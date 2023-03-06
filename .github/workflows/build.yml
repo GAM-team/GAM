@@ -12,6 +12,7 @@ defaults:
     working-directory: src
 
 env:
+  CFLAGS=: -DOPENSSL_TLS_SECURITY_LEVEL=2
   OPENSSL_CONFIG_OPTS: no-fips --api=3.0.0
   OPENSSL_INSTALL_PATH: ${{ github.workspace }}/bin/ssl
   OPENSSL_SOURCE_PATH: ${{ github.workspace }}/src/openssl
@@ -103,7 +104,7 @@ jobs:
           path: |
             bin.tar.xz
             src/cpython
-          key: gam-${{ matrix.jid }}-20230306
+          key: gam-${{ matrix.jid }}-20230306-01
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
@@ -192,18 +193,15 @@ jobs:
             echo "MACOSX_DEPLOYMENT_TARGET=10.15" >> $GITHUB_ENV
             echo "PYTHON=${PYTHON_INSTALL_PATH}/bin/python3" >> $GITHUB_ENV
             echo "PIP_ARGS=--no-binary=:all:" >> $GITHUB_ENV
-            CFLAGS="-DOPENSSL_TLS_SECURITY_LEVEL=2 -DOPENSSL_NO_SSL2_METHOD -DOPENSSL_NO_SSL2 -DOPENSSL_NO_SSL3_METHOD -DOPENSSL_NO_SSL3 -DOPENSSL_NO_TLS1_METHOD -DOPENSSL_NO_TLS1 -DOPENSSL_NO_TLS1_1_METHOD -DOPENSSL_NO_TLS1_1"
           elif [[ "${RUNNER_OS}" == "Linux" ]]; then
             MAKE=make
             MAKEOPT="-j$(nproc)"
             PERL=perl
-            CFLAGS="-DOPENSSL_TLS_SECURITY_LEVEL=2 -DOPENSSL_NO_SSL2_METHOD -DOPENSSL_NO_SSL2 -DOPENSSL_NO_SSL3_METHOD -DOPENSSL_NO_SSL3 -DOPENSSL_NO_TLS1_METHOD -DOPENSSL_NO_TLS1 -DOPENSSL_NO_TLS1_1_METHOD -DOPENSSL_NO_TLS1_1"
             echo "PYTHON=${PYTHON_INSTALL_PATH}/bin/python3" >> $GITHUB_ENV
           elif [[ "${RUNNER_OS}" == "Windows" ]]; then
             MAKE=nmake
             MAKEOPT=""
             PERL="c:\strawberry\perl\bin\perl.exe"
-            CFLAGS="-D\"OPENSSL_TLS_SECURITY_LEVEL=2\" -D\"OPENSSL_NO_SSL2_METHOD\" -D\"OPENSSL_NO_SSL2\" -D\"OPENSSL_NO_SSL3_METHOD\" -D\"OPENSSL_NO_SSL3\" -D\"OPENSSL_NO_TLS1_METHOD\" -D\"OPENSSL_NO_TLS1\" -D\"OPENSSL_NO_TLS1_1_METHOD\" -D\"OPENSSL_NO_TLS1_1\""
             LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_PATH}"
             echo "PYTHON=${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_PATH}/python.exe" >> $GITHUB_ENV
             echo "GAM_ARCHIVE_ARCH=${GAM_ARCHIVE_ARCH}" >> $GITHUB_ENV
@@ -211,7 +209,6 @@ jobs:
           fi
           echo "We'll run make with: ${MAKEOPT}"
           echo "JID=${jid}" >> $GITHUB_ENV
-          echo "CFLAGS=${CFLAGS}" >> $GITHUB_ENV
           echo "staticx=${staticx}" >> $GITHUB_ENV
           echo "arch=${arch}" >> $GITHUB_ENV
           echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}" >> $GITHUB_ENV
