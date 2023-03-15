@@ -7797,7 +7797,7 @@ def doUpdateProjects():
         _grantRotateRights(iam, sa_email, sa_email)
 
 
-def _generatePrivateKeyAndPublicCert(client_id, key_size, b64enc_pub=True):
+def _generatePrivateKeyAndPublicCert(client_id, key_size, b64enc_pub=True, validity_hours=0):
     print(' Generating new private key...')
     private_key = rsa.generate_private_key(public_exponent=65537,
                                            key_size=key_size,
@@ -7814,10 +7814,16 @@ def _generatePrivateKeyAndPublicCert(client_id, key_size, b64enc_pub=True):
     builder = builder.issuer_name(
         x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, client_id)]))
     # Gooogle seems to enforce the not before date strictly. Set the not before
-    # date to be UTC one hour ago should cover any clock skew.
-    builder = builder.not_valid_before(datetime.datetime.utcnow() - datetime.timedelta(hours=1))
-    # Google uses 12/31/9999 date for end time
-    builder = builder.not_valid_after(datetime.datetime(9999, 12, 31, 23, 59))
+    # date to be UTC two minutes ago which should cover any clock skew.
+    now = datetime.datetime.utcnow()
+    builder = builder.not_valid_before(now - datetime.timedelta(minutes=2))
+    # Google defaults to 12/31/9999 date for end time if there's no
+    # policy to restrict key age
+    if validity_hours:
+        expires = now + datetime.timedelta(hours=validity_hours) - datetime.timedelta(minutes=2)
+        builder = builder.not_valid_after(expires)
+    else:
+        builder = builder.not_valid_after(datetime.datetime(9999, 12, 31, 23, 59))
     builder = builder.serial_number(x509.random_serial_number())
     builder = builder.public_key(public_key)
     builder = builder.add_extension(x509.BasicConstraints(ca=False,
@@ -7883,6 +7889,7 @@ def doShowServiceAccountKeys():
                           'list',
                           'keys',
                           name=name,
+                          fields='*',
                           keyTypes=keyTypes)
     if not keys:
         print('No keys')
@@ -7969,6 +7976,7 @@ def doCreateOrRotateServiceAccountKeys(iam=None,
         mode = 'retainnone'
         i = 3
         iam = buildGAPIServiceObject('iam', None)
+        validity_hours = 0
         while i < len(sys.argv):
             myarg = sys.argv[i].lower().replace('_', '')
             if myarg == 'algorithm':
@@ -8002,6 +8010,9 @@ def doCreateOrRotateServiceAccountKeys(iam=None,
             elif myarg == 'yubikeyserialnumber':
                 getYubiKeySerialNumber(new_data, sys.argv[i+1])
                 i += 2
+            elif myarg == 'validityhours':
+                validity_hours = int(sys.argv[i + 1])
+                i += 2
             elif myarg in ['retainnone', 'retainexisting', 'replacecurrent']:
                 mode = myarg
                 i += 1
@@ -8022,7 +8033,7 @@ def doCreateOrRotateServiceAccountKeys(iam=None,
     elif local_key_size:
         # Generate private key locally, store in file
         new_data['private_key'], publicKeyData = _generatePrivateKeyAndPublicCert(
-            sa_name, local_key_size)
+            sa_name, local_key_size, validity_hours=validity_hours)
         new_data['key_type'] = 'default'
         for key in list(new_data):
             if key.startswith('yubikey_'):
