@@ -5,7 +5,6 @@ import os
 
 from google.auth.jwt import Credentials as JWTCredentials
 
-import gam
 from gam import utils
 
 from gam.auth import oauth
@@ -29,8 +28,7 @@ def get_admin_credentials_filename():
     # some custom name in it. Otherwise, just use the default name.
     if GC_Values[GC_ENABLE_DASA]:
         return GC_Values[GC_OAUTH2SERVICE_JSON] if GC_Values[GC_OAUTH2SERVICE_JSON] else _FN_OAUTH2SERVICE_JSON
-    else:
-        return GC_Values[GC_OAUTH2_TXT] if GC_Values[GC_OAUTH2_TXT] else _FN_OAUTH2_TXT
+    return GC_Values[GC_OAUTH2_TXT] if GC_Values[GC_OAUTH2_TXT] else _FN_OAUTH2_TXT
 
 
 def get_admin_credentials(api=None):
@@ -47,12 +45,12 @@ def get_admin_credentials(api=None):
         if key_type == 'default':
             return JWTCredentials.from_service_account_info(creds_data,
                                                             audience=audience)
-        elif key_type == 'yubikey':
+        if key_type == 'yubikey':
             yksigner = yubikey.YubiKey(creds_data)
             return JWTCredentials._from_signer_and_info(yksigner,
                 creds_data,
                 audience=audience)
-        elif key_type == 'signjwt':
+        if key_type == 'signjwt':
             sjsigner = signjwt.SignJwt(creds_data)
             return signjwt.JWTCredentials._from_signer_and_info(sjsigner,
                     creds_data,
