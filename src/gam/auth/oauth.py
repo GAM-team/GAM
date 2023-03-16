@@ -50,6 +50,7 @@ MESSAGE_LOCAL_SERVER_SUCCESS = ('The authentication flow has completed. You may'
                                 ' close this browser window and return to GAM.')
 
 MESSAGE_AUTHENTICATION_COMPLETE = ('\nThe authentication flow has completed.\n')
+MESSAGE_AUTHENTICATION_FAILED = ('\nThe authentication flow failed, reissue command')
 
 
 class CredentialsError(Exception):
@@ -629,15 +630,22 @@ class _ShortURLFlow(google_auth_oauthlib.flow.InstalledAppFlow):
         print(MESSAGE_CONSOLE_AUTHORIZATION_PROMPT.format(url=d['auth_url']))
         user_input.start()
         userInput = False
-        while True:
+        alive = 2
+        while alive > 0:
             sleep(0.1)
             if not http_client.is_alive():
-                user_input.terminate()
-                break
-            elif not user_input.is_alive():
+                if 'code' in d:
+                    user_input.terminate()
+                    break
+                alive -= 1
+            if not user_input.is_alive():
                 userInput = True
-                http_client.terminate()
-                break
+                if 'code' in d:
+                    http_client.terminate()
+                    break
+                alive -= 1
+        if 'code' not in d:
+            controlflow.system_error_exit(8, MESSAGE_AUTHENTICATION_FAILED)
         while True:
             code = d['code']
             if code.startswith('http'):
