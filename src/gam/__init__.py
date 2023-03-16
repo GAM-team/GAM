@@ -636,8 +636,10 @@ TIME_OFFSET_UNITS = [('day', 86400), ('hour', 3600), ('minute', 60),
 
 
 def getLocalGoogleTimeOffset(testLocation='admin.googleapis.com'):
+    # If local time is well off, it breaks https because the server certificate
+    # will be seen as too old or new and thus invalid; http doesn't have that issue.
     # Try with http first, if time is close (<MAX_LOCAL_GOOGLE_TIME_OFFSET seconds),
-    # retry with https
+    # retry with https as it should be OK
     badhttp = transport.create_http()
     for prot in ['http', 'https']:
         localUTC = datetime.datetime.now(datetime.timezone.utc)
@@ -646,6 +648,12 @@ def getLocalGoogleTimeOffset(testLocation='admin.googleapis.com'):
                 badhttp.request(f'{prot}://' + testLocation, 'HEAD')[0]['date'])
         except (httplib2.ServerNotFoundError, RuntimeError, ValueError) as e:
             controlflow.system_error_exit(4, str(e))
+        except httplib2.socks.HTTPError as e:
+            # If user has specified an HTTPS proxy, the http request will probably fail as httplib2
+            # turns a GET into a CONNECT which is not valid for an http address
+            if prot == 'http':
+                continue
+            handleServerError(e)
         offset = remainder = int(abs((localUTC - googleUTC).total_seconds()))
         if offset < MAX_LOCAL_GOOGLE_TIME_OFFSET and prot == 'http':
             continue
@@ -7957,6 +7965,7 @@ def doCreateOrRotateServiceAccountKeys(iam=None,
                                        client_email=None,
                                        client_id=None):
     local_key_size = 2048
+    validity_hours = 0
     mode = 'retainexisting'
     body = {}
     if iam:
@@ -7976,7 +7985,6 @@ def doCreateOrRotateServiceAccountKeys(iam=None,
         mode = 'retainnone'
         i = 3
         iam = buildGAPIServiceObject('iam', None)
-        validity_hours = 0
         while i < len(sys.argv):
             myarg = sys.argv[i].lower().replace('_', '')
             if myarg == 'algorithm':
