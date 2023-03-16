@@ -7965,6 +7965,7 @@ def doCreateOrRotateServiceAccountKeys(iam=None,
                                        client_email=None,
                                        client_id=None):
     local_key_size = 2048
+    validity_hours = 0
     mode = 'retainexisting'
     body = {}
     if iam:
@@ -7984,7 +7985,6 @@ def doCreateOrRotateServiceAccountKeys(iam=None,
         mode = 'retainnone'
         i = 3
         iam = buildGAPIServiceObject('iam', None)
-        validity_hours = 0
         while i < len(sys.argv):
             myarg = sys.argv[i].lower().replace('_', '')
             if myarg == 'algorithm':
