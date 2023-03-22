@@ -62,6 +62,21 @@ SKUS = {
         'aliases': ['cloudsearch'],
         'displayName': 'Google Cloud Search',
     },
+    '1010380001': {
+        'product': '101038',
+        'aliases': ['appsheetcore'],
+        'displayName': 'AppSheet Core',
+    },
+    '1010380002': {
+        'product': '101038',
+        'aliases': ['appsheetstandard', 'appsheetenterprisestandard'],
+        'displayName': 'AppSheet Enterprise Standard',
+    },
+    '1010380003': {
+        'product': '101038',
+        'aliases': ['appsheetplus', 'appsheetenterpriseplus'],
+        'displayName': 'AppSheet Enterprise Plus',
+    },
     '1010310002': {
         'product': '101031',
         'aliases': ['gsefe', 'e4e', 'gsuiteenterpriseeducation'],
@@ -300,6 +315,7 @@ PRODUCTID_NAME_MAPPINGS = {
     '101035': 'Cloud Search',
     '101036': 'Google Meet Global Dialing',
     '101037': 'G Suite Workspace for Education',
+    '101038': 'AppSheet',
     '101039': 'Assured Controls',
     '101040': 'Beyond Corp',
     'Google-Apps': 'Google Workspace',
