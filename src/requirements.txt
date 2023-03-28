@@ -1,4 +1,4 @@
-cryptography
+cryptography==39.0.2
 distro; sys_platform == 'linux'
 filelock
 google-api-python-client>=2.1
