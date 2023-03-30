@@ -7426,7 +7426,7 @@ def _createClientSecretsOauth2service(httpObj, projectId, login_hint):
     while True:
         print(f'''Please go to:
 
-{console_url}
+  {console_url}
 
 1. Choose "Desktop App" or "Other" for "Application type".
 2. Enter a desired value for "Name" or leave as is.
@@ -7465,6 +7465,24 @@ def _createClientSecretsOauth2service(httpObj, projectId, login_hint):
     fileutils.write_file(GC_Values[GC_CLIENT_SECRETS_JSON],
                          cs_data,
                          continue_on_error=False)
+    print(f'''
+Now it's important to mark the GAM Client ID as trusted by your Workspace instance.
+
+1. Please go to:
+
+  https://admin.google.com/ac/owl/list?tab=configuredApps
+
+2. Click on: Add app > OAuth App Name Or Client ID.
+3. Enter the following Client ID value:
+
+  {client_id}
+
+4. Search for the ID, select the GAM app, check the box and press Select.
+5. Keep the default scope or select a preferred scope that includes your GAM admin.
+6. Press Continue
+7. Select Trusted radio button, Continue and Finish.
+''')
+    input('Press Enter when complete.')
     print('That\'s it! Your GAM Project is created and ready to use.')
 
 
