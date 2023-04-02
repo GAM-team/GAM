@@ -7953,43 +7953,30 @@ def doResetYubiKeyPIV():
     yk.reset_piv()
 
 def create_signjwt_serviceaccount():
-    print(1)
     i = 3
     if i < len(sys.argv):
         controlflow.invalid_argument_exit(sys.argv[i], f'gam create {sys.argv[2]}')
-    print(2)
     _checkForExistingProjectFiles()
-    print(3)
     sa_info = {
             'type': 'service_account',
             'key_type': 'signjwt',
             'token_uri': 'https://oauth2.googleapis.com/token'
             }
-    print(4)
     try:
-        creds, sa_info['project_id'] = google.auth.default()
+        creds, sa_info['project_id'] = google.auth.default(scopes='https://www.googleapis.com/auth/iam')
     except google.auth.exceptions.DefaultCredentialsError as e:
         controlflow.system_error_exit(2, e)
-    print(5)
     request = transport.create_request()
-    print(6)
     creds.refresh(request)
-    print(7)
     sa_info['client_email'] = creds.service_account_email
-    print(8)
     oa2 = buildGAPIObjectNoAuthentication('oauth2')
-    print(9)
     token_info = gapi.call(oa2, 'tokeninfo', access_token=creds.token)
-    print(10)
     sa_info['client_id'] = token_info['issued_to']
-    print(11)
     sa_output = json.dumps(sa_info, indent=4, sort_keys=True)
-    print(12)
     fileutils.write_file(GC_Values[GC_OAUTH2SERVICE_JSON],
                           sa_output,
                           continue_on_error=False)
-    print(13)
-
+    
 def doCreateOrRotateServiceAccountKeys(iam=None,
                                        project_id=None,
                                        client_email=None,
