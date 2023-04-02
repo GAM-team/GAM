@@ -594,12 +594,12 @@ jobs:
              fi
              source ../.github/actions/decrypt.sh ../.github/actions/creds.tar.xz.gpg creds.tar.xz
              rm $gampath/oauth2service.json
-             $gam create signjwtserviceaccount
              export OAUTHFILE="oauth2.txt-gam-gha-${JID}"
              echo "OAUTHFILE=${OAUTHFILE}" >> $GITHUB_ENV
              export gam_user="gam-gha-${JID}@pdl.jaylee.us"
              echo "gam_user=${gam_user}" >> $GITHUB_ENV
              $gam checkconn
+             $gam create signjwtserviceaccount
              $gam oauth info
              $gam info domain
              $gam oauth refresh
