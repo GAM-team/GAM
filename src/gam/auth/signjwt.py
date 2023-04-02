@@ -74,7 +74,7 @@ class SignJwt(google.auth.crypt.Signer):
     def sign(self, message):
         ''' Call IAM Credentials SignJWT API to get our signed JWT '''
         try:
-            credentials, _ = google.auth.default()
+            credentials, _ = google.auth.default(scopes='https://www.googleapis.com/auth/iam')
         except google.auth.exceptions.DefaultCredentialsError as e:
             controlflow.system_error_exit(2, e)
         httpObj = transport.AuthorizedHttp(
