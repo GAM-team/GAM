@@ -95,6 +95,14 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
+      - id: auth
+        name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: projects/297925809119/locations/global/workloadIdentityPools/gha-pool/providers/gha-provider
+          service_account: github-actions-testing-for-gam@gam-project-wyo-lub-ivl.iam.gserviceaccount.com
+          access_token_scopes: "https://www.googleapis.com/auth/iam"
+
       - name: Cache multiple paths
         if: matrix.goal == 'build'
         uses: actions/cache@v3
@@ -580,6 +588,8 @@ jobs:
                brew install gnupg
              fi
              source ../.github/actions/decrypt.sh ../.github/actions/creds.tar.xz.gpg creds.tar.xz
+             rm $gampath/oauth2service.json
+             $gam create signjwtserviceaccount
              export OAUTHFILE="oauth2.txt-gam-gha-${JID}"
              echo "OAUTHFILE=${OAUTHFILE}" >> $GITHUB_ENV
              export gam_user="gam-gha-${JID}@pdl.jaylee.us"
