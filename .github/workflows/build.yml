@@ -600,6 +600,8 @@ jobs:
              echo "gam_user=${gam_user}" >> $GITHUB_ENV
              $gam checkconn
              $gam create signjwtserviceaccount
+             export CUSTOMER_ID="C01wfv983"
+             export GA_DOMAIN="pdl.jaylee.us"
              touch "${gampath}/enabledasa.txt"
              $gam oauth info
              $gam info domain
@@ -752,9 +754,6 @@ jobs:
              #$gam delete inboundssoprofile "id:${ssoprofile}"
              #$gam print printers
              #$gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by $(gam_user)" ou /
-             export CUSTOMER_ID="C01wfv983"
-             export GA_DOMAIN="pdl.jaylee.us"
-             touch $gampath/enabledasa.txt
              echo "using delegated admin service account"
              $gam print users
 
