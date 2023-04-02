@@ -600,6 +600,7 @@ jobs:
              echo "gam_user=${gam_user}" >> $GITHUB_ENV
              $gam checkconn
              $gam create signjwtserviceaccount
+             touch "${gampath}/enabledasa.txt"
              $gam oauth info
              $gam info domain
              $gam oauth refresh
