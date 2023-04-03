@@ -39,7 +39,7 @@ def get_admin_credentials(api=None):
     with open(credential_file) as f:
         creds_data = json.load(f)
     # Validate that enable DASA matches content of authorization file
-    if GC_Values[GC_ENABLE_DASA] and 'key_type' in creds_data:
+    if GC_Values[GC_ENABLE_DASA] and creds_data.get('type') == 'service_account':
         audience = f'https://{api}.googleapis.com/'
         key_type = creds_data.get('key_type', 'default')
         if key_type == 'default':
