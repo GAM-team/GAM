@@ -618,7 +618,9 @@ jobs:
              export newou="aaaGithub Actions/${newbase}"
              
              # cleanup old runs
+             rm "${gampath}/enabledasa.txt"
              GAM_CSV_ROW_FILTER="name:regex:gha_test_${JID}_" $gam print vaultholds | $gam csv - gam delete vaulthold "id:~~holdId~~" matter "id:~~matterId~~"
+             touch "${gampath}/enabledasa.txt"
              GAM_CSV_ROW_FILTER="name:regex:gha_test_${JID}_" $gam print features | $gam csv - gam delete feature ~name
              GAM_CSV_ROW_FILTER="name:regex:^gha_test_${JID}_" $gam user $gam_user print shareddrives asadmin | $gam csv - gam user $gam_user delete shareddrive ~id nukefromorbit
              $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail
