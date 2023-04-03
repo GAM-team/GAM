@@ -719,7 +719,9 @@ jobs:
              $gam delete building $newbuilding
              $gam delete group $newgroup
              $gam create alias $newalias user $newuser
+             rm "${gampath}/enabledasa.txt"
              $gam user $newuser delete license workspaceenterpriseplus
+             touch "${gampath}/enabledasa.txt"
              $gam whatis $newuser
              $gam user $gam_user show tokens
              rm "${gampath}/enabledasa.txt"
