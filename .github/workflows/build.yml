@@ -751,8 +751,10 @@ jobs:
              $gam report users fields accounts:is_less_secure_apps_access_allowed,gmail:last_imap_time,gmail:last_pop_time filters "accounts:last_login_time>2019-01-01T00:00:00.000Z" todrive
              $gam report admin start -3d todrive
              $gam print devices nopersonaldevices nodeviceusers filter "serial:$JID$JID$JID$JID-" | $gam csv - gam delete device id ~name
+             rm "${gampath}/enabledasa.txt"
              $gam print userinvitations
              $gam print userinvitations | $gam csv - gam send userinvitation ~name
+             touch "${gampath}/enabledasa.txt"
              $gam create caalevel "zzz_${newbase}" basic condition ipsubnetworks 1.1.1.1/32,2.2.2.2/32 endcondition
              $gam print caalevels
              $gam delete caalevel "zzz_${newbase}"
@@ -772,8 +774,6 @@ jobs:
              #$gam delete inboundssoprofile "id:${ssoprofile}"
              #$gam print printers
              #$gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by $(gam_user)" ou /
-             echo "using delegated admin service account"
-             $gam print users
 
       - name: Archive production artifacts
         uses: actions/upload-artifact@v3
