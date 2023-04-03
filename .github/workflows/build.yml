@@ -645,8 +645,8 @@ jobs:
              $gam user $gam_user sendemail recipient exchange@pdl.jaylee.us subject "test ${tstamp}" message "test message"
              rm "${gampath}/enabledasa.txt"
              $gam user $newuser add license workspaceenterpriseplus
-             touch "${gampath}/enabledasa.txt"
              $gam print privileges
+             touch "${gampath}/enabledasa.txt"
              $gam update cigroup $newgroup memberrestriction 'member.type == 1 || member.customer_id == groupCustomerId()'
              $gam info cigroup $newgroup
              $gam update group $newgroup add owner $gam_user
