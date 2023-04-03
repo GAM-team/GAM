@@ -720,7 +720,9 @@ jobs:
              $gam delete group $newgroup
              $gam create alias $newalias user $newuser
              rm "${gampath}/enabledasa.txt"
+             echo start
              $gam user $newuser delete license workspaceenterpriseplus
+             echo finish
              touch "${gampath}/enabledasa.txt"
              $gam whatis $newuser
              $gam user $gam_user show tokens
