@@ -652,7 +652,8 @@ jobs:
              $gam update group $newgroup add owner $gam_user
              $gam update group $newgroup add member $newuser
              rm "${gampath}/enabledasa.txt"
-             $gam create admin $newuser _GROUPS_EDITOR_ROLE CUSTOMER # condition nonsecuritygroup
+             $gam create admin $newuser _GROUPS_EDITOR_ROLE CUSTOMER condition nonsecuritygroup
+             GAM_CSV_ROW_FILTER="assignedToUser:regex:${newuser}" $gam print admins | $gam csv - gam delete admin "~roleAssignmentId"
              touch "${gampath}/enabledasa.txt"
              $gam csv sample.csv gam create user ~~email~~ firstname "GHA Bulk" lastname ~~email~~ gha.jid $JID ou "${newou}"
              $gam csv sample.csv gam update user ~~email~~ recoveryphone 12125121110 recoveryemail jay0lee@gmail.com password random displayname "GitHub Actions Bulk ${JID}"
