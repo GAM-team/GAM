@@ -735,14 +735,14 @@ jobs:
              # shakes off vault hold on user so we can delete
              $gam print users query "email:${newuser}" orgunitpath | $gam csv - gam update user ~primaryEmail ou ~orgUnitPath
              $gam user $newuser show holds
+             export sn="$JID$JID$JID$JID-$(openssl rand -base64 32 | sed 's/[^a-zA-Z0-9]//g')"
+             $gam create device serialnumber $sn devicetype android
              touch "${gampath}/enabledasa.txt"
              $gam delete user $newuser
              $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail
              $gam print mobile
              $gam print devices
              $gam print browsers
-             export sn="$JID$JID$JID$JID-$(openssl rand -base64 32 | sed 's/[^a-zA-Z0-9]//g')"
-             $gam create device serialnumber $sn devicetype android
              $gam print cros allfields orderby serialnumber
              $gam show crostelemetry storagepercentonly
              $gam report usageparameters customer
