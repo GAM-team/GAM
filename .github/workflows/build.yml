@@ -602,6 +602,7 @@ jobs:
              $gam create signjwtserviceaccount
              export CUSTOMER_ID="C03uzfv2s"
              export GA_DOMAIN="pdl.jaylee.us"
+             export GA_ADMIN_EMAIL="$gam_user"
              touch "${gampath}/enabledasa.txt"
              #$gam oauth info
              $gam info domain
