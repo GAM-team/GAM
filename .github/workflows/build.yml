@@ -703,6 +703,7 @@ jobs:
              endtime=$($PYTHON -c "import datetime; print((datetime.datetime.now() + datetime.timedelta(hours=2)).strftime('%Y-%m-%dT%H:%M:%S.%f+00:00'))")
              $gam calendar $gam_user addevent summary "GHA test event" start "${starttime}" end "${endtime}" attendee $newgroup hangoutsmeet guestscanmodify true sendupdates all
              $gam calendar $gam_user printevents after -0d
+             rm "${gampath}/enabledasa.txt"
              matterid=uid:$($gam create vaultmatter name "GHA matter $newbase" description "test matter" collaborators $newuser | head -1 | cut -d ' ' -f 3)
              $gam create vaulthold matter $matterid name "GHA hold $newbase" corpus mail accounts $newuser
              $gam print vaultmatters matterstate open
@@ -710,6 +711,7 @@ jobs:
              $gam print vaultcount matter $matterid corpus mail everyone todrive
              $gam create vaultexport matter $matterid name "GHA export $newbase" corpus mail accounts $newuser use_new_export false
              $gam print exports matter $matterid | $gam csv - gam info export $matterid id:~~id~~
+             touch "${gampath}/enabledasa.txt"
              $gam csv sample.csv gam user ~email add calendar id:$newresource
              $gam delete resource $newresource
              $gam delete feature Whiteboard-$newbase
@@ -720,6 +722,7 @@ jobs:
              $gam user $newuser delete license workspaceenterpriseplus
              $gam whatis $newuser
              $gam user $gam_user show tokens
+             rm "${gampath}/enabledasa.txt"
              $gam print exports matter $matterid | $gam csv - gam download export $matterid id:~~id~~
              $gam delete hold "GHA hold $newbase" matter $matterid
              $gam update matter $matterid action close
@@ -727,6 +730,7 @@ jobs:
              # shakes off vault hold on user so we can delete
              $gam print users query "email:${newuser}" orgunitpath | $gam csv - gam update user ~primaryEmail ou ~orgUnitPath
              $gam user $newuser show holds
+             touch "${gampath}/enabledasa.txt"
              $gam delete user $newuser
              $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail
              $gam print mobile
