@@ -412,7 +412,7 @@
     }
   },
   "revision": "20201203",
-  "rootUrl": "https://www.googleapis.com/admin/directory/v1.1beta1/customer/",
+  "rootUrl": "https://admin.googleapis.com/admin/directory/v1.1beta1/customer/",
   "schemas": {
     "ChromeBrowser": {
       "id": "ChromeBrowser",
