@@ -653,7 +653,9 @@ jobs:
              $gam csv sample.csv gam create user ~~email~~ firstname "GHA Bulk" lastname ~~email~~ gha.jid $JID ou "${newou}"
              $gam csv sample.csv gam update user ~~email~~ recoveryphone 12125121110 recoveryemail jay0lee@gmail.com password random displayname "GitHub Actions Bulk ${JID}"
              $gam csv sample.csv gam update user ~~email~~ recoveryphone "" recoveryemail ""
+             rm "${gampath}/enabledasa.txt"
              $gam csv sample.csv gam user ~email add license workspaceenterpriseplus
+             touch "${gampath}/enabledasa.txt"
              $gam csv sample.csv gam user $gam_user sendemail recipient ~~email~~@pdl.jaylee.us subject "test message $newbase" message "GHA test message"
              $gam csv sample.csv gam update group $newgroup add member ~email
              $gam info group $newgroup
