@@ -5,6 +5,7 @@ import os
 
 from google.auth.jwt import Credentials as JWTCredentials
 
+import gam
 from gam import utils
 
 from gam.auth import oauth
@@ -30,6 +31,9 @@ def get_admin_credentials_filename():
         return GC_Values[GC_OAUTH2SERVICE_JSON] if GC_Values[GC_OAUTH2SERVICE_JSON] else _FN_OAUTH2SERVICE_JSON
     return GC_Values[GC_OAUTH2_TXT] if GC_Values[GC_OAUTH2_TXT] else _FN_OAUTH2_TXT
 
+APIS_NEEDING_ACCESS_TOKEN = {
+    'cbcm': ['https://www.googleapis.com/auth/admin.directory.device.chromebrowsers']
+    }
 
 def get_admin_credentials(api=None):
     """Gets oauth.Credentials that are authenticated as the domain's admin user."""
@@ -40,6 +44,11 @@ def get_admin_credentials(api=None):
         creds_data = json.load(f)
     # Validate that enable DASA matches content of authorization file
     if GC_Values[GC_ENABLE_DASA] and creds_data.get('type') == 'service_account':
+        if api in APIS_NEEDING_ACCESS_TOKEN:
+            return gam.getSvcAcctCredentials(scopes=APIS_NEEDING_ACCESS_TOKEN[api],
+                                             act_as=None,
+                                             api=None,
+                                             force_oauth=True)
         audience = f'https://{api}.googleapis.com/'
         key_type = creds_data.get('key_type', 'default')
         if key_type == 'default':
