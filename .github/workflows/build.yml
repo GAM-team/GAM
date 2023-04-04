@@ -766,14 +766,16 @@ jobs:
              $gam user $gam_user update shareddrive "${driveid}" ou "aaaGithub Actions" # so we can delete our OU...
              $gam user $gam_user delete shareddrive "${driveid}" nukefromorbit
              echo "printer model count:"
+             ssoprofile=$($gam create inboundssoprofile name "El Goog ${newbase}" loginurl https://www.google.com logouturl https://www.google.com changepasswordurl https://www.google.com entityid ElGoog return_name_only)
+             $gam create inboundssocredential profile "id:${ssoprofile}" generate_key
+             $gam create inboundssoassignment profile "id:${ssoprofile}" orgunit "${newou}" mode SAML_SSO
+             $gam delete inboundssoprofile "id:${ssoprofile}"
              $gam print printermodels | wc -l
-             #ssoprofile=$($gam create inboundssoprofile name "El Goog ${newbase}" loginurl https://www.google.com logouturl https://www.google.com changepasswordurl https://www.google.com entityid ElGoog return_name_only)
-             #$gam create inboundssocredential profile "id:${ssoprofile}" generate_key
-             #$gam create inboundssoassignment profile "id:${ssoprofile}" orgunit "${newou}" mode SAML_SSO
+             $gam print printers
+             printerid=$($gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by $(gam_user)" ou "${newou}" | grep 'id: [a-z,0-9]*$' | cut -d' ' -f3)
+             $gam info printer "$printerid"
+             $gam delete printer "$printerid"
              $gam delete ou "${newou}"
-             #$gam delete inboundssoprofile "id:${ssoprofile}"
-             #$gam print printers
-             #$gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by $(gam_user)" ou /
 
       - name: Archive production artifacts
         uses: actions/upload-artifact@v3
