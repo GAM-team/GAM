@@ -418,7 +418,7 @@ jobs:
         run: |
           sudo add-apt-repository ppa:savoury1/curl34 -y
           sudo apt-get update
-          sudo apt-get install --upgrade curl
+          sudo apt-get install curl
 
       - name: Upgrade pip, wheel, etc
         run: |
