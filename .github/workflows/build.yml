@@ -161,7 +161,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           # Install latest Rust
-          curl --retry 5 --retry-connrefused -fsS -o rust.sh https://sh.rustup.rs
+          curl --retry 5 --retry-all-errors -fsS -o rust.sh https://sh.rustup.rs
           bash ./rust.sh -y
           source $HOME/.cargo/env
           # needed for Rust to compile cryptography Python package for universal2
@@ -415,7 +415,7 @@ jobs:
 
       - name: Upgrade pip, wheel, etc
         run: |
-          curl --retry 5 --retry-connrefused -O https://bootstrap.pypa.io/get-pip.py
+          curl --retry 5 --retry-all-errors -O https://bootstrap.pypa.io/get-pip.py
           "${PYTHON}" get-pip.py
           "${PYTHON}" -m pip install --upgrade pip
           "${PYTHON}" -m pip install --upgrade wheel
