@@ -413,6 +413,13 @@ jobs:
         run: |
           "${PYTHON}" -V
 
+      - name: Upgrade curl on Ubuntu 20.04
+        if: matrix.os == 'ubuntu-20.04'
+        run: |
+          sudo add-apt-repository ppa:savoury1/curl34 -y
+          sudo apt update
+          sudo apt --only-upgrade curl
+
       - name: Upgrade pip, wheel, etc
         run: |
           curl --retry 5 --retry-all-errors -O https://bootstrap.pypa.io/get-pip.py
@@ -769,6 +776,7 @@ jobs:
              ssoprofile=$($gam create inboundssoprofile name "El Goog ${newbase}" loginurl https://www.google.com logouturl https://www.google.com changepasswordurl https://www.google.com entityid ElGoog return_name_only)
              $gam create inboundssocredential profile "id:${ssoprofile}" generate_key
              $gam create inboundssoassignment profile "id:${ssoprofile}" orgunit "${newou}" mode SAML_SSO
+             $gam update inboundssoassignment orgunit "${newou}" mode SSO_OFF
              $gam delete inboundssoprofile "id:${ssoprofile}"
              $gam print printermodels | wc -l
              $gam print printers
