@@ -130,6 +130,16 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
+      - name: Set cURL retry flag
+        run: |
+          curl_version=$(curl --version | head -n 1 | awk '{ print $2 }')
+          echo "cURL is ${curl_version}"
+          if [ "$curl_version" == "7.68.0" ]; then
+            export curl_retry="--retry 5 --retry-connrefused"
+          else
+            export curl_retry="--retry 5 --retry-all-errors"
+          echo "curl_retry=${curl_retry}" >> $GITHUB_ENV
+
       - name: Set env variables for test
         if: matrix.goal == 'test'
         env:
@@ -161,7 +171,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           # Install latest Rust
-          curl --retry 5 --retry-all-errors -fsS -o rust.sh https://sh.rustup.rs
+          curl $curl_retry -fsS -o rust.sh https://sh.rustup.rs
           bash ./rust.sh -y
           source $HOME/.cargo/env
           # needed for Rust to compile cryptography Python package for universal2
@@ -413,16 +423,9 @@ jobs:
         run: |
           "${PYTHON}" -V
 
-      - name: Upgrade curl on Ubuntu 20.04
-        if: matrix.os == 'ubuntu-20.04'
-        run: |
-          sudo add-apt-repository ppa:savoury1/curl34 -y
-          sudo apt-get update
-          sudo apt-get install --upgrade curl libcurl4 libnghttp2-14
-
       - name: Upgrade pip, wheel, etc
         run: |
-          curl --retry 5 --retry-all-errors -O https://bootstrap.pypa.io/get-pip.py
+          curl $curl_retry -O https://bootstrap.pypa.io/get-pip.py
           "${PYTHON}" get-pip.py
           "${PYTHON}" -m pip install --upgrade pip
           "${PYTHON}" -m pip install --upgrade wheel
