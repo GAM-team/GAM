@@ -138,6 +138,7 @@ jobs:
             export curl_retry="--retry 5 --retry-connrefused"
           else
             export curl_retry="--retry 5 --retry-all-errors"
+          fi
           echo "curl_retry=${curl_retry}" >> $GITHUB_ENV
 
       - name: Set env variables for test
