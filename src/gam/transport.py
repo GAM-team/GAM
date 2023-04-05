@@ -9,6 +9,8 @@ from gam.var import GC_TLS_MAX_VERSION
 from gam.var import GC_TLS_MIN_VERSION
 from gam.var import GC_Values
 
+# Bump default retries
+httplib2.RETRIES = 5
 
 def create_http(cache=None,
                 timeout=None,
