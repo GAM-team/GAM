@@ -7962,17 +7962,13 @@ def create_signjwt_serviceaccount():
             'key_type': 'signjwt',
             'token_uri': 'https://oauth2.googleapis.com/token'
             }
-    print(1)
     request = transport.create_request()
-    print(2)
     try:
         creds, sa_info['project_id'] = google.auth.default(scopes=['https://www.googleapis.com/auth/iam'],
                 request=request)
     except google.auth.exceptions.DefaultCredentialsError as e:
         controlflow.system_error_exit(2, e)
-    print(3)
     creds.refresh(request)
-    print(4)
     sa_info['client_email'] = creds.service_account_email
     oa2 = buildGAPIObjectNoAuthentication('oauth2')
     token_info = gapi.call(oa2, 'tokeninfo', access_token=creds.token)
