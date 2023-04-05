@@ -35,7 +35,7 @@ def get_orgunit_id(orgunit):
 
 '''build Cloud Identity API'''
 def build():
-    return gapi_cloudidentity.build('cloudidentity_beta')
+    return gapi_cloudidentity.build('cloudidentity')
 
 
 '''parse cmd for profile create/update'''
@@ -482,6 +482,16 @@ def update_assignment():
        display.print_json(result['response'])
     else:
         controlflow.system_error_exit(3, 'Update did not finish {result}')
+
+
+'''gam delete inboundssoassignment'''
+def delete_assignment():
+    ci = build()
+    assignment = assignment_by_target(sys.argv[3], ci).get('name')
+    print(f'Deleting Inbound SSO Assignmnet {assignment}...')
+    gapi.call(ci.inboundSsoAssignments(),
+              'delete',
+              name=assignment)
 
 
 '''gam info inboundssoassignment'''

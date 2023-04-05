@@ -11872,6 +11872,8 @@ def ProcessGAMCommand(args):
                 gapi_cloudidentity_inboundsso.delete_profile()
             elif argument in ['inboundssocredential', 'inboundssocredentials']:
                 gapi_cloudidentity_inboundsso.delete_credentials()
+            elif argument in ['inboundssoassignment', 'inboundssoassignments']:
+                gapi_cloudidentity_inboundsso.delete_assignment()
             elif argument == 'resource':
                 gapi_directory_resource.deleteResourceCalendar()
             elif argument == 'mobile':
