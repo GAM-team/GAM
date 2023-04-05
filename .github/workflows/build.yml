@@ -780,7 +780,7 @@ jobs:
              ssoprofile=$($gam create inboundssoprofile name "El Goog ${newbase}" loginurl https://www.google.com logouturl https://www.google.com changepasswordurl https://www.google.com entityid ElGoog return_name_only)
              $gam create inboundssocredential profile "id:${ssoprofile}" generate_key
              $gam create inboundssoassignment profile "id:${ssoprofile}" orgunit "${newou}" mode SAML_SSO
-             $gam delete inboundssoassignment "ou:${newou}"
+             $gam delete inboundssoassignment "orgunit:${newou}"
              $gam delete inboundssoprofile "id:${ssoprofile}"
              $gam print printermodels | wc -l
              $gam print printers
