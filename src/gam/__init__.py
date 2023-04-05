@@ -7962,8 +7962,10 @@ def create_signjwt_serviceaccount():
             'key_type': 'signjwt',
             'token_uri': 'https://oauth2.googleapis.com/token'
             }
+    request = transport.create_request()
     try:
-        creds, sa_info['project_id'] = google.auth.default(scopes=['https://www.googleapis.com/auth/iam'])
+        creds, sa_info['project_id'] = google.auth.default(scopes=['https://www.googleapis.com/auth/iam'],
+                request=request)
     except google.auth.exceptions.DefaultCredentialsError as e:
         controlflow.system_error_exit(2, e)
     request = transport.create_request()
