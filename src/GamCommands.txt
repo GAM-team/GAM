@@ -1595,6 +1595,7 @@ gam create inboundssoassignment (group <GroupItem> rank <Number>)|(ou|org|orguni
 	(mode sso_off)|(mode saml_sso profile <SSOProfileItem>)(mode domain_wide_saml_if_enabled) [neverredirect]
 gam update inboundssoassignment [(group <GroupItem> rank <Number>)|(ou|org|orgunit <OrgUnitItem>)]
 	[(mode sso_off)|(mode saml_sso profile <SSOProfileItem>)(mode domain_wide_saml_if_enabled)] [neverredirect]
+gam delete inboundssoassignment <SSOAssignmentSelector>
 gam info inboundssoassignment <SSOAssignmentSelector>
 gam show inboundssoassignments
 gam print inboundssoassignments [todrive]
