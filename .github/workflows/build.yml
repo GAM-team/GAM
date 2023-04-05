@@ -659,7 +659,7 @@ jobs:
              $gam user $newuser add license workspaceenterpriseplus
              $gam print privileges
              touch "${gampath}/enabledasa.txt"
-             $gam update cigroup $newgroup memberrestriction 'member.type == 1 || member.customer_id == groupCustomerId()'
+             $gam update cigroup $newgroup security memberrestriction 'member.type == 1 || member.customer_id == groupCustomerId()'
              $gam info cigroup $newgroup
              $gam update group $newgroup add owner $gam_user
              $gam update group $newgroup add member $newuser
