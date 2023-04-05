@@ -22,25 +22,33 @@ For more information, see https://jaylee.us/gam
 """
 
 import sys
-from multiprocessing import freeze_support
-from multiprocessing import set_start_method
 
-from gam import controlflow
-import gam
-
-
+# Note that this file (and only this file) should remain compatible
+# with older Python versions so we can return a meaningful error
+# instead of a syntax error.
 def main():
+    required_ver = (3, 8, 0)
+    if sys.version_info[:3] < required_ver:
+        err_result = ('ERROR: GAM requires Python %s.%s.%s or newer. You are '
+                'running %s.%s.%s. Please upgrade your Python version '
+                'or use one of the binary GAM downloads.\n' %
+                (required_ver[0],
+                 required_ver[1],
+                 required_ver[2],
+                 sys.version_info[0],
+                 sys.version_info[1],
+                 sys.version_info[2]))
+        sys.stderr.write(err_result)
+        sys.exit(5)
+    from multiprocessing import freeze_support
     freeze_support()
     if sys.platform == 'darwin':
         # https://bugs.python.org/issue33725 in Python 3.8.0 seems
         # to break parallel operations with errors about extra -b
         # command line arguments
+        from multiprocessing import set_start_method
         set_start_method('fork')
-    if sys.version_info[0] < 3 or sys.version_info[1] < 7:
-        controlflow.system_error_exit(
-            5,
-            f'GAM requires Python 3.7 or newer. You are running %s.%s.%s. Please upgrade your Python version or use one of the binary GAM downloads.'
-            % sys.version_info[:3])
+    import gam
     sys.exit(gam.ProcessGAMCommand(sys.argv))
 
 
