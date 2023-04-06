@@ -600,6 +600,7 @@ jobs:
              fi
              source ../.github/actions/decrypt.sh ../.github/actions/creds.tar.xz.gpg creds.tar.xz
              rm $gampath/oauth2service.json
+             export GAM_TLS_MIN_VERSION=TLSv1_2
              export OAUTHFILE="oauth2.txt-gam-gha-${JID}"
              echo "OAUTHFILE=${OAUTHFILE}" >> $GITHUB_ENV
              export gam_user="gam-gha-${JID}@pdl.jaylee.us"
