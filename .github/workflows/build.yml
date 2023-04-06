@@ -433,11 +433,18 @@ jobs:
              echo "after requirements..."
              "${PYTHON}" -m pip list
              if [[ "${RUNNER_OS}" == "macOS" ]]; then
+               # cffi is a dep of cryptography and doesn't ship
+               # a universal2 wheel so we must build one ourself :-/
                export CFLAGS="-arch x86_64 -arch arm64"
                export ARCHFLAGS="-arch x86_64 -arch arm64"
-               "${PYTHON}" -m pip install --upgrade cffi --force --no-binary :cffi:
+               "${PYTHON}" -m pip install --upgrade --force-reinstall --no-binary :all: \
+                                 --no-cache-dir --no-deps --use-pep517 \
+                                 --use-feature=no-binary-enable-wheel-cache \
+                                 cffi 
                echo "before cryptography..."
                "${PYTHON}" -m pip list
+               # cryptography has a universal2 wheel but getting it installed
+               # on x86-64 MacOS is a royal pain in the keester.
                "${PYTHON}" -m pip download --only-binary :all: \
                                              --dest . \
                                              --no-cache \
