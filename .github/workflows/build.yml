@@ -100,8 +100,6 @@ jobs:
         with:
           workload_identity_provider: projects/297925809119/locations/global/workloadIdentityPools/gha-pool/providers/gha-provider
           service_account: github-actions-testing-for-gam@gam-project-wyo-lub-ivl.iam.gserviceaccount.com
-          access_token_scopes: https://www.googleapis.com/auth/iam
-          token_format: access_token
 
       - name: Cache multiple paths
         if: matrix.goal == 'build'
