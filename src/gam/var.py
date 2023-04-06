@@ -657,7 +657,7 @@ GOOGLEDOC_VALID_EXTENSIONS_MAP = {
         '.docx', '.html', '.odt', '.pdf', '.rtf', '.txt', '.zip'
     ],
     MIMETYPE_GA_PRESENTATION: ['.pdf', '.pptx', '.odp', '.txt'],
-    MIMETYPE_GA_SPREADSHEET: ['.csv', '.ods', '.pdf', '.xlsx', '.zip'],
+    MIMETYPE_GA_SPREADSHEET: ['.csv', '.ods', '.pdf', '.tsv', '.xlsx', '.zip'],
 }
 
 MACOS_CODENAMES = {
