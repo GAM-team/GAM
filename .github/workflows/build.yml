@@ -208,7 +208,7 @@ jobs:
             PERL=perl
             echo "MACOSX_DEPLOYMENT_TARGET=10.15" >> $GITHUB_ENV
             echo "PYTHON=${PYTHON_INSTALL_PATH}/bin/python3" >> $GITHUB_ENV
-            echo "PIP_ARGS=--no-binary=:all:" >> $GITHUB_ENV
+            #echo "PIP_ARGS=--no-binary=:all:" >> $GITHUB_ENV
           elif [[ "${RUNNER_OS}" == "Linux" ]]; then
             MAKE=make
             MAKEOPT="-j$(nproc)"
@@ -427,9 +427,15 @@ jobs:
 
       - name: Install pip requirements
         run: |
+             echo "before anything..."
+             "${PYTHON}" -m pip list
              "${PYTHON}" -m pip install --upgrade -r requirements.txt ${PIP_ARGS}
+             echo "after requirements..."
+             "${PYTHON}" -m pip list
              if [[ "${RUNNER_OS}" == "macOS" ]]; then
                "${PYTHON}" -m pip install --upgrade cffi ${PIP_ARGS}
+               echo "before cryptography..."
+               "${PYTHON}" -m pip list
                "${PYTHON}" -m pip download --only-binary :all: \
                                              --dest . \
                                              --no-cache \
@@ -440,6 +446,7 @@ jobs:
              else
                "${PYTHON}" -m pip install --force-reinstall --no-deps --upgrade cryptography
              fi
+             echo "after cryptography..."
              "${PYTHON}" -m pip list
 
       - name: Install PyInstaller
