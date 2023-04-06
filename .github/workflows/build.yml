@@ -525,25 +525,6 @@ jobs:
               cp -v gam-setup.bat $gampath
           fi
 
-      - name: Basic Tests all jobs
-        run: |
-             $PYTHON -m unittest discover --start-directory ./ --pattern "*_test.py" --buffer
-             $gam version extended
-             export GAMVERSION=$($gam version simple)
-             echo "GAM Version ${GAMVERSION}"
-             echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
-
-      - name: Linux/MacOS package
-        if: runner.os != 'Windows' && matrix.goal == 'build' && matrix.staticx != 'yes'
-        run: |
-          if [[ "${RUNNER_OS}" == "macOS" ]]; then
-              GAM_ARCHIVE="gam-${GAMVERSION}-macos-universal2.tar.xz"
-          elif [[ "${RUNNER_OS}" == "Linux" ]]; then
-              this_glibc_ver=$(ldd --version | awk '/ldd/{print $NF}')
-              GAM_ARCHIVE="gam-${GAMVERSION}-linux-$(arch)-glibc${this_glibc_ver}.tar.xz"
-          fi
-          tar -C dist/ --create --verbose --exclude-from "${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" --file $GAM_ARCHIVE --xz gam
-
       - name: Install StaticX
         if: matrix.staticx == 'yes'
         run: |
@@ -563,17 +544,24 @@ jobs:
           esac
           echo "ldlib=${ldlib}"
           $PYTHON -m staticx -l "${ldlib}" "${gam}" "${gam}-staticx"
-          
-      - name: Run StaticX
-        if: matrix.staticx == 'yes'
-        run: |
-          "${gam}-staticx" version extended
-          mv -v "${gam}-staticx" "${gam}"
 
-      - name: Linux package staticx
-        if: matrix.staticx == 'yes'
+      - name: Basic Tests all jobs
         run: |
-          GAM_ARCHIVE="gam-${GAMVERSION}-linux-$(uname -m)-legacy.tar.xz"
+             $PYTHON -m unittest discover --start-directory ./ --pattern "*_test.py" --buffer
+             $gam version extended
+             export GAMVERSION=$($gam version simple)
+             echo "GAM Version ${GAMVERSION}"
+             echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
+
+      - name: Linux/MacOS package
+        if: runner.os != 'Windows' && matrix.goal == 'build'
+        run: |
+          if [[ "${RUNNER_OS}" == "macOS" ]]; then
+              GAM_ARCHIVE="gam-${GAMVERSION}-macos-universal2.tar.xz"
+          elif [[ "${RUNNER_OS}" == "Linux" ]]; then
+              this_glibc_ver=$(ldd --version | awk '/ldd/{print $NF}')
+              GAM_ARCHIVE="gam-${GAMVERSION}-linux-$(arch)-glibc${this_glibc_ver}.tar.xz"
+          fi
           tar -C dist/ --create --verbose --exclude-from "${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" --file $GAM_ARCHIVE --xz gam
 
       - name: Windows package
