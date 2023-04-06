@@ -21,6 +21,7 @@ With GAM you can programmatically create users, turn on/off services for users l
 For more information, see https://jaylee.us/gam
 """
 
+import logging
 import sys
 
 # Note that this file (and only this file) should remain compatible
@@ -49,6 +50,7 @@ def main():
         from multiprocessing import set_start_method
         set_start_method('fork')
     import gam
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
     sys.exit(gam.ProcessGAMCommand(sys.argv))
 
 
