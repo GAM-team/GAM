@@ -7966,8 +7966,9 @@ def create_signjwt_serviceaccount():
     request = transport.create_request()
     print(2)
     try:
-        creds, sa_info['project_id'] = google.auth.default(scopes=['https://www.googleapis.com/auth/iam'],
-                request=request)
+        #creds, sa_info['project_id'] = google.auth.default(scopes=['https://www.googleapis.com/auth/iam'],
+        #        request=request)
+        creds, sa_info['project_id'] = google.auth.default()
     except google.auth.exceptions.DefaultCredentialsError as e:
         controlflow.system_error_exit(2, e)
     print(3)
