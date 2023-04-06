@@ -429,11 +429,13 @@ jobs:
         run: |
              echo "before anything..."
              "${PYTHON}" -m pip list
-             "${PYTHON}" -m pip install --upgrade -r requirements.txt ${PIP_ARGS}
+             "${PYTHON}" -m pip install --upgrade -r requirements.txt
              echo "after requirements..."
              "${PYTHON}" -m pip list
              if [[ "${RUNNER_OS}" == "macOS" ]]; then
-               "${PYTHON}" -m pip install --upgrade cffi ${PIP_ARGS}
+               export CFLAGS="-arch x86_64 -arch arm64"
+               export ARCHFLAGS="-arch x86_64 -arch arm64"
+               "${PYTHON}" -m pip install --upgrade cffi --force --no-binary :cffi:
                echo "before cryptography..."
                "${PYTHON}" -m pip list
                "${PYTHON}" -m pip download --only-binary :all: \
