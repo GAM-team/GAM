@@ -14,6 +14,13 @@ from gam.var import GM_Globals, GM_CACHE_DIR
 
 _DEFAULT_TOKEN_LIFETIME_SECS = 3600  # 1 hour in seconds
 _GOOGLE_OAUTH2_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
+_IAM_SCOPES = ['https://www.googleapis.com/auth/iam']
+
+# Some Workforce Identity Federation endpoints such as GitHub Actions
+# only allow TLS 1.2 as of April 2023.
+def get_request():
+    httpc = transport.create_http(override_min_tls='TLSv1_2')
+    return transport.create_request(httpc)
 
 
 class JWTCredentials(google.auth.jwt.Credentials):
@@ -73,8 +80,10 @@ class SignJwt(google.auth.crypt.Signer):
 
     def sign(self, message):
         ''' Call IAM Credentials SignJWT API to get our signed JWT '''
+        request = get_request()
         try:
-            credentials, _ = google.auth.default(scopes=['https://www.googleapis.com/auth/iam'])
+            credentials, _ = google.auth.default(scopes=_IAM_SCOPES,
+                    request=request)
         except google.auth.exceptions.DefaultCredentialsError as e:
             controlflow.system_error_exit(2, e)
         httpObj = transport.AuthorizedHttp(

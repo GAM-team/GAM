@@ -4,7 +4,7 @@ filelock
 google-api-python-client>=2.1
 google-auth-httplib2
 google-auth-oauthlib>=0.4.1
-google-auth[reauth]>=2.3.2
+google-auth>=2.3.2
 httplib2>=0.17.0
 passlib>=1.7.2
 pathvalidate

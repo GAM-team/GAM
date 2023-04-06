@@ -7195,8 +7195,10 @@ def enable_apis():
             controlflow.invalid_argument_exit(sys.argv[i],
                                               'gam enable apis')
     GAMProjectAPIs = getGAMProjectFile('project-apis.txt').splitlines()
+    request = signjwt.get_request()
     try:
-        _, projectId = google.auth.default()
+        _, projectId = google.auth.default(scopes=signjwt._IAM_SCOPES,
+                request=request)
     except google.auth.exceptions.DefaultCredentialsError as e:
         projectId = input('Please enter your project ID: ')
     while a_or_m not in ['a', 'm']:
@@ -7962,9 +7964,9 @@ def create_signjwt_serviceaccount():
             'key_type': 'signjwt',
             'token_uri': 'https://oauth2.googleapis.com/token'
             }
-    request = transport.create_request()
+    request = signjwt.get_request()
     try:
-        creds, sa_info['project_id'] = google.auth.default(scopes=['https://www.googleapis.com/auth/iam'],
+        creds, sa_info['project_id'] = google.auth.default(scopes=signjwt._IAM_SCOPES,
                 request=request)
     except google.auth.exceptions.DefaultCredentialsError as e:
         controlflow.system_error_exit(2, e)
