@@ -806,7 +806,7 @@ jobs:
           tar cJvvf bin.tar.xz bin/
 
   publish:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     needs: build
     steps:
