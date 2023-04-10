@@ -840,7 +840,7 @@ jobs:
         name: Publish draft release
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "v${{ steps.basictests.outputs.GAMVERSION }}- ${{ steps.dateversion.outputs.dateversion }}"
+          automatic_release_tag: "${{ steps.dateversion.outputs.dateversion }}"
           prerelease: false
           draft: true
           files: |
