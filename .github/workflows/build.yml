@@ -544,6 +544,8 @@ jobs:
           esac
           echo "ldlib=${ldlib}"
           $PYTHON -m staticx -l "${ldlib}" "${gam}" "${gam}-staticx"
+          rm -v "${gam}"
+          mv -v "${gam}-staticx" "${gam}"
 
       - name: Basic Tests all jobs
         run: |
