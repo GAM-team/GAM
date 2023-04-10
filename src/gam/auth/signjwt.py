@@ -84,7 +84,8 @@ class SignJwt(google.auth.crypt.Signer):
         try:
             credentials, _ = google.auth.default(scopes=_IAM_SCOPES,
                     request=request)
-        except google.auth.exceptions.DefaultCredentialsError as e:
+        except (google.auth.exceptions.DefaultCredentialsError,
+                google.auth.exceptions.RefreshError) as e:
             controlflow.system_error_exit(2, e)
         httpObj = transport.AuthorizedHttp(
                 credentials,
