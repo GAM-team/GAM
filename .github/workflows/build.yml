@@ -548,6 +548,7 @@ jobs:
           mv -v "${gam}-staticx" "${gam}"
 
       - name: Basic Tests all jobs
+        id: basictests
         run: |
              $PYTHON -m unittest discover --start-directory ./ --pattern "*_test.py" --buffer
              $gam version extended
@@ -808,7 +809,7 @@ jobs:
           tar cJvvf bin.tar.xz bin/
 
   publish:
-    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     needs: build
     steps:
@@ -828,11 +829,18 @@ jobs:
           files: |
             gam-binaries/*
 
+      - name: Set datetime version string
+        id: dateversion
+        run: |
+          export dateversion="$(date  +'%Y%m%d.%H%M%S')"
+          echo "Date version: ${dateversion}"
+          echo "dateversion=${dateversion}" >> $GITHUB_OUTPUT
+
       - uses: "marvinpinto/action-automatic-releases@latest"
         name: Publish draft release
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: latest
+          automatic_release_tag: "v${{ steps.basictests.outputs.GAMVERSION }}- ${{ steps.dateversion.outputs.dateversion }}"
           prerelease: false
           draft: true
           files: |
