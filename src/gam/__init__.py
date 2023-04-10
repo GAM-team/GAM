@@ -7199,7 +7199,8 @@ def enable_apis():
     try:
         _, projectId = google.auth.default(scopes=signjwt._IAM_SCOPES,
                 request=request)
-    except google.auth.exceptions.DefaultCredentialsError as e:
+    except (google.auth.exceptions.DefaultCredentialsError,
+            google.auth.exceptions.RefreshError) as e:
         projectId = input('Please enter your project ID: ')
     while a_or_m not in ['a', 'm']:
         a_or_m = input('Do you want to enable projects [a]utomatically or [m]anually? (a/m): ').strip().lower()
@@ -7968,7 +7969,8 @@ def create_signjwt_serviceaccount():
     try:
         creds, sa_info['project_id'] = google.auth.default(scopes=signjwt._IAM_SCOPES,
                 request=request)
-    except (google.auth.exceptions.DefaultCredentialsError, google.auth.exceptions.RefreshError) as e:
+    except (google.auth.exceptions.DefaultCredentialsError,
+            google.auth.exceptions.RefreshError) as e:
         controlflow.system_error_exit(2, e)
     creds.refresh(request)
     sa_info['client_email'] = creds.service_account_email
