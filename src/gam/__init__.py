@@ -7968,7 +7968,7 @@ def create_signjwt_serviceaccount():
     try:
         creds, sa_info['project_id'] = google.auth.default(scopes=signjwt._IAM_SCOPES,
                 request=request)
-    except google.auth.exceptions.DefaultCredentialsError as e:
+    except (google.auth.exceptions.DefaultCredentialsError, google.auth.exceptions.RefreshError) as e:
         controlflow.system_error_exit(2, e)
     creds.refresh(request)
     sa_info['client_email'] = creds.service_account_email
