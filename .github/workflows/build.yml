@@ -725,7 +725,7 @@ jobs:
              $gam print vaultmatters matterstate open
              $gam print vaultholds matter $matterid
              $gam print vaultcount matter $matterid corpus mail everyone todrive
-             $gam create vaultexport matter $matterid name "GHA export $newbase" corpus mail accounts $newuser use_new_export false
+             $gam create vaultexport matter $matterid name "GHA export $newbase" corpus mail accounts $newuser
              $gam print exports matter $matterid | $gam csv - gam info export $matterid id:~~id~~
              touch "${gampath}/enabledasa.txt"
              $gam csv sample.csv gam user ~email add calendar id:$newresource
