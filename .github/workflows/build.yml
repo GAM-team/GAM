@@ -812,6 +812,8 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     needs: build
+    permissions:
+      contents: write
     steps:
 
       - uses: actions/checkout@v3
