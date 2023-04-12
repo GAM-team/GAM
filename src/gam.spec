@@ -1,4 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
+from importlib.util import find_spec
 from os import getenv
 from re import search
 from sys import platform
@@ -11,7 +12,8 @@ with open('requirements.txt', 'r') as reqs:
     for req in reqs:
         r = search('^[a-z,A-Z,0-9-_]*', req)
         pkg = r.group(0) if r else ''
-        extra_files += copy_metadata(pkg, recursive=True)
+        if find_spec(pkg):
+            extra_files += copy_metadata(pkg, recursive=True)
 extra_files += [('cbcm-v1.1beta1.json', '.')]
 extra_files += [('contactdelegation-v1.json', '.')]
 extra_files += [('admin-directory_v1.1beta1.json', '.')]
