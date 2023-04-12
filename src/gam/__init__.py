@@ -884,20 +884,11 @@ def doGAMVersion(checkForArgs=True):
         doGAMCheckForUpdates(forceCheck)
     if extended:
         print(ssl.OPENSSL_VERSION)
-        libs = ['cryptography',
-                'filelock',
-                'google-auth-httplib2',
-                'google-auth-oauthlib',
-                'google-auth',
-                'httplib2',
-                'passlib',
-                'python-dateutil',
-                'yubikey-manager',
-                ]
-        for lib in libs:
+        for lib in GAM_VER_LIBS:
             try:
                 print(f'{lib} {lib_version(lib)}')
-            except:
+            except Exception as e:
+                print(e)
                 pass
         tls_ver, cipher_name, used_ip = _getServerTLSUsed(testLocation)
         print(

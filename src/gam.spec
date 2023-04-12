@@ -1,19 +1,15 @@
 # -*- mode: python ; coding: utf-8 -*-
-from importlib.util import find_spec
 from os import getenv
 from re import search
 from sys import platform
 
 from PyInstaller.utils.hooks import copy_metadata
 
+from gam.var import GAM_VER_LIBS
 
 extra_files = []
-with open('requirements.txt', 'r') as reqs:
-    for req in reqs:
-        r = search('^[a-z,A-Z,0-9-_]*', req)
-        pkg = r.group(0) if r else ''
-        if find_spec(pkg):
-            extra_files += copy_metadata(pkg, recursive=True)
+for pkg in GAM_VER_LIBS:
+    copy_metadata(pkg, recursive=True)
 extra_files += [('cbcm-v1.1beta1.json', '.')]
 extra_files += [('contactdelegation-v1.json', '.')]
 extra_files += [('admin-directory_v1.1beta1.json', '.')]

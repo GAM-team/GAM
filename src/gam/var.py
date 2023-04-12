@@ -17,6 +17,18 @@ GAM_INFO = (
     f'Python {platform.python_version()} {sys.version_info.releaselevel} / '
     f'{platform.platform()} {platform.machine()}')
 
+# Packages we want version info available
+# for "gam version extended"
+GAM_VER_LIBS = ['cryptography',
+                'filelock',
+                'google-auth-httplib2',
+                'google-auth-oauthlib',
+                'google-auth',
+                'httplib2',
+                'passlib',
+                'python-dateutil',
+                'yubikey-manager',
+                ]
 GAM_RELEASES = 'https://github.com/GAM-team/GAM/releases'
 GAM_WIKI = 'https://github.com/GAM-team/GAM/wiki'
 GAM_ALL_RELEASES = 'https://api.github.com/repos/GAM-team/GAM/releases'
