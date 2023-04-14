@@ -567,7 +567,7 @@ jobs:
               if [[ "${staticx}" == "yes" ]]; then
                 libver="legacy"
               else
-                libver="glibc-$(ldd --version | awk '/ldd/{print $NF}')"
+                libver="glibc$(ldd --version | awk '/ldd/{print $NF}')"
               fi
               GAM_ARCHIVE="gam-${GAMVERSION}-linux-$(arch)-$libver}.tar.xz"
           fi
