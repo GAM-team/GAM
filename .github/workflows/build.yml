@@ -568,6 +568,7 @@ jobs:
                 libver="legacy"
               else
                 libver="glibc-$(ldd --version | awk '/ldd/{print $NF}')"
+              fi
               GAM_ARCHIVE="gam-${GAMVERSION}-linux-$(arch)-$libver}.tar.xz"
           fi
           tar -C dist/ --create --verbose --exclude-from "${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" --file $GAM_ARCHIVE --xz gam
