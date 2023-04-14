@@ -674,6 +674,7 @@ jobs:
              $gam update group $newgroup add member $newuser
              rm "${gampath}/enabledasa.txt"
              $gam create admin $newuser _GROUPS_EDITOR_ROLE CUSTOMER # condition nonsecuritygroup
+             $gam create admin $newgroup _HELP_DESK_ADMIN_ROLE org_unit "${newou}"
              GAM_CSV_ROW_FILTER="assignedToUser:regex:${newuser}" $gam print admins | $gam csv - gam delete admin "~roleAssignmentId"
              touch "${gampath}/enabledasa.txt"
              $gam csv sample.csv gam create user ~~email~~ firstname "GHA Bulk" lastname ~~email~~ gha.jid $JID ou "${newou}"
