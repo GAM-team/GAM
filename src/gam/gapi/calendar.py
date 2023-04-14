@@ -18,9 +18,9 @@ def normalizeCalendarId(calname, checkPrimary=False):
         return calname
     if not GC_Values[GC_DOMAIN]:
         GC_Values[GC_DOMAIN] = gam._getValueFromOAuth('hd')
-    return gam.convertUIDtoEmailAddress(calname,
+    email, _ = gam.convertUIDtoEmailAddress(calname,
                                         email_types=['user', 'resource'])
-
+    return email
 
 def buildCalendarGAPIObject(calname):
     calendarId = normalizeCalendarId(calname)

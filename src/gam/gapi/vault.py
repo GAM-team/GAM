@@ -511,7 +511,7 @@ def getHoldInfo():
         account_type = 'group' if results['corpus'] == 'GROUPS' else 'user'
         for i in range(0, len(results['accounts'])):
             uid = f'uid:{results["accounts"][i]["accountId"]}'
-            acct_email = gam.convertUIDtoEmailAddress(uid, cd, [account_type])
+            acct_email, _ = gam.convertUIDtoEmailAddress(uid, cd, [account_type])
             results['accounts'][i]['email'] = acct_email
     if 'orgUnit' in results:
         results['orgUnit']['orgUnitPath'] = gapi_directory_orgunits.info(
@@ -792,7 +792,7 @@ def getMatterInfo():
         cd = gam.buildGAPIObject('directory')
         for i in range(0, len(result['matterPermissions'])):
             uid = f'uid:{result["matterPermissions"][i]["accountId"]}'
-            user_email = gam.convertUIDtoEmailAddress(uid, cd)
+            user_email, _ = gam.convertUIDtoEmailAddress(uid, cd)
             result['matterPermissions'][i]['email'] = user_email
     display.print_json(result)
 

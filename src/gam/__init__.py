@@ -887,8 +887,7 @@ def doGAMVersion(checkForArgs=True):
         for lib in GAM_VER_LIBS:
             try:
                 print(f'{lib} {lib_version(lib)}')
-            except Exception as e:
-                print(e)
+            except:
                 pass
         tls_ver, cipher_name, used_ip = _getServerTLSUsed(testLocation)
         print(
@@ -1133,39 +1132,66 @@ def buildGAPIObjectNoAuthentication(api):
     service = getService(api, httpObj)
     return service
 
-# Convert UID to email address
+def get_user_email_from_id(uid, cd):
+    try:
+        result = gapi.call(
+                cd.users(),
+                'get',
+                throw_reasons=[gapi_errors.ErrorReason.USER_NOT_FOUND],
+                userKey=uid,
+                fields='primaryEmail')
+        return result.get('primaryEmail')
+    except gapi_errors.GapiUserNotFoundError:
+        return
+
+def get_group_email_from_id(uid, cd):
+    try:
+        result = gapi.call(
+                cd.groups(),
+                'get',
+                throw_reasons=[gapi_errors.ErrorReason.GROUP_NOT_FOUND],
+                groupKey=uid,
+                fields='email')
+        return result.get('email')
+    except gapi_errors.GapiGroupNotFoundError:
+        return
+
 def convertUIDtoEmailAddress(emailAddressOrUID, cd=None, email_types=['user']):
+    '''convert UID to email address
+       returns email address and object type'''
     if isinstance(email_types, str):
         email_types = email_types.split(',')
     normalizedEmailAddressOrUID = normalizeEmailAddressOrUID(emailAddressOrUID)
     if normalizedEmailAddressOrUID.find('@') > 0:
-        return normalizedEmailAddressOrUID
+        return normalizedEmailAddressOrUID, 'email'
     if not cd:
         cd = buildGAPIObject('directory')
-    if 'user' in email_types:
-        try:
-            result = gapi.call(
-                cd.users(),
-                'get',
-                throw_reasons=[gapi_errors.ErrorReason.USER_NOT_FOUND],
-                userKey=normalizedEmailAddressOrUID,
-                fields='primaryEmail')
-            if 'primaryEmail' in result:
-                return result['primaryEmail'].lower()
-        except gapi_errors.GapiUserNotFoundError:
-            pass
-    if 'group' in email_types:
-        try:
-            result = gapi.call(
-                cd.groups(),
-                'get',
-                throw_reasons=[gapi_errors.ErrorReason.GROUP_NOT_FOUND],
-                groupKey=normalizedEmailAddressOrUID,
-                fields='email')
-            if 'email' in result:
-                return result['email'].lower()
-        except gapi_errors.GapiGroupNotFoundError:
-            pass
+    if 'user' in email_types and 'group' in email_types:
+        # Google User IDs *TEND* to be integers while groups tend to have letters
+        # thus we can optimize which check we try first. We'll still check
+        # both since there is no guarantee this will always be true.
+        if normalizedEmailAddressOrUID.isdigit():
+            uid = get_user_email_from_id(normalizedEmailAddressOrUID, cd)
+            if uid:
+                return uid, 'user'
+            uid = get_group_email_from_id(normalizedEmailAddressOrUID, cd)
+            if uid:
+                return uid, 'group'
+        else:
+            uid = get_group_email_from_id(normalizedEmailAddressOrUID, cd)
+            if uid:
+                return uid, 'group'
+            uid = get_user_email_from_id(normalizedEmailAddressOrUID, cd)
+            if uid:
+                return uid, 'user'
+    elif 'user' in email_types:
+        uid = get_user_email_from_id(normalizedEmailAddressOrUID, cd)
+        if uid:
+            return uid, 'user'
+    elif 'group' in email_types:
+        uid = get_group_email_from_id(normalizedEmailAddressOrUID, cd)
+        if uid:
+            return uid, 'group'
     if 'resource' in email_types:
         try:
             result = gapi.call(
@@ -1176,10 +1202,10 @@ def convertUIDtoEmailAddress(emailAddressOrUID, cd=None, email_types=['user']):
                 customer=GC_Values[GC_CUSTOMER_ID],
                 fields='resourceEmail')
             if 'resourceEmail' in result:
-                return result['resourceEmail'].lower()
+                return result['resourceEmail'].lower(), 'resource'
         except gapi_errors.GapiResourceNotFoundError:
             pass
-    return normalizedEmailAddressOrUID
+    return normalizedEmailAddressOrUID, 'unknown'
 
 
 # Convert email address to UID
@@ -1193,12 +1219,13 @@ def convertEmailAddressToUID(emailAddressOrUID, cd=None, email_type='user'):
                 result = gapi.call(
                     cd.users(),
                     'get',
-                    throw_reasons=[gapi_errors.ErrorReason.USER_NOT_FOUND],
+                    throw_reasons=[gapi_errors.ErrorReason.USER_NOT_FOUND,
+                                   gapi_errors.ErrorReason.BAD_REQUEST],
                     userKey=normalizedEmailAddressOrUID,
                     fields='id')
                 if 'id' in result:
                     return result['id']
-            except gapi_errors.GapiUserNotFoundError:
+            except (gapi_errors.GapiUserNotFoundError, gam.gapi.errors.GapiBadRequestError):
                 pass
         try:
             result = gapi.call(
@@ -1250,27 +1277,27 @@ def buildGAPIServiceObject(api, act_as, showAuthError=True, scopes=None):
 
 
 def buildAlertCenterGAPIObject(user):
-    userEmail = convertUIDtoEmailAddress(user)
+    userEmail, _ = convertUIDtoEmailAddress(user)
     return (userEmail, buildGAPIServiceObject('alertcenter', userEmail))
 
 
 def buildActivityGAPIObject(user):
-    userEmail = convertUIDtoEmailAddress(user)
+    userEmail, _ = convertUIDtoEmailAddress(user)
     return (userEmail, buildGAPIServiceObject('driveactivity', userEmail))
 
 
 def buildDriveGAPIObject(user):
-    userEmail = convertUIDtoEmailAddress(user)
+    userEmail, _ = convertUIDtoEmailAddress(user)
     return (userEmail, buildGAPIServiceObject('drive', userEmail))
 
 
 def buildDrive3GAPIObject(user):
-    userEmail = convertUIDtoEmailAddress(user)
+    userEmail, _ = convertUIDtoEmailAddress(user)
     return (userEmail, buildGAPIServiceObject('drive3', userEmail))
 
 
 def buildGmailGAPIObject(user):
-    userEmail = convertUIDtoEmailAddress(user)
+    userEmail, _ = convertUIDtoEmailAddress(user)
     return (userEmail, buildGAPIServiceObject('gmail', userEmail))
 
 
@@ -2294,7 +2321,7 @@ def doGetCourseInfo():
     croom = buildGAPIObject('classroom')
     courseId = addCourseIdScope(sys.argv[3])
     info = gapi.call(croom.courses(), 'get', id=courseId)
-    info['ownerEmail'] = convertUIDtoEmailAddress(f'uid:{info["ownerId"]}')
+    info['ownerEmail'], _ = convertUIDtoEmailAddress(f'uid:{info["ownerId"]}')
     display.print_json(info)
     teachers = gapi.get_all_pages(croom.courses().teachers(),
                                   'list',
@@ -2479,7 +2506,7 @@ def doPrintCourses():
         if ownerEmails is not None:
             ownerId = course['ownerId']
             if ownerId not in ownerEmails:
-                ownerEmails[ownerId] = convertUIDtoEmailAddress(f'uid:{ownerId}',
+                ownerEmails[ownerId], _ = convertUIDtoEmailAddress(f'uid:{ownerId}',
                                                                 cd=cd)
             course['ownerEmail'] = ownerEmails[ownerId]
         for field in skipFieldsList:

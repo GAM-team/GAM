@@ -16,7 +16,9 @@ NONSECURITY_GROUP_CONDITION = f'!{SECURITY_GROUP_CONDITION}'
 def create():
     cd = gapi_directory.build()
     user = gam.normalizeEmailAddressOrUID(sys.argv[3])
-    body = {'assignedTo': gam.convertEmailAddressToUID(user, cd)}
+    body = {'assignedTo': gam.convertEmailAddressToUID(sys.argv[3],
+                          cd=cd,
+                          email_type='any')}
     role = sys.argv[4]
     body['roleId'] = gapi_directory_roles.getRoleId(role)
     body['scopeType'] = sys.argv[5].upper()
@@ -70,7 +72,7 @@ def print_():
     item_fields = ['roleAssignmentId', 'roleId', 'assignedTo', 'scopeType', 'orgUnitId']
     titles = [
         'roleAssignmentId', 'roleId', 'role', 'assignedTo', 'assignedToUser',
-        'scopeType', 'orgUnitId', 'orgUnit'
+        'assignedToGroup', 'scopeType', 'orgUnitId', 'orgUnit'
     ]
     csvRows = []
     i = 3
@@ -107,7 +109,21 @@ def print_():
         admin_attrib = {}
         for key, value in list(admin.items()):
             if key == 'assignedTo':
-                admin_attrib['assignedToUser'] = gam.user_from_userid(value)
+                email_types = admin_attrib.get('assigneeType')
+                if email_types == 'user':
+                    email_field = 'assignedToUser'
+                elif email_types == 'group':
+                    email_field = 'assignedToGroup'
+                else:
+                    email_field = None
+                assignment_email, assignment_type = gam.convertUIDtoEmailAddress(f'uid:{value}', cd, email_types=['user', 'group'])
+                if not email_field and assignment_type in ['user', 'group']:
+                    if assignment_type == 'user':
+                        email_field = 'assignedToUser'
+                    else:
+                        email_field = 'assignedToGroup'
+                if email_field:
+                    admin_attrib[email_field] = assignment_email
             elif key == 'roleId':
                 admin_attrib['role'] = gapi_directory_roles.role_from_roleid(value)
             elif key == 'orgUnitId':

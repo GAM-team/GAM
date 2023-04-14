@@ -230,7 +230,7 @@ def print_():
             todrive = True
             i += 1
         elif myarg == 'enterprisemember':
-            member = gam.convertUIDtoEmailAddress(sys.argv[i + 1], email_types=['user', 'group'])
+            member, _ = gam.convertUIDtoEmailAddress(sys.argv[i + 1], email_types=['user', 'group'])
             usemember = f"member_key_id == '{member}' && 'cloudidentity.googleapis.com/groups.discussion_forum' in labels"
             i += 2
         elif myarg == 'delimiter':
@@ -501,7 +501,7 @@ def print_members():
                     )
             i += 2
         elif myarg == 'enterprisemember':
-            member = gam.convertUIDtoEmailAddress(sys.argv[i + 1], email_types=['user', 'group'])
+            member, _ = gam.convertUIDtoEmailAddress(sys.argv[i + 1], email_types=['user', 'group'])
             usemember = f"member_key_id == '{member}' && 'cloudidentity.googleapis.com/groups.discussion_forum' in labels"
             i += 2
         elif myarg in ['cigroup', 'cigroups']:
@@ -872,6 +872,13 @@ def update():
                 i += 2
             elif myarg == 'security':
                 body['labels'] = {
+                    'cloudidentity.googleapis.com/groups.security': '',
+                    'cloudidentity.googleapis.com/groups.discussion_forum': ''
+                }
+                i += 1
+            elif myarg == 'locked':
+                body['labels'] = {
+                    'cloudidentity.googleapis.com/groups.locked': '',
                     'cloudidentity.googleapis.com/groups.security': '',
                     'cloudidentity.googleapis.com/groups.discussion_forum': ''
                 }
