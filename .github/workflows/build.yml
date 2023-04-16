@@ -467,8 +467,8 @@ jobs:
           git clone https://github.com/pyinstaller/pyinstaller.git
           cd pyinstaller
           export latest_release=$(git tag --list | grep -v dev | grep -v rc | sort -Vr | head -n1)
-          # temp pin to 5.9
-          export latest_release="v5.9.0"
+
+
           git checkout "${latest_release}"
           # remove pre-compiled bootloaders so we fail if bootloader compile fails
           rm -rvf PyInstaller/bootloader/*-*/*
