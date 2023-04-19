@@ -330,7 +330,7 @@ def print_():
         page_message = gapi.got_total_items_msg('Device Users', '...\n')
         device_users = gapi.get_all_pages(ci.devices().deviceUsers(), 'list',
             'deviceUsers', customer=customer, parent=parent,
-            page_message=page_message, pageSize=1, filter=device_filter)
+            page_message=page_message, pageSize=20, filter=device_filter)
         for device_user in device_users:
             for device in devices:
                 if device_user.get('name').startswith(device.get('name')):
