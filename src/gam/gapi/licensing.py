@@ -204,6 +204,7 @@ def print_(returnFields=None,
                     ],
                     page_message=page_message,
                     customerId=customer_id,
+                    maxResults=100,
                     productId=product,
                     skuId=sku,
                     fields=fields)
@@ -234,6 +235,7 @@ def print_(returnFields=None,
                     ],
                     page_message=page_message,
                     customerId=customer_id,
+                    maxResults=100,
                     productId=productId,
                     fields=fields)
                 if countsOnly:
