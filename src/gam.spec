@@ -15,6 +15,7 @@ extra_files += [('contactdelegation-v1.json', '.')]
 extra_files += [('admin-directory_v1.1beta1.json', '.')]
 extra_files += [('roots.pem', '.')]
 hidden_imports = [
+     'ipaddress',
      'gam.auth.yubikey',
      ]
 a = Analysis(
