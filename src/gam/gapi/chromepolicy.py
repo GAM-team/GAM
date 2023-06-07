@@ -70,7 +70,7 @@ def printshow_policies():
         body['policyTargetKey']['additionalTargetKeys'] = {'app_id': app_id}
         if not namespaces:
             namespaces = ['chrome.users.apps',
-                          'chrome.devices.managedGuest.apps',
+                          'chrome.devices.managedguest.apps',
                           'chrome.devices.kiosk.apps']
     elif not namespaces:
         namespaces = [
@@ -78,7 +78,7 @@ def printshow_policies():
             'chrome.users.apps',
             'chrome.devices',
             'chrome.devices.kiosk',
-            'chrome.devices.managedGuest',
+            'chrome.devices.managedguest',
             ]
     throw_reasons = [gapi_errors.ErrorReason.FOUR_O_O,]
     orgunitPath = gapi_directory_orgunits.orgunit_from_orgunitid(orgunit[9:], None)
