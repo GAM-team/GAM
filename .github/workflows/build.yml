@@ -468,10 +468,6 @@ jobs:
           cd pyinstaller
           export latest_release=$(git tag --list | grep -v dev | grep -v rc | sort -Vr | head -n1)
           git checkout "${latest_release}"
-          # https://github.com/pyinstaller/pyinstaller/issues/7692
-          if [[ "${latest_release}" == "v5.11.0" ]]; then
-            git cherry-pick e295cd6855a41d6408b6157b457a0b3bb4ce78e3
-          fi
           # remove pre-compiled bootloaders so we fail if bootloader compile fails
           rm -rvf PyInstaller/bootloader/*-*/*
           cd bootloader
