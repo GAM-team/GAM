@@ -83,7 +83,7 @@ jobs:
             arch: x86_64
           - os: ubuntu-22.04
             goal: test
-            python: "3.12.0-beta - 3.12"
+            python: "3.12"
             jid: 12
             arch: x86_64
 
@@ -122,6 +122,7 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
+          allow-prereleases: true
 
       - name: Set cURL retry flag
         run: |
@@ -513,7 +514,7 @@ jobs:
              export PYINSTALLER_BUILD_ONEFILE="yes"
              export distpath="./dist/gam"
              export gampath="${distpath}"
-             "${PYTHON}" -m PyInstaller --clean --noconfirm --distpath="${distpath}" gam.spec
+             "${PYTHON}" -m PyInstaller --clean --noconfirm --distpath="${distpath}" --collect-all cryptography gam.spec
  
       - name: Copy extra package files
         if: matrix.goal == 'build'
