@@ -3,8 +3,8 @@ from os import getenv
 from re import search
 from sys import platform
 
-from PyInstaller.utils.hooks import collect_all,
-                                    copy_metadata
+from PyInstaller.utils.hooks import (collect_all,
+                                    copy_metadata)
 
 from gam.var import GAM_VER_LIBS
 
