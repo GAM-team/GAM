@@ -34,7 +34,7 @@ jobs:
             goal: build
             arch: x86_64
             openssl_archs: linux-x86_64
-          - os: [self-hosted, linux, arm64, gcp]
+          - os: [self-hosted, linux, arm64]
             jid: 2
             goal: build
             arch: aarch64
@@ -45,7 +45,7 @@ jobs:
             arch: x86_64
             openssl_archs: linux-x86_64
             staticx: yes
-          - os: [self-hosted, linux, arm64, gcp]
+          - os: [self-hosted, linux, arm64]
             jid: 4
             goal: build
             arch: aarch64
@@ -514,7 +514,7 @@ jobs:
              export PYINSTALLER_BUILD_ONEFILE="yes"
              export distpath="./dist/gam"
              export gampath="${distpath}"
-             "${PYTHON}" -m PyInstaller --clean --noconfirm --distpath="${distpath}" --collect-all cryptography gam.spec
+             "${PYTHON}" -m PyInstaller --clean --noconfirm --distpath="${distpath}" gam.spec
  
       - name: Copy extra package files
         if: matrix.goal == 'build'
