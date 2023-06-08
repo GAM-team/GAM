@@ -3,26 +3,32 @@ from os import getenv
 from re import search
 from sys import platform
 
-from PyInstaller.utils.hooks import copy_metadata
+from PyInstaller.utils.hooks import collect_all,
+                                    copy_metadata
 
 from gam.var import GAM_VER_LIBS
 
-extra_files = []
+datas = []
 for pkg in GAM_VER_LIBS:
-    extra_files += copy_metadata(pkg, recursive=True)
-extra_files += [('cbcm-v1.1beta1.json', '.')]
-extra_files += [('contactdelegation-v1.json', '.')]
-extra_files += [('admin-directory_v1.1beta1.json', '.')]
-extra_files += [('roots.pem', '.')]
-hidden_imports = [
+    datas += copy_metadata(pkg, recursive=True)
+datas += [('cbcm-v1.1beta1.json', '.')]
+datas += [('contactdelegation-v1.json', '.')]
+datas += [('admin-directory_v1.1beta1.json', '.')]
+datas += [('roots.pem', '.')]
+hiddenimports = [
      'gam.auth.yubikey',
      ]
+tmp_ret = collect_all('cryptography')
+datas += tmp_ret[0]
+binaries += tmp_ret[1]
+hiddenimports += tmp_ret[2]
+
 a = Analysis(
     ['gam/__main__.py'],
     pathex=[],
-    binaries=[],
-    datas=extra_files,
-    hiddenimports=hidden_imports,
+    binaries=binaries,
+    datas=datas,
+    hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
