@@ -3,8 +3,7 @@ from os import getenv
 from re import search
 from sys import platform
 
-from PyInstaller.utils.hooks import (collect_all,
-                                    copy_metadata)
+from PyInstaller.utils.hooks import copy_metadata
 
 from gam.var import GAM_VER_LIBS
 
@@ -18,9 +17,6 @@ datas += [('roots.pem', '.')]
 hiddenimports = [
      'gam.auth.yubikey',
      ]
-tmp_ret = collect_all('cryptography')
-datas += tmp_ret[0]
-hiddenimports += tmp_ret[2]
 
 a = Analysis(
     ['gam/__main__.py'],
