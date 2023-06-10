@@ -61,11 +61,11 @@ jobs:
             goal: build
             arch: Win64
             openssl_archs: VC-WIN64A
-          - os: windows-2022
-            jid: 7
-            goal: build
-            arch: Win32
-            openssl_archs: VC-WIN32
+
+
+
+
+
           - os: ubuntu-22.04
             goal: test
             python: "3.8"
