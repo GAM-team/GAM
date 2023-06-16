@@ -1125,6 +1125,7 @@ The following attributes are equivalent:
 	(before <Time>)|
 	includeeleted|
 	includehidden|
+	singleevents|
 	(query <QueryCalendar>)|
 	(updatedmin <Time>)
 
