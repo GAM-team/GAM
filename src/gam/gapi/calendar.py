@@ -178,8 +178,8 @@ def printEvents():
     calendarId, cal = buildCalendarDataGAPIObject(sys.argv[2])
     if not cal:
         return
-    q = showDeleted = showHiddenInvitations = timeMin = \
-        timeMax = timeZone = updatedMin = None
+    q = showDeleted = showHiddenInvitations = singleEvents = \
+        timeMin = timeMax = timeZone = updatedMin = None
     toDrive = False
     titles = []
     csvRows = []
@@ -194,6 +194,9 @@ def printEvents():
             i += 1
         elif myarg == 'includehidden':
             showHiddenInvitations = True
+            i += 1
+        elif myarg == 'singleevents':
+            singleEvents = True
             i += 1
         elif myarg == 'after':
             timeMin = utils.get_time_or_delta_from_now(sys.argv[i + 1])
@@ -222,6 +225,7 @@ def printEvents():
                                  q=q,
                                  showDeleted=showDeleted,
                                  showHiddenInvitations=showHiddenInvitations,
+                                 singleEvents=singleEvents,
                                  timeMin=timeMin,
                                  timeMax=timeMax,
                                  timeZone=timeZone,
