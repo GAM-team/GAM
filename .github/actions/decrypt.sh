@@ -1,5 +1,5 @@
 #!/bin/sh
-
+credspath="${HOME}/.gam"
 gpgfile="$1"
 echo "source file is ${gpgfile}"
 credsfile="$2"
@@ -13,6 +13,7 @@ fi
 gpg --quiet --batch --yes --decrypt --passphrase="${PASSCODE}" \
     --output "${credsfile}" "${gpgfile}"
 
-tar xvvf "${credsfile}" --directory "${gampath}"
+mkdir -p "${credspath}"
+tar xvvf "${credsfile}" --directory "${credspath}"
 rm -rvf "${gpgfile}"
 rm -rvf "${credsfile}"
