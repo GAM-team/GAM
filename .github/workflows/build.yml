@@ -160,7 +160,7 @@ jobs:
         run: |
           echo "RUNNING: apt update..."
           sudo apt-get -qq --yes update
-          sudo apt-get -qq --yes install swig libpcsclite-dev
+          sudo apt-get -qq --yes install swig libpcsclite-dev libxslt1-dev
 
       - name: MacOS install tools
         if: runner.os == 'macOS'
