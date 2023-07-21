@@ -10465,6 +10465,8 @@ def doOAuthCreate():
             invalidChoiceExit(uscope, API.getClientScopesURLs(GC.Values[GC.TODRIVE_CLIENTACCESS]), True)
       else:
         unknownArgumentExit()
+    if len(scopes) == 0:
+      scopes = None
   doOAuthRequest(scopes, login_hint)
 
 def exitIfNoOauth2Txt():
