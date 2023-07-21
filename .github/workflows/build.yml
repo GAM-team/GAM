@@ -612,9 +612,9 @@ jobs:
                brew install gnupg
              fi
              source ../.github/actions/decrypt.sh ../.github/actions/creds.tar.xz.gpg creds.tar.xz
-             rm ~/.gam/oauth2service.json
-             mv "${HOME}/.gam/oauth2.txt-gam-gha-${JID}" "${HOME}/.gam/oauth2.txt"
-             rm "${HOME}/.gam/oauth2.txt-gam*"
+             rm -v ~/.gam/oauth2service.json
+             mv -v "${HOME}/.gam/oauth2.txt-gam-gha-${JID}" "${HOME}/.gam/oauth2.txt"
+             rm -v $HOME/.gam/oauth2.txt-gam*
              export gam_user="gam-gha-${JID}@pdl.jaylee.us"
              echo "gam_user=${gam_user}" >> $GITHUB_ENV
              $gam config customer_id "C03uzfv2s" save
