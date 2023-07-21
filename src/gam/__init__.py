@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.0.0'
+__version__ = '7.00.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -10097,8 +10097,8 @@ def _waitForHttpClient(d):
     time.sleep(0.1)
   if d['open_browser']:
     webbrowser.open(d['auth_url'], new=1, autoraise=True)
-  local_server.handle_request()
   try:
+    local_server.handle_request()
     authorization_response = wsgi_app.last_request_uri.replace("http", "https")
     d['code'] = authorization_response
   except:
@@ -10128,19 +10128,24 @@ class _GamOauthFlow(google_auth_oauthlib.flow.InstalledAppFlow):
     print(Msg.OAUTH2_GO_TO_LINK_MESSAGE.format(url=d['auth_url']))
     userInputProcess.start()
     userInput = False
+    checkHttp = checkUser = True
     alive = 2
     while alive > 0:
       time.sleep(0.1)
-      if not httpClientProcess.is_alive():
+      if checkHttp and not httpClientProcess.is_alive():
         if 'code' in d:
-          userInputProcess.terminate()
+          if checkUser:
+            userInputProcess.terminate()
           break
+        checkHttp = False
         alive -= 1
-      if not userInputProcess.is_alive():
+      if checkUser and not userInputProcess.is_alive():
         userInput = True
         if 'code' in d:
-          httpClientProcess.terminate()
+          if checkHttp:
+            httpClientProcess.terminate()
           break
+        checkUser = False
         alive -= 1
     if 'code' not in d:
       systemErrorExit(SYSTEM_ERROR_RC, Msg.AUTHENTICATION_FLOW_FAILED)
@@ -64589,7 +64594,7 @@ def printShowMessagesThreads(users, entityType):
     if show_size:
       printKeyValueList(['SizeEstimate', result['sizeEstimate']])
     if show_labels:
-      printKeyValueList(['Labels', ','.join(messageLabels)])
+      printKeyValueList(['Labels', delimiter.join(messageLabels)])
     if show_body:
       printKeyValueList(['Body', None])
       Ind.Increment()
@@ -64652,6 +64657,7 @@ def printShowMessagesThreads(users, entityType):
     if show_size:
       row['SizeEstimate'] = result['sizeEstimate']
     if show_labels:
+      row['LabelsCount'] = len(messageLabels)
       row['Labels'] = delimiter.join(messageLabels)
     if show_body:
       if not convertCRNL:
@@ -64842,7 +64848,7 @@ def printShowMessagesThreads(users, entityType):
       show_all_headers = headersToShow and headersToShow[0] == 'all'
     elif not showMode and myarg in {'convertcrnl', 'converttextnl', 'convertbodynl'}:
       convertCRNL = True
-    elif not showMode and myarg == 'delimiter':
+    elif myarg == 'delimiter':
       delimiter = getCharacter()
     elif myarg == 'showdate':
       show_date = True
@@ -65038,15 +65044,16 @@ def printShowMessagesThreads(users, entityType):
             csvPF.WriteRow({'User': user, 'Sender': k, parameters['listType']: v})
   if csvPF:
     if not countsOnly:
-      csvPF.RemoveTitles(['Snippet', 'SizeEstimate', 'Labels', 'Body'])
-      if show_snippet:
-        csvPF.AddTitle('Snippet')
+      csvPF.RemoveTitles(['SizeEstimate', 'LabelsCount', 'Labels', 'Snippet', 'Body'])
       if show_size:
         csvPF.AddTitle('SizeEstimate')
       if show_labels:
-        csvPF.AddTitle('Labels')
+        csvPF.AddTitles(['LabelsCount', 'Labels'])
+      if show_snippet:
+        csvPF.AddTitle('Snippet')
       if show_body:
         csvPF.AddTitle('Body')
+      csvPF.SetSortAllTitles()
       csvPF.writeCSVfile('Messages')
     else:
       csvPF.writeCSVfile('Message Counts' if not show_labels else 'Message Label Counts')

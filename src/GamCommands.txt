@@ -6869,7 +6869,7 @@ gam <UserTypeEntity> show messages|threads
         [labelmatchpattern <RegularExpression>] [sendermatchpattern <RegularExpression>]
         [countsonly|positivecountsonly] [useronly]
         [headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
-        [showlabels] [showbody] [showdate] [showsize] [showsnippet]
+        [showlabels] [delimiter <Character>] [showbody] [showdate] [showsize] [showsnippet]
         [showattachments [attachmentnamepattern <RegularExpression>] [noshowtextplain]]
         [saveattachments [attachmentnamepattern <RegularExpression>]]
             [targetfolder <FilePath>] [overwrite [<Boolean>]]
@@ -6879,9 +6879,9 @@ gam <UserTypeEntity> print messages|threads [todrive <ToDriveAttribute>*]
         [labelmatchpattern <RegularExpression>] [sendermatchpattern <RegularExpression>]
         [countsonly|positivecountsonly] [useronly]
         [headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String> [dateheaderconverttimezone [<Boolean>]]]
-        [showlabels] [showbody] [showdate] [showsize] [showsnippet]
+        [showlabels] [delimiter <Character>] [showbody] [showdate] [showsize] [showsnippet]
         [showattachments [attachmentnamepattern <RegularExpression>]]
-        [convertcrnl] [delimiter <Character>]
+        [convertcrnl]
 
 # Users - Gmail - Profile
 
