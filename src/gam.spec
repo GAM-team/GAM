@@ -5,7 +5,7 @@ from sys import platform
 
 from PyInstaller.utils.hooks import copy_metadata
 
-from gam.var import GAM_VER_LIBS
+from gam.gamlib.glverlibs import GAM_VER_LIBS
 
 datas = []
 for pkg in GAM_VER_LIBS:
@@ -13,7 +13,7 @@ for pkg in GAM_VER_LIBS:
 datas += [('cbcm-v1.1beta1.json', '.')]
 datas += [('contactdelegation-v1.json', '.')]
 datas += [('admin-directory_v1.1beta1.json', '.')]
-datas += [('roots.pem', '.')]
+datas += [('cacerts.pem', '.')]
 hiddenimports = [
      'gam.auth.yubikey',
      ]
@@ -61,7 +61,7 @@ disable_windowed_traceback = False
 argv_emulation = False
 codesign_identity = None
 entitlements_file = None
-if getenv('PYINSTALLER_BUILD_ONEFILE') == 'yes':
+if not getenv('PYINSTALLER_BUILD_ONEDIR') == 'yes':
     # Build one file
     exe = EXE(
               pyz,
