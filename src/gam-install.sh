@@ -16,10 +16,12 @@ OPTIONS:
    -u      Admin user email address to use with GAM. Default is to prompt.
    -r      Regular user email address. Used to test service account access to user data. Default is to prompt.
    -v      Version to install (latest, prerelease, draft, 3.8, etc). Default is latest.
+   -s      Strip gam7 component from extracted files, files will be downloaded directly to $target_dir
 EOF
 }
 
 target_dir="$HOME/bin"
+target_gam="gam/gam"
 gamarch=$(uname -m)
 gamos=$(uname -s)
 osversion=""
@@ -28,9 +30,11 @@ upgrade_only=false
 gamversion="latest"
 adminuser=""
 regularuser=""
-gam_glibc_vers="2.31"
+gam_x86_64_glibc_vers="2.35 2.31 2.27 2.23 2.19"
+gam_arm64_glibc_vers="2.31 2.27 2.23"
+strip_gam="--strip-components 0"
 
-while getopts "hd:a:o:b:lp:u:r:v:" OPTION
+while getopts "hd:a:o:b:lp:u:r:v:s" OPTION
 do
      case $OPTION in
          h) usage; exit;;
@@ -43,6 +47,7 @@ do
          u) adminuser="$OPTARG";;
          r) regularuser="$OPTARG";;
          v) gamversion="$OPTARG";;
+         s) strip_gam="--strip-components 1"; target_gam="gam";;
          ?) usage; exit;;
      esac
 done
@@ -51,15 +56,15 @@ done
 target_dir=${target_dir%/}
 
 update_profile() {
-	[ "$2" -eq 1 ] || [ -f "$1" ] || return 1
+        [ "$2" -eq 1 ] || [ -f "$1" ] || return 1
 
-	grep -F "$alias_line" "$1" > /dev/null 2>&1
-	if [ $? -ne 0 ]; then
+        grep -F "$alias_line" "$1" > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
                 echo_yellow "Adding gam alias to profile file $1."
-		echo -e "\n$alias_line" >> "$1"
+                echo -e "\n$alias_line" >> "$1"
         else
           echo_yellow "gam alias already exists in profile file $1. Skipping add."
-	fi
+        fi
 }
 
 echo_red()
@@ -85,6 +90,7 @@ version_gt()
 # MacOS < 10.13 doesn't support sort -V
 echo "" | sort -V > /dev/null 2>&1
 vsort_failed=$?
+echo "Check:${2}"
 if [ "${1}" = "${2}" ]; then
   true
 elif (( $vsort_failed != 0 )); then
@@ -103,17 +109,31 @@ case $gamos in
       this_glibc_ver=$osversion
     fi
     echo "This Linux distribution uses glibc $this_glibc_ver"
-    useglibc="legacy"
-    for gam_glibc_ver in $gam_glibc_vers; do
-      if version_gt "$this_glibc_ver" "$gam_glibc_ver"; then
-        useglibc="glibc$gam_glibc_ver"
-        echo_green "Using GAM compiled against $useglibc"
-        break
-      fi
-    done
     case $gamarch in
-      x86_64) gamfile="linux-x86_64-$useglibc.tar.xz";;
-      arm64|aarch64) gamfile="linux-aarch64-$useglibc.tar.xz";;
+      x86_64)
+        useglibc="legacy"
+        for gam_glibc_ver in $gam_x86_64_glibc_vers; do
+          if version_gt $this_glibc_ver $gam_glibc_ver; then
+            useglibc="glibc$gam_glibc_ver"
+            echo_green "Using GAM compiled against $useglibc"
+            break
+          fi
+        done
+        gamfile="linux-x86_64-$useglibc.tar.xz";;
+      arm|arm64|aarch64)
+        useglibc=""
+        for gam_glibc_ver in $gam_arm64_glibc_vers; do
+          if version_gt $this_glibc_ver $gam_glibc_ver; then
+            useglibc="glibc$gam_glibc_ver"
+            echo_green "Using GAM compiled against $useglibc"
+            break
+          fi
+        done
+        if [ "$useglibc" == "" ]; then
+          echo_red "Sorry, you need to be running at least glibc $useglibc to run GAM"
+          exit
+        fi
+        gamfile="linux-arm64-$useglibc.tar.xz";;
       *)
         echo_red "ERROR: this installer currently only supports x86_64 and arm64 Linux. Looks like you're running on $gamarch. Exiting."
         exit
@@ -121,13 +141,24 @@ case $gamos in
     ;;
   [Mm]ac[Oo][sS]|[Dd]arwin)
     gamos="macos"
-    if [ "$osversion" == "" ]; then
-      this_macos_ver=$(sw_vers -productVersion)
-    else
-      this_macos_ver=$osversion
-    fi
-    echo "You are running MacOS $this_macos_ver"
-    gamfile="macos-universal2.tar.xz"
+    case $gamarch in
+      x86_64)
+        osversion=$(sw_vers -productVersion)
+        osversion=${osversion:0:2}
+        case ${osversion:0:2} in
+          11|12|13)
+            gamfile="macos-x86_64.tar.xz";;
+          *)
+            gamfile="macos-x86_64-legacy.tar";;
+        esac
+        ;;
+      arm|arm64|aarch64)
+        gamfile="macos-arm64.tar.xz";;
+#        gamfile="macos-universal2.tar.xz";;
+      *)
+        echo_red "ERROR: this installer currently only supports x86_64 and arm64 MacOS. Looks like you're running on $gamarch. Exiting."
+        exit
+    esac
     ;;
   MINGW64_NT*)
     gamos="windows"
@@ -194,6 +225,11 @@ fi
 $pycmd -V >/dev/null 2>&1
 rc=$?
 if (( $rc != 0 )); then
+  pycmd="/usr/bin/python3"
+fi
+$pycmd -V >/dev/null 2>&1
+rc=$?
+if (( $rc != 0 )); then
   pycmd="python2"
 fi
 $pycmd -V >/dev/null 2>&1
@@ -222,13 +258,15 @@ trap "rm -rf $temp_archive_dir" EXIT
 
 echo_yellow "Downloading file $name from $browser_download_url to $temp_archive_dir ($check_type)..."
 # Save archive to temp w/o losing our path
-(cd "$temp_archive_dir" && curl -# -O -L $GHCLIENT $browser_download_url)
+(cd "$temp_archive_dir" && curl -O -L $GHCLIENT $browser_download_url)
 
 mkdir -p "$target_dir"
 
 echo_yellow "Extracting archive to $target_dir"
 if [[ "${name}" == *.tar.xz ]]; then
-  tar xf "$temp_archive_dir"/"$name" -C "$target_dir"
+  tar $strip_gam -xf "$temp_archive_dir"/"$name" -C "$target_dir"
+elif [[ "${name}" == *.tar ]]; then
+  tar $strip_gam -xf "$temp_archive_dir"/"$name" -C "$target_dir"
 else
   unzip "${temp_archive_dir}/${name}" -d "${target_dir}"
 fi
@@ -242,7 +280,7 @@ fi
 
 # Update profile to add gam command
 if [ "$update_profile" = true ]; then
-  alias_line="function gam() { \"$target_dir/gam/gam\" \"\$@\" ; }"
+  alias_line="alias gam=\"${target_dir// /\\ }/$target_gam\""
   if [ "$gamos" == "linux" ]; then
     update_profile "$HOME/.bash_aliases" 0 || update_profile "$HOME/.bash_profile" 0 || update_profile "$HOME/.bashrc" 0
     update_profile "$HOME/.zshrc" 0
@@ -256,16 +294,19 @@ fi
 
 if [ "$upgrade_only" = true ]; then
   echo_green "Here's information about your GAM upgrade:"
-  "$target_dir/gam/gam" version extended
+  "$target_dir/$target_gam" version extended
   rc=$?
   if (( $rc != 0 )); then
-    echo_red "ERROR: Failed running GAM for the first time with $rc. Please report this error to GAM mailing list. Exiting."
+    echo_red "ERROR: Failed running GAM for the first time with return code $rc. Please report this error to GAM mailing list. Exiting."
     exit
   fi
 
   echo_green "GAM upgrade complete!"
   exit
 fi
+
+# Set config command
+config_cmd="config no_browser false"
 
 while true; do
   read -p "Can you run a full browser on this machine? (usually Y for MacOS, N for Linux if you SSH into this machine) " yn
@@ -274,7 +315,7 @@ while true; do
       break
       ;;
     [Nn]*)
-      touch "$target_dir/gam/nobrowser.txt" > /dev/null 2>&1
+      config_cmd="config no_browser true"
       break
       ;;
     *)
@@ -292,7 +333,7 @@ while true; do
       if [ "$adminuser" == "" ]; then
         read -p "Please enter your Google Workspace admin email address: " adminuser
       fi
-      "$target_dir/gam/gam" create project "$adminuser"
+      "$target_dir/$target_gam" $config_cmd create project $adminuser
       rc=$?
       if (( $rc == 0 )); then
         echo_green "Project creation complete."
@@ -317,7 +358,7 @@ while $project_created; do
   read -p "Are you ready to authorize GAM to perform Google Workspace management operations as your admin account? (yes or no) " yn
   case $yn in
     [Yy]*)
-      "$target_dir/gam/gam" oauth create "$adminuser"
+      "$target_dir/$target_gam" $config_cmd oauth create $adminuser
       rc=$?
       if (( $rc == 0 )); then
         echo_green "Admin authorization complete."
@@ -338,7 +379,7 @@ while $project_created; do
 done
 
 service_account_authorized=false
-while $project_created; do
+while $admin_authorized; do
   read -p "Are you ready to authorize GAM to manage Google Workspace user data and settings? (yes or no) " yn
   case $yn in
     [Yy]*)
@@ -346,7 +387,7 @@ while $project_created; do
         read -p "Please enter the email address of a regular Google Workspace user: " regularuser
       fi
       echo_yellow "Great! Checking service account scopes.This will fail the first time. Follow the steps to authorize and retry. It can take a few minutes for scopes to PASS after they've been authorized in the admin console."
-      "$target_dir/gam/gam" user "$adminuser" check serviceaccount
+      "$target_dir/$target_gam" $config_cmd user $regularuser check serviceaccount
       rc=$?
       if (( $rc == 0 )); then
         echo_green "Service account authorization complete."
@@ -357,7 +398,7 @@ while $project_created; do
       fi
       ;;
      [Nn]*)
-       echo -e "\nYou can authorize a service account later by running:\n\ngam check serviceaccount\n"
+       echo -e "\nYou can authorize a service account later by running:\n\ngam user $adminuser check serviceaccount\n"
        break
        ;;
      *)
@@ -367,7 +408,7 @@ while $project_created; do
 done
 
 echo_green "Here's information about your new GAM installation:"
-"$target_dir/gam/gam" version extended
+"$target_dir/$target_gam" $config_cmd save version extended
 rc=$?
 if (( $rc != 0 )); then
   echo_red "ERROR: Failed running GAM for the first time with $rc. Please report this error to GAM mailing list. Exiting."

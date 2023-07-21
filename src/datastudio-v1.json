@@ -1,0 +1,486 @@
+{
+  "basePath": "",
+  "discoveryVersion": "v1",
+  "documentationLink": "https://support.google.com/datastudio",
+  "canonicalName": "Data Studio",
+  "id": "datastudio:v1",
+  "ownerName": "Google",
+  "description": "Allows programmatic viewing and editing of Data Studio assets.",
+  "rootUrl": "https://datastudio.googleapis.com/",
+  "ownerDomain": "google.com",
+  "mtlsRootUrl": "https://datastudio.mtls.googleapis.com/",
+  "batchPath": "batch",
+  "version_module": true,
+  "version": "v1",
+  "schemas": {
+    "Asset": {
+      "id": "Asset",
+      "properties": {
+        "title": {
+          "description": "The title of the asset.",
+          "type": "string"
+        },
+        "createTime": {
+          "format": "google-datetime",
+          "description": "Date the asset was created.",
+          "type": "string"
+        },
+        "lastViewByMeTime": {
+          "type": "string",
+          "description": "Date the asset was last viewed by me.",
+          "format": "google-datetime"
+        },
+        "owner": {
+          "type": "string",
+          "description": "The owner of the asset."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the asset."
+        },
+        "trashed": {
+          "type": "boolean",
+          "description": "Value indicating if the asset is in the trash."
+        },
+        "updateTime": {
+          "format": "google-datetime",
+          "description": "Date the asset was last modified.",
+          "type": "string"
+        },
+        "updateByMeTime": {
+          "description": "Date the asset was last modified by me.",
+          "type": "string",
+          "format": "google-datetime"
+        },
+        "assetType": {
+          "enumDescriptions": [
+            "Asset type not specified.",
+            "A report asset.",
+            "A data Source asset."
+          ],
+          "enum": [
+            "ASSET_TYPE_UNSPECIFIED",
+            "REPORT",
+            "DATA_SOURCE"
+          ],
+          "description": "The type of the asset.",
+          "type": "string"
+        }
+      },
+      "description": "A Data Studio asset.",
+      "type": "object"
+    },
+    "SearchAssetsResponse": {
+      "id": "SearchAssetsResponse",
+      "properties": {
+        "assets": {
+          "items": {
+            "$ref": "Asset"
+          },
+          "type": "array",
+          "description": "The list of assets."
+        },
+        "nextPageToken": {
+          "type": "string",
+          "description": "A token to retrieve next page of results. Pass this value in the SearchAssetsRequest.page_token field in the subsequent call to `SearchAssets` method to retrieve the next page of results."
+        }
+      },
+      "description": "Response message for DataStudioService.SearchAssets",
+      "type": "object"
+    },
+    "UpdatePermissionsRequest": {
+      "description": "Request message for DataStudioService.UpdatePermissions",
+      "properties": {
+        "updateMask": {
+          "description": "The list of fields to be updated. Currently not supported.",
+          "type": "string",
+          "format": "google-fieldmask"
+        },
+        "permissions": {
+          "description": "The permissions object to update.",
+          "$ref": "Permissions"
+        }
+      },
+      "id": "UpdatePermissionsRequest",
+      "type": "object"
+    },
+    "AddMembersRequest": {
+      "properties": {
+        "members": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Required. The members to add to the role. The format of a member is one of - user:alice@example.com - group:admins@example.com - domain:google.com - serviceAccount:my-app@appspot.gserviceaccount.com"
+        },
+        "role": {
+          "type": "string",
+          "enumDescriptions": [
+            "Role not specified.",
+            "A viewer.",
+            "An editor.",
+            "An owner.",
+            "Link shared viewer.",
+            "Link shared editor."
+          ],
+          "enum": [
+            "ROLE_UNSPECIFIED",
+            "VIEWER",
+            "EDITOR",
+            "OWNER",
+            "LINK_VIEWER",
+            "LINK_EDITOR"
+          ],
+          "description": "Required. The role to add members to."
+        }
+      },
+      "type": "object",
+      "id": "AddMembersRequest",
+      "description": "Request message for DataStudioService.AddMembers"
+    },
+    "Permissions": {
+      "type": "object",
+      "id": "Permissions",
+      "description": "A Data Studio asset's Permissions.",
+      "properties": {
+        "permissions": {
+          "description": "A map from a Role to a list of members. Role is a string representation of the Role enum. One of: - OWNER - EDITOR - VIEWER",
+          "additionalProperties": {
+            "$ref": "Members"
+          },
+          "type": "object"
+        },
+        "etag": {
+          "format": "byte",
+          "description": "etag to detect and fail concurrent modifications",
+          "type": "string"
+        }
+      }
+    },
+    "RevokeAllPermissionsRequest": {
+      "description": "Request message for DataStudioService.RevokeAllPermissions",
+      "id": "RevokeAllPermissionsRequest",
+      "type": "object",
+      "properties": {
+        "members": {
+          "description": "Required. The members that are having their access revoked. The format of a member is one of - user:alice@example.com - group:admins@example.com - domain:google.com - serviceAccount:my-app@appspot.gserviceaccount.com",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      }
+    },
+    "Members": {
+      "description": "A wrapper message for a list of members.",
+      "properties": {
+        "members": {
+          "description": "Format of string is one of - user:alice@example.com - group:admins@example.com - domain:google.com - serviceAccount:my-app@appspot.gserviceaccount.com",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object",
+      "id": "Members"
+    }
+  },
+  "name": "datastudio",
+  "protocol": "rest",
+  "baseUrl": "https://datastudio.googleapis.com/",
+  "title": "Data Studio API",
+  "revision": "20210412",
+  "fullyEncodeReservedExpansion": true,
+  "icons": {
+    "x32": "http://www.google.com/images/icons/product/search-32.gif",
+    "x16": "http://www.google.com/images/icons/product/search-16.gif"
+  },
+  "parameters": {
+    "quotaUser": {
+      "location": "query",
+      "description": "Available to use for quota purposes for server-side applications. Can be any arbitrary string assigned to a user, but should not exceed 40 characters.",
+      "type": "string"
+    },
+    "prettyPrint": {
+      "location": "query",
+      "type": "boolean",
+      "description": "Returns response with indentations and line breaks.",
+      "default": "true"
+    },
+    "callback": {
+      "location": "query",
+      "type": "string",
+      "description": "JSONP"
+    },
+    "uploadType": {
+      "description": "Legacy upload protocol for media (e.g. \"media\", \"multipart\").",
+      "type": "string",
+      "location": "query"
+    },
+    "upload_protocol": {
+      "type": "string",
+      "location": "query",
+      "description": "Upload protocol for media (e.g. \"raw\", \"multipart\")."
+    },
+    "$.xgafv": {
+      "enumDescriptions": [
+        "v1 error format",
+        "v2 error format"
+      ],
+      "description": "V1 error format.",
+      "location": "query",
+      "type": "string",
+      "enum": [
+        "1",
+        "2"
+      ]
+    },
+    "oauth_token": {
+      "type": "string",
+      "location": "query",
+      "description": "OAuth 2.0 token for the current user."
+    },
+    "alt": {
+      "type": "string",
+      "enum": [
+        "json",
+        "media",
+        "proto"
+      ],
+      "location": "query",
+      "description": "Data format for response.",
+      "enumDescriptions": [
+        "Responses with Content-Type of application/json",
+        "Media download with context-dependent Content-Type",
+        "Responses with Content-Type of application/x-protobuf"
+      ],
+      "default": "json"
+    },
+    "fields": {
+      "description": "Selector specifying which fields to include in a partial response.",
+      "location": "query",
+      "type": "string"
+    },
+    "access_token": {
+      "type": "string",
+      "description": "OAuth access token.",
+      "location": "query"
+    },
+    "key": {
+      "type": "string",
+      "location": "query",
+      "description": "API key. Your API key identifies your project and provides you with API access, quota, and reports. Required unless you provide an OAuth 2.0 token."
+    }
+  },
+  "servicePath": "",
+  "kind": "discovery#restDescription",
+  "resources": {
+    "assets": {
+      "methods": {
+        "getPermissions": {
+          "parameters": {
+            "name": {
+              "type": "string",
+              "location": "path",
+              "description": "Required. The name of the asset.",
+              "required": true
+            },
+            "role": {
+              "enumDescriptions": [
+                "Role not specified.",
+                "A viewer.",
+                "An editor.",
+                "An owner.",
+                "Link shared viewer.",
+                "Link shared editor."
+              ],
+              "type": "string",
+              "location": "query",
+              "description": "The role of the permssion.",
+              "enum": [
+                "ROLE_UNSPECIFIED",
+                "VIEWER",
+                "EDITOR",
+                "OWNER",
+                "LINK_VIEWER",
+                "LINK_EDITOR"
+              ]
+            }
+          },
+          "id": "datastudio.assets.getPermissions",
+          "response": {
+            "$ref": "Permissions"
+          },
+          "flatPath": "v1/assets/{name}/permissions",
+          "path": "v1/assets/{name}/permissions",
+          "description": "Gets the asset's permission for a given role.",
+          "parameterOrder": [
+            "name"
+          ],
+          "httpMethod": "GET"
+        },
+        "updatePermissions": {
+          "id": "datastudio.assets.updatePermissions",
+          "parameterOrder": [
+            "name"
+          ],
+          "flatPath": "v1/assets/{name}/permissions",
+          "description": "Updates a permission.",
+          "request": {
+            "$ref": "UpdatePermissionsRequest"
+          },
+          "path": "v1/assets/{name}/permissions",
+          "parameters": {
+            "name": {
+              "description": "Required. The name of the asset.",
+              "location": "path",
+              "type": "string",
+              "required": true
+            }
+          },
+          "response": {
+            "$ref": "Permissions"
+          },
+          "httpMethod": "PATCH"
+        },
+        "get": {
+          "path": "v1/{+name}",
+          "id": "datastudio.assets.get",
+          "parameterOrder": [
+            "name"
+          ],
+          "description": "Gets the asset by name.",
+          "parameters": {
+            "name": {
+              "description": "Required. The name of the asset. Format: assets/{asset}",
+              "location": "path",
+              "required": true,
+              "pattern": "^assets/[^/]+$",
+              "type": "string"
+            }
+          },
+          "flatPath": "v1/assets/{assetsId}",
+          "response": {
+            "$ref": "Asset"
+          },
+          "httpMethod": "GET"
+        },
+        "search": {
+          "response": {
+            "$ref": "SearchAssetsResponse"
+          },
+          "path": "v1/assets:search",
+          "parameters": {
+            "pageToken": {
+              "type": "string",
+              "location": "query",
+              "description": "A token identifying a page of results the server should return. Use the value of SearchAssetsResponse.next_page_token returned from the previous call to `SearchAssets` method."
+            },
+            "assetTypes": {
+              "type": "string",
+              "repeated": true,
+              "description": "Exactly one AssetType must be specified.",
+              "enumDescriptions": [
+                "Asset type not specified.",
+                "A report asset.",
+                "A data Source asset."
+              ],
+              "location": "query",
+              "enum": [
+                "ASSET_TYPE_UNSPECIFIED",
+                "REPORT",
+                "DATA_SOURCE"
+              ]
+            },
+            "title": {
+              "description": "The title of assets to include. Not an exact match, works the same as search from the UI.",
+              "location": "query",
+              "type": "string"
+            },
+            "owner": {
+              "type": "string",
+              "location": "query",
+              "description": "The email of the owner of the asset."
+            },
+            "pageSize": {
+              "description": "Requested page size. If unspecified, server will pick an appropriate default.",
+              "location": "query",
+              "type": "integer",
+              "format": "int32"
+            },
+            "orderBy": {
+              "location": "query",
+              "description": "How the results should be ordered. Valid options are: - title",
+              "type": "string"
+            },
+            "includeTrashed": {
+              "location": "query",
+              "type": "boolean",
+              "description": "Value indicating if assets in trash should be included."
+            }
+          },
+          "flatPath": "v1/assets:search",
+          "httpMethod": "GET",
+          "description": "Searches assets.",
+          "id": "datastudio.assets.search",
+          "parameterOrder": []
+        }
+      },
+      "resources": {
+        "permissions": {
+          "methods": {
+            "revokeAllPermissions": {
+              "path": "v1/assets/{name}/permissions:revokeAllPermissions",
+              "response": {
+                "$ref": "Permissions"
+              },
+              "flatPath": "v1/assets/{name}/permissions:revokeAllPermissions",
+              "id": "datastudio.assets.permissions.revokeAllPermissions",
+              "description": "Revokes one or more members' access to an asset.",
+              "parameters": {
+                "name": {
+                  "required": true,
+                  "type": "string",
+                  "location": "path",
+                  "description": "Required. The name of the asset."
+                }
+              },
+              "parameterOrder": [
+                "name"
+              ],
+              "httpMethod": "POST",
+              "request": {
+                "$ref": "RevokeAllPermissionsRequest"
+              }
+            },
+            "addMembers": {
+              "path": "v1/assets/{name}/permissions:addMembers",
+              "parameters": {
+                "name": {
+                  "required": true,
+                  "location": "path",
+                  "type": "string",
+                  "description": "Required. The name of the asset."
+                }
+              },
+              "httpMethod": "POST",
+              "parameterOrder": [
+                "name"
+              ],
+              "response": {
+                "$ref": "Permissions"
+              },
+              "id": "datastudio.assets.permissions.addMembers",
+              "request": {
+                "$ref": "AddMembersRequest"
+              },
+              "description": "Adds one or more members to a role.",
+              "flatPath": "v1/assets/{name}/permissions:addMembers"
+            }
+          }
+        }
+      }
+    }
+  }
+}

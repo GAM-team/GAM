@@ -1,0 +1,593 @@
+{
+  "auth": {
+    "oauth2": {
+      "scopes": {
+        "https://www.googleapis.com/auth/admin.directory.device.chromebrowsers": {
+          "description": "View and manage your Chrome browsers registered with Cloud Management"
+        },
+        "https://www.googleapis.com/auth/admin.directory.device.chromebrowsers.readonly": {
+          "description": "View your Chrome browsers registered with Cloud Management"
+        }
+      }
+    }
+  },
+  "basePath": "",
+  "baseUrl": "https://admin.googleapis.com/admin/directory/v1.1beta1/customer/",
+  "batchPath": "batch",
+  "canonicalName": "cbcm",
+  "discoveryVersion": "v1",
+  "documentationLink": "https://support.google.com/chrome/a/answer/9681204",
+  "fullyEncodeReservedExpansion": true,
+  "icons": {
+    "x16": "http://www.google.com/images/icons/product/search-16.gif",
+    "x32": "http://www.google.com/images/icons/product/search-32.gif"
+  },
+  "id": "cbcm:v1.1beta1",
+  "kind": "discovery#restDescription",
+  "mtlsRootUrl": "https://admin.mtls.googleapis.com/",
+  "name": "cbcm",
+  "ownerDomain": "google.com",
+  "ownerName": "Jay Lee",
+  "packagePath": "cbcm",
+  "parameters": {
+    "$.xgafv": {
+      "description": "V1 error format.",
+      "enum": [
+        "1",
+        "2"
+      ],
+      "enumDescriptions": [
+        "v1 error format",
+        "v2 error format"
+      ],
+      "location": "query",
+      "type": "string"
+    },
+    "access_token": {
+      "description": "OAuth access token.",
+      "location": "query",
+      "type": "string"
+    },
+    "alt": {
+      "default": "json",
+      "description": "Data format for response.",
+      "enum": [
+        "json",
+        "media",
+        "proto"
+      ],
+      "enumDescriptions": [
+        "Responses with Content-Type of application/json",
+        "Media download with context-dependent Content-Type",
+        "Responses with Content-Type of application/x-protobuf"
+      ],
+      "location": "query",
+      "type": "string"
+    },
+    "callback": {
+      "description": "JSONP",
+      "location": "query",
+      "type": "string"
+    },
+    "fields": {
+      "description": "Selector specifying which fields to include in a partial response.",
+      "location": "query",
+      "type": "string"
+    },
+    "key": {
+      "description": "API key. Your API key identifies your project and provides you with API access, quota, and reports. Required unless you provide an OAuth 2.0 token.",
+      "location": "query",
+      "type": "string"
+    },
+    "oauth_token": {
+      "description": "OAuth 2.0 token for the current user.",
+      "location": "query",
+      "type": "string"
+    },
+    "prettyPrint": {
+      "default": "true",
+      "description": "Returns response with indentations and line breaks.",
+      "location": "query",
+      "type": "boolean"
+    },
+    "quotaUser": {
+      "description": "Available to use for quota purposes for server-side applications. Can be any arbitrary string assigned to a user, but should not exceed 40 characters.",
+      "location": "query",
+      "type": "string"
+    },
+    "uploadType": {
+      "description": "Legacy upload protocol for media (e.g. \"media\", \"multipart\").",
+      "location": "query",
+      "type": "string"
+    },
+    "upload_protocol": {
+      "description": "Upload protocol for media (e.g. \"raw\", \"multipart\").",
+      "location": "query",
+      "type": "string"
+    }
+  },
+  "protocol": "rest",
+  "resources": {
+    "chromebrowsers": {
+      "methods": {
+        "delete": {
+          "description": "Deletes a browser.",
+          "flatPath": "{customer}/devices/chromebrowsers/{deviceId}",
+          "httpMethod": "DELETE",
+          "id": "cbcm.chromebrowsers.delete",
+          "parameterOrder": [
+            "customer",
+            "deviceId"
+          ],
+          "parameters": {
+            "customer": {
+              "description": "Immutable ID of the G Suite account.",
+              "location": "path",
+              "required": true,
+              "type": "string"
+            },
+            "deviceId": {
+              "description": "Immutable ID of the browser.",
+              "location": "path",
+              "required": true,
+              "type": "string"
+            }
+          },
+          "path": "{customer}/devices/chromebrowsers/{deviceId}",
+          "scopes": [
+            "https://www.googleapis.com/auth/admin.directory.device.chromebrowsers"
+          ]
+        },
+        "get": {
+          "description": "Retrieves a browser.",
+          "flatPath": "{customer}/devices/chromebrowsers/{deviceId}",
+          "httpMethod": "GET",
+          "id": "cbcm.chromebrowsers.get",
+          "parameterOrder": [
+            "customer",
+            "deviceId"
+          ],
+          "parameters": {
+            "customer": {
+              "description": "Immutable ID of the G Suite account.",
+              "location": "path",
+              "required": true,
+              "type": "string"
+            },
+            "deviceId": {
+              "description": "Immutable ID of the browser.",
+              "location": "path",
+              "required": true,
+              "type": "string"
+            },
+            "projection": {
+              "description": "Restrict information returned to a set of selected fields. FULL or BASIC.",
+              "location": "query",
+              "type": "string"
+            }
+          },
+          "path": "{customer}/devices/chromebrowsers/{deviceId}",
+          "response": {
+            "$ref": "ChromeBrowser"
+          },
+          "scopes": [
+            "https://www.googleapis.com/auth/admin.directory.device.chromebrowsers",
+            "https://www.googleapis.com/auth/admin.directory.device.chromebrowsers.readonly"
+          ]
+        },
+        "list": {
+          "description": "Retrieves a paginated list of all the browsers in a domain.",
+          "flatPath": "{customer}/devices/chromebrowsers",
+          "httpMethod": "GET",
+          "id": "cbcm.chromebrowsers.list",
+          "parameterOrder": [
+            "customer"
+          ],
+          "parameters": {
+            "customer": {
+              "description": "Immutable ID of the G Suite account.",
+              "location": "path",
+              "required": true,
+              "type": "string"
+            },
+            "maxResults": {
+              "description": "Maximum number of results to return.",
+              "format": "int32",
+              "location": "query",
+              "maximum": "100",
+              "minimum": "1",
+              "type": "integer"
+            },
+            "orderBy": {
+              "description": "property to use for sorting results.",
+              "location": "query",
+              "type": "string"
+            },
+            "orgUnitPath": {
+              "description": "The full path of the organizational unit or its unique ID.",
+              "location": "query",
+              "type": "string"
+            },
+            "pageToken": {
+              "description": "Token to specify the next page in the list.",
+              "location": "query",
+              "type": "string"
+            },
+            "projection": {
+              "description": "Restrict information returned to a set of selected fields. FULL or BASIC.",
+              "location": "query",
+              "type": "string"
+            },
+            "query": {
+              "description": "Search string using the list page query language.",
+              "location": "query",
+              "type": "string"
+            },
+            "sortOrder": {
+              "description": "Whether to return results in ascending or descending order. Must be used with the orderBy parameter.",
+              "location": "query",
+              "type": "string"
+            }
+          },
+          "path": "{customer}/devices/chromebrowsers",
+          "response": {
+            "$ref": "ChromeBrowsers"
+          },
+          "scopes": [
+            "https://www.googleapis.com/auth/admin.directory.device.chromebrowsers",
+            "https://www.googleapis.com/auth/admin.directory.device.chromebrowsers.readonly"
+          ]
+        },
+        "moveChromeBrowsersToOu": {
+          "description": "Move Chrome Browsers Device between Organization Units",
+          "flatPath": "{customer}/devices/chromebrowsers/moveChromeBrowsersToOu",
+          "httpMethod": "POST",
+          "id": "cbcm.chromebrowsers.moveChromeBrowsersToOu",
+          "parameterOrder": [
+            "customer"
+          ],
+          "parameters": {
+            "customer": {
+              "description": "Immutable ID of the G Suite account.",
+              "location": "path",
+              "required": true,
+              "type": "string"
+            }
+          },
+          "path": "{customer}/devices/chromebrowsers/moveChromeBrowsersToOu",
+          "request": {
+            "$ref": "MoveChromeBrowsersRequest"
+          },
+          "scopes": [
+            "https://www.googleapis.com/auth/admin.directory.device.chromebrowsers"
+          ]
+        },
+        "update": {
+          "description": "Updates a browser.",
+          "flatPath": "{customer}/devices/chromebrowsers/{deviceId}",
+          "httpMethod": "PUT",
+          "id": "cbcm.chromebrowsers.update",
+          "parameterOrder": [
+            "customer",
+            "deviceId"
+          ],
+          "parameters": {
+            "customer": {
+              "description": "Immutable ID of the G Suite account.",
+              "location": "path",
+              "required": true,
+              "type": "string"
+            },
+            "deviceId": {
+              "description": "Immutable ID of the browser.",
+              "location": "path",
+              "required": true,
+              "type": "string"
+            },
+            "projection": {
+              "description": "BASIC or FULL",
+              "location": "query",
+              "type": "string"
+            }
+          },
+          "path": "{customer}/devices/chromebrowsers/{deviceId}",
+          "request": {
+            "$ref": "ChromeBrowser"
+          },
+          "response": {
+            "$ref": "ChromeBrowser"
+          },
+          "scopes": [
+            "https://www.googleapis.com/auth/admin.directory.device.chromebrowsers"
+          ]
+        }
+      }
+    },
+    "enrollmentTokens": {
+      "methods": {
+        "list": {
+          "description": "Retrieves a paginated list of all the browser entollment tokens in a domain.",
+          "flatPath": "{customer}/chrome/enrollmentTokens",
+          "httpMethod": "GET",
+          "id": "cbcm.enrollmentTokens.list",
+          "parameterOrder": [
+            "customer"
+          ],
+          "parameters": {
+            "customer": {
+              "description": "Immutable ID of the G Suite account.",
+              "location": "path",
+              "required": true,
+              "type": "string"
+            },
+            "pageSize": {
+              "description": "Maximum number of results to return.",
+              "format": "int32",
+              "location": "query",
+              "maximum": "100",
+              "minimum": "1",
+              "type": "integer"
+            },
+            "orgUnitPath": {
+              "description": "The full path of the organizational unit or its unique ID.",
+              "location": "query",
+              "type": "string"
+            },
+            "pageToken": {
+              "description": "Token to specify the next page in the list.",
+              "location": "query",
+              "type": "string"
+            },
+            "query": {
+              "description": "Search string using the list page query language.",
+              "location": "query",
+              "type": "string"
+            }
+          },
+          "path": "{customer}/chrome/enrollmentTokens",
+          "response": {
+            "$ref": "EnrollmentTokens"
+          },
+          "scopes": [
+            "https://www.googleapis.com/auth/admin.directory.device.chromebrowsers",
+            "https://www.googleapis.com/auth/admin.directory.device.chromebrowsers.readonly"
+          ]
+        },
+        "create": {
+          "description": "Creates a browser enrollment token in a domain.",
+          "flatPath": "{customer}/chrome/enrollmentTokens",
+          "httpMethod": "POST",
+          "id": "cbcm.enrollmentTokens.create",
+          "parameterOrder": [
+            "customer"
+          ],
+          "parameters": {
+            "customer": {
+              "description": "Immutable ID of the G Suite account.",
+              "location": "path",
+              "required": true,
+              "type": "string"
+            }
+	  },
+          "path": "{customer}/chrome/enrollmentTokens",
+          "request": {
+            "$ref": "CreateEnrollmentTokenRequest"
+          },
+          "response": {
+            "$ref": "EnrollmentToken"
+          },
+          "scopes": [
+            "https://www.googleapis.com/auth/admin.directory.device.chromebrowsers"
+          ]
+	},
+        "revoke": {
+          "description": "Revokes a browser enrollment token in a domain.",
+          "flatPath": "{customer}/chrome/enrollmentTokens/{tokenPermanentId}:revoke",
+          "httpMethod": "POST",
+          "id": "cbcm.enrollmentTokens.revoke",
+          "parameterOrder": [
+            "customer",
+	    "tokenPermanentId"
+          ],
+          "parameters": {
+            "customer": {
+              "description": "Immutable ID of the G Suite account.",
+              "location": "path",
+              "required": true,
+              "type": "string"
+            },
+            "tokenPermanentId": {
+              "description": "Unique identifier for an enrollment token.",
+              "location": "path",
+              "required": true,
+              "type": "string"
+            }
+	  },
+          "path": "{customer}/chrome/enrollmentTokens/{tokenPermanentId}:revoke",
+          "scopes": [
+            "https://www.googleapis.com/auth/admin.directory.device.chromebrowsers"
+          ]
+	}
+      }
+    }
+  },
+  "revision": "20201203",
+  "rootUrl": "https://admin.googleapis.com/admin/directory/v1.1beta1/customer/",
+  "schemas": {
+    "ChromeBrowser": {
+      "id": "ChromeBrowser",
+      "properties": {
+        "annotatedAssetId": {
+          "description": "Asset identifier as annotated by the administrator or specified during enrollment.",
+          "type": "string"
+        },
+        "annotatedLocation": {
+          "description": "Address or location of the device as annotated by the administrator.",
+          "type": "string"
+        },
+        "annotatedNotes": {
+          "description": "Notes about this device as annotated by the administrator",
+          "type": "string"
+        },
+        "annotatedUser": {
+          "description": "User of the device as annotated by the administrator.",
+          "type": "string"
+        },
+        "deviceId": {
+          "annotations": {
+            "required": [
+              "cbcm.chromebrowsers.update"
+            ]
+          },
+          "description": "The unique ID of the device.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ChromeBrowsers": {
+      "id": "ChromeBrowsers",
+      "properties": {
+        "browsers": {
+          "description": "List of Chrome browser objects.",
+          "items": {
+            "$ref": "ChromeBrowser"
+          },
+          "type": "array"
+        },
+        "etag": {
+          "description": "ETag of the resource.",
+          "type": "string"
+        },
+        "kind": {
+          "default": "admin#directory#chromeosdevices",
+          "description": "Kind of resource this is.",
+          "type": "string"
+        },
+        "nextPageToken": {
+          "description": "Token used to access the next page of this result. To access the next page, use this token's value in the `pageToken` query string of this request.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "EnrollmentToken": {
+      "id": "EnrollmentToken",
+      "properties": {
+        "kind": {
+          "default": "admin#directory#chromeEnrollmentToken",
+          "description": "Kind of resource this is.",
+          "type": "string"
+        },
+        "tokenId": {
+          "description": "Enrollment Token ID.",
+          "type": "string"
+        },
+        "tokenPermanentId": {
+          "description": "Enrollment Token Permanent ID.",
+          "type": "string"
+        },
+        "customerId": {
+          "description": "Immutable ID of the G Suite account.",
+          "type": "string"
+        },
+	"orgUnitPath": {
+          "description": "The full path of the organizational unit or its unique ID.",
+          "type": "string"
+        },
+	"creatorId": {
+          "description": "Creator ID.",
+          "type": "string"
+        },
+	"createTime": {
+          "description": "Creation Time.",
+          "type": "string"
+        },
+	"revokerId": {
+          "description": "Revoker ID.",
+          "type": "string"
+        },
+	"revokeTime": {
+          "description": "Revoke Time",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "EnrollmentTokens": {
+      "id": "EnrollmentTokens",
+      "properties": {
+        "chrome_enrollment_tokens": {
+          "description": "List of Chrome browser enrollment token objects.",
+          "items": {
+            "$ref": "EnrollmentToken"
+          },
+          "type": "array"
+        },
+        "kind": {
+          "default": "admin#directory#chromeEnrollmentTokens",
+          "description": "Kind of resource this is.",
+          "type": "string"
+        },
+        "nextPageToken": {
+          "description": "Token used to access the next page of this result. To access the next page, use this token's value in the `pageToken` query string of this request.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "CreateEnrollmentTokenRequest": {
+      "id": "CreateEnrollmentTokenRequest",
+      "properties": {
+	"org_unit_path": {
+          "description": "The full path of the organizational unit or its unique ID.",
+          "type": "string"
+        },
+	"expire_time": {
+          "description": "Expiration Time.",
+          "type": "string"
+        },
+	"token_type": {
+          "id": "token_type",
+          "annotations": {
+            "required": [
+              "cbcm.enrollmentTokens.create"
+            ]
+          },
+          "description": "CHROME_BROWSER.",
+          "type": "string"
+        }
+      }
+    },
+    "MoveChromeBrowsersRequest": {
+      "id": "MoveChromeBrowsersRequest",
+      "type": "object",
+      "properties": {
+        "org_unit_path": {
+          "annotations": {
+            "required": [
+              "cbcm.chromebrowsers.moveChromeBrowsersToOu"
+            ]
+          },
+          "description": "Destination organization unit to move devices to. Full path of the organizational unit or its ID prefixed with id:",
+          "type": "string"
+        },
+        "resource_ids": {
+          "annotations": {
+            "required": [
+              "cbcm.chromebrowsers.moveChromeBrowsersToOu"
+            ]
+          },
+          "description": "List of unique device IDs of Chrome Browser Devices to move. A maximum of 600 browsers may be moved per request.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "servicePath": "",
+  "title": "Admin SDK API",
+  "version": "cbcm_v1.1beta1"
+}
