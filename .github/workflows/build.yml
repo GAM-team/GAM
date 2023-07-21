@@ -612,7 +612,7 @@ jobs:
                brew install gnupg
              fi
              source ../.github/actions/decrypt.sh ../.github/actions/creds.tar.xz.gpg creds.tar.xz
-             rm $gampath/oauth2service.json
+             rm ~/.gam/oauth2service.json
              export OAUTHFILE="oauth2.txt-gam-gha-${JID}"
              echo "OAUTHFILE=${OAUTHFILE}" >> $GITHUB_ENV
              export gam_user="gam-gha-${JID}@pdl.jaylee.us"
