@@ -612,20 +612,20 @@ jobs:
                brew install gnupg
              fi
              source ../.github/actions/decrypt.sh ../.github/actions/creds.tar.xz.gpg creds.tar.xz
-             rm $gampath/oauth2service.json
-             export OAUTHFILE="oauth2.txt-gam-gha-${JID}"
-             echo "OAUTHFILE=${OAUTHFILE}" >> $GITHUB_ENV
+             rm -v ~/.gam/oauth2service.json
+             mv -v "${HOME}/.gam/oauth2.txt-gam-gha-${JID}" "${HOME}/.gam/oauth2.txt"
+             rm -v $HOME/.gam/oauth2.txt-gam*
              export gam_user="gam-gha-${JID}@pdl.jaylee.us"
              echo "gam_user=${gam_user}" >> $GITHUB_ENV
-             $gam checkconn
+             $gam config customer_id "C03uzfv2s" save
+             $gam config domain "pdl.jaylee.us" save
+             $gam config admin_email "${gam_user}" save
+             $gam oauth info
+             $gam oauth refresh
+             $gam config enable_dasa true save 
              $gam create signjwtserviceaccount
-             export CUSTOMER_ID="C03uzfv2s"
-             export GA_DOMAIN="pdl.jaylee.us"
-             export GA_ADMIN_EMAIL="$gam_user"
-             touch "${gampath}/enabledasa.txt"
-             #$gam oauth info
+             $gam checkconn
              $gam info domain
-             #$gam oauth refresh
              $gam info user
              export tstamp=$($PYTHON -c "import time; print(time.time_ns())")
              export newbase="gha_test_${JID}_${tstamp}"
@@ -637,9 +637,9 @@ jobs:
              export newou="aaaGithub Actions/${newbase}"
              
              # cleanup old runs
-             rm "${gampath}/enabledasa.txt"
+             $gam config enable_dasa false save
              GAM_CSV_ROW_FILTER="name:regex:gha_test_${JID}_" $gam print vaultholds | $gam csv - gam delete vaulthold "id:~~holdId~~" matter "id:~~matterId~~"
-             touch "${gampath}/enabledasa.txt"
+             $gam config enable_dasa true save
              GAM_CSV_ROW_FILTER="name:regex:gha_test_${JID}_" $gam print features | $gam csv - gam delete feature ~name
              GAM_CSV_ROW_FILTER="name:regex:^gha_test_${JID}_" $gam user $gam_user print shareddrives asadmin | $gam csv - gam user $gam_user delete shareddrive ~id nukefromorbit
              $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail
@@ -663,26 +663,26 @@ jobs:
              $gam create group $newgroup name "GHA $JID group" description "This is a description" isarchived true
              $gam user $gam_user sendemail recipient $newuser subject "test message $newbase" message "GHA test message"
              $gam user $gam_user sendemail recipient exchange@pdl.jaylee.us subject "test ${tstamp}" message "test message"
-             rm "${gampath}/enabledasa.txt"
+             $gam config enable_dasa false save
              $gam user $newuser add license workspaceenterpriseplus
              $gam print privileges
-             touch "${gampath}/enabledasa.txt"
+             $gam config enable_dasa true save
              $gam update cigroup $newgroup security memberrestriction 'member.type == 1 || member.customer_id == groupCustomerId()'
              $gam info cigroup $newgroup
              $gam update group $newgroup add owner $gam_user
              $gam update group $newgroup add member $newuser
-             rm "${gampath}/enabledasa.txt"
+             $gam config enable_dasa false save
              $gam create admin $newuser _GROUPS_EDITOR_ROLE CUSTOMER # condition nonsecuritygroup
              $gam create admin $newgroup _HELP_DESK_ADMIN_ROLE org_unit "${newou}"
              GAM_CSV_ROW_FILTER="assignedToUser:regex:${newuser}" $gam print admins | $gam csv - gam delete admin "~roleAssignmentId"
              GAM_CSV_ROW_FILTER="assignedToGroup:regex:${newgroup}" $gam print admins | $gam csv - gam delete admin "~roleAssignmentId"
-             touch "${gampath}/enabledasa.txt"
+             $gam config enable_dasa false save
              $gam csv sample.csv gam create user ~~email~~ firstname "GHA Bulk" lastname ~~email~~ gha.jid $JID ou "${newou}"
              $gam csv sample.csv gam update user ~~email~~ recoveryphone 12125121110 recoveryemail jay0lee@gmail.com password random displayname "GitHub Actions Bulk ${JID}"
              $gam csv sample.csv gam update user ~~email~~ recoveryphone "" recoveryemail ""
-             rm "${gampath}/enabledasa.txt"
+             $gam config enable_dasa false save
              $gam csv sample.csv gam user ~email add license workspaceenterpriseplus
-             touch "${gampath}/enabledasa.txt"
+             $gam config enable_dasa true save
              $gam csv sample.csv gam user $gam_user sendemail recipient ~~email~~@pdl.jaylee.us subject "test message $newbase" message "GHA test message"
              $gam csv sample.csv gam update group $newgroup add member ~email
              $gam info group $newgroup
@@ -726,7 +726,7 @@ jobs:
              endtime=$($PYTHON -c "import datetime; print((datetime.datetime.now() + datetime.timedelta(hours=2)).strftime('%Y-%m-%dT%H:%M:%S.%f+00:00'))")
              $gam calendar $gam_user addevent summary "GHA test event" start "${starttime}" end "${endtime}" attendee $newgroup hangoutsmeet guestscanmodify true sendupdates all
              $gam calendar $gam_user printevents after -0d
-             rm "${gampath}/enabledasa.txt"
+             $gam config enable_dasa true save
              matterid=uid:$($gam create vaultmatter name "GHA matter $newbase" description "test matter" collaborators $newuser | head -1 | cut -d ' ' -f 3)
              $gam create vaulthold matter $matterid name "GHA hold $newbase" corpus mail accounts $newuser
              $gam print vaultmatters matterstate open
@@ -734,21 +734,21 @@ jobs:
              $gam print vaultcount matter $matterid corpus mail everyone todrive
              $gam create vaultexport matter $matterid name "GHA export $newbase" corpus mail accounts $newuser
              $gam print exports matter $matterid | $gam csv - gam info export $matterid id:~~id~~
-             touch "${gampath}/enabledasa.txt"
+             $gam config enable_dasa true save
              $gam csv sample.csv gam user ~email add calendar id:$newresource
              $gam delete resource $newresource
              $gam delete feature Whiteboard-$newbase
              $gam delete feature VC-$newbase
              $gam delete building $newbuilding
              $gam delete group $newgroup
-             rm "${gampath}/enabledasa.txt"
+             $gam config enable_dasa false save
              echo start
              $gam user $newuser delete license workspaceenterpriseplus
              echo finish
-             touch "${gampath}/enabledasa.txt"
+             $gam config enable_dasa true save
              $gam whatis $newuser
              $gam user $gam_user show tokens
-             rm "${gampath}/enabledasa.txt"
+             $gam config enable_dasa false save
              $gam print exports matter $matterid | $gam csv - gam download export $matterid id:~~id~~
              $gam delete hold "GHA hold $newbase" matter $matterid
              $gam update matter $matterid action close
@@ -758,7 +758,7 @@ jobs:
              $gam user $newuser show holds
              export sn="$JID$JID$JID$JID-$(openssl rand -base64 32 | sed 's/[^a-zA-Z0-9]//g')"
              $gam create device serialnumber $sn devicetype android
-             touch "${gampath}/enabledasa.txt"
+             $gam config enable_dasa true save
              $gam delete user $newuser
              $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail
              $gam print mobile
@@ -772,10 +772,10 @@ jobs:
              $gam report users fields accounts:is_less_secure_apps_access_allowed,gmail:last_imap_time,gmail:last_pop_time filters "accounts:last_login_time>2019-01-01T00:00:00.000Z" todrive
              $gam report admin start -3d todrive
              $gam print devices nopersonaldevices nodeviceusers filter "serial:$JID$JID$JID$JID-" | $gam csv - gam delete device id ~name
-             rm "${gampath}/enabledasa.txt"
+             $gam config enable_dasa false save
              $gam print userinvitations
              $gam print userinvitations | $gam csv - gam send userinvitation ~name
-             touch "${gampath}/enabledasa.txt"
+             $gam config enable_dasa false save
              $gam create caalevel "zzz_${newbase}" basic condition ipsubnetworks 1.1.1.1/32,2.2.2.2/32 endcondition
              $gam print caalevels
              $gam delete caalevel "zzz_${newbase}"
