@@ -620,12 +620,12 @@ jobs:
              $gam config customer_id "C03uzfv2s" save
              $gam config domain "pdl.jaylee.us" save
              $gam config admin_email "${gam_user}" save
+             $gam oauth info
+             $gam oauth refresh
              $gam config enable_dasa true save 
              $gam create signjwtserviceaccount
              $gam checkconn
-             $gam oauth info
              $gam info domain
-             $gam oauth refresh
              $gam info user
              export tstamp=$($PYTHON -c "import time; print(time.time_ns())")
              export newbase="gha_test_${JID}_${tstamp}"
