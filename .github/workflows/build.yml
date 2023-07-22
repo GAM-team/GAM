@@ -637,15 +637,15 @@ jobs:
              
              # cleanup old runs
              $gam config enable_dasa false save
-             GAM_CSV_ROW_FILTER="name:regex:gha_test_${JID}_" $gam print vaultholds | $gam csv - gam delete vaulthold "id:~~holdId~~" matter "id:~~matterId~~"
+             $gam config csv_output_row_filter "name:regex:gha_test_${JID}_" print vaultholds | $gam csv - gam delete vaulthold "id:~~holdId~~" matter "id:~~matterId~~"
              $gam config enable_dasa true save
-             GAM_CSV_ROW_FILTER="name:regex:gha_test_${JID}_" $gam print features | $gam csv - gam delete feature ~name
-             GAM_CSV_ROW_FILTER="name:regex:^gha_test_${JID}_" $gam user $gam_user print shareddrives asadmin | $gam csv - gam user $gam_user delete shareddrive ~id nukefromorbit
+             $gam config csv_output_row_filter "name:regex:gha_test_${JID}_" print features | $gam csv - gam delete feature ~name
+             $gam config csv_output_row_filter "name:regex:^gha_test_${JID}_" user $gam_user print shareddrives asadmin | $gam csv - gam user $gam_user delete shareddrive ~id nukefromorbit
              $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail
-             GAM_CSV_ROW_FILTER="name:regex:^gha_test_${JID}_" $gam print ous fromparent "aaaGithub Actions" | $gam csv - gam delete ou ~orgUnitId
-             GAM_CSV_ROW_FILTER="groupKey.id:regex:^gha_test_${JID}_" $gam print cigroups | $gam csv - gam delete cigroup ~groupKey.id
-             GAM_CSV_ROW_FILTER="resourceId:regex:^gha_test_${JID}_" $gam print resources | $gam csv - gam delete resource ~resourceId
-             GAM_CSV_ROW_FILTER="buildingId:regex:^gha_test_${JID}_" $gam print buildings | $gam csv - gam delete building ~buildingId
+             $gam config csv_output_row_filter "name:regex:^gha_test_${JID}_" print ous fromparent "aaaGithub Actions" | $gam csv - gam delete ou ~orgUnitId
+             $gam config csv_output_row_filter "email:regex:^gha_test_${JID}_" print cigroups | $gam csv - gam delete cigroup ~groupKey.id
+             $gam config csv_output_row_filter "resourceId:regex:^gha_test_${JID}_" print resources | $gam csv - gam delete resource ~resourceId
+             $gam config csv_output_row_filter "buildingId:regex:^gha_test_${JID}_" print buildings | $gam csv - gam delete building ~buildingId
              
              echo "Creating OrgUnit ${newou}"
              $gam create ou "${newou}"
@@ -673,8 +673,8 @@ jobs:
              $gam config enable_dasa false save
              $gam create admin $newuser _GROUPS_EDITOR_ROLE CUSTOMER # condition nonsecuritygroup
              $gam create admin $newgroup _HELP_DESK_ADMIN_ROLE org_unit "${newou}"
-             GAM_CSV_ROW_FILTER="assignedToUser:regex:${newuser}" $gam print admins | $gam csv - gam delete admin "~roleAssignmentId"
-             GAM_CSV_ROW_FILTER="assignedToGroup:regex:${newgroup}" $gam print admins | $gam csv - gam delete admin "~roleAssignmentId"
+             $gam config csv_output_row_filter "assignedToUser:regex:${newuser}" print admins | $gam csv - gam delete admin "~roleAssignmentId"
+             $gam config csv_output_row_filter "assignedToGroup:regex:${newgroup}" print admins | $gam csv - gam delete admin "~roleAssignmentId"
              $gam config enable_dasa false save
              $gam csv sample.csv gam create user ~~email~~ firstname "GHA Bulk" lastname ~~email~~ gha.jid $JID ou "${newou}"
              $gam csv sample.csv gam update user ~~email~~ recoveryphone 12125121110 recoveryemail jay0lee@gmail.com password random displayname "GitHub Actions Bulk ${JID}"
@@ -708,7 +708,7 @@ jobs:
              $gam users "$newbase-bulkuser-4 $newbase-bulkuser-5 $newbase-bulkuser-6" trash messages query in:anywhere maxtotrash 99999 doit
              $gam users "$newbase-bulkuser-7 $newbase-bulkuser-8 $newbase-bulkuser-9" modify messages query in:anywhere maxtomodify 99999 addlabel IMPORTANT addlabel STARRED doit
              $gam user $newuser delete label --ALL_LABELS--
-             GAM_CSV_ROW_FILTER="name:regex:gha-test-${JID}" $gam print features | $gam csv - gam delete feature ~name
+             $gam config csv_output_row_filter "name:regex:gha-test-${JID}" print features | $gam csv - gam delete feature ~name
              $gam create feature name VC-$newbase
              $gam create feature name Whiteboard-$newbase
              $gam create building "My Building - $newbase" id $newbuilding floors 1,2,3,4,5,6,7,8,9,10,11,12,14,15 description "No 13th floor here..."
