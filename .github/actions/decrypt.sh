@@ -20,8 +20,12 @@ else
   echo "PASSCODE is set";
 fi
 
-gpg --quiet --batch --yes --decrypt --passphrase="${PASSCODE}" \
-    --output "${credsfile}" "${gpgfile}"
+gpg --batch \
+    --yes \
+    --decrypt \
+    --passphrase="${PASSCODE}" \
+    --output "${credsfile}" \
+    "${gpgfile}"
 
 tar xvvf "${credsfile}" --directory "${credspath}"
 rm -rvf "${gpgfile}"
