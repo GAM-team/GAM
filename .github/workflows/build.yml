@@ -624,6 +624,7 @@ jobs:
              $gam config enable_dasa true save 
              $gam create signjwtserviceaccount
              $gam checkconn
+             $gam user "$gam_user" check serviceaccount
              $gam info domain
              $gam info user
              export tstamp=$($PYTHON -c "import time; print(time.time_ns())")
@@ -686,7 +687,6 @@ jobs:
              $gam csv sample.csv gam update group $newgroup add member ~email
              $gam info group $newgroup
              $gam info cigroup $newgroup membertree
-             $gam user $gam_user check serviceaccount
              # confirm mailbox is provisoned before continuing
              $gam user $newuser waitformailbox
              $gam user $newuser imap on
