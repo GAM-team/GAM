@@ -714,6 +714,7 @@ jobs:
              $gam create building "My Building - $newbase" id $newbuilding floors 1,2,3,4,5,6,7,8,9,10,11,12,14,15 description "No 13th floor here..."
              $gam create resource $newresource "Resource Calendar $tstamp" capacity 25 features Whiteboard-$newbase,VC-$newbase building $newbuilding floor 15 type Room
              $gam info resource $newresource
+             $gam user $newuser add drivefile drivefilename "TPS Reports" mimetype gfolder
              $gam user $newuser show filelist
              $gam calendar $gam_user printacl | $gam csv - gam calendar $gam_user delete id ~id # clear ACLs
              $gam calendar $gam_user update read domain
