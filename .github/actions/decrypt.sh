@@ -1,11 +1,21 @@
 #!/bin/sh
 credspath="${HOME}/.gam"
+if [ ! -d "$credspath" ]; then
+    echo "creating ${credspath}"
+    mkdir -p "$credspath"
+fi
 gpgfile="$1"
-echo "source file is ${gpgfile}"
+if [ -f "$gpgfile" ]; then
+    echo "source file is ${gpgfile}"
+else
+    echo "ERROR: ${gpgfile} does not exist"
+    exit 1
+fi
 credsfile="$2"
 echo "target file is ${credsfile}"
 if [ -z ${PASSCODE+x} ]; then
-  echo "PASSCODE is unset";
+  echo "ERROR: PASSCODE is unset";
+  exit 2
 else
   echo "PASSCODE is set";
 fi
@@ -13,7 +23,6 @@ fi
 gpg --quiet --batch --yes --decrypt --passphrase="${PASSCODE}" \
     --output "${credsfile}" "${gpgfile}"
 
-mkdir -p "${credspath}"
 tar xvvf "${credsfile}" --directory "${credspath}"
 rm -rvf "${gpgfile}"
 rm -rvf "${credsfile}"
