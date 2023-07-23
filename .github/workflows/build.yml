@@ -726,7 +726,7 @@ jobs:
              endtime=$($PYTHON -c "import datetime; print((datetime.datetime.now() + datetime.timedelta(hours=2)).strftime('%Y-%m-%dT%H:%M:%S.%f+00:00'))")
              $gam calendar $gam_user addevent summary "GHA test event" start "${starttime}" end "${endtime}" attendee $newgroup hangoutsmeet guestscanmodify true sendupdates all
              $gam calendar $gam_user printevents after -0d
-             $gam config enable_dasa true save
+             $gam config enable_dasa false save
              matterid=uid:$($gam create vaultmatter name "GHA matter $newbase" description "test matter" collaborators $newuser | head -1 | cut -d ' ' -f 3)
              $gam create vaulthold matter $matterid name "GHA hold $newbase" corpus mail accounts $newuser
              $gam print vaultmatters matterstate open
