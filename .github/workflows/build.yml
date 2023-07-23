@@ -717,11 +717,11 @@ jobs:
              $gam user $newuser add drivefile drivefilename "TPS Reports" mimetype gfolder
              $gam user $newuser show filelist
              $gam calendar $gam_user printacl | $gam csv - gam calendar $gam_user delete id ~id # clear ACLs
-             $gam calendar $gam_user update read domain
-             $gam calendar $gam_user update freebusy default
+             $gam calendar $gam_user add read domain
+             $gam calendar $gam_user add freebusy default
              $gam calendar $gam_user add editor $newuser
              $gam calendar $gam_user showacl
-             #$gam calendar $gam_user printacl | $gam csv - gam calendar $gam_user delete id ~id
+             $gam calendar $gam_user printacl | $gam csv - gam calendar $gam_user delete ~id
              starttime=$($PYTHON -c "import datetime; print((datetime.datetime.now() + datetime.timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M:%S.%f+00:00'))")
              endtime=$($PYTHON -c "import datetime; print((datetime.datetime.now() + datetime.timedelta(hours=2)).strftime('%Y-%m-%dT%H:%M:%S.%f+00:00'))")
              $gam calendar $gam_user addevent summary "GHA test event" start "${starttime}" end "${endtime}" attendee $newgroup hangoutsmeet guestscanmodify true sendupdates all
