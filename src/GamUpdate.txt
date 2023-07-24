@@ -2,6 +2,11 @@
 
 Merged GAM-Team version
 
+6.61.12
+
+Updated `gam print|show vaultexports|vaultholds|vaultqueries` to handle the case
+where a vault matter changes state from `OPEN` to `CLOSED|DELETED` while the command is being processed.
+
 6.61.11
 
 Added option `returnidonly` to `gam create vaultexport|vaulthold|vaultmatter`

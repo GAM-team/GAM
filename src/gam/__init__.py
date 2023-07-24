@@ -36752,10 +36752,17 @@ def getMatterItem(v, state=None):
   matterId, _, matterNameId, _ = convertMatterNameToID(v, getString(Cmd.OB_MATTER_ITEM), state=state)
   return (matterId, matterNameId)
 
-def warnMatterNotOpen(matter, matterNameId, j, jcount):
+def warnMatterNotOpen(v, matter, matterNameId, j, jcount):
+  if v is not None:
+    try:
+      matter['state'] = callGAPI(v.matters(), 'get',
+                                 throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN],
+                                 matterId=matter['matterId'], view='BASIC', fields='state')['state']
+    except (GAPI.notFound, GAPI.forbidden):
+      matter['state'] = 'Unknown'
   printWarningMessage(DATA_NOT_AVALIABLE_RC, formatKeyValueList('',
                                                                 Ent.FormatEntityValueList([Ent.VAULT_MATTER, matterNameId])+
-                                                                [Msg.MATTER_NOT_OPEN.format(matter.get('state', 'Unknown'))],
+                                                                [Msg.MATTER_NOT_OPEN.format(matter['state'])],
                                                                 currentCount(j, jcount)))
 
 def _cleanVaultExport(export, cd):
@@ -37136,13 +37143,13 @@ def doPrintShowVaultExports():
                                 throwReasons=[GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN],
                                 matterId=matterId, fields=fields)
       except GAPI.failedPrecondition:
-        warnMatterNotOpen(matter, matterNameId, j, jcount)
+        warnMatterNotOpen(v, matter, matterNameId, j, jcount)
         continue
       except GAPI.forbidden as e:
         entityActionFailedWarning([Ent.VAULT_EXPORT, None], str(e))
         break
     else:
-      warnMatterNotOpen(matter, matterNameId, j, jcount)
+      warnMatterNotOpen(None, matter, matterNameId, j, jcount)
       continue
     kcount = len(exports)
     if not csvPF:
@@ -37795,13 +37802,13 @@ def doPrintShowVaultHolds():
                               throwReasons=[GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN],
                               matterId=matterId, fields=fields)
       except GAPI.failedPrecondition:
-        warnMatterNotOpen(matter, matterNameId, j, jcount)
+        warnMatterNotOpen(v, matter, matterNameId, j, jcount)
         continue
       except GAPI.forbidden as e:
         entityActionFailedWarning([Ent.VAULT_HOLD, None], str(e))
         break
     else:
-      warnMatterNotOpen(matter, matterNameId, j, jcount)
+      warnMatterNotOpen(None, matter, matterNameId, j, jcount)
       continue
     kcount = len(holds)
     if not csvPF:
@@ -37845,7 +37852,7 @@ def printShowUserVaultHolds(entityList):
     matters = callGAPIpages(v.matters(), 'list', 'matters',
                             pageMessage=getPageMessage(),
                             throwReasons=[GAPI.FORBIDDEN],
-                            view='BASIC', state='OPEN', fields='matters(matterId,name),nextPageToken')
+                            view='BASIC', state='OPEN', fields='matters(matterId,name,state),nextPageToken')
   except GAPI.forbidden as e:
     entityActionFailedWarning([Ent.VAULT_HOLD, None], str(e))
     return
@@ -37863,7 +37870,7 @@ def printShowUserVaultHolds(entityList):
                                       throwReasons=[GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN],
                                       matterId=matterId, fields='holds(holdId,name,accounts(accountId,email),orgUnit(orgUnitId)),nextPageToken')
     except GAPI.failedPrecondition:
-      warnMatterNotOpen(matter, matterNameId, j, jcount)
+      warnMatterNotOpen(v, matter, matterNameId, j, jcount)
     except GAPI.forbidden as e:
       entityActionFailedWarning([Ent.VAULT_HOLD, None], str(e), j, jcount)
   totalHolds = 0
@@ -38052,13 +38059,13 @@ def doPrintShowVaultQueries():
                                 throwReasons=[GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN],
                                 matterId=matterId, fields=fields)
       except GAPI.failedPrecondition:
-        warnMatterNotOpen(matter, matterNameId, j, jcount)
+        warnMatterNotOpen(v, matter, matterNameId, j, jcount)
         continue
       except GAPI.forbidden as e:
         entityActionFailedWarning([Ent.VAULT_QUERY, None], str(e))
         break
     else:
-      warnMatterNotOpen(matter, matterNameId, j, jcount)
+      warnMatterNotOpen(None, matter, matterNameId, j, jcount)
       continue
     kcount = len(queries)
     if not csvPF:
