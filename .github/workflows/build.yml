@@ -717,18 +717,16 @@ jobs:
              $gam info resource $newresource
              $gam user $newuser add drivefile drivefilename "TPS Reports" mimetype gfolder
              $gam user $newuser show filelist
-             $gam calendar $gam_user printacl | $gam csv - gam calendar $gam_user delete id ~id # clear ACLs
+             $gam calendar $gam_user printacl | $gam csv - gam calendar $gam_user delete ~id # clear ACLs
              $gam calendar $gam_user add read domain
              $gam calendar $gam_user add freebusy default
              $gam calendar $gam_user add editor $newuser
              $gam calendar $gam_user showacl
              $gam calendar $gam_user printacl | $gam csv - gam calendar $gam_user delete ~id
-             starttime=$($PYTHON -c "import datetime; print((datetime.datetime.now() + datetime.timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M:%S.%f+00:00'))")
-             endtime=$($PYTHON -c "import datetime; print((datetime.datetime.now() + datetime.timedelta(hours=2)).strftime('%Y-%m-%dT%H:%M:%S.%f+00:00'))")
-             $gam calendar $gam_user addevent summary "GHA test event" start "${starttime}" end "${endtime}" attendee $newgroup hangoutsmeet guestscanmodify true sendupdates all
+             $gam calendar $gam_user addevent summary "GHA test event" start +1h end +2h attendee $newgroup hangoutsmeet guestscanmodify true sendupdates all
              $gam calendar $gam_user printevents after -0d
              $gam config enable_dasa false save
-             matterid=uid:$($gam create vaultmatter name "GHA matter $newbase" description "test matter" collaborators $newuser | head -1 | awk -F'[()]' '{print $2}')
+             matterid=uid:$($gam create vaultmatter name "GHA matter $newbase" description "test matter" collaborators $newuser returnidonly)
              $gam create vaulthold matter $matterid name "GHA hold $newbase" corpus mail accounts $newuser
              $gam print vaultmatters matterstate open
              $gam print vaultholds matter $matterid
