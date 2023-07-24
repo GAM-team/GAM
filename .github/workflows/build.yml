@@ -769,7 +769,8 @@ jobs:
              $gam report usageparameters customer
              $gam report usage customer parameters gmail:num_emails_sent,accounts:num_1day_logins
              $gam report customer todrive
-             $gam report users fields accounts:is_less_secure_apps_access_allowed,gmail:last_imap_time,gmail:last_pop_time filters "accounts:last_login_time>2019-01-01T00:00:00.000Z" todrive
+             #$gam report users fields accounts:is_less_secure_apps_access_allowed,gmail:last_imap_time,gmail:last_pop_time filters "accounts:last_login_time>2019-01-01T00:00:00.000Z" todrive
+             $gam report users todrive
              $gam report admin start -3d todrive
              $gam print devices nopersonaldevices nodeviceusers filter "serial:$JID$JID$JID$JID-" | $gam csv - gam delete device id ~name
              $gam config enable_dasa false save
