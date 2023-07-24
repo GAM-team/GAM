@@ -746,7 +746,7 @@ jobs:
              $gam user $newuser delete license workspaceenterpriseplus
              echo finish
              $gam config enable_dasa true save
-             $gam whatis $newuser
+             $gam whatis $newuser noinfo
              $gam user $gam_user show tokens
              $gam config enable_dasa false save
              $gam print exports matter $matterid | $gam csv - gam download export $matterid id:~~id~~
