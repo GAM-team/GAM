@@ -780,7 +780,7 @@ jobs:
              $gam create caalevel "zzz_${newbase}" basic condition ipsubnetworks 1.1.1.1/32,2.2.2.2/32 endcondition
              $gam print caalevels
              $gam delete caalevel "zzz_${newbase}"
-             driveid=$($gam user $gam_user add shareddrive "${newbase}" | awk '{print $NF}')
+             driveid=$($gam user $gam_user add shareddrive "${newbase} returnidonly")
              echo "Created shared drive ${driveid}"
              $gam user $gam_user add drivefile localfile gam.py parentid "${driveid}"
              $gam user $gam_user update shareddrive "${driveid}" ou "${newou}"
