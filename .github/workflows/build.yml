@@ -619,6 +619,7 @@ jobs:
              $gam config customer_id "C03uzfv2s" save
              $gam config domain "pdl.jaylee.us" save
              $gam config admin_email "${gam_user}" save
+             $gam config enable_dasa false save
              $gam oauth info
              $gam oauth refresh
              $gam config enable_dasa true save 
@@ -795,7 +796,7 @@ jobs:
              $gam delete inboundssoprofile "id:${ssoprofile}"
              $gam print printermodels | wc -l
              $gam print printers
-             printerid=$($gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by $(gam_user)" ou "${newou}" | grep 'id: [a-z,0-9]*$' | cut -d' ' -f3)
+             printerid=$($gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by $(gam_user)" ou "${newou}" nodetails | awk '{print substr($2, 1, length($2)-1)}')
              $gam info printer "$printerid"
              $gam delete printer "$printerid"
              $gam delete ou "${newou}"
