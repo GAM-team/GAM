@@ -2,6 +2,15 @@
 
 Merged GAM-Team version
 
+6.61.11
+
+Added option `returnidonly` to `gam create vaultexport|vaulthold|vaultmatter`
+that causes GAM to return just the ID of the item created as output.
+
+6.61.10
+
+Fixed bug in `gam oauth create admin <EmailAddress>` which caused no scopes to be selected.
+
 6.61.09
 
 Updated `gam oauth create` to handle case where Google takes a very long time to respond

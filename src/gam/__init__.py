@@ -36895,14 +36895,14 @@ def _validateVaultQuery(query):
 #	[includerooms <Boolean>]
 #	[covereddata calllogs|textmessages|voicemails]
 #	[includeshareddrives|includeteamdrives <Boolean>] [driveversiondate <Date>|<Time>] [includeaccessinfo <Boolean>]
-#	[region any|europe|us] [showdetails]
+#	[region any|europe|us] [showdetails|returnidonly]
 def doCreateVaultExport():
   v = buildGAPIObject(API.VAULT)
   matterId = None
   body = {'query': {'dataScope': 'ALL_DATA'}, 'exportOptions': {}}
   exportFormat = 'MBOX'
   showConfidentialModeContent = None
-  showDetails = False
+  returnIdOnly = showDetails = False
   useNewExport = None
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -36927,6 +36927,10 @@ def doCreateVaultExport():
       body['exportOptions'].setdefault('voiceOptions', {})['coveredData'] = getChoice(VAULT_VOICE_COVERED_DATA_MAP, mapChoice=True)
     elif myarg == 'showdetails':
       showDetails = True
+      returnIdOnly = False
+    elif myarg == 'returnidonly':
+      returnIdOnly = True
+      showDetails = False
     else:
       unknownArgumentExit()
   if not matterId:
@@ -36950,9 +36954,12 @@ def doCreateVaultExport():
                       throwReasons=[GAPI.ALREADY_EXISTS, GAPI.BAD_REQUEST, GAPI.BACKEND_ERROR, GAPI.INVALID_ARGUMENT,
                                     GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN, GAPI.QUOTA_EXCEEDED],
                       matterId=matterId, body=body)
-    entityActionPerformed([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_EXPORT, formatVaultNameId(export['name'], export['id'])])
-    if showDetails:
-      _showVaultExport(None, export, None, None)
+    if not returnIdOnly:
+      entityActionPerformed([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_EXPORT, formatVaultNameId(export['name'], export['id'])])
+      if showDetails:
+        _showVaultExport(None, export, None, None)
+    else:
+      writeStdout(f'{export["id"]}\n')
   except (GAPI.alreadyExists, GAPI.badRequest, GAPI.backendError, GAPI.invalidArgument,
           GAPI.failedPrecondition, GAPI.forbidden, GAPI.quotaExceeded) as e:
     entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_EXPORT, body.get('name')], str(e))
@@ -37467,14 +37474,14 @@ def _setHoldQuery(body, queryParameters):
 #	[includerooms <Boolean>]
 #	[covereddata calllogs|textmessages|voicemails]
 #	[includeshareddrives|includeteamdrives <Boolean>]
-#	[showdetails]
+#	[showdetails|returnidonly]
 def doCreateVaultHold():
   v = buildGAPIObject(API.VAULT)
   body = {}
   matterId = None
   accounts = []
   queryParameters = {}
-  showDetails = False
+  returnIdOnly = showDetails = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'matter':
@@ -37492,6 +37499,10 @@ def doCreateVaultHold():
       pass
     elif myarg == 'showdetails':
       showDetails = True
+      returnIdOnly = False
+    elif myarg == 'returnidonly':
+      returnIdOnly = True
+      showDetails = False
     else:
       unknownArgumentExit()
   if matterId is None:
@@ -37511,9 +37522,12 @@ def doCreateVaultHold():
     hold = callGAPI(v.matters().holds(), 'create',
                     throwReasons=[GAPI.ALREADY_EXISTS, GAPI.BAD_REQUEST, GAPI.BACKEND_ERROR, GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN],
                     matterId=matterId, body=body)
-    entityActionPerformed([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_HOLD, formatVaultNameId(hold['name'], hold['holdId'])])
-    if showDetails:
-      _showVaultHold(None, hold, None, None)
+    if not returnIdOnly:
+      entityActionPerformed([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_HOLD, formatVaultNameId(hold['name'], hold['holdId'])])
+      if showDetails:
+        _showVaultHold(None, hold, None, None)
+    else:
+      writeStdout(f'{hold["holdId"]}\n')
   except (GAPI.alreadyExists, GAPI.badRequest, GAPI.backendError, GAPI.failedPrecondition, GAPI.forbidden) as e:
     entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_HOLD, body.get('name')], str(e))
 
@@ -38092,14 +38106,14 @@ def _showVaultMatter(matter, cd, FJQC, j=0, jcount=0):
 
 # gam create vaultmatter|matter [name <String>] [description <string>]
 #	[collaborator|collaborators <CollaboratorItemList>] [sendemails <Boolean>] [ccme <Boolean>]
-#	[showdetails]
+#	[showdetails|returnidonly]
 def doCreateVaultMatter():
   v = buildGAPIObject(API.VAULT)
   body = {}
   cbody = {'matterPermission': {'role': 'COLLABORATOR', 'accountId': ''}, 'sendEmails': False, 'ccMe': False}
   collaborators = []
   cd = None
-  showDetails = False
+  returnIdOnly = showDetails = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'name':
@@ -38116,6 +38130,10 @@ def doCreateVaultMatter():
       cbody['ccMe'] = getBoolean()
     elif myarg == 'showdetails':
       showDetails = True
+      returnIdOnly = False
+    elif myarg == 'returnidonly':
+      returnIdOnly = True
+      showDetails = False
     else:
       unknownArgumentExit()
   if 'name' not in body:
@@ -38126,14 +38144,18 @@ def doCreateVaultMatter():
                       body=body)
     matterId = matter['matterId']
     matterNameId = formatVaultNameId(matter['name'], matterId)
-    entityActionPerformed([Ent.VAULT_MATTER, matterNameId])
+    if not returnIdOnly:
+      entityActionPerformed([Ent.VAULT_MATTER, matterNameId])
+    else:
+      writeStdout(f'{matterId}\n')
   except (GAPI.alreadyExists, GAPI.forbidden) as e:
     entityActionFailedWarning([Ent.VAULT_MATTER, body['name']], str(e))
     return
   jcount = len(collaborators)
   if jcount > 0:
     Act.Set(Act.ADD)
-    entityPerformActionNumItems([Ent.VAULT_MATTER, matterNameId], jcount, Ent.COLLABORATOR)
+    if not returnIdOnly:
+      entityPerformActionNumItems([Ent.VAULT_MATTER, matterNameId], jcount, Ent.COLLABORATOR)
     Ind.Increment()
     j = 0
     for collaborator in collaborators:
@@ -38143,7 +38165,8 @@ def doCreateVaultMatter():
         callGAPI(v.matters(), 'addPermissions',
                  throwReasons=[GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN],
                  matterId=matterId, body=cbody)
-        entityActionPerformed([Ent.VAULT_MATTER, matterNameId, Ent.COLLABORATOR, collaborator['email']], j, jcount)
+        if not returnIdOnly:
+          entityActionPerformed([Ent.VAULT_MATTER, matterNameId, Ent.COLLABORATOR, collaborator['email']], j, jcount)
       except (GAPI.failedPrecondition, GAPI.forbidden) as e:
         entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId], str(e))
         break

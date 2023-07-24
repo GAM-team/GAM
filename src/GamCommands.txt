@@ -4785,7 +4785,7 @@ gam <UserTypeEntity> show teamdriveacls
 
 gam create|add vaultmatter|matter [name <String>] [description <string>]
         [collaborator|collaborators <EmailItemList>] [sendemails <Boolean>] [ccme <Boolean>]
-        [showdetails]
+        [showdetails|returnidonly]
 gam update vaultmatter|matter <MatterItem> [name <String>] [description <string>]
         [addcollaborator|addcollaborators <EmailItemList>] [removecollaborator|removecollaborators <EmailItemList>]
 gam update vaultmatter|matter <MatterItem> action close|reopen|delete|undelete
@@ -4834,7 +4834,7 @@ gam create vaultexport|export matter <MatterItem> [name <String>] corpus drive|m
         [showconfidentialmodecontent <Boolean>] [usenewexport <Boolean>]
         [includerooms <Boolean>] [covereddata calllogs|textmessages|voicemails]
         [includeshareddrives|includeteamdrives <Boolean>] [driveversiondate <Date>|<Time>] [includeaccessinfo <Boolean>]
-        [region any|europe|us] [showdetails]
+        [region any|europe|us] [showdetails|returnidonly]
 gam delete vaultexport|export <ExportItem> matter <MatterItem>
 gam delete vaultexport|export <MatterItem> <ExportItem>
 gam download vaultexport|export <ExportItem> matter <MatterItem>
@@ -4894,7 +4894,7 @@ gam create vaulthold|hold matter <MatterItem> [name <String>] corpus drive|mail|
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
         [includerooms <Boolean>] [covereddata calllogs|textmessages|voicemails]
         [includeshareddrives|includeteamdrives <Boolean>]
-        [showdetails]
+        [showdetails|returnidonly]
 gam update vaulthold|hold <HoldItem> matter <MatterItem>
         [([addaccounts|addgroups|addusers <EmailItemList>] [removeaccounts|removegroups|removeusers <EmailItemList>]) | (orgunit|org|ou <OrgUnit>)]
         [query <QueryVaultCorpus>]
