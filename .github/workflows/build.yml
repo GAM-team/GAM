@@ -704,9 +704,9 @@ jobs:
              $gam user $gam_user draftemail subject "GHA draft $newbase" message "Draft message test"
              $gam csvfile sample.csv:email waitformailbox
              $gam user $newuser delegate to "${newbase}-bulkuser-1"
-             $gam users "$gam_user $newbase-bulkuser-1 $newbase-bulkuser-2 $newbase-bulkuser-3" delete messages query in:anywhere maxtodelete 99999 doit
-             $gam users "$newbase-bulkuser-4 $newbase-bulkuser-5 $newbase-bulkuser-6" trash messages query in:anywhere maxtotrash 99999 doit
-             $gam users "$newbase-bulkuser-7 $newbase-bulkuser-8 $newbase-bulkuser-9" modify messages query in:anywhere maxtomodify 99999 addlabel IMPORTANT addlabel STARRED doit
+             $gam users "$gam_user $newbase-bulkuser-1 $newbase-bulkuser-2 $newbase-bulkuser-3" delete messages query in:anywhere maxtodelete 99999 doit || if [ $? != 60 ]; then exit $?; fi # expect a 60 return code (no messages)
+             $gam users "$newbase-bulkuser-4 $newbase-bulkuser-5 $newbase-bulkuser-6" trash messages query in:anywhere maxtotrash 99999 doit || if [ $? != 60 ]; then exit $?; fi # expect a 60 return code (no messages)
+             $gam users "$newbase-bulkuser-7 $newbase-bulkuser-8 $newbase-bulkuser-9" modify messages query in:anywhere maxtomodify 99999 addlabel IMPORTANT addlabel STARRED doit || if [ $? != 60 ]; then exit $?; fi # expect a 60 return code (no messages)
              $gam user $newuser delete label --ALL_LABELS--
              $gam config csv_output_row_filter "name:regex:gha-test-${JID}" print features | $gam csv - gam delete feature ~name
              $gam create feature name VC-$newbase
@@ -746,7 +746,7 @@ jobs:
              $gam user $newuser delete license workspaceenterpriseplus
              echo finish
              $gam config enable_dasa true save
-             $gam whatis $newuser || || if [ $? != 20 ]; then exit $?; fi # expect a 20 return code (is a user)
+             $gam whatis $newuser || if [ $? != 20 ]; then exit $?; fi # expect a 20 return code (is a user)
              $gam user $gam_user show tokens
              $gam config enable_dasa false save
              $gam print exports matter $matterid | $gam csv - gam download export $matterid id:~~id~~
