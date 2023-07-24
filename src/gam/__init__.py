@@ -36754,7 +36754,8 @@ def getMatterItem(v, state=None):
 
 def warnMatterNotOpen(matter, matterNameId, j, jcount):
   printWarningMessage(DATA_NOT_AVALIABLE_RC, formatKeyValueList('',
-                                                                Ent.FormatEntityValueList([Ent.VAULT_MATTER, matterNameId])+[Msg.MATTER_NOT_OPEN.format(matter['state'])],
+                                                                Ent.FormatEntityValueList([Ent.VAULT_MATTER, matterNameId])+
+                                                                [Msg.MATTER_NOT_OPEN.format(matter.get('state', 'Unknown'))],
                                                                 currentCount(j, jcount)))
 
 def _cleanVaultExport(export, cd):
