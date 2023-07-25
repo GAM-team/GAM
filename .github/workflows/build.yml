@@ -609,7 +609,7 @@ jobs:
              if [[ "${RUNNER_OS}" == "macOS" ]]; then
                brew install gnupg
              fi
-             source ../.github/actions/decrypt.sh ../.github/actions/creds.tar.xz.gpg creds.tar.xz
+             source ../.github/actions/decrypt.sh ../.github/actions/creds.tar.xz.gpg creds.tar.xz "${GAMCFGDIR}"
              mv -v "${GAMCFGDIR}/oauth2.txt-gam-gha-${JID}" "${GAMCFGDIR}/oauth2.txt"
              rm -v "${GAMCFGDIR}/oauth2.txt-gam*
              export gam_user="gam-gha-${JID}@pdl.jaylee.us"

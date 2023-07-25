@@ -1,5 +1,5 @@
 #!/bin/sh
-credspath="${HOME}/.gam"
+credspath="$3"
 if [ ! -d "$credspath" ]; then
     echo "creating ${credspath}"
     mkdir -p "$credspath"
