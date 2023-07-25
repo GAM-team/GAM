@@ -131,6 +131,7 @@ jobs:
           echo "curl_retry=${curl_retry}" >> $GITHUB_ENV
           # GAMCFGDIR should be recreated on every run
           GAMCFGDIR="${RUNNER_TEMP}/.gam"
+          echo "GAMCFGDIR=${GAMCFGDIR}" >> $GITHUB_ENV
 
       - name: Set env variables for test
         if: matrix.goal == 'test'
