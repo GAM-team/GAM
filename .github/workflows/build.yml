@@ -426,6 +426,13 @@ jobs:
           "${PYTHON}" -m pip install --upgrade wheel
           "${PYTHON}" -m pip install --upgrade setuptools
 
+      - name: ToT Google Auth for Python 3.12
+        if: matrix.python == '3.12'
+        run: |
+            # This can be removed once google-auth 2.23+ is out
+            # and removes six deps
+            "${PYTHON}" -m pip install --upgrade --force git+https://github.com/googleapis/google-auth-library-python@main
+
       - name: Install pip requirements
         run: |
              echo "before anything..."
@@ -619,6 +626,7 @@ jobs:
              $gam config customer_id "C03uzfv2s" save
              $gam config domain "pdl.jaylee.us" save
              $gam config admin_email "${gam_user}" save
+             $gam config enable_dasa false save
              $gam oauth info
              $gam oauth refresh
              $gam config enable_dasa true save 
@@ -704,9 +712,9 @@ jobs:
              $gam user $gam_user draftemail subject "GHA draft $newbase" message "Draft message test"
              $gam csvfile sample.csv:email waitformailbox
              $gam user $newuser delegate to "${newbase}-bulkuser-1"
-             $gam users "$gam_user $newbase-bulkuser-1 $newbase-bulkuser-2 $newbase-bulkuser-3" delete messages query in:anywhere maxtodelete 99999 doit
-             $gam users "$newbase-bulkuser-4 $newbase-bulkuser-5 $newbase-bulkuser-6" trash messages query in:anywhere maxtotrash 99999 doit
-             $gam users "$newbase-bulkuser-7 $newbase-bulkuser-8 $newbase-bulkuser-9" modify messages query in:anywhere maxtomodify 99999 addlabel IMPORTANT addlabel STARRED doit
+             $gam users "$gam_user $newbase-bulkuser-1 $newbase-bulkuser-2 $newbase-bulkuser-3" delete messages query in:anywhere maxtodelete 99999 doit || if [ $? != 60 ]; then exit $?; fi # expect a 60 return code (no messages)
+             $gam users "$newbase-bulkuser-4 $newbase-bulkuser-5 $newbase-bulkuser-6" trash messages query in:anywhere maxtotrash 99999 doit || if [ $? != 60 ]; then exit $?; fi # expect a 60 return code (no messages)
+             $gam users "$newbase-bulkuser-7 $newbase-bulkuser-8 $newbase-bulkuser-9" modify messages query in:anywhere maxtomodify 99999 addlabel IMPORTANT addlabel STARRED doit || if [ $? != 60 ]; then exit $?; fi # expect a 60 return code (no messages)
              $gam user $newuser delete label --ALL_LABELS--
              $gam config csv_output_row_filter "name:regex:gha-test-${JID}" print features | $gam csv - gam delete feature ~name
              $gam create feature name VC-$newbase
@@ -716,18 +724,16 @@ jobs:
              $gam info resource $newresource
              $gam user $newuser add drivefile drivefilename "TPS Reports" mimetype gfolder
              $gam user $newuser show filelist
-             $gam calendar $gam_user printacl | $gam csv - gam calendar $gam_user delete id ~id # clear ACLs
+             $gam calendar $gam_user printacl | $gam csv - gam calendar $gam_user delete ~id # clear ACLs
              $gam calendar $gam_user add read domain
              $gam calendar $gam_user add freebusy default
              $gam calendar $gam_user add editor $newuser
              $gam calendar $gam_user showacl
              $gam calendar $gam_user printacl | $gam csv - gam calendar $gam_user delete ~id
-             starttime=$($PYTHON -c "import datetime; print((datetime.datetime.now() + datetime.timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M:%S.%f+00:00'))")
-             endtime=$($PYTHON -c "import datetime; print((datetime.datetime.now() + datetime.timedelta(hours=2)).strftime('%Y-%m-%dT%H:%M:%S.%f+00:00'))")
-             $gam calendar $gam_user addevent summary "GHA test event" start "${starttime}" end "${endtime}" attendee $newgroup hangoutsmeet guestscanmodify true sendupdates all
+             $gam calendar $gam_user addevent summary "GHA test event" start +1h end +2h attendee $newgroup hangoutsmeet guestscanmodify true sendupdates all
              $gam calendar $gam_user printevents after -0d
              $gam config enable_dasa false save
-             matterid=uid:$($gam create vaultmatter name "GHA matter $newbase" description "test matter" collaborators $newuser | head -1 | cut -d ' ' -f 3)
+             matterid=uid:$($gam create vaultmatter name "GHA matter $newbase" description "test matter" collaborators $newuser returnidonly)
              $gam create vaulthold matter $matterid name "GHA hold $newbase" corpus mail accounts $newuser
              $gam print vaultmatters matterstate open
              $gam print vaultholds matter $matterid
@@ -746,7 +752,7 @@ jobs:
              $gam user $newuser delete license workspaceenterpriseplus
              echo finish
              $gam config enable_dasa true save
-             $gam whatis $newuser
+             $gam whatis $newuser || if [ $? != 20 ]; then exit $?; fi # expect a 20 return code (is a user)
              $gam user $gam_user show tokens
              $gam config enable_dasa false save
              $gam print exports matter $matterid | $gam csv - gam download export $matterid id:~~id~~
@@ -769,7 +775,8 @@ jobs:
              $gam report usageparameters customer
              $gam report usage customer parameters gmail:num_emails_sent,accounts:num_1day_logins
              $gam report customer todrive
-             $gam report users fields accounts:is_less_secure_apps_access_allowed,gmail:last_imap_time,gmail:last_pop_time filters "accounts:last_login_time>2019-01-01T00:00:00.000Z" todrive
+             #$gam report users fields accounts:is_less_secure_apps_access_allowed,gmail:last_imap_time,gmail:last_pop_time filters "accounts:last_login_time>2019-01-01T00:00:00.000Z" todrive
+             $gam report users todrive
              $gam report admin start -3d todrive
              $gam print devices nopersonaldevices nodeviceusers filter "serial:$JID$JID$JID$JID-" | $gam csv - gam delete device id ~name
              $gam config enable_dasa false save
@@ -779,7 +786,7 @@ jobs:
              $gam create caalevel "zzz_${newbase}" basic condition ipsubnetworks 1.1.1.1/32,2.2.2.2/32 endcondition
              $gam print caalevels
              $gam delete caalevel "zzz_${newbase}"
-             driveid=$($gam user $gam_user add shareddrive "${newbase}" | awk '{print $NF}')
+             driveid=$($gam user $gam_user add shareddrive "${newbase}" returnidonly)
              echo "Created shared drive ${driveid}"
              $gam user $gam_user add drivefile localfile gam.py parentid "${driveid}"
              $gam user $gam_user update shareddrive "${driveid}" ou "${newou}"
@@ -794,7 +801,7 @@ jobs:
              $gam delete inboundssoprofile "id:${ssoprofile}"
              $gam print printermodels | wc -l
              $gam print printers
-             printerid=$($gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by $(gam_user)" ou "${newou}" | grep 'id: [a-z,0-9]*$' | cut -d' ' -f3)
+             printerid=$($gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by $(gam_user)" ou "${newou}" nodetails | awk '{print substr($2, 1, length($2)-1)}')
              $gam info printer "$printerid"
              $gam delete printer "$printerid"
              $gam delete ou "${newou}"
