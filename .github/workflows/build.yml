@@ -426,6 +426,13 @@ jobs:
           "${PYTHON}" -m pip install --upgrade wheel
           "${PYTHON}" -m pip install --upgrade setuptools
 
+      - name: ToT Google Auth for Python 3.12
+        if: matrix.python == '3.12'
+        run: |
+            # This can be removed once google-auth 2.23+ is out
+            # and removes six deps
+            "${PYTHON}" -m pip install --upgrade --force git+https://github.com/googleapis/google-auth-library-python@main
+
       - name: Install pip requirements
         run: |
              echo "before anything..."
