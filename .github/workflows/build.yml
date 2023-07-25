@@ -611,7 +611,7 @@ jobs:
              fi
              source ../.github/actions/decrypt.sh ../.github/actions/creds.tar.xz.gpg creds.tar.xz "${GAMCFGDIR}"
              mv -v "${GAMCFGDIR}/oauth2.txt-gam-gha-${JID}" "${GAMCFGDIR}/oauth2.txt"
-             rm -v "${GAMCFGDIR}/oauth2.txt-gam*
+             rm -v $GAMCFGDIR/oauth2.txt-gam*
              export gam_user="gam-gha-${JID}@pdl.jaylee.us"
              echo "gam_user=${gam_user}" >> $GITHUB_ENV
              $gam config customer_id "C03uzfv2s" save
