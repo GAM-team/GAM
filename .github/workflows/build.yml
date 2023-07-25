@@ -131,7 +131,11 @@ jobs:
           echo "curl_retry=${curl_retry}" >> $GITHUB_ENV
           # GAMCFGDIR should be recreated on every run
           GAMCFGDIR="${RUNNER_TEMP}/.gam"
+          if [ "$arch" == "Win64" ]; then
+            GAMCFGDIR=$(cygpath -u "$GAMCFGDIR")
+          fi
           echo "GAMCFGDIR=${GAMCFGDIR}" >> $GITHUB_ENV
+          echo "GAMCFGDIR is: ${GAMCFGDIR}"
 
       - name: Set env variables for test
         if: matrix.goal == 'test'
