@@ -754,7 +754,7 @@ jobs:
              $gam update matter $matterid action delete
              # shakes off vault hold on user so we can delete
              $gam print users query "email:${newuser}" orgunitpath | $gam csv - gam update user ~primaryEmail ou ~orgUnitPath
-             $gam user $newuser show holds
+             $gam user $newuser show holds || if [ $? != 55 ]; then exit $?; fi # expect a 55 return code
              export sn="$JID$JID$JID$JID-$(openssl rand -base64 32 | sed 's/[^a-zA-Z0-9]//g')"
              $gam create device serialnumber $sn devicetype android
              $gam config enable_dasa true save
