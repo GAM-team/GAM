@@ -119,8 +119,17 @@ jobs:
           python-version: ${{ matrix.python }}
           allow-prereleases: true
 
-      - name: Set cURL and GAMCFGDIR variables
+      - name: common variables for all runs
+        env:
+          arch: ${{ matrix.arch }}
+          JID: ${{ matrix.jid }}
+          ACTIONS_CACHE: ${{ steps.cache-python-ssl.outputs.cache-hit }}
+          ACTIONS_GOAL: ${{ matrix.goal }}
         run: |
+          echo "arch=${arch}" >> $GITHUB_ENV
+          echo "JID=${JID}" >> $GITHUB_ENV
+          echo "ACTIONS_CACHE=${ACTIONS_CACHE}" >> $GITHUB_ENV
+          echo "ACTIONS_GOAL=${ACTIONS_GOAL}" >> $GITHUB_ENV
           curl_version=$(curl --version | head -n 1 | awk '{ print $2 }')
           echo "cURL is ${curl_version}"
           if [ "$curl_version" == "7.68.0" ]; then
@@ -139,10 +148,6 @@ jobs:
 
       - name: Set env variables for test
         if: matrix.goal == 'test'
-        env:
-          JID: ${{ matrix.jid }}
-          ACTIONS_CACHE: ${{ steps.cache-python-ssl.outputs.cache-hit }}
-          ACTIONS_GOAL: ${{ matrix.goal }}
         run: |
              export PYTHON=$(which python3)
              export PIP=$(which pip3)
@@ -153,9 +158,6 @@ jobs:
              echo "PIP=${PIP}" >> $GITHUB_ENV
              echo "gam=${gam}" >> $GITHUB_ENV
              echo "gampath=${gampath}" >> $GITHUB_ENV
-             echo "JID=${JID}" >> $GITHUB_ENV
-             echo "ACTIONS_CACHE=${ACTIONS_CACHE}" >> $GITHUB_ENV
-             echo "ACTIONS_GOAL=${ACTIONS_GOAL}" >> $GITHUB_ENV
 
       - name: Install necessary Github-hosted Linux packages
         if: runner.os == 'Linux' && runner.arch == 'X64'
@@ -183,8 +185,6 @@ jobs:
       - name: Set Env Variables for build
         if: matrix.goal == 'build'
         env:
-          arch: ${{ matrix.arch }}
-          jid: ${{ matrix.jid }}
           openssl_archs: ${{ matrix.openssl_archs }}
           staticx: ${{ matrix.staticx }}
         run: |
@@ -227,9 +227,7 @@ jobs:
             echo "WIX_ARCH=${WIX_ARCH}" >> $GITHUB_ENV
           fi
           echo "We'll run make with: ${MAKEOPT}"
-          echo "JID=${jid}" >> $GITHUB_ENV
           echo "staticx=${staticx}" >> $GITHUB_ENV
-          echo "arch=${arch}" >> $GITHUB_ENV
           echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}" >> $GITHUB_ENV
           echo "MAKE=${MAKE}" >> $GITHUB_ENV
           echo "MAKEOPT=${MAKEOPT}" >> $GITHUB_ENV
