@@ -1,0 +1,113 @@
+# List Items
+- [Lists of basic items](#lists-of-basic-items)
+- [List quoting rules](#list-quoting-rules)
+- [Basic Items](Basic-Items)
+
+## Lists of basic items
+```
+<APIScopeURLList> ::= "<APIScopeURL>(,<APIScopeURL>)*"
+<ASPIDList> ::= "<ASPID>(,<ASPID>)*"
+<AssetTagList> ::= "<AssetTag>(,<AssetTag>)*"
+<CalendarACLScopeList> ::= "<CalendarACLScope>(,<CalendarACLScope>)*"
+<CalendarList> ::= "<CalendarItem>(,<CalendarItem>)*"
+<ChatSpaceList> ::= "<ChatSpace>(,<ChatSpace>)*"
+<CIGroupAliasList> ::= "<CIGroupAlias>(,<CIGroupAlias>)*"
+<CIGroupTypeList> ::= "<CIGroupType>(,<CIGroupType>)*"
+<ClassroomInvitationIDList> ::= "<ClassroomInvitationID>(,<ClassroomInvitationID>)*"
+<ContactGroupList> ::= "<ContactGroupItem>(,<ContactGroupItem>)*"
+<ContactIDList> ::= "<ContactID>(,<ContactID>)*"
+<CourseAliasList> ::= "<CourseAlias>(,<CourseAlias>)*"
+<CourseAnnouncementIDList> ::= "<CourseAnnouncementID>(,<CourseAnnouncementID>)*"
+<CourseAnnouncementStateList> ::= all|"<CourseAnnouncementState>(,<CourseAnnouncementState>)*"
+<CourseIDList> ::= "<CourseID>(,<CourseID>)*"
+<CourseMaterialIDList> ::= "<CourseMaterialID>(,<CourseMaterialID>)*"
+<CourseMaterialStateList> ::= all|"<CourseMaterialState>(,<CourseMaterialState>)*"
+<CourseStateList> ::= all|"<CourseState>(,<CourseState>)*"
+<CourseSubmissionIDList> ::= "<CourseSubmissionID>(,<CourseSubmissionID>)*"
+<CourseSubmissionStateList> ::= all|"<CourseSubmissionState>(,<CourseSubmissionState>)*"
+<CourseTopicIDList> ::= "<CourseTopicID>(,<CourseTopicID>)*"
+<CourseTopicList> ::= "<CourseTopic>(,<CourseTopic>)*"
+<CourseWorkIDList> ::= "<CourseWorkID>(,<CourseWorkID>)*"
+<CourseWorkStateList> ::= all|"<CourseWorkState>(,<CourseWorkState>)*"
+<CrOSIDList> ::= "<CrOSID>(,<CrOSID>)*"
+<DataStudioAssetIDList> ::= "<DataStudioAssetID>(,<DataStudioAssetID>)*"
+<DataStudioPermissionList> ::= "<DataStudioPermission>(,<DataStudioPermission>)*"
+<DeviceIDList> ::= "<DeviceID>(,<DeviceID>)*"
+<DeviceUserList> ::= "<DeviceUserID>(,<DeviceUserID>)*"
+<DomainNameList> ::= "<DomainName>(,<DomainName>)*"
+<DriveFileACLRoleList> ::= "<DriveFileACLRole>(,<DriveFileACLRole>)*"
+<DriveFileList> ::= "<DriveFileItem>(,<DriveFileItem>)*"
+<DriveFilePermissionList> ::= "<DriveFilePermission>(,<DriveFilePermission>)*"
+<DriveFilePermissionIDList> ::= "<DriveFilePermissionID>(,<DriveFilePermissionID>)*"
+<DriveFileRevisionIDList> ::= "<DriveFileRevisionID>(,<DriveFileRevisionID>)*"
+<DriveFolderIDList> ::= "<DriveFolderID>(,<DriveFolderID>)*"
+<DriveFolderNameList> ::= "<DriveFolderName>(,<DriveFolderName>)*"
+<DriveLabelIDList> ::= "<DriveLabelID>(,<DriveLabelID>)*"
+<DriveLabelNameList> ::= "<DriveLabelName>(,<DriveLabelName>)*"
+<DriveLabelFieldIDList> ::= "<DriveLabelFieldID>(,<DriveLabelFieldID>)*"
+<DriveLabelSelectionIDList> ::= "<DriveLabelSelectionID>(,<DriveLabelSelectionID>)*"
+<EmailAddressList> ::= "<EmailAddress>(,<EmailAddress>)*"
+<EmailItemList> ::= "<EmailItem>(,<EmailItem>)*"
+<EventIDList> ::= "<EventID>(,<EventID>)*"
+<EventNameList> ::= "<EventName>(,<EventName>)*"
+<ExportStatusList> ::= "<ExportStatus>(,<ExportStatus>)*"
+<FeatureNameList> ::= "'<FeatureName>'(,'<FeatureName>')*"
+<FieldNameList> ::= "<FieldName>(,<FieldName>)*"
+<FileFormatList> ::= "<FileFormat>(,<FileFormat>)*"
+<FilterIDList> ::= "<FilterID>(,<FilterID>)*"
+<GuardianItemList> ::= "<GuardianItem>(,<GuardianItem>)*"
+<GuardianInvitationIDList> ::= "<GuardianInvitationID>(,<GuardianInvitationID>)*"
+<GroupList> ::= "<GroupItem>(,<GroupItem>)*"
+<GroupRoleList> ::= "<GroupRole>(,<GroupRole>)*"
+<GroupTypeList> ::= "<GroupType>(,<GroupType>)*"
+<LabelIDList> ::= "<LabelID>(,<LabelID>)*"
+<LabelNameList> ::= "'<LabelName>'(,'<LabelName>')*"
+<LanguageList> ::= "<Language>(,<Language>)*"
+<MatterItemList> ::= "<MatterItem>(,<MatterItem>)*"
+<MatterStateList> ::= "<MatterState>(,<MatterState>)*"
+<MessageIDList> ::= "<MessageID>(,<MessageID>)*"
+<MimeTypeList> ::= "<MimeType>(,<MimeType>)*"
+<NamespaceList> ::= "<Namespace>(,<Namespace>)*"
+<NotesNameList> ::= "<NotesName>(,<NotesName>)*"
+<OrgUnitList> ::= "<OrgUnitItem>(,<OrgUnitItem>)*"
+<OtherContactsResourceNameList> ::= "<OtherContactsResourceName>(,<OtherContactsResourceName>)*"
+<PeopleResourceNameList> ::= "<PeopleResourceName>(,<PeopleResourceName>)*"
+<PrinterIDList> ::= "<PrinterID>(,<PrinterID>)*"
+<ProductIDList> ::= "(<ProductID>|<SKUID>)(,<ProductID>|<SKUID>)*"
+<ProjectIDList> ::= "<ProjectID>(,<ProjectID>)*"
+<QueryBrowserList> ::= "<QueryBrowser>(,<QueryBrowser>)*"
+<QueryCrOSList> ::= "<QueryCrOS>(,<QueryCrOS>)*"
+<QueryDeviceList> ::= "<QueryDevice>(,<QueryDevice>)*"
+<QueryMobileList> ::= "<QueryMobile>(,<QueryMobile>)*"
+<QueryUserList> ::= "<QueryUser>(,<QueryUser>)*"
+<ResourceIDList> ::= "<ResourceID>(,<ResourceID>)*"
+<SchemaNameList> ::= "<SchemaName>(,<SchemaName>)*"
+<SerialNumberList> ::= "<SerialNumber>(,<SerialNumber>)*"
+<ServiceAccountKeyList> ::= "<ServiceAccountKey>(,<ServiceAccountKey>)*"
+<SiteACLScopeList> ::= "<SiteACLScope>(,<SiteACLScope>)*"
+<SiteList> ::= "<SiteItem>(,<SiteItem>)*"
+<SKUIDList> ="<SKUID>(,<SKUID>)*"
+<SMTPHeaderList> ::= "<SMTPDateHeader>|<SMTPHeader>(,<SMTPDateHeader>|<SMTPHeader>)*"
+<SharedDriveACLRoleList> ::= "<SharedDriveACLRole>(,<SharedDriveACLRole>)*"
+<SharedDriveIDList> ::= "<SharedDriveID>(,<SharedDriveID>)*"
+<StringList> ::= "<String>(,<String>)*"
+<TasklistIDList> ::= "<TasklistID>(,<TasklistID>)*"
+<TasklistIDTaskIDList> ::= "<TasklistIDTaskID>(,<TasklistIDTaskID>)*"
+<ThreadIDList> ::= "<ThreadID>(,<ThreadID>)*"
+<TimeList> ::= "<Time>(,<Time>)*"
+<UserList> ::= "<UserItem>(,<UserItem>)*"
+```
+## List quoting rules
+Items in a list can be separated by commas or spaces; if an item itself contains a comma, a space or a single quote, special quoting must be used.
+Typically, you will enclose the entire list in double quotes and quote each item in the list as detailed below.
+
+- Items, separated by commas, without spaces, commas or single quotes in the items themselves
+   * ```"item,item,item"```
+- Items, separated by spaces, without spaces, commas or single quotes in the items themselves
+   * ```"item item item"```
+- Items, separated by commas, with spaces, commas or single quotes in the items themselves
+   * ```"'it em','it,em',\"it'em\""```
+- Items, separated by spaces, with spaces, commas or single quotes in the items themselves
+   * ```"'it em' 'it,em' \"it'em\""```
+
+Typical places where these rules apply are lists of OUs and Contact Groups.
