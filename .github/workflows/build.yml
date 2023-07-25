@@ -61,11 +61,6 @@ jobs:
             goal: build
             arch: Win64
             openssl_archs: VC-WIN64A
-
-
-
-
-
           - os: ubuntu-22.04
             goal: test
             python: "3.8"
@@ -81,11 +76,11 @@ jobs:
             python: "3.10"
             jid: 11
             arch: x86_64
-          - os: ubuntu-22.04
-            goal: test
-            python: "3.12"
-            jid: 12
-            arch: x86_64
+          #- os: ubuntu-22.04
+          #  goal: test
+          #  python: "3.12"
+          #  jid: 12
+          #  arch: x86_64
 
     steps:
 
@@ -124,7 +119,7 @@ jobs:
           python-version: ${{ matrix.python }}
           allow-prereleases: true
 
-      - name: Set cURL retry flag
+      - name: Set cURL and GAMCFGDIR variables
         run: |
           curl_version=$(curl --version | head -n 1 | awk '{ print $2 }')
           echo "cURL is ${curl_version}"
@@ -134,6 +129,8 @@ jobs:
             export curl_retry="--retry 5 --retry-all-errors"
           fi
           echo "curl_retry=${curl_retry}" >> $GITHUB_ENV
+          # GAMCFGDIR should be recreated on every run
+          GAMCFGDIR="${RUNNER_TEMP}/.gam"
 
       - name: Set env variables for test
         if: matrix.goal == 'test'
@@ -425,13 +422,6 @@ jobs:
           "${PYTHON}" -m pip install --upgrade pip
           "${PYTHON}" -m pip install --upgrade wheel
           "${PYTHON}" -m pip install --upgrade setuptools
-
-      - name: ToT Google Auth for Python 3.12
-        if: matrix.python == '3.12'
-        run: |
-            # This can be removed once google-auth 2.23+ is out
-            # and removes six deps
-            "${PYTHON}" -m pip install --upgrade --force git+https://github.com/googleapis/google-auth-library-python@main
 
       - name: Install pip requirements
         run: |
