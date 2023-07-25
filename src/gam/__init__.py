@@ -37860,7 +37860,7 @@ def printShowUserVaultHolds(entityList):
       matterId = matter['matterId']
       matterName = matter['name']
       matterNameId = formatVaultNameId(matterName, matterId)
-      for hold in matter['holds']:
+      for hold in matter.get('holds', []):
         if 'orgUnit' in hold:
           orgUnitId = hold['orgUnit'].get('orgUnitId')
           if orgUnitId in orgUnits:
