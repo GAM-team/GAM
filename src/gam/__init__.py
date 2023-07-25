@@ -12782,7 +12782,7 @@ REPORT_ACTIVITIES_TIME_OBJECTS = {'time'}
 #	[nodatechange | (fulldatarequired all|<UserServiceNameList>)]
 #	[filtertime.* <Time>] [filter|filters <String>]
 #	[(fields|parameters <String>)|(services <UserServiceNameList>)]
-#	[aggregatebydate [Boolean]]
+#	[aggregatebydate|aggregatebyuser [Boolean]]
 #	[maxresults <Number>]
 # gam report customers|customer|domain [todrive <ToDriveAttribute>*]
 #	[(date <Date>)|(range <Date> <Date>)|
@@ -12835,7 +12835,33 @@ def doReport():
       csvPF.WriteRow(row)
     return (True, lastDate)
 
-  def processAggregateUserUsage(usage, lastDate):
+  def processAggregateUserUsageByUser(usage, lastDate):
+    if not usage:
+      return (True, lastDate)
+    if lastDate == usage[0]['date']:
+      return (False, lastDate)
+    lastDate = usage[0]['date']
+    for user_report in usage:
+      if 'entity' not in user_report:
+        continue
+      if 'userEmail' not in user_report['entity']:
+        continue
+      email = user_report['entity']['userEmail']
+      for item in user_report.get('parameters', []):
+        if 'name' not in item:
+          continue
+        name = item['name']
+        repsvc, _ = name.split(':', 1)
+        if repsvc not in includeServices:
+          continue
+        if 'intValue' in item:
+          csvPF.AddTitles(name)
+          eventCounts.setdefault(email, {})
+          eventCounts[email].setdefault(name, 0)
+          eventCounts[email][name] += int(item['intValue'])
+    return (True, lastDate)
+
+  def processAggregateUserUsageByDate(usage, lastDate):
     if not usage:
       return (True, lastDate)
     if lastDate == usage[0]['date']:
@@ -13007,7 +13033,8 @@ def doReport():
   filterTimes = {}
   maxActivities = 0
   maxResults = 1000
-  aggregateUserUsage = countsOnly = eventRowFilter = exitUserLoop = noAuthorizedApps = noDateChange = normalizeUsers = select = summary = userCustomerRange = False
+  aggregateByDate = aggregateByUser = countsOnly = eventRowFilter = exitUserLoop = noAuthorizedApps = noDateChange = \
+    normalizeUsers = select = summary = userCustomerRange = False
   allVerifyUser = userKey = 'all'
   cd = orgUnit = orgUnitId = None
   userOrgUnits = {}
@@ -13116,11 +13143,15 @@ def doReport():
       orgUnit = orgUnitId = None
       select = True
     elif userReports and myarg == 'aggregatebydate':
-      aggregateUserUsage = getBoolean()
+      aggregateByDate = getBoolean()
+    elif userReports and myarg == 'aggregatebyuser':
+      aggregateByUser = getBoolean()
     elif userReports and myarg == 'allverifyuser':
       allVerifyUser = getEmailAddress()
     else:
       unknownArgumentExit()
+  if aggregateByDate and aggregateByUser:
+    usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('aggregateByDate', 'aggregateByUser'))
   parameters = ','.join(parameters) if parameters else None
   if usageReports and not includeServices:
     includeServices = set(fullDataServices)
@@ -13148,12 +13179,12 @@ def doReport():
       Ent.SetGetting(Ent.REPORT)
       users = [normalizeEmailAddressOrUID(userKey)]
       orgUnitId = None
-    if aggregateUserUsage:
+    if aggregateByDate:
       titles = ['date']
-    elif not showOrgUnit:
-      titles = ['email', 'date']
+    elif aggregateByUser:
+      titles = ['email'] if not showOrgUnit else ['email', 'orgUnitPath']
     else:
-      titles = ['email', 'orgUnitPath', 'date']
+      titles = ['email', 'date'] if not showOrgUnit else ['email', 'orgUnitPath', 'date']
     csvPF.SetTitles(titles)
     csvPF.SetSortAllTitles()
     i = 0
@@ -13199,10 +13230,12 @@ def doReport():
                                 userKey=user, date=tryDate, customerId=customerId,
                                 orgUnitID=orgUnitId, filters=filters, parameters=parameters,
                                 maxResults=maxResults)
-          if not aggregateUserUsage:
-            status, lastDate = processUserUsage(usage, lastDate)
+          if aggregateByDate:
+            status, lastDate = processAggregateUserUsageByDate(usage, lastDate)
+          elif aggregateByUser:
+            status, lastDate = processAggregateUserUsageByUser(usage, lastDate)
           else:
-            status, lastDate = processAggregateUserUsage(usage, lastDate)
+            status, lastDate = processUserUsage(usage, lastDate)
           if not status:
             break
         except GAPI.invalid as e:
@@ -13225,10 +13258,7 @@ def doReport():
         startDateTime += oneDay
       if exitUserLoop:
         break
-    if not aggregateUserUsage:
-      csvPF.SortRowsTwoTitles('email', 'date', False)
-      csvPF.writeCSVfile(f'User Reports - {tryDate}')
-    else:
+    if aggregateByDate:
       for usageDate, events in iter(eventCounts.items()):
         row = {'date': usageDate}
         for event, count in iter(events.items()):
@@ -13236,6 +13266,19 @@ def doReport():
         csvPF.WriteRow(row)
       csvPF.SortRows('date', False)
       csvPF.writeCSVfile(f'User Reports Aggregate - {tryDate}')
+    elif aggregateByUser:
+      for email, events in iter(eventCounts.items()):
+        row = {'email': email}
+        if showOrgUnit:
+          row['orgUnitPath'] = userOrgUnits.get(email, UNKNOWN)
+        for event, count in iter(events.items()):
+          row[event] = count
+        csvPF.WriteRow(row)
+      csvPF.SortRows('email', False)
+      csvPF.writeCSVfile('User Reports Aggregate - User')
+    else:
+      csvPF.SortRowsTwoTitles('email', 'date', False)
+      csvPF.writeCSVfile(f'User Reports - {tryDate}')
   elif customerReports:
     if startEndTime.startDateTime is None:
       startEndTime.startDateTime = startEndTime.endDateTime = todaysDate()
