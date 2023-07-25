@@ -14823,7 +14823,7 @@ def printShowAnalyticItems(users, entityType):
     elif entityType == Ent.ANALYTIC_PROPERTY and myarg == 'filter':
       kwargs['filter'] = getString(Cmd.OB_STRING)
     elif entityType == Ent.ANALYTIC_UA_PROPERTY and myarg == 'accountid':
-      kwargs['accountId'] = getString(Cmd.OB_STRING)
+      kwargs['accountId'] = getString(Cmd.OB_STRING).replace('accounts/', '')
     elif entityType == Ent.ANALYTIC_DATASTREAM and myarg == 'parent':
       kwargs['parent'] = getString(Cmd.OB_STRING)
     else:
@@ -14935,11 +14935,11 @@ def printShowAnalyticProperties(users):
   printShowAnalyticItems(users, Ent.ANALYTIC_PROPERTY)
 
 # gam <UserTypeEntity> print analyticuaproperties [todrive <ToDriveAttribute>*]
-#	accountid <String>
+#	accountid [accounts/]<String>
 #	[maxresults <Integer>]
 #	[formatjson [quotechar <Character>]]
 # gam <UserTypeEntity> show analyticuaproperties
-#	accountid <String>
+#	accountid [accounts/]<String>
 #	[maxresults <Integer>]
 #	[formatjson]
 def printShowAnalyticUAProperties(users):

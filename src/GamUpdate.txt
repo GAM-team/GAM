@@ -2,6 +2,20 @@
 
 Merged GAM-Team version
 
+6.61.13
+
+Added commands to display Analytic UA properties.
+```
+gam <UserTypeEntity> print analyticuaproperties [todrive <ToDriveAttribute>*]
+        accountid [accounts/]<String>
+        [maxresults <Integer>]
+        [formatjson [quotechar <Character>]]
+gam <UserTypeEntity> show analyticuaproperties
+        accountid [accounts/]<String>
+        [maxresults <Integer>]
+        [formatjson]
+```
+
 6.61.12
 
 Updated `gam print|show vaultexports|vaultholds|vaultqueries` to handle the case
