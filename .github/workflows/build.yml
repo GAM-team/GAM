@@ -519,7 +519,7 @@ jobs:
       - name: Copy extra package files
         if: matrix.goal == 'build'
         run: |
-          cp -v roots.pem $gampath
+          cp -v cacerts.pem $gampath
           cp -v LICENSE $gampath
           cp -v GamCommands.txt $gampath
           if [[ "${RUNNER_OS}" == "Windows" ]]; then
