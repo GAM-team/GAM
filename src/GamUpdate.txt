@@ -2,6 +2,14 @@
 
 Merged GAM-Team version
 
+Added the following license SKUs.
+```
+1010060005 - Google Workspace Essentials Plus
+1010020031 - Google Workspace Frontline Standard
+1010340005 - Google Workspace Business Starter - Archived User
+1010340006 - Google Workspace Business Standard - Archived User
+```
+
 6.61.15
 
 Added option `contentrestrictions ownerrestricted [<Boolean>]` to `<DriveFileAttribute>`.
