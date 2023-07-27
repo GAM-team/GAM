@@ -108,8 +108,7 @@
 ```
 ```
 <DriveFileAttribute> ::=
-        (contentrestrictions readonly false)|
-        (contentrestrictions readonly true [reason <String>])|
+        (contentrestrictions (readonly false)|(readonly true [reason <String>]) [ownerrestricted [<Boolean>]])|
         (copyrequireswriterpermission [<Boolean>])|
         (description <String>)|
         (folderColorRgb <ColorValue>)|

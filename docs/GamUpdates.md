@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.61.15
+
+Added option `contentrestrictions ownerrestricted [<Boolean>]` to `<DriveFileAttribute>`.
+
 ### 6.61.14
 
 Added `aggregatebyuser [Boolean]` option to `gam report user` to allow data aggregation for users across multiple dates.

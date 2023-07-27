@@ -5833,6 +5833,7 @@ gam <UserTypeEntity> show datastudiopermissions
         <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVSubkeySelector> | <CSVDataSelector>)
 
 <DriveFileAttribute> ::=
+        (contentrestrictions ownerrestricted [<Boolean>])|
         (contentrestrictions readonly false)|
         (contentrestrictions readonly true [reason <String>])|
         (copyrequireswriterpermission [<Boolean>])|
@@ -5905,6 +5906,7 @@ gam <UserTypeEntity> update drivefile <DriveFileEntity> [copy] [returnidonly|ret
         [charset <CharSet>] [columndelimiter <Character>]
 
 <DriveFileCopyAttribute> ::=
+        (contentrestrictions ownerrestricted [<Boolean>])|
         (contentrestrictions readonly false)|
         (contentrestrictions readonly true [reason <String>])|
         (copyrequireswriterpermission [<Boolean>])|
@@ -6249,6 +6251,7 @@ gam <UserTypeEntity> collect orphans
         canuntrash
 
 <DriveContentRestrictionsSubfieldName> ::=
+        ownerrestricted|
         readonly|
         reason|
         restrictinguser|
