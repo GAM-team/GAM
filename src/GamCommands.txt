@@ -5833,9 +5833,7 @@ gam <UserTypeEntity> show datastudiopermissions
         <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVSubkeySelector> | <CSVDataSelector>)
 
 <DriveFileAttribute> ::=
-        (contentrestrictions ownerrestricted [<Boolean>])|
-        (contentrestrictions readonly false)|
-        (contentrestrictions readonly true [reason <String>])|
+        (contentrestrictions (readonly false)|(readonly true [reason <String>]) [ownerrestricted [<Boolean>]])|
         (copyrequireswriterpermission [<Boolean>])|
         (description <String>)|
         (folderColorRgb <ColorValue>)|
@@ -5906,9 +5904,7 @@ gam <UserTypeEntity> update drivefile <DriveFileEntity> [copy] [returnidonly|ret
         [charset <CharSet>] [columndelimiter <Character>]
 
 <DriveFileCopyAttribute> ::=
-        (contentrestrictions ownerrestricted [<Boolean>])|
-        (contentrestrictions readonly false)|
-        (contentrestrictions readonly true [reason <String>])|
+        (contentrestrictions (readonly false)|(readonly true [reason <String>]) [ownerrestricted [<Boolean>]])|
         (copyrequireswriterpermission [<Boolean>])|
         (description <String>)|
         ignoredefaultvisibility|

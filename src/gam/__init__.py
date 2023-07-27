@@ -48669,13 +48669,14 @@ DRIVEFILE_PROPERTY_VISIBILITY_CHOICE_MAP = {
 
 DRIVE_FILE_CONTENT_RESTRICTIONS_CHOICE_MAP = {
   'readonly': 'readOnly',
+  'ownerrestricted': 'ownerRestricted',
   }
 
 def getDriveFileProperty(visibility=None):
   key = getString(Cmd.OB_PROPERTY_KEY)
   value = getString(Cmd.OB_PROPERTY_VALUE, minLen=0) or None
   if visibility is None:
-    if Cmd.PeekArgumentPresent(DRIVEFILE_PROPERTY_VISIBILITY_CHOICE_MAP):
+    if Cmd.PeekArgumentPresent(list(DRIVEFILE_PROPERTY_VISIBILITY_CHOICE_MAP.keys())):
       visibility = getChoice(DRIVEFILE_PROPERTY_VISIBILITY_CHOICE_MAP, mapChoice=True)
     else:
       visibility = 'properties'
@@ -48746,16 +48747,17 @@ def getDriveFileCopyAttribute(myarg, body, parameters):
   elif myarg == 'writerscantshare':
     body['writersCanShare'] = not getBoolean()
   elif myarg == 'contentrestrictions':
-    body['contentRestrictions'] = [{}]
-    restriction = getChoice(DRIVE_FILE_CONTENT_RESTRICTIONS_CHOICE_MAP, mapChoice=True)
-    if restriction == 'readOnly':
+    while Cmd.PeekArgumentPresent(list(DRIVE_FILE_CONTENT_RESTRICTIONS_CHOICE_MAP.keys())):
+      body.setdefault('contentRestrictions', [{}])
+      restriction = getChoice(DRIVE_FILE_CONTENT_RESTRICTIONS_CHOICE_MAP, mapChoice=True)
       body['contentRestrictions'][0][restriction] = getBoolean()
-      if checkArgumentPresent(['reason']):
-        if body['contentRestrictions'][0][restriction]:
-          body['contentRestrictions'][0]['reason'] = getString(Cmd.OB_STRING, minLen=0)
-        else:
-          Cmd.Backup()
-          usageErrorExit(Msg.REASON_ONLY_VALID_WITH_CONTENTRESTRICTIONS_READONLY_TRUE)
+      if restriction == 'readOnly':
+        if checkArgumentPresent(['reason']):
+          if body['contentRestrictions'][0][restriction]:
+            body['contentRestrictions'][0]['reason'] = getString(Cmd.OB_STRING, minLen=0)
+          else:
+            Cmd.Backup()
+            usageErrorExit(Msg.REASON_ONLY_VALID_WITH_CONTENTRESTRICTIONS_READONLY_TRUE)
   elif myarg == 'property':
     driveprop = getDriveFileProperty()
     body.setdefault(driveprop['visibility'], {})
@@ -49647,6 +49649,7 @@ DRIVE_CAPABILITIES_SUBFIELDS_CHOICE_MAP = {
   }
 
 DRIVE_CONTENT_RESTRICTIONS_SUBFIELDS_CHOICE_MAP = {
+  'ownerrestricted': 'ownerRestricted',
   'readonly': 'readOnly',
   'reason': 'reason',
   'restrictinguser': 'restructingUser',

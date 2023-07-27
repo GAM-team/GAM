@@ -11,7 +11,7 @@ Added option `contentrestrictions ownerrestricted [<Boolean>]` to `<DriveFileAtt
 Added `aggregatebyuser [Boolean]` option to `gam report user` to allow data aggregation for users across multiple dates.
 Options `aggregatebyuser` and `aggregatebydate` are mutually exclusive.
 
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Reports#user-reports
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Reports#user-reports
 
 6.61.13
 
