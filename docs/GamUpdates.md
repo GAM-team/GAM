@@ -10,6 +10,27 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+6.61.17
+
+Updated `gam print|show vaultexports|vaultholds|vaultqueries` to not set a non-zero return code
+when a vault matter changes state from `OPEN` to `CLOSED|DELETED` while the command is being processed.
+
+Updated `gam create shareddrive <Name> ou|org|orgunit <OrgUnitItem>` to handle the following error:
+```
+ERROR: 403: permissionDenied - Request had insufficient authentication scopes.
+```
+It's not clear what causes the error.
+
+6.61.16
+
+Added the following license SKUs.
+```
+1010060005 - Google Workspace Essentials Plus
+1010020031 - Google Workspace Frontline Standard
+1010340005 - Google Workspace Business Starter - Archived User
+1010340006 - Google Workspace Business Standard - Archived User
+```
+
 ### 6.61.15
 
 Added option `contentrestrictions ownerrestricted [<Boolean>]` to `<DriveFileAttribute>`.

@@ -36803,10 +36803,13 @@ def warnMatterNotOpen(v, matter, matterNameId, j, jcount):
                                  matterId=matter['matterId'], view='BASIC', fields='state')['state']
     except (GAPI.notFound, GAPI.forbidden):
       matter['state'] = 'Unknown'
-  printWarningMessage(DATA_NOT_AVALIABLE_RC, formatKeyValueList('',
-                                                                Ent.FormatEntityValueList([Ent.VAULT_MATTER, matterNameId])+
-                                                                [Msg.MATTER_NOT_OPEN.format(matter['state'])],
-                                                                currentCount(j, jcount)))
+  else:
+    setSysExitRC(DATA_NOT_AVALIABLE_RC)
+  message = formatKeyValueList('',
+                               Ent.FormatEntityValueList([Ent.VAULT_MATTER, matterNameId])+
+                               [Msg.MATTER_NOT_OPEN.format(matter['state'])],
+                               currentCount(j, jcount))
+  writeStderr(f'\n{Ind.Spaces()}{WARNING_PREFIX}{message}\n')
 
 def _cleanVaultExport(export, cd):
   query = export.get('query')
@@ -59319,9 +59322,10 @@ def createSharedDrive(users, useDomainAdminAccess=False):
             try:
               callGAPI(drive.drives(), 'update',
                        bailOnInternalError=True,
-                       throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.BAD_REQUEST,
+                       throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN,
                                                                    GAPI.NO_MANAGE_TEAMDRIVE_ADMINISTRATOR_PRIVILEGE,
-                                                                   GAPI.INTERNAL_ERROR, GAPI.FILE_NOT_FOUND],
+                                                                   GAPI.BAD_REQUEST, GAPI.INTERNAL_ERROR, GAPI.PERMISSION_DENIED,
+                                                                   GAPI.FILE_NOT_FOUND],
                        useDomainAdminAccess=useDomainAdminAccess, driveId=driveId, body=updateBody)
               if not returnIdOnly and not csvPF:
                 entityActionPerformed([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], i, count)
@@ -59332,7 +59336,7 @@ def createSharedDrive(users, useDomainAdminAccess=False):
                 entityActionFailedWarning([Ent.USER, user, Ent.REQUEST_ID, requestId], str(e), i, count)
                 break
               waitingForCreationToComplete(retry*15)
-            except (GAPI.badRequest, GAPI.internalError) as e:
+            except (GAPI.badRequest, GAPI.internalError, GAPI.permissionDenied) as e:
               entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], str(e), i, count)
               break
             except GAPI.fileNotFound as e:
