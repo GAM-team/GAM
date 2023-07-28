@@ -259,7 +259,7 @@ jobs:
           git checkout "${LATEST_STABLE_TAG}"
           export COMPILED_OPENSSL_VERSION=${LATEST_STABLE_TAG:8} # Trim the openssl- prefix
           echo "COMPILED_OPENSSL_VERSION=${COMPILED_OPENSSL_VERSION}" >> $GITHUB_ENV
-          if [[ "${RUNNER_OS}" == "macOS" ] && [ "$arch" == "universal2"]]; then
+          if [[ "${RUNNER_OS}" == "macOS" ] && [ "$arch" == "universal2" ]]; then
             for openssl_arch in $openssl_archs; do
               ssldir="${OPENSSL_SOURCE_PATH}-${openssl_arch}"
               mkdir -v "${ssldir}"
@@ -299,7 +299,7 @@ jobs:
       - name: Install OpenSSL
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
-          if [[ "${RUNNER_OS}" == "macOS" ] && [ "$arch" == "universal2"]]; then
+          if [[ "${RUNNER_OS}" == "macOS" ] && [ "$arch" == "universal2" ]]; then
             for openssl_arch in $openssl_archs; do
               cd "${GITHUB_WORKSPACE}/src/openssl-${openssl_arch}"
               # install_sw saves us ages processing man pages :-)
@@ -351,7 +351,7 @@ jobs:
         if: matrix.goal == 'build' && runner.os != 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
           cd "${PYTHON_SOURCE_PATH}"
-          if [[ "${RUNNER_OS}" == "macOS" ] && [ "$arch" == "universal2"]]; then
+          if [[ "${RUNNER_OS}" == "macOS" ] && [ "$arch" == "universal2" ]]; then
             extra_args=( "--enable-universalsdk" "--with-universal-archs=universal2" )
           else
             extra_args=( )
@@ -441,7 +441,7 @@ jobs:
         run: |
              echo "before anything..."
              "${PYTHON}" -m pip list
-             if [[ "${RUNNER_OS}" == "macOS" ] && [ "$arch" == "universal2"]]; then
+             if [[ "${RUNNER_OS}" == "macOS" ] && [ "$arch" == "universal2" ]]; then
                # cffi is a dep of cryptography and doesn't ship
                # a universal2 wheel so we must build one ourself :-/
                export CFLAGS="-arch x86_64 -arch arm64"
