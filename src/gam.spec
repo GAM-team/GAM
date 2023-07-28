@@ -44,7 +44,10 @@ pyz = PYZ(a.pure,
 # GAM with older versions anyway
 match platform:
     case "darwin":
-        target_arch = "universal2"
+        if getenv('arch') == 'universal2':
+            target_arch = "universal2"
+        else:
+            target_arch = None
         strip = True
     case "win32":
         target_arch = None
