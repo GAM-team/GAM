@@ -58,12 +58,12 @@ jobs:
             openssl_archs: darwin64-x86_64
           - os: [self-hosted, macOS, ARM64]
             jid: 7
-            gaol: build
+            goal: build
             arch: aarch64
             openssl_archs: darwin64-arm64
           - os: [self-hosted, macOS, ARM64]
             jid: 12
-            gaol: build
+            goal: build
             arch: universal2
             openssl_archs: darwin64-arm64 darwin64-x86_64
           - os: windows-2022
