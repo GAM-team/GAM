@@ -59201,7 +59201,7 @@ def _getSharedDriveRestrictions(myarg, body):
     return True
   return False
 
-def _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci=None):
+def _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci, returnIdOnly):
   action = Act.Get()
   name = f'orgUnits/-/memberships/shared_drive;{driveId}'
   if ci is None:
@@ -59211,8 +59211,9 @@ def _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci=None):
   try:
     callGAPI(ci.orgUnits().memberships(), 'move',
              name=name, body=cibody)
-    Act.Set(Act.MOVE)
-    entityModifierNewValueActionPerformed([Ent.SHAREDDRIVE, driveId], Act.MODIFIER_TO, f'{Ent.Singular(Ent.ORGANIZATIONAL_UNIT)}: {orgUnit}', i, count)
+    if not returnIdOnly:
+      Act.Set(Act.MOVE)
+      entityModifierNewValueActionPerformed([Ent.SHAREDDRIVE, driveId], Act.MODIFIER_TO, f'{Ent.Singular(Ent.ORGANIZATIONAL_UNIT)}: {orgUnit}', i, count)
   except (GAPI.notFound, GAPI.forbidden, GAPI.badRequest, GAPI.internalError,
           GAPI.noManageTeamDriveAdministratorPrivilege) as e:
     entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], str(e), i, count)
@@ -59225,10 +59226,11 @@ def _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci=None):
 #	[(theme|themeid <String>) | ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
 #	(<SharedDriveRestrictionsFieldName> <Boolean>)*
 #	[hide|hidden <Boolean>] [ou|org|orgunit <OrgUnitItem>]
+#	[errorretries <Integer>] [updateinitialdelay <Integer>] [updateretrydelay <Integer>]
 #	[(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*) | returnidonly]
 def createSharedDrive(users, useDomainAdminAccess=False):
   def waitingForCreationToComplete(sleep_time):
-    writeStdout(Ind.Spaces()+Msg.WAITING_FOR_SHARED_DRIVE_CREATION_TO_COMPLETE_SLEEPING.format(sleep_time))
+    writeStderr(Ind.Spaces()+Msg.WAITING_FOR_SHARED_DRIVE_CREATION_TO_COMPLETE_SLEEPING.format(sleep_time))
     time.sleep(sleep_time)
 
   requestId = str(uuid.uuid4())
@@ -59238,6 +59240,9 @@ def createSharedDrive(users, useDomainAdminAccess=False):
   addCSVData = {}
   hide = returnIdOnly = False
   orgUnit = orgUnitId = ci = None
+  errorRetries = 5
+  updateInitialDelay = 10
+  updateRetryDelay = 10
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if _getSharedDriveTheme(myarg, body):
@@ -59259,6 +59264,12 @@ def createSharedDrive(users, useDomainAdminAccess=False):
       addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
     elif myarg in ADMIN_ACCESS_OPTIONS:
       useDomainAdminAccess = True
+    elif myarg == 'errorretries':
+      errorRetries = getInteger(minVal=0, maxVal=10)
+    elif myarg == 'updateinitialdelay':
+      updateInitialDelay = getInteger(minVal=0, maxVal=60)
+    elif myarg == 'updateretrydelay':
+      updateRetryDelay = getInteger(minVal=0, maxVal=60)
     else:
       unknownArgumentExit()
   if csvPF:
@@ -59299,7 +59310,7 @@ def createSharedDrive(users, useDomainAdminAccess=False):
         break
       except (GAPI.transientError, GAPI.teamDriveAlreadyExists) as e:
         retry += 1
-        if retry > 3:
+        if retry > errorRetries:
           entityActionFailedWarning([Ent.USER, user, Ent.REQUEST_ID, requestId], str(e), i, count)
           break
         requestId = str(uuid.uuid4())
@@ -59313,7 +59324,8 @@ def createSharedDrive(users, useDomainAdminAccess=False):
         userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
         break
     if doUpdate and (updateBody or hide or orgUnit):
-      waitingForCreationToComplete(30)
+      if updateBody or hide:
+        waitingForCreationToComplete(updateInitialDelay)
       try:
         if updateBody:
           Act.Set(Act.UPDATE)
@@ -59332,10 +59344,10 @@ def createSharedDrive(users, useDomainAdminAccess=False):
               break
             except GAPI.notFound as e:
               retry += 1
-              if retry > 3:
+              if retry > errorRetries:
                 entityActionFailedWarning([Ent.USER, user, Ent.REQUEST_ID, requestId], str(e), i, count)
                 break
-              waitingForCreationToComplete(retry*15)
+              waitingForCreationToComplete(updateRetryDelay)
             except (GAPI.badRequest, GAPI.internalError, GAPI.permissionDenied) as e:
               entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], str(e), i, count)
               break
@@ -59357,12 +59369,12 @@ def createSharedDrive(users, useDomainAdminAccess=False):
               break
             except GAPI.notFound as e:
               retry += 1
-              if retry > 3:
+              if retry > errorRetries:
                 entityActionFailedWarning([Ent.USER, user, Ent.REQUEST_ID, requestId], str(e), i, count)
                 break
-              time.sleep(retry*retry)
+              waitingForCreationToComplete(updateRetryDelay)
         if orgUnit:
-          ci = _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci)
+          ci = _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci, returnIdOnly)
       except (GAPI.forbidden, GAPI.badRequest, GAPI.noManageTeamDriveAdministratorPrivilege) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], str(e), i, count)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
@@ -59431,7 +59443,7 @@ def updateSharedDrive(users, useDomainAdminAccess=False):
                  driveId=driveId)
         entityActionPerformed([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], i, count)
       if orgUnit:
-        ci = _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci)
+        ci = _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci, False)
     except (GAPI.notFound, GAPI.forbidden, GAPI.badRequest, GAPI.internalError,
             GAPI.noManageTeamDriveAdministratorPrivilege) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], str(e), i, count)

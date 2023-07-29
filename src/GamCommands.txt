@@ -290,14 +290,18 @@ If an item contains spaces, it should be surrounded by ".
         wsbizplus | workspacebusinessplus | 1010020025 |
         wsbizplusarchived | workspacebusinessplusarchived | 1010340003 |
         wsbizstan | workspacebusinessstandard | 1010020028 |
+        wsbizstanarchived | workspacebusinessstandardarchived | 1010340006 |
         wsbizstarter | workspacebusinessstarter | wsbizstart | 1010020027 |
+        wsbizstarterarchived | workspacebusinessstarterarchived | 1010340005 |
         wsentess | workspaceenterpriseessentials | 1010060003 |
         wsentplus | workspaceenterpriseplus | gae | gse | enterprise | gsuiteenterprise | 1010020020 |
         wsentstan | workspaceenterprisestandard | 1010020026 |
         wsentstanarchived | workspaceenterprisestandardarchived | 1010340004 |
         wsentstarter | workspaceenterprisestarter | 1010020029 | wes |
         wsess | workspaceesentials | gsuiteessentials | essentials | d4e | driveenterprise | drive4enterprise | 1010060001 |
-        wsflw | workspacefrontline | workspacefrontlineworker | 1010020030
+        wsessplus | workspaceessentialsplus | 1010060005 |
+        wsflw | workspacefrontline | workspacefrontlineworker | 1010020030 |
+        wsflwstan | workspacefrontlinestan | workspacefrontlineworkerstan | 1010020031
 
 ## Items built from primitives
 
@@ -4410,7 +4414,7 @@ gam [<UserTypeEntity>] info siteacls <SiteEntity> <SiteACLScopeEntity>
 gam [<UserTypeEntity>] show siteacls <SiteEntity>
 gam [<UserTypeEntity>] print siteacls <SiteEntity> [todrive <ToDriveAttribute>*]
 
-# Shared Drives
+# Shared Drives - Administrator
 
 <SharedDriveFieldName> ::=
         backgroundimagefile|
@@ -4442,30 +4446,31 @@ sharingfoldersrequiresorganizerpermission true
 
 In these commands, the Google administrator named in oauth2.txt is used.
 
-gam show teamdrivethemes
-gam create|add teamdrive <Name>
+gam show shareddrivethemes
+gam create shareddrive <Name>
         [(theme|themeid <String>) | ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
         (<SharedDriveRestrictionsSubfieldName> <Boolean>)*
         [hide|hidden <Boolean>] [ou|org|orgunit <OrgUnitItem>]
+        [errorretries <Integer>] [updateinitialdelay <Integer>] [updateretrydelay <Integer>]
         [(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*) | returnidonly]
-gam update teamdrive <SharedDriveEntity> [name <Name>]
+gam update shareddrive <SharedDriveEntity> [name <Name>]
         [(theme|themeid <String>) | ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
         (<SharedDriveRestrictionsFieldName> <Boolean>)*
         [hide|hidden <Boolean>] [ou|org|orgunit <OrgUnitItem>]
-gam delete teamdrive <SharedDriveEntity>
+gam delete shareddrive <SharedDriveEntity>
        [adminaccess|asadmin] [allowitemdeletion]
-gam hide teamdrive <SharedDriveEntity>
-gam unhide teamdrive <SharedDriveEntity>
-gam info teamdrive <SharedDriveEntity> [fields <SharedDriveFieldNameList>]
+gam hide shareddrive <SharedDriveEntity>
+gam unhide shareddrive <SharedDriveEntity>
+gam info shareddrive <SharedDriveEntity> [fields <SharedDriveFieldNameList>]
         [formatjson]
-gam show teamdriveinfo <SharedDriveEntity> [fields <SharedDriveFieldNameList>]
+gam show shareddriveinfo <SharedDriveEntity> [fields <SharedDriveFieldNameList>]
         [formatjson]
-gam print teamdrives [todrive <ToDriveAttribute>*]
+gam print shareddrives [todrive <ToDriveAttribute>*]
         [teamdriveadminquery|query <QueryTeamDrive>]
         [matchname <RegularExpression>] [orgunit|org|ou <OrgUnitPath>]
         [fields <SharedDriveFieldNameList>] [noorgunits [<Boolean>]]
         [formatjson [quotechar <Character>]]
-gam show teamdrives
+gam show shareddrives
         [teamdriveadminquery|query <QueryTeamDrive>]
         [matchname <RegularExpression>] [orgunit|org|ou <OrgUnitPath>]
         [fields <SharedDriveFieldNameList>] [noorgunits [<Boolean>]]
@@ -4480,24 +4485,29 @@ gam show oushareddrives
 
 In these commands, you specify an administrator and then indicate that you want domain administrator access with the adminaccess option.
 
-gam <UserTypeEntity> create|add teamdrive <Name> adminaccess
+gam <UserTypeEntity> create shareddrive <Name> adminaccess
         [(theme|themeid <String>) | ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
         (<SharedDriveRestrictionsSubfieldName> <Boolean>)*
-        [hide <Boolean>]
+        [hide|hidden <Boolean>] [ou|org|orgunit <OrgUnitItem>]
+        [errorretries <Integer>] [updateinitialdelay <Integer>] [updateretrydelay <Integer>]
         [(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*) | returnidonly]
-gam <UserTypeEntity> delete teamdrive <SharedDriveEntity>
+gam update shareddrive <SharedDriveEntity> asadmin [name <Name>]
+        [(theme|themeid <String>) | ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
+        (<SharedDriveRestrictionsFieldName> <Boolean>)*
+        [hide|hidden <Boolean>] [ou|org|orgunit <OrgUnitItem>]
+gam <UserTypeEntity> delete shareddrive <SharedDriveEntity>
         adminaccess [allowitemdeletion]
-gam <UserTypeEntity> info teamdrive <SharedDriveEntity> adminaccess [fields <SharedDriveFieldNameList>]
+gam <UserTypeEntity> info shareddrive <SharedDriveEntity> adminaccess [fields <SharedDriveFieldNameList>]
         [formatjson]
-gam <UserTypeEntity> show teamdriveinfo <SharedDriveEntity> adminaccess [fields <SharedDriveFieldNameList>]
+gam <UserTypeEntity> show shareddriveinfo <SharedDriveEntity> adminaccess [fields <SharedDriveFieldNameList>]
         [formatjson]
-gam <UserTypeEntity> print teamdrives [todrive <ToDriveAttribute>*]
+gam <UserTypeEntity> print shareddrives [todrive <ToDriveAttribute>*]
         adminaccess [teamdriveadminquery|query <QueryTeamDrive>]
         [matchname <RegularExpression>] [orgunit|org|ou <OrgUnitPath>]
         (role|roles <SharedDriveACLRoleList>)*
         [fields <SharedDriveFieldNameList>]
         [formatjson [quotechar <Character>]]
-gam <UserTypeEntity> show teamdrives
+gam <UserTypeEntity> show shareddrives
         adminaccess [teamdriveadminquery|query <QueryTeamDrive>]
         [matchname <RegularExpression>] [orgunit|org|ou <OrgUnitPath>]
         (role|roles <SharedDriveACLRoleList>)*
@@ -7355,7 +7365,7 @@ gam <UserTypeEntity> show tasklists
 gam <UserTypeEntity> print tasklists [todrive <ToDriveAttribute>*]
         [countsonly | (formatjson [quotechar <Character>])]
 
-# Users - Team Drives
+# Users - Shared Drives
 
 <SharedDriveRestrictionsSubfieldName> ::=
         adminmanagedrestrictions|
@@ -7373,32 +7383,32 @@ sharingfoldersrequiresorganizerpermission false
 allowcontentmanagerstosharefolders false
 sharingfoldersrequiresorganizerpermission true
 
-gam <UserTypeEntity> show teamdrivethemes
-gam <UserTypeEntity> create|add teamdrive <Name> [adminaccess|asadmin]
+gam <UserTypeEntity> show shareddrivethemes
+gam <UserTypeEntity> create shareddrive <Name>
         [(theme|themeid <String>) | ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
         (<SharedDriveRestrictionsSubfieldName> <Boolean>)*
-        [hide|hidden <Boolean>] [ou|org|orgunit <OrgUnitItem>]
-gam <UserTypeEntity> update teamdrive <SharedDriveEntity> [adminaccess|asadmin] [name <Name>]
+        [hide|hidden <Boolean>]
+        [errorretries <Integer>] [updateinitialdelay <Integer>] [updateretrydelay <Integer>]
+        [(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*) | returnidonly]
+gam <UserTypeEntity> update shareddrive <SharedDriveEntity> [name <Name>]
         [(theme|themeid <String>) | ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
         (<SharedDriveRestrictionsSubfieldName> <Boolean>)*
-        [hide|hidden <Boolean>] [ou|org|orgunit <OrgUnitItem>]
-gam <UserTypeEntity> delete teamdrive <SharedDriveEntity>
-        [adminaccess|asadmin] [allowitemdeletion]
-gam <UserTypeEntity> hide teamdrive <SharedDriveEntity>
-gam <UserTypeEntity> unhide teamdrive <SharedDriveEntity>
-gam <UserTypeEntity> info teamdrive <SharedDriveEntity> [fields <SharedDriveFieldNameList>]
+        [hide|hidden <Boolean>]
+gam <UserTypeEntity> delete shareddrive <SharedDriveEntity>
+        [allowitemdeletion]
+gam <UserTypeEntity> hide shareddrive <SharedDriveEntity>
+gam <UserTypeEntity> unhide shareddrive <SharedDriveEntity>
+gam <UserTypeEntity> info shareddrive <SharedDriveEntity> [fields <SharedDriveFieldNameList>]
         [formatjson]
-gam <UserTypeEntity> info teamdrive <SharedDriveEntity> [fields <SharedDriveFieldNameList>]
+gam <UserTypeEntity> show shareddriveinfo <SharedDriveEntity> [fields <SharedDriveFieldNameList>]
         [formatjson]
-gam <UserTypeEntity> show teamdriveinfo <SharedDriveEntity> [fields <SharedDriveFieldNameList>]
-        [formatjson]
-gam <UserTypeEntity> print teamdrives [todrive <ToDriveAttribute>*]
+gam <UserTypeEntity> print shareddrives [todrive <ToDriveAttribute>*]
         [adminaccess|asadmin [teamdriveadminquery|query <QueryTeamDrive>]]
         [matchname <RegularExpression>] [orgunit|org|ou <OrgUnitPath>]
         (role|roles <SharedDriveACLRoleList>)*
         [fields <SharedDriveFieldNameList>] [noorgunits [<Boolean>]]
         [formatjson [quotechar <Character>]]
-gam <UserTypeEntity> show teamdrives
+gam <UserTypeEntity> show shareddrives
         [adminaccess|asadmin [teamdriveadminquery|query <QueryTeamDrive>]]
         [matchname <RegularExpression>] [orgunit|org|ou <OrgUnitPath>]
         (role|roles <SharedDriveACLRoleList>)*

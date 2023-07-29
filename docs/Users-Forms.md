@@ -60,7 +60,7 @@ By default, the user, form title and file name/ID values are displayed on stdout
 To retrieve the file ID with `returnidonly`:
 ```
 Linux/MacOS
-fileId=`gam user user@domain.com create form title "xyz" ... returnidonly`
+fileId=$(gam user user@domain.com create form title "xyz" ... returnidonly)
 Windows PowerShell
 $fileId = & gam user user@domain.com create form title "xyz" ... returnidonly
 ```

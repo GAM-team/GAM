@@ -10,7 +10,18 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
-6.61.17
+### 6.61.18
+
+Added the following options to `gam [<UserTypeEntity>] create shareddrive` to allow better control
+of the create/update process when attributes other than `themeid` are specified.
+```
+errorretries <Integer> - Number of create/update error retries; default value 5, range 0-10
+updateinitialdelay <Integer> - Initial delay after create before update: default value 10, range 0-60
+updateretrydelay <Integer> - Retry delay when update fails; default value 10, range 0-60
+```
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Shared-Drives#create-a-shared-drive
+
+### 6.61.17
 
 Updated `gam print|show vaultexports|vaultholds|vaultqueries` to not set a non-zero return code
 when a vault matter changes state from `OPEN` to `CLOSED|DELETED` while the command is being processed.
@@ -21,7 +32,7 @@ ERROR: 403: permissionDenied - Request had insufficient authentication scopes.
 ```
 It's not clear what causes the error.
 
-6.61.16
+### 6.61.16
 
 Added the following license SKUs.
 ```
