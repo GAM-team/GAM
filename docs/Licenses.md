@@ -66,17 +66,20 @@
 | Google Voice Standard | 1010330004 | voicestandard |
 | Google Voice Starter | 1010330003 | voicestarter |
 | Google Workspace Business - Archived User | 1010340002 | gsuitebusinessarchived |
-| Google Workspace Business Plus - Archived User | 1010340003 | wsbizplusarchived |
 | Google Workspace Business Plus | 1010020025 | wsbizplus |
+| Google Workspace Business Plus - Archived User | 1010340003 | wsbizplusarchived |
 | Google Workspace Business Standard | 1010020028 | wsbizstan |
+| Google Workspace Business Standard - Archived User | 1010340006 | wsbizstanarchived |
 | Google Workspace Business Starter | 1010020027 | wsbizstarter |
+| Google Workspace Business Starter - Archived User | 1010340005 | wsbizstarterarchived |
 | Google Workspace Enterprise Essentials | 1010060003 | wsentess |
-| Google Workspace Enterprise Plus - Archived User | 1010340001 | gsuiteenterprisearchived |
 | Google Workspace Enterprise Plus | 1010020020 | wsentplus |
-| Google Workspace Enterprise Standard - Archived User | 1010340004 | wsentstanarchived |
+| Google Workspace Enterprise Plus - Archived User | 1010340001 | gsuiteenterprisearchived |
 | Google Workspace Enterprise Standard | 1010020026 | wsentstan |
+| Google Workspace Enterprise Standard - Archived User | 1010340004 | wsentstanarchived |
 | Google Workspace Enterprise Starter | 1010020029 | wsentstarter |
 | Google Workspace Essentials | 1010060001 | wsess |
+| Google Workspace Essentials Plus | 1010060005 | wsessplus |
 | Google Workspace Government | Google-Apps-For-Government | gsuitegov |
 | Google Workspace for Education Plus (Extra Student) | 1010310010 | gwepstudent |
 | Google Workspace for Education Plus (Staff) | 1010310009 | gwepstaff |
@@ -87,7 +90,8 @@
 | Google Workspace for Education Standard (Staff) | 1010310006 | gwesstaff |
 | Google Workspace for Education Standard | 1010310005 | gwes |
 | Google Workspace for Education: Teaching and Learning Upgrade | 1010370001 | gwetlu |
-| Google Workspace Frontline | 1010020030 | wsflw,workspacefrontline,workspacefrontlineworker |
+| Google Workspace Frontline Starter | 1010020030 | wsflw |
+| Google Workspace Frontline Standard | 1010020031 | wsflwstan |
 
 ## Definitions
 ```

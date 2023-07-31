@@ -118,6 +118,14 @@
         cantrashchildren|
         canuntrash
 
+<DriveContentRestrictionsSubfieldName> ::=
+        ownerrestricted|
+        readonly|
+        reason|
+        restrictinguser|
+        restrictiontime|
+        type
+
 <DriveLabelInfoSubfieldName> ::=
         labels.id|              # modifiedByMe
         labels.revisionid|      # copyRequiresWriterPermission

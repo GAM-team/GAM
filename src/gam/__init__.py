@@ -8424,7 +8424,7 @@ class CSVPrintFile():
               except (GAPI.badRequest, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
                       GAPI.insufficientFilePermissions, GAPI.insufficientParentPermissions, GAPI.unknownError, GAPI.ownershipChangeAcrossDomainNotPermitted,
                       GAPI.teamDriveDomainUsersOnlyRestriction, GAPI.teamDriveTeamMembersOnlyRestriction,
-                      GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
+                      GAPI.targetUserRoleLimitedByLicenseRestriction, GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
                       GAPI.publishOutNotPermitted, GAPI.shareInNotPermitted, GAPI.shareOutNotPermitted, GAPI.shareOutNotPermittedToUser,
                       GAPI.cannotShareTeamDriveTopFolderWithAnyoneOrDomains, GAPI.cannotShareTeamDriveWithNonGoogleAccounts,
                       GAPI.ownerOnTeamDriveItemNotSupported,
@@ -24786,10 +24786,10 @@ def doInfoChatMember():
   infoChatMember([None])
 
 # gam [<UserTypeEntity>] show chatmembers <ChatSpace>
-#	[showinvited [<Boolean>]] [filter <String>]
+#	[showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
 #	[formatjson]
 # gam [<UserTypeEntity>] print chatmembers [todrive <ToDriveAttribute>*] <ChatSpace>
-#	[showinvited [<Boolean>]] [filter <String>]
+#	[showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
 #	[formatjson [quotechar <Character>]]
 def printShowChatMembers(users):
   def _printChatMember(user, member):
@@ -24808,8 +24808,8 @@ def printShowChatMembers(users):
   cd = buildGAPIObject(API.DIRECTORY)
   csvPF = CSVPrintFile(['User', 'name'] if not isinstance(users, list) else ['name']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
-  parent = pfilter = None
-  showInvited = False
+  kwargs = {}
+  parent = None
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -24817,16 +24817,18 @@ def printShowChatMembers(users):
     elif myarg == 'space' or myarg.startswith('spaces/'):
       parent = getChatSpace(myarg)
     elif myarg == 'showinvited':
-      showInvited = getBoolean()
+      kwargs['showInvited'] = getBoolean()
+    elif myarg == 'showgroups':
+      kwargs['showGroups'] = getBoolean()
     elif myarg =='filter':
-      pfilter = getString(Cmd.OB_STRING)
+      kwargs['filter'] = getString(Cmd.OB_STRING)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if not parent:
     missingArgumentExit('space')
   qfilter = f'{Ent.Singular(Ent.CHAT_SPACE)}: {parent}'
-  if pfilter:
-    qfilter += f', {pfilter}'
+  if 'filter' in kwargs:
+    qfilter += f', {kwargs["filter"]}'
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -24837,7 +24839,7 @@ def printShowChatMembers(users):
       members = callGAPIpages(chat.spaces().members(), 'list', 'memberships',
                               pageMessage=_getChatPageMessage(Ent.CHAT_MEMBER, user, i, count, qfilter),
                               throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                              pageSize=CHAT_PAGE_SIZE, parent=parent, filter=pfilter, showInvited=showInvited)
+                              pageSize=CHAT_PAGE_SIZE, parent=parent, **kwargs)
       for member in members:
         _getChatMemberEmail(cd, member)
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
@@ -36838,10 +36840,13 @@ def warnMatterNotOpen(v, matter, matterNameId, j, jcount):
                                  matterId=matter['matterId'], view='BASIC', fields='state')['state']
     except (GAPI.notFound, GAPI.forbidden):
       matter['state'] = 'Unknown'
-  printWarningMessage(DATA_NOT_AVALIABLE_RC, formatKeyValueList('',
-                                                                Ent.FormatEntityValueList([Ent.VAULT_MATTER, matterNameId])+
-                                                                [Msg.MATTER_NOT_OPEN.format(matter['state'])],
-                                                                currentCount(j, jcount)))
+  else:
+    setSysExitRC(DATA_NOT_AVALIABLE_RC)
+  message = formatKeyValueList('',
+                               Ent.FormatEntityValueList([Ent.VAULT_MATTER, matterNameId])+
+                               [Msg.MATTER_NOT_OPEN.format(matter['state'])],
+                               currentCount(j, jcount))
+  writeStderr(f'\n{Ind.Spaces()}{WARNING_PREFIX}{message}\n')
 
 def _cleanVaultExport(export, cd):
   query = export.get('query')
@@ -48704,13 +48709,14 @@ DRIVEFILE_PROPERTY_VISIBILITY_CHOICE_MAP = {
 
 DRIVE_FILE_CONTENT_RESTRICTIONS_CHOICE_MAP = {
   'readonly': 'readOnly',
+  'ownerrestricted': 'ownerRestricted',
   }
 
 def getDriveFileProperty(visibility=None):
   key = getString(Cmd.OB_PROPERTY_KEY)
   value = getString(Cmd.OB_PROPERTY_VALUE, minLen=0) or None
   if visibility is None:
-    if Cmd.PeekArgumentPresent(DRIVEFILE_PROPERTY_VISIBILITY_CHOICE_MAP):
+    if Cmd.PeekArgumentPresent(list(DRIVEFILE_PROPERTY_VISIBILITY_CHOICE_MAP.keys())):
       visibility = getChoice(DRIVEFILE_PROPERTY_VISIBILITY_CHOICE_MAP, mapChoice=True)
     else:
       visibility = 'properties'
@@ -48781,16 +48787,17 @@ def getDriveFileCopyAttribute(myarg, body, parameters):
   elif myarg == 'writerscantshare':
     body['writersCanShare'] = not getBoolean()
   elif myarg == 'contentrestrictions':
-    body['contentRestrictions'] = [{}]
-    restriction = getChoice(DRIVE_FILE_CONTENT_RESTRICTIONS_CHOICE_MAP, mapChoice=True)
-    if restriction == 'readOnly':
+    while Cmd.PeekArgumentPresent(list(DRIVE_FILE_CONTENT_RESTRICTIONS_CHOICE_MAP.keys())):
+      body.setdefault('contentRestrictions', [{}])
+      restriction = getChoice(DRIVE_FILE_CONTENT_RESTRICTIONS_CHOICE_MAP, mapChoice=True)
       body['contentRestrictions'][0][restriction] = getBoolean()
-      if checkArgumentPresent(['reason']):
-        if body['contentRestrictions'][0][restriction]:
-          body['contentRestrictions'][0]['reason'] = getString(Cmd.OB_STRING, minLen=0)
-        else:
-          Cmd.Backup()
-          usageErrorExit(Msg.REASON_ONLY_VALID_WITH_CONTENTRESTRICTIONS_READONLY_TRUE)
+      if restriction == 'readOnly':
+        if checkArgumentPresent(['reason']):
+          if body['contentRestrictions'][0][restriction]:
+            body['contentRestrictions'][0]['reason'] = getString(Cmd.OB_STRING, minLen=0)
+          else:
+            Cmd.Backup()
+            usageErrorExit(Msg.REASON_ONLY_VALID_WITH_CONTENTRESTRICTIONS_READONLY_TRUE)
   elif myarg == 'property':
     driveprop = getDriveFileProperty()
     body.setdefault(driveprop['visibility'], {})
@@ -49682,6 +49689,7 @@ DRIVE_CAPABILITIES_SUBFIELDS_CHOICE_MAP = {
   }
 
 DRIVE_CONTENT_RESTRICTIONS_SUBFIELDS_CHOICE_MAP = {
+  'ownerrestricted': 'ownerRestricted',
   'readonly': 'readOnly',
   'reason': 'reason',
   'restrictinguser': 'restructingUser',
@@ -53953,7 +53961,7 @@ def _copyPermissions(drive, user, i, count, j, jcount,
       except (GAPI.badRequest, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
               GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.ownershipChangeAcrossDomainNotPermitted,
               GAPI.teamDriveDomainUsersOnlyRestriction, GAPI.teamDriveTeamMembersOnlyRestriction,
-              GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
+              GAPI.targetUserRoleLimitedByLicenseRestriction, GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
               GAPI.publishOutNotPermitted, GAPI.shareInNotPermitted, GAPI.shareOutNotPermitted, GAPI.shareOutNotPermittedToUser,
               GAPI.cannotShareTeamDriveTopFolderWithAnyoneOrDomains, GAPI.cannotShareTeamDriveWithNonGoogleAccounts,
               GAPI.ownerOnTeamDriveItemNotSupported,
@@ -55006,7 +55014,7 @@ def _updateMoveFilePermissions(drive, user, i, count,
         except (GAPI.badRequest, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
                 GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.ownershipChangeAcrossDomainNotPermitted,
                 GAPI.teamDriveDomainUsersOnlyRestriction, GAPI.teamDriveTeamMembersOnlyRestriction,
-                GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
+                GAPI.targetUserRoleLimitedByLicenseRestriction, GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
                 GAPI.publishOutNotPermitted, GAPI.shareInNotPermitted, GAPI.shareOutNotPermitted, GAPI.shareOutNotPermittedToUser,
                 GAPI.cannotShareTeamDriveTopFolderWithAnyoneOrDomains, GAPI.cannotShareTeamDriveWithNonGoogleAccounts,
                 GAPI.ownerOnTeamDriveItemNotSupported,
@@ -57990,7 +57998,7 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
               GAPI.cannotSetExpiration,
               GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.ownershipChangeAcrossDomainNotPermitted,
               GAPI.teamDriveDomainUsersOnlyRestriction, GAPI.teamDriveTeamMembersOnlyRestriction,
-              GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
+              GAPI.targetUserRoleLimitedByLicenseRestriction, GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
               GAPI.publishOutNotPermitted, GAPI.shareInNotPermitted, GAPI.shareOutNotPermitted, GAPI.shareOutNotPermittedToUser,
               GAPI.cannotShareTeamDriveTopFolderWithAnyoneOrDomains, GAPI.cannotShareTeamDriveWithNonGoogleAccounts,
               GAPI.ownerOnTeamDriveItemNotSupported,
@@ -58119,7 +58127,7 @@ def updateDriveFileACLs(users, useDomainAdminAccess=False):
               GAPI.cannotSetExpiration,
               GAPI.badRequest, GAPI.invalidOwnershipTransfer, GAPI.cannotRemoveOwner,
               GAPI.fileNeverWritable, GAPI.ownershipChangeAcrossDomainNotPermitted, GAPI.sharingRateLimitExceeded,
-              GAPI.insufficientAdministratorPrivileges,
+              GAPI.targetUserRoleLimitedByLicenseRestriction, GAPI.insufficientAdministratorPrivileges,
               GAPI.publishOutNotPermitted, GAPI.shareInNotPermitted, GAPI.shareOutNotPermitted, GAPI.shareOutNotPermittedToUser,
               GAPI.organizerOnNonTeamDriveItemNotSupported, GAPI.fileOrganizerOnNonTeamDriveNotSupported,
               GAPI.cannotUpdatePermission, GAPI.cannotModifyInheritedTeamDrivePermission, GAPI.fieldNotWritable) as e:
@@ -58218,7 +58226,7 @@ def createDriveFilePermissions(users, useDomainAdminAccess=False):
       except (GAPI.badRequest, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
               GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.ownershipChangeAcrossDomainNotPermitted,
               GAPI.teamDriveDomainUsersOnlyRestriction, GAPI.teamDriveTeamMembersOnlyRestriction,
-              GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
+              GAPI.targetUserRoleLimitedByLicenseRestriction, GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
               GAPI.publishOutNotPermitted, GAPI.shareInNotPermitted, GAPI.shareOutNotPermitted, GAPI.shareOutNotPermittedToUser,
               GAPI.cannotShareTeamDriveTopFolderWithAnyoneOrDomains, GAPI.cannotShareTeamDriveWithNonGoogleAccounts,
               GAPI.ownerOnTeamDriveItemNotSupported,
@@ -59230,7 +59238,7 @@ def _getSharedDriveRestrictions(myarg, body):
     return True
   return False
 
-def _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci=None):
+def _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci, returnIdOnly):
   action = Act.Get()
   name = f'orgUnits/-/memberships/shared_drive;{driveId}'
   if ci is None:
@@ -59240,8 +59248,9 @@ def _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci=None):
   try:
     callGAPI(ci.orgUnits().memberships(), 'move',
              name=name, body=cibody)
-    Act.Set(Act.MOVE)
-    entityModifierNewValueActionPerformed([Ent.SHAREDDRIVE, driveId], Act.MODIFIER_TO, f'{Ent.Singular(Ent.ORGANIZATIONAL_UNIT)}: {orgUnit}', i, count)
+    if not returnIdOnly:
+      Act.Set(Act.MOVE)
+      entityModifierNewValueActionPerformed([Ent.SHAREDDRIVE, driveId], Act.MODIFIER_TO, f'{Ent.Singular(Ent.ORGANIZATIONAL_UNIT)}: {orgUnit}', i, count)
   except (GAPI.notFound, GAPI.forbidden, GAPI.badRequest, GAPI.internalError,
           GAPI.noManageTeamDriveAdministratorPrivilege) as e:
     entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], str(e), i, count)
@@ -59254,10 +59263,11 @@ def _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci=None):
 #	[(theme|themeid <String>) | ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
 #	(<SharedDriveRestrictionsFieldName> <Boolean>)*
 #	[hide|hidden <Boolean>] [ou|org|orgunit <OrgUnitItem>]
+#	[errorretries <Integer>] [updateinitialdelay <Integer>] [updateretrydelay <Integer>]
 #	[(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*) | returnidonly]
 def createSharedDrive(users, useDomainAdminAccess=False):
   def waitingForCreationToComplete(sleep_time):
-    writeStdout(Ind.Spaces()+Msg.WAITING_FOR_SHARED_DRIVE_CREATION_TO_COMPLETE_SLEEPING.format(sleep_time))
+    writeStderr(Ind.Spaces()+Msg.WAITING_FOR_SHARED_DRIVE_CREATION_TO_COMPLETE_SLEEPING.format(sleep_time))
     time.sleep(sleep_time)
 
   requestId = str(uuid.uuid4())
@@ -59267,6 +59277,9 @@ def createSharedDrive(users, useDomainAdminAccess=False):
   addCSVData = {}
   hide = returnIdOnly = False
   orgUnit = orgUnitId = ci = None
+  errorRetries = 5
+  updateInitialDelay = 10
+  updateRetryDelay = 10
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if _getSharedDriveTheme(myarg, body):
@@ -59288,6 +59301,12 @@ def createSharedDrive(users, useDomainAdminAccess=False):
       addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
     elif myarg in ADMIN_ACCESS_OPTIONS:
       useDomainAdminAccess = True
+    elif myarg == 'errorretries':
+      errorRetries = getInteger(minVal=0, maxVal=10)
+    elif myarg == 'updateinitialdelay':
+      updateInitialDelay = getInteger(minVal=0, maxVal=60)
+    elif myarg == 'updateretrydelay':
+      updateRetryDelay = getInteger(minVal=0, maxVal=60)
     else:
       unknownArgumentExit()
   if csvPF:
@@ -59328,7 +59347,7 @@ def createSharedDrive(users, useDomainAdminAccess=False):
         break
       except (GAPI.transientError, GAPI.teamDriveAlreadyExists) as e:
         retry += 1
-        if retry > 3:
+        if retry > errorRetries:
           entityActionFailedWarning([Ent.USER, user, Ent.REQUEST_ID, requestId], str(e), i, count)
           break
         requestId = str(uuid.uuid4())
@@ -59342,7 +59361,8 @@ def createSharedDrive(users, useDomainAdminAccess=False):
         userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
         break
     if doUpdate and (updateBody or hide or orgUnit):
-      waitingForCreationToComplete(30)
+      if updateBody or hide:
+        waitingForCreationToComplete(updateInitialDelay)
       try:
         if updateBody:
           Act.Set(Act.UPDATE)
@@ -59351,20 +59371,21 @@ def createSharedDrive(users, useDomainAdminAccess=False):
             try:
               callGAPI(drive.drives(), 'update',
                        bailOnInternalError=True,
-                       throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.BAD_REQUEST,
+                       throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN,
                                                                    GAPI.NO_MANAGE_TEAMDRIVE_ADMINISTRATOR_PRIVILEGE,
-                                                                   GAPI.INTERNAL_ERROR, GAPI.FILE_NOT_FOUND],
+                                                                   GAPI.BAD_REQUEST, GAPI.INTERNAL_ERROR, GAPI.PERMISSION_DENIED,
+                                                                   GAPI.FILE_NOT_FOUND],
                        useDomainAdminAccess=useDomainAdminAccess, driveId=driveId, body=updateBody)
               if not returnIdOnly and not csvPF:
                 entityActionPerformed([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], i, count)
               break
             except GAPI.notFound as e:
               retry += 1
-              if retry > 3:
+              if retry > errorRetries:
                 entityActionFailedWarning([Ent.USER, user, Ent.REQUEST_ID, requestId], str(e), i, count)
                 break
-              waitingForCreationToComplete(retry*15)
-            except (GAPI.badRequest, GAPI.internalError) as e:
+              waitingForCreationToComplete(updateRetryDelay)
+            except (GAPI.badRequest, GAPI.internalError, GAPI.permissionDenied) as e:
               entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], str(e), i, count)
               break
             except GAPI.fileNotFound as e:
@@ -59385,12 +59406,12 @@ def createSharedDrive(users, useDomainAdminAccess=False):
               break
             except GAPI.notFound as e:
               retry += 1
-              if retry > 3:
+              if retry > errorRetries:
                 entityActionFailedWarning([Ent.USER, user, Ent.REQUEST_ID, requestId], str(e), i, count)
                 break
-              time.sleep(retry*retry)
+              waitingForCreationToComplete(updateRetryDelay)
         if orgUnit:
-          ci = _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci)
+          ci = _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci, returnIdOnly)
       except (GAPI.forbidden, GAPI.badRequest, GAPI.noManageTeamDriveAdministratorPrivilege) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], str(e), i, count)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
@@ -59459,7 +59480,7 @@ def updateSharedDrive(users, useDomainAdminAccess=False):
                  driveId=driveId)
         entityActionPerformed([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], i, count)
       if orgUnit:
-        ci = _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci)
+        ci = _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci, False)
     except (GAPI.notFound, GAPI.forbidden, GAPI.badRequest, GAPI.internalError,
             GAPI.noManageTeamDriveAdministratorPrivilege) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], str(e), i, count)

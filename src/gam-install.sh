@@ -289,7 +289,7 @@ if [ "$upgrade_only" = true ]; then
 fi
 
 # Set config command
-config_cmd="config no_browser false"
+#config_cmd="config no_browser false"
 
 while true; do
   read -p "Can you run a full browser on this machine? (usually Y for MacOS, N for Linux if you SSH into this machine) " yn
@@ -298,7 +298,8 @@ while true; do
       break
       ;;
     [Nn]*)
-      config_cmd="config no_browser true"
+#      config_cmd="config no_browser true"
+      touch "$target_dir/gam/nobrowser.txt" > /dev/null 2>&1
       break
       ;;
     *)
@@ -316,7 +317,8 @@ while true; do
       if [ "$adminuser" == "" ]; then
         read -p "Please enter your Google Workspace admin email address: " adminuser
       fi
-      "$target_dir/$target_gam" $config_cmd create project $adminuser
+#      "$target_dir/$target_gam" $config_cmd create project $adminuser
+      "$target_dir/$target_gam" create project $adminuser
       rc=$?
       if (( $rc == 0 )); then
         echo_green "Project creation complete."
@@ -341,7 +343,8 @@ while $project_created; do
   read -p "Are you ready to authorize GAM to perform Google Workspace management operations as your admin account? (yes or no) " yn
   case $yn in
     [Yy]*)
-      "$target_dir/$target_gam" $config_cmd oauth create $adminuser
+#      "$target_dir/$target_gam" $config_cmd oauth create $adminuser
+      "$target_dir/$target_gam" oauth create $adminuser
       rc=$?
       if (( $rc == 0 )); then
         echo_green "Admin authorization complete."
@@ -370,7 +373,8 @@ while $admin_authorized; do
         read -p "Please enter the email address of a regular Google Workspace user: " regularuser
       fi
       echo_yellow "Great! Checking service account scopes.This will fail the first time. Follow the steps to authorize and retry. It can take a few minutes for scopes to PASS after they've been authorized in the admin console."
-      "$target_dir/$target_gam" $config_cmd user $regularuser check serviceaccount
+#      "$target_dir/$target_gam" $config_cmd user $regularuser check serviceaccount
+      "$target_dir/$target_gam" user $regularuser check serviceaccount
       rc=$?
       if (( $rc == 0 )); then
         echo_green "Service account authorization complete."
@@ -391,7 +395,8 @@ while $admin_authorized; do
 done
 
 echo_green "Here's information about your new GAM installation:"
-"$target_dir/$target_gam" $config_cmd save version extended
+#"$target_dir/$target_gam" $config_cmd save version extended
+"$target_dir/$target_gam" version extended
 rc=$?
 if (( $rc != 0 )); then
   echo_red "ERROR: Failed running GAM for the first time with $rc. Please report this error to GAM mailing list. Exiting."

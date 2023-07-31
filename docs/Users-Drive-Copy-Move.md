@@ -308,7 +308,7 @@ When copying folders, the option is only useful when copying a folder without re
 To retrieve the file ID with `returnidonly`:
 ```
 Linux/MacOS
-fileId=gam user user@domain.com copy drivefile <DriveFileEntity> ... returnidonly
+fileId=$(gam user user@domain.com copy drivefile <DriveFileEntity> ... returnidonly)
 Windows PowerShell
 $fileId = & gam user user@domain.com copy drivefile <DriveFileEntity> ... returnidonly
 ```

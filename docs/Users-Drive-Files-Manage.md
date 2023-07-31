@@ -108,8 +108,7 @@
 ```
 ```
 <DriveFileAttribute> ::=
-        (contentrestrictions readonly false)|
-        (contentrestrictions readonly true [reason <String>])|
+        (contentrestrictions (readonly false)|(readonly true [reason <String>]) [ownerrestricted [<Boolean>]])|
         (copyrequireswriterpermission [<Boolean>])|
         (description <String>)|
         (folderColorRgb <ColorValue>)|
@@ -214,7 +213,7 @@ Alternatively, you can direct the output to a CSV file:
 To retrieve the file ID with `returnidonly`:
 ```
 Linux/MacOS
-fileId=`gam user user@domain.com create drivefile ... returnidonly`
+fileId=$(gam user user@domain.com create drivefile ... returnidonly)
 Windows PowerShell
 $fileId = & gam user user@domain.com create drivefile ... returnidonly
 ```
@@ -512,7 +511,7 @@ By default, the user, file name, updated file name and id values are displayed o
 To retrieve the file ID with `returnidonly`:
 ```
 Linux/MacOS
-fileId=`gam user user@domain.com update drivefile <DriveFileEntity> copy ... returnidonly`
+fileId=$(gam user user@domain.com update drivefile <DriveFileEntity> copy ... returnidonly)
 Windows PowerShell
 $fileId = & gam user user@domain.com update drivefile <DriveFileEntity> copy ... returnidonly
 ```

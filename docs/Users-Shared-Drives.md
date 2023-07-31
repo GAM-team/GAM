@@ -181,6 +181,7 @@ gam <UserTypeEntity> create teamdrive <Name>
          ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
         (<SharedDriveRestrictionsSubfieldName> <Boolean>)*
         [hide <Boolean>] [ou|org|orgunit <OrgUnitItem>]
+        [errorretries <Integer>] [updateinitialdelay <Integer>] [updateretrydelay <Integer>]
         [(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*) | returnidonly]
 ```
 * `themeid` - a Shared Drive themeId obtained from `show teamdrivethemes`
@@ -191,12 +192,21 @@ gam <UserTypeEntity> create teamdrive <Name>
 * `color` - set the Shared Drive color
 * `<SharedDriveRestrictionsSubfieldName> <Boolean>` - Set Shared Drive Restrictions
 * `hide <Boolean>` - Set Shared Drive visibility
-* `ou|org|orgunit <OrgUnitItem>` - See: https://workspaceupdates.googleblog.com/2022/05/shared-drives-in-organizational-units-open-beta.html
 
 If any attributes other than `themeid` are specified, GAM must create the Drive and then update the Drive attributes.
 Even though the Create API returns success, the Update API fails and reports that the Drive does not exist. 
-For this reason, GAM waits 30 seconds after the create before attempting the update. GAM repeats the update
-with waits of 15, 30, and 45 seconds if the Update API continues to fail.
+* `errorretries <Integer>` - Number of create/update error retries; default value 5, range 0-10
+* `updateinitialdelay <Integer>` - Initial delay after create before update: default value 10, range 0-60
+* `updateretrydelay <Integer>` - Retry delay when update fails; default value 10, range 0-60
+
+For this reason, GAM waits `updateinitialdelay <Integer>` seconds after the create before attempting the update.
+GAM repeats the update `errorretries <Integer>` times waiting `updateretrydelay <Integer>` between tries
+if the Update API continues to fail.
+
+This is acceptable when creating a single Shared Drive, for bulk Shared Drive creation see [Bulk Create Shared Drives](#bulk-create-shared-drives).
+
+This option is only available when the command is run as an administrator.
+* `ou|org|orgunit <OrgUnitItem>` - See: https://workspaceupdates.googleblog.com/2022/05/shared-drives-in-organizational-units-open-beta.html
 
 By default, the user and Shared Drive name and ID values are displayed on stdout.
 * `csv [todrive <ToDriveAttribute>*]` - Write user, Shared Drive name and ID values to a CSV file.
@@ -207,9 +217,9 @@ When either of these options is chosen, no infomation about Shared Drive restric
 To retrieve the Shared Drive ID with `returnidonly`:
 ```
 Linux/MacOS
-teamDriveId=`gam user user@domain.com create teamdrive ... returnidonly`
+teamDriveId=$(gam user user@domain.com create teamdrive ... returnidonly)
 Windows PowerShell
-$teamDriveId = & gam user user@domain.com create teamdrive ... returnidonly`
+$teamDriveId = & gam user user@domain.com create teamdrive ... returnidonly
 ```
 
 ## Bulk Create Shared Drives
