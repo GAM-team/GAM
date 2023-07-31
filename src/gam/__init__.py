@@ -71,12 +71,14 @@ import shlex
 import signal
 import smtplib
 import socket
+import sqlite3
 import ssl
 import string
 import struct
 import subprocess
 import sys
 from tempfile import TemporaryFile
+import termios
 import threading
 import time
 from traceback import print_exc
@@ -4470,6 +4472,36 @@ def shortenURL(long_url):
   except:
     return long_url
 
+def runSqliteQuery(db_file, query):
+  conn = sqlite3.connect(db_file)
+  curr = conn.cursor()
+  curr.execute(query)
+  return curr.fetchone()[0]
+
+def refreshCredentialsWithReauth(credentials):
+  old_settings = termios.tcgetattr(sys.stdin)
+  # First makes sure gcloud has a valid access token and thus
+  # should also have a valid RAPT token
+  try:
+    subprocess.run(['gcloud',
+                    'auth',
+                    'print-identity-token',
+                    '--no-user-output-enabled'])
+    # now determine gcloud's config path and token file
+    gcloud_path_result = subprocess.run(['gcloud',
+                                         'info',
+                                         '--format=value(config.paths.global_config_dir)'],
+            capture_output=True)
+  except KeyboardInterrupt:
+    # avoids loss of terminal echo on *nix
+    termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+    printBlankLine()
+    raise KeyboardInterrupt
+  token_path = gcloud_path_result.stdout.decode().strip()
+  token_file = f'{token_path}/access_tokens.db'
+  credentials._rapt_token = runSqliteQuery(token_file,
+          f'SELECT rapt_token FROM access_tokens WHERE account_id = "{_getAdminEmail()}"')
+
 def getClientCredentials(forceRefresh=False, forceWrite=False, filename=None, api=None, noDASA=False, refreshOnly=False, noScopes=False):
   """Gets OAuth2 credentials which are guaranteed to be fresh and valid.
      Locks during read and possible write so that only one process will
@@ -4496,6 +4528,9 @@ def getClientCredentials(forceRefresh=False, forceWrite=False, filename=None, ap
           if isinstance(e.args, tuple):
             e = e.args[0]
           if 'Reauthentication is needed' in str(e):
+            if GC.Values[GC.ENABLE_GCLOUD_REAUTH]:
+              refreshCredentialsWithReauth(credentials)
+              continue
             e = Msg.REAUTHENTICATION_IS_NEEDED
           handleOAuthTokenError(e, False)
   return credentials
