@@ -149,6 +149,8 @@ DRIVE_V3_NATIVE_NAMES = 'drive_v3_native_names'
 EMAIL_BATCH_SIZE = 'email_batch_size'
 # Enable Delegated Admin Service Account
 ENABLE_DASA = 'enable_dasa'
+# Enable Gcloud reauth
+ENABLE_GCLOUD_REAUTH = 'enable_gcloud_reauth'
 # When retrieving lists of calendar events from API, how many should be retrieved in each chunk
 EVENT_MAX_RESULTS = 'event_max_results'
 # Path to extra_args.txt
@@ -331,6 +333,7 @@ Defaults = {
   DRIVE_V3_NATIVE_NAMES: TRUE,
   EMAIL_BATCH_SIZE: '50',
   ENABLE_DASA: FALSE,
+  ENABLE_GCLOUD_REAUTH: TRUE,
   EVENT_MAX_RESULTS: '250',
   EXTRA_ARGS: '',
   INTER_BATCH_WAIT: '0',
@@ -474,6 +477,7 @@ VAR_INFO = {
   DRIVE_V3_NATIVE_NAMES: {VAR_TYPE: TYPE_BOOLEAN},
   EMAIL_BATCH_SIZE: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 100)},
   ENABLE_DASA: {VAR_TYPE: TYPE_BOOLEAN, VAR_SIGFILE: 'enabledasa.txt', VAR_SFFT: (FALSE, TRUE)},
+  ENABLE_GCLOUD_REAUTH: {VAR_TYPE: TYPE_BOOLEAN},
   EVENT_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 2500)},
   EXTRA_ARGS: {VAR_TYPE: TYPE_FILE, VAR_SIGFILE: FN_EXTRA_ARGS_TXT, VAR_SFFT: ('', FN_EXTRA_ARGS_TXT), VAR_ACCESS: os.R_OK},
   INTER_BATCH_WAIT: {VAR_TYPE: TYPE_FLOAT, VAR_LIMITS: (0.0, 60.0)},
