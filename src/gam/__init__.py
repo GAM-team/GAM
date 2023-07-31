@@ -8389,7 +8389,7 @@ class CSVPrintFile():
               except (GAPI.badRequest, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
                       GAPI.insufficientFilePermissions, GAPI.insufficientParentPermissions, GAPI.unknownError, GAPI.ownershipChangeAcrossDomainNotPermitted,
                       GAPI.teamDriveDomainUsersOnlyRestriction, GAPI.teamDriveTeamMembersOnlyRestriction,
-                      GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
+                      GAPI.targetUserRoleLimitedByLicenseRestriction, GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
                       GAPI.publishOutNotPermitted, GAPI.shareInNotPermitted, GAPI.shareOutNotPermitted, GAPI.shareOutNotPermittedToUser,
                       GAPI.cannotShareTeamDriveTopFolderWithAnyoneOrDomains, GAPI.cannotShareTeamDriveWithNonGoogleAccounts,
                       GAPI.ownerOnTeamDriveItemNotSupported,
@@ -24751,10 +24751,10 @@ def doInfoChatMember():
   infoChatMember([None])
 
 # gam [<UserTypeEntity>] show chatmembers <ChatSpace>
-#	[showinvited [<Boolean>]] [filter <String>]
+#	[showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
 #	[formatjson]
 # gam [<UserTypeEntity>] print chatmembers [todrive <ToDriveAttribute>*] <ChatSpace>
-#	[showinvited [<Boolean>]] [filter <String>]
+#	[showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
 #	[formatjson [quotechar <Character>]]
 def printShowChatMembers(users):
   def _printChatMember(user, member):
@@ -24773,8 +24773,8 @@ def printShowChatMembers(users):
   cd = buildGAPIObject(API.DIRECTORY)
   csvPF = CSVPrintFile(['User', 'name'] if not isinstance(users, list) else ['name']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
-  parent = pfilter = None
-  showInvited = False
+  kwargs = {}
+  parent = None
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -24782,16 +24782,18 @@ def printShowChatMembers(users):
     elif myarg == 'space' or myarg.startswith('spaces/'):
       parent = getChatSpace(myarg)
     elif myarg == 'showinvited':
-      showInvited = getBoolean()
+      kwargs['showInvited'] = getBoolean()
+    elif myarg == 'showgroups':
+      kwargs['showGroups'] = getBoolean()
     elif myarg =='filter':
-      pfilter = getString(Cmd.OB_STRING)
+      kwargs['filter'] = getString(Cmd.OB_STRING)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if not parent:
     missingArgumentExit('space')
   qfilter = f'{Ent.Singular(Ent.CHAT_SPACE)}: {parent}'
-  if pfilter:
-    qfilter += f', {pfilter}'
+  if 'filter' in kwargs:
+    qfilter += f', {kwargs["filter"]}'
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -24802,7 +24804,7 @@ def printShowChatMembers(users):
       members = callGAPIpages(chat.spaces().members(), 'list', 'memberships',
                               pageMessage=_getChatPageMessage(Ent.CHAT_MEMBER, user, i, count, qfilter),
                               throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                              pageSize=CHAT_PAGE_SIZE, parent=parent, filter=pfilter, showInvited=showInvited)
+                              pageSize=CHAT_PAGE_SIZE, parent=parent, **kwargs)
       for member in members:
         _getChatMemberEmail(cd, member)
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
@@ -53924,7 +53926,7 @@ def _copyPermissions(drive, user, i, count, j, jcount,
       except (GAPI.badRequest, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
               GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.ownershipChangeAcrossDomainNotPermitted,
               GAPI.teamDriveDomainUsersOnlyRestriction, GAPI.teamDriveTeamMembersOnlyRestriction,
-              GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
+              GAPI.targetUserRoleLimitedByLicenseRestriction, GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
               GAPI.publishOutNotPermitted, GAPI.shareInNotPermitted, GAPI.shareOutNotPermitted, GAPI.shareOutNotPermittedToUser,
               GAPI.cannotShareTeamDriveTopFolderWithAnyoneOrDomains, GAPI.cannotShareTeamDriveWithNonGoogleAccounts,
               GAPI.ownerOnTeamDriveItemNotSupported,
@@ -54977,7 +54979,7 @@ def _updateMoveFilePermissions(drive, user, i, count,
         except (GAPI.badRequest, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
                 GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.ownershipChangeAcrossDomainNotPermitted,
                 GAPI.teamDriveDomainUsersOnlyRestriction, GAPI.teamDriveTeamMembersOnlyRestriction,
-                GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
+                GAPI.targetUserRoleLimitedByLicenseRestriction, GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
                 GAPI.publishOutNotPermitted, GAPI.shareInNotPermitted, GAPI.shareOutNotPermitted, GAPI.shareOutNotPermittedToUser,
                 GAPI.cannotShareTeamDriveTopFolderWithAnyoneOrDomains, GAPI.cannotShareTeamDriveWithNonGoogleAccounts,
                 GAPI.ownerOnTeamDriveItemNotSupported,
@@ -57961,7 +57963,7 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
               GAPI.cannotSetExpiration,
               GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.ownershipChangeAcrossDomainNotPermitted,
               GAPI.teamDriveDomainUsersOnlyRestriction, GAPI.teamDriveTeamMembersOnlyRestriction,
-              GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
+              GAPI.targetUserRoleLimitedByLicenseRestriction, GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
               GAPI.publishOutNotPermitted, GAPI.shareInNotPermitted, GAPI.shareOutNotPermitted, GAPI.shareOutNotPermittedToUser,
               GAPI.cannotShareTeamDriveTopFolderWithAnyoneOrDomains, GAPI.cannotShareTeamDriveWithNonGoogleAccounts,
               GAPI.ownerOnTeamDriveItemNotSupported,
@@ -58090,7 +58092,7 @@ def updateDriveFileACLs(users, useDomainAdminAccess=False):
               GAPI.cannotSetExpiration,
               GAPI.badRequest, GAPI.invalidOwnershipTransfer, GAPI.cannotRemoveOwner,
               GAPI.fileNeverWritable, GAPI.ownershipChangeAcrossDomainNotPermitted, GAPI.sharingRateLimitExceeded,
-              GAPI.insufficientAdministratorPrivileges,
+              GAPI.targetUserRoleLimitedByLicenseRestriction, GAPI.insufficientAdministratorPrivileges,
               GAPI.publishOutNotPermitted, GAPI.shareInNotPermitted, GAPI.shareOutNotPermitted, GAPI.shareOutNotPermittedToUser,
               GAPI.organizerOnNonTeamDriveItemNotSupported, GAPI.fileOrganizerOnNonTeamDriveNotSupported,
               GAPI.cannotUpdatePermission, GAPI.cannotModifyInheritedTeamDrivePermission, GAPI.fieldNotWritable) as e:
@@ -58189,7 +58191,7 @@ def createDriveFilePermissions(users, useDomainAdminAccess=False):
       except (GAPI.badRequest, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
               GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.ownershipChangeAcrossDomainNotPermitted,
               GAPI.teamDriveDomainUsersOnlyRestriction, GAPI.teamDriveTeamMembersOnlyRestriction,
-              GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
+              GAPI.targetUserRoleLimitedByLicenseRestriction, GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
               GAPI.publishOutNotPermitted, GAPI.shareInNotPermitted, GAPI.shareOutNotPermitted, GAPI.shareOutNotPermittedToUser,
               GAPI.cannotShareTeamDriveTopFolderWithAnyoneOrDomains, GAPI.cannotShareTeamDriveWithNonGoogleAccounts,
               GAPI.ownerOnTeamDriveItemNotSupported,
