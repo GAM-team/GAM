@@ -78,7 +78,11 @@ import struct
 import subprocess
 import sys
 from tempfile import TemporaryFile
-import termios
+try:
+  import termios
+except ImportError:
+  # termios does not exist for Windows
+  pass
 import threading
 import time
 from traceback import print_exc
@@ -4479,7 +4483,8 @@ def runSqliteQuery(db_file, query):
   return curr.fetchone()[0]
 
 def refreshCredentialsWithReauth(credentials):
-  old_settings = termios.tcgetattr(sys.stdin)
+  if 'termios' in sys.modules:
+    old_settings = termios.tcgetattr(sys.stdin)
   # First makes sure gcloud has a valid access token and thus
   # should also have a valid RAPT token
   try:
@@ -4494,7 +4499,8 @@ def refreshCredentialsWithReauth(credentials):
             capture_output=True)
   except KeyboardInterrupt:
     # avoids loss of terminal echo on *nix
-    termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+    if 'termios' in sys.modules:
+      termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
     printBlankLine()
     raise KeyboardInterrupt
   token_path = gcloud_path_result.stdout.decode().strip()
