@@ -620,7 +620,7 @@ jobs:
         env:
           PASSCODE: ${{ secrets.PASSCODE }}
         run: |
-             if [[ "${RUNNER_OS}" == "macOS" ]]; then
+             if ([ "${RUNNER_OS}" == "macOS" ] && ! which gpg > /dev/null); then
                brew install gnupg
              fi
              source ../.github/actions/decrypt.sh ../.github/actions/creds.tar.xz.gpg creds.tar.xz "${GAMCFGDIR}"
