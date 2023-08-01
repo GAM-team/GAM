@@ -668,6 +668,8 @@ jobs:
              for i in {1..10}; do
                echo "${newbase}-bulkuser-$i" >> sample.csv;
              done
+             driveid=$($gam user $gam_user add shareddrive "${newbase}" returnidonly)
+             echo "Created shared drive ${driveid}"
              $gam create user $newuser firstname GHA lastname $JID displayname "Github Actions ${JID}" password random ou "${newou}" recoveryphone 12125121110 recoveryemail jay0lee@gmail.com gha.jid $JID languages en+,en-GB-
              $gam user $newuser update photo https://dummyimage.com/400x600/000/fff
              $gam user $newuser get photo
@@ -791,8 +793,6 @@ jobs:
              $gam create caalevel "zzz_${newbase}" basic condition ipsubnetworks 1.1.1.1/32,2.2.2.2/32 endcondition
              $gam print caalevels
              $gam delete caalevel "zzz_${newbase}"
-             driveid=$($gam user $gam_user add shareddrive "${newbase}" returnidonly)
-             echo "Created shared drive ${driveid}"
              $gam user $gam_user add drivefile localfile gam.py parentid "${driveid}"
              $gam user $gam_user update shareddrive "${driveid}" ou "${newou}"
              $gam user $gam_user show shareddrives asadmin
