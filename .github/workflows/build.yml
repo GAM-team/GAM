@@ -718,7 +718,7 @@ jobs:
              $gam user $gam_user sendemail subject "GHA send $gam_user $newbase" file gam.py recipient admin@pdl.jaylee.us
              $gam user $gam_user draftemail subject "GHA draft $newbase" message "Draft message test"
              $gam csvfile sample.csv:email waitformailbox
-             $gam user $newuser delegate to "${newbase}-bulkuser-1"
+             $gam user $newuser delegate to "${newbase}-bulkuser-1" || if [ $? != 50 ]; then exit $?; fi # expect a 50 return code (delegation failed)
              $gam users "$gam_user $newbase-bulkuser-1 $newbase-bulkuser-2 $newbase-bulkuser-3" delete messages query in:anywhere maxtodelete 99999 doit || if [ $? != 60 ]; then exit $?; fi # expect a 60 return code (no messages)
              $gam users "$newbase-bulkuser-4 $newbase-bulkuser-5 $newbase-bulkuser-6" trash messages query in:anywhere maxtotrash 99999 doit || if [ $? != 60 ]; then exit $?; fi # expect a 60 return code (no messages)
              $gam users "$newbase-bulkuser-7 $newbase-bulkuser-8 $newbase-bulkuser-9" modify messages query in:anywhere maxtomodify 99999 addlabel IMPORTANT addlabel STARRED doit || if [ $? != 60 ]; then exit $?; fi # expect a 60 return code (no messages)
@@ -773,7 +773,7 @@ jobs:
              $gam create device serialnumber $sn devicetype android
              $gam config enable_dasa true save
              $gam delete user $newuser
-             $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail
+             $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail  || if [ $? != 50 ]; then exit $?; fi # expect a 50 return code (vault hold on user)
              $gam print mobile
              $gam print devices
              $gam print browsers
