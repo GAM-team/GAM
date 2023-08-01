@@ -114,7 +114,7 @@ jobs:
           path: |
             bin.tar.xz
             src/cpython
-          key: gam-${{ matrix.jid }}-20230728
+          key: gam-${{ matrix.jid }}-20230801
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
