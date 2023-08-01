@@ -133,7 +133,7 @@ case $gamos in
           echo_red "Sorry, you need to be running at least glibc $useglibc to run GAM"
           exit
         fi
-        gamfile="linux-arm64-$useglibc.tar.xz";;
+        gamfile="linux-aarch64-$useglibc.tar.xz";;
       *)
         echo_red "ERROR: this installer currently only supports x86_64 and arm64 Linux. Looks like you're running on $gamarch. Exiting."
         exit
