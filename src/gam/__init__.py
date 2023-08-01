@@ -4505,8 +4505,13 @@ def refreshCredentialsWithReauth(credentials):
     raise KeyboardInterrupt
   token_path = gcloud_path_result.stdout.decode().strip()
   token_file = f'{token_path}/access_tokens.db'
-  credentials._rapt_token = runSqliteQuery(token_file,
-          f'SELECT rapt_token FROM access_tokens WHERE account_id = "{_getAdminEmail()}"')
+  admin_email = _getAdminEmail()
+  try:
+    credentials._rapt_token = runSqliteQuery(token_file,
+            f'SELECT rapt_token FROM access_tokens WHERE account_id = "{admin_email}"')
+  except TypeError:
+    systemErrorExit(SYSTEM_ERROR_RC,
+            f'ERROR: failed to run gcloud as {admin_email}. Please make sure it\'s setup')
 
 def getClientCredentials(forceRefresh=False, forceWrite=False, filename=None, api=None, noDASA=False, refreshOnly=False, noScopes=False):
   """Gets OAuth2 credentials which are guaranteed to be fresh and valid.
