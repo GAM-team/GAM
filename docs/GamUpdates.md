@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.61.20
+
+Remove `audit.googleapis.com` from the list of project APIs.
+
 ### 6.61.19
 
 Fixed bug in `gam <UserTypeEntity> print|show chatmembers <ChatSpace>` that caused a trap.

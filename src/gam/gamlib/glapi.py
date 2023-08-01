@@ -146,7 +146,7 @@ PROJECT_APIS = [
   'alertcenter.googleapis.com',
   'analytics.googleapis.com',
   'analyticsadmin.googleapis.com',
-  'audit.googleapis.com',
+#  'audit.googleapis.com',
   'calendar-json.googleapis.com',
   'chat.googleapis.com',
   'chromemanagement.googleapis.com',

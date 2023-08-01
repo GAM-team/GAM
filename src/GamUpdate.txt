@@ -2,6 +2,10 @@
 
 Merged GAM-Team version
 
+6.61.20
+
+Remove `audit.googleapis.com` from the list of project APIs.
+
 6.61.19
 
 Fixed bug in `gam <UserTypeEntity> print|show chatmembers <ChatSpace>` that caused a trap.
