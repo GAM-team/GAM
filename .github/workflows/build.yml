@@ -772,7 +772,6 @@ jobs:
              export sn="$JID$JID$JID$JID-$(openssl rand -base64 32 | sed 's/[^a-zA-Z0-9]//g')"
              $gam create device serialnumber $sn devicetype android
              $gam config enable_dasa true save
-             $gam delete user $newuser
              $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail  || if [ $? != 50 ]; then exit $?; fi # expect a 50 return code (vault hold on user)
              $gam print mobile
              $gam print devices
