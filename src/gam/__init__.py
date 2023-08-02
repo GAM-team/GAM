@@ -4483,6 +4483,7 @@ def runSqliteQuery(db_file, query):
   return curr.fetchone()[0]
 
 def refreshCredentialsWithReauth(credentials):
+  writeStderr(Msg.CALLING_GCLOUD_FOR_REAUTH)
   if 'termios' in sys.modules:
     old_settings = termios.tcgetattr(sys.stdin)
   # First makes sure gcloud has a valid access token and thus
