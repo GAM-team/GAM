@@ -4492,18 +4492,19 @@ def refreshCredentialsWithReauth(credentials):
     subprocess.run(['gcloud',
                     'auth',
                     'print-identity-token',
-                    '--no-user-output-enabled'])
+                    '--no-user-output-enabled'],
+                   check=False)
     # now determine gcloud's config path and token file
     gcloud_path_result = subprocess.run(['gcloud',
                                          'info',
                                          '--format=value(config.paths.global_config_dir)'],
-            capture_output=True)
-  except KeyboardInterrupt:
+            capture_output=True, ckeck=False)
+  except KeyboardInterrupt as e:
     # avoids loss of terminal echo on *nix
     if 'termios' in sys.modules:
       termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
     printBlankLine()
-    raise KeyboardInterrupt
+    raise KeyboardInterrupt from e
   token_path = gcloud_path_result.stdout.decode().strip()
   token_file = f'{token_path}/access_tokens.db'
   admin_email = _getAdminEmail()
@@ -4512,10 +4513,10 @@ def refreshCredentialsWithReauth(credentials):
             f'SELECT rapt_token FROM access_tokens WHERE account_id = "{admin_email}"')
   except TypeError:
     systemErrorExit(SYSTEM_ERROR_RC,
-            f'failed to run gcloud as {admin_email}. Please make sure it\'s setup')
+            f'Failed to run gcloud as {admin_email}. Please make sure it\'s setup')
   if not credentials._rapt_token:
     systemErrorExit(SYSTEM_ERROR_RC,
-            f'failed to retrieve reauth token from gcloud. You may need to wait until gcloud is also prompted for reauth.')
+            f'Failed to retrieve reauth token from gcloud. You may need to wait until gcloud is also prompted for reauth.')
 
 def getClientCredentials(forceRefresh=False, forceWrite=False, filename=None, api=None, noDASA=False, refreshOnly=False, noScopes=False):
   """Gets OAuth2 credentials which are guaranteed to be fresh and valid.
