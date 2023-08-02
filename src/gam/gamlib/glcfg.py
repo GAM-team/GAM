@@ -400,6 +400,7 @@ Values = {DEBUG_LEVEL: 0}
 TYPE_BOOLEAN = 'bool'
 TYPE_CHARACTER = 'char'
 TYPE_CHOICE = 'choi'
+TYPE_CHOICE_LIST = 'chol'
 TYPE_DATETIME = 'datm'
 TYPE_DIRECTORY = 'dire'
 TYPE_EMAIL = 'emai'
