@@ -1602,25 +1602,19 @@ def getTopLevelOrgId(cd, parentOrgUnitPath):
       checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, parentOrgUnitPath)
       return None
   try:
-    result = callGAPI(cd.orgunits(), 'insert',
-                      throwReasons=[GAPI.INVALID_ORGUNIT, GAPI.BACKEND_ERROR,
-                                    GAPI.BAD_REQUEST, GAPI.INVALID_CUSTOMER_ID, GAPI.LOGIN_REQUIRED],
-                      customerId=GC.Values[GC.CUSTOMER_ID], body={'name': 'temp-delete-me', 'parentOrgUnitPath': parentOrgUnitPath}, fields='parentOrgUnitId,orgUnitId')
-  except (GAPI.invalidOrgunit, GAPI.backendError):
+    result = callGAPI(cd.orgunits(), 'list',
+                      throwReasons=GAPI.ORGUNIT_GET_THROW_REASONS,
+                      customerId=GC.Values[GC.CUSTOMER_ID], orgUnitPath='/', type='allIncludingParent',
+                      fields='organizationUnits(orgUnitId,orgUnitPath)')
+    for orgUnit in result.get('organizationUnits', []):
+      if orgUnit['orgUnitPath'] == '/':
+        return orgUnit['orgUnitId']
+    return None
+  except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError):
     return None
   except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
     checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, parentOrgUnitPath)
     return None
-  try:
-    callGAPI(cd.orgunits(), 'delete',
-             throwReasons=[GAPI.CONDITION_NOT_MET, GAPI.INVALID_ORGUNIT, GAPI.ORGUNIT_NOT_FOUND, GAPI.BACKEND_ERROR,
-                           GAPI.BAD_REQUEST, GAPI.INVALID_CUSTOMER_ID, GAPI.LOGIN_REQUIRED],
-             customerId=GC.Values[GC.CUSTOMER_ID], orgUnitPath=result['orgUnitId'])
-  except (GAPI.conditionNotMet, GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError):
-    pass
-  except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
-    checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, parentOrgUnitPath)
-  return result['parentOrgUnitId']
 
 def getOrgUnitId(cd=None, orgUnit=None):
   if cd is None:
