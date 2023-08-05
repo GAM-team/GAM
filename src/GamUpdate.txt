@@ -2,6 +2,12 @@
 
 Merged GAM-Team version
 
+6.61.21
+
+Updated `gam <UserTypeEntity> empty drivetrash <SharedDriveEntity>` to use new Drive API v3
+functionality for emptying the trash of a Shared Drive with a single API call. Previously, GAM had to purge each
+individual file and folder in the trash.
+
 6.61.20
 
 Remove `audit.googleapis.com` from the list of project APIs.

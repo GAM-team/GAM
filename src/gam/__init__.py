@@ -57832,43 +57832,28 @@ def emptyDriveTrash(users):
   else:
     fileIdEntity = {}
   checkForExtraneousArguments()
+  kwargs = {'driveId': None}
   i, count, users = getEntityArgument(users)
-  if not fileIdEntity:
-    for user in users:
-      i += 1
+  for user in users:
+    i += 1
+    if not fileIdEntity:
       user, drive = buildGAPIServiceObject(API.DRIVE3, user, i, count)
       if not drive:
         continue
-      try:
-        callGAPI(drive.files(), 'emptyTrash',
-                 throwReasons=GAPI.DRIVE_USER_THROW_REASONS)
-        entityActionPerformed([Ent.USER, user, Ent.DRIVE_TRASH, None], i, count)
-      except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
-  else:
-    Act.Set(Act.PURGE)
-    fileIdEntity['shareddrivefilequery'] = 'trashed = true'
-    for user in users:
-      i += 1
-      user, drive, jcount = _validateUserGetSharedDriveFileIDs(user, i, count, fileIdEntity, entityType=Ent.DRIVE_FILE_OR_FOLDER)
-      if jcount == 0:
+    else:
+      user, drive = _validateUserSharedDrive(user, i, count, fileIdEntity)
+      if not drive:
         continue
-      Ind.Increment()
-      j = 0
-      for fileId in fileIdEntity['list']:
-        j += 1
-        try:
-          callGAPI(drive.files(), 'delete',
-                   throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS,
-                   fileId=fileId, supportsAllDrives=True)
-          fileName = fileId
-          entityActionPerformed([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, fileName], j, jcount)
-        except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.unknownError) as e:
-          entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], str(e), j, jcount)
-        except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-          userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
-          break
-      Ind.Decrement()
+      kwargs['driveId'] = fileIdEntity['shareddrive']['driveId']
+    try:
+      callGAPI(drive.files(), 'emptyTrash',
+               throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND],
+               **kwargs)
+      entityActionPerformed([Ent.USER, user, Ent.DRIVE_TRASH, kwargs['driveId']], i, count)
+    except GAPI.notFound as e:
+      entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, kwargs['driveId']], str(e), i, count)
+    except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
+      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
 
 def _getDriveFileACLPrintKeysTimeObjects():
   printKeys = ['id', 'type', 'emailAddress', 'domain', 'role', 'permissionDetails',
