@@ -201,6 +201,7 @@ class GamEntity():
   EMAIL = 'emai'
   EMAIL_ALIAS = 'emal'
   EMAIL_SETTINGS = 'emse'
+  END_TIME = 'endt'
   ENTITY = 'enti'
   EVENT = 'evnt'
   FEATURE = 'feat'
@@ -321,6 +322,7 @@ class GamEntity():
   SOURCE_USER = 'src'
   SPREADSHEET = 'sprd'
   SPREADSHEET_RANGE = 'ssrn'
+  START_TIME = 'strt'
   STATUS = 'stat'
   STUDENT = 'stud'
   SUBSCRIPTION = 'subs'
@@ -358,6 +360,7 @@ class GamEntity():
   VAULT_OPERATION = 'vlto'
   VAULT_QUERY = 'vltq'
   WEBCLIPS_ENABLED = 'webc'
+  WORKING_LOCATION = 'wrkl'
   # _NAMES[0] is plural, _NAMES[1] is singular unless the item name is explicitly plural (Calendar Settings)
   # For items with Boolean values, both entries are singular (Forward, POP)
   # These values can be translated into other languages
@@ -523,6 +526,7 @@ class GamEntity():
     EMAIL: ['Email Addresses', 'Email Address'],
     EMAIL_ALIAS: ['Email Aliases', 'Email Alias'],
     EMAIL_SETTINGS: ['Email Settings', 'Email Settings'],
+    END_TIME: ['End Times', 'End Time'],
     ENTITY: ['Entities', 'Entity'],
     EVENT: ['Events', 'Event'],
     FEATURE: ['Features', 'Feature'],
@@ -643,6 +647,7 @@ class GamEntity():
     SOURCE_USER: ['Source Users', 'Source User'],
     SPREADSHEET: ['Spreadsheets', 'Spreadsheet'],
     SPREADSHEET_RANGE: ['Spreadsheet Ranges', 'Spreadsheet Range'],
+    START_TIME: ['Start Times', 'Start Time'],
     STATUS: ['Status', 'Status'],
     STUDENT: ['Students', 'Student'],
     SUBSCRIPTION: ['Subscriptions', 'Subscription'],
@@ -680,6 +685,7 @@ class GamEntity():
     VAULT_OPERATION: ['Vault Operations', 'Vault Operation'],
     VAULT_QUERY: ['Vault Queries', 'Vault Query'],
     WEBCLIPS_ENABLED: ['Web Clips Enabled', 'Web Clips Enabled'],
+    WORKING_LOCATION: ['Working Locations', 'Working Location'],
     ROLE_MANAGER: ['Managers', 'Manager'],
     ROLE_MEMBER: ['Members', 'Member'],
     ROLE_OWNER: ['Owners', 'Owner'],
