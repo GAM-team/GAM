@@ -10,6 +10,20 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.62.00
+
+Added `output_dateformat` and `output_timeformat` variables to `gam.cfg` that provide alternate
+output date and time formats that may be required by programs that will be processing the data.
+GAM will not accept alternate date/time formats as input.
+
+* See: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
+
+### 6.61.21
+
+Updated `gam <UserTypeEntity> empty drivetrash <SharedDriveEntity>` to use new Drive API v3
+functionality for emptying the trash of a Shared Drive with a single API call. Previously, GAM had to purge each
+individual file and folder in the trash.
+
 ### 6.61.20
 
 Remove `audit.googleapis.com` from the list of project APIs.
@@ -3162,13 +3176,13 @@ Updated option `dateheaderformat iso|rfc2822|<String>` to `gam <UserTypeEntity> 
 reformatting of the message `Date` header value from RFC2822 format to the the following:
 * `iso` - Format is `%Y-%m-%dT%H:%M:%S%z`
 * `rfc2822` - Format is `%a, %d %b %Y %H:%M:%S %z`
-* `<String>` - Format according to: https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
+* `<String>` - Format according to: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
 
 ### 6.15.05
 
 Added option `dateheaderformat <String>` to `gam <UserTypeEntity> print|show messages|threads` that allows
 reformatting of the message `Date` header from RFC2822 format to the format specified by `<String>`.
-If `<String>` is `iso`, then ISO 8601 format is used, otherwise see: https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
+If `<String>` is `iso`, then ISO 8601 format is used, otherwise see: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
 If the `Date` header can't be parsed as RFC2822, it is left unchanged.
 
 ### 6.15.04

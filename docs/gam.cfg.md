@@ -386,6 +386,16 @@ oauth2service_json
         Path to oauth2service.json
         Default: GamConfigDir/oauth2service.json
         Environment variable: OAUTHSERVICEFILE
+output_dateformat
+        Output format of dates
+        See: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
+        Default: '' which selects the format YYYY-MM-DD
+        Example: %m/%d/%Y  will display as 08/07/2023
+output_timeformat
+        Output format of times
+        See: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
+        Default: '' which selects the format YYYY-MM-DDTHH:MM:SS[Z|(+|-)HH:MM)
+        Example: %H:%M: %m/%d/%Y will display as 09:00 08/07/2023
 people_max_results
         When retrieving lists of People from API,
         how many should be retrieved in each API call
@@ -496,7 +506,7 @@ todrive_sheet_timestamp
         Default: False
 todrive_sheet_timeformat
         Format of the timestamp added to the sheet (tab) title of CSV files
-        See: https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
+        See: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
         Default: '' which selects an ISO format timestamp
         Example: %Y-%m-%dT%H:%M:%S will display as 2020-07-06T17:48:54
 todrive_timestamp
@@ -504,7 +514,7 @@ todrive_timestamp
         Default: False
 todrive_timeformat
         Format of the timestamp added to the title of CSV files
-        See: https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
+        See: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
         Default: '' which selects an ISO format timestamp
         Example: %Y-%m-%dT%H:%M:%S will display as 2020-07-06T17:48:54
 todrive_timezone
@@ -615,6 +625,8 @@ Section: DEFAULT
   num_threads = 5
   oauth2_txt = oauth2.txt ; /Users/admin/.gam/oauth2.txt
   oauth2service_json = oauth2service.json ; /Users/admin/.gam/oauth2service.json
+  output_dateformat = ''
+  output_timeformat = ''
   people_max_results = 100
   quick_cros_move = false
   quick_info_user = false
@@ -793,6 +805,8 @@ num_tbatch_threads = 2
 num_threads = 5
 oauth2_txt = oauth2.txt
 oauth2service_json = oauth2service.json
+output_dateformat = ''
+output_timeformat = ''
 people_max_results = 100
 quick_cros_move = False
 quick_info_user = False
