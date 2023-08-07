@@ -2,6 +2,14 @@
 
 Merged GAM-Team version
 
+6.62.00
+
+Added `output_dateformat` and `output_timeformat` variables to `gam.cfg` that provide alternate
+output date and time formats that may be required by programs that will be processing the data.
+GAM will not accept alternate date/time formats as input.
+
+* See: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
+
 6.61.21
 
 Updated `gam <UserTypeEntity> empty drivetrash <SharedDriveEntity>` to use new Drive API v3

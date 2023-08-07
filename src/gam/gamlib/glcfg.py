@@ -192,6 +192,10 @@ NUM_THREADS = 'num_threads'
 OAUTH2_TXT = 'oauth2_txt'
 # Path to oauth2service.json
 OAUTH2SERVICE_JSON = 'oauth2service_json'
+# Output date format, empty defalts to ISOFormat
+OUTPUT_DATEFORMAT = 'output_dateformat'
+# Output time format, empty defalts to ISOFormat
+OUTPUT_TIMEFORMAT = 'output_timeformat'
 # When retrieving lists of people from API, how many should be retrieved in each chunk
 PEOPLE_MAX_RESULTS = 'people_max_results'
 # Use quick method to move Chromebooks to OU
@@ -354,6 +358,8 @@ Defaults = {
   NUM_THREADS: '5',
   OAUTH2_TXT: FN_OAUTH2_TXT,
   OAUTH2SERVICE_JSON: FN_OAUTH2SERVICE_JSON,
+  OUTPUT_DATEFORMAT: '',
+  OUTPUT_TIMEFORMAT: '',
   PEOPLE_MAX_RESULTS: '100',
   QUICK_CROS_MOVE: FALSE,
   QUICK_INFO_USER: FALSE,
@@ -499,6 +505,8 @@ VAR_INFO = {
   NUM_THREADS: {VAR_TYPE: TYPE_INTEGER, VAR_ENVVAR: 'GAM_THREADS', VAR_LIMITS: (1, 1000)},
   OAUTH2_TXT: {VAR_TYPE: TYPE_FILE, VAR_ENVVAR: 'OAUTHFILE', VAR_ACCESS: os.R_OK | os.W_OK},
   OAUTH2SERVICE_JSON: {VAR_TYPE: TYPE_FILE, VAR_ENVVAR: 'OAUTHSERVICEFILE', VAR_ACCESS: os.R_OK | os.W_OK},
+  OUTPUT_DATEFORMAT: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
+  OUTPUT_TIMEFORMAT: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
   PEOPLE_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (0, 1000)},
   QUICK_CROS_MOVE: {VAR_TYPE: TYPE_BOOLEAN},
   QUICK_INFO_USER: {VAR_TYPE: TYPE_BOOLEAN},

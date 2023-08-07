@@ -2309,20 +2309,33 @@ def formatLocalTime(dateTimeStr):
     return GC.Values[GC.NEVER_TIME]
   try:
     timestamp, _ = iso8601.parse_date(dateTimeStr)
+    if not GC.Values[GC.OUTPUT_TIMEFORMAT]:
+      if GM.Globals[GM.CONVERT_TO_LOCAL_TIME]:
+        return ISOformatTimeStamp(timestamp.astimezone(GC.Values[GC.TIMEZONE]))
+      return timestamp.strftime(YYYYMMDDTHHMMSSZ_FORMAT)
     if GM.Globals[GM.CONVERT_TO_LOCAL_TIME]:
-      return ISOformatTimeStamp(timestamp.astimezone(GC.Values[GC.TIMEZONE]))
-    return timestamp.strftime(YYYYMMDDTHHMMSSZ_FORMAT)
+      return timestamp.astimezone(GC.Values[GC.TIMEZONE]).strftime(GC.Values[GC.OUTPUT_TIMEFORMAT])
+    return timestamp.strftime(GC.Values[GC.OUTPUT_TIMEFORMAT])
   except (iso8601.ParseError, OverflowError):
     return dateTimeStr
 
 def formatLocalSecondsTimestamp(timestamp):
-  return ISOformatTimeStamp(datetime.datetime.fromtimestamp(int(timestamp), GC.Values[GC.TIMEZONE]))
+  if not GC.Values[GC.OUTPUT_TIMEFORMAT]:
+    return ISOformatTimeStamp(datetime.datetime.fromtimestamp(int(timestamp), GC.Values[GC.TIMEZONE]))
+  return datetime.datetime.fromtimestamp(int(timestamp), GC.Values[GC.TIMEZONE]).strftime(GC.Values[GC.OUTPUT_TIMEFORMAT])
 
 def formatLocalTimestamp(timestamp):
-  return ISOformatTimeStamp(datetime.datetime.fromtimestamp(int(timestamp)//1000, GC.Values[GC.TIMEZONE]))
+  if not GC.Values[GC.OUTPUT_TIMEFORMAT]:
+    return ISOformatTimeStamp(datetime.datetime.fromtimestamp(int(timestamp)//1000, GC.Values[GC.TIMEZONE]))
+  return datetime.datetime.fromtimestamp(int(timestamp)//1000, GC.Values[GC.TIMEZONE]).strftime(GC.Values[GC.OUTPUT_TIMEFORMAT])
+
+def formatLocalTimestampUTC(timestamp):
+  return ISOformatTimeStamp(datetime.datetime.fromtimestamp(int(timestamp)//1000, iso8601.UTC))
 
 def formatLocalDatestamp(timestamp):
-  return datetime.datetime.fromtimestamp(int(timestamp)//1000, GC.Values[GC.TIMEZONE]).strftime(YYYYMMDD_FORMAT)
+  if not GC.Values[GC.OUTPUT_DATEFORMAT]:
+    return datetime.datetime.fromtimestamp(int(timestamp)//1000, GC.Values[GC.TIMEZONE]).strftime(YYYYMMDD_FORMAT)
+  return datetime.datetime.fromtimestamp(int(timestamp)//1000, GC.Values[GC.TIMEZONE]).strftime(GC.Values[GC.OUTPUT_DATEFORMAT])
 
 def formatMaxMessageBytes(maxMessageBytes, oneKiloBytes, oneMegaBytes):
   if maxMessageBytes < oneKiloBytes:
@@ -3979,9 +3992,14 @@ def SetGlobalVariables():
   GC.Values[GC.DOMAIN] = GC.Values[GC.DOMAIN].lower()
   if not GC.Values[GC.SMTP_FQDN]:
     GC.Values[GC.SMTP_FQDN] = None
-# Inherit debug_level if not locally defined
-  if GM.Globals[GM.PID] != 0 and GC.Values[GC.DEBUG_LEVEL] == 0:
-    GC.Values[GC.DEBUG_LEVEL] = GM.Globals[GM.DEBUG_LEVEL]
+# Inherit debug_level, output_dateformat, output_timeformat if not locally defined
+  if GM.Globals[GM.PID] != 0:
+    if GC.Values[GC.DEBUG_LEVEL] == 0:
+      GC.Values[GC.DEBUG_LEVEL] = GM.Globals[GM.DEBUG_LEVEL]
+    if not GC.Values[GC.OUTPUT_DATEFORMAT]:
+      GC.Values[GC.OUTPUT_DATEFORMAT] = GM.Globals[GM.OUTPUT_DATEFORMAT]
+    if not GC.Values[GC.OUTPUT_TIMEFORMAT]:
+      GC.Values[GC.OUTPUT_TIMEFORMAT] = GM.Globals[GM.OUTPUT_TIMEFORMAT]
 # Create/set mode for oauth2.txt.lock
   if not GM.Globals[GM.OAUTH2_TXT_LOCK]:
     fileName = f'{GC.Values[GC.OAUTH2_TXT]}.lock'
@@ -9251,6 +9269,7 @@ def terminateStdQueueHandler(mpQueue, mpQueueHandler):
 
 def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout, mpQueueStderr,
                            debugLevel, todrive,
+                           output_dateformat, output_timeformat,
                            csvColumnDelimiter, csvQuoteChar,
                            csvTimestampColumn,
                            csvHeaderFilter, csvHeaderDropFilter,
@@ -9284,6 +9303,8 @@ def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout,
     GM.Globals[GM.CSV_OUTPUT_TIMESTAMP_COLUMN] = csvTimestampColumn
     GM.Globals[GM.CSV_TODRIVE] = todrive.copy()
     GM.Globals[GM.DEBUG_LEVEL] = debugLevel
+    GM.Globals[GM.OUTPUT_DATEFORMAT] = output_dateformat
+    GM.Globals[GM.OUTPUT_TIMEFORMAT] = output_timeformat
     GM.Globals[GM.NUM_BATCH_ITEMS] = numItems
     GM.Globals[GM.PID] = pid
     GM.Globals[GM.SAVED_STDOUT] = None
@@ -9455,6 +9476,7 @@ def MultiprocessGAMCommands(items, showCmds):
       poolProcessResults[pid] = pool.apply_async(ProcessGAMCommandMulti,
                                                  [pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout, mpQueueStderr,
                                                   GC.Values[GC.DEBUG_LEVEL], GM.Globals[GM.CSV_TODRIVE],
+                                                  GC.Values[GC.OUTPUT_DATEFORMAT], GC.Values[GC.OUTPUT_TIMEFORMAT],
                                                   GC.Values[GC.CSV_OUTPUT_COLUMN_DELIMITER],
                                                   GC.Values[GC.CSV_OUTPUT_QUOTE_CHAR],
                                                   GC.Values[GC.CSV_OUTPUT_TIMESTAMP_COLUMN],
@@ -15315,6 +15337,10 @@ def doInfoCustomer(returnCustomerInfo=None, FJQC=None):
     customerInfo = callGAPI(cd.customers(), 'get',
                             throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID_INPUT, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
                             customerKey=customerId)
+    if 'customerCreationTime' in customerInfo:
+      customerInfo['customerCreationTime'] = formatLocalTime(customerInfo['customerCreationTime'])
+    else:
+      customerInfo['customerCreationTime'] =  UNKNOWN
     primaryDomain = {'domainName': UNKNOWN, 'verified': UNKNOWN}
     try:
       domains = callGAPIitems(cd.domains(), 'list', 'domains',
@@ -15329,10 +15355,10 @@ def doInfoCustomer(returnCustomerInfo=None, FJQC=None):
       # We should get all domains and use oldest date
       customerCreationTime = UNKNOWN
       for domain in domains:
-        domainCreationTime = formatLocalTimestamp(domain['creationTime'])
+        domainCreationTime = formatLocalTimestampUTC(domain['creationTime'])
         if customerCreationTime == UNKNOWN or domainCreationTime < customerCreationTime:
           customerCreationTime = domainCreationTime
-      customerInfo['customerCreationTime'] = customerCreationTime
+      customerInfo['customerCreationTime'] = formatLocalTime(customerCreationTime)
     except (GAPI.badRequest, GAPI.notFound):
       pass
     customerInfo['customerDomain'] = primaryDomain['domainName']
@@ -15347,7 +15373,7 @@ def doInfoCustomer(returnCustomerInfo=None, FJQC=None):
     printKeyValueList(['Customer ID', customerInfo['id']])
     printKeyValueList(['Primary Domain', customerInfo['customerDomain']])
     printKeyValueList(['Primary Domain Verified', customerInfo['verified']])
-    printKeyValueList(['Customer Creation Time', customerInfo.get('customerCreationTime', UNKNOWN)])
+    printKeyValueList(['Customer Creation Time', customerInfo['customerCreationTime']])
     printKeyValueList(['Default Language', customerInfo.get('language', 'Unset or Unknown (defaults to en)')])
     _showCustomerAddressPhoneNumber(customerInfo)
     printKeyValueList(['Admin Secondary Email', customerInfo.get('alternateEmail', UNKNOWN)])

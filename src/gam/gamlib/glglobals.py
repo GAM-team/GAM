@@ -148,6 +148,10 @@ OAUTH2SERVICE_JSON_DATA = 'osjd'
 OAUTH2_CLIENT_ID = 'oaci'
 # oauth2.txt lock file
 OAUTH2_TXT_LOCK = 'oatl'
+# Output date format, empty defalts to ISOFormat
+OUTPUT_DATEFORMAT = 'oudf'
+# Output time format, empty defalts to ISOFormat
+OUTPUT_TIMEFORMAT = 'outf'
 # gam.cfg parser
 PARSER = 'pars'
 # Process ID
@@ -261,6 +265,8 @@ Globals = {
   OAUTH2SERVICE_JSON_DATA: {},
   OAUTH2_CLIENT_ID: None,
   OAUTH2_TXT_LOCK: None,
+  OUTPUT_DATEFORMAT: '',
+  OUTPUT_TIMEFORMAT: '',
   PARSER: None,
   PID: 0,
   RATE_CHECK_COUNT: 0,
