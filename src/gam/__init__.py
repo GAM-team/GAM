@@ -47750,34 +47750,33 @@ def printShowCalendarEvents(users):
   if csvPF:
     csvPF.writeCSVfile('Calendar Events')
 
-def getWorkingLocationDate(dateType, dateList):
+def getWorkingLocationDateTime(dateType, dateList):
+  if dateType == 'timerange':
+    startTime = getTimeOrDeltaFromNow(returnDateTime=True)[0]
+    endTime = getTimeOrDeltaFromNow(returnDateTime=True)[0]
+    dateList.append({'type': dateType, 'first': startTime, 'last': endTime, 'ulast': endTime})
+    return
   firstDate = getYYYYMMDD(minLen=1, returnDateTime=True).replace(tzinfo=GC.Values[GC.TIMEZONE])
   if dateType == 'range':
     lastDate = getYYYYMMDD(minLen=1, returnDateTime=True).replace(tzinfo=GC.Values[GC.TIMEZONE])
   deltaDay = datetime.timedelta(days=1)
   deltaWeek = datetime.timedelta(weeks=1)
   if dateType == 'date':
-    dateList.append({'first': firstDate, 'last': firstDate+deltaDay,
+    dateList.append({'type': dateType, 'first': firstDate, 'last': firstDate+deltaDay,
                      'ulast': firstDate, 'udelta': deltaDay})
   elif dateType == 'range':
-    dateList.append({'first': firstDate, 'last': lastDate+deltaDay,
+    dateList.append({'type': dateType, 'first': firstDate, 'last': lastDate+deltaDay,
                      'ulast': lastDate, 'udelta': deltaDay})
   elif dateType == 'daily':
     argRepeat = getInteger(minVal=1, maxVal=366)
-    dateList.append({'first': firstDate, 'last': firstDate+datetime.timedelta(days=argRepeat),
+    dateList.append({'type': dateType, 'first': firstDate, 'last': firstDate+datetime.timedelta(days=argRepeat),
                      'ulast': firstDate+datetime.timedelta(days=argRepeat), 'udelta': deltaDay})
   else: #weekly
     argRepeat = getInteger(minVal=1, maxVal=52)
-    dateList.append({'first': firstDate, 'last': firstDate+deltaDay, 'pdelta': deltaWeek, 'repeats': argRepeat,
+    dateList.append({'type': dateType, 'first': firstDate, 'last': firstDate+deltaDay, 'pdelta': deltaWeek, 'repeats': argRepeat,
                      'ulast': firstDate+datetime.timedelta(weeks=argRepeat), 'udelta': deltaWeek})
 
-def getWorkingLocationTimeRange(timeList):
-  startTime = getEventTime()
-  endTime = getEventTime()
-  timeList.append({'start': startTime, 'end': endTime})
-
-WORKING_LOCATION_DATE_CHOICES = {'date', 'range', 'daily', 'weekly'}
-WORKING_LOCATION_TIME_CHOICES = {'timerange'}
+WORKING_LOCATION_DATETIME_CHOICES = {'date', 'range', 'daily', 'weekly', 'timerange'}
 WORKING_LOCATION_CHOICE_MAP = {
   'custom': 'customLocation',
   'home': 'homeOffice',
@@ -47795,7 +47794,7 @@ def _showCalendarWorkingLocation(primaryEmail, calId, eventEntityType, event, k,
   showJSON(None, event, skipObjects, EVENT_TIME_OBJECTS)
   Ind.Decrement()
 
-# gam <UserTypeEntity> update workinglocation
+# gam <UserTypeEntity> create workinglocation
 #	home|
 #	custom <String>
 #	office <String> [building|buildingid <String>] [floor|floorname <String>]
@@ -47805,102 +47804,175 @@ def _showCalendarWorkingLocation(primaryEmail, calId, eventEntityType, event, k,
 #	 (daily yyyy-mm-dd N)|
 #	 (weekly yyyy-mm-dd N)|
 #	 (timerange <Time> <Time>))+
-def updateWorkingLocation(users):
+def createWorkingLocation(users):
   body = {'start': {'date': None}, 'end': {'date': None}}
   calId = 'primary'
   dateList = []
-  timeList = []
-  location = getWorkingLocationProperties(body)
+  location =  getWorkingLocationProperties(body)
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if myarg in WORKING_LOCATION_DATE_CHOICES:
-      getWorkingLocationDate(myarg, dateList)
-    elif myarg in WORKING_LOCATION_TIME_CHOICES:
-      getWorkingLocationTimeRange(timeList)
+    if myarg in WORKING_LOCATION_DATETIME_CHOICES:
+      getWorkingLocationDateTime(myarg, dateList)
     elif myarg == 'json':
       body.update(getJSON([]))
     else:
       unknownArgumentExit()
-  if not dateList and not  timeList:
-    missingChoiceExit(WORKING_LOCATION_DATE_CHOICES|WORKING_LOCATION_TIME_CHOICES)
-  datekvList = [Ent.USER, '', Ent.DATE, '', Ent.LOCATION, f"{body['workingLocationProperties'].get(location, {}).get('label', location)}"]
-  timekvList = [Ent.USER, '', Ent.START_TIME, '', Ent.END_TIME, '', Ent.LOCATION, f"{body['workingLocationProperties'].get(location, {}).get('label', location)}"]
+  if not dateList:
+    missingChoiceExit(WORKING_LOCATION_DATETIME_CHOICES)
+  location = body['workingLocationProperties']['type']
+  if location in body['workingLocationProperties'] and 'label' in body['workingLocationProperties'][location]:
+    location += f"/{body['workingLocationProperties'][location]['label']}"
+  datekvList = [Ent.CALENDAR, '', Ent.EVENT, '', Ent.DATE, '', Ent.LOCATION, location]
+  timekvList = [Ent.CALENDAR, '', Ent.EVENT, '', Ent.START_TIME, '', Ent.END_TIME, '', Ent.LOCATION, location]
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, cal = buildGAPIServiceObject(API.CALENDAR, user, i, count)
     if not cal:
       continue
-    datekvList[1] = user
     jcount = len(dateList)
+    entityPerformAction([Ent.CALENDAR, user, Ent.WORKING_LOCATION, None], i, count)
+    Ind.Increment()
     j = 0
     for wlDate in dateList:
       j += 1
       first = wlDate['first']
       last = wlDate['ulast']
+      kvList = datekvList if wlDate['type'] != 'timerange' else timekvList
+      kvList[1] = user
       while first < last:
-        datekvList[3] = first.strftime(YYYYMMDD_FORMAT)
-        body['start']['date'] = first.strftime(YYYYMMDD_FORMAT)
-        body['end']['date'] = (first+datetime.timedelta(days=1)).strftime(YYYYMMDD_FORMAT)
+        if wlDate['type'] != 'timerange':
+          body['start']['date'] = first.strftime(YYYYMMDD_FORMAT)
+          kvList[5] = body['start']['date']
+          body['end']['date'] = (first+datetime.timedelta(days=1)).strftime(YYYYMMDD_FORMAT)
+        else:
+          body['start']['dateTime'] = ISOformatTimeStamp(first)
+          kvList[5] = body['start']['dateTime']
+          body['end']['dateTime'] = ISOformatTimeStamp(last)
+          kvList[7] = body['end']['dateTime']
         try:
-          callGAPI(cal.events(), 'insert',
-                   throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID, GAPI.BAD_REQUEST,
+          event = callGAPI(cal.events(), 'insert',
+                           throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID, GAPI.BAD_REQUEST,
                                                              GAPI.TIME_RANGE_EMPTY, GAPI.MALFORMED_WORKING_LOCATION_EVENT],
-                   calendarId=calId, body=body)
-          entityActionPerformed(datekvList, j, jcount)
+                           calendarId=calId, body=body, fields='id')
+          kvList[3] = event['id']
+          entityActionPerformed(kvList, j, jcount)
+          if wlDate['type'] == 'timerange':
+            break
           first += wlDate['udelta']
         except (GAPI.notACalendarUser, GAPI.forbidden, GAPI.invalid) as e:
-          entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+          entityActionFailedWarning([Ent.CALENDAR, user], str(e), i, count)
           break
         except (GAPI.badRequest, GAPI.timeRangeEmpty, GAPI.malformedWorkingLocationEvent) as e:
-          entityActionFailedWarning(datekvList, str(e), j, jcount)
+          entityActionFailedWarning(kvList, str(e), j, jcount)
           break
         except (GAPI.serviceNotAvailable, GAPI.authError):
           entityServiceNotApplicableWarning(Ent.USER, user, i, count)
           break
-    timekvList[1] = user
-    jcount = len(timeList)
+    Ind.Decrement()
+
+# gam <UserTypeEntity> delete workinglocation
+#	((date yyyy-mm-dd)|
+#	 (range yyyy-mm-dd yyyy-mm-dd)|
+#	 (daily yyyy-mm-dd N)|
+#	 (weekly yyyy-mm-dd N)|
+#	 (timerange <Time> <Time>))+
+def deleteWorkingLocation(users):
+  kwargs = {'eventTypes': ['workingLocation'], 'showDeleted': False, 'singleEvents': True,
+            'timeMax': None, 'timeMin': None, 'orderBy': 'startTime'}
+  calId = 'primary'
+  dateList = []
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg in WORKING_LOCATION_DATETIME_CHOICES:
+      getWorkingLocationDateTime(myarg, dateList)
+    else:
+      unknownArgumentExit()
+  if not dateList:
+    missingChoiceExit(WORKING_LOCATION_DATETIME_CHOICES)
+  datekvList = [Ent.CALENDAR, '', Ent.EVENT, '', Ent.DATE, '', Ent.LOCATION, '']
+  timekvList = [Ent.CALENDAR, '', Ent.EVENT, '', Ent.START_TIME, '', Ent.END_TIME, '', Ent.LOCATION, '']
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, cal = buildGAPIServiceObject(API.CALENDAR, user, i, count)
+    if not cal:
+      continue
+    jcount = len(dateList)
+    entityPerformAction([Ent.CALENDAR, user, Ent.WORKING_LOCATION, None], i, count)
+    Ind.Increment()
     j = 0
-    for wlTime in timeList:
+    for wlDate in dateList:
       j += 1
-      startTime = wlTime['start']
-      if 'dateTime' in startTime:
-        timekvList[3] = formatLocalTime(startTime['dateTime'])
-      else:
-        timekvList[3] = startTime['date'].strftime(YYYYMMDD_FORMAT)
-      endTime = wlTime['end']
-      if 'dateTime' in endTime:
-        timekvList[5] = formatLocalTime(endTime['dateTime'])
-      else:
-        timekvList[5] = endTime['date'].strftime(YYYYMMDD_FORMAT)
-      body.update(wlTime)
-      try:
-        callGAPI(cal.events(), 'insert',
-                 throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID, GAPI.BAD_REQUEST,
-                                                           GAPI.TIME_RANGE_EMPTY, GAPI.MALFORMED_WORKING_LOCATION_EVENT],
-                 calendarId=calId, body=body)
-        entityActionPerformed(timekvList, j, jcount)
-      except (GAPI.notACalendarUser, GAPI.forbidden, GAPI.invalid) as e:
-        entityActionFailedWarning([Ent.USER, user], str(e), i, count)
-        break
-      except (GAPI.badRequest, GAPI.timeRangeEmpty, GAPI.malformedWorkingLocationEvent) as e:
-        entityActionFailedWarning(timekvList, str(e), j, jcount)
-      except (GAPI.serviceNotAvailable, GAPI.authError):
-        entityServiceNotApplicableWarning(Ent.USER, user, i, count)
-        break
+      first = wlDate['first']
+      last = wlDate['last']
+      kvList = datekvList if wlDate['type'] != 'timerange' else timekvList
+      kvList[1] = user
+      events = []
+      for _ in range(1, wlDate.get('repeats', 1)+1):
+        kwargs['timeMin'] = ISOformatTimeStamp(first)
+        kwargs['timeMax'] = ISOformatTimeStamp(last)
+        try:
+          events = callGAPIpages(cal.events(), 'list', 'items',
+                                 throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID, GAPI.BAD_REQUEST],
+                                 calendarId=calId, fields='nextPageToken,items(id,start,end,workingLocationProperties)', **kwargs)
+        except (GAPI.notACalendarUser, GAPI.notFound, GAPI.forbidden, GAPI.invalid, GAPI.badRequest) as e:
+          entityActionFailedWarning([Ent.CALENDAR, user], str(e), j, jcount)
+          break
+        except (GAPI.serviceNotAvailable, GAPI.authError):
+          entityServiceNotApplicableWarning(Ent.CALENDAR, user, i, count)
+          break
+        kcount = len(events)
+        k = 0
+        for event in events:
+          k += 1
+          eventId = event['id']
+          kvList[3] = eventId
+          location = event['workingLocationProperties']['type']
+          if location in event['workingLocationProperties'] and 'label' in event['workingLocationProperties'][location]:
+            location += f"/{event['workingLocationProperties'][location]['label']}"
+          try:
+            callGAPI(cal.events(), 'delete',
+                     throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.DELETED, GAPI.FORBIDDEN,
+                                                               GAPI.INVALID, GAPI.REQUIRED, GAPI.REQUIRED_ACCESS_LEVEL],
+                     calendarId=calId, eventId=eventId, sendUpdates='none')
+            if 'date' in event['start']:
+              kvList[5] = event['start']['date']
+              kvList[7] = location
+            else:
+              kvList[5] = formatLocalTime(event['start']['dateTime'])
+              kvList[7] = formatLocalTime(event['end']['dateTime'])
+              kvList[9] = location
+            entityActionPerformed(kvList, k, kcount)
+          except (GAPI.notFound, GAPI.deleted) as e:
+            if not checkCalendarExists(cal, calId):
+              entityUnknownWarning(Ent.CALENDAR, calId, k, kcount)
+              break
+            entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), k, kcount)
+          except (GAPI.forbidden, GAPI.invalid, GAPI.required, GAPI.requiredAccessLevel) as e:
+            entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), k, kcount)
+          except GAPI.notACalendarUser as e:
+            entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
+            break
+          except (GAPI.serviceNotAvailable, GAPI.authError):
+            entityServiceNotApplicableWarning(Ent.CALENDAR, calId, i, count)
+            break
+    Ind.Decrement()
 
 # gam <UserTypeEntity> show workinglocation
 #	((date yyyy-mm-dd)|
 #	 (range yyyy-mm-dd yyyy-mm-dd)|
 #	 (daily yyyy-mm-dd N)|
-#	 (weekly yyyy-mm-dd N))+
+#	 (weekly yyyy-mm-dd N)|
+#	 (timerange <Time> <Time>))+
 #	[showdayofweek]
 #	[formatjson]
 # gam <UserTypeEntity> print workinglocation
 #	((date yyyy-mm-dd)|
 #	 (range yyyy-mm-dd yyyy-mm-dd)|
 #	 (daily yyyy-mm-dd N)|
-#	 (weekly yyyy-mm-dd N))+
+#	 (weekly yyyy-mm-dd N)|
+#	 (timerange <Time> <Time>))+
 #	[showdayofweek]
 #	[formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
 def printShowWorkingLocation(users):
@@ -47915,14 +47987,14 @@ def printShowWorkingLocation(users):
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif myarg in WORKING_LOCATION_DATE_CHOICES:
-      getWorkingLocationDate(myarg, dateList)
+    elif myarg in WORKING_LOCATION_DATETIME_CHOICES:
+      getWorkingLocationDateTime(myarg, dateList)
     elif myarg == 'showdayofweek':
       showDayOfWeek = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if not dateList:
-    missingChoiceExit(WORKING_LOCATION_DATE_CHOICES)
+    missingChoiceExit(WORKING_LOCATION_DATETIME_CHOICES)
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -47931,7 +48003,7 @@ def printShowWorkingLocation(users):
       continue
     jcount = len(dateList)
     if not csvPF and not FJQC.formatJSON:
-      entityPerformActionNumItems([Ent.USER, user], jcount, Ent.DATE, i, count)
+      entityPerformActionNumItems([Ent.CALENDAR, user], jcount, Ent.DATE, i, count)
     j = 0
     for wlDate in dateList:
       j += 1
@@ -47945,20 +48017,20 @@ def printShowWorkingLocation(users):
                                  throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID, GAPI.BAD_REQUEST],
                                  calendarId=calId, fields='nextPageToken,items(id,start,end,workingLocationProperties)', **kwargs)
         except (GAPI.notACalendarUser, GAPI.notFound, GAPI.forbidden, GAPI.invalid, GAPI.badRequest) as e:
-          entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+          entityActionFailedWarning([Ent.CALENDAR, user], str(e), j, jcount)
           break
         except (GAPI.serviceNotAvailable, GAPI.authError):
           entityServiceNotApplicableWarning(Ent.USER, user, i, count)
           break
         if not csvPF:
-          jcount = len(events)
+          kcount = len(events)
           Ind.Increment()
-          j = 0
+          k = 0
           for event in events:
-            j += 1
+            k += 1
             if showDayOfWeek:
               _getEventDaysOfWeek(event)
-            _showCalendarWorkingLocation(user, calId, Ent.EVENT, event, j, jcount, FJQC)
+            _showCalendarWorkingLocation(user, calId, Ent.EVENT, event, k, kcount, FJQC)
           Ind.Decrement()
         else:
           for event in events:
@@ -70040,6 +70112,7 @@ USER_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_SMIME:		createSmime,
   Cmd.ARG_TASK:			processTasks,
   Cmd.ARG_TASKLIST:		processTasklists,
+  Cmd.ARG_WORKINGLOCATION:	createWorkingLocation,
   }
 
 USER_COMMANDS_WITH_OBJECTS = {
@@ -70155,6 +70228,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_THREAD:		processThreads,
       Cmd.ARG_TOKEN:		deleteTokens,
       Cmd.ARG_USER:		deleteUsers,
+      Cmd.ARG_WORKINGLOCATION:	deleteWorkingLocation,
      }
     ),
   'draft':
@@ -70505,7 +70579,6 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_TASK:		processTasks,
       Cmd.ARG_TASKLIST:		processTasklists,
       Cmd.ARG_USER:		updateUsers,
-      Cmd.ARG_WORKINGLOCATION:	updateWorkingLocation,
      }
     ),
   'watch':
