@@ -9069,7 +9069,7 @@ def restoreNonPickleableValues(savedValues):
   GM.Globals[GM.CMDLOG_HANDLER] = savedValues[GM.CMDLOG_HANDLER]
   GM.Globals[GM.CMDLOG_LOGGER] = savedValues[GM.CMDLOG_LOGGER]
 
-def CSVFileQueueHandler(mpQueue, mpQueueStdout, mpQueueStderr, csvPF, datetimeNow, tzinfo):
+def CSVFileQueueHandler(mpQueue, mpQueueStdout, mpQueueStderr, csvPF, datetimeNow, tzinfo, output_timeformat):
   global Cmd
 
   def reopenSTDFile(stdtype):
@@ -9089,6 +9089,7 @@ def CSVFileQueueHandler(mpQueue, mpQueueStdout, mpQueueStderr, csvPF, datetimeNo
 
   GM.Globals[GM.DATETIME_NOW] = datetimeNow
   GC.Values[GC.TIMEZONE] = tzinfo
+  GC.Values[GC.OUTPUT_TIMEFORMAT] = output_timeformat
   if sys.platform.startswith('win'):
     signal.signal(signal.SIGINT, signal.SIG_IGN)
   if multiprocessing.get_start_method() == 'spawn':
@@ -9157,7 +9158,8 @@ def initializeCSVFileQueueHandler(mpManager, mpQueueStdout, mpQueueStderr):
   mpQueueHandler = multiprocessing.Process(target=CSVFileQueueHandler,
                                            args=(mpQueue, mpQueueStdout, mpQueueStderr,
                                                  GM.Globals[GM.CSVFILE][GM.REDIRECT_QUEUE_CSVPF],
-                                                 GM.Globals[GM.DATETIME_NOW], GC.Values[GC.TIMEZONE]))
+                                                 GM.Globals[GM.DATETIME_NOW], GC.Values[GC.TIMEZONE],
+                                                 GC.Values[GC.OUTPUT_TIMEFORMAT]))
   mpQueueHandler.start()
   return (mpQueue, mpQueueHandler)
 

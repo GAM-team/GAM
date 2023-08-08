@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.62.02
+
+Fixed bug introduced in 6.62.01 that caused a trap that broke `redirect csv ... multiprocess`.
+My apologies.
+
 ### 6.62.01
 
 Updated code so that when `gam.cfg` variables `csv_output_timestamp_column` and `output_timeformat` are both specified,
