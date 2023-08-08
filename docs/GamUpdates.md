@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.62.01
+
+Updated code so that when `gam.cfg` variables `csv_output_timestamp_column` and `output_timeformat` are both specified,
+the timestamp is output in the alternate output time format.
+
 ### 6.62.00
 
 Added `output_dateformat` and `output_timeformat` variables to `gam.cfg` that provide alternate

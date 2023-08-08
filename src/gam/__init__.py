@@ -8027,7 +8027,10 @@ class CSVPrintFile():
 
   def SetTimestampColumn(self, timestampColumn):
     self.timestampColumn = timestampColumn
-    self.todaysTime = ISOformatTimeStamp(todaysTime())
+    if not GC.Values[GC.OUTPUT_TIMEFORMAT]:
+      self.todaysTime = ISOformatTimeStamp(todaysTime())
+    else:
+      self.todaysTime = todaysTime().strftime(GC.Values[GC.OUTPUT_TIMEFORMAT])
 
   def SetFormatJSON(self, formatJSON):
     self.formatJSON = formatJSON
