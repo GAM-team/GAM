@@ -69,7 +69,7 @@ Alternatively, you can direct the output to a CSV file:
 To retrieve the shortcut ID with `returnidonly`:
 ```
 Linux/MacOS
-fileId=`gam user user@domain.com create drivefileshortcut ... returnidonly`
+fileId=$(gam user user@domain.com create drivefileshortcut ... returnidonly)
 Windows PowerShell
 $fileId = & gam user user@domain.com create drivefileshortcut ... returnidonly
 ```

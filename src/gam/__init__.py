@@ -51209,6 +51209,8 @@ def noFileSelectFileIdEntity(fileIdEntity):
               and not fileIdEntity['shareddrivefilequery']
               and not fileIdEntity['list']))
 
+SHOW_OWNED_BY_CHOICE_MAP = {'any': None, 'me': True, 'others': False}
+
 class DriveListParameters():
   def __init__(self, myargOptions):
     self.PM = PermissionMatch()
@@ -51230,7 +51232,6 @@ class DriveListParameters():
     self.showOwnedBy = True
     self.showSharedByMe = None
 
-  SHOW_OWNED_BY_CHOICE_MAP = {'any': None, 'me': True, 'others': False}
   SHOW_SHARED_BY_ME_CHOICE_MAP = {'any': None, 'true': True, 'false': False}
 
   def ProcessArgument(self, myarg, fileIdEntity):
@@ -51250,7 +51251,7 @@ class DriveListParameters():
       self.showOwnedBy = None
       self.UpdateAnyOwnerQuery()
     elif myarg == 'showownedby':
-      self.showOwnedBy = getChoice(self.SHOW_OWNED_BY_CHOICE_MAP, mapChoice=True)
+      self.showOwnedBy = getChoice(SHOW_OWNED_BY_CHOICE_MAP, mapChoice=True)
       self.UpdateQueryWithShowOwnedBy()
     elif myarg == 'showmimetype':
       self.mimeTypeCheck.Get()
@@ -52436,6 +52437,200 @@ def printShowFileCounts(users):
                        '' if count > 1 else sharedDriveId, '' if count > 1 else sharedDriveName, 0, 0)
   if csvPF:
     csvPF.writeCSVfile('Drive File Counts')
+
+DISKUSAGE_SHOW_CHOICES = {'all', 'summary', 'summaryandtrash'}
+
+# gam <UserTypeEntity> print diskusage <DriveFileEntity> [todrive <ToDriveAttribute>*]
+#	[anyowner|(showownedby any|me|others)]
+#	[pathdelimiter <Character>] [excludetrashed] [stripcrsfromname]
+#	(addcsvdata <FieldName> <String>)*
+#	[noprogress] [show all|summary|summaryandtrash]
+def printDiskUsage(users):
+  def _getChildDriveFolderInfo(drive, fileEntry, user, i, count):
+    q = WITH_PARENTS.format(fileEntry['id'])
+    try:
+      children = callGAPIpages(drive.files(), 'list', 'files',
+                               throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID_QUERY, GAPI.INVALID],
+                               retryReasons=[GAPI.UNKNOWN_ERROR],
+                               q=q, orderBy=orderBy, fields=pagesFields,
+                               pageSize=GC.Values[GC.DRIVE_MAX_RESULTS], supportsAllDrives=True, includeItemsFromAllDrives=True)
+    except (GAPI.invalidQuery, GAPI.invalid):
+      entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FOLDER, None], invalidQuery(q), i, count)
+      return
+    except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
+      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      return
+    Ind.Increment()
+    if showProgress:
+      entityActionPerformed([Ent.USER, user, Ent.DRIVE_FOLDER, fileEntry['path']])
+    for childEntryInfo in children:
+      trashed = childEntryInfo['trashed']
+      if trashed and excludeTrashed:
+        continue
+      mimeType = childEntryInfo.pop('mimeType')
+      if mimeType == MIMETYPE_GA_FOLDER:
+        fileEntry['directFolderCount'] += 1
+        fileEntry['totalFolderCount'] += 1
+        if trashed:
+          trashFolder['totalFolderCount'] += 1
+          if childEntryInfo['explicitlyTrashed']:
+            trashFolder['directFolderCount'] += 1
+        childEntryInfo['User'] = user
+        if includeOwner:
+          owners = childEntryInfo.pop('owners', [])
+          if owners:
+            childEntryInfo['Owner'] = owners[0].get('emailAddress', 'Unknown')
+        childEntryInfo.update(zeroFolderInfo)
+        if stripCRsFromName:
+          childEntryInfo['name'] = _stripControlCharsFromName(childEntryInfo['name'])
+        childEntryInfo['path'] = fileEntry['path']+pathDelimiter+childEntryInfo['name']
+        foldersList.append(childEntryInfo)
+        _getChildDriveFolderInfo(drive, childEntryInfo, user, i, count)
+        fileEntry['totalFileCount'] += childEntryInfo['totalFileCount']
+        fileEntry['totalFileSize'] += childEntryInfo['totalFileSize']
+        fileEntry['totalFolderCount'] += childEntryInfo['totalFolderCount']
+      elif mimeType != MIMETYPE_GA_SHORTCUT:
+        if includeOwner and showOwnedBy is not None and childEntryInfo['ownedByMe'] != showOwnedBy:
+          continue
+        fsize = int(childEntryInfo.get('size', '0'))
+        fileEntry['directFileCount'] += 1
+        fileEntry['directFileSize'] += fsize
+        fileEntry['totalFileCount'] += 1
+        fileEntry['totalFileSize'] += fsize
+        if trashed:
+          trashFolder['totalFileCount'] += 1
+          trashFolder['totalFileSize'] += fsize
+          if childEntryInfo['explicitlyTrashed']:
+            trashFolder['directFileCount'] += 1
+            trashFolder['directFileSize'] += fsize
+    Ind.Decrement()
+
+  csvPF = CSVPrintFile(['User', 'Owner', 'id', 'name', 'ownedByMe', 'trashed', 'explicitlyTrashed',
+                        'directFileCount', 'directFileSize', 'directFolderCount',
+                        'totalFileCount', 'totalFileSize', 'totalFolderCount', 'path'])
+  excludeTrashed = stripCRsFromName = False
+  includeOwner = True
+  orderBy = 'folder,name'
+  zeroFolderInfo = {'directFileCount': 0, 'directFileSize': 0, 'directFolderCount': 0,
+                    'totalFileCount': 0, 'totalFileSize': 0, 'totalFolderCount': 0}
+  showOwnedBy = showProgress = True
+  pathDelimiter = '/'
+  fileIdEntity = getDriveFileEntity()
+  addCSVData = {}
+  showResults = 'all'
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif myarg == 'anyowner':
+      showOwnedBy = None
+    elif myarg == 'showownedby':
+      showOwnedBy = getChoice(SHOW_OWNED_BY_CHOICE_MAP, mapChoice=True)
+    elif myarg == 'pathdelimiter':
+      pathDelimiter = getCharacter()
+    elif myarg == 'excludetrashed':
+      excludeTrashed = True
+    elif myarg == 'stripcrsfromname':
+      stripCRsFromName = True
+    elif myarg == 'addcsvdata':
+      k = getString(Cmd.OB_STRING)
+      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+    elif myarg == 'show':
+      showResults = getChoice(DISKUSAGE_SHOW_CHOICES)
+    elif myarg == 'noprogress':
+      showProgress = False
+    else:
+      unknownArgumentExit()
+  if addCSVData:
+    csvPF.AddTitles(sorted(addCSVData.keys()))
+  fieldsList = ['id', 'name', 'mimeType', 'size', 'trashed', 'explicitlyTrashed', 'owners(emailAddress)', 'ownedByMe']
+  pagesFields = getItemFieldsFromFieldsList('files', fieldsList)
+  topFieldsList = fieldsList[:]
+  topFieldsList.extend(['driveId', 'parents'])
+  topFields = getFieldsFromFieldsList(topFieldsList)
+  i, count, users = getEntityArgument(users)
+  i = 0
+  for user in users:
+    i += 1
+    origUser = user
+    user, drive, jcount = _validateUserGetFileIDs(origUser, i, count, fileIdEntity, entityType=Ent.DRIVE_DISK_USAGE)
+    if jcount == 0:
+      continue
+    j = 0
+    for fileId in fileIdEntity['list']:
+      j += 1
+      foldersList = []
+      trashFolder = {'User': user, 'id': 'Trash', 'name': 'Trash', 'path': 'Trash'}
+      trashFolder.update(zeroFolderInfo)
+      try:
+        topFolder = callGAPI(drive.files(), 'get',
+                                 throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
+                                 fileId=fileId, fields=topFields, supportsAllDrives=True)
+        if stripCRsFromName:
+          topFolder['name'] = _stripControlCharsFromName(topFolder['name'])
+        mimeType = topFolder.pop('mimeType')
+        if mimeType != MIMETYPE_GA_FOLDER:
+          entityValueList = [Ent.USER, user, _getEntityMimeType(topFolder), topFolder['name']]
+          entityActionNotPerformedWarning(entityValueList, Msg.INVALID_MIMETYPE.format(mimeType, MIMETYPE_GA_FOLDER), i, count)
+          continue
+        if topFolder['trashed']:
+          if excludeTrashed:
+            entityValueList = [Ent.USER, user, Ent.DRIVE_FOLDER, topFolder['name']]
+            entityActionNotPerformedWarning(entityValueList, Msg.IN_TRASH_AND_EXCLUDE_TRASHED, i, count)
+            continue
+          trashFolder['totalFolderCount'] += 1
+          if topFolder['explicitlyTrashed']:
+            trashFolder['directFolderCount'] += 1
+        driveId = topFolder.pop('driveId', None)
+        if driveId:
+          includeOwner = False
+          csvPF.RemoveTitles(['Owner', 'ownedByMe'])
+          if topFolder['name'] == TEAM_DRIVE and not topFolder.get('parents'):
+            topFolder['name'] = _getSharedDriveNameFromId(drive, driveId)
+            topFolder['path'] = f'{SHARED_DRIVES}{pathDelimiter}{topFolder["name"]}'
+          else:
+            topFolder['path'] = topFolder['name']
+        elif topFolder['name'] == MY_DRIVE and not topFolder.get('parents'):
+          topFolder['path'] = MY_DRIVE
+        else:
+          topFolder['path'] = topFolder['name']
+        topFolder['User'] = user
+        if includeOwner:
+          owners = topFolder.pop('owners', [])
+          if owners:
+            topFolder['Owner'] = owners[0].get('emailAddress', 'Unknown')
+            trashFolder['Owner'] = topFolder['Owner']
+        topFolder.pop('ownedByMe', None)
+        topFolder.pop('parents', None)
+        topFolder.update(zeroFolderInfo)
+        foldersList.append(topFolder)
+        _getChildDriveFolderInfo(drive, topFolder, user, i, count)
+      except GAPI.fileNotFound:
+        entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FOLDER, fileId], Msg.NOT_FOUND, j, jcount)
+        continue
+      except (GAPI.notFound, GAPI.teamDriveMembershipRequired) as e:
+        entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, fileIdEntity['shareddrive']['driveId']], str(e), j, jcount)
+        continue
+      except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
+        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        break
+      if showResults == 'all':
+        for folder in foldersList:
+          if addCSVData:
+            folder.update(addCSVData)
+          csvPF.WriteRow(folder)
+      else:
+        folder = foldersList[0]
+        if addCSVData:
+          folder.update(addCSVData)
+        csvPF.WriteRow(folder)
+      if showResults != 'summary' and not excludeTrashed:
+        trashFolder['trashed'] = trashFolder['totalFileCount']+trashFolder['totalFolderCount'] > 0
+        trashFolder['explicitlyTrashed'] = trashFolder['directFileCount']+trashFolder['directFolderCount'] > 0
+        if addCSVData:
+          trashFolder.update(addCSVData)
+        csvPF.WriteRow(trashFolder)
+  csvPF.writeCSVfile('Drive Disk Usage')
 
 FILESHARECOUNTS_OWNER = 'Owner'
 FILESHARECOUNTS_TOTAL = 'Total'
@@ -70356,6 +70551,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_DATASTUDIOASSET:	printShowDataStudioAssets,
       Cmd.ARG_DATASTUDIOPERMISSION:	printShowDataStudioPermissions,
       Cmd.ARG_DELEGATE:		printShowDelegates,
+      Cmd.ARG_DISKUSAGE:	printDiskUsage,
       Cmd.ARG_DRIVEACTIVITY:	printDriveActivity,
       Cmd.ARG_DRIVEFILEACL:	printShowDriveFileACLs,
       Cmd.ARG_DRIVELABEL:	printShowDriveLabels,
@@ -70447,6 +70643,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_DATASTUDIOASSET:	printShowDataStudioAssets,
       Cmd.ARG_DATASTUDIOPERMISSION:	printShowDataStudioPermissions,
       Cmd.ARG_DELEGATE:		printShowDelegates,
+      Cmd.ARG_DISKUSAGE:	printDiskUsage,
       Cmd.ARG_DRIVEACTIVITY:	printDriveActivity,
       Cmd.ARG_DRIVEFILEACL:	printShowDriveFileACLs,
       Cmd.ARG_DRIVELABEL:	printShowDriveLabels,

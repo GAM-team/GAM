@@ -6556,6 +6556,12 @@ gam <UserTypeEntity> print filelist [todrive <ToDriveAttribute>*]
         (addcsvdata <FieldName> <String>)*
         [formatjson [quotechar <Character>]]
 
+gam <UserTypeEntity> print diskusage <DriveFileEntity> [todrive <ToDriveAttribute>*]
+        [anyowner|(showownedby any|me|others)]
+        [pathdelimiter <Character>] [excludetrashed] [stripcrsfromname]
+        (addcsvdata <FieldName> <String>)*
+        [noprogress] [show all|summary|summaryandtrash]
+
 <DriveActivityAction> ::=
         comment|
         create|

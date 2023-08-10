@@ -10,6 +10,16 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.62.05
+
+Added progress messages (suppressible)  to `gam <UserTypeEntity> print diskusage`.
+
+### 6.62.04
+
+Added command `gam <UserTypeEntity> print diskusage` to display disk usage by folder.
+
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Files-Display#display-disk-usage
+
 ### 6.62.03
 
 Handled Google Directory API bug in `gam print groups` that caused a trap.

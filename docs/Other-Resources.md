@@ -11,3 +11,5 @@ Thank you.
 * Amado Tejada - https://github.com/amadotejada/GAMpass
 * Workspace Admins YouTube Channel - https://youtube.com/@googleworkspaceadmins
 * Goldy Arora - https://www.goldyarora.com/license-notifier/
+* Paul Ogier (Taming.Tech) - GAMADV-XTD3 Tutorials https://www.youtube.com/watch?v=g9LDeyXQNLI&list=PL_dLiK09pJVhKJxZHNk9CHK0q5hkZ856w
+* Paul Ogier (Taming.Tech) - GAMADV-XTD3 Course on Udemy https://taming.tech/GAMCourse

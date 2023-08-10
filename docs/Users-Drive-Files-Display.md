@@ -28,6 +28,7 @@
   - [File selection starting point for Display file list](#file-selection-starting-point-for-display-file-list)
   - [File selection with a particular drive label](#file-selection-with-a-particular-drive-label)
   - [Handle empty file lists](#handle-empty-file-lists)
+- [Display disk usage](#display-disk-usage)
 
 ## API documentation
 * https://developers.google.com/drive/api/v3/reference/files
@@ -1349,4 +1350,94 @@ Getting all Drive Files/Folders that match query ('me' in owners and name contai
 Got 0 Drive Files/Folders that matched query ('me' in owners and name contains 'abcd') for user@domain.com...
 $ more Files.csv
 BadNews-NoData
+```
+## Display disk usage
+```
+gam <UserTypeEntity> print diskusage <DriveFileEntity> [todrive <ToDriveAttribute>*]
+        [anyowner|(showownedby any|me|others)]
+        [pathdelimiter <Character>] [excludetrashed] [stripcrsfromname]
+        (addcsvdata <FieldName> <String>)*
+        [noprogress] [show all|summary|summaryandtrash]
+```
+For each folder in `<DiskFileEntity>`, the following items are displayed:
+* `User` - The email address of the user in `<UserTypeEntity>`
+* `Owner` - The email address of the owner of the folder; omitted when displaying disk usage on Shared Drives
+* `ownedByMe` - True if the folder is owned by `User`, False otherwise; omitted when displaying disk usage on Shared Drives
+* `id` - The folder ID
+* `name` - The Folder name
+* `trashed` - True if the folder has been trashed, either explicitly or from a trashed parent folder, False otherwise
+* `explicitlyTrashed` - True if the folder has been explicitly trashed, as opposed to recursively trashed from a parent folder, False otherwise
+* `directFileCount` - The number of files directly in the folder
+* `directFileSize` - The sum of the sizes of the files directly in the folder
+* `directFolderCount` - The number of folders directly in the folder
+* `totalFileCount` - The number of files directly in the folder and all of its subfolders
+* `totalFileSize` - The sum of the sizes of the files directly in the folder and all of its subfolders
+* `totalFolderCount` - The number of folders directly in the folder and all of its subfolders
+* `path` - The path of the folder
+
+There is a final row detailing files and folders in the trash; it is omitted if `excludetrashed` or `show summary` are specified.
+* `User` - The email address of the user in `<UserTypeEntity>`
+* `Owner` - The email address of the user in `<UserTypeEntity>`
+* `ownedByMe` - True
+* `id` - Trash
+* `name` - Trash
+* `trashed` - True if there are any items in the trash
+* `explicitlyTrashed` - True if any items have been explicitly trashed
+* `directFileCount` - The number of explicitly trashed files
+* `directFileSize` - The sum of the sizes of the explicitly trashed files 
+* `directFolderCount` - The number of explicitly trashed folders
+* `totalFileCount` - The number of files in the trash
+* `totalFileSize` - The sum of the sizes of the files in the trash
+* `totalFolderCount` - The number of folders in the trash
+* `path` - Trash
+
+By default, files owned by the user are counted. These options update the current query with the desired ownership.
+* `showownedby me` - Count files owned by the user; this is the default
+* `showownedby any` or `anyowner` - Count files accessible by the user
+* `showownedby others` - Count files not owned by the user
+
+All folders are counted, regardless of ownership.
+
+By default, file path components are separated by `/`; use `pathdelimiter <Character>` to use `<Character>` as the separator.
+
+Use the `excludetrashed` option to suppress counting files and folders in the trash.
+
+The `stripcrsfromname` option strips nulls, carriage returns and linefeeds from drive file names.
+Use this option if you discover filenames containing these special characters; it is not common.
+
+Add additional columns of data from the command line to the output:
+* `addcsvdata <FieldName> <String>`
+
+By default, progress messages are displayed for each folder, use `noprogress` to suppress these messages.
+
+Use the `show` option to control the display of data:
+* `all` - Display a row for every folder in `<DriveFileEntity>` and a row detailing items in the trash when `excludetrashed` is omitted. This is the default.
+* `summary` - Display a single row for the first folder in `<DriveFileEntity>`
+* `summaryandtrash` - Display a single row for the first folder in `<DriveFileEntity>` and a row detailing items in the trash when `excludetrashed` is omitted.
+
+### Examples
+```
+$ gam redirect csv ./MyDriveUsage.csv user testsimple@domain.com print diskusage mydrive 
+User: testsimple@domain.com, Print 1 Drive Disk Usage
+$ more MyDriveUsage.csv
+User,Owner,id,name,ownedByMe,trashed,explicitlyTrashed,directFileCount,directFileSize,directFolderCount,totalFileCount,totalFileSize,totalFolderCount,path
+testsimple@domain.com,testsimple@domain.com,012YenC8f12ALUk9PVA,My Drive,,False,False,100,138212,24,167,189598,79,My Drive
+testsimple@domain.com,testsimple@domain.com,456YenC8f12ALfndaQ1NHc0RtUG92Y1BIUUl4bjVBRmNkWG5oakNqVVFDcXJWOHNmdFlwZmc,Classroom,True,False,False,0,0,15,9,6840,17,My Drive/Classroom
+...
+testsimple@domain.com,testsimple@domain.com,1bHS_Tp77W3KSGRNSs_jP1RhAJhIGRCaI,XferFolder,True,False,False,1,1024,0,1,1024,0,My Drive/XferFolder
+testsimple@domain.com,testsimple@domain.com,Trash,Trash,,True,True,0,0,1,3,3072,9,Trash
+
+$ gam redirect csv ./MyDriveUsage.csv user testsimple@domain.com print diskusage mydrive show summaryandtrash
+User: testsimple@domain.com, Print 1 Drive Disk Usage
+$ more MyDriveUsage.csv 
+User,Owner,id,name,ownedByMe,trashed,explicitlyTrashed,directFileCount,directFileSize,directFolderCount,totalFileCount,totalFileSize,totalFolderCount,path
+testsimple@domain.com,testsimple@domain.com,012YenC8f12ALUk9PVA,My Drive,,False,False,100,138212,24,167,189598,79,My Drive
+testsimple@domain.com,testsimple@domain.com,Trash,Trash,,True,True,0,0,1,3,3072,9,Trash
+
+$ gam redirect csv ./MyDriveUsage.csv user testsimple@domain.com print diskusage shareddriveid 0AL5LiIe4dqxZUk9PVA  show summaryandtrash
+User: testsimple@domain.com, Print 1 Drive Disk Usage
+$ more MyDriveUsage.csv 
+User,id,name,trashed,explicitlyTrashed,directFileCount,directFileSize,directFolderCount,totalFileCount,totalFileSize,totalFolderCount,path
+testsimple@domain.com,0125LiIe4dqxZUk9PVA,TS Shared Drive 1,False,False,16,6144,7,42,73799,25,SharedDrives/TS Shared Drive 1
+testsimple@domain.com,Trash,Trash,True,True,1,1024,0,1,1024,0,Trash
 ```

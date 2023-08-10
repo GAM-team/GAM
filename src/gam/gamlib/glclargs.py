@@ -532,6 +532,7 @@ class GamCLArgs():
   ARG_DEVICEUSER = 'deviceuser'
   ARG_DEVICEUSERS = 'deviceusers'
   ARG_DEVICEUSERSTATE = 'deviceuserstate'
+  ARG_DISKUSAGE = 'diskusage'
   ARG_DOCUMENT = 'document'
   ARG_DOMAIN = 'domain'
   ARG_DOMAINS = 'domains'
