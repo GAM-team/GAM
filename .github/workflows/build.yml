@@ -763,9 +763,9 @@ jobs:
              $gam user $gam_user show tokens
              $gam config enable_dasa false save
              download_dir="${RUNNER_TEMP}/TEMP_DELETE_ME"
-             mkdir "$download_dir"
+             mkdir -v "$download_dir"
              $gam print exports matter $matterid | $gam csv - gam download export $matterid id:~~id~~ targetfolder "$download_dir"
-             rmdir /q /s "$download_dir"
+             rm -rvf "$download_dir"
              $gam delete hold "GHA hold $newbase" matter $matterid
              $gam update matter $matterid action close
              $gam update matter $matterid action delete
