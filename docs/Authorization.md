@@ -7,6 +7,7 @@
 - [Definitions](#definitions)
 - [Manage Projects](#manage-projects)
   - [Authorize a super admin to create projects](#authorize-a-super-admin-to-create-projects)
+  - [Authorize GAM to create projects](#authorize-gam-to-create-projects)
   - [Create a new GCP project folder](#create-a-new-gcp-project-folder)
   - [Create a new project for GAM authorization](#create-a-new-project-for-gam-authorization)
   - [Use an existing project for GAM authorization](#use-an-existing-project-for-gam-authorization)
@@ -186,7 +187,7 @@ GAM will then use Service Account access to display projects.
 If you try to create a project and get an error saying that the admin you specified is not authorized to create projects,
 perform these steps and then retry the create project command.
 
-* Login as an existing super admin at cloud.console.google.com
+* Login as an existing super admin at console.cloud.google.com
 * In the upper left click the three lines to the left of Google Cloud and select IAM & Admin
 * Under IAM & Admin select IAM
 * Click the down arrow in the box to the right of Google Cloud
@@ -198,6 +199,25 @@ perform these steps and then retry the create project command.
 * Type project creator in the Filter box
 * Click Project Creator
 * Click Save
+
+## Authorize GAM to create projects
+If you try to create a project and get an error saying "This app has been blocked on your domain for either being
+insecure or non-edutational"; you'll have to mark the GAM Project Creation app as trusted.
+Perform these steps and then retry the create project command.
+
+* Access the admin console and go to Security -> Access and data control -> API controls
+* Click **Manage third-party app access**
+* Click Add app and select **OAuth App Name Or Client ID**
+* Paste 297408095146-fug707qsjv4ikron0hugpevbrjhkmsk7.apps.googleusercontent.com
+* Click Search
+* Click Select at right end of line referencing GAM Project Creation
+* Check box to the left of the line with GAM Project Creation client ID
+* Click Select
+* Keep the default scope domain.com (all users) or select an org unit that includes your GAM admin
+* Click Next/Continue
+* Click Trusted: App can request access to all Google data
+* Click Next/Continue
+* Click Finish/Confirm
 
 ## Create a new GCP project folder
 This folder can be used in a subsequent `gam create project parent <String>` command.
