@@ -744,7 +744,7 @@ jobs:
              $gam create vaulthold matter $matterid name "GHA hold $newbase" corpus mail accounts $newuser
              $gam print vaultmatters matterstate open
              $gam print vaultholds matter $matterid
-             $gam print vaultcount matter $matterid corpus mail everyone todrive
+             $gam print vaultcount matter $matterid corpus mail everyone todrive tdnobrowser
              $gam create vaultexport matter $matterid name "GHA export $newbase" corpus mail accounts $newuser
              $gam print exports matter $matterid | $gam csv - gam info export $matterid id:~~id~~
              $gam config enable_dasa true save
@@ -783,10 +783,10 @@ jobs:
              $gam show crostelemetry storagepercentonly
              $gam report usageparameters customer
              $gam report usage customer parameters gmail:num_emails_sent,accounts:num_1day_logins
-             $gam report customer todrive
-             #$gam report users fields accounts:is_less_secure_apps_access_allowed,gmail:last_imap_time,gmail:last_pop_time filters "accounts:last_login_time>2019-01-01T00:00:00.000Z" todrive
-             $gam report users todrive
-             $gam report admin start -3d todrive
+             $gam report customer todrive tdnobrowser
+             #$gam report users fields accounts:is_less_secure_apps_access_allowed,gmail:last_imap_time,gmail:last_pop_time filters "accounts:last_login_time>2019-01-01T00:00:00.000Z" todrive tdnobrowser
+             $gam report users todrive tdnobrowser
+             $gam report admin start -3d todrive tdnobrowser
              $gam print devices nopersonaldevices nodeviceusers filter "serial:$JID$JID$JID$JID-" | $gam csv - gam delete device id ~name
              $gam config enable_dasa false save
              $gam print userinvitations
