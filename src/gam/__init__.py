@@ -213,6 +213,7 @@ SECONDS_PER_DAY = 86400
 SECONDS_PER_WEEK = 604800
 MAX_GOOGLE_SHEET_CELLS = 10000000 # See https://support.google.com/drive/answer/37603
 MAX_LOCAL_GOOGLE_TIME_OFFSET = 30
+SHARED_DRIVE_MAX_FILES_FOLDERS = 400000
 UTF8 = 'utf-8'
 UTF8_SIG = 'utf-8-sig'
 EV_GAMCFGDIR = 'GAMCFGDIR'
@@ -52301,6 +52302,8 @@ def printShowFileCounts(users):
       else:
         dataList = []
       dataList.extend([Ent.Choose(Ent.DRIVE_FILE_OR_FOLDER, total), total])
+      if sharedDriveId:
+        dataList.extend(['Item cap', f"{total/SHARED_DRIVE_MAX_FILES_FOLDERS:.2%}"])
       printEntityKVList(kvList, dataList, i, count)
       Ind.Increment()
       for mimeType, mimeTypeCount in sorted(iter(mimeTypeCounts.items())):
@@ -52308,7 +52311,7 @@ def printShowFileCounts(users):
       Ind.Decrement()
     else:
       if sharedDriveId:
-        row = {'User': user, 'id': sharedDriveId, 'name': sharedDriveName, 'Total': total}
+        row = {'User': user, 'id': sharedDriveId, 'name': sharedDriveName, 'Total': total, 'Item cap': f"{total/SHARED_DRIVE_MAX_FILES_FOLDERS:.2%}"}
       else:
         row = {'User': user, 'Total': total}
       if showSize:
@@ -52360,9 +52363,9 @@ def printShowFileCounts(users):
     getPermissionsForSharedDrives = False
   _setSelectionFields()
   if csvPF:
-    sortTitles = ['User', 'id', 'name', 'Total'] if fileIdEntity.get('shareddrive') else ['User', 'Total']
+    sortTitles = ['User', 'id', 'name', 'Total', 'Item cap'] if fileIdEntity.get('shareddrive') else ['User', 'Total']
     if showSize:
-      sortTitles.insert(-1, 'Size')
+      sortTitles.insert(-2, 'Size')
     csvPF.SetTitles(sortTitles)
     csvPF.SetSortAllTitles()
   pagesFields = getItemFieldsFromFieldsList('files', fieldsList)

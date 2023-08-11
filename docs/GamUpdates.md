@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.62.06
+
+Added output `Item cap` to `gam <UserTypeEntity> print filecounts select select <SharedDriveEntity>` that
+displays the total number of files/folders on the Shared Drive divided by 400000, the maximum number of file/folders on a Shared Drive.
+
 ### 6.62.05
 
 Added progress messages (suppressible)  to `gam <UserTypeEntity> print diskusage`.

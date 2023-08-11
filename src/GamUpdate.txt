@@ -2,6 +2,11 @@
 
 Merged GAM-Team version
 
+6.62.06
+
+Added output `Item cap` to `gam <UserTypeEntity> print filecounts select select <SharedDriveEntity>` that
+displays the total number of files/folders on the Shared Drive divided by 400000, the maximum number of file/folders on a Shared Drive.
+
 6.62.05
 
 Added progress messages (suppressible)  to `gam <UserTypeEntity> print diskusage`.
