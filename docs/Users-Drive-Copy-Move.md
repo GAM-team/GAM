@@ -132,18 +132,13 @@ By default, GAM displays a message referencing files and folders not selected fo
 * `suppressnotselectedmessages false` - Do not suppress these messages; this is the default
 * `suppressnotselectedmessages [true]` - Suppress these messages
 
-### By default, when copying sub files, all files, regardless of MIME type, are copied. You can specify
-restrictions on the MIME types to be copied.
+### By default, when copying sub files, all files, regardless of MIME type, are copied.
+You can specify restrictions on the MIME types to be copied.
 * `filemimetypes <MimeTypeList>` - Copy sub files with the specified MIME types
-* `filemimetypes not <MimeTypeList>` - Copy sub files with MIME types other than those specified
+* `filemimetypes not <MimeTypeList>` - Copy sub files with MIME types other than those specified 
 
-that limit the items copied based on their name.
-* `filenamematchpattern <RegularExpression>` - Only files whose name matches `<RegularExpression>` are copied
-* `foldernamematchpattern <RegularExpression>` - Only folders whose name matches `<RegularExpression>` are copied
-* `shortcutnamematchpattern <RegularExpression>` - Only shortcuts whose name matches `<RegularExpression>` are copied
-
-### By default, when copying sub files, folders and shortcuts, all are copied. You can specify `<RegularExpression>` patterns
-that limit the items copied based on their name.
+### By default, when copying sub files, folders and shortcuts, all are copied.
+You can specify `<RegularExpression>` patterns that limit the items copied based on their name.
 * `filenamematchpattern <RegularExpression>` - Only files whose name matches `<RegularExpression>` are copied
 * `foldernamematchpattern <RegularExpression>` - Only folders whose name matches `<RegularExpression>` are copied
 * `shortcutnamematchpattern <RegularExpression>` - Only shortcuts whose name matches `<RegularExpression>` are copied
