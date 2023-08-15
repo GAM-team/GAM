@@ -250,9 +250,23 @@ then filters the list to only those in `<PeopleContactGroupItem>`; quota limits 
 gam <UserTypeEntity> create contact
         [<PeopleContactAttribute>+]
         (contactgroup <PeopleContactGroupItem>)*
+        [(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*))| returnidonly]
 ```
 You may specify zero or more contact groups with `(contactgroup <PeopleContactGroupItem>)*`;
 these contact groups define the complete contact group list for the contact.
+
+By default, the user name and contact ID are displayed on stdout.
+* `csv [todrive <ToDriveAttribute>*]` - Write user name and contact ID values to a CSV file.
+  * `addcsvdata <FieldName> <String>` - Add additional columns of data from the command line to the output
+* `returnidonly` - Display just the contact ID on stdout
+
+To retrieve the contact ID with `returnidonly`:
+```
+Linux/MacOS
+contactId=$(gam user user@domain.com create contact ... returnidonly)
+Windows PowerShell
+$contactId = & gam user user@domain.com create contact ... returnidonly
+```
 
 ## Update User Contacts
 ```
@@ -546,6 +560,21 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 ## Manage User Contact Groups
 ```
 gam <UserTypeEntity> create contactgroup <PeopleContactGroupAttribute>+
+        [(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*))| returnidonly]
+```
+By default, the user name and contactgroup ID are displayed on stdout.
+* `csv [todrive <ToDriveAttribute>*]` - Write user name and contactgroup ID values to a CSV file.
+  * `addcsvdata <FieldName> <String>` - Add additional columns of data from the command line to the output
+* `returnidonly` - Display just the contactgroup ID on stdout
+
+To retrieve the contactgroup ID with `returnidonly`:
+```
+Linux/MacOS
+contactGroupId=$(gam user user@domain.com create contactgroup ... returnidonly)
+Windows PowerShell
+$contactGroupId = & gam user user@domain.com create contactgroup ... returnidonly
+```
+```
 gam <UserTypeEntity> update contactgroup <PeopleContactGroupItem> <PeopleContactGroupAttribute>+
 gam <UserTypeEntity> delete contactgroups <PeopleContactGroupEntity>
 ```
@@ -614,4 +643,3 @@ the quote character itself, the column delimiter (comma by default) and new-line
 When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
-

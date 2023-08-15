@@ -17637,6 +17637,21 @@ def doPrintAddresses():
 
 # Contact commands utilities
 #
+def _getCreateContactReturnOptions(parameters):
+  myarg = getArgument()
+  if myarg == 'returnidonly':
+    parameters['returnIdOnly'] = True
+  elif myarg == 'csv':
+    parameters['csvPF'] = CSVPrintFile(parameters['titles'], 'sortall')
+  elif parameters['csvPF'] and myarg == 'todrive':
+    parameters['csvPF'].GetTodriveParameters()
+  elif parameters['csvPF'] and myarg == 'addcsvdata':
+    k = getString(Cmd.OB_STRING)
+    parameters['addCSVData'][k] = getString(Cmd.OB_STRING, minLen=0)
+  else:
+    return False
+  return True
+#
 CONTACT_JSON = 'JSON'
 
 CONTACT_ID = 'ContactID'
@@ -18104,7 +18119,7 @@ class ContactsManager():
     return full_id[full_id.rfind('/')+1:]
 
   @staticmethod
-  def GetContactFields():
+  def GetContactFields(parameters=None):
 
     fields = {}
 
@@ -18155,6 +18170,10 @@ class ContactsManager():
 
     primary = {}
     while Cmd.ArgumentsRemaining():
+      if parameters is not None:
+        if _getCreateContactReturnOptions(parameters):
+          continue
+        Cmd.Backup()
       fieldName = getChoice(ContactsManager.CONTACT_ARGUMENT_TO_PROPERTY_MAP, mapChoice=True)
       if fieldName == CONTACT_BIRTHDAY:
         fields[fieldName] = getYYYYMMDD(minLen=0)
@@ -18690,7 +18709,13 @@ def dedupEmailAddressMatches(contactsManager, emailMatchType, fields):
 def _createContact():
   entityType = Ent.DOMAIN
   contactsManager = ContactsManager()
-  fields = contactsManager.GetContactFields()
+  parameters = {'csvPF': None, 'titles': ['Domain', CONTACT_ID], 'addCSVData': {}, 'returnIdOnly': False}
+  fields = contactsManager.GetContactFields(parameters)
+  csvPF = parameters['csvPF']
+  addCSVData = parameters['addCSVData']
+  if addCSVData:
+    csvPF.AddTitles(sorted(addCSVData.keys()))
+  returnIdOnly = parameters['returnIdOnly']
   contactEntry = contactsManager.FieldsToContact(fields)
   user, contactsObject = getContactsObject(True)
   try:
@@ -18698,15 +18723,27 @@ def _createContact():
                         throwErrors=[GDATA.BAD_REQUEST, GDATA.SERVICE_NOT_APPLICABLE, GDATA.FORBIDDEN],
                         retryErrors=[GDATA.INTERNAL_SERVER_ERROR],
                         new_contact=contactEntry, insert_uri=contactsObject.GetContactFeedUri(contact_list=user))
-    entityActionPerformed([entityType, user, Ent.CONTACT, contactsManager.GetContactShortId(contact)])
+    contactId = contactsManager.GetContactShortId(contact)
+    if returnIdOnly:
+      writeStdout(f'{contactId}\n')
+    elif not csvPF:
+      entityActionPerformed([entityType, user, Ent.CONTACT, contactId])
+    else:
+      row = {'Domain': user, CONTACT_ID: contactId}
+      if addCSVData:
+        row.update(addCSVData)
+      csvPF.WriteRow(row)
   except GDATA.badRequest as e:
     entityActionFailedWarning([entityType, user, Ent.CONTACT, ''], str(e))
   except GDATA.forbidden:
     entityServiceNotApplicableWarning(entityType, user)
   except GDATA.serviceNotApplicable:
     entityUnknownWarning(entityType, user)
+  if csvPF:
+    csvPF.writeCSVfile('Contacts')
 
 # gam create contact <ContactAttribute>+
+#	[(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*))| returnidonly]
 def doCreateDomainContact():
   _createContact()
 
@@ -19648,7 +19685,7 @@ class PeopleManager():
     }
 
   @staticmethod
-  def GetPersonFields(entityType, allowAddRemove):
+  def GetPersonFields(entityType, allowAddRemove, parameters=None):
     person = {}
     contactGroupsLists = {
       PEOPLE_GROUPS_LIST: [],
@@ -19717,6 +19754,10 @@ class PeopleManager():
         person[fieldName].append(entry)
 
     while Cmd.ArgumentsRemaining():
+      if parameters is not None:
+        if _getCreateContactReturnOptions(parameters):
+          continue
+        Cmd.Backup()
       locations['fieldName'] = Cmd.Location()
       fieldName = getChoice(PeopleManager.PEOPLE_ARGUMENT_TO_PROPERTY_MAP, mapChoice=True)
       if '.' in fieldName:
@@ -19890,9 +19931,13 @@ class PeopleManager():
       contactEntry[PEOPLE_MEMBERSHIPS].append({'contactGroupMembership': {'contactGroupResourceName': groupId}})
 
   @staticmethod
-  def GetContactGroupFields():
+  def GetContactGroupFields(parameters=None):
     contactGroup = {}
     while Cmd.ArgumentsRemaining():
+      if parameters is not None:
+        if _getCreateContactReturnOptions(parameters):
+          continue
+        Cmd.Backup()
       fieldName = getChoice(PeopleManager.PEOPLE_GROUP_ARGUMENT_TO_PROPERTY_MAP, mapChoice=True)
       if fieldName == PEOPLE_GROUP_NAME:
         contactGroup[PEOPLE_GROUP_NAME] = getString(Cmd.OB_STRING)
@@ -20238,12 +20283,19 @@ def validatePeopleContactGroupsList(people, contactId,
 
 # gam <UserTypeEntity> create contact <PeopleContactAttribute>+
 #	(contactgroup <ContactGroupItem>)*
+#	[(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*))| returnidonly]
 def createUserPeopleContact(users):
   entityType = Ent.USER
   peopleManager = PeopleManager()
   peopleEntityType = Ent.CONTACT
   sources = PEOPLE_READ_SOURCES_CHOICE_MAP['contact']
-  body, personFields, contactGroupsLists = peopleManager.GetPersonFields(entityType, False)
+  parameters = {'csvPF': None, 'titles': ['User', 'resourceName'], 'addCSVData': {}, 'returnIdOnly': False}
+  body, personFields, contactGroupsLists = peopleManager.GetPersonFields(entityType, False, parameters)
+  csvPF = parameters['csvPF']
+  addCSVData = parameters['addCSVData']
+  if addCSVData:
+    csvPF.AddTitles(sorted(addCSVData.keys()))
+  returnIdOnly = parameters['returnIdOnly']
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -20260,15 +20312,26 @@ def createUserPeopleContact(users):
     else:
       personFields.discard(PEOPLE_MEMBERSHIPS)
     try:
-      person = callGAPI(people.people(), 'createContact',
+      result = callGAPI(people.people(), 'createContact',
                         throwReasons=GAPI.PEOPLE_ACCESS_THROW_REASONS+[GAPI.INVALID_ARGUMENT],
                         retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
                         personFields=','.join(personFields), body=body, sources=sources)
-      entityActionPerformed([entityType, user, peopleEntityType, person['resourceName']], i, count)
+      resourceName = result['resourceName']
+      if returnIdOnly:
+        writeStdout(f'{resourceName}\n')
+      elif not csvPF:
+        entityActionPerformed([entityType, user, peopleEntityType, resourceName], i, count)
+      else:
+        row = {'User': user, 'resourceName': resourceName}
+        if addCSVData:
+          row.update(addCSVData)
+        csvPF.WriteRow(row)
     except GAPI.invalidArgument as e:
       entityActionFailedWarning([entityType, user, peopleEntityType, None], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.forbidden):
       ClientAPIAccessDeniedExit()
+  if csvPF:
+    csvPF.writeCSVfile('People Contacts')
 
 def localPeopleContactSelects(contactQuery, contact):
   if contactQuery['emailMatchPattern']:
@@ -21602,10 +21665,17 @@ def deleteUserPeopleContactPhoto(users):
   _processPeopleContactPhotos(users, 'deleteContactPhoto')
 
 # gam <UserTypeEntity> create contactgroup <ContactGroupAttribute>+
+#	[(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*))| returnidonly]
 def createUserPeopleContactGroup(users):
   peopleManager = PeopleManager()
   entityType = Ent.USER
-  body, _ = peopleManager.GetContactGroupFields()
+  parameters = {'csvPF': None, 'titles': ['User', 'resourceName'], 'addCSVData': {}, 'returnIdOnly': False}
+  body, _ = peopleManager.GetContactGroupFields(parameters)
+  csvPF = parameters['csvPF']
+  addCSVData = parameters['addCSVData']
+  if addCSVData:
+    csvPF.AddTitles(sorted(addCSVData.keys()))
+  returnIdOnly = parameters['returnIdOnly']
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -21623,11 +21693,22 @@ def createUserPeopleContactGroup(users):
       result = callGAPI(people.contactGroups(), 'create',
                         throwReasons=GAPI.PEOPLE_ACCESS_THROW_REASONS,
                         body={'contactGroup': body}, fields='resourceName')
-      entityActionPerformed([entityType, user, Ent.CONTACT_GROUP, result['resourceName']], i, count)
+      resourceName = result['resourceName']
+      if returnIdOnly:
+        writeStdout(f'{resourceName}\n')
+      elif not csvPF:
+        entityActionPerformed([entityType, user, Ent.CONTACT_GROUP, resourceName], i, count)
+      else:
+        row = {'User': user, 'resourceName': resourceName}
+        if addCSVData:
+          row.update(addCSVData)
+        csvPF.WriteRow(row)
     except GAPI.forbidden:
       entityServiceNotApplicableWarning(entityType, user, i, count)
     except GAPI.serviceNotAvailable:
       entityUnknownWarning(entityType, user, i, count)
+  if csvPF:
+    csvPF.writeCSVfile('People Contact Groups')
 
 # gam <UserTypeEntity> update contactgroups <ContactGroupItem> <ContactAttribute>+
 def updateUserPeopleContactGroup(users):

@@ -10,6 +10,30 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.62.08
+
+Added option `addcsvdata <FieldName> <String>` to these commands.  This adds additional columns of data to the CSV file output
+when the `csv` option is used.
+```
+gam create contact
+gam <UserTypeEntity> create contact
+gam <UserTypeEntity> create contactgroup
+```
+
+### 6.62.07
+
+Added option `csv [todrive <ToDriveAttribute>*]` to these commands that causes GAM to output
+the contact creator and contact ID in CSV form. This will be useful when bulk contacts are created.
+
+Added `returnidonly` to these commands that causes GAM to return just the
+contact ID as output. This will be useful in scripts that create a contact and then
+want to perform subsequent GAM commands on the contact.
+```
+gam create contact
+gam <UserTypeEntity> create contact
+gam <UserTypeEntity> create contactgroup
+```
+
 ### 6.62.06
 
 Added output `Item cap` to `gam <UserTypeEntity> print filecounts select select <SharedDriveEntity>` that

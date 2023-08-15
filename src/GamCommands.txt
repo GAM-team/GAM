@@ -3162,6 +3162,7 @@ gam show domainaliases|aliasdomains [formatjson]
         [updated_min <Date>]
 
 gam create contact <ContactAttribute>+
+        [(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*))| returnidonly]
 gam update contacts <ContactEntity>|<ContactSelection> <ContactAttribute>+
 gam clear contacts <ContactEntity>|<ContactSelection>
         [emailclearpattern <RegularExpression>] [emailcleartype work|home|other|<String>]
@@ -7141,6 +7142,7 @@ gam <UserTypeEntity> sync license <SKUIDList> [product|productid <ProductID>] [a
 gam <UserTypeEntity> create contact
         [<PeopleContactAttribute>+]
         (contactgroup <ContactGroupItem>)*
+        [(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*))| returnidonly]
 gam <UserTypeEntity> update contacts
         <PeopleResourceNameEntity>|(<PeopleUserContactSelection> endquery)
         [<PeopleContactAttribute>+]
@@ -7237,6 +7239,7 @@ gam <UserTypeEntity> print othercontacts [todrive <ToDriveAttribute>*]
 <PeopleContactGroupFieldList> ::= "<PeopleContactGroupField>(,<PeopleContactGroupField>)*"
 
 gam <UserTypeEntity> create contactgroup <PeopleContactGroupAttribute>+
+        [(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*))| returnidonly]
 gam <UserTypeEntity> update contactgroup <PeopleContactGroupItem> <PeopleContactGroupAttribute>+
 gam <UserTypeEntity> delete contactgroups <PeopleContactGroupEntity>
 

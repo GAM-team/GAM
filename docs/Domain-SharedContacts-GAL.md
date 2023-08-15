@@ -185,7 +185,21 @@
 ## Create domain shared contacts
 ```
 gam create contact <ContactAttribute>+
+        [(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*))| returnidonly]
 ```
+By default, the domain name and contact ID are displayed on stdout.
+* `csv [todrive <ToDriveAttribute>*]` - Write domain name and contact ID values to a CSV file.
+  * `addcsvdata <FieldName> <String>` - Add additional columns of data from the command line to the output
+* `returnidonly` - Display just the contact ID on stdout
+
+To retrieve the contact ID with `returnidonly`:
+```
+Linux/MacOS
+contactId=$(gam create contact ... returnidonly)
+Windows PowerShell
+$contactId = & gam create contact ... returnidonly
+```
+
 ## Select domain shared contacts
 You specify contacts by ID or by selection qualifiers.
 ```
