@@ -244,7 +244,7 @@ Partial serial number searches are supported, as long as you enter at least thre
 ### Status
 To view all provisioned or deprovisioned devices, select the status from the left drop-down, and all of the devices that fit this criterion will appear in the view. Alternatively, you can do the following searches from the All devices view:
 
-`gam print cros query "status:[provisioned|disable|deprovisioned]"`
+`gam print cros query "status:[provisioned|disabled|deprovisioned]"`
 
 ### User
 Enter user: as the operator. For example, to match the name Joe, but not Joey, enter the following:
