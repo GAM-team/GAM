@@ -441,6 +441,11 @@ jobs:
         run: |
              echo "before anything..."
              "${PYTHON}" -m pip list
+             pyminor=$($PYTHON  -c "import sys; print(sys.version_info[1])")
+             if [ "$pyminor" == "12" ]; then
+               # Temp fix on Python 3.12 to avoid six library
+               "$PYTHON" -m pip install git+https://github.com/googleapis/google-auth-library-python.git git+https://github.com/jay0lee/google-auth-library-python-httplib2
+             fi
              if ([ "${RUNNER_OS}" == "macOS" ] && [ "$arch" == "universal2" ]); then
                # cffi is a dep of cryptography and doesn't ship
                # a universal2 wheel so we must build one ourself :-/
