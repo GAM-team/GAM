@@ -47887,10 +47887,10 @@ def _showCalendarWorkingLocation(primaryEmail, calId, eventEntityType, event, k,
   Ind.Decrement()
 
 # gam <UserTypeEntity> create workinglocation
-#	home|
-#	custom <String>
-#	office <String> [building|buildingid <String>] [floor|floorname <String>]
-#			[section|floorsection <String>] [desk|deskcode <String>]
+#	(home|
+#	 (custom <String>)|
+#	 (office <String> [building|buildingid <String>] [floor|floorname <String>]
+#	   		  [section|floorsection <String>] [desk|deskcode <String>]))
 #	((date yyyy-mm-dd)|
 #	 (range yyyy-mm-dd yyyy-mm-dd)|
 #	 (daily yyyy-mm-dd N)|

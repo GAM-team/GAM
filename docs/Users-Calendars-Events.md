@@ -18,10 +18,14 @@
 - [Empty calendar trash](#empty-calendar-trash)
 - [Display calendar events](#display-calendar-events)
 - [Update calendar event attendees](#update-calendar-event-attendees)
+- [Working location events](#working-location-events)
+  - [Manage working location events](#manage-working-location-events)
+  - [Display working location events](#display-working-location-events)
 
 ## API documentation
 * https://developers.google.com/calendar/v3/reference/events
 * https://developers.google.com/calendar/v3/reference/events/import
+* https://developers.google.com/calendar/api/guides/working-hours-and-location
 
 ## Definitions
 * [`<UserTypeEntity>`](Collections-of-Users)
@@ -306,7 +310,11 @@
         tentative|
         (timezone <TimeZone>)|
         (transparency opaque|transparent)|
-        (visibility default|public|private)
+        (visibility default|public|private)|
+	(workinglocation (home|
+                          (custom <String>)|
+                          (office <String> [building|buildingid <String>] [floor|floorname <String>]
+                              [section|floorsection <String>] [desk|deskcode <String>])))
 
 The following attributes are equivalent:
         available - transparency transparent
@@ -682,3 +690,76 @@ option causes GAM to make two updates to the attendee list; the first removes th
 the second adds the primary email.
 
 The attendee changes are displayed but not processed unless `doit` is specified.
+
+## Working location events
+
+## Manage working location events
+You can create and delete working location events; they can not be updated.
+To update a working location event, delete the working location event and recreate it.
+```
+gam <UserTypeEntity> create workinglocation
+        (home|
+         (custom <String>)|
+         (office <String> [building|buildingid <String>] [floor|floorname <String>]
+              [section|floorsection <String>] [desk|deskcode <String>]))
+        ((date yyyy-mm-dd)|
+         (range yyyy-mm-dd yyyy-mm-dd)|
+         (daily yyyy-mm-dd <Number>)|
+         (weekly yyyy-mm-dd <Number>)|
+         (timerange <Time> <Time>))+
+
+gam <UserTypeEntity> delete workinglocation
+        ((date yyyy-mm-dd)|
+         (range yyyy-mm-dd yyyy-mm-dd)|
+         (daily yyyy-mm-dd <Number>)|
+         (weekly yyyy-mm-dd <Number>)|
+         (timerange <Time> <Time>))+
+```
+
+Use one of `home`, `custom <String>` and `office <String>` to specify the working location event label.
+
+Working location events are either single all day events or span a time range:
+* `date yyyy-mm-dd` - A specific day
+* `range yyyy-mm-dd yyyy-mm-dd` - Every day in the range
+* `daily yyyy-mm-dd <Number>` - Every day starting on the date for `<Number>` total days
+* `weekly yyyy-mm-dd <Number>` - A day per week starting on the date for `<Number>` total weeks
+* `timerange <Time> <Time>` - A time range, may span multiple days
+
+## Display working location events
+```
+gam <UserTypeEntity> show workinglocation
+        ((date yyyy-mm-dd)|
+         (range yyyy-mm-dd yyyy-mm-dd)|
+         (daily yyyy-mm-dd <Number>)|
+         (weekly yyyy-mm-dd <Number>)|
+         (timerange <Time> <Time>))+
+        [showdayofweek]
+        [formatjson]
+```
+`showdayofweek` displays `dayOfWeek` when event start and end times are displayed.
+
+By default, Gam displays the information as an indented list of keys and values.
+* `formatjson` - Display the fields in JSON format.
+
+```
+gam <UserTypeEntity> print workinglocation
+        ((date yyyy-mm-dd)|
+         (range yyyy-mm-dd yyyy-mm-dd)|
+         (daily yyyy-mm-dd <Number>)|
+         (weekly yyyy-mm-dd <Number>)|
+         (timerange <Time> <Time>))+
+        [showdayofweek]
+        [formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
+```
+`showdayofweek` displays columns `start.dayOfWeek` and `end.dayOfWeek` when event start and end times are displayed.
+
+By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
+* `formatjson` - Display the fields in JSON format.
+
+By default, Gam displays event details, use `countsonly` to display only the number of events. `formatjson` does not apply in this case.
+
+By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
+the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
+When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
+The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
+`quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.

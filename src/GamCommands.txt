@@ -1622,7 +1622,11 @@ gam calendar <CalendarEntity> printacl [todrive <ToDriveAttribute>*]
         tentative|
         (timezone <TimeZone>)|
         (transparency opaque|transparent)|
-        (visibility default|public|private)
+        (visibility default|public|private)|
+        (workinglocation (home|
+                          (custom <String>)|
+                          (office <String> [building|buildingid <String>] [floor|floorname <String>]
+                          [section|floorsection <String>] [desk|deskcode <String>])))
 
 The following attributes are equivalent:
         available - transparency transparent
@@ -5654,6 +5658,43 @@ gam <UserTypeEntity> update calattendees <UserCalendarEntity> <EventEntity> [any
         (replacestatus [<AttendeeAttendance>] [<AttendeeStatus>] <EmailAddress> <EmailAddress>)*
         (updatestatus [<AttendeeAttendance>] [<AttendeeStatus>] <EmailAddress>)*
         (updateentitystatus [<AttendeeAttendance>] [<AttendeeStatus>] <EmailAddressEntity>)*
+
+Manage/Display Working Locations
+
+gam <UserTypeEntity> create workinglocation
+        (home|
+         (custom <String>)|
+         (office <String> [building|buildingid <String>] [floor|floorname <String>]
+              [section|floorsection <String>] [desk|deskcode <String>]))
+        ((date yyyy-mm-dd)|
+         (range yyyy-mm-dd yyyy-mm-dd)|
+         (daily yyyy-mm-dd <Number>)|
+         (weekly yyyy-mm-dd <Number>)|
+         (timerange <Time> <Time>))+
+
+gam <UserTypeEntity> delete workinglocation
+        ((date yyyy-mm-dd)|
+         (range yyyy-mm-dd yyyy-mm-dd)|
+         (daily yyyy-mm-dd <Number>)|
+         (weekly yyyy-mm-dd <Number>)|
+         (timerange <Time> <Time>))+
+
+gam <UserTypeEntity> show workinglocation
+        ((date yyyy-mm-dd)|
+         (range yyyy-mm-dd yyyy-mm-dd)|
+         (daily yyyy-mm-dd <Number>)|
+         (weekly yyyy-mm-dd <Number>)|
+         (timerange <Time> <Time>))+
+        [showdayofweek]
+        [formatjson]
+gam <UserTypeEntity> print workinglocation
+        ((date yyyy-mm-dd)|
+         (range yyyy-mm-dd yyyy-mm-dd)|
+         (daily yyyy-mm-dd <Number>)|
+         (weekly yyyy-mm-dd <Number>)|
+         (timerange <Time> <Time>))+
+        [showdayofweek]
+        [formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
 
 # Users Chat
 
