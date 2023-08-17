@@ -39940,6 +39940,7 @@ def getUserAttributes(cd, updateCmd, noUid=False):
   addGroups = {}
   addAliases = []
   PwdOpts = PasswordOptions(updateCmd)
+  resolveConflictAccount = True
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'notify':
@@ -39967,6 +39968,8 @@ def getUserAttributes(cd, updateCmd, noUid=False):
         unknownArgumentExit()
     elif myarg == 'verifynotinvitable':
       parameters['verifyNotInvitable'] = True
+    elif myarg == 'alwaysevict':
+      resolveConflictAccount = False
     elif updateCmd and myarg == 'createifnotfound':
       parameters['createIfNotFound'] = True
     elif updateCmd and myarg == 'noactionifalias':
@@ -40340,7 +40343,9 @@ def getUserAttributes(cd, updateCmd, noUid=False):
       unknownArgumentExit()
   if not PwdOpts.makeUniqueRandomPassword:
     PwdOpts.AssignPassword(body, notify, notFoundBody, parameters['createIfNotFound'])
-  return (body, notify, tagReplacements, addGroups, addAliases, PwdOpts, updatePrimaryEmail, notFoundBody, groupOrgUnitMap, parameters)
+  return (body, notify, tagReplacements, addGroups, addAliases, PwdOpts,
+          updatePrimaryEmail, notFoundBody, groupOrgUnitMap, parameters,
+          resolveConflictAccount)
 
 def createUserAddToGroups(cd, user, addGroups, i, count):
   action = Act.Get()
@@ -40374,7 +40379,10 @@ def createUserAddAliases(cd, user, aliasList, i, count):
 #	[addnumericsuffixonduplicate <Number>]
 def doCreateUser():
   cd = buildGAPIObject(API.DIRECTORY)
-  body, notify, tagReplacements, addGroups, addAliases, PwdOpts, _, _, _, parameters = getUserAttributes(cd, False, noUid=True)
+  body, notify, tagReplacements, addGroups, addAliases, PwdOpts, _, _, _, \
+  parameters, resolveConflictAccount = getUserAttributes(cd,
+                                                           False,
+                                                           noUid=True)
   suffix = 0
   originalEmail = body['primaryEmail']
   atLoc = originalEmail.find('@')
@@ -40392,7 +40400,9 @@ def doCreateUser():
                                       GAPI.DOMAIN_CANNOT_USE_APIS, GAPI.FORBIDDEN,
                                       GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.INVALID_PARAMETER,
                                       GAPI.INVALID_ORGUNIT, GAPI.INVALID_SCHEMA_VALUE],
-                        body=body, fields=fields)
+                        body=body,
+                        fields=fields,
+                        resolveConflictAccount=resolveConflictAccount)
       entityActionPerformed([Ent.USER, user])
       break
     except GAPI.duplicate:
@@ -40471,7 +40481,9 @@ def verifyUserPrimaryEmail(cd, user, createIfNotFound, i, count):
 def updateUsers(entityList):
   cd = buildGAPIObject(API.DIRECTORY)
   ci = None
-  body, notify, tagReplacements, addGroups, addAliases, PwdOpts, updatePrimaryEmail, notFoundBody, groupOrgUnitMap, parameters = getUserAttributes(cd, True)
+  body, notify, tagReplacements, addGroups, addAliases, PwdOpts, \
+  updatePrimaryEmail, notFoundBody, groupOrgUnitMap, parameters, \
+  _ = getUserAttributes(cd, True)
   vfe = 'primaryEmail' in body and body['primaryEmail'][:4].lower() == 'vfe@'
   if body.get('orgUnitPath', '') and parameters['immutableOUs']:
     ubody = body.copy()
