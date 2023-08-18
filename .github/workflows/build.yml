@@ -637,6 +637,8 @@ jobs:
              $gam config domain "pdl.jaylee.us" save
              $gam config admin_email "${gam_user}" save
              $gam config enable_dasa false save
+             # temp attempt to fix Python 3.12 and WIF issues
+             $gam config tls_min_version TLSv1_2 save
              $gam oauth info
              $gam oauth refresh
              $gam config enable_dasa true save 
