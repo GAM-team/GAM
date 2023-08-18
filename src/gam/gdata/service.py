@@ -1087,7 +1087,7 @@ class GDataService(atom.service.AtomService):
         location = (server_response.getheader('Location')
                     or server_response.getheader('location'))
         if location is not None:
-          m = re.compile('[?&]gsessionid=(\w*)').search(location)
+          m = re.compile(r'[?&]gsessionid=(\w*)').search(location)
           if m is not None:
             self.__gsessionid = m.group(1)
           return GDataService.Get(self, location, extra_headers, redirects_remaining - 1, 
@@ -1335,7 +1335,7 @@ class GDataService(atom.service.AtomService):
         location = (server_response.getheader('Location')
                     or server_response.getheader('location'))
         if location is not None:
-          m = re.compile('[?&]gsessionid=(\w*)').search(location)
+          m = re.compile(r'[?&]gsessionid=(\w*)').search(location)
           if m is not None:
             self.__gsessionid = m.group(1) 
           return GDataService.PostOrPut(self, verb, data, location, 
@@ -1433,7 +1433,7 @@ class GDataService(atom.service.AtomService):
         location = (server_response.getheader('Location')
                     or server_response.getheader('location'))
         if location is not None:
-          m = re.compile('[?&]gsessionid=(\w*)').search(location)
+          m = re.compile(r'[?&]gsessionid=(\w*)').search(location)
           if m is not None:
             self.__gsessionid = m.group(1) 
           return GDataService.Delete(self, location, extra_headers, 
