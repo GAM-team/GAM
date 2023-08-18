@@ -5135,7 +5135,7 @@ gam download storagefile <StorageBucketObjectName>
         <UserClearAttribute>
 
 gam create|add user <EmailAddress> [ignorenullpassword] <UserAttribute>*
-        [verifynotinvitable]
+        [verifynotinvitable|alwaysevict]
         (groups [<GroupRole>] [[delivery] <DeliverySetting>] <GroupEntity>)*
         [alias|aliases <EmailAddressList>]
         [license <SKUIDList> [product|productid <ProductID>]]
@@ -5152,7 +5152,7 @@ gam create|add user <EmailAddress> [ignorenullpassword] <UserAttribute>*
 gam <UserTypeEntity> waitformailbox [retries <Number>]
 
 gam update user <UserItem> [ignorenullpassword] <UserAttribute>*
-        [verifynotinvitable] [noactionifalias]
+        [verifynotinvitable|alwaysevict] [noactionifalias]
         [updateprimaryemail <RegularExpression> <EmailReplacement>]
         [updateoufromgroup <FileName> [charset <CharSet>]
             [columndelimiter <Character>] [quotechar <Character>]

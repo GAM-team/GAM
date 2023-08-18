@@ -12223,7 +12223,7 @@ def doCreateGCPServiceAccount():
     systemErrorExit(API_ACCESS_DENIED_RC, str(e))
   sa_info['client_id'] = token_info['issued_to']
   sa_output = json.dumps(sa_info, ensure_ascii=False, sort_keys=True, indent=2)
-  print(f'Writing SignJWT service account data:\n\n{sa_output}')
+  writeStdout(f'Writing SignJWT service account data:\n\n{sa_output}\n')
   writeFile(GC.Values[GC.OAUTH2SERVICE_JSON], sa_output, continueOnError=False)
 
 # Audit command utilities
@@ -40367,6 +40367,7 @@ def createUserAddAliases(cd, user, aliasList, i, count):
   Act.Set(action)
 
 # gam create user <EmailAddress> <UserAttribute>
+#	[verifynotinvitable|alwaysevict]
 #	(groups [<GroupRole>] [[delivery] <DeliverySetting>] <GroupEntity>)*
 #	[alias|aliases <EmailAddressList>]
 #	[license <SKUID> [product|productid <ProductID>]]
@@ -40382,8 +40383,9 @@ def createUserAddAliases(cd, user, aliasList, i, count):
 #	[addnumericsuffixonduplicate <Number>]
 def doCreateUser():
   cd = buildGAPIObject(API.DIRECTORY)
-  body, notify, tagReplacements, addGroups, addAliases, PwdOpts, _, _, _, \
-  parameters, resolveConflictAccount = getUserAttributes(cd,
+  body, notify, tagReplacements, addGroups, addAliases, PwdOpts, \
+    _, _, _, \
+    parameters, resolveConflictAccount = getUserAttributes(cd,
                                                            False,
                                                            noUid=True)
   suffix = 0
@@ -40463,7 +40465,8 @@ def verifyUserPrimaryEmail(cd, user, createIfNotFound, i, count):
   entityUnknownWarning(Ent.USER, user, i, count)
   return False
 
-# gam <UserTypeEntity> update user <UserAttribute>* [noactionifalias]
+# gam <UserTypeEntity> update user <UserAttribute>*
+#	[verifynotinvitable|alwaysevict] [noactionifalias]
 #	[updateprimaryemail <RegularExpression> <EmailReplacement>]
 #	[updateoufromgroup <CSVFileInput> [keyfield <FieldName>] [datafield <FieldName>]]
 #	[immutableous <OrgUnitEntity>]|
@@ -40480,13 +40483,13 @@ def verifyUserPrimaryEmail(cd, user, createIfNotFound, i, count):
 #	    (replace <Tag> <UserReplacement>)*]
 #	[notifyonupdate [<Boolean>]]
 #	[lograndompassword <FileName>] [ignorenullpassword]
-#	[verifynotinvitable]
 def updateUsers(entityList):
   cd = buildGAPIObject(API.DIRECTORY)
   ci = None
   body, notify, tagReplacements, addGroups, addAliases, PwdOpts, \
-  updatePrimaryEmail, notFoundBody, groupOrgUnitMap, parameters, \
-  _ = getUserAttributes(cd, True)
+    updatePrimaryEmail, notFoundBody, groupOrgUnitMap, \
+    parameters, resolveConflictAccount = getUserAttributes(cd,
+                                                           True)
   vfe = 'primaryEmail' in body and body['primaryEmail'][:4].lower() == 'vfe@'
   if body.get('orgUnitPath', '') and parameters['immutableOUs']:
     ubody = body.copy()
@@ -40582,7 +40585,9 @@ def updateUsers(entityList):
                                   throwReasons=[GAPI.DUPLICATE, GAPI.DOMAIN_NOT_FOUND, GAPI.FORBIDDEN,
                                                 GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.INVALID_PARAMETER,
                                                 GAPI.INVALID_ORGUNIT, GAPI.INVALID_SCHEMA_VALUE],
-                                  body=body, fields=fields)
+                                  body=body,
+                                  fields=fields,
+                                  resolveConflictAccount=resolveConflictAccount)
                 entityActionPerformed([Ent.USER, body['primaryEmail']], i, count)
                 if PwdOpts.filename and PwdOpts.notFoundPassword:
                   writeFile(PwdOpts.filename, f'{user},{PwdOpts.notFoundPassword}\n', mode='a', continueOnError=True)

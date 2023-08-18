@@ -2,6 +2,18 @@
 
 Merged GAM-Team version
 
+6.63.01
+
+Following Jay's lead, added option `alwaysevict` to `gam create|update user` that is used to specify GAM's
+behavior when `verifynotinvitable` is not specified and there is a conflict with an unmanaged account.
+
+By default, when creating a user that has a conflict with an unmanaged account, GAM will honor the setting on this page:
+  * https://admin.google.com/ac/accountsettings/conflictaccountmanagement
+
+Specifying `alwaysevict` forces GAM to select this setting: `Replace conflicting unmanaged accounts with managed ones`
+
+With `gam update user`, `alwaysevict` only applies if `createifnotfound` is specified and the user was not found to update and must be created.
+
 6.63.00
 
 Added support for calendar working location events.

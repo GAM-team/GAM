@@ -1,5 +1,5 @@
 # Running GAMADV-XTD3 securely on a Google Compute Engine
-- [Thanks](#Thanks)
+- [thanks](#thanks)
 - [Introduction](#introduction)
 - [Setup Steps](#setup-steps)
 

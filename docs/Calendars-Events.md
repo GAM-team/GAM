@@ -11,7 +11,7 @@
   - [Add calendar attendees](#add-calendar-attendees)
 - [Update calendar events](#update-calendar-events)
   - [Update calendar attendees](#update-calendar-attendees)
-- [Specify calendar attendees with JSON data](#specify-calendar-attendees-with-JSON-data)
+- [Specify calendar attendees with JSON data](#specify-calendar-attendees-with-json-data)
 - [Delete selected calendar events](#delete-selected-calendar-events)
 - [Delete all calendar events](#delete-all-calendar-events)
 - [Move calendar events to another calendar](#move-calendar-events-to-another-calendar)
