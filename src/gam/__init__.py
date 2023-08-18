@@ -13864,7 +13864,8 @@ PC_PATTERN = re.compile(r'(?s){PC}.*?{/PC}')
 UC_PATTERN = re.compile(r'(?s){UC}.*?{/UC}')
 LC_PATTERN = re.compile(r'(?s){LC}.*?{/LC}')
 CASE_MARKERS = {'PC', '/PC', 'UC', '/UC', 'LC', '/LC'}
-SKIP_PATTERNS = [re.compile(r'<head>.*?</head>'), re.compile(r'<script>.*?</script>')]
+SKIP_PATTERNS = [re.compile(r'<head>.*?</head>', flags=re.IGNORECASE),
+                 re.compile(r'<script>.*?</script>', flags=re.IGNORECASE)]
 
 def _processTagReplacements(tagReplacements, message):
   def pcase(trstring):
