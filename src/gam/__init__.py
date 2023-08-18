@@ -4329,7 +4329,8 @@ class signjwtSignJwt(google.auth.crypt.Signer):
   def sign(self, message):
     ''' Call IAM Credentials SignJWT API to get our signed JWT '''
     try:
-      credentials, _ = google.auth.default(scopes=[API.IAM_SCOPE])
+      credentials, _ = google.auth.default(scopes=[API.IAM_SCOPE],
+                                           request=getTLSv1_2Request())
     except (google.auth.exceptions.DefaultCredentialsError, google.auth.exceptions.RefreshError) as e:
       systemErrorExit(API_ACCESS_DENIED_RC, str(e))
     httpObj = transportAuthorizedHttp(credentials, http=getHttpObj())
