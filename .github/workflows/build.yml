@@ -685,7 +685,7 @@ jobs:
              $gam user $gam_user sendemail recipient $newuser subject "test message $newbase" message "GHA test message"
              $gam user $gam_user sendemail recipient exchange@pdl.jaylee.us subject "test ${tstamp}" message "test message"
              $gam config enable_dasa false save
-             $gam create contact firstname GHA lastname "$JID" email "${newbase}@example.com"
+             $gam create contact firstname GHA lastname "$JID" email work "${newbase}@example.com" primary
              $gam print contacts
              $gam user $newuser add license workspaceenterpriseplus
              $gam print privileges
