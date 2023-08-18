@@ -665,7 +665,7 @@ jobs:
              $gam config csv_output_row_filter "email:regex:^gha_test_${JID}_" print cigroups | $gam csv - gam delete cigroup ~email
              $gam config csv_output_row_filter "resourceId:regex:^gha_test_${JID}_" print resources | $gam csv - gam delete resource ~resourceId
              $gam config csv_output_row_filter "buildingId:regex:^gha_test_${JID}_" print buildings | $gam csv - gam delete building ~buildingId
-             $gam config csv_output_row_filter "Emails.1.address:^gha_test-${JID}_" print contacts | $gam csv - gam delete contact ~ContactID
+             $gam config csv_output_row_filter "Emails.1.address:regex:^gha_test-${JID}_" print contacts | $gam csv - gam delete contact ~ContactID
 
              echo "Creating OrgUnit ${newou}"
              $gam create ou "${newou}"
