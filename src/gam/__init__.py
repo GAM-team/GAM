@@ -12222,6 +12222,7 @@ def doCreateGCPServiceAccount():
     systemErrorExit(API_ACCESS_DENIED_RC, str(e))
   sa_info['client_id'] = token_info['issued_to']
   sa_output = json.dumps(sa_info, ensure_ascii=False, sort_keys=True, indent=2)
+  print(f'Writing SignJWT service account data:\n\n{sa_output}')
   writeFile(GC.Values[GC.OAUTH2SERVICE_JSON], sa_output, continueOnError=False)
 
 # Audit command utilities
