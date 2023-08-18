@@ -12222,7 +12222,7 @@ def doCreateGCPServiceAccount():
     systemErrorExit(API_ACCESS_DENIED_RC, str(e))
   sa_info['client_id'] = token_info['issued_to']
   sa_output = json.dumps(sa_info, ensure_ascii=False, sort_keys=True, indent=2)
-  print(f'Writing SignJWT service account data:\n\n{sa_output}')
+  writeStdout(f'Writing SignJWT service account data:\n\n{sa_output}\n')
   writeFile(GC.Values[GC.OAUTH2SERVICE_JSON], sa_output, continueOnError=False)
 
 # Audit command utilities
@@ -40366,6 +40366,7 @@ def createUserAddAliases(cd, user, aliasList, i, count):
   Act.Set(action)
 
 # gam create user <EmailAddress> <UserAttribute>
+#	[verifynotinvitable|alwaysevict]
 #	(groups [<GroupRole>] [[delivery] <DeliverySetting>] <GroupEntity>)*
 #	[alias|aliases <EmailAddressList>]
 #	[license <SKUID> [product|productid <ProductID>]]
@@ -40463,7 +40464,8 @@ def verifyUserPrimaryEmail(cd, user, createIfNotFound, i, count):
   entityUnknownWarning(Ent.USER, user, i, count)
   return False
 
-# gam <UserTypeEntity> update user <UserAttribute>* [noactionifalias]
+# gam <UserTypeEntity> update user <UserAttribute>*
+#	[verifynotinvitable|alwaysevict] [noactionifalias]
 #	[updateprimaryemail <RegularExpression> <EmailReplacement>]
 #	[updateoufromgroup <CSVFileInput> [keyfield <FieldName>] [datafield <FieldName>]]
 #	[immutableous <OrgUnitEntity>]|
@@ -40480,7 +40482,6 @@ def verifyUserPrimaryEmail(cd, user, createIfNotFound, i, count):
 #	    (replace <Tag> <UserReplacement>)*]
 #	[notifyonupdate [<Boolean>]]
 #	[lograndompassword <FileName>] [ignorenullpassword]
-#	[verifynotinvitable]
 def updateUsers(entityList):
   cd = buildGAPIObject(API.DIRECTORY)
   ci = None
