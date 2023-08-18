@@ -1,5 +1,5 @@
 # Using GAMADV-XTD3 with a delegated admin service account
-- [Thanks](#Thanks)
+- [Thanks](#thanks)
 - [Introduction](#introduction)
 - [Advantages](#advantages)
 - [Disadvantages](#disadvantages)

@@ -40380,8 +40380,9 @@ def createUserAddAliases(cd, user, aliasList, i, count):
 #	[addnumericsuffixonduplicate <Number>]
 def doCreateUser():
   cd = buildGAPIObject(API.DIRECTORY)
-  body, notify, tagReplacements, addGroups, addAliases, PwdOpts, _, _, _, \
-  parameters, resolveConflictAccount = getUserAttributes(cd,
+  body, notify, tagReplacements, addGroups, addAliases, PwdOpts, \
+    _, _, _, \
+    parameters, resolveConflictAccount = getUserAttributes(cd,
                                                            False,
                                                            noUid=True)
   suffix = 0
@@ -40483,8 +40484,9 @@ def updateUsers(entityList):
   cd = buildGAPIObject(API.DIRECTORY)
   ci = None
   body, notify, tagReplacements, addGroups, addAliases, PwdOpts, \
-  updatePrimaryEmail, notFoundBody, groupOrgUnitMap, parameters, \
-  _ = getUserAttributes(cd, True)
+    updatePrimaryEmail, notFoundBody, groupOrgUnitMap, \
+    parameters, resolveConflictAccount = getUserAttributes(cd,
+                                                           True)
   vfe = 'primaryEmail' in body and body['primaryEmail'][:4].lower() == 'vfe@'
   if body.get('orgUnitPath', '') and parameters['immutableOUs']:
     ubody = body.copy()
@@ -40580,7 +40582,9 @@ def updateUsers(entityList):
                                   throwReasons=[GAPI.DUPLICATE, GAPI.DOMAIN_NOT_FOUND, GAPI.FORBIDDEN,
                                                 GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.INVALID_PARAMETER,
                                                 GAPI.INVALID_ORGUNIT, GAPI.INVALID_SCHEMA_VALUE],
-                                  body=body, fields=fields)
+                                  body=body,
+                                  fields=fields,
+                                  resolveConflictAccount=resolveConflictAccount)
                 entityActionPerformed([Ent.USER, body['primaryEmail']], i, count)
                 if PwdOpts.filename and PwdOpts.notFoundPassword:
                   writeFile(PwdOpts.filename, f'{user},{PwdOpts.notFoundPassword}\n', mode='a', continueOnError=True)

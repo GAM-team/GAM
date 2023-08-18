@@ -11,7 +11,7 @@
 - [GUI API Group settings mapping](#gui-api-group-settings-mapping)
 - [GUI API Group access type settings mapping](#gui-api-group-access-type-settings-mapping)
 - [Manage groups](#manage-groups)
-- [Update a group's settings with JSON data](#update-a-groups-settings-with-JSON-data)
+- [Update a group's settings with JSON data](#update-a-groups-settings-with-json-data)
 - [Display information about specific groups](#display-information-about-specific-groups)
 - [Display information about selected groups](#display-information-about-selected-groups)
 - [Display a group and its parents](#Display-a-group-and-its-parents)

@@ -7,7 +7,7 @@
 - [Return Codes](#return-codes)
 - [Display file information](#display-file-information)
 - [Display file paths](#display-file-paths)
-- [Select files for Display file counts, list, tree](#select-files-for-Display-file-counts-list-tree)
+- [Select files for Display file counts, list, tree](#select-files-for-display-file-counts-list-tree)
   - [File selection definitions](#file-selection-definitions)
   - [File selection defaults](#file-selection-defaults)
   - [File selection by query](#file-selection-by-query)
@@ -634,7 +634,7 @@ By default, print filecounts displays counts of all files owned by the specified
 
 The `showsize` option displays the total size (in bytes) of the files counted.
 
-See [Select files for Display file counts, list, tree](#select-files-for-Display-file-counts-list-tree)
+See [Select files for Display file counts, list, tree](#select-files-for-display-file-counts-list-tree)
 
 Use the `excludetrashed` option to suppress counting files in the trash.
 
@@ -796,7 +796,7 @@ gam <UserTypeEntity> show filetree
 ```
 By default, the file tree starting at the root and all orphans are shown.
 
-See [Select files for Display file counts, list, tree](#select-files-for-Display-file-counts-list-tree)
+See [Select files for Display file counts, list, tree](#select-files-for-display-file-counts-list-tree)
 
 ## File selection starting point for Display file tree
 You can specify a specific folder from which to select files.
@@ -866,7 +866,7 @@ When `allfields` is specified (or no fields are specified), use `showshareddrive
 when shared drives are queried/selected. In this case, the Drive API returns the permission IDs
 but not the permissions themselves so GAM makes an additional API call per file to get the permissions.
 
-See [Select files for Display file counts, list, tree](#select-files-for-Display-file-counts-list-tree)
+See [Select files for Display file counts, list, tree](#select-files-for-display-file-counts-list-tree)
 
 ## File selection by name and entity shortcuts for Display file list
 Select a subset of files by pre-defined queries.
@@ -1359,7 +1359,7 @@ gam <UserTypeEntity> print diskusage <DriveFileEntity> [todrive <ToDriveAttribut
         (addcsvdata <FieldName> <String>)*
         [noprogress] [show all|summary|summaryandtrash]
 ```
-For each folder in `<DiskFileEntity>`, the following items are displayed:
+For each folder in `<DriveFileEntity>`, the following items are displayed:
 * `User` - The email address of the user in `<UserTypeEntity>`
 * `Owner` - The email address of the owner of the folder; omitted when displaying disk usage on Shared Drives
 * `ownedByMe` - True if the folder is owned by `User`, False otherwise; omitted when displaying disk usage on Shared Drives
@@ -1411,9 +1411,9 @@ Add additional columns of data from the command line to the output:
 By default, progress messages are displayed for each folder, use `noprogress` to suppress these messages.
 
 Use the `show` option to control the display of data:
-* `all` - Display a row for every folder in `<DriveFileEntity>` and a row detailing items in the trash when `excludetrashed` is omitted. This is the default.
-* `summary` - Display a single row for the first folder in `<DriveFileEntity>`
-* `summaryandtrash` - Display a single row for the first folder in `<DriveFileEntity>` and a row detailing items in the trash when `excludetrashed` is omitted.
+* `show all` - Display a row for every folder in `<DriveFileEntity>` and a row detailing items in the trash when `excludetrashed` is omitted. This is the default.
+* `show summary` - Display a single row for the first folder in `<DriveFileEntity>`
+* `show summaryandtrash` - Display a single row for the first folder in `<DriveFileEntity>` and a row detailing items in the trash when `excludetrashed` is omitted.
 
 ### Examples
 ```

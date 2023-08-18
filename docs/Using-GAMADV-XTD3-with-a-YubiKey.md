@@ -1,5 +1,5 @@
 # Using GAMADV-XTD3 with a YubiKey
-- [Thanks](#Thanks)
+- [Thanks](#thanks)
 - [Introduction](#introduction)
 - [FAQs](#faqs)
 - [Setup Steps](#setup-steps)
