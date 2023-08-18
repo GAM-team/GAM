@@ -475,7 +475,7 @@ clearschema <SchemaName>.<FieldName>
 ## Create a user
 ```
 gam create user <EmailAddress> [ignorenullpassword] <UserAttribute>*
-        [verifynotinvitable]
+        [verifynotinvitable|alwaysevict]
         (groups [<GroupRole>] [[delivery] <DeliverySetting>] <GroupEntity>)*
         [alias|aliases <EmailAddressList>]
         [license <SKUIDList> [product|productid <ProductID>]]
@@ -489,8 +489,14 @@ gam create user <EmailAddress> [ignorenullpassword] <UserAttribute>*
         [lograndompassword <FileName>]
         [addnumericsuffixonduplicate <Number>]
 ```
-When `verifynotinvitable` is specified, GAM verifies that the email address being updated is not that of an unmanaged account;
+When `verifynotinvitable` is specified, GAM verifies that the email address being created is not that of an unmanaged account;
 if it is, the command is not performed.
+
+By default, when creating a user that has a conflict with an unmanaged account, GAM will honor the setting as described on these pages.
+  * https://support.google.com/a/answer/11112794
+  * https://admin.google.com/ac/accountsettings/conflictaccountmanagement
+  
+Specifying `alwaysevict` forces GAM to select this setting: `Replace conflicting unmanaged accounts with managed ones`
 
 The user will be added to the groups specified by `groups [<GroupRole>] [[delivery] <DeliverySetting>] <GroupEntity>`.
 
@@ -575,7 +581,7 @@ If the mailbox is setup, a zero return code is returned; if the retries are exha
 ## Update a user
 ```
 gam update user <UserItem> [ignorenullpassword] <UserAttribute>*
-        [verifynotinvitable] [noactionifalias]
+        [verifynotinvitable|alwaysevict] [noactionifalias]
         [updateprimaryemail <RegularExpression> <EmailReplacement>]
         [updateoufromgroup <FileName> [charset <CharSet>]
             [columndelimiter <Character>] [quotechar <Character>]
@@ -595,7 +601,7 @@ gam update user <UserItem> [ignorenullpassword] <UserAttribute>*
         (replace <Tag> <UserReplacement>)*
         [lograndompassword <FileName>]
 gam update users <UserTypeEntity> [ignorenullpassword] <UserAttribute>*
-        [verifynotinvitable] [noactionifalias]
+        [verifynotinvitable|alwaysevict] [noactionifalias]
         [updateprimaryemail <RegularExpression> <EmailReplacement>]
         [updateoufromgroup <FileName> [charset <CharSet>]
             [columndelimiter <Character>] [quotechar <Character>]
@@ -615,7 +621,7 @@ gam update users <UserTypeEntity> [ignorenullpassword] <UserAttribute>*
         (replace <Tag> <UserReplacement>)*
         [lograndompassword <FileName>]
 gam <UserTypeEntity> update users [ignorenullpassword] <UserAttribute>*
-        [verifynotinvitable] [noactionifalias]
+        [verifynotinvitable|alwaysevict] [noactionifalias]
         [updateprimaryemail <RegularExpression> <EmailReplacement>]
         [updateoufromgroup <FileName> [charset <CharSet>]
             [columndelimiter <Character>] [quotechar <Character>]
@@ -638,6 +644,14 @@ gam <UserTypeEntity> update users [ignorenullpassword] <UserAttribute>*
 
 When `verifynotinvitable` is specified, GAM verifies that the email address being updated is not that of an unmanaged account;
 if it is, the command is not performed.
+
+If `createifnotfound` is specified and the user was not found to update and must be created, the following applies.
+
+By default, when creating a user that has a conflict with an unmanaged account, GAM will honor the setting as described on these pages.
+  * https://support.google.com/a/answer/11112794
+  * https://admin.google.com/ac/accountsettings/conflictaccountmanagement
+
+Specifying `alwaysevict` forces GAM to select this setting: `Replace conflicting unmanaged accounts with managed ones`
 
 When `noactionifalias` is specified, no action is performed if `<UserItem>` or `<UserTypeEntity>` specifies an alias rather than a primary email address.
 

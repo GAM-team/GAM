@@ -10,6 +10,21 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.63.01
+
+Added `process_wait_limit` variable to `gam.cfg` that controls how long (in seconds) GAM should wait for all batch|csv processes to complete
+after all have been started. If the limit is reached, GAM terminates any remaining processes. The default is 0 which specifies no limit.
+
+Following Jay's lead, added option `alwaysevict` to `gam create|update user` that is used to specify GAM's
+behavior when `verifynotinvitable` is not specified and there is a conflict with an unmanaged account.
+
+By default, when creating a user that has a conflict with an unmanaged account, GAM will honor the setting on this page:
+  * https://admin.google.com/ac/accountsettings/conflictaccountmanagement
+
+Specifying `alwaysevict` forces GAM to select this setting: `Replace conflicting unmanaged accounts with managed ones`
+
+With `gam update user`, `alwaysevict` only applies if `createifnotfound` is specified and the user was not found to update and must be created.
+
 ### 6.63.00
 
 Added support for calendar working location events.

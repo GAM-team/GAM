@@ -174,6 +174,7 @@ Section: DEFAULT
   oauth2_txt = oauth2.txt ; /Users/admin/GAMConfig/oauth2.txt
   oauth2service_json = oauth2service.json ; /Users/admin/GAMConfig/oauth2service.json
   people_max_results = 100
+  process_wait_limit = 0
   quick_cros_move = false
   quick_info_user = false
   reseller_id = ''
@@ -329,7 +330,7 @@ writes the credentials into the file oauth2.txt.
 admin@server:/Users/admin/bin/gamadv-xtd3$ rm -f /Users/admin/GAMConfig/oauth2.txt
 admin@server:/Users/admin/bin/gamadv-xtd3$ ./gam version
 WARNING: Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, Item: oauth2_txt, Value: /Users/admin/GAMConfig/oauth2.txt, Not Found
-GAMADV-XTD3 6.63.00 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
+GAMADV-XTD3 6.63.01 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
 Ross Scroggs <ross.scroggs@gmail.com>
 Python 3.10.8 64-bit final
 MacOS High Sierra 10.13.6 x86_64
@@ -595,6 +596,7 @@ Section: DEFAULT
   oauth2_txt = oauth2.txt ; /Users/admin/GAMConfig/oauth2.txt
   oauth2service_json = oauth2service.json ; /Users/admin/GAMConfig/oauth2service.json
   people_max_results = 100
+  process_wait_limit = 0
   quick_cros_move = false
   quick_info_user = False
   reseller_id = ''
@@ -792,6 +794,7 @@ Section: DEFAULT
   oauth2_txt = oauth2.txt ; C:\GAMConfig\oauth2.txt
   oauth2service_json = oauth2service.json ; C:\GAMConfig\oauth2service.json
   people_max_results = 100
+  process_wait_limit = 0
   quick_cros_move = false
   quick_info_user = False
   reseller_id = ''
@@ -969,7 +972,7 @@ writes the credentials into the file oauth2.txt.
 C:\GAMADV-XTD3>del C:\GAMConfig\oauth2.txt
 C:\GAMADV-XTD3>gam version
 WARNING: Config File: C:\GAMConfig\gam.cfg, Section: DEFAULT, Item: oauth2_txt, Value: C:\GAMConfig\oauth2.txt, Not Found
-GAMADV-XTD3 6.63.00 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
+GAMADV-XTD3 6.63.01 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
 Ross Scroggs <ross.scroggs@gmail.com>
 Python 3.11.4 64-bit final
 Windows-10-10.0.17134 AMD64
@@ -1237,6 +1240,7 @@ Section: DEFAULT
   output_dateformat = ''
   output_timeformat = ''
   people_max_results = 100
+  process_wait_limit = 0
   quick_cros_move = false
   quick_info_user = False
   reseller_id = ''

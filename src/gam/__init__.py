@@ -9457,7 +9457,8 @@ def MultiprocessGAMCommands(items, showCmds):
       if item[0] == Cmd.COMMIT_BATCH_CMD:
         batchWriteStderr(Msg.COMMIT_BATCH_WAIT_N_PROCESSES.format(currentISOformatTimeStamp(),
                                                                   numItems, poolProcessResults[0],
-                                                                  PROCESS_PLURAL_SINGULAR[poolProcessResults[0] == 1]))
+                                                                  PROCESS_PLURAL_SINGULAR[poolProcessResults[0] == 1]
+                                                                  ''))
         while poolProcessResults[0] > 0:
           time.sleep(1)
           completedProcesses = []
@@ -9512,10 +9513,16 @@ def MultiprocessGAMCommands(items, showCmds):
               del poolProcessResults[p]
             break
           time.sleep(1)
+    processWaitStart = time.time()
+    if GC.Values[GC.PROCESS_WAIT_LIMIT] > 0:
+      waitRemaining = GC.Values[GC.PROCESS_WAIT_LIMIT]
+    else:
+      waitRemaining = 'unlimited'
     while poolProcessResults[0] > 0:
       batchWriteStderr(Msg.BATCH_CSV_WAIT_N_PROCESSES.format(currentISOformatTimeStamp(),
                                                              numItems, poolProcessResults[0],
-                                                             PROCESS_PLURAL_SINGULAR[poolProcessResults[0] == 1]))
+                                                             PROCESS_PLURAL_SINGULAR[poolProcessResults[0] == 1],
+                                                             Msg.BATCH_CSV_WAIT_LIMIT.format(waitRemaining)))
       completedProcesses = []
       for p, result in iter(poolProcessResults.items()):
         if p != 0 and result.ready():
@@ -9525,8 +9532,20 @@ def MultiprocessGAMCommands(items, showCmds):
         del poolProcessResults[p]
       if poolProcessResults[0] > 0:
         time.sleep(5)
+        if GC.Values[GC.PROCESS_WAIT_LIMIT] > 0:
+          delta = int(time.time()-processWaitStart)
+          if delta >= GC.Values[GC.PROCESS_WAIT_LIMIT]:
+            batchWriteStderr(Msg.BATCH_CSV_TERMINATE_N_PROCESSES.format(currentISOformatTimeStamp(),
+                                                                        numItems, poolProcessResults[0],
+                                                                        PROCESS_PLURAL_SINGULAR[poolProcessResults[0] == 1]))
+            pool.terminate()
+            break
+          waitRemaining = GC.Values[GC.PROCESS_WAIT_LIMIT] - delta
   except KeyboardInterrupt:
     setSysExitRC(KEYBOARD_INTERRUPT_RC)
+    batchWriteStderr(Msg.BATCH_CSV_TERMINATE_N_PROCESSES.format(currentISOformatTimeStamp(),
+                                                                numItems, poolProcessResults[0],
+                                                                PROCESS_PLURAL_SINGULAR[poolProcessResults[0] == 1]))
     pool.terminate()
   else:
     pool.close()

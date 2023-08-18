@@ -401,6 +401,11 @@ people_max_results
         how many should be retrieved in each API call
         Default: 100
         Range: 1 - 1000
+process_wait_limit
+	When processing batch/CSV files, how long (in seconds) GAM should wait for all batch|csv processes to complete
+	after all have been started. If the limit is reached, GAM terminates any remaining processes.
+        Default: 0: no limit
+        Range: 0 - Unlimited
 quick_cros_move
         Default value for "quickcrosmove [<Boolean>]" in commands that update Chromebook OUs.
         Default: False
@@ -628,6 +633,7 @@ Section: DEFAULT
   output_dateformat = ''
   output_timeformat = ''
   people_max_results = 100
+  process_wait_limit = 0
   quick_cros_move = false
   quick_info_user = false
   reseller_id = ''
@@ -808,6 +814,7 @@ oauth2service_json = oauth2service.json
 output_dateformat = ''
 output_timeformat = ''
 people_max_results = 100
+process_wait_limit = 0
 quick_cros_move = False
 quick_info_user = False
 reseller_id = ''

@@ -4,6 +4,9 @@ Merged GAM-Team version
 
 6.63.01
 
+Added `process_wait_limit` variable to `gam.cfg` that controls how long (in seconds) GAM should wait for all batch|csv processes to complete
+after all have been started. If the limit is reached, GAM terminates any remaining processes. The default is 0 which specifies no limit.
+
 Following Jay's lead, added option `alwaysevict` to `gam create|update user` that is used to specify GAM's
 behavior when `verifynotinvitable` is not specified and there is a conflict with an unmanaged account.
 
