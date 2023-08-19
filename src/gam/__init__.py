@@ -9457,8 +9457,7 @@ def MultiprocessGAMCommands(items, showCmds):
       if item[0] == Cmd.COMMIT_BATCH_CMD:
         batchWriteStderr(Msg.COMMIT_BATCH_WAIT_N_PROCESSES.format(currentISOformatTimeStamp(),
                                                                   numItems, poolProcessResults[0],
-                                                                  PROCESS_PLURAL_SINGULAR[poolProcessResults[0] == 1]
-                                                                  ''))
+                                                                  PROCESS_PLURAL_SINGULAR[poolProcessResults[0] == 1]))
         while poolProcessResults[0] > 0:
           time.sleep(1)
           completedProcesses = []
