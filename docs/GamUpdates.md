@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.63.02
+
+Fixed bug in `gam <UserTypeEntity> collect orphans` where shortcuts were being created unnecessarily
+when `useshortcuts` was false; either by default or when explicitly set.
+
 ### 6.63.01
 
 Added `process_wait_limit` variable to `gam.cfg` that controls how long (in seconds) GAM should wait for all batch|csv processes to complete
