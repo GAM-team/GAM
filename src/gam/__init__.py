@@ -56594,7 +56594,7 @@ def collectOrphans(users):
                            pageMessage=getPageMessageForWhom(),
                            throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                            retryReasons=[GAPI.UNKNOWN_ERROR],
-                           q=query, orderBy=OBY.orderBy, fields='nextPageToken,files(id,name,parents,mimeType,capabilities(canAddMyDriveParent))',
+                           q=query, orderBy=OBY.orderBy, fields='nextPageToken,files(id,name,parents,mimeType,capabilities(canMoveItemWithinDrive))',
                            pageSize=GC.Values[GC.DRIVE_MAX_RESULTS])
       if targetUserFolderPattern:
         trgtUserFolderName = _substituteForUser(targetUserFolderPattern, user, userName)
@@ -56638,7 +56638,7 @@ def collectOrphans(users):
 #        if fileType == Ent.DRIVE_FOLDER and not fileEntry['capabilities']['canAddMyDriveParent']:
 #          # Typically Google Backup & Sync images of laptops
 #          continue
-        if not useShortcuts and fileEntry['capabilities']['canAddMyDriveParent']:
+        if not useShortcuts and fileEntry['capabilities']['canMoveItemWithinDrive']:
           if csvPF:
             csvPF.WriteRow({'Owner': user, 'type': Ent.Singular(fileType), 'id': fileId, 'name': fileName, 'action': 'changeParent'})
             continue
