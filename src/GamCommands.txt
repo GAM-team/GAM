@@ -5719,6 +5719,7 @@ gam <UserTypeEntity> print workinglocation
 
 gam <UserTypeEntity> create chatspace
         [type <ChatSpaceType>]
+        [externalusersrallowed <Boolean>]
         [members <UserTypeEntity>]
         [displayname <String>]
         [description <String>] [guidelines <String>]

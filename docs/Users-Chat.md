@@ -82,6 +82,7 @@ Google requires that you have a Chat Bot configured in order to use the Chat API
 ```
 gam <UserTypeEntity> create chatspace
         [type <ChatSpaceType>]
+        [externalusersrallowed <Boolean>]
         [members <UserTypeEntity>]
         [displayname <String>]
         [description <String>] [guidelines <String>]

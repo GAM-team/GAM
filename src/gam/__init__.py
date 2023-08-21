@@ -24442,6 +24442,7 @@ CHAT_SPACE_MIN_MAX_MEMBERS = {
   }
 # gam <UserTypeEntity> create chatspace
 #       [type <ChatSpaceType>]
+#	[externalusersallowed <Boolean>]
 #	[members <UserTypeEntity>]
 #	[displayname <String>]
 #	[description <String>] [guidelines|rules <String>]
@@ -24449,7 +24450,6 @@ CHAT_SPACE_MIN_MAX_MEMBERS = {
 #	[<ChatContent>]
 #	[formatjson|returnidonly]
 def createChatSpace(users):
-  cd = buildGAPIObject(API.DIRECTORY)
   FJQC = FormatJSONQuoteChar()
   body = {'space': {'spaceType': CHAT_SPACE_TYPE_MAP['space'], 'displayName': ''},
           'requestId': str(uuid.uuid4()),
@@ -24461,6 +24461,8 @@ def createChatSpace(users):
     myarg = getArgument()
     if getChatSpaceParameters(myarg, body['space'], CHAT_SPACE_TYPE_MAP):
       pass
+    elif myarg == 'externalusersallowed':
+      body['space']['externalUserAllowed'] = getBoolean()
     elif myarg == 'members':
       _, members = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
     elif myarg == 'returnidonly':
@@ -24480,7 +24482,7 @@ def createChatSpace(users):
                                                                     CHAT_SPACE_MIN_MAX_MEMBERS[spaceType]['max']))
   mtype = CHAT_MEMBER_TYPE_MAP['human']
   for member in members:
-    name = convertEmailAddressToUID(member, cd, 'user')
+    name = normalizeEmailAddressOrUID(member)
     body['memberships'].append({'member': {'name': f'users/{name}', 'type': mtype}})
   if spaceType == 'SPACE':
     if not body['space']['displayName']:
@@ -24801,7 +24803,7 @@ def createChatMember(users):
       parent = getChatSpace(myarg)
     elif myarg == 'user':
       userList.append(getEmailAddress(returnUIDprefix='uid:'))
-    elif myarg == 'members':
+    elif myarg in {'member', 'members'}:
       _, members = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
       userList.extend(members)
     elif myarg == 'type':
@@ -24816,7 +24818,7 @@ def createChatMember(users):
     missingArgumentExit('user|members')
   userMembers = []
   for user in userList:
-    name = convertEmailAddressToUID(user, cd, 'user')
+    name = normalizeEmailAddressOrUID(user)
     userMembers.append({'member': {'name': f'users/{name}', 'type': mtype}})
   i, count, users = getEntityArgument(users)
   for user in users:
@@ -24830,7 +24832,6 @@ def createChatMember(users):
 #	((user <UserItem>)|(members <UserTypeEntity>))+
 # gam <UserTypeEntity> remove chatmember members <ChatMemberList>
 def deleteChatMember(users):
-  cd = buildGAPIObject(API.DIRECTORY)
   action = Act.Get()
   parent = None
   memberNames = []
@@ -24847,7 +24848,7 @@ def deleteChatMember(users):
         parent = getChatSpace(myarg)
       elif myarg == 'user':
         userList.append(getEmailAddress(returnUIDprefix='uid:'))
-      elif myarg == 'members':
+      elif myarg in {'member', 'members'}:
         _, members = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
         userList.extend(members)
       else:
@@ -24861,7 +24862,7 @@ def deleteChatMember(users):
     if not userList:
       missingArgumentExit('user|members')
     for user in userList:
-      name = convertEmailAddressToUID(user, cd, 'user')
+      name = normalizeEmailAddressOrUID(user)
       memberNames.append(f'{parent}/members/{name}')
   i, count, users = getEntityArgument(users)
   for user in users:

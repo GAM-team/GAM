@@ -1006,7 +1006,7 @@ The `labels` column indicates the number of drive labels a file has and there ar
 ```
 ...labels,labelsIds,...
 ```
-The `labels` column indicates the number of drive labels a file has and the `labelssIds` column is a list of the drive label IDs
+The `labels` column indicates the number of drive labels a file has and the `labelsIds` column is a list of the drive label IDs
 separated by `delimiter <Character>`; the default value is `csv_output_field_delimiter` from `gam.cfg`.
 
 By default, all ACLS are displayed; use the following option in conjunction with `<PermissionMatch>* [<PermissionMatchAction>]`
