@@ -29,5 +29,6 @@ GAM_VER_LIBS = ['cryptography',
                 'httplib2',
                 'passlib',
                 'python-dateutil',
+                'urllib3',
                 'yubikey-manager',
                 ]
