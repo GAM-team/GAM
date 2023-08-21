@@ -108,9 +108,6 @@ from filelock import FileLock
 
 from pathvalidate import sanitize_filename, sanitize_filepath
 
-import httplib2shim
-httplib2shim.patch()
-
 import googleapiclient
 import googleapiclient.discovery
 import googleapiclient.errors
@@ -2405,7 +2402,6 @@ def entityDoesNotExistWarning(entityType, entityName, i=0, count=0):
 
 def entityUnknownWarning(entityType, entityName, i=0, count=0):
   domain = getEmailAddressDomain(entityName)
-
   if (domain.endswith(GC.Values[GC.DOMAIN])) or (domain.endswith('google.com')):
     entityDoesNotExistWarning(entityType, entityName, i, count)
   else:
@@ -8875,11 +8871,8 @@ def _getServerTLSUsed(location):
   retries = 5
   for n in range(1, retries+1):
     try:
-      resp = httpObj.pool.request('GET',
-                                  url,
-                                  headers={'user-agent': GAM_USER_AGENT},
-                                  preload_content=False)
-      cipher_name, tls_ver, _ = resp.connection.sock.cipher()
+      httpObj.request(url, headers={'user-agent': GAM_USER_AGENT})
+      cipher_name, tls_ver, _ = httpObj.connections[conn].sock.cipher()
       return tls_ver, cipher_name
     except (httplib2.HttpLib2Error, RuntimeError) as e:
       if n != retries:
@@ -8984,16 +8977,15 @@ def doCheckConnection():
       writeStdout(f'{not_okay}\n    Connection reset by peer. {gen_firewall}\n')
     except httplib2.error.ServerNotFoundError:
       writeStdout(f'{not_okay}\n    Failed to find server. Your DNS is probably misconfigured.\n')
-    except ssl.SSLError as err:
-      err_type = type(err.args[0])
-      if err_type == ssl.SSLError:
+    except ssl.SSLError as e: 
+      if e.reason == 'SSLV3_ALERT_HANDSHAKE_FAILURE':
         writeStdout(f'{not_okay}\n    GAM expects to connect with TLS 1.3 or newer and that failed. If your firewall / proxy server is not compatible with TLS 1.3 then you can tell GAM to allow TLS 1.2 by setting tls_min_version = TLSv1.2 in gam.cfg.\n')
-      elif err_type == ssl.SSLCertVerificationError:
+      elif e.reason == 'CERTIFICATE_VERIFY_FAILED':
         writeStdout(f'{not_okay}\n    Certificate verification failed. If you are behind a firewall / proxy server that does TLS / SSL inspection you may need to point GAM at your certificate authority file by setting cacerts_pem = /path/to/your/certauth.pem in gam.cfg.\n')
-      elif err.strerror and err.strerror.startswith('TLS/SSL connection has been closed\n'):
+      elif e.strerror and e.strerror.startswith('TLS/SSL connection has been closed\n'):
         writeStdout(f'{not_okay}\n    TLS connection was closed. {gen_firewall}\n')
       else:
-        writeStdout(f'{not_okay}\n    {str(err)}\n')
+        writeStdout(f'{not_okay}\n    {str(e)}\n')
     except TimeoutError:
       writeStdout(f'{not_okay}\n    Timed out trying to connect to host\n')
     except Exception as e:
