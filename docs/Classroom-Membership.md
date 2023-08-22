@@ -22,7 +22,9 @@
 <CourseAlias> ::= <String>
 <CourseID> ::= <Number>|d:<CourseAlias>
 <CourseIDList> ::= "<CourseID>(,<CourseID>)*"
-<CourseEntity> ::= <CourseIDList> | <FileSelector> | <CSVFileSelector | <CSVkmdSelector>
+<CourseEntity> ::=
+        <CourseIDList> | <FileSelector> | <CSVFileSelector | <CSVkmdSelector>
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
 <CourseState> ::= active|archived|provisioned|declined|suspended
 <CourseStateList> ::= all|"<CourseState>(,<CourseState>)*"
 ```

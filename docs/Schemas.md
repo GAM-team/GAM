@@ -12,7 +12,9 @@
 <SchemaName> ::= <String>
 <FieldName> ::= <String>
 <SchemaNameList> ::= "<SchemaName>(,<SchemaName>)*"
-<SchemaEntity> ::= <SchemaNameList> | <FileSelector> | <CSVkmdSelector>
+<SchemaEntity> ::=
+        <SchemaNameList> | <FileSelector> | <CSVkmdSelector>
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
 
 <SchemaFieldDefinition> ::=
         field <FieldName> [displayname <String>]

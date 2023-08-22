@@ -41,6 +41,7 @@
         (query:<QueryBrowser>)|(query:orgunitpath:<OrgUnitPath>)|(query <QueryBrowser>) |
         (browserou <OrgUnitItem>) | (browserous <OrgUnitList>) |
         <FileSelector> | <CSVFileSelector>
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
 
 <BrowserAttribute> ::=
         (annotatedassetid|asset|assetid <String>)|

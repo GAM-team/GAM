@@ -94,8 +94,9 @@
 <EmailAddress> ::= <String>@<DomainName>
 <EmailAddressList> ::= "<EmailAddress>(,<EmailAddress>)*"
 <EmailAddressEntity> ::=
-        <EmailAddressList>|<FileSelector>|<CSVFileSelector>|
-        <CSVkmdSelector>|<CSVDataSelector>
+        <EmailAddressList> | <FileSelector> | <CSVFileSelector> | 
+        <CSVkmdSelector> | <CSVDataSelector>
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Users
 <CalendarItem> ::= <EmailAddress>
 <CalendarList> ::= "<CalendarItem>(,<CalendarItem>)*"
 <CourseAlias> ::= <String>
@@ -129,7 +130,7 @@
         (resource <ResourceID>)|
         (resources <ResourceIDList>)|
         ((calendars <CalendarList>)|<FileSelector>|<CSVFileSelector>|
-        <CSVkmdSelector>|<CSVDataSelector>)|
+        <CSVkmdSelector> | <CSVDataSelector>)|
         <CalendarSelectProperty>+
 ```
 ```
@@ -259,7 +260,7 @@
         (id|eventid <EventId>) |
         (event|events <EventIdList> |
         <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVSubkeySelector> | <CSVDataSelector>)
-
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
 <EventSelectEntity> ::=
         (<EventSelectProperty>+ <EventMatchProperty>*)
 

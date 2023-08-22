@@ -21,7 +21,9 @@
 <DomainName> ::= <String>(.<String>)+
 <EmailAddress> ::= <String>@<DomainName>
 <EmailAddressList> ::= "<EmailAddress>(,<EmailAddress>)*"
-<EmailAddressEntity> ::= <EmailAddressList>|<FileSelector>|<CSVkmdSelector>|<CSVDataSelector>
+<EmailAddressEntity> ::=
+        <EmailAddressList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Users
 ```
 ## Introduction
 An email address must be defined as a forwarding address before it can be used to forward.

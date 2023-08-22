@@ -56,6 +56,7 @@
         (resources <ResourceIDList>)|
         ((calendars <CalendarList>) | <FileSelector> | <CSVFileSelector> |
                                       <CSVkmdSelector> | <CSVDataSelector>)
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
 
 <UserCalendarEntity> ::=
         allcalendars|
@@ -72,6 +73,7 @@
         ((calendars <CalendarList>) | <FileSelector> | <CSVFileSelector> |
                                       <CSVkmdSelector> | <CSVDataSelector>)|
         <CalendarSelectProperty>*
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
 
 <UserCalendarSettingsField> ::=
         autoaddhangouts|

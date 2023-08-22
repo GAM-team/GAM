@@ -148,7 +148,9 @@
 
 <MessageID> ::= <String>
 <MessageIDList> ::= "<MessageID>(,<MessageID>)*"
-<MessageIDEntity> ::= <MessageIDList>|<FileSelector>|<CSVkmdSelector>|<CSVDataSelector>
+<MessageIDEntity> ::=
+        <MessageIDList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
 <ThreadID> ::= <String>
 <ThreadIDList> ::= "<ThreadID>(,<ThreadID>)*"
 <ThreadIDEntity> ::= <ThreadIDList>|<FileSelector>|<CSVkmdSelector>|<CSVDataSelector>

@@ -12,6 +12,7 @@
 
 ## API documentation
 * https://support.google.com/a/answer/6178640
+* https://support.google.com/a/answer/11112794
 * https://cloud.google.com/identity/docs/how-to/manage-user-invitations
 * https://cloud.google.com/identity/docs/reference/rest/v1beta1/customers.userinvitations
 

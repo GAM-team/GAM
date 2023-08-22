@@ -34,8 +34,10 @@ gam user user@domain.com check serviceaccount
 <TasklistIDTaskIDList> ::= "<TasklistIDTaskID>(,<TasklistIDTaskID>)*"
 <TasklistIDEntity> ::=
         <TasklistIDList> | <FileSelector> | <CSVFileSelector>
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
 <TasklistIDTaskIDEntity> ::=
         <TasklistIDTaskIDList> | <FileSelector> | <CSVFileSelector>
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
 
 <TaskAttribute> ::=
         (title <String>)|

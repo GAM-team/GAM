@@ -104,17 +104,13 @@ specify `basicpermissions` and additional permission fields, e.g., `permissions.
 <DriveFilePermissionEntity> ::=
          <DriveFilePermissionList> |
          (json [charset <Charset>] <JSONData>)|(json file <FileName> [charset <Charset>]) |
-         <FileSelector> |
-         <CSVFileSelector> |
-         <CSVkmdSelector> |
-         <CSVDataSelector>
+         <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
 <DriveFilePermissionIDEntity> ::=
          <DriveFilePermissionIDList> |
          (json [charset <Charset>] <JSONData>)|(json file <FileName> [charset <Charset>]) |
-         <FileSelector> |
-         <CSVFileSelector> |
-         <CSVkmdSelector> |
-         <CSVDataSelector>
+         <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
 ```
 ## GUI API permission name mapping
 

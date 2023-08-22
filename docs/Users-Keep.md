@@ -51,6 +51,7 @@ gam user user@domain.com check serviceaccount
 <NotesNameList> ::= "<NotesName>(,<NotesName)*"
 <NotesNameEntity> ::=
         <NotesNameList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
 
 <NotesField> ::=
         attachments|

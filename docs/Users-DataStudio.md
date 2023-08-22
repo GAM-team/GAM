@@ -31,6 +31,7 @@ gam user user@domain.com check serviceaccount
 <DataStudioAssetIDList> ::= "<DataStudioAssetID>(,<DataStudioAssetID>)*"
 <DataStudioAssetIDEntity> ::=
         <DataStudioAssetIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
 
 <DataStudioPermission> ::=
         user:<EmailAddress>|
@@ -40,6 +41,7 @@ gam user user@domain.com check serviceaccount
 <DataStudioPermissionList> ::= "<DataStudioPermission>(,<DataStudioPermission>)*"
 <DataStudioPermissionEntity> ::=
         <DataStudioPermissionList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
 ```
 
 Data Studio assets have an ID that is referred to by Google as its `name`; this is the value

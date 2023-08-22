@@ -50,7 +50,9 @@ See [Collections of Items](Collections-of-Items)
 <FeatureNameList> ::= "'<FeatureName>'(,'<FeatureName>')*"
 <ResourceID> ::= <String>
 <ResourceIDList> ::= "<ResourceID>(,<ResourceID>)*"
-<ResourceEntity> ::= <ResourceIDList> | <FileSelector> | <CSVkmdSelector>
+<ResourceEntity> ::=
+        <ResourceIDList> | <FileSelector> | <CSVkmdSelector>
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
 
 <BuildingFieldName> ::=
         address|

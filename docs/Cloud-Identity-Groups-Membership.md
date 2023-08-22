@@ -61,7 +61,9 @@ and Cloud Identity Premium accounts. Unfortunately, even if you have the require
 <UniqueID> ::= id:<String>
 <GroupItem> ::= <EmailAddress>|<UniqueID>|groups/<String>
 <GroupList> ::= "<GroupItem>(,<GroupItem>)*"
-<GroupEntity> ::= <GroupList>|<FileSelector>|<CSVkmdSelector>|<CSVDataSelector>
+<GroupEntity> ::=
+        <GroupList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
 <GroupRole> ::= owner|manager|member
 <GroupRoleList> ::= "<GroupRole>(,<GroupRole>)*"
 <CIGroupType> ::= customer|group|other|serviceaccount|user

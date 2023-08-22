@@ -35,6 +35,7 @@ Supported editions for this feature: Business Standard and Business Plus; Enterp
 <DriveLabelNameList> ::= "<DriveLabelName>(,<DriveLabelName)*"
 <DriveLabelNameEntity> ::=
         <DriveLabelNameList> | <FileSelector> | <CSVFileSelector> | <CSVDataSelector>
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
 
 <DriveLabelFieldID> ::= <String>
 <DriveLabelSelectionID> ::= <String>

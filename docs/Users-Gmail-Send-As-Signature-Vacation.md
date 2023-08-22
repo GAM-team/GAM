@@ -24,7 +24,8 @@
 <EmailAddress> ::= <String>@<DomainName>
 <EmailAddressList> ::= "<EmailAddress>(,<EmailAddress>)*"
 <EmailAddressEntity> ::=
-        <EmailAddressList>|<FileSelector>|<CSVkmdSelector>|<CSVDataSelector>
+        <EmailAddressList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Users
 <Charset> ::= ascii|mbcs|utf-8|utf-8-sig|utf-16|<String>
 <Password> ::= <String>
 <SMTPHostName> ::= <String>

@@ -51,7 +51,9 @@
 <EmailItem> ::= <EmailAddress>|<UniqueID>|<String>
 <GroupItem> ::= <EmailAddress>|<UniqueID>|<String>
 <GroupList> ::= "<GroupItem>(,<GroupItem>)*"
-<GroupEntity> ::= <GroupList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+<GroupEntity> ::=
+        <GroupList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
 <GroupRole> ::= owner|manager|member
 <GroupRoleList> ::= "<GroupRole>(,<GroupRole>)*"
 <GroupType> ::= customer|group|user

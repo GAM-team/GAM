@@ -20,7 +20,9 @@
 <UniqueID> ::= id:<String>
 <UserItem> ::= <EmailAddress>|<UniqueID>|<String>
 <UserList> ::= "<UserItem>(,<UserItem>)*"
-<UserEntity> ::= <UserList>|<FileSelector>|<CSVkmdSelector>|<CSVDataSelector>
+<UserEntity> ::=
+        <UserList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Users
 ```
 ## Aliases
 

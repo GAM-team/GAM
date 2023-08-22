@@ -304,6 +304,7 @@ You can select a list of file IDs by referencing files that contain file IDs.
 ```
 <DriveFileEntity> ::=
         <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVSubkeySelector>) | <CSVDataSelector>)
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
 ```
 * [Collections of Items](Collections-of-Items)
 

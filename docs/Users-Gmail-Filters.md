@@ -22,7 +22,9 @@
 
 <FilterID> ::= <String>
 <FilterIDList> ::= "<FilterID>(,<FilterID>)*"
-<FilterIDEntity> ::= <FilterIDList>|<FileSelector>|<CSVkmdSelector>|<CSVDataSelector>
+<FilterIDEntity> ::=
+        <FilterIDList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
 
 <GmailCategory> ::=
         forums|

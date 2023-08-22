@@ -33,7 +33,9 @@ Added the option `mailbox <EmailAddress>` to `gam sendemail` to allow specifying
         <String>@<DomainName> |
         <String> <<String>@<DomainName>> # The outer <> around <String>@<DomainName> are literal, e.g., IT Group<group@domain.com> 
 <EmailAddressList> ::= "<EmailAddress>(,<EmailAddress>)*"
-<EmailAddressEntity> ::= <EmailAddressList> | <FileSelector> | <CSVkmdSelector>
+<EmailAddressEntity> ::=
+        <EmailAddressList> | <FileSelector> | <CSVkmdSelector>
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Users
 <RecipientEntity> ::= <EmailAddressEntity> | (select <UserTypeEntity>)
 <UserItem> ::= <EmailAddress>|<UniqueID>|<String>
 

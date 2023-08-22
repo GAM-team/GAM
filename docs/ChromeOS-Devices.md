@@ -85,6 +85,7 @@ The second form is backwards compatible with Standard GAM and selection with `<C
 <SerialNumberList> ::= "<SerialNumber>(,<SerialNumber>)*"
 <SerialNumberEntity> ::=
         <SerialNumberList> | <FileSelector> | <CSVFileSelector>
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
 
 <CrOSEntity> ::=
         <CrOSIDList> | (cros_sn <SerialNumberList>) |

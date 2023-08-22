@@ -224,19 +224,19 @@ The file ID will only be valid when the return code of the command is 0; program
 Google Drive folders to GAM are just like files, with the MimeType for a folder. To create a folder `FooFolder` in the root of the Drive for user `Fred`:
 
 ```
-user Fred@yourdomain.com create drivefile drivefilename FooFolder mimetype gfolder
+gam user Fred@yourdomain.com create drivefile drivefilename FooFolder mimetype gfolder
 ```
 
 The same, but created in the existing folder `BarFolder`:
 
 ```
-user Fred@yourdomain.com create drivefile drivefilename FooFolder mimetype gfolder parentname BarFolder
+gam user Fred@yourdomain.com create drivefile drivefilename FooFolder mimetype gfolder parentname BarFolder
 ```
 
 This only works if the folder name for the parent is unique. An alternative is to use the folder ID:
 
 ```
-user Fred@yourdomain.com create drivefile drivefilename FooFolder mimetype gfolder parentid <FolderID>
+gam user Fred@yourdomain.com create drivefile drivefilename FooFolder mimetype gfolder parentid <FolderID>
 ```
 
 ## Bulk Create Files and Folders
