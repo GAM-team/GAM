@@ -1,7 +1,6 @@
 # Users - Calendars - Events
 - [API documentation](#api-documentation)
 - [Python Regular Expressions](Python-Regular-Expressions) Search function
-- [Collections of Users](Collections-of-Users)
 - [Definitions](#definitions)
 - [Recurrence rules](#recurrence-rules)
 - [Event colors](#event-colors)

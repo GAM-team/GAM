@@ -1,7 +1,6 @@
 # Users - Tasks
 - [API documentation](#api-documentation)
 - [Notes](#notes)
-- [Collections of Users](Collections-of-Users)
 - [Definitions](#definitions)
 - [Create Tasks](#create-tasks)
 - [Update Tasks](#update-tasks)

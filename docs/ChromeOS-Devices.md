@@ -4,7 +4,6 @@
   - [API documentation](#api-documentation)
   - [Query documentation](#query-documentation)
   - [Notes](#notes)
-  - [Collections of ChromeOS Devices](Collections-of-ChromeOS-Devices)
   - [Definitions](#definitions)
   - [CrOS Query Searchable Fields](#cros-query-searchable-fields)
   - [ChromeOS device update OU error handling](#chromeos-device-update-ou-error-handling)
@@ -74,8 +73,9 @@ The first form allows more powerful selection of devices with `<CrOSTypeEntity>`
 The second form is backwards compatible with Standard GAM and selection with `<CrOSEntity>` is limited.
 
 ## Definitions
-
-```BNF
+* [`<CrOSTypeEntity>`](Collections-of-ChromeOS-Devices)
+ 
+```
 <OrgUnitPath> ::= /|(/<String)+
 <QueryCrOS> ::= <String> See: https://support.google.com/chrome/a/answer/1698333
 <CommandID> ::= <String>

@@ -3,7 +3,6 @@
 - [Chrome Browser Cloud Management](#chrome-browser-cloud-management)
   - [API documentation](#api-documentation)
   - [Query documentation](#query-documentation)
-  - [Collections of ChromeOS Devices](Collections-of-ChromeOS-Devices)
   - [Definitions](#definitions)
   - [Manage Chrome browsers](#manage-chrome-browsers)
     - [Update Chrome browsers](#update-chrome-browsers)
@@ -25,8 +24,9 @@
 * https://support.google.com/chrome/a/answer/9681204#retrieve_all_chrome_devices_for_an_account
 
 ## Definitions
+* [`<CrOSTypeEntity>`](Collections-of-ChromeOS-Devices)
 
-```BNF
+```
 <BrowserTokenPermanentID> ::= <String>
 <OrgUnitPath> ::= /|(/<String)+
 <QueryBrowser> ::= <String> See: https://support.google.com/chrome/a/answer/9681204#retrieve_all_chrome_devices_for_an_account

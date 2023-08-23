@@ -1,6 +1,5 @@
 # Users - Calendars
 - [API documentation](#api-documentation)
-- [Collections of Users](Collections-of-Users)
 - [Definitions](#definitions)
 - [Calendar colors](#calendar-colors)
 - [Calendar selection](#calendar-selection)

@@ -1,6 +1,5 @@
 # Users - Application Specific Passwords
 - [API documentation](#api-documentation)
-- [Collections of Users](Collections-of-Users)
 - [Definitions](#definitions)
 - [Manage application specific passwords](#manage-application-specific-passwords)
 - [Display application specific passwords](#display-application-specific-passwords)

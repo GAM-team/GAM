@@ -1,7 +1,7 @@
 # Users - Analytics Admin
 - [API documentation](#api-documentation)
 - [Notes](#notes)
-- [Collections of Users](Collections-of-Users)
+- [Definitions](#definitions)
 - [Display Analytic Accounts](#display-analytic-accounts)
 - [Display Analytic Account Summaries](#display-analytic-account-summaries)
 - [Display Analytic Properties](#display-analytic-properties)
@@ -18,6 +18,9 @@ To use these commands you must add 'Analytics API' and 'Analytics Admin API' to 
 gam update project
 gam user user@domain.com check serviceaccount
 ```
+
+## Definitions
+* [`<UserTypeEntity>`](Collections-of-Users)
 
 ## Display Analytic Accounts
 ```

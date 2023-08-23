@@ -4,7 +4,6 @@
 - [Query documentation](#query-documentation)
 - [Quoting rules](#quoting-rules)
 - [Python Regular Expressions](Python-Regular-Expressions) Match function and Search function
-- [Collections of Users](Collections-of-Users)
 - [Definitions](#definitions)
 - [User Attributes](#user-attributes)
 - [Admin Console User Info](#admin-console-user-info)
@@ -69,6 +68,7 @@ queries  "\"orgUnitPath='/Students/Middle School'\",\"orgUnitPath='/Students/Low
 ```
 
 ## Definitions
+* [`<UserTypeEntity>`](Collections-of-Users)
 * [Command data from Google Docs/Sheets/Storage](Command-Data-From-Google-Docs-Sheets-Storage)
 ```
 <DeliverySetting> ::=

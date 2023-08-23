@@ -1,7 +1,6 @@
 # Users - Backup Verification Codes
 - [API documentation](#api-documentation)
 - [Definitions](#definitions)
-- [Collections of Users](Collections-of-Users)
 - [Manage backup verification codes](#manage-backup-verification-codes)
 - [Display backup verification codes](#display-backup-verification-codes)
 

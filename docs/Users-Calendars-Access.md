@@ -1,7 +1,6 @@
 # Users - Calendars - Access
 - [Notes](#Notes)
 - [API documentation](#api-documentation)
-- [Collections of Users](Collections-of-Users)
 - [Definitions](#definitions)
 - [Calendar selection](#calendar-selection)
 - [Manage calendar access](#manage-calendar-access)
