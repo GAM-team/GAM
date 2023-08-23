@@ -17,6 +17,7 @@ Installation
 Configuration
 * [Authorization](Authorization)
 * [GAM Configuration](gam.cfg)
+  * [Multiple Customers and Domains](https://github.com/taers232c/GAMADV-XTD3/wiki/gam.cfg#multiple-customers-and-domains)
 * [Running GAMADV-XTD3 securely on a Google Compute Engine](Running-GAMADV-XTD3-securely-on-a-Google-Compute-Engine)
 * [Using GAMADV-XTD3 with a delegated admin service account](Using-GAMADV-XTD3-with-a-delegated-admin-service-account)
 * [Using GAMADV-XTD3 with a YubiKey](Using-GAMADV-XTD3-with-a-YubiKey)

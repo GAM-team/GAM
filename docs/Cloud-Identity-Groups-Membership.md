@@ -178,14 +178,18 @@ testgroup@domain.com,testuser4@domain.com,MEMBER,Remove Failed,Does not exist
 
 ## Synchronize members in a group
 A synchronize operation gets the current membership for a group and does adds and deletes as necessary to make it match `<UserTypeEntity>`.
+This is done by specific role except for a special case where role is ignored.
 ```
-gam update cigroups <GroupEntity> sync [<GroupRole>]
+gam update cigroups <GroupEntity> sync [<GroupRole>|ignorerole]
         [usersonly|groupsonly] [addonly|removeonly]
         [notsuspended|suspended] [notarchived|archived]
         [expire|expires <Time>] [preview] [actioncsv]
         <UserTypeEntity>
 ```
-If `<GroupRole>` is not specified, `member` is assumed.
+If `ignorerole` is specified, GAM removes members regardless of role and adds new members with role MEMBER.
+This is a special purpose option, use with caution and ensure that `<UserTypeEntity>` specifies the full desired membership list of all roles.
+
+If neither `<GroupRole>` nor `ignorerole` is specified, `member` is assumed.
 
 When `<UserTypeEntity>` specifies a group or groups:
 * `usersonly` - Only the user members from the specified groups are added/deleted
