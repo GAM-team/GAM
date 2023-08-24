@@ -2,6 +2,13 @@
 
 Merged GAM-Team version
 
+6.63.06
+
+Updated `cigroup` commands to handle the following error:
+```
+ERROR: 503: serviceNotAvailable - The service is currently unavailable.
+```
+
 6.63.05
 
 Updated `inboundsso` commands to handle the following error:

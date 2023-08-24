@@ -5846,12 +5846,12 @@ def convertGroupCloudIDToEmail(ci, group, i=0, count=0):
     ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
   try:
     ciGroup = callGAPI(ci.groups(), 'get',
-                       throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.GROUP_GET_RETRY_REASONS,
+                       throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                        name=group, fields='groupKey(id)')
     return (ci, None, ciGroup['groupKey']['id'])
   except (GAPI.notFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
           GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
-          GAPI.systemError, GAPI.permissionDenied) as e:
+          GAPI.systemError, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
     action = Act.Get()
     Act.Set(Act.LOOKUP)
     entityActionFailedWarning([Ent.CLOUD_IDENTITY_GROUP, group, Ent.GROUP, None], str(e), i, count)
@@ -5869,12 +5869,12 @@ def convertGroupEmailToCloudID(ci, group, i=0, count=0):
     ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
   try:
     ciGroup = callGAPI(ci.groups(), 'lookup',
-                       throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.GROUP_GET_RETRY_REASONS,
+                       throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                        groupKey_id=group, fields='name')
     return (ci, ciGroup['name'], group)
   except (GAPI.notFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
           GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
-          GAPI.systemError, GAPI.failedPrecondition, GAPI.permissionDenied) as e:
+          GAPI.systemError, GAPI.failedPrecondition, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
     action = Act.Get()
     Act.Set(Act.LOOKUP)
     entityActionFailedWarning([Ent.GROUP, group, Ent.CLOUD_IDENTITY_GROUP, None], str(e), i, count)
@@ -5887,13 +5887,13 @@ def getCIGroupMembershipGraph(ci, member):
   parent = 'groups/-'
   try:
     result = callGAPI(ci.groups().memberships(), 'getMembershipGraph',
-                      throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS,
+                      throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                       parent=parent,
                       query=f"member_key_id == '{member}' && 'cloudidentity.googleapis.com/groups.discussion_forum' in labels")
     return (ci, result.get('response', {}))
   except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
           GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
-          GAPI.systemError, GAPI.permissionDenied) as e:
+          GAPI.systemError, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
     action = Act.Get()
     Act.Set(Act.LOOKUP)
     entityActionFailedWarning([Ent.CLOUD_IDENTITY_GROUP, parent], str(e))
@@ -5921,12 +5921,12 @@ def checkGroupExists(cd, ci, ciGroupsAPI, group, i=0, count=0):
     if group.startswith('groups/'):
       try:
         result = callGAPI(ci.groups(), 'get',
-                          throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.GROUP_GET_RETRY_REASONS,
+                          throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                           name=group, fields='name,groupKey(id)')
         return (ci, result['name'], result['groupKey']['id'])
       except (GAPI.notFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
               GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
-              GAPI.systemError, GAPI.permissionDenied):
+              GAPI.systemError, GAPI.permissionDenied, GAPI.serviceNotAvailable):
         entityUnknownWarning(Ent.GROUP, group, i, count)
         return (ci, None, None)
     else:
@@ -5978,12 +5978,12 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
     try:
       result = callGAPIpages(ci.groups().memberships(), 'list', 'memberships',
                              pageMessage=getPageMessageForWhom(),
-                             throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS, retryReasons=GAPI.MEMBERS_RETRY_REASONS,
+                             throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                              parent=groupName, view='FULL',
                              fields=f'nextPageToken,memberships(name,{CIGROUP_MEMBERKEY}(id),roles(name),type)', pageSize=GC.Values[GC.MEMBER_MAX_RESULTS])
     except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
             GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
-            GAPI.systemError, GAPI.permissionDenied):
+            GAPI.systemError, GAPI.permissionDenied, GAPI.serviceNotAvailable):
       entityUnknownWarning(Ent.CLOUD_IDENTITY_GROUP, groupEmail)
       _incrEntityDoesNotExist(Ent.CLOUD_IDENTITY_GROUP)
       return
@@ -6149,13 +6149,13 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
         try:
           result = callGAPIpages(ci.groups().memberships(), 'list', 'memberships',
                                  pageMessage=getPageMessageForWhom(),
-                                 throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS, retryReasons=GAPI.MEMBERS_RETRY_REASONS,
+                                 throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                                  parent=name, view='FULL',
                                  fields=f'nextPageToken,memberships({CIGROUP_MEMBERKEY}(id),roles(name),type)',
                                  pageSize=GC.Values[GC.MEMBER_MAX_RESULTS])
         except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
                 GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
-                GAPI.systemError, GAPI.permissionDenied):
+                GAPI.systemError, GAPI.permissionDenied, GAPI.serviceNotAvailable):
           entityUnknownWarning(Ent.CLOUD_IDENTITY_GROUP, groupEmail)
           _incrEntityDoesNotExist(Ent.CLOUD_IDENTITY_GROUP)
           continue
@@ -29073,7 +29073,7 @@ def doCreateGroup(ciGroupsAPI=False):
                body=body, fields='')
     else:
       callGAPI(ci.groups(), 'create',
-               throwReasons=GAPI.CIGROUP_CREATE_THROW_REASONS,
+               throwReasons=GAPI.CIGROUP_CREATE_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                initialGroupConfig=initialGroupConfig, body=body, fields='')
     if gs_body and not GroupIsAbuseOrPostmaster(groupEmail):
       if getBeforeUpdate:
@@ -29630,11 +29630,11 @@ def doUpdateGroups():
           continue
         try:
           callGAPI(ci.groups(), 'patch',
-                   throwReasons=GAPI.CIGROUP_UPDATE_THROW_REASONS,
+                   throwReasons=GAPI.CIGROUP_UPDATE_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                    name=name, body=ci_body, updateMask=','.join(list(ci_body.keys())))
         except (GAPI.notFound, GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
                 GAPI.forbidden, GAPI.badRequest, GAPI.invalid, GAPI.invalidInput, GAPI.invalidArgument,
-                GAPI.systemError, GAPI.permissionDenied, GAPI.failedPrecondition) as e:
+                GAPI.systemError, GAPI.permissionDenied, GAPI.failedPrecondition, GAPI.serviceNotAvailable) as e:
           entityActionFailedWarning([Ent.CLOUD_IDENTITY_GROUP, group], str(e), i, count)
           continue
       entityActionPerformed([entityType, group], i, count)
@@ -30258,7 +30258,7 @@ def infoGroups(entityList):
         if not name:
           continue
         cigInfo = callGAPI(ci.groups(), 'get',
-                           throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.GROUP_GET_RETRY_REASONS,
+                           throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                            name=name, fields=cifields)
       else:
         cigInfo = {}
@@ -30968,12 +30968,12 @@ def doPrintGroups():
       try:
         ciGroupList = callGAPIpages(ci.groups(), 'list', 'groups',
                                     pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute=['groupKey', 'id'],
-                                    throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS,
+                                    throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                                     parent=f'customers/{GC.Values[GC.CUSTOMER_ID]}', view='FULL',
                                     fields=cifieldsnp, pageSize=500)
       except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
               GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
-              GAPI.systemError, GAPI.permissionDenied) as e:
+              GAPI.systemError, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
         accessErrorExitNonDirectory(API.CLOUDIDENTITY_GROUPS, str(e))
       for ciGroup in ciGroupList:
         key = ciGroup['groupKey']['id']
@@ -31007,8 +31007,7 @@ def doPrintGroups():
         if name:
           try:
             ciGroup = callGAPI(ci.groups(), 'get',
-                               throwReasons=GAPI.CIGROUP_GET_THROW_REASONS,
-                               retryReasons=GAPI.GROUP_GET_RETRY_REASONS,
+                               throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                                name=name, fields=cifields)
             key = ciGroup['groupKey']['id']
             if not showCIgroupKey:
@@ -31016,7 +31015,7 @@ def doPrintGroups():
             ciGroups[key] = ciGroup
           except (GAPI.notFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
                   GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
-                  GAPI.systemError, GAPI.permissionDenied) as e:
+                  GAPI.systemError, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
             entityActionFailedWarning([Ent.GROUP, groupEmail, Ent.CLOUD_IDENTITY_GROUP, None], str(e), i, count)
     if cdbcount > 0:
       cdbatch.execute()
@@ -31818,8 +31817,7 @@ def doUpdateCIGroups():
   def checkDynamicGroup(ci, group, i, count):
     try:
       result = callGAPI(ci.groups(), 'get',
-                        throwReasons=GAPI.CIGROUP_GET_THROW_REASONS,
-                        retryReasons=GAPI.GROUP_GET_RETRY_REASONS,
+                        throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                         name=group, fields='labels')
       if 'cloudidentity.googleapis.com/groups.dynamic' in result.get('labels', {}):
         entityActionNotPerformedWarning([entityType, group], Msg.DYNAMIC_GROUP_MEMBERSHIP_CANNOT_BE_MODIFIED, i, count)
@@ -31827,7 +31825,7 @@ def doUpdateCIGroups():
       return False
     except (GAPI.notFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
             GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
-            GAPI.systemError, GAPI.permissionDenied):
+            GAPI.systemError, GAPI.permissionDenied, GAPI.serviceNotAvailable):
       return True
 
 # Convert foo@googlemail.com to foo@gmail.com; eliminate periods in name for foo.bar@gmail.com
@@ -32036,11 +32034,11 @@ def doUpdateCIGroups():
         if ci_body:
           try:
             callGAPI(ci.groups(), 'patch',
-                     throwReasons=GAPI.CIGROUP_UPDATE_THROW_REASONS,
+                     throwReasons=GAPI.CIGROUP_UPDATE_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                      name=name, body=ci_body, updateMask=','.join(list(ci_body.keys())))
           except (GAPI.notFound, GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
                   GAPI.forbidden, GAPI.badRequest, GAPI.invalid, GAPI.invalidInput, GAPI.invalidArgument,
-                  GAPI.systemError, GAPI.permissionDenied, GAPI.failedPrecondition) as e:
+                  GAPI.systemError, GAPI.permissionDenied, GAPI.failedPrecondition, GAPI.serviceNotAvailable) as e:
             entityActionFailedWarning([Ent.CLOUD_IDENTITY_GROUP, group], str(e), i, count)
             continue
         if se_body:
@@ -32048,11 +32046,11 @@ def doUpdateCIGroups():
           # We'll see if Google servers change this at some point.
           try:
             callGAPI(ci.groups(), 'updateSecuritySettings',
-                     throwReasons=GAPI.CIGROUP_UPDATE_THROW_REASONS,
+                     throwReasons=GAPI.CIGROUP_UPDATE_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                      name=f'{name}/securitySettings', updateMask='member_restriction.query', body=se_body)
           except (GAPI.notFound, GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
                   GAPI.forbidden, GAPI.badRequest, GAPI.invalid, GAPI.invalidInput, GAPI.invalidArgument,
-                  GAPI.systemError, GAPI.permissionDenied, GAPI.failedPrecondition) as e:
+                  GAPI.systemError, GAPI.permissionDenied, GAPI.failedPrecondition, GAPI.serviceNotAvailable) as e:
             entityActionFailedWarning([Ent.CLOUD_IDENTITY_GROUP, group], str(e), i, count)
             continue
       entityActionPerformed([entityType, group], i, count)
@@ -32544,7 +32542,7 @@ def doInfoCIGroups():
       continue
     try:
       cigInfo = callGAPI(ci.groups(), 'get',
-                         throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.GROUP_GET_RETRY_REASONS,
+                         throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                          name=name, fields=fields)
       group = cigInfo['groupKey']['id']
       if not getAliases:
@@ -32560,7 +32558,7 @@ def doInfoCIGroups():
             members.append(member)
       if getSecuritySettings:
         cigInfo['SecuritySettings'] = callGAPI(ci.groups(), 'getSecuritySettings',
-                                               throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.GROUP_GET_RETRY_REASONS,
+                                               throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                                                name=f'{name}/securitySettings', readMask='*')
       if FJQC.formatJSON:
         if getUsers and not showMemberTree:
@@ -32598,8 +32596,7 @@ def doInfoCIGroups():
       entityActionFailedWarning([Ent.CLOUD_IDENTITY_GROUP, group], Msg.DOES_NOT_EXIST, i, count)
     except (GAPI.groupNotFound, GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.backendError,
             GAPI.invalid, GAPI.invalidMember, GAPI.invalidParameter, GAPI.invalidInput, GAPI.forbidden, GAPI.badRequest,
-            GAPI.permissionDenied,
-            GAPI.systemError, GAPI.serviceLimit) as e:
+            GAPI.permissionDenied, GAPI.systemError, GAPI.serviceLimit, GAPI.serviceNotAvailable) as e:
       entityActionFailedWarning([Ent.CLOUD_IDENTITY_GROUP, group], str(e), i, count)
 
 def checkCIGroupShowOwnedBy(showOwnedBy, members):
@@ -32759,13 +32756,13 @@ def doPrintCIGroups():
     try:
       result = callGAPIpages(ci.groups().memberships(), 'searchTransitiveGroups', 'memberships',
                              pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute=['groupKey', 'id'],
-                             throwReasons=GAPI.CIGROUP_LIST_USERKEY_THROW_REASONS,
+                             throwReasons=GAPI.CIGROUP_LIST_USERKEY_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                              parent='groups/-', query=memberQuery,
                              fields='nextPageToken,memberships(group,groupKey(id),relationType)', pageSize=pageSize)
       entitySelection = [{'email': entity['groupKey']['id'], 'name': entity['group']} for entity in result if entity['relationType'] == 'DIRECT']
     except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
             GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
-            GAPI.systemError, GAPI.permissionDenied, GAPI.invalidArgument) as e:
+            GAPI.systemError, GAPI.permissionDenied, GAPI.invalidArgument, GAPI.serviceNotAvailable) as e:
       entityActionFailedWarning([Ent.CLOUD_IDENTITY_GROUP, None], str(e))
       return
   getFullFieldsList = []
@@ -32789,11 +32786,11 @@ def doPrintCIGroups():
     try:
       entityList = callGAPIpages(ci.groups(), method, 'groups',
                                  pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute=['groupKey', 'id'],
-                                 throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS,
+                                 throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                                  view='FULL', fields=fieldsnp, pageSize=pageSize, **kwargs)
     except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
             GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
-            GAPI.systemError, GAPI.permissionDenied) as e:
+            GAPI.systemError, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
       entityActionFailedWarning([Ent.CLOUD_IDENTITY_GROUP, None], str(e))
       return
   else:
@@ -32812,12 +32809,12 @@ def doPrintCIGroups():
       if name:
         try:
           ciGroup = callGAPI(ci.groups(), 'get',
-                             throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.GROUP_GET_RETRY_REASONS,
+                             throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                              name=name, fields=fields)
           entityList.append(ciGroup)
         except (GAPI.notFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
                 GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
-                GAPI.systemError, GAPI.permissionDenied) as e:
+                GAPI.systemError, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
           entityActionFailedWarning([Ent.CLOUD_IDENTITY_GROUP, groupEmail], str(e), i, count)
   i = 0
   count = len(entityList)
@@ -32829,12 +32826,12 @@ def doPrintCIGroups():
     if getFullFields:
       try:
         fullInfo = callGAPI(ci.groups(), 'get',
-                            throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.GROUP_GET_RETRY_REASONS,
+                            throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                             name=groupEntity['name'], fields=getFullFields)
         groupEntity.update(fullInfo)
       except (GAPI.notFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
               GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
-              GAPI.systemError, GAPI.permissionDenied) as e:
+              GAPI.systemError, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
         entityActionFailedWarning([Ent.CLOUD_IDENTITY_GROUP, groupEmail], str(e), i, count)
     groupMembers = {}
     if getRoles:
@@ -32850,14 +32847,14 @@ def doPrintCIGroups():
       printGettingEntityItemForWhom(Ent.MEMBER_RESTRICTION, groupEmail, i, count)
       try:
         secInfo = callGAPI(ci.groups(), 'getSecuritySettings',
-                           throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.GROUP_GET_RETRY_REASONS,
+                           throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                            name=f"{groupEntity['name']}/securitySettings", readMask='*')
         if 'memberRestriction' in secInfo:
           groupEntity['memberRestrictionQuery'] = secInfo['memberRestriction'].get('query', '')
           groupEntity['memberRestrictionEvaluation'] = secInfo['memberRestriction'].get('evaluation', {}).get('state', '')
       except (GAPI.notFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
               GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
-              GAPI.systemError, GAPI.permissionDenied) as e:
+              GAPI.systemError, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
         entityActionFailedWarning([Ent.CLOUD_IDENTITY_GROUP, groupEmail], str(e), i, count)
     _printGroupRow(groupEntity, groupMembers)
   if sortHeaders:
@@ -32883,13 +32880,13 @@ def getCIGroupMembersEntityList(ci, entityList, query, subTitle, matchPatterns, 
     try:
       result = callGAPIpages(ci.groups().memberships(), 'searchTransitiveGroups', 'memberships',
                              pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute=['groupKey', 'id'],
-                             throwReasons=GAPI.CIGROUP_LIST_USERKEY_THROW_REASONS,
+                             throwReasons=GAPI.CIGROUP_LIST_USERKEY_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                              parent=parent, query=query,
                              fields='nextPageToken,memberships(groupKey(id),relationType)', pageSize=500)
       entityList = [entity['groupKey']['id'] for entity in result if entity['relationType'] == 'DIRECT']
     except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
             GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
-            GAPI.systemError, GAPI.permissionDenied, GAPI.invalidArgument) as e:
+            GAPI.systemError, GAPI.permissionDenied, GAPI.invalidArgument, GAPI.serviceNotAvailable) as e:
       entityActionFailedExit([Ent.CLOUD_IDENTITY_GROUP, parent], str(e))
   elif entityList is None:
     updateFieldsForCIGroupMatchPatterns(matchPatterns, fieldsList, csvPF)
@@ -32898,12 +32895,12 @@ def getCIGroupMembersEntityList(ci, entityList, query, subTitle, matchPatterns, 
     try:
       entityList = callGAPIpages(ci.groups(), 'list', 'groups',
                                  pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute=['groupKey', 'id'],
-                                 throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS,
+                                 throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                                  parent=parent, view='FULL',
                                  fields=f'nextPageToken,groups({",".join(set(fieldsList))})', pageSize=500)
     except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
             GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
-            GAPI.systemError, GAPI.permissionDenied) as e:
+            GAPI.systemError, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
       entityActionFailedExit([Ent.CLOUD_IDENTITY_GROUP, parent], str(e))
   else:
     clearUnneededGroupMatchPatterns(matchPatterns)
@@ -32912,12 +32909,11 @@ def getCIGroupMembersEntityList(ci, entityList, query, subTitle, matchPatterns, 
 def getCIGroupTransitiveMembers(ci, groupName, membersList, i, count):
   try:
     groupMembers = callGAPIpages(ci.groups().memberships(), 'searchTransitiveMemberships', 'memberships',
-                                 throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS, retryReasons=GAPI.MEMBERS_RETRY_REASONS,
+                                 throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                                  parent=groupName,
                                  fields='nextPageToken,memberships(*)', pageSize=GC.Values[GC.MEMBER_MAX_RESULTS])
   except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
-          GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
-          GAPI.systemError):
+          GAPI.forbidden, GAPI.badRequest, GAPI.invalid, GAPI.systemError, GAPI.serviceNotAvailable):
     entityUnknownWarning(Ent.CLOUD_IDENTITY_GROUP, groupName, i, count)
     return False
   except GAPI.permissionDenied as e:
@@ -32942,12 +32938,12 @@ def getCIGroupMembers(ci, groupName, memberRoles, membersList, membersSet, i, co
   try:
     groupMembers = callGAPIpages(ci.groups().memberships(), 'list', 'memberships',
                                  pageMessage=getPageMessageForWhom(),
-                                 throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS, retryReasons=GAPI.MEMBERS_RETRY_REASONS,
+                                 throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                                  parent=groupName, view='FULL',
                                  fields='nextPageToken,memberships(*)', pageSize=GC.Values[GC.MEMBER_MAX_RESULTS])
   except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
-          GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
-          GAPI.systemError, GAPI.permissionDenied):
+          GAPI.forbidden, GAPI.badRequest, GAPI.invalid, GAPI.systemError,
+          GAPI.permissionDenied, GAPI.serviceNotAvailable):
     entityUnknownWarning(Ent.CLOUD_IDENTITY_GROUP, groupName, i, count)
     return
   if not memberOptions[MEMBEROPTION_RECURSIVE]:
@@ -33131,11 +33127,11 @@ def doPrintCIGroupMembers():
         continue
       try:
         groupEntity = callGAPI(ci.groups(), 'get',
-                               throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.GROUP_GET_RETRY_REASONS,
+                               throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                                name=name, fields=fields)
       except (GAPI.notFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
-              GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
-              GAPI.systemError, GAPI.permissionDenied) as e:
+              GAPI.forbidden, GAPI.badRequest, GAPI.invalid, GAPI.systemError,
+              GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
         entityActionFailedWarning([Ent.CLOUD_IDENTITY_GROUP, groupEmail], str(e), i, count)
         continue
     groupEmail = groupEntity['groupKey']['id'].lower()
@@ -33203,14 +33199,14 @@ def doShowCIGroupMembers():
     else:
       try:
         membersList = callGAPIpages(ci.groups().memberships(), 'list', 'memberships',
-                                    throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS, retryReasons=GAPI.MEMBERS_RETRY_REASONS,
+                                    throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                                     parent=groupName, view='FULL',
                                     fields='nextPageToken,memberships(*)', pageSize=GC.Values[GC.MEMBER_MAX_RESULTS])
         for member in membersList:
           getCIGroupMemberRoleFixType(member)
       except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
-              GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
-              GAPI.systemError, GAPI.permissionDenied):
+              GAPI.forbidden, GAPI.badRequest, GAPI.invalid, GAPI.systemError,
+              GAPI.permissionDenied, GAPI.serviceNotAvailable):
         if depth == 0:
           entityUnknownWarning(Ent.CLOUD_IDENTITY_GROUP, groupEmail, i, count)
         return
@@ -33294,11 +33290,11 @@ def doShowCIGroupMembers():
         continue
       try:
         groupEntity = callGAPI(ci.groups(), 'get',
-                               throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.GROUP_GET_RETRY_REASONS,
+                               throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                                name=name, fields=fields)
       except (GAPI.notFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
-              GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
-              GAPI.systemError, GAPI.permissionDenied) as e:
+              GAPI.forbidden, GAPI.badRequest, GAPI.invalid, GAPI.systemError,
+              GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
         entityActionFailedWarning([Ent.CLOUD_IDENTITY_GROUP, groupEmail], str(e), i, count)
         continue
     groupEmail = groupEntity['groupKey']['id'].lower()

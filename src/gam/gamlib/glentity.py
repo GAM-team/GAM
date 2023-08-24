@@ -31,6 +31,7 @@ class GamEntity():
   ROLE_MEMBER_OWNER = ','.join([ROLE_MEMBER, ROLE_OWNER])
   ROLE_MANAGER_MEMBER_OWNER = ','.join([ROLE_MANAGER, ROLE_MEMBER, ROLE_OWNER])
   ROLE_PUBLIC = 'PUBLIC'
+  ROLE_ALL = ROLE_MANAGER_MEMBER_OWNER
 
   TYPE_CUSTOMER = 'CUSTOMER'
   TYPE_EXTERNAL = 'EXTERNAL'
@@ -691,6 +692,7 @@ class GamEntity():
     ROLE_MANAGER: ['Managers', 'Manager'],
     ROLE_MEMBER: ['Members', 'Member'],
     ROLE_OWNER: ['Owners', 'Owner'],
+    ROLE_ALL: ['Members, Managers, Owners', 'Member, Manager, Owner'],
     ROLE_USER: ['Users', 'User'],
     ROLE_MANAGER_MEMBER: ['Members, Managers', 'Member, Manager'],
     ROLE_MANAGER_OWNER: ['Managers, Owners', 'Manager, Owner'],
