@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.63.05
+
+Updated `inboundsso` commands to handle the following error:
+```
+ERROR: 503: serviceNotAvailable - The service is currently unavailable.
+```
+
 ### 6.63.04
 
 Added option `ignorerole` to `gam update groups|cigroups <GroupEntity> sync [<GroupRole>|ignorerole] ... <UserTypeEntity>` that causes GAM

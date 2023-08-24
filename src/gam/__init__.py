@@ -6305,7 +6305,7 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
           result = callGAPIpages(croom.courses().teachers(), 'list', 'teachers',
                                  pageMessage=getPageMessageForWhom(),
                                  throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.BAD_REQUEST, GAPI.SERVICE_NOT_AVAILABLE],
-                                 retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  courseId=courseId, fields='nextPageToken,teachers/profile/emailAddress',
                                  pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS])
           for teacher in result:
@@ -6318,7 +6318,7 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
           result = callGAPIpages(croom.courses().students(), 'list', 'students',
                                  pageMessage=getPageMessageForWhom(),
                                  throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.BAD_REQUEST, GAPI.SERVICE_NOT_AVAILABLE],
-                                 retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  courseId=courseId, fields='nextPageToken,students/profile/emailAddress',
                                  pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS])
           for student in result:
@@ -15852,7 +15852,7 @@ def doCreateAdmin():
                       throwReasons=[GAPI.INTERNAL_ERROR, GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND,
                                     GAPI.FORBIDDEN, GAPI.CUSTOMER_EXCEEDED_ROLE_ASSIGNMENTS_LIMIT, GAPI.SERVICE_NOT_AVAILABLE,
                                     GAPI.INVALID_ORGUNIT, GAPI.DUPLICATE],
-                      retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       customer=GC.Values[GC.CUSTOMER_ID], body=body, fields='roleAssignmentId,assigneeType')
     assigneeType = result.get('assigneeType')
     if assigneeType == 'user':
@@ -15884,7 +15884,7 @@ def doDeleteAdmin():
              throwReasons=[GAPI.NOT_FOUND, GAPI.OPERATION_NOT_SUPPORTED, GAPI.FORBIDDEN,
                            GAPI.INVALID_INPUT, GAPI.SERVICE_NOT_AVAILABLE,
                            GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND],
-             retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
              customer=GC.Values[GC.CUSTOMER_ID], roleAssignmentId=roleAssignmentId)
     entityActionPerformed([Ent.ADMIN_ROLE_ASSIGNMENT, roleAssignmentId])
   except (GAPI.notFound, GAPI.operationNotSupported, GAPI.forbidden,
@@ -20161,7 +20161,7 @@ def _getPeopleOtherContacts(people, entityType, user, i=0, count=0):
     results = callGAPIpages(people.otherContacts(), 'list', 'otherContacts',
                             pageMessage=getPageMessageForWhom(),
                             throwReasons=GAPI.PEOPLE_ACCESS_THROW_REASONS,
-                            retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                             pageSize=1000,
                             readMask='emailAddresses', fields='nextPageToken,otherContacts(etag,resourceName,emailAddresses(value,type))')
     otherContacts = {}
@@ -20184,7 +20184,7 @@ def queryPeopleContacts(people, contactQuery, fields, sortOrder, entityType, use
         results = callGAPIpages(people.people().connections(), 'list', 'connections',
                                 pageMessage=pageMessage,
                                 throwReasons=GAPI.PEOPLE_ACCESS_THROW_REASONS,
-                                retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                 pageSize=GC.Values[GC.PEOPLE_MAX_RESULTS],
                                 resourceName='people/me', sources=sources, personFields=fields,
                                 sortOrder=sortOrder, fields='nextPageToken,connections')
@@ -20217,7 +20217,7 @@ def queryPeopleContacts(people, contactQuery, fields, sortOrder, entityType, use
                            resourceName=contactQuery['group'], maxMembers=totalItems, groupFields='name')
         for resourceName in results.get('memberResourceNames', []):
           result = callGAPI(people.people(), 'get',
-                            retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                             resourceName=resourceName, sources=sources, personFields=fields)
 
           entityList.append(result)
@@ -20238,7 +20238,7 @@ def queryPeopleOtherContacts(people, contactQuery, fields, entityType, user, i=0
       entityList = callGAPIpages(people.otherContacts(), 'list', 'otherContacts',
                                  pageMessage=pageMessage,
                                  throwReasons=GAPI.PEOPLE_ACCESS_THROW_REASONS,
-                                 retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  pageSize=GC.Values[GC.PEOPLE_MAX_RESULTS],
                                  readMask=fields, fields='nextPageToken,otherContacts', sources=sources)
     else:
@@ -20355,7 +20355,7 @@ def createUserPeopleContact(users):
     try:
       result = callGAPI(people.people(), 'createContact',
                         throwReasons=GAPI.PEOPLE_ACCESS_THROW_REASONS+[GAPI.INVALID_ARGUMENT],
-                        retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                        retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                         personFields=','.join(personFields), body=body, sources=sources)
       resourceName = result['resourceName']
       if returnIdOnly:
@@ -20474,7 +20474,7 @@ def _clearUpdatePeopleContacts(users, updateContacts):
           contact = callGAPI(people.people(), 'get',
                              bailOnInternalError=True,
                              throwReasons=[GAPI.NOT_FOUND, GAPI.INTERNAL_ERROR]+GAPI.PEOPLE_ACCESS_THROW_REASONS,
-                             retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                              resourceName=contact, sources=sources, personFields='emailAddresses,memberships')
         else:
           if not localPeopleContactSelects(contactQuery, contact):
@@ -20516,7 +20516,7 @@ def _clearUpdatePeopleContacts(users, updateContacts):
             callGAPI(people.people(), 'deleteContact',
                      bailOnInternalError=True,
                      throwReasons=[GAPI.NOT_FOUND, GAPI.INTERNAL_ERROR]+GAPI.PEOPLE_ACCESS_THROW_REASONS,
-                     retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                     retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                      resourceName=resourceName)
             entityActionPerformed([entityType, user, peopleEntityType, resourceName], j, jcount)
             continue
@@ -20524,7 +20524,7 @@ def _clearUpdatePeopleContacts(users, updateContacts):
           updatePersonFields = [PEOPLE_EMAIL_ADDRESSES]
         person = callGAPI(people.people(), 'updateContact',
                           throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.NOT_FOUND, GAPI.INTERNAL_ERROR]+GAPI.PEOPLE_ACCESS_THROW_REASONS,
-                          retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                          retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                           resourceName=resourceName,
                           updatePersonFields=','.join(updatePersonFields), body=body, sources=sources)
         entityActionPerformed([entityType, user, peopleEntityType, person['resourceName']], j, jcount)
@@ -20657,7 +20657,7 @@ def dedupReplaceDomainUserPeopleContacts(users):
           contact = callGAPI(people.people(), 'get',
                              bailOnInternalError=True,
                              throwReasons=[GAPI.NOT_FOUND, GAPI.INTERNAL_ERROR]+GAPI.PEOPLE_ACCESS_THROW_REASONS,
-                             retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                              resourceName=contact, sources=sources, personFields='emailAddresses,memberships')
         else:
           if action == Act.DEDUP and not localPeopleContactSelects(contactQuery, contact):
@@ -20672,7 +20672,7 @@ def dedupReplaceDomainUserPeopleContacts(users):
         Act.Set(Act.UPDATE)
         callGAPI(people.people(), 'updateContact',
                  throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.NOT_FOUND, GAPI.INTERNAL_ERROR]+GAPI.PEOPLE_ACCESS_THROW_REASONS,
-                 retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                  resourceName=resourceName,
                  updatePersonFields='emailAddresses', body=contact)
         entityActionPerformed([entityType, user, peopleEntityType, resourceName], j, jcount)
@@ -20728,7 +20728,7 @@ def deleteUserPeopleContacts(users):
         callGAPI(people.people(), 'deleteContact',
                  bailOnInternalError=True,
                  throwReasons=[GAPI.NOT_FOUND, GAPI.INTERNAL_ERROR]+GAPI.PEOPLE_ACCESS_THROW_REASONS,
-                 retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                  resourceName=resourceName)
         entityActionPerformed([entityType, user, peopleEntityType, resourceName], j, jcount)
       except (GAPI.notFound, GAPI.internalError):
@@ -21004,7 +21004,7 @@ def _infoPeople(users, entityType, source):
         result = callGAPI(people.people(), 'get',
                           bailOnInternalError=True,
                           throwReasons=[GAPI.NOT_FOUND, GAPI.INTERNAL_ERROR, GAPI.INVALID_ARGUMENT]+GAPI.PEOPLE_ACCESS_THROW_REASONS,
-                          retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                          retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                           resourceName=resourceName, sources=sources, personFields=fields)
       except (GAPI.notFound, GAPI.internalError):
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName], Msg.DOES_NOT_EXIST, j, jcount)
@@ -21277,7 +21277,7 @@ def processUserPeopleOtherContacts(users):
       try:
         callGAPI(upeople.people(), 'updateContact',
                  throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.NOT_FOUND, GAPI.INTERNAL_ERROR]+GAPI.PEOPLE_ACCESS_THROW_REASONS,
-                 retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                  resourceName=peopleResourceName,
                  updatePersonFields=','.join(updatePersonFields), body=body, sources=sources)
         if action != Act.DELETE:
@@ -21290,7 +21290,7 @@ def processUserPeopleOtherContacts(users):
               callGAPI(upeople.people(), 'deleteContact',
                        bailOnInternalError=True,
                        throwReasons=[GAPI.NOT_FOUND, GAPI.INTERNAL_ERROR]+GAPI.PEOPLE_ACCESS_THROW_REASONS,
-                       retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                       retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                        resourceName=peopleResourceName)
               entityActionPerformed([entityType, user, peopleEntityType, resourceName], j, jcount)
               break
@@ -21537,7 +21537,7 @@ def printShowUserPeopleProfiles(users):
     try:
       result = callGAPI(people.people(), 'get',
                         throwReasons=[GAPI.NOT_FOUND]+GAPI.PEOPLE_ACCESS_THROW_REASONS,
-                        retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                        retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                         resourceName='people/me', sources=sources, personFields=fields)
     except GAPI.notFound:
       entityUnknownWarning(Ent.PEOPLE_PROFILE, user, i, count)
@@ -21631,7 +21631,7 @@ def _processPeopleContactPhotos(users, function):
           result = callGAPI(people.people(), 'get',
                             bailOnInternalError=True,
                             throwReasons=[GAPI.NOT_FOUND, GAPI.INTERNAL_ERROR]+GAPI.PEOPLE_ACCESS_THROW_REASONS,
-                            retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                             resourceName=resourceName, sources=sources, personFields='emailAddresses')
         if function == 'updateContactPhoto':
           if subForContactId or subForEmail:
@@ -21650,7 +21650,7 @@ def _processPeopleContactPhotos(users, function):
           filename = os.path.join(targetFolder, filename)
           result = callGAPI(people.people(), 'get',
                             throwReasons=[GAPI.NOT_FOUND, GAPI.INTERNAL_ERROR]+GAPI.PEOPLE_ACCESS_THROW_REASONS,
-                            retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                             resourceName=resourceName, personFields='photos')
           url = None
           for photo in result.get('photos', []):
@@ -25393,7 +25393,7 @@ def buildChromeSchemas(cp=None, sfilter=None):
     cp = buildGAPIObject(API.CHROMEPOLICY)
   parent = _getCustomersCustomerIdWithC()
   schemas = callGAPIpages(cp.customers().policySchemas(), 'list', 'policySchemas',
-                          retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                          retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                           parent=parent, filter=sfilter)
   schema_objects = {}
   for schema in schemas:
@@ -25451,7 +25451,7 @@ def doDeleteChromePolicy():
     callGAPI(cp.customers().policies().orgunits(), 'batchInherit',
              throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED,
                            GAPI.INVALID_ARGUMENT, GAPI.SERVICE_NOT_AVAILABLE, GAPI.QUOTA_EXCEEDED],
-             retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
              customer=customer, body=body)
     entityActionPerformed(kvList)
   except (GAPI.notFound, GAPI.permissionDenied, GAPI.invalidArgument, GAPI.serviceNotAvailable, GAPI.quotaExceeded) as e:
@@ -25696,7 +25696,7 @@ def doUpdateChromePolicy():
     callGAPI(cp.customers().policies().orgunits(), 'batchModify',
              throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.INVALID_ARGUMENT,
                            GAPI.SERVICE_NOT_AVAILABLE, GAPI.QUOTA_EXCEEDED],
-             retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
              customer=customer, body=body)
     entityActionPerformed(kvList)
   except (GAPI.notFound, GAPI.permissionDenied, GAPI.invalidArgument, GAPI.serviceNotAvailable, GAPI.quotaExceeded) as e:
@@ -26132,7 +26132,7 @@ def doCreateChromeNetwork():
                       bailOnInternalError=True,
                       throwReasons=[GAPI.ALREADY_EXISTS, GAPI.PERMISSION_DENIED, GAPI.INVALID_ARGUMENT,
                                     GAPI.INTERNAL_ERROR, GAPI.SERVICE_NOT_AVAILABLE],
-                      retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       customer=customer, body=body)
     entityActionPerformed(kvList+[Ent.CHROME_NETWORK_ID, result['networkId']])
   except (GAPI.alreadyExists, GAPI.permissionDenied, GAPI.invalidArgument,
@@ -26153,7 +26153,7 @@ def doDeleteChromeNetwork():
     callGAPI(cp.customers().policies().networks(), 'removeNetwork',
              throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED,
                            GAPI.INVALID_ARGUMENT, GAPI.SERVICE_NOT_AVAILABLE],
-             retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
              customer=customer, body=body)
     entityActionPerformed(kvList)
   except (GAPI.notFound, GAPI.permissionDenied, GAPI.invalidArgument, GAPI.serviceNotAvailable) as e:
@@ -26211,7 +26211,7 @@ def getCIDeviceEntity():
   try:
     devices = callGAPIpages(ci.devices(), 'list', 'devices',
                             throwReasons=[GAPI.INVALID, GAPI.PERMISSION_DENIED],
-                            retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                             pageMessage=pageMessage,
                             customer=customer, filter=query,
                             fields='nextPageToken,devices(name)', pageSize=100)
@@ -26246,7 +26246,7 @@ def getCIDeviceUserEntity():
   try:
     deviceUsers = callGAPIpages(ci.devices().deviceUsers(), 'list', 'deviceUsers',
                                 throwReasons=[GAPI.INVALID, GAPI.PERMISSION_DENIED],
-                                retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                 pageMessage=pageMessage,
                                 customer=customer, filter=query, parent='devices/-',
                                 fields='nextPageToken,deviceUsers(name)', pageSize=20)
@@ -26446,7 +26446,7 @@ def doSyncCIDevices():
     try:
       result = callGAPIpages(ci.devices(), 'list', 'devices',
                              throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                             retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                              pageMessage=pageMessage,
                              customer=customer, filter=query, view='COMPANY_INVENTORY',
                              fields=fields, pageSize=100)
@@ -26715,7 +26715,7 @@ def doPrintCIDevices():
       devices = callGAPIpages(ci.devices(), 'list', 'devices',
                               pageMessage=pageMessage,
                               throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                              retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                               customer=customer, filter=query,
                               orderBy=OBY.orderBy, view=view, fields=fields, pageSize=100)
     except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
@@ -26732,7 +26732,7 @@ def doPrintCIDevices():
         deviceUsers = callGAPIpages(ci.devices().deviceUsers(), 'list', 'deviceUsers',
                                     pageMessage=pageMessage,
                                     throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                                    retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                    retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                     customer=customer, filter=query, parent=parent,
                                     orderBy=OBY.orderBy, fields=userFields, pageSize=20)
         for deviceUser in deviceUsers:
@@ -26894,7 +26894,7 @@ def doPrintCIDeviceUsers():
       deviceUsers = callGAPIpages(ci.devices().deviceUsers(), 'list', 'deviceUsers',
                                   pageMessage=pageMessage,
                                   throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                                  retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                   customer=customer, filter=query,
                                   orderBy=OBY.orderBy, parent=parent, fields=userFields, pageSize=20)
       for deviceUser in deviceUsers:
@@ -27525,7 +27525,7 @@ def doPrintShowChromeApps():
       try:
         apps = callGAPIpages(cm.customers().reports(), 'countInstalledApps', 'installedApps',
                              throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
-                             retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                              pageMessage=pageMessage,
                              customer=customerId, orgUnitId=orgUnitId, filter=pfilter, orderBy=orderBy)
       except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
@@ -27673,7 +27673,7 @@ def doPrintShowChromeAppDevices():
       try:
         devices = callGAPIpages(cm.customers().reports(), 'findInstalledAppDevices', 'devices',
                                 throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
-                                retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                 pageMessage=pageMessage,
                                 appId=appId, appType=appType,
                                 customer=customerId, orgUnitId=orgUnitId, filter=pfilter, orderBy=orderBy)
@@ -27792,7 +27792,7 @@ def doPrintShowChromeAues():
       try:
         aues = callGAPI(cm.customers().reports(), 'countChromeDevicesReachingAutoExpirationDate',
                         throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
-                        retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                        retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                         customer=customerId, orgUnitId=orgUnitId, minAueDate=minAueDate, maxAueDate=maxAueDate).get('deviceAueCountReports', [])
       except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
         entityActionFailedWarning([Ent.CHROME_MODEL, None], str(e))
@@ -27898,7 +27898,7 @@ def doPrintShowChromeNeedsAttn():
       try:
         result = callGAPI(cm.customers().reports(), 'countChromeDevicesThatNeedAttention',
                           throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
-                          retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                          retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                           customer=customerId, orgUnitId=orgUnitId, readMask=','.join(CHROME_NEEDSATTN_TITLES))
         for field in CHROME_NEEDSATTN_TITLES:
           result.setdefault(field, 0)
@@ -28024,7 +28024,7 @@ def doPrintShowChromeVersions():
       try:
         versions = callGAPIpages(cm.customers().reports(), 'countChromeVersions', 'browserVersions',
                                  throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
-                                 retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  pageMessage=pageMessage,
                                  customer=customerId, orgUnitId=orgUnitId, filter=pfilter)
       except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
@@ -31323,7 +31323,7 @@ def doPrintGroupMembers():
     try:
       info = callGAPI(people.people(), 'get',
                       throwReasons=[GAPI.NOT_FOUND]+GAPI.PEOPLE_ACCESS_THROW_REASONS,
-                      retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       resourceName=f'people/{memberId}', personFields='names')
       if 'names' in info:
         for sourceType in ['PROFILE', 'CONTACT']:
@@ -31489,7 +31489,7 @@ def doPrintGroupMembers():
           try:
             mbinfo = callGAPI(cd.users(), 'get',
                               throwReasons=GAPI.USER_GET_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
-                              retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                               userKey=memberId, fields=userFields)
             if memberOptions[MEMBEROPTION_MEMBERNAMES]:
               row['name'] = mbinfo['name'].pop('fullName')
@@ -34171,7 +34171,7 @@ def doCreateResourceCalendar():
     callGAPI(cd.resources().calendars(), 'insert',
              throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.SERVICE_NOT_AVAILABLE,
                            GAPI.REQUIRED, GAPI.DUPLICATE, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
-             retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
              customer=GC.Values[GC.CUSTOMER_ID], body=body, fields='')
     entityActionPerformed([Ent.RESOURCE_CALENDAR, body['resourceId']])
   except (GAPI.invalid, GAPI.invalidInput, GAPI.serviceNotAvailable) as e:
@@ -34200,7 +34200,7 @@ def _doUpdateResourceCalendars(entityList):
       if featureChanges['add'] or featureChanges['remove']:
         features = callGAPI(cd.resources().calendars(), 'get',
                             throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE, GAPI.FORBIDDEN],
-                            retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                             customer=GC.Values[GC.CUSTOMER_ID], calendarResourceId=resourceId, fields='featureInstances(feature(name))')
         bodyFeatures = body.pop('featureInstances', [])
         body['featureInstances'] = []
@@ -34224,7 +34224,7 @@ def _doUpdateResourceCalendars(entityList):
       callGAPI(cd.resources().calendars(), 'patch',
                throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.SERVICE_NOT_AVAILABLE, GAPI.REQUIRED,
                              GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
-               retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                customer=GC.Values[GC.CUSTOMER_ID], calendarResourceId=resourceId, body=body, fields='')
       entityActionPerformed([Ent.RESOURCE_CALENDAR, resourceId], i, count)
     except (GAPI.invalid, GAPI.invalidInput, GAPI.serviceNotAvailable, GAPI.required)  as e:
@@ -34250,7 +34250,7 @@ def _doDeleteResourceCalendars(entityList):
     try:
       callGAPI(cd.resources().calendars(), 'delete',
                throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
-               retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                customer=GC.Values[GC.CUSTOMER_ID], calendarResourceId=resourceId)
       entityActionPerformed([Ent.RESOURCE_CALENDAR, resourceId], i, count)
     except GAPI.serviceNotAvailable  as e:
@@ -40488,7 +40488,7 @@ def doCreateUser():
       callGAPI(parameters['lic'].licenseAssignments(), 'insert',
                throwReasons=[GAPI.INTERNAL_ERROR, GAPI.DUPLICATE, GAPI.CONDITION_NOT_MET, GAPI.INVALID,
                              GAPI.USER_NOT_FOUND, GAPI.FORBIDDEN, GAPI.BACKEND_ERROR, GAPI.SERVICE_NOT_AVAILABLE],
-               retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                productId=productId, skuId=skuId, body={'userId': user}, fields='')
       entityActionPerformed([Ent.USER, user, Ent.LICENSE, SKU.formatSKUIdDisplayName(skuId)])
     except (GAPI.internalError, GAPI.duplicate, GAPI.conditionNotMet, GAPI.invalid,
@@ -42256,11 +42256,12 @@ def _getInboundSSOProfiles(ci):
   try:
     return callGAPIpages(ci.inboundSamlSsoProfiles(), 'list', 'inboundSamlSsoProfiles',
                          throwReasons=GAPI.CISSO_LIST_THROW_REASONS,
+                         retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                          bailOnInternalError=True,
                          filter=f'customer=="{customer}"')
   except (GAPI.notFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
           GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
-          GAPI.systemError, GAPI.permissionDenied, GAPI.internalError) as e:
+          GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
     entityActionFailedWarning([Ent.INBOUND_SSO_PROFILE, customer], str(e))
     return []
 
@@ -42343,12 +42344,13 @@ def doCreateInboundSSOProfile():
   try:
     result = callGAPI(ci.inboundSamlSsoProfiles(), 'create',
                       throwReasons=GAPI.CISSO_CREATE_THROW_REASONS,
+                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       bailOnInternalError=True,
                       body=body)
     _processInboundSSOProfileResult(result, returnNameOnly, kvlist, 'create')
   except (GAPI.failedPrecondition, GAPI.notFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
           GAPI.badRequest, GAPI.invalid, GAPI.invalidInput, GAPI.invalidArgument,
-          GAPI.systemError, GAPI.permissionDenied, GAPI.internalError) as e:
+          GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
     entityActionFailedWarning(kvlist, str(e))
 
 # gam update inboundssoprofile <SSOProfileItem>
@@ -42362,6 +42364,7 @@ def doUpdateInboundSSOProfile():
   try:
     result = callGAPI(ci.inboundSamlSsoProfiles(), 'patch',
                       throwReasons=GAPI.CISSO_UPDATE_THROW_REASONS,
+                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       bailOnInternalError=True,
                       name=name, updateMask=','.join(body.keys()), body=body)
     _processInboundSSOProfileResult(result, returnNameOnly, kvlist, 'update')
@@ -42369,7 +42372,7 @@ def doUpdateInboundSSOProfile():
     entityActionFailedWarning(kvlist, Msg.DOES_NOT_EXIST)
   except (GAPI.failedPrecondition, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
           GAPI.badRequest, GAPI.invalid, GAPI.invalidInput, GAPI.invalidArgument,
-          GAPI.systemError, GAPI.permissionDenied, GAPI.internalError) as e:
+          GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
     entityActionFailedWarning(kvlist, str(e))
 
 # gam delete inboundssoprofile <SSOProfileItem>
@@ -42381,6 +42384,7 @@ def doDeleteInboundSSOProfile():
   try:
     result = callGAPI(ci.inboundSamlSsoProfiles(), 'delete',
                       throwReasons=GAPI.CISSO_UPDATE_THROW_REASONS,
+                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       bailOnInternalError=True,
                       name=name)
     _processInboundSSOProfileResult(result, True, kvlist, 'delete')
@@ -42388,7 +42392,7 @@ def doDeleteInboundSSOProfile():
     entityActionFailedWarning(kvlist, Msg.DOES_NOT_EXIST)
   except (GAPI.failedPrecondition, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
           GAPI.badRequest, GAPI.invalid, GAPI.invalidInput, GAPI.invalidArgument,
-          GAPI.systemError, GAPI.permissionDenied, GAPI.internalError) as e:
+          GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
     entityActionFailedWarning(kvlist, str(e))
 
 def _getInboundSSOProfile(ci, name):
@@ -42396,12 +42400,13 @@ def _getInboundSSOProfile(ci, name):
   try:
     return callGAPI(ci.inboundSamlSsoProfiles(), 'get',
                     throwReasons=GAPI.CISSO_GET_THROW_REASONS,
+                    retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                     bailOnInternalError=True,
                     name=name)
   except GAPI.notFound:
     entityActionFailedWarning(kvlist, Msg.DOES_NOT_EXIST)
   except (GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
-          GAPI.badRequest, GAPI.invalid, GAPI.systemError, GAPI.permissionDenied, GAPI.internalError) as e:
+          GAPI.badRequest, GAPI.invalid, GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
     entityActionFailedWarning(kvlist, str(e))
   return None
 
@@ -42459,11 +42464,12 @@ def getInboundSSOProfileCredentials(ci, profile):
   try:
     return callGAPIpages(ci.inboundSamlSsoProfiles().idpCredentials(), 'list', 'idpCredentials',
                          throwReasons=GAPI.CISSO_LIST_THROW_REASONS,
+                         retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                          bailOnInternalError=True,
                          parent=profile)
   except (GAPI.notFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
           GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
-          GAPI.systemError, GAPI.permissionDenied, GAPI.internalError) as e:
+          GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
     entityActionFailedWarning([Ent.INBOUND_SSO_PROFILE, profile], str(e))
     return None
 
@@ -42552,6 +42558,7 @@ def doCreateInboundSSOCredential():
   try:
     result = callGAPI(ci.inboundSamlSsoProfiles().idpCredentials(), 'add',
                       throwReasons=GAPI.CISSO_UPDATE_THROW_REASONS,
+                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       bailOnInternalError=True,
                       parent=profile, body={'pemData': pemData})
     _processInboundSSOCredentialsResult(result, kvlist, 'create')
@@ -42559,7 +42566,7 @@ def doCreateInboundSSOCredential():
     entityActionFailedWarning([Ent.INBOUND_SSO_PROFILE, profile], str(e))
   except (GAPI.failedPrecondition, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
           GAPI.badRequest, GAPI.invalid, GAPI.invalidInput, GAPI.invalidArgument,
-          GAPI.systemError, GAPI.permissionDenied, GAPI.internalError) as e:
+          GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
     entityActionFailedWarning(kvlist, str(e))
 
 # gam delete inboundssocredential <SSOCredentialsName>
@@ -42573,6 +42580,7 @@ def doDeleteInboundSSOCredential(ci=None, name=None):
   try:
     result = callGAPI(ci.inboundSamlSsoProfiles().idpCredentials(), 'delete',
                       throwReasons=GAPI.CISSO_UPDATE_THROW_REASONS,
+                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       bailOnInternalError=True,
                       name=name)
     _processInboundSSOCredentialsResult(result, kvlist, 'delete')
@@ -42580,7 +42588,7 @@ def doDeleteInboundSSOCredential(ci=None, name=None):
     entityActionFailedWarning(kvlist, Msg.DOES_NOT_EXIST)
   except (GAPI.failedPrecondition, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
           GAPI.badRequest, GAPI.invalid, GAPI.invalidInput, GAPI.invalidArgument,
-          GAPI.systemError, GAPI.permissionDenied, GAPI.internalError) as e:
+          GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
     entityActionFailedWarning(kvlist, str(e))
 
 # gam info inboundssocredential <SSOCredentialsName> [formatjson]
@@ -42592,13 +42600,14 @@ def doInfoInboundSSOCredential():
   try:
     credentials = callGAPI(ci.inboundSamlSsoProfiles().idpCredentials(), 'get',
                           throwReasons=GAPI.CISSO_GET_THROW_REASONS,
+                           retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                           bailOnInternalError=True,
                           name=name)
     _showInboundSSOCredentials(credentials, FJQC)
   except GAPI.notFound:
     entityActionFailedWarning(kvlist, Msg.DOES_NOT_EXIST)
   except (GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
-          GAPI.badRequest, GAPI.invalid, GAPI.systemError, GAPI.permissionDenied, GAPI.internalError) as e:
+          GAPI.badRequest, GAPI.invalid, GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
     entityActionFailedWarning(kvlist, str(e))
 
 # gam show inboundssocredentials [profile|profiles <SSOProfileItemList>]
@@ -42652,12 +42661,13 @@ def _getInboundSSOAssignment(ci, name):
   try:
     return callGAPI(ci.inboundSsoAssignments(), 'get',
                     throwReasons=GAPI.CISSO_GET_THROW_REASONS,
+                    retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                     bailOnInternalError=True,
                     name=name)
   except GAPI.notFound:
     entityActionFailedWarning(kvlist, Msg.DOES_NOT_EXIST)
   except (GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
-          GAPI.badRequest, GAPI.invalid, GAPI.systemError, GAPI.permissionDenied, GAPI.internalError) as e:
+          GAPI.badRequest, GAPI.invalid, GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
     entityActionFailedWarning(kvlist, str(e))
   return None
 
@@ -42666,11 +42676,12 @@ def _getInboundSSOAssignments(ci):
   try:
     return callGAPIpages(ci.inboundSsoAssignments(), 'list', 'inboundSsoAssignments',
                          throwReasons=GAPI.CISSO_LIST_THROW_REASONS,
+                         retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                          bailOnInternalError=True,
                          filter=f'customer=="{customer}"')
   except (GAPI.notFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
           GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
-          GAPI.systemError, GAPI.permissionDenied, GAPI.internalError) as e:
+          GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
     entityActionFailedWarning([Ent.INBOUND_SSO_ASSIGNMENT, customer], str(e))
     return None
 
@@ -42777,12 +42788,13 @@ def doCreateInboundSSOAssignment():
   try:
     result = callGAPI(ci.inboundSsoAssignments(), 'create',
                       throwReasons=GAPI.CISSO_CREATE_THROW_REASONS,
+                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       bailOnInternalError=True,
                       body=body)
     _processInboundSSOAssignmentResult(result, kvlist, ci, cd, 'create')
   except (GAPI.failedPrecondition, GAPI.notFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
           GAPI.badRequest, GAPI.invalid, GAPI.invalidInput, GAPI.invalidArgument,
-          GAPI.systemError, GAPI.permissionDenied, GAPI.internalError) as e:
+          GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
     entityActionFailedWarning(kvlist, str(e))
 
 # gam update inboundssoassignment [(group <GroupItem> rank <Number>)|(ou|org|orgunit <OrgUnitItem>)]
@@ -42796,6 +42808,7 @@ def doUpdateInboundSSOAssignment():
   try:
     result = callGAPI(ci.inboundSsoAssignments(), 'patch',
                       throwReasons=GAPI.CISSO_UPDATE_THROW_REASONS,
+                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       bailOnInternalError=True,
                       name=name, updateMask=','.join(list(body.keys())), body=body)
     _processInboundSSOAssignmentResult(result, kvlist, ci, cd, 'update')
@@ -42803,7 +42816,7 @@ def doUpdateInboundSSOAssignment():
     entityActionFailedWarning(kvlist, Msg.DOES_NOT_EXIST)
   except (GAPI.failedPrecondition, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
           GAPI.badRequest, GAPI.invalid, GAPI.invalidInput, GAPI.invalidArgument,
-          GAPI.systemError, GAPI.permissionDenied, GAPI.internalError) as e:
+          GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
     entityActionFailedWarning(kvlist, str(e))
 
 # gam delete inboundssoassignment <SSOAssignmentSelector>
@@ -42820,6 +42833,7 @@ def doDeleteInboundSSOAssignment():
   try:
     result = callGAPI(ci.inboundSsoAssignments(), 'delete',
                       throwReasons=GAPI.CISSO_UPDATE_THROW_REASONS,
+                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       bailOnInternalError=True,
                       name=name)
     _processInboundSSOAssignmentResult(result, kvlist, None, None, 'delete')
@@ -42827,7 +42841,7 @@ def doDeleteInboundSSOAssignment():
     entityActionFailedWarning(kvlist, Msg.DOES_NOT_EXIST)
   except (GAPI.failedPrecondition, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
           GAPI.badRequest, GAPI.invalid, GAPI.invalidInput, GAPI.invalidArgument,
-          GAPI.systemError, GAPI.permissionDenied, GAPI.internalError) as e:
+          GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
     entityActionFailedWarning(kvlist, str(e))
 
 # gam info inboundssoassignment <SSOAssignmentSelector> [formatjson]
@@ -43056,7 +43070,7 @@ def checkCourseExists(croom, courseId, i=0, count=0, entityType=Ent.COURSE):
   try:
     result = callGAPI(croom.courses(), 'get',
                       throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
-                      retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       id=courseId, fields='id,ownerId')
     return result
   except GAPI.notFound:
@@ -43290,7 +43304,7 @@ class CourseAttributes():
         self.courseAnnouncements = callGAPIpages(self.croom.courses().announcements(), 'list', 'announcements',
                                                  pageMessage=getPageMessageForWhom(),
                                                  throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
-                                                 retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                                  courseId=self.courseId, announcementStates=self.announcementStates,
                                                  pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS])
         for courseAnnouncement in self.courseAnnouncements:
@@ -43307,7 +43321,7 @@ class CourseAttributes():
         self.courseMaterials = callGAPIpages(self.croom.courses().courseWorkMaterials(), 'list', 'courseWorkMaterial',
                                              pageMessage=getPageMessageForWhom(),
                                              throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
-                                             retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                              courseId=self.courseId, courseWorkMaterialStates=self.materialStates,
                                              pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS])
         for courseMaterial in self.courseMaterials:
@@ -43328,7 +43342,7 @@ class CourseAttributes():
         self.courseWorks = callGAPIpages(self.croom.courses().courseWork(), 'list', 'courseWork',
                                          pageMessage=getPageMessageForWhom(),
                                          throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
-                                         retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                         retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                          courseId=self.courseId, courseWorkStates=self.workStates,
                                          pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS])
         for courseWork in self.courseWorks:
@@ -43352,7 +43366,7 @@ class CourseAttributes():
         courseTopics = callGAPIpages(self.croom.courses().topics(), 'list', 'topic',
                                      pageMessage=getPageMessageForWhom(),
                                      throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
-                                     retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                     retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                      courseId=self.courseId, fields='nextPageToken,topic(topicId,name)',
                                      pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS])
         for topic in courseTopics:
@@ -43440,7 +43454,7 @@ class CourseAttributes():
       try:
         newCourseTopics = callGAPIpages(self.croom.courses().topics(), 'list', 'topic',
                                         throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.FAILED_PRECONDITION, GAPI.SERVICE_NOT_AVAILABLE],
-                                        retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                        retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                         courseId=newCourseId, fields='nextPageToken,topic(topicId,name)',
                                         pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS])
         newTopicsByName = {}
@@ -43463,7 +43477,7 @@ class CourseAttributes():
         try:
           result = callGAPI(tcroom.courses().topics(), 'create',
                             throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.FAILED_PRECONDITION, GAPI.INVALID_ARGUMENT, GAPI.SERVICE_NOT_AVAILABLE],
-                            retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                             courseId=newCourseId, body={'name': topicName}, fields='topicId')
           newTopicsByName[topicName] = result['topicId']
           entityModifierItemValueListActionPerformed([Ent.COURSE, newCourseId, Ent.COURSE_TOPIC, topicName], Act.MODIFIER_FROM,
@@ -43491,7 +43505,7 @@ class CourseAttributes():
           result = callGAPI(tcroom.courses().announcements(), 'create',
                             throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.FORBIDDEN,
                                           GAPI.BAD_REQUEST, GAPI.FAILED_PRECONDITION, GAPI.BACKEND_ERROR, GAPI.INTERNAL_ERROR, GAPI.SERVICE_NOT_AVAILABLE],
-                            retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                             courseId=newCourseId, body=body, fields='id')
           entityModifierItemValueListActionPerformed([Ent.COURSE, newCourseId, Ent.COURSE_ANNOUNCEMENT_ID, result['id']], Act.MODIFIER_FROM,
                                                      [Ent.COURSE, self.courseId, Ent.COURSE_ANNOUNCEMENT_ID, courseAnnouncementId], j, jcount)
@@ -43527,7 +43541,7 @@ class CourseAttributes():
           result = callGAPI(tcroom.courses().courseWorkMaterials(), 'create',
                             throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.FORBIDDEN,
                                           GAPI.BAD_REQUEST, GAPI.FAILED_PRECONDITION, GAPI.BACKEND_ERROR, GAPI.INTERNAL_ERROR, GAPI.SERVICE_NOT_AVAILABLE],
-                            retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                             courseId=newCourseId, body=body, fields='id')
           entityModifierItemValueListActionPerformed([Ent.COURSE, newCourseId, Ent.COURSE_MATERIAL_ID, result['id']], Act.MODIFIER_FROM,
                                                      [Ent.COURSE, self.courseId, Ent.COURSE_MATERIAL_ID, courseMaterialId], j, jcount)
@@ -43568,7 +43582,7 @@ class CourseAttributes():
                             throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.FORBIDDEN,
                                           GAPI.BAD_REQUEST, GAPI.FAILED_PRECONDITION, GAPI.BACKEND_ERROR,
                                           GAPI.INTERNAL_ERROR, GAPI.INVALID_ARGUMENT, GAPI.SERVICE_NOT_AVAILABLE],
-                            retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                             courseId=newCourseId, body=body, fields='id')
           entityModifierItemValueListActionPerformed([Ent.COURSE, newCourseId, Ent.COURSE_WORK_ID, result['id']], Act.MODIFIER_FROM,
                                                      [Ent.COURSE, self.courseId, Ent.COURSE_WORK, f'{body.get("title", courseWorkId)}'], j, jcount)
@@ -43614,7 +43628,7 @@ def doCreateCourse():
     result = callGAPI(croom.courses(), 'create',
                       throwReasons=[GAPI.ALREADY_EXISTS, GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED,
                                     GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN, GAPI.BAD_REQUEST, GAPI.SERVICE_NOT_AVAILABLE],
-                      retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       body=courseAttributes.body, fields='id,name,ownerId,courseState,teacherFolder(id)')
     entityActionPerformed([Ent.COURSE_NAME, result['name'], Ent.COURSE, result['id']])
     if courseAttributes.courseId:
@@ -43644,12 +43658,12 @@ def _doUpdateCourses(entityList):
                             throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION,
                                           GAPI.FORBIDDEN, GAPI.BAD_REQUEST, GAPI.INVALID_ARGUMENT,
                                           GAPI.INTERNAL_ERROR, GAPI.SERVICE_NOT_AVAILABLE],
-                            retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                             id=courseId, body=body, updateMask=','.join(list(body)), fields='id,name,ownerId,courseState,teacherFolder(id)')
         else:
           result = callGAPI(croom.courses(), 'get',
                             throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
-                            retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                             id=courseId, fields='id,name,ownerId,courseState,teacherFolder(id)')
         if courseAttributes.body:
           if not newOwner:
@@ -43679,7 +43693,7 @@ def _doUpdateCourses(entityList):
                      throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.BACKEND_ERROR,
                                    GAPI.ALREADY_EXISTS, GAPI.FAILED_PRECONDITION,
                                    GAPI.QUOTA_EXCEEDED, GAPI.SERVICE_NOT_AVAILABLE],
-                     retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                     retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                      courseId=courseId, body={'userId': newOwner}, fields='')
             modifier = Act.MODIFIER_WITH_NEW_TEACHER_OWNER
             time.sleep(10)
@@ -43746,7 +43760,7 @@ def _doDeleteCourses(entityList):
                  throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION,
                                GAPI.FORBIDDEN, GAPI.BAD_REQUEST, GAPI.INVALID_ARGUMENT,
                                GAPI.INTERNAL_ERROR, GAPI.SERVICE_NOT_AVAILABLE],
-                 retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                  id=courseId, body=body, updateMask=updateMask, fields='')
       callGAPI(croom.courses(), 'delete',
                throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION, GAPI.INTERNAL_ERROR],
@@ -43898,7 +43912,7 @@ def _convertCourseUserIdToEmail(croom, userId, emails, entityValueList, i, count
     try:
       userEmail = callGAPI(croom.userProfiles(), 'get',
                            throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.BAD_REQUEST, GAPI.FORBIDDEN, GAPI.SERVICE_NOT_AVAILABLE],
-                           retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                           retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                            userId=userId, fields='emailAddress').get('emailAddress')
     except (GAPI.notFound, GAPI.permissionDenied, GAPI.badRequest, GAPI.forbidden, GAPI.serviceNotAvailable):
       pass
@@ -43925,7 +43939,7 @@ def _getCourseAliasesMembers(croom, courseId, courseShowProperties, teachersFiel
       aliases = callGAPIpages(croom.courses().aliases(), 'list', 'aliases',
                               pageMessage=pageMessage,
                               throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.SERVICE_NOT_AVAILABLE, GAPI.NOT_IMPLEMENTED],
-                              retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                               courseId=courseId, pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS])
     except (GAPI.notFound, GAPI.serviceNotAvailable, GAPI.notImplemented):
       pass
@@ -43939,7 +43953,7 @@ def _getCourseAliasesMembers(croom, courseId, courseShowProperties, teachersFiel
         teachers = callGAPIpages(croom.courses().teachers(), 'list', 'teachers',
                                  pageMessage=pageMessage,
                                  throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.SERVICE_NOT_AVAILABLE],
-                                 retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  courseId=courseId, fields=teachersFields, pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS])
       except (GAPI.notFound, GAPI.serviceNotAvailable):
         pass
@@ -43952,7 +43966,7 @@ def _getCourseAliasesMembers(croom, courseId, courseShowProperties, teachersFiel
         students = callGAPIpages(croom.courses().students(), 'list', 'students',
                                  pageMessage=pageMessage,
                                  throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.SERVICE_NOT_AVAILABLE],
-                                 retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  courseId=courseId, fields=studentsFields, pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS])
       except (GAPI.notFound, GAPI.serviceNotAvailable):
         pass
@@ -43990,7 +44004,7 @@ def _doInfoCourses(entityList):
     try:
       course = callGAPI(croom.courses(), 'get',
                         throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
-                        retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                        retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                         id=courseId, fields=fields)
       if courseShowProperties['ownerEmail']:
         course['ownerEmail'] = _convertCourseUserIdToEmail(croom, course['ownerId'], ownerEmails,
@@ -44139,7 +44153,7 @@ def _getCoursesInfo(croom, courseSelectionParameters, courseShowProperties, getO
       return callGAPIpages(croom.courses(), 'list', 'courses',
                            pageMessage=getPageMessage(),
                            throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.BAD_REQUEST, GAPI.INVALID, GAPI.SERVICE_NOT_AVAILABLE],
-                           retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                           retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                            teacherId=courseSelectionParameters['teacherId'],
                            studentId=courseSelectionParameters['studentId'],
                            courseStates=courseSelectionParameters['courseStates'],
@@ -44161,7 +44175,7 @@ def _getCoursesInfo(croom, courseSelectionParameters, courseShowProperties, getO
     try:
       info = callGAPI(croom.courses(), 'get',
                       throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.SERVICE_NOT_AVAILABLE],
-                      retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       id=courseId, fields=fields)
       coursesInfo.append(info)
     except GAPI.notFound:
@@ -44420,7 +44434,7 @@ def doPrintCourseAnnouncements():
         results = callGAPIpages(croom.courses().announcements(), 'list', 'announcements',
                                 pageMessage=getPageMessageForWhom(),
                                 throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
-                                retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                 courseId=courseId, announcementStates=courseAnnouncementStates, orderBy=OBY.orderBy,
                                 fields=fields, pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS])
         for courseAnnouncement in results:
@@ -44438,7 +44452,7 @@ def doPrintCourseAnnouncements():
         try:
           courseAnnouncement = callGAPI(croom.courses().announcements(), 'get',
                                         throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
-                                        retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                        retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                         courseId=courseId, id=courseAnnouncementId, fields=fields)
           _printCourseAnnouncement(course, courseAnnouncement, i, count)
         except GAPI.notFound:
@@ -44507,7 +44521,7 @@ def doPrintCourseTopics():
         results = callGAPIpages(croom.courses().topics(), 'list', 'topic',
                                 pageMessage=getPageMessageForWhom(),
                                 throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
-                                retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                 courseId=courseId,
                                 fields=fields, pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS])
         for courseTopic in results:
@@ -44525,7 +44539,7 @@ def doPrintCourseTopics():
         try:
           courseTopic = callGAPI(croom.courses().topics(), 'get',
                                  throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
-                                 retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  courseId=courseId, id=courseTopicId, fields=fields)
           _printCourseTopic(course, courseTopic)
         except GAPI.notFound:
@@ -44610,7 +44624,7 @@ def doPrintCourseWM(entityIDType, entityStateType):
     try:
       results = callGAPIpages(croom.courses().topics(), 'list', 'topic',
                               throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
-                              retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                               courseId=courseId,
                               fields='nextPageToken,topic(topicId,name)', pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS])
       for courseTopic in results:
@@ -44822,7 +44836,7 @@ def doPrintCourseSubmissions():
           try:
             userProfile = callGAPI(tcroom.userProfiles(), 'get',
                                    throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
-                                   retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                   retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                    userId=userId, fields='emailAddress,name')
             userProfiles[userId] = {'profile': {'emailAddress': userProfile.get('emailAddress', ''), 'name': userProfile['name']}}
           except (GAPI.notFound, GAPI.permissionDenied, GAPI.serviceNotAvailable):
@@ -44909,7 +44923,7 @@ def doPrintCourseSubmissions():
         results = callGAPIpages(croom.courses().courseWork(), 'list', 'courseWork',
                                 pageMessage=getPageMessageForWhom(),
                                 throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
-                                retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                 courseId=courseId, courseWorkStates=courseWMSelectionParameters['courseWMStates'], orderBy=OBY.orderBy,
                                 fields='nextPageToken,courseWork(id)', pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS])
         courseWorkIdsForCourse = [courseWork['id'] for courseWork in results]
@@ -44934,7 +44948,7 @@ def doPrintCourseSubmissions():
           results = callGAPIpages(croom.courses().courseWork().studentSubmissions(), 'list', 'studentSubmissions',
                                   pageMessage=getPageMessageForWhom(),
                                   throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
-                                  retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                   courseId=courseId, courseWorkId=courseWorkId, states=courseSubmissionStates, late=late, userId=courseSelectionParameters['studentId'],
                                   fields=fields, pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS])
           for submission in results:
@@ -44959,7 +44973,7 @@ def doPrintCourseSubmissions():
           try:
             submission = callGAPI(croom.courses().courseWork().studentSubmissions(), 'get',
                                   throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
-                                  retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                   courseId=courseId, courseWorkId=courseWorkId, id=courseSubmissionId,
                                   fields=fields)
             _printCourseSubmission(course, submission)
@@ -45194,7 +45208,7 @@ def _getCoursesOwnerInfo(croom, courseIds, coursesInfo, useAdminAccess):
       try:
         info = callGAPI(croom.courses(), 'get',
                         throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
-                        retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                        retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                         id=courseId, fields='name,ownerId')
         if not useAdminAccess:
           _, ocroom = buildGAPIServiceObject(API.CLASSROOM, f'uid:{info["ownerId"]}')
@@ -45472,7 +45486,7 @@ def _inviteGuardian(croom, studentId, guardianEmail, i=0, count=0, j=0, jcount=0
                       throwReasons=[GAPI.NOT_FOUND, GAPI.ALREADY_EXISTS,
                                     GAPI.INVALID_ARGUMENT, GAPI.BAD_REQUEST, GAPI.FORBIDDEN,
                                     GAPI.PERMISSION_DENIED, GAPI.RESOURCE_EXHAUSTED, GAPI.SERVICE_NOT_AVAILABLE],
-                      retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       studentId=studentId, body=body, fields='invitationId')
     entityActionPerformed([Ent.STUDENT, studentId, Ent.GUARDIAN, body['invitedEmailAddress'], Ent.GUARDIAN_INVITATION, result['invitationId']], j, jcount)
     return 1
@@ -45521,7 +45535,7 @@ def _cancelGuardianInvitation(croom, studentId, invitationId, i=0, count=0, j=0,
                       throwReasons=[GAPI.NOT_FOUND, GAPI.FAILED_PRECONDITION,
                                     GAPI.INVALID_ARGUMENT, GAPI.BAD_REQUEST, GAPI.FORBIDDEN,
                                     GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
-                      retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       studentId=studentId, invitationId=invitationId, updateMask='state', body={'state': 'COMPLETE'}, fields='invitedEmailAddress')
     entityActionPerformed([Ent.STUDENT, studentId, Ent.GUARDIAN_INVITATION, result['invitedEmailAddress']], j, jcount)
     return 1
@@ -45568,7 +45582,7 @@ def _deleteGuardian(croom, studentId, guardianId, guardianEmail, i, count, j, jc
   try:
     callGAPI(croom.userProfiles().guardians(), 'delete',
              throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
-             retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
              studentId=studentId, guardianId=guardianId)
     entityActionPerformed([Ent.STUDENT, studentId, Ent.GUARDIAN, guardianEmail], j, jcount)
     return 1
@@ -45593,7 +45607,7 @@ def _doDeleteGuardian(croom, studentId, guardianId, guardianClass, i=0, count=0,
         invitations = callGAPIpages(croom.userProfiles().guardianInvitations(), 'list', 'guardianInvitations',
                                     throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.BAD_REQUEST,
                                                   GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
-                                    retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                    retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                     studentId=studentId, invitedEmailAddress=guardianId, states=['PENDING'],
                                     fields='nextPageToken,guardianInvitations(studentId,invitationId)')
         for invitation in invitations:
@@ -45612,7 +45626,7 @@ def _doDeleteGuardian(croom, studentId, guardianId, guardianClass, i=0, count=0,
         guardians = callGAPIpages(croom.userProfiles().guardians(), 'list', 'guardians',
                                   throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.BAD_REQUEST,
                                                 GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
-                                  retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                   studentId=studentId, invitedEmailAddress=guardianId,
                                   fields='nextPageToken,guardians(studentId,guardianId)')
         for guardian in guardians:
@@ -45682,7 +45696,7 @@ def clearGuardians(users):
         invitations = callGAPIpages(croom.userProfiles().guardianInvitations(), 'list', 'guardianInvitations',
                                     throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.BAD_REQUEST,
                                                   GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
-                                    retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                    retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                     studentId=studentId, states=['PENDING'], fields='nextPageToken,guardianInvitations(invitationId)')
         Act.Set(Act.CANCEL)
         jcount = len(invitations)
@@ -45728,12 +45742,12 @@ def syncGuardians(users):
       invitations = callGAPIpages(croom.userProfiles().guardianInvitations(), 'list', 'guardianInvitations',
                                   throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.BAD_REQUEST,
                                                 GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
-                                  retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                   studentId=studentId, states=['PENDING'], fields='nextPageToken,guardianInvitations(invitationId,invitedEmailAddress)')
       guardians = callGAPIpages(croom.userProfiles().guardians(), 'list', 'guardians',
                                 throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.BAD_REQUEST,
                                               GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
-                                retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                 studentId=studentId, fields='nextPageToken,guardians(guardianId,invitedEmailAddress)')
     except GAPI.notFound:
       entityUnknownWarning(Ent.STUDENT, studentId, i, count)
@@ -45778,7 +45792,7 @@ def _getCourseName(croom, courseNames, courseId):
       courseName = callGAPI(croom.courses(), 'get',
                             throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.BAD_REQUEST,
                                           GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
-                            retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                             id=courseId, fields='name')['name']
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.badRequest, GAPI.forbidden, GAPI.permissionDenied, GAPI.serviceNotAvailable):
       pass
@@ -45796,7 +45810,7 @@ def _getClassroomEmail(croom, classroomEmails, userId, user):
       userEmail = callGAPI(croom.userProfiles(), 'get',
                            throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.BAD_REQUEST, GAPI.FORBIDDEN,
                                          GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
-                           retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                           retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                            userId=userId, fields='emailAddress').get('emailAddress')
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.badRequest, GAPI.forbidden, GAPI.permissionDenied, GAPI.serviceNotAvailable):
       pass
@@ -45896,7 +45910,7 @@ def _printShowGuardians(entityList=None):
                                     pageMessage=pageMessage,
                                     throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.BAD_REQUEST,
                                                   GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
-                                    retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                    retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                     studentId=studentId, invitedEmailAddress=invitedEmailAddress, states=states)
         jcount = len(invitations)
         if not csvPF:
@@ -45939,7 +45953,7 @@ def _printShowGuardians(entityList=None):
                                   pageMessage=pageMessage,
                                   throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.BAD_REQUEST,
                                                 GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
-                                  retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                   studentId=studentId, invitedEmailAddress=invitedEmailAddress)
         jcount = len(guardians)
         if not csvPF:
@@ -46004,7 +46018,7 @@ def _getClassroomInvitations(croom, userId, courseId, role, i, count, j=0, jcoun
     invitations = callGAPIpages(croom.invitations(), 'list', 'invitations',
                                 throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.BAD_REQUEST,
                                               GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
-                                retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                 userId=userId, courseId=courseId)
   except GAPI.notFound:
     if userId is not None:
@@ -46373,7 +46387,7 @@ def printShowClassroomProfile(users):
     try:
       result = callGAPI(croom.userProfiles(), 'get',
                         throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.BAD_REQUEST, GAPI.FORBIDDEN, GAPI.SERVICE_NOT_AVAILABLE],
-                        retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                        retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                         userId=userId, fields='*')
       result.setdefault('verifiedTeacher', False)
       if not csvPF:
@@ -50390,7 +50404,7 @@ def showFileInfo(users):
           try:
             result['permissions'] = callGAPIpages(drive.permissions(), 'list', 'permissions',
                                                   throwReasons=GAPI.DRIVE3_GET_ACL_REASONS,
-                                                  retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                                   fileId=fileId, fields=permissionsFields, supportsAllDrives=True)
             for permission in result['permissions']:
               permission.pop('teamDrivePermissionDetails', None)
@@ -51703,7 +51717,7 @@ def printFileList(users):
       try:
         f_file['permissions'] = callGAPIpages(drive.permissions(), 'list', 'permissions',
                                               throwReasons=GAPI.DRIVE3_GET_ACL_REASONS,
-                                              retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                               fileId=f_file['id'], fields=permissionsFields, supportsAllDrives=True)
         if not DLP.CheckFilePermissionMatches(f_file):
           return
@@ -52557,7 +52571,7 @@ def printShowFileCounts(users):
             try:
               f_file['permissions'] = callGAPIpages(drive.permissions(), 'list', 'permissions',
                                                     throwReasons=GAPI.DRIVE3_GET_ACL_REASONS+[GAPI.BAD_REQUEST],
-                                                    retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                                    retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                                     fileId=f_file['id'], fields=permissionsFields, supportsAllDrives=True)
               if not DLP.CheckFilePermissionMatches(f_file):
                 continue
@@ -54340,7 +54354,7 @@ def _copyPermissions(drive, user, i, count, j, jcount,
     try:
       result = callGAPIpages(drive.permissions(), 'list', 'permissions',
                              throwReasons=GAPI.DRIVE3_GET_ACL_REASONS,
-                             retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                              fileId=fid,
                              fields='nextPageToken,permissions(allowFileDiscovery,domain,emailAddress,expirationTime,id,role,type,deleted,view,pendingOwner,permissionDetails)',
                              useDomainAdminAccess=copyMoveOptions['useDomainAdminAccess'], supportsAllDrives=True)
@@ -55429,7 +55443,7 @@ def _updateMoveFilePermissions(drive, user, i, count,
     try:
       result = callGAPIpages(drive.permissions(), 'list', 'permissions',
                              throwReasons=GAPI.DRIVE3_GET_ACL_REASONS,
-                             retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                              fileId=fid,
                              fields='nextPageToken,permissions(allowFileDiscovery,domain,emailAddress,expirationTime,id,role,type,deleted,view,pendingOwner,permissionDetails)',
                              useDomainAdminAccess=copyMoveOptions['useDomainAdminAccess'], supportsAllDrives=True)
@@ -56936,7 +56950,7 @@ def transferDrive(users):
         try:
           permissions = callGAPIpages(ownerDrive.permissions(), 'list', 'permissions',
                                       throwReasons=GAPI.DRIVE3_GET_ACL_REASONS+[GAPI.BAD_REQUEST],
-                                      retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                       fileId=childFileId, fields='nextPageToken,permissions')
           if getSourcePermissionFromOwner:
             for permission in permissions:
@@ -59244,7 +59258,7 @@ def printShowDriveFileACLs(users, useDomainAdminAccess=False):
       try:
         permissions = callGAPIpages(drive.permissions(), 'list', 'permissions',
                                     throwReasons=GAPI.DRIVE3_GET_ACL_REASONS+[GAPI.NOT_FOUND],
-                                    retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                    retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                     useDomainAdminAccess=useDomainAdminAccess,
                                     includePermissionsForView=includePermissionsForView,
                                     fileId=fileId, fields=fields, supportsAllDrives=True)
@@ -60634,7 +60648,7 @@ def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
         permissions = callGAPIpages(drive.permissions(), 'list', 'permissions',
                                     pageMessage=getPageMessageForWhom(),
                                     throwReasons=GAPI.DRIVE3_GET_ACL_REASONS,
-                                    retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                                    retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                     useDomainAdminAccess=useDomainAdminAccess,
                                     fileId=shareddrive['id'], fields=fields, supportsAllDrives=True)
         if not permissions:
@@ -61981,7 +61995,7 @@ def _createLicenses(lic, productId, skuId, parameters, jcount, users, i, count, 
                    bailOnInternalError=True,
                    throwReasons=[GAPI.INTERNAL_ERROR, GAPI.DUPLICATE, GAPI.CONDITION_NOT_MET, GAPI.INVALID,
                                  GAPI.USER_NOT_FOUND, GAPI.FORBIDDEN, GAPI.BACKEND_ERROR, GAPI.SERVICE_NOT_AVAILABLE],
-                   retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                   retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                    productId=productId, skuId=skuId, body={'userId': user}, fields='')
           message = Act.SUCCESS
         entityActionPerformed([Ent.USER, user, Ent.LICENSE, SKU.formatSKUIdDisplayName(skuId)], j, jcount)
@@ -62041,7 +62055,7 @@ def updateLicense(users):
                  bailOnInternalError=True,
                  throwReasons=[GAPI.INTERNAL_ERROR, GAPI.NOT_FOUND, GAPI.CONDITION_NOT_MET, GAPI.INVALID,
                                GAPI.USER_NOT_FOUND, GAPI.FORBIDDEN, GAPI.BACKEND_ERROR, GAPI.SERVICE_NOT_AVAILABLE],
-                 retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                  productId=productId, skuId=oldSkuId, userId=user, body=body, fields='')
         message = Act.SUCCESS
       entityModifierNewValueActionPerformed([Ent.USER, user, Ent.LICENSE, SKU.skuIdToDisplayName(skuId)],
@@ -62074,7 +62088,7 @@ def _deleteLicenses(lic, productId, skuId, parameters, jcount, users, i, count):
         callGAPI(lic.licenseAssignments(), 'delete',
                  throwReasons=[GAPI.INTERNAL_ERROR, GAPI.NOT_FOUND, GAPI.CONDITION_NOT_MET, GAPI.INVALID,
                                GAPI.USER_NOT_FOUND, GAPI.FORBIDDEN, GAPI.BACKEND_ERROR, GAPI.SERVICE_NOT_AVAILABLE],
-                 retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                  productId=productId, skuId=skuId, userId=user)
         message = Act.SUCCESS
       entityActionPerformed([Ent.USER, user, Ent.LICENSE, SKU.formatSKUIdDisplayName(skuId)], j, jcount)
@@ -62317,7 +62331,7 @@ def getPhoto(users, profileMode):
       else:
         result = callGAPI(people.people(), 'get',
                           throwReasons=[GAPI.NOT_FOUND],
-                          retryReasons=[GAPI.SERVICE_NOT_AVAILABLE],
+                          retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                           resourceName='people/me', personFields='photos')
         default = False
         url = None
