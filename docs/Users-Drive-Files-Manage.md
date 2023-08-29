@@ -200,6 +200,15 @@ These are the naming rules:
 
 If `stripnameprefix <String>` is specified, `<String>` will be stripped from the front of the Google Drive file name if present.
 
+By default, when files are uploaded from local content, they are created with `binary` format, i.e., the data is uploaded
+without any conversion. Standard GAM had an option `convert` that was passed to the Drive API v2 that it used.
+* convert - Whether to convert this file to the corresponding Docs Editors format
+
+Advanced GAM uses Drive API v3 that doesn't support the `convert` option; it uses the `mimetype` argument to cause conversions.
+* `mimetype gdoc` - Convert the uploaded content to a Google Doc; e.g., convert a Word (.docx) file to a Google Doc
+* `mimetype gsheet` - Convert the uploaded content to a Google Sheet; e.g., convert an Excel (.xlsx) file to a Google Sheet
+* `mimetype gpresentation` - Convert the uploaded content to a Google Slides; e.g., convert an PowerPoint (.pptx) file to a Google Slides
+
 By default, the user, file name and id values are displayed on stdout.
 * `returnidonly` - Display just the file ID of the created file on stdout
 * `returnlinkonly` - Display just the file webViewLink of the created file on stdout
