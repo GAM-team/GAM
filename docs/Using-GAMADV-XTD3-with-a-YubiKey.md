@@ -1,5 +1,6 @@
 # Using GAMADV-XTD3 with a YubiKey
 - [Thanks](#thanks)
+- [Yubikey ykman PIV Commands](https://docs.yubico.com/software/yubikey/tools/ykman/PIV_Commands.html)
 - [Introduction](#introduction)
 - [FAQs](#faqs)
 - [Setup Steps](#setup-steps)
@@ -42,11 +43,11 @@ When using domain-wide delegation with GAMADV-XTD3, the service account and anyo
 4. **If you are already using the YubiKey and wish to preserve the PIV app data and keys**
     1. You need to configure one of the PIV slots for a private key GAMADV-XTD3 can use.
       * [ykman piv keys generate](https://docs.yubico.com/software/yubikey/tools/ykman/PIV_Commands.html#ykman-piv-keys-options-command-args)
-        `ykman piv keys generate -P some_pin --pin-policy ALWAYS --touch-policy NEVER --algorithm RSA2048 9a new_pubkey.txt`
+        `ykman piv keys generate -P <Text> --pin-policy ALWAYS --touch-policy NEVER --algorithm RSA2048 9a new_pubkey.txt`
       * Use `9a` for the `AUTHENTICATION` slot, `9c` for the `SIGNATURE` slot
     2. You need to generate a certificate for that slot.
       * [ykman piv certificates generate](https://docs.yubico.com/software/yubikey/tools/ykman/PIV_Commands.html#ykman-piv-certificates-generate-options-slot-public-key)
-        `ykman piv certificates generate -P some_pin --subject "GAM Service Account" -d 36500 9a new_pubkey.txt`
+        `ykman piv certificates generate -P <Text> --subject "GAM Service Account" -d 36500 9a new_pubkey.txt`
       * Use `9a` for the `AUTHENTICATION` slot, `9c` for the `SIGNATURE` slot
 
 5. Now that you have a private key on your YubiKey, tell GAMADV-XTD3 to use that instead of the private_key stored in oauth2service.json. We can do that by rotating the key:

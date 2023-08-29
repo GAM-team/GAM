@@ -367,6 +367,11 @@ When using the `formatjson` option, double quotes are used extensively in the da
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
+### Display dynamic groups
+```
+gam print cigroups query "'cloudidentity.googleapis.com/groups.dynamic' in labels"
+```
+
 ### Display security groups
 ```
 gam print cigroups query "'cloudidentity.googleapis.com/groups.security' in labels"

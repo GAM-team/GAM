@@ -205,9 +205,9 @@ without any conversion. Standard GAM had an option `convert` that was passed to 
 * convert - Whether to convert this file to the corresponding Docs Editors format
 
 Advanced GAM uses Drive API v3 that doesn't support the `convert` option; it uses the `mimetype` argument to cause conversions.
-* `mimetype gdoc` - Convert the uploaded content to a Google Doc; e.g., convert a Word (.docx) file to a Google Doc
-* `mimetype gsheet` - Convert the uploaded content to a Google Sheet; e.g., convert an Excel (.xlsx) file to a Google Sheet
-* `mimetype gpresentation` - Convert the uploaded content to a Google Slides; e.g., convert an PowerPoint (.pptx) file to a Google Slides
+* `mimetype gdoc` - Convert the uploaded content to a Google Doc; e.g., convert a Word (.docx) or text (.txt) file to a Google Doc
+* `mimetype gsheet` - Convert the uploaded content to a Google Sheet; e.g., convert an Excel (.xlsx) or CSV (.csv) file to a Google Sheet
+* `mimetype gpresentation` - Convert the uploaded content to a Google Slides; e.g., convert a PowerPoint (.pptx) file to a Google Slides
 
 By default, the user, file name and id values are displayed on stdout.
 * `returnidonly` - Display just the file ID of the created file on stdout
