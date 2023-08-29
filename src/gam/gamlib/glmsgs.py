@@ -462,6 +462,7 @@ UPDATE_USER_PASSWORD_CHANGE_NOTIFY_SUBJECT = 'Account #user# password has been c
 UPLOAD_CSV_FILE_INTERNAL_ERROR = 'Google reported "{0}" but the file was probably uploaded, check that it has {1} rows'
 UPLOADING_NEW_PUBLIC_CERTIFICATE_TO_GOOGLE = 'Uploading new public certificate to Google...\n'
 URL_ERROR = 'URL error: {0}'
+USE_MIMETYPE_TO_SPECIFY_GOOGLE_FORMAT = 'Use "mimetype <MimeType>" to specify Google file format\n'
 USED = 'Used'
 USER_BELONGS_TO_N_GROUPS_THAT_MAP_TO_ORGUNITS = 'User belongs to {0} groups ({1}) that map to OUs'
 USER_CANCELLED = 'User cancelled'
