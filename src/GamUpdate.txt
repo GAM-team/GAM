@@ -2,6 +2,13 @@
 
 Merged GAM-Team version
 
+6.63.09
+
+Updated `gam create teamdrive` to handle the following error:
+```
+ERROR: 403: userCannotCreateTeamDrives - The authenticated user cannot create new shared drives.
+```
+
 6.63.08
 
 Updated `cigroup` commands to handle the following error:
