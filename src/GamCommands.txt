@@ -2295,6 +2295,10 @@ Print no header row and deviceId for specified CrOS devices.
 gam <CrOSTypeEntity> print
 gam <CrOSTypeEntity> print cros
 
+Show count of CrOS devices
+
+gam <CrOSTypeEntity> show count
+
 Print activity for selected CrOS devices; use these options to select CrOS devices:
         [(query <QueryCrOS>)|(queries <QueryCrOSList>) [querytime.* <Time>]
          [(limittoou|cros_ou <OrgUnitItem>)|(cros_ou_and_children <OrgUnitItem>)|
@@ -5330,6 +5334,10 @@ Print lists of users
 gam <UserTypeEntity> print userlist [todrive <ToDriveAttribute>*]
         [title <String>]
         [delimiter <Character>] [formatjson] [quotechar <Character>]
+
+Show count of users
+
+gam <UserTypeEntity> show count
 
 # Users - Application Specific Passwords/backup Codes
 

@@ -231,6 +231,13 @@ gam create gcpfolder [admin <EmailAddress] folder <String>
 Create a new project to create and download two files: `client_secrets.json` for the Client and `oauth2service.json` for the Service Account.
 On-screen instructions lead you through the process.
 
+An existing project, `GAM Project Creation`, is used to create your GAM project. The initial instructions tell you how to
+enable this project as a trusted app as your workspace may not allow untrusted third-party apps. You can skip these steps
+if you know that untrusted third-party apps are allowed.
+
+The final instructions tell you how to enable your new GAM project as a trusted app as your workspace may not allow untrusted third-party apps.
+You can skip these steps if you know that untrusted third-party apps are allowed.
+
 ### Default values
 * `<AppName>` - "GAM"
 * `<ProjectID>` - "gam-project-abc-def-jki" where "abc-def-ghi" are randomly generated

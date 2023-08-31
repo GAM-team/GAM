@@ -548,8 +548,8 @@ No events are deleted unless you specify the `doit` option; omit `doit` to verif
 
 When events are deleted from a calendar, they are moved to the calendar's trash and are only permanently deleted (purged) after 30 days.
 Following a suggestion here (https://stackoverflow.com/questions/41043053/how-to-empty-calendar-trash-via-google-services) you can permanently delete
-calendar events. This is achieved by creating a temporary calendar, deleting the events, moving the deleted events to the temporary calendar
-and then deleting the temporary calendar.
+calendar events with `purge events`. This is achieved by creating a temporary calendar, deleting the events, moving the deleted events to the temporary calendar
+and then deleting the temporary calendar. 
 
 ## Delete all calendar events
 For a user's primary calendar:

@@ -503,6 +503,8 @@ class GamCLArgs():
   ARG_CONTACTGROUPS = 'contactgroups'
   ARG_CONTACTPHOTO = 'contactphoto'
   ARG_CONTACTPHOTOS = 'contactphotos'
+  ARG_COUNT = 'count'
+  ARG_COUNTS = 'counts'
   ARG_COURSE = 'course'
   ARG_COURSES = 'courses'
   ARG_COURSEANNOUNCEMENTS = 'courseannouncements'

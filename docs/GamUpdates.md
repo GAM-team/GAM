@@ -10,6 +10,16 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.63.10
+
+Added commands to show the number of CrOS devices or Users in an entity.
+```
+gam <CrOSTypeEntity> show count
+gam <UserTypeEntity> show count
+```
+
+Updated `gam create project` to prompt user to mark `GAM Project Creation` as a trusted app.
+
 ### 6.63.09
 
 Updated `gam create teamdrive` to handle the following error:

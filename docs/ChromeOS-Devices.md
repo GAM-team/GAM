@@ -23,6 +23,7 @@
     - [Print a header row and fields for selected CrOS devices](#print-a-header-row-and-fields-for-selected-cros-devices)
     - [Print a header row and fields for specified CrOS devices](#print-a-header-row-and-fields-for-specified-cros-devices)
     - [Display Examples](#display-examples)
+    - [Display CrOS device count](#display-cros-device-count)
   - [Print ChromeOS device activity](#print-chromeos-device-activity)
     - [Print a header row and activity for selected CrOS devices](#print-a-header-row-and-activity-for-selected-cros-devices)
     - [Print a header row and activity for specified CrOS devices](#print-a-header-row-and-activity-for-specified-cros-devices)
@@ -670,6 +671,12 @@ Print information about CrOS devices synced between 45 days ago and 30 days ago:
 
 ```
 gam print cros query "sync:#querytime1#..#querytime2#" querytime1 -45d querytime2 -30d
+```
+
+## Display CrOS device count
+Display the number of CrOS devices in an entity.
+```
+gam <CrOSTypeEntity> show count
 ```
 
 ## Print ChromeOS device activity

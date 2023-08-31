@@ -191,6 +191,8 @@ GAM_USER_AGENT = (f'{GAM} {__version__} - {GAM_URL} / '
 GAM_RELEASES = f'https://github.com/{GIT_USER}/{GAM}/releases'
 GAM_WIKI = f'https://github.com/{GIT_USER}/{GAM}/wiki'
 GAM_LATEST_RELEASE = f'https://api.github.com/repos/{GIT_USER}/{GAM}/releases/latest'
+GAM_PROJECT_CREATION = 'GAM Project Creation'
+GAM_PROJECT_CREATION_CLIENT_ID = '297408095146-fug707qsjv4ikron0hugpevbrjhkmsk7.apps.googleusercontent.com'
 
 TRUE = 'true'
 FALSE = 'false'
@@ -10027,6 +10029,20 @@ def doListCrOS(entityList):
 def doListUser(entityList):
   _doList(entityList, Cmd.ENTITY_USERS)
 
+def _showCount(entityList, entityType):
+  buildGAPIObject(API.DIRECTORY)
+  checkForExtraneousArguments()
+  _, count, entityList = getEntityArgument(entityList)
+  actionPerformedNumItems(count, entityType)
+
+# gam <CrOSTypeEntity> show count
+def showCountCrOS(entityList):
+  _showCount(entityList, Ent.CHROME_DEVICE)
+
+# gam <UserTypeEntity> show count
+def showCountUser(entityList):
+  _showCount(entityList, Ent.USER)
+
 VALIDEMAIL_PATTERN = re.compile(r'^[^@]+@[^@]+\.[^@]+$')
 
 def _getValidateLoginHint(login_hint, projectId=None):
@@ -10717,7 +10733,7 @@ def doOAuthExport():
 
 def getCRMService(login_hint):
   scopes = [API.CLOUD_PLATFORM_SCOPE]
-  client_id = '297408095146-fug707qsjv4ikron0hugpevbrjhkmsk7.apps.googleusercontent.com'
+  client_id = GAM_PROJECT_CREATION_CLIENT_ID
   client_secret = 'qM3dP8f_4qedwzWQE1VR4zzU'
   credentials = Credentials.from_client_secrets(
     client_id,
@@ -10933,7 +10949,7 @@ def _createClientSecretsOauth2service(httpObj, login_hint, appInfo, projectInfo,
 }}'''
   writeFile(GC.Values[GC.CLIENT_SECRETS_JSON], cs_data, continueOnError=False)
   sys.stdout.write(Msg.GO_BACK_TO_YOUR_BROWSER_AND_CLICK_OK_TO_CLOSE_THE_OAUTH_CLIENT_POPUP)
-  sys.stdout.write(Msg.TRUST_GAM_CLIENT_ID.format(client_id))
+  sys.stdout.write(Msg.TRUST_GAM_CLIENT_ID.format(GAM, client_id))
   readStdin('')
   sys.stdout.write(Msg.YOUR_GAM_PROJECT_IS_CREATED_AND_READY_TO_USE)
 
@@ -11238,6 +11254,8 @@ def doCreateGCPFolder():
 #	[saname <ServiceAccountName>] [sadisplayname <ServiceAccountDisplayName>>] [sadescription <ServiceAccountDescription>]
 def doCreateProject():
   _checkForExistingProjectFiles([GC.Values[GC.OAUTH2SERVICE_JSON], GC.Values[GC.CLIENT_SECRETS_JSON]])
+  sys.stdout.write(Msg.TRUST_GAM_CLIENT_ID.format(GAM_PROJECT_CREATION, GAM_PROJECT_CREATION_CLIENT_ID))
+  readStdin('')
   crm, httpObj, login_hint, appInfo, projectInfo, svcAcctInfo = _getLoginHintProjectInfo(True)
   login_domain = getEmailAddressDomain(login_hint)
   body = {'projectId': projectInfo['projectId'], 'displayName': projectInfo['name']}
@@ -70415,10 +70433,16 @@ CROS_COMMANDS_WITH_OBJECTS = {
      {Cmd.ARG_DEVICEFILE:	getCrOSDeviceFiles,
      }
     ),
+  'show':
+    (Act.SHOW,
+     {Cmd.ARG_COUNT: 		showCountCrOS,
+     }
+    ),
   }
 
 CROS_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_DEVICEFILES:		Cmd.ARG_DEVICEFILE,
+  Cmd.ARG_COUNTS:		Cmd.ARG_COUNT,
   }
 
 # <UserTypeEntity> commands
@@ -70807,6 +70831,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CLASSROOMINVITATION:	printShowClassroomInvitations,
       Cmd.ARG_CLASSROOMPROFILE:	printShowClassroomProfile,
       Cmd.ARG_CONTACTDELEGATE:	printShowContactDelegates,
+      Cmd.ARG_COUNT: 		showCountUser,
       Cmd.ARG_DATASTUDIOASSET:	printShowDataStudioAssets,
       Cmd.ARG_DATASTUDIOPERMISSION:	printShowDataStudioPermissions,
       Cmd.ARG_DELEGATE:		printShowDelegates,
@@ -71006,6 +71031,7 @@ USER_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_CONTACTGROUPS:	Cmd.ARG_PEOPLECONTACTGROUP,
   Cmd.ARG_CONTACTPHOTO:		Cmd.ARG_PEOPLECONTACTPHOTO,
   Cmd.ARG_CONTACTPHOTOS:	Cmd.ARG_PEOPLECONTACTPHOTO,
+  Cmd.ARG_COUNTS:		Cmd.ARG_COUNT,
   Cmd.ARG_DATASTUDIOASSETS:	Cmd.ARG_DATASTUDIOASSET,
   Cmd.ARG_DATASTUDIOPERMISSIONS:	Cmd.ARG_DATASTUDIOPERMISSION,
   Cmd.ARG_DELEGATES:		Cmd.ARG_DELEGATE,

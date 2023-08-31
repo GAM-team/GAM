@@ -38,6 +38,7 @@
     - [Print domain counts for users in a specific domain and/or selected by a query](#print-domain-counts-for-users-in-a-specific-domain-and-or-selected-by-a-query)
     - [Print domain counts for users specified by `<UserTypeEntity>`](#print-domain-counts-for-users-specified-by-usertypeentity)
 - [Print user list](#print-user-list)
+- [Display user count](#display-user-count)
 
 ## API documentation
 * https://developers.google.com/admin-sdk/directory/reference/rest/v1/users
@@ -1087,7 +1088,7 @@ When using the `formatjson` option, double quotes are used extensively in the da
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
-### Print user list
+## Print user list
 Print a CSV file with headers `title,count,users` that displays the list of users in `<UserTypeEntity>` in a single row.
 ```
 gam <UserTypeEntity> print userlist [todrive <ToDriveAttribute>*]
@@ -1178,3 +1179,10 @@ Got 4 Users directly in the Organizational Unit for /Test
 $ more UsersList.csv 
  ["testuser1@domain.org",  "testuser2@domain.org",  "testuser3@domain.org",  "testuser4@domain.org"] 
 ```
+
+## Display user count
+Display the number of users in an entity.
+```
+gam <UserTypeEntity> show count
+```
+
