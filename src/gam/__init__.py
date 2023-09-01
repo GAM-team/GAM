@@ -42799,6 +42799,7 @@ def doCreateInboundSSOAssignment():
   body = {'customer': normalizeChannelCustomerID(GC.Values[GC.CUSTOMER_ID])}
   body = _getInboundSSOAssignmentArguments(ci, cd, body)
   kvlist = [Ent.INBOUND_SSO_ASSIGNMENT, body['customer']]
+  print(body)
   try:
     result = callGAPI(ci.inboundSsoAssignments(), 'create',
                       throwReasons=GAPI.CISSO_CREATE_THROW_REASONS,
