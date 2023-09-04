@@ -232,8 +232,11 @@ Create a new project to create and download two files: `client_secrets.json` for
 On-screen instructions lead you through the process.
 
 An existing project, `GAM Project Creation`, is used to create your GAM project. The initial instructions tell you how to
-enable this project as a trusted app as your workspace may not allow untrusted third-party apps. You can skip these steps
-if you know that untrusted third-party apps are allowed.
+enable this project as a trusted app as your workspace may not allow untrusted third-party apps.
+This is recommended but not mandatory unless your workspace has "Google Cloud" service restricted:
+* https://support.google.com/a/answer/7281227?hl=en#zippy=%2Crestrict-or-unrestrict-google-services
+
+If it is restricted and you complete this step it may take an hour or so to take full affect and allow you to approve GAM project creation.
 
 The final instructions tell you how to enable your new GAM project as a trusted app as your workspace may not allow untrusted third-party apps.
 You can skip these steps if you know that untrusted third-party apps are allowed.

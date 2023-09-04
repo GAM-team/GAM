@@ -274,10 +274,13 @@ By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 ```
 gam resources <ResourceEntity> print acls|calendaracls [todrive <ToDriveAttribute>*]
-        [noselfowner]
+        [noselfowner] (addcsvdata <FieldName> <String>)*
         [formatjson [quotechar <Character>]]
 ```
 Option `noselfowner` suppresses the display of ACLs that reference the calendar itself as its owner.
+
+Add additional columns of data from the command line to the output
+* `addcsvdata <FieldName> <String>`
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.

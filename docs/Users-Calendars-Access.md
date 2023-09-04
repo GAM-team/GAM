@@ -117,10 +117,13 @@ By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 ```
 gam <UserTypeEntity> print calendaracls <UserCalendarEntity> [todrive <ToDriveAttribute>*]
-        [noselfowner]
+        [noselfowner] (addcsvdata <FieldName> <String>)*
         [formatjson [quotechar <Character>]]
 ```
 Option `noselfowner` suppresses the display of ACLs that reference the calendar itself as its owner.
+
+Add additional columns of data from the command line to the output
+* `addcsvdata <FieldName> <String>`
 
 By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
 the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.

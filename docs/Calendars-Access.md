@@ -57,10 +57,13 @@ By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 ```
 gam calendars <CalendarEntity> print acls|calendaracls [todrive <ToDriveAttribute>*]
-        [noselfowner]
+        [noselfowner] (addcsvdata <FieldName> <String>)*
         [formatjson [quotechar <Character>]]
 ```
 Option `noselfowner` suppresses the display of ACLs that reference the calendar itself as its owner.
+
+Add additional columns of data from the command line to the output
+* `addcsvdata <FieldName> <String>`
 
 By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
 the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
@@ -75,7 +78,9 @@ gam calendar <CalendarEntity> add <CalendarACLRole> ([user] <EmailAddress>)|(gro
 gam calendar <CalendarEntity> update <CalendarACLRole> ([user] <EmailAddress>)|(group <EmailAddress>)|(domain [<DomainName>])|default [sendnotifications <Boolean>]
 gam calendar <CalendarEntity> delete [<CalendarACLRole>] ([user] <EmailAddress>)|(group <EmailAddress>)|(domain [<DomainName>])|default
 gam calendar <CalendarEntity> showacl [formatjson]
-gam calendar <CalendarEntity> printacl [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]
+gam calendar <CalendarEntity> printacl [todrive <ToDriveAttribute>*]
+        (addcsvdata <FieldName> <String>)*
+        [formatjson [quotechar <Character>]]
 ```
 By default, when you add or update a calendar ACL, notification is sent to the members referenced in the `<CalendarACLScopeEntity>`.
 Use `sendnotifications false` to suppress sending the notification.

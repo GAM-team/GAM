@@ -1530,7 +1530,7 @@ gam calendars <CalendarEntity> show acls|calendaracls
         [noselfowner]
         [formatjson]
 gam calendars <CalendarEntity> print acls|calendaracls [todrive <ToDriveAttribute>*]
-        [noselfowner]
+        [noselfowner] (addcsvdata <FieldName> <String>)*
         [formatjson [quotechar <Character>]]
 
 gam calendar <CalendarEntity> create|add <CalendarACLRole> ([user] <EmailAddress>)|(group <EmailAddress>)|(domain [<DomainName>])|default [sendnotifications <Boolean>]
@@ -1540,7 +1540,7 @@ gam calendar <CalendarEntity> showacl
         [noselfowner]
         [formatjson]
 gam calendar <CalendarEntity> printacl [todrive <ToDriveAttribute>*]
-        [noselfowner]
+        [noselfowner] (addcsvdata <FieldName> <String>)*
         [formatjson [quotechar <Character>]]
 
 <AttendeeAttendance> ::= optional|required
@@ -4322,7 +4322,7 @@ gam resource <ResourceID> show acls|calendaracls
         [noselfowner]
         [formatjson]
 gam resource <ResourceID> print acls|calendaracls [todrive <ToDriveAttribute>*]
-        [noselfowner]
+        [noselfowner] (addcsvdata <FieldName> <String>)*
         [formatjson [quotechar <Character>]]
 
 gam resources <ResourceEntity> create|add acls|calendaracls <CalendarACLRole> <CalendarACLScopeEntity> [sendnotifications <Boolean>]
@@ -4334,7 +4334,7 @@ gam resources <ResourceEntity> show acls|calendaracls
         [noselfowner]
         [formatjson]
 gam resources <ResourceEntity> print acls|calendaracls [todrive <ToDriveAttribute>*]
-        [noselfowner]
+        [noselfowner] (addcsvdata <FieldName> <String>)*
         [formatjson [quotechar <Character>]]
 
 # Schemas
@@ -5496,7 +5496,7 @@ gam <UserTypeEntity> show calendaracls <UserCalendarEntity>
         [noselfowner]
         [formatjson]
 gam <UserTypeEntity> print calendaracls <UserCalendarEntity> [todrive <ToDriveAttribute>*]
-        [noselfowner]
+        [noselfowner] (addcsvdata <FieldName> <String>)*
         [formatjson [quotechar <Character>]]
 
 Transfer ownership of a selection of users calendars to another user

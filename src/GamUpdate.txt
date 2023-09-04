@@ -4,6 +4,17 @@ Merged GAM-Team version
 
 6.63.10
 
+Added option `addcsvdata <FieldName> <String>` to these commands. This adds additional columns of data to the CSV file output
+when the `csv` option is used. If a CSV file of calendar information is being used to specify the calenders, fields, e.g., summary
+can be added to the ACL output file.
+```
+gam <UserTypeEntity> print calendaracls <UserCalendarEntity>
+gam resource <ResourceID> print calendaracls
+gam resources <ResourceEntity> print calendaracls
+gam calendar <CalendarEntity> printacl
+gam calendars <CalendarEntity> print acls
+```
+
 Added commands to show the number of CrOS devices or Users in an entity.
 ```
 gam <CrOSTypeEntity> show count

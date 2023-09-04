@@ -8,6 +8,7 @@
 - [Create an administrator](#create-an-administrator)
 - [Delete an administrator](#delete-an-administrator)
 - [Display administrators](#display-administrators)
+- [Copy roles from one administrator to another](#copy-roles-from-one-administrator-to-another)
 
 ## Administrator roles documentation
 * https://support.google.com/a/answer/33325?ref_topic=4514341
@@ -856,6 +857,7 @@ gam show adminroles|roles [todrive <ToDriveAttribute>*] [privileges]
 * `privileges` - Display privileges associated with each role
 
 ## Create an administrator
+Add an administrator role to an administrator.
 ```
 gam create admin <EmailAddress>|<UniqueID> <RoleItem> customer|(org_unit <OrgUnitItem>)
         [condition securitygroup|nonsecuritygroup]
@@ -868,6 +870,7 @@ The option `condition` limits the conditions for delegate admin access. This cur
 * `condition nonsecuritygroup` - limit the delegated admin to managing non-security groups
 
 ## Delete an administrator
+Remove an administrator role from an administrator.
 ```
 gam delete admin <RoleAssignmentId>
 ```
@@ -888,3 +891,15 @@ options to limit the display:
 
 In versions prior to 6.07.01, specification of both `user <UserItem>`
 and `role <RoleItem>` generated no output due to an undocumented API rule that disallows both.
+
+## Copy roles from one administrator to another
+Get roles for current admin.
+```
+gam redirect csv ./CurrentAdminRoles.csv print admins user currentadmin@domain.com
+```
+Add roles to new admin.
+```
+gam config csv_input_row_filter "scopeType:regex:CUSTOMER" redirect stdout ./UpdateNewAdminCustomerRoles.txt multiprocess redirect stderr stdout csv CurrentAdminRoles.csv gam create admin newadmin@domain.com "id:~~roleId~~" customer
+gam config csv_input_row_filter "scopeType:regex:ORG_UNIT" redirect stdout ./UpdateNewAdminOrgUnitRoles.txt multiprocess redirect stderr stdout csv CurrentAdminRoles.csv gam create admin newadmin@domain.com "id:~~roleId~~" org_unit "id:~~orgUnitId~~"
+```
+

@@ -34834,7 +34834,7 @@ def doCalendarsInfoACLs(calIds):
   FJQC = _getCalendarInfoACLOptions()
   _doInfoCalendarACLs(None, None, None, calIds, len(calIds), ACLScopeEntity, FJQC)
 
-def _printShowCalendarACLs(cal, user, entityType, calId, i, count, csvPF, FJQC, noSelfOwner):
+def _printShowCalendarACLs(cal, user, entityType, calId, i, count, csvPF, FJQC, noSelfOwner, addCSVData):
   if csvPF:
     printGettingEntityItemForWhom(Ent.CALENDAR_ACL, calId, i, count)
   try:
@@ -34873,6 +34873,8 @@ def _printShowCalendarACLs(cal, user, entityType, calId, i, count, csvPF, FJQC, 
           row = {'calendarId': calId}
           if user:
             row['primaryEmail'] = user
+          if addCSVData:
+            row.update(addCSVData)
           flattenJSON(rule, flattened=row)
           if not FJQC.formatJSON:
             csvPF.WriteRowTitles(row)
@@ -34881,6 +34883,8 @@ def _printShowCalendarACLs(cal, user, entityType, calId, i, count, csvPF, FJQC, 
                                                            ensure_ascii=False, sort_keys=False)}
             if user:
               row['primaryEmail'] = user
+            if addCSVData:
+              row.update(addCSVData)
             csvPF.WriteRowNoFilter(row)
       elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT] and user:
         csvPF.WriteRowNoFilter({'calendarId': calId, 'primaryEmail': user})
@@ -34888,41 +34892,58 @@ def _printShowCalendarACLs(cal, user, entityType, calId, i, count, csvPF, FJQC, 
       for rule in acls:
         if noSelfOwner and rule['role'] == 'owner' and rule['scope']['value'] == calId:
           continue
-        row = flattenJSON(rule, flattened={'resourceId': user, 'resourceEmail': calId})
+        row = {'resourceId': user, 'resourceEmail': calId}
+        if addCSVData:
+          row.update(addCSVData)
+        flattenJSON(rule, flattened=row)
         if not FJQC.formatJSON:
           csvPF.WriteRowTitles(row)
         elif csvPF.CheckRowTitles(row):
-          csvPF.WriteRowNoFilter({'resourceId': user, 'resourceEmail': calId,
-                                  'JSON': json.dumps(cleanJSON(rule), ensure_ascii=False, sort_keys=False)})
+          row = {'resourceId': user, 'resourceEmail': calId, 'JSON': json.dumps(cleanJSON(rule),
+                                                                                ensure_ascii=False, sort_keys=False)}
+          if addCSVData:
+            row.update(addCSVData)
+          csvPF.WriteRowNoFilter(row)
 
 def _getCalendarPrintShowACLOptions(titles):
   csvPF = CSVPrintFile(titles, 'sortall') if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   noSelfOwner = False
+  addCSVData = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'noselfowner':
       noSelfOwner = True
+    elif csvPF and myarg == 'addcsvdata':
+      k = getString(Cmd.OB_STRING)
+      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
-  return (csvPF, FJQC, noSelfOwner)
+  if csvPF:
+    if addCSVData:
+      csvPF.AddTitles(sorted(addCSVData.keys()))
+      if FJQC.formatJSON:
+        csvPF.AddJSONTitles(sorted(addCSVData.keys()))
+        csvPF.MoveJSONTitlesToEnd(['JSON'])
+    csvPF.SetSortAllTitles()
+  return (csvPF, FJQC, noSelfOwner, addCSVData)
 
 # gam calendars <CalendarEntity> print acls [todrive <ToDriveAttribute>*]
-#	[noselfowner]
+#	[noselfowner] (addcsvdata <FieldName> <String>)*
 #	[formatjson [quotechar <Character>]]
 # gam calendars <CalendarEntity> show acls
 #	[noselfowner]
 #	[formatjson]
 # gam calendar <CalendarEntity> printacl [todrive <ToDriveAttribute>*]
-#	[noselfowner]
+#	[noselfowner] (addcsvdata <FieldName> <String>)*
 #	[formatjson]
 # gam calendar <CalendarEntity> showacl
 #	[noselfowner]
 #	[formatjson]
 def doCalendarsPrintShowACLs(calIds):
-  csvPF, FJQC, noSelfOwner = _getCalendarPrintShowACLOptions(['calendarId'])
+  csvPF, FJQC, noSelfOwner, addCSVData = _getCalendarPrintShowACLOptions(['calendarId'])
   count = len(calIds)
   i = 0
   for calId in calIds:
@@ -34930,7 +34951,7 @@ def doCalendarsPrintShowACLs(calIds):
     calId, cal = validateCalendar(calId, i, count)
     if not cal:
       continue
-    _printShowCalendarACLs(cal, None, Ent.CALENDAR, calId, i, count, csvPF, FJQC, noSelfOwner)
+    _printShowCalendarACLs(cal, None, Ent.CALENDAR, calId, i, count, csvPF, FJQC, noSelfOwner, addCSVData)
   if csvPF:
     csvPF.writeCSVfile('Calendar ACLs')
 
@@ -36490,10 +36511,10 @@ def doResourceInfoCalendarACLs(entityList):
     _infoCalendarACLs(cal, resourceId, Ent.RESOURCE_CALENDAR, calId, i, count, ruleIds, jcount, FJQC)
 
 # gam resource <ResourceID> print calendaracls [todrive <ToDriveAttribute>*]
-#	[noselfowner]
+#	[noselfowner] (addcsvdata <FieldName> <String>)*
 #	[formatjson [quotechar <Character>]]
 # gam resources <ResourceEntity> print calendaracls [todrive <ToDriveAttribute>*]
-#	[noselfowner]
+#	[noselfowner] (addcsvdata <FieldName> <String>)*
 #	[formatjson [quotechar <Character>]]
 # gam resource <ResourceID> show calendaracls
 #	[noselfowner]
@@ -36503,7 +36524,7 @@ def doResourceInfoCalendarACLs(entityList):
 #	[formatjson]
 def doResourcePrintShowCalendarACLs(entityList):
   cal = buildGAPIObject(API.CALENDAR)
-  csvPF, FJQC, noSelfOwner = _getCalendarPrintShowACLOptions(['resourceId', 'resourceEmail'])
+  csvPF, FJQC, noSelfOwner, addCSVData = _getCalendarPrintShowACLOptions(['resourceId', 'resourceEmail'])
   i = 0
   count = len(entityList)
   for resourceId in entityList:
@@ -36511,7 +36532,7 @@ def doResourcePrintShowCalendarACLs(entityList):
     calId = _validateResourceId(resourceId, i, count)
     if not calId:
       continue
-    _printShowCalendarACLs(cal, resourceId, Ent.RESOURCE_CALENDAR, calId, i, count, csvPF, FJQC, noSelfOwner)
+    _printShowCalendarACLs(cal, resourceId, Ent.RESOURCE_CALENDAR, calId, i, count, csvPF, FJQC, noSelfOwner, addCSVData)
   if csvPF:
     csvPF.writeCSVfile('Resource Calendar ACLs')
 
@@ -47358,14 +47379,14 @@ def infoCalendarACLs(users):
     Ind.Decrement()
 
 # gam <UserTypeEntity> print calendaracls <UserCalendarEntity> [todrive <ToDriveAttribute>*]
-#	[noselfowner]
+#	[noselfowner] (addcsvdata <FieldName> <String>)*
 #	[formatjson [quotechar <Character>]]
 # gam <UserTypeEntity> show calendaracls <UserCalendarEntity>
 #	[noselfowner]
 #	[formatjson]
 def printShowCalendarACLs(users):
   calendarEntity = getUserCalendarEntity(default='all')
-  csvPF, FJQC, noSelfOwner = _getCalendarPrintShowACLOptions(['primaryEmail', 'calendarId'])
+  csvPF, FJQC, noSelfOwner, addCSVData = _getCalendarPrintShowACLOptions(['primaryEmail', 'calendarId'])
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -47377,7 +47398,7 @@ def printShowCalendarACLs(users):
     for calId in calIds:
       j += 1
       calId = convertUIDtoEmailAddress(calId)
-      _printShowCalendarACLs(cal, user, Ent.CALENDAR, calId, j, jcount, csvPF, FJQC, noSelfOwner)
+      _printShowCalendarACLs(cal, user, Ent.CALENDAR, calId, j, jcount, csvPF, FJQC, noSelfOwner, addCSVData)
     Ind.Decrement()
   if csvPF:
     csvPF.writeCSVfile('Calendar ACLs')
