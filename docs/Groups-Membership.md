@@ -108,7 +108,7 @@ users in a particular archived state. This option can be used with the following
         (query <QueryUser>)|
         (queries <QueryUserList>)
 ```
-Prior to bersion `6.20.05`, the `notarchived|archived` option could only be used with the following `<UserTypeEntity>`:
+Prior to version `6.20.05`, the `notarchived|archived` option could only be used with the following `<UserTypeEntity>`:
 ```
         (group|group_ns|group_susp <GroupItem>)|
         (groups|groups_ns|groups_susp <GroupList>)|

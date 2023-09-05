@@ -23704,13 +23704,13 @@ CROS_TELEMETRY_TIME_OBJECTS = {'reportTime', 'lastUpdateTime', 'lastUpdateCheckT
 #	[reverselists <CrOSTelemetryListFieldNameList>]
 #	[formatjson [quotechar <Character>]]
 # gam show crostelemetry
-#	[(ou|org|orgunit <OrgUnitItem>)|(cros_sn <SerialNumber>)|(filter <String>)]
+#	[(ou|org|orgunit|ou_and_children <OrgUnitItem>)|(cros_sn <SerialNumber>)|(filter <String>)]
 #	<CrOSTelemetryFieldName>* [fields <CrOSTelemetryFieldNameList>]
 #	[start <Date>] [end <Date>] [listlimit <Number>]
 #	[reverselists <CrOSTelemetryListFieldNameList>]
 #	[formatjson [quotechar <Character>]]
 # gam print crostelemetry [todrive <ToDriveAttribute>*]
-#	[(ou|org|orgunit <OrgUnitItem>)|(cros_sn <SerialNumber>)|(filter <String>)]
+#	[(ou|org|orgunit|ou_and_children <OrgUnitItem>)|(cros_sn <SerialNumber>)|(filter <String>)]
 #	<CrOSTelemetryFieldName>* [fields <CrOSTelemetryFieldNameList>]
 #	[reverselists <CrOSTelemetryListFieldNameList>]
 #	[start <Date>] [end <Date>] [listlimit <Number>]
@@ -23778,10 +23778,11 @@ def doInfoPrintShowCrOSTelemetry():
   reverseLists = []
   action = Act.Get()
   if action == Act.INFO:
-    pfilter = f'serialNumber={getString(Cmd.OB_SERIAL_NUMBER)}'
+    sn = getString(Cmd.OB_SERIAL_NUMBER)
+    pfilters = [(f'serialNumber={sn}', f'serialNumber={sn}')]
     Act.Set(Act.SHOW)
   else:
-    pfilter = None
+    pfilters = []
   csvPF = CSVPrintFile(['deviceId'], CROS_TELEMETRY_SCALAR_FIELDS, CROS_TELEMETRY_LIST_FIELDS) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   diskPercentOnly = showOrgUnitPath = False
@@ -23791,19 +23792,31 @@ def doInfoPrintShowCrOSTelemetry():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif myarg in ['ou', 'org', 'orgunit', 'limittoou', 'crossn', 'filter']:
-      if pfilter:
+    elif myarg in ['ou', 'org', 'orgunit', 'limittoou', 'ouandchildren', 'crossn', 'filter']:
+      if pfilters:
         Cmd.Backup()
-        usageErrorExit(Msg.ONLY_ONE_DEVICE_SELECTION_ALLOWED.format(pfilter))
+        usageErrorExit(Msg.ONLY_ONE_DEVICE_SELECTION_ALLOWED.format(pfilters[0][1]))
       if myarg == 'crossn':
-        pfilter = f'serialNumber={getString(Cmd.OB_SERIAL_NUMBER)}'
+        sn = getString(Cmd.OB_SERIAL_NUMBER)
+        pfilters = [(f'serialNumber={sn}', f'serialNumber={sn}')]
       elif myarg == 'filter':
-        pfilter = getString(Cmd.OB_STRING)
+        pf = getString(Cmd.OB_STRING)
+        pfilters = [(pf, pf)]
       else:
         if cd is None:
           cd = buildGAPIObject(API.DIRECTORY)
-        _, orgUnitId = getOrgUnitId(cd)
-        pfilter = f'orgUnitId={orgUnitId[3:]}'
+        orgUnitPath, orgUnitId = getOrgUnitId(cd)
+        pfilters = [(f'orgUnitId={orgUnitId[3:]}', f'orgUnitPath={orgUnitPath}')]
+        if myarg == 'ouandchildren':
+          try:
+            subous = callGAPI(cd.orgunits(), 'list',
+                              throwReasons=GAPI.ORGUNIT_GET_THROW_REASONS,
+                              customerId=GC.Values[GC.CUSTOMER_ID], orgUnitPath=orgUnitId,
+                              type='all', fields='organizationUnits(orgUnitPath,orgUnitId)')
+          except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError, GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
+            checkEntityDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, orgUnitId)
+            return
+          pfilters.extend([(f'orgUnitId={subou["orgUnitId"][3:]}', f'orgUnitPath={subou["orgUnitPath"]}') for subou in subous.get('organizationUnits', [])])
     elif myarg == 'listlimit':
       listLimit = getInteger()
     elif myarg in CROS_START_ARGUMENTS:
@@ -23841,30 +23854,31 @@ def doInfoPrintShowCrOSTelemetry():
   readMask = ','.join(set(fieldsList))
   if csvPF and FJQC.formatJSON:
     csvPF.SetJSONTitles(['deviceId', 'JSON'])
-  printGettingAllAccountEntities(Ent.CROS_DEVICE, pfilter)
-  pageMessage = getPageMessage()
-  try:
-    devices = callGAPIpages(cm.customers().telemetry().devices(), 'list', 'devices',
-                            pageMessage=pageMessage,
-                            throwReasons=[GAPI.PERMISSION_DENIED, GAPI.INVALID_ARGUMENT, GAPI.INVALID_INPUT],
-                            parent=parent, filter=pfilter,
-                            readMask=readMask, pageSize=GC.Values[GC.DEVICE_MAX_RESULTS])
-  except (GAPI.invalidArgument, GAPI.invalidInput) as e:
-    message = str(e).replace('\n', ',')
-    entityActionFailedWarning([Ent.CROS_DEVICE, None], message)
-    return
-  except GAPI.permissionDenied as e:
-    accessErrorExitNonDirectory(API.CHROMEMANAGEMENT, str(e))
-  if csvPF:
-    for device in devices:
-      _printDevice(device)
-  else:
-    jcount = len(devices)
-    performActionNumItems(jcount, Ent.CROS_DEVICE)
-    j = 0
-    for device in devices:
-      j += 1
-      _showDevice(device, j, jcount)
+  for pfilter in pfilters:
+    printGettingAllAccountEntities(Ent.CROS_DEVICE, pfilter[1])
+    pageMessage = getPageMessage()
+    try:
+      devices = callGAPIpages(cm.customers().telemetry().devices(), 'list', 'devices',
+                              pageMessage=pageMessage,
+                              throwReasons=[GAPI.PERMISSION_DENIED, GAPI.INVALID_ARGUMENT, GAPI.INVALID_INPUT],
+                              parent=parent, filter=pfilter[0],
+                              readMask=readMask, pageSize=GC.Values[GC.DEVICE_MAX_RESULTS])
+    except (GAPI.invalidArgument, GAPI.invalidInput) as e:
+      message = str(e).replace('\n', ',')
+      entityActionFailedWarning([Ent.CROS_DEVICE, None], message)
+      return
+    except GAPI.permissionDenied as e:
+      accessErrorExitNonDirectory(API.CHROMEMANAGEMENT, str(e))
+    if csvPF:
+      for device in devices:
+        _printDevice(device)
+    else:
+      jcount = len(devices)
+      performActionNumItems(jcount, Ent.CROS_DEVICE)
+      j = 0
+      for device in devices:
+        j += 1
+        _showDevice(device, j, jcount)
   if csvPF:
     csvPF.writeCSVfile('CrOS Devices Telemetry')
 

@@ -832,7 +832,7 @@ gam info crostelemetry <SerialNumber>
 ### Display data about all or selected devices.
 ```
 gam show crostelemetry
-        [(ou|org|orgunit <OrgUnitItem>)|(cros_sn <SerialNumber>)|(filter <String>)]
+        [(ou|org|orgunit|ou_and_children <OrgUnitItem>)|(cros_sn <SerialNumber>)|(filter <String>)]
         <CrOSTelemetryFieldName>* [fields <CrOSTelemetryFieldNameList>]
         [start <Date>] [end <Date>] [listlimit <Number>]
         [reverselists <CrOSTelemetryListFieldNameList>]
@@ -841,6 +841,7 @@ gam show crostelemetry
 Use these options to select CrOS devices; if none are chosen, all CrOS devices in the account are selected.
 
 - `ou|org|orgunit <OrgUnitItem>` - Select CrOS devices directly in the OU `<OrgUnitItem>`
+- `ou_and_children <OrgUnitItem>` - Select CrOS devices in the OU `<OrgUnitItem>` and its sub OUs
 - `cros_sn <SerialNumber>` - Select the CrOS device with serial number `<SerialNumber>`.
 - `filter <String>` - Select the CrOS device with a filter.
 - `listlimit <Number>` - Limits the number of repetitions to `<Number>`; if not specified or `<Number>` equals zero, there is no limit.
@@ -857,7 +858,7 @@ By default, Gam displays the information as an indented list of keys and values:
 ### Print data about all or selected devices.
 ```
 gam print crostelemetry [todrive <ToDriveAttribute>*]
-        [(ou|org|orgunit <OrgUnitItem>)|(cros_sn <SerialNumber>)|(filter <String>)]
+        [(ou|org|orgunit|ou_and_children <OrgUnitItem>)|(cros_sn <SerialNumber>)|(filter <String>)]
         <CrOSTelemetryFieldName>* [fields <CrOSTelemetryFieldNameList>]
         [reverselists <CrOSTelemetryListFieldNameList>]
         [start <Date>] [end <Date>] [listlimit <Number>]
@@ -866,6 +867,7 @@ gam print crostelemetry [todrive <ToDriveAttribute>*]
 Use these options to select CrOS devices; if none are chosen, all CrOS devices in the account are selected.
 
 - `ou|org|orgunit <OrgUnitItem>` - Select CrOS devices directly in the OU `<OrgUnitItem>`
+- `ou_and_children <OrgUnitItem>` - Select CrOS devices in the OU `<OrgUnitItem>` and its sub OUs
 - `cros_sn <SerialNumber>` - Select the CrOS device with serial number `<SerialNumber>`.
 - `filter <String>` - Select the CrOS device with a filter.
 - `listlimit <Number>` - Limits the number of repetitions to `<Number>`; if not specified or `<Number>` equals zero, there is no limit.

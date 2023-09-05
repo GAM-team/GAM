@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.63.11
+
+Added option `ou_and_children  <OrgUnitItem>` to `gam print|show crostelemetry` to simplify getting
+telemetry data for all ChromeOS devices in an OU and its children.
+
 ### 6.63.10
 
 Added option `addcsvdata <FieldName> <String>` to these commands. This adds additional columns of data to the CSV file output
