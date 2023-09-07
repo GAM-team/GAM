@@ -5780,10 +5780,10 @@ gam <UserTypeEntity> delete chatmessage name <ChatMessage>
 gam <UserTypeEntity> info chatmessage name <ChatMessage>
         [formatjson]
 gam <UserTypeEntity> show chatmessages <ChatSpace>
-        [filter <String>]
+        [showdeleted [<Boolean>]] [filter <String>]
         [formatjson]
 gam <UserTypeEntity> print chatmessages [todrive <ToDriveAttribute>*] <ChatSpace>
-        [filter <String>]
+        [showdeleted [<Boolean>]] [filter <String>]
         [formatjson [quotechar <Character>]]
 
 # Users - Data Studuo
