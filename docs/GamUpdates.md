@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.63.13
+
+Updated `gam <UserTypeEntity> print filelist ... showdrivename` and `gam <UserTypeEntity> show fileinfo <DriveFileEntity> ... showdrivename`
+to show the actual name of Shared Drives in other domains rather than `Drive`.
+
 ### 6.63.12
 
 Updated commands that call the Reports API (including `gam info domain`) to handle a change

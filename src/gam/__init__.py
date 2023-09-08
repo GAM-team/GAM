@@ -3106,7 +3106,7 @@ GCS_FORMAT_MIME_TYPES = {
   'gcshtml': MIMETYPE_TEXT_HTML,
   }
 
-# gcscsv|gcshtml|gcsdoc <StorageBucketObjectName>>
+# gcscsv|gcshtml|gcsdoc <StorageBucketObjectName>
 def getStorageFileData(gcsformat, returnData=True):
   mimeType = GCS_FORMAT_MIME_TYPES[gcsformat]
   bucket, s_object, bucketObject = getBucketObjectName()
@@ -11251,7 +11251,7 @@ def doCreateGCPFolder():
 # gam create project [admin <EmailAddress>] [project <ProjectID>]
 #	[appname <String>] [supportemail <EmailAddress>]
 #	[projectname <ProjectName>] [parent <String>]
-#	[saname <ServiceAccountName>] [sadisplayname <ServiceAccountDisplayName>>] [sadescription <ServiceAccountDescription>]
+#	[saname <ServiceAccountName>] [sadisplayname <ServiceAccountDisplayName>] [sadescription <ServiceAccountDescription>]
 def doCreateProject():
   _checkForExistingProjectFiles([GC.Values[GC.OAUTH2SERVICE_JSON], GC.Values[GC.CLIENT_SECRETS_JSON]])
   sys.stdout.write(Msg.TRUST_GAM_CLIENT_ID.format(GAM_PROJECT_CREATION, GAM_PROJECT_CREATION_CLIENT_ID))
@@ -11325,7 +11325,7 @@ def doCreateProject():
 
 # gam use project [<EmailAddress>] [<ProjectID>]
 # gam use project [admin <EmailAddress>] [project <ProjectID>]
-#	[saname <ServiceAccountName>] [sadisplayname <ServiceAccountDisplayName>>] [sadescription <ServiceAccountDescription>]
+#	[saname <ServiceAccountName>] [sadisplayname <ServiceAccountDisplayName>] [sadescription <ServiceAccountDescription>]
 def doUseProject():
   _checkForExistingProjectFiles([GC.Values[GC.OAUTH2SERVICE_JSON], GC.Values[GC.CLIENT_SECRETS_JSON]])
   _, httpObj, login_hint, _, projectInfo, svcAcctInfo = _getLoginHintProjectInfo(False)
@@ -11529,7 +11529,7 @@ def doInfoCurrentProjectId():
   printEntity([Ent.PROJECT_ID, _getCurrentProjectId()])
 
 # gam create svcacct [[admin] <EmailAddress>] [<ProjectIDEntity>]
-#	[saname <ServiceAccountName>] [sadisplayname <ServiceAccountDisplayName>>] [sadescription <ServiceAccountDescription>]
+#	[saname <ServiceAccountName>] [sadisplayname <ServiceAccountDisplayName>] [sadescription <ServiceAccountDescription>]
 def doCreateSvcAcct():
   _checkForExistingProjectFiles([GC.Values[GC.OAUTH2SERVICE_JSON]])
   _, httpObj, login_hint, projects = _getLoginHintProjects(createSvcAcctCmd=True)
@@ -42847,7 +42847,6 @@ def doCreateInboundSSOAssignment():
   body = {'customer': normalizeChannelCustomerID(GC.Values[GC.CUSTOMER_ID])}
   body = _getInboundSSOAssignmentArguments(ci, cd, body)
   kvlist = [Ent.INBOUND_SSO_ASSIGNMENT, body['customer']]
-  print(body)
   try:
     result = callGAPI(ci.inboundSsoAssignments(), 'create',
                       throwReasons=GAPI.CISSO_CREATE_THROW_REASONS,
@@ -43681,7 +43680,7 @@ class CourseAttributes():
 #	    [copytopics [<Boolean>]]
 #	    [markpublishedasdraft [<Boolean>]] [markdraftaspublished [<Boolean>]]
 #	    [members none|all|students|teachers]]
-#	    [logdrivefileids [<Boolean>>]]
+#	    [logdrivefileids [<Boolean>]]
 def doCreateCourse():
   croom = buildGAPIObject(API.CLASSROOM)
   courseAttributes = CourseAttributes(croom, False)
@@ -43784,7 +43783,7 @@ def _doUpdateCourses(entityList):
 #	    [copytopics [<Boolean>]]
 #	    [markpublishedasdraft [<Boolean>]] [markdraftaspublished [<Boolean>]]
 #	    [members none|all|students|teachers]]
-#	    [logdrivefileids [<Boolean>>]]
+#	    [logdrivefileids [<Boolean>]]
 def doUpdateCourses():
   _doUpdateCourses(getEntityList(Cmd.OB_COURSE_ENTITY, shlexSplit=True))
 
@@ -50287,17 +50286,12 @@ class DriveFileFields():
   def orderBy(self):
     return self.OBY.orderBy
 
-  def SharedDriveName(self, driveId):
+  def SharedDriveName(self, drive, driveId):
     if driveId not in self.sharedDriveNames:
-      if not self.drive:
-        _, self.drive = buildGAPIServiceObject(API.DRIVE3, _getAdminEmail())
-        if not self.drive:
-          self.sharedDriveNames[driveId] = TEAM_DRIVE
-          return TEAM_DRIVE
       try:
-        self.sharedDriveNames[driveId] = callGAPI(self.drive.drives(), 'get',
-                                                throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND],
-                                                useDomainAdminAccess=True, driveId=driveId, fields='name')['name']
+        self.sharedDriveNames[driveId] = callGAPI(drive.drives(), 'get',
+                                                  throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND],
+                                                  useDomainAdminAccess=False, driveId=driveId, fields='name')['name']
       except (GAPI.notFound, GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy):
         self.sharedDriveNames[driveId] = TEAM_DRIVE
     return self.sharedDriveNames[driveId]
@@ -50459,9 +50453,9 @@ def showFileInfo(users):
         driveId = result.get('driveId')
         if driveId:
           if result['mimeType'] == MIMETYPE_GA_FOLDER and result['name'] == TEAM_DRIVE:
-            result['name'] = DFF.SharedDriveName(driveId)
+            result['name'] = DFF.SharedDriveName(drive, driveId)
           if DFF.showSharedDriveNames:
-            result['driveName'] = DFF.SharedDriveName(driveId)
+            result['driveName'] = DFF.SharedDriveName(drive, driveId)
         if showNoParents:
           result.setdefault('parents', [])
         if getPermissionsForSharedDrives and driveId and 'permissions' not in result:
@@ -51709,7 +51703,7 @@ FILECOUNT_SUMMARY_USER = 'Summary'
 #	[((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>) (querytime.* <Time>)*]
 #	[choose <DriveFileNameEntity>|<DriveFileEntityShortcut>]
 #	[corpora <CorporaAttribute>]
-#	[select <DriveFileEntity>> [selectsubquery <QueryDriveFile>]
+#	[select <DriveFileEntity> [selectsubquery <QueryDriveFile>]
 #	    [(norecursion [<Boolean>])|(depth <Number>)] [showparent]]
 #	[anyowner|(showownedby any|me|others)]
 #	[showmimetype [not] <MimeTypeList>] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
@@ -51797,7 +51791,7 @@ def printFileList(users):
     if not pmselect and 'permissions' in fileInfo:
       fileInfo['permissions'] = DLP.GetFileMatchingPermission(fileInfo)
     if DFF.showSharedDriveNames and driveId:
-      fileInfo['driveName'] = DFF.SharedDriveName(driveId)
+      fileInfo['driveName'] = DFF.SharedDriveName(drive, driveId)
     if filepath:
       if not FJQC.formatJSON or not addPathsToJSON:
         addFilePathsToRow(drive, fileTree, fileInfo, filePathInfo, csvPF, row, fullpath=fullpath, showDepth=showDepth)

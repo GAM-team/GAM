@@ -2,6 +2,11 @@
 
 Merged GAM-Team version
 
+6.63.13
+
+Updated `gam <UserTypeEntity> print filelist ... showdrivename` and `gam <UserTypeEntity> show fileinfo <DriveFileEntity> ... showdrivename`
+to show the actual name of Shared Drives in other domains rather than `Drive`.
+
 6.63.12
 
 Updated commands that call the Reports API (including `gam info domain`) to handle a change

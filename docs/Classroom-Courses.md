@@ -278,7 +278,7 @@ gam create|add course [id|alias <CourseAlias>] <CourseAttribute>*
             [markdraftaspublished [<Boolean>]]
             [markpublishedasdraft [<Boolean>]]
             [members none|all|students|teachers]]
-            [logdrivefileids [<Boolean>>]]
+            [logdrivefileids [<Boolean>]]
 
 gam update course <CourseID> <CourseAttribute>+
         [copyfrom <CourseID>
@@ -292,7 +292,7 @@ gam update course <CourseID> <CourseAttribute>+
             [markdraftaspublished [<Boolean>]]
             [markpublishedasdraft [<Boolean>]]
             [members none|all|students|teachers]]
-            [logdrivefileids [<Boolean>>]]
+            [logdrivefileids [<Boolean>]]
 gam update courses <CourseEntity> <CourseAttribute>+
         [copyfrom <CourseID>
             [announcementstates <CourseAnnouncementStateList>]
@@ -305,7 +305,7 @@ gam update courses <CourseEntity> <CourseAttribute>+
             [markdraftaspublished [<Boolean>]]
             [markpublishedasdraft [<Boolean>]]
             [members none|all|students|teachers]]
-            [logdrivefileids [<Boolean>>]]
+            [logdrivefileids [<Boolean>]]
 ```
 `copyfrom <CourseID>` allows copying of course announcements, work, topics and members from one course to another.
 * Accouncements - By default, no course announcements are copied
@@ -335,7 +335,7 @@ gam update courses <CourseEntity> <CourseAttribute>+
     * `members students` - Copy students
     * `members teachers` - Copy teachers
 
-When true, `logdrivefileids [<Boolean>>]` generates a CSV file with headers `courseId,ownerId,fileId' that
+When true, `logdrivefileids [<Boolean>]` generates a CSV file with headers `courseId,ownerId,fileId' that
 lists all drive files in the course.
 
 The Classroom API does not support course materials of type `form`, they will not be copied.
