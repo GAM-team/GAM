@@ -198,6 +198,8 @@ OUTPUT_DATEFORMAT = 'output_dateformat'
 OUTPUT_TIMEFORMAT = 'output_timeformat'
 # When retrieving lists of people from API, how many should be retrieved in each chunk
 PEOPLE_MAX_RESULTS = 'people_max_results'
+# Domains for print alises|groups|users
+PRINT_AGU_DOMAINS = 'print_agu_domains'
 # Number of seconds to wait for batch/csv processes to complete
 PROCESS_WAIT_LIMIT = 'process_wait_limit'
 # Use quick method to move Chromebooks to OU
@@ -363,6 +365,7 @@ Defaults = {
   OUTPUT_DATEFORMAT: '',
   OUTPUT_TIMEFORMAT: '',
   PEOPLE_MAX_RESULTS: '100',
+  PRINT_AGU_DOMAINS: '',
   PROCESS_WAIT_LIMIT: '0',
   QUICK_CROS_MOVE: FALSE,
   QUICK_INFO_USER: FALSE,
@@ -511,6 +514,7 @@ VAR_INFO = {
   OUTPUT_DATEFORMAT: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
   OUTPUT_TIMEFORMAT: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
   PEOPLE_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (0, 1000)},
+  PRINT_AGU_DOMAINS: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
   PROCESS_WAIT_LIMIT: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (0, None)},
   QUICK_CROS_MOVE: {VAR_TYPE: TYPE_BOOLEAN},
   QUICK_INFO_USER: {VAR_TYPE: TYPE_BOOLEAN},

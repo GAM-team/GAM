@@ -19,6 +19,7 @@
 * https://developers.google.com/admin-sdk/directory/v1/reference/members
 
 ## Definitions
+See [Collections of Items](Collections-of-Items)
 ```
 <DeliverySetting> ::=
         allmail|
@@ -27,6 +28,9 @@
         disabled|
         none|nomail
 <DomainName> ::= <String>(.<String>)+
+<DomainNameList> ::= "<DomainName>(,<DomainName>)*"
+<DomainNameEntity> ::=
+        <DomainNameList> | <FileSelector> | <CSVFileSelector>
 <EmailAddress> ::= <String>@<DomainName>
 <EmailItem> ::= <EmailAddress>|<UniqueID>|<String>
 <UniqueID> ::= id:<String>
@@ -41,6 +45,7 @@
 <GroupTypeList> ::= "<GroupType>(,<GroupType>)*"
 <QueryGroup> ::= <String>
         See: https://developers.google.com/admin-sdk/directory/v1/guides/search-groups
+<QueryGroupList> ::= "<QueryGroup>(,<QueryGroup>)*"
 
 <MembersFieldName> ::=
         delivery|deliverysettings|
@@ -563,7 +568,7 @@ gam info member|group-members <UserItem>|<UserTypeEntity> <GroupEntity>
 By default, delivery information is not displayed.
 ```
 gam print group-members [todrive <ToDriveAttribute>*]
-        [([domain <DomainName>] ([member|showownedby <EmailItem>]|[query <QueryGroup>]))|
+        [([domain|domains <DomainNameEntity>] ([member|showownedby <EmailItem>]|[(query <QueryGroup>)|(queries <QueryGroupList>)]))|
          (group|group_ns|group_susp <GroupItem>)|
          (select <GroupEntity>)]
         [emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
@@ -581,10 +586,10 @@ gam print group-members [todrive <ToDriveAttribute>*]
         [formatjson [quotechar <Character>]]
 ```
 By default, the group membership of all groups in the account are displayed, these options allow selection of subsets of groups:
-* `domain <DomainName>` - Limit display to groups in the domain `<DomainName>`
+* `domain|domains <DomainNameEntity>` - Limit display to groups in the domains specified by `<DomainNameEntity>`
 * `member <EmailItem>` - Limit display to groups that contain `<EmailItem>` as a member; mutually exclusive with `query <QueryGroup>`
 * `showownedby <EmailItem>` - Limit display to groups that contain `<EmailItem>` as an owner; mutually exclusive with `query <QueryGroup>`
-* `query <QueryGroup>` - Limit display to groups that match `<QueryGroup>`, matching is done at Google; mutually exclusive with `member <UserItem>`
+* `(query <QueryGroup>)|(queries <QueryGroupList>)` - Limit groups to those that match a query; each query is run against each domain
 * `group <GroupItem>` - Limit display to the single group `<GroupItem>`
 * `group_ns <GroupItem>` - Limit display to the single group `<GroupItem>`, display non-suspended members
 * `group_susp <GroupItem>` - Limit display to the single group `<GroupItem>`, display suspended members
@@ -679,7 +684,7 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 ## Display group membership in hierarchical format
 ```
 gam show group-members
-        [([domain <DomainName>] ([member|showownedby <EmailItem>]|[query <QueryGroup>]))|
+        [([domain|domains <DomainNameEntity>] ([member|showownedby <EmailItem>]|[(query <QueryGroup>)|(queries <QueryGroupList>)]))|
          (group|group_ns|group_susp <GroupItem>)|
          (select <GroupEntity>)]
         [emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
@@ -692,10 +697,10 @@ gam show group-members
         [includederivedmembership]
 ```
 By default, the group membership of all groups in the account are displayed, these options allow selection of subsets of groups:
-* `domain <DomainName>` - Limit display to groups in the domain `<DomainName>`
+* `domain|domains <DomainNameEntity>` - Limit display to groups in the domains specified by `<DomainNameEntity>`
 * `member <EmailItem>` - Limit display to groups that contain `<EmailItem>` as a member; mutually exclusive with `query <QueryGroup>`
 * `showownedby <EmailItem>` - Limit display to groups that contain `<EmailItem>` as an owner; mutually exclusive with `query <QueryGroup>`
-* `query <QueryGroup>` - Limit display to groups that match `<QueryGroup>`, matching is done at Google; mutually exclusive with `member <UserItem>`
+* `(query <QueryGroup>)|(queries <QueryGroupList>)` - Limit groups to those that match a query; each query is run against each domain
 * `group <GroupItem>` - Limit display to the single group `<GroupItem>`
 * `group_ns <GroupItem>` - Limit display to the single group `<GroupItem>`, display non-suspended members
 * `group_susp <GroupItem>` - Limit display to the single group `<GroupItem>`, display suspended members

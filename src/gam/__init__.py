@@ -2375,12 +2375,9 @@ def emptyQuery(query, entityType):
 def invalidQuery(query):
   return f'{Ent.Singular(Ent.QUERY)} ({query}) {Msg.INVALID}'
 
-def invalidMember(kwargs):
-  if 'userKey' in kwargs:
-    badRequestWarning(Ent.GROUP, Ent.MEMBER, kwargs['userKey'])
-    return True
-  if 'query' in kwargs:
-    badRequestWarning(Ent.GROUP, Ent.QUERY, invalidQuery(kwargs['query']))
+def invalidMember(query):
+  if query:
+    badRequestWarning(Ent.GROUP, Ent.QUERY, invalidQuery(query))
     return True
   return False
 
@@ -4121,6 +4118,8 @@ def SetGlobalVariables():
       GC.Values[GC.CSV_OUTPUT_ROW_DROP_FILTER_MODE] = GM.Globals[GM.CSV_OUTPUT_ROW_DROP_FILTER_MODE]
     if not GC.Values[GC.CSV_OUTPUT_ROW_LIMIT]:
       GC.Values[GC.CSV_OUTPUT_ROW_LIMIT] = GM.Globals[GM.CSV_OUTPUT_ROW_LIMIT]
+    if not GC.Values[GC.PRINT_AGU_DOMAINS]:
+      GC.Values[GC.PRINT_AGU_DOMAINS] = GM.Globals[GM.PRINT_AGU_DOMAINS]
 # customer_id, domain and admin_email must be set when enable_dasa = true
   if GC.Values[GC.ENABLE_DASA]:
     errors = 0
@@ -9300,7 +9299,7 @@ def terminateStdQueueHandler(mpQueue, mpQueueHandler):
   mpQueueHandler.join()
 
 def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout, mpQueueStderr,
-                           debugLevel, todrive,
+                           debugLevel, todrive, printAguDomains,
                            output_dateformat, output_timeformat,
                            csvColumnDelimiter, csvQuoteChar,
                            csvTimestampColumn,
@@ -9339,6 +9338,7 @@ def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout,
     GM.Globals[GM.OUTPUT_TIMEFORMAT] = output_timeformat
     GM.Globals[GM.NUM_BATCH_ITEMS] = numItems
     GM.Globals[GM.PID] = pid
+    GM.Globals[GM.PRINT_AGU_DOMAINS] = printAguDomains
     GM.Globals[GM.SAVED_STDOUT] = None
     GM.Globals[GM.SYSEXITRC] = 0
     if mpQueueCSVFile:
@@ -9508,6 +9508,7 @@ def MultiprocessGAMCommands(items, showCmds):
       poolProcessResults[pid] = pool.apply_async(ProcessGAMCommandMulti,
                                                  [pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout, mpQueueStderr,
                                                   GC.Values[GC.DEBUG_LEVEL], GM.Globals[GM.CSV_TODRIVE],
+                                                  GC.Values[GC.PRINT_AGU_DOMAINS],
                                                   GC.Values[GC.OUTPUT_DATEFORMAT], GC.Values[GC.OUTPUT_TIMEFORMAT],
                                                   GC.Values[GC.CSV_OUTPUT_COLUMN_DELIMITER],
                                                   GC.Values[GC.CSV_OUTPUT_QUOTE_CHAR],
@@ -17452,11 +17453,58 @@ def infoAliases(entityList):
 def doInfoAliases():
   infoAliases(getEntityList(Cmd.OB_EMAIL_ADDRESS_ENTITY))
 
+def initUserGroupDomainQueryFilters():
+  if not GC.Values[GC.PRINT_AGU_DOMAINS]:
+    return {'list': [{'customer': GC.Values[GC.CUSTOMER_ID]}], 'queries': [None]}
+  return {'list': [{'domain': domain.lower()} for domain in GC.Values[GC.PRINT_AGU_DOMAINS].replace(',', ' ').split()], 'queries': [None]}
+
+def getUserGroupDomainQueryFilters(myarg, kwargsDict):
+  if myarg in {'domain', 'domains'}:
+    kwargsDict['list'] = [{'domain': domain.lower()} for domain in getEntityList(Cmd.OB_DOMAIN_NAME_ENTITY)]
+  elif myarg in {'query', 'queries'}:
+    kwargsDict['queries'] = getQueries(myarg)
+  else:
+    return False
+  return True
+
+def makeUserGroupDomainQueryFilters(kwargsDict):
+  kwargsQueries = []
+  for kwargs in kwargsDict['list']:
+    for query in kwargsDict['queries']:
+      kwargsQueries.append((kwargs, query))
+  return kwargsQueries
+
+def userFilters(kwargs, query, orgUnitPath, isSuspended):
+  queryTitle = ''
+  if kwargs.get('domain'):
+    queryTitle += f'domain={kwargs["domain"]}, '
+  if orgUnitPath is not None:
+    if query is not None and query.find(orgUnitPath) == -1:
+      query += f" orgUnitPath='{orgUnitPath}'"
+    else:
+      if query is None:
+        query = ''
+      else:
+        query += ' '
+      query += f"orgUnitPath='{orgUnitPath}'"
+  if isSuspended is not None:
+    if query is None:
+      query = ''
+    else:
+      query += ' '
+    query += f'isSuspended={isSuspended}'
+  if query is not None:
+    queryTitle += f'query="{query}", '
+  if queryTitle:
+    return query, queryTitle[:-2]
+  return query, queryTitle
+
 # gam print aliases|nicknames [todrive <ToDriveAttribute>*]
-#	[domain <DomainName>] [(query <QueryUser>)|(queries <QueryUserList>)]
+#	([domain|domains <DomainNameEntity>] [(query <QueryUser>)|(queries <QueryUserList>)]
+#	 [limittoou <OrgUnitItem>])
 #	[user|users <EmailAddressList>] [group|groups <EmailAddressList>]
 #	[select <UserTypeEntity>]
-#	[aliasmatchpattern <RegularExpression>]
+#	[issuspended <Boolean>] [aliasmatchpattern <RegularExpression>]
 #	[shownoneditable] [nogroups] [nousers]
 #	[onerowpertarget] [delimiter <Character>]
 #	[suppressnoaliasrows]
@@ -17497,12 +17545,12 @@ def doPrintAliases():
   userFields = ['primaryEmail', 'aliases']
   groupFields = ['email', 'aliases']
   oneRowPerTarget = showNonEditable = suppressNoAliasRows = False
-  kwargs = {'customer': GC.Values[GC.CUSTOMER_ID]}
-  queries = [None]
+  kwargsDict = initUserGroupDomainQueryFilters()
   getGroups = getUsers = True
   groups = []
   users = []
   aliasMatchPattern = re.compile(r'^.*$')
+  isSuspended = orgUnitPath = None
   addCSVData = {}
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   while Cmd.ArgumentsRemaining():
@@ -17517,15 +17565,17 @@ def doPrintAliases():
       getGroups = False
     elif myarg == 'nousers':
       getUsers = False
-    elif myarg == 'domain':
-      kwargs['domain'] = getString(Cmd.OB_DOMAIN_NAME).lower()
-      kwargs.pop('customer', None)
-    elif myarg in {'query', 'queries'}:
-      queries = getQueries(myarg)
+    elif myarg == 'limittoou':
+      orgUnitPath = getOrgUnitItem(pathOnly=True, cd=cd)
+      orgUnitPathLower = orgUnitPath.lower()
+      userFields.append('orgUnitPath')
       getGroups = False
-      getUsers = True
+    elif getUserGroupDomainQueryFilters(myarg, kwargsDict):
+      pass
     elif myarg == 'select':
       _, users = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
+    elif myarg == 'issuspended':
+      isSuspended = getBoolean()
     elif myarg in {'user','users'}:
       users.extend(convertEntityToList(getString(Cmd.OB_EMAIL_ADDRESS_LIST, minLen=0)))
     elif myarg in {'group', 'groups'}:
@@ -17543,7 +17593,7 @@ def doPrintAliases():
       delimiter = getCharacter()
     else:
       unknownArgumentExit()
-  if users or groups and queries[0] is None:
+  if (users or groups) and kwargsDict['queries'][0] is None:
     getUsers = getGroups = False
   if not oneRowPerTarget:
     titlesList = ['Alias', 'Target', 'TargetType']
@@ -17557,8 +17607,11 @@ def doPrintAliases():
   if addCSVData:
     csvPF.AddTitles(sorted(addCSVData.keys()))
   if getUsers:
-    for query in queries:
-      printGettingAllAccountEntities(Ent.USER, query)
+    for kwargsQuery in makeUserGroupDomainQueryFilters(kwargsDict):
+      kwargs = kwargsQuery[0]
+      query = kwargsQuery[1]
+      query, pquery = userFilters(kwargs, query, orgUnitPath, isSuspended)
+      printGettingAllAccountEntities(Ent.USER, pquery)
       try:
         entityList = callGAPIpages(cd.users(), 'list', 'users',
                                    pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute='primaryEmail',
@@ -17568,13 +17621,14 @@ def doPrintAliases():
                                    fields=f'nextPageToken,users({",".join(userFields)})',
                                    maxResults=GC.Values[GC.USER_MAX_RESULTS], **kwargs)
         for user in entityList:
-          writeAliases(user, user['primaryEmail'], 'User')
+          if orgUnitPath is None or orgUnitPathLower == user.get('orgUnitPath', '').lower():
+            writeAliases(user, user['primaryEmail'], 'User')
       except (GAPI.invalidOrgunit, GAPI.invalidInput):
         entityActionFailedWarning([Ent.ALIAS, None], invalidQuery(query))
-        return
+        continue
       except GAPI.domainNotFound as e :
         entityActionFailedWarning([Ent.ALIAS, None, Ent.DOMAIN, kwargs['domain']], str(e))
-        return
+        continue
       except (GAPI.resourceNotFound, GAPI.forbidden, GAPI.badRequest):
         accessErrorExit(cd)
   count = len(users)
@@ -17593,19 +17647,24 @@ def doPrintAliases():
     except (GAPI.userNotFound, GAPI.badRequest, GAPI.invalid, GAPI.forbidden, GAPI.invalidResource, GAPI.conditionNotMet) as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
   if getGroups:
-    printGettingAllAccountEntities(Ent.GROUP)
-    try:
-      entityList = callGAPIpages(cd.groups(), 'list', 'groups',
-                                 pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute='email',
-                                 throwReasons=GAPI.GROUP_LIST_THROW_REASONS,
-                                 orderBy='email', fields=f'nextPageToken,groups({",".join(groupFields)})', **kwargs)
-      for group in entityList:
-        writeAliases(group, group['email'], 'Group')
-    except GAPI.domainNotFound as e :
-      entityActionFailedWarning([Ent.ALIAS, None, Ent.DOMAIN, kwargs['domain']], str(e))
-      return
-    except (GAPI.resourceNotFound, GAPI.forbidden, GAPI.badRequest):
-      accessErrorExit(cd)
+    for kwargsQuery in makeUserGroupDomainQueryFilters(kwargsDict):
+      kwargs = kwargsQuery[0]
+      query = kwargsQuery[1]
+      query, pquery = groupFilters(kwargs, query)
+      printGettingAllAccountEntities(Ent.GROUP, pquery)
+      try:
+        entityList = callGAPIpages(cd.groups(), 'list', 'groups',
+                                   pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute='email',
+                                   throwReasons=GAPI.GROUP_LIST_THROW_REASONS,
+                                   query=query, orderBy='email',
+                                   fields=f'nextPageToken,groups({",".join(groupFields)})', **kwargs)
+        for group in entityList:
+          writeAliases(group, group['email'], 'Group')
+      except GAPI.domainNotFound as e :
+        entityActionFailedWarning([Ent.ALIAS, None, Ent.DOMAIN, kwargs['domain']], str(e))
+        continue
+      except (GAPI.resourceNotFound, GAPI.forbidden, GAPI.badRequest):
+        accessErrorExit(cd)
   count = len(groups)
   i = 0
   for group in groups:
@@ -30442,40 +30501,32 @@ def infoGroups(entityList):
 def doInfoGroups():
   infoGroups(getEntityList(Cmd.OB_GROUP_ENTITY))
 
-def groupFilters(kwargs):
+def groupFilters(kwargs, query):
   queryTitle = ''
   if kwargs.get('domain'):
-    queryTitle += f'{Ent.Singular(Ent.DOMAIN)}={kwargs["domain"]}, '
-  if kwargs.get('userKey'):
-    queryTitle += f'{Ent.Singular(Ent.MEMBER)}={kwargs["userKey"]}, '
-  if kwargs.get('query'):
-    queryTitle += f'query="{kwargs["query"]}", '
+    queryTitle += f'domain={kwargs["domain"]}, '
+  if query is not None:
+    queryTitle += f'query="{query}", '
   if queryTitle:
-    return queryTitle[:-2]
-  return queryTitle
+    return query, queryTitle[:-2]
+  return query, queryTitle
 
-def getGroupFilters(myarg, kwargs, showOwnedBy):
-  if myarg == 'domain':
-    kwargs['domain'] = getString(Cmd.OB_DOMAIN_NAME).lower()
-    kwargs.pop('customer', None)
+def getGroupFilters(myarg, kwargsDict, showOwnedBy):
+  if getUserGroupDomainQueryFilters(myarg, kwargsDict):
+    pass
   elif myarg in {'member', 'showownedby'}:
     emailAddressOrUID = getEmailAddress()
     if emailAddressOrUID != GC.Values[GC.CUSTOMER_ID].lower():
-      kwargs['userKey'] = emailAddressOrUID
-      kwargs.pop('customer', None)
+      kwargsDict['queries'] = [f'memberKey={emailAddressOrUID}']
       key = 'email' if emailAddressOrUID.find('@') != -1 else 'id'
     else:
-      kwargs['query'] = f'memberKey={GC.Values[GC.CUSTOMER_ID]}'
+      kwargsDict['queries'] = [f'memberKey={GC.Values[GC.CUSTOMER_ID]}']
       key = 'id'
     if myarg == 'showownedby':
       showOwnedBy['key'] = key
       showOwnedBy['value'] = emailAddressOrUID
-  elif myarg == 'query':
-    kwargs['query'] = getString(Cmd.OB_QUERY)
   else:
     return False
-  if kwargs.get('userKey') and kwargs.get('query'):
-    usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('member', 'query'))
   return True
 
 def checkGroupShowOwnedBy(showOwnedBy, members):
@@ -30669,7 +30720,7 @@ def addMemberInfoToRow(row, groupMembers, typesSet, memberOptions, memberDisplay
 PRINT_GROUPS_JSON_TITLES = ['email', 'JSON']
 
 # gam print groups [todrive <ToDriveAttribute>*]
-#	[([domain <DomainName>] ([member|showownedby <EmailItem>]|[query <QueryGroup>]))|
+#	[([domain|domains <DomainNameEntity>] ([member|showownedby <EmailItem>]|[(query <QueryGroup>)|(queries <QueryUserList>)]))|
 #	 (select <GroupEntity>)]
 #	[emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
 #	[descriptionmatchpattern [not] <RegularExpression>] (matchsetting [not] <GroupAttribute>)*
@@ -30849,7 +30900,7 @@ def doPrintGroups():
 
   cd = buildGAPIObject(API.DIRECTORY)
   ci = None
-  kwargs = {'customer': GC.Values[GC.CUSTOMER_ID]}
+  kwargsDict = initUserGroupDomainQueryFilters()
   convertCRNL = GC.Values[GC.CSV_OUTPUT_CONVERT_CR_NL]
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   getCloudIdentity = getSettings = showCIgroupKey = sortHeaders = False
@@ -30871,7 +30922,7 @@ def doPrintGroups():
     myarg = getArgument()
     if myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif getGroupFilters(myarg, kwargs, showOwnedBy):
+    elif getGroupFilters(myarg, kwargsDict, showOwnedBy):
       pass
     elif getGroupMatchPatterns(myarg, matchPatterns, False):
       pass
@@ -30992,40 +31043,43 @@ def doPrintGroups():
     if getCloudIdentity:
       csvPF.AddJSONTitle('JSON-cloudIdentity')
   if entitySelection is None:
-    printGettingAllAccountEntities(Ent.GROUP, groupFilters(kwargs))
-    try:
-      entityList = callGAPIpages(cd.groups(), 'list', 'groups',
-                                 pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute='email',
-                                 throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
-                                 orderBy='email', fields=cdfieldsnp, maxResults=maxResults, **kwargs)
-    except (GAPI.invalidMember, GAPI.invalidInput) as e:
-      if not invalidMember(kwargs):
-        entityActionFailedExit([Ent.GROUP, None], str(e))
-      entityList = []
-    except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.forbidden, GAPI.badRequest):
-      if kwargs.get('domain'):
-        badRequestWarning(Ent.GROUP, Ent.DOMAIN, kwargs['domain'])
-        entityList = []
-      else:
-        accessErrorExit(cd)
-    if getCloudIdentity:
-      printGettingAllAccountEntities(Ent.CLOUD_IDENTITY_GROUP)
+    entityList = []
+    for kwargsQuery in makeUserGroupDomainQueryFilters(kwargsDict):
+      kwargs = kwargsQuery[0]
+      query  = kwargsQuery[1]
+      query, pquery = groupFilters(kwargs, query)
+      printGettingAllAccountEntities(Ent.GROUP, pquery)
       try:
-        ciGroupList = callGAPIpages(ci.groups(), 'list', 'groups',
-                                    pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute=['groupKey', 'id'],
-                                    throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
-                                    parent=f'customers/{GC.Values[GC.CUSTOMER_ID]}', view='FULL',
-                                    fields=cifieldsnp, pageSize=500)
-      except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
-              GAPI.forbidden, GAPI.badRequest, GAPI.invalid, GAPI.invalidArgument,
-              GAPI.systemError, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
-        accessErrorExitNonDirectory(API.CLOUDIDENTITY_GROUPS, str(e))
-      for ciGroup in ciGroupList:
-        key = ciGroup['groupKey']['id']
-        if not showCIgroupKey:
-          ciGroup.pop('groupKey')
-        ciGroups[key] = ciGroup.copy()
-      del ciGroupList
+        entityList.extend(callGAPIpages(cd.groups(), 'list', 'groups',
+                                        pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute='email',
+                                        throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
+                                        orderBy='email', query=query, fields=cdfieldsnp, maxResults=maxResults, **kwargs))
+      except (GAPI.invalidMember, GAPI.invalidInput) as e:
+        if not invalidMember(query):
+          entityActionFailedExit([Ent.GROUP, None], str(e))
+      except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.forbidden, GAPI.badRequest):
+        if kwargs.get('domain'):
+          badRequestWarning(Ent.GROUP, Ent.DOMAIN, kwargs['domain'])
+        else:
+          accessErrorExit(cd)
+      if getCloudIdentity:
+        printGettingAllAccountEntities(Ent.CLOUD_IDENTITY_GROUP)
+        try:
+          ciGroupList = callGAPIpages(ci.groups(), 'list', 'groups',
+                                      pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute=['groupKey', 'id'],
+                                      throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
+                                      parent=f'customers/{GC.Values[GC.CUSTOMER_ID]}', view='FULL',
+                                      fields=cifieldsnp, pageSize=500)
+        except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
+                GAPI.forbidden, GAPI.badRequest, GAPI.invalid, GAPI.invalidArgument,
+                GAPI.systemError, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
+          accessErrorExitNonDirectory(API.CLOUDIDENTITY_GROUPS, str(e))
+        for ciGroup in ciGroupList:
+          key = ciGroup['groupKey']['id']
+          if not showCIgroupKey:
+            ciGroup.pop('groupKey')
+          ciGroups[key] = ciGroup.copy()
+        del ciGroupList
   else:
     svcargs = dict([('groupKey', None), ('fields', cdfields)]+GM.Globals[GM.EXTRA_ARGS_LIST])
     cdmethod = getattr(cd.groups(), 'get')
@@ -31219,26 +31273,28 @@ def infoGroupMembers(entityList, ciGroupsAPI=False):
 def doInfoGroupMembers():
   infoGroupMembers(getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)[1], False)
 
-def getGroupMembersEntityList(cd, entityList, matchPatterns, fieldsList, kwargs):
+def getGroupMembersEntityList(cd, entityList, matchPatterns, fieldsList, kwargsDict):
   if entityList is None:
     updateFieldsForGroupMatchPatterns(matchPatterns, fieldsList)
-    subTitle = groupFilters(kwargs)
-    printGettingAllAccountEntities(Ent.GROUP, subTitle)
-    try:
-      entityList = callGAPIpages(cd.groups(), 'list', 'groups',
-                                 pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute='email',
-                                 throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
-                                 orderBy='email', fields=f'nextPageToken,groups({",".join(set(fieldsList))})', **kwargs)
-    except (GAPI.invalidMember, GAPI.invalidInput) as e:
-      if not invalidMember(kwargs):
-        entityActionFailedExit([Ent.GROUP, None], str(e))
-      entityList = []
-    except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.forbidden, GAPI.badRequest):
-      if kwargs.get('domain'):
-        badRequestWarning(Ent.GROUP, Ent.DOMAIN, kwargs['domain'])
-        entityList = []
-      else:
-        accessErrorExit(cd)
+    entityList = []
+    for kwargsQuery in makeUserGroupDomainQueryFilters(kwargsDict):
+      kwargs = kwargsQuery[0]
+      query  = kwargsQuery[1]
+      query, pquery = groupFilters(kwargs, query)
+      printGettingAllAccountEntities(Ent.GROUP, pquery)
+      try:
+        entityList.extend(callGAPIpages(cd.groups(), 'list', 'groups',
+                                        pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute='email',
+                                        throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
+                                        orderBy='email', query=query, fields=f'nextPageToken,groups({",".join(set(fieldsList))})', **kwargs))
+      except (GAPI.invalidMember, GAPI.invalidInput) as e:
+        if not invalidMember(query):
+          entityActionFailedExit([Ent.GROUP, None], str(e))
+      except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.forbidden, GAPI.badRequest):
+        if kwargs.get('domain'):
+          badRequestWarning(Ent.GROUP, Ent.DOMAIN, kwargs['domain'])
+        else:
+          accessErrorExit(cd)
   else:
     clearUnneededGroupMatchPatterns(matchPatterns)
   return entityList
@@ -31347,7 +31403,7 @@ GROUPMEMBERS_FIELDS_CHOICE_MAP = {
 GROUPMEMBERS_DEFAULT_FIELDS = ['group', 'type', 'role', 'id', 'status', 'email']
 
 # gam print group-members [todrive <ToDriveAttribute>*]
-#	[([domain <DomainName>] ([member|showownedby <EmailItem>]|[query <QueryGroup>]))|
+#	[([domain|domains <DomainNameEntity>] ([member|showownedby <EmailItem>]|[(query <QueryGroup>)|(queries <QueryUserList>)]))|
 #	 (group|group_ns|group_susp <GroupItem>)|
 #	 (select <GroupEntity>)]
 #	[emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
@@ -31384,7 +31440,8 @@ def doPrintGroupMembers():
   peopleNames = {}
   memberOptions = initMemberOptions()
   groupColumn = True
-  kwargs = {'customer': GC.Values[GC.CUSTOMER_ID]}
+  customerKey = GC.Values[GC.CUSTOMER_ID]
+  kwargsDict = initUserGroupDomainQueryFilters()
   subTitle = f'{Msg.ALL} {Ent.Plural(Ent.GROUP)}'
   fieldsList = []
   csvPF = CSVPrintFile('group')
@@ -31401,7 +31458,7 @@ def doPrintGroupMembers():
     myarg = getArgument()
     if myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif getGroupFilters(myarg, kwargs, showOwnedBy):
+    elif getGroupFilters(myarg, kwargsDict, showOwnedBy):
       pass
     elif getGroupMatchPatterns(myarg, matchPatterns, False):
       pass
@@ -31457,7 +31514,7 @@ def doPrintGroupMembers():
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   if not typesSet:
     typesSet = {Ent.TYPE_USER} if memberOptions[MEMBEROPTION_RECURSIVE] else ALL_GROUP_TYPES
-  entityList = getGroupMembersEntityList(cd, entityList, matchPatterns, cdfieldsList, kwargs)
+  entityList = getGroupMembersEntityList(cd, entityList, matchPatterns, cdfieldsList, kwargsDict)
   if not fieldsList:
     for field in GROUPMEMBERS_DEFAULT_FIELDS:
       csvPF.AddField(field, {field: field}, fieldsList)
@@ -31493,7 +31550,6 @@ def doPrintGroupMembers():
     getRolesSet.add(Ent.ROLE_OWNER)
   getRoles = ','.join(sorted(getRolesSet))
   level = 0
-  customerKey = GC.Values[GC.CUSTOMER_ID]
   setCustomerMemberEmail = 'email' in fieldsList
   i = 0
   count = len(entityList)
@@ -31595,7 +31651,7 @@ def doPrintGroupMembers():
   csvPF.writeCSVfile(f'Group Members ({subTitle})')
 
 # gam show group-members
-#	[([domain <DomainName>] ([member|showownedby <EmailItem>]|[query <QueryGroup>]))|
+#	[([domain|domains <DomainNameEntity>] ([member|showownedby <EmailItem>]|[(query <QueryGroup>)|(queries <QueryUserList>)]))|
 #	 (group|group_ns|group_susp <GroupItem>)|
 #	 (select <GroupEntity>)]
 #	[emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
@@ -31642,8 +31698,7 @@ def doShowGroupMembers():
 
   cd = buildGAPIObject(API.DIRECTORY)
   ci = None
-  customerKey = GC.Values[GC.CUSTOMER_ID]
-  kwargs = {'customer': customerKey}
+  kwargsDict = initUserGroupDomainQueryFilters()
   entityList = None
   showOwnedBy = {}
   cdfieldsList = ['email']
@@ -31655,7 +31710,7 @@ def doShowGroupMembers():
   includeDerivedMembership = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if getGroupFilters(myarg, kwargs, showOwnedBy):
+    if getGroupFilters(myarg, kwargsDict, showOwnedBy):
       pass
     elif getGroupMatchPatterns(myarg, matchPatterns, False):
       pass
@@ -31687,7 +31742,7 @@ def doShowGroupMembers():
     rolesSet = ALL_GROUP_ROLES
   if not typesSet:
     typesSet = ALL_GROUP_TYPES
-  entityList = getGroupMembersEntityList(cd, entityList, matchPatterns, cdfieldsList, kwargs)
+  entityList = getGroupMembersEntityList(cd, entityList, matchPatterns, cdfieldsList, kwargsDict)
   i = 0
   count = len(entityList)
   for group in entityList:
@@ -41662,7 +41717,7 @@ USERS_INDEXED_TITLES = ['addresses', 'aliases', 'nonEditableAliases', 'emails', 
                         'phones', 'posixAccounts', 'relations', 'sshPublicKeys', 'websites']
 
 # gam print users [todrive <ToDriveAttribute>*]
-#	([domain <DomainName>] [(query <QueryUser>)|(queries <QueryUserList>)]
+#	([domain|domains <DomainNameEntity>] [(query <QueryUser>)|(queries <QueryUserList>)]
 #	 [limittoou <OrgUnitItem>] [deleted_only|only_deleted])|[select <UserTypeEntity>]
 #	[groups|groupsincolumns]
 #	[license|licenses|licence|licences|licensebyuser|licensesbyuser|licencebyuser|licencesbyuser]
@@ -41804,8 +41859,7 @@ def doPrintUsers(entityList=None):
     'sortHeaders': False,
     'maxGroups': 0
     }
-  kwargs = {'customer': GC.Values[GC.CUSTOMER_ID]}
-  queries = [None]
+  kwargsDict = initUserGroupDomainQueryFilters()
   licenses = {}
   lic = None
   skus = None
@@ -41824,11 +41878,8 @@ def doPrintUsers(entityList=None):
     elif entityList is None and myarg == 'limittoou':
       orgUnitPath = getOrgUnitItem(pathOnly=True, cd=cd)
       orgUnitPathLower = orgUnitPath.lower()
-    elif myarg == 'domain':
-      kwargs['domain'] = getString(Cmd.OB_DOMAIN_NAME).lower()
-      kwargs.pop('customer', None)
-    elif entityList is None and myarg in {'query', 'queries'}:
-      queries = getQueries(myarg)
+    elif entityList is None and getUserGroupDomainQueryFilters(myarg, kwargsDict):
+      pass
     elif entityList is None and myarg in {'deletedonly', 'onlydeleted'}:
       showDeleted = True
     elif entityList is None and myarg == 'select':
@@ -41927,23 +41978,11 @@ def doPrintUsers(entityList=None):
     if orgUnitPath is not None and fieldsList:
       fieldsList.append('orgUnitPath')
     fields = getItemFieldsFromFieldsList('users', fieldsList)
-    for query in queries:
-      if orgUnitPath is not None:
-        if query is not None and query.find(orgUnitPath) == -1:
-          query += f" orgUnitPath='{orgUnitPath}'"
-        else:
-          if query is None:
-            query = ''
-          else:
-            query += ' '
-          query += f"orgUnitPath='{orgUnitPath}'"
-      if isSuspended is not None:
-        if query is None:
-          query = ''
-        else:
-          query += ' '
-        query += f'isSuspended={isSuspended}'
-      printGettingAllAccountEntities(Ent.USER, query)
+    for kwargsQuery in makeUserGroupDomainQueryFilters(kwargsDict):
+      kwargs = kwargsQuery[0]
+      query  = kwargsQuery[1]
+      query, pquery = userFilters(kwargs, query, orgUnitPath, isSuspended)
+      printGettingAllAccountEntities(Ent.USER, pquery)
       pageMessage = getPageMessage(showFirstLastItems=True)
       try:
         feed = yieldGAPIpages(cd.users(), 'list', 'users',
@@ -41972,7 +42011,7 @@ def doPrintUsers(entityList=None):
                   _updateDomainCounts(user['primaryEmail'])
       except GAPI.domainNotFound:
         entityActionFailedWarning([Ent.USER, None, Ent.DOMAIN, kwargs['domain']], Msg.NOT_FOUND)
-        return
+        continue
       except (GAPI.invalidOrgunit, GAPI.invalidInput) as e:
         if query and not customFieldMask:
           entityActionFailedWarning([Ent.USER, None], invalidQuery(query))
@@ -41982,7 +42021,7 @@ def doPrintUsers(entityList=None):
           entityActionFailedWarning([Ent.USER, None], f'{invalidQuery(query)} or {invalidUserSchema(customFieldMask)}')
         else:
           entityActionFailedWarning([Ent.USER, None], str(e))
-        return
+        continue
       except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
         accessErrorExit(cd)
   else:
@@ -50235,8 +50274,6 @@ class DriveFileFields():
     self.fieldsList = []
     self.includeLabels = []
     self.parentsSubFields = {'id': False, 'isRoot': False, 'rootFolderId': None}
-    self.sharedDriveNames = {}
-    self.drive = None
 
   def SetAllParentsSubFields(self):
     self.parentsSubFields['id'] = self.parentsSubFields['isRoot'] = True
@@ -50285,16 +50322,6 @@ class DriveFileFields():
   @property
   def orderBy(self):
     return self.OBY.orderBy
-
-  def SharedDriveName(self, drive, driveId):
-    if driveId not in self.sharedDriveNames:
-      try:
-        self.sharedDriveNames[driveId] = callGAPI(drive.drives(), 'get',
-                                                  throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND],
-                                                  useDomainAdminAccess=False, driveId=driveId, fields='name')['name']
-      except (GAPI.notFound, GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy):
-        self.sharedDriveNames[driveId] = TEAM_DRIVE
-    return self.sharedDriveNames[driveId]
 
 def _setSkipObjects(skipObjects, skipTitles, fieldsList):
   for field in skipTitles:
@@ -50453,9 +50480,9 @@ def showFileInfo(users):
         driveId = result.get('driveId')
         if driveId:
           if result['mimeType'] == MIMETYPE_GA_FOLDER and result['name'] == TEAM_DRIVE:
-            result['name'] = DFF.SharedDriveName(drive, driveId)
+            result['name'] = _getSharedDriveNameFromId(drive, driveId)
           if DFF.showSharedDriveNames:
-            result['driveName'] = DFF.SharedDriveName(drive, driveId)
+            result['driveName'] = _getSharedDriveNameFromId(drive, driveId)
         if showNoParents:
           result.setdefault('parents', [])
         if getPermissionsForSharedDrives and driveId and 'permissions' not in result:
@@ -51791,7 +51818,7 @@ def printFileList(users):
     if not pmselect and 'permissions' in fileInfo:
       fileInfo['permissions'] = DLP.GetFileMatchingPermission(fileInfo)
     if DFF.showSharedDriveNames and driveId:
-      fileInfo['driveName'] = DFF.SharedDriveName(drive, driveId)
+      fileInfo['driveName'] = _getSharedDriveNameFromId(drive, driveId)
     if filepath:
       if not FJQC.formatJSON or not addPathsToJSON:
         addFilePathsToRow(drive, fileTree, fileInfo, filePathInfo, csvPF, row, fullpath=fullpath, showDepth=showDepth)
@@ -54904,6 +54931,7 @@ copyReturnItemMap = {
 #	[copysheetprotectedrangesnoninheritedpermissions [<Boolean>]]
 #	[sendemailifrequired [<Boolean>]]
 #	[suppressnotselectedmessages [<Boolean>]]
+#	[verifyorganizer [<Boolean>]]
 def copyDriveFile(users):
   def _writeCSVData(user, oldName, oldId, newName, newId, mimeType):
     row = {'User': user, fileNameTitle: oldName, 'id': oldId,
@@ -55240,6 +55268,7 @@ def copyDriveFile(users):
   copyMoveOptions = initCopyMoveOptions(True)
   excludeTrashed = newParentsSpecified = recursive = suppressNotSelectedMessages = False
   maxdepth = -1
+  verifyOrganizer = True
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if getCopyMoveOptions(myarg, copyMoveOptions):
@@ -55267,6 +55296,8 @@ def copyDriveFile(users):
       suppressNotSelectedMessages = getBoolean()
     elif getDriveFileCopyAttribute(myarg, copyBody, copyParameters):
       pass
+    elif myarg == 'verifyorganizer':
+      verifyOrganizer = getBoolean()
     else:
       unknownArgumentExit()
   if csvPF:
@@ -55319,7 +55350,7 @@ def copyDriveFile(users):
           continue
         if copyMoveOptions['sourceDriveId']:
 # If copying from a Shared Drive, user has to be an organizer
-          if not _verifyUserIsOrganizer(drive, user, i, count, copyMoveOptions['sourceDriveId']):
+          if verifyOrganizer and not _verifyUserIsOrganizer(drive, user, i, count, copyMoveOptions['sourceDriveId']):
             _incrStatistic(statistics, STAT_USER_NOT_ORGANIZER)
             continue
           sourceSearchArgs = {'driveId': copyMoveOptions['sourceDriveId'], 'corpora': 'drive', 'includeItemsFromAllDrives': True, 'supportsAllDrives': True}
@@ -55347,7 +55378,7 @@ def copyDriveFile(users):
         copyMoveOptions['destParentType'] = dest['destParentType']
         if copyMoveOptions['destDriveId']:
 # If copying to a Shared Drive, user has to be an organizer
-          if not _verifyUserIsOrganizer(drive, user, i, count, copyMoveOptions['destDriveId']):
+          if verifyOrganizer and not _verifyUserIsOrganizer(drive, user, i, count, copyMoveOptions['destDriveId']):
             _incrStatistic(statistics, STAT_USER_NOT_ORGANIZER)
             continue
           if not parentParms[DFA_SEARCHARGS]:
@@ -55680,6 +55711,7 @@ def _updateMoveFilePermissions(drive, user, i, count,
 #	[updatefilepermissions [<Boolean>]]
 #	[retainsourcefolders [<Boolean>]]
 #	[sendemailifrequired [<Boolean>]]
+#	[verifyorganizer [<Boolean>]]
 def moveDriveFile(users):
   def _cloneFolderMove(drive, user, i, count, j, jcount,
                        source, targetChildren, newFolderName, newParentId, newParentName, mergeParentModifiedTime,
@@ -56014,6 +56046,7 @@ def moveDriveFile(users):
   newParentsSpecified = False
   movedFiles = {}
   updateFilePermissions = False
+  verifyOrganizer = True
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if getCopyMoveOptions(myarg, copyMoveOptions):
@@ -56022,6 +56055,8 @@ def moveDriveFile(users):
       newParentsSpecified = True
     elif myarg == 'updatefilepermissions':
       updateFilePermissions = getBoolean()
+    elif myarg == 'verifyorganizer':
+      verifyOrganizer = getBoolean()
     else:
       unknownArgumentExit()
   i, count, users = getEntityArgument(users)
@@ -56054,7 +56089,7 @@ def moveDriveFile(users):
         copyMoveOptions['sourceDriveId'] = source.get('driveId')
         if copyMoveOptions['sourceDriveId']:
 # If moving from a Shared Drive, user has to be an organizer
-          if not _verifyUserIsOrganizer(drive, user, i, count, copyMoveOptions['sourceDriveId']):
+          if verifyOrganizer and not _verifyUserIsOrganizer(drive, user, i, count, copyMoveOptions['sourceDriveId']):
             _incrStatistic(statistics, STAT_USER_NOT_ORGANIZER)
             continue
           if source['trashed']:
@@ -56099,7 +56134,7 @@ def moveDriveFile(users):
           continue
         if copyMoveOptions['destDriveId']:
 # If moving to a Shared Drive, user has to be an organizer
-          if not _verifyUserIsOrganizer(drive, user, i, count, copyMoveOptions['destDriveId']):
+          if verifyOrganizer and not _verifyUserIsOrganizer(drive, user, i, count, copyMoveOptions['destDriveId']):
             _incrStatistic(statistics, STAT_USER_NOT_ORGANIZER)
             continue
 # 3rd party shortcuts can't be moved to Shared Drives

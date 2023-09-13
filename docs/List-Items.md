@@ -78,6 +78,7 @@
 <QueryBrowserList> ::= "<QueryBrowser>(,<QueryBrowser>)*"
 <QueryCrOSList> ::= "<QueryCrOS>(,<QueryCrOS>)*"
 <QueryDeviceList> ::= "<QueryDevice>(,<QueryDevice>)*"
+<QueryGroupList> ::= "<QueryGroup>(,<QueryGroup>)*"
 <QueryMobileList> ::= "<QueryMobile>(,<QueryMobile>)*"
 <QueryUserList> ::= "<QueryUser>(,<QueryUser>)*"
 <ResourceIDList> ::= "<ResourceID>(,<ResourceID>)*"

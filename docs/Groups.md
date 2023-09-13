@@ -44,8 +44,12 @@
 * https://support.google.com/a/answer/167430
 
 ## Definitions
+See [Collections of Items](Collections-of-Items)
 ```
 <DomainName> ::= <String>(.<String>)+
+<DomainNameList> ::= "<DomainName>(,<DomainName>)*"
+<DomainNameEntity> ::=
+        <DomainNameList> | <FileSelector> | <CSVFileSelector>
 <EmailAddress> ::= <String>@<DomainName>
 <UniqueID> ::= id:<String>
 <EmailItem> ::= <EmailAddress>|<UniqueID>|<String>
@@ -60,6 +64,7 @@
 <GroupTypeList> ::= "<GroupType>(,<GroupType>)*"
 <QueryGroup> ::= <String>
         See: https://developers.google.com/admin-sdk/directory/v1/guides/search-groups
+<QueryGroupList> ::= "<QueryGroup>(,<QueryGroup>)*"
 <QueryDynamicGroup> ::= <String>
         See: https://cloud.google.com/identity/docs/reference/rest/v1/groups#dynamicgroupquery
 
@@ -404,7 +409,7 @@ By default, Gam displays the information as an indented list of keys and values.
 This command displays information in CSV format.
 ```
 gam print groups [todrive <ToDriveAttribute>*]
-        [([domain <DomainName>] ([member|showownedby <EmailItem>]|[query <QueryGroup>]))|
+        [([domain|domains <DomainNameEntity>] ([member|showownedby <EmailItem>]|[(query <QueryGroup>)|(queries <QueryGroupList>)]))|
          (select <GroupEntity>)]
         [emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
         [descriptionmatchpattern [not] <RegularExpression>] (matchsetting [not] <GroupAttribute>)*
@@ -423,12 +428,11 @@ gam print groups [todrive <ToDriveAttribute>*]
         [formatjson [quotechar <Character>]]
 ```
 By default, all groups in the account are displayed, these options allow selection of subsets of groups:
-* `domain <DomainName>` - Limit display to groups in the domain `<DomainName>`
+* `domain|domains <DomainNameEntity>` - Limit display to groups in the domains specified by `<DomainNameEntity>`
 * `member <EmailItem>` - Limit display to groups that contain `<EmailItem>` as a member; mutually exclusive with `query <QueryGroup>`
 * `showownedby <EmailItem>` - Limit display to groups that contain `<EmailItem>` as an owner; mutually exclusive with `query <QueryGroup>`
-* `query <QueryGroup>` - Limit display to groups that match <QueryGroup>, matching is done at Google; mutually exclusive with `member <UserItem>`
+* `(query <QueryGroup>)|(queries <QueryGroupList>)` - Limit groups to those that match a query; each query is run against each domain
 * `select <GroupEntity>` - Limit display to the groups specified in `<GroupEntity>`
-* `showownedby <UserItem>` - Limit display to groups owned by `<UserItem>`
 
 When using `query <QueryGroup>` with the `name:{PREFIX}*` query, `PREFIX` must contain at least three characters.
 

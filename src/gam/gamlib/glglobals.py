@@ -156,6 +156,8 @@ OUTPUT_TIMEFORMAT = 'outf'
 PARSER = 'pars'
 # Process ID
 PID = 'pid '
+# Domains for print alises|groups|users
+PRINT_AGU_DOMAINS = 'pagu'
 # Check API calls rate
 RATE_CHECK_COUNT = 'rccn'
 RATE_CHECK_START = 'rcst'
@@ -269,6 +271,7 @@ Globals = {
   OUTPUT_TIMEFORMAT: '',
   PARSER: None,
   PID: 0,
+  PRINT_AGU_DOMAINS: '',
   RATE_CHECK_COUNT: 0,
   RATE_CHECK_START: 0,
   SECTION: None,

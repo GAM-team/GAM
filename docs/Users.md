@@ -80,6 +80,9 @@ queries  "\"orgUnitPath='/Students/Middle School'\",\"orgUnitPath='/Students/Low
         none|nomail
 
 <DomainName> ::= <String>(.<String>)+
+<DomainNameList> ::= "<DomainName>(,<DomainName>)*"
+<DomainNameEntity> ::=
+        <DomainNameList> | <FileSelector> | <CSVFileSelector>
 <EmailAddress> ::=
         <String>@<DomainName> |
         <String> <<String>@<DomainName>> # The outer <> around <String>@<DomainName> are literal, e.g., IT Group<group@domain.com> 
@@ -953,8 +956,8 @@ gam print users
 See: https://developers.google.com/admin-sdk/directory/v1/guides/search-users
 ```
 gam print users [todrive <ToDriveAttribute>*]
-        ([domain <DomainName>] [(query <QueryUser>)|(queries <QueryUserList>)]
-         [limittoou <OrgUnitPath>|<OrgUnitID>] [deleted_only|only_deleted])
+        ([domain|domains <DomainNameEntity>] [(query <QueryUser>)|(queries <QueryUserList>)]
+         [limittoou <OrgUnitItem>] [deleted_only|only_deleted])
         [orderby <UserOrderByFieldName> [ascending|descending]]
         [groups|groupsincolumns] [license|licenses|licence|licences]
         [schemas|custom|customschemas all|<SchemaNameList>]
@@ -966,9 +969,9 @@ gam print users [todrive <ToDriveAttribute>*]
 ```
 
 By default, users in all domains in the account are selected; these options allow selection of subsets of users:
-* `domain <DomainName>` - Limit users to those in `<DomainName>`
-* `(query <QueryUser>)|(queries <QueryUserList>)` - Limit users to those that match a query
-* `limittoou <OrgUnitPath>|<OrgUnitID>` - Limit users to those in the specified `<OrgUnitPath>|<OrgUnitID>`
+* `domain|domains <DomainNameEntity>` - Limit users to those in the domains specified by `<DomainNameEntity>`
+* `(query <QueryUser>)|(queries <QueryUserList>)` - Limit users to those that match a query; each query is run against each domain
+* `limittoou <OrgUnitPath>|<OrgUnitID>` - Limit users to those in the specified `<OrgUnitItem>>`
 * `deleted_only|only_deleted` - Only display deleted users
 * `issuspended <Boolean>` - Limit users based on their status
 
@@ -1060,15 +1063,15 @@ Print a CSV file with headers `domain,count` that gives the number of users in e
 ### Print domain counts for users in a specific domain and/or selected by a query
 ```
 gam print users [todrive <ToDriveAttribute>*]
-        ([domain <DomainName>] [(query <QueryUser>)|(queries <QueryUserList>)]
-         [limittoou <OrgUnitPath>|<OrgUnitID>] [deleted_only|only_deleted])
+        ([domain|domains <DomainNameEntity>] [(query <QueryUser>)|(queries <QueryUserList>)]
+         [limittoou <OrgUnitItem>] [deleted_only|only_deleted])
         [formatjson [quotechar <Character>]] [countonly]
         [issuspended <Boolean>]
 ```
 By default, users in all domains in the account are selected; these options allow selection of subsets of users:
-* `domain <DomainName>` - Limit users to those in `<DomainName>`
-* `(query <QueryUser>)|(queries <QueryUserList>)` - Limit users to those that match a query
-* `limittoou <OrgUnitPath>|<OrgUnitID>` - Limit users to those in the specified `<OrgUnitPath>|<OrgUnitID>`
+* `domain|domains <DomainNameEntity>` - Limit users to those in the domains specified by `<DomainNameEntity>`
+* `(query <QueryUser>)|(queries <QueryUserList>)` - Limit users to those that match a query; each query is run against each domain
+* `limittoou <OrgUnitPath>|<OrgUnitID>` - Limit users to those in the specified `<OrgUnitItem>>`
 * `deleted_only|only_deleted` - Only display deleted users
 * `issuspended <Boolean>` - Limit users based on their status
 

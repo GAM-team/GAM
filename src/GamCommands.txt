@@ -700,6 +700,7 @@ If an item contains spaces, it should be surrounded by ".
 <QueryBrowserList> ::= "<QueryBrowser>(,<QueryBrowser>)*"
 <QueryCrOSList> ::= "<QueryCrOS>(,<QueryCrOS>)*"
 <QueryDeviceList> ::= "<QueryDevice>(,<QueryDevice>)*"
+<QueryGroupList> ::= "<QueryGroup>(,<QueryGroup>)*"
 <QueryMobileList> ::= "<QueryMobile>(,<QueryMobile>)*"
 <QueryUserList> ::= "<QueryUser>(,<QueryUser>)*"
 <ResourceIDList> ::= "<ResourceID>(,<ResourceID>)*"
@@ -1453,7 +1454,8 @@ gam <UserTypeEntity> delete alias|aliases
 gam info alias|aliases <EmailAddressEntity>
 
 gam print alias|aliases [todrive <ToDriveAttribute>*]
-        [domain <DomainName>] [(query <QueryUser>)|(queries <QueryUserList>)]
+        ([domain|domains <DomainNameEntity>] [(query <QueryUser>)|(queries <QueryUserList>)]
+         [limittoou <OrgUnitItem>])
         [user|users <EmailAddressList>] [group|groups <EmailAddressList>]
         [select <UserTypeEntity>]
         [aliasmatchpattern <RegularExpression>]
@@ -3555,7 +3557,7 @@ gam info group|groups <GroupEntity>
         [memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
         [formatjson]
 gam print groups [todrive <ToDriveAttribute>*]
-        [([domain <DomainName>] ([member|showownedby <EmailItem>]|[query <QueryGroup>]))|
+        [([domain|domains <DomainNameEntity>] ([member|showownedby <EmailItem>]|[(query <QueryGroup>)|(queries <QueryGroupList>)]))|
          (select <GroupEntity>)]
         [emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
         [descriptionmatchpattern [not] <RegularExpression>] (matchsetting [not] <GroupAttribute>)*
@@ -3591,7 +3593,7 @@ gam show grouptree <GroupEntity>
 gam <UserTypeEntity> info member|group-members <GroupEntity>
 gam info member|group-members <UserItem>|<UserTypeEntity> <GroupEntity>
 gam print group-members [todrive <ToDriveAttribute>*]
-        [([domain <DomainName>] ([member|showownedby <EmailItem>]|[query <QueryGroup>]))|
+        [([domain|domains <DomainNameEntity>] ([member|showownedby <EmailItem>]|[(query <QueryGroup>)|(queries <QueryGroupList>)]))|
          (group|group_ns|group_susp <GroupItem>)|
          (select <GroupEntity>)]
         [emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
@@ -3608,7 +3610,7 @@ gam print group-members [todrive <ToDriveAttribute>*]
         [peoplelookup|(peoplelookupuser <EmailAddress>)]
         [formatjson [quotechar <Character>]]
 gam show group-members
-        [([domain <DomainName>] ([member|showownedby <EmailItem>]|[query <QueryGroup>]))|
+        [([domain|domains <DomainNameEntity>] ([member|showownedby <EmailItem>]|[(query <QueryGroup>)|(queries <QueryGroupList>)]))|
          (group|group_ns|group_susp <GroupItem>)|
          (select <GroupEntity>)]
         [emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
@@ -5262,7 +5264,7 @@ Print fields for selected users; use these options to select users:
 If none of these options are chosen, all users are selected.
 
 gam print users [todrive <ToDriveAttribute>*]
-        ([domain <DomainName>] [(query <QueryUser>)|(queries <QueryUserList>)]
+        ([domain|domains <DomainNameEntity>] [(query <QueryUser>)|(queries <QueryUserList>)]
          [limittoou <OrgUnitItem>] [deleted_only|only_deleted])
         [orderby <UserOrderByFieldName> [ascending|descending]]
         [groups|groupsincolumns]
@@ -5310,12 +5312,12 @@ gam <UserTypeEntity> print
 gam <UserTypeEntity> print users
 
 Print user domain counts for selected users; use these options to select users:
-        ([domain <DomainName>] [(query <QueryUser>)|(queries <QueryUserList>)]
+        ([domain|domains <DomainNameEntity>] [(query <QueryUser>)|(queries <QueryUserList>)]
          [limittoou <OrgUnitItem>] [deleted_only|only_deleted])
 If none of these options are chosen, all users are selected.
 
 gam print users [todrive <ToDriveAttribute>*]
-        ([domain <DomainName>] [(query <QueryUser>)|(queries <QueryUserList>)]
+        ([domain|domains <DomainNameEntity>] [(query <QueryUser>)|(queries <QueryUserList>)]
          [limittoou <OrgUnitItem>] [deleted_only|only_deleted])
         [formatjson [quotechar <Character>]] [countsonly|countonly]
         [issuspended <Boolean>]
@@ -6015,6 +6017,7 @@ gam <UserTypeEntity> copy drivefile <DriveFileEntity>
         [copysheetprotectedrangesnoninheritedpermissions [<Boolean>]]
         [sendemailifrequired [<Boolean>]]
         [suppressnotselectedmessages [<Boolean>]]
+        [verifyorganizer [<Boolean>]]
 
 gam <UserTypeEntity> move drivefile <DriveFileEntity> [newfilename <DriveFileName>]
         [summary [<Boolean>]] [showpermissionmessages [<Boolean>]]
@@ -6037,6 +6040,7 @@ gam <UserTypeEntity> move drivefile <DriveFileEntity> [newfilename <DriveFileNam
         [updatefilepermissions [<Boolean>]]
         [retainsourcefolders [<Boolean>]]
         [sendemailifrequired [<Boolean>]]
+        [verifyorganizer [<Boolean>]]
 
 gam <UserTypeEntity> get document <DriveFileEntity>
         [viewmode default|suggestions_inline|preview_suggestions_accepted|preview_without_suggestions]

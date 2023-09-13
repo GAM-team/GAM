@@ -21,8 +21,12 @@
 * https://developers.google.com/admin-sdk/directory/v1/guides/search-users
 
 ## Definitions
+See [Collections of Items](Collections-of-Items)
 ```
 <DomainName> ::= <String>(.<String>)+
+<DomainNameList> ::= "<DomainName>(,<DomainName>)*"
+<DomainNameEntity> ::=
+        <DomainNameList> | <FileSelector> | <CSVFileSelector>
 <EmailAddress> ::= <String>@<DomainName>
 <EmailAddressList> ::= "<EmailAddress>(,<EmailAddress>)*"
 <EmailAddressEntity> ::= <EmailAddressList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
@@ -84,7 +88,8 @@ gam info alias|aliases <EmailAddressEntity>
 Display selected aliases.
 ```
 gam print aliases [todrive <ToDriveAttribute>*]
-        [domain <DomainName>] [(query <QueryUser>)|(queries <QueryUserList>)]
+        ([domain|domains <DomainNameEntity>] [(query <QueryUser>)|(queries <QueryUserList>)]
+         [limittoou <OrgUnitItem>])
         [user|users <EmailAddressList>] [group|groups <EmailAddressList>]
         [select <UserTypeEntity>]
         [aliasmatchpattern <RegularExpression>]
@@ -94,8 +99,9 @@ gam print aliases [todrive <ToDriveAttribute>*]
         (addcsvdata <FieldName> <String>)*
 ```
 By default, group and user aliases in all domains in the account are selected; these options allow selection of subsets of aliases:
-* `domain <DomainName>` - Limit aliases to those in `<DomainName>`
-* `(query <QueryUser>)|(queries <QueryUserList>)` - Print aliases for selected users
+* `domain|domains <DomainNameEntity>` - Limit aliases to those in the domains specified by `<DomainNameEntity>`
+* `(query <QueryUser>)|(queries <QueryUserList>)` - Print aliases for users/groups that match a query; each query is run against each domain
+* `limittoou <OrgUnitItem>` - Print aliases for users in the specified `<OrgUnitItem>`
 * `user|users <EmailAddressList>` - Print aliases for users in `<EmailAddressList`
 * `select <UserTypeEntity>` - Print aliases for users in `<UserTypeEntity>`
 * `group|groups <EmailAddressList>` - Print aliases for groups in `<EmailAddressList`
@@ -116,6 +122,21 @@ By default, the aliases in a list are separated by the `csv_output_field_delimit
 * `delimiter <Character>` - Separate aliases in a list with `<Character>`
 
 Specifying both `onerowpertarget` and `suppressnoaliasrows` causes GAM to not display any targets that have no aliases.
+
+When multiple domains are specified and a query/queries are specified, an API call is made for each domain/query combination.
+```
+$ gam print aliases domains school.org,students.school.org queries "'email:admin*','email:test*'"
+Getting all Users that match query (domain=school.org, query="email:admin*"), may take some time on a large Google Workspace Account...
+Got 3 Users: admin@school.org - admindirector@school.org
+Getting all Users that match query (domain=school.org, query="email:test*"), may take some time on a large Google Workspace Account...
+Got 20 Users: testusera@school.org - testuserx@school.org
+Getting all Users that match query (domain=students.school.org, query="email:admin*"), may take some time on a large Google Workspace Account...
+Got 1 User: admin@students.school.org - admin@students.school.org
+Getting all Users that match query (domain=students.school.org, query="email:test*"), may take some time on a large Google Workspace Account...
+Got 1 User: testuser1@students.school.org - testuser1@students.school.org
+Alias,Target,TargetType
+...
+```
 
 ## Bulk delete aliases
 You can bulk delete aliases as follows; use `(query <QueryUser>)|(queries <QueryUserList>)` and

@@ -2,6 +2,37 @@
 
 Merged GAM-Team version
 
+6.63.14
+
+Added option `verifyorganizer [<Boolean>]` to `gam <UserTypeEntity> copy|move drivefile`. When a copy/move
+operation involves a Shared Drive, GAM verifies that the user is an organizer. Unfortunatley, this fails
+when the user is not a direct organizer but is a member of a group that is an organizer. Specifying
+`verifyorganizer false` suppresses the verification.
+
+Updated the following commands to be able to specify a list of domains rather than a single domain:
+```
+gam print alias|aliases
+gam print groups
+gam print|show group-members
+gam print users
+```
+Added `print_agu_domains` variable to `gam.cfg` that provides a default list of domains for these commands.
+
+When multiple domains are specified and a query/queries are specified, an API call is made for each domain/query combination.
+```
+$ gam print users domains school.org,students.school.org queries "'email:admin*','email:test*'"
+Getting all Users that match query (domain=school.org, query="email:admin*"), may take some time on a large Google Workspace Account...
+Got 3 Users: admin@school.org - admindirector@school.org
+Getting all Users that match query (domain=school.org, query="email:test*"), may take some time on a large Google Workspace Account...
+Got 20 Users: testusera@school.org - testuserx@school.org
+Getting all Users that match query (domain=students.school.org, query="email:admin*"), may take some time on a large Google Workspace Account...
+Got 1 User: admin@students.school.org - admin@students.school.org
+Getting all Users that match query (domain=students.school.org, query="email:test*"), may take some time on a large Google Workspace Account...
+Got 1 User: testuser1@students.school.org - testuser1@students.school.org
+primaryEmail
+...
+```
+
 6.63.13
 
 Updated `gam <UserTypeEntity> print filelist ... showdrivename` and `gam <UserTypeEntity> show fileinfo <DriveFileEntity> ... showdrivename`

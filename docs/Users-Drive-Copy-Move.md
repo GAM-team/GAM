@@ -92,6 +92,7 @@ gam <UserTypeEntity> copy drivefile <DriveFileEntity>
         [excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
         (mappermissionsdomain <DomainName> <DomainName>)*
         [sendemailifrequired [<Boolean>]]
+        [verifyorganizer [<Boolean>]]
 ```
 The files/folders specified by `<DriveFileEntity>` are referred to as `source`, `target` refers to where those files are being copied.
 The files/folders specified by `<DriveFileEntity>` are referred to as `top`; when a folder is being copied recursively, the files/folders that it contains are referred as `sub`.
@@ -99,6 +100,10 @@ The files/folders specified by `<DriveFileEntity>` are referred to as `top`; whe
 At its simplest, you copy files/folders by giving the copy a new name and parent location.
 
 By default, files/folders in the Trash are copied; use `excludetrashed` to prevent these files/folders from being copied.
+
+When a copy operation involves a Shared Drive, GAM verifies that the user is an organizer. Unfortunatley, this fails
+when the user is not a direct organizer but is a member of a group that is an organizer. Specifying
+`verifyorganizer false` suppresses the verification.
 
 When copying folders, you have three modes of operation:
 
@@ -443,11 +448,16 @@ gam <UserTypeEntity> move drivefile <DriveFileEntity> [newfilename <DriveFileNam
         [updatefilepermissions [<Boolean>]]
         [retainsourcefolders [<Boolean>]]
         [sendemailifrequired [<Boolean>]]
+        [verifyorganizer [<Boolean>]]
 ```
 The files/folders specified by `<DriveFileEntity>` are referred to as `source`, `target` refers to where those files are being moved.
 The files/folders specified by `<DriveFileEntity>` are referred to as `top`; when a folder is being moved, the files/folders that it contains are referred as `sub`.
 
 At its simplest, you move files/folders by giving them a new name and parent location.
+
+When a move operation involves a Shared Drive, GAM verifies that the user is an organizer. Unfortunatley, this fails
+when the user is not a direct organizer but is a member of a group that is an organizer. Specifying
+`verifyorganizer false` suppresses the verification.
 
 When moving folders, you have two modes of operation:
 
