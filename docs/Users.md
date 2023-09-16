@@ -64,8 +64,14 @@ Typically, you will enclose the entire list in double quotes and quote each item
    * ```"'it em' 'it,em' \"it'em\""```
 
 For example, a list of queries for Org Units where the Org Unit names contain spaces:
+
+* Linux and MacOS and Windows Command Prompt
 ```
 queries  "\"orgUnitPath='/Students/Middle School'\",\"orgUnitPath='/Students/Lower School'\""
+```
+* Windows Power Shell
+```
+queries "`"orgUnitPath=\'/Students/Lower\ School/2027\'`",`"orgUnitPath=\'/Students/Lower\ School/2028\'`""
 ```
 
 ## Definitions
@@ -970,6 +976,7 @@ gam print users [todrive <ToDriveAttribute>*]
 
 By default, users in all domains in the account are selected; these options allow selection of subsets of users:
 * `domain|domains <DomainNameEntity>` - Limit users to those in the domains specified by `<DomainNameEntity>`
+  * You can predefine this list with the `print_agu_domains` variable in `gam.cfg`.
 * `(query <QueryUser>)|(queries <QueryUserList>)` - Limit users to those that match a query; each query is run against each domain
 * `limittoou <OrgUnitPath>|<OrgUnitID>` - Limit users to those in the specified `<OrgUnitItem>>`
 * `deleted_only|only_deleted` - Only display deleted users
@@ -1070,6 +1077,7 @@ gam print users [todrive <ToDriveAttribute>*]
 ```
 By default, users in all domains in the account are selected; these options allow selection of subsets of users:
 * `domain|domains <DomainNameEntity>` - Limit users to those in the domains specified by `<DomainNameEntity>`
+  * You can predefine this list with the `print_agu_domains` variable in `gam.cfg`.
 * `(query <QueryUser>)|(queries <QueryUserList>)` - Limit users to those that match a query; each query is run against each domain
 * `limittoou <OrgUnitPath>|<OrgUnitID>` - Limit users to those in the specified `<OrgUnitItem>>`
 * `deleted_only|only_deleted` - Only display deleted users

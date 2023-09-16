@@ -100,6 +100,7 @@ gam print aliases [todrive <ToDriveAttribute>*]
 ```
 By default, group and user aliases in all domains in the account are selected; these options allow selection of subsets of aliases:
 * `domain|domains <DomainNameEntity>` - Limit aliases to those in the domains specified by `<DomainNameEntity>`
+  * You can predefine this list with the `print_agu_domains` variable in `gam.cfg`.
 * `(query <QueryUser>)|(queries <QueryUserList>)` - Print aliases for users/groups that match a query; each query is run against each domain
 * `limittoou <OrgUnitItem>` - Print aliases for users in the specified `<OrgUnitItem>`
 * `user|users <EmailAddressList>` - Print aliases for users in `<EmailAddressList`

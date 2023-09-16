@@ -3,6 +3,7 @@
 - [Windows Command Prompt](#windows-command-prompt)
 - [Windows PowerShell](#windows-powershell)
 - [List quoting rules](#list-quoting-rules)
+- [Queries example](#queries-example)
 
 ## Linux and MacOS
 
@@ -60,3 +61,19 @@ Typically, you will enclose the entire list in double quotes and quote each item
    * ```"'it em' 'it,em' \"it'em\""```
 
 Typical places where these rules apply are lists of OUs and Contact Groups.
+
+## Queries example
+### Linux and MacOS
+```
+gam print users queries "\"orgUnitPath='/Students/Lower School/2027'\",\"orgUnitPath='/Students/Lower School/2028'\""
+```
+
+### Windows Command Prompt
+```
+gam print users queries "\"orgUnitPath='/Students/Lower School/2027'\",\"orgUnitPath='/Students/Lower School/2028'\""
+```
+
+### Windows Power Shell
+```
+gam print users queries "`"orgUnitPath=\'/Students/Lower\ School/2027\'`",`"orgUnitPath=\'/Students/Lower\ School/2028\'`""
+```

@@ -158,6 +158,10 @@ PARSER = 'pars'
 PID = 'pid '
 # Domains for print alises|groups|users
 PRINT_AGU_DOMAINS = 'pagu'
+# OrgUnits for print cros
+PRINT_CROS_OUS = 'pcou'
+# OrgUnits and children for print cros
+PRINT_CROS_OUS_AND_CHILDREN = 'pcoc'
 # Check API calls rate
 RATE_CHECK_COUNT = 'rccn'
 RATE_CHECK_START = 'rcst'
@@ -272,6 +276,8 @@ Globals = {
   PARSER: None,
   PID: 0,
   PRINT_AGU_DOMAINS: '',
+  PRINT_CROS_OUS: '',
+  PRINT_CROS_OUS_AND_CHILDREN: '',
   RATE_CHECK_COUNT: 0,
   RATE_CHECK_START: 0,
   SECTION: None,

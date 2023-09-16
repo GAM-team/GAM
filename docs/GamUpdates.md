@@ -10,6 +10,27 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.63.15
+
+Added `print_cros_ous` and `print_cros_ous_and_children` variables to `gam.cfg` that provide a default list of OUs for these commands:
+```
+gam print cros
+gam print crosactivity
+```
+
+Updated `group` commands that manage members to handle the following error:
+```
+ERROR: 503: serviceNotAvailable - The service is currently unavailable.
+```
+
+Updated Data Studio to Looker Studio; added the following command synonyms:
+* `lookerstudioassets` for `datastudioassets`
+* 'lookerstudiopermissions` for `datastudiopermissions`
+
+Corrected error message in `gam add datastudiopermissions`:
+* Old -`ERROR: Missing argument: Expected <DataStudioAssetMembersEntity>`
+* New - `ERROR: Missing argument: Expected <LookerStudioPermissionEntity>
+
 ### 6.63.14
 
 Added option `verifyorganizer [<Boolean>]` to `gam <UserTypeEntity> copy|move drivefile`. When a copy/move

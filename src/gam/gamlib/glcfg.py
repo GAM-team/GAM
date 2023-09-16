@@ -200,6 +200,10 @@ OUTPUT_TIMEFORMAT = 'output_timeformat'
 PEOPLE_MAX_RESULTS = 'people_max_results'
 # Domains for print alises|groups|users
 PRINT_AGU_DOMAINS = 'print_agu_domains'
+# OrgUnits for print cros
+PRINT_CROS_OUS = 'print_cros_ous'
+# OrgUnits and children for print cros
+PRINT_CROS_OUS_AND_CHILDREN = 'print_cros_ous_and_children'
 # Number of seconds to wait for batch/csv processes to complete
 PROCESS_WAIT_LIMIT = 'process_wait_limit'
 # Use quick method to move Chromebooks to OU
@@ -366,6 +370,8 @@ Defaults = {
   OUTPUT_TIMEFORMAT: '',
   PEOPLE_MAX_RESULTS: '100',
   PRINT_AGU_DOMAINS: '',
+  PRINT_CROS_OUS: '',
+  PRINT_CROS_OUS_AND_CHILDREN: '',
   PROCESS_WAIT_LIMIT: '0',
   QUICK_CROS_MOVE: FALSE,
   QUICK_INFO_USER: FALSE,
@@ -515,6 +521,8 @@ VAR_INFO = {
   OUTPUT_TIMEFORMAT: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
   PEOPLE_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (0, 1000)},
   PRINT_AGU_DOMAINS: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
+  PRINT_CROS_OUS: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
+  PRINT_CROS_OUS_AND_CHILDREN: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
   PROCESS_WAIT_LIMIT: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (0, None)},
   QUICK_CROS_MOVE: {VAR_TYPE: TYPE_BOOLEAN},
   QUICK_INFO_USER: {VAR_TYPE: TYPE_BOOLEAN},

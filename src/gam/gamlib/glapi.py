@@ -47,7 +47,6 @@ CLOUDRESOURCEMANAGER = 'cloudresourcemanager'
 CLOUDRESOURCEMANAGER_V1 = 'cloudresourcemanager1'
 CONTACTS = 'contacts'
 CONTACTDELEGATION = 'contactdelegation'
-DATASTUDIO = 'datastudio'
 DATATRANSFER = 'datatransfer'
 DIRECTORY = 'directory'
 DIRECTORY_BETA = 'directory_beta'
@@ -69,6 +68,7 @@ IAM_CREDENTIALS = 'iamcredentials'
 IAP = 'iap'
 KEEP = 'keep'
 LICENSING = 'licensing'
+LOOKERSTUDIO = 'datastudio'
 OAUTH2 = 'oauth2'
 PEOPLE = 'people'
 PEOPLE_DIRECTORY = 'peopledirectory'
@@ -206,7 +206,6 @@ _INFO = {
   CLOUDRESOURCEMANAGER: {'name': 'Cloud Resource Manager API v3', 'version': 'v3', 'v2discovery': True},
   CONTACTS: {'name': 'Contacts API', 'version': 'v3', 'v2discovery': False},
   CONTACTDELEGATION: {'name': 'Contact Delegation API', 'version': 'v1', 'v2discovery': True, 'localjson': True},
-  DATASTUDIO: {'name': 'Data Studio API', 'version': 'v1', 'v2discovery': True, 'localjson': True},
   DATATRANSFER: {'name': 'Data Transfer API', 'version': 'datatransfer_v1', 'v2discovery': True, 'mappedAPI': 'admin'},
   DIRECTORY: {'name': 'Directory API', 'version': 'directory_v1', 'v2discovery': True, 'mappedAPI': 'admin'},
   DIRECTORY_BETA: {'name': 'Directory API', 'version': 'directory_v1.1beta1', 'v2discovery': True, 'mappedAPI': 'admin', 'localjson': True},
@@ -227,6 +226,7 @@ _INFO = {
   IAP: {'name': 'Cloud Identity-Aware Proxy API', 'version': 'v1', 'v2discovery': True},
   KEEP: {'name': 'Keep API', 'version': 'v1', 'v2discovery': True},
   LICENSING: {'name': 'License Manager API', 'version': 'v1', 'v2discovery': True},
+  LOOKERSTUDIO: {'name': 'Looker Studio API', 'version': 'v1', 'v2discovery': True, 'localjson': True},
   OAUTH2: {'name': 'OAuth2 API', 'version': 'v2', 'v2discovery': False},
   PEOPLE: {'name': 'People API', 'version': 'v1', 'v2discovery': True},
   PEOPLE_DIRECTORY: {'name': 'People Directory API', 'version': 'v1', 'v2discovery': True, 'mappedAPI': PEOPLE},
@@ -546,10 +546,6 @@ _SVCACCT_SCOPES = [
 #   'api': CONTACTS,
 #   'subscopes': [],
 #   'scope': 'https://www.google.com/m8/feeds'},
-  {'name': 'Data Studio API',
-   'api': DATASTUDIO,
-   'subscopes': READONLY,
-   'scope': 'https://www.googleapis.com/auth/datastudio'},
   {'name': 'Drive API',
    'api': DRIVE3,
    'subscopes': READONLY,
@@ -598,6 +594,10 @@ _SVCACCT_SCOPES = [
    'api': KEEP,
    'subscopes': READONLY,
    'scope': 'https://www.googleapis.com/auth/keep'},
+  {'name': 'Looker Studio API',
+   'api': LOOKERSTUDIO,
+   'subscopes': READONLY,
+   'scope': 'https://www.googleapis.com/auth/datastudio'},
   {'name': 'OAuth2 API',
    'api': OAUTH2,
    'subscopes': [],

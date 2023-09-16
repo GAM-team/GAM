@@ -4102,7 +4102,7 @@ def SetGlobalVariables():
       elif (varType == GC.TYPE_INTEGER) and itemName in {GC.CSV_INPUT_ROW_LIMIT, GC.CSV_OUTPUT_ROW_LIMIT}:
         GM.Globals[GM.PARSER].set(sectionName, itemName, '0')
 # Child process
-# Inherit main process output header/row filters/limit if not locally defined
+# Inherit main process output header/row filters/limit, print defaults if not locally defined
   else:
     if not GC.Values[GC.CSV_OUTPUT_HEADER_FILTER]:
       GC.Values[GC.CSV_OUTPUT_HEADER_FILTER] = GM.Globals[GM.CSV_OUTPUT_HEADER_FILTER][:]
@@ -4120,6 +4120,10 @@ def SetGlobalVariables():
       GC.Values[GC.CSV_OUTPUT_ROW_LIMIT] = GM.Globals[GM.CSV_OUTPUT_ROW_LIMIT]
     if not GC.Values[GC.PRINT_AGU_DOMAINS]:
       GC.Values[GC.PRINT_AGU_DOMAINS] = GM.Globals[GM.PRINT_AGU_DOMAINS]
+    if not GC.Values[GC.PRINT_CROS_OUS]:
+      GC.Values[GC.PRINT_CROS_OUS] = GM.Globals[GM.PRINT_CROS_OUS]
+    if not GC.Values[GC.PRINT_CROS_OUS_AND_CHILDREN]:
+      GC.Values[GC.PRINT_CROS_OUS_AND_CHILDREN] = GM.Globals[GM.PRINT_CROS_OUS_AND_CHILDREN]
 # customer_id, domain and admin_email must be set when enable_dasa = true
   if GC.Values[GC.ENABLE_DASA]:
     errors = 0
@@ -5954,7 +5958,7 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
                              throwReasons=GAPI.MEMBERS_THROW_REASONS, retryReasons=GAPI.MEMBERS_RETRY_REASONS,
                              includeDerivedMembership=includeDerivedMembership,
                              groupKey=group, roles=listRoles, fields=listFields, maxResults=GC.Values[GC.MEMBER_MAX_RESULTS])
-    except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
+    except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden, GAPI.serviceNotAvailable):
       entityUnknownWarning(Ent.GROUP, group)
       _incrEntityDoesNotExist(Ent.GROUP)
       return
@@ -6085,7 +6089,7 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
                                  throwReasons=GAPI.MEMBERS_THROW_REASONS, retryReasons=GAPI.MEMBERS_RETRY_REASONS,
                                  includeDerivedMembership=includeDerivedMembership,
                                  groupKey=group, roles=listRoles, fields=listFields, maxResults=GC.Values[GC.MEMBER_MAX_RESULTS])
-        except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
+        except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden, GAPI.serviceNotAvailable):
           entityUnknownWarning(Ent.GROUP, group)
           _incrEntityDoesNotExist(Ent.GROUP)
           continue
@@ -9300,6 +9304,7 @@ def terminateStdQueueHandler(mpQueue, mpQueueHandler):
 
 def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout, mpQueueStderr,
                            debugLevel, todrive, printAguDomains,
+                           printCrosOUs, printCrosOUsAndChildren,
                            output_dateformat, output_timeformat,
                            csvColumnDelimiter, csvQuoteChar,
                            csvTimestampColumn,
@@ -9339,6 +9344,8 @@ def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout,
     GM.Globals[GM.NUM_BATCH_ITEMS] = numItems
     GM.Globals[GM.PID] = pid
     GM.Globals[GM.PRINT_AGU_DOMAINS] = printAguDomains
+    GM.Globals[GM.PRINT_CROS_OUS] = printCrosOUs
+    GM.Globals[GM.PRINT_CROS_OUS_AND_CHILDREN] = printCrosOUsAndChildren
     GM.Globals[GM.SAVED_STDOUT] = None
     GM.Globals[GM.SYSEXITRC] = 0
     if mpQueueCSVFile:
@@ -9509,6 +9516,7 @@ def MultiprocessGAMCommands(items, showCmds):
                                                  [pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout, mpQueueStderr,
                                                   GC.Values[GC.DEBUG_LEVEL], GM.Globals[GM.CSV_TODRIVE],
                                                   GC.Values[GC.PRINT_AGU_DOMAINS],
+                                                  GC.Values[GC.PRINT_CROS_OUS], GC.Values[GC.PRINT_CROS_OUS_AND_CHILDREN],
                                                   GC.Values[GC.OUTPUT_DATEFORMAT], GC.Values[GC.OUTPUT_TIMEFORMAT],
                                                   GC.Values[GC.CSV_OUTPUT_COLUMN_DELIMITER],
                                                   GC.Values[GC.CSV_OUTPUT_QUOTE_CHAR],
@@ -12882,6 +12890,7 @@ REPORT_CHOICE_MAP = {
   'keep': 'keep',
   'login': 'login',
   'logins': 'login',
+  'lookerstudio': 'data_studio',
   'meet': 'meet',
   'mobile': 'mobile',
   'oauthtoken': 'token',
@@ -16069,6 +16078,7 @@ SERVICE_NAME_CHOICE_MAP = {
   'drive': DRIVE_AND_DOCS_APP_NAME,
   'googledrive': DRIVE_AND_DOCS_APP_NAME,
   'gdrive': DRIVE_AND_DOCS_APP_NAME,
+  'lookerstudio': GOOGLE_DATA_STUDIO_APP_NAME,
   }
 
 def _validateTransferAppName(apps, appName):
@@ -23120,6 +23130,16 @@ def substituteQueryTimes(queries, queryTimes):
         for queryTimeName, queryTimeValue in iter(queryTimes.items()):
           queries[i] = query.replace(f'#{queryTimeName}#', queryTimeValue)
 
+# Get CrOS devices from gam.cfg print_cros_ous and print_cros_ous_and_children
+def getCfgCrOSEntities():
+  if GC.Values[GC.PRINT_CROS_OUS]:
+    entityList = getItemsToModify(Cmd.ENTITY_CROS_OUS, GC.Values[GC.PRINT_CROS_OUS])
+  else:
+    entityList = []
+  if GC.Values[GC.PRINT_CROS_OUS_AND_CHILDREN]:
+    entityList.extend(getItemsToModify(Cmd.ENTITY_CROS_OUS_AND_CHILDREN, GC.Values[GC.PRINT_CROS_OUS_AND_CHILDREN]))
+  return entityList
+
 CROS_ORDERBY_CHOICE_MAP = {
   'lastsync': 'lastSync',
   'location': 'annotatedLocation',
@@ -23287,6 +23307,9 @@ def doPrintCrOSDevices(entityList=None):
   selectedLists = {}
   queryTimes = {}
   selectionAllowed = entityList is None
+  if selectionAllowed and (GC.Values[GC.PRINT_CROS_OUS] or GC.Values[GC.PRINT_CROS_OUS_AND_CHILDREN]):
+    entityList = getCfgCrOSEntities()
+    selectionAllowed = False
   allFields = noLists = oneRow = showDVRstorageFreePercentage = sortHeaders = False
   activeTimeRangesOrder = 'ASCENDING'
   while Cmd.ArgumentsRemaining():
@@ -23545,6 +23568,9 @@ def doPrintCrOSActivity(entityList=None):
   selectedLists = {}
   queryTimes = {}
   selectionAllowed = entityList is None
+  if selectionAllowed and (GC.Values[GC.PRINT_CROS_OUS] or GC.Values[GC.PRINT_CROS_OUS_AND_CHILDREN]):
+    entityList = getCfgCrOSEntities()
+    selectionAllowed = False
   oneUserPerRow = False
   directlyInOU = True
   activeTimeRangesOrder = 'ASCENDING'
@@ -29344,7 +29370,7 @@ def doUpdateGroups():
     except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
       entityUnknownWarning(entityType, group, i, count)
     except (GAPI.duplicate, GAPI.memberNotFound, GAPI.resourceNotFound,
-            GAPI.invalidMember, GAPI.cyclicMembershipsNotAllowed, GAPI.conditionNotMet) as e:
+            GAPI.invalidMember, GAPI.cyclicMembershipsNotAllowed, GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
       _showFailure(group, member, role, str(e), j, jcount)
     except GAPI.conflict:
       _showSuccess(group, member, role, delivery_settings, j, jcount, Msg.ACTION_MAY_BE_DELAYED)
@@ -29381,7 +29407,7 @@ def doUpdateGroups():
       _showSuccess(ri[RI_ENTITY], ri[RI_ITEM], ri[RI_ROLE], ri[RI_OPTION], int(ri[RI_J]), int(ri[RI_JCOUNT]))
     else:
       http_status, reason, message = checkGAPIError(exception)
-      if reason in GAPI.MEMBERS_THROW_REASONS:
+      if reason in GAPI.MEMBERS_THROW_REASONS and reason != GAPI.SERVICE_NOT_AVAILABLE:
         entityUnknownWarning(entityType, ri[RI_ENTITY], int(ri[RI_I]), int(ri[RI_COUNT]))
       elif reason == GAPI.CONFLICT:
         _showSuccess(ri[RI_ENTITY], ri[RI_ITEM], ri[RI_ROLE], ri[RI_OPTION], int(ri[RI_J]), int(ri[RI_JCOUNT]), Msg.ACTION_MAY_BE_DELAYED)
@@ -29455,7 +29481,7 @@ def doUpdateGroups():
       _showSuccess(group, member, role, DELIVERY_SETTINGS_UNDEFINED, j, jcount)
     except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
       entityUnknownWarning(entityType, group, i, count)
-    except (GAPI.memberNotFound, GAPI.invalidMember, GAPI.resourceNotFound, GAPI.conditionNotMet) as e:
+    except (GAPI.memberNotFound, GAPI.invalidMember, GAPI.resourceNotFound, GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
       _showFailure(group, member, role, str(e), j, jcount)
     except GAPI.conflict:
       _showSuccess(group, member, role, DELIVERY_SETTINGS_UNDEFINED, j, jcount, Msg.ACTION_MAY_BE_DELAYED)
@@ -29470,7 +29496,7 @@ def doUpdateGroups():
       _showSuccess(ri[RI_ENTITY], ri[RI_ITEM], ri[RI_ROLE], DELIVERY_SETTINGS_UNDEFINED, int(ri[RI_J]), int(ri[RI_JCOUNT]))
     else:
       http_status, reason, message = checkGAPIError(exception)
-      if reason in GAPI.MEMBERS_THROW_REASONS:
+      if reason in GAPI.MEMBERS_THROW_REASONS and reason != GAPI.SERVICE_NOT_AVAILABLE:
         entityUnknownWarning(entityType, ri[RI_ENTITY], int(ri[RI_I]), int(ri[RI_COUNT]))
       elif reason == GAPI.CONFLICT:
         _showSuccess(ri[RI_ENTITY], ri[RI_ITEM], ri[RI_ROLE], DELIVERY_SETTINGS_UNDEFINED, int(ri[RI_J]), int(ri[RI_JCOUNT]), Msg.ACTION_MAY_BE_DELAYED)
@@ -29560,7 +29586,7 @@ def doUpdateGroups():
         Act.Set(Act.UPDATE)
       else:
         _showFailure(group, member, role, str(e), j, jcount)
-    except (GAPI.invalidMember, GAPI.resourceNotFound) as e:
+    except (GAPI.invalidMember, GAPI.resourceNotFound, GAPI.serviceNotAvailable) as e:
       _showFailure(group, member, role, str(e), j, jcount)
 
   def _callbackUpdateGroupMembers(request_id, response, exception):
@@ -29573,11 +29599,18 @@ def doUpdateGroups():
         Act.Set(Act.ADD)
         _addMember(ri[RI_ENTITY], int(ri[RI_I]), int(ri[RI_COUNT]), ri[RI_ROLE], ri[RI_OPTION], ri[RI_ITEM], int(ri[RI_J]), int(ri[RI_JCOUNT]))
         Act.Set(Act.UPDATE)
-      elif reason in GAPI.MEMBERS_THROW_REASONS:
+      elif reason in GAPI.MEMBERS_THROW_REASONS and reason != GAPI.SERVICE_NOT_AVAILABLE:
         entityUnknownWarning(entityType, ri[RI_ENTITY], int(ri[RI_I]), int(ri[RI_COUNT]))
-      else:
+      elif reason not in GAPI.DEFAULT_RETRY_REASONS+GAPI.MEMBERS_RETRY_REASONS:
         errMsg = getHTTPError(_UPDATE_MEMBER_REASON_TO_MESSAGE_MAP, http_status, reason, message)
         _showFailure(ri[RI_ENTITY], ri[RI_ITEM], ri[RI_ROLE], errMsg, int(ri[RI_J]), int(ri[RI_JCOUNT]))
+      else:
+        if addBatchParms['adjust']:
+          addBatchParms['adjust'] = False
+          addBatchParms['wait'] += 0.25
+          writeStderr(f'{WARNING_PREFIX}{Msg.INTER_BATCH_WAIT_INCREASED.format(addBatchParms["wait"])}\n')
+        time.sleep(0.1)
+        _updateMember(ri[RI_ENTITY], int(ri[RI_I]), int(ri[RI_COUNT]), ri[RI_ROLE], ri[RI_OPTION], ri[RI_ITEM], int(ri[RI_J]), int(ri[RI_JCOUNT]))
 
   def _batchUpdateGroupMembers(group, i, count, updateMembers, role, delivery_settings):
     Act.Set([Act.UPDATE, Act.UPDATE_PREVIEW][preview])
@@ -29891,7 +29924,7 @@ def doUpdateGroups():
                                roles=None if Ent.ROLE_MEMBER in rolesSet or ignoreRole else memberRoles,
                                fields='nextPageToken,members(email,id,type,status,role)',
                                maxResults=GC.Values[GC.MEMBER_MAX_RESULTS])
-      except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
+      except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden, GAPI.serviceNotAvailable):
         entityUnknownWarning(entityType, group, i, count)
         continue
       for role in rolesSet:
@@ -30016,7 +30049,7 @@ def doUpdateGroups():
                                groupKey=group, roles=None if Ent.ROLE_MEMBER in rolesSet else memberRoles,
                                fields='nextPageToken,members(email,id,type,status,role)',
                                maxResults=GC.Values[GC.MEMBER_MAX_RESULTS])
-      except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
+      except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden, GAPI.serviceNotAvailable):
         entityUnknownWarning(entityType, group, i, count)
         continue
       removeMembers = {}
@@ -30845,7 +30878,7 @@ def doPrintGroups():
                             includeDerivedMembership=memberOptions[MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP],
                             groupKey=ri[RI_ENTITY], roles=ri[RI_ROLE], fields='nextPageToken,members(email,id,role,type,status)',
                             maxResults=GC.Values[GC.MEMBER_MAX_RESULTS])
-      except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.invalid, GAPI.forbidden) as e:
+      except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.invalid, GAPI.forbidden, GAPI.serviceNotAvailable) as e:
         entityActionFailedWarning([Ent.GROUP, ri[RI_ENTITY], ri[RI_ROLE], None], str(e), i, int(ri[RI_COUNT]))
         groupData[i]['required'] -= 1
         return
@@ -30861,7 +30894,7 @@ def doPrintGroups():
                             includeDerivedMembership=memberOptions[MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP],
                             groupKey=ri[RI_ENTITY], roles=ri[RI_ROLE], fields='nextPageToken,members(email,id,role,type,status)',
                             maxResults=GC.Values[GC.MEMBER_MAX_RESULTS])
-      except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.invalid, GAPI.forbidden) as e:
+      except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.invalid, GAPI.forbidden, GAPI.serviceNotAvailable) as e:
         entityActionFailedWarning([Ent.GROUP, ri[RI_ENTITY], ri[RI_ROLE], None], str(e), i, int(ri[RI_COUNT]))
         break
     groupData[i]['required'] -= 1
@@ -31238,7 +31271,7 @@ def infoGroupMembers(entityList, ciGroupsAPI=False):
           for field in INFO_GROUPMEMBERS_FIELDS:
             printKeyValueList([field, result[field]])
           Ind.Decrement()
-        except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden) as e:
+        except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden, GAPI.serviceNotAvailable) as e:
           entityActionFailedWarning([entityType, group], str(e), j, jcount)
         except GAPI.memberNotFound:
           entityActionFailedWarning([entityType, group, Ent.MEMBER, memberKey], Msg.NOT_AN_ENTITY.format(Ent.Singular(Ent.MEMBER)), j, jcount)
@@ -31307,7 +31340,7 @@ def getGroupMembers(cd, groupEmail, memberRoles, membersList, membersSet, i, cou
                                                throwReasons=GAPI.MEMBERS_THROW_REASONS+[GAPI.MEMBER_NOT_FOUND],
                                                retryReasons=GAPI.MEMBERS_RETRY_REASONS,
                                                groupKey=groupEmail, memberKey=member['id'], fields='delivery_settings')['delivery_settings']
-      except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
+      except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden, GAPI.serviceNotAvailable):
         pass
       except GAPI.memberNotFound:
         pass
@@ -31322,7 +31355,7 @@ def getGroupMembers(cd, groupEmail, memberRoles, membersList, membersSet, i, cou
                                  throwReasons=GAPI.MEMBERS_THROW_REASONS, retryReasons=GAPI.MEMBERS_RETRY_REASONS,
                                  includeDerivedMembership=memberOptions[MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP],
                                  groupKey=groupEmail, roles=listRoles, fields=listFields, maxResults=GC.Values[GC.MEMBER_MAX_RESULTS])
-  except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
+  except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden, GAPI.serviceNotAvailable):
     entityUnknownWarning(Ent.GROUP, groupEmail, i, count)
     return
   if not memberOptions[MEMBEROPTION_RECURSIVE]:
@@ -31679,7 +31712,7 @@ def doShowGroupMembers():
                                   groupKey=groupEmail, fields='nextPageToken,members(email,id,role,status,type)', maxResults=GC.Values[GC.MEMBER_MAX_RESULTS])
       if showOwnedBy and not checkGroupShowOwnedBy(showOwnedBy, membersList):
         return
-    except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
+    except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden, GAPI.serviceNotAvailable):
       if depth == 0:
         entityUnknownWarning(Ent.GROUP, groupEmail, i, count)
       return
@@ -32313,6 +32346,9 @@ def doUpdateCIGroups():
       except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
         entityUnknownWarning(Ent.CLOUD_IDENTITY_GROUP, group)
         continue
+      except (GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
+        entityActionFailedWarning([Ent.CLOUD_IDENTITY_GROUP, group], str(e))
+        continue
       currentMembersNames = {}
       for role in rolesSet:
         currentMembersSets[role] = set()
@@ -32484,6 +32520,9 @@ def doUpdateCIGroups():
       except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
         entityUnknownWarning(entityType, group, i, count)
         continue
+      except (GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
+        entityActionFailedWarning([entityType, group], str(e), i, count)
+        continue
       removeMembers = {}
       for role in rolesSet:
         removeMembers[role] = []
@@ -32553,6 +32592,9 @@ def doInfoCIGroups():
                                                      pageSize=GC.Values[GC.MEMBER_MAX_RESULTS])
       except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
         entityUnknownWarning(Ent.CLOUD_IDENTITY_GROUP, group_id, i, count)
+        return
+      except (GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
+        entityActionFailedWarning([Ent.CLOUD_IDENTITY_GROUP, group_id], str(e), i, count)
         return
     for member in cachedGroupMembers[group_id]:
       member_id = member.get('name', '')
@@ -32943,6 +32985,8 @@ def doPrintCIGroups():
                                      parent=groupEntity['name'], view='FULL', fields='*', pageSize=pageSize)
       except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
         entityUnknownWarning(Ent.CLOUD_IDENTITY_GROUP, groupEmail, i, count)
+      except (GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
+        entityActionFailedWarning([Ent.CLOUD_IDENTITY_GROUP, groupEmail], str(e), i, count)
     if memberRestrictions:
       printGettingEntityItemForWhom(Ent.MEMBER_RESTRICTION, groupEmail, i, count)
       try:
@@ -56832,6 +56876,7 @@ TRANSFER_DRIVEFILE_ACL_ROLES_MAP = {
 #	[(targetfolderid <DriveFolderID>)|(targetfoldername <DriveFolderName>)]
 #	[targetuserfoldername <DriveFolderName>] [targetuserorphansfoldername <DriveFolderName>]
 #	[mergewithtarget [<Boolean>]]
+#	[createshortcutsfornonmovablefiles [<Boolean>]]
 #	[skipids <DriveFileEntity>]
 #	[keepuser | (retainrole reader|commenter|writer|editor|fileorganizer|none)] [noretentionmessages]
 #	[nonowner_retainrole reader|commenter|writer|editor|fileorganizer|current|none]
@@ -56905,37 +56950,36 @@ def transferDrive(users):
   def _setUpdateRole(permission):
     return {'role': permission['role']}
 
-#  def _makeXferShortcut(drive, user, j, jcount, entityType, childId, childName, newParentId, newParentName):
-#    kvList = [Ent.USER, user, entityType, f'{childName}({childId})']
-#    targetEntityType = Ent.DRIVE_FILE_SHORTCUT if entityType == Ent.DRIVE_FILE else Ent.DRIVE_FOLDER_SHORTCUT
-#    newParentNameId = f'{newParentName}({newParentId})'
-#    action = Act.Get()
-#    existingShortcut = _checkForExistingShortcut(drive, childId, childName, newParentId)
-#    if existingShortcut:
-#      Act.Set(Act.CREATE_SHORTCUT)
-#      entityModifierItemValueListActionPerformed(kvList, Act.MODIFIER_PREVIOUSLY_IN,
-#                                                 [Ent.DRIVE_FOLDER, newParentNameId, targetEntityType, f"{childName}({existingShortcut})"],
-#                                                 j, jcount)
-#      Act.Set(action)
-#      return
-#    body = {'name': childName, 'mimeType': MIMETYPE_GA_SHORTCUT,
-#            'parents': [newParentId], 'shortcutDetails': {'targetId': childId}}
-#    try:
-#      result = callGAPI(drive.files(), 'create',
-#                        throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.FORBIDDEN, GAPI.INSUFFICIENT_PERMISSIONS, GAPI.INSUFFICIENT_PARENT_PERMISSIONS,
-#                                                                    GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.FILE_NOT_FOUND, GAPI.UNKNOWN_ERROR,
-#                                                                    GAPI.STORAGE_QUOTA_EXCEEDED, GAPI.TEAMDRIVES_SHARING_RESTRICTION_NOT_ALLOWED,
-#                                                                    GAPI.TEAMDRIVE_HIERARCHY_TOO_DEEP, GAPI.SHORTCUT_TARGET_INVALID],
-#                        body=body, fields='id', supportsAllDrives=True)
-#      Act.Set(Act.CREATE_SHORTCUT)
-#      entityModifierItemValueListActionPerformed(kvList, Act.MODIFIER_IN,
-#                                                 [Ent.DRIVE_FOLDER, newParentNameId, targetEntityType, f"{childName}({result['id']})"],
-#                                                 j, jcount)
-#      Act.Set(action)
-#    except (GAPI.forbidden, GAPI.insufficientFilePermissions, GAPI.insufficientParentPermissions, GAPI.invalid, GAPI.badRequest,
-#            GAPI.fileNotFound, GAPI.unknownError, GAPI.storageQuotaExceeded, GAPI.teamDrivesSharingRestrictionNotAllowed,
-#	     GAPI.teamDriveHierarchyTooDeep, GAPI.shortcutTargetInvalid) as e:
-#      entityActionFailedWarning(kvList+[Ent.DRIVE_FILE_SHORTCUT, childName], str(e), j, jcount)
+  def _makeXferShortcut(drive, user, j, jcount, entityType, childId, childName, newParentId):
+    kvList = [Ent.USER, user, entityType, f'{childName}({childId})']
+    targetEntityType = Ent.DRIVE_FILE_SHORTCUT if entityType == Ent.DRIVE_FILE else Ent.DRIVE_FOLDER_SHORTCUT
+    action = Act.Get()
+    existingShortcut = _checkForExistingShortcut(drive, childId, childName, newParentId)
+    if existingShortcut:
+      Act.Set(Act.CREATE_SHORTCUT)
+      entityModifierItemValueListActionPerformed(kvList, Act.MODIFIER_PREVIOUSLY_IN,
+                                                 [Ent.DRIVE_FOLDER, newParentId, targetEntityType, f"{childName}({existingShortcut})"],
+                                                 j, jcount)
+      Act.Set(action)
+      return
+    body = {'name': childName, 'mimeType': MIMETYPE_GA_SHORTCUT,
+            'parents': [newParentId], 'shortcutDetails': {'targetId': childId}}
+    try:
+      result = callGAPI(drive.files(), 'create',
+                        throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.FORBIDDEN, GAPI.INSUFFICIENT_PERMISSIONS, GAPI.INSUFFICIENT_PARENT_PERMISSIONS,
+                                                                    GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.FILE_NOT_FOUND, GAPI.UNKNOWN_ERROR,
+                                                                    GAPI.STORAGE_QUOTA_EXCEEDED, GAPI.TEAMDRIVES_SHARING_RESTRICTION_NOT_ALLOWED,
+                                                                    GAPI.TEAMDRIVE_HIERARCHY_TOO_DEEP, GAPI.SHORTCUT_TARGET_INVALID],
+                        body=body, fields='id', supportsAllDrives=True)
+      Act.Set(Act.CREATE_SHORTCUT)
+      entityModifierItemValueListActionPerformed(kvList, Act.MODIFIER_IN,
+                                                 [Ent.DRIVE_FOLDER, newParentId, targetEntityType, f"{childName}({result['id']})"],
+                                                 j, jcount)
+      Act.Set(action)
+    except (GAPI.forbidden, GAPI.insufficientFilePermissions, GAPI.insufficientParentPermissions, GAPI.invalid, GAPI.badRequest,
+            GAPI.fileNotFound, GAPI.unknownError, GAPI.storageQuotaExceeded, GAPI.teamDrivesSharingRestrictionNotAllowed,
+	     GAPI.teamDriveHierarchyTooDeep, GAPI.shortcutTargetInvalid) as e:
+      entityActionFailedWarning(kvList+[Ent.DRIVE_FILE_SHORTCUT, childName], str(e), j, jcount)
 
   def _transferFile(childEntry, i, count, j, jcount, atSelectTop):
     childEntryInfo = childEntry['info']
@@ -56956,14 +57000,14 @@ def transferDrive(users):
         csvPF.WriteRow({'OldOwner': sourceUser, 'NewOwner': targetUser, 'type': Ent.Singular(childFileType), 'id': childFileId, 'name': childFileName, 'role': 'owner'})
         return
       Act.Set(Act.TRANSFER_OWNERSHIP)
-      addTargetParents = set()
+      addTargetParent = None
       removeSourceParents = set()
       removeTargetParents = set()
       childParents = childEntryInfo.get('parents', [])
       if childParents:
         for parentId in childParents:
           if parentId in parentIdMap:
-            addTargetParents.add(parentIdMap[parentId])
+            addTargetParent = parentIdMap[parentId]
             if parentId != sourceRootId:
               removeSourceParents.add(parentId)
             elif not mergeWithTarget and targetFolderId != targetRootId:
@@ -56971,7 +57015,7 @@ def transferDrive(users):
       else:
         if targetIds[TARGET_ORPHANS_PARENT_ID] is None:
           _buildTargetUserOrphansFolder()
-        addTargetParents.add(targetIds[TARGET_ORPHANS_PARENT_ID])
+        addTargetParent = targetIds[TARGET_ORPHANS_PARENT_ID]
         removeTargetParents.add(targetRootId)
       try:
         actionUser = sourceUser
@@ -56992,24 +57036,22 @@ def transferDrive(users):
                    throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS, retryReasons=[GAPI.BAD_REQUEST, GAPI.FILE_NOT_FOUND], retries=3,
                    fileId=childFileId, removeParents=','.join(removeSourceParents), fields='')
         actionUser = targetUser
-        if addTargetParents or removeTargetParents:
+        if addTargetParent or removeTargetParents:
           op = 'Add/Remove Target Parents'
           callGAPI(targetDrive.files(), 'update',
                    throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.INSUFFICIENT_PARENT_PERMISSIONS],
                    retryReasons=[GAPI.BAD_REQUEST, GAPI.FILE_NOT_FOUND], retries=3,
                    fileId=childFileId,
-                   addParents=','.join(addTargetParents), removeParents=','.join(removeTargetParents), fields='')
+                   addParents=addTargetParent, removeParents=','.join(removeTargetParents), fields='')
         entityModifierNewValueItemValueListActionPerformed([Ent.USER, sourceUser, childFileType, childFileName], Act.MODIFIER_TO, None, [Ent.USER, targetUser], j, jcount)
       except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.unknownError,
-              GAPI.badRequest, GAPI.sharingRateLimitExceeded,
-              GAPI.insufficientFilePermissions, GAPI.insufficientParentPermissions,
-              GAPI.fileOwnerNotMemberOfWriterDomain, GAPI.crossDomainMoveRestriction) as e:
+              GAPI.badRequest, GAPI.sharingRateLimitExceeded, GAPI.insufficientParentPermissions) as e:
         entityActionFailedWarning([Ent.USER, actionUser, childFileType, childFileName], f'{op}: {str(e)}', j, jcount)
-#      except (GAPI.insufficientFilePermissions, GAPI.fileOwnerNotMemberOfWriterDomain, GAPI.crossDomainMoveRestriction) as e:
-#        if not createShortcutsForNonmovableFiles:
-#          entityActionFailedWarning([Ent.USER, actionUser, childFileType, childFileName], f'{op}: {str(e)}', j, jcount)
-#        else:
-#          _makeXferShortcut(targetDrive, targetUser, j, jcount, childFileType, childFileId, childFileName, newParentId, newParentName)
+      except (GAPI.insufficientFilePermissions, GAPI.fileOwnerNotMemberOfWriterDomain, GAPI.crossDomainMoveRestriction) as e:
+        if not createShortcutsForNonmovableFiles:
+          entityActionFailedWarning([Ent.USER, actionUser, childFileType, childFileName], f'{op}: {str(e)}', j, jcount)
+        else:
+          _makeXferShortcut(targetDrive, targetUser, j, jcount, childFileType, childFileId, childFileName, addTargetParent)
       except GAPI.permissionNotFound:
         entityDoesNotHaveItemWarning([Ent.USER, actionUser, childFileType, childFileName, Ent.PERMISSION_ID, targetPermissionId], j, jcount)
       except GAPI.invalidSharingRequest as e:
@@ -57373,7 +57415,7 @@ def transferDrive(users):
   targetUserFolderPattern = '#user# old files'
   targetUserOrphansFolderPattern = '#user# orphaned files'
   targetIds = [None, None]
-#  createShortcutsForNonmovableFiles = False
+  createShortcutsForNonmovableFiles = False
   mergeWithTarget = False
   thirdPartyOwners = {}
   skipFileIdEntity = initDriveFileEntity()
@@ -57410,8 +57452,8 @@ def transferDrive(users):
       buildTree = False
     elif myarg == 'mergewithtarget':
       mergeWithTarget = getBoolean()
-#    elif myarg == 'createshortcutsfornonmovablefiles':
-#      createShortcutsForNonmovableFiles = getBoolean()
+    elif myarg == 'createshortcutsfornonmovablefiles':
+      createShortcutsForNonmovableFiles = getBoolean()
     elif myarg == 'skipids':
       skipFileIdEntity = getDriveFileEntity()
     elif myarg == 'preview':
@@ -60840,18 +60882,18 @@ def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
 def doPrintShowSharedDriveACLs():
   printShowSharedDriveACLs([_getAdminEmail()], True)
 
-DATASTUDIO_ASSETTYPE_CHOICE_MAP = {
+LOOKERSTUDIO_ASSETTYPE_CHOICE_MAP = {
   'report': ['REPORT'],
   'datasource': ['DATA_SOURCE'],
   'all': ['REPORT', 'DATA_SOURCE'],
   }
 
-def initDataStudioAssetSelectionParameters():
+def initLookerStudioAssetSelectionParameters():
   return ({'owner': None, 'title': None, 'includeTrashed': False}, {'assetTypes': ['REPORT']})
 
-def getDataStudioAssetSelectionParameters(myarg, parameters, assetTypes):
+def getLookerStudioAssetSelectionParameters(myarg, parameters, assetTypes):
   if myarg in {'assettype', 'assettypes'}:
-    assetTypes['assetTypes'] = getChoice(DATASTUDIO_ASSETTYPE_CHOICE_MAP, mapChoice=True)
+    assetTypes['assetTypes'] = getChoice(LOOKERSTUDIO_ASSETTYPE_CHOICE_MAP, mapChoice=True)
   elif myarg == 'title':
     parameters['title'] = getString(Cmd.OB_STRING)
   elif myarg == 'owner':
@@ -60862,7 +60904,7 @@ def getDataStudioAssetSelectionParameters(myarg, parameters, assetTypes):
     return False
   return True
 
-def _validateUserGetDataStudioAssetIds(user, i, count, entity):
+def _validateUserGetLookerStudioAssetIds(user, i, count, entity):
   if entity:
     if entity['dict']:
       entityList = [{'name': item, 'title': item} for item in entity['dict'][user]]
@@ -60870,16 +60912,16 @@ def _validateUserGetDataStudioAssetIds(user, i, count, entity):
       entityList = [{'name': item, 'title': item} for item in entity['list']]
   else:
     entityList = []
-  user, ds = buildGAPIServiceObject(API.DATASTUDIO, user, i, count)
+  user, ds = buildGAPIServiceObject(API.LOOKERSTUDIO, user, i, count)
   if not ds:
     return (user, None, None, 0)
   return (user, ds, entityList, len(entityList))
 
-def _getDataStudioAssetByID(ds, user, i, count, assetId):
-  printGettingAllEntityItemsForWhom(Ent.DATASTUDIO_ASSET, user, i, count)
+def _getLookerStudioAssetByID(ds, user, i, count, assetId):
+  printGettingAllEntityItemsForWhom(Ent.LOOKERSTUDIO_ASSET, user, i, count)
   try:
     return callGAPI(ds.assets(), 'get',
-                    throwReasons=GAPI.DATASTUDIO_THROW_REASONS,
+                    throwReasons=GAPI.LOOKERSTUDIO_THROW_REASONS,
                     name=f'assets/{assetId}')
   except (GAPI.invalidArgument, GAPI.badRequest, GAPI.notFound, GAPI.permissionDenied) as e:
     entityActionFailedWarning([Ent.USER, user], str(e), i, count)
@@ -60887,16 +60929,16 @@ def _getDataStudioAssetByID(ds, user, i, count, assetId):
     entityServiceNotApplicableWarning(Ent.USER, user, i, count)
   return None
 
-def _getDataStudioAssets(ds, user, i, count, parameters, assetTypes, fields, orderBy=None):
+def _getLookerStudioAssets(ds, user, i, count, parameters, assetTypes, fields, orderBy=None):
   assets = []
   for assetType in assetTypes['assetTypes']:
-    entityType = Ent.DATASTUDIO_ASSET_REPORT if assetType == 'REPORT' else Ent.DATASTUDIO_ASSET_DATASOURCE
+    entityType = Ent.LOOKERSTUDIO_ASSET_REPORT if assetType == 'REPORT' else Ent.LOOKERSTUDIO_ASSET_DATASOURCE
     printGettingAllEntityItemsForWhom(entityType, user, i, count)
     parameters['assetTypes'] = assetType
     try:
       assets.extend(callGAPIpages(ds.assets(), 'search', 'assets',
                                   pageMessage=getPageMessage(),
-                                  throwReasons=GAPI.DATASTUDIO_THROW_REASONS,
+                                  throwReasons=GAPI.LOOKERSTUDIO_THROW_REASONS,
                                   **parameters, orderBy=orderBy, fields=fields))
     except (GAPI.invalidArgument, GAPI.badRequest, GAPI.notFound, GAPI.permissionDenied) as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
@@ -60906,26 +60948,26 @@ def _getDataStudioAssets(ds, user, i, count, parameters, assetTypes, fields, ord
       return (None, 0)
   return (assets, len(assets))
 
-DATASTUDIO_ASSETS_ORDERBY_CHOICE_MAP = {
+LOOKERSTUDIO_ASSETS_ORDERBY_CHOICE_MAP = {
   'title': 'title'
   }
-DATASTUDIO_ASSETS_TIME_OBJECTS = {'updateTime', 'updateByMeTime', 'createTime', 'lastViewByMeTime'}
+LOOKERSTUDIO_ASSETS_TIME_OBJECTS = {'updateTime', 'updateByMeTime', 'createTime', 'lastViewByMeTime'}
 
-# gam <UserTypeEntity> print datastudioassets [todrive <ToDriveAttribute>*]
+# gam <UserTypeEntity> print lookerstudioassets [todrive <ToDriveAttribute>*]
 #	[([assettype report|datasource|all] [title <String>]
 #	  [owner <Emailddress>] [includetrashed]
 #	  [orderby title [ascending|descending]]) |
-#	 (assetids <DataStudioAssetIDEntity>)]
+#	 (assetids <LookerStudioAssetIDEntity>)]
 #	[stripcrsfromtitle]
 #	[formatjson [quotechar <Character>]]
-# gam <UserTypeEntity> show datastudioassets
+# gam <UserTypeEntity> show lookerstudioassets
 #	[([assettype report|datasource|all] [title <String>]
 #	  [owner <Emailddress>] [includetrashed]
 #	  [orderby title [ascending|descending]]) |
-#	 (assetids <DataStudioAssetIDEntity>)]
+#	 (assetids <LookerStudioAssetIDEntity>)]
 #	[stripcrsfromtitle]
 #	[formatjson]
-def printShowDataStudioAssets(users):
+def printShowLookerStudioAssets(users):
   def _printAsset(asset, user):
     if stripCRsFromTitle:
       asset['title'] = _stripControlCharsFromName(asset['title'])
@@ -60934,33 +60976,33 @@ def printShowDataStudioAssets(users):
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
       csvPF.WriteRowNoFilter({'User': user, 'title': asset['title'],
-                              'JSON': json.dumps(cleanJSON(asset, timeObjects=DATASTUDIO_ASSETS_TIME_OBJECTS), ensure_ascii=False, sort_keys=True)})
+                              'JSON': json.dumps(cleanJSON(asset, timeObjects=LOOKERSTUDIO_ASSETS_TIME_OBJECTS), ensure_ascii=False, sort_keys=True)})
 
   def _showAsset(asset):
     if stripCRsFromTitle:
       asset['title'] = _stripControlCharsFromName(asset['title'])
     if FJQC.formatJSON:
-      printLine(json.dumps(cleanJSON(asset, timeObjects=DATASTUDIO_ASSETS_TIME_OBJECTS), ensure_ascii=False, sort_keys=False))
+      printLine(json.dumps(cleanJSON(asset, timeObjects=LOOKERSTUDIO_ASSETS_TIME_OBJECTS), ensure_ascii=False, sort_keys=False))
       return
-    printEntity([Ent.DATASTUDIO_ASSET, asset['title']], j, jcount)
+    printEntity([Ent.LOOKERSTUDIO_ASSET, asset['title']], j, jcount)
     Ind.Increment()
-    showJSON(None, asset, timeObjects=DATASTUDIO_ASSETS_TIME_OBJECTS)
+    showJSON(None, asset, timeObjects=LOOKERSTUDIO_ASSETS_TIME_OBJECTS)
     Ind.Decrement()
 
   csvPF = CSVPrintFile(['User', 'title']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
-  OBY = OrderBy(DATASTUDIO_ASSETS_ORDERBY_CHOICE_MAP, ascendingKeyword='ascending', descendingKeyword='')
-  parameters, assetTypes = initDataStudioAssetSelectionParameters()
+  OBY = OrderBy(LOOKERSTUDIO_ASSETS_ORDERBY_CHOICE_MAP, ascendingKeyword='ascending', descendingKeyword='')
+  parameters, assetTypes = initLookerStudioAssetSelectionParameters()
   assetIdEntity = None
   stripCRsFromTitle = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif getDataStudioAssetSelectionParameters(myarg, parameters, assetTypes):
+    elif getLookerStudioAssetSelectionParameters(myarg, parameters, assetTypes):
       pass
     elif myarg in {'assetid', 'assetids'}:
-      assetIdEntity = getUserObjectEntity(Cmd.OB_USER_ENTITY, Ent.DATASTUDIO_ASSETID)
+      assetIdEntity = getUserObjectEntity(Cmd.OB_USER_ENTITY, Ent.LOOKERSTUDIO_ASSETID)
     elif myarg == 'stripcrsfromtitle':
       stripCRsFromTitle = True
     elif myarg == 'orderby':
@@ -60970,35 +61012,35 @@ def printShowDataStudioAssets(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, ds, assets, jcount = _validateUserGetDataStudioAssetIds(user, i, count, assetIdEntity)
+    user, ds, assets, jcount = _validateUserGetLookerStudioAssetIds(user, i, count, assetIdEntity)
     if not ds:
       continue
     if assetIdEntity is None:
-      assets, jcount = _getDataStudioAssets(ds, user, i, count, parameters, assetTypes, 'nextPageToken,assets', OBY.orderBy)
+      assets, jcount = _getLookerStudioAssets(ds, user, i, count, parameters, assetTypes, 'nextPageToken,assets', OBY.orderBy)
       if assets is None:
         continue
     if not csvPF:
       if not FJQC.formatJSON:
-        entityPerformActionNumItems([Ent.USER, user], jcount, Ent.DATASTUDIO_ASSET, i, count)
+        entityPerformActionNumItems([Ent.USER, user], jcount, Ent.LOOKERSTUDIO_ASSET, i, count)
       Ind.Increment()
       j = 0
       for asset in assets:
         j += 1
         if assetIdEntity:
-          asset = _getDataStudioAssetByID(ds, user, i, count, asset['name'])
+          asset = _getLookerStudioAssetByID(ds, user, i, count, asset['name'])
         if asset:
           _showAsset(asset)
       Ind.Decrement()
     else:
       for asset in assets:
         if assetIdEntity:
-          asset = _getDataStudioAssetByID(ds, user, i, count, asset['name'])
+          asset = _getLookerStudioAssetByID(ds, user, i, count, asset['name'])
         if asset:
           _printAsset(asset, user)
   if csvPF:
-    csvPF.writeCSVfile('Data Studio Assets')
+    csvPF.writeCSVfile('Looker Studio Assets')
 
-def _showDataStudioPermissions(user, asset, permissions, j, jcount, FJQC):
+def _showLookerStudioPermissions(user, asset, permissions, j, jcount, FJQC):
   if FJQC is not None and FJQC.formatJSON:
     permissions['User'] = user
     permissions['assetId'] = asset['name']
@@ -61006,7 +61048,7 @@ def _showDataStudioPermissions(user, asset, permissions, j, jcount, FJQC):
     return
   permissions = permissions['permissions']
   if permissions:
-    printEntity([Ent.DATASTUDIO_ASSET, asset['title'], Ent.DATASTUDIO_PERMISSION, ''], j, jcount)
+    printEntity([Ent.LOOKERSTUDIO_ASSET, asset['title'], Ent.LOOKERSTUDIO_PERMISSION, ''], j, jcount)
   for role in ['OWNER', 'EDITOR', 'VIEWER']:
     members = permissions.get(role, {}).get('members', [])
     if members:
@@ -61016,25 +61058,25 @@ def _showDataStudioPermissions(user, asset, permissions, j, jcount, FJQC):
         printKeyValueList([lrole, member])
       Ind.Decrement()
 
-DATASTUDIO_VIEW_PERMISSION_ROLE_CHOICE_MAP = {
+LOOKERSTUDIO_VIEW_PERMISSION_ROLE_CHOICE_MAP = {
   'editor': 'EDITOR',
   'owner': 'OWNER',
   'viewer': 'VIEWER',
   }
 
-DATASTUDIO_ADD_UPDATE_PERMISSION_ROLE_CHOICE_MAP = {
+LOOKERSTUDIO_ADD_UPDATE_PERMISSION_ROLE_CHOICE_MAP = {
   'editor': 'EDITOR',
   'viewer': 'VIEWER',
   }
 
-DATASTUDIO_DELETE_PERMISSION_ROLE_CHOICE_MAP = {
+LOOKERSTUDIO_DELETE_PERMISSION_ROLE_CHOICE_MAP = {
   'any': None,
   'editor': None,
   'owner': None,
   'viewer': None,
   }
 
-DATASTUDIO_PERMISSION_MODIFIER_MAP = {
+LOOKERSTUDIO_PERMISSION_MODIFIER_MAP = {
   Act.ADD: Act.MODIFIER_TO,
   Act.DELETE: Act.MODIFIER_FROM,
   Act.UPDATE: Act.MODIFIER_FOR
@@ -61044,46 +61086,46 @@ DATASTUDIO_PERMISSION_MODIFIER_MAP = {
 #	[([assettype report|datasource|all] [title <String>]
 #	  [owner <Emailddress>] [includetrashed]
 #	  [orderby title [ascending|descending]]) |
-#	 (assetids <DataStudioAssetIDEntity>)]
-#	(role editor|viewer <DataStudioPermissionEntity>)+
+#	 (assetids <LookerStudioAssetIDEntity>)]
+#	(role editor|viewer <LookerStudioPermissionEntity>)+
 #	[nodetails]
 # gam <UserTypeEntity> delete datastudiopermissions
 #	([[assettype report|datasource|all] [title <String>]
 #	  [owner <Emailddress>] [includetrashed]
 #	  [orderby title [ascending|descending]]) |
-#	 (assetids <DataStudioAssetIDEntity>)]
-#	(role any <DataStudioPermissionEntity>)+
+#	 (assetids <LookerStudioAssetIDEntity>)]
+#	(role any <LookerStudioPermissionEntity>)+
 #	[nodetails]
 # gam <UserTypeEntity> update datastudiopermissions
 #	[([assettype report|datasource|all] [title <String>]
 #	  [owner <Emailddress>] [includetrashed]
 #	  [orderby title [ascending|descending]]) |
-#	 (assetids <DataStudioAssetIDEntity>)]
-#	(role editor|viewer <DataStudioPermissionEntity>)+
+#	 (assetids <LookerStudioAssetIDEntity>)]
+#	(role editor|viewer <LookerStudioPermissionEntity>)+
 #	[nodetails]
-def processDataStudioPermissions(users):
+def processLookerStudioPermissions(users):
   action = Act.Get()
   if action == Act.CREATE:
     action = Act.ADD
-  modifier = DATASTUDIO_PERMISSION_MODIFIER_MAP[action]
-  parameters, assetTypes = initDataStudioAssetSelectionParameters()
+  modifier = LOOKERSTUDIO_PERMISSION_MODIFIER_MAP[action]
+  parameters, assetTypes = initLookerStudioAssetSelectionParameters()
   permissions = {}
   assetIdEntity = None
   showDetails = True
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if getDataStudioAssetSelectionParameters(myarg, parameters, assetTypes):
+    if getLookerStudioAssetSelectionParameters(myarg, parameters, assetTypes):
       pass
     elif myarg in {'assetid', 'assetids'}:
-      assetIdEntity = getUserObjectEntity(Cmd.OB_USER_ENTITY, Ent.DATASTUDIO_ASSETID)
+      assetIdEntity = getUserObjectEntity(Cmd.OB_USER_ENTITY, Ent.LOOKERSTUDIO_ASSETID)
     elif myarg == 'role':
       permissions.setdefault('permissions', {})
       if action in {Act.ADD, Act.UPDATE}:
-        role = getChoice(DATASTUDIO_ADD_UPDATE_PERMISSION_ROLE_CHOICE_MAP, mapChoice=True)
+        role = getChoice(LOOKERSTUDIO_ADD_UPDATE_PERMISSION_ROLE_CHOICE_MAP, mapChoice=True)
       else:
-        role = getChoice(DATASTUDIO_DELETE_PERMISSION_ROLE_CHOICE_MAP, mapChoice=True)
+        role = getChoice(LOOKERSTUDIO_DELETE_PERMISSION_ROLE_CHOICE_MAP, mapChoice=True)
       permissions['permissions'].setdefault(role, {'members': []})
-      permissions['permissions'][role]['members'].extend(getEntityList(Cmd.OB_DATASTUDIO_ASSET_MEMBERS_ENTITY))
+      permissions['permissions'][role]['members'].extend(getEntityList(Cmd.OB_LOOKERSTUDIO_PERMISSION_ENTITY))
     elif myarg == 'nodetails':
       showDetails = False
     else:
@@ -61096,14 +61138,14 @@ def processDataStudioPermissions(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, ds, assets, jcount = _validateUserGetDataStudioAssetIds(user, i, count, assetIdEntity)
+    user, ds, assets, jcount = _validateUserGetLookerStudioAssetIds(user, i, count, assetIdEntity)
     if not ds:
       continue
     if assetIdEntity is None:
-      assets, jcount = _getDataStudioAssets(ds, user, i, count, parameters, assetTypes, 'nextPageToken,assets(name,title)', None)
+      assets, jcount = _getLookerStudioAssets(ds, user, i, count, parameters, assetTypes, 'nextPageToken,assets(name,title)', None)
       if assets is None:
         continue
-    entityPerformActionSubItemModifierNumItems([Ent.USER, user], Ent.DATASTUDIO_PERMISSION, modifier, jcount, Ent.DATASTUDIO_ASSET, i, count)
+    entityPerformActionSubItemModifierNumItems([Ent.USER, user], Ent.LOOKERSTUDIO_PERMISSION, modifier, jcount, Ent.LOOKERSTUDIO_ASSET, i, count)
     j = 0
     for asset in assets:
       j += 1
@@ -61112,18 +61154,18 @@ def processDataStudioPermissions(users):
           body = {'name': asset['name'], 'members': permissions['permissions'][role]['members']}
           if action in {Act.DELETE, Act.UPDATE}:
             results = callGAPI(ds.assets().permissions(), 'revokeAllPermissions',
-                               throwReasons=GAPI.DATASTUDIO_THROW_REASONS,
+                               throwReasons=GAPI.LOOKERSTUDIO_THROW_REASONS,
                                name=asset['name'], body=body)
           if action in {Act.ADD, Act.UPDATE}:
             body['role'] = role
             results = callGAPI(ds.assets().permissions(), 'addMembers',
-                               throwReasons=GAPI.DATASTUDIO_THROW_REASONS,
+                               throwReasons=GAPI.LOOKERSTUDIO_THROW_REASONS,
                                name=asset['name'], body=body)
-          entityActionPerformed([Ent.USER, user, Ent.DATASTUDIO_ASSET, asset['title'], Ent.DATASTUDIO_PERMISSION, ''], j, jcount)
+          entityActionPerformed([Ent.USER, user, Ent.LOOKERSTUDIO_ASSET, asset['title'], Ent.LOOKERSTUDIO_PERMISSION, ''], j, jcount)
           if showDetails:
-            _showDataStudioPermissions(user, asset, results, j, jcount, None)
+            _showLookerStudioPermissions(user, asset, results, j, jcount, None)
         except (GAPI.invalidArgument, GAPI.badRequest, GAPI.notFound, GAPI.permissionDenied) as e:
-          entityActionFailedWarning([Ent.USER, user, Ent.DATASTUDIO_ASSET, asset['title']], str(e), j, jcount)
+          entityActionFailedWarning([Ent.USER, user, Ent.LOOKERSTUDIO_ASSET, asset['title']], str(e), j, jcount)
           continue
         except GAPI.serviceNotAvailable:
           entityServiceNotApplicableWarning(Ent.USER, user, i, count)
@@ -61133,18 +61175,18 @@ def processDataStudioPermissions(users):
 #	[([assettype report|datasource|all] [title <String>]
 #	  [owner <Emailddress>] [includetrashed]
 #	  [orderby title [ascending|descending]]) |
-#	 (assetids <DataStudioAssetIDEntity>)]
+#	 (assetids <LookerStudioAssetIDEntity>)]
 #	[role editor|owner|viewer]
 #	[formatjson [quotechar <Character>]]
 # gam <UserTypeEntity> show datastudiopermissions
 #	[([assettype report|datasource|all] [title <String>]
 #	  [owner <Emailddress>] [includetrashed]
 #	  [orderby title [ascending|descending]]) |
-#	 (assetids <DataStudioAssetIDEntity>)[
+#	 (assetids <LookerStudioAssetIDEntity>)[
 #	[role editor|owner|viewer]
 #	[formatjson]
-def printShowDataStudioPermissions(users):
-  def _printDataStudioPermissions(user, asset, permissions):
+def printShowLookerStudioPermissions(users):
+  def _printLookerStudioPermissions(user, asset, permissions):
     row = flattenJSON(permissions, flattened={'User': user, 'assetId': asset['name']},
                       simpleLists=['members'], delimiter=delimiter)
     if not FJQC.formatJSON:
@@ -61156,19 +61198,19 @@ def printShowDataStudioPermissions(users):
   csvPF = CSVPrintFile(['User', 'assetId']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
-  parameters, assetTypes = initDataStudioAssetSelectionParameters()
+  parameters, assetTypes = initLookerStudioAssetSelectionParameters()
   assetIdEntity = None
   role = None
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif getDataStudioAssetSelectionParameters(myarg, parameters, assetTypes):
+    elif getLookerStudioAssetSelectionParameters(myarg, parameters, assetTypes):
       pass
     elif myarg in {'assetid', 'assetids'}:
-      assetIdEntity = getUserObjectEntity(Cmd.OB_USER_ENTITY, Ent.DATASTUDIO_ASSETID)
+      assetIdEntity = getUserObjectEntity(Cmd.OB_USER_ENTITY, Ent.LOOKERSTUDIO_ASSETID)
     elif myarg == 'role':
-      role = getChoice(DATASTUDIO_VIEW_PERMISSION_ROLE_CHOICE_MAP, mapChoice=True)
+      role = getChoice(LOOKERSTUDIO_VIEW_PERMISSION_ROLE_CHOICE_MAP, mapChoice=True)
     elif myarg == 'delimiter':
       delimiter = getCharacter()
     else:
@@ -61176,36 +61218,36 @@ def printShowDataStudioPermissions(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, ds, assets, jcount = _validateUserGetDataStudioAssetIds(user, i, count, assetIdEntity)
+    user, ds, assets, jcount = _validateUserGetLookerStudioAssetIds(user, i, count, assetIdEntity)
     if not ds:
       continue
     if assetIdEntity is None:
-      assets, jcount = _getDataStudioAssets(ds, user, i, count, parameters, assetTypes, 'nextPageToken,assets(name,title)', None)
+      assets, jcount = _getLookerStudioAssets(ds, user, i, count, parameters, assetTypes, 'nextPageToken,assets(name,title)', None)
       if assets is None:
         continue
     if not csvPF and not FJQC.formatJSON:
-      entityPerformActionNumItems([Ent.USER, user], jcount, Ent.DATASTUDIO_ASSET, i, count)
+      entityPerformActionNumItems([Ent.USER, user], jcount, Ent.LOOKERSTUDIO_ASSET, i, count)
     j = 0
     for asset in assets:
       j += 1
       try:
         permissions = callGAPI(ds.assets(), 'getPermissions',
-                               throwReasons=GAPI.DATASTUDIO_THROW_REASONS,
+                               throwReasons=GAPI.LOOKERSTUDIO_THROW_REASONS,
                                name=asset['name'], role=role)
       except (GAPI.invalidArgument, GAPI.badRequest, GAPI.notFound, GAPI.permissionDenied) as e:
-        entityActionFailedWarning([Ent.USER, user, Ent.DATASTUDIO_ASSET, asset['title']], str(e), j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.LOOKERSTUDIO_ASSET, asset['title']], str(e), j, jcount)
         continue
       except GAPI.serviceNotAvailable:
         entityServiceNotApplicableWarning(Ent.USER, user, i, count)
         break
       if not csvPF:
         Ind.Increment()
-        _showDataStudioPermissions(user, asset, permissions, j, jcount, FJQC)
+        _showLookerStudioPermissions(user, asset, permissions, j, jcount, FJQC)
         Ind.Decrement()
       else:
-        _printDataStudioPermissions(user, asset, permissions)
+        _printLookerStudioPermissions(user, asset, permissions)
   if csvPF:
-    csvPF.writeCSVfile('Data Studio Permissions')
+    csvPF.writeCSVfile('Looker Studio Permissions')
 
 def _validateSubkeyRoleGetGroups(user, role, origUser, userGroupLists, i, count):
   roleLower = role.lower()
@@ -61235,7 +61277,7 @@ def _addUserToGroups(cd, user, addGroupsSet, addGroups, i, count):
       entityActionPerformed([Ent.GROUP, group, role, user], j, jcount)
     except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
       entityUnknownWarning(Ent.GROUP, group, j, jcount)
-    except (GAPI.duplicate, GAPI.cyclicMembershipsNotAllowed, GAPI.conditionNotMet) as e:
+    except (GAPI.duplicate, GAPI.cyclicMembershipsNotAllowed, GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
       entityActionFailedWarning([Ent.GROUP, group, role, user], str(e), j, jcount)
     except GAPI.conflict:
       entityActionPerformedMessage([Ent.GROUP, group, role, user], Msg.ACTION_MAY_BE_DELAYED, j, jcount)
@@ -61302,7 +61344,7 @@ def _deleteUserFromGroups(cd, user, deleteGroupsSet, deleteGroups, i, count):
       entityActionPerformed([Ent.GROUP, group, role, user], j, jcount)
     except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
       entityUnknownWarning(Ent.GROUP, group, j, jcount)
-    except (GAPI.memberNotFound, GAPI.invalidMember, GAPI.conditionNotMet) as e:
+    except (GAPI.memberNotFound, GAPI.invalidMember, GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.GROUP, group], str(e), j, jcount)
     except GAPI.conflict:
       entityActionPerformedMessage([Ent.GROUP, group, role, user], Msg.ACTION_MAY_BE_DELAYED, j, jcount)
@@ -61402,7 +61444,7 @@ def _updateUserGroups(cd, user, updateGroupsSet, updateGroups, i, count):
       entityActionPerformed([Ent.GROUP, group, role, user], j, jcount)
     except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
       entityUnknownWarning(Ent.GROUP, group, j, jcount)
-    except (GAPI.memberNotFound, GAPI.invalidMember, GAPI.conditionNotMet) as e:
+    except (GAPI.memberNotFound, GAPI.invalidMember, GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.GROUP, group], str(e), j, jcount)
   Ind.Decrement()
 
@@ -61533,7 +61575,7 @@ def syncUserWithGroups(users):
                                   'delivery_settings': result.get('delivery_settings', DELIVERY_SETTINGS_UNDEFINED)}
       except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
         entityUnknownWarning(Ent.GROUP, groupEmail, i, count)
-      except (GAPI.memberNotFound, GAPI.invalidMember, GAPI.conditionNotMet) as e:
+      except (GAPI.memberNotFound, GAPI.invalidMember, GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.GROUP, groupEmail], str(e), i, count)
     currGroupsSet = set(currGroups)
     syncGroupsSet = set(syncGroups)
@@ -61649,7 +61691,7 @@ def checkUserInGroups(users):
           else:
             csvPF.WriteRow({'user': user, 'group': groupEmail, 'role': notMemberOrRole})
           _setCheckError()
-        except (GAPI.invalidMember, GAPI.conditionNotMet) as e:
+        except (GAPI.invalidMember, GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
           entityActionFailedWarning([Ent.USER, user, Ent.GROUP, groupEmail], str(e), j, jcount)
           _setCheckError()
       else:
@@ -61671,6 +61713,9 @@ def checkUserInGroups(users):
             _setCheckError()
         except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
           entityUnknownWarning(Ent.GROUP, groupEmail, j, jcount)
+          _setCheckError()
+        except (GAPI.invalidMember, GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
+          entityActionFailedWarning([Ent.USER, user, Ent.GROUP, groupEmail], str(e), j, jcount)
           _setCheckError()
     Ind.Decrement()
   if csvPF:
@@ -61793,7 +61838,7 @@ def printShowUserGroups(users):
             csvPF.WriteRow({'User': user, 'Group': groupEmail, 'Role': role, 'Status': status, 'Delivery': delivery_settings})
       except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
         entityUnknownWarning(Ent.GROUP, groupEmail, j, jcount)
-      except (GAPI.memberNotFound, GAPI.invalidMember, GAPI.conditionNotMet) as e:
+      except (GAPI.memberNotFound, GAPI.invalidMember, GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.GROUP, groupEmail], str(e), j, jcount)
     if countsOnly:
       if not csvPF:
@@ -61930,7 +61975,7 @@ def printShowGroupTree(users):
         except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
           entityUnknownWarning(Ent.GROUP, groupEmail, j, jcount)
           continue
-        except (GAPI.memberNotFound, GAPI.invalidMember, GAPI.conditionNotMet) as e:
+        except (GAPI.memberNotFound, GAPI.invalidMember, GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
           entityActionFailedWarning([Ent.USER, user, Ent.GROUP, groupEmail], str(e), j, jcount)
           continue
       else:
@@ -70558,7 +70603,7 @@ USER_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_CHATSPACE:		createChatSpace,
   Cmd.ARG_CLASSROOMINVITATION:	createClassroomInvitations,
   Cmd.ARG_CONTACTDELEGATE:	processContactDelegates,
-  Cmd.ARG_DATASTUDIOPERMISSION:	processDataStudioPermissions,
+  Cmd.ARG_LOOKERSTUDIOPERMISSION:	processLookerStudioPermissions,
   Cmd.ARG_DELEGATE:		processDelegates,
   Cmd.ARG_DRIVEFILE:		createDriveFile,
   Cmd.ARG_DRIVEFILEACL:		createDriveFileACL,
@@ -70668,7 +70713,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHATSPACE:	deleteChatSpace,
       Cmd.ARG_CLASSROOMINVITATION:	deleteClassroomInvitations,
       Cmd.ARG_CONTACTDELEGATE:	processContactDelegates,
-      Cmd.ARG_DATASTUDIOPERMISSION:	processDataStudioPermissions,
+      Cmd.ARG_LOOKERSTUDIOPERMISSION:	processLookerStudioPermissions,
       Cmd.ARG_DELEGATE:		processDelegates,
       Cmd.ARG_DRIVEFILE:	deleteDriveFile,
       Cmd.ARG_DRIVEFILEACL:	deleteDriveFileACLs,
@@ -70817,8 +70862,8 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CLASSROOMINVITATION:	printShowClassroomInvitations,
       Cmd.ARG_CLASSROOMPROFILE:	printShowClassroomProfile,
       Cmd.ARG_CONTACTDELEGATE:	printShowContactDelegates,
-      Cmd.ARG_DATASTUDIOASSET:	printShowDataStudioAssets,
-      Cmd.ARG_DATASTUDIOPERMISSION:	printShowDataStudioPermissions,
+      Cmd.ARG_LOOKERSTUDIOASSET:	printShowLookerStudioAssets,
+      Cmd.ARG_LOOKERSTUDIOPERMISSION:	printShowLookerStudioPermissions,
       Cmd.ARG_DELEGATE:		printShowDelegates,
       Cmd.ARG_DISKUSAGE:	printDiskUsage,
       Cmd.ARG_DRIVEACTIVITY:	printDriveActivity,
@@ -70910,8 +70955,8 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CLASSROOMPROFILE:	printShowClassroomProfile,
       Cmd.ARG_CONTACTDELEGATE:	printShowContactDelegates,
       Cmd.ARG_COUNT: 		showCountUser,
-      Cmd.ARG_DATASTUDIOASSET:	printShowDataStudioAssets,
-      Cmd.ARG_DATASTUDIOPERMISSION:	printShowDataStudioPermissions,
+      Cmd.ARG_LOOKERSTUDIOASSET:	printShowLookerStudioAssets,
+      Cmd.ARG_LOOKERSTUDIOPERMISSION:	printShowLookerStudioPermissions,
       Cmd.ARG_DELEGATE:		printShowDelegates,
       Cmd.ARG_DISKUSAGE:	printDiskUsage,
       Cmd.ARG_DRIVEACTIVITY:	printDriveActivity,
@@ -71029,7 +71074,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CALENDARACL:	updateCalendarACLs,
       Cmd.ARG_CHATMESSAGE:	updateChatMessage,
       Cmd.ARG_CHATSPACE:	updateChatSpace,
-      Cmd.ARG_DATASTUDIOPERMISSION:	processDataStudioPermissions,
+      Cmd.ARG_LOOKERSTUDIOPERMISSION:	processLookerStudioPermissions,
       Cmd.ARG_DELEGATE:		updateDelegates,
       Cmd.ARG_DRIVEFILE:	updateDriveFile,
       Cmd.ARG_DRIVEFILEACL:	updateDriveFileACLs,
@@ -71110,8 +71155,12 @@ USER_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_CONTACTPHOTO:		Cmd.ARG_PEOPLECONTACTPHOTO,
   Cmd.ARG_CONTACTPHOTOS:	Cmd.ARG_PEOPLECONTACTPHOTO,
   Cmd.ARG_COUNTS:		Cmd.ARG_COUNT,
-  Cmd.ARG_DATASTUDIOASSETS:	Cmd.ARG_DATASTUDIOASSET,
-  Cmd.ARG_DATASTUDIOPERMISSIONS:	Cmd.ARG_DATASTUDIOPERMISSION,
+  Cmd.ARG_DATASTUDIOASSET:	Cmd.ARG_LOOKERSTUDIOASSET,
+  Cmd.ARG_DATASTUDIOPERMISSION:	Cmd.ARG_LOOKERSTUDIOPERMISSION,
+  Cmd.ARG_DATASTUDIOASSETS:	Cmd.ARG_LOOKERSTUDIOASSET,
+  Cmd.ARG_DATASTUDIOPERMISSIONS:	Cmd.ARG_LOOKERSTUDIOPERMISSION,
+  Cmd.ARG_LOOKERSTUDIOASSETS:	Cmd.ARG_LOOKERSTUDIOASSET,
+  Cmd.ARG_LOOKERSTUDIOPERMISSIONS:	Cmd.ARG_LOOKERSTUDIOPERMISSION,
   Cmd.ARG_DELEGATES:		Cmd.ARG_DELEGATE,
   Cmd.ARG_DOMAINCONTACT:	Cmd.ARG_PEOPLECONTACT,
   Cmd.ARG_DOMAINCONTACTS:	Cmd.ARG_PEOPLECONTACT,

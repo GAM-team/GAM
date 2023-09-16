@@ -407,6 +407,19 @@ print_agu_domains
           gam print groups
           gam print|show group-members
           gam print users
+	This allows predefining the list of domains so they don't have to be specified in each command.
+        Default: Blank
+print_cros_ous
+        A comma separated list of org unit that are used in these commands:
+          gam print cros
+          gam print crosactivity
+	This allows predefining the list of org units so they don't have to be specified in each command.
+        Default: Blank
+print_cros_ous_and_children
+        A comma separated list of org unit names that are used in these commands:
+          gam print cros
+          gam print crosactivity
+	This allows predefining the list of org units so they don't have to be specified in each command.
         Default: Blank
 process_wait_limit
 	When processing batch/CSV files, how long (in seconds) GAM should wait for all batch|csv processes to complete
@@ -641,6 +654,8 @@ Section: DEFAULT
   output_timeformat = ''
   people_max_results = 100
   print_agu_domains = ''
+  print_cros_ous = ''
+  print_cros_ous_and_children = ''
   process_wait_limit = 0
   quick_cros_move = false
   quick_info_user = false
@@ -823,6 +838,8 @@ output_dateformat = ''
 output_timeformat = ''
 people_max_results = 100
 print_agu_domains = ''
+print_cros_ous = ''
+print_cros_ous_and_children = ''
 process_wait_limit = 0
 quick_cros_move = False
 quick_info_user = False

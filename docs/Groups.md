@@ -429,6 +429,7 @@ gam print groups [todrive <ToDriveAttribute>*]
 ```
 By default, all groups in the account are displayed, these options allow selection of subsets of groups:
 * `domain|domains <DomainNameEntity>` - Limit display to groups in the domains specified by `<DomainNameEntity>`
+  * You can predefine this list with the `print_agu_domains` variable in `gam.cfg`.
 * `member <EmailItem>` - Limit display to groups that contain `<EmailItem>` as a member; mutually exclusive with `query <QueryGroup>`
 * `showownedby <EmailItem>` - Limit display to groups that contain `<EmailItem>` as an owner; mutually exclusive with `query <QueryGroup>`
 * `(query <QueryGroup>)|(queries <QueryGroupList>)` - Limit groups to those that match a query; each query is run against each domain

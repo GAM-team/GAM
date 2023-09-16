@@ -556,9 +556,13 @@ is also specified, the query applies to devices within the OUs.
 
 - `(query <QueryCrOS>)|(queries <QueryCrOSList>)` - Select CrOS devices that match a query
 - `limittoou|cros_ou <OrgUnitItem>` - Select CrOS devices directly in the OU `<OrgUnitItem>`
+  - You can predefine this item with the `print_cros_ous` variable in `gam.cfg`.
 - `cros_ou_and_children <OrgUnitItem>` - Select CrOS devices in the OU `<OrgUnitItem>` and its sub OUs
+  - You can predefine this item with the `print_cros_ous_and_children` variable in `gam.cfg`.
 - `cros_ous <OrgUnitList>` - Select CrOS devices directly in the OUs `<OrgUnitList>`
+  - You can predefine this list with the `print_cros_ous` variable in `gam.cfg`.
 - `cros_ous_and_children <OrgUnitList>` - Select CrOS devices in the OUs `<OrgUnitList>` and their sub OUs
+  - You can predefine this list with the `print_cros_ous_and_children` variable in `gam.cfg`.
 
 Use the `querytime<String> <Time>` option to allow times, usually relative, to be substituted into the `query <QueryCrOS>` and `queries <QueryCrOSList>` options.
 The `querytime<String> <Time>` value replaces the string `#querytime<String>#` in any queries.
@@ -704,9 +708,13 @@ is also specified, the query applies to devices within the OUs.
 
 - `(query <QueryCrOS>)|(queries <QueryCrOSList>)` - Select CrOS devices that match a query
 - `limittoou|cros_ou <OrgUnitItem>` - Select CrOS devices directly in the OU `<OrgUnitItem>`
+  - You can predefine this item with the `print_cros_ous` variable in `gam.cfg`.
 - `cros_ou_and_children <OrgUnitItem>` - Select CrOS devices in the OU `<OrgUnitItem>` and its sub OUs
+  - You can predefine this item with the `print_cros_ous_and_children` variable in `gam.cfg`.
 - `cros_ous <OrgUnitList>` - Select CrOS devices directly in the OUs `<OrgUnitList>`
+  - You can predefine this list with the `print_cros_ous` variable in `gam.cfg`.
 - `cros_ous_and_children <OrgUnitList>` - Select CrOS devices in the OUs `<OrgUnitList>` and their sub OUs
+  - You can predefine this list with the `print_cros_ous_and_children` variable in `gam.cfg`.
 
 Use the `querytime<String> <Time>` option to allow times, usually relative, to be substituted into the `query <QueryCrOS>` and `queries <QueryCrOSList>` options.
 The `querytime<String> <Time>` value replaces the string `#querytime<String>#` in any queries.

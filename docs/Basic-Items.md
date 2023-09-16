@@ -371,12 +371,6 @@
 <CourseWorkState> ::= draft|published|deleted
 <CrOSID> ::= <String>
 <CustomerID> ::= <String>
-<DataStudioAssetID> ::= <String>
-<DataStudioPermission> ::=
-        user:<EmailAddress>|
-        group:<EmailAddress>|
-        domain:<DomainName>|
-        serviceAccount:<EmailAddress>
 <DeliverySetting> ::=
         allmail|
         abridged|daily|
@@ -452,6 +446,12 @@
 <LabelID> ::= Label_<String>
 <LabelName> ::= <String>
 <LabelReplacement> ::= <String>
+<LookerStudioAssetID> ::= <String>
+<LookerStudioPermission> ::=
+        user:<EmailAddress>|
+        group:<EmailAddress>|
+        domain:<DomainName>|
+        serviceAccount:<EmailAddress>
 <Marker> ::= <String>
 <MatterItem> ::= <UniqueID>|<String>
 <MatterState> ::= open|closed|deleted
