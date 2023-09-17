@@ -801,6 +801,9 @@ def deprecatedArgument(argument):
   Cmd.Advance()
   stderrWarningMsg(f'{Cmd.ARGUMENT_ERROR_NAMES[Cmd.ARGUMENT_DEPRECATED][1]}: {Msg.IGNORED} <{argument}>')
 
+def deprecatedArgumentExit(argument):
+  usageErrorExit(f'{Cmd.ARGUMENT_ERROR_NAMES[Cmd.ARGUMENT_DEPRECATED][1]}: <{argument}>')
+
 # Choices is the valid set of choices that was expected
 def formatChoiceList(choices):
   choiceList = [c if c else "''" for c in choices]
@@ -15888,7 +15891,7 @@ def doCreateAdmin():
     result = callGAPI(cd.roleAssignments(), 'insert',
                       throwReasons=[GAPI.INTERNAL_ERROR, GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND,
                                     GAPI.FORBIDDEN, GAPI.CUSTOMER_EXCEEDED_ROLE_ASSIGNMENTS_LIMIT, GAPI.SERVICE_NOT_AVAILABLE,
-                                    GAPI.INVALID_ORGUNIT, GAPI.DUPLICATE],
+                                    GAPI.INVALID_ORGUNIT, GAPI.DUPLICATE, GAPI.CONDITION_NOT_MET],
                       retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       customer=GC.Values[GC.CUSTOMER_ID], body=body, fields='roleAssignmentId,assigneeType')
     assigneeType = result.get('assigneeType')
@@ -15904,7 +15907,7 @@ def doCreateAdmin():
     pass
   except (GAPI.badRequest, GAPI.customerNotFound):
     accessErrorExit(cd)
-  except (GAPI.forbidden, GAPI.customerExceededRoleAssignmentsLimit, GAPI.serviceNotAvailable) as e:
+  except (GAPI.forbidden, GAPI.customerExceededRoleAssignmentsLimit, GAPI.serviceNotAvailable, GAPI.conditionNotMet) as e:
     entityActionFailedWarning([Ent.ADMINISTRATOR, user, Ent.ADMIN_ROLE, role], str(e))
   except GAPI.invalidOrgunit:
     entityActionFailedWarning([Ent.ADMINISTRATOR, user], Msg.INVALID_ORGUNIT)
@@ -16306,7 +16309,23 @@ def doShowTransferApps():
     Ind.Decrement()
   Ind.Decrement()
 
-# gam create org|ou <String> [description <String>] [parent <OrgUnitItem>] [inherit|noinherit|(blockinheritance <Boolean>)] [buildpath]
+def _getOrgInheritance(myarg, body):
+  if myarg == 'noinherit':
+    Cmd.Backup()
+    deprecatedArgumentExit(myarg)
+  elif myarg == 'inherit':
+    body['blockInheritance'] = False
+  elif myarg in {'blockinheritance', 'inheritanceblocked'}:
+    location = Cmd.Location()-1
+    if getBoolean():
+      Cmd.SetLocation(location)
+      deprecatedArgumentExit(myarg)
+    body['blockInheritance'] = False
+  else:
+    return False
+  return True
+  
+# gam create org|ou <String> [description <String>] [parent <OrgUnitItem>] [inherit|(blockinheritance False)] [buildpath]
 def doCreateOrg():
 
   def _createOrg(body, parentPath, fullPath):
@@ -16335,12 +16354,8 @@ def doCreateOrg():
       body['description'] = getStringWithCRsNLs()
     elif myarg == 'parent':
       parent = getOrgUnitItem()
-    elif myarg == 'noinherit':
-      body['blockInheritance'] = True
-    elif myarg == 'inherit':
-      body['blockInheritance'] = False
-    elif myarg in {'blockinheritance', 'inheritanceblocked'}:
-      body['blockInheritance'] = getBoolean()
+    elif _getOrgInheritance(myarg, body):
+      pass
     elif myarg == 'buildpath':
       buildPath = True
     else:
@@ -16624,12 +16639,8 @@ def _doUpdateOrgs(entityList):
           body['parentOrgUnitId'] = parent
         else:
           body['parentOrgUnitPath'] = parent
-      elif myarg == 'noinherit':
-        body['blockInheritance'] = True
-      elif myarg == 'inherit':
-        body['blockInheritance'] = False
-      elif myarg in {'blockinheritance', 'inheritanceblocked'}:
-        body['blockInheritance'] = getBoolean()
+      elif _getOrgInheritance(myarg, body):
+        pass
       else:
         unknownArgumentExit()
     i = 0
@@ -16649,7 +16660,7 @@ def _doUpdateOrgs(entityList):
       except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
         checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, orgUnitPath)
 
-# gam update orgs|ous <OrgUnitEntity> [name <String>] [description <String>] [parent <OrgUnitItem>] [inherit|noinherit|(blockinheritance <Boolean>)]
+# gam update orgs|ous <OrgUnitEntity> [name <String>] [description <String>] [parent <OrgUnitItem>] [inherit|(blockinheritance False)]
 # gam update orgs|ous <OrgUnitEntity> add|move <CrosTypeEntity> [quickcrosmove [<Boolean>]]
 # gam update orgs|ous <OrgUnitEntity> add|move <UserTypeEntity>
 # gam update orgs|ous <OrgUnitEntity> sync <CrosTypeEntity> [removetoou <OrgUnitItem>] [quickcrosmove [<Boolean>]]
@@ -16657,7 +16668,7 @@ def _doUpdateOrgs(entityList):
 def doUpdateOrgs():
   _doUpdateOrgs(getEntityList(Cmd.OB_ORGUNIT_ENTITY, shlexSplit=True))
 
-# gam update org|ou <OrgUnitItem> [name <String>] [description <String>]  [parent <OrgUnitItem>] [inherit|noinherit|(blockinheritance <Boolean>)]
+# gam update org|ou <OrgUnitItem> [name <String>] [description <String>]  [parent <OrgUnitItem>] [inherit|(blockinheritance False)]
 # gam update org|ou <OrgUnitItem> add|move <CrosTypeEntity> [quickcrosmove [<Boolean>]]
 # gam update org|ou <OrgUnitItem> add|move <UserTypeEntity>
 # gam update org|ou <OrgUnitItem> sync <CrosTypeEntity> [removetoou <OrgUnitItem>] [quickcrosmove [<Boolean>]]

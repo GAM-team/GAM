@@ -10,6 +10,17 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.63.16
+
+Arguments `noinherit`, `blockinheritance` and `blockinheritance true` have been removed from the following
+commands due to an upcoming API change that no longer allows blocking OU setting inheritance.
+Arguments `inherit` and `blockinheritance false` are still valid.
+```
+gam create org <OrgUnitPath>
+gam update org <OrgUnitItem>
+gam update orgs <OrgUnitEntity>
+```
+
 ### 6.63.15
 
 Added `print_cros_ous` and `print_cros_ous_and_children` variables to `gam.cfg` that provide a default list of OUs for these commands:
