@@ -59885,7 +59885,9 @@ def doPrintShowOwnership():
           if item['value'] in foundIds:
             break
           fileInfo['id'] = item['value']
-        elif item['name'] == 'owner':
+        elif event['name'] == 'change_owner' and item['name'] == 'new_owner':
+          fileInfo['Owner'] = item['value']
+        elif event['name'] != 'change_owner' and item['name'] == 'owner':
           fileInfo['Owner'] = item['value']
         elif item['name'] == 'doc_title':
           fileInfo[fileNameTitle] = item['value']

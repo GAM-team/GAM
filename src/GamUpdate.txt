@@ -2,6 +2,10 @@
 
 Merged GAM-Team version
 
+6.63.18
+
+Updated `gam print|show ownership` to show the correct file owner when the most recent event is `change_owner`.
+
 6.63.17
 
 Added support for Duet AI license.

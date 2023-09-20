@@ -318,7 +318,7 @@ you can specify `permissions` to get all of the fields, enumerate the specific f
 specify `basicpermissions` and additional permission fields, e.g., `permissions.displayName`.
 
 ```
-<<DriveOrderByFieldName> ::=
+<DriveOrderByFieldName> ::=
         createddate|createdtime|
         folder|
         modifiedbyme|modifiedbymedate|modifiedbymetime|modifiedbyuser|
@@ -630,7 +630,7 @@ gam <UserTypeEntity> show filecounts
         [summary none|only|plus] [summaryuser <String>] [showsize]
 ```
 
-By default, print filecounts displays counts of all files owned by the specified `<UserTypeEntity>`.
+By default, print filecounts displays counts of all files owned by the specified [`<UserTypeEntity>`](Collections-of-Users).
 
 The `showsize` option displays the total size (in bytes) of the files counted.
 
@@ -860,7 +860,7 @@ gam <UserTypeEntity> print|show filelist [todrive <ToDriveAttribute>*]
         (addcsvdata <FieldName> <String>)*
         [formatjson [quotechar <Character>]]
 ```
-By default, `print filelist` displays all files owned by the specified `<UserTypeEntity>`.
+By default, `print filelist` displays all files owned by the specified [`<UserTypeEntity>`](https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Users)
 
 When `allfields` is specified (or no fields are specified), use `showshareddrivepermissions` to display permissions
 when shared drives are queried/selected. In this case, the Drive API returns the permission IDs
