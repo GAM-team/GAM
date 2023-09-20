@@ -106,6 +106,7 @@ Section: DEFAULT
   admin_email = ''
   api_calls_rate_check = false
   api_calls_rate_limit = 100
+  api_calls_tries_limit = 10
   auto_batch_min = 0
   bail_on_internal_error_tries = 2
   batch_size = 50
@@ -333,7 +334,7 @@ writes the credentials into the file oauth2.txt.
 admin@server:/Users/admin/bin/gamadv-xtd3$ rm -f /Users/admin/GAMConfig/oauth2.txt
 admin@server:/Users/admin/bin/gamadv-xtd3$ ./gam version
 WARNING: Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, Item: oauth2_txt, Value: /Users/admin/GAMConfig/oauth2.txt, Not Found
-GAMADV-XTD3 6.63.16 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
+GAMADV-XTD3 6.63.17 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
 Ross Scroggs <ross.scroggs@gmail.com>
 Python 3.10.8 64-bit final
 MacOS High Sierra 10.13.6 x86_64
@@ -534,6 +535,7 @@ Section: DEFAULT
   admin_email = ''
   api_calls_rate_check = false
   api_calls_rate_limit = 100
+  api_calls_tries_limit = 10
   auto_batch_min = 0
   bail_on_internal_error_tries = 2
   batch_size = 50
@@ -735,6 +737,7 @@ Section: DEFAULT
   admin_email = ''
   api_calls_rate_check = false
   api_calls_rate_limit = 100
+  api_calls_tries_limit = 10
   auto_batch_min = 0
   bail_on_internal_error_tries = 2
   batch_size = 50
@@ -981,7 +984,7 @@ writes the credentials into the file oauth2.txt.
 C:\GAMADV-XTD3>del C:\GAMConfig\oauth2.txt
 C:\GAMADV-XTD3>gam version
 WARNING: Config File: C:\GAMConfig\gam.cfg, Section: DEFAULT, Item: oauth2_txt, Value: C:\GAMConfig\oauth2.txt, Not Found
-GAMADV-XTD3 6.63.16 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
+GAMADV-XTD3 6.63.17 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
 Ross Scroggs <ross.scroggs@gmail.com>
 Python 3.11.5 64-bit final
 Windows-10-10.0.17134 AMD64
@@ -1182,6 +1185,7 @@ Section: DEFAULT
   admin_email = ''
   api_calls_rate_check = false
   api_calls_rate_limit = 100
+  api_calls_tries_limit = 10
   auto_batch_min = 0
   bail_on_internal_error_tries = 2
   batch_size = 50

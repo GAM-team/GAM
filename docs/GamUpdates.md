@@ -10,6 +10,16 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.63.17
+
+Added support for Duet AI license.
+* ProductID - 101047
+* SKUID - 101047001 | duetai
+
+Added `api_call_tries_limit` variable to `gam.cfg` that limits the number of tries
+for Google API calls that return an error that indicates a retry should be performed.
+The default value is 10 and the range of allowable values is 3-10.
+
 ### 6.63.16
 
 Arguments `noinherit`, `blockinheritance` and `blockinheritance true` have been removed from the following

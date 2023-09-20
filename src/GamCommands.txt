@@ -240,6 +240,7 @@ If an item contains spaces, it should be surrounded by ".
         101038 |
         101039 |
         101040 |
+        101047 |
         Google-Apps |
         Google-Chrome-Device-Management |
         Google-Drive-storage |
@@ -264,6 +265,7 @@ If an item contains spaces, it should be surrounded by ".
         cloudidentity | identity | 1010010001 |
         cloudidentitypremium | identitypremium | 1010050001 |
         cloudsearch | 1010350001 |
+        duetai | 101047001 |
         gsuitebasic | gafb | gafw | basic | Google-Apps-For-Business |
         gsuitebusiness | gau | gsb | unlimited | Google-Apps-Unlimited |
         gsuitebusinessarchived | gsbau | businessarchived | 1010340002 |

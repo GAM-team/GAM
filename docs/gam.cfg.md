@@ -61,6 +61,11 @@ api_calls_rate_limit
         Limit on number of Google API calls per 60 seconds
         Default: 1000
         Range: 100 - Unlimited
+api_calls_tries_limit
+        Limit the number of tries for Google API calls that return an error
+        that indicates a retry should be performed
+        Default: 10
+        Range: 3-10
 auto_batch_min
         Automatically generate gam batch command if number of users
         specified in gam users xxx command exceeds this number
@@ -582,6 +587,7 @@ Section: DEFAULT
   admin_email = ''
   api_calls_rate_check = false
   api_calls_rate_limit = 100
+  api_calls_tries_limit = 10
   auto_batch_min = 0
   bail_on_internal_error_tries = 2
   batch_size = 50
@@ -773,6 +779,7 @@ activity_max_results = 100
 admin_email = ''
 api_calls_rate_check = false
 api_calls_rate_limit = 1000
+api_calls_tries_limit = 10
 auto_batch_min = 0
 bail_on_internal_error_tries = 2
 batch_size = 50

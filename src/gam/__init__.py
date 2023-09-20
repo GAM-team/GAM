@@ -3054,15 +3054,15 @@ def getGSheetData():
     f = TemporaryFile(mode='w+', encoding=UTF8)
     if GC.Values[GC.DEBUG_LEVEL] > 0:
       sys.stderr.write(f'Debug: spreadsheetUrl: {spreadsheetUrl}\n')
-    retries = 3
-    for n in range(1, retries+1):
+    triesLimit = 3
+    for n in range(1, triesLimit+1):
       _, content = drive._http.request(uri=spreadsheetUrl, method='GET')
 # Check for HTML error message instead of data
       if content[0:15] != b'<!DOCTYPE html>':
         break
       tg = HTML_TITLE_PATTERN.match(content[0:600].decode('utf-8'))
       errMsg = tg.group(1) if tg else 'Unknown error'
-      getGDocSheetDataRetryWarning([Ent.USER, user, Ent.SPREADSHEET, result['name'], sheetEntity['sheetType'], sheetEntity['sheetValue']], errMsg, n, retries)
+      getGDocSheetDataRetryWarning([Ent.USER, user, Ent.SPREADSHEET, result['name'], sheetEntity['sheetType'], sheetEntity['sheetValue']], errMsg, n, triesLimit)
       time.sleep(20)
     else:
       getGDocSheetDataFailedExit([Ent.USER, user, Ent.SPREADSHEET, result['name'], sheetEntity['sheetType'], sheetEntity['sheetValue']], errMsg)
@@ -4553,16 +4553,16 @@ def getClientCredentials(forceRefresh=False, forceWrite=False, filename=None, ap
     if not credentials:
       invalidOauth2TxtExit('')
     if credentials.expired or forceRefresh:
-      retries = 3
-      for n in range(1, retries+1):
+      triesLimit = 3
+      for n in range(1, triesLimit+1):
         try:
           credentials.refresh(transportCreateRequest())
           if writeCreds or forceWrite:
             writeClientCredentials(credentials, filename or GC.Values[GC.OAUTH2_TXT])
           break
         except (httplib2.HttpLib2Error, google.auth.exceptions.TransportError, RuntimeError) as e:
-          if n != retries:
-            waitOnFailure(n, retries, NETWORK_ERROR_RC, str(e))
+          if n != triesLimit:
+            waitOnFailure(n, triesLimit, NETWORK_ERROR_RC, str(e))
             continue
           handleServerError(e)
         except google.auth.exceptions.RefreshError as e:
@@ -4576,10 +4576,10 @@ def getClientCredentials(forceRefresh=False, forceWrite=False, filename=None, ap
           handleOAuthTokenError(e, False)
   return credentials
 
-def waitOnFailure(n, retries, error_code, error_message):
+def waitOnFailure(n, triesLimit, error_code, error_message):
   delta = min(2 ** n, 60)+float(random.randint(1, 1000))/1000
   if n > 3:
-    writeStderr(f'Temporary error: {error_code} - {error_message}, Backing off: {int(delta)} seconds, Retry: {n}/{retries}\n')
+    writeStderr(f'Temporary error: {error_code} - {error_message}, Backing off: {int(delta)} seconds, Retry: {n}/{triesLimit}\n')
     flushStderr()
   time.sleep(delta)
   if GC.Values[GC.SHOW_API_CALLS_RETRY_DATA]:
@@ -4614,8 +4614,8 @@ def getService(api, httpObj):
       clearServiceCache(service)
     return service
   if not hasLocalJSON:
-    retries = 3
-    for n in range(1, retries+1):
+    triesLimit = 3
+    for n in range(1, triesLimit+1):
       try:
         service = googleapiclient.discovery.build(api, version, http=httpObj, cache_discovery=False,
                                                   discoveryServiceUrl=DISCOVERY_URIS[v2discovery], static_discovery=False)
@@ -4627,20 +4627,20 @@ def getService(api, httpObj):
       except googleapiclient.errors.UnknownApiNameOrVersion as e:
         systemErrorExit(GOOGLE_API_ERROR_RC, Msg.UNKNOWN_API_OR_VERSION.format(str(e), __author__))
       except (googleapiclient.errors.InvalidJsonError, KeyError, ValueError) as e:
-        if n != retries:
-          waitOnFailure(n, retries, INVALID_JSON_RC, str(e))
+        if n != triesLimit:
+          waitOnFailure(n, triesLimit, INVALID_JSON_RC, str(e))
           continue
         systemErrorExit(INVALID_JSON_RC, str(e))
       except (http_client.ResponseNotReady, OSError, googleapiclient.errors.HttpError) as e:
         errMsg = f'Connection error: {str(e) or repr(e)}'
-        if n != retries:
-          waitOnFailure(n, retries, SOCKET_ERROR_RC, errMsg)
+        if n != triesLimit:
+          waitOnFailure(n, triesLimit, SOCKET_ERROR_RC, errMsg)
           continue
         systemErrorExit(SOCKET_ERROR_RC, errMsg)
       except (httplib2.HttpLib2Error, google.auth.exceptions.TransportError, RuntimeError) as e:
-        if n != retries:
+        if n != triesLimit:
           httpObj.connections = {}
-          waitOnFailure(n, retries, NETWORK_ERROR_RC, str(e))
+          waitOnFailure(n, triesLimit, NETWORK_ERROR_RC, str(e))
           continue
         handleServerError(e)
   disc_file, discovery = readDiscoveryFile(f'{api}-{version}')
@@ -4897,27 +4897,28 @@ def checkGDataError(e, service):
 
 def callGData(service, function,
               bailOnInternalServerError=False, softErrors=False,
-              throwErrors=None, retryErrors=None,
+              throwErrors=None, retryErrors=None, triesLimit=0,
               **kwargs):
   if throwErrors is None:
     throwErrors = []
   if retryErrors is None:
     retryErrors = []
+  if triesLimit == 0:
+    triesLimit = GC.Values[GC.API_CALLS_TRIES_LIMIT]
   allRetryErrors = GDATA.NON_TERMINATING_ERRORS+retryErrors
   method = getattr(service, function)
-  retries = 10
   if GC.Values[GC.API_CALLS_RATE_CHECK]:
     checkAPICallsRate()
-  for n in range(1, retries+1):
+  for n in range(1, triesLimit+1):
     try:
       return method(**kwargs)
     except (gdata.service.RequestError, gdata.apps.service.AppsForYourDomainException) as e:
       error_code, error_message = checkGDataError(e, service)
-      if (n != retries) and (error_code in allRetryErrors):
+      if (n != triesLimit) and (error_code in allRetryErrors):
         if (error_code == GDATA.INTERNAL_SERVER_ERROR and
             bailOnInternalServerError and n == GC.Values[GC.BAIL_ON_INTERNAL_ERROR_TRIES]):
           raise GDATA.ERROR_CODE_EXCEPTION_MAP[error_code](error_message)
-        waitOnFailure(n, retries, error_code, error_message)
+        waitOnFailure(n, triesLimit, error_code, error_message)
         continue
       if error_code in throwErrors:
         if error_code in GDATA.ERROR_CODE_EXCEPTION_MAP:
@@ -4930,8 +4931,8 @@ def callGData(service, function,
         APIAccessDeniedExit()
       systemErrorExit(GOOGLE_API_ERROR_RC, f'{error_code} - {error_message}')
     except (httplib2.HttpLib2Error, google.auth.exceptions.TransportError, RuntimeError) as e:
-      if n != retries:
-        waitOnFailure(n, retries, NETWORK_ERROR_RC, str(e))
+      if n != triesLimit:
+        waitOnFailure(n, triesLimit, NETWORK_ERROR_RC, str(e))
         continue
       handleServerError(e)
     except google.auth.exceptions.RefreshError as e:
@@ -4941,8 +4942,8 @@ def callGData(service, function,
       raise GDATA.ERROR_CODE_EXCEPTION_MAP[GDATA.SERVICE_NOT_APPLICABLE](str(e))
     except (http_client.ResponseNotReady, OSError) as e:
       errMsg = f'Connection error: {str(e) or repr(e)}'
-      if n != retries:
-        waitOnFailure(n, retries, SOCKET_ERROR_RC, errMsg)
+      if n != triesLimit:
+        waitOnFailure(n, triesLimit, SOCKET_ERROR_RC, errMsg)
         continue
       if softErrors:
         writeStderr(f'\n{ERROR_PREFIX}{errMsg} - Giving up.\n')
@@ -5163,18 +5164,20 @@ def checkGAPIError(e, softErrors=False, retryOnHttpError=False, mapNotFound=True
 def callGAPI(service, function,
              bailOnInternalError=False, bailOnTransientError=False, bailOnInvalidError=False,
              softErrors=False, mapNotFound=True,
-             throwReasons=None, retryReasons=None, retries=10,
+             throwReasons=None, retryReasons=None, triesLimit=0,
              **kwargs):
   if throwReasons is None:
     throwReasons = []
   if retryReasons is None:
     retryReasons = []
+  if triesLimit == 0:
+    triesLimit = GC.Values[GC.API_CALLS_TRIES_LIMIT]
   allRetryReasons = GAPI.DEFAULT_RETRY_REASONS+retryReasons
   method = getattr(service, function)
   svcparms = dict(list(kwargs.items())+GM.Globals[GM.EXTRA_ARGS_LIST])
   if GC.Values[GC.API_CALLS_RATE_CHECK]:
     checkAPICallsRate()
-  for n in range(1, retries+1):
+  for n in range(1, triesLimit+1):
     try:
       return method(**svcparms).execute()
     except googleapiclient.errors.HttpError as e:
@@ -5190,7 +5193,7 @@ def callGAPI(service, function,
         continue
       if http_status == 0:
         return None
-      if (n != retries) and ((reason in allRetryReasons) or
+      if (n != triesLimit) and ((reason in allRetryReasons) or
                              (GC.Values[GC.RETRY_API_SERVICE_NOT_AVAILABLE] and (reason == GAPI.SERVICE_NOT_AVAILABLE))):
         if (reason in [GAPI.INTERNAL_ERROR, GAPI.BACKEND_ERROR] and
             bailOnInternalError and n == GC.Values[GC.BAIL_ON_INTERNAL_ERROR_TRIES]):
@@ -5198,7 +5201,7 @@ def callGAPI(service, function,
         if (reason in [GAPI.INVALID] and
             bailOnInvalidError and n == GC.Values[GC.BAIL_ON_INTERNAL_ERROR_TRIES]):
           raise GAPI.REASON_EXCEPTION_MAP[reason](message)
-        waitOnFailure(n, retries, reason, message)
+        waitOnFailure(n, triesLimit, reason, message)
         if reason == GAPI.TRANSIENT_ERROR and bailOnTransientError:
           raise GAPI.REASON_EXCEPTION_MAP[reason](message)
         continue
@@ -5213,9 +5216,9 @@ def callGAPI(service, function,
         APIAccessDeniedExit()
       systemErrorExit(HTTP_ERROR_RC, formatHTTPError(http_status, reason, message))
     except (httplib2.HttpLib2Error, google.auth.exceptions.TransportError, RuntimeError) as e:
-      if n != retries:
+      if n != triesLimit:
         service._http.connections = {}
-        waitOnFailure(n, retries, NETWORK_ERROR_RC, str(e))
+        waitOnFailure(n, triesLimit, NETWORK_ERROR_RC, str(e))
         continue
       handleServerError(e)
     except google.auth.exceptions.RefreshError as e:
@@ -5225,8 +5228,8 @@ def callGAPI(service, function,
       raise GAPI.REASON_EXCEPTION_MAP[GAPI.SERVICE_NOT_AVAILABLE](str(e))
     except (http_client.ResponseNotReady, OSError) as e:
       errMsg = f'Connection error: {str(e) or repr(e)}'
-      if n != retries:
-        waitOnFailure(n, retries, SOCKET_ERROR_RC, errMsg)
+      if n != triesLimit:
+        waitOnFailure(n, triesLimit, SOCKET_ERROR_RC, errMsg)
         continue
       if softErrors:
         writeStderr(f'\n{ERROR_PREFIX}{errMsg} - Giving up.\n')
@@ -5443,22 +5446,22 @@ def buildGAPIServiceObject(api, user, i=0, count=0, displayError=True):
   service = getService(api, httpObj)
   credentials = getSvcAcctCredentials(api, userEmail)
   request = transportCreateRequest(httpObj)
-  retries = 3
-  for n in range(1, retries+1):
+  triesLimit = 3
+  for n in range(1, triesLimit+1):
     try:
       credentials.refresh(request)
       service._http = transportAuthorizedHttp(credentials, http=httpObj)
       return (userEmail, service)
     except (httplib2.HttpLib2Error, google.auth.exceptions.TransportError, RuntimeError) as e:
-      if n != retries:
+      if n != triesLimit:
         httpObj.connections = {}
-        waitOnFailure(n, retries, NETWORK_ERROR_RC, str(e))
+        waitOnFailure(n, triesLimit, NETWORK_ERROR_RC, str(e))
         continue
       handleServerError(e)
     except google.auth.exceptions.RefreshError as e:
       if isinstance(e.args, tuple):
         e = e.args[0]
-      if n < retries:
+      if n < triesLimit:
         if isinstance(e, str):
           eContent = e
         else:
@@ -8875,16 +8878,16 @@ def _getServerTLSUsed(location):
   _, netloc, _, _, _, _ = urlparse(url)
   conn = 'https:'+netloc
   httpObj = getHttpObj()
-  retries = 5
-  for n in range(1, retries+1):
+  triesLimit = 5
+  for n in range(1, triesLimit+1):
     try:
       httpObj.request(url, headers={'user-agent': GAM_USER_AGENT})
       cipher_name, tls_ver, _ = httpObj.connections[conn].sock.cipher()
       return tls_ver, cipher_name
     except (httplib2.HttpLib2Error, RuntimeError) as e:
-      if n != retries:
+      if n != triesLimit:
         httpObj.connections = {}
-        waitOnFailure(n, retries, NETWORK_ERROR_RC, str(e))
+        waitOnFailure(n, triesLimit, NETWORK_ERROR_RC, str(e))
         continue
       handleServerError(e)
 
@@ -16324,7 +16327,7 @@ def _getOrgInheritance(myarg, body):
   else:
     return False
   return True
-  
+
 # gam create org|ou <String> [description <String>] [parent <OrgUnitItem>] [inherit|(blockinheritance False)] [buildpath]
 def doCreateOrg():
 
@@ -24552,8 +24555,12 @@ def getChatSpace(myarg):
     chatSpace = getString(Cmd.OB_CHAT_SPACE)
     if chatSpace.startswith('spaces/'):
       return chatSpace
-    return 'spaces/'+chatSpace
-  return Cmd.Previous() # /spaces/xxx
+    if not chatSpace.startswith('space/'):
+      return 'spaces/'+chatSpace
+    _, chatSpace = chatSpace.split('/', 1)
+  else: # myarg.startswith('spaces/') or myarg.startswith('space/')
+    _, chatSpace = Cmd.Previous().split('/', 1)
+  return 'spaces/'+chatSpace
 
 def _cleanChatSpace(space):
   space.pop('type', None)
@@ -24709,7 +24716,7 @@ def updateChatSpace(users):
   body = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if myarg == 'space' or myarg.startswith('spaces/'):
+    if myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
       name = getChatSpace(myarg)
     elif getChatSpaceParameters(myarg, body, CHAT_UPDATE_SPACE_TYPE_MAP):
       pass
@@ -24741,7 +24748,7 @@ def deleteChatSpace(users):
   name = None
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if myarg == 'space' or myarg.startswith('spaces/'):
+    if myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
       name = getChatSpace(myarg)
     else:
       unknownArgumentExit()
@@ -24768,7 +24775,7 @@ def infoChatSpace(users, name=None):
   function = 'get' if name is None else 'findDirectMessage'
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if function == 'get' and (myarg == 'space' or myarg.startswith('spaces/')):
+    if function == 'get' and (myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/')):
       name = getChatSpace(myarg)
     else:
       FJQC.GetFormatJSON(myarg)
@@ -24917,7 +24924,7 @@ CHAT_MEMBER_TYPE_MAP = {
 
 # gam <UserTypeEntity> create chatmember <ChatSpace>
 #	[type human|bot]
-#	(user <UserItem>)* (members <UserTypeEntity>)*
+#	(user <UserItem>)* (members <UserTypeEntity>)* (group <GroupItem>)*
 #	[formatjson|returnidonly]
 def createChatMember(users):
   def addMembers(members, field, entityType, i, count):
@@ -24953,16 +24960,19 @@ def createChatMember(users):
   parent = None
   mtype = CHAT_MEMBER_TYPE_MAP['human']
   userList = []
+  groupList = []
   returnIdOnly = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if myarg == 'space' or myarg.startswith('spaces/'):
+    if myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
       parent = getChatSpace(myarg)
     elif myarg == 'user':
       userList.append(getEmailAddress(returnUIDprefix='uid:'))
     elif myarg in {'member', 'members'}:
       _, members = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
       userList.extend(members)
+    elif myarg == 'group':
+      groupList.append(getEmailAddress(returnUIDprefix='uid:'))
     elif myarg == 'type':
       mtype = getChoice(CHAT_MEMBER_TYPE_MAP, mapChoice=True)
     elif myarg == 'returnidonly':
@@ -24971,54 +24981,79 @@ def createChatMember(users):
       FJQC.GetFormatJSON(myarg)
   if not parent:
     missingArgumentExit('space')
-  if not userList:
-    missingArgumentExit('user|members')
+  if not userList and not groupList:
+    missingArgumentExit('user|members|group')
   userMembers = []
   for user in userList:
     name = normalizeEmailAddressOrUID(user)
     userMembers.append({'member': {'name': f'users/{name}', 'type': mtype}})
+  groupMembers = []
+  for group in groupList:
+    name = normalizeEmailAddressOrUID(group)
+    groupMembers.append({'groupMember': {'name': f'groups/{name}'}})
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, chat, kvList = buildChatServiceObject(API.CHAT_MEMBERSHIPS, user, i, count, [Ent.CHAT_SPACE, parent, Ent.CHAT_MEMBER, ''])
     if not chat:
       continue
-    addMembers(userMembers, 'member', Ent.USER, i, count)
+    if userMembers:
+      addMembers(userMembers, 'member', Ent.USER, i, count)
+    if groupMembers:
+      addMembers(groupMembers, 'groupMember', Ent.GROUP, i, count)
+
+CHAT_MEMBER_ROLE_CHOICES_MAP = {
+  'member': 'ROLE_MEMBER',
+  'manager': 'ROLE_MANAGER'
+  }
 
 # gam <UserTypeEntity> delete chatmember <ChatSpace>
-#	((user <UserItem>)|(members <UserTypeEntity>))+
+#	((user <UserItem>)|(members <UserTypeEntity>)|(group <GroupItem>))+
 # gam <UserTypeEntity> remove chatmember members <ChatMemberList>
-def deleteChatMember(users):
+# gam <UserTypeEntity> update chatmember <ChatSpace>
+#	((user <UserItem>)|(members <UserTypeEntity>))+ role member|manager
+# gam <UserTypeEntity> modify chatmember members <ChatMemberList> role member|manager
+def deleteUpdateChatMember(users):
+  cd = buildGAPIObject(API.DIRECTORY)
   action = Act.Get()
+  deleteMode =  action in {Act.DELETE, Act.REMOVE}
   parent = None
+  body = {}
   memberNames = []
-  userList = []
+  userGroupList = []
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if action == Act.REMOVE:
+    if action in {Act.UPDATE, Act.MODIFY} and myarg == 'role':
+      body['role'] = getChoice(CHAT_MEMBER_ROLE_CHOICES_MAP, mapChoice=True)
+      continue
+    if action in {Act.REMOVE, Act.MODIFY}:
       if myarg in {'member', 'members'}:
         memberNames.extend(getString(Cmd.OB_CHAT_MEMBER).replace(',', ' ').split())
       else:
         unknownArgumentExit()
-    else: # Act.DELETE
-      if myarg == 'space' or myarg.startswith('spaces/'):
+    else: # {Act.DELETE, Act.UPDATE}
+      if myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
         parent = getChatSpace(myarg)
       elif myarg == 'user':
-        userList.append(getEmailAddress(returnUIDprefix='uid:'))
+        userGroupList.append(getEmailAddress(returnUIDprefix='uid:'))
       elif myarg in {'member', 'members'}:
         _, members = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
-        userList.extend(members)
+        userGroupList.extend(members)
+      elif deleteMode and myarg == 'group':
+        userGroupList.append(getEmailAddress(returnUIDprefix='uid:'))
       else:
         unknownArgumentExit()
-  if action == Act.REMOVE:
+  if not deleteMode and 'role' not in body:
+    missingArgumentExit('role')
+  if action in {Act.REMOVE, Act.MODIFY}:
     if not memberNames:
       missingArgumentExit('members')
-  else: # Act.DELETE
+  else: # {Act.DELETE, Act.UPDATE}
     if not parent:
       missingArgumentExit('space')
-    if not userList:
-      missingArgumentExit('user|members')
-    for user in userList:
+    if not userGroupList:
+      missingArgumentExit('user|members|group')
+    for user in userGroupList:
       name = normalizeEmailAddressOrUID(user)
       memberNames.append(f'{parent}/members/{name}')
   i, count, users = getEntityArgument(users)
@@ -25036,11 +25071,21 @@ def deleteChatMember(users):
       j += 1
       kvList[-1] = name
       try:
-        callGAPI(chat.spaces().members(), 'delete',
-                 bailOnInternalError=True,
-                 throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
-                 name=name)
-        entityActionPerformed(kvList, j, jcount)
+        if deleteMode:
+          callGAPI(chat.spaces().members(), 'delete',
+                   bailOnInternalError=True,
+                   throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                   name=name)
+          entityActionPerformed(kvList, j, jcount)
+        else:
+          member = callGAPI(chat.spaces().members(), 'patch',
+                            bailOnInternalError=True,
+                            throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                            name=name, updateMask='role', body=body)
+          _getChatMemberEmail(cd, member)
+          Ind.Increment()
+          _showChatMember(member, None, j, jcount)
+          Ind.Decrement()
       except GAPI.notFound as e:
         entityActionFailedWarning(kvList, str(e), j, jcount)
       except (GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
@@ -25119,7 +25164,7 @@ def printShowChatMembers(users):
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif myarg == 'space' or myarg.startswith('spaces/'):
+    elif myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
       parent = getChatSpace(myarg)
     elif myarg == 'showinvited':
       kwargs['showInvited'] = getBoolean()
@@ -25197,7 +25242,7 @@ def createChatMessage(users):
   returnIdOnly = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if myarg == 'space' or myarg.startswith('spaces/'):
+    if myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
       parent = getChatSpace(myarg)
     elif myarg == 'thread':
       body.setdefault('thread', {})
@@ -25399,7 +25444,7 @@ def printShowChatMessages(users):
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif myarg == 'space' or myarg.startswith('spaces/'):
+    elif myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
       parent = getChatSpace(myarg)
     elif myarg == 'showdeleted':
       showDeleted = getBoolean()
@@ -45224,7 +45269,7 @@ def _batchAddItemsToCourse(croom, courseId, i, count, addParticipants, role):
                  throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.BACKEND_ERROR,
                                GAPI.ALREADY_EXISTS, GAPI.FAILED_PRECONDITION,
                                GAPI.QUOTA_EXCEEDED, GAPI.SERVICE_NOT_AVAILABLE],
-                 retryReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE], retries=10 if reason != GAPI.NOT_FOUND else 3,
+                 retryReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE], triesLimit=0 if reason != GAPI.NOT_FOUND else 3,
                  courseId=addCourseIdScope(ri[RI_ENTITY]),
                  body={attribute: ri[RI_ITEM] if ri[RI_ROLE] != Ent.COURSE_ALIAS else addCourseAliasScope(ri[RI_ITEM])},
                  fields='')
@@ -45301,7 +45346,7 @@ def _batchRemoveItemsFromCourse(croom, courseId, i, count, removeParticipants, r
         callGAPI(service, 'delete',
                  throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED,
                                GAPI.QUOTA_EXCEEDED, GAPI.SERVICE_NOT_AVAILABLE],
-                 retryReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE], retries=10 if reason != GAPI.NOT_FOUND else 3,
+                 retryReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE], triesLimit=0 if reason != GAPI.NOT_FOUND else 3,
                  courseId=addCourseIdScope(ri[RI_ENTITY]),
                  body={attribute: ri[RI_ITEM] if ri[RI_ROLE] != Ent.COURSE_ALIAS else addCourseAliasScope(ri[RI_ITEM])},
                  fields='')
@@ -57044,14 +57089,14 @@ def transferDrive(users):
         if removeSourceParents:
           op = 'Remove Source Parents'
           callGAPI(sourceDrive.files(), 'update',
-                   throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS, retryReasons=[GAPI.BAD_REQUEST, GAPI.FILE_NOT_FOUND], retries=3,
+                   throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS, retryReasons=[GAPI.BAD_REQUEST, GAPI.FILE_NOT_FOUND], triesLimit=3,
                    fileId=childFileId, removeParents=','.join(removeSourceParents), fields='')
         actionUser = targetUser
         if addTargetParent or removeTargetParents:
           op = 'Add/Remove Target Parents'
           callGAPI(targetDrive.files(), 'update',
                    throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.INSUFFICIENT_PARENT_PERMISSIONS],
-                   retryReasons=[GAPI.BAD_REQUEST, GAPI.FILE_NOT_FOUND], retries=3,
+                   retryReasons=[GAPI.BAD_REQUEST, GAPI.FILE_NOT_FOUND], triesLimit=3,
                    fileId=childFileId,
                    addParents=addTargetParent, removeParents=','.join(removeTargetParents), fields='')
         entityModifierNewValueItemValueListActionPerformed([Ent.USER, sourceUser, childFileType, childFileName], Act.MODIFIER_TO, None, [Ent.USER, targetUser], j, jcount)
@@ -57168,7 +57213,7 @@ def transferDrive(users):
           try:
             callGAPI(sourceDrive.files(), 'update',
                      throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.BAD_REQUEST],
-                     retryReasons=[GAPI.FILE_NOT_FOUND], retries=3,
+                     retryReasons=[GAPI.FILE_NOT_FOUND], triesLimit=3,
                      fileId=childFileId,
                      removeParents=','.join(existingParentIds), body={}, fields='')
           except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.unknownError,
@@ -57184,7 +57229,7 @@ def transferDrive(users):
 #          try:
 #            callGAPI(targetDrive.files(), 'update',
 #                     throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.BAD_REQUEST, GAPI.CANNOT_ADD_PARENT, GAPI.INSUFFICIENT_PARENT_PERMISSIONS],
-#                     retryReasons=[GAPI.FILE_NOT_FOUND], retries=3,
+#                     retryReasons=[GAPI.FILE_NOT_FOUND], triesLimit=3,
 #                     fileId=childFileId,
 #                     addParents=mappedParentId, body={}, fields='')
 #          except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.insufficientParentPermissions, GAPI.unknownError,
@@ -59370,6 +59415,8 @@ def printShowDriveFileACLs(users, useDomainAdminAccess=False):
       useDomainAdminAccess = True
     elif myarg == 'pmselect':
       pmselect = True
+    elif myarg == 'pmfilter': # Ignore, this is the default behavior
+      pass
     elif PM.ProcessArgument(myarg):
       pass
     elif myarg == 'includepermissionsforview':
@@ -66987,13 +67034,14 @@ def _processForwardingAddress(user, i, count, emailAddress, j, jcount, gmail, fu
   userDefined = True
   try:
     result = callGAPI(gmail.users().settings().forwardingAddresses(), function,
-                      throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.ALREADY_EXISTS, GAPI.DUPLICATE, GAPI.INVALID_ARGUMENT],
+                      throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.ALREADY_EXISTS, GAPI.DUPLICATE,
+                                                             GAPI.INVALID_ARGUMENT, GAPI.FAILED_PRECONDITION],
                       userId='me', **kwargs)
     if function == 'get':
       _showForwardingAddress(j, count, result)
     else:
       entityActionPerformed([Ent.USER, user, Ent.FORWARDING_ADDRESS, emailAddress], j, jcount)
-  except (GAPI.notFound, GAPI.alreadyExists, GAPI.duplicate, GAPI.invalidArgument) as e:
+  except (GAPI.notFound, GAPI.alreadyExists, GAPI.duplicate, GAPI.invalidArgument, GAPI.failedPrecondition) as e:
     entityActionFailedWarning([Ent.USER, user, Ent.FORWARDING_ADDRESS, emailAddress], str(e), j, jcount)
   except (GAPI.serviceNotAvailable, GAPI.badRequest):
     entityServiceNotApplicableWarning(Ent.USER, user, i, count)
@@ -70719,7 +70767,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_BACKUPCODE:	deleteBackupCodes,
       Cmd.ARG_CALENDAR:		deleteCalendars,
       Cmd.ARG_CALENDARACL:	deleteCalendarACLs,
-      Cmd.ARG_CHATMEMBER:	deleteChatMember,
+      Cmd.ARG_CHATMEMBER:	deleteUpdateChatMember,
       Cmd.ARG_CHATMESSAGE:	deleteChatMessage,
       Cmd.ARG_CHATSPACE:	deleteChatSpace,
       Cmd.ARG_CLASSROOMINVITATION:	deleteClassroomInvitations,
@@ -70837,6 +70885,7 @@ USER_COMMANDS_WITH_OBJECTS = {
   'modify':
     (Act.MODIFY,
      {Cmd.ARG_CALENDAR:		modifyCalendars,
+      Cmd.ARG_CHATMEMBER:	deleteUpdateChatMember,
       Cmd.ARG_MESSAGE:		processMessages,
       Cmd.ARG_THREAD:		processThreads,
      }
@@ -70939,7 +70988,7 @@ USER_COMMANDS_WITH_OBJECTS = {
   'remove':
     (Act.REMOVE,
      {Cmd.ARG_CALENDAR:		removeCalendars,
-      Cmd.ARG_CHATMEMBER:	deleteChatMember,
+      Cmd.ARG_CHATMEMBER:	deleteUpdateChatMember,
      }
     ),
   'replacedomain':
@@ -71083,6 +71132,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CALATTENDEES:	updateCalendarAttendees,
       Cmd.ARG_CALENDAR:		updateCalendars,
       Cmd.ARG_CALENDARACL:	updateCalendarACLs,
+      Cmd.ARG_CHATMEMBER:	deleteUpdateChatMember,
       Cmd.ARG_CHATMESSAGE:	updateChatMessage,
       Cmd.ARG_CHATSPACE:	updateChatSpace,
       Cmd.ARG_LOOKERSTUDIOPERMISSION:	processLookerStudioPermissions,

@@ -50,6 +50,8 @@ ADMIN_EMAIL = 'admin_email'
 API_CALLS_RATE_CHECK = 'api_calls_rate_check'
 # API calls per 100 seconds limit
 API_CALLS_RATE_LIMIT = 'api_calls_rate_limit'
+# API calls tries limit
+API_CALLS_TRIES_LIMIT = 'api_calls_tries_limit'
 # Automatically generate gam batch command if number of users specified in gam users xxx command exceeds this number
 # Default: 0, do not automatically generate gam batch commands
 AUTO_BATCH_MIN = 'auto_batch_min'
@@ -297,6 +299,7 @@ Defaults = {
   ADMIN_EMAIL: '',
   API_CALLS_RATE_CHECK: FALSE,
   API_CALLS_RATE_LIMIT: '100',
+  API_CALLS_TRIES_LIMIT: '10',
   AUTO_BATCH_MIN: '0',
   BAIL_ON_INTERNAL_ERROR_TRIES: '2',
   BATCH_SIZE: '50',
@@ -448,6 +451,7 @@ VAR_INFO = {
   ADMIN_EMAIL: {VAR_TYPE: TYPE_STRING, VAR_ENVVAR: 'GA_ADMIN_EMAIL', VAR_LIMITS: (0, None)},
   API_CALLS_RATE_CHECK: {VAR_TYPE: TYPE_BOOLEAN},
   API_CALLS_RATE_LIMIT: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (50, None)},
+  API_CALLS_TRIES_LIMIT: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (3, 10)},
   AUTO_BATCH_MIN: {VAR_TYPE: TYPE_INTEGER, VAR_ENVVAR: 'GAM_AUTOBATCH', VAR_LIMITS: (0, 100)},
   BAIL_ON_INTERNAL_ERROR_TRIES: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 10)},
   BATCH_SIZE: {VAR_TYPE: TYPE_INTEGER, VAR_ENVVAR: 'GAM_BATCH_SIZE', VAR_LIMITS: (1, 1000)},

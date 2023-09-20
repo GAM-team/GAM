@@ -33,6 +33,7 @@ _PRODUCTS = {
   '101038': 'AppSheet',
   '101039': 'Assured Controls',
   '101040': 'Beyond Corp Enterprise',
+  '101047': 'Duet AI',
   'Google-Apps': 'Google Workspace',
   'Google-Chrome-Device-Management': 'Google Chrome Device Management',
   'Google-Drive-storage': 'Google Drive Storage',
@@ -81,6 +82,8 @@ _SKUS = {
     'product': '101039', 'aliases': ['assuredcontrols'], 'displayName': 'Assured Controls'},
   '1010400001': {
     'product': '101040', 'aliases': ['beyondcorp', 'beyondcorpenterprise', 'bce'], 'displayName': 'Beyond Corp Enterprise'},
+  '1010470001': {
+    'product': '101047', 'aliases': ['duetai'], 'displayName': 'Duet AI for Enterprise'},
   'Google-Apps': {
     'product': 'Google-Apps', 'aliases': ['standard', 'free'], 'displayName': 'G Suite Legacy'},
   'Google-Apps-For-Business': {

@@ -24,6 +24,7 @@
 | Cloud Identity Free | 101001 |
 | Cloud Identity Premium | 101005 |
 | Cloud Search | 101035 |
+| Duet AI | 101047 |
 | Google Chrome Device Management | Google-Chrome-Device-Management |
 | Google Drive Storage | Google-Drive-storage |
 | Google Meet Global Dialing | 101036 |
@@ -44,6 +45,7 @@
 | Cloud Identity Free | 1010010001 | cloudidentity |
 | Cloud Identity Premium | 1010050001 | cloudidentitypremium |
 | Cloud Search | 1010350001 | cloudsearch |
+| Duet AI | 1010470001 | duetai |
 | G Suite Basic | Google-Apps-For-Business | gsuitebasic |
 | G Suite Business | Google-Apps-Unlimited | gsuitebusiness |
 | G Suite Legacy | Google-Apps | standard |
@@ -108,6 +110,7 @@
         101038 |
         101039 |
         101040 |
+        101047 |
         Google-Apps |
         Google-Chrome-Device-Management |
         Google-Drive-storage |
@@ -134,6 +137,7 @@
         cloudidentity | identity | 1010010001 |
         cloudidentitypremium | identitypremium | 1010050001 |
         cloudsearch | 1010350001 |
+        duetai | 101047001 |
         gsuitebasic | gafb | gafw | basic | Google-Apps-For-Business |
         gsuitebusiness | gau | gsb | unlimited | Google-Apps-Unlimited |
         gsuitebusinessarchived | gsbau | businessarchived | 1010340002 |
