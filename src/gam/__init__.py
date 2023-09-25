@@ -68075,7 +68075,7 @@ def printShowVacation(users):
     elif enabled:
       row['startdate'] = VACATION_START_STARTED
     if 'endTime' in result:
-      row['enddate'] = formatLocalDatestamp((result['endTime'])
+      row['enddate'] = formatLocalDatestamp(result['endTime'])
     elif enabled:
       row['enddate'] = VACATION_END_NOT_SPECIFIED
     row['subject'] = result.get('responseSubject', 'None')
