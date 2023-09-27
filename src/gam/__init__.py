@@ -48449,7 +48449,7 @@ def printShowYouTubeChannel(users):
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif myarg == 'channels':
+    elif myarg in {'channel', 'channels'}:
       kwargs.pop('mine', None)
       kwargs['id'] = ','.join(getEntityList(Cmd.OB_YOUTUBE_CHANNEL_ID_LIST))
     elif getFieldsList(myarg, YOUTUBE_CHANNEL_FIELDS_CHOICE_MAP, fieldsList):
@@ -48470,9 +48470,12 @@ def printShowYouTubeChannel(users):
       channels = callGAPIpages(yt.channels(), 'list', 'items',
                                throwReasons=GAPI.YOUTUBE_THROW_REASONS,
                                fields='nextPageToken,items', **kwargs)
+    except GAPI.unsupportedSupervisedAccount as e:
+      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+      continue
     except (GAPI.serviceNotAvailable, GAPI.authError):
       entityServiceNotApplicableWarning(Ent.USER, user, i, count)
-      break
+      continue
     if not csvPF:
       jcount = len(channels)
       if not FJQC.formatJSON:

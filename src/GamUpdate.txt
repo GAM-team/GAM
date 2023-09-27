@@ -2,6 +2,13 @@
 
 Merged GAM-Team version
 
+6.64.01
+
+Updated `gam <UserTypeEntity> print|show youtubechannels` to handle the following error:
+```
+ERROR: 403: unsupportedSupervisedAccount - Access Forbidden. The authenticated user cannot access this service.
+```
+
 6.64.00
 
 Added support for displaying users YouTube channels.
