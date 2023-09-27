@@ -777,6 +777,8 @@ class GamCLArgs():
   ARG_VERIFY = 'verify'
   ARG_WORKINGLOCATION = 'workinglocation'
   ARG_WORKINGLOCATIONS = 'workinglocations'
+  ARG_YOUTUBECHANNEL = 'youtubechannel'
+  ARG_YOUTUBECHANNELS = 'youtubechannels'
 # Lists of arguments for use in checkArgumentPresent
   CLEAR_NONE_ARGUMENT = ['clear', 'none',]
 
@@ -985,6 +987,7 @@ class GamCLArgs():
   OB_USER_ENTITY = 'UserEntity'
   OB_USER_ITEM = 'UserItem'
   OB_USER_NAME = 'UserName'
+  OB_YOUTUBE_CHANNEL_ID_LIST = 'YouTubeChannelIDlist'
 
 #
 # Error message types; keys into ARGUMENT_ERROR_NAMES; arbitrary values but must be unique

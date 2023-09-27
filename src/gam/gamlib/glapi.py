@@ -88,6 +88,7 @@ STORAGEREAD = 'storageread'
 STORAGEWRITE = 'storagewrite'
 TASKS = 'tasks'
 VAULT = 'vault'
+YOUTUBE = 'youtube'
 #
 CHROMEVERSIONHISTORY_URL = 'https://versionhistory.googleapis.com/v1/chrome/platforms'
 DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive'
@@ -177,6 +178,7 @@ PROJECT_APIS = [
   'storage-api.googleapis.com',
   'tasks.googleapis.com',
   'vault.googleapis.com',
+  'youtube.googleapis.com',
   ]
 
 _INFO = {
@@ -246,6 +248,7 @@ _INFO = {
   STORAGEWRITE: {'name': 'Cloud Storage API - Write', 'version': 'v1', 'v2discovery': True, 'mappedAPI': STORAGE},
   TASKS: {'name': 'Tasks API', 'version': 'v1', 'v2discovery': True},
   VAULT: {'name': 'Vault API', 'version': 'v1', 'v2discovery': True},
+  YOUTUBE: {'name': 'Youtube API', 'version': 'v3', 'v2discovery': True},
   }
 
 READONLY = ['readonly',]
@@ -626,6 +629,10 @@ _SVCACCT_SCOPES = [
    'api': TASKS,
    'subscopes': READONLY,
    'scope': 'https://www.googleapis.com/auth/tasks'},
+  {'name': 'Youtube API - read only',
+   'api': YOUTUBE,
+   'subscopes': [],
+   'scope': 'https://www.googleapis.com/auth/youtube.readonly'},
   ]
 
 _SVCACCT_SPECIAL_SCOPES = [

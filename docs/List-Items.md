@@ -97,6 +97,7 @@
 <ThreadIDList> ::= "<ThreadID>(,<ThreadID>)*"
 <TimeList> ::= "<Time>(,<Time>)*"
 <UserList> ::= "<UserItem>(,<UserItem>)*"
+<YouTubeChannelIDList> ::= "<YouTubeChannelID>(,<YouTubeChannelID>)*"
 ```
 ## List quoting rules
 Items in a list can be separated by commas or spaces; if an item itself contains a comma, a space or a single quote, special quoting must be used.

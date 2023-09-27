@@ -48418,6 +48418,92 @@ def printShowWorkingLocation(users):
   if csvPF:
     csvPF.writeCSVfile('Calendar Working Locations')
 
+YOUTUBE_CHANNEL_FIELDS_CHOICE_MAP = {
+  'brandingsettings': 'brandingSettings',
+  'contentdetails': 'contentDetails',
+  'contentownerdetails': 'contentOwnerDetails',
+  'id': 'id',
+  'localizations': 'localizations',
+  'snippet': 'snippet',
+  'statistics': 'statistics',
+  'status': 'status',
+  'topicdetails': 'topicDetails',
+  }
+
+YOUTUBE_CHANNEL_TIME_OBJECTS = {'publishedAt'}
+
+# gam <UserTypeEntity> show youtubechannels
+#	[channels <YouTubeChannelIDList>]
+#	[allfields|(fields <YouTubeChannelFieldNameList>)]
+#	[formatjson]
+# gam <UserTypeEntity> print youtubechannels [todrive <ToDriveAttribute>*]
+#	[channels <YouTubeChannelIDList>]
+#	[allfields|(fields <YouTubeChannelFieldNameList>)]
+#	[formatjson [quotechar <Character>]]
+def printShowYouTubeChannel(users):
+  csvPF = CSVPrintFile(['User', 'id'], 'sortall') if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
+  kwargs = {'mine': True}
+  fieldsList = ['id']
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif myarg == 'channels':
+      kwargs.pop('mine', None)
+      kwargs['id'] = ','.join(getEntityList(Cmd.OB_YOUTUBE_CHANNEL_ID_LIST))
+    elif getFieldsList(myarg, YOUTUBE_CHANNEL_FIELDS_CHOICE_MAP, fieldsList):
+      pass
+    elif myarg == 'allfields':
+      for field in YOUTUBE_CHANNEL_FIELDS_CHOICE_MAP:
+        addFieldToFieldsList(field, YOUTUBE_CHANNEL_FIELDS_CHOICE_MAP, fieldsList)
+    else:
+      FJQC.GetFormatJSONQuoteChar(myarg, True)
+  kwargs['part'] = ','.join(set(fieldsList))
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, yt = buildGAPIServiceObject(API.YOUTUBE, user, i, count)
+    if not yt:
+      continue
+    try:
+      channels = callGAPIpages(yt.channels(), 'list', 'items',
+                               throwReasons=GAPI.YOUTUBE_THROW_REASONS,
+                               fields='nextPageToken,items', **kwargs)
+    except (GAPI.serviceNotAvailable, GAPI.authError):
+      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+      break
+    if not csvPF:
+      jcount = len(channels)
+      if not FJQC.formatJSON:
+        entityPerformActionNumItems([Ent.USER, user], jcount, Ent.YOUTUBE_CHANNEL, i, count)
+      Ind.Increment()
+      j = 0
+      for channel in channels:
+        j += 1
+        if FJQC.formatJSON:
+          printLine(json.dumps(cleanJSON(channel, timeObjects=YOUTUBE_CHANNEL_TIME_OBJECTS),
+                               ensure_ascii=False, sort_keys=True))
+          break
+        printEntity([Ent.YOUTUBE_CHANNEL, channel['id']], j, jcount)
+        Ind.Increment()
+        showJSON(None, channel, skipObjects={'id'}, timeObjects=YOUTUBE_CHANNEL_TIME_OBJECTS)
+        Ind.Decrement()
+      Ind.Decrement()
+    else:
+      for channel in channels:
+        row = {'User': user, 'id': channel['id']}
+        flattenJSON(channel, flattened=row, timeObjects=YOUTUBE_CHANNEL_TIME_OBJECTS)
+        if not FJQC.formatJSON:
+          csvPF.WriteRowTitles(row)
+        elif csvPF.CheckRowTitles(row):
+          row = {'User': user, 'id': channel['id'],
+                 'JSON': json.dumps(cleanJSON(channel, timeObjects=YOUTUBE_CHANNEL_TIME_OBJECTS),
+                                    ensure_ascii=False, sort_keys=True)}
+          csvPF.WriteRowNoFilter(row)
+  if csvPF:
+    csvPF.writeCSVfile('YouTube Channels')
+
 def _getEntityMimeType(fileEntry):
   if fileEntry['mimeType'] == MIMETYPE_GA_FOLDER:
     return Ent.DRIVE_FOLDER
@@ -70980,6 +71066,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_VACATION:		printShowVacation,
       Cmd.ARG_VAULTHOLD:	printShowUserVaultHolds,
       Cmd.ARG_WORKINGLOCATION:	printShowWorkingLocation,
+      Cmd.ARG_YOUTUBECHANNEL:	printShowYouTubeChannel,
      }
     ),
   'process':
@@ -71071,6 +71158,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_VAULTHOLD:	printShowUserVaultHolds,
       Cmd.ARG_VACATION:		printShowVacation,
       Cmd.ARG_WORKINGLOCATION:	printShowWorkingLocation,
+      Cmd.ARG_YOUTUBECHANNEL:	printShowYouTubeChannel,
      }
     ),
   'spam':
@@ -71293,6 +71381,7 @@ USER_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_VAULTHOLDS:		Cmd.ARG_VAULTHOLD,
   Cmd.ARG_VERIFICATIONCODES:	Cmd.ARG_BACKUPCODE,
   Cmd.ARG_WORKINGLOCATIONS:	Cmd.ARG_WORKINGLOCATION,
+  Cmd.ARG_YOUTUBECHANNELS:	Cmd.ARG_YOUTUBECHANNEL,
   }
 
 def showAPICallsRetryData():

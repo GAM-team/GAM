@@ -114,7 +114,7 @@ jobs:
           path: |
             bin.tar.xz
             src/cpython
-          key: gam-${{ matrix.jid }}-20230825
+          key: gam-${{ matrix.jid }}-20230626
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
@@ -480,6 +480,8 @@ jobs:
           cd pyinstaller
           export latest_release=$(git tag --list | grep -v dev | grep -v rc | sort -Vr | head -n1)
           git checkout "${latest_release}"
+          #V6.0.0 causes errors, comment above and uncomment below to use 5.13.2
+          #git checkout "v5.13.2"
           # remove pre-compiled bootloaders so we fail if bootloader compile fails
           rm -rvf PyInstaller/bootloader/*-*/*
           cd bootloader

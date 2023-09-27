@@ -137,6 +137,9 @@ By default, only tasks with status `needsAction` are displayed.
 * `showcompleted` - Add completed tasks to the display. `showHidden` must also be True to show tasks completed in first party clients, such as the web UI and Google's mobile apps.
 * `showall` - Equivalent to `showdeleted` `showhidden` `showcompleted`
 
+By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
+* `formatjson` - Display the fields in JSON format.
+
 By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
 the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
 When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
@@ -194,6 +197,9 @@ By default, Gam displays the task lists as an indented list of keys and values.
 gam <UserTypeEntity> print tasklists [todrive <ToDriveAttribute>*]
         [countsonly | (formatjson [quotechar <Character>])]
 ```
+By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
+* `formatjson` - Display the fields in JSON format.
+
 By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
 the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
 When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.

@@ -363,6 +363,7 @@ class GamEntity():
   VAULT_QUERY = 'vltq'
   WEBCLIPS_ENABLED = 'webc'
   WORKING_LOCATION = 'wrkl'
+  YOUTUBE_CHANNEL = 'ytch'
   # _NAMES[0] is plural, _NAMES[1] is singular unless the item name is explicitly plural (Calendar Settings)
   # For items with Boolean values, both entries are singular (Forward, POP)
   # These values can be translated into other languages
@@ -689,6 +690,7 @@ class GamEntity():
     VAULT_QUERY: ['Vault Queries', 'Vault Query'],
     WEBCLIPS_ENABLED: ['Web Clips Enabled', 'Web Clips Enabled'],
     WORKING_LOCATION: ['Working Locations', 'Working Location'],
+    YOUTUBE_CHANNEL: ['YouTube Channels', 'YouTube Channel'],
     ROLE_MANAGER: ['Managers', 'Manager'],
     ROLE_MEMBER: ['Members', 'Member'],
     ROLE_OWNER: ['Owners', 'Owner'],

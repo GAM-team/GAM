@@ -628,6 +628,7 @@ If an item contains spaces, it should be surrounded by ".
         (file|textfile|htmlfile <FileName> [charset <Charset>])|
         (gdoc|ghtml <UserGoogleDoc>)|
         (gcsdoc|gcshtml <StorageBucketObjectName>)
+<YouTubeChannelID> ::= <String>
 ## Lists of basic items
 
 <APIScopeURLList> ::= "<APIScopeURL>(,<APIScopeURL>)*"
@@ -721,6 +722,7 @@ If an item contains spaces, it should be surrounded by ".
 <ThreadIDList> ::= "<ThreadID>(,<ThreadID>)*"
 <TimeList> ::= "<Time>(,<Time>)*"
 <UserList> ::= "<UserItem>(,<UserItem>)*"
+<YouTubeChannelIDList> ::= "<YouTubeChannelID>(,<YouTubeChannelID>)*"
 
 ## Quoting rules
 
@@ -7255,7 +7257,7 @@ gam <UserTypeEntity> print contacts [todrive <ToDriveAttribute>*]
         names|
         phonenumbers|
         photos
-<OtherContactsFieldNameList> ::= "<OtherContactsFieldName>(,<OtherContactFieldName>)*"
+<OtherContactsFieldNameList> ::= "<OtherContactsFieldName>(,<OtherContactsFieldName>)*"
 
 <OtherContactsSelection> ::=
         [query <QueryContact>]
@@ -7596,6 +7598,32 @@ gam <UserTypeEntity> show tokens|token|3lo|oauth [clientid <ClientID>]
 gam print tokens|token [todrive <ToDriveAttribute>*] [clientid <ClientID>]
         [aggregateby|orderby clientid|id|appname|displaytext] [delimiter <Character>]
         [<UserTypeEntity>]
+
+# Users - YouTube
+
+<YouTubeChannelID> ::= <String>
+<YouTubeChannelIDList> ::= "<YouTubeChannelID>(,<YouTubeChannelID>)*"
+
+<YouTubeChannelFieldName> ::=
+        brandingsettings|
+        contentdetails|
+        contentownerdetails|
+        id|
+        localizations|
+        snippet|
+        statistics|
+        status|
+        topicdetails
+<YouTubeChannelFieldNameList> ::= "<YouTubeChannelFieldName>(,<YouTubeChannelFieldName>)*"
+
+gam <UserTypeEntity> show youtubechannels
+        [channels <YouTubeChannelIDList>]
+        [allfields|(fields <YouTubeChannelFieldNameList>)]
+        [formatjson]
+gam <UserTypeEntity> print youtubechannels [todrive <ToDriveAttribute>*]
+        [channels <YouTubeChannelIDList>]
+        [allfields|(fields <YouTubeChannelFieldNameList>)]
+        [formatjson [quotechar <Character>]]
 
 # Verifications
 

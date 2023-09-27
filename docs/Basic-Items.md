@@ -611,4 +611,5 @@
         (file|textfile|htmlfile <FileName> [charset <Charset>])|
         (gdoc|ghtml <UserGoogleDoc>)|
         (gcsdoc|gcshtml <StorageBucketObjectName>)
+<YouTubeChannelID> ::= <String>
 ```
