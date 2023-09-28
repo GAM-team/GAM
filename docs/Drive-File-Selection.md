@@ -200,6 +200,7 @@ By default, all types of files and folders are displayed; you can specify a list
         gfolder|gdirectory|
         gform|
         gfusion|
+        gjam|
         gmap|
         gpresentation|
         gscript|
@@ -218,6 +219,7 @@ This is the mapping from `<MimeTypeShortcut>` to MIME type.
 * `gfolder|gdirectory` - application/vnd.google-apps.folder
 * `gform` - application/vnd.google-apps.form
 * `gfusion|gfusiontable` - application/vnd.google-apps.fusiontable
+* `gjam` - application/vnd.google-apps.jam
 * `gmap` - application/vnd.google-apps.map
 * `gpresentation` - application/vnd.google-apps.presentation
 * `gscript` - application/vnd.google-apps.script

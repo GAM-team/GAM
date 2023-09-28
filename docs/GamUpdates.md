@@ -10,6 +10,17 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.64.03
+
+Updated `gam <UserTypeEntity> get drivefile` to allow downloading Jamboard files; they must be downloaded with `format pdf`.
+
+### 6.64.02
+
+Updated `gam <UserTypeEntity> transfer drive` to handle the following error:
+```
+ERROR: 400: Bad Request. User message: "The action cannot be performed on an item of mime-type: application/vnd.google-apps.shortcut" - invalidSharingRequest
+```
+
 ### 6.64.01
 
 Updated `gam <UserTypeEntity> print|show youtubechannels` to handle the following error:

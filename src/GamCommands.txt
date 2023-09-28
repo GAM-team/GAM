@@ -217,6 +217,7 @@ If an item contains spaces, it should be surrounded by ".
         gfolder|gdirectory|
         gform|
         gfusion|
+        gjam|
         gmap|
         gpresentation|
         gscript|

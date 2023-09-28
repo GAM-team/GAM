@@ -255,6 +255,7 @@ MIMETYPE_GA_FILE = f'{APPLICATION_VND_GOOGLE_APPS}file'
 MIMETYPE_GA_FOLDER = f'{APPLICATION_VND_GOOGLE_APPS}folder'
 MIMETYPE_GA_FORM = f'{APPLICATION_VND_GOOGLE_APPS}form'
 MIMETYPE_GA_FUSIONTABLE = f'{APPLICATION_VND_GOOGLE_APPS}fusiontable'
+MIMETYPE_GA_JAM = f'{APPLICATION_VND_GOOGLE_APPS}jam'
 MIMETYPE_GA_MAP = f'{APPLICATION_VND_GOOGLE_APPS}map'
 MIMETYPE_GA_PRESENTATION = f'{APPLICATION_VND_GOOGLE_APPS}presentation'
 MIMETYPE_GA_SCRIPT = f'{APPLICATION_VND_GOOGLE_APPS}script'
@@ -49266,6 +49267,7 @@ MIMETYPE_CHOICE_MAP = {
   'gform': MIMETYPE_GA_FORM,
   'gfusion': MIMETYPE_GA_FUSIONTABLE,
   'gfusiontable': MIMETYPE_GA_FUSIONTABLE,
+  'gjam': MIMETYPE_GA_JAM,
   'gmap': MIMETYPE_GA_MAP,
   'gpresentation': MIMETYPE_GA_PRESENTATION,
   'gscript': MIMETYPE_GA_SCRIPT,
@@ -56457,6 +56459,7 @@ NON_DOWNLOADABLE_MIMETYPES = [MIMETYPE_GA_FORM, MIMETYPE_GA_FUSIONTABLE, MIMETYP
 GOOGLEDOC_VALID_EXTENSIONS_MAP = {
   MIMETYPE_GA_DRAWING: ['.jpeg', '.jpg', '.pdf', '.png', '.svg'],
   MIMETYPE_GA_DOCUMENT: ['.docx', '.epub', '.html', '.odt', '.pdf', '.rtf', '.txt', '.zip'],
+  MIMETYPE_GA_JAM: ['.pdf'],
   MIMETYPE_GA_PRESENTATION: ['.pdf', '.pptx', '.odp', '.txt'],
   MIMETYPE_GA_SPREADSHEET: ['.csv', '.ods', '.pdf', '.tsv', '.xlsx', '.zip'],
   }
@@ -57164,17 +57167,18 @@ def transferDrive(users):
         removeTargetParents.add(targetRootId)
       try:
         actionUser = sourceUser
-        if not updateTargetPermission:
-          op = 'Create Source ACL'
-          callGAPI(sourceDrive.permissions(), 'create',
-                   throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.BAD_REQUEST, GAPI.INVALID_SHARING_REQUEST, GAPI.SHARING_RATE_LIMIT_EXCEEDED],
-                   fileId=childFileId, sendNotificationEmail=False, body=targetWriterPermissionsBody, fields='')
-        op = 'Update Source ACL'
-        callGAPI(sourceDrive.permissions(), 'update',
-                 throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.BAD_REQUEST, GAPI.INVALID_OWNERSHIP_TRANSFER,
-                                                               GAPI.PERMISSION_NOT_FOUND, GAPI.SHARING_RATE_LIMIT_EXCEEDED],
-                 fileId=childFileId, permissionId=targetPermissionId,
-                 transferOwnership=True, body={'role': 'owner'}, fields='')
+        if childEntryInfo['mimeType'] != MIMETYPE_GA_SHORTCUT:
+          if not updateTargetPermission:
+            op = 'Create Source ACL'
+            callGAPI(sourceDrive.permissions(), 'create',
+                     throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.BAD_REQUEST, GAPI.INVALID_SHARING_REQUEST, GAPI.SHARING_RATE_LIMIT_EXCEEDED],
+                     fileId=childFileId, sendNotificationEmail=False, body=targetWriterPermissionsBody, fields='')
+          op = 'Update Source ACL'
+          callGAPI(sourceDrive.permissions(), 'update',
+                   throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.BAD_REQUEST, GAPI.INVALID_OWNERSHIP_TRANSFER,
+                                                                 GAPI.PERMISSION_NOT_FOUND, GAPI.SHARING_RATE_LIMIT_EXCEEDED],
+                   fileId=childFileId, permissionId=targetPermissionId,
+                   transferOwnership=True, body={'role': 'owner'}, fields='')
         if removeSourceParents:
           op = 'Remove Source Parents'
           callGAPI(sourceDrive.files(), 'update',

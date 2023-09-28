@@ -211,6 +211,7 @@
         gfolder|gdirectory|
         gform|
         gfusion|
+        gjam|
         gmap|
         gpresentation|
         gscript|
