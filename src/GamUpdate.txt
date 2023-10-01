@@ -2,6 +2,14 @@
 
 Merged GAM-Team version
 
+6.64.04
+
+Updated `gam calendars <CalendarEntity> move events` and `gam <UserTypeEntity> move events <UserCalendarEntity>`
+to handle the following error:
+```
+ERROR: 400: badRequest - Bad Request
+```
+
 6.64.03
 
 Updated `gam <UserTypeEntity> get drivefile` to allow downloading Jamboard files; they must be downloaded with `format pdf`.

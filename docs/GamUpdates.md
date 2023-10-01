@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.64.04
+
+Updated `gam calendars <CalendarEntity> move events` and `gam <UserTypeEntity> move events <UserCalendarEntity>`
+to handle the following error:
+```
+ERROR: 400: badRequest - Bad Request
+```
+
 ### 6.64.03
 
 Updated `gam <UserTypeEntity> get drivefile` to allow downloading Jamboard files; they must be downloaded with `format pdf`.

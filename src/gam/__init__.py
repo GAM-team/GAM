@@ -8909,6 +8909,7 @@ MACOS_CODENAMES = {
   11: 'Big Sur',
   12: 'Monterey',
   13: 'Ventura',
+  14: 'Sonoma',
   }
 
 def getOSPlatform():
@@ -35994,7 +35995,8 @@ def _moveCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEnt
       kvListEventNewCal = kvListEvent+[Ent.CALENDAR, newCalId]
       try:
         callGAPI(cal.events(), 'move',
-                 throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.REQUIRED_ACCESS_LEVEL, GAPI.INVALID,
+                 throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.REQUIRED_ACCESS_LEVEL,
+                                                           GAPI.INVALID, GAPI.BAD_REQUEST,
                                                            GAPI.CANNOT_CHANGE_ORGANIZER, GAPI.CANNOT_CHANGE_ORGANIZER_OF_INSTANCE],
                  calendarId=calId, eventId=eventId, destination=newCalId, sendUpdates=parameters['sendUpdates'], fields='')
         entityModifierNewValueActionPerformed(kvListEvent, Act.MODIFIER_TO, f'{Ent.Singular(Ent.CALENDAR)}: {newCalId}', j, jcount)
@@ -36009,7 +36011,8 @@ def _moveCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEnt
       except GAPI.requiredAccessLevel:
 # Correct "You need to have reader access to this calendar." to "Writer access required to both calendars."
         entityActionFailedWarning(kvListEventNewCal, Msg.WRITER_ACCESS_REQUIRED_TO_BOTH_CALENDARS, j, jcount)
-      except (GAPI.forbidden, GAPI.invalid, GAPI.cannotChangeOrganizer, GAPI.cannotChangeOrganizerOfInstance) as e:
+      except (GAPI.forbidden, GAPI.invalid, GAPI.badRequest,
+              GAPI.cannotChangeOrganizer, GAPI.cannotChangeOrganizerOfInstance) as e:
         entityActionFailedWarning(kvListEventNewCal, str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError):
         entityServiceNotApplicableWarning(Ent.CALENDAR, calId, i, count)
