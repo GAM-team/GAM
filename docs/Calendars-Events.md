@@ -185,6 +185,7 @@ Client access works when accessing Resource calendars.
         (matchfield location <RegularExpression>)|
         (matchfield organizeremail <RegularExpression>)|
         (matchfield organizername <RegularExpression>)|
+        (matchfield organizerself <Boolean>)|
         (matchfield status <RegularExpression>)|
         (matchfield summary <RegularExpression>)|
         (matchfield transparency <RegularExpression>)|

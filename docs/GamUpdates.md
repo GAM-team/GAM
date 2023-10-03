@@ -10,6 +10,21 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.64.05
+
+Added `matchfield organizerself <Boolean>` to `<EventMatchProperty>` to simplify selecting events
+where the user in the following commands is/is not the organizer of the event.
+```
+gam <UserTypeEntity> update events <UserCalendarEntity> [<EventEntity>]
+gam <UserTypeEntity> delete events <UserCalendarEntity> [<EventEntity>]
+gam <UserTypeEntity> purge events <UserCalendarEntity> [<EventEntity>]
+gam <UserTypeEntity> move events <UserCalendarEntity> [<EventEntity>]
+gam <UserTypeEntity> info events <UserCalendarEntity> [<EventEntity>]
+gam <UserTypeEntity> show events <UserCalendarEntity> [<EventEntity>]
+gam <UserTypeEntity> print events <UserCalendarEntity> [<EventEntity>]
+gam <UserTypeEntity> update calattendees <UserCalendarEntity> <EventEntity>
+```
+
 ### 6.64.04
 
 Updated `gam calendars <CalendarEntity> move events` and `gam <UserTypeEntity> move events <UserCalendarEntity>`

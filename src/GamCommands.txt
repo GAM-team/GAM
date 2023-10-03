@@ -1575,6 +1575,7 @@ gam calendar <CalendarEntity> printacl [todrive <ToDriveAttribute>*]
         (matchfield location <RegularExpression>)|
         (matchfield organizeremail <RegularExpression>)|
         (matchfield organizername <RegularExpression>)|
+        (matchfield organizerself <Boolean>)|
         (matchfield status <RegularExpression>)|
         (matchfield summary <RegularExpression>)|
         (matchfield transparency <RegularExpression>)|
@@ -5655,7 +5656,7 @@ gam <UserTypeEntity> show events <UserCalendarEntity> [<EventEntity>] <EventDisp
         [fields <EventFieldNameList>] [showdayofweek]
         [countsonly]
         [formatjson]
-gam <UserTypeEntity> print events <UserCalendarEntity> [<EventtEntity>] <EventDisplayProperty>*
+gam <UserTypeEntity> print events <UserCalendarEntity> [<EventEntity>] <EventDisplayProperty>*
         [fields <EventFieldNameList>] [showdayofweek]
         [countsonly]
         [formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]

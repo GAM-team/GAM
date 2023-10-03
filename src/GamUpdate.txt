@@ -1,3 +1,18 @@
+6.64.05
+
+Added `matchfield organizerself <Boolean>` to `<EventMatchProperty>` to simplify selecting events
+where the user in the following commands is/is not the organizer of the event.
+```
+gam <UserTypeEntity> update events <UserCalendarEntity> [<EventEntity>]
+gam <UserTypeEntity> delete events <UserCalendarEntity> [<EventEntity>]
+gam <UserTypeEntity> purge events <UserCalendarEntity> [<EventEntity>]
+gam <UserTypeEntity> move events <UserCalendarEntity> [<EventEntity>]
+gam <UserTypeEntity> info events <UserCalendarEntity> [<EventEntity>]
+gam <UserTypeEntity> show events <UserCalendarEntity> [<EventEntity>]
+gam <UserTypeEntity> print events <UserCalendarEntity> [<EventEntity>]
+gam <UserTypeEntity> update calattendees <UserCalendarEntity> <EventEntity>
+```
+
 7.00.00
 
 Merged GAM-Team version

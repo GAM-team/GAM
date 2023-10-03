@@ -35178,8 +35178,10 @@ LIST_EVENTS_MATCH_FIELDS = {
   'creatoremail': ['creator', 'email'],
   'organizername': ['organizer', 'displayName'],
   'organizeremail': ['organizer', 'email'],
+  'organizerself': ['organizer', 'self'],
   'organisername': ['organizer', 'displayName'],
   'organiseremail': ['organizer', 'email'],
+  'organiserself': ['organizer', 'self'],
   'status': ['status'],
   'transparency': ['transparency'],
   'visibility': ['visibility'],
@@ -35233,7 +35235,9 @@ def getCalendarEventEntity():
       calendarEventEntity['queries'].append(getString(Cmd.OB_QUERY))
     elif myarg == 'matchfield':
       matchField = getChoice(LIST_EVENTS_MATCH_FIELDS, mapChoice=True)
-      if matchField[0] != 'attendees' or matchField[1] == 'match':
+      if matchField[0] == 'organizer' and matchField[1] == 'self':
+        calendarEventEntity['matches'].append((matchField, getBoolean()))
+      elif matchField[0] != 'attendees' or matchField[1] == 'match':
         calendarEventEntity['matches'].append((matchField, getREPattern(re.IGNORECASE)))
       elif matchField[1] == 'email':
         calendarEventEntity['matches'].append((matchField, getNormalizedEmailAddressEntity()))
@@ -35519,6 +35523,8 @@ def _eventMatches(event, match):
       eventAttr = eventAttr.get(attr, '')
       if not eventAttr:
         break
+    if match[0][0] == 'organizer' and match[0][1] == 'self':
+      return bool(eventAttr) == match[1]
     if match[0][0] != 'hangoutLink':
       return match[1].search(eventAttr) is not None
 # vkj-przn-nvg or vkjprznnvg
