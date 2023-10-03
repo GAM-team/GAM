@@ -610,7 +610,7 @@ Moving a Drive folder to a Shared Drive is not directly supported by the API; GA
 recursively adjust the files/folders within it to point to the new parent folder. Once the original folder is emptied, it is deleted unless `retainsourcefolders` is specified.
 
 ### Move content of a Shared Drive to another Shared Drive
-Suppose you have a source Shared Drive called 0AC_1AB with multiple files and folders, and want to move all of its content to the target Shared Drive 0AE_9ZX.
+Suppose you have a source Shared Drive with ID 0AC_1AB with multiple files and folders, and want to move all of its content to the target Shared Drive with ID 0AE_9ZX.
 
 The following command will change the parents of the top level files and folders from 0AC_1AB to 0AE_9ZX; the sub files and folders will move along with their top level folder.
 
@@ -619,3 +619,7 @@ The following command will change the parents of the top level files and folders
 gam user user@domain.com move drivefile teamdriveid 0AC_1AB teamdriveparentid 0AE_9ZX mergewithparent 
 ```
 
+If you want the source Shared Drive with ID 0AC_1AB to be contained in a top level folder of the target Shared Drive with ID 0AE_9ZX, omit the `mergewithparent` argument.
+```
+gam user user@domain.com move drivefile teamdriveid 0AC_1AB teamdriveparentid 0AE_9ZX
+```

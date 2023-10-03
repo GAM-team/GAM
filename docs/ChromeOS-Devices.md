@@ -110,6 +110,7 @@ The second form is backwards compatible with Standard GAM and selection with `<C
         deprovisionreason|
         devicefiles|
         deviceid|
+        devicelicensetype|
         diskvolumereports|
         dockmacaddress|
         ethernetmacaddress|
@@ -128,6 +129,7 @@ The second form is backwards compatible with Standard GAM and selection with `<C
         ordernumber|
         orgunitid|
         orgunitpath|org|ou|
+        osupdatestatus|
         osversion|
         platformversion|
         recentusers|
@@ -135,8 +137,8 @@ The second form is backwards compatible with Standard GAM and selection with `<C
         serialnumber|
         status|
         supportenddate|
-        systemramtotal|
         systemramfreereports|
+        systemramtotal|
         tpmversioninfo|
         willautorenew
 <CrOSFieldNameList> ::= "<CrOSFieldName>(,<CrOSFieldName>)*"
