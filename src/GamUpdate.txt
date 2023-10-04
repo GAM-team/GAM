@@ -1,3 +1,10 @@
+6.64.07
+
+Updated `gam <UserTypeEntity> move drivefile` to handle the following error:
+```
+ERROR: 403: targetUserRoleLimitedByLicenseRestriction - Cannot set the requested role for that user as they lack the necessary license
+```
+
 6.64.06
 
 Added fields `devicelicensetype` and `osupdatestatus` to `<CrOSFieldName>`.

@@ -56005,6 +56005,7 @@ def moveDriveFile(users):
                                                                GAPI.FILE_OWNER_NOT_MEMBER_OF_TEAMDRIVE,
                                                                GAPI.FILE_OWNER_NOT_MEMBER_OF_WRITER_DOMAIN,
                                                                GAPI.FILE_WRITER_TEAMDRIVE_MOVE_IN_DISABLED,
+                                                               GAPI.TARGET_USER_ROLE_LIMITED_BY_LICENSE_RESTRICTION,
                                                                GAPI.CANNOT_MOVE_TRASHED_ITEM_INTO_TEAMDRIVE,
                                                                GAPI.CANNOT_MOVE_TRASHED_ITEM_OUT_OF_TEAMDRIVE,
                                                                GAPI.CROSS_DOMAIN_MOVE_RESTRICTION],
@@ -56017,7 +56018,7 @@ def moveDriveFile(users):
         _incrStatistic(statistics, STAT_FILE_COPIED_MOVED)
         return (None, None, False)
       except (GAPI.badRequest, GAPI.insufficientParentPermissions, GAPI.fileOwnerNotMemberOfTeamDrive, GAPI.fileOwnerNotMemberOfWriterDomain,
-              GAPI.fileWriterTeamDriveMoveInDisabled,
+              GAPI.fileWriterTeamDriveMoveInDisabled, GAPI.targetUserRoleLimitedByLicenseRestriction,
               GAPI.cannotMoveTrashedItemIntoTeamDrive, GAPI.cannotMoveTrashedItemOutOfTeamDrive,
               GAPI.crossDomainMoveRestriction) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FOLDER, folderName], str(e), j, jcount)
@@ -56040,7 +56041,8 @@ def moveDriveFile(users):
     try:
       result = callGAPI(drive.files(), 'create',
                         throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.FORBIDDEN, GAPI.INSUFFICIENT_PERMISSIONS, GAPI.INSUFFICIENT_PARENT_PERMISSIONS,
-                                                                    GAPI.INTERNAL_ERROR, GAPI.STORAGE_QUOTA_EXCEEDED, GAPI.TEAMDRIVE_HIERARCHY_TOO_DEEP, GAPI.BAD_REQUEST],
+                                                                    GAPI.INTERNAL_ERROR, GAPI.STORAGE_QUOTA_EXCEEDED, GAPI.TEAMDRIVE_HIERARCHY_TOO_DEEP,
+                                                                    GAPI.BAD_REQUEST, GAPI.TARGET_USER_ROLE_LIMITED_BY_LICENSE_RESTRICTION],
                         body=body, fields='id', supportsAllDrives=True)
       newFolderId = result['id']
       action = Act.Get()
@@ -56059,7 +56061,8 @@ def moveDriveFile(users):
                          ['copySubFolderNonInheritedPermissions', 'copyTopFolderNonInheritedPermissions'][atTop])
       return (newFolderId, newFolderName, False)
     except (GAPI.forbidden, GAPI.insufficientFilePermissions, GAPI.insufficientParentPermissions,
-            GAPI.internalError, GAPI.storageQuotaExceeded, GAPI.teamDriveHierarchyTooDeep, GAPI.badRequest) as e:
+            GAPI.internalError, GAPI.storageQuotaExceeded, GAPI.teamDriveHierarchyTooDeep,
+            GAPI.badRequest, GAPI.targetUserRoleLimitedByLicenseRestriction) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FOLDER, newFolderName], str(e), j, jcount)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
       userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
@@ -56095,7 +56098,8 @@ def moveDriveFile(users):
                         throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.FORBIDDEN, GAPI.INSUFFICIENT_PERMISSIONS, GAPI.INSUFFICIENT_PARENT_PERMISSIONS,
                                                                     GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.FILE_NOT_FOUND, GAPI.UNKNOWN_ERROR,
                                                                     GAPI.STORAGE_QUOTA_EXCEEDED, GAPI.TEAMDRIVES_SHARING_RESTRICTION_NOT_ALLOWED,
-                                                                    GAPI.TEAMDRIVE_HIERARCHY_TOO_DEEP, GAPI.SHORTCUT_TARGET_INVALID],
+                                                                    GAPI.TEAMDRIVE_HIERARCHY_TOO_DEEP, GAPI.SHORTCUT_TARGET_INVALID,
+                                                                    GAPI.TARGET_USER_ROLE_LIMITED_BY_LICENSE_RESTRICTION],
                         body=body, fields='id', supportsAllDrives=True)
       Act.Set(Act.CREATE_SHORTCUT)
       entityModifierItemValueListActionPerformed(kvList, Act.MODIFIER_IN,
@@ -56106,7 +56110,7 @@ def moveDriveFile(users):
     except (GAPI.forbidden, GAPI.insufficientFilePermissions, GAPI.insufficientParentPermissions,
             GAPI.invalid, GAPI.badRequest, GAPI.fileNotFound, GAPI.unknownError,
             GAPI.storageQuotaExceeded, GAPI.teamDrivesSharingRestrictionNotAllowed,
-            GAPI.teamDriveHierarchyTooDeep, GAPI.shortcutTargetInvalid) as e:
+            GAPI.teamDriveHierarchyTooDeep, GAPI.shortcutTargetInvalid, GAPI.targetUserRoleLimitedByLicenseRestriction) as e:
       entityActionFailedWarning(kvList+[Ent.DRIVE_FILE_SHORTCUT, childName], str(e), k, kcount)
       _incrStatistic(statistics, STAT_FILE_FAILED)
 
@@ -56124,6 +56128,7 @@ def moveDriveFile(users):
                                                              GAPI.FILE_OWNER_NOT_MEMBER_OF_TEAMDRIVE,
                                                              GAPI.FILE_OWNER_NOT_MEMBER_OF_WRITER_DOMAIN,
                                                              GAPI.FILE_WRITER_TEAMDRIVE_MOVE_IN_DISABLED,
+                                                             GAPI.TARGET_USER_ROLE_LIMITED_BY_LICENSE_RESTRICTION,
                                                              GAPI.CANNOT_MOVE_TRASHED_ITEM_INTO_TEAMDRIVE,
                                                              GAPI.CANNOT_MOVE_TRASHED_ITEM_OUT_OF_TEAMDRIVE,
                                                              GAPI.TEAMDRIVES_SHORTCUT_FILE_NOT_SUPPORTED,
@@ -56135,6 +56140,7 @@ def moveDriveFile(users):
                                                  k, kcount)
       _incrStatistic(statistics, STAT_FILE_COPIED_MOVED)
     except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.unknownError, GAPI.badRequest,
+            GAPI.targetUserRoleLimitedByLicenseRestriction,
             GAPI.cannotMoveTrashedItemIntoTeamDrive, GAPI.cannotMoveTrashedItemOutOfTeamDrive,
             GAPI.teamDrivesShortcutFileNotSupported) as e:
       entityActionFailedWarning(kvList, str(e), k, kcount)

@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.64.07
+
+Updated `gam <UserTypeEntity> move drivefile` to handle the following error:
+```
+ERROR: 403: targetUserRoleLimitedByLicenseRestriction - Cannot set the requested role for that user as they lack the necessary license
+```
+
 ### 6.64.06
 
 Added fields `devicelicensetype` and `osupdatestatus` to `<CrOSFieldName>`.
