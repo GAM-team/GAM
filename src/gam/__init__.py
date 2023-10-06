@@ -8320,7 +8320,7 @@ class CSVPrintFile():
           user = self.todrive['user']
           drive = buildGAPIObject(API.DRIVE3)
         importSize = csvFile.tell()
-# Update sheet
+# Add/Update sheet
         try:
           if self.todrive['addsheet'] or self.todrive['updatesheet']:
             Act.Set(Act.CREATE if self.todrive['addsheet'] else Act.UPDATE)
@@ -8455,6 +8455,7 @@ class CSVPrintFile():
                                   body=body,
                                   media_body=googleapiclient.http.MediaIoBaseUpload(io.BytesIO(csvFile.getvalue().encode()), mimetype='text/csv', resumable=True),
                                   fields=fields, supportsAllDrives=True)
+              spreadsheetId = result['id']
             except GAPI.internalError as e:
               entityActionFailedWarning([Ent.DRIVE_FILE, body['name']], Msg.UPLOAD_CSV_FILE_INTERNAL_ERROR.format(str(e), str(numRows)))
               closeFile(csvFile)
@@ -8466,7 +8467,7 @@ class CSVPrintFile():
                 callGAPI(drive.permissions(), 'create',
                          bailOnInternalError=True,
                          throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+GAPI.DRIVE3_CREATE_ACL_THROW_REASONS,
-                         fileId=result['id'], sendNotificationEmail=False, body=self.todrive['share'], fields='', supportsAllDrives=True)
+                         fileId=spreadsheetId, sendNotificationEmail=False, body=self.todrive['share'], fields='', supportsAllDrives=True)
                 entityActionPerformed([Ent.USER, user, Ent.SPREADSHEET, title,
                                        Ent.TARGET_USER, self.todrive['share']['emailAddress'], Ent.ROLE, self.todrive['share']['role']])
               except (GAPI.badRequest, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
@@ -8487,24 +8488,22 @@ class CSVPrintFile():
                                           str(e))
             if ((result['mimeType'] == MIMETYPE_GA_SPREADSHEET) and
                 (self.todrive['sheetEntity'] or self.todrive['locale'] or self.todrive['timeZone'] or
-                 self.todrive['cellwrap'] or self.todrive['cellnumberformat'])):
+                 self.todrive['sheettitle'] or self.todrive['cellwrap'] or self.todrive['cellnumberformat'])):
               if not GC.Values[GC.TODRIVE_CLIENTACCESS]:
                 _, sheet = buildGAPIServiceObject(API.SHEETSTD, user)
                 if sheet is None:
                   return
               else:
                 sheet = buildGAPIObject(API.SHEETS)
-              spreadsheetId = result['id']
               try:
                 body = {'requests': []}
-                if self.todrive['sheetEntity'] or self.todrive['cellwrap']:
+                if self.todrive['sheetEntity'] or self.todrive['sheettitle'] or self.todrive['cellwrap']:
                   spreadsheet = callGAPI(sheet.spreadsheets(), 'get',
                                          throwReasons=GAPI.SHEETS_ACCESS_THROW_REASONS,
                                          spreadsheetId=spreadsheetId, fields='sheets/properties')
-                  if self.todrive['sheetEntity'] and self.todrive['sheetEntity']['sheetTitle']:
-                    spreadsheet['sheets'][0]['properties']['title'] = sheetTitle
-                    body['requests'].append({'updateSheetProperties':
-                                               {'properties': spreadsheet['sheets'][0]['properties'], 'fields': 'title'}})
+                  spreadsheet['sheets'][0]['properties']['title'] = sheetTitle
+                  body['requests'].append({'updateSheetProperties':
+                                           {'properties': spreadsheet['sheets'][0]['properties'], 'fields': 'title'}})
                   if self.todrive['cellwrap']:
                     body['requests'].append({'repeatCell': {'range': {'sheetId': spreadsheet['sheets'][0]['properties']['sheetId']},
                                                             'fields': 'userEnteredFormat.wrapStrategy',

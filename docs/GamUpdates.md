@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.64.08
+
+Fixed bug in `redirect csv - todrive tdtitle "File Title" tdsheettitle "Sheet Title"` where
+"Sheet Title" was not assigned to the new sheet.
+
 ### 6.64.07
 
 Updated `gam <UserTypeEntity> move drivefile` to handle the following error:
