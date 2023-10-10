@@ -404,7 +404,8 @@ jobs:
         run: |
           cd "${env:PYTHON_SOURCE_PATH}"
           # We need out custom openssl.props which uses OpenSSL 3 DLL names
-          Copy-Item -Path "${env:GITHUB_WORKSPACE}\src\tools\openssl.props" -Destination PCBuild\ -Verbose
+          # NOTE this should no longer be necessary post Python 3.12.
+          # Copy-Item -Path "${env:GITHUB_WORKSPACE}\src\tools\openssl.props" -Destination PCBuild\ -Verbose
           echo "Building for ${env:PYBUILDRELEASE_ARCH}..."
           PCBuild\build.bat -m --pgo -c Release -p "${env:PYBUILDRELEASE_ARCH}"
 
@@ -479,9 +480,12 @@ jobs:
           git clone https://github.com/pyinstaller/pyinstaller.git
           cd pyinstaller
           export latest_release=$(git tag --list | grep -v dev | grep -v rc | sort -Vr | head -n1)
-          git checkout "${latest_release}"
-          #V6.0.0 causes errors, comment above and uncomment below to use 5.13.2
-          #git checkout "v5.13.2"
+          #V6.0.0 causes errors on staticx
+          if [[ "${staticx}" == "yes" ]]; then
+            git checkout "v5.13.2"
+          else
+            git checkout "${latest_release}"
+          fi
           # remove pre-compiled bootloaders so we fail if bootloader compile fails
           rm -rvf PyInstaller/bootloader/*-*/*
           cd bootloader
