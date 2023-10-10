@@ -88,7 +88,7 @@ jobs:
             arch: x86_64
           - os: ubuntu-22.04
             goal: test
-            python: "3.12"
+            python: "3.11"
             jid: 12
             arch: x86_64
 
