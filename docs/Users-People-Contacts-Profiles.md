@@ -361,6 +361,11 @@ If `<PeopleUserContactSelection>` specifies `emailmatchpattern <RegularExpressio
 are updated.
 
 ## Display User Contacts
+### User Contact Group information
+In the following commands, specifying `allfields` or including `memberships` in `fields <PeopleFieldNameList>`
+yields contact group information but only gives the contact group ID. Use the `showgroups` option to have GAM
+make additional API calls to get the contact group name associated with the ID.
+
 ### Display as an indented list of keys and values.
 ```
 gam <UserTypeEntity> info contacts

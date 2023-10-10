@@ -7592,6 +7592,8 @@ class CSVPrintFile():
       GM.Globals[GM.CSV_OUTPUT_TIMESTAMP_COLUMN] = GC.Values.get(GC.CSV_OUTPUT_TIMESTAMP_COLUMN, '')
     self.SetTimestampColumn(GM.Globals[GM.CSV_OUTPUT_TIMESTAMP_COLUMN])
     self.SetFormatJSON(False)
+    self.SetMapDrive3Titles(False)
+    self.SetNodataFields(False, None, None, None, False)
     self.SetFixPaths(False)
     self.SetShowPermissionsLast(False)
     self.sortTitlesSet = set()
@@ -7660,7 +7662,12 @@ class CSVPrintFile():
     self.sortTitlesList = self.titlesList[:]
     self.sortTitlesSet = set(self.sortTitlesList)
 
-  def UpdateMappedTitles(self):
+  def SetMapDrive3Titles(self, mapDrive3Titles):
+    self.mapDrive3Titles = mapDrive3Titles
+
+  def MapDrive3TitlesToDrive2(self):
+    _mapDrive3TitlesToDrive2(self.titlesList, API.DRIVE3_TO_DRIVE2_FILES_FIELDS_MAP)
+    _mapDrive3TitlesToDrive2(self.titlesList, API.DRIVE3_TO_DRIVE2_CAPABILITIES_TITLES_MAP)
     self.titlesSet = set(self.titlesList)
 
   def AddJSONTitle(self, title):
@@ -8022,6 +8029,67 @@ class CSVPrintFile():
     except ValueError:
       pass
 
+  def FixNodataTitles(self):
+    if self.mapNodataFields:
+      titles = []
+      addPermissionsTitle = not self.oneItemPerRow
+      for field in self.nodataFields:
+        if field.find('(') != -1:
+          field, subFields = field.split('(', 1)
+          if field in self.driveListFields:
+            if field != 'permissions':
+              titles.append(field)
+            elif addPermissionsTitle:
+              titles.append(field)
+              addPermissionsTitle = False
+            titles.extend([f'{field}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}0{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{subField}' for subField in subFields[:-1].split(',') if subField])
+          else:
+            titles.extend([f'{field}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{subField}' for subField in subFields[:-1].split(',') if subField])
+        elif field.find('.') != -1:
+          field, subField = field.split('.', 1)
+          if field in self.driveListFields:
+            if field != 'permissions':
+              titles.append(field)
+            elif addPermissionsTitle:
+              titles.append(field)
+              addPermissionsTitle = False
+            titles.append(f'{field}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}0{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{subField}')
+          else:
+            titles.append(f'{field}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{subField}')
+        elif field.lower() in self.driveSubfieldsChoiceMap:
+          if field in self.driveListFields:
+            if field != 'permissions':
+              titles.append(field)
+            elif addPermissionsTitle:
+              titles.append(field)
+              addPermissionsTitle = False
+            for subField in iter(self.driveSubfieldsChoiceMap[field.lower()].values()):
+              if not isinstance(subField, list):
+                titles.append(f'{field}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}0{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{subField}')
+              else:
+                titles.extend([f'{field}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}0{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{subSubField}' for subSubField in subField])
+          else:
+            for subField in iter(self.driveSubfieldsChoiceMap[field.lower()].values()):
+              if not isinstance(subField, list):
+                titles.append(f'{field}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{subField}')
+              else:
+                titles.extend([f'{field}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{subSubField}' for subSubField in subField])
+        else:
+          titles.append(field)
+        if self.oneItemPerRow:
+          for i, title in enumerate(titles):
+            if title.startswith('permissions.0'):
+              titles[i] = title.replace('permissions.0', 'permission')
+      if not self.formatJSON:
+        self.SetTitles(titles)
+        self.SetSortTitles(['Owner', 'id', 'name', 'title'])
+        self.SortTitles()
+      else:
+        self.SetJSONTitles(titles)
+    else:
+      self.SetTitles(self.nodataFields)
+      self.SetJSONTitles(self.nodataFields)
+
   def MovePermsToEnd(self):
 # Put permissions at end of titles
     try:
@@ -8051,6 +8119,13 @@ class CSVPrintFile():
 
   def SetFormatJSON(self, formatJSON):
     self.formatJSON = formatJSON
+
+  def SetNodataFields(self, mapNodataFields, nodataFields, driveListFields, driveSubfieldsChoiceMap, oneItemPerRow):
+    self.mapNodataFields = mapNodataFields
+    self.nodataFields = nodataFields
+    self.driveListFields = driveListFields
+    self.driveSubfieldsChoiceMap = driveSubfieldsChoiceMap
+    self.oneItemPerRow = oneItemPerRow
 
   def SetFixPaths(self, fixPaths):
     self.fixPaths = fixPaths
@@ -8550,7 +8625,14 @@ class CSVPrintFile():
                                                       self.formatJSON, self.JSONtitlesList,
                                                       self.columnDelimiter, self.quoteChar,
                                                       self.timestampColumn,
-                                                      self.fixPaths, self.showPermissionsLast,
+                                                      self.mapDrive3Titles,
+                                                      self.fixPaths,
+                                                      self.mapNodataFields,
+                                                      self.nodataFields,
+                                                      self.driveListFields,
+                                                      self.driveSubfieldsChoiceMap,
+                                                      self.oneItemPerRow,
+                                                      self.showPermissionsLast,
                                                       self.zeroBlankMimeTypeCounts)))
       GM.Globals[GM.CSVFILE][GM.REDIRECT_QUEUE].put((GM.REDIRECT_QUEUE_DATA, self.rows))
       return
@@ -8574,10 +8656,18 @@ class CSVPrintFile():
           self.FixPathsTitles(self.titlesList)
         if self.showPermissionsLast:
           self.MovePermsToEnd()
+        if not self.rows and self.nodataFields is not None:
+          self.FixNodataTitles()
+        if self.mapDrive3Titles:
+          self. MapDrive3TitlesToDrive2()
       if self.timestampColumn:
         self.AddTitle(self.timestampColumn)
       titlesList = self.titlesList
     else:
+      if self.fixPaths:
+        self.FixPathsTitles(self.JSONtitlesList)
+      if not self.rows and self.nodataFields is not None:
+        self.FixNodataTitles()
       if self.timestampColumn:
         for i, v in enumerate(self.JSONtitlesList):
           if v.startswith('JSON'):
@@ -9156,9 +9246,11 @@ def CSVFileQueueHandler(mpQueue, mpQueueStdout, mpQueueStderr, csvPF, datetimeNo
       csvPF.SetColumnDelimiter(dataItem[5])
       csvPF.SetQuoteChar(dataItem[6])
       csvPF.SetTimestampColumn(dataItem[7])
-      csvPF.SetFixPaths(dataItem[8])
-      csvPF.SetShowPermissionsLast(dataItem[9])
-      csvPF.SetZeroBlankMimeTypeCounts(dataItem[10])
+      csvPF.SetMapDrive3Titles(dataItem[8])
+      csvPF.SetFixPaths(dataItem[9])
+      csvPF.SetNoDataFields(dataItem[10], dataItem[11], dataItem[12], dataItem[13], dataItem[14])
+      csvPF.SetShowPermissionsLast(dataItem[15])
+      csvPF.SetZeroBlankMimeTypeCounts(dataItem[16])
     elif dataType == GM.REDIRECT_QUEUE_DATA:
       csvPF.rows.extend(dataItem)
     elif dataType == GM.REDIRECT_QUEUE_ARGS:
@@ -17681,6 +17773,7 @@ def doPrintAliases():
         entityList = callGAPIpages(cd.groups(), 'list', 'groups',
                                    pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute='email',
                                    throwReasons=GAPI.GROUP_LIST_THROW_REASONS,
+                                   retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                    query=query, orderBy='email',
                                    fields=f'nextPageToken,groups({",".join(groupFields)})', **kwargs)
         for group in entityList:
@@ -17750,6 +17843,7 @@ def doPrintAddresses():
     entityList = callGAPIpages(cd.groups(), 'list', 'groups',
                                pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute='email',
                                throwReasons=GAPI.GROUP_LIST_THROW_REASONS,
+                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                orderBy='email', fields=f'nextPageToken,groups({",".join(groupFields)})', **kwargs)
   except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.forbidden, GAPI.badRequest):
     accessErrorExit(cd)
@@ -30468,6 +30562,7 @@ def infoGroups(entityList):
       if getGroups:
         groups = callGAPIpages(cd.groups(), 'list', 'groups',
                                throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
+                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                userKey=group, orderBy='email', fields='nextPageToken,groups(name,email)')
       if getUsers:
         validRoles, listRoles, listFields = _getRoleVerification(memberRoles, 'nextPageToken,members(email,id,role,status,type)')
@@ -31146,6 +31241,7 @@ def doPrintGroups():
         entityList.extend(callGAPIpages(cd.groups(), 'list', 'groups',
                                         pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute='email',
                                         throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
+                                        retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                         orderBy='email', query=query, fields=cdfieldsnp, maxResults=maxResults, **kwargs))
       except (GAPI.invalidMember, GAPI.invalidInput) as e:
         if not invalidMember(query):
@@ -31379,6 +31475,7 @@ def getGroupMembersEntityList(cd, entityList, matchPatterns, fieldsList, kwargsD
         entityList.extend(callGAPIpages(cd.groups(), 'list', 'groups',
                                         pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute='email',
                                         throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
+                                        retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                         orderBy='email', query=query, fields=f'nextPageToken,groups({",".join(set(fieldsList))})', **kwargs))
       except (GAPI.invalidMember, GAPI.invalidInput) as e:
         if not invalidMember(query):
@@ -31858,6 +31955,7 @@ def doPrintShowGroupTree():
     try:
       entityList = callGAPIpages(cd.groups(), 'list', 'groups',
                                  throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
+                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  orderBy='email', fields='nextPageToken,groups(email,name)', **kwargs)
       for parentGroup in entityList:
         groupParents[groupEmail]['parents'].append(parentGroup['email'])
@@ -40805,6 +40903,7 @@ def updateUsers(entityList):
         try:
           groups = callGAPIpages(cd.groups(), 'list', 'groups',
                                  throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
+                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  userKey=userKey, orderBy='email', fields='nextPageToken,groups(email)')
         except (GAPI.invalidMember, GAPI.invalidInput):
           entityUnknownWarning(Ent.USER, userKey, i, count)
@@ -41358,6 +41457,7 @@ def infoUsers(entityList):
     try:
       entityList = callGAPIpages(cd.groups(), 'list', 'groups',
                                  throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
+                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  userKey=groupEmail, orderBy='email', fields='nextPageToken,groups(email,name)')
       for parentGroup in entityList:
         groupParents[groupEmail]['parents'].append(parentGroup['email'])
@@ -41490,6 +41590,7 @@ def infoUsers(entityList):
         try:
           groups = callGAPIpages(cd.groups(), 'list', 'groups',
                                  throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
+                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  userKey=user['primaryEmail'], orderBy='email', fields='nextPageToken,groups(name,email)', **kwargs)
         except (GAPI.forbidden, GAPI.domainNotFound):
 ### Print some message
@@ -41881,6 +41982,7 @@ def doPrintUsers(entityList=None):
           groups = callGAPIpages(cd.groups(), 'list', 'groups',
                                  pageMessage=getPageMessageForWhom(),
                                  throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
+                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  userKey=userEmail, orderBy='email', fields='nextPageToken,groups(email)')
           numGroups = len(groups)
           if not printOptions['groupsInColumns']:
@@ -52331,9 +52433,6 @@ def printFileList(users):
   timeObjects = _getDriveTimeObjects()
   if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES]:
     fileNameTitle = 'title'
-    _mapDrive3TitlesToDrive2(csvPF.titlesList, API.DRIVE3_TO_DRIVE2_FILES_FIELDS_MAP)
-    _mapDrive3TitlesToDrive2(csvPF.titlesList, API.DRIVE3_TO_DRIVE2_CAPABILITIES_TITLES_MAP)
-    csvPF.UpdateMappedTitles()
   else:
     fileNameTitle = 'name'
   csvPF.RemoveTitles(['capabilities'])
@@ -52350,6 +52449,23 @@ def printFileList(users):
         csvPFco.MoveTitlesToEnd(['Size'])
       csvPFco.MoveTitlesToEnd(['Total'])
       csvPFco.SetSortAllTitles()
+  if not nodataFields:
+    if DFF.fieldsList:
+      if not FJQC.formatJSON:
+        nodataFields = ['Owner']+list(set(DFF.fieldsList)-skipObjects)
+      else:
+        nodataFields = ['Owner', 'id', fileNameTitle, 'owners.emailAddress']
+    else:
+      nodataFields = ['Owner', 'id', fileNameTitle, 'owners.emailAddress']
+      if not FJQC.formatJSON:
+        nodataFields.append('permissions')
+    if filepath:
+      nodataFields.append('paths')
+    if FJQC.formatJSON:
+      nodataFields.append('JSON')
+    csvPF.SetNodataFields(True, nodataFields, DRIVE_LIST_FIELDS, DRIVE_SUBFIELDS_CHOICE_MAP, oneItemPerRow)
+  else:
+    csvPF.SetNodataFields(False, nodataFields, None, None, False)
   i, count, users = getEntityArgument(users)
   sizeTotals = {'User': 0, 'Summary': 0}
   for user in users:
@@ -52508,59 +52624,9 @@ def printFileList(users):
   if not countsOnly:
     if not csvPF.rows:
       setSysExitRC(NO_ENTITIES_FOUND_RC)
-      if not nodataFields:
-        if DFF.fieldsList:
-          nodataFields = ['Owner']+list(set(DFF.fieldsList)-skipObjects)
-        else:
-          nodataFields = ['Owner', 'id', fileNameTitle, 'owners.emailAddress', 'permissions']
-        if filepath:
-          nodataFields.append('paths')
-        if FJQC.formatJSON:
-          nodataFields.append('JSON')
-        titles = []
-        for field in nodataFields:
-          if field.find('(') != -1:
-            field, subFields = field.split('(', 1)
-            if field in DRIVE_LIST_FIELDS:
-              titles.append(field)
-              titles.extend([f'{field}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}0{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{subField}' for subField in subFields[:-1].split(',') if subField])
-            else:
-              titles.extend([f'{field}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{subField}' for subField in subFields[:-1].split(',') if subField])
-          elif field.find('.') != -1:
-            field, subField = field.split('.', 1)
-            if field in DRIVE_LIST_FIELDS and (field != 'permissions' or pmselect):
-              titles.append(f'{field}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}0{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{subField}')
-            else:
-              titles.append(f'{field}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{subField}')
-          elif field.lower() in DRIVE_SUBFIELDS_CHOICE_MAP:
-            if field in DRIVE_LIST_FIELDS:
-              titles.append(field)
-              for subField in iter(DRIVE_SUBFIELDS_CHOICE_MAP[field.lower()].values()):
-                if not isinstance(subField, list):
-                  titles.append(f'{field}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}0{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{subField}')
-                else:
-                  titles.extend([f'{field}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}0{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{subSubField}' for subSubField in subField])
-            else:
-              for subField in iter(DRIVE_SUBFIELDS_CHOICE_MAP[field.lower()].values()):
-                if not isinstance(subField, list):
-                  titles.append(f'{field}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{subField}')
-                else:
-                  titles.extend([f'{field}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{subSubField}' for subSubField in subField])
-          else:
-            titles.append(field)
-        csvPF.SetTitles(titles)
-      else:
-        csvPF.SetTitles(nodataFields)
-        csvPF.SetJSONTitles(nodataFields)
-      if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES]:
-        _mapDrive3TitlesToDrive2(csvPF.titlesList, API.DRIVE3_TO_DRIVE2_FILES_FIELDS_MAP)
-        _mapDrive3TitlesToDrive2(csvPF.titlesList, API.DRIVE3_TO_DRIVE2_CAPABILITIES_TITLES_MAP)
-        csvPF.UpdateMappedTitles()
     if not FJQC.formatJSON:
       csvPF.SetSortTitles(['Owner', 'id', fileNameTitle])
     else:
-      csvPF.JSONtitlesList.sort()
-      csvPF.FixPathsTitles(csvPF.JSONtitlesList)
       if 'JSON' in csvPF.JSONtitlesList:
         csvPF.MoveJSONTitlesToEnd(['JSON'])
     if GM.Globals[GM.CSVFILE][GM.REDIRECT_QUEUE] is None:
@@ -53391,8 +53457,7 @@ def printShowFileTree(users):
     if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES]:
       fileNameTitle = 'title'
       fileSize = 'fileSize'
-      _mapDrive3TitlesToDrive2(csvPF.titlesList, API.DRIVE3_TO_DRIVE2_FILES_FIELDS_MAP)
-      csvPF.UpdateMappedTitles()
+      csvPF.SetMapDrive3Titles(True)
     else:
       fileNameTitle = 'name'
       fileSize = 'size'
@@ -60892,6 +60957,7 @@ def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
       try:
         groups = callGAPIpages(cd.groups(), 'list', 'groups',
                                throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
+                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                userKey=emailAddress, orderBy='email', fields='nextPageToken,groups(email)')
       except (GAPI.invalidMember, GAPI.invalidInput):
         badRequestWarning(Ent.GROUP, Ent.MEMBER, emailAddress)
@@ -61578,6 +61644,7 @@ def deleteUserFromGroups(users):
       try:
         result = callGAPIpages(cd.groups(), 'list', 'groups',
                                throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
+                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                orderBy='email', fields='nextPageToken,groups(email)', **kwargs)
       except (GAPI.invalidMember, GAPI.invalidInput):
         badRequestWarning(Ent.GROUP, Ent.MEMBER, user)
@@ -61656,6 +61723,7 @@ def updateUserGroups(users):
       try:
         result = callGAPIpages(cd.groups(), 'list', 'groups',
                                throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
+                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                orderBy='email', fields='nextPageToken,groups(email)', **kwargs)
       except (GAPI.invalidMember, GAPI.invalidInput):
         badRequestWarning(Ent.GROUP, Ent.MEMBER, user)
@@ -61728,6 +61796,7 @@ def syncUserWithGroups(users):
     try:
       entityList = callGAPIpages(cd.groups(), 'list', 'groups',
                                  throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
+                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  orderBy='email', fields='nextPageToken,groups(email)', **kwargs)
     except (GAPI.invalidMember, GAPI.invalidInput):
       badRequestWarning(Ent.GROUP, Ent.MEMBER, user)
@@ -61956,6 +62025,7 @@ def printShowUserGroups(users):
       entityList = callGAPIpages(cd.groups(), 'list', 'groups',
                                  pageMessage=pageMessage,
                                  throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
+                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  orderBy='email', fields='nextPageToken,groups(email)', **kwargs)
     except (GAPI.invalidMember, GAPI.invalidInput):
       badRequestWarning(Ent.GROUP, Ent.MEMBER, user)
@@ -62037,6 +62107,7 @@ def printShowGroupTree(users):
     try:
       entityList = callGAPIpages(cd.groups(), 'list', 'groups',
                                  throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
+                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  orderBy='email', fields='nextPageToken,groups(email,name)', **kwargs)
       for parentGroup in entityList:
         groupParents[groupEmail]['parents'].append(parentGroup['email'])
@@ -62116,6 +62187,7 @@ def printShowGroupTree(users):
     try:
       groups = callGAPIpages(cd.groups(), 'list', 'groups',
                              throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
+                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                              orderBy='email', fields='nextPageToken,groups(email,name)', **kwargs)
     except (GAPI.invalidMember, GAPI.invalidInput):
       entityUnknownWarning(Ent.USER, user, i, count)
@@ -62190,6 +62262,7 @@ def printUserGroupsList(users):
       entityList = callGAPIpages(cd.groups(), 'list', 'groups',
                                  pageMessage=getPageMessageForWhom(),
                                  throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
+                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  orderBy='email', fields='nextPageToken,groups(email)', **kwargs)
     except (GAPI.invalidMember, GAPI.invalidInput):
       badRequestWarning(Ent.GROUP, Ent.MEMBER, user)

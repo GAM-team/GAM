@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.64.09
+
+Eliminated extraneous `permisssions.0.xxxx` headers in `gam <UserTypeEntity> print filelist ... oneitemperrow`
+that appeared when some user in `<UserTypeEntity>` had no files to display.
+
 ### 6.64.08
 
 Fixed bug in `redirect csv - todrive tdtitle "File Title" tdsheettitle "Sheet Title"` where
