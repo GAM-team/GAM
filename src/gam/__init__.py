@@ -9248,7 +9248,7 @@ def CSVFileQueueHandler(mpQueue, mpQueueStdout, mpQueueStderr, csvPF, datetimeNo
       csvPF.SetTimestampColumn(dataItem[7])
       csvPF.SetMapDrive3Titles(dataItem[8])
       csvPF.SetFixPaths(dataItem[9])
-      csvPF.SetNoDataFields(dataItem[10], dataItem[11], dataItem[12], dataItem[13], dataItem[14])
+      csvPF.SetNodataFields(dataItem[10], dataItem[11], dataItem[12], dataItem[13], dataItem[14])
       csvPF.SetShowPermissionsLast(dataItem[15])
       csvPF.SetZeroBlankMimeTypeCounts(dataItem[16])
     elif dataType == GM.REDIRECT_QUEUE_DATA:

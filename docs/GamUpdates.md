@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.64.10
+
+Fixed bug introduced in	6.64.09	that caused a trap when	`gam redirect csv <FileName> multiprocess` was used.
+
 ### 6.64.09
 
 Eliminated extraneous `permisssions.0.xxxx` headers in `gam <UserTypeEntity> print filelist ... oneitemperrow`
