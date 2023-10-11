@@ -532,7 +532,7 @@ jobs:
              export distpath="./dist/gam"
              export gampath="${distpath}"
              "${PYTHON}" -m PyInstaller --clean --noconfirm --distpath="${distpath}" gam.spec
-             cat build\gam\warn-gam.txt
+             cat build/gam/warn-gam.txt
  
       - name: Copy extra package files
         if: matrix.goal == 'build'
