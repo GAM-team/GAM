@@ -518,7 +518,8 @@ jobs:
              elif [[ "${RUNNER_OS}" == "Windows" ]]; then
                # Work around issue where PyInstaller picks up python3.dll from other Python versions
                # https://github.com/pyinstaller/pyinstaller/issues/7102
-               export PATH="/usr/bin"
+               # export PATH="/usr/bin"
+               true
              else
                export gampath=$(realpath "${gampath}")
              fi
@@ -531,6 +532,7 @@ jobs:
              export distpath="./dist/gam"
              export gampath="${distpath}"
              "${PYTHON}" -m PyInstaller --clean --noconfirm --distpath="${distpath}" gam.spec
+             cat build\gam\warn-gam.txt
  
       - name: Copy extra package files
         if: matrix.goal == 'build'
