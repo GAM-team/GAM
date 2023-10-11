@@ -94,6 +94,7 @@
 | Google Workspace for Education: Teaching and Learning Upgrade | 1010370001 | gwetlu |
 | Google Workspace Frontline Starter | 1010020030 | wsflw |
 | Google Workspace Frontline Standard | 1010020031 | wsflwstan |
+| Google Workspace Labs | 1010470002 | gwlabs | workspacelabs |
 
 ## Definitions
 ```
@@ -137,7 +138,7 @@
         cloudidentity | identity | 1010010001 |
         cloudidentitypremium | identitypremium | 1010050001 |
         cloudsearch | 1010350001 |
-        duetai | 101047001 |
+        duetai | 1010470001 |
         gsuitebasic | gafb | gafw | basic | Google-Apps-For-Business |
         gsuitebusiness | gau | gsb | unlimited | Google-Apps-Unlimited |
         gsuitebusinessarchived | gsbau | businessarchived | 1010340002 |
@@ -153,6 +154,7 @@
         gwesstaff | workspaceeducationstandardstaff | 1010310006 |
         gwesstudent | workspaceeducationstandardstudent | 1010310007 |
         gwetlu | workspaceeducationupgrade | 1010370001 |
+        gwlabs | workspacelabs | 1010470002
         meetdialing | googlemeetglobaldialing | 1010360001 |
         postini | gams | gsuitegams | gsuitepostini | gsuitemessagesecurity | Google-Apps-For-Postini |
         standard | free | Google-Apps |
