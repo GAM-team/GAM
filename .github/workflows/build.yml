@@ -88,7 +88,7 @@ jobs:
             arch: x86_64
           - os: ubuntu-22.04
             goal: test
-            python: "3.12"
+            python: "3.11"
             jid: 12
             arch: x86_64
 
@@ -479,9 +479,12 @@ jobs:
           git clone https://github.com/pyinstaller/pyinstaller.git
           cd pyinstaller
           export latest_release=$(git tag --list | grep -v dev | grep -v rc | sort -Vr | head -n1)
-          git checkout "${latest_release}"
-          #V6.0.0 causes errors, comment above and uncomment below to use 5.13.2
-          #git checkout "v5.13.2"
+          #V6.0.0 causes errors on staticx
+          if [[ "${staticx}" == "yes" ]]; then
+            git checkout "v5.13.2"
+          else
+            git checkout "${latest_release}"
+          fi
           # remove pre-compiled bootloaders so we fail if bootloader compile fails
           rm -rvf PyInstaller/bootloader/*-*/*
           cd bootloader
@@ -515,7 +518,8 @@ jobs:
              elif [[ "${RUNNER_OS}" == "Windows" ]]; then
                # Work around issue where PyInstaller picks up python3.dll from other Python versions
                # https://github.com/pyinstaller/pyinstaller/issues/7102
-               export PATH="/usr/bin"
+               # export PATH="/usr/bin"
+               true
              else
                export gampath=$(realpath "${gampath}")
              fi
@@ -528,6 +532,7 @@ jobs:
              export distpath="./dist/gam"
              export gampath="${distpath}"
              "${PYTHON}" -m PyInstaller --clean --noconfirm --distpath="${distpath}" gam.spec
+             cat build/gam/warn-gam.txt
  
       - name: Copy extra package files
         if: matrix.goal == 'build'
