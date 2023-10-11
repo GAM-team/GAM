@@ -84,6 +84,8 @@ _SKUS = {
     'product': '101040', 'aliases': ['beyondcorp', 'beyondcorpenterprise', 'bce'], 'displayName': 'Beyond Corp Enterprise'},
   '1010470001': {
     'product': '101047', 'aliases': ['duetai'], 'displayName': 'Duet AI for Enterprise'},
+  '1010470002': {
+    'product': '101047', 'aliases': ['gwlabs', 'workspacelabs'], 'displayName': 'Google Workspace Labs'},
   'Google-Apps': {
     'product': 'Google-Apps', 'aliases': ['standard', 'free'], 'displayName': 'G Suite Legacy'},
   'Google-Apps-For-Business': {

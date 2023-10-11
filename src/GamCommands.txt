@@ -266,7 +266,7 @@ If an item contains spaces, it should be surrounded by ".
         cloudidentity | identity | 1010010001 |
         cloudidentitypremium | identitypremium | 1010050001 |
         cloudsearch | 1010350001 |
-        duetai | 101047001 |
+        duetai | 1010470001 |
         gsuitebasic | gafb | gafw | basic | Google-Apps-For-Business |
         gsuitebusiness | gau | gsb | unlimited | Google-Apps-Unlimited |
         gsuitebusinessarchived | gsbau | businessarchived | 1010340002 |
@@ -282,6 +282,7 @@ If an item contains spaces, it should be surrounded by ".
         gwesstaff | workspaceeducationstandardstaff | 1010310006 |
         gwesstudent | workspaceeducationstandardstudent | 1010310007 |
         gwetlu | workspaceeducationupgrade | 1010370001 |
+        gwlabs | workspacelabs | 1010470002
         meetdialing | googlemeetglobaldialing | 1010360001 |
         postini | gams | gsuitegams | gsuitepostini | gsuitemessagesecurity | Google-Apps-For-Postini |
         standard | free | Google-Apps |
