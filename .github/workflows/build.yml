@@ -480,7 +480,7 @@ jobs:
           cd pyinstaller
           export latest_release=$(git tag --list | grep -v dev | grep -v rc | sort -Vr | head -n1)
           #V6.0.0 causes errors on staticx
-          if [[ "${staticx}" == "yes" ]]; then
+          if ([ "${staticx}" == "yes" ] || [ "${RUNNER_OS}" == "macOS" ]); then
             git checkout "v5.13.2"
           else
             git checkout "${latest_release}"
@@ -518,8 +518,7 @@ jobs:
              elif [[ "${RUNNER_OS}" == "Windows" ]]; then
                # Work around issue where PyInstaller picks up python3.dll from other Python versions
                # https://github.com/pyinstaller/pyinstaller/issues/7102
-               # export PATH="/usr/bin"
-               true
+               export PATH="/usr/bin"
              else
                export gampath=$(realpath "${gampath}")
              fi
