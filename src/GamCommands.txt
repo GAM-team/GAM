@@ -2502,9 +2502,9 @@ gam create chromenetwork
 gam delete chromenetwork
          <OrgUnitItem> <NetworkID>
 
-# Chrome Apps/Details/Versions
+# Chrome Apps/Devices/Versions
 
-gam info appdetails android|chrome|web <AppID>
+gam info chromeapp android|chrome|web <AppID>
         [formatjson]
 
 gam show chromeapps

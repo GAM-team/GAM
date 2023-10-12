@@ -24088,38 +24088,6 @@ def doInfoPrintShowCrOSTelemetry():
   if csvPF:
     csvPF.writeCSVfile('CrOS Devices Telemetry')
 
-APP_DETAILS_TIME_OBJECTS = {'firstPublishTime', 'latestPublishTime'}
-APP_DETAILS_TYPE_CHOICES  = ['android', 'chrome', 'web']
-
-# gam info appdetails android|chrome|web <AppID> [formatjson]
-def doInfoAppDetails():
-  cm = buildGAPIObject(API.CHROMEMANAGEMENT_APPDETAILS)
-  mode = getChoice(APP_DETAILS_TYPE_CHOICES)
-  app_id = getString(Cmd.OB_APP_ID)
-  FJQC = FormatJSONQuoteChar()
-  while Cmd.ArgumentsRemaining():
-    myarg = getArgument()
-    FJQC.GetFormatJSON(myarg)
-  if mode == 'chrome':
-    service = cm.customers().apps().chrome()
-  elif mode == 'android':
-    service = cm.customers().apps().android()
-  else:
-    service = cm.customers().apps().web()
-  try:
-    appDetails = callGAPI(service, 'get',
-                          throwReasons=[GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
-                          name=f'customers/{GC.Values[GC.CUSTOMER_ID]}/apps/{mode}/{app_id}')
-    if FJQC.formatJSON:
-      printLine(json.dumps(cleanJSON(appDetails), ensure_ascii=False, sort_keys=True))
-      return
-    printEntity([Ent.APP_ID, app_id])
-    Ind.Increment()
-    showJSON(None, appDetails, timeObjects=APP_DETAILS_TIME_OBJECTS)
-    Ind.Decrement()
-  except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
-    checkEntityAFDNEorAccessErrorExit(None, Ent.APP_ID, app_id)
-
 # gam delete browser <DeviceID>
 def doDeleteBrowsers():
   cbcm = buildGAPIObject(API.CBCM)
@@ -27723,6 +27691,38 @@ def doPrintShowPrinterModels():
       _printPrinterModel(model)
   if csvPF:
     csvPF.writeCSVfile('Printer Models')
+
+CHROME_APPS_TIME_OBJECTS = {'firstPublishTime', 'latestPublishTime'}
+CHROME_APPS_TYPE_CHOICES  = ['android', 'chrome', 'web']
+
+# gam info chromeapp android|chrome|web <AppID> [formatjson]
+def doInfoChromeApp():
+  cm = buildGAPIObject(API.CHROMEMANAGEMENT_APPDETAILS)
+  mode = getChoice(CHROME_APPS_TYPE_CHOICES)
+  app_id = getString(Cmd.OB_APP_ID)
+  FJQC = FormatJSONQuoteChar()
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    FJQC.GetFormatJSON(myarg)
+  if mode == 'chrome':
+    service = cm.customers().apps().chrome()
+  elif mode == 'android':
+    service = cm.customers().apps().android()
+  else:
+    service = cm.customers().apps().web()
+  try:
+    appDetails = callGAPI(service, 'get',
+                          throwReasons=[GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
+                          name=f'customers/{GC.Values[GC.CUSTOMER_ID]}/apps/{mode}/{app_id}')
+    if FJQC.formatJSON:
+      printLine(json.dumps(cleanJSON(appDetails), ensure_ascii=False, sort_keys=True))
+      return
+    printEntity([Ent.CHROME_APP, app_id])
+    Ind.Increment()
+    showJSON(None, appDetails, timeObjects=CHROME_APPS_TIME_OBJECTS)
+    Ind.Decrement()
+  except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
+    checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_APP, app_id)
 
 def _getPrintChromeGetting(subou, pfilter, entityType):
   orgUnitPath = subou[0]
@@ -50491,7 +50491,7 @@ DRIVE_CONTENT_RESTRICTIONS_SUBFIELDS_CHOICE_MAP = {
   'ownerrestricted': 'ownerRestricted',
   'readonly': 'readOnly',
   'reason': 'reason',
-  'restrictinguser': 'restructingUser',
+  'restrictinguser': 'restrictingUser',
   'restrictiontime': 'restrictionTime',
   'type': 'type',
   }
@@ -52465,6 +52465,7 @@ def printFileList(users):
   timeObjects = _getDriveTimeObjects()
   if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES]:
     fileNameTitle = 'title'
+    csvPF.SetMapDrive3Titles(True)
   else:
     fileNameTitle = 'name'
   csvPF.RemoveTitles(['capabilities'])
@@ -70062,13 +70063,13 @@ MAIN_COMMANDS_WITH_OBJECTS = {
     (Act.INFO,
      {Cmd.ARG_ADMINROLE:	doInfoAdminRole,
       Cmd.ARG_ALERT:		doInfoAlert,
-      Cmd.ARG_APPDETAILS:	doInfoAppDetails,
       Cmd.ARG_ALIAS:		doInfoAliases,
       Cmd.ARG_BUILDING:		doInfoBuilding,
       Cmd.ARG_BROWSER:		doInfoBrowsers,
       Cmd.ARG_CHATMEMBER:	doInfoChatMember,
       Cmd.ARG_CHATMESSAGE:	doInfoChatMessage,
       Cmd.ARG_CHATSPACE:	doInfoChatSpace,
+      Cmd.ARG_CHROMEAPP:	doInfoChromeApp,
       Cmd.ARG_CHROMESCHEMA:	doInfoChromePolicySchemas,
       Cmd.ARG_CIGROUP:		doInfoCIGroups,
       Cmd.ARG_CIGROUPMEMBERS:	doInfoCIGroupMembers,
@@ -70148,7 +70149,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHANNELSKU:	doPrintShowChannelSKUs,
       Cmd.ARG_CHATMEMBER:	doPrintShowChatMembers,
       Cmd.ARG_CHATSPACE:	doPrintShowChatSpaces,
-      Cmd.ARG_CHROMEAPPS:	doPrintShowChromeApps,
+      Cmd.ARG_CHROMEAPP:	doPrintShowChromeApps,
       Cmd.ARG_CHROMEAPPDEVICES:	doPrintShowChromeAppDevices,
       Cmd.ARG_CHROMEAUES:	doPrintShowChromeAues,
       Cmd.ARG_CHROMEHISTORY:	doPrintShowChromeHistory,
@@ -70275,7 +70276,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHANNELSKU:	doPrintShowChannelSKUs,
       Cmd.ARG_CHATMEMBER:	doPrintShowChatMembers,
       Cmd.ARG_CHATSPACE:	doPrintShowChatSpaces,
-      Cmd.ARG_CHROMEAPPS:	doPrintShowChromeApps,
+      Cmd.ARG_CHROMEAPP:	doPrintShowChromeApps,
       Cmd.ARG_CHROMEAPPDEVICES:	doPrintShowChromeAppDevices,
       Cmd.ARG_CHROMEAUES:	doPrintShowChromeAues,
       Cmd.ARG_CHROMEHISTORY:	doPrintShowChromeHistory,
@@ -70438,6 +70439,7 @@ MAIN_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_ALIASES:		Cmd.ARG_ALIAS,
   Cmd.ARG_APIS:			Cmd.ARG_API,
   Cmd.ARG_APIPROJECT:		Cmd.ARG_PROJECT,
+  Cmd.ARG_APPDETAILS:		Cmd.ARG_CHROMEAPP,
   Cmd.ARG_BROWSERS:		Cmd.ARG_BROWSER,
   Cmd.ARG_BROWSERTOKENS:	Cmd.ARG_BROWSERTOKEN,
   Cmd.ARG_BUCKET:		Cmd.ARG_STORAGEBUCKET,
@@ -70451,6 +70453,7 @@ MAIN_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_CHANNELPRODUCTS:	Cmd.ARG_CHANNELPRODUCT,
   Cmd.ARG_CHANNELSKUS:		Cmd.ARG_CHANNELSKU,
   Cmd.ARG_CHATSPACES:		Cmd.ARG_CHATSPACE,
+  Cmd.ARG_CHROMEAPPS:		Cmd.ARG_CHROMEAPP,
   Cmd.ARG_CHROMENETWORKS:	Cmd.ARG_CHROMENETWORK,
   Cmd.ARG_CHROMEPOLICIES:	Cmd.ARG_CHROMEPOLICY,
   Cmd.ARG_CHROMESCHEMAS:	Cmd.ARG_CHROMESCHEMA,

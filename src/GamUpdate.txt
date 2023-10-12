@@ -1,6 +1,10 @@
+6.64.14
+
+Cleaned up and renamed `gam info appdetails` to `gam info chromeapp`.
+
 6.64.13
 
-Added command to get customer app details.
+Added command to get chrome app details.
 ```
 gam info appdetails android|chrome|web <AppID> [formatjson]
 ```
