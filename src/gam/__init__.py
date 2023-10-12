@@ -27698,22 +27698,22 @@ CHROME_APPS_TYPE_CHOICES  = ['android', 'chrome', 'web']
 # gam info chromeapp android|chrome|web <AppID> [formatjson]
 def doInfoChromeApp():
   cm = buildGAPIObject(API.CHROMEMANAGEMENT_APPDETAILS)
-  mode = getChoice(CHROME_APPS_TYPE_CHOICES)
+  app_type = getChoice(CHROME_APPS_TYPE_CHOICES)
   app_id = getString(Cmd.OB_APP_ID)
   FJQC = FormatJSONQuoteChar()
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     FJQC.GetFormatJSON(myarg)
-  if mode == 'chrome':
+  if app_type == 'chrome':
     service = cm.customers().apps().chrome()
-  elif mode == 'android':
+  elif app_type == 'android':
     service = cm.customers().apps().android()
   else:
     service = cm.customers().apps().web()
   try:
     appDetails = callGAPI(service, 'get',
                           throwReasons=[GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
-                          name=f'customers/{GC.Values[GC.CUSTOMER_ID]}/apps/{mode}/{app_id}')
+                          name=f'customers/{GC.Values[GC.CUSTOMER_ID]}/apps/{app_type}/{app_id}')
     if FJQC.formatJSON:
       printLine(json.dumps(cleanJSON(appDetails), ensure_ascii=False, sort_keys=True))
       return
@@ -27722,7 +27722,7 @@ def doInfoChromeApp():
     showJSON(None, appDetails, timeObjects=CHROME_APPS_TIME_OBJECTS)
     Ind.Decrement()
   except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
-    checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_APP, app_id)
+    checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_APP, f'{app_type}/{app_id}')
 
 def _getPrintChromeGetting(subou, pfilter, entityType):
   orgUnitPath = subou[0]
