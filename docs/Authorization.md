@@ -931,7 +931,7 @@ This will prevent the limited user from having any client access.
 Perform these steps:
 
 Create a a new service account in your project that will be used for the limited user;
-this will create `outh2service.json`.
+this will create `oauth2service.json`.
 ```
 gam add svcacct saname "gam-limited" sadisplayname "GAM Limited"
 ```

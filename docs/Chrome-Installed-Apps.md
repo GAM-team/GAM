@@ -4,6 +4,7 @@
   - [API documentation](#api-documentation)
   - [Definitions](#definitions)
   - [Quoting rules](#quoting-rules)
+  - [Display Chrome installed app details](#display-chrome-installed-app-details)
   - [Display Chrome installed apps counts](#display-chrome-installed-apps-counts)
   - [Display Chrome devices with a specific installed application](#display-chrome-devices-with-a-specific-installed-application)
 
@@ -19,6 +20,7 @@ the appropriate scope: `Chrome Management API - read only`.
 gam update project
 gam oauth create
 ```
+To get installed app details you must authorize the scope: `Chrome Management API - AppDetails read only`.
 
 ## Definitions
 ```
@@ -47,6 +49,14 @@ Typically, you will enclose the entire list in double quotes and quote each item
 - Items, separated by spaces, with spaces, commas or single quotes in the items themselves
    * ```"'it em' 'it,em' \"it'em\""```
 
+## Display Chrome installed app details
+```
+gam info appdetails android|chrome|web <AppID>
+        [formatjson]
+```
+By default, Gam displays the information as an indented list of keys and values.
+* `formatjson` - Display the fields in JSON format.
+```
 ## Display Chrome installed apps counts
 ```
 gam show chromeapps

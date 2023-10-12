@@ -428,6 +428,7 @@ class GamCLArgs():
   ARG_APIS = 'apis'
   ARG_APIPROJECT = 'apiproject'
   ARG_APPACCESSSETTINGS = 'appaccesssettings'
+  ARG_APPDETAILS = 'appdetails'
   ARG_APPLICATIONSPECIFICPASSWORDS = 'applicationspecificpasswords'
   ARG_ASP = 'asp'
   ARG_ASPS = 'asps'

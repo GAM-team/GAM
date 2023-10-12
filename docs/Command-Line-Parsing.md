@@ -17,7 +17,7 @@ To embed a `'` in a string enclosed in `"`, enter `'`; `name "Test'Group"`.
 
 To embed a `"` in a string enclosed in `'`, enter `"`; `name 'Test"Group'`.
 
-To embed a `'` in a string enclosed in `'`, enter `'\''"`; `name 'Test'\''Group'`.
+To embed a `'` in a string enclosed in `'`, enter `'\''`; `name 'Test'\''Group'`.
 
 To embed a `"` in a string enclosed in `"`, enter `\"`; `name "Test\"Group"`.
 

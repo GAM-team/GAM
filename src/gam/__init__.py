@@ -24088,6 +24088,38 @@ def doInfoPrintShowCrOSTelemetry():
   if csvPF:
     csvPF.writeCSVfile('CrOS Devices Telemetry')
 
+APP_DETAILS_TIME_OBJECTS = {'firstPublishTime', 'latestPublishTime'}
+APP_DETAILS_TYPE_CHOICES  = ['android', 'chrome', 'web']
+
+# gam info appdetails android|chrome|web <AppID> [formatjson]
+def doInfoAppDetails():
+  cm = buildGAPIObject(API.CHROMEMANAGEMENT_APPDETAILS)
+  mode = getChoice(APP_DETAILS_TYPE_CHOICES)
+  app_id = getString(Cmd.OB_APP_ID)
+  FJQC = FormatJSONQuoteChar()
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    FJQC.GetFormatJSON(myarg)
+  if mode == 'chrome':
+    service = cm.customers().apps().chrome()
+  elif mode == 'android':
+    service = cm.customers().apps().android()
+  else:
+    service = cm.customers().apps().web()
+  try:
+    appDetails = callGAPI(service, 'get',
+                          throwReasons=[GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
+                          name=f'customers/{GC.Values[GC.CUSTOMER_ID]}/apps/{mode}/{app_id}')
+    if FJQC.formatJSON:
+      printLine(json.dumps(cleanJSON(appDetails), ensure_ascii=False, sort_keys=True))
+      return
+    printEntity([Ent.APP_ID, app_id])
+    Ind.Increment()
+    showJSON(None, appDetails, timeObjects=APP_DETAILS_TIME_OBJECTS)
+    Ind.Decrement()
+  except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
+    checkEntityAFDNEorAccessErrorExit(None, Ent.APP_ID, app_id)
+
 # gam delete browser <DeviceID>
 def doDeleteBrowsers():
   cbcm = buildGAPIObject(API.CBCM)
@@ -70030,6 +70062,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
     (Act.INFO,
      {Cmd.ARG_ADMINROLE:	doInfoAdminRole,
       Cmd.ARG_ALERT:		doInfoAlert,
+      Cmd.ARG_APPDETAILS:	doInfoAppDetails,
       Cmd.ARG_ALIAS:		doInfoAliases,
       Cmd.ARG_BUILDING:		doInfoBuilding,
       Cmd.ARG_BROWSER:		doInfoBrowsers,

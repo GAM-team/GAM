@@ -2502,7 +2502,10 @@ gam create chromenetwork
 gam delete chromenetwork
          <OrgUnitItem> <NetworkID>
 
-# Chrome Apps/Versions
+# Chrome Apps/Details/Versions
+
+gam info appdetails android|chrome|web <AppID>
+        [formatjson]
 
 gam show chromeapps
         [(ou <OrgUnitItem>)|(ou_and_children <OrgUnitItem>)|

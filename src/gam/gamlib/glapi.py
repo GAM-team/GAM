@@ -32,6 +32,7 @@ CHAT_MESSAGES = 'chatmessages'
 CHAT_SPACES = 'chatspaces'
 CHAT_SPACES_DELETE = 'chatspacesdelete'
 CHROMEMANAGEMENT = 'chromemanagement'
+CHROMEMANAGEMENT_APPDETAILS = 'chromemanagementappdetails'
 CHROMEMANAGEMENT_TELEMETRY = 'chromemanagementtelemetry'
 CHROMEPOLICY = 'chromepolicy'
 CHROMEVERSIONHISTORY = 'versionhistory'
@@ -195,6 +196,7 @@ _INFO = {
   CHAT_SPACES_DELETE: {'name': 'Chat API - Spaces Delete', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},
   CLASSROOM: {'name': 'Classroom API', 'version': 'v1', 'v2discovery': True},
   CHROMEMANAGEMENT: {'name': 'Chrome Management API', 'version': 'v1', 'v2discovery': True},
+  CHROMEMANAGEMENT_APPDETAILS: {'name': 'Chrome Management API - AppDetails', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHROMEMANAGEMENT},
   CHROMEMANAGEMENT_TELEMETRY: {'name': 'Chrome Management API - Telemetry', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHROMEMANAGEMENT},
   CHROMEPOLICY: {'name': 'Chrome Policy API', 'version': 'v1', 'v2discovery': True},
   CHROMEVERSIONHISTORY: {'name': 'Chrome Version History API', 'version': 'v1', 'v2discovery': True},
@@ -266,6 +268,10 @@ _CLIENT_SCOPES = [
    'api': CHROMEMANAGEMENT,
    'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/chrome.management.reports.readonly'},
+  {'name': 'Chrome Management API - AppDetails read only',
+   'api': CHROMEMANAGEMENT_APPDETAILS,
+   'subscopes': [],
+   'scope': 'https://www.googleapis.com/auth/chrome.management.appdetails.readonly'},
   {'name': 'Chrome Management API - Telemetry read only',
    'api': CHROMEMANAGEMENT_TELEMETRY,
    'subscopes': [],

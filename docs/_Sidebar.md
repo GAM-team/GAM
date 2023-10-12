@@ -67,7 +67,7 @@ Client Access
 * [Chrome Auto Update Expiration Counts](Chrome-AUE-Counts)
 * [Chrome Browser Cloud Management](Chrome-Browser-Cloud-Management)
 * [Chrome Device Needs Attention Counts](Chrome-Needs-Attention-Counts)
-* [Chrome Installed Apps Counts](Chrome-Installed-Apps-Counts)
+* [Chrome Installed Apps](Chrome-Installed-Apps)
 * [Chrome Policies](Chrome-Policies)
 * [Chrome Printers](Chrome-Printers)
 * [Chrome Version Counts](Chrome-Version-Counts)

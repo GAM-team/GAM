@@ -4,9 +4,9 @@
 Print the current version of Gam with details
 ```
 gam version
-GAMADV-XTD3 6.64.11 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
+GAMADV-XTD3 6.64.13 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
 Ross Scroggs <ross.scroggs@gmail.com>
-Python 3.11.5 64-bit final
+Python 3.12.0 64-bit final
 MacOS Monterey 12.6.6 x86_64
 Path: /Users/Admin/bin/gamadv-xtd3
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain.com
@@ -16,9 +16,9 @@ Time: 2023-06-02T21:10:00-07:00
 Print the current version of Gam with details and time offset information
 ```
 gam version timeoffset
-GAMADV-XTD3 6.64.11 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
+GAMADV-XTD3 6.64.13 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
 Ross Scroggs <ross.scroggs@gmail.com>
-Python 3.11.5 64-bit final
+Python 3.12.0 64-bit final
 MacOS Monterey 12.6.6 x86_64
 Path: /Users/Admin/bin/gamadv-xtd3
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain.com
@@ -28,9 +28,9 @@ Your system time differs from www.googleapis.com by less than 1 second
 Print the current version of Gam with extended details and SSL information
 ```
 gam version extended
-GAMADV-XTD3 6.64.11 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
+GAMADV-XTD3 6.64.13 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
 Ross Scroggs <ross.scroggs@gmail.com>
-Python 3.11.5 64-bit final
+Python 3.12.0 64-bit final
 MacOS Monterey 12.6.6 x86_64
 Path: /Users/Admin/bin/gamadv-xtd3
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain.com
@@ -65,7 +65,7 @@ MacOS High Sierra 10.13.6 x86_64
 Path: /Users/Admin/bin/gamadv-xtd3
 Version Check:
   Current: 5.35.08
-   Latest: 6.64.11
+   Latest: 6.64.13
 echo $?
 1
 ```
@@ -73,7 +73,7 @@ echo $?
 Print the current version number without details
 ```
 gam version simple
-6.64.11
+6.64.13
 ```
 In Linux/MacOS you can do:
 ```
@@ -83,9 +83,9 @@ echo $VER
 Print the current version of Gam and address of this Wiki
 ```
 gam help
-GAM 6.64.11 - https://github.com/taers232c/GAMADV-XTD3
+GAM 6.64.13 - https://github.com/taers232c/GAMADV-XTD3
 Ross Scroggs <ross.scroggs@gmail.com>
-Python 3.11.5 64-bit final
+Python 3.12.0 64-bit final
 MacOS Monterey 12.6.6 x86_64
 Path: /Users/Admin/bin/gamadv-xtd3
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain.com

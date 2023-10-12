@@ -10,6 +10,18 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.64.13
+
+Added command to get customer app details.
+```
+gam info appdetails android|chrome|web <AppID> [formatjson]
+```
+
+### 6.64.12
+
+Upgraded to Python 3.12.0 where possible.
+Upgraded to OpenSSL 3.1.3 where possible.
+
 ### 6.64.11
 
 Added support for Google Workspace Labs license.
