@@ -334,7 +334,7 @@ writes the credentials into the file oauth2.txt.
 admin@server:/Users/admin/bin/gamadv-xtd3$ rm -f /Users/admin/GAMConfig/oauth2.txt
 admin@server:/Users/admin/bin/gamadv-xtd3$ ./gam version
 WARNING: Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, Item: oauth2_txt, Value: /Users/admin/GAMConfig/oauth2.txt, Not Found
-GAMADV-XTD3 6.64.13 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
+GAMADV-XTD3 6.64.14 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
 Ross Scroggs <ross.scroggs@gmail.com>
 Python 3.10.8 64-bit final
 MacOS High Sierra 10.13.6 x86_64
@@ -348,55 +348,61 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
 
 [*]  0)  Calendar API (supports readonly)
 [*]  1)  Chrome Browser Cloud Management API (supports readonly)
-[*]  2)  Chrome Management API - Telemetry read only
-[*]  3)  Chrome Management API - read only
-[*]  4)  Chrome Policy API (supports readonly)
-[*]  5)  Chrome Printer Management API (supports readonly)
-[*]  6)  Chrome Version History API
-[*]  7)  Classroom API - Course Announcements (supports readonly)
-[*]  8)  Classroom API - Course Topics (supports readonly)
-[*]  9)  Classroom API - Course Work/Materials (supports readonly)
-[*] 10)  Classroom API - Course Work/Submissions (supports readonly)
-[*] 11)  Classroom API - Courses (supports readonly)
-[*] 12)  Classroom API - Profile Emails
-[*] 13)  Classroom API - Profile Photos
-[*] 14)  Classroom API - Rosters (supports readonly)
-[*] 15)  Classroom API - Student Guardians (supports readonly)
-[*] 16)  Cloud Identity Groups API (supports readonly)
-[*] 17)  Cloud Storage (Vault Export - read only)
-[*] 18)  Contact Delegation API (supports readonly)
-[*] 19)  Contacts API - Domain Shared and Users and GAL
-[*] 20)  Data Transfer API (supports readonly)
-[*] 21)  Directory API - Chrome OS Devices (supports readonly)
-[*] 22)  Directory API - Customers (supports readonly)
-[*] 23)  Directory API - Domains (supports readonly)
-[*] 24)  Directory API - Groups (supports readonly)
-[*] 25)  Directory API - Mobile Devices Directory (supports readonly and action)
-[*] 26)  Directory API - Organizational Units (supports readonly)
-[*] 27)  Directory API - Resource Calendars (supports readonly)
-[*] 28)  Directory API - Roles (supports readonly)
-[*] 29)  Directory API - User Schemas (supports readonly)
-[*] 30)  Directory API - User Security
-[*] 31)  Directory API - Users (supports readonly)
-[*] 32)  Email Audit API
-[*] 33)  Groups Migration API
-[*] 34)  Groups Settings API
-[*] 35)  License Manager API
-[*] 36)  People API (supports readonly)
-[*] 37)  People Directory API - read only
-[ ] 38)  Pub / Sub API
-[*] 39)  Reports API - Audit Reports
-[*] 40)  Reports API - Usage Reports
-[ ] 41)  Reseller API
-[*] 42)  Site Verification API
-[*] 43)  Sites API
-[*] 44)  Vault API (supports readonly)
+[*]  2)  Chrome Management API - AppDetails read only
+[*]  3)  Chrome Management API - Telemetry read only
+[*]  4)  Chrome Management API - read only
+[*]  5)  Chrome Policy API (supports readonly)
+[*]  6)  Chrome Printer Management API (supports readonly)
+[ ]  7)  Chrome Version History API
+[*]  8)  Classroom API - Course Announcements (supports readonly)
+[*]  9)  Classroom API - Course Topics (supports readonly)
+[*] 10)  Classroom API - Course Work/Materials (supports readonly)
+[*] 11)  Classroom API - Course Work/Submissions (supports readonly)
+[*] 12)  Classroom API - Courses (supports readonly)
+[*] 13)  Classroom API - Profile Emails
+[*] 14)  Classroom API - Profile Photos
+[*] 15)  Classroom API - Rosters (supports readonly)
+[*] 16)  Classroom API - Student Guardians (supports readonly)
+[*] 17)  Cloud Channel API (supports readonly)
+[*] 18)  Cloud Identity - Inbound SSO Settings (supports readonly)
+[*] 19)  Cloud Identity Groups API (supports readonly)
+[*] 20)  Cloud Identity OrgUnits API (supports readonly)
+[*] 21)  Cloud Identity User Invitations API (supports readonly)
+[ ] 22)  Cloud Storage API (Read Only, Vault/Takeout Download, Cloud Storage)
+[ ] 23)  Cloud Storage API (Read/Write, Vault/Takeout Copy/Download, Cloud Storage)
+[*] 24)  Contact Delegation API (supports readonly)
+[*] 25)  Contacts API - Domain Shared Contacts and GAL
+[*] 26)  Data Transfer API (supports readonly)
+[*] 27)  Directory API - Chrome OS Devices (supports readonly)
+[*] 28)  Directory API - Customers (supports readonly)
+[*] 29)  Directory API - Domains (supports readonly)
+[*] 30)  Directory API - Groups (supports readonly)
+[*] 31)  Directory API - Mobile Devices Directory (supports readonly and action)
+[*] 32)  Directory API - Organizational Units (supports readonly)
+[*] 33)  Directory API - Resource Calendars (supports readonly)
+[*] 34)  Directory API - Roles (supports readonly)
+[*] 35)  Directory API - User Schemas (supports readonly)
+[*] 36)  Directory API - User Security
+[*] 37)  Directory API - Users (supports readonly)
+[ ] 38)  Email Audit API
+[*] 39)  Groups Migration API
+[*] 40)  Groups Settings API
+[*] 41)  License Manager API
+[*] 42)  People API (supports readonly)
+[*] 43)  People Directory API - read only
+[ ] 44)  Pub / Sub API
+[*] 45)  Reports API - Audit Reports
+[*] 46)  Reports API - Usage Reports
+[*] 47)  Reseller API
+[*] 48)  Site Verification API
+[ ] 49)  Sites API
+[*] 50)  Vault API (supports readonly)
 
      s)  Select all scopes
      u)  Unselect all scopes
      e)  Exit without changes
      c)  Continue to authorization
-Please enter 0-44[a|r] or s|u|e|c: c
+Please enter 0-50[a|r] or s|u|e|c: c
 
 Enter your Google Workspace admin email address? admin@domain.com
 
@@ -424,35 +430,41 @@ Service Account Private Key Authentication
   Authentication                                                            PASS
 Service Account Private Key age; Google recommends rotating keys on a routine basis
   Service Account Private Key age: 0 days                                   PASS
-Domain-Wide Delegation authentication:, User: admin@domain.com, Scopes: 28
-  https://mail.google.com/                                                  PASS (1/28)
-  https://sites.google.com/feeds                                            PASS (2/28)
-  https://www.googleapis.com/auth/apps.alerts                               PASS (3/28)
-  https://www.googleapis.com/auth/calendar                                  PASS (4/28)
-  https://www.googleapis.com/auth/classroom.announcements                   PASS (5/28)
-  https://www.googleapis.com/auth/classroom.coursework.students             PASS (6/28)
-  https://www.googleapis.com/auth/classroom.courseworkmaterials             PASS (7/28)
-  https://www.googleapis.com/auth/classroom.profile.emails                  PASS (8/28)
-  https://www.googleapis.com/auth/classroom.rosters                         PASS (9/28)
-  https://www.googleapis.com/auth/classroom.topics                          PASS (10/28)
-  https://www.googleapis.com/auth/cloud-identity                            PASS (11/28)
-  https://www.googleapis.com/auth/cloud-platform                            PASS (12/28)
-  https://www.googleapis.com/auth/contacts                                  PASS (13/28)
-  https://www.googleapis.com/auth/contacts.other.readonly                   PASS (14/28)
-  https://www.googleapis.com/auth/datastudio                                PASS (15/28)
-  https://www.googleapis.com/auth/directory.readonly                        PASS (16/28)
-  https://www.googleapis.com/auth/documents                                 PASS (17/28)
-  https://www.googleapis.com/auth/drive                                     PASS (18/28)
-  https://www.googleapis.com/auth/drive.activity                            PASS (19/28)
-  https://www.googleapis.com/auth/drive.admin.labels                        FAIL (20/28)
-  https://www.googleapis.com/auth/drive.labels                              FAIL (21/28)
-  https://www.googleapis.com/auth/gmail.modify                              PASS (22/28)
-  https://www.googleapis.com/auth/gmail.settings.basic                      PASS (23/28)
-  https://www.googleapis.com/auth/gmail.settings.sharing                    PASS (24/28)
-  https://www.googleapis.com/auth/keep                                      PASS (25/28)
-  https://www.googleapis.com/auth/spreadsheets                              PASS (26/28)
-  https://www.googleapis.com/auth/tasks                                     PASS (27/28)
-  https://www.googleapis.com/auth/userinfo.profile                          PASS (28/28)
+Domain-wide Delegation authentication:, User: admin@domain.com, Scopes: 34
+  https://mail.google.com/                                                  PASS (1/34)
+  https://sites.google.com/feeds                                            PASS (2/34)
+  https://www.googleapis.com/auth/analytics.readonly                        PASS (3/34)
+  https://www.googleapis.com/auth/apps.alerts                               PASS (4/34)
+  https://www.googleapis.com/auth/calendar                                  PASS (5/34)
+  https://www.googleapis.com/auth/chat.delete                               PASS (6/34)
+  https://www.googleapis.com/auth/chat.memberships                          PASS (7/34)
+  https://www.googleapis.com/auth/chat.messages                             PASS (8/34)
+  https://www.googleapis.com/auth/chat.spaces                               PASS (9/34)
+  https://www.googleapis.com/auth/classroom.announcements                   PASS (10/34)
+  https://www.googleapis.com/auth/classroom.coursework.students             PASS (11/34)
+  https://www.googleapis.com/auth/classroom.courseworkmaterials             PASS (12/34)
+  https://www.googleapis.com/auth/classroom.profile.emails                  PASS (13/34)
+  https://www.googleapis.com/auth/classroom.rosters                         PASS (14/34)
+  https://www.googleapis.com/auth/classroom.topics                          PASS (15/34)
+  https://www.googleapis.com/auth/cloud-identity                            PASS (16/34)
+  https://www.googleapis.com/auth/cloud-platform                            PASS (17/34)
+  https://www.googleapis.com/auth/contacts                                  PASS (18/34)
+  https://www.googleapis.com/auth/contacts.other.readonly                   PASS (19/34)
+  https://www.googleapis.com/auth/datastudio                                PASS (20/34)
+  https://www.googleapis.com/auth/directory.readonly                        PASS (21/34)
+  https://www.googleapis.com/auth/documents                                 PASS (22/34)
+  https://www.googleapis.com/auth/drive                                     PASS (23/34)
+  https://www.googleapis.com/auth/drive.activity                            PASS (24/34)
+  https://www.googleapis.com/auth/drive.admin.labels                        FAIL (25/34)
+  https://www.googleapis.com/auth/drive.labels                              FAIL (26/34)
+  https://www.googleapis.com/auth/gmail.modify                              PASS (27/34)
+  https://www.googleapis.com/auth/gmail.settings.basic                      PASS (28/34)
+  https://www.googleapis.com/auth/gmail.settings.sharing                    PASS (29/34)
+  https://www.googleapis.com/auth/keep                                      PASS (30/34)
+  https://www.googleapis.com/auth/spreadsheets                              PASS (31/34)
+  https://www.googleapis.com/auth/tasks                                     PASS (32/34)
+  https://www.googleapis.com/auth/userinfo.profile                          PASS (33/34)
+  https://www.googleapis.com/auth/youtube.readonly                          PASS (34/34)
 Some scopes FAILED!
 To authorize them, please go to:
 
@@ -480,35 +492,41 @@ System time status:
   Your system time differs from www.googleapis.com by less than 1 second    PASS
 Service Account Private Key Authentication:
   Authentication                                                            PASS
-Domain-Wide Delegation authentication:, User: admin@domain.com, Scopes: 28
-  https://mail.google.com/                                                  PASS (1/28)
-  https://sites.google.com/feeds                                            PASS (2/28)
-  https://www.googleapis.com/auth/apps.alerts                               PASS (3/28)
-  https://www.googleapis.com/auth/calendar                                  PASS (4/28)
-  https://www.googleapis.com/auth/classroom.announcements                   PASS (5/28)
-  https://www.googleapis.com/auth/classroom.coursework.students             PASS (6/28)
-  https://www.googleapis.com/auth/classroom.courseworkmaterials             PASS (7/28)
-  https://www.googleapis.com/auth/classroom.profile.emails                  PASS (8/28)
-  https://www.googleapis.com/auth/classroom.rosters                         PASS (9/28)
-  https://www.googleapis.com/auth/classroom.topics                          PASS (10/28)
-  https://www.googleapis.com/auth/cloud-identity                            PASS (11/28)
-  https://www.googleapis.com/auth/cloud-platform                            PASS (12/28)
-  https://www.googleapis.com/auth/contacts                                  PASS (13/28)
-  https://www.googleapis.com/auth/contacts.other.readonly                   PASS (14/28)
-  https://www.googleapis.com/auth/datastudio                                PASS (15/28)
-  https://www.googleapis.com/auth/directory.readonly                        PASS (16/28)
-  https://www.googleapis.com/auth/documents                                 PASS (17/28)
-  https://www.googleapis.com/auth/drive                                     PASS (18/28)
-  https://www.googleapis.com/auth/drive.activity                            PASS (19/28)
-  https://www.googleapis.com/auth/drive.admin.labels                        PASS (20/28)
-  https://www.googleapis.com/auth/drive.labels                              PASS (21/28)
-  https://www.googleapis.com/auth/gmail.modify                              PASS (22/28)
-  https://www.googleapis.com/auth/gmail.settings.basic                      PASS (23/28)
-  https://www.googleapis.com/auth/gmail.settings.sharing                    PASS (24/28)
-  https://www.googleapis.com/auth/keep                                      PASS (25/28)
-  https://www.googleapis.com/auth/spreadsheets                              PASS (26/28)
-  https://www.googleapis.com/auth/tasks                                     PASS (27/28)
-  https://www.googleapis.com/auth/userinfo.profile                          PASS (28/28)
+Domain-wide Delegation authentication:, User: admin@domain.com, Scopes: 34
+  https://mail.google.com/                                                  PASS (1/34)
+  https://sites.google.com/feeds                                            PASS (2/34)
+  https://www.googleapis.com/auth/analytics.readonly                        PASS (3/34)
+  https://www.googleapis.com/auth/apps.alerts                               PASS (4/34)
+  https://www.googleapis.com/auth/calendar                                  PASS (5/34)
+  https://www.googleapis.com/auth/chat.delete                               PASS (6/34)
+  https://www.googleapis.com/auth/chat.memberships                          PASS (7/34)
+  https://www.googleapis.com/auth/chat.messages                             PASS (8/34)
+  https://www.googleapis.com/auth/chat.spaces                               PASS (9/34)
+  https://www.googleapis.com/auth/classroom.announcements                   PASS (10/34)
+  https://www.googleapis.com/auth/classroom.coursework.students             PASS (11/34)
+  https://www.googleapis.com/auth/classroom.courseworkmaterials             PASS (12/34)
+  https://www.googleapis.com/auth/classroom.profile.emails                  PASS (13/34)
+  https://www.googleapis.com/auth/classroom.rosters                         PASS (14/34)
+  https://www.googleapis.com/auth/classroom.topics                          PASS (15/34)
+  https://www.googleapis.com/auth/cloud-identity                            PASS (16/34)
+  https://www.googleapis.com/auth/cloud-platform                            PASS (17/34)
+  https://www.googleapis.com/auth/contacts                                  PASS (18/34)
+  https://www.googleapis.com/auth/contacts.other.readonly                   PASS (19/34)
+  https://www.googleapis.com/auth/datastudio                                PASS (20/34)
+  https://www.googleapis.com/auth/directory.readonly                        PASS (21/34)
+  https://www.googleapis.com/auth/documents                                 PASS (22/34)
+  https://www.googleapis.com/auth/drive                                     PASS (23/34)
+  https://www.googleapis.com/auth/drive.activity                            PASS (24/34)
+  https://www.googleapis.com/auth/drive.admin.labels                        PASS (25/34)
+  https://www.googleapis.com/auth/drive.labels                              PASS (26/34)
+  https://www.googleapis.com/auth/gmail.modify                              PASS (27/34)
+  https://www.googleapis.com/auth/gmail.settings.basic                      PASS (28/34)
+  https://www.googleapis.com/auth/gmail.settings.sharing                    PASS (29/34)
+  https://www.googleapis.com/auth/keep                                      PASS (30/34)
+  https://www.googleapis.com/auth/spreadsheets                              PASS (31/34)
+  https://www.googleapis.com/auth/tasks                                     PASS (32/34)
+  https://www.googleapis.com/auth/userinfo.profile                          PASS (33/34)
+  https://www.googleapis.com/auth/youtube.readonly                          PASS (34/34)
 All scopes PASSED!
 
 Service Account Client name: SVCACCTID is fully authorized.
@@ -984,7 +1002,7 @@ writes the credentials into the file oauth2.txt.
 C:\GAMADV-XTD3>del C:\GAMConfig\oauth2.txt
 C:\GAMADV-XTD3>gam version
 WARNING: Config File: C:\GAMConfig\gam.cfg, Section: DEFAULT, Item: oauth2_txt, Value: C:\GAMConfig\oauth2.txt, Not Found
-GAMADV-XTD3 6.64.13 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
+GAMADV-XTD3 6.64.14 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
 Ross Scroggs <ross.scroggs@gmail.com>
 Python 3.12.0 64-bit final
 Windows-10-10.0.17134 AMD64
@@ -998,55 +1016,61 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
 
 [*]  0)  Calendar API (supports readonly)
 [*]  1)  Chrome Browser Cloud Management API (supports readonly)
-[*]  2)  Chrome Management API - Telemetry read only
-[*]  3)  Chrome Management API - read only
-[*]  4)  Chrome Policy API (supports readonly)
-[*]  5)  Chrome Printer Management API (supports readonly)
-[*]  6)  Chrome Version History API
-[*]  7)  Classroom API - Course Announcements (supports readonly)
-[*]  8)  Classroom API - Course Topics (supports readonly)
-[*]  9)  Classroom API - Course Work/Materials (supports readonly)
-[*] 10)  Classroom API - Course Work/Submissions (supports readonly)
-[*] 11)  Classroom API - Courses (supports readonly)
-[*] 12)  Classroom API - Profile Emails
-[*] 13)  Classroom API - Profile Photos
-[*] 14)  Classroom API - Rosters (supports readonly)
-[*] 15)  Classroom API - Student Guardians (supports readonly)
-[*] 16)  Cloud Identity Groups API (supports readonly)
-[*] 17)  Cloud Storage (Vault Export - read only)
-[*] 18)  Contact Delegation API (supports readonly)
-[*] 19)  Contacts API - Domain Shared and Users and GAL
-[*] 20)  Data Transfer API (supports readonly)
-[*] 21)  Directory API - Chrome OS Devices (supports readonly)
-[*] 22)  Directory API - Customers (supports readonly)
-[*] 23)  Directory API - Domains (supports readonly)
-[*] 24)  Directory API - Groups (supports readonly)
-[*] 25)  Directory API - Mobile Devices Directory (supports readonly and action)
-[*] 26)  Directory API - Organizational Units (supports readonly)
-[*] 27)  Directory API - Resource Calendars (supports readonly)
-[*] 28)  Directory API - Roles (supports readonly)
-[*] 29)  Directory API - User Schemas (supports readonly)
-[*] 30)  Directory API - User Security
-[*] 31)  Directory API - Users (supports readonly)
-[*] 32)  Email Audit API
-[*] 33)  Groups Migration API
-[*] 34)  Groups Settings API
-[*] 35)  License Manager API
-[*] 36)  People API (supports readonly)
-[*] 37)  People Directory API - read only
-[ ] 38)  Pub / Sub API
-[*] 39)  Reports API - Audit Reports
-[*] 40)  Reports API - Usage Reports
-[ ] 41)  Reseller API
-[*] 42)  Site Verification API
-[*] 43)  Sites API
-[*] 44)  Vault API (supports readonly)
+[*]  2)  Chrome Management API - AppDetails read only
+[*]  3)  Chrome Management API - Telemetry read only
+[*]  4)  Chrome Management API - read only
+[*]  5)  Chrome Policy API (supports readonly)
+[*]  6)  Chrome Printer Management API (supports readonly)
+[ ]  7)  Chrome Version History API
+[*]  8)  Classroom API - Course Announcements (supports readonly)
+[*]  9)  Classroom API - Course Topics (supports readonly)
+[*] 10)  Classroom API - Course Work/Materials (supports readonly)
+[*] 11)  Classroom API - Course Work/Submissions (supports readonly)
+[*] 12)  Classroom API - Courses (supports readonly)
+[*] 13)  Classroom API - Profile Emails
+[*] 14)  Classroom API - Profile Photos
+[*] 15)  Classroom API - Rosters (supports readonly)
+[*] 16)  Classroom API - Student Guardians (supports readonly)
+[*] 17)  Cloud Channel API (supports readonly)
+[*] 18)  Cloud Identity - Inbound SSO Settings (supports readonly)
+[*] 19)  Cloud Identity Groups API (supports readonly)
+[*] 20)  Cloud Identity OrgUnits API (supports readonly)
+[*] 21)  Cloud Identity User Invitations API (supports readonly)
+[ ] 22)  Cloud Storage API (Read Only, Vault/Takeout Download, Cloud Storage)
+[ ] 23)  Cloud Storage API (Read/Write, Vault/Takeout Copy/Download, Cloud Storage)
+[*] 24)  Contact Delegation API (supports readonly)
+[*] 25)  Contacts API - Domain Shared Contacts and GAL
+[*] 26)  Data Transfer API (supports readonly)
+[*] 27)  Directory API - Chrome OS Devices (supports readonly)
+[*] 28)  Directory API - Customers (supports readonly)
+[*] 29)  Directory API - Domains (supports readonly)
+[*] 30)  Directory API - Groups (supports readonly)
+[*] 31)  Directory API - Mobile Devices Directory (supports readonly and action)
+[*] 32)  Directory API - Organizational Units (supports readonly)
+[*] 33)  Directory API - Resource Calendars (supports readonly)
+[*] 34)  Directory API - Roles (supports readonly)
+[*] 35)  Directory API - User Schemas (supports readonly)
+[*] 36)  Directory API - User Security
+[*] 37)  Directory API - Users (supports readonly)
+[ ] 38)  Email Audit API
+[*] 39)  Groups Migration API
+[*] 40)  Groups Settings API
+[*] 41)  License Manager API
+[*] 42)  People API (supports readonly)
+[*] 43)  People Directory API - read only
+[ ] 44)  Pub / Sub API
+[*] 45)  Reports API - Audit Reports
+[*] 46)  Reports API - Usage Reports
+[*] 47)  Reseller API
+[*] 48)  Site Verification API
+[ ] 49)  Sites API
+[*] 50)  Vault API (supports readonly)
 
      s)  Select all scopes
      u)  Unselect all scopes
      e)  Exit without changes
      c)  Continue to authorization
-Please enter 0-44![a|r] or s|u|e|c: c
+Please enter 0-50[a|r] or s|u|e|c: c
 
 Enter your Google Workspace admin email address? admin@domain.com
 
@@ -1074,35 +1098,41 @@ Service Account Private Key Authentication
   Authentication                                                            PASS
 Service Account Private Key age; Google recommends rotating keys on a routine basis
   Service Account Private Key age: 0 days                                   PASS
-Domain-Wide Delegation authentication:, User: admin@domain.com, Scopes: 28
-  https://mail.google.com/                                                  PASS (1/28)
-  https://sites.google.com/feeds                                            PASS (2/28)
-  https://www.googleapis.com/auth/apps.alerts                               PASS (3/28)
-  https://www.googleapis.com/auth/calendar                                  PASS (4/28)
-  https://www.googleapis.com/auth/classroom.announcements                   PASS (5/28)
-  https://www.googleapis.com/auth/classroom.coursework.students             PASS (6/28)
-  https://www.googleapis.com/auth/classroom.courseworkmaterials             PASS (7/28)
-  https://www.googleapis.com/auth/classroom.profile.emails                  PASS (8/28)
-  https://www.googleapis.com/auth/classroom.rosters                         PASS (9/28)
-  https://www.googleapis.com/auth/classroom.topics                          PASS (10/28)
-  https://www.googleapis.com/auth/cloud-identity                            PASS (11/28)
-  https://www.googleapis.com/auth/cloud-platform                            PASS (12/28)
-  https://www.googleapis.com/auth/contacts                                  PASS (13/28)
-  https://www.googleapis.com/auth/contacts.other.readonly                   PASS (14/28)
-  https://www.googleapis.com/auth/datastudio                                PASS (15/28)
-  https://www.googleapis.com/auth/directory.readonly                        PASS (16/28)
-  https://www.googleapis.com/auth/documents                                 PASS (17/28)
-  https://www.googleapis.com/auth/drive                                     PASS (18/28)
-  https://www.googleapis.com/auth/drive.activity                            PASS (19/28)
-  https://www.googleapis.com/auth/drive.admin.labels                        FAIL (20/28)
-  https://www.googleapis.com/auth/drive.labels                              FAIL (21/28)
-  https://www.googleapis.com/auth/gmail.modify                              PASS (22/28)
-  https://www.googleapis.com/auth/gmail.settings.basic                      PASS (23/28)
-  https://www.googleapis.com/auth/gmail.settings.sharing                    PASS (24/28)
-  https://www.googleapis.com/auth/keep                                      PASS (25/28)
-  https://www.googleapis.com/auth/spreadsheets                              PASS (26/28)
-  https://www.googleapis.com/auth/tasks                                     PASS (27/28)
-  https://www.googleapis.com/auth/userinfo.profile                          PASS (28/28)
+Domain-wide Delegation authentication:, User: admin@domain.com, Scopes: 34
+  https://mail.google.com/                                                  PASS (1/34)
+  https://sites.google.com/feeds                                            PASS (2/34)
+  https://www.googleapis.com/auth/analytics.readonly                        PASS (3/34)
+  https://www.googleapis.com/auth/apps.alerts                               PASS (4/34)
+  https://www.googleapis.com/auth/calendar                                  PASS (5/34)
+  https://www.googleapis.com/auth/chat.delete                               PASS (6/34)
+  https://www.googleapis.com/auth/chat.memberships                          PASS (7/34)
+  https://www.googleapis.com/auth/chat.messages                             PASS (8/34)
+  https://www.googleapis.com/auth/chat.spaces                               PASS (9/34)
+  https://www.googleapis.com/auth/classroom.announcements                   PASS (10/34)
+  https://www.googleapis.com/auth/classroom.coursework.students             PASS (11/34)
+  https://www.googleapis.com/auth/classroom.courseworkmaterials             PASS (12/34)
+  https://www.googleapis.com/auth/classroom.profile.emails                  PASS (13/34)
+  https://www.googleapis.com/auth/classroom.rosters                         PASS (14/34)
+  https://www.googleapis.com/auth/classroom.topics                          PASS (15/34)
+  https://www.googleapis.com/auth/cloud-identity                            PASS (16/34)
+  https://www.googleapis.com/auth/cloud-platform                            PASS (17/34)
+  https://www.googleapis.com/auth/contacts                                  PASS (18/34)
+  https://www.googleapis.com/auth/contacts.other.readonly                   PASS (19/34)
+  https://www.googleapis.com/auth/datastudio                                PASS (20/34)
+  https://www.googleapis.com/auth/directory.readonly                        PASS (21/34)
+  https://www.googleapis.com/auth/documents                                 PASS (22/34)
+  https://www.googleapis.com/auth/drive                                     PASS (23/34)
+  https://www.googleapis.com/auth/drive.activity                            PASS (24/34)
+  https://www.googleapis.com/auth/drive.admin.labels                        FAIL (25/34)
+  https://www.googleapis.com/auth/drive.labels                              FAIL (26/34)
+  https://www.googleapis.com/auth/gmail.modify                              PASS (27/34)
+  https://www.googleapis.com/auth/gmail.settings.basic                      PASS (28/34)
+  https://www.googleapis.com/auth/gmail.settings.sharing                    PASS (29/34)
+  https://www.googleapis.com/auth/keep                                      PASS (30/34)
+  https://www.googleapis.com/auth/spreadsheets                              PASS (31/34)
+  https://www.googleapis.com/auth/tasks                                     PASS (32/34)
+  https://www.googleapis.com/auth/userinfo.profile                          PASS (33/34)
+  https://www.googleapis.com/auth/youtube.readonly                          PASS (34/34)
 Some scopes FAILED!
 To authorize them, please go to:
 
@@ -1130,35 +1160,41 @@ System time status:
   Your system time differs from www.googleapis.com by less than 1 second    PASS
 Service Account Private Key Authentication:
   Authentication                                                            PASS
-Domain-Wide Delegation authentication:, User: admin@domain.com, Scopes: 28
-  https://mail.google.com/                                                  PASS (1/28)
-  https://sites.google.com/feeds                                            PASS (2/28)
-  https://www.googleapis.com/auth/apps.alerts                               PASS (3/28)
-  https://www.googleapis.com/auth/calendar                                  PASS (4/28)
-  https://www.googleapis.com/auth/classroom.announcements                   PASS (5/28)
-  https://www.googleapis.com/auth/classroom.coursework.students             PASS (6/28)
-  https://www.googleapis.com/auth/classroom.courseworkmaterials             PASS (7/28)
-  https://www.googleapis.com/auth/classroom.profile.emails                  PASS (8/28)
-  https://www.googleapis.com/auth/classroom.rosters                         PASS (9/28)
-  https://www.googleapis.com/auth/classroom.topics                          PASS (10/28)
-  https://www.googleapis.com/auth/cloud-identity                            PASS (11/28)
-  https://www.googleapis.com/auth/cloud-platform                            PASS (12/28)
-  https://www.googleapis.com/auth/contacts                                  PASS (13/28)
-  https://www.googleapis.com/auth/contacts.other.readonly                   PASS (14/28)
-  https://www.googleapis.com/auth/datastudio                                PASS (15/28)
-  https://www.googleapis.com/auth/directory.readonly                        PASS (16/28)
-  https://www.googleapis.com/auth/documents                                 PASS (17/28)
-  https://www.googleapis.com/auth/drive                                     PASS (18/28)
-  https://www.googleapis.com/auth/drive.activity                            PASS (19/28)
-  https://www.googleapis.com/auth/drive.admin.labels                        PASS (20/28)
-  https://www.googleapis.com/auth/drive.labels                              PASS (21/28)
-  https://www.googleapis.com/auth/gmail.modify                              PASS (22/28)
-  https://www.googleapis.com/auth/gmail.settings.basic                      PASS (23/28)
-  https://www.googleapis.com/auth/gmail.settings.sharing                    PASS (24/28)
-  https://www.googleapis.com/auth/keep                                      PASS (25/28)
-  https://www.googleapis.com/auth/spreadsheets                              PASS (26/28)
-  https://www.googleapis.com/auth/tasks                                     PASS (27/28)
-  https://www.googleapis.com/auth/userinfo.profile                          PASS (28/28)
+Domain-wide Delegation authentication:, User: admin@domain.com, Scopes: 34
+  https://mail.google.com/                                                  PASS (1/34)
+  https://sites.google.com/feeds                                            PASS (2/34)
+  https://www.googleapis.com/auth/analytics.readonly                        PASS (3/34)
+  https://www.googleapis.com/auth/apps.alerts                               PASS (4/34)
+  https://www.googleapis.com/auth/calendar                                  PASS (5/34)
+  https://www.googleapis.com/auth/chat.delete                               PASS (6/34)
+  https://www.googleapis.com/auth/chat.memberships                          PASS (7/34)
+  https://www.googleapis.com/auth/chat.messages                             PASS (8/34)
+  https://www.googleapis.com/auth/chat.spaces                               PASS (9/34)
+  https://www.googleapis.com/auth/classroom.announcements                   PASS (10/34)
+  https://www.googleapis.com/auth/classroom.coursework.students             PASS (11/34)
+  https://www.googleapis.com/auth/classroom.courseworkmaterials             PASS (12/34)
+  https://www.googleapis.com/auth/classroom.profile.emails                  PASS (13/34)
+  https://www.googleapis.com/auth/classroom.rosters                         PASS (14/34)
+  https://www.googleapis.com/auth/classroom.topics                          PASS (15/34)
+  https://www.googleapis.com/auth/cloud-identity                            PASS (16/34)
+  https://www.googleapis.com/auth/cloud-platform                            PASS (17/34)
+  https://www.googleapis.com/auth/contacts                                  PASS (18/34)
+  https://www.googleapis.com/auth/contacts.other.readonly                   PASS (19/34)
+  https://www.googleapis.com/auth/datastudio                                PASS (20/34)
+  https://www.googleapis.com/auth/directory.readonly                        PASS (21/34)
+  https://www.googleapis.com/auth/documents                                 PASS (22/34)
+  https://www.googleapis.com/auth/drive                                     PASS (23/34)
+  https://www.googleapis.com/auth/drive.activity                            PASS (24/34)
+  https://www.googleapis.com/auth/drive.admin.labels                        PASS (25/34)
+  https://www.googleapis.com/auth/drive.labels                              PASS (26/34)
+  https://www.googleapis.com/auth/gmail.modify                              PASS (27/34)
+  https://www.googleapis.com/auth/gmail.settings.basic                      PASS (28/34)
+  https://www.googleapis.com/auth/gmail.settings.sharing                    PASS (29/34)
+  https://www.googleapis.com/auth/keep                                      PASS (30/34)
+  https://www.googleapis.com/auth/spreadsheets                              PASS (31/34)
+  https://www.googleapis.com/auth/tasks                                     PASS (32/34)
+  https://www.googleapis.com/auth/userinfo.profile                          PASS (33/34)
+  https://www.googleapis.com/auth/youtube.readonly                          PASS (34/34)
 All scopes PASSED!
 
 Service Account Client name: SVCACCTID is fully authorized.

@@ -61192,7 +61192,7 @@ def _getLookerStudioAssetByID(ds, user, i, count, assetId):
     return callGAPI(ds.assets(), 'get',
                     throwReasons=GAPI.LOOKERSTUDIO_THROW_REASONS,
                     name=f'assets/{assetId}')
-  except (GAPI.invalidArgument, GAPI.badRequest, GAPI.notFound, GAPI.permissionDenied) as e:
+  except (GAPI.invalidArgument, GAPI.badRequest, GAPI.notFound, GAPI.permissionDenied, GAPI.internalError) as e:
     entityActionFailedWarning([Ent.USER, user], str(e), i, count)
   except GAPI.serviceNotAvailable:
     entityServiceNotApplicableWarning(Ent.USER, user, i, count)
@@ -61209,7 +61209,7 @@ def _getLookerStudioAssets(ds, user, i, count, parameters, assetTypes, fields, o
                                   pageMessage=getPageMessage(),
                                   throwReasons=GAPI.LOOKERSTUDIO_THROW_REASONS,
                                   **parameters, orderBy=orderBy, fields=fields))
-    except (GAPI.invalidArgument, GAPI.badRequest, GAPI.notFound, GAPI.permissionDenied) as e:
+    except (GAPI.invalidArgument, GAPI.badRequest, GAPI.notFound, GAPI.permissionDenied, GAPI.internalError) as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
       return (None, 0)
     except GAPI.serviceNotAvailable:
@@ -61433,7 +61433,7 @@ def processLookerStudioPermissions(users):
           entityActionPerformed([Ent.USER, user, Ent.LOOKERSTUDIO_ASSET, asset['title'], Ent.LOOKERSTUDIO_PERMISSION, ''], j, jcount)
           if showDetails:
             _showLookerStudioPermissions(user, asset, results, j, jcount, None)
-        except (GAPI.invalidArgument, GAPI.badRequest, GAPI.notFound, GAPI.permissionDenied) as e:
+        except (GAPI.invalidArgument, GAPI.badRequest, GAPI.notFound, GAPI.permissionDenied, GAPI.internalError) as e:
           entityActionFailedWarning([Ent.USER, user, Ent.LOOKERSTUDIO_ASSET, asset['title']], str(e), j, jcount)
           continue
         except GAPI.serviceNotAvailable:
@@ -61503,7 +61503,7 @@ def printShowLookerStudioPermissions(users):
         permissions = callGAPI(ds.assets(), 'getPermissions',
                                throwReasons=GAPI.LOOKERSTUDIO_THROW_REASONS,
                                name=asset['name'], role=role)
-      except (GAPI.invalidArgument, GAPI.badRequest, GAPI.notFound, GAPI.permissionDenied) as e:
+      except (GAPI.invalidArgument, GAPI.badRequest, GAPI.notFound, GAPI.permissionDenied, GAPI.internalError) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.LOOKERSTUDIO_ASSET, asset['title']], str(e), j, jcount)
         continue
       except GAPI.serviceNotAvailable:

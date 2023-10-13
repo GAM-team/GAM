@@ -51,12 +51,12 @@ Typically, you will enclose the entire list in double quotes and quote each item
 
 ## Display Chrome installed app details
 ```
-gam info appdetails android|chrome|web <AppID>
+gam info chromeapp android|chrome|web <AppID>
         [formatjson]
 ```
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
-```
+
 ## Display Chrome installed apps counts
 ```
 gam show chromeapps
