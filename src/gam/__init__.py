@@ -69063,9 +69063,9 @@ def getTaskMoveAttribute(myarg, kwargs):
 def processTasks(users):
   action = Act.Get()
   if action != Act.CREATE:
-    tasklistTaskEntity = getUserObjectEntity(Cmd.OB_TASKLIST_ID_ENTITY, Ent.TASKLIST)
+    tasklistTaskEntity = getUserObjectEntity(Cmd.OB_TASKLIST_ID_ENTITY, Ent.TASK)
   else:
-    tasklistTaskEntity = getUserObjectEntity(Cmd.OB_TASKLIST_ID_TASK_ID_ENTITY, Ent.TASKLIST)
+    tasklistTaskEntity = getUserObjectEntity(Cmd.OB_TASKLIST_ID_TASK_ID_ENTITY, Ent.TASK)
   if action in {Act.DELETE, Act.CLEAR}:
     FJQC = None
     checkForExtraneousArguments()
@@ -69103,6 +69103,7 @@ def processTasks(users):
         tasklist, task = tasklistTask.split('/', 1)
       else:
         tasklist = tasklistTask
+        task = body.get('title', '')
       try:
         if action == Act.DELETE:
           callGAPI(svc.tasks(), 'delete',

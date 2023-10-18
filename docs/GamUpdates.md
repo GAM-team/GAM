@@ -10,6 +10,18 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.64.16
+
+Fixed bug in `gam <UserTypeEntity> create task <TasklistIDEntity>` that caused a trap
+when an invalid TaskListID was specified.
+
+### 6.64.15
+
+Updated `lookerstudioassets|lookerstudiopermissions` commands to handle the following error:
+```
+ERROR: 500: internalError - Internal error encountered.
+```
+
 ### 6.64.14
 
 Cleaned up and renamed `gam info appdetails` to `gam info chromeapp`.

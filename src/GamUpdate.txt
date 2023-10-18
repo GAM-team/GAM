@@ -1,3 +1,8 @@
+6.64.16
+
+Fixed bug in `gam <UserTypeEntity> create task <TasklistIDEntity>` that caused a trap
+when an invalid TaskListID was specified.
+
 6.64.15
 
 Updated `lookerstudioassets|lookerstudiopermissions` commands to handle the following error:
