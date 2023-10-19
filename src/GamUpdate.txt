@@ -1,3 +1,32 @@
+7.00.00
+
+Merged GAM-Team version
+
+6.65.00
+
+Fixed bug in `gam <UserTypeEntity> create contact <JSONData>` that caused a trap when
+contacts were being copied from one user to another.
+
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-People-Contacts-Profiles#copy-user-contacts-to-another-user
+
+Updated the following commands to allow specification of a task list by its title.
+```
+<TaskListTitle> ::= tltitle:<String>
+<TasklistTitleList> ::= "'<TasklistTitle>'(,'<TasklistTitle>')*"
+<TasklistEntity> ::=
+        <TasklistIDList> | <TaskListTitleList> | <FileSelector> | <CSVFileSelector>
+
+gam <UserTypeEntity> create task <TasklistEntity>
+gam <UserTypeEntity> show tasks [tasklists <TasklistEntity>]
+gam <UserTypeEntity> print tasks [tasklists <TasklistEntity>]
+gam <UserTypeEntity> update tasklist <TasklistEntity>
+gam <UserTypeEntity> delete tasklist <TasklistEntity>
+gam <UserTypeEntity> clear tasklist <TasklistEntity>
+gam <UserTypeEntity> info tasklist <TasklistEntity>
+```
+
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Tasks#specifying-task-lists
+
 6.64.16
 
 Fixed bug in `gam <UserTypeEntity> create task <TasklistIDEntity>` that caused a trap
@@ -20,6 +49,7 @@ Added command to get chrome app details.
 ```
 gam info appdetails android|chrome|web <AppID> [formatjson]
 ```
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Chrome-Installed-Apps
 
 6.64.12
 
@@ -34,7 +64,7 @@ Added support for Google Workspace Labs license.
 
 6.64.10
 
-Fixed bug introduced in	6.64.09	that caused a trap when	`gam redirect csv <FileName> multiprocess` was used.
+Fixed bug introduced in 6.64.09 that caused a trap when `gam redirect csv <FileName> multiprocess` was used.
 
 6.64.09
 
@@ -71,10 +101,6 @@ gam <UserTypeEntity> show events <UserCalendarEntity> [<EventEntity>]
 gam <UserTypeEntity> print events <UserCalendarEntity> [<EventEntity>]
 gam <UserTypeEntity> update calattendees <UserCalendarEntity> <EventEntity>
 ```
-
-7.00.00
-
-Merged GAM-Team version
 
 6.64.04
 

@@ -588,6 +588,7 @@ If an item contains spaces, it should be surrounded by ".
 <TakeoutBucketName> ::= takeout-export-[a-f,0-9,-]*
 <TaskID> ::= <String>
 <TaskListID> ::= <String>
+<TaskListTitle> ::= tltitle:<String>
 <TasklistIDTaskID> ::= <TasklistID>/<TaskID>
 <ThreadID> ::= <String>
 <TimeZone> ::= <String>
@@ -720,6 +721,7 @@ If an item contains spaces, it should be surrounded by ".
 <SharedDriveIDList> ::= "<SharedDriveID>(,<SharedDriveID>)*"
 <StringList> ::= "<String>(,<String>)*"
 <TasklistIDList> ::= "<TasklistID>(,<TasklistID>)*"
+<TasklistTitleList> ::= "'<TasklistTitle>'(,'<TasklistTitle>')*"
 <TasklistIDTaskIDList> ::= "<TasklistIDTaskID>(,<TasklistIDTaskID>)*"
 <ThreadIDList> ::= "<ThreadID>(,<ThreadID>)*"
 <TimeList> ::= "<Time>(,<Time>)*"
@@ -1161,8 +1163,8 @@ Specify a collection of items by directly specifying them; the item type is dete
         <SiteACLScopeList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 <SiteEntity> ::=
         <SiteList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-<TasklistIDEntity> ::=
-        <TasklistIDList> | <FileSelector> | <CSVFileSelector>
+<TasklistEntity> ::=
+        <TasklistIDList> | <TaskListTitleList> | <FileSelector> | <CSVFileSelector>
 <TasklistIDTaskIDEntity> ::=
         <TasklistIDTaskIDList> | <FileSelector> | <CSVFileSelector>
 <ThreadIDEntity> ::=
@@ -7393,7 +7395,7 @@ gam <UserTypeEntity> show profile
         (status needsaction|completed)|
         (due <Time>)
 
-gam <UserTypeEntity> create task <TasklistIDEntity>
+gam <UserTypeEntity> create task <TasklistEntity>
         <TaskAttribute>* [parent <TaskID>] [previous <TaskID>]
         [compact|formatjson|returnidonly]
 gam <UserTypeEntity> update task <TasklistIDTaskIDEntity>
@@ -7406,14 +7408,14 @@ gam <UserTypeEntity> move task <TasklistIDTaskIDEntity>
 
 gam <UserTypeEntity> info task <TasklistIDTaskIDEntity>
         [compact|formatjson]
-gam <UserTypeEntity> show tasks [tasklists <TasklistIDEntity>]
+gam <UserTypeEntity> show tasks [tasklists <TasklistEntity>]
         [completedmin <Time>] [completedmax <Time>]
         [duemin <Time>] [duemax <Time>]
         [updatedmin <Time>]
         [showcompleted [<Boolean>]] [showdeleted [<Boolean>]] [showhidden [<Boolean>]] [showall]
         [orderby completed|due|updated]
         [countsonly|compact|formatjson]
-gam <UserTypeEntity> print tasks [tasklists <TasklistIDEntity>] [todrive <ToDriveAttribute>*]
+gam <UserTypeEntity> print tasks [tasklists <TasklistEntity>] [todrive <ToDriveAttribute>*]
         [completedmin <Time>] [completedmax <Time>]
         [duemin <Time>] [duemax <Time>]
         [updatedmin <Time>]
@@ -7427,13 +7429,13 @@ gam <UserTypeEntity> print tasks [tasklists <TasklistIDEntity>] [todrive <ToDriv
 gam <UserTypeEntity> create tasklist
         <TasklistAttribute>*
         [returnidonly] [formatjson]
-gam <UserTypeEntity> update tasklist <TasklistIDEntity>
+gam <UserTypeEntity> update tasklist <TasklistEntity>
         <TasklistAttribute>*
         [formatjson]
-gam <UserTypeEntity> delete tasklist <TasklistIDEntity>
-gam <UserTypeEntity> clear tasklist <TasklistIDEntity>
+gam <UserTypeEntity> delete tasklist <TasklistEntity>
+gam <UserTypeEntity> clear tasklist <TasklistEntity>
 
-gam <UserTypeEntity> info tasklist <TasklistIDEntity>
+gam <UserTypeEntity> info tasklist <TasklistEntity>
         [formatjson]
 gam <UserTypeEntity> show tasklists
         [countsonly|formatjson]

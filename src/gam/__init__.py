@@ -20146,7 +20146,19 @@ class PeopleManager():
           unknownArgumentExit()
         contactGroupsLists[PEOPLE_REMOVE_GROUPS_LIST].append(getString(Cmd.OB_STRING))
       elif fieldName == PEOPLE_JSON:
-        person.update(getJSON(['resourceName', 'etag', 'metadata', PEOPLE_COVER_PHOTOS, PEOPLE_PHOTOS, PEOPLE_UPDATE_TIME]))
+        jsonData = getJSON(['resourceName', 'etag', 'metadata', PEOPLE_COVER_PHOTOS, PEOPLE_PHOTOS, PEOPLE_UPDATE_TIME])
+        for membership in jsonData.pop('memberships', []):
+          contactGroupName = membership.get('contactGroupMembership', {}).get('contactGroupName', '')
+          if contactGroupName:
+            contactGroupsLists[PEOPLE_GROUPS_LIST].append(contactGroupName)
+        newClientData = []
+        for clientData in jsonData.pop('clientData', []):
+          if clientData['key'] not in {'ContactId', 'CtsContactHash'}:
+            newClientData.append({'key': clientData['key'], 'value': clientData['value']})
+        if newClientData:
+          person.setdefault(PEOPLE_CLIENT_DATA, [])
+          person[PEOPLE_CLIENT_DATA].extend(newClientData)
+        person.update(jsonData)
     return (person, set(person.keys()), contactGroupsLists)
 
   PEOPLE_GROUP_ARGUMENT_TO_PROPERTY_MAP = {
@@ -20195,7 +20207,9 @@ class PeopleManager():
           contactGroup.setdefault(fieldName, [])
           contactGroup[fieldName].append(entry)
       elif fieldName == PEOPLE_JSON:
-        contactGroup.update(getJSON(['resourceName', 'etag', 'metadata', 'groupType', 'formattedName', 'memberResourceNames',  'memberCount']))
+        jsonData = getJSON(['resourceName', 'etag', 'metadata', 'formattedName', 'memberResourceNames',  'memberCount'])
+        if jsonData.get('groupType', '') != 'SYSTEM_CONTACT_GROUP':
+          contactGroup[PEOPLE_GROUP_NAME] = jsonData['name']
     return (contactGroup, ','.join(contactGroup.keys()))
 
 PEOPLE_DIRECTORY_SOURCES_CHOICE_MAP = {
@@ -21917,6 +21931,8 @@ def createUserPeopleContactGroup(users):
   entityType = Ent.USER
   parameters = {'csvPF': None, 'titles': ['User', 'resourceName'], 'addCSVData': {}, 'returnIdOnly': False}
   body, _ = peopleManager.GetContactGroupFields(parameters)
+  if PEOPLE_GROUP_NAME not in body:
+    return
   csvPF = parameters['csvPF']
   addCSVData = parameters['addCSVData']
   if addCSVData:
@@ -68998,6 +69014,33 @@ def deleteNotesACLs(users):
         entityServiceNotApplicableWarning(Ent.USER, user, i, count)
         break
 
+def getTaskLists(svc, user, i, count):
+  try:
+    results = callGAPIpages(svc.tasklists(), 'list', 'items',
+                            pageMessage=getPageMessageForWhom(),
+                            throwReasons=GAPI.TASKLIST_THROW_REASONS,
+                            maxResults=100)
+  except GAPI.notFound:
+    results = []
+  except (GAPI.badRequest, GAPI.invalid) as e:
+    entityActionFailedWarning([Ent.USER, user, Ent.TASKLIST, None], str(e), i, count)
+    results = None
+  except GAPI.serviceNotAvailable:
+    entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    results = None
+  return results
+
+def getTaskListIDfromTitle(svc, userTasklists, title, user, i, count):
+  if userTasklists is None:
+    printGettingEntityItemForWhom(Ent.TASKLIST, user, i, count)
+    userTasklists = getTaskLists(svc, user, i, count)
+    if userTasklists is None:
+      return None, None
+  for userTasklist in userTasklists:
+    if userTasklist['title'] == title:
+      return userTasklists, userTasklist['id']
+  return userTasklists, None
+
 TASK_SKIP_OBJECTS = ['selfLink']
 TASK_TIME_OBJECTS = ['due', 'completed', 'updated']
 
@@ -69048,7 +69091,7 @@ def getTaskMoveAttribute(myarg, kwargs):
     return False
   return True
 
-# gam <UserTypeEntity> create task <TasklistIDEntity>
+# gam <UserTypeEntity> create task <TasklistEntity>
 #	<TaskAttribute>* [parent <TaskID>] [previous <TaskID>]
 #	[compact|formatjson|returnidonly]
 # gam <UserTypeEntity> update task <TasklistIDTaskIDEntity>
@@ -69063,9 +69106,9 @@ def getTaskMoveAttribute(myarg, kwargs):
 def processTasks(users):
   action = Act.Get()
   if action != Act.CREATE:
-    tasklistTaskEntity = getUserObjectEntity(Cmd.OB_TASKLIST_ID_ENTITY, Ent.TASK)
+    tasklistTaskEntity = getUserObjectEntity(Cmd.OB_TASKLIST_ID_TASK_ID_ENTITY, Ent.TASK, shlexSplit=True)
   else:
-    tasklistTaskEntity = getUserObjectEntity(Cmd.OB_TASKLIST_ID_TASK_ID_ENTITY, Ent.TASK)
+    tasklistTaskEntity = getUserObjectEntity(Cmd.OB_TASKLIST_ID_ENTITY, Ent.TASK, shlexSplit=True)
   if action in {Act.DELETE, Act.CLEAR}:
     FJQC = None
     checkForExtraneousArguments()
@@ -69093,6 +69136,7 @@ def processTasks(users):
                                                                   api=API.TASKS, showAction=FJQC is None or not FJQC.formatJSON)
     if jcount == 0:
       continue
+    userTasklists = None
     Ind.Increment()
     j = 0
     for tasklistTask in tasklistTasks:
@@ -69104,6 +69148,12 @@ def processTasks(users):
       else:
         tasklist = tasklistTask
         task = body.get('title', '')
+        if tasklist.startswith('tltitle:'):
+          tasklistTitle = tasklist[8:]
+          userTasklists, tasklist = getTaskListIDfromTitle(svc, userTasklists, tasklistTitle, user, i, count)
+          if tasklist is None:
+            entityActionFailedWarning([Ent.USER, user, Ent.TASKLIST, tasklistTitle, Ent.TASK, task], Msg.TASKLIST_TITLE_NOT_FOUND, j, jcount)
+            continue
       try:
         if action == Act.DELETE:
           callGAPI(svc.tasks(), 'delete',
@@ -69163,14 +69213,14 @@ TASK_QUERY_STATE_MAP = {
   'showhidden': 'showHidden',
   }
 
-# gam <UserTypeEntity> show tasks [tasklists <TasklistIDEntity>]
+# gam <UserTypeEntity> show tasks [tasklists <TasklistEntity>]
 #	[completedmin <Time>] [completedmax <Time>]
 #	[duemin <Time>] [duemax <Time>]
 #	[updatedmin <Time>]
 #	[showcompleted [<Boolean>]] [showdeleted [<Boolean>]] [showhidden [<Boolean>]] [showall]
 #	[orderby completed|due|updated]
 #	[countsonly|compact|formatjson]
-# gam <UserTypeEntity> print tasks [tasklists <TasklistIDEntity>] [todrive <ToDriveAttribute>*]
+# gam <UserTypeEntity> print tasks [tasklists <TasklistEntity>] [todrive <ToDriveAttribute>*]
 #	[completedmin <Time>] [completedmax <Time>]
 #	[duemin <Time>] [duemax <Time>]
 #	[updatedmin <Time>]
@@ -69217,7 +69267,6 @@ def printShowTasks(users):
   CSVTitle = 'Tasks'
   FJQC = FormatJSONQuoteChar(csvPF)
   tasklistEntity = None
-  tlkwargs = {'maxResults': 100}
   kwargs = {'maxResults': 100}
   compact = countsOnly = False
   orderBy = orderByNoDataValue = None
@@ -69226,7 +69275,7 @@ def printShowTasks(users):
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg in {'tasklist', 'tasklists'}:
-      tasklistEntity = getUserObjectEntity(Cmd.OB_TASKLIST_ID_ENTITY, Ent.TASKLIST)
+      tasklistEntity = getUserObjectEntity(Cmd.OB_TASKLIST_ID_ENTITY, Ent.TASKLIST, shlexSplit=True)
     elif myarg in TASK_QUERY_TIME_MAP:
       kwargs[TASK_QUERY_TIME_MAP[myarg]] = getTimeOrDeltaFromNow()
     elif myarg in TASK_QUERY_STATE_MAP:
@@ -69254,22 +69303,13 @@ def printShowTasks(users):
       if not svc:
         continue
       printGettingEntityItemForWhom(Ent.TASKLIST, user, i, count)
-      try:
-        results = callGAPIpages(svc.tasklists(), 'list', 'items',
-                                pageMessage=getPageMessageForWhom(),
-                                throwReasons=GAPI.TASKLIST_THROW_REASONS,
-                                **tlkwargs)
-      except GAPI.notFound:
-        results = []
-      except (GAPI.badRequest, GAPI.invalid) as e:
-        entityActionFailedWarning([Ent.USER, user, Ent.TASKLIST, None], str(e), i, count)
-        continue
-      except GAPI.serviceNotAvailable:
-        entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+      results = getTaskLists(svc, user, i, count)
+      if results is None:
         continue
       tasklists = [tasklist['id'] for tasklist in results]
       jcount = len(tasklists)
     else:
+      userTasklists = None
       user, svc, tasklists, jcount = _validateUserGetObjectList(user, i, count, tasklistEntity, api=API.TASKS,
                                                                 showAction=FJQC is None or not FJQC.formatJSON)
       if jcount == 0:
@@ -69281,6 +69321,12 @@ def printShowTasks(users):
     j = 0
     for tasklist in tasklists:
       j += 1
+      if tasklist.startswith('tltitle:'):
+        tasklistTitle = tasklist[8:]
+        userTasklists, tasklist = getTaskListIDfromTitle(svc, userTasklists, tasklistTitle, user, i, count)
+        if tasklist is None:
+          entityActionFailedWarning([Ent.USER, user, Ent.TASKLIST, tasklistTitle], Msg.TASKLIST_TITLE_NOT_FOUND, j, jcount)
+          continue
       printGettingEntityItemForWhom(Ent.TASK, tasklist, j, jcount)
       try:
         tasks = callGAPIpages(svc.tasks(), 'list', 'items',
@@ -69353,17 +69399,17 @@ def _showTasklist(tasklist, j=0, jcount=0, FJQC=None):
 # gam <UserTypeEntity> create tasklist
 #	[title <String>]
 #	[returnidonly] [formatjson]
-# gam <UserTypeEntity> update tasklist <TasklistIDEntity>
+# gam <UserTypeEntity> update tasklist <TasklistEntity>
 #	[title <String>]
 #	[formatjson]
-# gam <UserTypeEntity> info tasklist <TasklistIDEntity>
+# gam <UserTypeEntity> info tasklist <TasklistEntity>
 #	[formatjson]
-# gam <UserTypeEntity> delete tasklist <TasklistIDEntity>
-# gam <UserTypeEntity> clear tasklist <TasklistIDEntity>
+# gam <UserTypeEntity> delete tasklist <TasklistEntity>
+# gam <UserTypeEntity> clear tasklist <TasklistEntity>
 def processTasklists(users):
   action = Act.Get()
   if action != Act.CREATE:
-    tasklistEntity = getUserObjectEntity(Cmd.OB_TASKLIST_ID_ENTITY, Ent.TASKLIST)
+    tasklistEntity = getUserObjectEntity(Cmd.OB_TASKLIST_ID_ENTITY, Ent.TASKLIST, shlexSplit=True)
   else:
     tasklistEntity = {'item': Ent.TASKLIST, 'list': [None], 'dict': None}
   if action in {Act.DELETE, Act.CLEAR}:
@@ -69384,6 +69430,7 @@ def processTasklists(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
+    userTasklists = None
     user, svc, tasklists, jcount = _validateUserGetObjectList(user, i, count, tasklistEntity,
                                                               api=API.TASKS,
                                                               showAction=action != Act.CREATE and (FJQC is None or not FJQC.formatJSON))
@@ -69393,6 +69440,13 @@ def processTasklists(users):
     j = 0
     for tasklist in tasklists:
       j += 1
+      if action != Act.CREATE:
+        if tasklist.startswith('tltitle:'):
+          tasklistTitle = tasklist[8:]
+          userTasklists, tasklist = getTaskListIDfromTitle(svc, userTasklists, tasklistTitle, user, i, count)
+          if tasklist is None:
+            entityActionFailedWarning([Ent.USER, user, Ent.TASKLIST, tasklistTitle], Msg.TASKLIST_TITLE_NOT_FOUND, j, jcount)
+            continue
       try:
         if action == Act.DELETE:
           callGAPI(svc.tasklists(), 'delete',
@@ -69445,7 +69499,6 @@ def printShowTasklists(users):
   CSVTitle = 'TaskLists'
   FJQC = FormatJSONQuoteChar(csvPF)
   countsOnly = False
-  kwargs = {'maxResults': 100}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -69463,18 +69516,8 @@ def printShowTasklists(users):
     if not svc:
       continue
     printGettingAllEntityItemsForWhom(Ent.TASKLIST, user, i, count)
-    try:
-      tasklists = callGAPIpages(svc.tasklists(), 'list', 'items',
-                                pageMessage=getPageMessageForWhom(),
-                                throwReasons=GAPI.TASKLIST_THROW_REASONS,
-                                **kwargs)
-    except GAPI.notFound:
-      tasklists = []
-    except (GAPI.badRequest, GAPI.invalid) as e:
-      entityActionFailedWarning([Ent.USER, user, Ent.TASKLIST, None], str(e), i, count)
-      continue
-    except GAPI.serviceNotAvailable:
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    tasklists = getTaskLists(svc, user, i, count)
+    if tasklists is None:
       continue
     jcount = len(tasklists)
     if countsOnly:
