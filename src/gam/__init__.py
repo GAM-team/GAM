@@ -8222,13 +8222,14 @@ class CSVPrintFile():
         self.AddTitle(title)
     return RowFilterMatch(row, self.titlesList, self.rowFilter, self.rowFilterMode, self.rowDropFilter, self.rowDropFilterMode)
 
-  def UpdateMimeTypeCounts(self, row, mimeTypeCounts):
+  def UpdateMimeTypeCounts(self, row, mimeTypeInfo):
     for title in row:
       if title not in self.titlesSet:
         self.AddTitle(title)
     if RowFilterMatch(row, self.titlesList, self.rowFilter, self.rowFilterMode, self.rowDropFilter, self.rowDropFilterMode):
-      mimeTypeCounts.setdefault(row['mimeType'], 0)
-      mimeTypeCounts[row['mimeType']] += 1
+      mimeTypeInfo.setdefault(row['mimeType'], {'count': 0, 'size': 0})
+      mimeTypeInfo[row['mimeType']]['count'] += 1
+      mimeTypeInfo[row['mimeType']]['size'] += int(row.get('size', '0'))
 
   def SetZeroBlankMimeTypeCounts(self, zeroBlankMimeTypeCounts):
     self.zeroBlankMimeTypeCounts = zeroBlankMimeTypeCounts
@@ -22183,6 +22184,8 @@ def printShowUserPeopleContactGroups(users):
   entityType = Ent.USER
   entityTypeName = Ent.Singular(entityType)
   csvPF = CSVPrintFile([entityTypeName, 'resourceName'], 'sortall') if Act.csvFormat() else None
+  if csvPF:
+    csvPF.SetEscapeChar(None)
   FJQC = FormatJSONQuoteChar(csvPF)
   fieldsList = []
   parameters = _initPersonMetadataParameters()
@@ -52225,14 +52228,13 @@ def printFileList(users):
                                      ensure_ascii=False, sort_keys=True)
             csvPF.WriteRowTitlesJSONNoFilter(row)
     else:
-      if showSize:
-        sizeTotals['User'] += int(fileInfo.get('size', '0'))
       if not countsRowFilter:
         csvPF.UpdateMimeTypeCounts(flattenJSON(fileInfo, flattened=row, skipObjects=skipObjects, timeObjects=timeObjects,
-                                               simpleLists=simpleLists, delimiter=delimiter), mimeTypeCounts)
+                                               simpleLists=simpleLists, delimiter=delimiter), mimeTypeInfo)
       else:
-        mimeTypeCounts.setdefault(fileInfo['mimeType'], 0)
-        mimeTypeCounts[fileInfo['mimeType']] += 1
+        mimeTypeInfo.setdefault(fileInfo['mimeType'], {'count': 0, 'size': 0})
+        mimeTypeInfo[fileInfo['mimeType']['count']] += 1
+        mimeTypeInfo[fileInfo['mimeType']['size']] += int(fileInfo.get('size', '0'))
 
   def _printChildDriveFolderContents(drive, fileEntry, user, i, count, depth):
     parentFileEntry = fileTree.get(fileEntry['id'])
@@ -52286,11 +52288,12 @@ def printFileList(users):
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
       userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
 
-  def writeMimeTypeCountsRow(user, sourceId, sourceName, mimeTypeCounts, sizeTotal):
-    total = 0
-    for mimeTypeCount in iter(mimeTypeCounts.values()):
-      total += mimeTypeCount
-    row = {'Owner': user, 'Total': total}
+  def writeMimeTypeCountsRow(user, sourceId, sourceName, mimeTypeInfo):
+    countTotal = sizeTotal = 0
+    for mtinfo in iter(mimeTypeInfo.values()):
+      countTotal += mtinfo['count']
+      sizeTotal += mtinfo['size']
+    row = {'Owner': user, 'Total': countTotal}
     if showSource:
       row['Source'] = sourceId
       row['Name'] = sourceName
@@ -52298,20 +52301,20 @@ def printFileList(users):
       row['Size'] = sizeTotal
     if addCSVData:
       row.update(addCSVData)
-    row.update(mimeTypeCounts)
+    for mimeType, mtinfo in sorted(iter(mimeTypeInfo.items())):
+      row[f'{mimeType}'] = mtinfo['count']
+      if showMimeTypeSize:
+        row[f'{mimeType}:Size'] = mtinfo['size']
     if not countsRowFilter:
       csvPFco.WriteRowTitlesNoFilter(row)
     else:
       csvPFco.WriteRowTitles(row)
 
-  def incrementSizeSummary():
-    sizeTotals['Summary'] += sizeTotals['User']
-    sizeTotals['User'] = 0
-
   csvPF = CSVPrintFile('Owner', indexedTitles=DRIVE_INDEXED_TITLES)
   FJQC = FormatJSONQuoteChar(csvPF)
   addPathsToJSON = countsRowFilter = buildTree = countsOnly = filepath = fullpath = getPermissionsForSharedDrives = \
-    noRecursion = oneItemPerRow = showParentsIdsAsList = showDepth = showParent = showSize = showSource = stripCRsFromName = False
+    noRecursion = oneItemPerRow = stripCRsFromName = \
+    showParentsIdsAsList = showDepth = showParent = showSize = showMimeTypeSize = showSource = False
   pathDelimiter = '/'
   pmselect = True
   showLabels = None
@@ -52328,7 +52331,7 @@ def printFileList(users):
   DFF = DriveFileFields()
   summary = FILECOUNT_SUMMARY_NONE
   summaryUser = FILECOUNT_SUMMARY_USER
-  summaryMimeTypeCounts = {}
+  summaryMimeTypeInfo = {}
   addCSVData = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -52383,16 +52386,18 @@ def printFileList(users):
         if not showSize:
           csvPFco.SetTitles(['Owner', 'Source', 'Name', 'Total'])
         else:
-          csvPFco.SetTitles(['Owner', 'Source', 'Name', 'Size', 'Total'])
+          csvPFco.SetTitles(['Owner', 'Source', 'Name', 'Total', 'Size'])
         csvPFco.SetSortAllTitles()
-    elif myarg == 'showsize':
+    elif myarg in {'showsize', 'showmimetypesize'}:
       showSize = True
       if countsOnly:
         if not showSource:
-          csvPFco.SetTitles(['Owner', 'Size', 'Total'])
+          csvPFco.SetTitles(['Owner', 'Total', 'Size'])
         else:
-          csvPFco.SetTitles(['Owner', 'Source', 'Name', 'Size', 'Total'])
+          csvPFco.SetTitles(['Owner', 'Source', 'Name', 'Total', 'Size'])
         csvPFco.SetSortAllTitles()
+        if myarg == 'showmimetypesize':
+          showMimeTypeSize = True
     elif myarg == 'delimiter':
       delimiter = getCharacter()
     elif myarg == 'showparentsidsaslist':
@@ -52516,7 +52521,6 @@ def printFileList(users):
   else:
     csvPF.SetNodataFields(False, nodataFields, None, None, False)
   i, count, users = getEntityArgument(users)
-  sizeTotals = {'User': 0, 'Summary': 0}
   for user in users:
     i += 1
     origUser = user
@@ -52550,7 +52554,7 @@ def printFileList(users):
     if filepath:
       filePathInfo = initFilePathInfo(pathDelimiter)
     filesPrinted = set()
-    mimeTypeCounts = {}
+    mimeTypeInfo = {}
     if buildTree:
       printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, user, i, count, query=DLP.fileIdEntity['query'])
       if not incrementalPrint:
@@ -52583,12 +52587,12 @@ def printFileList(users):
         if incrementalPrint:
           if countsOnly:
             if summary != FILECOUNT_SUMMARY_NONE:
-              for mimeType, mtcount in iter(mimeTypeCounts.items()):
-                summaryMimeTypeCounts.setdefault(mimeType, 0)
-                summaryMimeTypeCounts[mimeType] += mtcount
+              for mimeType, mtinfo in iter(mimeTypeInfo.items()):
+                summaryMimeTypeInfo.setdefault(mimeType, {'count': 0, 'size': 0})
+                summaryMimeTypeInfo[mimeType]['count'] += mtinfo['count']
+                summaryMimeTypeInfo[mimeType]['size'] += mtinfo['size']
             if summary != FILECOUNT_SUMMARY_ONLY:
-              writeMimeTypeCountsRow(user, rootFolderId, rootFolderName, mimeTypeCounts, sizeTotals['User'])
-            incrementSizeSummary()
+              writeMimeTypeCountsRow(user, rootFolderId, rootFolderName, mimeTypeInfo)
           continue
         extendFileTreeParents(drive, fileTree, fields)
         DLP.GetLocationFileIdsFromTree(fileTree, fileIdEntity)
@@ -52613,7 +52617,7 @@ def printFileList(users):
     for fileId in fileIdEntity['list']:
       j += 1
       if showSource:
-        mimeTypeCounts = {}
+        mimeTypeInfo = {}
       fileEntry = fileTree.get(fileId)
       if fileEntry:
         fileEntryInfo = fileEntry['info']
@@ -52655,21 +52659,21 @@ def printFileList(users):
       if countsOnly:
         if showSource:
           if summary != FILECOUNT_SUMMARY_NONE:
-            for mimeType, mtcount in iter(mimeTypeCounts.items()):
-              summaryMimeTypeCounts.setdefault(mimeType, 0)
-              summaryMimeTypeCounts[mimeType] += mtcount
+            for mimeType, mtinfo in iter(mimeTypeInfo.items()):
+              summaryMimeTypeInfo.setdefault(mimeType, {'count': 0, 'size': 0})
+              summaryMimeTypeInfo[mimeType]['count'] += mtinfo['count']
+              summaryMimeTypeInfo[mimeType]['size'] += mtinfo['size']
           if summary != FILECOUNT_SUMMARY_ONLY:
-            writeMimeTypeCountsRow(user, fileId, fileEntryInfo['name'], mimeTypeCounts, sizeTotals['User'])
-          incrementSizeSummary()
+            writeMimeTypeCountsRow(user, fileId, fileEntryInfo['name'], mimeTypeInfo)
     if countsOnly:
       if not showSource:
         if summary != FILECOUNT_SUMMARY_NONE:
-          for mimeType, mtcount in iter(mimeTypeCounts.items()):
-            summaryMimeTypeCounts.setdefault(mimeType, 0)
-            summaryMimeTypeCounts[mimeType] += mtcount
+          for mimeType, mtinfo in iter(mimeTypeInfo.items()):
+            summaryMimeTypeInfo.setdefault(mimeType, {'count': 0, 'size': 0})
+            summaryMimeTypeInfo[mimeType]['count'] += mtinfo['count']
+            summaryMimeTypeInfo[mimeType]['size'] += mtinfo['size']
         if summary != FILECOUNT_SUMMARY_ONLY:
-          writeMimeTypeCountsRow(user, 'Various', 'Various', mimeTypeCounts, sizeTotals['User'])
-        incrementSizeSummary()
+          writeMimeTypeCountsRow(user, 'Various', 'Various', mimeTypeInfo)
   if not countsOnly:
     if not csvPF.rows:
       setSysExitRC(NO_ENTITIES_FOUND_RC)
@@ -52686,7 +52690,7 @@ def printFileList(users):
     if not csvPFco.rows:
       setSysExitRC(NO_ENTITIES_FOUND_RC)
     if summary != FILECOUNT_SUMMARY_NONE:
-      writeMimeTypeCountsRow(summaryUser, 'Various', 'Various', summaryMimeTypeCounts, sizeTotals['Summary'])
+      writeMimeTypeCountsRow(summaryUser, 'Various', 'Various', summaryMimeTypeInfo)
     csvPFco.todrive = csvPF.todrive
     if not countsRowFilter:
       csvPFco.SetRowFilter([], GC.Values[GC.CSV_OUTPUT_ROW_FILTER_MODE])
@@ -52842,46 +52846,48 @@ def printShowFileCounts(users):
     if DLP.onlySharedDrives or getPermissionsForSharedDrives:
       fieldsList.append('driveId')
 
-  def incrementSizeSummary():
-    sizeTotals['Summary'] += sizeTotals['User']
-    sizeTotals['User'] = 0
-
-  def showMimeTypeCounts(user, mimeTypeCounts, sizeTotal, sharedDriveId, sharedDriveName, i, count):
-    total = 0
-    for mimeTypeCount in iter(mimeTypeCounts.values()):
-      total += mimeTypeCount
+  def showMimeTypeInfo(user, mimeTypeInfo, sharedDriveId, sharedDriveName, i, count):
     if summary != FILECOUNT_SUMMARY_NONE:
       if user != summaryUser:
-        for mimeType, mtcount in iter(mimeTypeCounts.items()):
-          summaryMimeTypeCounts.setdefault(mimeType, 0)
-          summaryMimeTypeCounts[mimeType] += mtcount
+        for mimeType, mtinfo in iter(mimeTypeInfo.items()):
+          summaryMimeTypeInfo.setdefault(mimeType, {'count': 0, 'size': 0})
+          summaryMimeTypeInfo[mimeType]['count'] += mtinfo['count']
+          summaryMimeTypeInfo[mimeType]['size'] += mtinfo['size']
         if summary == FILECOUNT_SUMMARY_ONLY:
           return
+    countTotal = sizeTotal = 0
+    for mtinfo in iter(mimeTypeInfo.values()):
+      countTotal += mtinfo['count']
+      sizeTotal += mtinfo['size']
     if not csvPF:
       if sharedDriveId:
         kvList = [Ent.USER, user, Ent.SHAREDDRIVE, f'{sharedDriveName} ({sharedDriveId})']
       else:
         kvList = [Ent.USER, user]
+      dataList = [Ent.Choose(Ent.DRIVE_FILE_OR_FOLDER, countTotal), countTotal]
       if showSize:
-        dataList = [Ent.Singular(Ent.SIZE), sizeTotal]
-      else:
-        dataList = []
-      dataList.extend([Ent.Choose(Ent.DRIVE_FILE_OR_FOLDER, total), total])
+        dataList.extend([Ent.Singular(Ent.SIZE), sizeTotal])
       if sharedDriveId:
-        dataList.extend(['Item cap', f"{total/SHARED_DRIVE_MAX_FILES_FOLDERS:.2%}"])
+        dataList.extend(['Item cap', f"{countTotal/SHARED_DRIVE_MAX_FILES_FOLDERS:.2%}"])
       printEntityKVList(kvList, dataList, i, count)
       Ind.Increment()
-      for mimeType, mimeTypeCount in sorted(iter(mimeTypeCounts.items())):
-        printKeyValueList([mimeType, mimeTypeCount])
+      for mimeType, mtinfo in sorted(iter(mimeTypeInfo.items())):
+        if not showMimeTypeSize:
+          printKeyValueList([mimeType, mtinfo['count']])
+        else:
+          printKeyValueList([mimeType, f"{mtinfo['count']}, {mtinfo['size']}"])
       Ind.Decrement()
     else:
       if sharedDriveId:
-        row = {'User': user, 'id': sharedDriveId, 'name': sharedDriveName, 'Total': total, 'Item cap': f"{total/SHARED_DRIVE_MAX_FILES_FOLDERS:.2%}"}
+        row = {'User': user, 'id': sharedDriveId, 'name': sharedDriveName, 'Total': sizeTotal, 'Item cap': f"{sizeTotal/SHARED_DRIVE_MAX_FILES_FOLDERS:.2%}"}
       else:
-        row = {'User': user, 'Total': total}
+        row = {'User': user, 'Total': countTotal}
       if showSize:
         row['Size'] = sizeTotal
-      row.update(mimeTypeCounts)
+      for mimeType, mtinfo in sorted(iter(mimeTypeInfo.items())):
+        row[f'{mimeType}'] = mtinfo['count']
+        if showMimeTypeSize:
+          row[f'{mimeType}:Size'] = mtinfo['size']
       csvPF.WriteRowTitles(row)
 
   csvPF = CSVPrintFile() if Act.csvFormat() else None
@@ -52890,10 +52896,10 @@ def printShowFileCounts(users):
   fieldsList = ['mimeType']
   DLP = DriveListParameters({'allowChoose': False, 'allowCorpora': True, 'allowQuery': True, 'mimeTypeInQuery': True})
   sharedDriveId = sharedDriveName = ''
-  showSize = False
+  showSize = showMimeTypeSize = False
   summary = FILECOUNT_SUMMARY_NONE
   summaryUser = FILECOUNT_SUMMARY_USER
-  summaryMimeTypeCounts = {}
+  summaryMimeTypeInfo = {}
   fileIdEntity = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -52907,6 +52913,8 @@ def printShowFileCounts(users):
       fileIdEntity = getSharedDriveEntity()
     elif myarg == 'showsize':
       showSize = True
+    elif myarg == 'showmimetypesize':
+      showMimeTypeSize = showSize = True
     elif myarg == 'summary':
       summary = getChoice(FILECOUNT_SUMMARY_CHOICE_MAP, mapChoice=True)
     elif myarg == 'summaryuser':
@@ -52930,12 +52938,11 @@ def printShowFileCounts(users):
   if csvPF:
     sortTitles = ['User', 'id', 'name', 'Total', 'Item cap'] if fileIdEntity.get('shareddrive') else ['User', 'Total']
     if showSize:
-      sortTitles.insert(-2, 'Size')
+      sortTitles.insert(sortTitles.index('Total')+1, 'Size')
     csvPF.SetTitles(sortTitles)
     csvPF.SetSortAllTitles()
   pagesFields = getItemFieldsFromFieldsList('files', fieldsList)
   i, count, users = getEntityArgument(users)
-  sizeTotals = {'User': 0, 'Summary': 0}
   for user in users:
     i += 1
     user, drive = _validateUserSharedDrive(user, i, count, fileIdEntity)
@@ -52946,7 +52953,7 @@ def printShowFileCounts(users):
       sharedDriveName = _getSharedDriveNameFromId(drive, sharedDriveId)
     else:
       sharedDriveName = ''
-    mimeTypeCounts = {}
+    mimeTypeInfo = {}
     printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, user, i, count, query=DLP.fileIdEntity['query'])
     try:
       feed = yieldGAPIpages(drive.files(), 'list', 'files',
@@ -52984,12 +52991,11 @@ def printShowFileCounts(users):
                     GAPI.unknownError, GAPI.invalid, GAPI.badRequest,
                     GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy):
               continue
-          mimeTypeCounts.setdefault(f_file['mimeType'], 0)
-          mimeTypeCounts[f_file['mimeType']] += 1
-          if showSize:
-            sizeTotals['User'] += int(f_file.get('size', '0'))
-      showMimeTypeCounts(user, mimeTypeCounts, sizeTotals['User'], sharedDriveId, sharedDriveName, i, count)
-      incrementSizeSummary()
+          fileSize = int(f_file.get('size', '0'))
+          mimeTypeInfo.setdefault(f_file['mimeType'], {'count': 0, 'size': 0})
+          mimeTypeInfo[f_file['mimeType']]['count'] += 1
+          mimeTypeInfo[f_file['mimeType']]['size'] += fileSize
+      showMimeTypeInfo(user, mimeTypeInfo, sharedDriveId, sharedDriveName, i, count)
     except (GAPI.invalidQuery, GAPI.invalid, GAPI.badRequest):
       entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, None], invalidQuery(DLP.fileIdEntity['query']), i, count)
       break
@@ -53001,8 +53007,8 @@ def printShowFileCounts(users):
       userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
       continue
   if summary != FILECOUNT_SUMMARY_NONE:
-    showMimeTypeCounts(summaryUser, summaryMimeTypeCounts, sizeTotals['Summary'],
-                       '' if count > 1 else sharedDriveId, '' if count > 1 else sharedDriveName, 0, 0)
+    showMimeTypeInfo(summaryUser, summaryMimeTypeInfo,
+                     '' if count > 1 else sharedDriveId, '' if count > 1 else sharedDriveName, 0, 0)
   if csvPF:
     csvPF.writeCSVfile('Drive File Counts')
 
@@ -69572,7 +69578,7 @@ def importTasklist(users):
       cleanTasklist['items'].append(cleanTask.copy())
     cleanData['items'].append(cleanTasklist.copy())
   if not cleanData['items']:
-    print('No tasks to import')
+    writeStdout('No tasks to import\n')
     return
   i, count, users = getEntityArgument(users)
   for user in users:

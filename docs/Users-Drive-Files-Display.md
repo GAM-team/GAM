@@ -617,7 +617,8 @@ gam <UserTypeEntity> print filecounts [todrive <ToDriveAttribute>*]
         [filenamematchpattern <RegularExpression>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
         [excludetrashed]
-        [summary none|only|plus] [summaryuser <String>] [showsize]
+        [showsize] [showmimetypesize]
+        [summary none|only|plus] [summaryuser <String>]
 gam <UserTypeEntity> show filecounts
         [((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>)
             (querytime<String> <Time>)*]
@@ -628,12 +629,15 @@ gam <UserTypeEntity> show filecounts
         [filenamematchpattern <RegularExpression>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
         [excludetrashed]
-        [summary none|only|plus] [summaryuser <String>] [showsize]
+        [showsize] [showmimetypesize]
+        [summary none|only|plus] [summaryuser <String>]
 ```
 
 By default, print filecounts displays counts of all files owned by the specified [`<UserTypeEntity>`](Collections-of-Users).
 
 The `showsize` option displays the total size (in bytes) of the files counted.
+
+The showmimetypesize' displays the total size (in bytes) of each MIME type counted.
 
 See [Select files for Display file counts, list, tree](#select-files-for-display-file-counts-list-tree)
 
@@ -647,7 +651,83 @@ that can display a summarization of file counts across all users specified in th
 
 The `summaryuser <String>` option  replaces the default summary user `Summary` with `<String>`.
 
-### Example
+### Examples
+Show file counts for a user.
+```
+$ gam user testuser@domain.com show filecounts showsize
+Getting all Drive Files/Folders that match query ('me' in owners) for testuser@domain.com
+Got 261 Drive Files/Folders that matched query ('me' in owners) for testuser@domain.com...
+User: testuser@domain.com, Drive Files/Folders: 261, Size: 13822521
+  application/octet-stream: 8
+  application/pdf: 1
+  application/vnd.google-apps.document: 98
+  application/vnd.google-apps.drawing: 2
+  application/vnd.google-apps.drive-sdk.423565144751: 1
+  application/vnd.google-apps.folder: 68
+  application/vnd.google-apps.form: 3
+  application/vnd.google-apps.jam: 1
+  application/vnd.google-apps.presentation: 1
+  application/vnd.google-apps.shortcut: 14
+  application/vnd.google-apps.site: 1
+  application/vnd.google-apps.spreadsheet: 24
+  application/vnd.openxmlformats-officedocument.spreadsheetml.sheet: 1
+  application/vnd.openxmlformats-officedocument.wordprocessingml.document: 3
+  application/vnd.openxmlformats-officedocument.wordprocessingml.template: 1
+  application/x-gzip: 4
+  application/zip: 2
+  image/jpeg: 8
+  image/vnd.adobe.photoshop: 1
+  text/csv: 2
+  text/plain: 13
+  text/rtf: 3
+  text/x-sh: 1
+```
+Show file counts for a user including sizes for each MIME type.
+```
+$ gam user testuser@domain.com show filecounts showmimetypesize
+Getting all Drive Files/Folders that match query ('me' in owners) for testuser@domain.com
+Got 261 Drive Files/Folders that matched query ('me' in owners) for testuser@domain.com...
+User: testuser@domain.com, Drive Files/Folders: 261, Size: 13822521
+  application/octet-stream: 8, 17
+  application/pdf: 1, 9879
+  application/vnd.google-apps.document: 98, 52858
+  application/vnd.google-apps.drawing: 2, 2048
+  application/vnd.google-apps.drive-sdk.423565144751: 1, 0
+  application/vnd.google-apps.folder: 68, 0
+  application/vnd.google-apps.form: 3, 0
+  application/vnd.google-apps.jam: 1, 1024
+  application/vnd.google-apps.presentation: 1, 0
+  application/vnd.google-apps.shortcut: 14, 0
+  application/vnd.google-apps.site: 1, 0
+  application/vnd.google-apps.spreadsheet: 24, 11264
+  application/vnd.openxmlformats-officedocument.spreadsheetml.sheet: 1, 8157
+  application/vnd.openxmlformats-officedocument.wordprocessingml.document: 3, 34407
+  application/vnd.openxmlformats-officedocument.wordprocessingml.template: 1, 25906
+  application/x-gzip: 4, 2768
+  application/zip: 2, 765
+  image/jpeg: 8, 16498
+  image/vnd.adobe.photoshop: 1, 13613198
+  text/csv: 2, 397
+  text/plain: 13, 41461
+  text/rtf: 3, 1738
+  text/x-sh: 1, 136
+```
+Print file counts for a user.
+```
+$ gam user testuser@domain,com print filecounts showsize
+Getting all Drive Files/Folders that match query ('me' in owners) for testuser@domain.com
+Got 261 Drive Files/Folders that matched query ('me' in owners) for testuser@domain.com...
+User,Total,Size,application/octet-stream,application/pdf,application/vnd.google-apps.document,application/vnd.google-apps.drawing,application/vnd.google-apps.drive-sdk.423565144751,application/vnd.google-apps.folder,application/vnd.google-apps.form,application/vnd.google-apps.jam,application/vnd.google-apps.presentation,application/vnd.google-apps.shortcut,application/vnd.google-apps.site,application/vnd.google-apps.spreadsheet,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.wordprocessingml.template,application/x-gzip,application/zip,image/jpeg,image/vnd.adobe.photoshop,text/csv,text/plain,text/rtf,text/x-sh
+testuser@domain.com,261,13822521,8,1,98,2,1,68,3,1,1,14,1,24,1,3,1,4,2,8,1,2,13,3,1
+```
+Print file counts for a user including sizes for each MIME type.
+```
+$ gam user testuser@domain.com print filecounts showmimetypesize
+Getting all Drive Files/Folders that match query ('me' in owners) for testuser@domain.com
+Got 261 Drive Files/Folders that matched query ('me' in owners) for testuser@domain.com...
+User,Total,Size,application/octet-stream,application/octet-stream-size,application/pdf,application/pdf-size,application/vnd.google-apps.document,application/vnd.google-apps.document-size,application/vnd.google-apps.drawing,application/vnd.google-apps.drawing-size,application/vnd.google-apps.drive-sdk.423565144751,application/vnd.google-apps.drive-sdk.423565144751-size,application/vnd.google-apps.folder,application/vnd.google-apps.folder-size,application/vnd.google-apps.form,application/vnd.google-apps.form-size,application/vnd.google-apps.jam,application/vnd.google-apps.jam-size,application/vnd.google-apps.presentation,application/vnd.google-apps.presentation-size,application/vnd.google-apps.shortcut,application/vnd.google-apps.shortcut-size,application/vnd.google-apps.site,application/vnd.google-apps.site-size,application/vnd.google-apps.spreadsheet,application/vnd.google-apps.spreadsheet-size,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet-size,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.wordprocessingml.document-size,application/vnd.openxmlformats-officedocument.wordprocessingml.template,application/vnd.openxmlformats-officedocument.wordprocessingml.template-size,application/x-gzip,application/x-gzip-size,application/zip,application/zip-size,image/jpeg,image/jpeg-size,image/vnd.adobe.photoshop,image/vnd.adobe.photoshop-size,text/csv,text/csv-size,text/plain,text/plain-size,text/rtf,text/rtf-size,text/x-sh,text/x-sh-size
+testuser@domain.com,261,13822521,8,17,1,9879,98,52858,2,2048,1,0,68,0,3,0,1,1024,1,0,14,0,1,0,24,11264,1,8157,3,34407,1,25906,4,2768,2,765,8,16498,1,13613198,2,397,13,41461,3,1738,1,136
+```
 Get file count summaries by OU; top level selector is ou, sub level selectors are ou_and_children
 ```
 gam redirect csv ./TopLevelOUs.csv print ous showparent toplevelonly parentselector ou childselector ou_and_children fields orgunitpath
@@ -826,7 +906,7 @@ The `stripcrsfromname` option strips nulls, carriage returns and linefeeds from 
 This option is special purpose and will not generally be used.
 
 ### Examples
-Show full file tree including the file id and mimetype:
+Show full file tree including the file id and MIME type:
 ```
 gam user testuser show filetree fields id,mimetype
 ```
@@ -850,7 +930,7 @@ gam <UserTypeEntity> print|show filelist [todrive <ToDriveAttribute>*]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>] [pmfilter] [oneitemperrow]
         [excludetrashed]
         [maxfiles <Integer>] [nodataheaders <String>]
-        [countsonly [summary none|only|plus] [summaryuser <String>] [showsource] [showsize]] [countsrowfilter]
+        [countsonly [summary none|only|plus] [summaryuser <String>] [showsource] [showsize] [showmimetypesize]] [countsrowfilter]
         [filepath|fullpath [pathdelimiter <Character>] [addpathstojson] [showdepth]] [buildtree]
         [allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
         [showdrivename] [showshareddrivepermissions]
@@ -1022,7 +1102,7 @@ By default, all ACLs are displayed with the other file fields on a single row.
 * `oneitemperrow` - Display each of a files ACls on a separate row with all of the other file fields.
 This produces a CSV file that can be used in subsequent commands without further script processing.
 
-The `countsonly` option doesn't display any indididual file data, it lists the total number of files that the use can access
+The `countsonly` option doesn't display any indididual file data, it lists the total number of files that the user can access
 and the mumber of files by MIME type.
 
 The `countsonly` suboption `summary none|only|plus` specifies display of a summarization of file counts across all users specified in the command.
@@ -1035,6 +1115,8 @@ The `summaryuser <String>` option  replaces the default summary user `Summary` w
 The `countsonly` suboption `showsource` adds additional columns `Source` and `Name` that identify the top level folder ID and Name from which the counts are derived.
 
 The `countsonly` suboption `showsize` adds an additional column `Size` that indicates the total size (in bytes) of the files represented on the row.
+
+The `countsonly` suboption `showmimetypesize` adds additional columns `<MimeType>:Size` that indicate the total size (in bytes) of each MIME type.
 
 By default, when `countsonly` is specified, GAM applies `config csv_output_row_filter` to the file details to select which files are counted.
 Use the `countsrowfilter` option to have GAM to apply `config csv_output_row_filter` to the file counts rather than the file details.

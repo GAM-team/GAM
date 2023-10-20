@@ -10,6 +10,37 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation.
 
+### 6.65.01
+
+Added option `showmimetypesize` to `gam <UserTypeEntity> print|show filecounts` and
+`gam <UserTypeEntity> print filelist countsonly` that displays the total file size for each MIME type.
+
+### 6.65.00
+
+Fixed bug in `gam <UserTypeEntity> create contact <JSONData>` that caused a trap when
+contacts were being copied from one user to another.
+
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-People-Contacts-Profiles#copy-user-contacts-to-another-user
+
+Updated the following commands to allow specification of a task list by its title.
+```
+<TaskListTitle> ::= tltitle:<String>
+<TasklistTitleList> ::= "'<TasklistTitle>'(,'<TasklistTitle>')*"
+<TasklistEntity> ::=
+        <TasklistIDList> | <TaskListTitleList> | <FileSelector> | <CSVFileSelector>
+
+gam <UserTypeEntity> create task <TasklistEntity>
+gam <UserTypeEntity> show tasks [tasklists <TasklistEntity>]
+gam <UserTypeEntity> print tasks [tasklists <TasklistEntity>]
+gam <UserTypeEntity> update tasklist <TasklistEntity>
+gam <UserTypeEntity> delete tasklist <TasklistEntity>
+gam <UserTypeEntity> clear tasklist <TasklistEntity>
+gam <UserTypeEntity> info tasklist <TasklistEntity>
+```
+
+Note the quoting in `<TasklistTitleList>`; the entire list should be enclosed in `"` and
+each `tltitle:<String>` must be enclosed in `'` if `<String>` contains a space.
+
 ### 6.64.16
 
 Fixed bug in `gam <UserTypeEntity> create task <TasklistIDEntity>` that caused a trap

@@ -571,6 +571,7 @@
 <TakeoutBucketName> ::= takeout-export-[a-f,0-9,-]*
 <TaskID> ::= <String>
 <TaskListID> ::= <String>
+<TaskListTitle> ::= tltitle:<String>
 <TasklistIDTaskID> ::= <TasklistID>/<TaskID>
 <ThreadID> ::= <String>
 <TimeZone> ::= <String>

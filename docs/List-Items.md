@@ -93,6 +93,7 @@
 <SharedDriveIDList> ::= "<SharedDriveID>(,<SharedDriveID>)*"
 <StringList> ::= "<String>(,<String>)*"
 <TasklistIDList> ::= "<TasklistID>(,<TasklistID>)*"
+<TasklistTitleList> ::= "'<TasklistTitle>'(,'<TasklistTitle>')*"
 <TasklistIDTaskIDList> ::= "<TasklistIDTaskID>(,<TasklistIDTaskID>)*"
 <ThreadIDList> ::= "<ThreadID>(,<ThreadID>)*"
 <TimeList> ::= "<Time>(,<Time>)*"

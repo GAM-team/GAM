@@ -55,8 +55,8 @@ gam enable apis
 ```
 You are given the option to enable them automatically or manually. Automatic enablement will ask you to authenticate to GAMADV-XTD3. You should authenticate as a user with rights to manage project APIs, probably a project owner. If you are not the project owner you can choose manual enablement and GAMADV-XTD3 will provide two or more URLs which you can send to the project owner. When the owner opens these URLs, they'll be prompted to enable all the APIs GAMADV-XTD3 needs.
 
-9. Manage user data
-   * Run ```gam user user@domain.com check serviceaccount``` and follow the instructions to perform domain-wide delegation.
-
-10. Perform admin actions (manage users, groups, orgunits, Chrome devices, etc)
+9. Perform admin actions (manage users, groups, orgunits, Chrome devices, etc)
    * [Configure delegated admin service account (DASA)](https://github.com/taers232c/GAMADV-XTD3/wiki/Using-GAMADV-XTD3-with-a-delegated-admin-service-account); start at step 4.
+
+10. Manage user data
+   * Run ```gam user user@domain.com check serviceaccount``` and follow the instructions to perform domain-wide delegation.

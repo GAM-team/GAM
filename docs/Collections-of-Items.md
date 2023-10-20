@@ -332,8 +332,8 @@ Data fields identified in a `csvkmd` argument.
         <SiteACLScopeList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 <SiteEntity> ::=
         <SiteList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-<TasklistIDEntity> ::=
-        <TasklistIDList> | <FileSelector> | <CSVFileSelector>
+<TasklistEntity> ::=
+        <TasklistIDList> | <TaskListTitleList> | <FileSelector> | <CSVFileSelector>
 <TasklistIDTaskIDEntity> ::=
         <TasklistIDTaskIDList> | <FileSelector> | <CSVFileSelector>
 <ThreadIDEntity> ::=

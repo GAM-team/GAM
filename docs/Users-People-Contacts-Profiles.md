@@ -21,6 +21,7 @@
 - [Manage User Contact Groups](#manage-user-contact-groups)
 - [Display User Contact Groups](#display-user-contact-groups)
 - [Display User People Profile](#display-user-people-profile)
+- [Copy User Contacts to another User](#copy-user-contacts-to-another-user)
 
 ## Notes
 As of version `6.08.00`, GAM uses the People API to manage user contacts rather than the Contacts API.
@@ -651,3 +652,16 @@ the quote character itself, the column delimiter (comma by default) and new-line
 When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
+
+## Copy User Contacts to another User
+
+To copy one user's contacts to another user perform the following steps.
+```
+# Copy contact groups
+gam redirect csv ./ContactGroups.csv user sourceuser@domain.com print contactgroups formatjson
+gam redirect stdout ./CopyContactGroups.txt multiprocess redirect stderr stdout csv ContactGroups.csv gam user targetuser@domain.com create contactgroup json "~JSON"
+
+# Copy contacts
+gam redirect csv ./Contacts.csv user sourceuser@domain.com print contacts selectmaincontacts allfields showgroups formatjson
+gam redirect stdout ./CopyContacts.txt multiprocess redirect stderr stdout csv Contacts.csv gam user targetuser@domain.com create contact json "~JSON"
+```

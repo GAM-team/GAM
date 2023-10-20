@@ -2,6 +2,7 @@
 - [API documentation](#api-documentation)
 - [Notes](#notes)
 - [Definitions](#definitions)
+- [Specifying task lists](#specifying-task-lists)
 - [Create Tasks](#create-tasks)
 - [Update Tasks](#update-tasks)
 - [Delete Tasks](#delete-tasks)
@@ -28,11 +29,13 @@ gam user user@domain.com check serviceaccount
 ```
 <TaskID> ::= <String>
 <TaskListID> ::= <String>
+<TaskListTitle> ::= tltitle:<String>
+<TasklistTitleList> ::= "'<TasklistTitle>'(,'<TasklistTitle>')*"
 <TasklistIDTaskID> ::= <TasklistID>/<TaskID>
 <TasklistIDList> ::= "<TasklistID>(,<TasklistID>)*"
 <TasklistIDTaskIDList> ::= "<TasklistIDTaskID>(,<TasklistIDTaskID>)*"
-<TasklistIDEntity> ::=
-        <TasklistIDList> | <FileSelector> | <CSVFileSelector>
+<TasklistEntity> ::=
+        <TasklistIDList> | <TaskListTitleList> | <FileSelector> | <CSVFileSelector>
         See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
 <TasklistIDTaskIDEntity> ::=
         <TasklistIDTaskIDList> | <FileSelector> | <CSVFileSelector>
@@ -47,9 +50,22 @@ gam user user@domain.com check serviceaccount
 <TasklistAttribute> ::=
         (title <String>)
 ```
+## Specifying task lists
+
+The Tasks API requires that a task list be specified by its ID; GAM allows specification of a task list
+by its title and makes an additional API call to convert the title to an ID.
+
+Note the quoting in `<TasklistTitleList>`; the entire list should be enclosed in `"` and
+each `tltitle:<String>` must be enclosed in `'` if `<String>` contains a space.
+
+```
+gam user user@domain.com create task "'tltitle:My Tasks'" title "Task title" notes "Task Notes"
+gam user user@domain.com info tasklist "'tltitle:My Tasks'"
+```
+
 ## Create Tasks
 ```
-gam <UserTypeEntity> create task <TasklistIDEntity>
+gam <UserTypeEntity> create task <TasklistEntity>
         <TaskAttribute>* [parent <TaskID>] [previous <TaskID>]
         [compact|formatjson|returnidonly]
 ```
@@ -95,7 +111,7 @@ By default, Gam displays the tasks as an indented list of keys and values; the t
 
 ### Display all tasks
 ```
-gam <UserTypeEntity> show tasks [tasklists <TasklistIDEntity>]
+gam <UserTypeEntity> show tasks [tasklists <TasklistEntity>]
         [completedmin <Time>] [completedmax <Time>]
         [duemin <Time>] [duemax <Time>]
         [updatedmin <Time>]
@@ -118,7 +134,7 @@ By default, only tasks with status `needsAction` are displayed.
 * `showcompleted` - Add completed tasks to the display. `showHidden` must also be True to show tasks completed in first party clients, such as the web UI and Google's mobile apps.
 * `showall` - Equivalent to `showdeleted` `showhidden` `showcompleted`
 ```
-gam <UserTypeEntity> print tasks [tasklists <TasklistIDEntity>] [todrive <ToDriveAttribute>*]
+gam <UserTypeEntity> print tasks [tasklists <TasklistEntity>] [todrive <ToDriveAttribute>*]
         [completedmin <Time>] [completedmax <Time>]
         [duemin <Time>] [duemax <Time>]
         [updatedmin <Time>]
@@ -158,7 +174,7 @@ By default, Gam displays the created task list as an indented list of keys and v
 
 ## Update Task Lists
 ```
-gam <UserTypeEntity> update tasklist <TasklistIDEntity>
+gam <UserTypeEntity> update tasklist <TasklistEntity>
         <TasklistAttribute>*
         [formatjson]
 ```
@@ -167,19 +183,19 @@ By default, Gam displays the updated task list as an indented list of keys and v
 
 ## Delete Task Lists
 ```
-gam <UserTypeEntity> delete tasklist <TasklistIDEntity>
+gam <UserTypeEntity> delete tasklist <TasklistEntity>
 ```
 
 ## Clear Task Lists
 Clears all completed tasks from the specified task lists.
 ```
-gam <UserTypeEntity> clear tasklist <TasklistIDEntity>
+gam <UserTypeEntity> clear tasklist <TasklistEntity>
 ```
 
 ## Display Task Lists
 ### Display selected task lists
 ```
-gam <UserTypeEntity> info tasklist <TasklistIDEntity>
+gam <UserTypeEntity> info tasklist <TasklistEntity>
         [formatjson]
 ```
 By default, Gam displays the task lists as an indented list of keys and values.

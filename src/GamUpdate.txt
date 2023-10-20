@@ -2,6 +2,11 @@
 
 Merged GAM-Team version
 
+6.65.01
+
+Added option `showmimetypesize` to `gam <UserTypeEntity> print|show filecounts` and
+`gam <UserTypeEntity> print filelist countsonly` that displays the total file size for each MIME type.
+
 6.65.00
 
 Fixed bug in `gam <UserTypeEntity> create contact <JSONData>` that caused a trap when
