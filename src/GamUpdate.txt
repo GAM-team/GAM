@@ -2,6 +2,13 @@
 
 Merged GAM-Team version
 
+6.65.02
+
+Updated `gam print|show browsers` to handle the following error:
+```
+ERROR: 503: serviceNotAvailable - The service is currently unavailable.
+```
+
 6.65.01
 
 Added option `showmimetypesize` to `gam <UserTypeEntity> print|show filecounts` and
