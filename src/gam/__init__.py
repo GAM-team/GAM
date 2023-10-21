@@ -6361,6 +6361,7 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
       result = callGAPIpages(cd.chromeosdevices(), 'list', 'chromeosdevices',
                              pageMessage=getPageMessage(),
                              throwReasons=[GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                              customerId=GC.Values[GC.CUSTOMER_ID],
                              fields='nextPageToken,chromeosdevices(deviceId)',
                              maxResults=GC.Values[GC.DEVICE_MAX_RESULTS])
@@ -6380,6 +6381,7 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
         result = callGAPIpages(cd.chromeosdevices(), 'list', 'chromeosdevices',
                                pageMessage=getPageMessage(),
                                throwReasons=[GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                customerId=GC.Values[GC.CUSTOMER_ID], query=query,
                                fields='nextPageToken,chromeosdevices(deviceId)',
                                maxResults=GC.Values[GC.DEVICE_MAX_RESULTS])
@@ -6426,6 +6428,7 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
                                  pageMessage=getPageMessageForWhom(),
                                  throwReasons=[GAPI.INVALID_INPUT, GAPI.INVALID_ORGUNIT, GAPI.ORGUNIT_NOT_FOUND,
                                                GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  customerId=GC.Values[GC.CUSTOMER_ID], query=query,
                                  orgUnitPath=ou, includeChildOrgunits=includeChildOrgunits,
                                  fields='nextPageToken,chromeosdevices(deviceId)', maxResults=GC.Values[GC.DEVICE_MAX_RESULTS])
@@ -17130,6 +17133,7 @@ def doPrintOrgs():
           feed = callGAPI(cd.chromeosdevices(), 'list', 'chromeosdevices',
                           throwReasons=[GAPI.INVALID_INPUT, GAPI.INVALID_ORGUNIT, GAPI.ORGUNIT_NOT_FOUND,
                                         GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                          retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                           pageToken=pageToken,
                           customerId=GC.Values[GC.CUSTOMER_ID], orgUnitPath=orgUnitPath, includeChildOrgunits=False,
                           fields='nextPageToken,chromeosdevices(status)', maxResults=GC.Values[GC.DEVICE_MAX_RESULTS])
@@ -23546,6 +23550,7 @@ def doPrintCrOSDevices(entityList=None):
             feed = callGAPI(cd.chromeosdevices(), 'list',
                             throwReasons=[GAPI.INVALID_INPUT, GAPI.INVALID_ORGUNIT,
                                           GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                             pageToken=pageToken,
                             customerId=GC.Values[GC.CUSTOMER_ID], query=query, projection=projection,
                             orgUnitPath=ou, includeChildOrgunits=includeChildOrgunits,
@@ -23811,6 +23816,7 @@ def doPrintCrOSActivity(entityList=None):
               feed = callGAPI(cd.chromeosdevices(), 'list',
                               throwReasons=[GAPI.INVALID_INPUT, GAPI.INVALID_ORGUNIT,
                                             GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                               pageToken=pageToken,
                               customerId=GC.Values[GC.CUSTOMER_ID], query=query, projection=projection, orgUnitPath=orgUnitPath,
                               orderBy=orderBy, sortOrder=sortOrder, fields=fields, maxResults=GC.Values[GC.DEVICE_MAX_RESULTS])
@@ -28670,6 +28676,7 @@ def doPrintChromeSnValidity():
       devices = callGAPIpages(cd.chromeosdevices(), 'list', 'chromeosdevices',
                               pageMessage=getPageMessage(),
                               throwReasons=[GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                               customerId=GC.Values[GC.CUSTOMER_ID],
                               query=query, fields='nextPageToken,chromeosdevices(deviceId,serialNumber)',
                               orderBy='serialNumber', maxResults=GC.Values[GC.DEVICE_MAX_RESULTS])
