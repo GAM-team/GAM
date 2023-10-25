@@ -241,6 +241,7 @@ If an item contains spaces, it should be surrounded by ".
         101038 |
         101039 |
         101040 |
+        101043 |
         101047 |
         Google-Apps |
         Google-Chrome-Device-Management |
@@ -291,6 +292,7 @@ If an item contains spaces, it should be surrounded by ".
         voicepremier | gvpremier | googlevoicepremier | 1010330002 |
         voicestandard | gvstandard | googlevoicestandard | 1010330004 |
         voicestarter | gvstarter | googlevoicestarter | 1010330003 |
+        wsas | plusstorage | 1010430001 |
         wsbizplus | workspacebusinessplus | 1010020025 |
         wsbizplusarchived | workspacebusinessplusarchived | 1010340003 |
         wsbizstan | workspacebusinessstandard | 1010020028 |

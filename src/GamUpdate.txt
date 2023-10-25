@@ -1,3 +1,12 @@
+6.65.04
+
+Fixed bug where license SKU `1010020031` (Google Workspace Frontline Standard) was improperly entered making it unusable;
+its alias `wsflwstan` was usable.
+
+Added support for Google Workspace Additional Storage.
+* ProductID - 101043
+* SKUID - 1010430001 | gwas | plusstorage
+
 7.00.00
 
 Merged GAM-Team version

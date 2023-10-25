@@ -33,6 +33,7 @@ _PRODUCTS = {
   '101038': 'AppSheet',
   '101039': 'Assured Controls',
   '101040': 'Beyond Corp Enterprise',
+  '101043': 'Google Workspace Additional Storage',
   '101047': 'Duet AI',
   'Google-Apps': 'Google Workspace',
   'Google-Chrome-Device-Management': 'Google Chrome Device Management',
@@ -82,6 +83,8 @@ _SKUS = {
     'product': '101039', 'aliases': ['assuredcontrols'], 'displayName': 'Assured Controls'},
   '1010400001': {
     'product': '101040', 'aliases': ['beyondcorp', 'beyondcorpenterprise', 'bce'], 'displayName': 'Beyond Corp Enterprise'},
+  '1010430001': {
+    'product': '101043', 'aliases': ['gwas', 'plusstorage'], 'displayName': 'Google Workspace Additional Storage'},
   '1010470001': {
     'product': '101047', 'aliases': ['duetai'], 'displayName': 'Duet AI for Enterprise'},
   '1010470002': {
@@ -113,7 +116,7 @@ _SKUS = {
     'product': 'Google-Apps', 'aliases': ['wes', 'wsentstarter', 'workspaceenterprisestarter'], 'displayName': 'Workspace Enterprise Starter'},
   '1010020030': {
     'product': 'Google-Apps', 'aliases': ['wsflw', 'workspacefrontline', 'workspacefrontlineworker'], 'displayName': 'Google Workspace Frontline Starter'},
-  '1010020031`': {
+  '1010020031': {
     'product': 'Google-Apps', 'aliases': ['wsflwstan', 'workspacefrontlinestan', 'workspacefrontlineworkerstan'], 'displayName': 'Google Workspace Frontline Standard'},
   '1010340001': {
     'product': '101034', 'aliases': ['gseau', 'enterprisearchived', 'gsuiteenterprisearchived'], 'displayName': 'Google Workspace Enterprise Plus - Archived User'},

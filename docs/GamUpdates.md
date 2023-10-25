@@ -10,6 +10,15 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.65.04
+
+Fixed bug where license SKU `1010020031` (Google Workspace Frontline Standard) was improperly entered making it unusable;
+its alias `wsflwstan` was usable.
+
+Added support for Google Workspace Additional Storage.
+* ProductID - 101043
+* SKUID - 1010430001 | gwas | plusstorage
+
 ### 6.65.03
 
 Fixed bug in commands that display calendar events where event start and end times were not properly displayed

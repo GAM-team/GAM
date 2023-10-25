@@ -30,6 +30,7 @@
 | Google Meet Global Dialing | 101036 |
 | Google Vault |Google-Vault |
 | Google Voice | 101033 |
+| Google Workspace Additional Storage | 101043 |
 | Google Workspace Archived User | 101034 |
 | Google Workspace for Education | 101031 |
 | Google Workspace for Education | 101037 |
@@ -67,6 +68,7 @@
 | Google Voice Premier | 1010330002 | voicepremier |
 | Google Voice Standard | 1010330004 | voicestandard |
 | Google Voice Starter | 1010330003 | voicestarter |
+| Google Workspace Additional Storage | 1010430001 | gwas |
 | Google Workspace Business - Archived User | 1010340002 | gsuitebusinessarchived |
 | Google Workspace Business Plus | 1010020025 | wsbizplus |
 | Google Workspace Business Plus - Archived User | 1010340003 | wsbizplusarchived |
@@ -111,6 +113,7 @@
         101038 |
         101039 |
         101040 |
+        101043 |
         101047 |
         Google-Apps |
         Google-Chrome-Device-Management |
@@ -163,6 +166,7 @@
         voicepremier | gvpremier | googlevoicepremier | 1010330002 |
         voicestandard | gvstandard | googlevoicestandard | 1010330004 |
         voicestarter | gvstarter | googlevoicestarter | 1010330003 |
+        wsas | plusstorage | 1010430001 |
         wsbizplus | workspacebusinessplus | 1010020025 |
         wsbizplusarchived | workspacebusinessplusarchived | 1010340003 |
         wsbizstan | workspacebusinessstandard | 1010020028 |

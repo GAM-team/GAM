@@ -483,6 +483,7 @@ See: [Drive File Selection](Drive-File-Selection) for details of `<DriveFileName
 <DriveFileQueryShortcut> ::=
         all_files |
         all_folders |
+        all_forms |
         all_google_files |
         all_non_google_files |
         all_shortcuts |
@@ -490,13 +491,16 @@ See: [Drive File Selection](Drive-File-Selection) for details of `<DriveFileName
         all_items |
         my_files |
         my_folders |
+        my_forms |
         my_google_files |
         my_non_google_files |
         my_shortcuts |
         my_3p_shortcuts |
         my_items |
+        my_forms |
         others_files |
         others_folders |
+        others_forms |
         others_google_files |
         others_non_google_files |
         others_shortcuts |

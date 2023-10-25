@@ -75,6 +75,7 @@
         others_3p_shortcuts |
         others_items |
         writable_files
+
 <SharedDriveID> ::= <String>
 <SharedDriveName> ::= <String>
 <SharedDriveIDEntity> ::= (teamdriveid <DriveFileItem>) | (teamdriveid:<DriveFileItem>)
