@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.65.03
+
+Fixed bug in commands that display calendar events where event start and end times were not properly displayed
+when `gam.cfg` had `timezone utc`. The API returns the start and end times expressed in the calendar timezone
+but GAM replaced the timezone specifier with a `Z`; the date and time values were as expected. This became
+a problem when event data was exported and used to create or update events.
+
 ### 6.65.02
 
 Updated `gam print|show browsers` to handle the following error:

@@ -36315,7 +36315,7 @@ EVENT_SHOW_ORDER = ['id', 'summary', 'status', 'description', 'location',
 EVENT_PRINT_ORDER = ['id', 'summary', 'status', 'description', 'location',
                      'created', 'updated', 'iCalUID']
 
-EVENT_TIME_OBJECTS = {'created', 'updated', 'dateTime'}
+EVENT_TIME_OBJECTS = {'created', 'updated'}
 
 def _showCalendarEvent(primaryEmail, calId, eventEntityType, event, k, kcount, FJQC):
   if FJQC.formatJSON:
