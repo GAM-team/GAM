@@ -45456,6 +45456,8 @@ def _batchAddItemsToCourse(croom, courseId, i, count, addParticipants, role):
           errMsg = getPhraseDNEorSNA(ri[RI_ITEM])
         else:
           errMsg = getHTTPError(_ADD_PART_REASON_TO_MESSAGE_MAP, http_status, reason, message)
+          if (reason == GAPI.PERMISSION_DENIED) and (ri[RI_ROLE] in {Ent.STUDENT, Ent.TEACHER}) and ('CannotDirectAddUser' in errMsg):
+            errMsg += f' Add external user with: gam user {ri[RI_ITEM]} create classroominvitation courses {ri[RI_ENTITY]} role {Ent.Singular(ri[RI_ROLE])}'
         entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM]], errMsg, int(ri[RI_J]), int(ri[RI_JCOUNT]))
         return
       waitOnFailure(1, 10, reason, message)

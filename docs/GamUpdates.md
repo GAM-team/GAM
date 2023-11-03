@@ -12,6 +12,15 @@ See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Win
 
 Updated `gam <UserTypeEntity> import|insert message` to allow `replace <Tag> <UserReplacement>` as documented.
 
+### 6.65.06
+
+Improved error message when trying to add external students/teachers to a course.
+```
+gam courses 544906261666 add student user@gmail.com
+Course: 544906261666, Add 1 Student
+  Course: 544906261666, Student: user@gmail.com, Add Failed: 403: permissionDenied - @CannotDirectAddUser Unable to directly add the user to the course. Please check that the user account exists and is within the course admin's domain. Add external user with: gam user user@gmail.com create classroominvitation courses 544906261666 role Student
+```
+
 ### 6.65.05
 
 Updated `gam info users <UserTypeEntity>` to make option `grouptree` effective when used
@@ -30,6 +39,8 @@ in the last 30 days.
 ```
 gam user user@domain.com  print messages querytime30d -30d query "after:#querytime30d# is:unread"
 ```
+
+Updated non-owner permission handling in `gam <UserTypeEntity> copy|move drivefile`.
 
 ### 6.65.04
 
