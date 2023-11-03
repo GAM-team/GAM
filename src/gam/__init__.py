@@ -2191,6 +2191,7 @@ def getJSON(deleteFields):
     if not Cmd.ArgumentsRemaining():
       missingArgumentExit(Cmd.OB_JSON_DATA)
     argstr = Cmd.Current()
+#    argstr = Cmd.Current().replace(r'\\"', r'\"')
     Cmd.Advance()
     try:
       if encoding == UTF8:
@@ -4509,17 +4510,26 @@ def runSqliteQuery(db_file, query):
   return curr.fetchone()[0]
 
 def refreshCredentialsWithReauth(credentials):
+  def gcloudError():
+    writeStderr(f'Failed to run gcloud as {admin_email}. Please make sure it\'s setup')
+    e = Msg.REAUTHENTICATION_IS_NEEDED
+    handleOAuthTokenError(e, False)
+
   writeStderr(Msg.CALLING_GCLOUD_FOR_REAUTH)
   if 'termios' in sys.modules:
     old_settings = termios.tcgetattr(sys.stdin)
+  admin_email = _getAdminEmail()
   # First makes sure gcloud has a valid access token and thus
   # should also have a valid RAPT token
   try:
+    devnull = open(os.devnull, 'w', encoding=UTF8)
     subprocess.run(['gcloud',
                     'auth',
                     'print-identity-token',
                     '--no-user-output-enabled'],
+                   stderr=devnull,
                    check=False)
+    devnull.close()
     # now determine gcloud's config path and token file
     gcloud_path_result = subprocess.run(['gcloud',
                                          'info',
@@ -4532,14 +4542,14 @@ def refreshCredentialsWithReauth(credentials):
     printBlankLine()
     raise KeyboardInterrupt from e
   token_path = gcloud_path_result.stdout.decode().strip()
+  if not token_path:
+    gcloudError()
   token_file = f'{token_path}/access_tokens.db'
-  admin_email = _getAdminEmail()
   try:
     credentials._rapt_token = runSqliteQuery(token_file,
             f'SELECT rapt_token FROM access_tokens WHERE account_id = "{admin_email}"')
   except TypeError:
-    systemErrorExit(SYSTEM_ERROR_RC,
-            f'Failed to run gcloud as {admin_email}. Please make sure it\'s setup')
+    gcloudError()
   if not credentials._rapt_token:
     systemErrorExit(SYSTEM_ERROR_RC,
             'Failed to retrieve reauth token from gcloud. You may need to wait until gcloud is also prompted for reauth.')
@@ -4792,7 +4802,7 @@ def checkGDataError(e, service):
   reason = error[0].get('reason', '')
   body = error[0].get('body', '').decode(UTF8)
   # First check for errors that need special handling
-  if reason in ['Token invalid - Invalid token: Stateless token expired', 'Token invalid - Invalid token: Token not found']:
+  if reason in ['Token invalid - Invalid token: Stateless token expired', 'Token invalid - Invalid token: Token not found', 'gone']:
     keep_domain = service.domain
     getGDataOAuthToken(service)
     service.domain = keep_domain
@@ -23302,7 +23312,7 @@ CROS_INDEXED_TITLES = ['activeTimeRanges', 'recentUsers', 'deviceFiles',
                        'cpuStatusReports', 'diskVolumeReports', 'lastKnownNetwork', 'screenshotFiles', 'systemRamFreeReports']
 
 # gam print cros [todrive <ToDriveAttribute>*]
-#	[(query <QueryCrOS>)|(queries <QueryCrOSList>) [querytime.* <Time>]
+#	[(query <QueryCrOS>)|(queries <QueryCrOSList>) [querytime<String> <Time>]
 #	 [(limittoou|cros_ou <OrgUnitItem>)|(cros_ou_and_children <OrgUnitItem>)|
 #	  (cros_ous <OrgUnitList>)|(cros_ous_and_children <OrgUnitList>)]]
 # gam print cros [todrive <ToDriveAttribute>*] select <CrOSTypeEntity>
@@ -23628,7 +23638,7 @@ CROS_ACTIVITY_LIST_FIELDS_CHOICE_MAP = {
 CROS_ACTIVITY_TIME_OBJECTS = {'createTime'}
 
 # gam print crosactivity [todrive <ToDriveAttribute>*]
-#	[(query <QueryCrOS>)|(queries <QueryCrOSList>) [querytime.* <Time>]
+#	[(query <QueryCrOS>)|(queries <QueryCrOSList>) [querytime<String> <Time>]
 #	 [(limittoou|cros_ou <OrgUnitItem>)|(cros_ou_and_children <OrgUnitItem>)|
 #	  (cros_ous <OrgUnitList>)|(cros_ous_and_children <OrgUnitList>)]]
 # gam print crosactivity [todrive <ToDriveAttribute>*] select <CrOSTypeEntity>
@@ -24215,7 +24225,7 @@ def doInfoBrowsers():
 
 # gam move browsers ou|org|orgunit <OrgUnitPath>
 #	((ids <DeviceIDList>) |
-#	 (queries <QueryBrowserList> [querytime.* <Time>]) |
+#	 (queries <QueryBrowserList> [querytime<String> <Time>]) |
 #	 (browserou <OrgUnitItem>) | (browserous <OrgUnitList>) |
 #	 <FileSelector> | <CSVFileSelector>)
 #	[batchsize <Integer>]
@@ -24354,13 +24364,13 @@ BROWSER_ORDERBY_CHOICE_MAP = {
 
 # gam show browsers
 #	([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
-#	[querytime.* <Time>]
+#	[querytime<String> <Time>]
 #	[orderby <BrowserOrderByFieldName> [ascending|descending]]
 #	[basic|full|allfields|annotated] <BrowserFieldName>* [fields <BrowserFieldNameList>]
 #	[formatjson]
 # gam print browsers [todrive <ToDriveAttribute>*]
 #	([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
-#	[querytime.* <Time>]
+#	[querytime<String> <Time>]
 #	[orderby <BrowserOrderByFieldName> [ascending|descending]]
 #	[basic|full|allfields|annotated] <BrowserFieldName>* [fields <BrowserFieldNameList>]
 #	[sortheaders] [formatjson [quotechar <Character>]]
@@ -24556,13 +24566,13 @@ BROWSER_TOKEN_FIELDS_CHOICE_MAP = {
 
 # gam show browsertokens
 #	([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowserToken)|(queries <QueryBrowserTokenList>)))
-#	[querytime.* <Time>]
+#	[querytime<String> <Time>]
 #	[orderby <BrowserTokenFieldName> [ascending|descending]]
 #	[allfields] <BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]
 #	[formatjson]
 # gam print browsertokens [todrive <ToDriveAttribute>*]
 #	([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowserToken)|(queries <QueryBrowserTokenList>)))
-#	[querytime.* <Time>]
+#	[querytime<String> <Time>]
 #	[orderby <BrowserTokenFieldName> [ascending|descending]]
 #	[allfields] <BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]
 #	[sortheaders] [formatjson [quotechar <Character>]]
@@ -26677,7 +26687,7 @@ DEVICE_MISSING_ACTION_MAP = {
 
 # gam sync devices
 #	<CSVFileSelector>
-#	[(query <QueryDevice>)|(queries <QueryDeviceList>) (querytime.* <Time>)*]
+#	[(query <QueryDevice>)|(queries <QueryDeviceList>) (querytime<String> <Time>)*]
 #	(devicetype_column <String>)|(static_devicetype <DeviceType>)
 #	(serialnumber_column <String>)
 #	[assettag_column <String>]
@@ -26976,7 +26986,7 @@ DEVICE_ORDERBY_CHOICE_MAP = {
   }
 
 # gam print devices [todrive <ToDriveAttribute>*]
-#	[(query <QueryDevice>)|(queries <QueryDeviceList>) (querytime.* <Time>)*]
+#	[(query <QueryDevice>)|(queries <QueryDeviceList>) (querytime<String> <Time>)*]
 #	<DeviceFieldName>* [fields <DeviceFieldNameList>] [userfields <DeviceUserFieldNameList>]
 #	[orderby <DeviceOrderByFieldName> [ascending|descending]]
 #	[all|company|personal|nocompanydevices|nopersonaldevices]
@@ -27163,7 +27173,7 @@ def doInfoCIDeviceUser():
 
 # gam print deviceusers [todrive <ToDriveAttribute>*]
 #	[select <DeviceID>]
-#	[(query <QueryDevice>)|(queries <QueryDeviceList>) (querytime.* <Time>)*]
+#	[(query <QueryDevice>)|(queries <QueryDeviceList>) (querytime<String> <Time>)*]
 #	<DeviceUserFieldName>* [fields <DevieUserFieldNameList>]
 #	[orderby <DeviceOrderByFieldName> [ascending|descending]]
 #	[formatjson [quotechar <Character>]]
@@ -28948,7 +28958,7 @@ MOBILE_ORDERBY_CHOICE_MAP = {
   }
 
 # gam print mobile [todrive <ToDriveAttribute>*]
-#	[(query <QueryMobile>)|(queries <QueryMobileList>) [querytime.* <Time>]]
+#	[(query <QueryMobile>)|(queries <QueryMobileList>) [querytime<String> <Time>]]
 #	[orderby <MobileOrderByFieldName> [ascending|descending]]
 #	[basic|full|allfields] <MobileFieldName>* [fields <MobileFieldNameList>]
 #	[delimiter <Character>] [appslimit <Number>] [oneappperrow] [listlimit <Number>]
@@ -32006,53 +32016,68 @@ def doShowGroupMembers():
     if checkGroupMatchPatterns(groupEmail, group, matchPatterns):
       _showGroup(groupEmail, 0)
 
+def getGroupParents(cd, groupParents, groupEmail, groupName, kwargs):
+  groupParents[groupEmail] = {'name': groupName, 'parents': []}
+  _setUserGroupArgs(groupEmail, kwargs)
+  try:
+    entityList = callGAPIpages(cd.groups(), 'list', 'groups',
+                               throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
+                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                               orderBy='email', fields='nextPageToken,groups(email,name)', **kwargs)
+    for parentGroup in entityList:
+      groupParents[groupEmail]['parents'].append(parentGroup['email'])
+      if parentGroup['email'] not in groupParents:
+        getGroupParents(cd, groupParents, parentGroup['email'], parentGroup['name'], kwargs)
+  except (GAPI.invalidMember, GAPI.invalidInput):
+    badRequestWarning(Ent.GROUP, Ent.MEMBER, groupEmail)
+  except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.forbidden, GAPI.badRequest):
+    accessErrorExit(cd)
+
+def showGroupParents(groupParents, groupEmail, role, i, count):
+  kvList = [groupEmail, f'{groupParents[groupEmail]["name"]}']
+  if role:
+    kvList.extend([Ent.Singular(Ent.ROLE), role])
+  printKeyValueListWithCount(kvList, i, count)
+  Ind.Increment()
+  for parentEmail in groupParents[groupEmail]['parents']:
+    showGroupParents(groupParents, parentEmail, None, 0, 0)
+  Ind.Decrement()
+
+def addJsonGroupParents(groupParents, userGroup, groupEmail):
+  userGroup.setdefault('parents', [])
+  for parentEmail in groupParents[groupEmail]['parents']:
+    userGroup['parents'].append({'email': parentEmail, 'name': groupParents[parentEmail]['name'], 'parents': []})
+    addJsonGroupParents(groupParents, userGroup['parents'][-1], parentEmail)
+
+def printGroupParents(groupParents, groupEmail, row, csvPF, delimiter, showParentsAsList):
+  if groupParents[groupEmail]['parents']:
+    for parentEmail in groupParents[groupEmail]['parents']:
+      row['parents'].append({'email': parentEmail, 'name': groupParents[parentEmail]['name']})
+      printGroupParents(groupParents, parentEmail, row, csvPF, delimiter, showParentsAsList)
+      del row['parents'][-1]
+  else:
+    if not showParentsAsList:
+      csvPF.WriteRowTitles(flattenJSON(row))
+    else:
+      crow = row.copy()
+      if 'Role' in row:
+        crow['Role'] = row['Role']
+      parents = crow.pop('parents')
+      crow['ParentsCount'] = len(parents)
+      crow['Parents'] = delimiter.join([parent['email'] for parent in parents])
+      crow['ParentsName'] = delimiter.join([parent['name'] for parent in parents])
+      csvPF.WriteRow(flattenJSON(crow))
+
 # gam print grouptree <GroupEntity> [todrive <ToDriveAttribute>*]
 #	[showparentsaslist [<Boolean>]] [delimiter <Character>]
+#	[formatjson [quotechar <Character>]]
 # gam show grouptree <GroupEntity>
+#	[formatjson]
 def doPrintShowGroupTree():
-  def getGroupParents(groupEmail, groupName):
-    groupParents[groupEmail] = {'name': groupName, 'parents': []}
-    _setUserGroupArgs(groupEmail, kwargs)
-    try:
-      entityList = callGAPIpages(cd.groups(), 'list', 'groups',
-                                 throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
-                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                                 orderBy='email', fields='nextPageToken,groups(email,name)', **kwargs)
-      for parentGroup in entityList:
-        groupParents[groupEmail]['parents'].append(parentGroup['email'])
-        if parentGroup['email'] not in groupParents:
-          getGroupParents(parentGroup['email'], parentGroup['name'])
-    except (GAPI.invalidMember, GAPI.invalidInput):
-      badRequestWarning(Ent.GROUP, Ent.MEMBER, groupEmail)
-    except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.forbidden, GAPI.badRequest):
-      accessErrorExit(cd)
-
-  def showGroupParents(groupEmail, i, count):
-    printKeyValueListWithCount([f'{groupEmail}: {groupParents[groupEmail]["name"]}'], i, count)
-    Ind.Increment()
-    for parentEmail in groupParents[groupEmail]['parents']:
-      showGroupParents(parentEmail, 0, 0)
-    Ind.Decrement()
-
-  def printGroupParents(groupEmail, row):
-    if groupParents[groupEmail]['parents']:
-      for parentEmail in groupParents[groupEmail]['parents']:
-        row['parents'].append({'email': parentEmail, 'name': groupParents[parentEmail]['name']})
-        printGroupParents(parentEmail, row)
-        del row['parents'][-1]
-    else:
-      if not showParentsAsList:
-        csvPF.WriteRowTitles(flattenJSON(row))
-      else:
-        crow = {'Group': row['Group'], 'Name': row['Name']}
-        crow['ParentsCount'] = len(row['parents'])
-        crow['Parents'] = delimiter.join([parent['email'] for parent in row['parents']])
-        crow['ParentsName'] = delimiter.join([parent['name'] for parent in row['parents']])
-        csvPF.WriteRow(flattenJSON(crow))
-
   cd = buildGAPIObject(API.DIRECTORY)
   kwargs = {'customer': GC.Values[GC.CUSTOMER_ID]}
   csvPF = CSVPrintFile(['Group', 'Name']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   showParentsAsList = False
   entityList = getEntityList(Cmd.OB_GROUP_ENTITY)
@@ -32065,8 +32090,8 @@ def doPrintShowGroupTree():
     elif csvPF and myarg == 'showparentsaslist':
       showParentsAsList = getBoolean()
     else:
-      unknownArgumentExit()
-  if csvPF:
+      FJQC.GetFormatJSONQuoteChar(myarg, True)
+  if csvPF and not FJQC.formatJSON:
     if not showParentsAsList:
       csvPF.SetIndexedTitles(['parents'])
     else:
@@ -32074,7 +32099,7 @@ def doPrintShowGroupTree():
   groupParents = {}
   i = 0
   count = len(entityList)
-  if not csvPF:
+  if not csvPF and not FJQC.formatJSON:
     performActionNumItems(count, Ent.GROUP_TREE)
   for group in entityList:
     i += 1
@@ -32088,12 +32113,24 @@ def doPrintShowGroupTree():
               GAPI.invalid, GAPI.systemError) as e:
         entityActionFailedWarning([Ent.GROUP, groupEmail], str(e), i, count)
         continue
-      getGroupParents(groupEmail, groupName)
-    if not csvPF:
-      showGroupParents(groupEmail, i, count)
+      getGroupParents(cd, groupParents, groupEmail, groupName, kwargs)
+    if not FJQC.formatJSON:
+      if not csvPF:
+        showGroupParents(groupParents, groupEmail, None, i, count)
+      else:
+        row = {'Group': groupEmail, 'Name': groupParents[groupEmail]['name'], 'parents': []}
+        printGroupParents(groupParents, groupEmail, row, csvPF, delimiter, showParentsAsList)
     else:
-      row = {'Group': groupEmail, 'Name': groupParents[groupEmail]['name'], 'parents': []}
-      printGroupParents(groupEmail, row)
+      groupInfo = {'email': groupEmail, 'name': groupParents[groupEmail]['name'], 'parents': []}
+      addJsonGroupParents(groupParents, groupInfo, groupEmail)
+      if not csvPF:
+        printLine(json.dumps(cleanJSON(groupInfo), ensure_ascii=False, sort_keys=True))
+      else:
+        row = flattenJSON(groupInfo)
+        if csvPF.CheckRowTitles(row):
+          csvPF.WriteRowNoFilter({'Group': groupEmail, 'Name': groupParents[groupEmail]['name'],
+                                  'JSON': json.dumps(cleanJSON(groupInfo),
+                                                     ensure_ascii=False, sort_keys=True)})
   if csvPF:
     csvPF.writeCSVfile('Group Tree')
 
@@ -41513,29 +41550,6 @@ def _formatLanguagesList(propertyValue, delimiter):
   return delimiter.join(languages)
 
 def infoUsers(entityList):
-  def getGroupParents(groupEmail, groupName):
-    groupParents[groupEmail] = {'name': groupName, 'parents': []}
-    try:
-      entityList = callGAPIpages(cd.groups(), 'list', 'groups',
-                                 throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
-                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                                 userKey=groupEmail, orderBy='email', fields='nextPageToken,groups(email,name)')
-      for parentGroup in entityList:
-        groupParents[groupEmail]['parents'].append(parentGroup['email'])
-        if parentGroup['email'] not in groupParents:
-          getGroupParents(parentGroup['email'], parentGroup['name'])
-    except (GAPI.invalidMember, GAPI.invalidInput):
-      badRequestWarning(Ent.GROUP, Ent.MEMBER, groupEmail)
-    except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.forbidden, GAPI.badRequest):
-      accessErrorExit(cd)
-
-  def showGroupParents(groupEmail):
-    printKeyValueList([groupEmail, f'{groupParents[groupEmail]["name"]}'])
-    Ind.Increment()
-    for parentEmail in groupParents[groupEmail]['parents']:
-      showGroupParents(parentEmail)
-    Ind.Decrement()
-
   def printUserCIGroupMap(parent, group_name_mappings, seen_group_count, edges, direction):
     for a_parent, a_child in edges:
       if a_parent == parent:
@@ -41662,8 +41676,14 @@ def infoUsers(entityList):
           getCIGroupsTree = False
       licenses = getUserLicenses(lic, user, skus) if getLicenses else []
       if FJQC.formatJSON:
-        if getGroups:
+        if getGroups or getGroupsTree:
           user['groups'] = groups
+          if getGroupsTree:
+            for group in user['groups']:
+              groupEmail = group['email']
+              if groupEmail not in groupParents:
+                getGroupParents(cd, groupParents, groupEmail, group['name'], {})
+              addJsonGroupParents(groupParents, group, groupEmail)
         if getLicenses:
           user['licenses'] = [SKU.formatSKUIdDisplayName(u_license) for u_license in licenses]
         if not getAliases:
@@ -41901,8 +41921,8 @@ def infoUsers(entityList):
         for group in groups:
           groupEmail = group['email']
           if groupEmail not in groupParents:
-            getGroupParents(groupEmail, group['name'])
-          showGroupParents(groupEmail)
+            getGroupParents(cd, groupParents, groupEmail, group['name'], {})
+          showGroupParents(groupParents, groupEmail, None, 0, 0)
         Ind.Decrement()
       elif getCIGroupsTree:
         printEntity([Ent.GROUP_MEMBERSHIP_TREE, ''])
@@ -52092,7 +52112,7 @@ FILECOUNT_SUMMARY_CHOICE_MAP = {
 FILECOUNT_SUMMARY_USER = 'Summary'
 
 # gam <UserTypeEntity> print filelist [todrive <ToDriveAttribute>*]
-#	[((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>) (querytime.* <Time>)*]
+#	[((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>) (querytime<String> <Time>)*]
 #	[choose <DriveFileNameEntity>|<DriveFileEntityShortcut>]
 #	[corpora <CorporaAttribute>]
 #	[select <DriveFileEntity> [selectsubquery <QueryDriveFile>]
@@ -52822,7 +52842,7 @@ def printShowFilePaths(users):
     csvPF.writeCSVfile('Drive File Paths')
 
 # gam <UserTypeEntity> print filecounts [todrive <ToDriveAttribute>*]
-#	[((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>) (querytime.* <Time>)*]
+#	[((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>) (querytime<String> <Time>)*]
 #	[corpora <CorporaAttribute>]
 #	[select <SharedDriveEntity>]
 #	[anyowner|(showownedby any|me|others)]
@@ -52832,7 +52852,7 @@ def printShowFilePaths(users):
 #	[excludetrashed]
 #	[summary none|only|plus] [summaryuser <String>] [showsize]
 # gam <UserTypeEntity> show filecounts
-#	[((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>) (querytime.* <Time>)*]
+#	[((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>) (querytime<String> <Time>)*]
 #	[corpora <CorporaAttribute>]
 #	[select <SharedDriveEntity>]
 #	[anyowner|(showownedby any|me|others)]
@@ -54765,7 +54785,8 @@ def _getUniqueFilename(destFilename, mimeType, targetChildren):
 
 def _copyPermissions(drive, user, i, count, j, jcount,
                      entityType, fileId, fileTitle, newFileId, newFileTitle,
-                     statistics, stat, copyMoveOptions, atTop, copyInherited, copyNonInherited):
+                     statistics, stat, copyMoveOptions, atTop, copyInherited, copyNonInherited,
+                     updateOwner):
   def getPermissions(fid):
     permissions = {}
     try:
@@ -54800,12 +54821,14 @@ def _copyPermissions(drive, user, i, count, j, jcount,
 
   def isPermissionCopyable(kvList, permission):
     role = permission['role']
+    if permission['type'] in {'group', 'user'}:
+      emailAddress = permission.get('emailAddress', '')
     domain = ''
     if copyMoveOptions['excludePermissionsFromDomains'] or copyMoveOptions['includePermissionsFromDomains']:
       if permission['type'] in {'group', 'user'}:
-        atLoc = permission.get('emailAddress', '').find('@')
+        atLoc = emailAddress.find('@')
         if atLoc > 0:
-          domain = permission['emailAddress'][atLoc+1:]
+          domain = emailAddress[atLoc+1:]
       elif permission['type'] == 'domain':
         domain = permission.get('domain', '')
     if permission['inherited'] and not copyMoveOptions[copyInherited]:
@@ -54813,7 +54836,13 @@ def _copyPermissions(drive, user, i, count, j, jcount,
     elif not permission['inherited'] and copyMoveOptions[copyNonInherited] == COPY_NONINHERITED_PERMISSIONS_NEVER:
       notCopiedMessage = 'noninherited not selected'
     elif role == 'owner':
-      notCopiedMessage = f'role {role} copy not required/appropriate'
+      if emailAddress == user or copyMoveOptions['destDriveId'] or not updateOwner:
+        notCopiedMessage = f'role {role} copy not required/appropriate'
+      else:
+        permission['role'] = 'writer'
+        return True
+    elif updateOwner and emailAddress == user:
+      notCopiedMessage = 'user is now owner'
     elif domain and domain in copyMoveOptions['excludePermissionsFromDomains']:
       notCopiedMessage = f'domain {domain} excluded'
     elif domain and copyMoveOptions['includePermissionsFromDomains'] and domain not in copyMoveOptions['includePermissionsFromDomains']:
@@ -55301,7 +55330,8 @@ def copyDriveFile(users):
                          statistics, STAT_FOLDER_PERMISSIONS_FAILED,
                          copyMoveOptions, True,
                          'copyTopFolderInheritedPermissions',
-                         copyFolderNonInheritedPermissions)
+                         copyFolderNonInheritedPermissions,
+                         True)
       return (newParentId, newParentName, True)
 # Merge parent folders
     if copyMoveOptions['duplicateFolders'] == DUPLICATE_FOLDER_MERGE:
@@ -55330,7 +55360,8 @@ def copyDriveFile(users):
                                statistics, STAT_FOLDER_PERMISSIONS_FAILED,
                                copyMoveOptions, atTop,
                                ['copySubFolderInheritedPermissions', 'copyTopFolderInheritedPermissions'][atTop],
-                               copyFolderNonInheritedPermissions)
+                               copyFolderNonInheritedPermissions,
+                               False)
             return (newFolderId, newFolderName, True)
           entityActionFailedWarning(kvList+[Ent.DRIVE_FOLDER, newParentNameId], Msg.NOT_WRITABLE, j, jcount)
           _incrStatistic(statistics, STAT_FOLDER_NOT_WRITABLE)
@@ -55375,7 +55406,8 @@ def copyDriveFile(users):
                          statistics, STAT_FOLDER_PERMISSIONS_FAILED,
                          copyMoveOptions, False,
                          ['copySubFolderInheritedPermissions', 'copyTopFolderInheritedPermissions'][atTop],
-                         ['copySubFolderNonInheritedPermissions', 'copyTopFolderNonInheritedPermissions'][atTop])
+                         ['copySubFolderNonInheritedPermissions', 'copyTopFolderNonInheritedPermissions'][atTop],
+                         True)
       return (newFolderId, newFolderName, False)
     except (GAPI.forbidden, GAPI.insufficientFilePermissions, GAPI.insufficientParentPermissions,
             GAPI.internalError, GAPI.storageQuotaExceeded, GAPI.teamDriveHierarchyTooDeep, GAPI.badRequest) as e:
@@ -55570,7 +55602,8 @@ def copyDriveFile(users):
                                statistics, STAT_FILE_PERMISSIONS_FAILED,
                                copyMoveOptions, False,
                                'copySheetProtectedRangesInheritedPermissions',
-                               'copySheetProtectedRangesNonInheritedPermissions')
+                               'copySheetProtectedRangesNonInheritedPermissions',
+                               True)
               _updateSheetProtectedRanges(sheet, user, i, count, k, kcount, result['id'], result['name'], protectedSheetRanges,
                                           statistics, STAT_FILE_PROTECTEDRANGES_FAILED)
             elif copyMoveOptions['copyFilePermissions']:
@@ -55579,7 +55612,8 @@ def copyDriveFile(users):
                                statistics, STAT_FILE_PERMISSIONS_FAILED,
                                copyMoveOptions, False,
                                'copyFileInheritedPermissions',
-                               'copyFileNonInheritedPermissions')
+                               'copyFileNonInheritedPermissions',
+                               True)
           except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.insufficientFilePermissions,
                   GAPI.insufficientParentPermissions, GAPI.unknownError,
                   GAPI.invalid, GAPI.cannotCopyFile, GAPI.badRequest, GAPI.responsePreparationFailure, GAPI.fileNeverWritable, GAPI.fieldNotWritable,
@@ -55830,7 +55864,8 @@ def copyDriveFile(users):
                              statistics, STAT_FILE_PERMISSIONS_FAILED,
                              copyMoveOptions, False,
                              'copySheetProtectedRangesInheritedPermissions',
-                             'copySheetProtectedRangesNonInheritedPermissions')
+                             'copySheetProtectedRangesNonInheritedPermissions',
+                             True)
             _updateSheetProtectedRanges(sheet, user, i, count, j, jcount, result['id'], result['name'], protectedSheetRanges,
                                         statistics, STAT_FILE_PROTECTEDRANGES_FAILED)
           elif copyMoveOptions['copyFilePermissions']:
@@ -55839,7 +55874,8 @@ def copyDriveFile(users):
                              statistics, STAT_FILE_PERMISSIONS_FAILED,
                              copyMoveOptions, False,
                              'copyFileInheritedPermissions',
-                             'copyFileNonInheritedPermissions')
+                             'copyFileNonInheritedPermissions',
+                             True)
       except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.insufficientFilePermissions,
               GAPI.insufficientParentPermissions, GAPI.unknownError,
               GAPI.invalid, GAPI.badRequest, GAPI.cannotCopyFile, GAPI.responsePreparationFailure, GAPI.fileNeverWritable, GAPI.fieldNotWritable,
@@ -56072,7 +56108,8 @@ def moveDriveFile(users):
                          statistics, STAT_FOLDER_PERMISSIONS_FAILED,
                          copyMoveOptions, True,
                          'copyTopFolderInheritedPermissions',
-                         copyFolderNonInheritedPermissions)
+                         copyFolderNonInheritedPermissions,
+                         False)
       source.pop('oldparents', None)
       return (newParentId, newParentName, True)
 # Merge parent folders
@@ -56101,7 +56138,8 @@ def moveDriveFile(users):
                                statistics, STAT_FOLDER_PERMISSIONS_FAILED,
                                copyMoveOptions, atTop,
                                ['copySubFolderInheritedPermissions', 'copyTopFolderInheritedPermissions'][atTop],
-                               copyFolderNonInheritedPermissions)
+                               copyFolderNonInheritedPermissions,
+                               False)
             return (newFolderId, newFolderName, True)
           entityActionFailedWarning(kvList+[Ent.DRIVE_FOLDER, newParentNameId], Msg.NOT_WRITABLE, j, jcount)
           _incrStatistic(statistics, STAT_FOLDER_NOT_WRITABLE)
@@ -56187,7 +56225,8 @@ def moveDriveFile(users):
                          statistics, STAT_FOLDER_PERMISSIONS_FAILED,
                          copyMoveOptions, False,
                          ['copySubFolderInheritedPermissions', 'copyTopFolderInheritedPermissions'][atTop],
-                         ['copySubFolderNonInheritedPermissions', 'copyTopFolderNonInheritedPermissions'][atTop])
+                         ['copySubFolderNonInheritedPermissions', 'copyTopFolderNonInheritedPermissions'][atTop],
+                         True)
       return (newFolderId, newFolderName, False)
     except (GAPI.forbidden, GAPI.insufficientFilePermissions, GAPI.insufficientParentPermissions,
             GAPI.internalError, GAPI.storageQuotaExceeded, GAPI.teamDriveHierarchyTooDeep,
@@ -59575,7 +59614,7 @@ def doInfoDriveFileACLs():
   infoDriveFileACLs([_getAdminEmail()], True)
 
 DRIVEFILE_BASIC_PERMISSION_FIELDS = [
-  'id', 'emailAddress', 'domain', 'role', 'type',
+  'displayName', 'id', 'emailAddress', 'domain', 'role', 'type',
   'allowFileDiscovery', 'expirationTime', 'deleted'
   ]
 
@@ -60929,7 +60968,8 @@ def copySyncSharedDriveACLs(users, useDomainAdminAccess=False):
                      statistics, STAT_FOLDER_PERMISSIONS_FAILED,
                      copyMoveOptions, True,
                      'copyTopFolderInheritedPermissions',
-                     'copyTopFolderNonInheritedPermissions')
+                     'copyTopFolderNonInheritedPermissions',
+                     False)
 
 def doCopySyncSharedDriveACLs():
   copySyncSharedDriveACLs([_getAdminEmail()], True)
@@ -62162,58 +62202,16 @@ def printShowUserGroups(users):
 #	[(domain <DomainName>)|(customerid <CustomerID>)]
 #	[roles <GroupRoleList>]
 #	[showparentsaslist [<Boolean>]] [delimiter <Character>]
+#	[formatjson [quotechar <Character>]]
 # gam <UserTypeEntity> show grouptree
 #	[(domain <DomainName>)|(customerid <CustomerID>)]
 #	[roles <GroupRoleList>]
+#	[formatjson]
 def printShowGroupTree(users):
-  def getGroupParents(groupEmail, groupName):
-    groupParents[groupEmail] = {'name': groupName, 'parents': []}
-    _setUserGroupArgs(groupEmail, kwargs)
-    try:
-      entityList = callGAPIpages(cd.groups(), 'list', 'groups',
-                                 throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
-                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                                 orderBy='email', fields='nextPageToken,groups(email,name)', **kwargs)
-      for parentGroup in entityList:
-        groupParents[groupEmail]['parents'].append(parentGroup['email'])
-        if parentGroup['email'] not in groupParents:
-          getGroupParents(parentGroup['email'], parentGroup['name'])
-    except (GAPI.invalidMember, GAPI.invalidInput):
-      badRequestWarning(Ent.GROUP, Ent.MEMBER, groupEmail)
-    except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.forbidden, GAPI.badRequest):
-      accessErrorExit(cd)
-
-  def showGroupParents(groupEmail, role, i, count):
-    kvList = [groupEmail, f'{groupParents[groupEmail]["name"]}']
-    if role:
-      kvList.extend([Ent.Singular(Ent.ROLE), role])
-    printKeyValueListWithCount(kvList, i, count)
-    Ind.Increment()
-    for parentEmail in groupParents[groupEmail]['parents']:
-      showGroupParents(parentEmail, None, 0, 0)
-    Ind.Decrement()
-
-  def printGroupParents(groupEmail, row):
-    if groupParents[groupEmail]['parents']:
-      for parentEmail in groupParents[groupEmail]['parents']:
-        row['parents'].append({'email': parentEmail, 'name': groupParents[parentEmail]['name']})
-        printGroupParents(parentEmail, row)
-        del row['parents'][-1]
-    else:
-      if not showParentsAsList:
-        csvPF.WriteRowTitles(flattenJSON(row))
-      else:
-        crow = {'User': row['User'], 'Group': row['Group'], 'Name': row['Name']}
-        if rolesSet:
-          crow['Role'] = row['Role']
-        crow['ParentsCount'] = len(row['parents'])
-        crow['Parents'] = delimiter.join([parent['email'] for parent in row['parents']])
-        crow['ParentsName'] = delimiter.join([parent['name'] for parent in row['parents']])
-        csvPF.WriteRow(flattenJSON(crow))
-
   cd = buildGAPIObject(API.DIRECTORY)
   kwargs = {'customer': GC.Values[GC.CUSTOMER_ID]}
   csvPF = CSVPrintFile(['User', 'Group', 'Name']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   showParentsAsList = False
   rolesSet = set()
@@ -62234,14 +62232,19 @@ def printShowGroupTree(users):
     elif csvPF and myarg == 'showparentsaslist':
       showParentsAsList = getBoolean()
     else:
-      unknownArgumentExit()
+      FJQC.GetFormatJSONQuoteChar(myarg, False)
   if csvPF:
     if rolesSet:
       csvPF.AddTitles('Role')
-    if not showParentsAsList:
-      csvPF.SetIndexedTitles(['parents'])
+    if not FJQC.formatJSON:
+      if not showParentsAsList:
+        csvPF.SetIndexedTitles(['parents'])
+      else:
+        csvPF.AddTitles(['ParentsCount', 'Parents', 'ParentsName'])
     else:
-      csvPF.AddTitles(['ParentsCount', 'Parents', 'ParentsName'])
+      if rolesSet:
+        csvPF.AddJSONTitles('Role')
+      csvPF.AddJSONTitles('JSON')
   allRoles = rolesSet == ALL_GROUP_ROLES
   groupParents = {}
   i, count, users = getEntityArgument(users)
@@ -62259,7 +62262,7 @@ def printShowGroupTree(users):
       continue
     j = 0
     jcount = len(groups)
-    if not csvPF:
+    if not csvPF and not FJQC.formatJSON:
       if allRoles:
         entityPerformActionNumItems([Ent.USER, user], jcount, Ent.GROUP_TREE, i, count)
       else:
@@ -62269,7 +62272,7 @@ def printShowGroupTree(users):
       j += 1
       groupEmail = group['email']
       if groupEmail not in groupParents:
-        getGroupParents(groupEmail, group['name'])
+        getGroupParents(cd, groupParents, groupEmail, group['name'], kwargs)
       if rolesSet:
         try:
           result = callGAPI(cd.members(), 'get',
@@ -62287,13 +62290,30 @@ def printShowGroupTree(users):
           continue
       else:
         role = None
-      if not csvPF:
-        showGroupParents(groupEmail, role, j, jcount)
+      if not FJQC.formatJSON:
+        if not csvPF:
+          showGroupParents(groupParents, groupEmail, role, j, jcount)
+        else:
+          row = {'User': user, 'Group': groupEmail, 'Name': group['name'], 'parents': []}
+          if role is not None:
+            row['Role'] = role
+          printGroupParents(groupParents, groupEmail, row, csvPF, delimiter, showParentsAsList)
       else:
-        row = {'User': user, 'Group': groupEmail, 'Name': group['name'], 'parents': []}
-        if rolesSet:
-          row['Role'] = role
-        printGroupParents(groupEmail, row)
+        groupInfo = {'email': groupEmail, 'name': group['name'], 'parents': []}
+        if role is not None:
+          groupInfo['role'] = role
+        addJsonGroupParents(groupParents, groupInfo, groupEmail)
+        if not csvPF:
+          printLine(json.dumps(cleanJSON(groupInfo), ensure_ascii=False, sort_keys=True))
+        else:
+          row = flattenJSON(groupInfo)
+          if csvPF.CheckRowTitles(row):
+            row = {'User': user, 'Group': groupEmail, 'Name': group['name']}
+            if rolesSet:
+              row['Role'] = role
+            row['JSON'] = json.dumps(cleanJSON(groupInfo),
+                                     ensure_ascii=False, sort_keys=True)
+            csvPF.WriteRowNoFilter(row)
     Ind.Decrement()
   if csvPF:
     csvPF.writeCSVfile('User Group Trees')
@@ -64599,7 +64619,8 @@ MESSAGES_MAX_TO_KEYWORDS = {
 
 def _initMessageThreadParameters(entityType, doIt, maxToProcess):
   listType = 'messages' if entityType == Ent.MESSAGE else 'threads'
-  return {'currLabelOp': 'and', 'prevLabelOp': 'and', 'labelGroupOpen':  False, 'query': '',
+  return {'currLabelOp': 'and', 'prevLabelOp': 'and', 'labelGroupOpen':  False,
+          'query': '', 'queryTimes': {},
           'entityType': entityType, 'messageEntity': None, 'doIt': doIt, 'quick': True,
           'labelMatchPattern': None, 'senderMatchPattern': None,
           'maxToProcess': maxToProcess, 'maxItems': 0,
@@ -64611,6 +64632,8 @@ LABEL_QUERY_REPLACEMENT_CHARACTERS = ' &()"|{}/'
 def _getMessageSelectParameters(myarg, parameters):
   if myarg == 'query':
     parameters['query'] += f' ({getString(Cmd.OB_QUERY)})'
+  elif myarg.startswith('querytime'):
+    parameters['queryTimes'][myarg] = getDateOrDeltaFromNow().replace('-', '/')
   elif myarg == 'matchlabel':
     labelTemp = getString(Cmd.OB_LABEL_NAME).lower()
     labelName = ''
@@ -64667,6 +64690,9 @@ def _finalizeMessageSelectParameters(parameters, queryOrIdsRequired):
   if parameters['query']:
     if parameters['labelGroupOpen']:
       parameters['query'] += ')'
+    if parameters['queryTimes']:
+      for queryTimeName, queryTimeValue in iter(parameters['queryTimes'].items()):
+        parameters['query'] = parameters['query'].replace(f'#{queryTimeName}#', queryTimeValue)
     _mapMessageQueryDates(parameters)
   elif queryOrIdsRequired and parameters['messageEntity'] is None:
     missingArgumentExit('query|matchlabel|ids')
@@ -64675,7 +64701,7 @@ def _finalizeMessageSelectParameters(parameters, queryOrIdsRequired):
   parameters['maxItems'] = parameters['maxToProcess'] if parameters['quick'] and not parameters['labelMatchPattern'] else 0
 
 # gam <UserTypeEntity> archive messages <GroupItem>
-#	(((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_archive <Number>])|(ids <MessageIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_archive <Number>])|(ids <MessageIDEntity>)
 def archiveMessages(users):
   entityType = Ent.MESSAGE
   parameters = _initMessageThreadParameters(entityType, False, 0)
@@ -64905,30 +64931,30 @@ def _processMessagesThreads(users, entityType):
     Ind.Decrement()
 
 # gam <UserTypeEntity> delete message|messages
-#	(((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_delete <Number>])|(ids <MessageIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_delete <Number>])|(ids <MessageIDEntity>)
 # gam <UserTypeEntity> modify message|messages
-#	(((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_modify <Number>])|(ids <MessageIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_modify <Number>])|(ids <MessageIDEntity>)
 #	(addlabel <LabelName>)* (removelabel <LabelName>)*
 # gam <UserTypeEntity> spam message|messages
-#	(((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_spam <Number>])|(ids <MessageIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_spam <Number>])|(ids <MessageIDEntity>)
 # gam <UserTypeEntity> trash message|messages
-#	(((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_trash <Number>])|(ids <MessageIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_trash <Number>])|(ids <MessageIDEntity>)
 # gam <UserTypeEntity> untrash message|messages
-#	(((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_untrash <Number>])|(ids <MessageIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_untrash <Number>])|(ids <MessageIDEntity>)
 def processMessages(users):
   _processMessagesThreads(users, Ent.MESSAGE)
 
 # gam <UserTypeEntity> delete thread|threads
-#	(((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_delete <Number>])|(ids <ThreadIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_delete <Number>])|(ids <ThreadIDEntity>)
 # gam <UserTypeEntity> modify thread|threads
-#	(((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_modify <Number>])|(ids <ThreadIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_modify <Number>])|(ids <ThreadIDEntity>)
 #	(addlabel <LabelName>)* (removelabel <LabelName>)*
 # gam <UserTypeEntity> spam thread|threads
-#	(((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_spam <Number>])|(ids <ThreadIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_spam <Number>])|(ids <ThreadIDEntity>)
 # gam <UserTypeEntity> trash thread|threads
-#	(((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_trash <Number>])|(ids <MessageIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_trash <Number>])|(ids <MessageIDEntity>)
 # gam <UserTypeEntity> untrash thread|threads
-#	(((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_untrash <Number>])|(ids <ThreadIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_untrash <Number>])|(ids <ThreadIDEntity>)
 def processThreads(users):
   _processMessagesThreads(users, Ent.THREAD)
 
@@ -65038,13 +65064,13 @@ def exportMessagesThreads(users, entityType):
     Ind.Decrement()
 
 # gam <UserTypeEntity> export message|messages
-#	(((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_export <Number>])|(ids <MessageIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_export <Number>])|(ids <MessageIDEntity>)
 #	[targetfolder <FilePath>] [targetname <FileName>] [overwrite [<Boolean>]]
 def exportMessages(users):
   exportMessagesThreads(users, Ent.MESSAGE)
 
 # gam <UserTypeEntity> export thread|threads
-#	(((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_export <Number>])|(ids <ThreadIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_export <Number>])|(ids <ThreadIDEntity>)
 #	[targetfolder <FilePath>] [targetname <FileName>] [overwrite [<Boolean>]]
 def exportThreads(users):
   exportMessagesThreads(users, Ent.THREAD)
@@ -65064,10 +65090,10 @@ def _decodeHeader(header):
       return header
 
 # gam <UserTypeEntity> forward message|messages recipient|to <RecipientEntity>
-#	(((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_forward <Number>])|(ids <MessageIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_forward <Number>])|(ids <MessageIDEntity>)
 #	[subject <String>] [altcharset <String>]
 # gam <UserTypeEntity> forward thread|threads recipient|to <RecipientEntity>
-#	(((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_forward <Number>])|(ids <ThreadIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_forward <Number>])|(ids <ThreadIDEntity>)
 #	[subject <String>] [altcharset <String>]
 def forwardMessagesThreads(users, entityType):
   def getRecipients():
@@ -65371,7 +65397,7 @@ def _draftImportInsertMessage(users, operation):
       emlFile = True
       internalDateSource = 'dateHeader'
     elif myarg == 'replace':
-      _getTagReplacement(tagReplacements, False)
+      _getTagReplacement(tagReplacements, True)
     elif operation in IMPORT_INSERT and myarg == 'addlabel':
       addLabelNames.append(getString(Cmd.OB_LABEL_NAME, minLen=1))
     elif operation in IMPORT_INSERT and myarg == 'labels':
@@ -66184,7 +66210,7 @@ def printShowMessagesThreads(users, entityType):
       csvPF.writeCSVfile('Message Counts' if not show_labels else 'Message Label Counts')
 
 # gam <UserTypeEntity> print message|messages
-#	(((query <QueryGmail>) (matchlabel <LabelName>) [or|and])* [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <MessageIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])* [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <MessageIDEntity>)
 #	[labelmatchpattern <RegularExpression>] [sendermatchpattern <RegularExpression>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
 #	[showlabels] [showbody] [showdate] [showsize] [showsnippet]
@@ -66192,7 +66218,7 @@ def printShowMessagesThreads(users, entityType):
 #	[convertcrnl] [delimiter <Character>] [todrive <ToDriveAttribute>*]
 #	[countsonly|positivecountsonly] [useronly]
 # gam <UserTypeEntity> show message|messages
-#	(((query <QueryGmail>) (matchlabel <LabelName>) [or|and])* [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <MessageIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])* [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <MessageIDEntity>)
 #	[labelmatchpattern <RegularExpression>] [sendermatchpattern <RegularExpression>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
 #	[showlabels] [showbody] [showdate] [showsize] [showsnippet]
@@ -66203,7 +66229,7 @@ def printShowMessages(users):
   printShowMessagesThreads(users, Ent.MESSAGE)
 
 # gam <UserTypeEntity> print thread|threads
-#	(((query <QueryGmail>) (matchlabel <LabelName>) [or|and])* [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <ThreadIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])* [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <ThreadIDEntity>)
 #	[labelmatchpattern <RegularExpression>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
 #	[showlabels] [showbody] [showdate] [showsize] [showsnippet]
@@ -66211,7 +66237,7 @@ def printShowMessages(users):
 #	[convertcrnl] [delimiter <Character>] [todrive <ToDriveAttribute>*]
 #	[countsonly|positivecountsonly] [useronly]
 # gam <UserTypeEntity> show thread|threads
-#	(((query <QueryGmail>) (matchlabel <LabelName>) [or|and])* [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <ThreadIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])* [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <ThreadIDEntity>)
 #	[labelmatchpattern <RegularExpression>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
 #	[showlabels] [showbody] [showdate] [showsize] [showsnippet]
@@ -67169,10 +67195,10 @@ EMAILSETTINGS_FORWARD_POP_ACTION_CHOICE_MAP = {
   }
 
 # gam <UserTypeEntity> forward message|messages recipient|to <RecipientEntity>
-#	(((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_forward <Number>])|(ids <MessageIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_forward <Number>])|(ids <MessageIDEntity>)
 #	[subject <String>]
 # gam <UserTypeEntity> forward thread|threads recipient|to <RecipientEntity>
-#	(((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_forward <Number>])|(ids <ThreadIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_forward <Number>])|(ids <ThreadIDEntity>)
 #	[subject <String>]
 # gam <UserTypeEntity> forward <FalseValues>
 # gam <UserTypeEntity> forward <TrueValues> keep|leaveininbox|archive|delete|trash|markread <EmailAddress>

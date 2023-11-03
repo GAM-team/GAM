@@ -538,7 +538,7 @@ gam <CrOSTypeEntity> print cros
 
 ```
 gam print cros [todrive <ToDriveAttribute>*]
-        [(query <QueryCrOS>)|(queries <QueryCrOSList>) [querytime.* <Time>]
+        [(query <QueryCrOS>)|(queries <QueryCrOSList>) [querytime<String> <Time>]
          [(limittoou|cros_ou <OrgUnitItem>)|(cros_ou_and_children <OrgUnitItem>)|
           (cros_ous <OrgUnitList>)|(cros_ous_and_children <OrgUnitList>)]]
         [orderby <CrOSOrderByFieldName> [ascending|descending]]
@@ -691,7 +691,7 @@ gam <CrOSTypeEntity> show count
 
 ```
 gam print crosactivity [todrive <ToDriveAttribute>*]
-        [(query <QueryCrOS>)|(queries <QueryCrOSList>) [querytime.* <Time>]
+        [(query <QueryCrOS>)|(queries <QueryCrOSList>) [querytime<String> <Time>]
          [(limittoou|cros_ou <OrgUnitItem>)|(cros_ou_and_children <OrgUnitItem>)|
           (cros_ous <OrgUnitList>)|(cros_ous_and_children <OrgUnitList>)]]
         [orderby <CrOSOrderByFieldName> [ascending|descending]]

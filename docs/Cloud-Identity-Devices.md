@@ -167,7 +167,7 @@ These two/three columns are used to match current company devices against the CS
 If `preview` is specified, the operations that would be performed are previewed but are not performed; use this to test.
 ```
 gam sync devices
-        [(query <QueryDevice>)|(queries <QueryDeviceList>) (querytime.* <Time>)*]
+        [(query <QueryDevice>)|(queries <QueryDeviceList>) (querytime<String> <Time>)*]
         csvfile <FileName>
         (devicetype_column <String>)|(static_devicetype <DeviceType>)
         (serialnumber_column <String>)
@@ -190,7 +190,7 @@ By default, Gam displays the information as an indented list of keys and values.
 ## Print devices
 ```
 gam print devices [todrive <ToDriveAttribute>*]
-        [(query <QueryDevice>)|(queries <QueryDeviceList>) (querytime.* <Time>)*]
+        [(query <QueryDevice>)|(queries <QueryDeviceList>) (querytime<String> <Time>)*]
         <DeviceFieldName>* [fields <DeviceFieldNameList>] [userfields <DeviceUserFieldNameList>]
         [orderby <DeviceOrderByFieldName> [ascending|descending]]
         [all|company|personal|nocompanydevices|nopersonaldevices]
@@ -266,7 +266,7 @@ gam info deviceuser <DeviceUserEntity>
 ```
 gam print deviceusers [todrive <ToDriveAttribute>*]
         [select <DeviceID>]
-        [(query <QueryDevice>)|(queries <QueryDeviceList>) (querytime.* <Time>)*]
+        [(query <QueryDevice>)|(queries <QueryDeviceList>) (querytime<String> <Time>)*]
         <DeviceUserFieldName>* [fields <DeviceUserFieldNameList>]
         [orderby <DeviceOrderByFieldName> [ascending|descending]]
         [formatjson [quotechar <Character>]]

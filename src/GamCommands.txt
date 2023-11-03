@@ -1906,7 +1906,7 @@ gam delete browser <DeviceID>
 gam update browser <BrowserEntity> <BrowserAttibute>+
 gam move browsers ou|org|orgunit <OrgUnitPath>
         ((ids <DeviceIDList>) |
-         (queries <QueryBrowserList> [querytime.* <Time>]) |
+         (queries <QueryBrowserList> [querytime<String> <Time>]) |
          (browserou <OrgUnitItem>) | (browserous <OrgUnitList>) |
          <FileSelector> | <CSVFileSelector>)
         [batchsize <Integer>]
@@ -1916,13 +1916,13 @@ gam info browser <DeviceID>
         [formatjson]
 gam show browsers
         ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser>)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
-        [querytime.* <Time>]
+        [querytime<String> <Time>]
         [orderby <BrowserOrderByFieldName> [ascending|descending]]
         [basic|full|allfields|annotated] <BrowserFieldName>* [fields <BrowserFieldNameList>]
         [formatjson]
 gam print browsers [todrive <ToDriveAttribute>*]
         ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser>)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
-        [querytime.* <Time>]
+        [querytime<String> <Time>]
         [orderby <BrowserOrderByFieldName> [ascending|descending]]
         [basic|full|allfields|annotated] <BrowserFieldName>* [fields <BrowserFieldNameList>]
         [sortheaders]
@@ -1950,13 +1950,13 @@ gam revoke browsertoken <BrowserTokenPermanentID>
 
 gam show browsertokens
         ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowserToken>)|(queries <QueryBrowserTokenList>)))
-        [querytime.* <Time>]
+        [querytime<String> <Time>]
         [orderby <BrowserTokenFieldName> [ascending|descending]]
         [allfields] <BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]
         [formatjson]
 gam print browsertokens [todrive <ToDriveAttribute>*]
         ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowserToken>)|(queries <QueryBrowserTokenList>)))
-        [querytime.* <Time>]
+        [querytime<String> <Time>]
         [orderby <BrowserTokenFieldName> [ascending|descending]]
         [allfields] <BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]
         [sortheaders]
@@ -2253,13 +2253,13 @@ gam <CrOSTypeEntity> info
         [formatjson]
 
 Print fields for selected CrOS devices; use these options to select CrOS devices:
-        [(query <QueryCrOS>)|(queries <QueryCrOSList>) [querytime.* <Time>]
+        [(query <QueryCrOS>)|(queries <QueryCrOSList>) [querytime<String> <Time>]
          [(limittoou|cros_ou <OrgUnitItem>)|(cros_ou_and_children <OrgUnitItem>)|
           (cros_ous <OrgUnitList>)|(cros_ous_and_children <OrgUnitList>)]]
 If none of these options are chosen, all CrOS devices are selected.
 
 gam print cros [todrive <ToDriveAttribute>*]
-        [(query <QueryCrOS>)|(queries <QueryCrOSList>) [querytime.* <Time>]
+        [(query <QueryCrOS>)|(queries <QueryCrOSList>) [querytime<String> <Time>]
          [(limittoou|cros_ou <OrgUnitItem>)|(cros_ou_and_children <OrgUnitItem>)|
           (cros_ous <OrgUnitList>)|(cros_ous_and_children <OrgUnitList>)]]
         [orderby <CrOSOrderByFieldName> [ascending|descending]]
@@ -2315,13 +2315,13 @@ Show count of CrOS devices
 gam <CrOSTypeEntity> show count
 
 Print activity for selected CrOS devices; use these options to select CrOS devices:
-        [(query <QueryCrOS>)|(queries <QueryCrOSList>) [querytime.* <Time>]
+        [(query <QueryCrOS>)|(queries <QueryCrOSList>) [querytime<String> <Time>]
          [(limittoou|cros_ou <OrgUnitItem>)|(cros_ou_and_children <OrgUnitItem>)|
           (cros_ous <OrgUnitList>)|(cros_ous_and_children <OrgUnitList>)]]
 If none of these options are chosen, all CrOS devices are selected.
 
 gam print crosactivity [todrive <ToDriveAttribute>*]
-        [(query <QueryCrOS>)|(queries <QueryCrOSList>) [querytime.* <Time>]
+        [(query <QueryCrOS>)|(queries <QueryCrOSList>) [querytime<String> <Time>]
          [(limittoou|cros_ou <OrgUnitItem>)|(cros_ou_and_children <OrgUnitItem>)|
           (cros_ous <OrgUnitList>)|(cros_ous_and_children <OrgUnitList>)]]
         [orderby <CrOSOrderByFieldName> [ascending|descending]]
@@ -3593,7 +3593,9 @@ gam print groups [todrive <ToDriveAttribute>*]
 
 gam print grouptree <GroupEntity> [todrive <ToDriveAttribute>*]
         [showparentsaslist [<Boolean>]] [delimiter <Character>]
+        [formatjson [quotechar <Character>]]
 gam show grouptree <GroupEntity>
+        [formatjson]
 
 <MembersFieldName> ::=
         delivery|deliverysettings|
@@ -3807,7 +3809,7 @@ gam wipe device <DeviceEntity> [removeresetlock] [doit]
 
 gam sync devices
         <CSVFileSelector>
-        [(query <QueryDevice>)|(queries <QueryDeviceList>) (querytime.* <Time>)*]
+        [(query <QueryDevice>)|(queries <QueryDeviceList>) (querytime<String> <Time>)*]
         (devicetype_column <String>)|(static_devicetype <DeviceType>)
         (serialnumber_column <String>)
         [assettag_column <String>]
@@ -3820,7 +3822,7 @@ gam info device <DeviceEntity>
         [nodeviceusers]
         [formatjson]
 gam print devices [todrive <ToDriveAttribute>*]
-        [(query <QueryDevice>)|(queries <QueryDeviceList>) (querytime.* <Time>)*]
+        [(query <QueryDevice>)|(queries <QueryDeviceList>) (querytime<String> <Time>)*]
         <DeviceFieldName>* [fields <DeviceFieldNameList>] [userfields <DeviceUserFieldNameList>]
         [orderby <DeviceOrderByFieldName> [ascending|descending]]
         [all|company|personal|nocompanydevices|nopersonaldevices]
@@ -3845,7 +3847,7 @@ gam info deviceuser <DeviceUserEntity>
         [formatjson]
 gam print deviceusers [todrive <ToDriveAttribute>*]
         [select <DeviceID>]
-        [(query <QueryDevice>)|(queries <QueryDeviceList>) (querytime.* <Time>)*]
+        [(query <QueryDevice>)|(queries <QueryDeviceList>) (querytime<String> <Time>)*]
         <DeviceUserFieldName>* [fields <DeviceUserFieldNameList>]
         [orderby <DeviceOrderByFieldName> [ascending|descending]]
         [formatjson [quotechar <Character>]]
@@ -3986,7 +3988,7 @@ gam info mobile <MobileEntity>
         [basic|full|allfields] <MobileFieldName>* [fields <MobileFieldNameList>]
         [formatjson]
 gam print mobile [todrive <ToDriveAttribute>*]
-        [(query <QueryMobile>)|(queries <QueryMobileList>) (querytime.* <Time>)*]
+        [(query <QueryMobile>)|(queries <QueryMobileList>) (querytime<String> <Time>)*]
         [orderby <MobileOrderByFieldName> [ascending|descending]]
         [basic|full|allfields] <MobileFieldName>* [fields <MobileFieldNameList>]
         [delimiter <Character>] [appslimit <Number>] [oneappperrow] [listlimit <Number>]
@@ -6865,43 +6867,43 @@ gam <UserTypeEntity> insert message
         [deleted [<Boolean>]]
 
 gam <UserTypeEntity> archive messages <GroupItem>
-        (((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+
+        (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [quick|notquick] [doit] [max_to_archive <Number>])|(ids <MessageIDEntity>)
 gam <UserTypeEntity> delete messages|threads
-        (((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+
+        (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [quick|notquick] [doit] [max_to_delete <Number>])|(ids <MessageIDEntity>)
 gam <UserTypeEntity> modify messages|threads
-        (((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+
+        (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [quick|notquick] [doit] [max_to_modify <Number>])|(ids <MessageIDEntity>)
         (addlabel <LabelName>)* (removelabel <LabelName>)*
 gam <UserTypeEntity> spam messages|threads
-        (((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+
+        (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [quick|notquick] [doit] [max_to_spam <Number>])|(ids <MessageIDEntity>)
 gam <UserTypeEntity> trash messages|threads
-        (((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+
+        (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [quick|notquick] [doit] [max_to_trash <Number>])|(ids <MessageIDEntity>)
 gam <UserTypeEntity> untrash messages|threads
-        (((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+
+        (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [quick|notquick] [doit] [max_to_untrash <Number>])|(ids <MessageIDEntity>)
 
 gam <UserTypeEntity> export message|messages
-        (((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_export <Number>])|(ids <MessageIDEntity>)
+        (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_export <Number>])|(ids <MessageIDEntity>)
         [targetfolder <FilePath>] [targetname <FileName>] [overwrite [<Boolean>]]
 gam <UserTypeEntity> export thread|threads
-        (((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_export <Number>])|(ids <ThreadIDEntity>)
+        (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_export <Number>])|(ids <ThreadIDEntity>)
         [targetfolder <FilePath>] [targetname <FileName>] [overwrite [<Boolean>]]
 
 gam <UserTypeEntity> forward message|messages recipient|to <RecipientEntity>
-        (((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+
+        (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [quick|notquick] [doit] [max_to_forward <Number>])|(ids <MessageIDEntity>)
         [subject <String>] [altcharset <String>]
 gam <UserTypeEntity> forward thread|thtreads recipient|to <RecipientEntity>
-        (((query <QueryGmail>) (matchlabel <LabelName>) [or|and])+
+        (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          quick|notquick] [doit] [max_to_forward <Number>])|(ids <ThreadIDEntity>)
         [subject <String>] [altcharset <String>]
 
 gam <UserTypeEntity> show messages|threads
-        (((query <QueryGmail>) (matchlabel <LabelName>) [or|and])*
+        (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])*
          [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <MessageIDEntity>)
         [labelmatchpattern <RegularExpression>] [sendermatchpattern <RegularExpression>]
         [countsonly|positivecountsonly] [useronly]
@@ -6911,7 +6913,7 @@ gam <UserTypeEntity> show messages|threads
         [saveattachments [attachmentnamepattern <RegularExpression>]]
             [targetfolder <FilePath>] [overwrite [<Boolean>]]
 gam <UserTypeEntity> print messages|threads [todrive <ToDriveAttribute>*]
-        (((query <QueryGmail>) (matchlabel <LabelName>) [or|and])*
+        (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])*
          [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <MessageIDEntity>)
         [labelmatchpattern <RegularExpression>] [sendermatchpattern <RegularExpression>]
         [countsonly|positivecountsonly] [useronly]
@@ -7014,9 +7016,11 @@ gam <UserTypeEntity> print grouptree [todrive <ToDriveAttribute>*]
         [(domain <DomainName>)|(customerid <CustomerID>)]
         [roles <GroupRoleList>]
         [showparentsaslist [<Boolean>]] [delimiter <Character>]
+        [formatjson [quotechar <Character>]]
 gam <UserTypeEntity> show grouptree
         [(domain <DomainName>)|(customerid <CustomerID>)]
         [roles <GroupRoleList>]
+        [formatjson]
 gam <UserTypeEntity> print groupslist [todrive <ToDriveAttribute>*]
         [(domain <DomainName>)|(customerid <CustomerID>)]
         [delimiter <Character>] [quotechar <Character>]

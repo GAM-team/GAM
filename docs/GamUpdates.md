@@ -10,6 +10,27 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+Updated `gam <UserTypeEntity> import|insert message` to allow `replace <Tag> <UserReplacement>` as documented.
+
+### 6.65.05
+
+Updated `gam info users <UserTypeEntity>` to make option `grouptree` effective when used
+with option `formatjson`.
+
+Added option `[formatjson [quotechar <Character>]]]`
+to these commands so that event details are displayed in CSV format.
+```
+gam print|show grouptree <GroupEntity>
+gam <UserTypeEntity> print|show grouptree
+```
+
+Added option `querytime<String> <Date>` to all commands that process messages.
+For example, you can identify all messages within a particular time period, in this case, all messages unread
+in the last 30 days.
+```
+gam user user@domain.com  print messages querytime30d -30d query "after:#querytime30d# is:unread"
+```
+
 ### 6.65.04
 
 Fixed bug where license SKU `1010020031` (Google Workspace Frontline Standard) was improperly entered making it unusable;

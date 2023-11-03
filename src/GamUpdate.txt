@@ -1,3 +1,30 @@
+7.00.00
+
+Merged GAM-Team version
+
+6.65.05
+
+Updated `gam info users <UserTypeEntity>` to make option `grouptree` effective when used
+with option `formatjson`.
+
+Added option `[formatjson [quotechar <Character>]]]`
+to these commands so that event details are displayed in CSV format.
+```
+gam print|show grouptree <GroupEntity>
+gam <UserTypeEntity> print|show grouptree
+```
+
+Added option `querytime<String> <Date>` to all commands that process messages.
+For example, you can identify all messages within a particular time period, in this case, all messages unread
+in the last 30 days.
+```
+gam user user@domain.com  print messages querytime30d -30d query "after:#querytime30d# is:unread"
+```
+
+Updated `gam <UserTypeEntity> import|insert message` to allow `replace <Tag> <UserReplacement>` as documented.
+
+Updated non-owner permission handling in `gam <UserTypeEntity> copy|move drivefile`.
+
 6.65.04
 
 Fixed bug where license SKU `1010020031` (Google Workspace Frontline Standard) was improperly entered making it unusable;
@@ -6,10 +33,6 @@ its alias `wsflwstan` was usable.
 Added support for Google Workspace Additional Storage.
 * ProductID - 101043
 * SKUID - 1010430001 | gwas | plusstorage
-
-7.00.00
-
-Merged GAM-Team version
 
 6.65.03
 

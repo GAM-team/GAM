@@ -100,7 +100,7 @@ By default, Gam displays the information as an indented list of keys and values.
 ## Print mobile devices
 ```
 gam print mobile [todrive <ToDriveAttribute>*]
-        [(query <QueryMobile>)|(queries <QueryMobileList>) (querytime.* <Time>)*]
+        [(query <QueryMobile>)|(queries <QueryMobileList>) (querytime<String> <Time>)*]
         [orderby <MobileOrderByFieldName> [ascending|descending]]
         [basic|full|allfields] <MobileFieldName>* [fields <MobileFieldNameList>]
         [delimiter <Character>] [appslimit <Number>] [oneappperrow] [listlimit <Number>]

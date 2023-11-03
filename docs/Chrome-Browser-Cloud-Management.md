@@ -137,7 +137,7 @@ gam csv UpdateBrowsers.csv gam update browser ~deviceId updatenotes "~~notes~~\n
 ```
 gam move browsers ou|org|orgunit <OrgUnitPath>
         ((ids <DeviceIDList>) |
-         (queries <QueryBrowserList> [querytime.* <Time>]) |
+         (queries <QueryBrowserList> [querytime<String> <Time>]) |
          (browserou <OrgUnitItem>) | (browserous <OrgUnitList>) |
          <FileSelector> | <CSVFileSelector>)
         [batchsize <Integer>]
@@ -178,7 +178,7 @@ By default, Gam displays the information as an indented list of keys and values:
 ```
 gam show browsers
         ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser>)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
-        [querytime.* <Time>]
+        [querytime<String> <Time>]
         [orderby <BrowserOrderByFieldName> [ascending|descending]]
         [basic|full|allfields|annotated] <BrowserFieldName>* [fields <BrowserFieldNameList>]
         [formatjson]
@@ -205,7 +205,7 @@ The characters following `querytime` can be any combination of lowercase letters
 ```
 gam print browsers [todrive <ToDriveAttribute>*]
         ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser>)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
-        [querytime.* <Time>]
+        [querytime<String> <Time>]
         [orderby <BrowserOrderByFieldName> [ascending|descending]]
         [basic|full|allfields|annotated] <BrowserFieldName>* [fields <BrowserFieldNameList>]
         [sortheaders] [formatjson [quotechar <Character>]]
@@ -372,7 +372,7 @@ gam revoke browsertoken <BrowserTokenPermanentID>
 ```
 gam show browsertokens
         ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowserToken)|(queries <QueryBrowserTokenList>)))
-        [querytime.* <Time>]
+        [querytime<String> <Time>]
         [orderby <BrowserTokenFieldName> [ascending|descending]]
         [allfields] <BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]
         [formatjson]
@@ -395,7 +395,7 @@ By default, Gam displays the information as an indented list of keys and values:
 ```
 gam print browsertokens [todrive <ToDriveAttribute>*]
         ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowserToken)|(queries <QueryBrowserTokenList>)))
-        [querytime.* <Time>]
+        [querytime<String> <Time>]
         [orderby <BrowserTokenFieldName> [ascending|descending]]
         [allfields] <BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]
         [sortheaders] [formatjson [quotechar <Character>]]
