@@ -12,6 +12,13 @@ See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Win
 
 Updated `gam <UserTypeEntity> import|insert message` to allow `replace <Tag> <UserReplacement>` as documented.
 
+### 6.65.07
+
+Updated `gam delete building` to handle the following error:
+```
+ERROR: 412: conditionNotMet - Cannot delete building because there are Calendar resources associated with it.
+```
+
 ### 6.65.06
 
 Improved error message when trying to add external students/teachers to a course.

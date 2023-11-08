@@ -25,7 +25,7 @@ GAMADV-XTD3 version 6.50.00 or higher is required.
    * click on the Permissions tab.
    * click "Grant Access".
    * In the "New principals text box, paste the service account email you copied.
-   * Give your service account the "Service Account Token Creator" and "View Service Accounts" roles.
+   * Give your service account the "Service Account Key Admin", "Service Account Token Creator" and "View Service Accounts" roles.
 
 4. [Create a Windows or Linux virtual machine](https://cloud.google.com/compute/docs/instances/create-start-instance).
    * You can choose a region physically close to you though you may be limited in your choices if you want to use the free tier.

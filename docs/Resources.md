@@ -165,7 +165,7 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 
 ## Manage features
 ```
-gam create|add feature <Name>
+gam create|add feature name <Name>
 gam update feature <Name> name <Name>
 gam delete feature <Name>
 ```
@@ -194,10 +194,10 @@ When updating a resource, use the following options to manage the features.
 ## Display resources
 ```
 gam info resource <ResourceID>
-        [acls]Documents/GoogleApps/GAM3/Docs/ [calendar]
+        [acls] [noselfowner] [calendar]
         [formatjson]
 gam info resources <ResourceEntity>
-        [acls]Documents/GoogleApps/GAM3/Docs/ [calendar]
+        [acls] [noselfowner] [calendar]
         [formatjson]
 gam show resources
         [allfields|<ResourceFieldName>*|(fields <ResourceFieldNameList>)]

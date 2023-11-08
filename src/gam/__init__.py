@@ -34258,11 +34258,14 @@ def doDeleteBuilding():
   checkForExtraneousArguments()
   try:
     callGAPI(cd.resources().buildings(), 'delete',
-             throwReasons=[GAPI.RESOURCE_NOT_FOUND, GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
+             throwReasons=[GAPI.RESOURCE_NOT_FOUND, GAPI.CONDITION_NOT_MET,
+                           GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
              customer=GC.Values[GC.CUSTOMER_ID], buildingId=buildingId)
     entityActionPerformed([Ent.BUILDING_ID, buildingId])
   except GAPI.resourceNotFound:
     entityUnknownWarning(Ent.BUILDING_ID, buildingId)
+  except GAPI.conditionNotMet as e:
+    entityActionFailedWarning([Ent.BUILDING_ID, buildingId], str(e))
   except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
     accessErrorExit(cd)
 
@@ -34408,7 +34411,7 @@ def _getFeatureAttributes(body):
       unknownArgumentExit()
   return body
 
-# gam create feature <Name>
+# gam create feature name <Name>
 def doCreateFeature():
   cd = buildGAPIObject(API.DIRECTORY)
   body = _getFeatureAttributes({})
@@ -34448,7 +34451,7 @@ def doUpdateFeature():
   except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
     accessErrorExit(cd)
 
-# gam delete feature <eName>
+# gam delete feature <Name>
 def doDeleteFeature():
   cd = buildGAPIObject(API.DIRECTORY)
   featureKey = getString(Cmd.OB_NAME)
