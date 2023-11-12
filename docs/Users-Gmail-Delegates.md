@@ -6,6 +6,7 @@
 - [Delete Gmail delegates](#delete-gmail-delegates)
 - [Update Gmail delegates](#update-gmail-delegates)
 - [Display Gmail delegates](#display-gmail-delegates)
+- [Delete all delegates for a user](#delete-all-delegates-for-a-user)
 
 ## API documentation
 * https://developers.google.com/gmail/api/v1/reference/users/settings/delegates
@@ -66,3 +67,19 @@ This involves an extra API call per delegate email address.
 
 By default, `show delegates` displays indented keys and values; use the `csv` option to have just the values
 shown as a comma separated list.
+
+## Delete all delegates for a user
+```
+$ gam redirect csv ./Delegates.csv user testsimple print delegates
+Getting all Delegates for testsimple@domain.com
+$ gam redirect stdout - multiprocess csv Delegates.csv gam user "~User" delete delegate "~delegateAddress"
+2023-11-10T06:56:04.118-08:00,0/3,Using 3 processes...
+2023-11-10T06:56:04.123-08:00,0,Processing item 3/3
+User: testsimple@domain.com, Delete 1 Delegate
+  User: testsimple@domain.com, Delegate: testuser1@domain.com, Deleted
+User: testsimple@domain.com, Delete 1 Delegate
+  User: testsimple@domain.com, Delegate: testuser2@domain.com, Deleted
+User: testsimple@domain.com, Delete 1 Delegate
+  User: testsimple@domain.com, Delegate: testgroup@domain.com, Deleted
+2023-11-10T06:56:07.253-08:00,0/3,Processing complete
+```

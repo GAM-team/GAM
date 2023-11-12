@@ -12763,7 +12763,7 @@ REPORTS_PARAMETERS_SIMPLE_TYPES = ['intValue', 'boolValue', 'datetimeValue', 'st
 #	[([start|startdate <Date>] [end|enddate <Date>])|(range <Date> <Date>)|
 #	 thismonth|(previousmonths <Integer>)]
 #	[fields|parameters <String>)]
-# gam report usage |customer [todrive <ToDriveAttribute>*]
+# gam report usage customer [todrive <ToDriveAttribute>*]
 #	[([start|startdate <Date>] [end|enddate <Date>])|(range <Date> <Date>)|
 #	 thismonth|(previousmonths <Integer>)]
 #	[fields|parameters <String>)]
@@ -13042,6 +13042,7 @@ REPORT_ACTIVITIES_TIME_OBJECTS = {'time'}
 #	[groupidfilter <String>]
 #	[maxactivities <Number>] [maxresults <Number>]
 #	[countsonly [summary] [eventrowfilter]]
+#	(addcsvdata <FieldName> <String>)* [shownoactivities]
 # gam report users|user [todrive <ToDriveAttribute>*]
 #	[(user all|<UserItem>)|(orgunit|org|ou <OrgUnitPath> [showorgunit])|(select <UserTypeEntity>)]
 #	[allverifyuser <UserItem>]
@@ -13320,6 +13321,8 @@ def doReport():
   usageReports = customerReports or userReports
   activityReports = not usageReports
   dataRequiredServices = set()
+  addCSVData = {}
+  showNoActivities = False
   if usageReports:
     includeServices = set()
   while Cmd.ArgumentsRemaining():
@@ -13396,6 +13399,11 @@ def doReport():
       eventRowFilter = True
     elif activityReports and myarg == 'groupidfilter':
       groupIdFilter = getString(Cmd.OB_STRING)
+    elif activityReports and myarg == 'addcsvdata':
+      k = getString(Cmd.OB_STRING)
+      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+    elif activityReports and myarg == 'shownoactivities':
+      showNoActivities = True
     elif not customerReports and myarg.startswith('filtertime'):
       filterTimes[myarg] = getTimeOrDeltaFromNow()
     elif not customerReports and myarg in {'filter', 'filters'}:
@@ -13596,6 +13604,8 @@ def doReport():
       startDateTime += oneDay
     csvPF.writeCSVfile(f'Customer Report - {tryDate}')
   else: # activityReports
+    if addCSVData:
+      csvPF.AddTitles(sorted(addCSVData.keys()))
     if select:
       pageMessage = None
       normalizeUsers = True
@@ -13690,6 +13700,8 @@ def doReport():
               row = flattenJSON(event)
               row.update(activity_row)
               if not countsOnly:
+                if addCSVData:
+                  row.update(addCSVData)
                 csvPF.WriteRowTitles(row)
               elif csvPF.CheckRowTitles(row):
                 if not summary:
@@ -13709,22 +13721,48 @@ def doReport():
               eventCounts.setdefault(event['name'], 0)
               eventCounts[event['name']] += 1
     if not countsOnly:
+      if not csvPF.rows and showNoActivities:
+        row = {'name': 'NoActivities'}
+        if addCSVData:
+          row.update(addCSVData)
+          csvPF.WriteRowTitles(row)
       csvPF.SetSortTitles(['name'])
     else:
       if eventRowFilter:
         csvPF.SetRowFilter([], GC.Values[GC.CSV_OUTPUT_ROW_FILTER_MODE])
       if not summary:
         csvPF.SetTitles('emailAddress')
-        for actor, events in iter(eventCounts.items()):
-          row = {'emailAddress': actor}
-          for event, count in iter(events.items()):
-            row[event] = count
-          csvPF.WriteRowTitles(row)
+        if addCSVData:
+          csvPF.AddTitles(sorted(addCSVData.keys()))
+        if eventCounts:
+          for actor, events in iter(eventCounts.items()):
+            row = {'emailAddress': actor}
+            for event, count in iter(events.items()):
+              row[event] = count
+            if addCSVData:
+              row.update(addCSVData)
+            csvPF.WriteRowTitles(row)
+        elif showNoActivities:
+          row = {'emailAddress': 'NoActivities'}
+          if addCSVData:
+            row.update(addCSVData)
+            csvPF.WriteRow(row)
         csvPF.SetSortTitles(['emailAddress'])
       else:
         csvPF.SetTitles(['event', 'count'])
-        for event in sorted(eventCounts):
-          csvPF.WriteRow({'event': event, 'count': eventCounts[event]})
+        if addCSVData:
+          csvPF.AddTitles(sorted(addCSVData.keys()))
+        if eventCounts:
+          for event in sorted(eventCounts):
+            row = {'event': event, 'count': eventCounts[event]}
+            if addCSVData:
+              row.update(addCSVData)
+            csvPF.WriteRow(row)
+        elif showNoActivities:
+          row = {'event': 'NoActivities', 'count': 0}
+          if addCSVData:
+            row.update(addCSVData)
+          csvPF.WriteRow(row)
     csvPF.writeCSVfile(f'{report.capitalize()} Activity Report')
 
 # Substitute for #user#, #email#, #usernamne#

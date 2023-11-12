@@ -3,6 +3,7 @@
 - [Collections of Users](Collections-of-Users)
 - [Definitions](#definitions)
 - [Activity reports](#activity-reports)
+  - [Find Shared Drives with no activity](#find-shared-drives-with-no-activity)
 - [Customer and user reports parameters](#customer-and-user-reports-parameters)
 - [Customer usage reports](#customer-usage-reports)
 - [Customer reports](#customer-reports)
@@ -59,6 +60,7 @@ gam report <ActivityApplicationName> [todrive <ToDriveAttributes>*]
         [groupidfilter <String>]
         [maxactivities <Number>] [maxresults <Number>]
         [countsonly [summary] [eventrowfilter]]
+        (addcsvdata <FieldName> <String>)* [shownoactivities]
 ```
 Select the application with `<ActivityApplicationName>`.
 
@@ -101,6 +103,12 @@ Limit the total number of activites.
 Limit the number of activities downloaded per API call; infrequently used.
 * `maxresults <Number>`
 
+Add additional columns of data from the command line to the output.
+* `addcsvdata <FieldName> <String>`
+
+Display a row with a key value of `NoActivities` when there are no activities to report.
+* `shownoactivities`
+
 By default, individual event details are displayed, these options modify what's displayed.
 * `countsonly` - Limit the display to the number of occurences of each event for each user
 * `countsonly summary` - Limit the display to the number of occurences of each event summarized across all users
@@ -120,6 +128,43 @@ gam config csv_output_row_filter "doc_title:regex:\.xyz" report drive event crea
 Number of files summarized across all users
 ```
 gam config csv_output_row_filter "doc_title:regex:\.xyz" report drive event create yesterday countsonly summary eventrowfilter
+```
+## Find Shared Drives with no activity
+
+Remember that activity events are only available for the past 180 days.
+
+Get Shared Drives ID and Name
+```
+gam redirect csv ./SharedDrives.csv print shareddrives fields id,name
+```
+Options:
+* `maxactivities 1` - Limits the number of activities displayed for Shared Drives with activity.
+* `shownoactivities` - Displays a row for Shared Drives with no activity.
+* `addcsvdata shared_drive_id "~id"` adds the Shared Drive ID to the output.
+* `addcsvdata shared_drive_name "~name"` adds the Shared Drive name to the output.
+
+Get activities with minimal activty data.
+```
+gam config csv_output_header_filter "name,id.time,shared_drive_id,shared_drive_name" redirect csv ./SharedDrivesActivity.csv multiprocess redirect stderr - multiprocess csv SharedDrives.csv gam report drive filter "shared_drive_id==~~id~~" maxactivities 1 shownoactivities addcsvdata shared_drive_id "~id" addcsvdata shared_drive_name "~name"
+
+Example output from SharedDrivesActivity.csv:
+
+name,id.time,shared_drive_id,shared_drive_name
+NoActivities,,0AERPpMc23znvUkPXYZ,Shared Drive 1
+view,2023-10-18T21:27:51-07:00,0AMhgLk82dhsuUkPXYZ,Shared Drive 2
+edit,2023-09-05T15:27:01-07:00,0AM8lpdkkJaKYUkPXYZ,Shared Drive 3
+```
+
+Get activities with full activty data.
+```
+gam redirect csv ./SharedDrivesActivity.csv multiprocess redirect stderr - multiprocess csv SharedDrives.csv gam report drive filter "shared_drive_id==~~id~~" maxactivities 1 shownoactivities addcsvdata shared_drive_id "~id" addcsvdata shared_drive_name "~name"
+
+Example output from SharedDrivesActivity.csv:
+
+name,actor.callerType,actor.email,actor.key,actor.profileId,actor_is_collaborator_account,added_role,billable,destination_folder_id,destination_folder_title,doc_id,doc_title,doc_type,id.applicationName,id.customerId,id.time,id.uniqueQualifier,ipAddress,is_encrypted,membership_change_type,new_settings_state,old_settings_state,originating_app_id,owner,owner_is_shared_drive,owner_is_team_drive,owner_team_drive_id,primary_event,removed_role,shared_drive_id,shared_drive_name,shared_drive_settings_change_type,target,team_drive_id,team_drive_settings_change_type,type,visibility
+NoActivities,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0AERPpMc23znvUkPXYZ,Shared Drive 1,,,,,,
+view,,user1@domain.com,,100016760394505151666,False,,True,,,1SDNu-yzDapqjdJq4y4xKDUATJlOPRIBodpGGeGt1n4I,Digital Poetry Journal,document,drive,C03kt1z99,2023-10-18T21:27:51-07:00,-2856812962461786835,2600:1700:9580:f4b0:2127:3b2:dd21:3806,False,,,,263492796725,Shared Drive 2,True,True,0AMhgLk82dhsuUkPXYZ,True,,0AMhgLk82dhsuUkPXYZ,Shared Drive 2,,,0AMhgLk82dhsuUkPXYZ,,access,people_with_link
+edit,,user2@domain.com,,104066776037911136666,False,,True,,,1ZwHi_v-JVXH8W6zwgb7QYoUHrZD6NzIshJEqoTCaDD0,High School Scavenger Hunt,form,drive,C03kt1z99,2023-09-05T15:27:01-07:00,-1272095408714453395,50.204.178.246,False,,,,,Shared Drive 3,True,True,0AM8lpdkkJaKYUkPXYZ,True,,0AM8lpdkkJaKYUkPXYZ,Shared Drive 3,,,0AM8lpdkkJaKYUkPXYZ,,access,shared_internally
 ```
 
 ## Customer and user reports parameters

@@ -4138,6 +4138,7 @@ gam report <ActivityApplicationName> [todrive <ToDriveAttribute>*]
         [groupidfilter <String>]
         [maxactivities <Number>] [maxresults <Number>]
         [countsonly [summary] [eventrowfilter]]
+        (addcsvdata <FieldName> <String>)* [shownoactivities]
 
 <CustomerServiceName> ::=
         accounts|

@@ -10,7 +10,15 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
-Updated `gam <UserTypeEntity> import|insert message` to allow `replace <Tag> <UserReplacement>` as documented.
+### 6.65.08
+
+Added option `addcsvdata <FieldName> <String>` to `gam report <ActivityApplicationName>` that adds
+additional columns of data to the CSV file output.
+
+Added option `shownoactivities` to `gam report <ActivityApplicationName>` that causes GAM to display
+a row with a key value of `NoActivities` when there are no activities to report.
+
+For example, to find Shared Drives with no activity, see: https://github.com/taers232c/GAMADV-XTD3/wiki/Reports#find-shared-drives-with-no-activity
 
 ### 6.65.07
 
@@ -46,6 +54,8 @@ in the last 30 days.
 ```
 gam user user@domain.com  print messages querytime30d -30d query "after:#querytime30d# is:unread"
 ```
+
+Updated `gam <UserTypeEntity> import|insert message` to allow `replace <Tag> <UserReplacement>` as documented.
 
 Updated non-owner permission handling in `gam <UserTypeEntity> copy|move drivefile`.
 

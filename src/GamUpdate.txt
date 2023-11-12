@@ -2,6 +2,16 @@
 
 Merged GAM-Team version
 
+6.65.08
+
+Added option `addcsvdata <FieldName> <String>` to `gam report <ActivityApplicationName>` that adds
+additional columns of data to the CSV file output.
+
+Added option `shownoactivities` to `gam report <ActivityApplicationName>` that causes GAM to display
+a row with a key value of `NoActivities` when there are no activities to report.
+
+For example, to find Shared Drives with no activity, see: https://github.com/taers232c/GAMADV-XTD3/wiki/Reports#find-shared-drives-with-no-activity
+
 6.65.07
 
 Updated `gam delete building` to handle the following error:
