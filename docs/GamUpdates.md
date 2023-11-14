@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.65.09
+
+Updated `gam <UserTypeEntity> get drivefile <DriveFileEntity>` to handle the following error
+that seems to occur when multiple tabs from a Google sheet are being downloaded in parallel.
+```
+Download Failed: HTTP Error: 429
+```
+
 ### 6.65.08
 
 Added option `addcsvdata <FieldName> <String>` to `gam report <ActivityApplicationName>` that adds

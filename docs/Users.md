@@ -371,7 +371,8 @@ When creating a user or updating a user's password, you can send a message with 
     [subject <String>]
     [notifypassword <String>]
     [from <EmailAaddress>]
-    [replyto <EmailAaddress>]
+    [mailbox <EmailAddress>]
+    [replyto <EmailAddress>]
     [<NotifyMessageContent>]
     (replace <Tag> <UserReplacement>)*]
 [notifyonupdate [<Boolean>]]
@@ -420,6 +421,7 @@ is sent when the user is updated or created. Use `notifyonupdate false` to suppr
 
 By default, the email is sent from the admin user identified in oauth2.txt, `gam oauth info` will show the value.
 Use `from <EmailAddress>` to specify an alternate from address.
+Use `mailbox <EmailAddress>` if `from <EmailAddress>` specifies a group; GAM has to login as a user to be able to send a message. 
 Gam gets no indication as to the status of the message delivery; the from user will get a non-delivery receipt if the message could not be sent to the `notify <EmailAddressList>`.
 
 By default, messages are sent as plain text, use `html` or `html true` to indicate that the message is HTML.
@@ -494,6 +496,7 @@ gam create user <EmailAddress> [ignorenullpassword] <UserAttribute>*
             [subject <String>]
             [notifypassword <String>]
             [from <EmailAaddress>]
+            [mailbox <EmailAddress>]
             [replyto <EmailAaddress>]
             [<NotifyMessageContent>]
             (replace <Tag> <UserReplacement>)*]
@@ -605,6 +608,7 @@ gam update user <UserItem> [ignorenullpassword] <UserAttribute>*
             [subject <String>]
             [notifypassword <String>]
             [from <EmailAaddress>]
+            [mailbox <EmailAddress>]
             [replyto <EmailAaddress>]
             [<NotifyMessageContent>]
             (replace <Tag> <UserReplacement>)*]
@@ -625,6 +629,7 @@ gam update users <UserTypeEntity> [ignorenullpassword] <UserAttribute>*
             [subject <String>]
             [notifypassword <String>]
             [from <EmailAaddress>]
+            [mailbox <EmailAddress>]
             [replyto <EmailAaddress>]
             [<NotifyMessageContent>]
             (replace <Tag> <UserReplacement>)*]
@@ -645,6 +650,7 @@ gam <UserTypeEntity> update users [ignorenullpassword] <UserAttribute>*
             [subject <String>]
             [notifypassword <String>]
             [from <EmailAaddress>]
+            [mailbox <EmailAddress>]
             [replyto <EmailAaddress>]
             [<NotifyMessageContent>]
             (replace <Tag> <UserReplacement>)*]

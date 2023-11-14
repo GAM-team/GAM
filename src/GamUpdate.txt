@@ -2,6 +2,14 @@
 
 Merged GAM-Team version
 
+6.65.09
+
+Updated `gam <UserTypeEntity> get drivefile <DriveFileEntity>` to handle the following error
+that seems to occur when multiple tabs from a Google sheet are being downloaded in parallel.
+```
+Download Failed: HTTP Error: 429
+```
+
 6.65.08
 
 Added option `addcsvdata <FieldName> <String>` to `gam report <ActivityApplicationName>` that adds
@@ -5156,7 +5164,7 @@ Updated `gam [<UserTypeEntity>] create teamdrive <Name>` to output the name of t
 Team Drive in addition to its ID.
 ```
 $ gam user user@domain.com create teamdrive Test
-User: user@domain.com, Shared Drive Name: Test, Shared Drive ID: 0ALHCDtCDTx_4Uk9PVA, Created
+User: user@domain.com, Shared Drive Name: Test, Shared Drive ID: 0ALHCDtCDTx_4Uk9XYZ, Created
 ```
 
 6.03.20
