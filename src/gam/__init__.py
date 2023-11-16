@@ -9116,10 +9116,10 @@ def doCheckConnection():
 def doComment():
   writeStdout(Cmd.QuotedArgumentList(Cmd.Remaining())+'\n')
 
-# gam version [check|checkrc|simple|extended] [timeoffset] [location <HostName>]
+# gam version [check|checkrc|simple|extended] [timeoffset] [nooffseterror] [location <HostName>]
 def doVersion(checkForArgs=True):
   forceCheck = 0
-  extended = timeOffset = simple = False
+  extended = noOffsetError = timeOffset = simple = False
   testLocation = GOOGLE_TIMECHECK_LOCATION
   if checkForArgs:
     while Cmd.ArgumentsRemaining():
@@ -9134,6 +9134,8 @@ def doVersion(checkForArgs=True):
         extended = timeOffset = True
       elif myarg == 'timeoffset':
         timeOffset = True
+      elif myarg == 'nooffseterror':
+        noOffsetError = True
       elif myarg == 'location':
         testLocation = getString(Cmd.OB_HOST_NAME)
       else:
@@ -9156,7 +9158,9 @@ def doVersion(checkForArgs=True):
     offsetSeconds, offsetFormatted = getLocalGoogleTimeOffset(testLocation)
     printKeyValueList([Msg.YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE.format(testLocation, offsetFormatted)])
     if offsetSeconds > MAX_LOCAL_GOOGLE_TIME_OFFSET:
-      systemErrorExit(NETWORK_ERROR_RC, Msg.PLEASE_CORRECT_YOUR_SYSTEM_TIME)
+      if not noOffsetError:
+        systemErrorExit(NETWORK_ERROR_RC, Msg.PLEASE_CORRECT_YOUR_SYSTEM_TIME)
+      stderrWarningMsg(Msg.PLEASE_CORRECT_YOUR_SYSTEM_TIME)
   if forceCheck:
     doGAMCheckForUpdates(forceCheck)
   if extended:
@@ -53738,14 +53742,14 @@ createReturnItemMap = {
 #	[(localfile <FileName>|-)|(url <URL>)]
 #	[(drivefilename|newfilename <DriveFileName>) | (replacefilename <RegularExpression> <String>)*]
 #	[stripnameprefix <String>]
-#	<DriveFileCreateAttribute>*
+#	<DriveFileCreateAttribute>* [noduplicate]
 #	[(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*)) |
 #	 (returnidonly|returnlinkonly|returneditlinkonly|showdetails)]
 def createDriveFile(users):
   csvPF = media_body = None
   addCSVData = {}
   returnIdLink = None
-  showDetails = False
+  noDuplicate = showDetails = False
   body = {}
   newName = None
   assignLocalName = True
@@ -53761,6 +53765,8 @@ def createDriveFile(users):
     elif myarg == 'showdetails':
       returnIdLink = None
       showDetails = True
+    elif myarg == 'noduplicate':
+      noDuplicate = True
     elif myarg == 'csv':
       csvPF = CSVPrintFile()
     elif csvPF and myarg == 'todrive':
@@ -53804,7 +53810,18 @@ def createDriveFile(users):
       continue
     if not _getDriveFileParentInfo(drive, user, i, count, body, parameters):
       continue
+    entityType = _getEntityMimeType(body) if 'mimeType' in body else Ent.DRIVE_FILE
     try:
+      if noDuplicate:
+        # Check for existing file/folder, do not duplicate
+        files = callGAPIitems(drive.files(), 'list', 'files',
+                              throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID_QUERY, GAPI.INVALID],
+                              q=f"name = '{escapeDriveFileName(body['name'])}'and '{body['parents'][0]}' in parents and trashed = false",
+                              fields='files(id)', **parameters['searchargs'])
+        if files:
+          entityActionNotPerformedWarning([Ent.USER, user, entityType, body['name'], Ent.DRIVE_PARENT_FOLDER_ID, body['parents'][0]],
+                                          f"{Msg.DUPLICATE} IDs {','.join([file['id'] for file in files])}", i, count)
+          continue
       result = callGAPI(drive.files(), 'create',
                         throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.FORBIDDEN, GAPI.INSUFFICIENT_PERMISSIONS, GAPI.INSUFFICIENT_PARENT_PERMISSIONS,
                                                                     GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.CANNOT_ADD_PARENT,
@@ -53846,10 +53863,10 @@ def createDriveFile(users):
           row.update(addCSVData)
         csvPF.WriteRow(row)
     except (GAPI.forbidden, GAPI.insufficientFilePermissions, GAPI.insufficientParentPermissions,
-            GAPI.invalid, GAPI.badRequest, GAPI.cannotAddParent,
+            GAPI.invalidQuery, GAPI.invalid, GAPI.badRequest, GAPI.cannotAddParent,
             GAPI.fileNotFound, GAPI.unknownError, GAPI.storageQuotaExceeded, GAPI.teamDrivesSharingRestrictionNotAllowed,
             GAPI.teamDriveHierarchyTooDeep, GAPI.uploadTooLarge, GAPI.teamDrivesShortcutFileNotSupported) as e:
-      entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, body['name']], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user, entityType, body['name']], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
       userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
   if csvPF:

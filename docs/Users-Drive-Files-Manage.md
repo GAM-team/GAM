@@ -165,7 +165,7 @@
 gam <UserTypeEntity> create|add drivefile
         [(localfile <FileName>|-)|(url <URL>)]
         [(drivefilename|newfilename <DriveFileName>) | (replacefilename <RegularExpression> <String>)*]
-        [stripnameprefix <String>]
+        [stripnameprefix <String>] [noduplicate]
         <DriveFileCreateAttribute>*
         [(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*) |
          (returnidonly|returnlinkonly|returneditlinkonly|showdetails)]
@@ -200,6 +200,9 @@ These are the naming rules:
 * `create drivefile drivefilename "GoogleFile.csv" localfile "LocalFile.csv"` - Google Drive file is named "GoogleFile.csv"
 
 If `stripnameprefix <String>` is specified, `<String>` will be stripped from the front of the Google Drive file name if present.
+
+If `noduplicate` is specfied, GAM will issue a warning and not perform the create if a non-trashed item with the same name (regardless of MIME type)
+exists in the parent folder.
 
 By default, when files are uploaded from local content, they are created with `binary` format, i.e., the data is uploaded
 without any conversion. Standard GAM had an option `convert` that was passed to the Drive API v2 that it used.

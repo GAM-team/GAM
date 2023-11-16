@@ -98,7 +98,7 @@ gam <UserTypeEntity> add calendaracls <UserCalendarEntity>
 gam <UserTypeEntity> update calendaracls <UserCalendarEntity>
         <CalendarACLRole> <CalendarACLScopeEntity> [sendnotifications <Boolean>]
 gam <UserTypeEntity> delete calendaracls <UserCalendarEntity>
-        <CalendarACLRole>] <CalendarACLScopeEntity>
+        [<CalendarACLRole>] <CalendarACLScopeEntity>
 ```
 By default, when you add or update a calendar ACL, notification is sent to the members referenced in the `<CalendarACLScopeEntity>`.
 Use `sendnotifications false` to suppress sending the notification.

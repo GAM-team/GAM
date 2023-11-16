@@ -12,6 +12,10 @@ See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Win
 
 ### 6.65.09
 
+Added option `noduplicate` to `gam <UserTypeEntity> create drivefile` that causes GAM
+to issue a warning and not perform the create if a non-trashed item with the same name (regardless of MIME type)
+exists in the parent folder.
+
 Updated `gam <UserTypeEntity> get drivefile <DriveFileEntity>` to handle the following error
 that seems to occur when multiple tabs from a Google sheet are being downloaded in parallel.
 ```

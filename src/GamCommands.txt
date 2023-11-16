@@ -5902,7 +5902,7 @@ gam <UserTypeEntity> print chatmessages [todrive <ToDriveAttribute>*] <ChatSpace
 gam <UserTypeEntity> create|add drivefile
         [(localfile <FileName>|-)|(url <URL>)]
         [(drivefilename|newfilename <DriveFileName>) | (replacefilename <RegularExpression> <String>)*]
-        [stripnameprefix <String>]
+        [stripnameprefix <String>] [noduplicate]
         <DriveFileCreateAttribute>*
         [(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> currenttime|<String>)*) |
          (returnidonly|returnlinkonly|returneditlinkonly|showdetails)]
