@@ -577,7 +577,7 @@ jobs:
         id: basictests
         run: |
              $PYTHON -m unittest discover --start-directory ./ --pattern "*_test.py" --buffer || if [ $? != 5 ]; then exit $?; fi # exit 5 is no tests
-             $gam version extended
+             $gam version extended nooffseterror
              export GAMVERSION=$($gam version simple)
              echo "GAM Version ${GAMVERSION}"
              echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
@@ -611,7 +611,7 @@ jobs:
       - name: Basic Tests build jobs only
         if: matrix.goal != 'test' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
-          export voutput=$($gam version extended)
+          export voutput=$($gam version extended nooffseterror)
           export python_line=$(echo -e "${voutput}" | grep "Python ")
           export python_arr=($python_line)
           export this_python=${python_arr[1]}
