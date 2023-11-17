@@ -370,9 +370,6 @@ YUBIKEY_VALUE_ERROR_RC = 85
 YUBIKEY_MULTIPLE_CONNECTED_RC = 86
 YUBIKEY_NOT_FOUND_RC = 87
 
-# Multiprocessing lock
-mplock = None
-
 # stdin/stdout/stderr
 def readStdin(prompt):
   return input(prompt)
@@ -9421,7 +9418,7 @@ def terminateStdQueueHandler(mpQueue, mpQueueHandler):
   mpQueue.put((0, GM.REDIRECT_QUEUE_EOF, None))
   mpQueueHandler.join()
 
-def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout, mpQueueStderr,
+def ProcessGAMCommandMulti(mplock, pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout, mpQueueStderr,
                            debugLevel, todrive, printAguDomains,
                            printCrosOUs, printCrosOUsAndChildren,
                            output_dateformat, output_timeformat,
@@ -9432,8 +9429,6 @@ def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout,
                            csvRowFilter, csvRowFilterMode, csvRowDropFilter, csvRowDropFilterMode,
                            csvRowLimit,
                            args):
-  global mplock
-
   with mplock:
     initializeLogging()
     if sys.platform.startswith('win'):
@@ -9528,10 +9523,6 @@ def checkChildProcessRC(rc):
     return not low <= rc <= high
   return low <= rc <= high
 
-def initGamWorker(l):
-  global mplock
-  mplock = l
-
 def MultiprocessGAMCommands(items, showCmds):
   def poolCallback(result):
     poolProcessResults[0] -= 1
@@ -9554,12 +9545,12 @@ def MultiprocessGAMCommands(items, showCmds):
     parallelPoolProcesses = min(numItems, GC.Values[GC.MULTIPROCESS_POOL_LIMIT])
   origSigintHandler = signal.signal(signal.SIGINT, signal.SIG_IGN)
   mpManager = multiprocessing.Manager()
-  l = mpManager.Lock()
+  mplock = mpManager.Lock()
   try:
     if multiprocessing.get_start_method() == 'spawn':
-      pool = mpManager.Pool(processes=numPoolProcesses, initializer=initGamWorker, initargs=(l,), maxtasksperchild=200)
+      pool = mpManager.Pool(processes=numPoolProcesses, maxtasksperchild=200)
     else:
-      pool = multiprocessing.Pool(processes=numPoolProcesses, initializer=initGamWorker, initargs=(l,), maxtasksperchild=200)
+      pool = multiprocessing.Pool(processes=numPoolProcesses, maxtasksperchild=200)
   except IOError as e:
     systemErrorExit(FILE_ERROR_RC, e)
   except AssertionError as e:
@@ -9632,7 +9623,7 @@ def MultiprocessGAMCommands(items, showCmds):
       else:
         logCmd = ''
       poolProcessResults[pid] = pool.apply_async(ProcessGAMCommandMulti,
-                                                 [pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout, mpQueueStderr,
+                                                 [mplock, pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout, mpQueueStderr,
                                                   GC.Values[GC.DEBUG_LEVEL], GM.Globals[GM.CSV_TODRIVE],
                                                   GC.Values[GC.PRINT_AGU_DOMAINS],
                                                   GC.Values[GC.PRINT_CROS_OUS], GC.Values[GC.PRINT_CROS_OUS_AND_CHILDREN],
@@ -24012,8 +24003,11 @@ def doInfoPrintShowCrOSTelemetry():
           device[field] = []
           i = 0
           for item in listItems:
-            timeValue, _ = iso8601.parse_date(item['reportTime'])
-            if ((startTime is None) or (timeValue >= startTime)) and ((endTime is None) or (timeValue <= endTime)):
+            if 'reportTime' in item:
+              timeValue, _ = iso8601.parse_date(item['reportTime'])
+            else:
+              timeValue = None
+            if (timeValue is None) or (((startTime is None) or (timeValue >= startTime)) and ((endTime is None) or (timeValue <= endTime))):
               device[field].append(item)
               i += 1
               if listLimit and i == listLimit:
