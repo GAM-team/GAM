@@ -114,7 +114,7 @@ jobs:
           path: |
             bin.tar.xz
             src/cpython
-          key: gam-${{ matrix.jid }}-20231020
+          key: gam-${{ matrix.jid }}-202311118
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
@@ -488,6 +488,8 @@ jobs:
           if [[ "${staticx}" == "yes" ]]; then
             git checkout "v5.13.2"
           elif [[ "${RUNNER_OS}" == "Windows" ]]; then
+            git checkout "v5.13.2"
+          elif [[ "${RUNNER_OS}" == "macOS" ]]; then
             git checkout "v5.13.2"
           else
             git checkout "${latest_release}"
