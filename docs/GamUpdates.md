@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.65.12
+
+Additional updates on MacOS when a `gam csv` command is interrupted with a contol-C.
+
 ### 6.65.11
 
 Updated multiprocessing to handle the following error that occurs on MacOS when a `gam csv` command
