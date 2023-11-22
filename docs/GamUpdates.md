@@ -10,6 +10,28 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.65.14
+
+Fixed bug in gam <UserTypeEntity> copy|move drivefile` that caused a trap.
+```
+UnboundLocalError: cannot access local variable 'emailAddress' where it is not associated with a value
+```
+
+### 6.65.13
+
+Added support for user language `en-CA`.
+
+
+Added option `sizefield quotabytesused|size` to the following commands that specifies which
+file size field to use when totaling file sizes; the default value is `quotabytesused`; previous versions used `size`.
+```
+gam <UserTypeEntity> print|show filecounts
+gam <UserTypeEntity> print filelist
+gam <UserTypeEntity> print|show filetree
+gam <UserTypeEntity> print diskusage
+```
+See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Files-Display#file-size-fields
+
 ### 6.65.12
 
 Additional updates on MacOS when a `gam csv` command is interrupted with a contol-C.

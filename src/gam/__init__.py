@@ -1101,7 +1101,7 @@ LANGUAGE_CODES_MAP = {
   'ach': 'ach', 'af': 'af', 'ag': 'ga', 'ak': 'ak', 'am': 'am', 'ar': 'ar', 'az': 'az', #Luo, Afrikaans, Irish, Akan, Amharic, Arabica, Azerbaijani
   'be': 'be', 'bem': 'bem', 'bg': 'bg', 'bn': 'bn', 'br': 'br', 'bs': 'bs', 'ca': 'ca', #Belarusian, Bemba, Bulgarian, Bengali, Breton, Bosnian, Catalan
   'chr': 'chr', 'ckb': 'ckb', 'co': 'co', 'crs': 'crs', 'cs': 'cs', 'cy': 'cy', 'da': 'da', #Cherokee, Kurdish (Sorani), Corsican, Seychellois Creole, Czech, Welsh, Danish
-  'de': 'de', 'ee': 'ee', 'el': 'el', 'en': 'en', 'en-gb': 'en-GB', 'en-us': 'en-US', 'eo': 'eo', #German, Ewe, Greek, English, English (UK), English (US), Esperanto
+  'de': 'de', 'ee': 'ee', 'el': 'el', 'en': 'en', 'en-ca': 'en-CA', 'en-gb': 'en-GB', 'en-us': 'en-US', 'eo': 'eo', #German, Ewe, Greek, English, English (CA), English (UK), English (US), Esperanto
   'es': 'es', 'es-419': 'es-419', 'et': 'et', 'eu': 'eu', 'fa': 'fa', 'fi': 'fi', 'fil': 'fil', 'fo': 'fo', #Spanish, Spanish (Latin American), Estonian, Basque, Persian, Finnish, Filipino, Faroese
   'fr': 'fr', 'fr-ca': 'fr-CA', 'fy': 'fy', 'ga': 'ga', 'gaa': 'gaa', 'gd': 'gd', 'gl': 'gl', #French, French (Canada), Frisian, Irish, Ga, Scots Gaelic, Galician
   'gn': 'gn', 'gu': 'gu', 'ha': 'ha', 'haw': 'haw', 'he': 'he', 'hi': 'hi', 'hr': 'hr', #Guarani, Gujarati, Hausa, Hawaiian, Hebrew, Hindi, Croatian
@@ -9564,7 +9564,8 @@ def MultiprocessGAMCommands(items, showCmds):
     parallelPoolProcesses = numPoolProcesses
   else:
     parallelPoolProcesses = min(numItems, GC.Values[GC.MULTIPROCESS_POOL_LIMIT])
-  origSigintHandler = signal.signal(signal.SIGINT, signal.SIG_IGN)
+#  origSigintHandler = signal.signal(signal.SIGINT, signal.SIG_IGN)
+  signal.signal(signal.SIGINT, signal.SIG_IGN)
   mpManager = multiprocessing.Manager()
   l = mpManager.Lock()
   try:
@@ -52145,8 +52146,8 @@ class DriveListParameters():
   def CheckMimeType(self, fileInfo):
     return self.mimeTypeCheck.Check(fileInfo)
 
-  def CheckFileSize(self, fileInfo):
-    size = int(fileInfo.get('size', '0'))
+  def CheckFileSize(self, fileInfo, sizeField):
+    size = int(fileInfo.get(sizeField, '0'))
     if self.minimumFileSize is not None and size < self.minimumFileSize:
       return False
     if self.maximumFileSize is not None and size > self.maximumFileSize:
@@ -52177,6 +52178,11 @@ FILECOUNT_SUMMARY_CHOICE_MAP = {
   }
 FILECOUNT_SUMMARY_USER = 'Summary'
 
+SIZE_FIELD_CHOICE_MAP = {
+  'size': 'size',
+  'quotabytesused': 'quotaBytesUsed'
+  }
+
 # gam <UserTypeEntity> print filelist [todrive <ToDriveAttribute>*]
 #	[((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>) (querytime<String> <Time>)*]
 #	[choose <DriveFileNameEntity>|<DriveFileEntityShortcut>]
@@ -52184,12 +52190,15 @@ FILECOUNT_SUMMARY_USER = 'Summary'
 #	[select <DriveFileEntity> [selectsubquery <QueryDriveFile>]
 #	    [(norecursion [<Boolean>])|(depth <Number>)] [showparent]]
 #	[anyowner|(showownedby any|me|others)]
-#	[showmimetype [not] <MimeTypeList>] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
+#	[showmimetype [not] <MimeTypeList>]
+#	[sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
 #	[filenamematchpattern <RegularExpression>]
 #	<PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>] [pmfilter] [oneitemperrow]
 #	[excludetrashed]
 #	[maxfiles <Integer>] [nodataheaders <String>]
-#	[countsonly [summary none|only|plus] [summaryuser <String>] [showsource] [showsize]] [countsrowfilter]
+#	[countsonly [summary none|only|plus] [summaryuser <String>]
+#		    [showsource] [showsize] [showmimetypesize]]
+#	[countsrowfilter]
 #	[filepath|fullpath [pathdelimiter <Character>] [addpathstojson] [showdepth]] [buildtree]
 #	[allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
 #	[showdrivename] [showshareddrivepermissions]
@@ -52213,11 +52222,11 @@ def printFileList(users):
       skipObjects.discard('mimeType')
       if 'mimeType' not in DFF.fieldsList:
         DFF.fieldsList.append('mimeType')
-      skipObjects.discard('size')
-      if showSize and 'size' not in DFF.fieldsList:
-        DFF.fieldsList.append('size')
+      skipObjects.discard(sizeField)
+      if showSize and sizeField not in DFF.fieldsList:
+        DFF.fieldsList.append(sizeField)
     if (DLP.minimumFileSize is not None) or (DLP.maximumFileSize is not None):
-      _setSkipObjects(skipObjects, ['size'], DFF.fieldsList)
+      _setSkipObjects(skipObjects, [sizeField], DFF.fieldsList)
     if DLP.filenameMatchPattern or showParent:
       _setSkipObjects(skipObjects, ['name'], DFF.fieldsList)
     if DLP.excludeTrashed:
@@ -52244,7 +52253,7 @@ def printFileList(users):
         not DLP.CheckShowSharedByMe(f_file) or
         not DLP.CheckExcludeTrashed(f_file) or
         not DLP.CheckMimeType(f_file) or
-        not DLP.CheckFileSize(f_file) or
+        not DLP.CheckFileSize(f_file, sizeField) or
         not DLP.CheckFilenameMatch(f_file) or
         (not checkSharedDrivePermissions and not DLP.CheckFilePermissionMatches(f_file)) or
         (DLP.onlySharedDrives and not driveId)):
@@ -52330,7 +52339,7 @@ def printFileList(users):
       else:
         mimeTypeInfo.setdefault(fileInfo['mimeType'], {'count': 0, 'size': 0})
         mimeTypeInfo[fileInfo['mimeType']['count']] += 1
-        mimeTypeInfo[fileInfo['mimeType']['size']] += int(fileInfo.get('size', '0'))
+        mimeTypeInfo[fileInfo['mimeType']['size']] += int(fileInfo.get(sizeField, '0'))
 
   def _printChildDriveFolderContents(drive, fileEntry, user, i, count, depth):
     parentFileEntry = fileTree.get(fileEntry['id'])
@@ -52411,6 +52420,7 @@ def printFileList(users):
   addPathsToJSON = countsRowFilter = buildTree = countsOnly = filepath = fullpath = getPermissionsForSharedDrives = \
     noRecursion = oneItemPerRow = stripCRsFromName = \
     showParentsIdsAsList = showDepth = showParent = showSize = showMimeTypeSize = showSource = False
+  sizeField = 'quotaBytesUsed'
   pathDelimiter = '/'
   pmselect = True
   showLabels = None
@@ -52494,6 +52504,8 @@ def printFileList(users):
         csvPFco.SetSortAllTitles()
         if myarg == 'showmimetypesize':
           showMimeTypeSize = True
+    elif myarg == 'sizefield':
+      sizeField = getChoice(SIZE_FIELD_CHOICE_MAP, mapChoice=True)
     elif myarg == 'delimiter':
       delimiter = getCharacter()
     elif myarg == 'showparentsidsaslist':
@@ -52912,7 +52924,8 @@ def printShowFilePaths(users):
 #	[corpora <CorporaAttribute>]
 #	[select <SharedDriveEntity>]
 #	[anyowner|(showownedby any|me|others)]
-#	[showmimetype [not] <MimeTypeList>] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
+#	[showmimetype [not] <MimeTypeList>]
+#	[sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
 #	[filenamematchpattern <RegularExpression>]
 #	<PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
 #	[excludetrashed]
@@ -52922,7 +52935,8 @@ def printShowFilePaths(users):
 #	[corpora <CorporaAttribute>]
 #	[select <SharedDriveEntity>]
 #	[anyowner|(showownedby any|me|others)]
-#	[showmimetype [not] <MimeTypeList>] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
+#	[showmimetype [not] <MimeTypeList>]
+#	[sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
 #	[filenamematchpattern <RegularExpression>]
 #	<PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
 #	[excludetrashed]
@@ -52932,7 +52946,7 @@ def printShowFileCounts(users):
     if DLP.showOwnedBy is not None:
       fieldsList.extend(OWNED_BY_ME_FIELDS_TITLES)
     if showSize or (DLP.minimumFileSize is not None) or (DLP.maximumFileSize is not None):
-      fieldsList.append('size')
+      fieldsList.append(sizeField)
     if DLP.filenameMatchPattern:
       fieldsList.append('name')
     if DLP.excludeTrashed:
@@ -52975,7 +52989,7 @@ def printShowFileCounts(users):
       Ind.Decrement()
     else:
       if sharedDriveId:
-        row = {'User': user, 'id': sharedDriveId, 'name': sharedDriveName, 'Total': sizeTotal, 'Item cap': f"{sizeTotal/SHARED_DRIVE_MAX_FILES_FOLDERS:.2%}"}
+        row = {'User': user, 'id': sharedDriveId, 'name': sharedDriveName, 'Total': countTotal, 'Item cap': f"{sizeTotal/SHARED_DRIVE_MAX_FILES_FOLDERS:.2%}"}
       else:
         row = {'User': user, 'Total': countTotal}
       if showSize:
@@ -52993,6 +53007,7 @@ def printShowFileCounts(users):
   DLP = DriveListParameters({'allowChoose': False, 'allowCorpora': True, 'allowQuery': True, 'mimeTypeInQuery': True})
   sharedDriveId = sharedDriveName = ''
   showSize = showMimeTypeSize = False
+  sizeField = 'quotaBytesUsed'
   summary = FILECOUNT_SUMMARY_NONE
   summaryUser = FILECOUNT_SUMMARY_USER
   summaryMimeTypeInfo = {}
@@ -53009,6 +53024,8 @@ def printShowFileCounts(users):
       fileIdEntity = getSharedDriveEntity()
     elif myarg == 'showsize':
       showSize = True
+    elif myarg == 'sizefield':
+      sizeField = getChoice(SIZE_FIELD_CHOICE_MAP, mapChoice=True)
     elif myarg == 'showmimetypesize':
       showMimeTypeSize = showSize = True
     elif myarg == 'summary':
@@ -53067,7 +53084,7 @@ def printShowFileCounts(users):
           if (not DLP.CheckShowOwnedBy(f_file) or
               not DLP.CheckShowSharedByMe(f_file) or
               not DLP.CheckExcludeTrashed(f_file) or
-              not DLP.CheckFileSize(f_file) or
+              not DLP.CheckFileSize(f_file, sizeField) or
               not DLP.CheckFilenameMatch(f_file) or
               (not checkSharedDrivePermissions and not DLP.CheckFilePermissionMatches(f_file)) or
               (DLP.onlySharedDrives and not driveId)):
@@ -53087,10 +53104,9 @@ def printShowFileCounts(users):
                     GAPI.unknownError, GAPI.invalid, GAPI.badRequest,
                     GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy):
               continue
-          fileSize = int(f_file.get('size', '0'))
           mimeTypeInfo.setdefault(f_file['mimeType'], {'count': 0, 'size': 0})
           mimeTypeInfo[f_file['mimeType']]['count'] += 1
-          mimeTypeInfo[f_file['mimeType']]['size'] += fileSize
+          mimeTypeInfo[f_file['mimeType']]['size'] += int(f_file.get(sizeField, '0'))
       showMimeTypeInfo(user, mimeTypeInfo, sharedDriveId, sharedDriveName, i, count)
     except (GAPI.invalidQuery, GAPI.invalid, GAPI.badRequest):
       entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, None], invalidQuery(DLP.fileIdEntity['query']), i, count)
@@ -53112,6 +53128,7 @@ DISKUSAGE_SHOW_CHOICES = {'all', 'summary', 'summaryandtrash'}
 
 # gam <UserTypeEntity> print diskusage <DriveFileEntity> [todrive <ToDriveAttribute>*]
 #	[anyowner|(showownedby any|me|others)]
+#	[sizefield quotabytesused|size]
 #	[pathdelimiter <Character>] [excludetrashed] [stripcrsfromname]
 #	(addcsvdata <FieldName> <String>)*
 #	[noprogress] [show all|summary|summaryandtrash]
@@ -53162,7 +53179,7 @@ def printDiskUsage(users):
       elif mimeType != MIMETYPE_GA_SHORTCUT:
         if includeOwner and showOwnedBy is not None and childEntryInfo['ownedByMe'] != showOwnedBy:
           continue
-        fsize = int(childEntryInfo.get('size', '0'))
+        fsize = int(childEntryInfo.get(sizeField, '0'))
         fileEntry['directFileCount'] += 1
         fileEntry['directFileSize'] += fsize
         fileEntry['totalFileCount'] += 1
@@ -53183,6 +53200,7 @@ def printDiskUsage(users):
   orderBy = 'folder,name'
   zeroFolderInfo = {'directFileCount': 0, 'directFileSize': 0, 'directFolderCount': 0,
                     'totalFileCount': 0, 'totalFileSize': 0, 'totalFolderCount': 0}
+  sizeField = 'quotaBytesUsed'
   showOwnedBy = showProgress = True
   pathDelimiter = '/'
   fileIdEntity = getDriveFileEntity()
@@ -53196,6 +53214,8 @@ def printDiskUsage(users):
       showOwnedBy = None
     elif myarg == 'showownedby':
       showOwnedBy = getChoice(SHOW_OWNED_BY_CHOICE_MAP, mapChoice=True)
+    elif myarg == 'sizefield':
+      sizeField = getChoice(SIZE_FIELD_CHOICE_MAP, mapChoice=True)
     elif myarg == 'pathdelimiter':
       pathDelimiter = getCharacter()
     elif myarg == 'excludetrashed':
@@ -53213,7 +53233,7 @@ def printDiskUsage(users):
       unknownArgumentExit()
   if addCSVData:
     csvPF.AddTitles(sorted(addCSVData.keys()))
-  fieldsList = ['id', 'name', 'mimeType', 'size', 'trashed', 'explicitlyTrashed', 'owners(emailAddress)', 'ownedByMe']
+  fieldsList = ['id', 'name', 'mimeType', sizeField, 'trashed', 'explicitlyTrashed', 'owners(emailAddress)', 'ownedByMe']
   pagesFields = getItemFieldsFromFieldsList('files', fieldsList)
   topFieldsList = fieldsList[:]
   topFieldsList.extend(['driveId', 'parents'])
@@ -53450,7 +53470,8 @@ FILETREE_FIELDS_PRINT_ORDER = ['id', 'parents', 'owners', 'mimeType', 'size', 'e
 # gam <UserTypeEntity> print filetree [todrive <ToDriveAttribute>*]
 #	[select <DriveFileEntity> [selectsubquery <QueryDriveFile>] [depth <Number>]]
 #	[anyowner|(showownedby any|me|others)]
-#	[showmimetype [not] <MimeTypeList>] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
+#	[showmimetype [not] <MimeTypeList>]
+#	[sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
 #	[filenamematchpattern <RegularExpression>]
 #	<PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
 #	[excludetrashed]
@@ -53460,7 +53481,8 @@ FILETREE_FIELDS_PRINT_ORDER = ['id', 'parents', 'owners', 'mimeType', 'size', 'e
 # gam <UserTypeEntity> show filetree
 #	[select <DriveFileEntity> [selectsubquery <QueryDriveFile>] [depth <Number>]]
 #	[anyowner|(showownedby any|me|others)]
-#	[showmimetype [not] <MimeTypeList>] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
+#	[showmimetype [not] <MimeTypeList>]
+#	[sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
 #	[filenamematchpattern <RegularExpression>]
 #	<PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
 #	[excludetrashed]
@@ -53488,6 +53510,8 @@ def printShowFileTree(users):
             trashed = fileEntry.get(field, False)
             if trashed:
               fileInfoList.extend([field, trashed])
+          elif field == 'size':
+            fileInfoList.extend([field, fileEntry.get(sizeField, 0)])
           else:
             fileInfoList.extend([field, fileEntry.get(field, '')])
       if fileInfoList:
@@ -53506,7 +53530,7 @@ def printShowFileTree(users):
           elif field == 'owners':
             row[field] = delimiter.join([owner['emailAddress'] for owner in fileEntry.get(field, [])])
           elif field == 'size':
-            row[fileSize] = fileEntry.get(field, '')
+            row[fileSize] = fileEntry.get(sizeField, 0)
           else:
             row[field] = fileEntry.get(field, '')
       csvPF.WriteRow(row)
@@ -53518,7 +53542,7 @@ def printShowFileTree(users):
         if not DLP.CheckExcludeTrashed(childEntry['info']):
           continue
         if (DLP.CheckMimeType(childEntry['info']) and
-            DLP.CheckFileSize(childEntry['info']) and
+            DLP.CheckFileSize(childEntry['info'], sizeField) and
             DLP.CheckFilenameMatch(childEntry['info']) and
             DLP.CheckFilePermissionMatches(childEntry['info'])):
           _showFileInfo(childEntry['info'], depth)
@@ -53550,7 +53574,7 @@ def printShowFileTree(users):
         continue
       if (DLP.CheckShowOwnedBy(childEntryInfo) and
           DLP.CheckMimeType(childEntryInfo) and
-          DLP.CheckFileSize(childEntryInfo) and
+          DLP.CheckFileSize(childEntryInfo, sizeField) and
           DLP.CheckFilenameMatch(childEntryInfo) and
           DLP.CheckFilePermissionMatches(childEntryInfo)):
         _showFileInfo(childEntryInfo, depth)
@@ -53563,8 +53587,7 @@ def printShowFileTree(users):
   maxdepth = -1
   fileIdEntity = {}
   selectSubQuery = ''
-  fieldsList = ['driveId', 'id', 'name', 'parents', 'mimeType', 'ownedByMe', 'owners(emailAddress)',
-                'shared', 'size', 'explicitlyTrashed', 'trashed']
+  sizeField = 'quotaBytesUsed'
   showFields = {}
   for mappedField in FILETREE_FIELDS_CHOICE_MAP.values():
     showFields[mappedField] = False
@@ -53588,6 +53611,8 @@ def printShowFileTree(users):
       OBY.GetChoice()
     elif myarg == 'depth':
       maxdepth = getInteger(minVal=-1)
+    elif myarg == 'sizefield':
+      sizeField = getChoice(SIZE_FIELD_CHOICE_MAP, mapChoice=True)
     elif myarg == 'fields':
       for field in _getFieldsList():
         if field in FILETREE_FIELDS_CHOICE_MAP:
@@ -53604,6 +53629,8 @@ def printShowFileTree(users):
       stripCRsFromName = True
     else:
       unknownArgumentExit()
+  fieldsList = ['driveId', 'id', 'name', 'parents', 'mimeType', 'ownedByMe', 'owners(emailAddress)',
+                'shared', sizeField, 'explicitlyTrashed', 'trashed']
   if csvPF:
     if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES]:
       fileNameTitle = 'title'
@@ -54900,8 +54927,7 @@ def _copyPermissions(drive, user, i, count, j, jcount,
 
   def isPermissionCopyable(kvList, permission):
     role = permission['role']
-    if permission['type'] in {'group', 'user'}:
-      emailAddress = permission.get('emailAddress', '')
+    emailAddress = permission.get('emailAddress', '')
     domain = ''
     if copyMoveOptions['excludePermissionsFromDomains'] or copyMoveOptions['includePermissionsFromDomains']:
       if permission['type'] in {'group', 'user'}:
@@ -56913,7 +56939,7 @@ def getDriveFile(users):
       try:
         result = callGAPI(drive.files(), 'get',
                           throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
-                          fileId=fileId, fields='name,fullFileExtension,mimeType,size,shortcutDetails', supportsAllDrives=True)
+                          fileId=fileId, fields='name,fullFileExtension,mimeType,quotaBytesUsed,shortcutDetails', supportsAllDrives=True)
         mimeType = result['mimeType']
         if (mimeType == MIMETYPE_GA_SHORTCUT) and not donotFollowShortcuts:
           fileId = result['shortcutDetails']['targetId']
@@ -56946,8 +56972,8 @@ def getDriveFile(users):
             entityActionNotPerformedWarning(entityValueList, Msg.FORMAT_NOT_AVAILABLE.format(','.join(exportFormatChoices)), j, jcount)
             continue
         else:
-          if 'size' in result:
-            my_line = ['Size', formatFileSize(int(result['size']))]
+          if 'quotaBytesUsed' in result:
+            my_line = ['Size', formatFileSize(int(result['quotaBytesUsed']))]
           else:
             my_line = ['Size', UNKNOWN]
           googleDoc = False

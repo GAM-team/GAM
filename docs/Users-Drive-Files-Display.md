@@ -5,6 +5,7 @@
 - [Permission Matches](Permission-Matches)
 - [Definitions](#definitions)
 - [Return Codes](#return-codes)
+- [File size fields](#file-size-fields)
 - [Display file information](#display-file-information)
 - [Display file paths](#display-file-paths)
 - [Select files for Display file counts, list, tree](#select-files-for-display-file-counts-list-tree)
@@ -358,6 +359,29 @@ $ echo $?
 60
 ```
 
+## File size fields
+The Drive API defines two fields that relate to file size: `quotaBytesUsed` and `size`.
+```
+quotaBytesUsed - The number of storage quota bytes used by the file.
+    This includes the head revision as well as previous revisions with keepForever enabled.
+size - Size in bytes of blobs and first party editor files.
+```
+Previously, GAM used the `size` field when totaling file sizes, it now uses the `quotaBytesUsed` field.
+The option `sizefield quotabytesused|size` allows you to select which field to use.
+
+For most MIME types, the values are the same; for the following MIME types, `quotabytesused` is larger.
+```
+application/pdf
+application/vnd.ms-powerpoint
+application/vnd.openxmlformats-officedocument.presentationml.presentation
+application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+application/vnd.openxmlformats-officedocument.wordprocessingml.document
+application/zip
+audio/mpeg
+image/jpeg
+image/png
+```
+
 ## Display file information
 Display file details in indented keyword: value format. The two forms are equivalent.
 ```
@@ -617,7 +641,8 @@ gam <UserTypeEntity> print filecounts [todrive <ToDriveAttribute>*]
         [corpora <CorporaAttribute>]
         [select <SharedDriveEntity>]
         [anyowner|(showownedby any|me|others)]
-        [showmimetype [not] <MimeTypeList>] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
+        [showmimetype [not] <MimeTypeList>]
+        [sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
         [filenamematchpattern <RegularExpression>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
         [excludetrashed]
@@ -629,7 +654,8 @@ gam <UserTypeEntity> show filecounts
         [corpora <CorporaAttribute>]
         [select <SharedDriveEntity>]
         [anyowner|(showownedby any|me|others)]
-        [showmimetype [not] <MimeTypeList>] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
+        [showmimetype [not] <MimeTypeList>]
+        [sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
         [filenamematchpattern <RegularExpression>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
         [excludetrashed]
@@ -860,7 +886,8 @@ gam <UserTypeEntity> print filetree [todrive <ToDriveAttribute>*]
         [select <DriveFileEntity> [selectsubquery <QueryDriveFile>]
             [depth <Number>]]
         [anyowner|(showownedby any|me|others)]
-        [showmimetype [not] <MimeTypeList>] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
+        [showmimetype [not] <MimeTypeList>]
+        [sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
         [filenamematchpattern <RegularExpression>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
         [excludetrashed]
@@ -871,7 +898,8 @@ gam <UserTypeEntity> show filetree
         [select <DriveFileEntity> [selectsubquery <QueryDriveFile>]
             [depth <Number>]]
         [anyowner|(showownedby any|me|others)]
-        [showmimetype [not] <MimeTypeList>] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
+        [showmimetype [not] <MimeTypeList>]
+        [sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
         [filenamematchpattern <RegularExpression>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
         [excludetrashed]
@@ -929,12 +957,14 @@ gam <UserTypeEntity> print|show filelist [todrive <ToDriveAttribute>*]
         [select <DriveFileEntity> [selectsubquery <QueryDriveFile>]
             [(norecursion [<Boolean>])|(depth <Number>)] [showparent]]
         [anyowner|(showownedby any|me|others)]
-        [showmimetype [not] <MimeTypeList>] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
+        [showmimetype [not] <MimeTypeList>]
+        [sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
         [filenamematchpattern <RegularExpression>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>] [pmfilter] [oneitemperrow]
         [excludetrashed]
         [maxfiles <Integer>] [nodataheaders <String>]
-        [countsonly [summary none|only|plus] [summaryuser <String>] [showsource] [showsize] [showmimetypesize]] [countsrowfilter]
+        [countsonly [summary none|only|plus] [summaryuser <String>]
+	            [showsource] [showsize] [showmimetypesize]] [countsrowfilter]
         [filepath|fullpath [pathdelimiter <Character>] [addpathstojson] [showdepth]] [buildtree]
         [allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
         [showdrivename] [showshareddrivepermissions]
@@ -1442,6 +1472,7 @@ BadNews-NoData
 ```
 gam <UserTypeEntity> print diskusage <DriveFileEntity> [todrive <ToDriveAttribute>*]
         [anyowner|(showownedby any|me|others)]
+        [sizefield quotabytesused|size]
         [pathdelimiter <Character>] [excludetrashed] [stripcrsfromname]
         (addcsvdata <FieldName> <String>)*
         [noprogress] [show all|summary|summaryandtrash]
