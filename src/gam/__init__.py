@@ -48468,7 +48468,7 @@ def createWorkingLocation(users):
     if not cal:
       continue
     jcount = len(dateList)
-    entityPerformAction([Ent.CALENDAR, user, Ent.WORKING_LOCATION, None], i, count)
+    entityPerformAction([Ent.CALENDAR, user, Ent.EVENT_WORKINGLOCATION, None], i, count)
     Ind.Increment()
     j = 0
     for wlDate in dateList:
@@ -48536,7 +48536,7 @@ def deleteWorkingLocation(users):
     if not cal:
       continue
     jcount = len(dateList)
-    entityPerformAction([Ent.CALENDAR, user, Ent.WORKING_LOCATION, None], i, count)
+    entityPerformAction([Ent.CALENDAR, user, Ent.EVENT_WORKINGLOCATION, None], i, count)
     Ind.Increment()
     j = 0
     for wlDate in dateList:
@@ -48695,33 +48695,51 @@ YOUTUBE_CHANNEL_FIELDS_CHOICE_MAP = {
 YOUTUBE_CHANNEL_TIME_OBJECTS = {'publishedAt'}
 
 # gam <UserTypeEntity> show youtubechannels
-#	[channels <YouTubeChannelIDList>]
+#	(mine|
+#	 (ids|channels <YouTubeChannelIDList>)|
+#	 (forusername <String>)|
+#	 (managedbyme <String>))
+#	[languagecode <BCP47LanguageCode>]
 #	[allfields|(fields <YouTubeChannelFieldNameList>)]
 #	[formatjson]
 # gam <UserTypeEntity> print youtubechannels [todrive <ToDriveAttribute>*]
-#	[channels <YouTubeChannelIDList>]
+#	(mine|
+#	 (ids|channels <YouTubeChannelIDList>)|
+#	 (forusername <String>)|
+#	 (managedbyme <String>))
+#	[languagecode <BCP47LanguageCode>]
 #	[allfields|(fields <YouTubeChannelFieldNameList>)]
 #	[formatjson [quotechar <Character>]]
 def printShowYouTubeChannel(users):
   csvPF = CSVPrintFile(['User', 'id'], 'sortall') if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   kwargs = {'mine': True}
+  languageCode = ''
   fieldsList = ['id']
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif myarg in {'channel', 'channels'}:
-      kwargs.pop('mine', None)
-      kwargs['id'] = ','.join(getEntityList(Cmd.OB_YOUTUBE_CHANNEL_ID_LIST))
+    elif myarg == 'mine':
+      kwargs = {'mine': True}
+    elif myarg in {'id', 'ids', 'channel', 'channels'}:
+      kwargs = {'id': ','.join(getEntityList(Cmd.OB_YOUTUBE_CHANNEL_ID_LIST))}
+    elif myarg == 'forusername':
+      kwargs = {'forUsername': getString(Cmd.OB_USER_NAME)}
+    elif myarg == 'managedbyme':
+      kwargs = {'managedByMe': True, 'onBehalfOfContentOwner': getString(Cmd.OB_USER_NAME)}
     elif getFieldsList(myarg, YOUTUBE_CHANNEL_FIELDS_CHOICE_MAP, fieldsList):
       pass
     elif myarg == 'allfields':
       for field in YOUTUBE_CHANNEL_FIELDS_CHOICE_MAP:
         addFieldToFieldsList(field, YOUTUBE_CHANNEL_FIELDS_CHOICE_MAP, fieldsList)
+    elif myarg in {'languagecode', 'hl'}:
+      languageCode = getLanguageCode(BCP47_LANGUAGE_CODES_MAP)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   kwargs['part'] = ','.join(set(fieldsList))
+  if languageCode:
+    kwargs['hl'] = languageCode
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -48732,8 +48750,14 @@ def printShowYouTubeChannel(users):
       channels = callGAPIpages(yt.channels(), 'list', 'items',
                                throwReasons=GAPI.YOUTUBE_THROW_REASONS,
                                fields='nextPageToken,items', **kwargs)
-    except GAPI.unsupportedSupervisedAccount as e:
+    except (GAPI.unsupportedSupervisedAccount, GAPI.unsupportedLanguageCode) as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+      continue
+    except GAPI.contentOwnerAccountNotFound as e:
+      if 'managedByMe' in kwargs:
+        entityActionFailedWarning([Ent.USER, user, Ent.OWNER, kwargs['onBehalfOfContentOwner']], str(e), i, count)
+      else:
+        entityActionFailedWarning([Ent.USER, user], str(e), i, count)
       continue
     except (GAPI.serviceNotAvailable, GAPI.authError):
       entityServiceNotApplicableWarning(Ent.USER, user, i, count)
@@ -59964,7 +59988,7 @@ def _showDriveLabel(label, j, jcount, FJQC):
   Ind.Decrement()
 
 # gam [<UserTypeEntity>] info drivelabels <DriveLabelNameEntity>
-#	[[basic|full] [languagecode <DriveLabelLanguageCode>]
+#	[[basic|full] [languagecode <BCP47LanguageCode>]
 #	[formatjson] [adminaccess|asadmin]
 def infoDriveLabels(users, useAdminAccess=False):
   driveLabelNameEntity = getUserObjectEntity(Cmd.OB_DRIVE_LABEL_NAME, Ent.DRIVE_LABEL_NAME, shlexSplit=True)
@@ -60009,11 +60033,11 @@ def doInfoDriveLabels():
   infoDriveLabels([_getAdminEmail()], True)
 
 # gam [<UserTypeEntity>] print drivelabels> [todrive <ToDriveAttribute>*]
-#	[basic|full] [languagecode <DriveLabelLanguageCode>]
+#	[basic|full] [languagecode <BCP47LanguageCode>]
 #	[publishedonly [<Boolean>]] [minimumrole applier|editor|organizer|reader]
 #	[formatjson [quotechar <Character>]] [adminaccess|asadmin]
 # gam [<UserTypeEntity>] show drivelabels
-#	[basic|full] [languagecode <DriveLabelLanguageCode>]
+#	[basic|full] [languagecode <BCP47LanguageCode>]
 #	[publishedonly [<Boolean>]] [minimumrole applier|editor|organizer|reader]
 #	[formatjson] [adminaccess|asadmin]
 def printShowDriveLabels(users, useAdminAccess=False):

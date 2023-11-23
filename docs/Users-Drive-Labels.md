@@ -41,7 +41,7 @@ Supported editions for this feature: Business Standard and Business Plus; Enterp
 <DriveLabelSelectionID> ::= <String>
 <DriveLabelSelectionIDList> ::= "<DriveLabelSelectionID>(,<DriveLabelSelectionID)*"
 
-<DriveLabelLanguageCode> ::=
+<BCP47LanguageCode> ::=
         ar-sa| # Arabic Saudi Arabia
         cs-cz| # Czech Czech Republic
         da-dk| # Danish Denmark
@@ -94,12 +94,12 @@ Three forms of the commands are available:
 
 ```
 gam [<UserTypeEntity>] info drivelabels <DriveLabelNameEntity>
-        [[basic|full] [languagecode <DriveLabelLanguageCode>]
+        [[basic|full] [languagecode <BCP47LanguageCode>]
         [formatjson] [adminaccess|asadmin]
 ```
 * `basic` - Display fields: name,id,revisionId,labelType,properties.*; this is the default
 * `full` - Display all possible fields
-* `languagecode <DriveLabelLanguageCode>` - The BCP-47 language code to use for evaluating localized Field labels. When not specified, values in the default configured language will be used.
+* `languagecode <BCP47LanguageCode>` - The BCP-47 language code to use for evaluating localized Field labels. When not specified, values in the default configured language will be used.
 * `adminaccess|asadmin` - Use the user's admin credentials. This will return all Labels within the customer.
 
 By default, Gam displays the information as an indented list of keys and values.
@@ -107,13 +107,13 @@ By default, Gam displays the information as an indented list of keys and values.
 
 ```
 gam [<UserTypeEntity>] show drivelabels
-        [basic|full] [languagecode <DriveLabelLanguageCode>]
+        [basic|full] [languagecode <BCP47LanguageCode>]
         [publishedonly [<Boolean>]] [minimumrole applier|editor|organizer|reader]
         [formatjson] [adminaccess|asadmin]
 ```
 * `basic` - Display fields: name,id,revisionId,labelType,properties.*; this is the default
 * `full` - Display all possible fields
-* `languagecode <DriveLabelLanguageCode>` - The BCP-47 language code to use for evaluating localized Field labels. When not specified, values in the default configured language will be used.
+* `languagecode <BCP47LanguageCode>` - The BCP-47 language code to use for evaluating localized Field labels. When not specified, values in the default configured language will be used.
 * `minimumrole applier|editor|organizer|reader` - Specifies the level of access the user must have on the returned Labels. Defaults to READER.
 * `adminaccess|asadmin` - Use the user's admin credentials. This will return all Labels within the customer.
 
@@ -122,13 +122,13 @@ By default, Gam displays the information as an indented list of keys and values.
 
 ```
 gam [<UserTypeEntity>] print drivelabels [todrive <ToDriveAttribute>*]
-        [basic|full] [languagecode <DriveLabelLanguageCode>]
+        [basic|full] [languagecode <BCP47LanguageCode>]
         [publishedonly [<Boolean>]] [minimumrole applier|editor|organizer|reader]
         [formatjson [quotechar <Character>]] [adminaccess|asadmin]
 ```
 * `basic` - Display fields: name,id,revisionId,labelType,properties.*; this is the default
 * `full` - Display all possible fields
-* `languagecode <DriveLabelLanguageCode>` - The BCP-47 language code to use for evaluating localized Field labels. When not specified, values in the default configured language will be used.
+* `languagecode <BCP47LanguageCode>` - The BCP-47 language code to use for evaluating localized Field labels. When not specified, values in the default configured language will be used.
 * `minimumrole applier|editor|organizer|reader` - Specifies the level of access the user must have on the returned Labels. Defaults to READER.
 * `adminaccess|asadmin` - Use the user's admin credentials. This will return all Labels within the customer.
 

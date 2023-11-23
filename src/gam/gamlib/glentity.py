@@ -201,6 +201,9 @@ class GamEntity():
   END_TIME = 'endt'
   ENTITY = 'enti'
   EVENT = 'evnt'
+  EVENT_FOCUSTIME = 'evft'
+  EVENT_OUTOFOFFICE = 'evoo'
+  EVENT_WORKINGLOCATION = 'evwl'
   FEATURE = 'feat'
   FIELD = 'fiel'
   FILE = 'file'
@@ -362,7 +365,6 @@ class GamEntity():
   VAULT_OPERATION = 'vlto'
   VAULT_QUERY = 'vltq'
   WEBCLIPS_ENABLED = 'webc'
-  WORKING_LOCATION = 'wrkl'
   YOUTUBE_CHANNEL = 'ytch'
   # _NAMES[0] is plural, _NAMES[1] is singular unless the item name is explicitly plural (Calendar Settings)
   # For items with Boolean values, both entries are singular (Forward, POP)
@@ -528,6 +530,9 @@ class GamEntity():
     END_TIME: ['End Times', 'End Time'],
     ENTITY: ['Entities', 'Entity'],
     EVENT: ['Events', 'Event'],
+    EVENT_FOCUSTIME: ['Focus Time Events', 'Focus Time Event'],
+    EVENT_OUTOFOFFICE: ['Out of Office Events', 'Out of Office Event'],
+    EVENT_WORKINGLOCATION: ['Working Location Events', 'Working Location Event'],
     FEATURE: ['Features', 'Feature'],
     FIELD: ['Fields', 'Field'],
     FILE: ['Files', 'File'],
@@ -689,7 +694,6 @@ class GamEntity():
     VAULT_OPERATION: ['Vault Operations', 'Vault Operation'],
     VAULT_QUERY: ['Vault Queries', 'Vault Query'],
     WEBCLIPS_ENABLED: ['Web Clips Enabled', 'Web Clips Enabled'],
-    WORKING_LOCATION: ['Working Locations', 'Working Location'],
     YOUTUBE_CHANNEL: ['YouTube Channels', 'YouTube Channel'],
     ROLE_MANAGER: ['Managers', 'Manager'],
     ROLE_MEMBER: ['Members', 'Member'],

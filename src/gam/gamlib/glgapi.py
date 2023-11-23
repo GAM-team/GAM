@@ -52,6 +52,7 @@ CANNOT_SHARE_TEAMDRIVE_WITH_NONGOOGLE_ACCOUNTS = 'cannotShareTeamDriveWithNonGoo
 CANNOT_UPDATE_PERMISSION = 'cannotUpdatePermission'
 CONDITION_NOT_MET = 'conditionNotMet'
 CONFLICT = 'conflict'
+CONTENT_OWNER_ACCOUNT_NOT_FOUND = 'contentOwnerAccountNotFound'
 CROSS_DOMAIN_MOVE_RESTRICTION = 'crossDomainMoveRestriction'
 CUSTOMER_EXCEEDED_ROLE_ASSIGNMENTS_LIMIT = 'CUSTOMER_EXCEEDED_ROLE_ASSIGNMENTS_LIMIT'
 CUSTOMER_NOT_FOUND = 'customerNotFound'
@@ -164,6 +165,7 @@ TEAMDRIVES_SHORTCUT_FILE_NOT_SUPPORTED = 'teamDrivesShortcutFileNotSupported'
 TIME_RANGE_EMPTY = 'timeRangeEmpty'
 TRANSIENT_ERROR = 'transientError'
 UNKNOWN_ERROR = 'unknownError'
+UNSUPPORTED_LANGUAGE_CODE = 'unsupportedLanguageCode'
 UNSUPPORTED_SUPERVISED_ACCOUNT = 'unsupportedSupervisedAccount'
 UPLOAD_TOO_LARGE = 'uploadTooLarge'
 USER_CANNOT_CREATE_TEAMDRIVES = 'userCannotCreateTeamDrives'
@@ -263,7 +265,7 @@ SHEETS_ACCESS_THROW_REASONS = DRIVE_USER_THROW_REASONS+[NOT_FOUND, PERMISSION_DE
 TASK_THROW_REASONS = [SERVICE_NOT_AVAILABLE, BAD_REQUEST, PERMISSION_DENIED, INVALID, NOT_FOUND, ACCESS_NOT_CONFIGURED]
 TASKLIST_THROW_REASONS = [SERVICE_NOT_AVAILABLE, BAD_REQUEST, PERMISSION_DENIED, INVALID, NOT_FOUND, ACCESS_NOT_CONFIGURED]
 USER_GET_THROW_REASONS = [USER_NOT_FOUND, DOMAIN_NOT_FOUND, DOMAIN_CANNOT_USE_APIS, FORBIDDEN, BAD_REQUEST, SYSTEM_ERROR]
-YOUTUBE_THROW_REASONS = [SERVICE_NOT_AVAILABLE, AUTH_ERROR, UNSUPPORTED_SUPERVISED_ACCOUNT]
+YOUTUBE_THROW_REASONS = [SERVICE_NOT_AVAILABLE, AUTH_ERROR, UNSUPPORTED_SUPERVISED_ACCOUNT, UNSUPPORTED_LANGUAGE_CODE, CONTENT_OWNER_ACCOUNT_NOT_FOUND]
 
 REASON_MESSAGE_MAP = {
   ABORTED: [
@@ -393,6 +395,8 @@ class cannotUpdatePermission(Exception):
 class conditionNotMet(Exception):
   pass
 class conflict(Exception):
+  pass
+class contentOwnerAccountNotFound(Exception):
   pass
 class crossDomainMoveRestriction(Exception):
   pass
@@ -614,6 +618,8 @@ class transientError(Exception):
   pass
 class unknownError(Exception):
   pass
+class unsupportedLanguageCode(Exception):
+  pass
 class unsupportedSupervisedAccount(Exception):
   pass
 class uploadTooLarge(Exception):
@@ -659,6 +665,7 @@ REASON_EXCEPTION_MAP = {
   CANNOT_UPDATE_PERMISSION: cannotUpdatePermission,
   CONDITION_NOT_MET: conditionNotMet,
   CONFLICT: conflict,
+  CONTENT_OWNER_ACCOUNT_NOT_FOUND: contentOwnerAccountNotFound,
   CROSS_DOMAIN_MOVE_RESTRICTION: crossDomainMoveRestriction,
   CUSTOMER_EXCEEDED_ROLE_ASSIGNMENTS_LIMIT: customerExceededRoleAssignmentsLimit,
   CUSTOMER_NOT_FOUND: customerNotFound,
@@ -769,6 +776,7 @@ REASON_EXCEPTION_MAP = {
   TIME_RANGE_EMPTY: timeRangeEmpty,
   TRANSIENT_ERROR: transientError,
   UNKNOWN_ERROR: unknownError,
+  UNSUPPORTED_LANGUAGE_CODE: unsupportedLanguageCode,
   UNSUPPORTED_SUPERVISED_ACCOUNT: unsupportedSupervisedAccount,
   UPLOAD_TOO_LARGE: uploadTooLarge,
   USER_CANNOT_CREATE_TEAMDRIVES: userCannotCreateTeamDrives,

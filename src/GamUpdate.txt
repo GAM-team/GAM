@@ -2,6 +2,10 @@
 
 Merged GAM-Team version
 
+6.65.15
+
+Added additional options to `gam <UserTypeEntity> print|show youtubechannels`.
+
 6.65.14
 
 Fixed bug in gam <UserTypeEntity> copy|move drivefile` that caused a trap.

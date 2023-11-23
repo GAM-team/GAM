@@ -16,44 +16,7 @@
 <FalseValues>= false|off|no|disabled|0
 <TrueValues> ::= true|on|yes|enabled|1
 
-<Charset> ::= ascii|latin1|mbcs|utf-8|utf-8-sig|utf-16|<String>
-<CalendarColorIndex> ::= <Number in range 1-24>
-<CalendarColorName> ::=
-        amethyst|avocado|banana|basil|birch|blueberry|
-        cherryblossom|citron|cobalt|cocoa|eucalyptus|flamingo|
-        grape|graphite|lavender|mango|peacock|pistachio|
-        pumpkin|radicchio|sage|tangerine|tomato|wisteria|
-<ColorHex> ::= "#<Hex><Hex><Hex><Hex><Hex><Hex>"
-<ColorNameGoogle> ::=
-        asparagus|bluevelvet|bubblegum|cardinal|chocolateicecream|denim|desertsand|
-        earthworm|macaroni|marsorange|mountaingray|mountaingrey|mouse|oldbrickred|
-        pool|purpledino|purplerain|rainysky|seafoam|slimegreen|spearmint|
-        toyeggplant|vernfern|wildstrawberries|yellowcab
-<ColorNameWeb> ::=
-        aliceblue|antiquewhite|aqua|aquamarine|azure|beige|bisque|black|blanchedalmond|
-        blue|blueviolet|brown|burlywood|cadetblue|chartreuse|chocolate|coral|
-        cornflowerblue|cornsilk|crimson|cyan|darkblue|darkcyan|darkgoldenrod|darkgray|
-        darkgrey|darkgreen|darkkhaki|darkmagenta|darkolivegreen|darkorange|darkorchid|
-        darkred|darksalmon|darkseagreen|darkslateblue|darkslategray|darkslategrey|
-        darkturquoise|darkviolet|deeppink|deepskyblue|dimgray|dimgrey|dodgerblue|
-        firebrick|floralwhite|forestgreen|fuchsia|gainsboro|ghostwhite|gold|goldenrod|
-        gray|grey|green|greenyellow|honeydew|hotpink|indianred|indigo|ivory|khaki|
-        lavender|lavenderblush|lawngreen|lemonchiffon|lightblue|lightcoral|lightcyan|
-        lightgoldenrodyellow|lightgray|lightgrey|lightgreen|lightpink|lightsalmon|
-        lightseagreen|lightskyblue|lightslategray|lightslategrey|lightsteelblue|
-        lightyellow|lime|limegreen|linen|magenta|maroon|mediumaquamarine|mediumblue|
-        mediumorchid|mediumpurple|mediumseagreen|mediumslateblue|mediumspringgreen|
-        mediumturquoise|mediumvioletred|midnightblue|mintcream|mistyrose|moccasin|
-        navajowhite|navy|oldlace|olive|olivedrab|orange|orangered|orchid|
-        palegoldenrod|palegreen|paleturquoise|palevioletred|papayawhip|peachpuff|
-        peru|pink|plum|powderblue|purple|red|rosybrown|royalblue|saddlebrown|salmon|
-        sandybrown|seagreen|seashell|sienna|silver|skyblue|slateblue|slategray|
-        slategrey|snow|springgreen|steelblue|tan|teal|thistle|tomato|turquoise|violet|
-        wheat|white|whitesmoke|yellow|yellowgreen
-<ColorName> ::= <ColorNameGoogle>|<ColorNameWeb>
-<ColorValue> ::= <ColorName>|<ColorHex>
-<DayOfWeek> ::= mon|tue|wed|thu|fri|sat|sun
-<DriveLabelLanguageCode> ::=
+<BCP47LanguageCode> ::=
         ar-sa| # Arabic Saudi Arabia
         cs-cz| # Czech Czech Republic
         da-dk| # Danish Denmark
@@ -91,6 +54,43 @@
         zh-cn| # Chinese China
         zh-hk| # Chinese Hong Kong
         zh-tw  # Chinese Taiwan
+<Charset> ::= ascii|latin1|mbcs|utf-8|utf-8-sig|utf-16|<String>
+<CalendarColorIndex> ::= <Number in range 1-24>
+<CalendarColorName> ::=
+        amethyst|avocado|banana|basil|birch|blueberry|
+        cherryblossom|citron|cobalt|cocoa|eucalyptus|flamingo|
+        grape|graphite|lavender|mango|peacock|pistachio|
+        pumpkin|radicchio|sage|tangerine|tomato|wisteria|
+<ColorHex> ::= "#<Hex><Hex><Hex><Hex><Hex><Hex>"
+<ColorNameGoogle> ::=
+        asparagus|bluevelvet|bubblegum|cardinal|chocolateicecream|denim|desertsand|
+        earthworm|macaroni|marsorange|mountaingray|mountaingrey|mouse|oldbrickred|
+        pool|purpledino|purplerain|rainysky|seafoam|slimegreen|spearmint|
+        toyeggplant|vernfern|wildstrawberries|yellowcab
+<ColorNameWeb> ::=
+        aliceblue|antiquewhite|aqua|aquamarine|azure|beige|bisque|black|blanchedalmond|
+        blue|blueviolet|brown|burlywood|cadetblue|chartreuse|chocolate|coral|
+        cornflowerblue|cornsilk|crimson|cyan|darkblue|darkcyan|darkgoldenrod|darkgray|
+        darkgrey|darkgreen|darkkhaki|darkmagenta|darkolivegreen|darkorange|darkorchid|
+        darkred|darksalmon|darkseagreen|darkslateblue|darkslategray|darkslategrey|
+        darkturquoise|darkviolet|deeppink|deepskyblue|dimgray|dimgrey|dodgerblue|
+        firebrick|floralwhite|forestgreen|fuchsia|gainsboro|ghostwhite|gold|goldenrod|
+        gray|grey|green|greenyellow|honeydew|hotpink|indianred|indigo|ivory|khaki|
+        lavender|lavenderblush|lawngreen|lemonchiffon|lightblue|lightcoral|lightcyan|
+        lightgoldenrodyellow|lightgray|lightgrey|lightgreen|lightpink|lightsalmon|
+        lightseagreen|lightskyblue|lightslategray|lightslategrey|lightsteelblue|
+        lightyellow|lime|limegreen|linen|magenta|maroon|mediumaquamarine|mediumblue|
+        mediumorchid|mediumpurple|mediumseagreen|mediumslateblue|mediumspringgreen|
+        mediumturquoise|mediumvioletred|midnightblue|mintcream|mistyrose|moccasin|
+        navajowhite|navy|oldlace|olive|olivedrab|orange|orangered|orchid|
+        palegoldenrod|palegreen|paleturquoise|palevioletred|papayawhip|peachpuff|
+        peru|pink|plum|powderblue|purple|red|rosybrown|royalblue|saddlebrown|salmon|
+        sandybrown|seagreen|seashell|sienna|silver|skyblue|slateblue|slategray|
+        slategrey|snow|springgreen|steelblue|tan|teal|thistle|tomato|turquoise|violet|
+        wheat|white|whitesmoke|yellow|yellowgreen
+<ColorName> ::= <ColorNameGoogle>|<ColorNameWeb>
+<ColorValue> ::= <ColorName>|<ColorHex>
+<DayOfWeek> ::= mon|tue|wed|thu|fri|sat|sun
 <EventColorIndex> ::= <Number in range 1-11>
 <EventColorName> ::=
         banana|basil|blueberry|flamingo|graphite|grape|

@@ -59,7 +59,7 @@ If an item contains spaces, it should be surrounded by ".
 <ColorName> ::= <ColorNameGoogle>|<ColorNameWeb>
 <ColorValue> ::= <ColorName>|<ColorHex>
 <DayOfWeek> ::= mon|tue|wed|thu|fri|sat|sun
-<DriveLabelLanguageCode> ::=
+<BCP47LanguageCode> ::=
         ar-sa| # Arabic Saudi Arabia
         cs-cz| # Czech Czech Republic
         da-dk| # Danish Denmark
@@ -1558,9 +1558,17 @@ gam calendar <CalendarEntity> printacl [todrive <ToDriveAttribute>*]
 <AttendeeAttendance> ::= optional|required
 <AttendeeStatus> ::= accepted|declined|needsaction|tentative
 
+<EventType> ::=
+        default|
+        focustime|
+        outofoffice|
+        workinglocation
+<EventTypeList> ::= "<EventType>(,<EventType>)*"
+
 <EventSelectProperty> ::=
         (after|starttime|timemin <Time>)|
         (before|endtime|timemax <Time>)|
+        (eventtypes <EventTypeList>)|
         (query <QueryCalendar>)|
         (privateextendedproperty <String>)|
         (sharedextendedproperty <Syting>)|
@@ -1635,11 +1643,7 @@ gam calendar <CalendarEntity> printacl [todrive <ToDriveAttribute>*]
         tentative|
         (timezone <TimeZone>)|
         (transparency opaque|transparent)|
-        (visibility default|public|private)|
-        (workinglocation (home|
-                          (custom <String>)|
-                          (office <String> [building|buildingid <String>] [floor|floorname <String>]
-                          [section|floorsection <String>] [desk|deskcode <String>])))
+        (visibility default|public|private)
 
 The following attributes are equivalent:
         available - transparency transparent
@@ -1719,11 +1723,20 @@ gam calendar|calendars <CalendarEntity> empty calendartrash
         creator.id|
         creator.self
 
+<EventFocusTimePropertiesSubfieldName> ::=
+        focustime.autodeclinemode|
+        focustime.chatstatus|
+        focustime.declinemessage
+
 <EventOrganizerSubfieldName> ::=
         organizer.displayname|
         organizer.email|
         organizer.id|
         organizer.self
+
+<EventOutOfOfficePropertiesSubfieldName> ::=
+        outofoffice.autodeclinemode|
+        outofoffice.declinemessage
 
 <EventWorkingLocationPropertiesSubfieldName> ::=
         workinglocationproperties.homeoffice|
@@ -1748,6 +1761,8 @@ gam calendar|calendars <CalendarEntity> empty calendartrash
         endtimeunspecified|
         extendedproperties|
         eventtype|
+        focustimeproperties|
+        <EventFocusTimePropertiesSubfieldName>|
         gadget|
         guestscaninviteothers|
         guestscanmodify|
@@ -1761,6 +1776,8 @@ gam calendar|calendars <CalendarEntity> empty calendartrash
         organizer|
         <EventOrganizerSubfieldName>|
         originalstart|originalstarttime|
+        outofofficeproperties|
+        <EventOutOfOfficePropertiesSubfieldName>
         privatecopy|
         recurrence|
         recurringeventid|
@@ -5534,12 +5551,20 @@ gam <UserTypeEntity> transfer seccals <UserItem> [keepuser] [sendnotifications <
 <AttendeeAttendance> ::= optional|required
 <AttendeeStatus> ::= accepted|declined|needsaction|tentative
 
+<EventType> ::=
+        default|
+        focustime|
+        outofoffice|
+        workinglocation
+<EventTypeList> ::= "<EventType>(,<EventType>)*"
+
 <EventSelectProperty> ::=
         (after|starttime|timemin <Time>)|
         (before|endtime|timemax <Time>)|
+        (eventtypes <EventTypeList>)|
         (query <QueryCalendar>)|
         (privateextendedproperty <String>)|
-        (sharedextendedproperty <Syting>)|
+        (sharedextendedproperty <String>)|
         showdeletedevents|
         showhiddeninvitations|
         singleevents|
@@ -6129,15 +6154,15 @@ gam <UserTypeEntity> delete permissions <DriveFileEntity> <DriveFilePermissionID
         <PermissionMatch>* [<PermissionMatchAction>]
 
 gam [<UserTypeEntity>] info drivelabels <DriveLabelNameEntity>
-        [[basic|full] [languagecode <DriveLabelLanguageCode>]
+        [[basic|full] [languagecode <BCP47LanguageCode>]
         [formatjson] [adminaccess|asadmin]
 
 gam [<UserTypeEntity>] print <drivelabels> [todrive <ToDriveAttribute>*]
-        [basic|full] [languagecode <DriveLabelLanguageCode>]
+        [basic|full] [languagecode <BCP47LanguageCode>]
         [publishedonly [<Boolean>]] [minimumrole applier|editor|organizer|reader]
         [formatjson [quotechar <Character>]] [adminaccess|asadmin]
 gam [<UserTypeEntity>] show drivelabels
-        [basic|full] [languagecode <DriveLabelLanguageCode>]
+        [basic|full] [languagecode <BCP47LanguageCode>]
         [publishedonly [<Boolean>]] [minimumrole applier|editor|organizer|reader]
         [formatjson] [adminaccess|asadmin]
 
@@ -7648,11 +7673,19 @@ gam print tokens|token [todrive <ToDriveAttribute>*] [clientid <ClientID>]
 <YouTubeChannelFieldNameList> ::= "<YouTubeChannelFieldName>(,<YouTubeChannelFieldName>)*"
 
 gam <UserTypeEntity> show youtubechannels
-        [channels <YouTubeChannelIDList>]
+        (mine|
+         (ids|channels <YouTubeChannelIDList>)|
+         (forusername <String>)|
+         (managedbyme <String>))
+        [languagecode <BCP47LanguageCode>]
         [allfields|(fields <YouTubeChannelFieldNameList>)]
         [formatjson]
 gam <UserTypeEntity> print youtubechannels [todrive <ToDriveAttribute>*]
-        [channels <YouTubeChannelIDList>]
+        (mine|
+         (ids|channels <YouTubeChannelIDList>)|
+         (forusername <String>)|
+         (managedbyme <String>))
+        [languagecode <BCP47LanguageCode>]
         [allfields|(fields <YouTubeChannelFieldNameList>)]
         [formatjson [quotechar <Character>]]
 
