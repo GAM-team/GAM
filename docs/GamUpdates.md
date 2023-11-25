@@ -10,6 +10,24 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.65.17
+
+Added the option `mappermissionsdomain <DomainName1> <DomainName2>` to `gam <UserTypeEntity> create drivefileacl <DriveFileEntity>`
+that maps `<DomainName1>` to `<DomainName2>` in the `user <UserItem>)|(group <GroupItem>)|(domain <DomainName>)` options;
+`<UserItem>` and `<GroupItem>` must specify email addresses for the mapping to succeed.
+The option can be specified multiple times to provide different mappings. This option will be most useful
+when reading a CSV file containing ACLs referencing `<DomainName1>` and you want a new ACL with the same options but in `<DomainName2>`.
+
+### 6.65.16
+
+Fixed bug in `gam <UserTypeEntity> print filecounts` where `Item Cap` showed an incorrect value.
+
+Added option `addorigfieldstosubject` to `gam <UserTypeEntity> forward messages|threads` that causes GAM
+to append  the original `from`, `to` and `date` fields to the message subject.
+```
+Fwd: Ross to TestUser (Original From: Ross Scroggs <ross.scroggs@gmail.com> To: testuser@domain.com Date: Thu, 23 Nov 2023 07:01:59 -0800)
+```
+
 ### 6.65.15
 
 Added additional options to `gam <UserTypeEntity> print|show youtubechannels`.

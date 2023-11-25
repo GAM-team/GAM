@@ -17,6 +17,12 @@
 - [Empty calendar trash](#empty-calendar-trash)
 - [Display calendar events](#display-calendar-events)
 - [Update calendar event attendees](#update-calendar-event-attendees)
+- [Focus time events](#focus-time-events)
+  - [Manage focus time events](#manage-focus-time-events)
+  - [Display focus time events](#display-focus-time-events)
+- [Out of officeevents](#out-of-office-events)
+  - [Manage Out of office events](#manage-out-of-office-events)
+  - [Display Out of officeevents](#display-out-of-office-events)
 - [Working location events](#working-location-events)
   - [Manage working location events](#manage-working-location-events)
   - [Display working location events](#display-working-location-events)
@@ -166,11 +172,20 @@
         creator.id|
         creator.self
 
+<EventFocusTimePropertiesSubfieldName> ::=
+        focustimeproperties.chatstatus|
+        focustimeproperties.declinemode|
+        focustimeproperties.declinemessage
+
 <EventOrganizerSubfieldName> ::=
         organizer.displayname|
         organizer.email|
         organizer.id|
         organizer.self
+
+<EventOutOfOfficePropertiesSubfieldName> ::=
+        outofoffice.declinemode|
+        outofoffice.declinemessage
 
 <EventWorkingLocationPropertiesSubfieldName> ::=
         workinglocationproperties.homeoffice|
@@ -195,6 +210,7 @@
         endtimeunspecified|
         extendedproperties|
         eventtype|
+        <EventFocusTimePropertiesSubfieldName>
         gadget|
         guestscaninviteothers|
         guestscanmodify|
@@ -208,6 +224,7 @@
         organizer|
         <EventOrganizerSubfieldName>|
         originalstart|originalstarttime|
+        <EventOutOfOfficePropertiesSubfieldName>
         privatecopy|
         recurrence|
         recurringeventid|
@@ -228,9 +245,17 @@
 <AttendeeStatus> ::= accepted|declined|needsaction|tentative
 ```
 ```
+<EventType> ::=
+        default|
+        focustime|
+        outofoffice|
+        workinglocation
+<EventTypeList> ::= "<EventType>(,<EventType>)*"
+
 <EventSelectProperty> ::=
         (after|starttime|timemin <Time>)|
         (before|endtime|timemax <Time>)|
+        (eventtypes <EventTypeList>)|
         (query <QueryCalendar>)|
         (privateextendedproperty <String>)|
         (sharedextendedproperty <String>)|
@@ -285,6 +310,7 @@
         (colorindex|colorid <EventColorIndex>)|
         (description <String>)|
         (end (allday <Date>)|<Time>)|
+        (focustime [declinemode none|all|new] [declinemessage <String>] [chatstatus available|donotdisturb])|
         (guestscaninviteothers <Boolean>)|
         guestscantinviteothers|
         (guestscanmodify <Boolean>)|
@@ -298,6 +324,7 @@
         (noreminders|(reminder email|popup <Number>))|
         (optionalattendee <EmailAddress>)|
         (originalstart|originalstarttime (allday <Date>)|<Time>)|
+        (outofoffice [declinemode none|all|new] [declinemessage <String>])|
         (privateproperty <PropertyKey> <PropertyValue>)|
         (recurrence <RRULE, EXRULE, RDATE and EXDATE line>)|
         (reminder <Number> email|popup))|
@@ -362,10 +389,12 @@ This is dense reading; a simpler approach is to define a test event in Google Ca
 the recurrence rule that you want, then use `gam calendar <EmailAddress> info events eventid <EventId>` to get the recurrence rule and use it in subsequent commands.
 
 ```
-RRULE:FREQ=DAILY
-RRULE:FREQ=DAILY;COUNT=30
-RRULE:FREQ=WEEKLY;BYDAY=WE
-RRULE:FREQ=WEEKLY;WKST=SU;COUNT=13;BYDAY=WE
+RRULE:FREQ=DAILY - Daily
+RRULE:FREQ=DAILY;COUNT=30 - Daily for 30 days
+RRULE:FREQ=WEEKLY - Weekly on the same day of the week as the starting day; e.g., every Wednesday
+RRULE:FREQ=WEEKLY;COUNT=13 - Weekly on the same day of the week as the starting day; e.g., every Wednesday, for 13 weeks
+RRULE:FREQ=MONTHLY - Monthly on the same day of the month as the starting day; e.g., every 15th of the month
+RRULE:FREQ=MONTHLY;BYDAY=4TH - Monthly on the fourth instance of the starting day; e.g., every 4th Thursday
 ```
 
 ## Event colors
@@ -691,6 +720,103 @@ option causes GAM to make two updates to the attendee list; the first removes th
 the second adds the primary email.
 
 The attendee changes are displayed but not processed unless `doit` is specified.
+
+## Focus time events
+
+## Manage focus time events
+You can create and delete focus time events; they can not be updated.
+To update a working location event, delete the working location event and recreate it.
+```
+gam <UserTypeEntity> create focustime
+        [chatstatus available|donotdisturb]|
+        [declinemode none|all|new] [declinemessage <String>]|
+        (timerange <Time> <Time>)+
+
+gam <UserTypeEntity> delete focustime
+        (timerange <Time> <Time>)+
+```
+
+focus time events span a time range:
+* `timerange <Time> <Time>` - A time range, may span multiple days
+
+## Display focus time events
+```
+gam <UserTypeEntity> show focustime
+        (timerange <Time> <Time>)+
+        [showdayofweek]
+        [formatjson]
+```
+`showdayofweek` displays `dayOfWeek` when event start and end times are displayed.
+
+By default, Gam displays the information as an indented list of keys and values.
+* `formatjson` - Display the fields in JSON format.
+
+```
+gam <UserTypeEntity> print focustime
+        (timerange <Time> <Time>)+
+        [showdayofweek]
+        [formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
+```
+`showdayofweek` displays columns `start.dayOfWeek` and `end.dayOfWeek` when event start and end times are displayed.
+
+By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
+* `formatjson` - Display the fields in JSON format.
+
+By default, Gam displays event details, use `countsonly` to display only the number of events. `formatjson` does not apply in this case.
+
+By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
+the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
+When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
+The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
+`quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
+
+## Out of office events
+
+## Manage out of office events
+You can create and delete out of office events; they can not be updated.
+To update a working location event, delete the working location event and recreate it.
+```
+gam <UserTypeEntity> create outofoffice
+        [declinemode none|all|new] [declinemessage <String>]|
+        (timerange <Time> <Time>)+
+
+gam <UserTypeEntity> delete outofoffice
+        (timerange <Time> <Time>)+
+```
+
+out of office events span a time range:
+* `timerange <Time> <Time>` - A time range, may span multiple days
+
+## Display out of office events
+```
+gam <UserTypeEntity> show outofoffice
+        (timerange <Time> <Time>)+
+        [showdayofweek]
+        [formatjson]
+```
+`showdayofweek` displays `dayOfWeek` when event start and end times are displayed.
+
+By default, Gam displays the information as an indented list of keys and values.
+* `formatjson` - Display the fields in JSON format.
+
+```
+gam <UserTypeEntity> print outofoffice
+        (timerange <Time> <Time>)+
+        [showdayofweek]
+        [formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
+```
+`showdayofweek` displays columns `start.dayOfWeek` and `end.dayOfWeek` when event start and end times are displayed.
+
+By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
+* `formatjson` - Display the fields in JSON format.
+
+By default, Gam displays event details, use `countsonly` to display only the number of events. `formatjson` does not apply in this case.
+
+By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
+the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
+When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
+The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
+`quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
 ## Working location events
 

@@ -1082,7 +1082,7 @@ def getLabelColor(colorType):
     invalidArgumentExit('|'.join(colorType))
   missingArgumentExit(Cmd.OB_LABEL_COLOR_HEX)
 
-# Language codes used in Drive Labels
+# Language codes used in Drive Labels/Youtube
 BCP47_LANGUAGE_CODES_MAP = {
   'ar-sa': 'ar-SA', 'cs-cz': 'cs-CZ', 'da-dk': 'da-DK', 'de-de': 'de-DE', #Arabic Saudi Arabia, Czech Czech Republic, Danish Denmark, German Germany
   'el-gr': 'el-GR', 'en-au': 'en-AU', 'en-gb': 'en-GB', 'en-ie': 'en-IE', #Modern Greek Greece, English Australia, English United Kingdom, English Ireland
@@ -35639,6 +35639,14 @@ def _getCalendarEventAttribute(myarg, body, parameters, function):
     body['originalStart'] = getEventTime()
   elif myarg in {'end', 'endtime'}:
     body['end'] = getEventTime()
+  elif myarg == 'allday':
+    body['start'] = body['end'] = {'date': getYYYYMMDD()}
+  elif myarg == 'range':
+    body['start'] = {'date': getYYYYMMDD()}
+    body['end'] = {'date': getYYYYMMDD()}
+  elif myarg == 'timerange':
+    body['start'] = {'dateTime': getTimeOrDeltaFromNow()}
+    body['end'] = {'dateTime': getTimeOrDeltaFromNow()}
   elif myarg == 'attachment':
     body.setdefault('attachments', [])
     body['attachments'].append({'title': getString(Cmd.OB_STRING), 'fileUrl': getString(Cmd.OB_URL)})
@@ -35750,8 +35758,6 @@ def _getCalendarEventAttribute(myarg, body, parameters, function):
     body['extendedProperties'].setdefault('shared', {})
     key = getString(Cmd.OB_PROPERTY_KEY)
     body['extendedProperties']['shared'][key] = getString(Cmd.OB_PROPERTY_VALUE, minLen=0)
-  elif myarg == 'workinglocation':
-    getWorkingLocationProperties(body)
   elif function == 'update' and myarg == 'clearprivateproperty':
     body.setdefault('extendedProperties', {})
     body['extendedProperties'].setdefault('private', {})
@@ -36504,6 +36510,7 @@ EVENT_FIELDS_CHOICE_MAP = {
   'endtime': 'end',
   'endtimeunspecified': 'endTimeUnspecified',
   'extendedproperties': 'extendedProperties',
+  'focustimeproperties': 'focusTimeProperties',
   'gadget': 'gadget',
   'guestscaninviteothers': 'guestsCanInviteOthers',
   'guestscanmodify': 'guestsCanModify',
@@ -36519,6 +36526,7 @@ EVENT_FIELDS_CHOICE_MAP = {
   'organiser': 'organizer',
   'originalstart': 'originalStartTime',
   'originalstarttime': 'originalStartTime',
+  'outofofficeproperties': 'outOfOfficeProperties',
   'privatecopy': 'privateCopy',
   'recurrence': 'recurrence',
   'recurringeventid': 'recurringEventId',
@@ -36573,11 +36581,22 @@ EVENT_CREATOR_SUBFIELDS_CHOICE_MAP = {
   'self': 'self',
   }
 
+EVENT_FOCUSTIME_SUBFIELDS_CHOICE_MAP = {
+  'autodeclinemode': 'autoDeclineMode',
+  'chatstatus': 'chatStatus',
+  'declinemessage': 'declineMessage',
+  }
+
 EVENT_ORGANIZER_SUBFIELDS_CHOICE_MAP = {
   'displayname': 'displayName',
   'email': 'email',
   'id': 'id',
   'self': 'self',
+  }
+
+EVENT_OUTOFOFFICE_SUBFIELDS_CHOICE_MAP = {
+  'autodeclinemode': 'autoDeclineMode',
+  'declinemessage': 'declineMessage',
   }
 
 EVENT_WORKINGLOCATION_SUBFIELDS_CHOICE_MAP = {
@@ -36591,8 +36610,10 @@ EVENT_SUBFIELDS_CHOICE_MAP = {
   'attendees': EVENT_ATTENDEES_SUBFIELDS_CHOICE_MAP,
   'conferencedata': EVENT_CONFERENCEDATA_SUBFIELDS_CHOICE_MAP,
   'creator': EVENT_CREATOR_SUBFIELDS_CHOICE_MAP,
+  'focustimeproperties': EVENT_FOCUSTIME_SUBFIELDS_CHOICE_MAP,
   'organizer': EVENT_ORGANIZER_SUBFIELDS_CHOICE_MAP,
   'organiser': EVENT_ORGANIZER_SUBFIELDS_CHOICE_MAP,
+  'outofofficeproperties': EVENT_OUTOFOFFICE_SUBFIELDS_CHOICE_MAP,
   'workinglocationproperties': EVENT_WORKINGLOCATION_SUBFIELDS_CHOICE_MAP,
 }
 
@@ -53013,7 +53034,7 @@ def printShowFileCounts(users):
       Ind.Decrement()
     else:
       if sharedDriveId:
-        row = {'User': user, 'id': sharedDriveId, 'name': sharedDriveName, 'Total': countTotal, 'Item cap': f"{sizeTotal/SHARED_DRIVE_MAX_FILES_FOLDERS:.2%}"}
+        row = {'User': user, 'id': sharedDriveId, 'name': sharedDriveName, 'Total': countTotal, 'Item cap': f"{countTotal/SHARED_DRIVE_MAX_FILES_FOLDERS:.2%}"}
       else:
         row = {'User': user, 'Total': countTotal}
       if showSize:
@@ -59020,6 +59041,7 @@ def _checkFileIdEntityDomainAccess(fileIdEntity, useDomainAdminAccess):
 # gam [<UserTypeEntity>] create drivefileacl <DriveFileEntity> [adminaccess|asadmin]
 #	anyone|(user <UserItem>)|(group <GroupItem>)|(domain <DomainName>)  (role <DriveFileACLRole>)]
 #	[withlink|(allowfilediscovery|discoverable [<Boolean>])] [expiration <Time>]
+#	(mappermissionsdomain <DomainName> <DomainName>)*
 #	[moveToNewOwnersRoot [<Boolean>]]
 #	[updatesheetprotectedranges  [<Boolean>]]
 #	[sendemail] [emailmessage <String>]
@@ -59035,14 +59057,15 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
   fileNameTitle = 'title' if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES] else 'name'
   fileIdEntity = getDriveFileEntity()
   body = {}
-  body['type'] = getChoice(DRIVEFILE_ACL_PERMISSION_TYPES)
-  if body['type'] != 'anyone':
-    if body['type'] != 'domain':
+  body['type'] = permType = getChoice(DRIVEFILE_ACL_PERMISSION_TYPES)
+  if permType != 'anyone':
+    if permType != 'domain':
       body['emailAddress'] = permissionId = getEmailAddress()
     else:
       body['domain'] = permissionId = getString(Cmd.OB_DOMAIN_NAME)
   else:
     permissionId = 'anyone'
+  mapPermissionsDomains = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'withlink':
@@ -59056,6 +59079,9 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
       body['role'] = getChoice(DRIVEFILE_ACL_ROLES_MAP, mapChoice=True)
       if body['role'] == 'owner':
         sendNotificationEmail = _transferOwnership = True
+    elif myarg == 'mappermissionsdomain':
+      oldDomain = getString(Cmd.OB_DOMAIN_NAME).lower()
+      mapPermissionsDomains[oldDomain] = getString(Cmd.OB_DOMAIN_NAME).lower()
     elif myarg == 'enforcesingleparent':
       deprecatedArgument(myarg)
     elif myarg == 'movetonewownersroot':
@@ -59086,6 +59112,18 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
   _checkFileIdEntityDomainAccess(fileIdEntity, useDomainAdminAccess)
   if 'role' not in body:
     missingArgumentExit(f'role {formatChoiceList(DRIVEFILE_ACL_ROLES_MAP)}')
+  if mapPermissionsDomains:
+    if permType != 'anyone':
+      if permType != 'domain':
+        atLoc = permissionId.find('@')
+        if atLoc != -1:
+          mappedDomain = mapPermissionsDomains.get(permissionId[atLoc+1:], None)
+          if mappedDomain:
+            body['emailAddress'] = permissionId = f"{permissionId[:atLoc]}@{mappedDomain}"
+      else:
+        mappedDomain = mapPermissionsDomains.get(permissionId, None)
+        if mappedDomain:
+          body['domain'] = permissionId = mappedDomain
   _validatePermissionOwnerType(roleLocation, body)
   _validatePermissionAttributes('allowfilediscovery/withlink', withLinkLocation, body, 'allowFileDiscovery', ['anyone', 'domain'])
   _validatePermissionAttributes('expiration', expirationLocation, body, 'expirationTime', ['user', 'group'])
@@ -65227,10 +65265,10 @@ def _decodeHeader(header):
 
 # gam <UserTypeEntity> forward message|messages recipient|to <RecipientEntity>
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_forward <Number>])|(ids <MessageIDEntity>)
-#	[subject <String>] [altcharset <String>]
+#	[subject <String>] [addorigfieldstosubject [<Boolean>]] [altcharset <String>]
 # gam <UserTypeEntity> forward thread|threads recipient|to <RecipientEntity>
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_forward <Number>])|(ids <ThreadIDEntity>)
-#	[subject <String>] [altcharset <String>]
+#	[subject <String>] [addorigfieldstosubject [<Boolean>]] [altcharset <String>]
 def forwardMessagesThreads(users, entityType):
   def getRecipients():
     if checkArgumentPresent('select'):
@@ -65241,7 +65279,7 @@ def forwardMessagesThreads(users, entityType):
   checkArgumentPresent({'recipient', 'recipients', 'to'})
   recipients = getRecipients()
   parameters = _initMessageThreadParameters(entityType, False, 1)
-  includeSpamTrash = False
+  addOriginalFieldsToSubject = includeSpamTrash = False
   subject = ''
   encodings = [UTF8]
   while Cmd.ArgumentsRemaining():
@@ -65250,6 +65288,8 @@ def forwardMessagesThreads(users, entityType):
       pass
     elif myarg == 'subject':
       subject = getString(Cmd.OB_STRING)
+    elif myarg == 'addorigfieldstosubject':
+      addOriginalFieldsToSubject = getBoolean()
     elif myarg == 'altcharset':
       encodings.append(getString(Cmd.OB_CHAR_SET))
     else:
@@ -65338,6 +65378,12 @@ def forwardMessagesThreads(users, entityType):
             if header in message:
               del message[header]
           message['To'] = msgTo
+          if addOriginalFieldsToSubject:
+            msgSubject += ' (Original'
+            for header in ['From', 'To', 'Date']:
+              if header in message:
+                msgSubject += f' {header}: {message[header]}'
+            msgSubject += ')'
           message['Subject'] = msgSubject
           try:
             result = callGAPI(gmail.users().messages(), 'send',
@@ -67330,12 +67376,6 @@ EMAILSETTINGS_FORWARD_POP_ACTION_CHOICE_MAP = {
   'trash': 'trash',
   }
 
-# gam <UserTypeEntity> forward message|messages recipient|to <RecipientEntity>
-#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_forward <Number>])|(ids <MessageIDEntity>)
-#	[subject <String>]
-# gam <UserTypeEntity> forward thread|threads recipient|to <RecipientEntity>
-#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_forward <Number>])|(ids <ThreadIDEntity>)
-#	[subject <String>]
 # gam <UserTypeEntity> forward <FalseValues>
 # gam <UserTypeEntity> forward <TrueValues> keep|leaveininbox|archive|delete|trash|markread <EmailAddress>
 def setForward(users):

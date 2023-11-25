@@ -129,11 +129,18 @@ specify `basicpermissions` and additional permission fields, e.g., `permissions.
 gam <UserTypeEntity> create|add drivefileacl <DriveFileEntity>
         anyone|(user <UserItem>)|(group <GroupItem>)|(domain <DomainName>) (role <DriveFileACLRole>)
         [withlink|(allowfilediscovery|discoverable [<Boolean>])] [expiration <Time>]
+        (mappermissionsdomain <DomainName> <DomainName>)*
         [movetonewownersroot [<Boolean>]]
         [sendemail] [emailmessage <String>]
         [updatesheetprotectedranges [<Boolean>]]
         [showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
 ```
+The option `mappermissionsdomain <DomainName1> <DomainName2>` maps `<DomainName1>` to `<DomainName2>` in the
+`user <UserItem>)|(group <GroupItem>)|(domain <DomainName>)` options;
+`<UserItem>` and `<GroupItem>` must specify email addresses for the mapping to succeed.
+The option can be specified multiple times to provide different mappings. This option will be most useful
+when reading a CSV file containing ACLs referencing `<DomainName1>` and you want a new ACL with the same options but in `<DomainName2>`.
+
 From the Google Drive API documentation.
 * `movetonewownersroot` - This parameter only takes effect if the item is not in a shared drive and the request is attempting to transfer the ownership of the item.
   * `false` - Parents are not changed. The file is an orphan for the new owner. This is the default.

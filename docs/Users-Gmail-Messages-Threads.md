@@ -372,16 +372,21 @@ See below for message selection.
 gam <UserTypeEntity> forward message|messages recipient|to <RecipientEntity>
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [quick|notquick] [doit] [max_to_forward <Number>])|(ids <MessageIDEntity>)
-         [subject <String>]
+         [subject <String>] [addorigfieldstosubject]
 gam <UserTypeEntity> forward thread|threads recipient|to <RecipientEntity>
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [quick|notquick] [doit] [max_to_forward <Number>])|(ids <ThreadIDEntity>)
-         [subject <String>]
+         [subject <String>] [addorigfieldstosubject]
 ```
 
 By default, the message subject has `Fwd: ` prepended; use `subject <String>` to specify a new subject.
 
 All `Cc` addresses are removed from the forwarded message.
+
+If `addorigfieldstosubject` is specified, GAM appends the original `from`, `to` and `date` fields to the message subject.
+```
+Fwd: Ross to TestUser (Original From: Ross Scroggs <ross.scroggs@gmail.com> To: testuser@domain.com Date: Thu, 23 Nov 2023 07:01:59 -0800)
+```
 
 See below for message selection.
 

@@ -4589,6 +4589,7 @@ In these commands, the Google administrator named in oauth2.txt is used.
 gam create|add drivefileacl <SharedDriveEntityAdmin>
         anyone|(user <UserItem>)|(group <GroupItem>)|(domain <DomainName>)
         (role <DriveFileACLRole>) [withlink|(allowfilediscovery|discoverable [<Boolean>])]
+        (mappermissionsdomain <DomainName> <DomainName>)*
         [expiration <Time>] [sendemail] [emailmessage <String>]
         [showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
 gam update drivefileacl <SharedDriveEntityAdmin> <DriveFilePermissionIDorEmail>
@@ -4626,6 +4627,7 @@ In these commands, you specify an administrator and then indicate that you want 
 gam <UserTypeEntity> create|add drivefileacl <SharedDriveEntityAdmin>
         anyone|(user <UserItem>)|(group <GroupItem>)|(domain <DomainName>)
         (role <DriveFileACLRole>) [withlink|(allowfilediscovery|discoverable [<Boolean>])]
+        (mappermissionsdomain <DomainName> <DomainName>)*
         [movetonewownersroot [<Boolean>]]
         [expiration <Time>] [sendemail] [emailmessage <String>]
         [showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
@@ -6934,11 +6936,11 @@ gam <UserTypeEntity> export thread|threads
 gam <UserTypeEntity> forward message|messages recipient|to <RecipientEntity>
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [quick|notquick] [doit] [max_to_forward <Number>])|(ids <MessageIDEntity>)
-        [subject <String>] [altcharset <String>]
+        [subject <String>] [addorigfieldstosubject [<Boolean>]] [altcharset <String>]
 gam <UserTypeEntity> forward thread|thtreads recipient|to <RecipientEntity>
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          quick|notquick] [doit] [max_to_forward <Number>])|(ids <ThreadIDEntity>)
-        [subject <String>] [altcharset <String>]
+        [subject <String>] [addorigfieldstosubject [<Boolean>]] [altcharset <String>]
 
 gam <UserTypeEntity> show messages|threads
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])*
