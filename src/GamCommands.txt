@@ -1615,7 +1615,7 @@ gam calendar <CalendarEntity> printacl [todrive <ToDriveAttribute>*]
         (attendeestatus [<AttendeeAttendance>] [<AttendeeStatus>] <EmailAddress>)|
         available|
         (color <EventColorName>)|
-        (colorindex|colorid <EventColorIndex>))|
+        (colorindex|colorid <EventColorIndex>)|
         (description <String>)|
         (end|endtime (allday <Date>)|<Time>)|
         (guestscaninviteothers <Boolean>)|
@@ -1625,12 +1625,14 @@ gam calendar <CalendarEntity> printacl [todrive <ToDriveAttribute>*]
         guestscantseeotherguests|
         hangoutsmeet|
         <JSONData>|
-        (jsonattendees [charset <Charset>] <String>)|(jsonattendees file <FileName> [charset <Charset>])|
+        (jsonattendees [charset <Charset>] <String>)|
+        (jsonattendees file <FileName> [charset <Charset>])|
         (location <String>)|
         (noreminders|(reminder email|popup <Number>))|
         (optionalattendee <EmailAddress>)|
         (originalstart|originalstarttime (allday <Date>)|<Time>)|
         (privateproperty <PropertyKey> <PropertyValue>)|
+        (range <Date> <Date>)|
         (recurrence <RRULE, EXRULE, RDATE and EXDATE line>)|
         (reminder <Number> email|popup))|
         (selectattendees [<AttendeeAttendance>] [<AttendeeStatus>] <UserTypeEntity>)|
@@ -1641,6 +1643,7 @@ gam calendar <CalendarEntity> printacl [todrive <ToDriveAttribute>*]
         (status confirmed|tentative|cancelled)|
         (summary <String>)|
         tentative|
+        (timerange <Time> <Time>)|
         (timezone <TimeZone>)|
         (transparency opaque|transparent)|
         (visibility default|public|private)
@@ -2004,10 +2007,10 @@ gam print chatspaces [todrive <ToDriveAttribute>*]
 gam info chatmember member <ChatMember>
         [formatjson]
 gam show chatmembers <ChatSpace>
-        [showinvited [<Boolean>]] [filter <String>]
+        [showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
         [formatjson]
 gam print chatmembers [todrive <ToDriveAttribute>*] <ChatSpace>
-        [showinvited [<Boolean>]] [filter <String>]
+        [showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
         [formatjson [quotechar <Character>]]
 
 gam create chatmessage <ChatSpace>
@@ -5719,39 +5722,53 @@ gam <UserTypeEntity> update calattendees <UserCalendarEntity> <EventEntity> [any
         (updatestatus [<AttendeeAttendance>] [<AttendeeStatus>] <EmailAddress>)*
         (updateentitystatus [<AttendeeAttendance>] [<AttendeeStatus>] <EmailAddressEntity>)*
 
-Manage/Display Working Locations
+Manage/Display Status Events
 
+gam <UserTypeEntity> create focustime
+        [chatstatus available|donotdisturb]
+        [declinemode none|all|new]
+        [declinemessage <String>]
+        [summary <String>]
+        (timerange <Time> <Time> [recurrence <String>])+
+        [timezone <String>]
+gam <UserTypeEntity> create outofoffice
+        [declinemode none|all|new]
+        [declinemessage <String>]
+        [summary <String>]
+        (timerange <Time> <Time> [recurrence <String>])+
+        [timezone <String>]
 gam <UserTypeEntity> create workinglocation
         (home|
          (custom <String>)|
          (office <String> [building|buildingid <String>] [floor|floorname <String>]
-              [section|floorsection <String>] [desk|deskcode <String>]))
+           		  [section|floorsection <String>] [desk|deskcode <String>]))
         ((date yyyy-mm-dd)|
          (range yyyy-mm-dd yyyy-mm-dd)|
-         (daily yyyy-mm-dd <Number>)|
-         (weekly yyyy-mm-dd <Number>)|
+         (daily yyyy-mm-dd N)|
+         (weekly yyyy-mm-dd N)|
+         (timerange <Time> <Time>))+
+        [timezone <String>]
+
+gam <UserTypeEntity> delete focustime|outofoffice|workinglocation
+        ((date yyyy-mm-dd)|
+         (range yyyy-mm-dd yyyy-mm-dd)|
+         (daily yyyy-mm-dd N)|
+         (weekly yyyy-mm-dd N)|
          (timerange <Time> <Time>))+
 
-gam <UserTypeEntity> delete workinglocation
+gam <UserTypeEntity> show focustime|outofoffice|workinglocation
         ((date yyyy-mm-dd)|
          (range yyyy-mm-dd yyyy-mm-dd)|
-         (daily yyyy-mm-dd <Number>)|
-         (weekly yyyy-mm-dd <Number>)|
-         (timerange <Time> <Time>))+
-
-gam <UserTypeEntity> show workinglocation
-        ((date yyyy-mm-dd)|
-         (range yyyy-mm-dd yyyy-mm-dd)|
-         (daily yyyy-mm-dd <Number>)|
-         (weekly yyyy-mm-dd <Number>)|
+         (daily yyyy-mm-dd N)|
+         (weekly yyyy-mm-dd N)|
          (timerange <Time> <Time>))+
         [showdayofweek]
         [formatjson]
-gam <UserTypeEntity> print workinglocation
+gam <UserTypeEntity> print focustime|outofoffice|workinglocation
         ((date yyyy-mm-dd)|
          (range yyyy-mm-dd yyyy-mm-dd)|
-         (daily yyyy-mm-dd <Number>)|
-         (weekly yyyy-mm-dd <Number>)|
+         (daily yyyy-mm-dd N)|
+         (weekly yyyy-mm-dd N)|
          (timerange <Time> <Time>))+
         [showdayofweek]
         [formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
@@ -5806,18 +5823,22 @@ gam <UserTypeEntity> print chatspaces [todrive <ToDriveAttribute>*]
         [formatjson [quotechar <Character>]]
 
 gam <UserTypeEntity> create chatmember <ChatSpace>
-        [type human|bot]
-        ((user <UserItem>)|(members <UserTypeEntity>))*
+        [type human|bot] [role member|manager]
+        (user <UserItem>)* (members <UserTypeEntity>)*
+        (group <GroupItem>)* (groups <GroupEntity>)*
         [formatjson|returnidonly]
 gam <UserTypeEntity> delete chatmember <ChatSpace>
-        ((user <UserItem>)|(members <UserTypeEntity>))+
+        ((user <UserItem>)|(members <UserTypeEntity>)|
+         (group <GroupItem>)|(groups <GroupEntity>))+
 gam <UserTypeEntity> remove chatmember members <ChatMemberList>
 
 gam <UserTypeEntity> info chatmember members <ChatMemberList>
         [formatjson]
 gam <UserTypeEntity> show chatmembers <ChatSpace>
+        [showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
         [formatjson]
 gam <UserTypeEntity> print chatmembers [todrive <ToDriveAttribute>*] <ChatSpace>
+        [showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
         [formatjson [quotechar <Character>]]
 
 gam <UserTypeEntity> create chatmessage <ChatSpace>

@@ -17,15 +17,10 @@
 - [Empty calendar trash](#empty-calendar-trash)
 - [Display calendar events](#display-calendar-events)
 - [Update calendar event attendees](#update-calendar-event-attendees)
-- [Focus time events](#focus-time-events)
-  - [Manage focus time events](#manage-focus-time-events)
-  - [Display focus time events](#display-focus-time-events)
-- [Out of officeevents](#out-of-office-events)
-  - [Manage Out of office events](#manage-out-of-office-events)
-  - [Display Out of officeevents](#display-out-of-office-events)
-- [Working location events](#working-location-events)
-  - [Manage working location events](#manage-working-location-events)
-  - [Display working location events](#display-working-location-events)
+- [Status events](#status-events)
+  - [Focus time events](#focus-time-events)
+  - [Out of officeevents](#out-of-office-events)
+  - [Working location events](#working-location-events)
 
 ## API documentation
 * https://developers.google.com/calendar/v3/reference/events
@@ -255,7 +250,7 @@
 <EventSelectProperty> ::=
         (after|starttime|timemin <Time>)|
         (before|endtime|timemax <Time>)|
-        (eventtypes <EventTypeList>)|
+        (eventtype|eventtypes <EventTypeList>)|
         (query <QueryCalendar>)|
         (privateextendedproperty <String>)|
         (sharedextendedproperty <String>)|
@@ -301,6 +296,7 @@
 <TimeZone> ::= <String>
 
 <EventAttribute> ::=
+        (allday <Date>)|
         (anyonecanaddself [<Boolean>])|
         (attachment <String> <URL>)|
         (attendee <EmailAddress>)|
@@ -309,8 +305,7 @@
         (color <EventColorName>)|
         (colorindex|colorid <EventColorIndex>)|
         (description <String>)|
-        (end (allday <Date>)|<Time>)|
-        (focustime [declinemode none|all|new] [declinemessage <String>] [chatstatus available|donotdisturb])|
+        (end|endtime (allday <Date>)|<Time>)|
         (guestscaninviteothers <Boolean>)|
         guestscantinviteothers|
         (guestscanmodify <Boolean>)|
@@ -324,25 +319,22 @@
         (noreminders|(reminder email|popup <Number>))|
         (optionalattendee <EmailAddress>)|
         (originalstart|originalstarttime (allday <Date>)|<Time>)|
-        (outofoffice [declinemode none|all|new] [declinemessage <String>])|
         (privateproperty <PropertyKey> <PropertyValue>)|
+        (range <Date> <Date>)|
         (recurrence <RRULE, EXRULE, RDATE and EXDATE line>)|
         (reminder <Number> email|popup))|
         (selectattendees [<AttendeeAttendance>] [<AttendeeStatus>] <UserTypeEntity>)|
         (sequence <Integer>)|
         (sharedproperty <PropertyKey> <PropertyValue>)|
         (source <String> <URL>)|
-        (start (allday <Date>)|<Time>)|
+        (start|starttime (allday <Date>)|<Time>)|
         (status confirmed|tentative|cancelled)|
         (summary <String>)|
         tentative|
+        (timerange <Time> <Time>)|
         (timezone <TimeZone>)|
         (transparency opaque|transparent)|
-        (visibility default|public|private)|
-	(workinglocation (home|
-                          (custom <String>)|
-                          (office <String> [building|buildingid <String>] [floor|floorname <String>]
-                              [section|floorsection <String>] [desk|deskcode <String>])))
+        (visibility default|public|private)
 
 The following attributes are equivalent:
         available - transparency transparent
@@ -357,8 +349,8 @@ The following attributes are equivalent:
 
 <EventUpdateAttribute> ::=
         <EventAttribute>|
-        clearattendees|
         clearattachments|
+        clearattendees|
         clearhangoutsmeet|
         (clearprivateproperty <PropertyKey>)|
         (clearsharedproperty <PropertyKey>)|
@@ -435,6 +427,7 @@ If none of the following options are selected, all events are selected.
 The Google Calendar API processes `<EventSelectProperty>*`; you may specify none or multiple properties.
 * `after|starttime|timemin <Time>` - Lower bound (inclusive) for an event's end time to filter by. If timeMax is set, timeMin must be smaller than timeMax.
 * `before|endtime|timemax <Time>` - Upper bound (exclusive) for an event's start time to filter by. If timeMin is set, timeMax must be greater than timeMin.
+* `eventtypes <EventTypeList>` - Select events based on their type.
 * `query <QueryCalendar>` - Free text search terms to find events that match these terms in any field, except for extended properties
 * `privateextendedproperty <String>` - A required private property; `<String>` must be of the form `propertyName=value`
 * `sharedextendedproperty <String>` - A required shared property; `<String>` must be of the form `propertyName=value`
@@ -720,6 +713,8 @@ option causes GAM to make two updates to the attendee list; the first removes th
 the second adds the primary email.
 
 The attendee changes are displayed but not processed unless `doit` is specified.
+
+## Status events
 
 ## Focus time events
 

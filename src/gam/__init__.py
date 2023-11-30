@@ -370,6 +370,9 @@ YUBIKEY_VALUE_ERROR_RC = 85
 YUBIKEY_MULTIPLE_CONNECTED_RC = 86
 YUBIKEY_NOT_FOUND_RC = 87
 
+# Multiprocessing lock                                                                                                                                                                                                            
+mplock = None
+
 # stdin/stdout/stderr
 def readStdin(prompt):
   return input(prompt)
@@ -24791,6 +24794,16 @@ def  getChatSpaceParameters(myarg, body, typeChoicesMap):
     return False
   return True
 
+CHAT_MEMBER_ROLE_MAP = {
+  'member': 'ROLE_MEMBER',
+  'manager': 'ROLE_MANAGER'
+  }
+
+CHAT_MEMBER_TYPE_MAP = {
+  'bot': 'BOT',
+  'human': 'HUMAN'
+  }
+
 CHAT_SPACE_TYPE_MAP = {
   'space': 'SPACE',
   'groupchat': 'GROUP_CHAT',
@@ -25098,12 +25111,12 @@ def _getChatMemberEmail(cd, member):
   if 'member' in member:
     if member['member']['type'] == 'HUMAN':
       _, memberUid = member['member']['name'].split('/')
-      member['member']['email'], _ = convertUIDtoEmailAddressWithType(f'uid:{memberUid}', cd, emailTypes=['user'])
+      member['member']['email'], status = convertUIDtoEmailAddressWithType(f'uid:{memberUid}', cd, emailTypes=['user'])
   elif 'groupMember' in member:
     _, memberUid = member['groupMember']['name'].split('/')
     member['groupMember']['email'], _ = convertUIDtoEmailAddressWithType(f'uid:{memberUid}', cd, emailTypes=['group'])
 
-CHAT_MEMBER_TIME_OBJECTS = {'createTime'}
+CHAT_MEMBER_TIME_OBJECTS = {'createTime', 'deleteTime'}
 
 def _showChatMember(member, FJQC, i=0, count=0):
   if FJQC.formatJSON:
@@ -25115,14 +25128,10 @@ def _showChatMember(member, FJQC, i=0, count=0):
   showJSON(None, member, timeObjects=CHAT_MEMBER_TIME_OBJECTS)
   Ind.Decrement()
 
-CHAT_MEMBER_TYPE_MAP = {
-  'bot': 'BOT',
-  'human': 'HUMAN'
-  }
-
 # gam <UserTypeEntity> create chatmember <ChatSpace>
-#	[type human|bot]
-#	(user <UserItem>)* (members <UserTypeEntity>)* (group <GroupItem>)*
+#	[type human|bot] [role member|manager]
+#	(user <UserItem>)* (members <UserTypeEntity>)*
+#	(group <GroupItem>)* (groups <GroupEntity>)*
 #	[formatjson|returnidonly]
 def createChatMember(users):
   def addMembers(members, field, entityType, i, count):
@@ -25139,6 +25148,11 @@ def createChatMember(users):
                           bailOnInternalError=True,
                           throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
                           parent=parent, body=body)
+        if role != 'ROLE_MEMBER':
+          member = callGAPI(chat.spaces().members(), 'patch',
+                            bailOnInternalError=True,
+                            throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                            name=name, updateMask='role', body={'role': role})
         if not returnIdOnly:
           kvList[-1] = member['name']
           _getChatMemberEmail(cd, member)
@@ -25156,6 +25170,7 @@ def createChatMember(users):
   cd = buildGAPIObject(API.DIRECTORY)
   FJQC = FormatJSONQuoteChar()
   parent = None
+  role = CHAT_MEMBER_ROLE_MAP['member']
   mtype = CHAT_MEMBER_TYPE_MAP['human']
   userList = []
   groupList = []
@@ -25171,6 +25186,10 @@ def createChatMember(users):
       userList.extend(members)
     elif myarg == 'group':
       groupList.append(getEmailAddress(returnUIDprefix='uid:'))
+    elif myarg == 'groups':
+      groupList.extend(getEntityList(Cmd.OB_GROUP_ENTITY))
+    elif myarg == 'role':
+      role = getChoice(CHAT_MEMBER_ROLE_MAP, mapChoice=True)
     elif myarg == 'type':
       mtype = getChoice(CHAT_MEMBER_TYPE_MAP, mapChoice=True)
     elif myarg == 'returnidonly':
@@ -25180,7 +25199,7 @@ def createChatMember(users):
   if not parent:
     missingArgumentExit('space')
   if not userList and not groupList:
-    missingArgumentExit('user|members|group')
+    missingArgumentExit('user|members|group|groups')
   userMembers = []
   for user in userList:
     name = normalizeEmailAddressOrUID(user)
@@ -25200,17 +25219,32 @@ def createChatMember(users):
     if groupMembers:
       addMembers(groupMembers, 'groupMember', Ent.GROUP, i, count)
 
-CHAT_MEMBER_ROLE_CHOICES_MAP = {
-  'member': 'ROLE_MEMBER',
-  'manager': 'ROLE_MANAGER'
-  }
+def _deleteChatMembers(chat, kvList, jcount, memberNames, i, count):
+  j = 0
+  for name in memberNames:
+    j += 1
+    kvList[-1] = name
+    try:
+      callGAPI(chat.spaces().members(), 'delete',
+               bailOnInternalError=True,
+               throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+               name=name)
+      entityActionPerformed(kvList, j, jcount)
+    except GAPI.notFound as e:
+      entityActionFailedWarning(kvList, str(e), j, jcount)
+    except (GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
+      exitIfChatNotConfigured(chat, kvList, str(e), i, count)
 
 # gam <UserTypeEntity> delete chatmember <ChatSpace>
-#	((user <UserItem>)|(members <UserTypeEntity>)|(group <GroupItem>))+
+#	((user <UserItem>)|(members <UserTypeEntity>)|
+#	 (group <GroupItem>)|(groups <GroupEntity>))+
 # gam <UserTypeEntity> remove chatmember members <ChatMemberList>
 # gam <UserTypeEntity> update chatmember <ChatSpace>
-#	((user <UserItem>)|(members <UserTypeEntity>))+ role member|manager
-# gam <UserTypeEntity> modify chatmember members <ChatMemberList> role member|manager
+#	role member|manager
+#	((user <UserItem>)|(members <UserTypeEntity>))+
+# gam <UserTypeEntity> modify chatmember
+#	role member|manager
+#	members <ChatMemberList>
 def deleteUpdateChatMember(users):
   cd = buildGAPIObject(API.DIRECTORY)
   action = Act.Get()
@@ -25222,7 +25256,7 @@ def deleteUpdateChatMember(users):
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if action in {Act.UPDATE, Act.MODIFY} and myarg == 'role':
-      body['role'] = getChoice(CHAT_MEMBER_ROLE_CHOICES_MAP, mapChoice=True)
+      body['role'] = getChoice(CHAT_MEMBER_ROLE_MAP, mapChoice=True)
       continue
     if action in {Act.REMOVE, Act.MODIFY}:
       if myarg in {'member', 'members'}:
@@ -25239,6 +25273,8 @@ def deleteUpdateChatMember(users):
         userGroupList.extend(members)
       elif deleteMode and myarg == 'group':
         userGroupList.append(getEmailAddress(returnUIDprefix='uid:'))
+      elif deleteMode and myarg == 'groups':
+        userGroupList.extend(getEntityList(Cmd.OB_GROUP_ENTITY))
       else:
         unknownArgumentExit()
   if not deleteMode and 'role' not in body:
@@ -25250,7 +25286,7 @@ def deleteUpdateChatMember(users):
     if not parent:
       missingArgumentExit('space')
     if not userGroupList:
-      missingArgumentExit('user|members|group')
+      missingArgumentExit('user|members|group|groups')
     for user in userGroupList:
       name = normalizeEmailAddressOrUID(user)
       memberNames.append(f'{parent}/members/{name}')
@@ -25264,18 +25300,14 @@ def deleteUpdateChatMember(users):
     entityPerformActionNumItems(kvList, jcount, Ent.CHAT_MEMBER, i, count)
     kvList.extend([Ent.CHAT_MEMBER, ''])
     Ind.Increment()
-    j = 0
-    for name in memberNames:
-      j += 1
-      kvList[-1] = name
-      try:
-        if deleteMode:
-          callGAPI(chat.spaces().members(), 'delete',
-                   bailOnInternalError=True,
-                   throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
-                   name=name)
-          entityActionPerformed(kvList, j, jcount)
-        else:
+    if deleteMode:
+      _deleteChatMembers(chat, kvList, jcount, memberNames, i, count)
+    else:
+      j = 0
+      for name in memberNames:
+        j += 1
+        kvList[-1] = name
+        try:
           member = callGAPI(chat.spaces().members(), 'patch',
                             bailOnInternalError=True,
                             throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
@@ -25284,11 +25316,168 @@ def deleteUpdateChatMember(users):
           Ind.Increment()
           _showChatMember(member, None, j, jcount)
           Ind.Decrement()
-      except GAPI.notFound as e:
-        entityActionFailedWarning(kvList, str(e), j, jcount)
-      except (GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
-        exitIfChatNotConfigured(chat, kvList, str(e), i, count)
+        except GAPI.notFound as e:
+          entityActionFailedWarning(kvList, str(e), j, jcount)
+        except (GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
+          exitIfChatNotConfigured(chat, kvList, str(e), i, count)
     Ind.Decrement()
+
+CHAT_SYNC_PREVIEW_TITLES = ['space', 'member', 'role', 'action', 'message']
+
+# gam <UserTypeEntity> sync chatmembers <ChatSpace>
+#	[role member|manager] [type human|bot]
+#	[addonly|removeonly]
+#	[preview [actioncsv]]
+#	(users <UserTypeEntity>)* (groups <GroupEntity>)*
+def syncChatMembers(users):
+  def _previewAction(members, jcount, action):
+    Ind.Increment()
+    j = 0
+    for member in members:
+      j += 1
+      entityActionPerformed([Ent.CHAT_SPACE, parent, Ent.CHAT_MEMBER, member, Ent.ROLE, role], j, jcount)
+    Ind.Decrement()
+    if csvPF:
+      for member in members:
+        csvPF.WriteRow({'space': parent, 'member': member, 'role': role, 'action': Act.PerformedName(action), 'message': Act.PREVIEW})
+
+  def addMembers(memberNames, members, entityType, i, count):
+    jcount = len(memberNames)
+    entityPerformActionNumItems(kvList, jcount, Ent.CHAT_MEMBER, i, count)
+    if jcount == 0:
+      return
+    if preview:
+      _previewAction(memberNames, jcount, Act.REMOVE)
+      return
+    kvList.extend([entityType, ''])
+    Ind.Increment()
+    j = 0
+    for memberName in memberNames:
+      j += 1
+      body = members[memberName]
+      kvList[-1] = memberName
+      try:
+        callGAPI(chat.spaces().members(), 'create',
+                 bailOnInternalError=True,
+                 throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                 parent=parent, body=body)
+        if role != 'ROLE_MEMBER':
+          callGAPI(chat.spaces().members(), 'patch',
+                   bailOnInternalError=True,
+                   throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                   name=memberName, updateMask='role', body={'role': role})
+        entityActionPerformed(kvList, j, jcount)
+      except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
+        entityActionFailedWarning(kvList, str(e), j, jcount)
+    Ind.Decrement()
+    del kvList[-2:]
+
+  def deleteMembers(memberNames, entityType, i, count):
+    jcount = len(memberNames)
+    entityPerformActionNumItems(kvList, jcount, Ent.CHAT_MEMBER, i, count)
+    if jcount == 0:
+      return
+    if preview:
+      _previewAction(memberNames, jcount, Act.ADD)
+      return
+    kvList.extend([entityType, ''])
+    Ind.Increment()
+    _deleteChatMembers(chat, kvList, jcount, memberNames, i, count)
+    Ind.Decrement()
+    del kvList[-2:]
+
+  cd = buildGAPIObject(API.DIRECTORY)
+  kwargs = {}
+  parent = None
+  role = CHAT_MEMBER_ROLE_MAP['member']
+  mtype = CHAT_MEMBER_TYPE_MAP['human']
+  syncOperation = 'addremove'
+  preview = False
+  csvPF = None
+  userList = []
+  usersSpecified = False
+  groupList = []
+  groupsSpecified = False
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
+      parent = getChatSpace(myarg)
+    elif myarg == 'role':
+      role = getChoice(CHAT_MEMBER_ROLE_MAP, mapChoice=True)
+    elif myarg == 'type':
+      mtype = getChoice(CHAT_MEMBER_TYPE_MAP, mapChoice=True)
+    elif myarg in {'addonly', 'removeonly'}:
+      syncOperation = myarg
+    elif myarg == 'preview':
+      preview = True
+    elif myarg == 'actioncsv':
+      csvPF = CSVPrintFile(CHAT_SYNC_PREVIEW_TITLES)
+    elif myarg == 'users':
+      userList.extend(getEntityList(Cmd.OB_USER_ENTITY))
+      usersSpecified = True
+    elif myarg in {'member', 'members'}:
+      _, members = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
+      userList.extend(members)
+      usersSpecified = True
+    elif myarg == 'groups':
+      groupList.extend(getEntityList(Cmd.OB_GROUP_ENTITY))
+      groupsSpecified = True
+    else:
+      unknownArgumentExit()
+  if not parent:
+    missingArgumentExit('space')
+  userMembers = {}
+  syncUsersSet = set()
+  for user in userList:
+    name = normalizeEmailAddressOrUID(user)
+    memberName = f'{parent}/members/{name}'
+    userMembers[memberName] = {'member': {'name': f'users/{name}', 'type': mtype}}
+    syncUsersSet.add(memberName)
+  groupMembers = {}
+  syncGroupsSet = set()
+  for group in groupList:
+    name = normalizeEmailAddressOrUID(group)
+    memberName = f'{parent}/members/{name}'
+    groupMembers[memberName] = {'groupMember': {'name': f'groups/{name}'}}
+    syncGroupsSet.add(memberName)
+  kwargs['filter'] = f'member.type = "{mtype}" AND role = "{role}"'
+  qfilter = f'{Ent.Singular(Ent.CHAT_SPACE)}: {parent}, {kwargs["filter"]}'
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, chat, kvList = buildChatServiceObject(API.CHAT_MEMBERSHIPS, user, i, count)
+    if not chat:
+      continue
+    currentUsersSet = set()
+    currentGroupsSet = set()
+    try:
+      members = callGAPIpages(chat.spaces().members(), 'list', 'memberships',
+                              pageMessage=_getChatPageMessage(Ent.CHAT_MEMBER, user, i, count, qfilter),
+                              throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                              pageSize=CHAT_PAGE_SIZE, parent=parent, **kwargs)
+      for member in members:
+        _getChatMemberEmail(cd, member)
+        if 'member' in member:
+          currentUsersSet.add(f"{parent}/members/{member['member']['email']}")
+        elif 'groupMember' in member:
+          currentGroupsSet.add(f"{parent}/members/{member['groupMember']['email']}")
+    except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+      exitIfChatNotConfigured(chat, kvList, str(e), i, count)
+      continue
+    if syncOperation != 'addonly':
+      Act.Set([Act.REMOVE, Act.REMOVE_PREVIEW][preview])
+      if usersSpecified:
+        deleteMembers(currentUsersSet-syncUsersSet, Ent.USER, i, count)
+      if groupsSpecified:
+        deleteMembers(currentGroupsSet-syncGroupsSet, Ent.GROUP, i, count)
+    if syncOperation != 'removeonly':
+      Act.Set([Act.ADD, Act.ADD_PREVIEW][preview])
+      if usersSpecified:
+        addMembers(syncUsersSet-currentUsersSet, userMembers, Ent.USER, i, count)
+      if groupsSpecified:
+        addMembers(syncGroupsSet-currentGroupsSet, groupMembers, Ent.GROUP, i, count)
+  if csvPF:
+    csvPF.writeCSVfile('Chat Member Updates')
 
 # gam [<UserTypeEntity>] info chatmember members <ChatMemberList>
 #	[formatjson]
@@ -35402,6 +35591,55 @@ def doCalendarsPrintShowACLs(calIds):
   if csvPF:
     csvPF.writeCSVfile('Calendar ACLs')
 
+EVENT_TYPE_DEFAULT = 'default'
+EVENT_TYPE_FOCUSTIME = 'focusTime'
+EVENT_TYPE_OUTOFOFFICE = 'outOfOffice'
+EVENT_TYPE_WORKINGLOCATION = 'workingLocation'
+
+EVENT_TYPES_CHOICE_MAP = {
+  'default': EVENT_TYPE_DEFAULT,
+  'focustime': EVENT_TYPE_FOCUSTIME,
+  'outofoffice': EVENT_TYPE_OUTOFOFFICE,
+  'workinglocation': EVENT_TYPE_WORKINGLOCATION,
+  }
+
+EVENT_TYPE_DEFAULT_PROPERTIES_MAP = {
+  EVENT_TYPE_DEFAULT: {'eventType': EVENT_TYPE_DEFAULT},
+  EVENT_TYPE_FOCUSTIME: {'eventType': EVENT_TYPE_FOCUSTIME,
+                         'focusTimeProperties': {'autoDeclineMode': 'declineNone', 'declineMessage': 'Declined', 'chatStatus': 'doNotDisturb'},
+                         'transparency':'opaque'},
+  EVENT_TYPE_OUTOFOFFICE: {'eventType': EVENT_TYPE_OUTOFOFFICE,
+                           'outOfOfficeProperties': {'autoDeclineMode': 'declineOnlyNewConflictingInvitations', 'declineMessage': 'Declined'},
+                           'transparency':'opaque'},
+  EVENT_TYPE_WORKINGLOCATION: {'eventType': EVENT_TYPE_WORKINGLOCATION,
+                               'workingLocationProperties': {},
+                               'visibility': 'public', 'transparency':'transparent'},
+  }
+
+EVENT_TYPE_PROPERTIES_NAME_MAP = {
+  EVENT_TYPE_DEFAULT: None,
+  EVENT_TYPE_FOCUSTIME: f'{EVENT_TYPE_FOCUSTIME}Properties',
+  EVENT_TYPE_OUTOFOFFICE: f'{EVENT_TYPE_OUTOFOFFICE}Properties',
+  EVENT_TYPE_WORKINGLOCATION: f'{EVENT_TYPE_WORKINGLOCATION}Properties',
+  }
+
+EVENT_TYPE_ENTITY_MAP = {
+  EVENT_TYPE_DEFAULT: None,
+  EVENT_TYPE_FOCUSTIME: Ent.EVENT_FOCUSTIME,
+  EVENT_TYPE_OUTOFOFFICE: Ent.EVENT_OUTOFOFFICE,
+  EVENT_TYPE_WORKINGLOCATION: Ent.EVENT_WORKINGLOCATION,
+  }
+
+def _getEventTypes():
+  typesList = []
+  for field in _getFieldsList():
+    if field in EVENT_TYPES_CHOICE_MAP:
+      addFieldToFieldsList(field, EVENT_TYPES_CHOICE_MAP, typesList)
+    else:
+      invalidChoiceExit(field, EVENT_TYPES_CHOICE_MAP, True)
+#  return ','.join(typesList)
+  return typesList
+
 LIST_EVENTS_DISPLAY_PROPERTIES = {
   'alwaysincludeemail': ('alwaysIncludeEmail', {GC.VAR_TYPE: GC.TYPE_BOOLEAN}),
   'icaluid': ('iCalUID', {GC.VAR_TYPE: GC.TYPE_STRING}),
@@ -35426,6 +35664,7 @@ LIST_EVENTS_SELECT_PROPERTIES = {
   'timemin': ('timeMin', {GC.VAR_TYPE: GC.TYPE_DATETIME}),
   'updated': ('updatedMin', {GC.VAR_TYPE: GC.TYPE_DATETIME}),
   'updatedmin': ('updatedMin', {GC.VAR_TYPE: GC.TYPE_DATETIME}),
+  'eventtype': ('eventTypes', {GC.VAR_TYPE: GC.TYPE_CHOICE_LIST}),
   'eventtypes': ('eventTypes', {GC.VAR_TYPE: GC.TYPE_CHOICE_LIST}),
   }
 
@@ -35567,41 +35806,6 @@ EVENT_JSON_SUBFIELD_CLEAR_FIELDS = {
 EVENT_JSONATTENDEES_SUBFIELD_CLEAR_FIELDS = {
   'attendees': ['id', 'organizer', 'self'],
   }
-
-WORKING_LOCATION_CHOICE_MAP = {
-  'custom': 'customLocation',
-  'home': 'homeOffice',
-  'office': 'officeLocation',
-  }
-
-def getWorkingLocationProperties(body):
-  body.update({'eventType': 'workingLocation', 'workingLocationProperties': {},
-               'visibility': 'public', 'transparency':'transparent'})
-  location = getChoice(WORKING_LOCATION_CHOICE_MAP, mapChoice=True)
-  body['workingLocationProperties']['type'] = location
-  if location == 'homeOffice':
-    pass
-  elif location == 'customLocation':
-    body['workingLocationProperties'][location] = {'label': getString(Cmd.OB_STRING)}
-  else: #officeLocation
-    body['workingLocationProperties'][location] = {'label': getString(Cmd.OB_STRING)}
-    entry = body['workingLocationProperties'][location]
-    while Cmd.ArgumentsRemaining():
-      argument = getArgument()
-      if argument in {'building', 'buildingid'}:
-        entry['buildingId'] = _getBuildingByNameOrId(None)
-      elif argument in {'floor', 'floorname'}:
-        entry['floorId'] = getString(Cmd.OB_STRING, minLen=0)
-      elif argument in {'section', 'floorsection'}:
-        entry['floorSectionId'] = getString(Cmd.OB_STRING, minLen=0)
-      elif argument in {'desk', 'deskcode'}:
-        entry['deskId'] = getString(Cmd.OB_STRING, minLen=0)
-      elif argument == 'endlocation':
-        break
-      else:
-        Cmd.Backup()
-        break
-  return location
 
 def _getCalendarEventAttribute(myarg, body, parameters, function):
   def clearJSONfields(body, clearFields):
@@ -36641,22 +36845,6 @@ def _addEventEntitySelectFields(calendarEventEntity, fieldsList):
     _getEventMatchFields(calendarEventEntity, fieldsList)
     if calendarEventEntity['maxinstances'] != -1:
       fieldsList.append('recurrence')
-
-EVENT_TYPES_CHOICE_MAP = {
-  'default': 'default',
-  'focustime': 'focusTime',
-  'outofoffice': 'outOfOffice',
-  'workinglocation': 'workingLocation',
-  }
-
-def _getEventTypes():
-  typesList = []
-  for field in _getFieldsList():
-    if field in EVENT_TYPES_CHOICE_MAP:
-      addFieldToFieldsList(field, EVENT_TYPES_CHOICE_MAP, typesList)
-    else:
-      invalidChoiceExit(field, EVENT_TYPES_CHOICE_MAP, True)
-  return ','.join(typesList)
 
 def _getCalendarInfoEventOptions(calendarEventEntity):
   FJQC = FormatJSONQuoteChar()
@@ -48408,20 +48596,23 @@ def printShowCalendarEvents(users):
   if csvPF:
     csvPF.writeCSVfile('Calendar Events')
 
-def getWorkingLocationDateTime(dateType, dateList):
+def getStatusEventDateTime(dateType, dateList):
   if dateType == 'timerange':
     startTime = getTimeOrDeltaFromNow(returnDateTime=True)[0]
     endTime = getTimeOrDeltaFromNow(returnDateTime=True)[0]
-    dateList.append({'type': dateType, 'first': startTime, 'last': endTime, 'ulast': endTime})
+    recurrence = []
+    while checkArgumentPresent(['recurrence']):
+      recurrence.append(getString(Cmd.OB_RECURRENCE))
+    dateList.append({'type': dateType, 'first': startTime, 'last': endTime, 'ulast': endTime, 'recurrence': recurrence})
     return
   firstDate = getYYYYMMDD(minLen=1, returnDateTime=True).replace(tzinfo=GC.Values[GC.TIMEZONE])
   if dateType == 'range':
     lastDate = getYYYYMMDD(minLen=1, returnDateTime=True).replace(tzinfo=GC.Values[GC.TIMEZONE])
   deltaDay = datetime.timedelta(days=1)
   deltaWeek = datetime.timedelta(weeks=1)
-  if dateType == 'date':
-    dateList.append({'type': dateType, 'first': firstDate, 'last': firstDate+deltaDay,
-                     'ulast': firstDate, 'udelta': deltaDay})
+  if dateType in {'date', 'allday'}:
+    dateList.append({'type': 'date', 'first': firstDate, 'last': firstDate+deltaDay,
+                     'ulast': firstDate+deltaDay, 'udelta': deltaDay})
   elif dateType == 'range':
     dateList.append({'type': dateType, 'first': firstDate, 'last': lastDate+deltaDay,
                      'ulast': lastDate, 'udelta': deltaDay})
@@ -48434,14 +48625,7 @@ def getWorkingLocationDateTime(dateType, dateList):
     dateList.append({'type': dateType, 'first': firstDate, 'last': firstDate+deltaDay, 'pdelta': deltaWeek, 'repeats': argRepeat,
                      'ulast': firstDate+datetime.timedelta(weeks=argRepeat), 'udelta': deltaWeek})
 
-WORKING_LOCATION_DATETIME_CHOICES = {'date', 'range', 'daily', 'weekly', 'timerange'}
-WORKING_LOCATION_CHOICE_MAP = {
-  'custom': 'customLocation',
-  'home': 'homeOffice',
-  'office': 'officeLocation',
-  }
-
-def _showCalendarWorkingLocation(primaryEmail, calId, eventEntityType, event, k, kcount, FJQC):
+def _showCalendarStatusEvent(primaryEmail, calId, eventEntityType, event, k, kcount, FJQC):
   if FJQC.formatJSON:
     printLine(json.dumps(cleanJSON({'primaryEmail': primaryEmail, 'calendarId': calId, 'event': event},
                                    timeObjects=EVENT_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
@@ -48452,6 +48636,124 @@ def _showCalendarWorkingLocation(primaryEmail, calId, eventEntityType, event, k,
   showJSON(None, event, skipObjects, EVENT_TIME_OBJECTS)
   Ind.Decrement()
 
+EVENT_AUTO_DECLINE_MODE_CHOICE_MAP = {
+  'declinenone': 'declineNone',
+  'declineallconflictinginvitations': 'declineAllConflictingInvitations',
+  'declineonlynewconflictinginvitations': 'declineOnlyNewConflictingInvitations',
+  'none': 'declineNone',
+  'all': 'declineAllConflictingInvitations',
+  'new': 'declineOnlyNewConflictingInvitations',
+  }
+
+EVENT_CHAT_STATUS_CHOICE_MAP = {
+  'available': 'available',
+  'dnd': 'doNotDisturb',
+  'donotdisturb': 'doNotDisturb',
+  }
+
+def getFocusTimeProperties(body, parameters, dateList):
+  eventProperties = EVENT_TYPE_PROPERTIES_NAME_MAP[EVENT_TYPE_FOCUSTIME]
+  body.update({'eventType': EVENT_TYPE_FOCUSTIME, 'summary': 'Focus time',
+               eventProperties: {'autoDeclineMode': 'declineNone', 'chatStatus': 'available', 'declineMessage': 'Declined'},
+               'transparency':'opaque'})
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'summary':
+      body['summary'] = getString(Cmd.OB_STRING, minLen=0)
+    elif myarg == 'declinemode':
+      body[eventProperties]['autoDeclineMode'] = getChoice(EVENT_AUTO_DECLINE_MODE_CHOICE_MAP, mapChoice=True)
+    elif myarg == 'declinemessage':
+      body[eventProperties]['declineMessage'] = getString(Cmd.OB_STRING)
+    elif myarg == 'chatstatus':
+      body[eventProperties]['chatStatus'] = getChoice(EVENT_CHAT_STATUS_CHOICE_MAP, mapChoice=True)
+    elif myarg == 'timerange':
+      getStatusEventDateTime(myarg, dateList)
+    elif myarg == 'timezone':
+      parameters['timeZone'] = getString(Cmd.OB_STRING)
+    else:
+      unknownArgumentExit()
+
+def getOutOfOfficeProperties(body, parameters, dateList):
+  eventProperties = EVENT_TYPE_PROPERTIES_NAME_MAP[EVENT_TYPE_OUTOFOFFICE]
+  body.update({'eventType': EVENT_TYPE_OUTOFOFFICE, 'summary': 'Out of office',
+               eventProperties: {'autoDeclineMode': 'declineNone', 'declineMessage': 'Declined'},
+               'transparency':'opaque'})
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'summary':
+      body['summary'] = getString(Cmd.OB_STRING, minLen=0)
+    elif myarg == 'declinemode':
+      body[eventProperties]['autoDeclineMode'] = getChoice(EVENT_AUTO_DECLINE_MODE_CHOICE_MAP, mapChoice=True)
+    elif myarg == 'declinemessage':
+      body[eventProperties]['declineMessage'] = getString(Cmd.OB_STRING)
+    elif myarg == 'timerange':
+      getStatusEventDateTime(myarg, dateList)
+    elif myarg == 'timezone':
+      parameters['timeZone'] = getString(Cmd.OB_STRING)
+    else:
+      unknownArgumentExit()
+
+STATUS_EVENTS_DATETIME_CHOICES = {'date', 'allday', 'range', 'daily', 'weekly', 'timerange'}
+
+WORKING_LOCATION_CHOICE_MAP = {
+  'custom': 'customLocation',
+  'home': 'homeOffice',
+  'office': 'officeLocation',
+  }
+
+def getWorkingLocationProperties(body, parameters, dateList):
+  eventProperties = EVENT_TYPE_PROPERTIES_NAME_MAP[EVENT_TYPE_WORKINGLOCATION]
+  body.update({'eventType': EVENT_TYPE_WORKINGLOCATION, eventProperties: {},
+               'visibility': 'public', 'transparency':'transparent'})
+  location = ''
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg in WORKING_LOCATION_CHOICE_MAP:
+      location = WORKING_LOCATION_CHOICE_MAP[myarg]
+      body[eventProperties]['type'] = location
+      if location == 'homeOffice':
+        pass
+      elif location == 'customLocation':
+        body[eventProperties][location] = {'label': getString(Cmd.OB_STRING)}
+      else: #officeLocation
+        body[eventProperties][location] = {'label': getString(Cmd.OB_STRING)}
+        entry = body[eventProperties][location]
+        while Cmd.ArgumentsRemaining():
+          myarg = getArgument()
+          if myarg in {'building', 'buildingid'}:
+            entry['buildingId'] = _getBuildingByNameOrId(None)
+          elif myarg in {'floor', 'floorname'}:
+            entry['floorId'] = getString(Cmd.OB_STRING, minLen=0)
+          elif myarg in {'section', 'floorsection'}:
+            entry['floorSectionId'] = getString(Cmd.OB_STRING, minLen=0)
+          elif myarg in {'desk', 'deskcode'}:
+            entry['deskId'] = getString(Cmd.OB_STRING, minLen=0)
+          elif myarg == 'endlocation':
+            break
+          else:
+            Cmd.Backup()
+            break
+    elif myarg in STATUS_EVENTS_DATETIME_CHOICES:
+      getStatusEventDateTime(myarg, dateList)
+    elif myarg == 'timezone':
+      parameters['timeZone'] = getString(Cmd.OB_STRING)
+    else:
+      unknownArgumentExit()
+  return location
+
+# gam <UserTypeEntity> create focustime
+#	[chatstatus available|donotdisturb]
+#	[declinemode none|all|new]
+#	[declinemessage <String>]
+#	[summary <String>]
+#	(timerange <Time> <Time> [recurrence <String>])+
+#	[timezone <String>]
+# gam <UserTypeEntity> create outofoffice
+#	[declinemode none|all|new]
+#	[declinemessage <String>]
+#	[summary <String>]
+#	(timerange <Time> <Time> [recurrence <String>])+
+#	[timezone <String>]
 # gam <UserTypeEntity> create workinglocation
 #	(home|
 #	 (custom <String>)|
@@ -48462,26 +48764,32 @@ def _showCalendarWorkingLocation(primaryEmail, calId, eventEntityType, event, k,
 #	 (daily yyyy-mm-dd N)|
 #	 (weekly yyyy-mm-dd N)|
 #	 (timerange <Time> <Time>))+
-def createWorkingLocation(users):
-  body = {'start': {'date': None}, 'end': {'date': None}}
+#	[timezone <String>]
+def createStatusEvent(users, eventType):
+  eventProperties = EVENT_TYPE_PROPERTIES_NAME_MAP[eventType]
+  entityType = EVENT_TYPE_ENTITY_MAP[eventType]
+  body = {'start': {}, 'end': {}, 'recurrence': None}
   calId = 'primary'
+  parameters = {}
   dateList = []
-  location =  getWorkingLocationProperties(body)
-  while Cmd.ArgumentsRemaining():
-    myarg = getArgument()
-    if myarg in WORKING_LOCATION_DATETIME_CHOICES:
-      getWorkingLocationDateTime(myarg, dateList)
-    elif myarg == 'json':
-      body.update(getJSON([]))
-    else:
-      unknownArgumentExit()
+  if eventType == EVENT_TYPE_WORKINGLOCATION:
+    location =  getWorkingLocationProperties(body, parameters, dateList)
+    if not location:
+      missingArgumentExit('|'.join(WORKING_LOCATION_CHOICE_MAP))
+  elif eventType == EVENT_TYPE_OUTOFOFFICE:
+    getOutOfOfficeProperties(body, parameters, dateList)
+  else: # eventType == EVENT_TYPE_FOCUSTIME
+    getFocusTimeProperties(body, parameters, dateList)
   if not dateList:
-    missingChoiceExit(WORKING_LOCATION_DATETIME_CHOICES)
-  location = body['workingLocationProperties']['type']
-  if location in body['workingLocationProperties'] and 'label' in body['workingLocationProperties'][location]:
-    location += f"/{body['workingLocationProperties'][location]['label']}"
-  datekvList = [Ent.CALENDAR, '', Ent.EVENT, '', Ent.DATE, '', Ent.LOCATION, location]
-  timekvList = [Ent.CALENDAR, '', Ent.EVENT, '', Ent.START_TIME, '', Ent.END_TIME, '', Ent.LOCATION, location]
+    missingChoiceExit(STATUS_EVENTS_DATETIME_CHOICES)
+  datekvList = [Ent.CALENDAR, '', Ent.EVENT, '', Ent.DATE, '']
+  timekvList = [Ent.CALENDAR, '', Ent.EVENT, '', Ent.START_TIME, '', Ent.END_TIME, '']
+  if eventType == EVENT_TYPE_WORKINGLOCATION:
+    location = body[eventProperties]['type']
+    if location in body[eventProperties] and 'label' in body[eventProperties][location]:
+      location += f"/{body[eventProperties][location]['label']}"
+    datekvList.extend([Ent.LOCATION, location])
+    timekvList.extend([Ent.LOCATION, location])
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -48489,7 +48797,7 @@ def createWorkingLocation(users):
     if not cal:
       continue
     jcount = len(dateList)
-    entityPerformAction([Ent.CALENDAR, user, Ent.EVENT_WORKINGLOCATION, None], i, count)
+    entityPerformAction([Ent.CALENDAR, user, entityType, None], i, count)
     Ind.Increment()
     j = 0
     for wlDate in dateList:
@@ -48499,6 +48807,7 @@ def createWorkingLocation(users):
       kvList = datekvList if wlDate['type'] != 'timerange' else timekvList
       kvList[1] = user
       while first < last:
+        body.pop('recurrence', None)
         if wlDate['type'] != 'timerange':
           body['start']['date'] = first.strftime(YYYYMMDD_FORMAT)
           kvList[5] = body['start']['date']
@@ -48508,10 +48817,14 @@ def createWorkingLocation(users):
           kvList[5] = body['start']['dateTime']
           body['end']['dateTime'] = ISOformatTimeStamp(last)
           kvList[7] = body['end']['dateTime']
+          if wlDate['recurrence']:
+            body['recurrence'] = wlDate['recurrence']
+            if not _setEventRecurrenceTimeZone(cal, calId, body, parameters, i, count):
+              break
         try:
           event = callGAPI(cal.events(), 'insert',
                            throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID, GAPI.BAD_REQUEST,
-                                                             GAPI.TIME_RANGE_EMPTY, GAPI.MALFORMED_WORKING_LOCATION_EVENT],
+                                                                     GAPI.TIME_RANGE_EMPTY, GAPI.MALFORMED_WORKING_LOCATION_EVENT],
                            calendarId=calId, body=body, fields='id')
           kvList[3] = event['id']
           entityActionPerformed(kvList, j, jcount)
@@ -48529,27 +48842,37 @@ def createWorkingLocation(users):
           break
     Ind.Decrement()
 
-# gam <UserTypeEntity> delete workinglocation
+def createFocusTime(users):
+  createStatusEvent(users, EVENT_TYPE_FOCUSTIME)
+
+def createOutOfOffice(users):
+  createStatusEvent(users, EVENT_TYPE_OUTOFOFFICE)
+
+def createWorkingLocation(users):
+  createStatusEvent(users, EVENT_TYPE_WORKINGLOCATION)
+
+# gam <UserTypeEntity> delete focustime|outofoffice|workinglocation
 #	((date yyyy-mm-dd)|
 #	 (range yyyy-mm-dd yyyy-mm-dd)|
 #	 (daily yyyy-mm-dd N)|
 #	 (weekly yyyy-mm-dd N)|
 #	 (timerange <Time> <Time>))+
-def deleteWorkingLocation(users):
-  kwargs = {'eventTypes': ['workingLocation'], 'showDeleted': False, 'singleEvents': True,
+def deleteStatusEvent(users, eventType):
+  eventProperties = EVENT_TYPE_PROPERTIES_NAME_MAP[eventType]
+  entityType = EVENT_TYPE_ENTITY_MAP[eventType]
+  kwargs = {'eventTypes': [eventType], 'showDeleted': False, 'singleEvents': True,
             'timeMax': None, 'timeMin': None, 'orderBy': 'startTime'}
   calId = 'primary'
   dateList = []
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if myarg in WORKING_LOCATION_DATETIME_CHOICES:
-      getWorkingLocationDateTime(myarg, dateList)
+    if myarg in STATUS_EVENTS_DATETIME_CHOICES:
+      getStatusEventDateTime(myarg, dateList)
     else:
       unknownArgumentExit()
   if not dateList:
-    missingChoiceExit(WORKING_LOCATION_DATETIME_CHOICES)
-  datekvList = [Ent.CALENDAR, '', Ent.EVENT, '', Ent.DATE, '', Ent.LOCATION, '']
-  timekvList = [Ent.CALENDAR, '', Ent.EVENT, '', Ent.START_TIME, '', Ent.END_TIME, '', Ent.LOCATION, '']
+    missingChoiceExit(STATUS_EVENTS_DATETIME_CHOICES)
+  basekvList = [Ent.CALENDAR, '', Ent.EVENT, '']
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -48557,15 +48880,14 @@ def deleteWorkingLocation(users):
     if not cal:
       continue
     jcount = len(dateList)
-    entityPerformAction([Ent.CALENDAR, user, Ent.EVENT_WORKINGLOCATION, None], i, count)
+    entityPerformAction([Ent.CALENDAR, user, entityType, None], i, count)
     Ind.Increment()
     j = 0
     for wlDate in dateList:
       j += 1
       first = wlDate['first']
       last = wlDate['last']
-      kvList = datekvList if wlDate['type'] != 'timerange' else timekvList
-      kvList[1] = user
+      basekvList[1] = user
       events = []
       for _ in range(1, wlDate.get('repeats', 1)+1):
         kwargs['timeMin'] = ISOformatTimeStamp(first)
@@ -48573,7 +48895,7 @@ def deleteWorkingLocation(users):
         try:
           events = callGAPIpages(cal.events(), 'list', 'items',
                                  throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID, GAPI.BAD_REQUEST],
-                                 calendarId=calId, fields='nextPageToken,items(id,start,end,workingLocationProperties)', **kwargs)
+                                 calendarId=calId, fields=f'nextPageToken,items(id,start,end,{eventProperties})', **kwargs)
         except (GAPI.notACalendarUser, GAPI.notFound, GAPI.forbidden, GAPI.invalid, GAPI.badRequest) as e:
           entityActionFailedWarning([Ent.CALENDAR, user], str(e), j, jcount)
           break
@@ -48585,22 +48907,26 @@ def deleteWorkingLocation(users):
         for event in events:
           k += 1
           eventId = event['id']
-          kvList[3] = eventId
-          location = event['workingLocationProperties']['type']
-          if location in event['workingLocationProperties'] and 'label' in event['workingLocationProperties'][location]:
-            location += f"/{event['workingLocationProperties'][location]['label']}"
+          basekvList[3] = eventId
+          kvList = basekvList[:]
+          if eventType == EVENT_TYPE_WORKINGLOCATION:
+            location = event[eventProperties]['type']
+            if location in event[eventProperties] and 'label' in event[eventProperties][location]:
+              location += f"/{event[eventProperties][location]['label']}"
           try:
             callGAPI(cal.events(), 'delete',
                      throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.DELETED, GAPI.FORBIDDEN,
                                                                GAPI.INVALID, GAPI.REQUIRED, GAPI.REQUIRED_ACCESS_LEVEL],
                      calendarId=calId, eventId=eventId, sendUpdates='none')
             if 'date' in event['start']:
-              kvList[5] = event['start']['date']
-              kvList[7] = location
+              kvList.extend([Ent.DATE, event['start']['date']])
+              if eventType == EVENT_TYPE_WORKINGLOCATION:
+                kvList.extend([Ent.LOCATION, location])
             else:
-              kvList[5] = formatLocalTime(event['start']['dateTime'])
-              kvList[7] = formatLocalTime(event['end']['dateTime'])
-              kvList[9] = location
+              kvList.extend([Ent.START_TIME, formatLocalTime(event['start']['dateTime']),
+                             Ent.END_TIME, formatLocalTime(event['end']['dateTime'])])
+              if eventType == EVENT_TYPE_WORKINGLOCATION:
+                kvList.extend([Ent.LOCATION, location])
             entityActionPerformed(kvList, k, kcount)
           except (GAPI.notFound, GAPI.deleted) as e:
             if not checkCalendarExists(cal, calId):
@@ -48617,7 +48943,16 @@ def deleteWorkingLocation(users):
             break
     Ind.Decrement()
 
-# gam <UserTypeEntity> show workinglocation
+def deleteFocusTime(users):
+  deleteStatusEvent(users, EVENT_TYPE_FOCUSTIME)
+
+def deleteOutOfOffice(users):
+  deleteStatusEvent(users, EVENT_TYPE_OUTOFOFFICE)
+
+def deleteWorkingLocation(users):
+  deleteStatusEvent(users, EVENT_TYPE_WORKINGLOCATION)
+
+# gam <UserTypeEntity> show focustime|outofoffice|workinglocation
 #	((date yyyy-mm-dd)|
 #	 (range yyyy-mm-dd yyyy-mm-dd)|
 #	 (daily yyyy-mm-dd N)|
@@ -48625,7 +48960,7 @@ def deleteWorkingLocation(users):
 #	 (timerange <Time> <Time>))+
 #	[showdayofweek]
 #	[formatjson]
-# gam <UserTypeEntity> print workinglocation
+# gam <UserTypeEntity> print focustime|outofoffice|workinglocation
 #	((date yyyy-mm-dd)|
 #	 (range yyyy-mm-dd yyyy-mm-dd)|
 #	 (daily yyyy-mm-dd N)|
@@ -48633,10 +48968,12 @@ def deleteWorkingLocation(users):
 #	 (timerange <Time> <Time>))+
 #	[showdayofweek]
 #	[formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
-def printShowWorkingLocation(users):
+def printShowStatusEvent(users, eventType):
+  eventProperties = EVENT_TYPE_PROPERTIES_NAME_MAP[eventType]
+  entityType = EVENT_TYPE_ENTITY_MAP[eventType]
   csvPF = CSVPrintFile(['primaryEmail', 'calendarId', 'id'], 'sortall') if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
-  kwargs = {'eventTypes': ['workingLocation'], 'showDeleted': False, 'singleEvents': True,
+  kwargs = {'eventTypes': [eventType], 'showDeleted': False, 'singleEvents': True,
             'timeMax': None, 'timeMin': None, 'orderBy': 'startTime'}
   calId = 'primary'
   showDayOfWeek = False
@@ -48645,14 +48982,14 @@ def printShowWorkingLocation(users):
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif myarg in WORKING_LOCATION_DATETIME_CHOICES:
-      getWorkingLocationDateTime(myarg, dateList)
+    elif myarg in STATUS_EVENTS_DATETIME_CHOICES:
+      getStatusEventDateTime(myarg, dateList)
     elif myarg == 'showdayofweek':
       showDayOfWeek = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if not dateList:
-    missingChoiceExit(WORKING_LOCATION_DATETIME_CHOICES)
+    missingChoiceExit(STATUS_EVENTS_DATETIME_CHOICES)
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -48673,7 +49010,8 @@ def printShowWorkingLocation(users):
         try:
           events = callGAPIpages(cal.events(), 'list', 'items',
                                  throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID, GAPI.BAD_REQUEST],
-                                 calendarId=calId, fields='nextPageToken,items(id,start,end,workingLocationProperties)', **kwargs)
+                                 calendarId=calId, fields=f'nextPageToken,items(id,start,end,eventType,{eventProperties},transparency,visibility)',
+                                 **kwargs)
         except (GAPI.notACalendarUser, GAPI.notFound, GAPI.forbidden, GAPI.invalid, GAPI.badRequest) as e:
           entityActionFailedWarning([Ent.CALENDAR, user], str(e), j, jcount)
           break
@@ -48688,7 +49026,7 @@ def printShowWorkingLocation(users):
             k += 1
             if showDayOfWeek:
               _getEventDaysOfWeek(event)
-            _showCalendarWorkingLocation(user, calId, Ent.EVENT, event, k, kcount, FJQC)
+            _showCalendarStatusEvent(user, calId, Ent.EVENT, event, k, kcount, FJQC)
           Ind.Decrement()
         else:
           for event in events:
@@ -48699,7 +49037,16 @@ def printShowWorkingLocation(users):
           first += wlDate['pdelta']
           last += wlDate['pdelta']
   if csvPF:
-    csvPF.writeCSVfile('Calendar Working Locations')
+    csvPF.writeCSVfile(f'Calendar {Ent.Plural(entityType)}')
+
+def printShowFocusTime(users):
+  printShowStatusEvent(users, EVENT_TYPE_FOCUSTIME)
+
+def printShowOutOfOffice(users):
+  printShowStatusEvent(users, EVENT_TYPE_OUTOFOFFICE)
+
+def printShowWorkingLocation(users):
+  printShowStatusEvent(users, EVENT_TYPE_WORKINGLOCATION)
 
 YOUTUBE_CHANNEL_FIELDS_CHOICE_MAP = {
   'brandingsettings': 'brandingSettings',
@@ -61597,21 +61944,21 @@ LOOKERSTUDIO_PERMISSION_MODIFIER_MAP = {
   Act.UPDATE: Act.MODIFIER_FOR
   }
 
-# gam <UserTypeEntity> add datastudiopermissions
+# gam <UserTypeEntity> add lookerstudiopermissions
 #	[([assettype report|datasource|all] [title <String>]
 #	  [owner <Emailddress>] [includetrashed]
 #	  [orderby title [ascending|descending]]) |
 #	 (assetids <LookerStudioAssetIDEntity>)]
 #	(role editor|viewer <LookerStudioPermissionEntity>)+
 #	[nodetails]
-# gam <UserTypeEntity> delete datastudiopermissions
+# gam <UserTypeEntity> delete lookerstudiopermissions
 #	([[assettype report|datasource|all] [title <String>]
 #	  [owner <Emailddress>] [includetrashed]
 #	  [orderby title [ascending|descending]]) |
 #	 (assetids <LookerStudioAssetIDEntity>)]
 #	(role any <LookerStudioPermissionEntity>)+
 #	[nodetails]
-# gam <UserTypeEntity> update datastudiopermissions
+# gam <UserTypeEntity> update lookerstudiopermissions
 #	[([assettype report|datasource|all] [title <String>]
 #	  [owner <Emailddress>] [includetrashed]
 #	  [orderby title [ascending|descending]]) |
@@ -61686,14 +62033,14 @@ def processLookerStudioPermissions(users):
           entityServiceNotApplicableWarning(Ent.USER, user, i, count)
           break
 
-# gam <UserTypeEntity> print datastudiopermissions [todrive <ToDriveAttribute>*]
+# gam <UserTypeEntity> print lookerstudiopermissions [todrive <ToDriveAttribute>*]
 #	[([assettype report|datasource|all] [title <String>]
 #	  [owner <Emailddress>] [includetrashed]
 #	  [orderby title [ascending|descending]]) |
 #	 (assetids <LookerStudioAssetIDEntity>)]
 #	[role editor|owner|viewer]
 #	[formatjson [quotechar <Character>]]
-# gam <UserTypeEntity> show datastudiopermissions
+# gam <UserTypeEntity> show lookerstudiopermissions
 #	[([assettype report|datasource|all] [title <String>]
 #	  [owner <Emailddress>] [includetrashed]
 #	  [orderby title [ascending|descending]]) |
@@ -65833,9 +66180,9 @@ def printShowMessagesThreads(users, entityType):
 
   def _initSenderLabelsMap(sender):
     if sender not in senderLabelsMaps:
-      senderLabelsMaps[sender] = {'*None*': {'name': '*None*', 'count': 0, 'type': LABEL_TYPE_USER, 'match': labelMatchPattern is None}}
+      senderLabelsMaps[sender] = {'*None*': {'name': '*None*', 'count': 0, 'size': 0, 'type': LABEL_TYPE_USER, 'match': labelMatchPattern is None}}
       for label in labels['labels']:
-        senderLabelsMaps[sender][label['id']] = {'name': label['name'], 'count': 0, 'type': label['type'],
+        senderLabelsMaps[sender][label['id']] = {'name': label['name'], 'count': 0, 'size': 0, 'type': label['type'],
                                                 'match': True if not labelMatchPattern else labelMatchPattern.match(label['name']) is not None}
     return senderLabelsMaps[sender]
 
@@ -65865,8 +66212,9 @@ def printShowMessagesThreads(users, entityType):
     for header in result['payload'].get('headers', []):
       sender = _decodeHeader(header['value'])
       if header['name'] == 'Sender' and senderMatchPattern.match(sender):
-        senderCounts.setdefault(sender, 0)
-        senderCounts[sender] += 1
+        senderCounts.setdefault(sender, {'count': 0, 'size': 0})
+        senderCounts[sender]['count'] += 1
+        senderCounts[sender]['size'] += result['sizeEstimate']
         return sender
     return None
 
@@ -66021,16 +66369,19 @@ def printShowMessagesThreads(users, entityType):
       for labelId in labelIds:
         if labelId in labelsMap:
           labelsMap[labelId]['count'] += 1
+          labelsMap[labelId]['size'] += result['sizeEstimate']
         else:
-          labelsMap[labelId] = {'name': labelId, 'count': 1, 'type': LABEL_TYPE_USER,
+          labelsMap[labelId] = {'name': labelId, 'count': 1, 'size': result['sizeEstimate'], 'type': LABEL_TYPE_USER,
                                 'match': True if not labelMatchPattern else labelMatchPattern.match(labelId) is not None}
     elif not labelMatchPattern:
       labelsMap['*None*']['count'] += 1
+      labelsMap['*None*']['size'] += result['sizeEstimate']
 
   def _countMessages(_, result):
     if senderMatchPattern and not _checkSenderMatchCount(result):
       return
     messageThreadCounts['messages'] += 1
+    messageThreadCounts['size'] += result['sizeEstimate']
 
   def _showThread(user, result, j, jcount):
     if senderMatchPattern:
@@ -66039,6 +66390,7 @@ def printShowMessagesThreads(users, entityType):
           break
       else:
         return
+    messageThreadCounts['threads'] += 1
     printEntity([Ent.THREAD, result['id']], j, jcount)
     Ind.Increment()
     if show_snippet and 'snippet' in result:
@@ -66059,6 +66411,7 @@ def printShowMessagesThreads(users, entityType):
         return
     for message in result['messages']:
       _printMessage(user, message)
+    messageThreadCounts['threads'] += 1
 
   def _countThreadLabels(user, result):
     for message in result['messages']:
@@ -66068,9 +66421,13 @@ def printShowMessagesThreads(users, entityType):
     if senderMatchPattern:
       for message in result['messages']:
         if _checkSenderMatchCount(message):
+          messageThreadCounts['size'] += message['sizeEstimate']
           break
       else:
         return
+    else:
+      for message in result['messages']:
+        messageThreadCounts['size'] += message['sizeEstimate']
     messageThreadCounts['threads'] += 1
 
   _GMAIL_ERROR_REASON_TO_MESSAGE_MAP = {GAPI.NOT_FOUND: Msg.DOES_NOT_EXIST, GAPI.INVALID_MESSAGE_ID: Msg.INVALID_MESSAGE_ID}
@@ -66088,7 +66445,7 @@ def printShowMessagesThreads(users, entityType):
     try:
       response = callGAPI(service, 'get',
                           throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_MESSAGE_ID],
-                          userId='me', id=ri[RI_ITEM], format=['metadata', 'full'][show_body or show_attachments or save_attachments])
+                          userId='me', id=ri[RI_ITEM], format=['metadata', 'full'][show_size or show_body or show_attachments or save_attachments])
       if countsOnly:
         _callbacks['process'](ri[RI_ENTITY], response)
       else:
@@ -66129,12 +66486,14 @@ def printShowMessagesThreads(users, entityType):
     if countsOnly:
       if show_labels:
         if not senderMatchPattern:
-          svcargs['fields'] = 'labelIds' if entityType == Ent.MESSAGE else 'messages(labelIds)'
+          svcargs['fields'] = 'labelIds,sizeEstimate' if entityType == Ent.MESSAGE else 'messages(labelIds,sizeEstimate)'
         else:
-          svcargs['fields'] = 'labelIds,payload' if entityType == Ent.MESSAGE else 'messages(labelIds,payload)'
+          svcargs['fields'] = 'labelIds,sizeEstimate,payload' if entityType == Ent.MESSAGE else 'messages(labelIds,sizeEstimate,payload)'
       else:
-        if senderMatchPattern:
-          svcargs['fields'] = 'payload' if entityType == Ent.MESSAGE else 'messages(payload)'
+        if not senderMatchPattern:
+          svcargs['fields'] = 'sizeEstimate' if entityType == Ent.MESSAGE else 'messages(sizeEstimate)'
+        else:
+          svcargs['fields'] = 'sizeEstimate,payload' if entityType == Ent.MESSAGE else 'messages(sizeEstimate,payload)'
     method = getattr(service, 'get')
     dbatch = gmail.new_batch_http_request(callback=_callbacks['batch'])
     bcount = 0
@@ -66245,6 +66604,8 @@ def printShowMessagesThreads(users, entityType):
         else:
           sortTitles = ['User', 'Sender', parameters['listType']]
         _callbacks = {'batch': _callbackCountLabels, 'process': _countMessages if entityType == Ent.MESSAGE else _countThreads}
+      if show_size:
+        sortTitles.append('size')
       csvPF.SetTitles(sortTitles)
     else:
       sortTitles = ['User', 'threadId', 'id']
@@ -66274,7 +66635,7 @@ def printShowMessagesThreads(users, entityType):
       senderLabelsMaps = {}
       if not senderMatchPattern:
         _initSenderLabelsMap(user)
-    messageThreadCounts = {'User': user, parameters['listType']: 0}
+    messageThreadCounts = {'User': user, parameters['listType']: 0, 'size': 0}
     senderCounts = {}
     if save_attachments:
       _, userName, _ = splitEmailAddressOrUID(user)
@@ -66304,7 +66665,7 @@ def printShowMessagesThreads(users, entityType):
     jcount = len(messageIds)
     if jcount == 0:
       setSysExitRC(NO_ENTITIES_FOUND_RC)
-    if countsOnly and not show_labels and not senderMatchPattern:
+    if countsOnly and not show_labels and not senderMatchPattern and not show_size:
       if not csvPF:
         printEntityKVList([Ent.USER, user], [parameters['listType'], jcount], i, count)
       else:
@@ -66355,26 +66716,44 @@ def printShowMessagesThreads(users, entityType):
             j = 0
             for label in sorted(iter(labelsMap.values()), key=lambda k: k['name']):
               j += 1
-              printEntityKVList([Ent.LABEL, label['name']], ['Count', label['count'], 'Type', label['type']], j, jcount)
+              if not show_size:
+                printEntityKVList([Ent.LABEL, label['name']], ['Count', label['count'], 'Type', label['type']], j, jcount)
+              else:
+                printEntityKVList([Ent.LABEL, label['name']], ['Count', label['count'], 'Size', label['size'], 'Type', label['type']], j, jcount)
             Ind.Decrement()
         else:
           for sender, labelsMap in sorted(iter(senderLabelsMaps.items())):
             row = {'User': user}
             if senderMatchPattern:
               row['Sender'] = sender
+            if not show_size:
+              labelsMap.pop('size', None)
             csvPF.WriteRowTitles(flattenJSON({'Labels': sorted(iter(labelsMap.values()), key=lambda k: k['name'])}, flattened=row))
       elif not senderMatchPattern:
         if not csvPF:
-          printEntityKVList([Ent.USER, user], [parameters['listType'], messageThreadCounts[parameters['listType']]], i, count)
+          if not show_size:
+            printEntityKVList([Ent.USER, user], [parameters['listType'], messageThreadCounts[parameters['listType']]], i, count)
+          else:
+            printEntityKVList([Ent.USER, user], [parameters['listType'], messageThreadCounts[parameters['listType']], 'size', messageThreadCounts['size']], i, count)
         else:
+          if not show_size:
+            messageThreadCounts.pop('size', None)
           csvPF.WriteRow(messageThreadCounts)
       else:
-        if not csvPF:
-          for k, v in sorted(iter(senderCounts.items())):
-            printEntityKVList([Ent.USER, user, Ent.SENDER, k], [parameters['listType'], v], i, count)
+        if not show_size:
+          if not csvPF:
+            for k, v in sorted(iter(senderCounts.items())):
+              printEntityKVList([Ent.USER, user, Ent.SENDER, k], [parameters['listType'], v['count']], i, count)
+          else:
+            for k, v in sorted(iter(senderCounts.items())):
+              csvPF.WriteRow({'User': user, 'Sender': k, parameters['listType']: v['count']})
         else:
-          for k, v in sorted(iter(senderCounts.items())):
-            csvPF.WriteRow({'User': user, 'Sender': k, parameters['listType']: v})
+          if not csvPF:
+            for k, v in sorted(iter(senderCounts.items())):
+              printEntityKVList([Ent.USER, user, Ent.SENDER, k], [parameters['listType'], v['count'], 'size', v['size']], i, count)
+          else:
+            for k, v in sorted(iter(senderCounts.items())):
+              csvPF.WriteRow({'User': user, 'Sender': k, parameters['listType']: v['count'], 'size': v['size']})
   if csvPF:
     if not countsOnly:
       csvPF.RemoveTitles(['SizeEstimate', 'LabelsCount', 'Labels', 'Snippet', 'Body'])
@@ -71153,6 +71532,7 @@ USER_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_DRIVEFOLDERPATH:	createDriveFolderPath,
   Cmd.ARG_EVENT:		createCalendarEvent,
   Cmd.ARG_FILTER:		createFilter,
+  Cmd.ARG_FOCUSTIME:		createFocusTime,
   Cmd.ARG_FORM:			createForm,
   Cmd.ARG_FORWARDINGADDRESS:	createForwardingAddresses,
   Cmd.ARG_GUARDIAN:		inviteGuardians,
@@ -71162,6 +71542,7 @@ USER_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_LICENSE:		createLicense,
   Cmd.ARG_NOTE:			createNote,
   Cmd.ARG_NOTEACL:		createNotesACLs,
+  Cmd.ARG_OUTOFOFFICE:		createOutOfOffice,
   Cmd.ARG_PEOPLECONTACT:	createUserPeopleContact,
   Cmd.ARG_PEOPLECONTACTGROUP:	createUserPeopleContactGroup,
   Cmd.ARG_PERMISSION:		createDriveFilePermissions,
@@ -71263,6 +71644,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_EVENT:		deleteCalendarEvents,
       Cmd.ARG_FILEREVISION:	deleteFileRevisions,
       Cmd.ARG_FILTER:		deleteFilters,
+      Cmd.ARG_FOCUSTIME:	deleteFocusTime,
       Cmd.ARG_FORWARDINGADDRESS:	deleteForwardingAddresses,
       Cmd.ARG_GROUP:		deleteUserFromGroups,
       Cmd.ARG_GUARDIAN:		deleteGuardians,
@@ -71274,6 +71656,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_MESSAGE:		processMessages,
       Cmd.ARG_NOTE:		deleteInfoNotes,
       Cmd.ARG_NOTEACL:		deleteNotesACLs,
+      Cmd.ARG_OUTOFOFFICE:	deleteOutOfOffice,
       Cmd.ARG_OTHERCONTACT:	processUserPeopleOtherContacts,
       Cmd.ARG_PEOPLECONTACT:	deleteUserPeopleContacts,
       Cmd.ARG_PEOPLECONTACTGROUP:	deleteUserPeopleContactGroups,
@@ -71423,6 +71806,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_FILESHARECOUNT:	printShowFileShareCounts,
       Cmd.ARG_FILETREE:		printShowFileTree,
       Cmd.ARG_FILTER:		printShowFilters,
+      Cmd.ARG_FOCUSTIME:	printShowFocusTime,
       Cmd.ARG_FORM:		printShowForms,
       Cmd.ARG_FORMRESPONSE:	printShowFormResponses,
       Cmd.ARG_FORWARD:		printShowForward,
@@ -71438,6 +71822,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_MESSAGE:		printShowMessages,
       Cmd.ARG_NOTE:		printShowNotes,
       Cmd.ARG_OTHERCONTACT:	printShowUserPeopleOtherContacts,
+      Cmd.ARG_OUTOFOFFICE:	printShowOutOfOffice,
       Cmd.ARG_PEOPLECONTACT:	printShowUserPeopleContacts,
       Cmd.ARG_PEOPLECONTACTGROUP:	printShowUserPeopleContactGroups,
       Cmd.ARG_PEOPLEPROFILE:	printShowUserPeopleProfiles,
@@ -71516,6 +71901,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_FILESHARECOUNT:	printShowFileShareCounts,
       Cmd.ARG_FILETREE:		printShowFileTree,
       Cmd.ARG_FILTER:		printShowFilters,
+      Cmd.ARG_FOCUSTIME:	printShowFocusTime,
       Cmd.ARG_FORM:		printShowForms,
       Cmd.ARG_FORMRESPONSE:	printShowFormResponses,
       Cmd.ARG_FORWARD:		printShowForward,
@@ -71530,6 +71916,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_MESSAGE:		printShowMessages,
       Cmd.ARG_NOTE:		printShowNotes,
       Cmd.ARG_OTHERCONTACT:	printShowUserPeopleOtherContacts,
+      Cmd.ARG_OUTOFOFFICE:	printShowOutOfOffice,
       Cmd.ARG_PEOPLECONTACT:	printShowUserPeopleContacts,
       Cmd.ARG_PEOPLECONTACTGROUP:	printShowUserPeopleContactGroups,
       Cmd.ARG_PEOPLEPROFILE:	printShowUserPeopleProfiles,
@@ -71569,7 +71956,8 @@ USER_COMMANDS_WITH_OBJECTS = {
     ),
   'sync':
     (Act.SYNC,
-     {Cmd.ARG_GROUP:		syncUserWithGroups,
+     {Cmd.ARG_CHATMEMBER:	syncChatMembers,
+      Cmd.ARG_GROUP:		syncUserWithGroups,
       Cmd.ARG_GUARDIAN:		syncGuardians,
       Cmd.ARG_LICENSE:		syncLicense,
       Cmd.ARG_SHAREDDRIVEACLS:	copySyncSharedDriveACLs,
@@ -71720,6 +72108,7 @@ USER_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_FILEREVISIONS:	Cmd.ARG_FILEREVISION,
   Cmd.ARG_FILESHARECOUNTS:	Cmd.ARG_FILESHARECOUNT,
   Cmd.ARG_FILTERS:		Cmd.ARG_FILTER,
+  Cmd.ARG_FOCUSTIMES:		Cmd.ARG_FOCUSTIME,
   Cmd.ARG_FORMS:		Cmd.ARG_FORM,
   Cmd.ARG_FORMRESPONSES:	Cmd.ARG_FORMRESPONSE,
   Cmd.ARG_FORWARDS:		Cmd.ARG_FORWARD,
@@ -71748,6 +72137,7 @@ USER_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_NOTEATTACHMENTS:	Cmd.ARG_NOTEATTACHMENT,
   Cmd.ARG_OAUTH:		Cmd.ARG_TOKEN,
   Cmd.ARG_OTHERCONTACTS:	Cmd.ARG_OTHERCONTACT,
+  Cmd.ARG_OUTOFOFFICES:		Cmd.ARG_OUTOFOFFICE,
   Cmd.ARG_PEOPLECONTACTS:	Cmd.ARG_PEOPLECONTACT,
   Cmd.ARG_PEOPLECONTACTGROUPS:	Cmd.ARG_PEOPLECONTACTGROUP,
   Cmd.ARG_PEOPLECONTACTPHOTOS:	Cmd.ARG_PEOPLECONTACTPHOTO,

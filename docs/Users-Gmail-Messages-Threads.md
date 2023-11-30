@@ -539,13 +539,15 @@ The `dateheaderconverttimezone [<Boolean>]>` option converts `<SMTPDateHeader>` 
 * `showsize` - Display the message size
 * `showsnippet` - Display the message snippet
 
-### Display message count
+### Display message count and optionally cumulative message size
 * `countsonly` - Display the count of the number of messages
+* `showsize` - Display the cumulative message size
 
 ### Display label counts
 * `showlabels` - Display the message labels
 * `countsonly` - Display all message label counts
 * `positivecountsonly` - Display message label counts that are greater than 0
+* `showsize` - Display the cumulative message size for each label
 * `useronly` - Do not display system labels
 
 ## Print only options

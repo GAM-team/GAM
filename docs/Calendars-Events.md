@@ -103,11 +103,20 @@ Client access works when accessing Resource calendars.
         creator.id|
         creator.self
 
+<EventFocusTimePropertiesSubfieldName> ::=
+        focustimeproperties.chatstatus|
+        focustimeproperties.declinemode|
+        focustimeproperties.declinemessage
+
 <EventOrganizerSubfieldName> ::=
         organizer.displayname|
         organizer.email|
         organizer.id|
         organizer.self
+
+<EventOutOfOfficePropertiesSubfieldName> ::=
+        outofoffice.declinemode|
+        outofoffice.declinemessage
 
 <EventWorkingLocationPropertiesSubfieldName> ::=
         workinglocationproperties.homeoffice|
@@ -132,6 +141,7 @@ Client access works when accessing Resource calendars.
         endtimeunspecified|
         extendedproperties|
         eventtype|
+        <EventFocusTimePropertiesSubfieldName>
         gadget|
         guestscaninviteothers|
         guestscanmodify|
@@ -145,6 +155,7 @@ Client access works when accessing Resource calendars.
         organizer|
         <EventOrganizerSubfieldName>|
         originalstart|originalstarttime|
+        <EventOutOfOfficePropertiesSubfieldName>
         privatecopy|
         recurrence|
         recurringeventid|
@@ -158,14 +169,23 @@ Client access works when accessing Resource calendars.
         updated|
         visibility|
         workinglocationproperties|
+        <EventWorkingLocationPropertiesSubfieldName>
 <EventFieldNameList> ::= "<EventFieldName>(,<EventFieldName>)*"
 
 <AttendeeAttendance> ::= optional|required
 <AttendeeStatus> ::= accepted|declined|needsaction|tentative
 
+<EventType> ::=
+        default|
+        focustime|
+        outofoffice|
+        workinglocation
+<EventTypeList> ::= "<EventType>(,<EventType>)*"
+
 <EventSelectProperty> ::=
         (after|starttime|timemin <Time>)|
         (before|endtime|timemax <Time>)|
+        (eventtype|eventtypes <EventTypeList>)|
         (query <QueryCalendar>)|
         (privateextendedproperty <String>)|
         (sharedextendedproperty <String>)|
@@ -211,6 +231,7 @@ Client access works when accessing Resource calendars.
 <PropertyValue> ::= <String>
 
 <EventAttribute> ::=
+        (allday <Date>)|
         (anyonecanaddself [<Boolean>])|
         (attachment <String> <URL>)|
         (attendee <EmailAddress>)|
@@ -219,7 +240,7 @@ Client access works when accessing Resource calendars.
         (color <EventColorName>)|
         (colorindex|colorid <EventColorIndex>)|
         (description <String>)|
-        (end (allday <Date>)|<Time>)|
+        (end|endtime (allday <Date>)|<Time>)|
         (guestscaninviteothers <Boolean>)|
         guestscantinviteothers|
         (guestscanmodify <Boolean>)|
@@ -234,16 +255,18 @@ Client access works when accessing Resource calendars.
         (optionalattendee <EmailAddress>)|
         (originalstart|originalstarttime (allday <Date>)|<Time>)|
         (privateproperty <PropertyKey> <PropertyValue>)|
+        (range <Date> <Date>)|
         (recurrence <RRULE, EXRULE, RDATE and EXDATE line>)|
         (reminder <Number> email|popup))|
         (selectattendees [<AttendeeAttendance>] [<AttendeeStatus>] <UserTypeEntity>)|
         (sequence <Integer>)|
         (sharedproperty <PropertyKey> <PropertyValue>)|
         (source <String> <URL>)|
-        (start (allday <Date>)|<Time>)|
+        (start|starttime (allday <Date>)|<Time>)|
         (status confirmed|tentative|cancelled)|
         (summary <String>)|
         tentative|
+        (timerange <Time> <Time>)|
         (timezone <TimeZone>)|
         (transparency opaque|transparent)|
         (visibility default|public|private)
@@ -293,10 +316,12 @@ This is dense reading; a simpler approach is to define a test event in Google Ca
 the recurrence rule that you want, then use `gam info event` to get the recurrence rule and use it in subsequent commands.
 
 ```
-RRULE:FREQ=DAILY
-RRULE:FREQ=DAILY;COUNT=30
-RRULE:FREQ=WEEKLY;BYDAY=WE
-RRULE:FREQ=WEEKLY;WKST=SU;COUNT=13;BYDAY=WE
+RRULE:FREQ=DAILY - Daily
+RRULE:FREQ=DAILY;COUNT=30 - Daily for 30 days
+RRULE:FREQ=WEEKLY - Weekly on the same day of the week as the starting day; e.g., every Wednesday
+RRULE:FREQ=WEEKLY;COUNT=13 - Weekly on the same day of the week as the starting day; e.g., every Wednesday, for 13 weeks
+RRULE:FREQ=MONTHLY - Monthly on the same day of the month as the starting day; e.g., every 15th of the month
+RRULE:FREQ=MONTHLY;BYDAY=4TH - Monthly on the fourth instance of the starting day; e.g., every 4th Thursday
 ```
 
 ## Event colors
@@ -320,6 +345,7 @@ If none of the following options are selected, all events are selected.
 The Google Calendar API processes `<EventSelectProperty>*`; you may specify none or multiple properties.
 * `after|starttime|timemin <Time>` - Lower bound (inclusive) for an event's end time to filter by. If timeMax is set, timeMin must be smaller than timeMax.
 * `before|endtime|timemax <Time>` - Upper bound (exclusive) for an event's start time to filter by. If timeMin is set, timeMax must be greater than timeMin.
+* `eventtypes <EventTypeList>` - Select events based on their type.
 * `query <QueryCalendar>` - Free text search terms to find events that match these terms in any field, except for extended properties
 * `privateextendedproperty <String>` - A required private property; `<String>` must be of the form `propertyName=value`
 * `sharedextendedproperty <String>` - A required shared property; `<String>` must be of the form `propertyName=value`

@@ -10,6 +10,22 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.66.00
+
+Added support for `Focus Time` and `Out of Office` status events in user's primary calendars.
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Calendars-Events#status-events
+This is a work-in-progress.
+
+Updated `gam <UserTypeEntity> print|show messages` to allow option `show_size` to be used with option `countsonly`
+to display the cumulative size of the messages selected.
+```
+gam user user@domain.com print messages query "newer_than:31d" countsonly showsize
+Getting all Messages for user@domain.com
+Got 16 Messagess for user@domain.com...
+User,messages,size
+user@domain.com,16,92806
+```
+
 ### 6.65.17
 
 Added the option `mappermissionsdomain <DomainName1> <DomainName2>` to `gam <UserTypeEntity> create drivefileacl <DriveFileEntity>`

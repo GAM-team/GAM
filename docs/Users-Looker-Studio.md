@@ -2,12 +2,12 @@
 - [API documentation](#api-documentation)
 - [Notes](#notes)
 - [Definitions](#definitions)
-- [Display Looker Studio assets](#display-data-studio-assets)
-- [Manage Looker Studio permissions](#manage-data-studio-permissions)
+- [Display Looker Studio assets](#display-looker-studio-assets)
+- [Manage Looker Studio permissions](#manage-looker-studio-permissions)
   - [Add Permissions](#add-permissions)
   - [Delete Permissions](#delete-permissions)
   - [Update Permissions](#update-permissions)
-- [Display Looker Studio permissions](#display-data-studio-permissions)
+- [Display Looker Studio permissions](#display-looker-studio-permissions)
 
 ## API documentation
 * https://developers.google.com/looker-studio/integrate/api/reference

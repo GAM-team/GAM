@@ -204,8 +204,9 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 ### Add members to a chat space
 ```
 gam <UserTypeEntity> create chatmember <ChatSpace>
-        [type human|bot]
-        ((user <UserItem>)|(members <UserTypeEntity>))*
+        [type human|bot] [role member|manager]
+        (user <UserItem>)* (members <UserTypeEntity>)*
+        (group <GroupItem>)* (groups <GroupEntity>)*
         [formatjson|returnidonly]
 ```
 By default, Gam displays the information about the chatmember as an indented list of keys and values.
@@ -213,10 +214,11 @@ By default, Gam displays the information about the chatmember as an indented lis
 * `returnidonly` - Display the chatmember name only
 
 ### Delete members from a chat space
-Delete members by specifying a chat space and user email addresses.
+Delete members by specifying a chat space and user/group email addresses.
 ```
 gam <UserTypeEntity> delete chatmember <ChatSpace>
-        ((user <UserItem>)|(members <UserTypeEntity>))+
+        ((user <UserItem>)|(members <UserTypeEntity>)|
+         (group <GroupItem>)|(groups <GroupEntity>))+
 ```
 
 Delete members by specifying chatmember names.
@@ -236,7 +238,7 @@ By default, Gam displays the information as an indented list of keys and values.
 ### Display information about all chat members in a chat space
 ```
 gam <UserTypeEntity> show chatmembers <ChatSpace>
-        [showinvited [<Boolean>]] [filter <String>]
+        [showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
         [formatjson]
 ```
 
@@ -245,7 +247,7 @@ By default, Gam displays the information as an indented list of keys and values.
 
 ```
 gam <UserTypeEntity> print chatmembers [todrive <ToDriveAttribute>*] <ChatSpace>
-        [showinvited [<Boolean>]] [filter <String>]
+        [showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
         [formatjson [quotechar <Character>]]
 ```
 

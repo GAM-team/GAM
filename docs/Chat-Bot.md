@@ -109,7 +109,7 @@ By default, Gam displays the information as an indented list of keys and values.
 ### Display information about all chat members in a chat space
 ```
 gam show chatmembers space <ChatSpace>
-        [showinvited [<Boolean>]] [filter <String>]
+        [showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
         [formatjson]
 ```
 By default, Gam displays the information as an indented list of keys and values.
@@ -117,7 +117,7 @@ By default, Gam displays the information as an indented list of keys and values.
 
 ```
 gam print chatmembers [todrive <ToDriveAttribute>*] space <ChatSpace>
-        [showinvited [<Boolean>]] [filter <String>]
+        [showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
         [formatjson [quotechar <Character>]]
 ```
 
