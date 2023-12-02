@@ -65,6 +65,8 @@ CSV_OUTPUT_HEADER_DROP_FILTER = 'cohd'
 CSV_OUTPUT_HEADER_FILTER = 'cohf'
 # Force output column headers
 CSV_OUTPUT_HEADER_FORCE = 'cofh'
+# No escape character in CSV output file
+CSV_OUTPUT_NO_ESCAPE_CHAR = 'cone'
 # Quote character in CSV output file
 CSV_OUTPUT_QUOTE_CHAR = 'coqc'
 # Filter for output column drop values
@@ -227,6 +229,7 @@ Globals = {
   CSV_OUTPUT_HEADER_DROP_FILTER: [],
   CSV_OUTPUT_HEADER_FILTER: [],
   CSV_OUTPUT_HEADER_FORCE: [],
+  CSV_OUTPUT_NO_ESCAPE_CHAR: None,
   CSV_OUTPUT_QUOTE_CHAR: None,
   CSV_OUTPUT_ROW_DROP_FILTER: [],
   CSV_OUTPUT_ROW_DROP_FILTER_MODE: False,

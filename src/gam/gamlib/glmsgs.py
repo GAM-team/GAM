@@ -422,6 +422,7 @@ RESOURCE_CAPACITY_FLOOR_REQUIRED = 'Options "capacity <Number>" (<Number> > 0) a
 RESOURCE_FLOOR_REQUIRED = 'Option "floor <String>" required'
 RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET = 'Results are too large for Google Spreadsheets. Uploading as a regular CSV file.'
 RETRIES_EXHAUSTED = 'Retries {0} exhausted'
+RETRYING_GOOGLE_SHEET_EXPORT_SLEEPING = 'Retrying Google Sheet export {0}/{1}. Sleeping {2} seconds\n'
 ROLE_MUST_BE_ORGANIZER = 'Role must be organizer'
 ROLE_NOT_IN_SET = 'Role not in set: {0})'
 SCHEMA_WOULD_HAVE_NO_FIELDS = '{0} would have no {1}'

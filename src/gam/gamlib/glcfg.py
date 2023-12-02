@@ -89,6 +89,8 @@ CONFIG_DIR = 'config_dir'
 CONTACT_MAX_RESULTS = 'contact_max_results'
 # Column delimiter in CSV input file
 CSV_INPUT_COLUMN_DELIMITER = 'csv_input_column_delimiter'
+# No escape character in CSV input file
+CSV_INPUT_NO_ESCAPE_CHAR = 'csv_input_no_escape_char'
 # Quote character in CSV input file
 CSV_INPUT_QUOTE_CHAR = 'csv_input_quote_char'
 # Filter for input column values
@@ -105,6 +107,8 @@ CSV_INPUT_ROW_LIMIT = 'csv_input_row_limit'
 CSV_OUTPUT_CONVERT_CR_NL = 'csv_output_convert_cr_nl'
 # Column delimiter in CSV output file
 CSV_OUTPUT_COLUMN_DELIMITER = 'csv_output_column_delimiter'
+# No escape character in CSV output file
+CSV_OUTPUT_NO_ESCAPE_CHAR = 'csv_output_no_escape_char'
 # Field list delimiter in CSV output file
 CSV_OUTPUT_FIELD_DELIMITER = 'csv_output_field_delimiter'
 # Filter for output column headers
@@ -260,6 +264,8 @@ TODRIVE_LOCALE = 'todrive_locale'
 TODRIVE_NOBROWSER = 'todrive_nobrowser'
 # Suppress sending email on todrive upload
 TODRIVE_NOEMAIL = 'todrive_noemail'
+# No escape character in CSV output file
+TODRIVE_NO_ESCAPE_CHAR = 'todrive_no_escape_char'
 # ID/Name of parent folder for todrive files
 TODRIVE_PARENT = 'todrive_parent'
 # Append timestamp to todrive sheet name
@@ -317,6 +323,7 @@ Defaults = {
   CONFIG_DIR: '',
   CONTACT_MAX_RESULTS: '100',
   CSV_INPUT_COLUMN_DELIMITER: ',',
+  CSV_INPUT_NO_ESCAPE_CHAR: TRUE,
   CSV_INPUT_QUOTE_CHAR: '\'"\'',
   CSV_INPUT_ROW_FILTER: '',
   CSV_INPUT_ROW_FILTER_MODE: 'allmatch',
@@ -325,6 +332,7 @@ Defaults = {
   CSV_INPUT_ROW_LIMIT: '0',
   CSV_OUTPUT_COLUMN_DELIMITER: ',',
   CSV_OUTPUT_CONVERT_CR_NL: FALSE,
+  CSV_OUTPUT_NO_ESCAPE_CHAR: FALSE,
   CSV_OUTPUT_FIELD_DELIMITER: "' '",
   CSV_OUTPUT_HEADER_FILTER: '',
   CSV_OUTPUT_HEADER_DROP_FILTER: '',
@@ -402,6 +410,7 @@ Defaults = {
   TODRIVE_LOCALE: '',
   TODRIVE_NOBROWSER: '',
   TODRIVE_NOEMAIL: '',
+  TODRIVE_NO_ESCAPE_CHAR: TRUE,
   TODRIVE_PARENT: 'root',
   TODRIVE_SHEET_TIMESTAMP: 'copy', # copy from TODRIVE_TIMESTAMP
   TODRIVE_SHEET_TIMEFORMAT: 'copy', # copy from TODRIVE_TIMEFORMAT
@@ -469,6 +478,7 @@ VAR_INFO = {
   CONFIG_DIR: {VAR_TYPE: TYPE_DIRECTORY, VAR_ENVVAR: 'GAMUSERCONFIGDIR'},
   CONTACT_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 10000)},
   CSV_INPUT_COLUMN_DELIMITER: {VAR_TYPE: TYPE_CHARACTER},
+  CSV_INPUT_NO_ESCAPE_CHAR: {VAR_TYPE: TYPE_BOOLEAN},
   CSV_INPUT_QUOTE_CHAR: {VAR_TYPE: TYPE_CHARACTER},
   CSV_INPUT_ROW_FILTER: {VAR_TYPE: TYPE_ROWFILTER},
   CSV_INPUT_ROW_FILTER_MODE: {VAR_TYPE: TYPE_CHOICE, VAR_CHOICES: {'allmatch': True, 'anymatch': False}},
@@ -477,6 +487,7 @@ VAR_INFO = {
   CSV_INPUT_ROW_LIMIT: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (0, None)},
   CSV_OUTPUT_COLUMN_DELIMITER: {VAR_TYPE: TYPE_CHARACTER},
   CSV_OUTPUT_CONVERT_CR_NL: {VAR_TYPE: TYPE_BOOLEAN},
+  CSV_OUTPUT_NO_ESCAPE_CHAR: {VAR_TYPE: TYPE_BOOLEAN},
   CSV_OUTPUT_FIELD_DELIMITER: {VAR_TYPE: TYPE_CHARACTER},
   CSV_OUTPUT_HEADER_FILTER: {VAR_TYPE: TYPE_HEADERFILTER},
   CSV_OUTPUT_HEADER_DROP_FILTER: {VAR_TYPE: TYPE_HEADERFILTER},
@@ -554,6 +565,7 @@ VAR_INFO = {
   TODRIVE_LOCALE: {VAR_TYPE: TYPE_LOCALE},
   TODRIVE_NOBROWSER: {VAR_TYPE: TYPE_BOOLEAN, VAR_SIGFILE: 'nobrowser.txt', VAR_SFFT: (FALSE, TRUE)},
   TODRIVE_NOEMAIL: {VAR_TYPE: TYPE_BOOLEAN, VAR_SIGFILE: 'notdemail.txt', VAR_SFFT: (FALSE, TRUE)},
+  TODRIVE_NO_ESCAPE_CHAR: {VAR_TYPE: TYPE_BOOLEAN},
   TODRIVE_PARENT: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
   TODRIVE_SHEET_TIMESTAMP: {VAR_TYPE: TYPE_BOOLEAN},
   TODRIVE_SHEET_TIMEFORMAT: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
