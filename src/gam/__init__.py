@@ -52660,7 +52660,7 @@ def printFileList(users):
     if DLP.onlySharedDrives or getPermissionsForSharedDrives or DFF.showSharedDriveNames:
       _setSkipObjects(skipObjects, ['driveId'], DFF.fieldsList)
 
-  def _printFileInfo(drive, user, f_file):
+  def _printFileInfo(drive, user, f_file, cleanFileName):
     driveId = f_file.get('driveId')
     checkSharedDrivePermissions = getPermissionsForSharedDrives and driveId and 'permissions' not in f_file
     if (f_file.get('noDisplay', False) or
@@ -52690,6 +52690,8 @@ def printFileList(users):
         pass
     row = {'Owner': user}
     fileInfo = f_file.copy()
+    if cleanFileName:
+      fileInfo['name'] = _stripControlCharsFromName(fileInfo['name'])
     if not pmselect and 'permissions' in fileInfo:
       fileInfo['permissions'] = DLP.GetFileMatchingPermission(fileInfo)
     if DFF.showSharedDriveNames and driveId:
@@ -52768,7 +52770,7 @@ def printFileList(users):
             filesPrinted.add(childFileId)
             # Don't show My Drive/Shared Drive unless asked when parent is 'SharedDrives'
             if showParent or parentFileEntry['info']['id'] != SHARED_DRIVES:
-              _printFileInfo(drive, user, childEntry['info'].copy())
+              _printFileInfo(drive, user, childEntry['info'].copy(), False)
           if childEntry['info']['mimeType'] == MIMETYPE_GA_FOLDER and (maxdepth == -1 or depth < maxdepth):
             _printChildDriveFolderContents(drive, childEntry['info'], user, i, count, depth+1)
       return
@@ -52800,7 +52802,7 @@ def printFileList(users):
           fileTree.setdefault(childFileId, {'info': childEntryInfo})
         if childFileId not in filesPrinted:
           filesPrinted.add(childFileId)
-          _printFileInfo(drive, user, childEntryInfo.copy())
+          _printFileInfo(drive, user, childEntryInfo.copy(), stripCRsFromName)
         if childEntryInfo['mimeType'] == MIMETYPE_GA_FOLDER and (maxdepth == -1 or depth < maxdepth):
           _printChildDriveFolderContents(drive, childEntryInfo, user, i, count, depth+1)
     except (GAPI.invalidQuery, GAPI.invalid, GAPI.badRequest):
@@ -53106,7 +53108,7 @@ def printFileList(users):
             for f_file in files:
               if stripCRsFromName:
                 f_file['name'] = _stripControlCharsFromName(f_file['name'])
-              _printFileInfo(drive, user, f_file)
+              _printFileInfo(drive, user, f_file, False)
         if incrementalPrint:
           if countsOnly:
             if summary != FILECOUNT_SUMMARY_NONE:
@@ -53173,7 +53175,7 @@ def printFileList(users):
           fileEntryInfo['mimeType'] != MIMETYPE_GA_FOLDER or noRecursion):
         if fileId not in filesPrinted:
           filesPrinted.add(fileId)
-          _printFileInfo(drive, user, fileEntryInfo.copy())
+          _printFileInfo(drive, user, fileEntryInfo.copy(), False)
       if fileEntryInfo['mimeType'] == MIMETYPE_GA_FOLDER and not noRecursion:
         _printChildDriveFolderContents(drive, fileEntryInfo, user, i, count, 0)
         if GC.Values[GC.SHOW_GETTINGS] and not GC.Values[GC.SHOW_GETTINGS_GOT_NL]:

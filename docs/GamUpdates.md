@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.66.03
+
+Fixed bug in `gam <UserTypeEntity> print filelist select <DriveFileEntity>` where `stripcrsfromname` was not being
+applied to files below the selected folder.
+
 ### 6.66.02
 
 Updated device commmands to handle the following error caused by an invalid query.
