@@ -43,6 +43,7 @@ Command Processing
 * [Command Line Parsing](Command-Line-Parsing)
 * [Command Logging and Progress](Command-Logging-Progress)
 * [Command data from Google Docs/Sheets/Storage](Command-Data-From-Google-Docs-Sheets-Storage)
+* [CSV Special Characters](CSV-Special-Characters)
 * [CSV Input Filtering](CSV-Input-Filtering)
 * [CSV Output Filtering](CSV-Output-Filtering)
 * [Meta Commands and File Redirection](Meta-Commands-and-File-Redirection)

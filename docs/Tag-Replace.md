@@ -167,7 +167,7 @@ gam create user <EmailAddress> <UserAttribute>*
 gam update user <UserItem> <UserAttribute>
         [updateprimaryemail <RegularExpression> <EmailReplacement>]
         [updateoufromgroup <FileName> [charset <CharSet>]
-            [columndelimiter <Character>] [quotechar <Character>]
+            [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [fields <FieldNameList>] [keyfield <FieldName>] [datafield <FieldName>]]
         [clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>]
         [createifnotfound] [notify <EmailAddress>] [subject <String>]

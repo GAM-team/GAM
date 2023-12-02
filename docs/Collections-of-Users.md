@@ -127,7 +127,7 @@
              (gdoc(:<FieldName>)+ <UserGoogleDoc>)|
              (gcscsv(:<FieldName>)+ <StorageBucketObjectName>)|
              (gcsdoc(:<FieldName>)+ <StorageBucketObjectName>))
-            [warnifnodata] [columndelimiter <Character>] [quotechar <Character>]
+            [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>][quotechar <Character>]
             [endcsv|(fields <FieldNameList>)]
             (matchfield|skipfield <FieldName> <RegularExpression>)*
             [delimiter <Character>])|
@@ -148,7 +148,7 @@
               (gdoc(:<FieldName>)+ <UserGoogleDoc>)|
               (gcscsv(:<FieldName>)+ <StorageBucketObjectName>)|
               (gcsdoc(:<FieldName>)+ <StorageBucketObjectName>))
-            [warnifnodata] [columndelimiter <Character>] [quotechar <Character>]
+            [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>][quotechar <Character>]
             [endcsv|(fields <FieldNameList>)]
             (matchfield|skipfield <FieldName> <RegularExpression>)*
             [delimiter <Character>])|
@@ -161,7 +161,7 @@
               (gdoc <UserGoogleDoc>)|
               (gcscsv <StorageBucketObjectName>)|
               (gcsdoc <StorageBucketObjectName>))
-             [charset <Charset>] [columndelimiter <Character>] [quotechar <Character>] [fields <FieldNameList>])
+             [charset <Charset>] [columndelimiter <Character>] [noescapechar <Boolean>][quotechar <Character>] [fields <FieldNameList>])
             keyfield <FieldName> [keypattern <RegularExpression>] [keyvalue <String>] [delimiter <Character>]
             subkeyfield <FieldName> [keypattern <RegularExpression>] [keyvalue <String>] [delimiter <Character>]
             (matchfield|skipfield <FieldName> <RegularExpression>)*
@@ -360,7 +360,7 @@ csvfile
     (gdoc(:<FieldName>)+ <UserGoogleDoc>)|
     (gcscsv(:<FieldName>)+ <StorageBucketObjectName>)|
     (gcsdoc(:<FieldName>)+ <StorageBucketObjectName>))
-   [warnifnodata] [columndelimiter <Character>] [quotechar <Character>]
+   [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>][quotechar <Character>]
    [endcsv|(fields <FieldNameList>)]
    (matchfield|skipfield <FieldName> <RegularExpression>)*
    [delimiter <Character>]
@@ -373,7 +373,8 @@ csvfile
 * `gcsdoc(:<FieldName>)+ <StorageBucketObjectName>` - A Google Cloud Storage Bucket Object and the one or more columns that contain Users
 * `warnifnodata` - Issue message 'No CSV file data found' and exit with return code 60 if there is no data selected from the file
 * `columndelimiter <Character>` - Columns are  separated by `<Character>`; if not specified, the value of `csv_input_column_delimiter` from `gam.cfg` will be used
-* `quotechar <Character>` - The column quote characer is `<Character>`; if not specified, the value of `csv_input_quote_char` from `gam.cfg` will be used
+* `noescapechar <Boolean>` - Should `\` be ignored as an escape character; if not specified, the value of `csv_input_no_escape_char` from `gam.cfg` will be used
+* `quotechar <Character>` - The column quote character is `<Character>`; if not specified, the value of `csv_input_quote_char` from `gam.cfg` will be used
 * `endcsv` - Use this option to signal the end of the csvfile parameters in the case that the next argument on the command line is `fields` but is specifying the output field list for the command not column headings
 * `fields <FieldNameList>` - The column headings of a CSV file that does not contain column headings
 * `(matchfield|skipfield <FieldName> <RegularExpression>)*` - The criteria to select rows from the CSV file; can be used multiple times; if not specified, all rows are selected
@@ -408,7 +409,7 @@ csvdatafile
      (gdoc(:<FieldName>)+ <UserGoogleDoc>)|
      (gcscsv(:<FieldName>)+ <StorageBucketObjectName>)|
      (gcsdoc(:<FieldName>)+ <StorageBucketObjectName>))
-   [warnifnodata] [columndelimiter <Character>] [quotechar <Character>]
+   [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>][quotechar <Character>]
    [endcsv|(fields <FieldNameList>)]
    (matchfield|skipfield <FieldName> <RegularExpression>)*
    [delimiter <Character>]
@@ -422,7 +423,8 @@ csvdatafile
 * `gcsdoc(:<FieldName>)+ <StorageBucketObjectName>` - A Google Cloud Storage Bucket Object and the one or more columns contain the type of item specified
 * `warnifnodata` - Issue message 'No CSV file data found' and exit with return code 60 if there is no data selected from the file
 * `columndelimiter <Character>` - Columns are  separated by `<Character>`; if not specified, the value of `csv_input_column_delimiter` from `gam.cfg` will be used
-* `quotechar <Character>` - The column quote characer is `<Character>`; if not specified, the value of `csv_input_quote_char` from `gam.cfg` will be used
+* `noescapechar <Boolean>` - Should `\` be ignored as an escape character; if not specified, the value of `csv_input_no_escape_char` from `gam.cfg` will be used
+* `quotechar <Character>` - The column quote character is `<Character>`; if not specified, the value of `csv_input_quote_char` from `gam.cfg` will be used
 * `endcsv` - Use this option to signal the end of the csvfile parameters in the case that the next argument on the command line is `fields` but is specifying the output field list for the command not column headings
 * `fields <FieldNameList>` - The column headings of a CSV file that does not contain column headings
 * `(matchfield|skipfield <FieldName> <RegularExpression>)*` - The criteria to select rows from the CSV file; can be used multiple times; if not specified, all rows are selected
@@ -439,7 +441,7 @@ csvkmd
      (gdoc <UserGoogleDoc>)|
      (gcscsv <StorageBucketObjectName>)|
      (gcsdoc <StorageBucketObjectName>))
-    [charset <Charset>] [columndelimiter <Character>] [quotechar <Character>] [fields <FieldNameList>])
+    [charset <Charset>] [columndelimiter <Character>] [noescapechar <Boolean>][quotechar <Character>] [fields <FieldNameList>])
    keyfield <FieldName> [keypattern <RegularExpression>] [keyvalue <String>] [delimiter <Character>]
    subkeyfield <FieldName> [keypattern <RegularExpression>] [keyvalue <String>] [delimiter <Character>]
    (matchfield|skipfield <FieldName> <RegularExpression>)*
@@ -454,7 +456,8 @@ csvkmd
 * `gcsdoc <StorageBucketObjectName>` - A Google Cloud Storage Bucket Object with columns of the type of item specified
 * `warnifnodata` - Issue message 'No CSV file data found' and exit with return code 60 if there is no data selected from the file
 * `columndelimiter <Character>` - Columns are  separated by `<Character>`; if not specified, the value of `csv_input_column_delimiter` from `gam.cfg` will be used
-* `quotechar <Character>` - The column quote characer is `<Character>`; if not specified, the value of `csv_input_quote_char` from `gam.cfg` will be used
+* `noescapechar <Boolean>` - Should `\` be ignored as an escape character; if not specified, the value of `csv_input_no_escape_char` from `gam.cfg` will be used
+* `quotechar <Character>` - The column quote character is `<Character>`; if not specified, the value of `csv_input_quote_char` from `gam.cfg` will be used
 * `endcsv` - Use this option to signal the end of the csvfile parameters in the case that the next argument on the command line is `fields` but is specifying the output field list for the command not column headings
 * `fields <FieldNameList>` - The column headings of a CSV file that does not contain column headings
 * `(keyfield <FieldName> [keypattern <RegularExpression>] [keyvalue <String>] [delimiter <Character>])+`

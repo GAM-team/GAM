@@ -132,6 +132,9 @@ todrive_nobrowser
 todrive_noemail
         Enable/disable sending an email when todrive is specified
         Default: True
+todrive_no_escape_char
+        When writing a CSV file to Google Drive, should `\` be ignored as an escape character.
+        Default: True
 todrive_parent
         Parent folder for CSV files when todrive is specified;
         can be id:<DriveFolderID> or <DriveFolderName>
@@ -180,6 +183,7 @@ direct the uploaded file to a particular user and location and add a timestamp t
         (tdlocale <Locale>)|
         (tdnobrowser [<Boolean>])|
         (tdnoemail [<Boolean>])|
+        (tdnoescapechar [<Boolean>])|
         (tdparent (id:<DriveFolderID>)|<DriveFolderName>)|
         (tdretaintitle [<Boolean>])|
         (tdshare <EmailAddress> commenter|reader|writer)|
@@ -233,6 +237,9 @@ If `tdfileid <DriveFileID>` is not specified, a new file is created.
 * `tdnobrowser` - If False, a browser is opened to view the file uploaded to Google Drive; if not specified, the `todrive_nobrowser` value from gam.cfg is used.
 * `tdnoemail` - If False, an email is sent to `tduser` informing them of name and URL of the uploaded file; if not specified, the `todrive_noemail` value from gam.cfg is used.
 
+## Escape character
+* `tdnoescapechar <Boolean>` - Should `\` be ignored as an escape character; if not specified, the value of `todrive_no_escape_char` from `gam.cfg` will be used
+
 ## Local copy
 * `tdlocalcopy` - Should a local copy of the CSV file be saved in addition to the file uploaded to Google Drive; if not specified, the `todrive_localcopy` value from gam.cfg is used.
 
@@ -265,7 +272,7 @@ If `tdfileid <DriveFileID>` is not specified, a new file is created.
 You can specify `todrive` options in conjunction with `redirect csv`.
 ```
 redirect csv <FileName> [multiprocess] [append] [noheader] [charset <Charset>]
-             [columndelimiter <Character>] [quotechar <Character>]
+             [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
              [todrive <ToDriveAttribute>*]
 ```
 If you are doing `redirect csv <FileName> multiprocess`, it is more efficient to specify `todrive <ToDriveAttribute>*` as part of
@@ -273,6 +280,8 @@ the redirect as verification of the `todrive` settings, which can invole several
 
 `columndelimiter <Character>` and `quotechar <Character>` will not generally be used with `todrive` as
 Google Sheets only recognizes `,` as the column delimiter and `"` as the quote character.
+
+`noescapechar true` will generally be used with `todrive` as Google Sheets does not recognize `\\` as an escaped `\`.
 
 ## Examples
 Generate a list of user IDs and names, title the file "User IDs and Names", upload it to the "GAM Reports" folder of usermgr@domain.com, add a timestamp to the title.

@@ -36,8 +36,9 @@
         See: https://support.google.com/a/answer/7549103
 <QueryDeviceList> ::= "<QueryDevice>(,<QueryDevice>)*"
 <DeviceID> ::= devices/<String>
+<DeviceIDList> ::= "<DeviceID>(,<DeviceID>)*"
 <DeviceEntity> ::=
-        <DeviceIDList> |
+        <DeviceIDList> | devicesn <String> |
         (query:<QueryDevice>)|(query <QueryDevice>)
 <DeviceType> ::= android|chrome_os|google_sync|linux|mac_os|windows
 <DeviceUserID> ::= devices/<String>/deviceUsers/<String>

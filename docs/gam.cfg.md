@@ -148,6 +148,10 @@ csv_input_column_delimiter
         All places where an input CSV file can be specified have an
         argument columndelimiter <String> that can override this value.
         Default: ','
+csv_input_no_escape_char
+        When reading a CSV file, should `\` be ignored as an escape character.
+	Set this to False if the input file data was written using `\` as an escape character.
+        Default: True
 csv_input_quote_char
         A one-character string used to quote fields containing special characters,
         such as the csv_input_column_delimiter or csv_input_quote_char, or newline characters.
@@ -209,11 +213,15 @@ csv_output_header_force
         for inclusion in the CSV file written by a gam print command
         Default: ''
 csv_output_line_terminator
-        Allowed values: cr, lf, crlf
+p        Allowed values: cr, lf, crlf
         Designates character(s) used to terminate the lines of a CSV file.
         For Linux and Mac OS, this would typically be lf.
         For Windows, this would typically be crlf.
         Default: lf
+csv_output_no_escape_char
+        When writing a CSV file, should `\` be ignored as an escape character.
+	Set this to True if the output file data is to be read by a non-Python program.
+        Default: False
 csv_output_quote_char
         A one-character string used to quote fields containing special characters,
         such as the csv_output_column_delimiter or csv_output_quote_char
@@ -527,6 +535,9 @@ todrive_nobrowser
 todrive_noemail
         Enable/disable sending an email when todrive is specified
         Default: True
+todrive_no_escape_char
+        When writing a CSV file to Google Drive, should `\` be ignored as an escape character.
+        Default: True
 todrive_parent
         Parent folder for CSV files when todrive is specified;
         can be id:<DriveFolderID> or <DriveFolderName>
@@ -605,6 +616,7 @@ Section: DEFAULT
   config_dir = /Users/admin/.gam
   contact_max_results = 100
   csv_input_column_delimiter = ,
+  csv_input_no_escape_char = true
   csv_input_quote_char = '"'
   csv_input_row_drop_filter = ''
   csv_input_row_drop_filter = ''
@@ -619,6 +631,7 @@ Section: DEFAULT
   csv_output_header_filter = ''
   csv_output_header_force = ''
   csv_output_line_terminator = lf
+  csv_output_no_escape_char = false
   csv_output_quote_char = '"'
   csv_output_row_drop_filter = ''
   csv_output_row_drop_filter_mode = anymatch
@@ -689,6 +702,7 @@ Section: DEFAULT
   todrive_locale = ''
   todrive_nobrowser = false
   todrive_noemail = true
+  todrive_no_escape_char = true
   todrive_parent = root
   todrive_sheet_timeformat = ''
   todrive_sheet_timestamp = false
@@ -797,6 +811,7 @@ clock_skew_in_seconds = 10
 config_dir = /Users/admin/.gam
 contact_max_results = 100
 csv_input_column_delimiter = ,
+csv_input_no_escape_char = true
 csv_input_quote_char = '"'
 csv_input_row_drop_filter = ''
 csv_input_row_filter = ''
@@ -807,6 +822,7 @@ csv_output_header_drop_filter = ''
 csv_output_header_filter = ''
 csv_output_header_force = ''
 csv_output_line_terminator = lf
+csv_output_no_escape_char = false
 csv_output_quote_char = '"'
 csv_output_row_drop_filter = 
 csv_output_row_filter = ''
@@ -873,6 +889,7 @@ todrive_localcopy = false
 todrive_locale = ''
 todrive_nobrowser = false
 todrive_noemail = true
+todrive_no_escape_char = true
 todrive_parent = root
 todrive_sheet_timeformat = ''
 todrive_sheet_timestamp = false

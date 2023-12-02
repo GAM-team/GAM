@@ -609,6 +609,7 @@ If an item contains spaces, it should be surrounded by ".
         (tdlocale <Locale>)|
         (tdnobrowser [<Boolean>])|
         (tdnoemail [<Boolean>])|
+        (tdnoescapechar [<Boolean>])|
         (tdparent (id:<DriveFolderID>)|<DriveFolderName>)|
         (tdretaintitle [<Boolean>])|
         (tdshare <EmailAddress> commenter|reader|writer)|
@@ -788,7 +789,7 @@ Specify a collection of ChromeOS devices by directly specifying them or by speci
              (gdoc(:<FieldName>)+ <UserGoogleDoc>)|
              (gcscsv(:<FieldName>)+ <StorageBucketObjectName>)|
              (gcsdoc(:<FieldName>)+ <StorageBucketObjectName>))
-            [warnifnodata] [columndelimiter <Character>] [quotechar <Character>]
+            [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [endcsv|(fields <FieldNameList>)]
             (matchfield|skipfield <FieldName> <RegularExpression>)*
             [delimiter <Character>])|
@@ -798,7 +799,7 @@ Specify a collection of ChromeOS devices by directly specifying them or by speci
              (gdoc(:<FieldName>)+ <UserGoogleDoc>)|
              (gcscsv(:<FieldName>)+ <StorageBucketObjectName>)|
              (gcsdoc(:<FieldName>)+ <StorageBucketObjectName>))
-            [warnifnodata] [columndelimiter <Character>] [quotechar <Character>]
+            [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [endcsv|(fields <FieldNameList>)]
             (matchfield|skipfield <FieldName> <RegularExpression>)*
             [delimiter <Character>])|
@@ -815,7 +816,7 @@ Specify a collection of ChromeOS devices by directly specifying them or by speci
               (gdoc(:<FieldName>)+ <UserGoogleDoc>)|
               (gcscsv(:<FieldName>)+ <StorageBucketObjectName>)|
               (gcsdoc(:<FieldName>)+ <StorageBucketObjectName>))
-            [warnifnodata] [columndelimiter <Character>] [quotechar <Character>]
+            [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [endcsv|(fields <FieldNameList>)]
             (matchfield|skipfield <FieldName> <RegularExpression>)*
             [delimiter <Character>])|
@@ -826,7 +827,7 @@ Specify a collection of ChromeOS devices by directly specifying them or by speci
               (gdoc <UserGoogleDoc>)|
               (gcscsv <StorageBucketObjectName>)|
               (gcsdoc <StorageBucketObjectName>))
-             [charset <Charset>] [columndelimiter <Character>] [quotechar <Character>] [fields <FieldNameList>])
+             [charset <Charset>] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>] [fields <FieldNameList>])
             keyfield <FieldName> [keypattern <RegularExpression>] [keyvalue <String>] [delimiter <Character>]
             subkeyfield <FieldName> [keypattern <RegularExpression>] [keyvalue <String>] [delimiter <Character>]
             (matchfield|skipfield <FieldName> <RegularExpression>)*
@@ -874,7 +875,7 @@ Specify a collection of Users by directly specifying them or by specifiying item
              (gdoc(:<FieldName>)+ <UserGoogleDoc>)|
              (gcscsv(:<FieldName>)+ <StorageBucketObjectName>)|
              (gcsdoc(:<FieldName>)+ <StorageBucketObjectName>))
-            [warnifnodata] [columndelimiter <Character>] [quotechar <Character>]
+            [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [endcsv|(fields <FieldNameList>)]
             (matchfield|skipfield <FieldName> <RegularExpression>)*
             [delimiter <Character>])|
@@ -895,7 +896,7 @@ Specify a collection of Users by directly specifying them or by specifiying item
               (gdoc(:<FieldName>)+ <UserGoogleDoc>)|
               (gcscsv(:<FieldName>)+ <StorageBucketObjectName>)|
               (gcsdoc(:<FieldName>)+ <StorageBucketObjectName>))
-            [warnifnodata] [columndelimiter <Character>] [quotechar <Character>]
+            [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [endcsv|(fields <FieldNameList>)]
             (matchfield|skipfield <FieldName> <RegularExpression>)*
             [delimiter <Character>])|
@@ -908,7 +909,7 @@ Specify a collection of Users by directly specifying them or by specifiying item
               (gdoc <UserGoogleDoc>)|
               (gcscsv <StorageBucketObjectName>)|
               (gcsdoc <StorageBucketObjectName>))
-             [charset <Charset>] [columndelimiter <Character>] [quotechar <Character>] [fields <FieldNameList>])
+             [charset <Charset>] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>] [fields <FieldNameList>])
             keyfield <FieldName> [keypattern <RegularExpression>] [keyvalue <String>] [delimiter <Character>]
             subkeyfield <FieldName> [keypattern <RegularExpression>] [keyvalue <String>] [delimiter <Character>]
             (matchfield|skipfield <FieldName> <RegularExpression>)*
@@ -925,7 +926,7 @@ Specify a collection of items by directly specifying them; the item type is dete
          (gdoc <UserGoogleDoc>)|
          (gcscsv <StorageBucketObjectName>)|
          (gcsdoc <StorageBucketObjectName>))
-        [warnifnodata] [columndelimiter <Character>] [quotechar <Character>]
+        [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
         [endcsv|(fields <FieldNameList>)]
 
 <FileSelector> ::=
@@ -941,7 +942,7 @@ Specify a collection of items by directly specifying them; the item type is dete
              (gdoc(:<FieldName>)+ <UserGoogleDoc>)|
              (gcscsv(:<FieldName>)+ <StorageBucketObjectName>)|
              (gcsdoc(:<FieldName>)+ <StorageBucketObjectName>))
-            [warnifnodata] [columndelimiter <Character>] [quotechar <Character>]
+            [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [endcsv|(fields <FieldNameList>)]
             (matchfield|skipfield <FieldName> <RegularExpression>)*
             [delimiter <Character>]
@@ -956,7 +957,7 @@ Specify a collection of items by directly specifying them; the item type is dete
               (gdoc <UserGoogleDoc>)|
               (gcscsv <StorageBucketObjectName>)|
               (gcsdoc <StorageBucketObjectName>))
-             [charset <Charset>] [columndelimiter <Character>] [quotechar <Character>] [fields <FieldNameList>])
+             [charset <Charset>] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>] [fields <FieldNameList>])
             keyfield <FieldName> [keypattern <RegularExpression>] [keyvalue <String>] [delimiter <Character>]
             subkeyfield <FieldName> [keypattern <RegularExpression>] [keyvalue <String>] [delimiter <Character>]
             (matchfield|skipfield <FieldName> <RegularExpression>)*
@@ -1237,7 +1238,7 @@ If the pattern {{Section}} appears in <FileName>, it will be replaced with the n
 For redirect csv, the optional arguments must appear in the order shown.
 <Redirect> ::=
         redirect csv <FileName> [multiprocess] [append] [noheader] [charset <Charset>]
-                     [columndelimiter <Character>] [quotechar <Character>]
+                     [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
                      [timestampcolumn <String>]
                      [todrive <ToDriveAttribute>*] |
         redirect stdout <FileName> [multiprocess] [append] |
@@ -1284,13 +1285,13 @@ gam tbatch <BatchContent> [showcmds [<Boolean>]]
          [charset <Charset>] [delimiter <Character>])
 
 gam csv <CSVLoopContent> [warnifnodata]
-        [columndelimiter <Character>] [quotechar <Character>] [fields <FieldNameList>]
+        [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>] [fields <FieldNameList>]
         (matchfield|skipfield <FieldName> <RegularExpression>)* [showcmds [<Boolean>]]
         [maxrows <Integer>]
         gam <GAMArgumentList>
 
 gam loop <CSVLoopContent> [warnifnodata]
-        [columndelimiter <Character>] [quotechar <Character>] [fields <FieldNameList>]
+        [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>] [fields <FieldNameList>]
         (matchfield|skipfield <FieldName> <RegularExpression>)* [showcmds [<Boolean>]]
         [maxrows <Integer>]
         gam <GAMArgumentList>
@@ -3766,9 +3767,12 @@ gam show cigroup-members
 # Cloud Identity Devices
 
 <DeviceID> ::= devices/<String>
-<DeviceUserID> ::= devices/<String>/deviceUsers/<String>
+<DeviceIDList> ::= "<DeviceID>(,<DeviceID>)*"
+<DeviceEntity> ::=
+        <DeviceIDList> | devicesn <String> |
+        (query:<QueryDevice>)|(query <QueryDevice>)
 <DeviceType> ::= android|chrome_os|google_sync|ios|linux|mac_os|windows
-
+<DeviceUserID> ::= devices/<String>/deviceUsers/<String>
 <DeviceFieldName> ::=
         androidspecificattributes|
         assettag|
@@ -3778,11 +3782,13 @@ gam show cigroup-members
         buildnumber|
         compromisedstate|
         createtime|
+        deviceid|
         devicetype|
         enableddeveloperoptions|
         enabledusbdebugging|
         endpointverificationspecificattributes|
         encryptionstate|
+        hostname|
         imei|
         kernelversion|
         lastsynctime|
@@ -5203,7 +5209,7 @@ gam update user <UserItem> [ignorenullpassword] <UserAttribute>*
         [verifynotinvitable|alwaysevict] [noactionifalias]
         [updateprimaryemail <RegularExpression> <EmailReplacement>]
         [updateoufromgroup <FileName> [charset <CharSet>]
-            [columndelimiter <Character>] [quotechar <Character>]
+            [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [fields <FieldNameList>] [keyfield <FieldName>] [datafield <FieldName>]]
         [immutableous <OrgUnitEntity>]|
         [clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>]
@@ -5239,7 +5245,7 @@ gam update users <UserTypeEntity> [ignorenullpassword] <UserAttribute>*
         [verifynotinvitable] [noactionifalias]
         [updateprimaryemail <RegularExpression> <EmailReplacement>]
         [updateoufromgroup <FileName> [charset <CharSet>]
-            [columndelimiter <Character>] [quotechar <Character>]
+            [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [fields <FieldNameList>] [keyfield <FieldName>] [datafield <FieldName>]]
         [clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>]
         [createifnotfound] [notfoundpassword (random [<Integer>])|blocklogin|<Password>]

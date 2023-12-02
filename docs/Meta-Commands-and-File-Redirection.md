@@ -112,7 +112,7 @@ You can redirect stdout and stderr to null and stderr can be redirected to stdou
 ```
 <Redirect> ::=
         redirect csv <FileName> [multiprocess] [append] [noheader] [charset <Charset>]
-                     [columndelimiter <Character>] [quotechar <Character>]
+                     [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
                      [timestampcolumn <String>]
                      [todrive <ToDriveAttribute>*] |
         redirect stdout <FileName> [multiprocess] [append] |
@@ -141,8 +141,11 @@ subsequent GAM commands specify `append noheader`.
 The `charset <Charset>` subargument sets the character set of the CSV file; the default is the value of `charset`
 in `gam.cfg` which defaults to UTF-8.
 
-The `columndelimiter <Character>` sets the intercolumn delimiter of the CSV file; the default value
-is the value of csv_output_column_delimiter` in `gam.cfg` which defaults to comma.
+The `columndelimiter <Character>` subargument sets the intercolumn delimiter of the CSV file; the default value
+is the value of `csv_output_column_delimiter` in `gam.cfg` which defaults to comma.
+
+The `noescapechar <Boolean>` subargument controls whether `\` is used as an escape character when writing the CSV file; the default value
+is the value of `csv_output_no_escape_char` in `gam.cfg` which defaults to False.
 
 The `quotechar <Character>` subargument sets the character used to quote fields in the CSV file
 that contaim special charactere; the default value is the value of `csv_output_quote_char` in `gam.cfg`

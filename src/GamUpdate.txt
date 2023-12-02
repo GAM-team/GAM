@@ -2,6 +2,29 @@
 
 Merged GAM-Team version
 
+6.66.02
+
+Updated device commmands to handle the following error caused by an invalid query.
+```
+ERROR: 400: invalidArgument - Request contains an invalid argument.
+```
+
+Added fields `deviceid` and `hostname` to `<DeviceFieldName>`.
+
+6.66.01
+
+Added the following variables to gam.cfg that allow control over whether `\` is used as an escape character
+when reading/writing CSV files.
+```
+csv_input_no_escape_char - default value True
+csv_output_no_escape_char - default value False
+todrive_no_escape_char - default value True
+```
+When the value is True, `\` is ignored as an escape character; when the value is False,
+`\\` on input is converted to `\`, `\` on output is converted to `\\`.
+
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/CSV-Special-Characters
+
 6.66.00
 
 Added support for `Focus Time` and `Out of Office` status events in user's primary calendars.

@@ -69,13 +69,13 @@ gam redirect stdout ./NewStudents.out redirect stderr ./NewStudents.err tbatch N
 ## CSV files
 ```
 gam csv <FileName>|-|(gsheet <UserGoogleSheet>)|(gdoc <UserGoogleDoc>) [charset <Charset>] [warnifnodata]
-        [columndelimiter <Character>] [quotechar <Character>] [fields <FieldNameList>]
+        [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>] [fields <FieldNameList>]
         (matchfield|skipfield <FieldName> <RegularExpression>)* [showcmds [<Boolean>]]
         [maxrows <Integer>]
         gam <GAMArgumentList>
 
 gam loop <FileName>|-|(gsheet <UserGoogleSheet>)|(gdoc <UserGoogleDoc>) [charset <Charset>] [warnifnodata]
-        [columndelimiter <Character>] [quotechar <Character>] [fields <FieldNameList>]
+        [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>] [fields <FieldNameList>]
         (matchfield|skipfield <FieldName> <RegularExpression>)* [showcmds [<Boolean>]]
         [maxrows <Integer>]
         gam <GAMArgumentList>
@@ -87,6 +87,7 @@ gam loop <FileName>|-|(gsheet <UserGoogleSheet>)|(gdoc <UserGoogleDoc>) [charset
 * `gsheet <UserGoogleSheet>` - A Google Sheet and the one or more columns that contain data
 * `gdoc <UserGoogleDoc>` - A Google Doc and the one or more columns that contain data
 * `columndelimiter <Character>` - Columns are separated by `<Character>`; if not specified, the value of `csv_input_column_delimiter` from `gam.cfg` will be used
+* `noescapechar <Boolean>` - Should `\` be ignored as an escape character; if not specified, the value of `csv_input_no_escape_char` from `gam.cfg` will be used
 * `quotechar <Character>` - The column quote characer is `<Character>`; if not specified, the value of `csv_input_quote_char` from `gam.cfg` will be used
 * `fields <FieldNameList>` - The column headings of a CSV file that does not contain column headings.
 * `(matchfield|skipfield <FieldName> <RegularExpression>)*` - The criteria to select rows from the CSV file; can be used multiple times; if not specified, all rows are selected

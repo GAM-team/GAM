@@ -78,7 +78,7 @@ gam <UserTypeEntity> print|show driveactivity [v2] [todrive <ToDriveAttributes>*
          yesterday|today|thismonth|(previousmonths <Integer>)]
         [action|actions [not] <DriveActivityActionList>]
         [consolidationstrategy legacy|none]
-        [idmapfile <FileName>|(gsheet <UserGoogleSheet>) [charset <String>] [columndelimiter <Character>] [quotechar <Character>]]
+        [idmapfile <FileName>|(gsheet <UserGoogleSheet>) [charset <String>] [columndelimiter <Character>] [noescapechar <Boolean>]  [quotechar <Character>]]
         [formatjson [quotechar <Character>]]
 ```
 By default, Drive Activity API v2 is used; the `v2` option is ignored.

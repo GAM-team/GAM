@@ -48,7 +48,7 @@
          (gdoc <UserGoogleDoc>)|
          (gcscsv <StorageBucketObjectName>)|
          (gcsdoc <StorageBucketObjectName>))
-        [warnifnodata] [columndelimiter <Character>] [quotechar <Character>]
+        [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>]  [quotechar <Character>]
         [endcsv|(fields <FieldNameList>)]
 
 <CSVFileSelector> ::=
@@ -57,7 +57,7 @@
                  (gdoc(:<FieldName>)+ <UserGoogleDoc>)|
                  (gcscsv(:<FieldName>)+ <StorageBucketObjectName>)|
                  (gcsdoc(:<FieldName>)+ <StorageBucketObjectName>))
-                [warnifnodata] [columndelimiter <Character>] [quotechar <Character>]
+                [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
                 [endcsv|(fields <FieldNameList>)]
                 (matchfield|skipfield <FieldName> <RegularExpression>)*
                 [delimiter <Character>]

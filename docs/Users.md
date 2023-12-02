@@ -598,7 +598,7 @@ gam update user <UserItem> [ignorenullpassword] <UserAttribute>*
         [verifynotinvitable|alwaysevict] [noactionifalias]
         [updateprimaryemail <RegularExpression> <EmailReplacement>]
         [updateoufromgroup <FileName> [charset <CharSet>]
-            [columndelimiter <Character>] [quotechar <Character>]
+            [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [fields <FieldNameList>] [keyfield <FieldName>] [datafield <FieldName>]]
         [clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>]
         [createifnotfound] [notfoundpassword random|<Password>]
@@ -619,7 +619,7 @@ gam update users <UserTypeEntity> [ignorenullpassword] <UserAttribute>*
         [verifynotinvitable|alwaysevict] [noactionifalias]
         [updateprimaryemail <RegularExpression> <EmailReplacement>]
         [updateoufromgroup <FileName> [charset <CharSet>]
-            [columndelimiter <Character>] [quotechar <Character>]
+            [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [fields <FieldNameList>] [keyfield <FieldName>] [datafield <FieldName>]]
         [clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>]
         [createifnotfound] [notfoundpassword random|<Password>]
@@ -640,7 +640,7 @@ gam <UserTypeEntity> update users [ignorenullpassword] <UserAttribute>*
         [verifynotinvitable|alwaysevict] [noactionifalias]
         [updateprimaryemail <RegularExpression> <EmailReplacement>]
         [updateoufromgroup <FileName> [charset <CharSet>]
-            [columndelimiter <Character>] [quotechar <Character>]
+            [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [fields <FieldNameList>] [keyfield <FieldName>] [datafield <FieldName>]]
         [clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>]
         [createifnotfound] [notfoundpassword random|<Password>]
@@ -814,11 +814,12 @@ No update is performed if a user does not belong to any group in the CSV file or
 
 ```
 [updateoufromgroup <FileName> [charset <CharSet>]
-    [columndelimiter <Character>] [quotechar <Character>]
+    [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
     [fields <FieldNameList>] [keyfield <FieldName>] [datafield <FieldName>]]
 ```
 * `<FileName>` - A CSV file containing rows with columns of items
 * `columndelimiter <Character>` - Columns are  separated by `<Character>`; if not specified, the value of `csv_input_column_delimiter` from `gam.cfg` will be used
+* `noescapechar <Boolean>` - Should `\` be ignored as an escape character; if not specified, the value of `csv_input_no_escape_char` from `gam.cfg` will be used
 * `quotechar <Character>` - The column quote characer is `<Character>`; if not specified, the value of `csv_input_quote_char` from `gam.cfg` will be used
 * `fields <FieldNameList>` - The column headings of a CSV file that does not contain column headings
 * `keyfield <FieldName>` - The column heading of the group column; the default is Group

@@ -3173,6 +3173,10 @@ def openCSVFileReader(filename, fieldnames=None):
     columnDelimiter = getCharacter()
   else:
     columnDelimiter = GC.Values[GC.CSV_INPUT_COLUMN_DELIMITER]
+  if checkArgumentPresent('noescapechar'):
+    noEscapeChar = getBoolean()
+  else:
+    noEscapeChar = GC.Values[GC.CSV_INPUT_NO_ESCAPE_CHAR]
   if checkArgumentPresent('quotechar'):
     quotechar = getCharacter()
   else:
@@ -3180,7 +3184,10 @@ def openCSVFileReader(filename, fieldnames=None):
   if not checkArgumentPresent('endcsv') and checkArgumentPresent('fields'):
     fieldnames = shlexSplitList(getString(Cmd.OB_FIELD_NAME_LIST))
   try:
-    csvFile = csv.DictReader(f, fieldnames=fieldnames, delimiter=columnDelimiter, quotechar=quotechar)
+    csvFile = csv.DictReader(f, fieldnames=fieldnames,
+                             delimiter=columnDelimiter,
+                             escapechar='\\' if not noEscapeChar else None,
+                             quotechar=quotechar)
     return (f, csvFile, csvFile.fieldnames if csvFile.fieldnames is not None else [])
   except (csv.Error, UnicodeDecodeError, UnicodeError) as e:
     systemErrorExit(FILE_ERROR_RC, e)
@@ -3343,6 +3350,8 @@ def SetGlobalVariables():
     value = codecs.escape_decode(bytes(_stripStringQuotes(GM.Globals[GM.PARSER].get(sectionName, itemName)), UTF8))[0].decode(UTF8)
     if not value and (itemName == 'csv_output_field_delimiter'):
       return ' '
+    if not value and (itemName in {'csv_input_escape_char', 'csv_output_escape_char'}):
+      return None
     if len(value) == 1:
       return value
     _printValueError(sectionName, itemName, f'"{value}"', f'{Msg.EXPECTED}: {integerLimits(1, 1, Msg.STRING_LENGTH)}')
@@ -4033,7 +4042,7 @@ def SetGlobalVariables():
   if checkArgumentPresent(Cmd.MULTIPROCESSEXIT_CMD):
     _setMultiprocessExit()
 # redirect csv <FileName> [multiprocess] [append] [noheader] [charset <CharSet>]
-#	       [columndelimiter <Character>] [quotechar <Character>]]
+#	       [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]]
 #	       [timestampcolumn <String>]
 #	       [todrive <ToDriveAttribute>*]
 # redirect stdout <FileName> [multiprocess] [append]
@@ -4053,6 +4062,8 @@ def SetGlobalVariables():
         GM.Globals[GM.CSV_OUTPUT_COLUMN_DELIMITER] = GC.Values[GC.CSV_OUTPUT_COLUMN_DELIMITER] = getCharacter()
       if checkArgumentPresent('quotechar'):
         GM.Globals[GM.CSV_OUTPUT_QUOTE_CHAR] = GC.Values[GC.CSV_OUTPUT_QUOTE_CHAR] = getCharacter()
+      if checkArgumentPresent('noescapechar'):
+        GM.Globals[GM.CSV_OUTPUT_NO_ESCAPE_CHAR] = GC.Values[GC.CSV_OUTPUT_NO_ESCAPE_CHAR] = getBoolean()
       if checkArgumentPresent('timestampcolumn'):
         GM.Globals[GM.CSV_OUTPUT_TIMESTAMP_COLUMN] = GC.Values[GC.CSV_OUTPUT_TIMESTAMP_COLUMN] = getString(Cmd.OB_STRING, minLen=0)
       _setCSVFile(filename, mode, encoding, writeHeader, multi)
@@ -7601,7 +7612,9 @@ class CSVPrintFile():
     self.SetColumnDelimiter(GM.Globals[GM.CSV_OUTPUT_COLUMN_DELIMITER])
     if GM.Globals.get(GM.CSV_OUTPUT_QUOTE_CHAR) is None:
       GM.Globals[GM.CSV_OUTPUT_QUOTE_CHAR] = GC.Values.get(GC.CSV_OUTPUT_QUOTE_CHAR, '"')
-    self.SetEscapeChar('\\')
+    if GM.Globals.get(GM.CSV_OUTPUT_NO_ESCAPE_CHAR) is None:
+      GM.Globals[GM.CSV_OUTPUT_NO_ESCAPE_CHAR] = GC.Values.get(GC.CSV_OUTPUT_NO_ESCAPE_CHAR, False)
+    self.SetNoEscapeChar(GM.Globals[GM.CSV_OUTPUT_NO_ESCAPE_CHAR])
     self.SetQuoteChar(GM.Globals[GM.CSV_OUTPUT_QUOTE_CHAR])
     if GM.Globals.get(GM.CSV_OUTPUT_TIMESTAMP_COLUMN) is None:
       GM.Globals[GM.CSV_OUTPUT_TIMESTAMP_COLUMN] = GC.Values.get(GC.CSV_OUTPUT_TIMESTAMP_COLUMN, '')
@@ -7812,6 +7825,7 @@ class CSVPrintFile():
                     'backupSheetEntity': None, 'copySheetEntity': None,
                     'locale': GC.Values[GC.TODRIVE_LOCALE], 'timeZone': GC.Values[GC.TODRIVE_TIMEZONE],
                     'timestamp': GC.Values[GC.TODRIVE_TIMESTAMP], 'timeformat': GC.Values[GC.TODRIVE_TIMEFORMAT],
+                    'noescapechar': GC.Values[GC.TODRIVE_NO_ESCAPE_CHAR],
                     'daysoffset': None, 'hoursoffset': None,
                     'sheettimestamp': GC.Values[GC.TODRIVE_SHEET_TIMESTAMP], 'sheettimeformat': GC.Values[GC.TODRIVE_SHEET_TIMEFORMAT],
                     'sheetdaysoffset': None, 'sheethoursoffset': None,
@@ -7888,6 +7902,8 @@ class CSVPrintFile():
         self.todrive['nobrowser'] = getBoolean()
       elif myarg == 'tdnoemail':
         self.todrive['noemail'] = getBoolean()
+      elif myarg == 'tdnoescapechar':
+        self.todrive['noescapechar'] = getBoolean()
       elif myarg == 'tdshare':
         self.todrive['share']['emailAddress'] = normalizeEmailAddressOrUID(getString(Cmd.OB_EMAIL_ADDRESS))
         self.todrive['share']['type'] = 'user'
@@ -8119,8 +8135,8 @@ class CSVPrintFile():
   def SetColumnDelimiter(self, columnDelimiter):
     self.columnDelimiter = columnDelimiter
 
-  def SetEscapeChar(self, escapeChar):
-    self.escapeChar = escapeChar
+  def SetNoEscapeChar(self, noEscapeChar):
+    self.noEscapeChar = noEscapeChar
 
   def SetQuoteChar(self, quoteChar):
     self.quoteChar = quoteChar
@@ -8318,11 +8334,11 @@ class CSVPrintFile():
         stderrErrorMsg(e)
         return False
 
-    def setDialect(lineterminator):
+    def setDialect(lineterminator, noEscapeChar):
       writerDialect = {
         'delimiter': self.columnDelimiter,
         'doublequote': True,
-        'escapechar': self.escapeChar,
+        'escapechar': '\\' if not noEscapeChar else None,
         'lineterminator': lineterminator,
         'quotechar': self.quoteChar,
         'quoting': csv.QUOTE_MINIMAL,
@@ -8332,7 +8348,7 @@ class CSVPrintFile():
 
     def writeCSVToStdout():
       csvFile = StringIOobject()
-      writerDialect = setDialect('\n')
+      writerDialect = setDialect('\n', self.noEscapeChar)
       writer = csv.DictWriter(csvFile, titlesList, extrasaction=extrasaction, **writerDialect)
       if writeCSVData(writer):
         try:
@@ -8347,7 +8363,7 @@ class CSVPrintFile():
                          encoding=GM.Globals[GM.CSVFILE][GM.REDIRECT_ENCODING], errors='backslashreplace',
                          continueOnError=True)
       if csvFile:
-        writerDialect = setDialect(str(GC.Values[GC.CSV_OUTPUT_LINE_TERMINATOR]))
+        writerDialect = setDialect(str(GC.Values[GC.CSV_OUTPUT_LINE_TERMINATOR]), self.noEscapeChar)
         writer = csv.DictWriter(csvFile, titlesList, extrasaction=extrasaction, **writerDialect)
         writeCSVData(writer)
         closeFile(csvFile)
@@ -8363,7 +8379,7 @@ class CSVPrintFile():
         csvFile = TemporaryFile(mode='w+', encoding=UTF8)
       else:
         csvFile = StringIOobject()
-      writerDialect = setDialect('\n')
+      writerDialect = setDialect('\n', self.todrive['noescapechar'])
       writer = csv.DictWriter(csvFile, titlesList, extrasaction=extrasaction, **writerDialect)
       if writeCSVData(writer):
         if ((self.todrive['title'] is None) or
@@ -8639,7 +8655,7 @@ class CSVPrintFile():
       GM.Globals[GM.CSVFILE][GM.REDIRECT_QUEUE].put((GM.REDIRECT_QUEUE_CSVPF,
                                                      (self.titlesList, self.sortTitlesList, self.indexedTitles,
                                                       self.formatJSON, self.JSONtitlesList,
-                                                      self.columnDelimiter, self.quoteChar,
+                                                      self.columnDelimiter, self.noEscapeChar, self.quoteChar,
                                                       self.timestampColumn,
                                                       self.mapDrive3Titles,
                                                       self.fixPaths,
@@ -9244,6 +9260,7 @@ def CSVFileQueueHandler(mpQueue, mpQueueStdout, mpQueueStderr, csvPF, datetimeNo
     Cmd = glclargs.GamCLArgs()
   else:
     csvPF.SetColumnDelimiter(GC.Values[GC.CSV_OUTPUT_COLUMN_DELIMITER])
+    csvPF.SetNoEscapeChar(GC.Values[GC.CSV_OUTPUT_NO_ESCAPE_CHAR])
     csvPF.SetQuoteChar(GC.Values[GC.CSV_OUTPUT_QUOTE_CHAR])
     csvPF.SetTimestampColumn(GC.Values[GC.CSV_OUTPUT_TIMESTAMP_COLUMN])
     csvPF.SetHeaderFilter(GC.Values[GC.CSV_OUTPUT_HEADER_FILTER])
@@ -9265,13 +9282,14 @@ def CSVFileQueueHandler(mpQueue, mpQueueStdout, mpQueueStderr, csvPF, datetimeNo
       csvPF.SetFormatJSON(dataItem[3])
       csvPF.AddJSONTitles(dataItem[4])
       csvPF.SetColumnDelimiter(dataItem[5])
-      csvPF.SetQuoteChar(dataItem[6])
-      csvPF.SetTimestampColumn(dataItem[7])
-      csvPF.SetMapDrive3Titles(dataItem[8])
-      csvPF.SetFixPaths(dataItem[9])
-      csvPF.SetNodataFields(dataItem[10], dataItem[11], dataItem[12], dataItem[13], dataItem[14])
-      csvPF.SetShowPermissionsLast(dataItem[15])
-      csvPF.SetZeroBlankMimeTypeCounts(dataItem[16])
+      csvPF.SetNoEscapeChar(dataItem[6])
+      csvPF.SetQuoteChar(dataItem[7])
+      csvPF.SetTimestampColumn(dataItem[8])
+      csvPF.SetMapDrive3Titles(dataItem[9])
+      csvPF.SetFixPaths(dataItem[10])
+      csvPF.SetNodataFields(dataItem[11], dataItem[12], dataItem[13], dataItem[14], dataItem[15])
+      csvPF.SetShowPermissionsLast(dataItem[16])
+      csvPF.SetZeroBlankMimeTypeCounts(dataItem[17])
     elif dataType == GM.REDIRECT_QUEUE_DATA:
       csvPF.rows.extend(dataItem)
     elif dataType == GM.REDIRECT_QUEUE_ARGS:
@@ -9284,6 +9302,7 @@ def CSVFileQueueHandler(mpQueue, mpQueueStdout, mpQueueStderr, csvPF, datetimeNo
     elif dataType == GM.REDIRECT_QUEUE_VALUES:
       GC.Values = dataItem
       csvPF.SetColumnDelimiter(GC.Values[GC.CSV_OUTPUT_COLUMN_DELIMITER])
+      csvPF.SetNoEscapeChar(GC.Values[GC.CSV_OUTPUT_NO_ESCAPE_CHAR])
       csvPF.SetQuoteChar(GC.Values[GC.CSV_OUTPUT_QUOTE_CHAR])
       csvPF.SetTimestampColumn(GC.Values[GC.CSV_OUTPUT_TIMESTAMP_COLUMN])
       csvPF.SetHeaderFilter(GC.Values[GC.CSV_OUTPUT_HEADER_FILTER])
@@ -9427,7 +9446,7 @@ def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout,
                            debugLevel, todrive, printAguDomains,
                            printCrosOUs, printCrosOUsAndChildren,
                            output_dateformat, output_timeformat,
-                           csvColumnDelimiter, csvQuoteChar,
+                           csvColumnDelimiter, csvNoEscapeChar, csvQuoteChar,
                            csvTimestampColumn,
                            csvHeaderFilter, csvHeaderDropFilter,
                            csvHeaderForce,
@@ -9449,6 +9468,7 @@ def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout,
     GM.Globals[GM.CSV_SUBKEY_FIELD] = None
     GM.Globals[GM.CSV_DATA_FIELD] = None
     GM.Globals[GM.CSV_OUTPUT_COLUMN_DELIMITER] = csvColumnDelimiter
+    GM.Globals[GM.CSV_OUTPUT_NO_ESCAPE_CHAR] = csvNoEscapeChar
     GM.Globals[GM.CSV_OUTPUT_HEADER_DROP_FILTER] = csvHeaderDropFilter[:]
     GM.Globals[GM.CSV_OUTPUT_HEADER_FILTER] = csvHeaderFilter[:]
     GM.Globals[GM.CSV_OUTPUT_HEADER_FORCE] = csvHeaderForce[:]
@@ -9658,6 +9678,7 @@ def MultiprocessGAMCommands(items, showCmds):
                                                   GC.Values[GC.PRINT_CROS_OUS], GC.Values[GC.PRINT_CROS_OUS_AND_CHILDREN],
                                                   GC.Values[GC.OUTPUT_DATEFORMAT], GC.Values[GC.OUTPUT_TIMEFORMAT],
                                                   GC.Values[GC.CSV_OUTPUT_COLUMN_DELIMITER],
+                                                  GC.Values[GC.CSV_OUTPUT_NO_ESCAPE_CHAR],
                                                   GC.Values[GC.CSV_OUTPUT_QUOTE_CHAR],
                                                   GC.Values[GC.CSV_OUTPUT_TIMESTAMP_COLUMN],
                                                   GC.Values[GC.CSV_OUTPUT_HEADER_FILTER],
@@ -22261,7 +22282,7 @@ def printShowUserPeopleContactGroups(users):
   entityTypeName = Ent.Singular(entityType)
   csvPF = CSVPrintFile([entityTypeName, 'resourceName'], 'sortall') if Act.csvFormat() else None
   if csvPF:
-    csvPF.SetEscapeChar(None)
+    csvPF.SetNoEscapeChar(True)
   FJQC = FormatJSONQuoteChar(csvPF)
   fieldsList = []
   parameters = _initPersonMetadataParameters()
@@ -26376,7 +26397,7 @@ def doPrintShowChromePolicies():
   customer = _getCustomersCustomerIdWithC()
   csvPF = CSVPrintFile(CHROME_POLICY_SORT_TITLES, indexedTitles=CHROME_POLICY_INDEXED_TITLES) if Act.csvFormat() else None
   if csvPF:
-    csvPF.SetEscapeChar(None)
+    csvPF.SetNoEscapeChar(True)
   FJQC = FormatJSONQuoteChar(csvPF)
   appId = orgUnit = policySchemaFilter = printerId = None
   showPolicies = CHROME_POLICY_SHOW_ALL
@@ -26783,13 +26804,13 @@ def getCIDeviceEntity():
   pageMessage = getPageMessage()
   try:
     devices = callGAPIpages(ci.devices(), 'list', 'devices',
-                            throwReasons=[GAPI.INVALID, GAPI.PERMISSION_DENIED],
+                            throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                             pageMessage=pageMessage,
                             customer=customer, filter=query,
                             fields='nextPageToken,devices(name)', pageSize=100)
     return (devices, ci, customer, False)
-  except GAPI.invalid:
+  except (GAPI.invalid, GAPI.invalidArgument):
     Cmd.Backup()
     usageErrorExit(Msg.INVALID_QUERY)
   except GAPI.permissionDenied as e:
@@ -27121,11 +27142,13 @@ DEVICE_FIELDS_CHOICE_MAP = {
   'buildnumber': 'buildNumber',
   'compromisedstate': 'compromisedState',
   'createtime': 'createTime',
+  'deviceid': 'deviceId',
   'devicetype': 'deviceType',
   'enableddeveloperoptions': 'enabledDeveloperOptions',
   'enabledusbdebugging': 'enabledUsbDebugging',
   'encryptionstate': 'encryptionState',
   'endpointverificationspecificattributes': 'endpointVerificationSpecificAttributes',
+  'hostname': 'hostname',
   'imei': 'imei',
   'kernelversion': 'kernelVersion',
   'lastsynctime': 'lastSyncTime',
@@ -69278,7 +69301,7 @@ NOTES_ROLE_CHOICE_MAP = {
 def printShowNotes(users):
   csvPF = CSVPrintFile(['User', 'name', 'title', 'owner', 'ownedByMe']) if Act.csvFormat() else None
   if csvPF:
-    csvPF.SetEscapeChar(None)
+    csvPF.SetNoEscapeChar(True)
   FJQC = FormatJSONQuoteChar(csvPF)
   compact = False
   fieldsList = []
@@ -69860,7 +69883,7 @@ def printShowTasks(users):
 
   csvPF = CSVPrintFile(['User', 'tasklistId', 'id', 'taskId', 'title', 'status', 'due', 'updated', 'completed'], 'sortall') if Act.csvFormat() else None
   if csvPF:
-    csvPF.SetEscapeChar(None)
+    csvPF.SetNoEscapeChar(True)
   CSVTitle = 'Tasks'
   FJQC = FormatJSONQuoteChar(csvPF)
   tasklistEntity = None
@@ -70092,7 +70115,7 @@ def processTasklists(users):
 def printShowTasklists(users):
   csvPF = CSVPrintFile(['User', 'id', 'title']) if Act.csvFormat() else None
   if csvPF:
-    csvPF.SetEscapeChar(None)
+    csvPF.SetNoEscapeChar(True)
   CSVTitle = 'TaskLists'
   FJQC = FormatJSONQuoteChar(csvPF)
   countsOnly = False
