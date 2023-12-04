@@ -24578,6 +24578,8 @@ def doPrintShowBrowsers():
       csvPF.SetSortTitles(['deviceId'])
     csvPF.writeCSVfile('Browsers')
 
+BROWSER_TOKEN_TIME_OBJECTS = {'createTime', 'expireTime', 'revokeTime'}
+
 def _showBrowserToken(browser, FJQC, i=0, count=0):
   if FJQC.formatJSON:
     printLine(json.dumps(cleanJSON(browser), ensure_ascii=False, sort_keys=True))
@@ -24632,8 +24634,6 @@ def doRevokeBrowserToken():
     entityActionFailedWarning([Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, tokenPermanentId], str(e))
   except GAPI.forbidden:
     accessErrorExit(None)
-
-BROWSER_TOKEN_TIME_OBJECTS = {'createTime', 'expireTime', 'revokeTime'}
 
 BROWSER_TOKEN_FIELDS_CHOICE_MAP = {
   'createtime': 'createTime',
@@ -24788,14 +24788,17 @@ def _cleanChatSpace(space):
   space.pop('type', None)
   space.pop('threaded', None)
 
+CHAT_SPACE_TIME_OBJECTS = {'createTime'}
+
 def _showChatSpace(space, FJQC, i=0, count=0):
   _cleanChatSpace(space)
   if FJQC.formatJSON:
-    printLine(json.dumps(cleanJSON(space), ensure_ascii=False, sort_keys=True))
+    printLine(json.dumps(cleanJSON(space, timeObjects=CHAT_SPACE_TIME_OBJECTS),
+                         ensure_ascii=False, sort_keys=True))
     return
   printEntity([Ent.CHAT_SPACE, space['name']], i, count)
   Ind.Increment()
-  showJSON(None, space)
+  showJSON(None, space, timeObjects=CHAT_SPACE_TIME_OBJECTS)
   Ind.Decrement()
 
 def  getChatSpaceParameters(myarg, body, typeChoicesMap):
@@ -25059,7 +25062,7 @@ CHAT_PAGE_SIZE = 1000
 def printShowChatSpaces(users):
   def _printChatSpace(user, space):
     _cleanChatSpace(space)
-    row = flattenJSON(space)
+    row = flattenJSON(space, timeObjects=CHAT_SPACE_TIME_OBJECTS)
     if user is not None:
       row['User'] = user
     if not FJQC.formatJSON:
@@ -25067,7 +25070,7 @@ def printShowChatSpaces(users):
     elif csvPF.CheckRowTitles(row):
       row = {'User': user} if user is not None else {}
       row.update({'name': space['name'],
-                  'JSON': json.dumps(cleanJSON(space),
+                  'JSON': json.dumps(cleanJSON(space, timeObjects=CHAT_SPACE_TIME_OBJECTS),
                                      ensure_ascii=False, sort_keys=True)})
       csvPF.WriteRowNoFilter(row)
 
@@ -25554,17 +25557,18 @@ def printShowChatMembers(users):
     row = flattenJSON(member, timeObjects=CHAT_MEMBER_TIME_OBJECTS)
     if user is not None:
       row['User'] = user
+    row['space.name'] = parent
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
-      row = {'User': user} if user is not None else {}
+      row = {'User': user, 'space.name': parent} if user is not None else {'space.name': parent}
       row.update({'name': member['name'],
                   'JSON': json.dumps(cleanJSON(member, timeObjects=CHAT_MEMBER_TIME_OBJECTS),
                                      ensure_ascii=False, sort_keys=True)})
       csvPF.WriteRowNoFilter(row)
 
   cd = buildGAPIObject(API.DIRECTORY)
-  csvPF = CSVPrintFile(['User', 'name'] if not isinstance(users, list) else ['name']) if Act.csvFormat() else None
+  csvPF = CSVPrintFile(['User', 'space.name', 'name'] if not isinstance(users, list) else ['space.name', 'name']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   kwargs = {}
   parent = None
@@ -25773,7 +25777,7 @@ def doDeleteChatMessage():
 def _cleanChatMessage(message):
   message.pop('cards', None)
 
-CHAT_MESSAGE_TIME_OBJECTS = {'createTime'}
+CHAT_MESSAGE_TIME_OBJECTS = {'createTime', 'deleteTime', 'lastUpdateTime'}
 
 def _showChatMessage(message, FJQC, i=0, count=0):
   _cleanChatMessage(message)
@@ -25844,7 +25848,7 @@ def printShowChatMessages(users):
       csvPF.WriteRowNoFilter(row)
 
   cd = buildGAPIObject(API.DIRECTORY)
-  csvPF = CSVPrintFile(['User', 'name'] if not isinstance(users, list) else ['name']) if Act.csvFormat() else None
+  csvPF = CSVPrintFile(['User', 'space.name', 'name'] if not isinstance(users, list) else ['space.name', 'name']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   parent = pfilter = None
   showDeleted = False
