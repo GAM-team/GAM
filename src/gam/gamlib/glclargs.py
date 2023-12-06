@@ -577,6 +577,7 @@ class GamCLArgs():
   ARG_FILEDRIVELABELS = 'filedrivelabels'
   ARG_FILEINFO = 'fileinfo'
   ARG_FILELIST = 'filelist'
+  ARG_FILEPARENTTREE = 'fileparenttree'
   ARG_FILEPATH = 'filepath'
   ARG_FILEPATHS = 'filepaths'
   ARG_FILEREVISION = 'filerevision'

@@ -85,6 +85,8 @@ class GamEntity():
   CHANNEL_SKU = 'chsk'
   CHAT_BOT = 'chbo'
   CHAT_MEMBER = 'chme'
+  CHAT_MEMBER_GROUP = 'chmg'
+  CHAT_MEMBER_USER = 'chmu'
   CHAT_MESSAGE = 'chms'
   CHAT_MESSAGE_ID = 'chmi'
   CHAT_SPACE = 'chsp'
@@ -207,6 +209,7 @@ class GamEntity():
   FEATURE = 'feat'
   FIELD = 'fiel'
   FILE = 'file'
+  FILE_PARENT_TREE = 'fptr'
   FILTER = 'filt'
   FORM = 'form'
   FORM_RESPONSE = 'frmr'
@@ -416,6 +419,8 @@ class GamEntity():
     CHAT_MESSAGE: ['Chat Messages', 'Chat Message'],
     CHAT_MESSAGE_ID: ['Chat Message IDs', 'Chat Message ID'],
     CHAT_MEMBER: ['Chat Members', 'Chat Member'],
+    CHAT_MEMBER_GROUP: ['Chat Group Members', 'Chat Group Member'],
+    CHAT_MEMBER_USER: ['Chat User Members', 'Chat User Member'],
     CHAT_SPACE: ['Chat Spaces', 'Chat Space'],
     CHAT_THREAD: ['Chat Threads', 'Chat Thread'],
     CHROME_APP: ['Chrome Applications', 'Chrome Application'],
@@ -536,6 +541,7 @@ class GamEntity():
     FEATURE: ['Features', 'Feature'],
     FIELD: ['Fields', 'Field'],
     FILE: ['Files', 'File'],
+    FILE_PARENT_TREE: ['File Parent Trees', 'File Parent Tree'],
     FILTER: ['Filters', 'Filter'],
     FORM: ['Forms', 'Form'],
     FORM_RESPONSE: ['Form Responses', 'Form Response'],

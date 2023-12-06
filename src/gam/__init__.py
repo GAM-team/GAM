@@ -25170,7 +25170,7 @@ def createChatMember(users):
       try:
         member = callGAPI(chat.spaces().members(), 'create',
                           bailOnInternalError=True,
-                          throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                          throwReasons=[GAPI.ALREADY_EXISTS, GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
                           parent=parent, body=body)
         if role != 'ROLE_MEMBER':
           member = callGAPI(chat.spaces().members(), 'patch',
@@ -25187,7 +25187,7 @@ def createChatMember(users):
           Ind.Decrement()
         else:
           writeStdout(f'{member["name"]}\n')
-      except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
+      except (GAPI.alreadyExists, GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
         entityActionFailedWarning(kvList, str(e))
   Ind.Decrement()
 
@@ -25235,13 +25235,13 @@ def createChatMember(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, chat, kvList = buildChatServiceObject(API.CHAT_MEMBERSHIPS, user, i, count, [Ent.CHAT_SPACE, parent, Ent.CHAT_MEMBER, ''])
+    user, chat, kvList = buildChatServiceObject(API.CHAT_MEMBERSHIPS, user, i, count, [Ent.CHAT_SPACE, parent])
     if not chat:
       continue
     if userMembers:
-      addMembers(userMembers, 'member', Ent.USER, i, count)
+      addMembers(userMembers, 'member', Ent.CHAT_MEMBER_USER, i, count)
     if groupMembers:
-      addMembers(groupMembers, 'groupMember', Ent.GROUP, i, count)
+      addMembers(groupMembers, 'groupMember', Ent.CHAT_MEMBER_GROUP, i, count)
 
 def _deleteChatMembers(chat, kvList, jcount, memberNames, i, count):
   j = 0
@@ -25383,7 +25383,7 @@ def syncChatMembers(users):
       try:
         callGAPI(chat.spaces().members(), 'create',
                  bailOnInternalError=True,
-                 throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                 throwReasons=[GAPI.ALREADY_EXISTS, GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
                  parent=parent, body=body)
         if role != 'ROLE_MEMBER':
           callGAPI(chat.spaces().members(), 'patch',
@@ -25391,7 +25391,7 @@ def syncChatMembers(users):
                    throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
                    name=memberName, updateMask='role', body={'role': role})
         entityActionPerformed(kvList, j, jcount)
-      except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
+      except (GAPI.alreadyExists, GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
         entityActionFailedWarning(kvList, str(e), j, jcount)
     Ind.Decrement()
     del kvList[-2:]
@@ -25491,15 +25491,15 @@ def syncChatMembers(users):
     if syncOperation != 'addonly':
       Act.Set([Act.REMOVE, Act.REMOVE_PREVIEW][preview])
       if usersSpecified:
-        deleteMembers(currentUsersSet-syncUsersSet, Ent.USER, i, count)
+        deleteMembers(currentUsersSet-syncUsersSet, Ent.CHAT_MEMBER_USER, i, count)
       if groupsSpecified:
-        deleteMembers(currentGroupsSet-syncGroupsSet, Ent.GROUP, i, count)
+        deleteMembers(currentGroupsSet-syncGroupsSet, Ent.CHAT_MEMBER_GROUP, i, count)
     if syncOperation != 'removeonly':
       Act.Set([Act.ADD, Act.ADD_PREVIEW][preview])
       if usersSpecified:
-        addMembers(syncUsersSet-currentUsersSet, userMembers, Ent.USER, i, count)
+        addMembers(syncUsersSet-currentUsersSet, userMembers, Ent.CHAT_MEMBER_USER, i, count)
       if groupsSpecified:
-        addMembers(syncGroupsSet-currentGroupsSet, groupMembers, Ent.GROUP, i, count)
+        addMembers(syncGroupsSet-currentGroupsSet, groupMembers, Ent.CHAT_MEMBER_GROUP, i, count)
   if csvPF:
     csvPF.writeCSVfile('Chat Member Updates')
 
@@ -53340,6 +53340,73 @@ def printShowFilePaths(users):
   if csvPF:
     csvPF.writeCSVfile('Drive File Paths')
 
+# gam <UserTypeEntity> print fileparenttree <DriveFileEntity> [todrive <ToDriveAttribute>*]
+#	[stripcrsfromname]
+def printFileParentTree(users):
+  fileNameTitle = 'title' if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES] else 'name'
+  csvPF = CSVPrintFile(['Owner', 'id', fileNameTitle, 'parentId', 'depth', 'isRoot'], 'sortall')
+  fileIdEntity = getDriveFileEntity()
+  stripCRsFromName = False
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif myarg == 'stripcrsfromname':
+      stripCRsFromName = True
+    else:
+      unknownArgumentExit()
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, drive, jcount = _validateUserGetFileIDs(user, i, count, fileIdEntity, entityType=Ent.FILE_PARENT_TREE)
+    if jcount == 0:
+      continue
+    try:
+      rootId = callGAPI(drive.files(), 'get',
+                              throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
+                              fileId=ROOT, fields='id')['id']
+    except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
+      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      continue
+    j = 0
+    for fileId in fileIdEntity['list']:
+      j += 1
+      fileList = []
+      while True:
+        try:
+          result = callGAPI(drive.files(), 'get',
+                            throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
+                            fileId=fileId, fields='id,name,mimeType,parents,driveId', supportsAllDrives=True)
+          if stripCRsFromName:
+            result['name'] = _stripControlCharsFromName(result['name'])
+          result['isRoot'] = False
+          if not result.get('parents', []):
+            if fileId == rootId:
+              result['isRoot'] = True
+            else:
+              driveId = result.get('driveId')
+              if driveId:
+                if result['mimeType'] == MIMETYPE_GA_FOLDER and result['name'] == TEAM_DRIVE:
+                  result['name'] = _getSharedDriveNameFromId(drive, driveId)
+                  result['isRoot'] = True
+            result['parents'] = ['']
+            fileList.append(result)
+            break
+          fileList.append(result)
+          fileId = result['parents'][0]
+        except GAPI.fileNotFound:
+          entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], Msg.DOES_NOT_EXIST, j, jcount)
+          break
+        except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
+          userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+          break
+      kcount = len(fileList)
+      for result in fileList:
+        csvPF.WriteRow({'Owner': user, 'id': result['id'], fileNameTitle: result['name'], 'parentId': result['parents'][0],
+                        'depth': kcount, 'isRoot': result['isRoot']})
+        kcount -= 1
+  csvPF.writeCSVfile('Drive File Parent Tree')
+
 # gam <UserTypeEntity> print filecounts [todrive <ToDriveAttribute>*]
 #	[((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>) (querytime<String> <Time>)*]
 #	[corpora <CorporaAttribute>]
@@ -53592,6 +53659,7 @@ def printDiskUsage(users):
         if stripCRsFromName:
           childEntryInfo['name'] = _stripControlCharsFromName(childEntryInfo['name'])
         childEntryInfo['path'] = fileEntry['path']+pathDelimiter+childEntryInfo['name']
+        childEntryInfo.pop(sizeField, None)
         foldersList.append(childEntryInfo)
         _getChildDriveFolderInfo(drive, childEntryInfo, user, i, count)
         fileEntry['totalFileCount'] += childEntryInfo['totalFileCount']
@@ -53714,6 +53782,7 @@ def printDiskUsage(users):
         topFolder.pop('ownedByMe', None)
         topFolder.pop('parents', None)
         topFolder.update(zeroFolderInfo)
+        topFolder.pop(sizeField, None)
         foldersList.append(topFolder)
         _getChildDriveFolderInfo(drive, topFolder, user, i, count)
       except GAPI.fileNotFound:
@@ -71852,6 +71921,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_NOTE:		printShowNotes,
       Cmd.ARG_OTHERCONTACT:	printShowUserPeopleOtherContacts,
       Cmd.ARG_OUTOFOFFICE:	printShowOutOfOffice,
+      Cmd.ARG_FILEPARENTTREE:	printFileParentTree,
       Cmd.ARG_PEOPLECONTACT:	printShowUserPeopleContacts,
       Cmd.ARG_PEOPLECONTACTGROUP:	printShowUserPeopleContactGroups,
       Cmd.ARG_PEOPLEPROFILE:	printShowUserPeopleProfiles,

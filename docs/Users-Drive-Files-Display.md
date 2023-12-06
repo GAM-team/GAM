@@ -24,6 +24,7 @@
 - [Display file share counts](#display-file-share-counts)
 - [Display file tree](#display-file-tree)
   - [File selection starting point for Display file tree](#file-selection-starting-point-for-display-file-tree)
+- [Display file parent tree](#display-file-parent-tree)
 - [Display file list](#display-file-list)
   - [File selection by name and entity shortcuts for Display file list](#file-selection-by-name-and-entity-shortcuts-for-display-file-list)
   - [File selection starting point for Display file list](#file-selection-starting-point-for-display-file-list)
@@ -946,6 +947,40 @@ Show file tree starting at the folder named "Middle Folder" and 2 levels deeper
 ```
 gam user testuser show filetree select drivefilename "Middle Folder" depth 2
 ```
+## Display file parent tree
+Print the parent tree of file/folder.
+```
+gam <UserTypeEntity> print fileparenttree <DriveFileEntity> [todrive <ToDriveAttribute>*]
+        [stripcrsfromname]
+```
+### Examples
+```
+# My Drive file
+$ gam user user@domain.com print fileparenttree 1tDGtnaBXc1qx_9NjBSZOUUNZ7FoRc2u6
+User: user@domain.com, Print 1 File Parent Tree
+Owner,id,name,parentId,depth,isRoot
+user@domain.com,1tDGtnaBXc1qx_9NjBSZOUUNZ7FoRc2u6,Bottom Folder,1HvAJtmQ2KZrKJhzY8aeZVScHhZ3HBJLp,4,False
+user@domain.com,1HvAJtmQ2KZrKJhzY8aeZVScHhZ3HBJLp,Middle Folder,1CVqOJJLNQtxX4QEPdpDfbkjiq1oUsxne,3,False
+user@domain.com,1CVqOJJLNQtxX4QEPdpDfbkjiq1oUsxne,TopCopy,0AHYenC8f12ALUk9PVA,2,False
+user@domain.com,0AHYenC8f12ALUk9PVA,My Drive,,1,True
+
+# Shared Drive file
+$ gam user user@domain.com print fileparenttree 1kAHa7Q801KXRF1DfoofNlW05UWDzddhVP_u_L2xGfFQ
+User: user@domain.com, Print 1 File Parent Tree
+Owner,id,name,parentId,depth,isRoot
+user@domain.com,1kAHa7Q801KXRF1DfoofNlW05UWDzddhVP_u_L2xGfFQ,Middle Doc,1DShPJ6iG1TnNsgiBn-Oy1OVE2BahYlPr,4,False
+user@domain.com,1DShPJ6iG1TnNsgiBn-Oy1OVE2BahYlPr,Middle Folder,1s3g64uWfuQrpXRPf82B-bWCB5VuyrOmQ,3,False
+user@domain.com,1s3g64uWfuQrpXRPf82B-bWCB5VuyrOmQ,Top Folder,0AL5LiIe4dqxZUk9PVA,2,False
+user@domain.com,0AL5LiIe4dqxZUk9PVA,TS Shared Drive 1,,1,True
+
+# Shared with Me file
+$ gam user user@domain.com print fileparenttree 1S2D97pyG1vAil4hgNnGGLD2ldCwTOzXUM9D7XbeUv0s
+User: user@domain.com, Print 1 File Parent Tree
+Owner,id,name,parentId,depth,isRoot
+user@domain.com,1S2D97pyG1vAil4hgNnGGLD2ldCwTOzXUM9D7XbeUv0s,GooGoo,0B0NlVEBUkz-hfjVudlF4VHlYYWlmOEdCUUxDaHdLdXhJTF84YWQwbmpRWmZ3Qm0wZnpHSGs,2,False
+user@domain.com,0B0NlVEBUkz-hfjVudlF4VHlYYWlmOEdCUUxDaHdLdXhJTF84YWQwbmpRWmZ3Qm0wZnpHSGs,FooBar,,1,False
+```
+
 ## Display file list
 Display a list of file/folder details in CSV format.
 ```

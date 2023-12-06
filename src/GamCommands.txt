@@ -6608,6 +6608,9 @@ gam <UserTypeEntity> show filetree
         (orderby <DriveFileOrderByFieldName> [ascending|descending])* [delimiter <Character>]
         [stripcrsfromname]
 
+gam <UserTypeEntity> print fileparenttree <DriveFileEntity> [todrive <ToDriveAttribute>*]
+        [stripcrsfromname]
+
 gam <UserTypeEntity> print filelist [todrive <ToDriveAttribute>*]
         [((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>)
             (querytime<String> <Time>)*]
