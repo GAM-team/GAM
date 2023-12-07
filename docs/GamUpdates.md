@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.66.08
+
+Added additional columns `isBase` and `baseId' to `gam <UserTypeEntity> print fileparenttree`
+to simplify  processing the output in a script.
+
 ### 6.66.07
 
 Fixed bug in `gam <UserTypeEntity> print diskusage` that caused a trap.

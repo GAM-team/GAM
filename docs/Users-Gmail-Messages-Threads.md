@@ -17,7 +17,7 @@
   - [Display a selected set of messages](#display-a-selected-set-of-messages)
   - [Choose information to display](#choose-information-to-display)
     - [Display message content](#display-message-content)
-    - [Display message count](#display-message-count)
+    - [Display message counts](#display-message-counts)
     - [Display label counts](#display-label-counts)
   - [Print only options](#print-only-options)
   - [Show only options](#show-only-options)
@@ -539,7 +539,7 @@ The `dateheaderconverttimezone [<Boolean>]>` option converts `<SMTPDateHeader>` 
 * `showsize` - Display the message size
 * `showsnippet` - Display the message snippet
 
-### Display message count and optionally cumulative message size
+### Display message counts
 * `countsonly` - Display the count of the number of messages
 * `showsize` - Display the cumulative message size
 

@@ -2,6 +2,11 @@
 
 Merged GAM-Team version
 
+6.66.08
+
+Added additional columns `isBase` and `baseId` to `gam <UserTypeEntity> print fileparenttree`
+to simplify  processing the output in a script.
+
 6.66.07
 
 Fixed bug in `gam <UserTypeEntity> print diskusage` that caused a trap.

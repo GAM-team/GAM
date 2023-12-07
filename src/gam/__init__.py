@@ -53344,7 +53344,7 @@ def printShowFilePaths(users):
 #	[stripcrsfromname]
 def printFileParentTree(users):
   fileNameTitle = 'title' if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES] else 'name'
-  csvPF = CSVPrintFile(['Owner', 'id', fileNameTitle, 'parentId', 'depth', 'isRoot'], 'sortall')
+  csvPF = CSVPrintFile(['Owner', 'isBase', 'baseId', 'id', fileNameTitle, 'parentId', 'depth', 'isRoot'], 'sortall')
   fileIdEntity = getDriveFileEntity()
   stripCRsFromName = False
   while Cmd.ArgumentsRemaining():
@@ -53372,6 +53372,7 @@ def printFileParentTree(users):
     for fileId in fileIdEntity['list']:
       j += 1
       fileList = []
+      baseId = fileId
       while True:
         try:
           result = callGAPI(drive.files(), 'get',
@@ -53401,9 +53402,11 @@ def printFileParentTree(users):
           userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
           break
       kcount = len(fileList)
+      isBase = True
       for result in fileList:
-        csvPF.WriteRow({'Owner': user, 'id': result['id'], fileNameTitle: result['name'], 'parentId': result['parents'][0],
-                        'depth': kcount, 'isRoot': result['isRoot']})
+        csvPF.WriteRow({'Owner': user, 'isBase': isBase, 'baseId': baseId, 'id': result['id'], fileNameTitle: result['name'],
+                        'parentId': result['parents'][0], 'depth': kcount, 'isRoot': result['isRoot']})
+        isBase = False
         kcount -= 1
   csvPF.writeCSVfile('Drive File Parent Tree')
 
@@ -66825,7 +66828,8 @@ def printShowMessagesThreads(users, entityType):
             if senderMatchPattern:
               row['Sender'] = sender
             if not show_size:
-              labelsMap.pop('size', None)
+              for label in labelsMap.values():
+                label.pop('size', None)
             csvPF.WriteRowTitles(flattenJSON({'Labels': sorted(iter(labelsMap.values()), key=lambda k: k['name'])}, flattened=row))
       elif not senderMatchPattern:
         if not csvPF:
