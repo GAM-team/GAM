@@ -2,6 +2,11 @@
 
 Merged GAM-Team version
 
+6.66.09
+
+Fixed bug in `gam <UserTypeEntity> print filelist ... allfields` that caused a trap
+when `gam.cfg` contained `drive_v3_native_names = False`.
+
 6.66.08
 
 Added additional columns `isBase` and `baseId` to `gam <UserTypeEntity> print fileparenttree`

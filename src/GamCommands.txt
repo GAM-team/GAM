@@ -6284,6 +6284,7 @@ gam <UserTypeEntity> collect orphans
         canaddfolderfromanotherdrive|
         canaddmydriveparent|
         canchangecopyrequireswriterpermission|
+        canchangecopyrequireswriterpermissionrestriction|
         canchangedomainusersonlyrestriction|
         canchangedrivebackground|
         canchangedrivemembersonlyrestriction|
@@ -6301,11 +6302,14 @@ gam <UserTypeEntity> collect orphans
         canmanagemembers|
         canmodifycontent|
         canmodifycontentrestriction|
+        canmodifyeditorcontentrestriction|
         canmodifylabels|
+        canmodifyownercontentrestriction|
         canmovechildrenoutofdrive|
         canmovechildrenoutofteamdrive|
         canmovechildrenwithindrive|
         canmovechildrenwithinteamdrive|
+        canmoveitemintodrive|
         canmoveitemintoteamdrive|
         canmoveitemoutofdrive|
         canmoveitemoutofteamdrive|
@@ -6317,6 +6321,7 @@ gam <UserTypeEntity> collect orphans
         canreadrevisions|
         canreadteamdrive|
         canremovechildren|
+        canremovecontentrestriction|
         canremovemydriveparent|
         canrename|
         canrenamedrive|

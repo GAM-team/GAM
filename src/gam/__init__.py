@@ -7695,7 +7695,6 @@ class CSVPrintFile():
 
   def MapDrive3TitlesToDrive2(self):
     _mapDrive3TitlesToDrive2(self.titlesList, API.DRIVE3_TO_DRIVE2_FILES_FIELDS_MAP)
-    _mapDrive3TitlesToDrive2(self.titlesList, API.DRIVE3_TO_DRIVE2_CAPABILITIES_TITLES_MAP)
     self.titlesSet = set(self.titlesList)
 
   def AddJSONTitle(self, title):
@@ -50979,6 +50978,7 @@ DRIVE_CAPABILITIES_SUBFIELDS_CHOICE_MAP = {
   'canaddfolderfromanotherdrive': 'canAddFolderFromAnotherDrive',
   'canaddmydriveparent': 'canAddMyDriveParent',
   'canchangecopyrequireswriterpermission': 'canChangeCopyRequiresWriterPermission',
+  'canchangecopyrequireswriterpermissionrestriction': 'canChangeCopyRequiresWriterPermissionRestriction',
   'canchangedomainusersonlyrestriction': 'canChangeDomainUsersOnlyRestriction',
   'canchangedrivebackground': 'canChangeDriveBackground',
   'canchangedrivemembersonlyrestriction': 'canChangeDriveMembersOnlyRestriction',
@@ -50996,22 +50996,26 @@ DRIVE_CAPABILITIES_SUBFIELDS_CHOICE_MAP = {
   'canmanagemembers': 'canManageMembers',
   'canmodifycontent': 'canModifyContent',
   'canmodifycontentrestriction': 'canModifyContentRestriction',
+  'canmodifyeditorcontentrestriction': 'canModifyEditorContentRestriction',
   'canmodifylabels': 'canModifyLabels',
+  'canmodifyownercontentrestriction': 'canModifyOwnerContentRestriction',
   'canmovechildrenoutofdrive': 'canMoveChildrenOutOfDrive',
   'canmovechildrenoutofteamdrive': 'canMoveChildrenOutOfDrive',
   'canmovechildrenwithindrive': 'canMoveChildrenWithinDrive',
   'canmovechildrenwithinteamdrive': 'canMoveChildrenWithinDrive',
-  'canmoveitemintoteamdrive': 'canMoveItemOutOfDrive',
+  'canmoveitemintodrive':  'canMoveItemIntoDrive',
+  'canmoveitemintoteamdrive':  'canMoveItemIntoDrive',
   'canmoveitemoutofdrive': 'canMoveItemOutOfDrive',
   'canmoveitemoutofteamdrive': 'canMoveItemOutOfDrive',
   'canmoveitemwithindrive': 'canMoveItemWithinDrive',
   'canmoveitemwithinteamdrive': 'canMoveItemWithinDrive',
-  'canmoveteamdriveitem': ['canMoveItemOutOfDrive', 'canMoveItemWithinDrive'],
+  'canmoveteamdriveitem': 'canMoveTeamDriveItem',
   'canreaddrive': 'canReadDrive',
   'canreadlabels': 'canReadLabels',
   'canreadrevisions': 'canReadRevisions',
   'canreadteamdrive': 'canReadDrive',
   'canremovechildren': 'canRemoveChildren',
+  'canremovecontentrestriction': 'canRemoveContentRestriction',
   'canremovemydriveparent': 'canRemoveMyDriveParent',
   'canrename': 'canRename',
   'canrenamedrive': 'canRenameDrive',

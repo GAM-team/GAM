@@ -691,14 +691,6 @@ DRIVE3_TO_DRIVE2_CAPABILITIES_NAMES_MAP = {
   'canChangeViewersCanCopyContent': 'canChangeRestrictedDownload',
   }
 
-DRIVE3_TO_DRIVE2_CAPABILITIES_TITLES_MAP = {
-  'capabilities.canComment': 'canComment',
-  'capabilities.canReadRevisions': 'canReadRevisions',
-  'capabilities.canCopy': 'copyable',
-  'capabilities.canEdit': 'editable',
-  'capabilities.canShare': 'shareable',
-  }
-
 DRIVE3_TO_DRIVE2_FILES_FIELDS_MAP = {
   'allowFileDiscovery': 'withLink',
   'createdTime': 'createdDate',
