@@ -80,6 +80,7 @@
         canaddfolderfromanotherdrive|
         canaddmydriveparent|
         canchangecopyrequireswriterpermission|
+        canchangecopyrequireswriterpermissionrestriction|
         canchangedomainusersonlyrestriction|
         canchangedrivebackground|
         canchangedrivemembersonlyrestriction|
@@ -97,11 +98,14 @@
         canmanagemembers|
         canmodifycontent|
         canmodifycontentrestriction|
+        canmodifyeditorcontentrestriction|
         canmodifylabels|
+        canmodifyownercontentrestriction|
         canmovechildrenoutofdrive|
         canmovechildrenoutofteamdrive|
         canmovechildrenwithindrive|
         canmovechildrenwithinteamdrive|
+        canmoveitemintodrive|
         canmoveitemintoteamdrive|
         canmoveitemoutofdrive|
         canmoveitemoutofteamdrive|
@@ -113,6 +117,7 @@
         canreadrevisions|
         canreadteamdrive|
         canremovechildren|
+        canremovecontentrestriction|
         canremovemydriveparent|
         canrename|
         canrenamedrive|
@@ -1076,6 +1081,12 @@ Use the following option to select a subset of files based on their permissions.
 * `<PermissionMatch>* [<PermissionMatchAction>]` - Use permission matching to select files
 
 ## File selection starting point for Display file list
+You can limit the selection for files on a specific Shared drive.
+Any query will be applied to the Shared drive.
+```
+select <SharedDriveEntity>
+```
+
 You can specify a specific folder from which to select files.
 ```
 select <DriveFileEntity> [selectsubquery <QueryDriveFile>]

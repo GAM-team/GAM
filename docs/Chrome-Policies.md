@@ -409,7 +409,7 @@ chrome.devices.AllowRedeemChromeOsRegistrationOffers: Redeem offers through Chro
     true: Allow users to redeem offers through ChromeOS registration.
     false: Prevent users from redeeming offers through ChromeOS Registration.
 
-chrome.devices.AnonymousMetricReporting: Anonymous metric reporting.
+chrome.devices.AnonymousMetricReporting: Metrics reporting.
   metricsEnabled: TYPE_BOOL
     true: Always send metrics to Google.
     false: Never send metrics to Google.
@@ -432,7 +432,7 @@ chrome.devices.AutoUpdateSettings: Auto-update settings.
     ROLLBACK_DISABLED: Do not roll back OS.
     ROLLBACK_AND_RESTORE_IF_POSSIBLE: Roll back OS.
   deviceMinimumVersionAueMessage: TYPE_STRING
-    Enforce updates Auto Update Expiration (AUE) message. When a device reaches Auto Update Expiration(https://support.google.com/chrome/a/answer/6220366)automatic software updates from Google will no longer be provided. This text overrides the default message that will be shown on the device.
+    Final automatic update alert message. When a device reaches its last automatic update(https://support.google.com/chrome/a/answer/6220366)automatic , an alert is sent to the user. This text overrides the default message that will be shown on the device.
   autoUpdateHttpDownloadsEnabled: TYPE_BOOL
     true: Use HTTP for update downloads.
     false: Use HTTPS for update downloads.
@@ -446,8 +446,6 @@ chrome.devices.AutoUpdateSettings: Auto-update settings.
   deviceAutoUpdatePeerToPeerEnabled: TYPE_BOOL
     true: Allow peer to peer auto update downloads.
     false: Do not allow peer to peer auto update downloads.
-  autoUpdateTargetSelector: TYPE_STRING
-    Specific update version. This will override the Chrome version restriction.
   plan: TYPE_ENUM
     DEFAULT_UPDATES:
     SCATTER_UPDATES:
@@ -500,6 +498,14 @@ chrome.devices.ContentProtection: Allow web services to request proof that the d
     true: Ensures ChromeOS devices in your organization will verify their identity to content providers.
     false: Does not ensure ChromeOS devices in your organization will verify their identity to content providers. Some premium content may be unavailable to your users.
 
+chrome.devices.DeviceAuthenticationUrlAllowlist: Blocked URL exceptions on the sign-in / lock screens.
+  deviceAuthenticationUrlAllowlist: TYPE_LIST
+    Blocked URL exceptions. Any URL that matches an entry in this exception list will be allowed, even if it matches a line in the blocked URLs. Wildcards ("*") are allowed when appended to a URL, but cannot be entered alone. Maximum of 1000 URLs.
+
+chrome.devices.DeviceAuthenticationUrlBlocklist: Blocked URLs on the sign-in / lock screens.
+  deviceAuthenticationUrlBlocklist: TYPE_LIST
+    Blocked URLs. Any URL in this list will be blocked, unless it also appears in the list of exceptions in the corresponding allowlist.
+
 chrome.devices.DeviceAutofillSamlUsername: Autofill username on SAML IdP login page.
   deviceAutofillSamlUsername: TYPE_STRING
     URL parameter name. Specify the URL parameter name which will be used on IdP login page to autofill the username field. See the help center article for some examples of fitting URL parameters. Warning: ChromeOS user's email will be used to autofill the username field, so do not use this policy if a different username should be used on IdP login page. This policy is only relevant if SAML SSO has been configured for Chrome Devices.
@@ -515,6 +521,12 @@ chrome.devices.DeviceBatteryCharge: Primary battery charge configuration.
     min 50; max 95. Start charging when the battery drop below (% available charge).
   customBatteryChargeStop: TYPE_INT64
     min 55; max 100. Stop charging when the battery goes above (% available charge).
+
+chrome.devices.DeviceChargingSoundsEnabled: Charging Sounds.
+  deviceChargingSoundsEnabled: TYPE_ENUM
+    UNSET: Allow the user to decide.
+    FALSE: Disable charging sounds.
+    TRUE: Enable charging sounds.
 
 chrome.devices.DeviceDebugPacketCaptureAllowed: Debug network packet captures.
   deviceDebugPacketCaptureAllowed: TYPE_BOOL
@@ -537,6 +549,11 @@ chrome.devices.DeviceKeyboardBacklightColor: Default keyboard backlight color.
     BACKLIGHT_PURPLE: Purple.
     BACKLIGHT_RAINBOW: Rainbow.
 
+chrome.devices.DeviceKeylockerForStorageEncryptionEnabled: Enable Key Locker.
+  keylockerForStorageEncryptionEnabled: TYPE_BOOL
+    true: Use Key Locker with the encryption algorithm for user storage encryption, if supported.
+    false: Do not use Key Locker with the encryption algorithm for user storage encryption.
+
 chrome.devices.DeviceLoginScreenAutocompleteDomainGroup: Autocomplete domain.
   loginScreenDomainAutoComplete: TYPE_BOOL
     true: Use the domain name set in the field 'loginScreenDomainAutoCompletePrefix' for autocomplete at sign-in.
@@ -547,6 +564,13 @@ chrome.devices.DeviceLoginScreenAutocompleteDomainGroup: Autocomplete domain.
 chrome.devices.DeviceLoginScreenAutoSelectCertificateForUrls: Single sign-on client certificates.
   deviceLoginScreenAutoSelectCertificateForUrls: TYPE_LIST
     Automatically select client certificate for these single sign-on sites. Please refer to the support url for the format of this setting.
+
+chrome.devices.DeviceLoginScreenExtensionManifestVTwoAvailability: Manifest v2 extension availability on sign-in screen.
+  deviceLoginScreenExtensionManifestVTwoAvailability: TYPE_ENUM
+    DEFAULT: Default device behavior.
+    DISABLE: Disable manifest V2 extensions on the sign-in screen.
+    ENABLE: Enable manifest V2 extensions on the sign-in screen.
+    ENABLE_FOR_FORCED_EXTENSIONS: Enable force-installed manifest V2 extensions on the sign-in screen.
 
 chrome.devices.DeviceLoginScreenPrivacyScreenEnabled: Privacy screen on sign-in screen.
   deviceLoginScreenPrivacyScreenEnabled: TYPE_ENUM
@@ -561,9 +585,15 @@ chrome.devices.DeviceLoginScreenPromptOnMultipleMatchingCertificates: Prompt whe
 
 chrome.devices.DeviceLoginScreenSystemInfoEnforced: System info on sign-in screen.
   deviceLoginScreenSystemInfoEnforced: TYPE_ENUM
-    UNSET: Allow users to display system information on the sign-in screen by pressing Alt+V.
+    UNSET: Allow the user to decide.
     FALSE: Do not allow users to display system information on the sign-in screen.
     TRUE: Always display system information on the sign-in screen.
+
+chrome.devices.DeviceLowBatterySoundEnabled: Low Battery Sound.
+  deviceLowBatterySoundEnabled: TYPE_ENUM
+    UNSET: Allow the user to decide.
+    FALSE: Disable low battery sound.
+    TRUE: Enable low battery sound.
 
 chrome.devices.DevicePciPeripheralDataAccessEnabled: Data access protection for peripherals.
   devicePciPeripheralDataAccessEnabled: TYPE_ENUM
@@ -576,12 +606,21 @@ chrome.devices.DevicePowerwashAllowed: Powerwash.
     true: Allow powerwash to be triggered.
     false: Do not allow powerwash to be triggered.
 
+chrome.devices.DevicePrintingClientNameTemplate: Internet Printing Protocol client-name attribute.
+  devicePrintingClientNameTemplate: TYPE_STRING
+    Template for the client-name attribute. Set the 'client-name' value to be passed to IPP (Internet Printing Protocol) print destinations in print job creation requests.The following variables can be used: ${DEVICE_DIRECTORY_API_ID}, ${DEVICE_SERIAL_NUMBER} ${DEVICE_ASSET_ID} and ${DEVICE_ANNOTATED_LOCATION}.
+
 chrome.devices.DeviceRebootOnUserSignout: Reboot on sign-out.
   deviceRebootOnUserSignout: TYPE_ENUM
     NEVER: Do not reboot on user sign-out.
     ARC_SESSION: Reboot on user sign-out if Android has started.
     ALWAYS: Always reboot on user sign-out.
     VM_STARTED_OR_ARC_SESSION: Reboot on user sign-out if Android or a VM has started.
+
+chrome.devices.DeviceReportXdrEvents: Report extended detection and response (XDR) events.
+  deviceReportXdrEvents: TYPE_BOOL
+    true: Report information about extended detection and response (XDR) events.
+    false: Do not report information about extended detection and response (XDR) events.
 
 chrome.devices.DeviceRestrictedManagedGuestSessionEnabled: Shared kiosk mode.
   deviceRestrictedManagedGuestSessionEnabled: TYPE_BOOL
@@ -610,6 +649,14 @@ chrome.devices.DeviceScheduledReboot: Scheduled reboot.
   minutes: TYPE_INT32
   seconds: TYPE_INT32
   nanos: TYPE_INT32
+
+chrome.devices.DeviceScreensaverLoginScreenEnabled: Screen saver.
+  deviceScreensaverLoginScreenEnabled: TYPE_BOOL
+    true: Display screen saver when idle.
+    false: Don't display screen saver when idle.
+  deviceScreensaverLoginScreenImages: TYPE_LIST
+    Screen saver image URLs. Enter one URL per line. Images must be in JPG format(.jpg or .jpeg files.
+  duration: TYPE_INT64
 
 chrome.devices.DeviceScreenSettings: Screen settings.
   allowUserDisplayChanges: TYPE_BOOL
@@ -679,6 +726,11 @@ chrome.devices.DeviceShowNumericKeyboardForPassword: Show numeric keyboard for p
   deviceShowNumericKeyboardForPassword: TYPE_BOOL
     true: Default to a numeric keyboard for password input.
     false: Default to a standard keyboard for password input.
+
+chrome.devices.DeviceSystemWideTracingEnabled: System-wide performance trace collection.
+  deviceSystemWideTracingEnabled: TYPE_BOOL
+    true: Allow users to collect a system-wide performance trace.
+    false: Prevent users from collecting a system-wide performance trace.
 
 chrome.devices.DeviceUpdateDeviceAttributes: Asset identifier input after zero touch enrollment.
   allowToUpdateDeviceAttributes: TYPE_BOOL
@@ -796,6 +848,7 @@ chrome.devices.Imprivata: Imprivata login screen integration.
     IMPRIVATA_EXTENSION_VERSION_M81: Pinned to v1 (Compatible with Chrome 81+).
     IMPRIVATA_EXTENSION_VERSION_M86: Pinned to v2 (Compatible with Chrome 86+).
     IMPRIVATA_EXTENSION_VERSION_3: Pinned to v3 (Compatible with Chrome 97+).
+    IMPRIVATA_EXTENSION_VERSION_4: Pinned to v4 (Compatible with Chrome 118+).
   downloadUri: TYPE_STRING
 
 chrome.devices.InactiveDeviceNotifications: Inactive device notifications.
@@ -807,7 +860,7 @@ chrome.devices.InactiveDeviceNotifications: Inactive device notifications.
   cadence: TYPE_INT64
     Notification cadence (days). Send me an inactive device report with this frequency.
   emailsToNotify: TYPE_LIST
-    Email addresses to receive notification reports. Enter a list of email addresses to receive inactive device reports (one address per line).
+    Email addresses to receive notification reports. Enter a list of email addresses to receive inactive device reports (one address per line). This field requires at least one element.
 
 chrome.devices.kiosk.AccessibilityShortcutsEnabled: Kiosk accessibility shortcuts.
   accessibilityShortcutsEnabled: TYPE_ENUM
@@ -848,11 +901,6 @@ chrome.devices.kiosk.apps.ForceInstall: Force installs the app. Note: It's requi
 
 chrome.devices.kiosk.apps.FunctionKeys: Allows setting Function Keys.
   allowFunctionKeys: TYPE_BOOL
-
-chrome.devices.kiosk.apps.InstallationUrl: Specifies the url from which to install a self hosted Chrome Extension.
-  installationUrl: TYPE_STRING
-    The url from which to install a self hosted Chrome Extension.
-  overrideInstallationUrl: TYPE_BOOL
 
 chrome.devices.kiosk.apps.InstallationUrlV2: Specifies the url from which to install a self hosted Chrome Extension.
   installationUrl: TYPE_STRING
@@ -947,6 +995,11 @@ chrome.devices.kiosk.KioskAllowedInputMethods: Kiosk allowed input methods.
   allowedInputMethods: TYPE_LIST
     {'value': 'xkb:jp::jpn', 'description': 'Alphanumeric with Japanese keyboard.'}
 
+chrome.devices.kiosk.KioskTroubleshootingToolsEnabled: Kiosk troubleshooting tools.
+  kioskTroubleshootingToolsEnabled: TYPE_BOOL
+    true: Enable troubleshooting tools.
+    false: Disable troubleshooting tools.
+
 chrome.devices.kiosk.KioskVirtualKeyboardFeatures: Kiosk virtual keyboard features (websites only).
   virtualKeyboardFeatures: TYPE_LIST
     {'value': 'AUTO_SUGGEST', 'description': 'Auto suggest.'}
@@ -1030,6 +1083,11 @@ chrome.devices.kiosk.UrlBlocking: URL blocking.
     Blocked URLs. Any URL in the URL blocklist will be blocked, unless it also appears in the URL blocklist exception list.
   urlAllowlist: TYPE_LIST
     Blocked URLs exceptions. Any URL that matches an entry in the blocklist exception list will be allowed, even if it matches an entry in the URL blocklist. Wildcards ("*") are allowed when appended to a URL, but cannot be entered alone.
+
+chrome.devices.kiosk.UrlKeyedAnonymizedDataCollectionEnabled: URL-keyed anonymized data collection.
+  urlKeyedAnonymizedDataCollectionEnabled: TYPE_BOOL
+    true: Send anonymized URL-keyed data for kiosk sessions.
+    false: Do not send anonymized URL-keyed data for kiosk sessions.
 
 chrome.devices.kiosk.VirtualKeyboardEnabled: Kiosk on-screen keyboard.
   virtualKeyboardEnabled: TYPE_ENUM
@@ -1155,7 +1213,7 @@ chrome.devices.managedguest.AccessControlAllowMethodsInCorsPreflightSpecConforma
 
 chrome.devices.managedguest.AccessibilityImageLabelsEnabled: Image descriptions.
   accessibilityImageLabelsEnabled: TYPE_ENUM
-    UNSET: Let users choose to use an anonymous Google service to provide automatic descriptions for unlabeled images.
+    UNSET: Allow the user to decide.
     FALSE: Do not use Google services to provide automatic image descriptions.
     TRUE: Use an anonymous Google service to provide automatic descriptions for unlabeled images.
 
@@ -1174,6 +1232,11 @@ chrome.devices.managedguest.AdsSettingForIntrusiveAdsSites: Sites with intrusive
   adsSettingForIntrusiveAdsSites: TYPE_ENUM
     ALLOW_ADS: Allow ads on all sites.
     BLOCK_ADS: Block ads on sites with intrusive ads.
+
+chrome.devices.managedguest.AllowBackForwardCacheForCacheControlNoStorePageEnabled: No-store header back/forward cache.
+  allowBackForwardCacheForCacheControlNoStorePageEnabled: TYPE_BOOL
+    true: Allow pages with CCNS header to be stored in back/forward cache.
+    false: Disallow pages with CCNS header from being stored in back/forward cache.
 
 chrome.devices.managedguest.AllowDinosaurEasterEgg: Dinosaur game.
   allowDinosaurEasterEgg: TYPE_ENUM
@@ -1332,6 +1395,12 @@ chrome.devices.managedguest.AutoplayAllowlist: Autoplay video.
 chrome.devices.managedguest.Avatar: Custom avatar.
   downloadUri: TYPE_STRING
 
+chrome.devices.managedguest.BeforeunloadEventCancelByPreventDefaultEnabled: Behavior of event.preventDefault() for beforeunload event.
+  beforeunloadEventCancelByPreventDefaultEnabled: TYPE_ENUM
+    UNSET: Use the default Chrome setting.
+    FALSE: Do not show cancel dialog when event.preventDefault() is called for beforeunload event.
+    TRUE: Show cancel dialog when event.preventDefault() is called for beforeunload event.
+
 chrome.devices.managedguest.BookmarkBarEnabled: Bookmark bar.
   bookmarkBarEnabled: TYPE_ENUM
     UNSET: Allow the user to decide.
@@ -1371,6 +1440,11 @@ chrome.devices.managedguest.Cecpq2Enabled: CECPQ2 post-quantum key-agreement for
     true: Enable default CECPQ2 rollout process.
     false: Disable CECPQ2.
 
+chrome.devices.managedguest.ChromeAppsWebViewPermissiveBehaviorAllowed: Restore permissive Chrome Apps behavior.
+  chromeAppsWebViewPermissiveBehaviorAllowed: TYPE_BOOL
+    true: Allow permissive behavior.
+    false: Use default navigation protections.
+
 chrome.devices.managedguest.ClipboardSettings: Clipboard.
   defaultClipboardSetting: TYPE_ENUM
     BLOCK_CLIPBOARD: Do not allow any site to use the clipboard site permission.
@@ -1395,6 +1469,11 @@ chrome.devices.managedguest.CursorHighlightEnabled: Cursor highlight.
 
 chrome.devices.managedguest.CustomTermsOfService: Custom terms of service.
   downloadUri: TYPE_STRING
+
+chrome.devices.managedguest.DataLeakPreventionReportingEnabled: Data controls reporting.
+  dataLeakPreventionReportingEnabled: TYPE_BOOL
+    true: Enable reporting of data control events.
+    false: Disable reporting of data control events.
 
 chrome.devices.managedguest.DefaultInsecureContentSetting: Control use of insecure content exceptions.
   defaultInsecureContentSetting: TYPE_ENUM
@@ -1482,6 +1561,12 @@ chrome.devices.managedguest.DnsOverHttps: DNS-over-HTTPS.
   dnsOverHttpsTemplates: TYPE_LIST
     DNS-over-HTTPS templates. URI templates of desired DNS-over-HTTPS resolvers. If the URI template contains a '{?dns}' variable, requests to the resolver will use GET; otherwise requests will use POST.
 
+chrome.devices.managedguest.DnsOverHttpsTemplatesWithIdentifiers: DNS-over-HTTPS with identifiers.
+  dnsOverHttpsSalt: TYPE_STRING
+    Salt for hashing identifiers in the URI templates. Salt used for hashing user and device identifiers in the template URIs. Optional starting Chrome version 114.
+  dnsOverHttpsTemplatesWithIdentifiers: TYPE_LIST
+    DNS-over-HTTPS templates with identifiers. URI templates of desired DNS-over-HTTPS resolvers which contain user or device identifiers. If the URI template contains a '{?dns}' variable, requests to the resolver will use GET; otherwise requests will use POST. If both DNS-over-HTTPS templates and DNS-over-HTTPS templates with identifiers are set, ChromeOS will default to DNS-over-HTTPS templates with identifiers.
+
 chrome.devices.managedguest.DownloadBubbleEnabled: Download bubble.
   downloadBubbleEnabled: TYPE_BOOL
     true: Enable download bubble.
@@ -1490,10 +1575,16 @@ chrome.devices.managedguest.DownloadBubbleEnabled: Download bubble.
 chrome.devices.managedguest.DownloadRestrictions: Download restrictions.
   safeBrowsingDownloadRestrictions: TYPE_ENUM
     NO_SPECIAL_RESTRICTIONS: No special restrictions.
-    BLOCK_ALL_MALICIOUS_DOWNLOAD: Block all malicious downloads.
-    BLOCK_DANGEROUS_DOWNLOAD: Block dangerous downloads.
-    BLOCK_POTENTIALLY_DANGEROUS_DOWNLOAD: Block potentially dangerous downloads.
+    BLOCK_ALL_MALICIOUS_DOWNLOAD: Block malicious downloads.
+    BLOCK_DANGEROUS_DOWNLOAD: Block malicious downloads and dangerous file types.
+    BLOCK_POTENTIALLY_DANGEROUS_DOWNLOAD: Block malicious downloads, uncommon or unwanted downloads and dangerous file types.
     BLOCK_ALL_DOWNLOAD: Block all downloads.
+
+chrome.devices.managedguest.EmojiPickerGifSupportEnabled: GIF Support in Emoji Picker.
+  emojiPickerGifSupportEnabled: TYPE_ENUM
+    UNSET: Use the default Chrome setting.
+    FALSE: Do not allow GIFs to be selected in the Emoji picker.
+    TRUE: Allow GIFs to be selected in the Emoji picker.
 
 chrome.devices.managedguest.EmojiSuggestionEnabled: Emoji suggestions.
   emojiSuggestionEnabled: TYPE_BOOL
@@ -1540,6 +1631,17 @@ chrome.devices.managedguest.ExplicitlyAllowedNetworkPorts: Allowed network ports
   explicitlyAllowedNetworkPorts: TYPE_LIST
     {'value': '554', 'description': 'port 554 (expires 2021/10/15).'}
 
+chrome.devices.managedguest.ExtensionExtendedBackgroundLifetimeForPortConnectionsToUrls: Extended background lifetime.
+  extensionExtendedBackgroundLifetimeForPortConnectionsToUrls: TYPE_LIST
+    Origins that grant extended background lifetime to connecting extensions. Enter a list of origins. Extensions that connect to one of these origins will be be kept running as long as the port is connected. One URL per line.
+
+chrome.devices.managedguest.ExtensionManifestVTwoAvailability: Manifest V2 extension availability.
+  extensionManifestVTwoAvailability: TYPE_ENUM
+    DEFAULT: Default browser behavior.
+    DISABLE: Disable manifest V2 extensions.
+    ENABLE: Enable manifest V2 extensions.
+    ENABLE_FOR_FORCED_EXTENSIONS: Enable force-installed manifest V2 extensions.
+
 chrome.devices.managedguest.ExternalStorage: External storage devices.
   externalStorageDevices: TYPE_ENUM
     READ_WRITE: Allow external storage devices.
@@ -1551,6 +1653,10 @@ chrome.devices.managedguest.FastPairEnabled: Fast Pair (fast Bluetooth pairing).
     UNSET: Allow the user to decide.
     FALSE: Disable Fast Pair.
     TRUE: Enable Fast Pair.
+
+chrome.devices.managedguest.FileOrDirectoryPickerWithoutGestureAllowedForOrigins: File/directory picker without user gesture.
+  fileOrDirectoryPickerWithoutGestureAllowedForOrigins: TYPE_LIST
+    Allow file or directory picker APIs to be called without prior user gesture. Urls to allow file or directory pickers without user gesture.
 
 chrome.devices.managedguest.FileSystemRead: File system read access.
   defaultFileSystemReadGuardSetting: TYPE_ENUM
@@ -1593,6 +1699,11 @@ chrome.devices.managedguest.ForceMaximizeOnFirstRun: Maximize window on first ru
     true: Maximize the first browser window on first run.
     false: Default system behavior (depends on screen size).
 
+chrome.devices.managedguest.ForcePermissionPolicyUnloadDefaultEnabled: Unload event handlers.
+  forcePermissionPolicyUnloadDefaultEnabled: TYPE_BOOL
+    true: Enable unload event handlers.
+    false: Do not enable unload event handlers.
+
 chrome.devices.managedguest.FullscreenAllowed: Fullscreen mode.
   fullscreenAllowed: TYPE_BOOL
     true: Allow fullscreen mode.
@@ -1615,6 +1726,11 @@ chrome.devices.managedguest.GoogleCast: Cast.
     true: Allow users to Cast.
     false: Do not allow users to Cast.
 
+chrome.devices.managedguest.GoogleSearchSidePanelEnabled: Side Panel search.
+  googleSearchSidePanelEnabled: TYPE_BOOL
+    true: Enable Side Panel search on all web pages.
+    false: Disable Side Panel search on all web pages.
+
 chrome.devices.managedguest.HighContrastEnabled: High contrast.
   highContrastEnabled: TYPE_ENUM
     UNSET: Allow the user to decide.
@@ -1635,7 +1751,7 @@ chrome.devices.managedguest.HomeButton: Home button.
 
 chrome.devices.managedguest.Homepage: Homepage.
   homepageIsNewTabPage: TYPE_ENUM
-    UNSET: Allow user to configure.
+    UNSET: Allow the user to decide.
     FALSE: Homepage is always the URL set in 'homepageLocation'.
     TRUE: Homepage is always the new tab page.
   homepageLocation: TYPE_STRING
@@ -1659,6 +1775,28 @@ chrome.devices.managedguest.IdleSettings: Idle settings.
     SHUTDOWN: Shutdown.
     DO_NOTHING: Do nothing.
 
+chrome.devices.managedguest.IdleSettingsExtended: Idle settings.
+  lidCloseAction: TYPE_ENUM
+    SLEEP: Sleep.
+    LOGOUT: Logout.
+    SHUTDOWN: Shutdown.
+    DO_NOTHING: Do nothing.
+  idleActionAc: TYPE_ENUM
+    SLEEP: Sleep.
+    LOGOUT: Logout.
+    SHUTDOWN: Shut down.
+    DO_NOTHING: Do nothing.
+  idleActionBattery: TYPE_ENUM
+    SLEEP: Sleep.
+    LOGOUT: Logout.
+    SHUTDOWN: Shut down.
+    DO_NOTHING: Do nothing.
+  lockOnSleepOrLidClose: TYPE_ENUM
+    UNSET: Allow user to configure.
+    FALSE: Don't lock screen.
+    TRUE: Lock screen.
+  duration: TYPE_INT64
+
 chrome.devices.managedguest.IncognitoMode: Incognito mode.
   incognitoModeAvailability: TYPE_ENUM
     AVAILABLE: Allow incognito mode.
@@ -1677,6 +1815,12 @@ chrome.devices.managedguest.InsecureFormsWarningsEnabled: Insecure forms.
   insecureFormsWarningsEnabled: TYPE_BOOL
     true: Show warnings and disable autofill on insecure forms.
     false: Do not show warnings or disable autofill on insecure forms.
+
+chrome.devices.managedguest.InsecureHashesInTlsHandshakesEnabled: Insecure hashes in TLS handshakes.
+  insecureHashesInTlsHandshakesEnabled: TYPE_ENUM
+    UNSET: Use the default Chrome setting.
+    FALSE: Do not allow insecure hashes in TLS handshakes.
+    TRUE: Allow insecure hashes in TLS handshakes.
 
 chrome.devices.managedguest.InsecurePrivateNetworkRequestsAllowed: Requests from insecure websites to more-private network endpoints.
   insecurePrivateNetworkRequestsAllowed: TYPE_BOOL
@@ -1717,6 +1861,10 @@ chrome.devices.managedguest.KerberosCustomPrefilledConfigSettingGroup: Kerberos 
   kerberosUseCustomPrefilledConfig: TYPE_BOOL
     true: Customize Kerberos configuration.
     false: Use recommended Kerberos configuration.
+
+chrome.devices.managedguest.KerberosDomainAutocomplete: Autocomplete Kerberos domain.
+  kerberosDomainAutocomplete: TYPE_STRING
+    Kerberos domain. Autocomplete Kerberos domain.
 
 chrome.devices.managedguest.KerberosTickets: Kerberos tickets.
   kerberosEnabled: TYPE_BOOL
@@ -1803,6 +1951,11 @@ chrome.devices.managedguest.MonoAudioEnabled: Mono audio.
     FALSE: Disable mono audio.
     TRUE: Enable mono audio.
 
+chrome.devices.managedguest.NativeClientForceAllowed: Allow Native Client (NaCl).
+  nativeClientForceAllowed: TYPE_BOOL
+    true: Allow Native Client to run even if it is disabled by default.
+    false: Use default behavior.
+
 chrome.devices.managedguest.NetworkFileShares: Network file shares.
   networkFileSharesAllowed: TYPE_BOOL
     true: Allow network file shares.
@@ -1867,6 +2020,22 @@ chrome.devices.managedguest.PdfLocalFileAccessAllowedForDomains: Local file acce
   pdfLocalFileAccessAllowedForDomains: TYPE_LIST
     Allowed URLs. List of file URLs with local access enabled in the PDF viewer.
 
+chrome.devices.managedguest.PdfUseSkiaRendererEnabled: Renderer for PDF files.
+  pdfUseSkiaRendererEnabled: TYPE_ENUM
+    UNSET: Use the default Chrome setting.
+    FALSE: Use AGG renderer for PDF files.
+    TRUE: Use Skia renderer for PDF files.
+
+chrome.devices.managedguest.PhysicalKeyboardAutocorrect: Physical keyboard autocorrect.
+  physicalKeyboardAutocorrect: TYPE_BOOL
+    true: Enable physical keyboard autocorrect.
+    false: Disable physical keyboard autocorrect.
+
+chrome.devices.managedguest.PhysicalKeyboardPredictiveWriting: Physical keyboard predictive writing.
+  physicalKeyboardPredictiveWriting: TYPE_BOOL
+    true: Enable physical keyboard predictive writing.
+    false: Disable physical keyboard predictive writing.
+
 chrome.devices.managedguest.Popups: Pop-ups.
   defaultPopupsSetting: TYPE_ENUM
     UNSET: Allow the user to decide.
@@ -1876,6 +2045,12 @@ chrome.devices.managedguest.Popups: Pop-ups.
     Allow pop-ups on these sites. Urls to allow pop-ups.
   popupsBlockedForUrls: TYPE_LIST
     Block pop-ups on these sites. Urls to block pop-ups.
+
+chrome.devices.managedguest.PostQuantumKeyAgreementEnabled: Post-quantum TLS.
+  postQuantumKeyAgreementEnabled: TYPE_ENUM
+    UNSET: Use the default Chrome setting.
+    FALSE: Do not allow Kyber key agreement for TLS.
+    TRUE: Allow Kyber key agreement for TLS.
 
 chrome.devices.managedguest.PpApiSharedImagesSwapChainAllowed: Modern buffer allocation for Graphics3D APIs PPAPI plugin.
   ppApiSharedImagesSwapChainAllowed: TYPE_BOOL
@@ -1895,7 +2070,7 @@ chrome.devices.managedguest.PrimaryMouseButtonSwitch: Primary mouse button.
 
 chrome.devices.managedguest.PrinterTypeDenyList: Blocked printer types.
   printerTypeDenyList: TYPE_LIST
-    {'value': 'privet', 'description': 'Zeroconf-based (mDNS + DNS-SD) protocol.'}
+    {'value': 'privet', 'description': 'Privet zeroconf-based protocol (deprecated).'}
 
 chrome.devices.managedguest.PrintHeaderFooter: Print headers and footers.
   printHeaderFooter: TYPE_ENUM
@@ -1988,6 +2163,11 @@ chrome.devices.managedguest.QuicProtocol: QUIC protocol.
     true: Enable.
     false: Disable.
 
+chrome.devices.managedguest.RemoteAccessHostAllowEnterpriseRemoteSupportConnections: Enterprise remote support connections.
+  remoteAccessHostAllowEnterpriseRemoteSupportConnections: TYPE_BOOL
+    true: Allow remote support connections from enterprise admins.
+    false: Prevent remote support connections from enterprise admins.
+
 chrome.devices.managedguest.RemoteAccessHostAllowRemoteSupportConnections: Remote support connections.
   remoteAccessHostAllowRemoteSupportConnections: TYPE_BOOL
     true: Allow remote support connections.
@@ -1996,6 +2176,9 @@ chrome.devices.managedguest.RemoteAccessHostAllowRemoteSupportConnections: Remot
 chrome.devices.managedguest.RemoteAccessHostClientDomainList: Remote access clients.
   remoteAccessHostClientDomainList: TYPE_LIST
     Remote access client domain. Configure the required domain names for remote access clients.
+
+chrome.devices.managedguest.RemoteAccessHostClipboardSizeBytes: Clipboard sync max size.
+  value: TYPE_INT64
 
 chrome.devices.managedguest.RemoteAccessHostDomainList: Remote access hosts.
   remoteAccessHostDomainList: TYPE_LIST
@@ -2033,12 +2216,21 @@ chrome.devices.managedguest.RestrictPrintDuplexMode: Restrict page sides.
     SIMPLEX_ONLY: One-sided only.
     DUPLEX_ONLY: Two-sided only.
 
-chrome.devices.managedguest.SafeBrowsingProtectionLevel: Safe Browsing Protection Level.
+chrome.devices.managedguest.RsaKeyUsageForLocalAnchorsEnabled: Check RSA key usage.
+  rsaKeyUsageForLocalAnchorsEnabled: TYPE_ENUM
+    UNSET: Use the default Chrome setting.
+    FALSE: Disable RSA key usage checking.
+    TRUE: Enable RSA key usage checking.
+
+chrome.devices.managedguest.SafeBrowsingProtectionLevel: Safe Browsing protection.
   safeBrowsingProtectionLevel: TYPE_ENUM
     USER_CHOICE: Allow the user to decide.
     NO_PROTECTION: Safe Browsing is never active.
     STANDARD_PROTECTION: Safe Browsing is active in the standard mode.
     ENHANCED_PROTECTION: Safe Browsing is active in the enhanced mode. This mode provides better security, but requires sharing more browsing information with Google.
+  safeBrowsingProxiedRealTimeChecksAllowed: TYPE_BOOL
+    true: Allow higher-protection proxied lookups.
+    false: Don't allow higher-protection proxied lookups.
 
 chrome.devices.managedguest.SafeSearchRestrictedMode: SafeSearch and Restricted Mode.
   forceGoogleSafeSearch: TYPE_BOOL
@@ -2073,12 +2265,24 @@ chrome.devices.managedguest.ScreenCaptureAllowed: Screen video capture.
     true: Allow sites to prompt the user to share a video stream of their screen.
     false: Do not allow sites to prompt the user to share a video stream of their screen.
 
+chrome.devices.managedguest.ScreenCaptureWithoutGestureAllowedForOrigins: Media picker without user gesture.
+  screenCaptureWithoutGestureAllowedForOrigins: TYPE_LIST
+    Allow screen capture without prior user gesture. Urls to allow screencapture without user gesture.
+
 chrome.devices.managedguest.ScreenMagnifierType: Screen magnifier.
   screenMagnifierType: TYPE_ENUM
     UNSET: Allow the user to decide.
     DISABLED: Disable screen magnifier.
     FULL_SCREEN: Enable full-screen magnifier.
     DOCKED: Enable docked magnifier.
+
+chrome.devices.managedguest.ScreensaverLockScreenEnabled: Screen saver.
+  screensaverLockScreenEnabled: TYPE_BOOL
+    true: Display screen saver on lock screen when idle.
+    false: Don't display screen saver on lock screen when idle.
+  screensaverLockScreenImages: TYPE_LIST
+    Screen saver image URLs. Enter one URL per line. Images must be in JPG format(.jpg or .jpeg files.
+  duration: TYPE_INT64
 
 chrome.devices.managedguest.Screenshot: Screenshot.
   disableScreenshots: TYPE_BOOL
@@ -2135,6 +2339,12 @@ chrome.devices.managedguest.SessionLocale: Session locale.
   sessionLocalesRepeatedString: TYPE_LIST
     {'value': 'ar', 'description': 'Arabic - \u202bالعربية\u202c.'}
 
+chrome.devices.managedguest.SetTimeoutWithoutOneMsClampEnabled: Javascript setTimeout() minimum.
+  setTimeoutWithoutOneMsClampEnabled: TYPE_ENUM
+    UNSET: Use the default Chrome setting.
+    FALSE: Javascript setTimeout() with a timeout of 0ms will clamp to 1ms.
+    TRUE: Javascript setTimeout() with a timeout of 0ms will not clamp to 1ms.
+
 chrome.devices.managedguest.SharedArrayBufferUnrestrictedAccessAllowed: SharedArrayBuffer.
   sharedArrayBufferUnrestrictedAccessAllowed: TYPE_BOOL
     true: Allow sites that are not cross-origin isolated to use SharedArrayBuffers.
@@ -2159,7 +2369,7 @@ chrome.devices.managedguest.ShowAccessibilityOptionsInSystemTrayMenu: Accessibil
 
 chrome.devices.managedguest.ShowCastSessionsStartedByOtherDevices: Show media controls for Google Cast sessions started by other devices on the local network.
   showCastSessionsStartedByOtherDevices: TYPE_ENUM
-    UNSET: Use the system default.
+    UNSET: Use the default Chrome setting.
     FALSE: Do not show media controls for Google Cast sessions started by other devices.
     TRUE: Show media controls for Google Cast sessions started by other devices.
 
@@ -2241,9 +2451,10 @@ chrome.devices.managedguest.StartupPages: Pages to load on startup.
     Startup pages. Example: https://example.com.
   restoreOnStartup: TYPE_ENUM
     UNSET: Allow the user to decide.
-    LIST_OF_URLS: Open a list of URLs.
     NEW_TAB: Open New Tab page.
     RESTORE_SESSION: Restore the last session.
+    LIST_OF_URLS: Open a list of URLs.
+    LIST_OF_URLS_AND_RESTORE_SESSION: Open a list of URLs and restore the last session.
 
 chrome.devices.managedguest.StickyKeysEnabled: Sticky keys.
   stickyKeysEnabled: TYPE_ENUM
@@ -2323,6 +2534,11 @@ chrome.devices.managedguest.Translate: Google Translate.
     FALSE: Never offer translation.
     TRUE: Always offer translation.
 
+chrome.devices.managedguest.TrashEnabled: Trashed files.
+  trashEnabled: TYPE_BOOL
+    true: Allow files to be sent to the Trash bin in the Files app.
+    false: Do not allow files to be sent to the Trash bin in the Files app.
+
 chrome.devices.managedguest.UnifiedDesktop: Unified Desktop (BETA).
   unifiedDesktopEnabledByDefault: TYPE_BOOL
     true: Make Unified Desktop mode available to user.
@@ -2330,7 +2546,7 @@ chrome.devices.managedguest.UnifiedDesktop: Unified Desktop (BETA).
 
 chrome.devices.managedguest.UnthrottledNestedTimeoutEnabled: JavaScript setTimeout() clamping.
   unthrottledNestedTimeoutEnabled: TYPE_ENUM
-    UNSET: Default behavior for setTimeout() function nested clamp.
+    UNSET: Use the default Chrome setting.
     FALSE: JavaScript setTimeout() will be clamped after a normal nesting threshold.
     TRUE: JavaScript setTimeout() will not be clamped as aggressively.
 
@@ -2421,6 +2637,11 @@ chrome.devices.managedguest.WebSerialPortAccess: Web Serial API.
   serialBlockedForUrls: TYPE_LIST
     Block the Web Serial API on these sites. List of URLs patterns that specify which websites can't ask users to grant them access to a serial port. Prefix domain with [*.] to include subdomains.
 
+chrome.devices.managedguest.WebSqlAccess: Force WebSQL to be enabled.
+  webSqlAccess: TYPE_BOOL
+    true: Force WebSQL to be enabled.
+    false: Allow WebSQL to be disabled by a Chrome flag.
+
 chrome.devices.managedguest.WebSqlInThirdPartyContextEnabled: WebSQL in third-party context.
   webSqlInThirdPartyContextEnabled: TYPE_BOOL
     true: Allow WebSQL in third-party contexts.
@@ -2449,6 +2670,11 @@ chrome.devices.managedguest.WpadQuickCheckEnabled: WPAD optimization.
   wpadQuickCheckEnabled: TYPE_BOOL
     true: Enable Web Proxy Auto-Discovery (WPAD) optimization.
     false: Disable Web Proxy Auto-Discovery (WPAD) optimization.
+
+chrome.devices.MetricsReporting: Metrics reporting.
+  metricsEnabled: TYPE_BOOL
+    true: Always send metrics to Google.
+    false: Never send metrics to Google.
 
 chrome.devices.MobileDataRoaming: Mobile data roaming.
   dataRoamingEnabled: TYPE_BOOL
@@ -2826,6 +3052,17 @@ chrome.users.AbusiveExperienceInterventionEnforce: Abusive Experience Interventi
     true: Prevent sites with abusive experiences from opening new windows or tabs.
     false: Allow sites with abusive experiences to open new windows or tabs.
 
+chrome.users.AccessCodeCast: Cast moderator.
+  accessCodeCastEnabled: TYPE_BOOL
+    true: Enable cast moderator.
+    false: Disable cast moderator.
+  accessCodeCastDeviceDuration: TYPE_ENUM
+    INSTANT: Remove immediately.
+    ONE_HOUR: 1 hour.
+    ONE_DAY: 1 day.
+    ONE_MONTH: 1 month.
+    ONE_YEAR: 1 year.
+
 chrome.users.AccessControlAllowMethodsInCorsPreflightSpecConformant: CORS Access-Control-Allow-Methods conformance.
   accessControlAllowMethodsInCorsPreflightSpecConformant: TYPE_BOOL
     true: Do not uppercase request methods except for DELETE/GET/HEAD/OPTIONS/POST/PUT.
@@ -2833,7 +3070,7 @@ chrome.users.AccessControlAllowMethodsInCorsPreflightSpecConformant: CORS Access
 
 chrome.users.AccessibilityImageLabelsEnabled: Image descriptions.
   accessibilityImageLabelsEnabled: TYPE_ENUM
-    UNSET: Let users choose to use an anonymous Google service to provide automatic descriptions for unlabeled images.
+    UNSET: Allow the user to decide.
     FALSE: Do not use Google services to provide automatic image descriptions.
     TRUE: Use an anonymous Google service to provide automatic descriptions for unlabeled images.
 
@@ -2857,6 +3094,11 @@ chrome.users.AdvancedProtectionAllowed: Advanced Protection program.
   advancedProtectionAllowed: TYPE_BOOL
     true: Users enrolled in the Advanced Protection program will receive extra protections.
     false: Users enrolled in the Advanced Protection program will only receive standard consumer protections.
+
+chrome.users.AllowBackForwardCacheForCacheControlNoStorePageEnabled: No-store header back/forward cache.
+  allowBackForwardCacheForCacheControlNoStorePageEnabled: TYPE_BOOL
+    true: Allow pages with CCNS header to be stored in back/forward cache.
+    false: Disallow pages with CCNS header from being stored in back/forward cache.
 
 chrome.users.AllowDinosaurEasterEgg: Dinosaur game.
   allowDinosaurEasterEgg: TYPE_ENUM
@@ -3036,8 +3278,8 @@ chrome.users.appsconfig.AllowInsecureUpdates: Allow insecure extension packaging
 
 chrome.users.appsconfig.AndroidAppsEnabled: Android applications on Chrome devices.
   arcEnabled: TYPE_BOOL
-    true: Enable letting a user install Android applications on a Chrome OS device.
-    false: Disable letting a user install Android applications on a Chrome OS device.
+    true: Enable letting a user install Android applications on a ChromeOS device.
+    false: Disable letting a user install Android applications on a ChromeOS device.
   ackNoticeForArcEnabledSetToTrue: TYPE_BOOL
 
 chrome.users.appsconfig.AppExtensionInstallSources: App and extension install sources.
@@ -3083,10 +3325,19 @@ chrome.users.appsconfig.ChromeWebStorePermissions: Chrome Web Store permissions.
     true: Allow users to publish private hosted apps even if the domain name of the app's {print "launch_web_url"} or {print "app_url"} is not owned by the organization.
     false: Do not allow users to publish private hosted apps if the domain name of the app's {print "launch_web_url"} or {print "app_url"} is not owned by the organization.
 
-chrome.users.appsconfig.FullRestoreEnabled: Full restore.
+chrome.users.appsconfig.ExtensionUnpublishedAvailability: Chrome Web Store unpublished extensions.
+  extensionUnpublishedAvailability: TYPE_ENUM
+    ALLOW_UNPUBLISHED: Allow unpublished extensions.
+    DISABLE_UNPUBLISHED: Disable unpublished extensions.
+
+chrome.users.appsconfig.FullRestoreEnabled: Restore apps on startup.
   fullRestoreEnabled: TYPE_BOOL
-    true: Restore apps and app windows after crash or reboot.
-    false: Do not restore apps and app windows after crash or reboot.
+    true: Restore all apps and app windows.
+    false: Only restore Chrome browser.
+  fullRestoreMode: TYPE_ENUM
+    ASK_EVERY_TIME: Ask user every time.
+    ALWAYS: Always restore.
+    DO_NOT_RESTORE: Do not restore.
 
 chrome.users.appsconfig.GhostWindowEnabled: Android ghost windows.
   ghostWindowEnabled: TYPE_BOOL
@@ -3117,17 +3368,10 @@ chrome.users.ArcAppToWebAppSharingEnabled: Sharing from Android apps to Web apps
     true: Enable Android to Web Apps sharing.
     false: Disable Android to Web Apps sharing.
 
-chrome.users.AssistantHotword: Google Assistant hotword.
-  assistantHotwordEnabled: TYPE_ENUM
-    UNSET: Allow the user to decide.
-    FALSE: Disable the Google Assistant hotword.
-    TRUE: Enable the Google Assistant hotword.
-
-chrome.users.AssistantScreenContext: Google Assistant screen context.
-  assistantScreenContextEnabled: TYPE_ENUM
-    UNSET: Allow the user to decide.
-    FALSE: Block Google Assistant from accessing screen context during interactions.
-    TRUE: Allow Google Assistant to access screen context.
+chrome.users.ArcVmDataMigrationStrategy: Android VM Update.
+  arcVmDataMigrationStrategy: TYPE_ENUM
+    DO_NOT_PROMPT: Do not allow users to manually update Android apps.
+    PROMPT: Allow users to manually update Android apps.
 
 chrome.users.AssistantWebEnabled: Allow using Google Assistant on the web.
   assistantWebEnabled: TYPE_ENUM
@@ -3151,13 +3395,13 @@ chrome.users.AudioOutput: Audio output.
 
 chrome.users.AudioProcessHighPriorityEnabled: Audio process priority.
   audioProcessHighPriorityEnabled: TYPE_ENUM
-    UNSET: Use the system default priority for the Chrome audio process.
+    UNSET: Use the default Chrome setting.
     FALSE: Use normal priority for the Chrome audio process.
     TRUE: Use high priority for the Chrome audio process.
 
 chrome.users.AudioSandboxEnabled: Audio sandbox.
   audioSandboxEnabled: TYPE_ENUM
-    UNSET: Use the default configuration for the audio sandbox.
+    UNSET: Use the default Chrome setting.
     FALSE: Never sandbox the audio process.
     TRUE: Always sandbox the audio process.
 
@@ -3235,6 +3479,12 @@ chrome.users.BatterySaverModeAvailability: Battery Saver Mode.
     ENABLED_ON_BATTERY: Enable when the device is on battery power.
     UNSET: End user can control this setting.
 
+chrome.users.BeforeunloadEventCancelByPreventDefaultEnabled: Behavior of event.preventDefault() for beforeunload event.
+  beforeunloadEventCancelByPreventDefaultEnabled: TYPE_ENUM
+    UNSET: Use the default Chrome setting.
+    FALSE: Do not show cancel dialog when event.preventDefault() is called for beforeunload event.
+    TRUE: Show cancel dialog when event.preventDefault() is called for beforeunload event.
+
 chrome.users.BookmarkBarEnabled: Bookmark bar.
   bookmarkBarEnabled: TYPE_ENUM
     UNSET: Allow the user to decide.
@@ -3268,6 +3518,11 @@ chrome.users.BrowserLabsEnabled: Browser experiments icon in toolbar.
   browserLabsEnabled: TYPE_BOOL
     true: Allow users to access browser experimental features through an icon in the toolbar.
     false: Do not show browser experimental features icon in the toolbar.
+
+chrome.users.BrowserLegacyExtensionPointsBlocked: Browser Legacy Extension Points.
+  browserLegacyExtensionPointsBlocked: TYPE_BOOL
+    true: Block legacy extension points in the Browser process.
+    false: Do not block legacy extension points in the Browser process.
 
 chrome.users.BrowserNetworkTimeQueriesEnabled: Google time service.
   browserNetworkTimeQueriesEnabled: TYPE_BOOL
@@ -3392,7 +3647,7 @@ chrome.users.CertTransparencyLegacyCas: Certificate transparency legacy CA allow
 
 chrome.users.ChromeAppsWebViewPermissiveBehaviorAllowed: Restore permissive Chrome Apps behavior.
   chromeAppsWebViewPermissiveBehaviorAllowed: TYPE_BOOL
-    true: Allow proceeding to unsafe sites.
+    true: Allow permissive behavior.
     false: Use default navigation protections.
 
 chrome.users.ChromeBrowserDmtokenDeletionEnabled: Device Token Management.
@@ -3422,13 +3677,13 @@ chrome.users.ChromeCleanupEnabled: Chrome Cleanup.
     true: Allow Chrome Cleanup to periodically scan the system and allow manual scans.
     false: Prevent Chrome Cleanup from periodical scans and disallow manual scans.
   chromeCleanupReportingEnabled: TYPE_ENUM
-    UNSET: Users may choose to share results from a Chrome Cleanup cleanup run with Google.
-    FALSE: Results from a Chrome Cleanup cleanup are never shared with Google.
-    TRUE: Results from a Chrome Cleanup cleanup are always shared with Google.
+    UNSET: Allow the user to decide.
+    FALSE: Results from a Chrome Cleanup are never shared with Google.
+    TRUE: Results from a Chrome Cleanup are always shared with Google.
 
 chrome.users.ChromeRootStoreEnabled: Chrome Root Store and certificate verifier.
   chromeRootStoreEnabled: TYPE_ENUM
-    UNSET: Chrome Root Store may be used.
+    UNSET: Use the default Chrome setting.
     FALSE: Do not use the Chrome Root Store.
     TRUE: Use the Chrome Root Store.
 
@@ -3489,6 +3744,11 @@ chrome.users.ComponentUpdates: Component updates.
     true: Enable updates for all components.
     false: Disable updates for components.
 
+chrome.users.ConnectorsEnabled: Allow enterprise connectors.
+  connectorsEnabled: TYPE_BOOL
+    true: Allow users to enable Enterprise Connectors.
+    false: Do not allow  users to enable Enterprise Connectors.
+
 chrome.users.ContextualSearchEnabled: Touch to search.
   contextualSearchEnabled: TYPE_BOOL
     true: Allow users to use touch to search.
@@ -3518,6 +3778,12 @@ chrome.users.CpuTaskScheduler: CPU task scheduler.
     CONSERVATIVE: Optimize for stability.
     PERFORMANCE: Optimize for performance.
 
+chrome.users.CreatePasskeysInICloudKeychain: iCloud Keychain.
+  createPasskeysInICloudKeychain: TYPE_ENUM
+    UNSET: Use the default Chrome setting.
+    FALSE: Default to creating passkeys in other stores (such as the Google Chrome profile).
+    TRUE: Default to creating passkeys in iCloud Keychain when possible.
+
 chrome.users.CredentialProviderPromoEnabled: Credential provider extension promo.
   credentialProviderPromoEnabled: TYPE_BOOL
     true: Allow the Credential Provider Extension promo to be displayed.
@@ -3544,6 +3810,11 @@ chrome.users.DataCompressionProxy: Data compression proxy.
     UNSET: Allow the user to decide.
     FALSE: Always disable data compression proxy.
     TRUE: Always enable data compression proxy.
+
+chrome.users.DataLeakPreventionReportingEnabled: Data controls reporting.
+  dataLeakPreventionReportingEnabled: TYPE_BOOL
+    true: Enable reporting of data control events.
+    false: Disable reporting of data control events.
 
 chrome.users.DefaultBrowserSettingEnabled: Default browser check.
   defaultBrowserSettingEnabled: TYPE_ENUM
@@ -3662,6 +3933,12 @@ chrome.users.DnsOverHttps: DNS-over-HTTPS.
   dnsOverHttpsTemplates: TYPE_LIST
     DNS-over-HTTPS templates. URI templates of desired DNS-over-HTTPS resolvers. If the URI template contains a '{?dns}' variable, requests to the resolver will use GET; otherwise requests will use POST.
 
+chrome.users.DnsOverHttpsTemplatesWithIdentifiers: DNS-over-HTTPS with identifiers.
+  dnsOverHttpsSalt: TYPE_STRING
+    Salt for hashing identifiers in the URI templates. Salt used for hashing user and device identifiers in the template URIs. Optional starting Chrome version 114.
+  dnsOverHttpsTemplatesWithIdentifiers: TYPE_LIST
+    DNS-over-HTTPS templates with identifiers. URI templates of desired DNS-over-HTTPS resolvers which contain user or device identifiers. If the URI template contains a '{?dns}' variable, requests to the resolver will use GET; otherwise requests will use POST. If both DNS-over-HTTPS templates and DNS-over-HTTPS templates with identifiers are set, ChromeOS will default to DNS-over-HTTPS templates with identifiers.
+
 chrome.users.DomainReliabilityAllowed: Allow reporting of domain reliability related data.
   domainReliabilityAllowed: TYPE_BOOL
     true: Domain Reliability data may be sent to Google depending on Chrome User Metrics (UMA) policy.
@@ -3683,15 +3960,21 @@ chrome.users.DownloadPreference: Cacheable URLs.
 chrome.users.DownloadRestrictions: Download restrictions.
   safeBrowsingDownloadRestrictions: TYPE_ENUM
     NO_SPECIAL_RESTRICTIONS: No special restrictions.
-    BLOCK_ALL_MALICIOUS_DOWNLOAD: Block all malicious downloads.
-    BLOCK_DANGEROUS_DOWNLOAD: Block dangerous downloads.
-    BLOCK_POTENTIALLY_DANGEROUS_DOWNLOAD: Block potentially dangerous downloads.
+    BLOCK_ALL_MALICIOUS_DOWNLOAD: Block malicious downloads.
+    BLOCK_DANGEROUS_DOWNLOAD: Block malicious downloads and dangerous file types.
+    BLOCK_POTENTIALLY_DANGEROUS_DOWNLOAD: Block malicious downloads, uncommon or unwanted downloads and dangerous file types.
     BLOCK_ALL_DOWNLOAD: Block all downloads.
 
 chrome.users.EcheAllowed: App Streaming.
   echeAllowed: TYPE_BOOL
     true: Allow users to launch App Streaming.
     false: Do not allow users to launch App Streaming.
+
+chrome.users.EmojiPickerGifSupportEnabled: GIF Support in Emoji Picker.
+  emojiPickerGifSupportEnabled: TYPE_ENUM
+    UNSET: Use the default Chrome setting.
+    FALSE: Do not allow GIFs to be selected in the Emoji picker.
+    TRUE: Allow GIFs to be selected in the Emoji picker.
 
 chrome.users.EmojiSuggestionEnabled: Emoji suggestions.
   emojiSuggestionEnabled: TYPE_BOOL
@@ -3744,6 +4027,17 @@ chrome.users.ExplicitlyAllowedNetworkPorts: Allowed network ports.
   explicitlyAllowedNetworkPorts: TYPE_LIST
     {'value': '554', 'description': 'port 554 (expires 2021/10/15).'}
 
+chrome.users.ExtensionExtendedBackgroundLifetimeForPortConnectionsToUrls: Extended background lifetime.
+  extensionExtendedBackgroundLifetimeForPortConnectionsToUrls: TYPE_LIST
+    Origins that grant extended background lifetime to connecting extensions. Enter a list of origins. Extensions that connect to one of these origins will be be kept running as long as the port is connected. One URL per line.
+
+chrome.users.ExtensionManifestVTwoAvailability: Manifest V2 extension availability.
+  extensionManifestVTwoAvailability: TYPE_ENUM
+    DEFAULT: Default browser behavior.
+    DISABLE: Disable manifest V2 extensions.
+    ENABLE: Enable manifest V2 extensions.
+    ENABLE_FOR_FORCED_EXTENSIONS: Enable force-installed manifest V2 extensions.
+
 chrome.users.ExternalProtocolDialogShowAlwaysOpenCheckbox: Show "Always open" checkbox in external protocol dialog.
   externalProtocolDialogShowAlwaysOpenCheckbox: TYPE_BOOL
     true: User may select "Always allow" to skip all future confirmation prompts.
@@ -3766,6 +4060,10 @@ chrome.users.FetchKeepaliveDurationSecondsOnShutdown: Keepalive duration.
 
 chrome.users.FetchKeepaliveDurationSecondsOnShutdownV2: Keepalive duration.
   duration: TYPE_INT64
+
+chrome.users.FileOrDirectoryPickerWithoutGestureAllowedForOrigins: File/directory picker without user gesture.
+  fileOrDirectoryPickerWithoutGestureAllowedForOrigins: TYPE_LIST
+    Allow file or directory picker APIs to be called without prior user gesture. Urls to allow file or directory pickers without user gesture.
 
 chrome.users.FileSystemRead: File system read access.
   defaultFileSystemReadGuardSetting: TYPE_ENUM
@@ -3792,6 +4090,11 @@ chrome.users.FileSystemWrite: File system write access.
   fileSystemWriteBlockedForUrls: TYPE_LIST
     Block write access to files and directories on these sites. For detailed information on valid url patterns, please see URL patterns at https://cloud.google.com/docs/chrome-enterprise/policies/url-patterns. Note: using only the "*" wildcard is not valid.
 
+chrome.users.FirstPartySetsEnabled: First-Party Sets.
+  firstPartySetsEnabled: TYPE_BOOL
+    true: Enable First-Party Sets for all affected users.
+    false: Disable First-Party Sets for all affected users.
+
 chrome.users.ForcedLanguages: Preferred languages.
   forcedLanguages: TYPE_LIST
     {'value': 'af', 'description': 'Afrikaans.'}
@@ -3816,6 +4119,11 @@ chrome.users.ForceMaximizeOnFirstRun: Maximize window on first run.
   forceMaximizeOnFirstRun: TYPE_BOOL
     true: Maximize the first browser window on first run.
     false: Default system behavior (depends on screen size).
+
+chrome.users.ForcePermissionPolicyUnloadDefaultEnabled: Unload event handlers.
+  forcePermissionPolicyUnloadDefaultEnabled: TYPE_BOOL
+    true: Enable unload event handlers.
+    false: Do not enable unload event handlers.
 
 chrome.users.FullscreenAlertEnabled: Fullscreen alert.
   fullscreenAlertEnabled: TYPE_BOOL
@@ -3867,6 +4175,11 @@ chrome.users.GoogleDriveSyncingOverCellular: Google Drive syncing over cellular.
     true: Disable Google Drive syncing over cellular connections.
     false: Enable Google Drive syncing over cellular connections.
 
+chrome.users.GoogleSearchSidePanelEnabled: Side Panel search.
+  googleSearchSidePanelEnabled: TYPE_BOOL
+    true: Enable Side Panel search on all web pages.
+    false: Disable Side Panel search on all web pages.
+
 chrome.users.GssapiLibraryName: GSSAPI library name.
   gssapiLibraryName: TYPE_STRING
     Library name or full path. Specify which GSSAPI library to use for HTTP authentication. You can set either just a library name, or a full path. Leave empty for default.
@@ -3896,7 +4209,7 @@ chrome.users.HomeButton: Home button.
 
 chrome.users.Homepage: Homepage.
   homepageIsNewTabPage: TYPE_ENUM
-    UNSET: Allow user to configure.
+    UNSET: Allow the user to decide.
     FALSE: Homepage is always the URL set in 'homepageLocation'.
     TRUE: Homepage is always the new tab page.
   homepageLocation: TYPE_STRING
@@ -3932,9 +4245,31 @@ chrome.users.IdleSettings: Idle settings.
     SLEEP: Sleep.
     LOGOUT: Logout.
   lockOnSleep: TYPE_ENUM
+    UNSET: Allow the user to decide.
+    FALSE: Don't lock screen.
+    TRUE: Lock screen.
+
+chrome.users.IdleSettingsExtended: Idle settings.
+  lidCloseAction: TYPE_ENUM
+    SLEEP: Sleep.
+    LOGOUT: Logout.
+    SHUTDOWN: Shutdown.
+    DO_NOTHING: Do nothing.
+  idleActionAc: TYPE_ENUM
+    SLEEP: Sleep.
+    LOGOUT: Logout.
+    SHUTDOWN: Shut down.
+    DO_NOTHING: Do nothing.
+  idleActionBattery: TYPE_ENUM
+    SLEEP: Sleep.
+    LOGOUT: Logout.
+    SHUTDOWN: Shut down.
+    DO_NOTHING: Do nothing.
+  lockOnSleepOrLidClose: TYPE_ENUM
     UNSET: Allow user to configure.
     FALSE: Don't lock screen.
     TRUE: Lock screen.
+  duration: TYPE_INT64
 
 chrome.users.Images: Images.
   defaultImagesSettings: TYPE_ENUM
@@ -4001,6 +4336,12 @@ chrome.users.InsecureFormsWarningsEnabled: Insecure forms.
     true: Show warnings and disable autofill on insecure forms.
     false: Do not show warnings or disable autofill on insecure forms.
 
+chrome.users.InsecureHashesInTlsHandshakesEnabled: Insecure hashes in TLS handshakes.
+  insecureHashesInTlsHandshakesEnabled: TYPE_ENUM
+    UNSET: Use the default Chrome setting.
+    FALSE: Do not allow insecure hashes in TLS handshakes.
+    TRUE: Allow insecure hashes in TLS handshakes.
+
 chrome.users.InsecurePrivateNetworkRequestsAllowed: Requests from insecure websites to more-private network endpoints.
   insecurePrivateNetworkRequestsAllowed: TYPE_BOOL
     true: Insecure websites are allowed to make requests to any network endpoint.
@@ -4060,6 +4401,10 @@ chrome.users.KerberosCustomPrefilledConfigSettingGroup: Kerberos ticket default 
   kerberosUseCustomPrefilledConfig: TYPE_BOOL
     true: Customize Kerberos configuration.
     false: Use recommended Kerberos configuration.
+
+chrome.users.KerberosDomainAutocomplete: Autocomplete Kerberos domain.
+  kerberosDomainAutocomplete: TYPE_STRING
+    Kerberos domain. Autocomplete Kerberos domain.
 
 chrome.users.KerberosRememberPasswordEnabled: Remember Kerberos passwords.
   kerberosRememberPasswordEnabled: TYPE_BOOL
@@ -4223,6 +4568,11 @@ chrome.users.MultipleSignInAccess: Multiple sign-in access.
     UNRESTRICTED: Unrestricted user access (allow any user to be added to any other user's session).
     NOT_ALLOWED: Block multiple sign-in access for users in this organization.
 
+chrome.users.NativeClientForceAllowed: Allow Native Client (NaCl).
+  nativeClientForceAllowed: TYPE_BOOL
+    true: Allow Native Client to run even if it is disabled by default.
+    false: Use default behavior.
+
 chrome.users.NativeMessagingAllowed: Native Messaging allowed hosts.
   nativeMessagingAllowlist: TYPE_LIST
     Native Messaging hosts not subject to the blocklist. Domains to allow native messaging.
@@ -4258,7 +4608,7 @@ chrome.users.NetworkFileShares: Network file shares.
 
 chrome.users.NetworkServiceSandboxEnabled: Network service sandbox.
   networkServiceSandboxEnabled: TYPE_ENUM
-    UNSET: Default network service sandbox configuration.
+    UNSET: Use the default Chrome setting.
     FALSE: Disable the network service sandbox.
     TRUE: Enable the network service sandbox.
 
@@ -4385,6 +4735,12 @@ chrome.users.PdfLocalFileAccessAllowedForDomains: Local file access to file:// U
   pdfLocalFileAccessAllowedForDomains: TYPE_LIST
     Allowed URLs. List of file URLs with local access enabled in the PDF viewer.
 
+chrome.users.PdfUseSkiaRendererEnabled: Renderer for PDF files.
+  pdfUseSkiaRendererEnabled: TYPE_ENUM
+    UNSET: Use the default Chrome setting.
+    FALSE: Use AGG renderer for PDF files.
+    TRUE: Use Skia renderer for PDF files.
+
 chrome.users.PersistentQuotaEnabled: Persistent quota for webkitRequestFileSystem.
   persistentQuotaEnabled: TYPE_BOOL
     true: Enable persistent quota.
@@ -4401,15 +4757,15 @@ chrome.users.PhoneHub: Phone Hub.
     true: Allow Phone Hub task continuation to be enabled.
     false: Do not allow Phone Hub task continuation to be enabled.
 
-chrome.users.PinSettings: Lock screen PIN.
-  pinUnlockMinimumLength: TYPE_INT64
-    Minimum PIN length. Sets the minimum length of the lock screen PIN.
-  pinUnlockMaximumLength: TYPE_INT64
-    Maximum PIN length. If unset or set to zero, the PIN length is unlimited.
-  pinUnlockWeakPinsAllowed: TYPE_ENUM
-    UNSET: Allow users to set a weak PIN, but show a warning.
-    FALSE: Do not allow users to set a weak PIN.
-    TRUE: Allow users to set a weak PIN.
+chrome.users.PhysicalKeyboardAutocorrect: Physical keyboard autocorrect.
+  physicalKeyboardAutocorrect: TYPE_BOOL
+    true: Enable physical keyboard autocorrect.
+    false: Disable physical keyboard autocorrect.
+
+chrome.users.PhysicalKeyboardPredictiveWriting: Physical keyboard predictive writing.
+  physicalKeyboardPredictiveWriting: TYPE_BOOL
+    true: Enable physical keyboard predictive writing.
+    false: Disable physical keyboard predictive writing.
 
 chrome.users.PinUnlockAutosubmitEnabled: PIN auto-submit.
   pinUnlockAutosubmitEnabled: TYPE_BOOL
@@ -4458,6 +4814,12 @@ chrome.users.Popups: Pop-ups.
   popupsBlockedForUrls: TYPE_LIST
     Block pop-ups on these sites. Urls to block pop-ups.
 
+chrome.users.PostQuantumKeyAgreementEnabled: Post-quantum TLS.
+  postQuantumKeyAgreementEnabled: TYPE_ENUM
+    UNSET: Use the default Chrome setting.
+    FALSE: Do not allow Kyber key agreement for TLS.
+    TRUE: Allow Kyber key agreement for TLS.
+
 chrome.users.PpApiSharedImagesSwapChainAllowed: Modern buffer allocation for Graphics3D APIs PPAPI plugin.
   ppApiSharedImagesSwapChainAllowed: TYPE_BOOL
     true: Allow new implementation.
@@ -4476,7 +4838,7 @@ chrome.users.PrimaryMouseButtonSwitch: Primary mouse button.
 
 chrome.users.PrinterTypeDenyList: Blocked printer types.
   printerTypeDenyList: TYPE_LIST
-    {'value': 'privet', 'description': 'Zeroconf-based (mDNS + DNS-SD) protocol.'}
+    {'value': 'privet', 'description': 'Privet zeroconf-based protocol (deprecated).'}
 
 chrome.users.PrintHeaderFooter: Print headers and footers.
   printHeaderFooter: TYPE_ENUM
@@ -4628,14 +4990,6 @@ chrome.users.QuickUnlockModeAllowlist: Quick unlock.
   quickUnlockModeAllowlist: TYPE_LIST
     {'value': 'PIN', 'description': 'PIN.'}
 
-chrome.users.QuickUnlockTimeout: Quick unlock timeout.
-  quickUnlockTimeout: TYPE_ENUM
-    SIX_HOURS: Password entry is required every six hours.
-    TWELVE_HOURS: Password entry is required every twelve hours.
-    ONE_DAY: Password entry is required every day.
-    TWO_DAYS: Password entry is required every two days (48 hours).
-    WEEK: Password entry is required every week (168 hours).
-
 chrome.users.QuicProtocol: QUIC protocol.
   quicAllowed: TYPE_BOOL
     true: Enable.
@@ -4674,6 +5028,11 @@ chrome.users.RelaunchNotificationWithDurationV2: Relaunch notification.
   seconds: TYPE_INT32
   nanos: TYPE_INT32
 
+chrome.users.RemoteAccessHostAllowEnterpriseRemoteSupportConnections: Enterprise remote support connections.
+  remoteAccessHostAllowEnterpriseRemoteSupportConnections: TYPE_BOOL
+    true: Allow remote support connections from enterprise admins.
+    false: Prevent remote support connections from enterprise admins.
+
 chrome.users.RemoteAccessHostAllowRemoteSupportConnections: Remote support connections.
   remoteAccessHostAllowRemoteSupportConnections: TYPE_BOOL
     true: Allow remote support connections.
@@ -4682,6 +5041,9 @@ chrome.users.RemoteAccessHostAllowRemoteSupportConnections: Remote support conne
 chrome.users.RemoteAccessHostClientDomainList: Remote access clients.
   remoteAccessHostClientDomainList: TYPE_LIST
     Remote access client domain. Configure the required domain names for remote access clients.
+
+chrome.users.RemoteAccessHostClipboardSizeBytes: Clipboard sync max size.
+  value: TYPE_INT64
 
 chrome.users.RemoteAccessHostDomainList: Remote access hosts.
   remoteAccessHostDomainList: TYPE_LIST
@@ -4737,6 +5099,12 @@ chrome.users.RestrictSigninToPattern: Restrict sign-in to pattern.
   restrictSigninToPattern: TYPE_STRING
     Pattern. A regular expression which is used to determine which Google accounts can be set as browser primary accounts in Google Chrome (i.e. the account that is chosen during the Sync opt-in flow). For example, the value .*@example.com would restrict sign in to accounts in the example.com domain.
 
+chrome.users.RsaKeyUsageForLocalAnchorsEnabled: Check RSA key usage.
+  rsaKeyUsageForLocalAnchorsEnabled: TYPE_ENUM
+    UNSET: Use the default Chrome setting.
+    FALSE: Disable RSA key usage checking.
+    TRUE: Enable RSA key usage checking.
+
 chrome.users.SafeBrowsingAllowlistDomain: Safe Browsing allowed domains.
   safeBrowsingAllowlistDomains: TYPE_LIST
     Allowed domains. Enter the list of domains that you want to be excluded from Safe Browsing checks.
@@ -4752,12 +5120,15 @@ chrome.users.SafeBrowsingForTrustedSourcesEnabled: Safe Browsing for trusted sou
     true: Perform Safe Browsing checks on all downloaded files.
     false: Skip Safe Browsing checks for files downloaded from trusted sources.
 
-chrome.users.SafeBrowsingProtectionLevel: Safe Browsing Protection Level.
+chrome.users.SafeBrowsingProtectionLevel: Safe Browsing protection.
   safeBrowsingProtectionLevel: TYPE_ENUM
     USER_CHOICE: Allow the user to decide.
     NO_PROTECTION: Safe Browsing is never active.
     STANDARD_PROTECTION: Safe Browsing is active in the standard mode.
     ENHANCED_PROTECTION: Safe Browsing is active in the enhanced mode. This mode provides better security, but requires sharing more browsing information with Google.
+  safeBrowsingProxiedRealTimeChecksAllowed: TYPE_BOOL
+    true: Allow higher-protection proxied lookups.
+    false: Don't allow higher-protection proxied lookups.
 
 chrome.users.SafeSearchRestrictedMode: SafeSearch and Restricted Mode.
   forceGoogleSafeSearch: TYPE_BOOL
@@ -4799,6 +5170,10 @@ chrome.users.ScreenCaptureAllowed: Screen video capture.
   screenCaptureAllowed: TYPE_BOOL
     true: Allow sites to prompt the user to share a video stream of their screen.
     false: Do not allow sites to prompt the user to share a video stream of their screen.
+
+chrome.users.ScreenCaptureWithoutGestureAllowedForOrigins: Media picker without user gesture.
+  screenCaptureWithoutGestureAllowedForOrigins: TYPE_LIST
+    Allow screen capture without prior user gesture. Urls to allow screencapture without user gesture.
 
 chrome.users.ScreenMagnifierType: Screen magnifier.
   screenMagnifierType: TYPE_ENUM
@@ -4870,6 +5245,12 @@ chrome.users.SessionLength: Maximum user session length.
 chrome.users.SessionLengthV2: Maximum user session length.
   duration: TYPE_INT64
 
+chrome.users.SetTimeoutWithoutOneMsClampEnabled: Javascript setTimeout() minimum.
+  setTimeoutWithoutOneMsClampEnabled: TYPE_ENUM
+    UNSET: Use the default Chrome setting.
+    FALSE: Javascript setTimeout() with a timeout of 0ms will clamp to 1ms.
+    TRUE: Javascript setTimeout() with a timeout of 0ms will not clamp to 1ms.
+
 chrome.users.SharedArrayBufferUnrestrictedAccessAllowed: SharedArrayBuffer.
   sharedArrayBufferUnrestrictedAccessAllowed: TYPE_BOOL
     true: Allow sites that are not cross-origin isolated to use SharedArrayBuffers.
@@ -4912,7 +5293,7 @@ chrome.users.ShowAppsShortcutInBookmarkBar: Apps shortcut in the bookmark bar.
 
 chrome.users.ShowCastSessionsStartedByOtherDevices: Show media controls for Google Cast sessions started by other devices on the local network.
   showCastSessionsStartedByOtherDevices: TYPE_ENUM
-    UNSET: Use the system default.
+    UNSET: Use the default Chrome setting.
     FALSE: Do not show media controls for Google Cast sessions started by other devices.
     TRUE: Show media controls for Google Cast sessions started by other devices.
 
@@ -4927,7 +5308,7 @@ chrome.users.ShowLogoutButton: Show sign-out button in tray.
     true: Show sign-out button in tray.
     false: Do not show sign-out button in tray.
 
-chrome.users.SideSearchEnabled: Side panel search history.
+chrome.users.SideSearchEnabled: Side Panel search history.
   sideSearchEnabled: TYPE_BOOL
     true: Enable showing the most recent Google Search results in a Browser side panel.
     false: Disable showing the most recent Google Search results in a Browser side panel.
@@ -5042,9 +5423,10 @@ chrome.users.StartupPages: Pages to load on startup.
     Startup pages. Example: https://example.com.
   restoreOnStartup: TYPE_ENUM
     UNSET: Allow the user to decide.
-    LIST_OF_URLS: Open a list of URLs.
     NEW_TAB: Open New Tab page.
     RESTORE_SESSION: Restore the last session.
+    LIST_OF_URLS: Open a list of URLs.
+    LIST_OF_URLS_AND_RESTORE_SESSION: Open a list of URLs and restore the last session.
 
 chrome.users.StickyKeysEnabled: Sticky keys.
   stickyKeysEnabled: TYPE_ENUM
@@ -5099,7 +5481,7 @@ chrome.users.SystemFeaturesDisableList: Disabled system features.
 
 chrome.users.SystemTerminalSshAllowed: SSH in terminal system app.
   systemTerminalSshAllowed: TYPE_ENUM
-    UNSET: Enable SSH in Terminal System App, but not on enrolled Chrome OS devices.
+    UNSET: Use the default Chrome setting.
     FALSE: Disable SSH in Terminal System App.
     TRUE: Enable SSH in Terminal System App.
 
@@ -5161,9 +5543,14 @@ chrome.users.Translate: Google Translate.
     FALSE: Never offer translation.
     TRUE: Always offer translation.
 
+chrome.users.TrashEnabled: Trashed files.
+  trashEnabled: TYPE_BOOL
+    true: Allow files to be sent to the Trash bin in the Files app.
+    false: Do not allow files to be sent to the Trash bin in the Files app.
+
 chrome.users.TripleDesEnabled: 3DES cipher suites in TLS.
   tripleDesEnabled: TYPE_ENUM
-    UNSET: Use the default setting for 3DES cipher suites in TLS.
+    UNSET: Use the default Chrome setting.
     FALSE: Disable 3DES cipher suites in TLS.
     TRUE: Enable 3DES cipher suites in TLS.
 
@@ -5174,7 +5561,7 @@ chrome.users.UnifiedDesktop: Unified Desktop (BETA).
 
 chrome.users.UnthrottledNestedTimeoutEnabled: JavaScript setTimeout() clamping.
   unthrottledNestedTimeoutEnabled: TYPE_ENUM
-    UNSET: Default behavior for setTimeout() function nested clamp.
+    UNSET: Use the default Chrome setting.
     FALSE: JavaScript setTimeout() will be clamped after a normal nesting threshold.
     TRUE: JavaScript setTimeout() will not be clamped as aggressively.
 
@@ -5228,6 +5615,11 @@ chrome.users.UserAgentReduction: User-Agent Reduction.
     DEFAULT: Allow reduction controlled via Field-Trials and Origin-Trials.
     FORCE_DISABLED: Disable reduction for all origins.
     FORCE_ENABLED: Enable reduction for all origins.
+
+chrome.users.UserAvatarCustomizationSelectorsEnabled: Customization of user avatar image using Google profile image or local images.
+  userAvatarCustomizationSelectorsEnabled: TYPE_BOOL
+    true: Allow user avatar selection from local filesystem, camera and Google profile.
+    false: Prevent user avatar selection from local filesystem, camera and Google profile.
 
 chrome.users.UserBorealisAllowed: Steam on ChromeOS.
   userBorealisAllowed: TYPE_BOOL
@@ -5303,6 +5695,11 @@ chrome.users.VirtualMachinesAndroidAdbSideloadingAllowed: Android apps from untr
   virtualMachinesAndroidAdbSideloadingAllowed: TYPE_ENUM
     DISALLOW: Prevent the user from using Android apps from untrusted sources.
     ALLOW: Allow the user to use Android apps from untrusted sources.
+
+chrome.users.VirtualMachinesBackupRestoreUiAllowed: Linux virtual machine backup and restore (BETA).
+  virtualMachinesBackupRestoreUiAllowed: TYPE_BOOL
+    true: Enable Linux virtual machine backup and restore.
+    false: Disable Linux virtual machine backup and restore.
 
 chrome.users.VirtualMachinesCommandLineAccessAllowed: Command line access.
   virtualMachinesCommandLineAccessAllowed: TYPE_BOOL
@@ -5381,6 +5778,11 @@ chrome.users.WebSerialPortAccess: Web Serial API.
     Allow the Web Serial API on these sites. List of URLs that specify websites that will be allowed to ask users to grant them access to the serial ports. Prefix domain with [*.] to include subdomains.
   serialBlockedForUrls: TYPE_LIST
     Block the Web Serial API on these sites. List of URLs patterns that specify which websites can't ask users to grant them access to a serial port. Prefix domain with [*.] to include subdomains.
+
+chrome.users.WebSqlAccess: Force WebSQL to be enabled.
+  webSqlAccess: TYPE_BOOL
+    true: Force WebSQL to be enabled.
+    false: Allow WebSQL to be disabled by a Chrome flag.
 
 chrome.users.WebSqlInThirdPartyContextEnabled: WebSQL in third-party context.
   webSqlInThirdPartyContextEnabled: TYPE_BOOL

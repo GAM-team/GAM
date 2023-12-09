@@ -5084,13 +5084,11 @@ def checkGAPIError(e, softErrors=False, retryOnHttpError=False, mapNotFound=True
     http_status = error['error']['code']
     if 'errors' in error['error'] and 'message' in error['error']['errors'][0]:
       message = error['error']['errors'][0]['message']
-      status = ''
     elif 'errors' in error['error'] and 'Unknown Error' in error['error']['message'] and 'reason' in error['error']['errors'][0]:
       message = error['error']['errors'][0]['reason']
-      status = error['error'].get('status', '')
     else:
       message = error['error']['message']
-      status = error['error'].get('status', '')
+    status = error['error'].get('status', '')
     lmessage = message.lower() if message is not None else ''
     if http_status == 500:
       if not lmessage or status == 'UNKNOWN':
@@ -5133,6 +5131,9 @@ def checkGAPIError(e, softErrors=False, retryOnHttpError=False, mapNotFound=True
         error = makeErrorDict(http_status, GAPI.INVALID_ARGUMENT, message)
       elif 'does not match' in lmessage or 'invalid' in lmessage:
         error = makeErrorDict(http_status, GAPI.INVALID, message)
+    elif http_status == 401:
+      if status == 'PERMISSION_DENIED':
+        error = makeErrorDict(http_status, GAPI.PERMISSION_DENIED, message)
     elif http_status == 403:
       if 'quota exceeded for quota metric' in lmessage:
         error = makeErrorDict(http_status, GAPI.QUOTA_EXCEEDED, message)
@@ -16342,9 +16343,9 @@ def doCreateDataTransfer():
       _assignAppParameter(Cmd.Previous().upper(), getString(Cmd.OB_PARAMETER_VALUE).upper().split(','), True)
   try:
     result = callGAPI(dt.transfers(), 'insert',
-                      throwReasons=[GAPI.UNKNOWN_ERROR, GAPI.FORBIDDEN],
+                      throwReasons=[GAPI.UNKNOWN_ERROR, GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                       body=body, fields='id')
-  except (GAPI.unknownError, GAPI.forbidden) as e:
+  except (GAPI.unknownError, GAPI.forbidden, GAPI.permissionDenied) as e:
     entityActionFailedExit([Ent.USER, old_owner], str(e))
   entityActionPerformed([Ent.TRANSFER_REQUEST, None])
   Ind.Increment()
