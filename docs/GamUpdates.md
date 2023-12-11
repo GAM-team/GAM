@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.66.11
+
+Fixed/improved handling of shortcuts in `gam <UserTypeEntity> transfer drive`.
+
 ### 6.66.10
 
 Updated `gam create datatransfer` to handle the following error:

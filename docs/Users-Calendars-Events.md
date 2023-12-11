@@ -585,13 +585,6 @@ gam <UserTypeEntity> delete events <UserCalendarEntity> [doit] [<EventNotificati
 ```
 No events are deleted unless you specify the `doit` option; omit `doit` to verify that you properly selected the events to delete.
 
-## Move calendar events to another calendar
-Generally you won't move all events from one calendar to another; typically, you'll move events created by the event creator
-using `matchfield creatoremail <RegularExpression>` in conjunction with other `<EventSelectProperty>` and `<EventMatchProperty>` options.
-```
-gam <UserTypeEntity> move events <UserCalendarEntity> [<EventEntity>] destination|to <CalendarItem> [<EventNotificationAttribute>]
-```
-
 ## Empty calendar trash
 A user signed in to Google Calendar can empty the calendar trash but there is no direct API support for this operation.
 To empty the calendar trash a temporary calendar is created, the deleted events are moved to the temporary calendar and then the temporary calendar is deleted.

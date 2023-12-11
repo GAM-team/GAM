@@ -2,6 +2,10 @@
 
 Merged GAM-Team version
 
+6.66.11
+
+Fixed/improved handling of shortcuts in `gam <UserTypeEntity> transfer drive`.
+
 6.66.10
 
 Updated `gam create datatransfer` to handle the following error:
