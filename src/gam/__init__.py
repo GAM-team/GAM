@@ -2521,7 +2521,7 @@ def entityBadRequestWarning(entityValueList, errMessage, i=0, count=0):
                                  currentCountNL(i, count)))
 
 def userSvcNotApplicableOrDriveDisabled(user, errMessage, i=0, count=0):
-  if errMessage.find('Drive apps') == -1:
+  if errMessage.find('Drive apps') == -1 and errMessage.find('Active session is invalid') == -1:
     entityServiceNotApplicableWarning(Ent.USER, user, i, count)
   else:
     entityActionNotPerformedWarning([Ent.USER, user], errMessage, i, count)
@@ -5082,8 +5082,11 @@ def checkGAPIError(e, softErrors=False, retryOnHttpError=False, mapNotFound=True
       systemErrorExit(HTTP_ERROR_RC, eContent)
   if 'error' in error:
     http_status = error['error']['code']
+    reason = ''
     if 'errors' in error['error'] and 'message' in error['error']['errors'][0]:
       message = error['error']['errors'][0]['message']
+      if 'reason' in error['error']['errors'][0]:
+        reason = error['error']['errors'][0]['reason']
     elif 'errors' in error['error'] and 'Unknown Error' in error['error']['message'] and 'reason' in error['error']['errors'][0]:
       message = error['error']['errors'][0]['reason']
     else:
@@ -5132,7 +5135,10 @@ def checkGAPIError(e, softErrors=False, retryOnHttpError=False, mapNotFound=True
       elif status == 'INVALID_ARGUMENT':
         error = makeErrorDict(http_status, GAPI.INVALID_ARGUMENT, message)
     elif http_status == 401:
-      if status == 'PERMISSION_DENIED':
+      if 'active session is invalid' in lmessage and reason == 'authError':
+        message += ' Drive SDK API access disabled'
+        error = makeErrorDict(http_status, GAPI.AUTH_ERROR, message)
+      elif status == 'PERMISSION_DENIED':
         error = makeErrorDict(http_status, GAPI.PERMISSION_DENIED, message)
     elif http_status == 403:
       if 'quota exceeded for quota metric' in lmessage:
@@ -16343,9 +16349,9 @@ def doCreateDataTransfer():
       _assignAppParameter(Cmd.Previous().upper(), getString(Cmd.OB_PARAMETER_VALUE).upper().split(','), True)
   try:
     result = callGAPI(dt.transfers(), 'insert',
-                      throwReasons=[GAPI.UNKNOWN_ERROR, GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
+                      throwReasons=[GAPI.UNKNOWN_ERROR, GAPI.FORBIDDEN],
                       body=body, fields='id')
-  except (GAPI.unknownError, GAPI.forbidden, GAPI.permissionDenied) as e:
+  except (GAPI.unknownError, GAPI.forbidden) as e:
     entityActionFailedExit([Ent.USER, old_owner], str(e))
   entityActionPerformed([Ent.TRANSFER_REQUEST, None])
   Ind.Increment()

@@ -10,6 +10,17 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.66.12
+
+Upgraded to Python 3.12.1 where possible.
+
+Updated all drive commands to handle the following error:
+```
+ERROR: 401: Active session is invalid. Error code: 4 - authError
+```
+This is due to the Drive SDK API being disabled in the user's OU.
+* See: https://support.google.com/a/answer/6105699
+
 ### 6.66.11
 
 Fixed/improved handling of shortcuts in `gam <UserTypeEntity> transfer drive`.

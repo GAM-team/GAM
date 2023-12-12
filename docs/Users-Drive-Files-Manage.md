@@ -25,6 +25,7 @@
 * https://developers.google.com/drive/api/v3/ref-single-parent
 * https://developers.google.com/drive/api/v3/shared-drives-diffs
 * https://developers.google.com/drive/api/v3/shortcuts
+* https://support.google.com/a/answer/6105699
 * https://support.google.com/a/answer/7374057
 * https://developers.google.com/docs/api/reference/rest
 

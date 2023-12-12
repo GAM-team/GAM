@@ -34,6 +34,7 @@
 
 ## API documentation
 * https://developers.google.com/drive/api/v3/reference/files
+* https://support.google.com/a/answer/6105699
 
 ## Definitions
 * [`<DriveFileEntity>`](Drive-File-Selection)
