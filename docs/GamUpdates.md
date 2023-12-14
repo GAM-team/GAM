@@ -10,6 +10,17 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.66.13
+
+Updated functionality of option `preservefiletimes` in `gam <UserTypeEntity> update drivefile <DriveFileEntity>`.
+
+* Current
+  * `preservefiletimes localfile <FileName>` - `modifiedTime` of `<DriveFileEntity>` is set to that of `localfile <FileName>`
+  * `preservefiletimes` - No effect
+* Updated
+  * `preservefiletimes localfile <FileName>` - `modifiedTime` of `<DriveFileEntity>` is set to that of `localfile <FileName>`
+  * `preservefiletimes` - `modifiedTime` of `<DriveFileEntity>` retains its current value
+
 ### 6.66.12
 
 Upgraded to Python 3.12.1 where possible.

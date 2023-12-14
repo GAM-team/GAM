@@ -2,6 +2,17 @@
 
 Merged GAM-Team version
 
+6.66.13
+
+Updated functionality of option `preservefiletimes` in `gam <UserTypeEntity> update drivefile <DriveFileEntity>`.
+
+* Current
+  * `preservefiletimes localfile <FileName>` - `modifiedTime` of `<DriveFileEntity>` is set to that of `localfile <FileName>`
+  * `preservefiletimes` - No effect
+* Updated
+  * `preservefiletimes localfile <FileName>` - `modifiedTime` of `<DriveFileEntity>` is set to that of `localfile <FileName>`
+  * `preservefiletimes` - `modifiedTime` of `<DriveFileEntity>` retains its current value
+
 6.66.12
 
 Upgraded to Python 3.12.1 where possible.

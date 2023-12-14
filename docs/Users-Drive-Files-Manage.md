@@ -493,7 +493,8 @@ From the Google Drive API documentation.
 By default, Google assigns the current time to the attribute `modifiedTime`; you can assign your own value
 with `modifiedtime <Time>`.
 
-The option `preservefiletimes`, when used with `localfile <FileName>`, will set the `modifiedTime` attribute from the local file.
+* `preservefiletimes localfile <FileName>` - `modifiedTime` of `<DriveFileEntity>` is set to that of `localfile <FileName>`
+* `preservefiletimes` - `modifiedTime` of `<DriveFileEntity>` retains its current value
 
 These are the naming rules when updating from a local file:
 * `update drivefile drivefilename "GoogleFile.csv" localfile "NewLocalFile.csv"` - Google Drive file "GoogleFile.csv" is renamed "NewLocalFile.csv"

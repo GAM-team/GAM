@@ -54825,6 +54825,7 @@ def updateDriveFile(users):
   addSheetEntity = None
   updateSheetEntity = None
   clearFilter = False
+  preserveModifiedTime = False
   encoding = GC.Values[GC.CHARSET]
   columnDelimiter = GC.Values[GC.CSV_INPUT_COLUMN_DELIMITER]
   returnIdLink = None
@@ -54877,6 +54878,8 @@ def updateDriveFile(users):
     addSheetEntity =  updateSheetEntity = None
     media_body = getMediaBody(parameters)
     body['mimeType'] = parameters[DFA_LOCALMIMETYPE]
+  elif operation == 'update' and parameters[DFA_PRESERVE_FILE_TIMES]:
+    preserveModifiedTime = True
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -54898,15 +54901,17 @@ def updateDriveFile(users):
         try:
           addParents = addParentsBase[:]
           removeParents = removeParentsBase[:]
-          if newParents or (not newName and parameters[DFA_REPLACEFILENAME]):
+          if newParents or (not newName and parameters[DFA_REPLACEFILENAME]) or preserveModifiedTime:
             result = callGAPI(drive.files(), 'get',
                               throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
-                              fileId=fileId, fields='name,parents', supportsAllDrives=True)
+                              fileId=fileId, fields='name,parents,modifiedTime', supportsAllDrives=True)
             if newParents:
               addParents.extend(newParents)
               removeParents.extend(result.get('parents', []))
             if not newName and parameters[DFA_REPLACEFILENAME]:
               body['name'] = processFilenameReplacements(result['name'], parameters[DFA_REPLACEFILENAME])
+            if preserveModifiedTime:
+              body['modifiedTime'] = result['modifiedTime']
           if newName:
             if parameters[DFA_REPLACEFILENAME]:
               body['name'] = processFilenameReplacements(newName, parameters[DFA_REPLACEFILENAME])

@@ -322,12 +322,12 @@ Version `6.21.02` is required.
 Display direct policies, update all
 ```
 gam redirect csv ChromePolicies.csv print chromepolicies ou "/Path/To/OU1" show direct formatjson quotechar "'"
-gam csv ChromePolicies.csv quotechar "'" gam update chromepolicy "~name" json "~JSON"
+gam csv ChromePolicies.csv quotechar "'" gam update chromepolicy "~name" json "~JSON" ou "/Path/To/OU2"
 ```
 Display all policies, select direct on update
 ```
 gam redirect csv ChromePolicies.csv print chromepolicies ou "/Path/To/OU1" formatjson quotechar "'"
-gam config csv_input_row_filter "direct:boolean:true" csv ChromePolicies.csv quotechar "'" gam update chromepolicy "~name" json "~JSON"
+gam config csv_input_row_filter "direct:boolean:true" csv ChromePolicies.csv quotechar "'" gam update chromepolicy "~name" json "~JSON" ou "/Path/To/OU2"
 ```
 
 ## Create Chrome network

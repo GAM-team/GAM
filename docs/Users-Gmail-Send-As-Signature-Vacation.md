@@ -13,6 +13,7 @@
 ## API documentation
 * https://developers.google.com/gmail/api/reference/rest/v1/users.settings.sendAs
 * https://developers.google.com/gmail/api/v1/reference/users/settings
+* https://support.google.com/a/answer/1710338
 
 ## Definitions
 * [`<UserTypeEntity>`](Collections-of-Users)
@@ -87,6 +88,8 @@ of the sendas address.
 
 The `default` option sets `<EmailAddress>` as the default sendas address for the user.
 
+For `treatasalias`, see: https://support.google.com/a/answer/1710338
+
 You can allow users to send mail through an external SMTP server when configuring a sendas address hosted outside your email domains. You must enable
 this capability in Admin Console/Apps/Google Workspace/Gmail/Advanced settings/End User Access/Allow per-user outbound gateways.
 
@@ -144,6 +147,8 @@ gam <UserTypeEntity> signature|sig
 * `gcsdoc|gcshtml <StorageBucketObjectName>` - Read the signature from the Google Cloud Storage file `<StorageBucketObjectName>`
 
 The `default` option sets `<EmailAddress>` as the default sendas address for the user.
+
+For `treatasalias`, see: https://support.google.com/a/answer/1710338
 
 When `<UserTypeEntity>` specifies an alias, the `primary` option causes the primary
 email address signature rather than the alias signature to be set.
