@@ -55263,6 +55263,7 @@ def initCopyMoveOptions(copyCmd):
     'shortcutNameMatchPattern': None,
     'fileMimeTypes': set(),
     'notMimeTypes': False,
+    'copySubFilesOwnedBy': None,
     }
 
 DUPLICATE_FILE_CHOICES = {
@@ -55378,6 +55379,8 @@ def getCopyMoveOptions(myarg, copyMoveOptions):
         copyMoveOptions['notMimeTypes'] = checkArgumentPresent('not')
         for mimeType in getString(Cmd.OB_MIMETYPE_LIST).lower().replace(',', ' ').split():
           copyMoveOptions['fileMimeTypes'].add(validateMimeType(mimeType))
+      elif myarg == 'copysubfilesownedby':
+        copyMoveOptions['copySubFilesOwnedBy'] = getChoice(SHOW_OWNED_BY_CHOICE_MAP, mapChoice=True)
       else:
         return False
   return True
@@ -56100,7 +56103,7 @@ def copyDriveFile(users):
       entityActionFailedWarning(kvList+[Ent.DRIVE_FILE_SHORTCUT, childName], str(e), k, kcount)
       _incrStatistic(statistics, STAT_FILE_FAILED)
 
-  def _checkChildCopyAllowed(childMimeType, childName):
+  def _checkChildCopyAllowed(childMimeType, childName, child):
     if childMimeType == MIMETYPE_GA_FOLDER:
       if not copyMoveOptions['copySubFolders']:
         return False
@@ -56112,6 +56115,9 @@ def copyDriveFile(users):
     else:
       if not copyMoveOptions['copySubFiles']:
         return False
+      if copyMoveOptions['copySubFilesOwnedBy'] is not None:
+        if child.get('driveId', None) is None and child.get('ownedByMe', False) != copyMoveOptions['copySubFilesOwnedBy']:
+          return False
       if copyMoveOptions['fileMimeTypes']:
         if not copyMoveOptions['notMimeTypes']:
           if childMimeType not in copyMoveOptions['fileMimeTypes']:
@@ -56143,7 +56149,7 @@ def copyDriveFile(users):
                                    q=WITH_PARENTS.format(folderId),
                                    orderBy='folder desc,name,modifiedTime desc',
                                    fields='nextPageToken,files(id,name,parents,appProperties,capabilities,contentHints,copyRequiresWriterPermission,'\
-                                     'description,folderColorRgb,mimeType,modifiedTime,properties,starred,driveId,trashed,viewedByMeTime,writersCanShare,'\
+                                     'description,folderColorRgb,mimeType,modifiedTime,ownedByMe,properties,starred,driveId,trashed,viewedByMeTime,writersCanShare,'\
                                      'shortcutDetails(targetId,targetMimeType))',
                                    pageSize=GC.Values[GC.DRIVE_MAX_RESULTS], **sourceSearchArgs)
     kcount = len(sourceChildren)
@@ -56169,10 +56175,11 @@ def copyDriveFile(users):
         if childId in copiedTargetFiles: # Don't recopy file/folder copied into a sub-folder
           continue
         kvList = [Ent.USER, user, _getEntityMimeType(child), childNameId]
-        if not _checkChildCopyAllowed(childMimeType, childName):
+        if not _checkChildCopyAllowed(childMimeType, childName, child):
           if not suppressNotSelectedMessages:
             entityActionNotPerformedWarning(kvList, Msg.NOT_SELECTED, k, kcount)
           continue
+        child.pop('ownedByMe', None)
         trashed = child.pop('trashed', False)
         if (childId == newFolderId) or (excludeTrashed and trashed):
           entityActionNotPerformedWarning(kvList,

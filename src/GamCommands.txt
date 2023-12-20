@@ -6006,7 +6006,9 @@ gam <UserTypeEntity> copy drivefile <DriveFileEntity>
         [summary [<Boolean>]] [showpermissionmessages [<Boolean>]]
         [<DriveFileParentAttribute>]
         [mergewithparent [<Boolean>]] [recursive [depth <Number>]]
-        [copysubfiles [<Boolean>]] [filenamematchpattern <RegularExpression>] [filemimetype [not] <MimeTypeList>]
+        [copysubfiles [<Boolean>]] [filenamematchpattern <RegularExpression>]
+             [filemimetype [not] <MimeTypeList>]
+        [copysubfilesownedby any|me|others]
         [copysubfolders [<Boolean>]] [foldernamematchpattern <RegularExpression>]
         [copysubshortcuts [<Boolean>]] [shortcutnamematchpattern <RegularExpression>]
         <DriveFileCopyAttribute>*

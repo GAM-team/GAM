@@ -204,6 +204,9 @@ You can also replace ` ` with `-` but it doesn't seem to be required.
 
 * `query "label:Foo -Bar-"` - Select messages with label `Foo (Bar)`
 
+You can have GAM do the substitutions for you with the `matchlabel <LabelName>` option.
+* `matchlabel "Foo (Bar)"` is converted to `query "label:Foo -Bar-"`
+
 ## Draft messages
 Add a draft message to a user's mailbox.
 ```

@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.66.15
+
+Added option `copysubfilesownedby any|me|others` to `gam <UserTypeEntity> copy drivefile` that allows
+specification of which source folder sub files to copy based on file ownership; the default is `all`.
+This only applies when files are being copied from a 'My Drive'.
+
 ### 6.66.14
 
 Updated `gam <UserTypeEntity> modify messages` to recognize the following error:

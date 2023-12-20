@@ -68,6 +68,7 @@ gam <UserTypeEntity> copy drivefile <DriveFileEntity>
         [mergewithparent [<Boolean>]] [recursive [depth <Number>]]
         [copysubfiles [<Boolean>]] [filenamematchpattern <RegularExpression>]
              [filemimetype [not] <MimeTypeList>]
+        [copysubfilesownedby any|me|others]
         [copysubfolders [<Boolean>]] [foldernamematchpattern <RegularExpression>]
         [copysubshortcuts [<Boolean>]] [shortcutnamematchpattern <RegularExpression>]
         <DriveFileCopyAttribute>*
@@ -147,6 +148,11 @@ You can specify `<RegularExpression>` patterns that limit the items copied based
 * `filenamematchpattern <RegularExpression>` - Only files whose name matches `<RegularExpression>` are copied
 * `foldernamematchpattern <RegularExpression>` - Only folders whose name matches `<RegularExpression>` are copied
 * `shortcutnamematchpattern <RegularExpression>` - Only shortcuts whose name matches `<RegularExpression>` are copied
+
+### By default, when copying sub files, all files, regardless of ownership, are copied.
+* `copysubfilesownedby all` - All files, regardless of ownership, are copied.
+* `copysubfilesownedby me` - Only files owned by `<UserTypeEntity>`  are copied.
+* `copysubfilesownedby others` - Only files not owned by `<UserTypeEntity>`  are copied.
 
 ### Specify a new name for the file/folder
 * `newfilename <DriveFileName>` - The copied file/folder will be named `<DriveFileName>`
