@@ -10,6 +10,25 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.66.14
+
+Updated `gam <UserTypeEntity> modify messages` to recognize the following error:
+```
+ERROR: 400: invalid - Invalid label: SENT
+```
+
+Updated `gam update alias <EmailAddressEntity> user|group|target <EmailAddress>`
+to avoid the following problem.
+```
+$ gam update alias testalias@domain.com user testuser
+User Alias: testalias@domain.com, Deleted
+User Alias: testalias@domain.com, User: testuser@domain.com, Update Failed: Duplicate, Email Address: testalias@domain.com
+```
+GAM updates an alias to point to a new target by deleting the alias and then recreating the alias pointing to the new target.
+Unfortunately, if these commands are executed back-to-back; Google generates the `Update Failed: Duplicate` error.
+Now, GAM waits 2 seconds between the delete and the insert which seems to eliminate the problem. If the problem persists,
+the option `waitafterdelete <Integer>` can be used to increase the wait time to a maximum of 10 seconds.
+
 ### 6.66.13
 
 Updated functionality of option `preservefiletimes` in `gam <UserTypeEntity> update drivefile <DriveFileEntity>`.

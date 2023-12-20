@@ -55,12 +55,17 @@ gam create alias bob[@yourdomain.com] user robert[@yourdomain.com]
 The existing alias is deleted and a new alias is created.
 ```
 gam update alias|aliases <EmailAddressEntity> user|group|target <UniqueID>|<EmailAddress>
-        [notargetverify]
+        [notargetverify] [waitafterdelete <Integer>]
 ```
 `<EmailAddressEntity>` are the aliases, `<EmailAddress>` is the target.
 
 By default, GAM makes additional API calls to verify that the target email address exists before updating the alias;
 if you know that the target exists, you can suppress the verification with `notargetverify.
+
+GAM updates an alias to point to a new target by deleting the alias and then recreates the alias pointing to the new target.
+Unfortunately, if these commands are executed back-to-back; Google generates the `Update Failed: Duplicate` error.
+Now, GAM waits 2 seconds between the delete and the insert which seems to eliminate the problem. If the problem persists,
+use the option `waitafterdelete <Integer>` to increase the wait time to a maximum of 10 seconds.
 
 ## Delete an alias regardless of the target
 ```

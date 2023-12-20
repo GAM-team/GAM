@@ -370,7 +370,7 @@ YUBIKEY_VALUE_ERROR_RC = 85
 YUBIKEY_MULTIPLE_CONNECTED_RC = 86
 YUBIKEY_NOT_FOUND_RC = 87
 
-# Multiprocessing lock                                                                                                                                                                                                            
+# Multiprocessing lock
 mplock = None
 
 # stdin/stdout/stderr
@@ -17333,7 +17333,7 @@ ALIAS_TARGET_TYPES = ['user', 'group', 'target']
 # gam create aliases|nicknames <EmailAddressEntity> user|group|target <UniqueID>|<EmailAddress>
 #	[verifynotinvitable]
 # gam update aliases|nicknames <EmailAddressEntity> user|group|target <UniqueID>|<EmailAddress>
-#	[notargetverify]
+#	[notargetverify] [waitafterdelete <Integer>]
 def doCreateUpdateAliases():
   def verifyAliasTargetExists():
     if targetType != 'group':
@@ -17355,6 +17355,42 @@ def doCreateUpdateAliases():
             GAPI.badRequest, GAPI.invalid, GAPI.systemError):
       return None
 
+  def deleteAliasOnUpdate():
+# User alias
+    if targetType != 'group':
+      try:
+        callGAPI(cd.users().aliases(), 'delete',
+                 throwReasons=[GAPI.USER_NOT_FOUND, GAPI.BAD_REQUEST, GAPI.INVALID, GAPI.FORBIDDEN, GAPI.INVALID_RESOURCE,
+                               GAPI.CONDITION_NOT_MET],
+                 userKey=aliasEmail, alias=aliasEmail)
+        printEntityKVList([Ent.USER_ALIAS, aliasEmail], [Act.PerformedName(Act.DELETE)], i, count)
+        time.sleep(waitAfterDelete)
+        return True
+      except GAPI.conditionNotMet as e:
+        entityActionFailedWarning([Ent.USER_ALIAS, aliasEmail], str(e), i, count)
+        return False
+      except (GAPI.userNotFound, GAPI.badRequest, GAPI.invalid, GAPI.forbidden, GAPI.invalidResource):
+        if targetType == 'user':
+          entityUnknownWarning(Ent.USER_ALIAS, aliasEmail, i, count)
+          return False
+# Group alias
+    try:
+      callGAPI(cd.groups().aliases(), 'delete',
+               throwReasons=[GAPI.GROUP_NOT_FOUND, GAPI.BAD_REQUEST, GAPI.INVALID, GAPI.FORBIDDEN, GAPI.INVALID_RESOURCE,
+                             GAPI.CONDITION_NOT_MET],
+               groupKey=aliasEmail, alias=aliasEmail)
+      time.sleep(waitAfterDelete)
+      return True
+    except GAPI.conditionNotMet as e:
+      entityActionFailedWarning([Ent.GROUP_ALIAS, aliasEmail], str(e), i, count)
+      return False
+    except GAPI.forbidden:
+      entityUnknownWarning(Ent.GROUP_ALIAS, aliasEmail, i, count)
+      return False
+    except (GAPI.groupNotFound, GAPI.badRequest, GAPI.invalid, GAPI.invalidResource):
+      entityUnknownWarning(Ent.GROUP_ALIAS, aliasEmail, i, count)
+      return False
+
   cd = buildGAPIObject(API.DIRECTORY)
   ci = None
   updateCmd = Act.Get() == Act.UPDATE
@@ -17364,12 +17400,15 @@ def doCreateUpdateAliases():
   entityLists = targetEmails if isinstance(targetEmails, dict) else None
   verifyNotInvitable = False
   verifyTarget = updateCmd
+  waitAfterDelete = 2
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if (not updateCmd) and myarg == 'verifynotinvitable':
       verifyNotInvitable = True
     elif updateCmd and myarg == 'notargetverify':
       verifyTarget = False
+    elif updateCmd and myarg == 'waitafterdelete':
+      waitAfterDelete = getInteger(minVal=2, maxVal=10)
     else:
       unknownArgumentExit()
   i = 0
@@ -17394,30 +17433,9 @@ def doCreateUpdateAliases():
         if targetType is None:
           entityUnknownWarning(Ent.ALIAS_TARGET, targetEmail, i, count)
           continue
-      if updateCmd:
-        try:
-          callGAPI(cd.users().aliases(), 'delete',
-                   throwReasons=[GAPI.USER_NOT_FOUND, GAPI.BAD_REQUEST, GAPI.INVALID, GAPI.FORBIDDEN, GAPI.INVALID_RESOURCE,
-                                 GAPI.CONDITION_NOT_MET],
-                   userKey=aliasEmail, alias=aliasEmail)
-          printEntityKVList([Ent.USER_ALIAS, aliasEmail], [Act.PerformedName(Act.DELETE)], i, count)
-        except GAPI.conditionNotMet as e:
-          entityActionFailedWarning([Ent.USER_ALIAS, aliasEmail], str(e), i, count)
-          continue
-        except (GAPI.userNotFound, GAPI.badRequest, GAPI.invalid, GAPI.forbidden, GAPI.invalidResource):
-          try:
-            callGAPI(cd.groups().aliases(), 'delete',
-                     throwReasons=[GAPI.GROUP_NOT_FOUND, GAPI.BAD_REQUEST, GAPI.INVALID, GAPI.FORBIDDEN, GAPI.INVALID_RESOURCE,
-                                   GAPI.CONDITION_NOT_MET],
-                     groupKey=aliasEmail, alias=aliasEmail)
-          except GAPI.conditionNotMet as e:
-            entityActionFailedWarning([Ent.GROUP_ALIAS, aliasEmail], str(e), i, count)
-            continue
-          except GAPI.forbidden:
-            entityUnknownWarning(Ent.GROUP_ALIAS, aliasEmail, i, count)
-            continue
-          except (GAPI.groupNotFound, GAPI.badRequest, GAPI.invalid, GAPI.invalidResource):
-            entityUnknownWarning(Ent.ALIAS, aliasEmail, i, count)
+      if updateCmd and not deleteAliasOnUpdate():
+        continue
+# User alias
       if targetType != 'group':
         try:
           callGAPI(cd.users().aliases(), 'insert',
@@ -17440,6 +17458,7 @@ def doCreateUpdateAliases():
           if targetType == 'user':
             entityUnknownWarning(Ent.ALIAS_TARGET, targetEmail, i, count)
             continue
+# Group alias
       try:
         callGAPI(cd.groups().aliases(), 'insert',
                  throwReasons=[GAPI.GROUP_NOT_FOUND, GAPI.USER_NOT_FOUND, GAPI.BAD_REQUEST,
@@ -25169,16 +25188,18 @@ def createChatMember(users):
     entityPerformActionNumItems(kvList, jcount, entityType, i, count)
     if jcount == 0:
       return
+    kvList.extend([entityType, ''])
     Ind.Increment()
     j = 0
     for body in members:
+      j += 1
       kvList[-1] = body[field]['name']
       try:
         member = callGAPI(chat.spaces().members(), 'create',
                           bailOnInternalError=True,
-                          throwReasons=[GAPI.ALREADY_EXISTS, GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                          throwReasons=[GAPI.ALREADY_EXISTS, GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
                           parent=parent, body=body)
-        if role != 'ROLE_MEMBER':
+        if role != 'ROLE_MEMBER' and entityType == Ent.CHAT_MANAGER_USER:
           member = callGAPI(chat.spaces().members(), 'patch',
                             bailOnInternalError=True,
                             throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
@@ -25193,7 +25214,7 @@ def createChatMember(users):
           Ind.Decrement()
         else:
           writeStdout(f'{member["name"]}\n')
-      except (GAPI.alreadyExists, GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
+      except (GAPI.alreadyExists, GAPI.notFound, GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
         entityActionFailedWarning(kvList, str(e))
   Ind.Decrement()
 
@@ -25230,6 +25251,7 @@ def createChatMember(users):
     missingArgumentExit('space')
   if not userList and not groupList:
     missingArgumentExit('user|members|group|groups')
+  userEntityType = Ent.CHAT_MEMBER_USER if role == 'ROLE_MEMBER' else Ent.CHAT_MANAGER_USER
   userMembers = []
   for user in userList:
     name = normalizeEmailAddressOrUID(user)
@@ -25244,10 +25266,12 @@ def createChatMember(users):
     user, chat, kvList = buildChatServiceObject(API.CHAT_MEMBERSHIPS, user, i, count, [Ent.CHAT_SPACE, parent])
     if not chat:
       continue
+    Ind.Increment()
     if userMembers:
-      addMembers(userMembers, 'member', Ent.CHAT_MEMBER_USER, i, count)
+      addMembers(userMembers, 'member', userEntityType, i, count)
     if groupMembers:
       addMembers(groupMembers, 'groupMember', Ent.CHAT_MEMBER_GROUP, i, count)
+    Ind.Decrement()
 
 def _deleteChatMembers(chat, kvList, jcount, memberNames, i, count):
   j = 0
@@ -25323,7 +25347,7 @@ def deleteUpdateChatMember(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, chat, kvList = buildChatServiceObject(API.CHAT_MEMBERSHIPS, user, i, count)
+    user, chat, kvList = buildChatServiceObject(API.CHAT_MEMBERSHIPS, user, i, count, [Ent.CHAT_SPACE, parent] if parent is not None else None)
     if not chat:
       continue
     jcount = len(memberNames)
@@ -25360,12 +25384,12 @@ CHAT_SYNC_PREVIEW_TITLES = ['space', 'member', 'role', 'action', 'message']
 #	[preview [actioncsv]]
 #	(users <UserTypeEntity>)* (groups <GroupEntity>)*
 def syncChatMembers(users):
-  def _previewAction(members, jcount, action):
+  def _previewAction(members, entityType, jcount, action):
     Ind.Increment()
     j = 0
     for member in members:
       j += 1
-      entityActionPerformed([Ent.CHAT_SPACE, parent, Ent.CHAT_MEMBER, member, Ent.ROLE, role], j, jcount)
+      entityActionPerformed([Ent.CHAT_SPACE, parent, entityType, member, Ent.ROLE, role], j, jcount)
     Ind.Decrement()
     if csvPF:
       for member in members:
@@ -25373,11 +25397,11 @@ def syncChatMembers(users):
 
   def addMembers(memberNames, members, entityType, i, count):
     jcount = len(memberNames)
-    entityPerformActionNumItems(kvList, jcount, Ent.CHAT_MEMBER, i, count)
+    entityPerformActionNumItems(kvList, jcount, entityType, i, count)
     if jcount == 0:
       return
     if preview:
-      _previewAction(memberNames, jcount, Act.REMOVE)
+      _previewAction(memberNames, entityType, jcount, Act.REMOVE)
       return
     kvList.extend([entityType, ''])
     Ind.Increment()
@@ -25389,26 +25413,26 @@ def syncChatMembers(users):
       try:
         callGAPI(chat.spaces().members(), 'create',
                  bailOnInternalError=True,
-                 throwReasons=[GAPI.ALREADY_EXISTS, GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                 throwReasons=[GAPI.ALREADY_EXISTS, GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
                  parent=parent, body=body)
-        if role != 'ROLE_MEMBER':
+        if role != 'ROLE_MEMBER' and entityType == Ent.CHAT_MANAGER_USER:
           callGAPI(chat.spaces().members(), 'patch',
                    bailOnInternalError=True,
                    throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
                    name=memberName, updateMask='role', body={'role': role})
         entityActionPerformed(kvList, j, jcount)
-      except (GAPI.alreadyExists, GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
+      except (GAPI.alreadyExists, GAPI.notFound, GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
         entityActionFailedWarning(kvList, str(e), j, jcount)
     Ind.Decrement()
     del kvList[-2:]
 
   def deleteMembers(memberNames, entityType, i, count):
     jcount = len(memberNames)
-    entityPerformActionNumItems(kvList, jcount, Ent.CHAT_MEMBER, i, count)
+    entityPerformActionNumItems(kvList, jcount, entityType, i, count)
     if jcount == 0:
       return
     if preview:
-      _previewAction(memberNames, jcount, Act.ADD)
+      _previewAction(memberNames, entityType, jcount, Act.ADD)
       return
     kvList.extend([entityType, ''])
     Ind.Increment()
@@ -25417,7 +25441,6 @@ def syncChatMembers(users):
     del kvList[-2:]
 
   cd = buildGAPIObject(API.DIRECTORY)
-  kwargs = {}
   parent = None
   role = CHAT_MEMBER_ROLE_MAP['member']
   mtype = CHAT_MEMBER_TYPE_MAP['human']
@@ -25456,6 +25479,7 @@ def syncChatMembers(users):
       unknownArgumentExit()
   if not parent:
     missingArgumentExit('space')
+  userEntityType = Ent.CHAT_MEMBER_USER if role == 'ROLE_MEMBER' else Ent.CHAT_MANAGER_USER
   userMembers = {}
   syncUsersSet = set()
   for user in userList:
@@ -25470,12 +25494,11 @@ def syncChatMembers(users):
     memberName = f'{parent}/members/{name}'
     groupMembers[memberName] = {'groupMember': {'name': f'groups/{name}'}}
     syncGroupsSet.add(memberName)
-  kwargs['filter'] = f'member.type = "{mtype}" AND role = "{role}"'
-  qfilter = f'{Ent.Singular(Ent.CHAT_SPACE)}: {parent}, {kwargs["filter"]}'
+  qfilter = f'{Ent.Singular(Ent.CHAT_SPACE)}: {parent}'
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, chat, kvList = buildChatServiceObject(API.CHAT_MEMBERSHIPS, user, i, count)
+    user, chat, kvList = buildChatServiceObject(API.CHAT_MEMBERSHIPS, user, i, count, [Ent.CHAT_SPACE, parent])
     if not chat:
       continue
     currentUsersSet = set()
@@ -25484,12 +25507,14 @@ def syncChatMembers(users):
       members = callGAPIpages(chat.spaces().members(), 'list', 'memberships',
                               pageMessage=_getChatPageMessage(Ent.CHAT_MEMBER, user, i, count, qfilter),
                               throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                              pageSize=CHAT_PAGE_SIZE, parent=parent, **kwargs)
+                              pageSize=CHAT_PAGE_SIZE, parent=parent, showGroups=groupsSpecified)
       for member in members:
-        _getChatMemberEmail(cd, member)
         if 'member' in member:
-          currentUsersSet.add(f"{parent}/members/{member['member']['email']}")
+          if member['member']['type'] == mtype and member['role'] == role:
+            _getChatMemberEmail(cd, member)
+            currentUsersSet.add(f"{parent}/members/{member['member']['email']}")
         elif 'groupMember' in member:
+          _getChatMemberEmail(cd, member)
           currentGroupsSet.add(f"{parent}/members/{member['groupMember']['email']}")
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
@@ -25497,13 +25522,13 @@ def syncChatMembers(users):
     if syncOperation != 'addonly':
       Act.Set([Act.REMOVE, Act.REMOVE_PREVIEW][preview])
       if usersSpecified:
-        deleteMembers(currentUsersSet-syncUsersSet, Ent.CHAT_MEMBER_USER, i, count)
+        deleteMembers(currentUsersSet-syncUsersSet, userEntityType, i, count)
       if groupsSpecified:
         deleteMembers(currentGroupsSet-syncGroupsSet, Ent.CHAT_MEMBER_GROUP, i, count)
     if syncOperation != 'removeonly':
       Act.Set([Act.ADD, Act.ADD_PREVIEW][preview])
       if usersSpecified:
-        addMembers(syncUsersSet-currentUsersSet, userMembers, Ent.CHAT_MEMBER_USER, i, count)
+        addMembers(syncUsersSet-currentUsersSet, userMembers, userEntityType, i, count)
       if groupsSpecified:
         addMembers(syncGroupsSet-currentGroupsSet, groupMembers, Ent.CHAT_MEMBER_GROUP, i, count)
   if csvPF:
@@ -65484,20 +65509,27 @@ def _processMessagesThreads(users, entityType):
     bcount = min(jcount-mcount, GC.Values[GC.MESSAGE_BATCH_SIZE])
     while bcount > 0:
       body['ids'] = messageIds[mcount:mcount+bcount]
+      idsCount = min(5, bcount)
+      idsList = ','.join(body['ids'][0:idsCount])
+      if bcount > 5:
+        idsList += ',...'
       try:
         callGAPI(gmail.users().messages(), function,
-                 throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.INVALID_MESSAGE_ID, GAPI.FAILED_PRECONDITION],
+                 throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.INVALID_MESSAGE_ID, GAPI.INVALID, GAPI.FAILED_PRECONDITION],
                  userId='me', body=body)
         for messageId in body['ids']:
           mcount += 1
           entityActionPerformed([Ent.USER, user, entityType, messageId], mcount, jcount)
       except (GAPI.serviceNotAvailable, GAPI.badRequest):
         mcount += bcount
+      except GAPI.invalid as e:
+        entityActionFailedWarning([Ent.USER, user, entityType, idsList], f'{str(e)} ({mcount+1}-{mcount+bcount}/{jcount})')
+        mcount += bcount
       except GAPI.invalidMessageId:
-        entityActionFailedWarning([Ent.USER, user, entityType, Msg.BATCH], f'{Msg.INVALID_MESSAGE_ID} ({mcount+1}-{mcount+bcount}/{jcount})')
+        entityActionFailedWarning([Ent.USER, user, entityType, idsList], f'{Msg.INVALID_MESSAGE_ID} ({mcount+1}-{mcount+bcount}/{jcount})')
         mcount += bcount
       except GAPI.failedPrecondition:
-        entityActionFailedWarning([Ent.USER, user, entityType, Msg.BATCH], f'{Msg.FAILED_PRECONDITION} ({mcount+1}-{mcount+bcount}/{jcount})')
+        entityActionFailedWarning([Ent.USER, user, entityType, idsList], f'{Msg.FAILED_PRECONDITION} ({mcount+1}-{mcount+bcount}/{jcount})')
         mcount += bcount
       bcount = min(jcount-mcount, GC.Values[GC.MESSAGE_BATCH_SIZE])
 
