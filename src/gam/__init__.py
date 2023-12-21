@@ -26151,7 +26151,7 @@ CHROME_SCHEMA_TYPE_MESSAGE = {
 CHROME_TARGET_VERSION_CHANNEL_MINUS_PATTERN = re.compile(r'^([a-z]+)-(\d+)$')
 CHROME_TARGET_VERSION_PATTERN = re.compile(r'^(\d{1,4}\.){1,4}$')
 
-# gam update chromepolicy
+# gam update chromepolicy [convertcrnl]
 #	(<SchemaName> ((<Field> <Value>)+ | <JSONData>))+
 #	ou|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
 def doUpdateChromePolicy():
@@ -26172,6 +26172,7 @@ def doUpdateChromePolicy():
   app_id = channelMap = orgUnit = printer_id = None
   body = {'requests': []}
   schemaNameList = []
+  convertCRsNLs = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg in {'ou', 'org', 'orgunit'}:
@@ -26180,6 +26181,8 @@ def doUpdateChromePolicy():
       printer_id = getString(Cmd.OB_PRINTER_ID)
     elif myarg == 'appid':
       app_id = getString(Cmd.OB_APP_ID)
+    elif myarg == 'convertcrnl':
+      convertCRsNLs = True
     else:
       schemaName, schema = simplifyChromeSchema(_getChromePolicySchema(cp, Cmd.Previous(), '*'))
       body['requests'].append({'policyValue': {'policySchema': schemaName, 'value': {}},
@@ -26218,11 +26221,11 @@ def doUpdateChromePolicy():
             value = field['value']
             if vtype in ['TYPE_INT64', 'TYPE_INT32', 'TYPE_UINT64']:
               value = int(value)
-            elif vtype in ['TYPE_BOOL']:
+            elif vtype == 'TYPE_BOOL':
               pass
-            elif vtype in ['TYPE_ENUM']:
+            elif vtype == 'TYPE_ENUM':
               value = f"{schema['settings'][lowerField]['enum_prefix']}{value}"
-            elif vtype in ['TYPE_LIST']:
+            elif vtype == 'TYPE_LIST':
               value = value.split(',') if value else []
             if myarg == 'chrome.users.chromebrowserupdates' and casedField == 'targetVersionPrefixSetting':
               mg = CHROME_TARGET_VERSION_CHANNEL_MINUS_PATTERN.match(value)
@@ -26272,7 +26275,7 @@ def doUpdateChromePolicy():
             Cmd.Backup()
             invalidArgumentExit(integerLimits(None, None))
           value = int(value)
-        elif vtype in ['TYPE_BOOL']:
+        elif vtype == 'TYPE_BOOL':
           value = value.lower()
           if value in TRUE_VALUES:
             value = True
@@ -26280,7 +26283,7 @@ def doUpdateChromePolicy():
             value = False
           else:
             invalidChoiceExit(value, TRUE_FALSE, True)
-        elif vtype in ['TYPE_ENUM']:
+        elif vtype == 'TYPE_ENUM':
           value = value.upper()
           prefix = schema['settings'][field]['enum_prefix']
           enum_values = schema['settings'][field]['enums']
@@ -26290,8 +26293,10 @@ def doUpdateChromePolicy():
             pass
           else:
             invalidChoiceExit(value, enum_values, True)
-        elif vtype in ['TYPE_LIST']:
+        elif vtype == 'TYPE_LIST':
           value = value.split(',') if value else []
+        elif vtype == 'TYPE_STRING' and convertCRsNLs:
+          value = unescapeCRsNLs(value)
         if myarg == 'chrome.users.chromebrowserupdates' and casedField == 'targetVersionPrefixSetting':
           mg = CHROME_TARGET_VERSION_CHANNEL_MINUS_PATTERN.match(value)
           if mg:

@@ -156,7 +156,7 @@ gam create chromepolicyimage <ChromePolicyImageSchemaName> <FileName>
 ## Update Chrome policy
 You can update a policy for all devices/users within an OU or for a specific printer or application within an OU.
 ```
-gam update chromepolicy (<SchemaName> (<Field> <Value>)+)+
+gam update chromepolicy [convertcrnl]
         (<SchemaName> ((<Field> <Value>)+ | <JSONData>))+
         ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
 ```
@@ -189,6 +189,14 @@ Here is a schema with an TYPE_ENUM field.
 When specifying a value for this field you can enter the value in one of two ways:
 * `DEFAULT_PRINT_COLOR_ENUM_MONOCHROME` - The full value
 * `MONOCHROME` - The text following `..._ENUM_`
+
+### TYPE_STRING fields with carriage returns (\r) and line feeds (\n)
+Use the `convertcrnl` option to properly handle these characters
+in value strings entered on the command line in the `<Field> <Value>` form. 
+```
+gam update chromepolicy convertcrnl chrome.devices.DisabledDeviceReturnInstructions
+    deviceDisabledMessage "Please return device to:\nSchool\n123 Main Street\nAnytown US" ou /Path/to/OU
+```
 
 ### Examples
 Restrict student users from adding additional printers and set default printing to black and white.

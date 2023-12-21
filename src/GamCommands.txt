@@ -2475,7 +2475,7 @@ gam print crostelemetry [todrive <ToDriveAttribute>*]
 
 gam create chromepolicyimage <ChromePolicyImageSchemaName> <FileName>
 
-gam update chromepolicy
+gam update chromepolicy [convertcrnl]
         (<SchemaName> ((<Field> <Value>)+ | <JSONData>))+
         ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
 gam delete chromepolicy

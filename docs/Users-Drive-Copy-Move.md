@@ -150,7 +150,7 @@ You can specify `<RegularExpression>` patterns that limit the items copied based
 * `shortcutnamematchpattern <RegularExpression>` - Only shortcuts whose name matches `<RegularExpression>` are copied
 
 ### By default, when copying sub files, all files, regardless of ownership, are copied.
-* `copysubfilesownedby all` - All files, regardless of ownership, are copied.
+* `copysubfilesownedby any` - All files, regardless of ownership, are copied.
 * `copysubfilesownedby me` - Only files owned by `<UserTypeEntity>`  are copied.
 * `copysubfilesownedby others` - Only files not owned by `<UserTypeEntity>`  are copied.
 

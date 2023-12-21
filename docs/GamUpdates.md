@@ -10,10 +10,19 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.66.16
+
+Added option `convertcrnl` to `gam update chromepolicy` to properly handle carriage returns (\r) and line feeds (\n)
+in value strings entered on the command line in the `<Field> <Value>` form. 
+```
+gam update chromepolicy convertcrnl chrome.devices.DisabledDeviceReturnInstructions
+    deviceDisabledMessage "Please return device to:\nSchool\n123 Main Street\nAnytown US" ou /Path/to/OU
+```
+
 ### 6.66.15
 
 Added option `copysubfilesownedby any|me|others` to `gam <UserTypeEntity> copy drivefile` that allows
-specification of which source folder sub files to copy based on file ownership; the default is `all`.
+specification of which source folder sub files to copy based on file ownership; the default is `any`.
 This only applies when files are being copied from a 'My Drive'.
 
 ### 6.66.14
