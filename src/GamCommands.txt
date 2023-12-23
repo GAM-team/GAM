@@ -2164,8 +2164,10 @@ gam print chromehistory releases [todrive <ToDriveAttribute>*]
 
 <CrOSAction> ::=
         deprovision_different_model_replace|
+        deprovision_different_model_replacement|
         deprovision_retiring_device|
         deprovision_same_model_replace|
+        deprovision_same_model_replacement|
         deprovision_upgrade_transfer|
         disable|
         reenable|
@@ -2173,7 +2175,9 @@ gam print chromehistory releases [todrive <ToDriveAttribute>*]
         pre_provisioned_reenable
 
 gam update cros <CrOSEntity> action <CrOSAction> [acknowledge_device_touch_requirement]
+        [actionbatchsize <Integer>]
 gam <CrOSTypeEntity> update action <CrOSAction> [acknowledge_device_touch_requirement]
+        [actionbatchsize <Integer>]
 
 <CrOSCommand>
         reboot|
@@ -4894,25 +4898,25 @@ gam show vaultmatters|matters [matterstate <MatterStateList>]
 gam print vaultcounts [todrive <ToDriveAttributes>*]
         matter <MatterItem> corpus mail|groups
         (accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
-        (shareddrives|teamdrives <SharedDriveIDList>) | (rooms <RoomList>)
         [scope [all_data|held_data|unprocessed_data]]
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
         [excludedrafts <Boolean>]
-        [includerooms <Boolean>]
-        [includeshareddrives|includeteamdrives <Boolean>] [driveversiondate <Date>|<Time>]
         [wait <Integer>]
 gam print vaultcounts [todrive <ToDriveAttributes>*]
         matter <MatterItem> operation <String> [wait <Integer>]
 
-gam create vaultexport|export matter <MatterItem> [name <String>] corpus drive|mail|groups|hangouts_chat|voice
+gam create vaultexport|export matter <MatterItem> [name <String>] corpus calendar|drive|mail|groups|hangouts_chat|voice
         (accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
         (shareddrives|teamdrives <SharedDriveIDList>) | (rooms <RoomList>)
-        [scope [all_data|held_data|unprocessed_data]]
+        [scope all_data|held_data|unprocessed_data]
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
+        [locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
+        [responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*] [calendarversiondate <Date>|<Time>]
+        [includeshareddrives <Boolean>] [driveversiondate <Date>|<Time>] [includeaccessinfo <Boolean>]
+        [includerooms <Boolean>]
         [excludedrafts <Boolean>] [format mbox|pst]
         [showconfidentialmodecontent <Boolean>] [usenewexport <Boolean>]
-        [includerooms <Boolean>] [covereddata calllogs|textmessages|voicemails]
-        [includeshareddrives|includeteamdrives <Boolean>] [driveversiondate <Date>|<Time>] [includeaccessinfo <Boolean>]
+        [covereddata calllogs|textmessages|voicemails]
         [region any|europe|us] [showdetails|returnidonly]
 gam delete vaultexport|export <ExportItem> matter <MatterItem>
 gam delete vaultexport|export <MatterItem> <ExportItem>

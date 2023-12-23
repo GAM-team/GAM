@@ -37,6 +37,7 @@
 
 ## Definitions
 ```
+<AttendeeStatus> ::= accepted|declined|needsaction|tentative
 <EmailItem> ::= <EmailAddress>|<UniqueID>|<String>
 <EmailItemList> ::= "<EmailItem>(,<EmailItem>)*"
 <EmailAddressList> ::= "<EmailAddess>(,<EmailAddress>)*"
@@ -192,12 +193,9 @@ This command can be useful for discovering legacy former employee accounts which
 gam print vaultcounts [todrive <ToDriveAttributes>*]
         matter <MatterItem> corpus mail|groups
         (accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
-        (shareddrives|teamdrives <SharedDriveIDList>) | (rooms <RoomList>)
         [scope <all_data|held_data|unprocessed_data>]
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
         [excludedrafts <Boolean>]
-        [includerooms <Boolean>]
-        [includeshareddrives|includeteamdrives <Boolean>] [driveversiondate <Date>|<Time>]
         [wait <Integer>]
 ```
 Check the status of a previous count operation with the name from a previous command.
@@ -210,16 +208,18 @@ gam print vaultcounts [todrive <ToDriveAttributes>*]
 ## Create Vault Exports
 Create a Google Vault export request.
 ```
-gam create vaultexport|export matter <MatterItem> [name <String>] corpus drive|mail|groups|hangouts_chat|voice
+gam create vaultexport|export matter <MatterItem> [name <String>] corpus calendar|drive|mail|groups|hangouts_chat|voice
         (accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
         (shareddrives|teamdrives <SharedDriveIDList>) | (rooms <RoomList>)
-        [scope <all_data|held_data|unprocessed_data>]
+        [scope all_data|held_data|unprocessed_data]
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
+        [locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
+        [responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*] [calendarversiondate <Date>|<Time>]
+        [includeshareddrives <Boolean>] [driveversiondate <Date>|<Time>] [includeaccessinfo <Boolean>]
+        [includerooms <Boolean>]
         [excludedrafts <Boolean>] [format mbox|pst]
         [showconfidentialmodecontent <Boolean>] [usenewexport <Boolean>]
-        [includerooms <Boolean>]
         [covereddata calllogs|textmessages|voicemails]
-        [includeshareddrives <Boolean>] [driveversiondate <Date>|<Time>] [includeaccessinfo <Boolean>]
         [region any|europe|us] [showdetails|returnidonly]
 ```
 <MatterItem> specifies the matter name or ID the export should be associated with.
@@ -228,7 +228,8 @@ Specify the name of the export:
 * `name <String>` - The export will be named `<String>`
 * `default` - The export will be named `GAM <corpus> Export - <Time>`
 
-Specify the corpus of data, this option is required::
+Specify the corpus of data, this option is required:
+* `calendar`
 * `drive`
 * `mail`
 * `groups`
@@ -247,10 +248,35 @@ Specify the scope of data to include in the export:
 * `held_data` - Data on Hold
 * `unprocessed_data` - Data not processed
 
+You can specify search terms to limit the scope of data:
+* `terms <String>` - [Vault search](https://support.google.com/vault/answer/2474474)
+
 Specify time limits on the scope of data:
 * `start|starttime <Date>|<Time>` - The start time range for the search query. These timestamps are in GMT and rounded down to the start of the given date.
 * `end|endtime <Date>|<Time>` - The end time range for the search query. These timestamps are in GMT and rounded down to the start of the given date.
 * `timezone <TimeZone>` - The time zone name. It should be an IANA TZ name, such as "America/Los_Angeles"
+
+For `corpus calendar`, you can specify advanced search options:
+* `locationquery <StringList>`
+  * Matches only those events whose location contains all of the words in the given set.
+  * If the string contains quoted phrases, this method only matches those events whose location contain the exact phrase.
+  * Entries in the set are considered in "and".
+  * Word splitting example: ["New Zealand"] vs ["New","Zealand"] "New Zealand": matched by both "New and better Zealand": only matched by the latter.
+* `peoplequery <StringList>`
+  * Matches only those events whose attendees contain all of the words in the given set.
+  * Entries in the set are considered in "and".
+* `minuswords <StringList>`
+  * Matches only those events that do not contain any of the words in the given set in title, description, location, or attendees.
+  * Entries in the set are considered in "or".
+* `responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*
+  * Matches only events for which the custodian gave one of these responses. If the set is empty, there will be no filtering on responses.
+* `calendarversiondate <Date>|<Time>`
+  * Search the current version of the Calendar event, but export the contents of the last version saved before 12:00 AM UTC on the specified date.
+  * Enter the date in UTC.
+
+For `corpus calendar`, you can specify the format of the exported data:
+* `format ics` - Export in ICS format, this is the default
+* `format pst` - Export in PST format
 
 For `corpus drive`, you can specify advanced search options:
 * `driveversiondate <Date>|<Time>` - Search the versions of the Drive file as of the reference date. These timestamps are in GMT and rounded down to the given date.
@@ -264,9 +290,6 @@ For `corpus drive`, you can specify whether to include access information for us
 For `corpus hangouts_chat` you can specify advanced search options:
 * `includerooms False` - Do not include rooms, this is the default
 * `includerooms True` - Include rooms
-
-For `corpus mail`, you can specify search terms to limit the scope of data:
-* `terms <String>` - [Vault search](https://support.google.com/vault/answer/2474474)
 
 For `corpus mail`, you can specify whether to exclude draft messages:
 * `excludedrafts False` - Do not exclude drafts, this is the default
@@ -282,7 +305,7 @@ For `corpus mail`, you can specify whether to use the new export system:
 
 See: https://support.google.com/vault/answer/4388708#new_gmail_export&zippy=%2Cfebruary-new-gmail-export-system-available
 
-For `corpus mail`, `corpus groups` and `corpus hangouts_chat`, you can specify the format of the exported data:
+For `corpus mail`, `corpus groups`, `corpus hangouts_chat`and `corpus voice`, you can specify the format of the exported data:
 * `format mbox` - Export in MBOX format, this is the default
 * `format pst` - Export in PST format
 

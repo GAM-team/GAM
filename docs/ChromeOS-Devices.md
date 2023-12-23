@@ -160,8 +160,10 @@ The second form is backwards compatible with Standard GAM and selection with `<C
 ```
 <CrOSAction> ::=
         deprovision_different_model_replace|
+        deprovision_different_model_replacement|
         deprovision_retiring_device|
         deprovision_same_model_replace|
+        deprovision_same_model_replacement|
         deprovision_upgrade_transfer|
         disable|
         reenable|
@@ -403,13 +405,15 @@ gam update ou csvkmd cros.csv keyfield OU datafield deviceId add croscsvdata dev
         deprovision_same_model_replace|
         deprovision_upgrade_transfer|
         disable|
-        reenable|
-        pre_provisioned_disable|
-        pre_provisioned_reenable
+        reenable
 
 gam <CrOSTypeEntity> update action <CrOSAction> [acknowledge_device_touch_requirement]
+        [actionbatchsize <Integer>]
 gam update cros <CrOSEntity> action <CrOSAction> [acknowledge_device_touch_requirement]
+        [actionbatchsize <Integer>]
 ```
+As of GAM version `6.67.00`, the new API function `batchChangeStatus` replaces the old API function `action`; ChromeOS devices are now processed in batches.
+The batch size defaults to 10, the `actionbatchsize <Integer>` option can be used to set a batch size between 10 and 250.
 
 As deprovisioning ChromeOS devices is not reversible, you must enter `acknowledge_device_touch_requirement`
 when `<CrOSAction>` is `deprovision_same_model_replace`, `deprovision_different_model_replace`,

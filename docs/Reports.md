@@ -333,6 +333,9 @@ Select the users for whom information is desired.
   * `showorgunit` - Add a column labelled `orgUnitPath` to the output; an additional API call is made to get the email addresses of the users in `<OrgUnitPath>`
 * `select <UserTypeEntity>` - A selected collection of users, e.g., `select group staff@domain.com`; there is one API call per user
 
+By default, when `user all` is specified (or no user specification in supplied), GAM backs up looking for data with a (basically) random user. If the randaom
+doesn't have any data, the command reports that no data was found. Use `allverifyuser <UserItem>` to specify a specific user to use to search for data.
+
 Specify the report date; the default is today's date.
 * `date <Date>` - A single date; there is one API call
 * `range <Date> <Date>` - A range of dates; there is an API call per date

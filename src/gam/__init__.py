@@ -22521,28 +22521,29 @@ UPDATE_CROS_ARGUMENT_TO_PROPERTY_MAP = {
   }
 
 CROS_ACTION_CHOICE_MAP = {
-  'deprovisionsamemodelreplace': ('deprovision', 'same_model_replacement'),
-  'deprovisionsamemodelreplacement': ('deprovision', 'same_model_replacement'),
-  'deprovisiondifferentmodelreplace': ('deprovision', 'different_model_replacement'),
-  'deprovisiondifferentmodelreplacement': ('deprovision', 'different_model_replacement'),
-  'deprovisionupgradetransfer': ('deprovision', 'upgrade_transfer'),
-  'deprovisionretiringdevice': ('deprovision', 'retiring_device'),
-  'disable': ('disable', None),
-  'reenable': ('reenable', None),
-  'preprovisioneddisable': ('pre_provisioned_disable', None),
-  'preprovisionedreenable': ('pre_provisioned_reenable', None)
+  'deprovisiondifferentmodelreplace': ('CHANGE_CHROME_OS_DEVICE_STATUS_ACTION_DEPROVISION', 'DEPROVISION_REASON_DIFFERENT_MODEL_REPLACEMENT'),
+  'deprovisiondifferentmodelreplacement': ('CHANGE_CHROME_OS_DEVICE_STATUS_ACTION_DEPROVISION', 'DEPROVISION_REASON_DIFFERENT_MODEL_REPLACEMENT'),
+  'deprovisionretiringdevice': ('CHANGE_CHROME_OS_DEVICE_STATUS_ACTION_DEPROVISION', 'DEPROVISION_REASON_RETIRING_DEVICE'),
+  'deprovisionsamemodelreplace': ('CHANGE_CHROME_OS_DEVICE_STATUS_ACTION_DEPROVISION', 'DEPROVISION_REASON_SAME_MODEL_REPLACEMENT'),
+  'deprovisionsamemodelreplacement': ('CHANGE_CHROME_OS_DEVICE_STATUS_ACTION_DEPROVISION', 'DEPROVISION_REASON_SAME_MODEL_REPLACEMENT'),
+  'deprovisionupgradetransfer': ('CHANGE_CHROME_OS_DEVICE_STATUS_ACTION_DEPROVISION', 'DEPROVISION_REASON_UPGRADE_TRANSFER'),
+  'disable': ('CHANGE_CHROME_OS_DEVICE_STATUS_ACTION_DISABLE', None),
+  'reenable': ('CHANGE_CHROME_OS_DEVICE_STATUS_ACTION_REENABLE', None),
+#  'preprovisioneddisable': ('pre_provisioned_disable', None),
+#  'preprovisionedreenable': ('pre_provisioned_reenable', None)
   }
 
 CROS_ACTION_NAME_MAP = {
-  'deprovision': Act.DEPROVISION,
-  'disable': Act.DISABLE,
-  'reenable': Act.REENABLE,
-  'pre_provisioned_disable': Act.PRE_PROVISIONED_DISABLE,
-  'pre_provisioned_reenable': Act.PRE_PROVISIONED_REENABLE
+  'CHANGE_CHROME_OS_DEVICE_STATUS_ACTION_DEPROVISION': Act.DEPROVISION,
+  'CHANGE_CHROME_OS_DEVICE_STATUS_ACTION_DISABLE': Act.DISABLE,
+  'CHANGE_CHROME_OS_DEVICE_STATUS_ACTION_REENABLE': Act.REENABLE,
+#  'pre_provisioned_disable': Act.PRE_PROVISIONED_DISABLE,
+#  'pre_provisioned_reenable': Act.PRE_PROVISIONED_REENABLE
   }
 
 # gam <CrOSTypeEntity> update <CrOSAttribute>+ [quickcrosmove [<Boolean>]] [nobatchupdate]
 # gam <CrOSTypeEntity> update action <CrOSAction> [acknowledge_device_touch_requirement]
+#	[actionbatchsize <Integer>]
 def updateCrOSDevices(entityList):
   cd = buildGAPIObject(API.DIRECTORY)
   noBatchUpdate = False
@@ -22551,6 +22552,7 @@ def updateCrOSDevices(entityList):
   orgUnitPath = updateNotes = None
   ackWipe = False
   quickCrOSMove = GC.Values[GC.QUICK_CROS_MOVE]
+  actionBatchSize = 10
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg in UPDATE_CROS_ARGUMENT_TO_PROPERTY_MAP:
@@ -22564,16 +22566,18 @@ def updateCrOSDevices(entityList):
         update_body[up] = getString(Cmd.OB_STRING, minLen=0)
     elif myarg == 'action':
       actionLocation = Cmd.Location()
-      action_body['action'], deprovisionReason = getChoice(CROS_ACTION_CHOICE_MAP, mapChoice=True)
+      action_body['changeChromeOsDeviceStatusAction'], deprovisionReason = getChoice(CROS_ACTION_CHOICE_MAP, mapChoice=True)
       if deprovisionReason:
         action_body['deprovisionReason'] = deprovisionReason
-      Act.Set(CROS_ACTION_NAME_MAP[action_body['action']])
+      Act.Set(CROS_ACTION_NAME_MAP[action_body['changeChromeOsDeviceStatusAction']])
     elif myarg == 'acknowledgedevicetouchrequirement':
       ackWipe = True
     elif myarg == 'quickcrosmove':
       quickCrOSMove = getBoolean()
     elif myarg == 'nobatchupdate':
       noBatchUpdate = getBoolean()
+    elif myarg == 'actionbatchsize':
+      actionBatchSize = getInteger(minVal=10, maxVal=250)
     else:
       unknownArgumentExit()
   if action_body and update_body:
@@ -22585,28 +22589,44 @@ def updateCrOSDevices(entityList):
       entityActionFailedWarning([Ent.CROS_DEVICE, ''], f'{Ent.Singular(Ent.ORGANIZATIONAL_UNIT)}: {orgUnitPath}, {Msg.DOES_NOT_EXIST}')
       return
   i, count, entityList = getEntityArgument(entityList)
-  function = None
+# Action
   if action_body:
-    if action_body['action'] == 'deprovision' and not ackWipe:
+    if action_body['changeChromeOsDeviceStatusAction'] == 'CHANGE_CHROME_OS_DEVICE_STATUS_ACTION_DEPROVISION' and not ackWipe:
       stderrWarningMsg(Msg.REFUSING_TO_DEPROVISION_DEVICES.format(count))
       systemErrorExit(ACTION_NOT_PERFORMED_RC, None)
-    function = 'action'
-    parmId = 'resourceId'
-    kwargs = {parmId: None, 'body': action_body}
-  else:
-    if update_body or noBatchUpdate:
-      if orgUnitPath and (not quickCrOSMove or noBatchUpdate):
-        update_body['orgUnitPath'] = orgUnitPath
-        if GC.Values[GC.UPDATE_CROS_OU_WITH_ID]:
-          update_body['orgUnitId'] = orgUnitId
-        orgUnitPath = None
-      function = 'update'
-      parmId = 'deviceId'
-      kwargs = {parmId: None, 'body': update_body, 'fields': ''}
-    if orgUnitPath:
-      Act.Set(Act.ADD)
-      _batchMoveCrOSesToOrgUnit(cd, orgUnitPath, orgUnitId, 0, 0, entityList, quickCrOSMove)
-      Act.Set(Act.UPDATE)
+    while i < count:
+      bcount = min(count-i, actionBatchSize)
+      action_body['deviceIds'] = entityList[i:i+bcount]
+      try:
+        result = callGAPI(cd.customer().devices().chromeos(), 'batchChangeStatus',
+                          throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.CONDITION_NOT_MET, GAPI.INVALID_INPUT,
+                                        GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
+                          customerId=GC.Values[GC.CUSTOMER_ID], body=action_body)
+        for status in result['changeChromeOsDeviceStatusResults']:
+          i += 1
+          deviceId = status['deviceId']
+          if 'error' not in status:
+            entityActionPerformed([Ent.CROS_DEVICE, deviceId], i, count)
+          else:
+            entityActionFailedWarning([Ent.CROS_DEVICE, deviceId], status['error']['message'], i, count)
+      except (GAPI.invalid, GAPI.invalidArgument, GAPI.conditionNotMet, GAPI.invalidInput, GAPI.badRequest, GAPI.forbidden) as e:
+        entityActionFailedExit([Ent.CROS_DEVICE, None], str(e))
+    return
+# Update
+  function = None
+  if update_body or noBatchUpdate:
+    if orgUnitPath and (not quickCrOSMove or noBatchUpdate):
+      update_body['orgUnitPath'] = orgUnitPath
+      if GC.Values[GC.UPDATE_CROS_OU_WITH_ID]:
+        update_body['orgUnitId'] = orgUnitId
+      orgUnitPath = None
+    function = 'update'
+    parmId = 'deviceId'
+    kwargs = {parmId: None, 'body': update_body, 'fields': ''}
+  if orgUnitPath:
+    Act.Set(Act.ADD)
+    _batchMoveCrOSesToOrgUnit(cd, orgUnitPath, orgUnitId, 0, 0, entityList, quickCrOSMove)
+    Act.Set(Act.UPDATE)
   if function is None:
     return
   for deviceId in entityList:
@@ -37878,10 +37898,12 @@ VAULT_SEARCH_METHODS_MAP = {
   'rooms': 'ROOM',
   'shareddrive': 'SHARED_DRIVE',
   'shareddrives': 'SHARED_DRIVE',
+  'sitesurl': 'SITES_URL',
   'teamdrive': 'SHARED_DRIVE',
   'teamdrives': 'SHARED_DRIVE',
   }
 VAULT_CORPUS_ARGUMENT_MAP = {
+  'calendar': 'CALENDAR',
   'drive': 'DRIVE',
   'mail': 'MAIL',
   'groups': 'GROUPS',
@@ -37891,6 +37913,12 @@ VAULT_CORPUS_ARGUMENT_MAP = {
 VAULT_COUNTS_CORPUS_ARGUMENT_MAP = {
   'mail': 'MAIL',
   'groups': 'GROUPS',
+  }
+VAULT_RESPONSE_STATUS_MAP = {
+  'accepted': 'ATTENDEE_RESPONSE_ACCEPTED',
+  'declined': 'ATTENDEE_RESPONSE_DECLINED',
+  'needsaction': 'ATTENDEE_RESPONSE_NEEDS_ACTION',
+  'tentative': 'ATTENDEE_RESPONSE_TENTATIVE',
   }
 VAULT_VOICE_COVERED_DATA_MAP = {
   'calllogs': 'CALL_LOGS',
@@ -37903,8 +37931,16 @@ VAULT_EXPORT_DATASCOPE_MAP = {
   'unprocesseddata': 'UNPROCESSED_DATA',
   }
 VAULT_EXPORT_FORMAT_MAP = {
+  'ics': 'ICS',
   'mbox': 'MBOX',
   'pst': 'PST',
+  }
+VAULT_CORPUS_EXPORT_FORMATS = {
+  'CALENDAR': ['ICS', 'PST'],
+  'DRIVE': [],
+  'GROUPS': ['MBOX', 'PST'],
+  'HANGOUTS_CHAT': ['MBOX', 'PST'],
+  'VOICE' : ['MBOX', 'PST'],
   }
 VAULT_EXPORT_REGION_MAP = {
   'any': 'ANY',
@@ -37912,6 +37948,7 @@ VAULT_EXPORT_REGION_MAP = {
   'us': 'US',
   }
 VAULT_CORPUS_OPTIONS_MAP = {
+  'CALENDAR': 'calendarOptions',
   'DRIVE': 'driveOptions',
   'MAIL': 'mailOptions',
   'GROUPS': 'groupsOptions',
@@ -37927,8 +37964,17 @@ VAULT_CORPUS_QUERY_MAP = {
   }
 VAULT_QUERY_ARGS = [
   'corpus', 'scope', 'terms', 'start', 'starttime', 'end', 'endtime', 'timezone',
-  'includerooms', 'excludedrafts',
-  'driveversiondate', 'includeshareddrives', 'includeteamdrives'] + list(VAULT_SEARCH_METHODS_MAP.keys())
+# calendar
+  'locationquery', 'peoplequery', 'minuswords', 'responsestatuses', 'caldendarversiondate',
+# drive
+  'driveversiondate', 'includeshareddrives', 'includeteamdrives',
+# hangoutsChat
+  'includerooms',
+# mail
+  'excludedrafts',
+# voice
+  'covereddata',
+  ] + list(VAULT_SEARCH_METHODS_MAP.keys())
 
 def _buildVaultQuery(myarg, query, corpusArgumentMap):
   if not query:
@@ -37949,6 +37995,8 @@ def _buildVaultQuery(myarg, query, corpusArgumentMap):
       query['sharedDriveInfo'] = {'sharedDriveIds': getString(Cmd.OB_SHAREDDRIVE_ID_LIST).replace(',', ' ').split()}
     elif searchMethod == 'ROOM':
       query['hangoutsChatInfo'] = {'roomId': getString(Cmd.OB_ROOM_LIST).replace(',', ' ').split()}
+    elif searchMethod == 'SITES_URL':
+      query['sitesUrlInfo'] = {'urls': getString(Cmd.OB_URL_LIST).replace(',', ' ').split()}
   elif myarg == 'scope':
     query['dataScope'] = getChoice(VAULT_EXPORT_DATASCOPE_MAP, mapChoice=True)
   elif myarg == 'terms':
@@ -37959,37 +38007,64 @@ def _buildVaultQuery(myarg, query, corpusArgumentMap):
     query['endTime'] = getTimeOrDeltaFromNow()
   elif myarg == 'timezone':
     query['timeZone'] = getString(Cmd.OB_STRING)
-  elif myarg == 'includerooms':
-    query['hangoutsChatOptions'] = {'includeRooms': getBoolean()}
-  elif myarg == 'excludedrafts':
-    query['mailOptions'] = {'excludeDrafts': getBoolean()}
+# calendar
+  elif myarg == 'locationquery':
+    query.setdefault('calendarOptions', {})['locationQuery'] = shlexSplitList(getString(Cmd.OB_STRING_LIST))
+  elif myarg == 'peoplequery':
+    query.setdefault('calendarOptions', {})['peopleQuery'] = shlexSplitList(getString(Cmd.OB_STRING_LIST))
+  elif myarg == 'minuswords':
+    query.setdefault('calendarOptions', {})['minusWords'] = shlexSplitList(getString(Cmd.OB_STRING_LIST))
+  elif myarg == 'responsestatuses':
+    query.setdefault('calendarOptions', {})['responseStatuses'] = []
+    for response in getString(Cmd.OB_FIELD_NAME_LIST).lower().replace('_', '').replace(',', ' ').split():
+      if response in VAULT_RESPONSE_STATUS_MAP:
+        query['calendarOptions']['responseStatuses'].append(VAULT_RESPONSE_STATUS_MAP[response])
+      else:
+        invalidChoiceExit(response, VAULT_RESPONSE_STATUS_MAP, True)
+  elif myarg == 'calendarversiondate':
+    query.setdefault('calendarOptions', {})['versionDate'] = getTimeOrDeltaFromNow()
+# drive
   elif myarg == 'driveversiondate':
     query.setdefault('driveOptions', {})['versionDate'] = getTimeOrDeltaFromNow()
   elif myarg in {'includeshareddrives', 'includeteamdrives'}:
     query.setdefault('driveOptions', {})['includeSharedDrives'] = getBoolean()
+# hangoutsChat
+  elif myarg == 'includerooms':
+    query['hangoutsChatOptions'] = {'includeRooms': getBoolean()}
+# mail
+  elif myarg == 'excludedrafts':
+    query['mailOptions'] = {'excludeDrafts': getBoolean()}
+# voice
+  elif myarg == 'covereddata':
+    query['voiceOptions'] = {'coveredData': getChoice(VAULT_VOICE_COVERED_DATA_MAP, mapChoice=True)}
 
-def _validateVaultQuery(query):
-  if 'corpus' not in query:
+def _validateVaultQuery(body):
+  if 'corpus' not in body['query']:
     missingArgumentExit(f'corpus {formatChoiceList(VAULT_CORPUS_ARGUMENT_MAP)}')
-  if 'searchMethod' not in query:
+  if 'searchMethod' not in body['query']:
     missingArgumentExit(formatChoiceList(VAULT_SEARCH_METHODS_MAP))
+  for corpus, options in iter(VAULT_CORPUS_OPTIONS_MAP.items()):
+    if body['query']['corpus'] != corpus:
+      body['exportOptions'].pop(options, None)
 
-# gam create vaultexport|export matter <MatterItem> [name <String>] corpus drive|mail|groups|hangouts_chat|voice
+# gam create vaultexport|export matter <MatterItem> [name <String>] corpus calendar|drive|mail|groups|hangouts_chat|voice
 #	(accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
 #	(shareddrives|teamdrives <TeamDriveIDList>) | (rooms <RoomList>)
 #	[scope <all_data|held_data|unprocessed_data>]
 #	[terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
+#	[locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
+#	[responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*] [calendarversiondate <Date>|<Time>]
+#	[includeshareddrives <Boolean>] [driveversiondate <Date>|<Time>] [includeaccessinfo <Boolean>]
+#	[includerooms <Boolean>]
 #	[excludedrafts <Boolean>] [format mbox|pst]
 #	[showconfidentialmodecontent <Boolean>] [usenewexport <Boolean>]
-#	[includerooms <Boolean>]
 #	[covereddata calllogs|textmessages|voicemails]
-#	[includeshareddrives|includeteamdrives <Boolean>] [driveversiondate <Date>|<Time>] [includeaccessinfo <Boolean>]
 #	[region any|europe|us] [showdetails|returnidonly]
 def doCreateVaultExport():
   v = buildGAPIObject(API.VAULT)
   matterId = None
   body = {'query': {'dataScope': 'ALL_DATA'}, 'exportOptions': {}}
-  exportFormat = 'MBOX'
+  exportFormat = None
   showConfidentialModeContent = None
   returnIdOnly = showDetails = False
   useNewExport = None
@@ -38024,24 +38099,26 @@ def doCreateVaultExport():
       unknownArgumentExit()
   if not matterId:
     missingArgumentExit('matter')
-  _validateVaultQuery(body['query'])
+  _validateVaultQuery(body)
+  if exportFormat is not None:
+    if not exportFormat in VAULT_CORPUS_EXPORT_FORMATS[body['query']['corpus']]:
+      invalidChoiceExit(exportFormat, VAULT_CORPUS_EXPORT_FORMATS[body['query']['corpus']], False)
+  elif body['query']['corpus'] != 'DRIVE':
+    exportFormat = VAULT_CORPUS_EXPORT_FORMATS[body['query']['corpus']][0]
   if 'name' not in body:
     body['name'] = f'GAM {body["query"]["corpus"]} Export - {ISOformatTimeStamp(todaysTime())}'
   optionsField = VAULT_CORPUS_OPTIONS_MAP[body['query']['corpus']]
   if body['query']['corpus'] != 'DRIVE':
-    body['exportOptions'].pop('driveOptions', None)
     body['exportOptions'][optionsField] = {'exportFormat': exportFormat}
     if body['query']['corpus'] == 'MAIL':
       if showConfidentialModeContent is not None:
         body['exportOptions'][optionsField]['showConfidentialModeContent'] = showConfidentialModeContent
       if useNewExport is not None:
         body['exportOptions'][optionsField]['useNewExport'] = useNewExport
-  if body['query']['corpus'] != 'VOICE':
-    body['exportOptions'].pop('voiceOptions', None)
   try:
     export = callGAPI(v.matters().exports(), 'create',
                       throwReasons=[GAPI.ALREADY_EXISTS, GAPI.BAD_REQUEST, GAPI.BACKEND_ERROR, GAPI.INVALID_ARGUMENT,
-                                    GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN, GAPI.QUOTA_EXCEEDED],
+                                    GAPI.INVALID, GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN, GAPI.QUOTA_EXCEEDED],
                       matterId=matterId, body=body)
     if not returnIdOnly:
       entityActionPerformed([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_EXPORT, formatVaultNameId(export['name'], export['id'])])
@@ -38050,7 +38127,7 @@ def doCreateVaultExport():
     else:
       writeStdout(f'{export["id"]}\n')
   except (GAPI.alreadyExists, GAPI.badRequest, GAPI.backendError, GAPI.invalidArgument,
-          GAPI.failedPrecondition, GAPI.forbidden, GAPI.quotaExceeded) as e:
+          GAPI.invalid, GAPI.failedPrecondition, GAPI.forbidden, GAPI.quotaExceeded) as e:
     entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_EXPORT, body.get('name')], str(e))
 
 # gam delete vaultexport|export <ExportItem> matter <MatterItem>
@@ -39508,12 +39585,9 @@ PRINT_VAULT_COUNTS_TITLES = ['account', 'count', 'error']
 # gam print vaultcounts [todrive <ToDriveAttributes>*]
 #	matter <MatterItem> corpus mail|groups
 #	(accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
-#	(shareddrives|teamdrives <TeamDriveIDList>) | (rooms <RoomList>)
 #	[scope <all_data|held_data|unprocessed_data>]
 #	[terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
 #	[excludedrafts <Boolean>]
-#	[includerooms <Boolean>]
-#	[includeshareddrives|includeteamdrives <Boolean>] [driveversiondate <Date>|<Time>]
 #	[wait <Integer>]
 # gam print vaultcounts [todrive <ToDriveAttributes>*]
 #	 matter <MatterItem> operation <String> [wait <Integer>]
@@ -39544,8 +39618,8 @@ def doPrintVaultCounts():
     operation = {'name': name}
     doWait = False
   else:
-    _validateVaultQuery(query)
     body['query'] = query
+    _validateVaultQuery(body)
     try:
       operation = callGAPI(v.matters(), 'count',
                            throwReasons=[GAPI.INVALID_ARGUMENT],
@@ -67148,7 +67222,7 @@ def printShowDelegates(users):
       printGettingAllEntityItemsForWhom(Ent.DELEGATE, user, i, count)
     try:
       result = callGAPI(gmail.users().settings().delegates(), 'list',
-                        throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED],
+                        throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                         userId='me')
       delegates = result.get('delegates', []) if result is not None else []
       jcount = len(delegates)
@@ -67195,7 +67269,7 @@ def printShowDelegates(users):
                               'delegationStatus': delegate['verificationStatus']})
         elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
           csvPF.WriteRowNoFilter({'User': user})
-    except GAPI.permissionDenied as e:
+    except (GAPI.permissionDenied, GAPI.failedPrecondition) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.DELEGATE, None], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.badRequest):
       entityServiceNotApplicableWarning(Ent.USER, user, i, count)

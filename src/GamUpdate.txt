@@ -2,6 +2,15 @@
 
 Merged GAM-Team version
 
+6.67.00
+
+Updated `gam <CrOSTypeEntity> update action <CrOSAction>` to use the new API function `batchChangeStatus`
+that replaces the old API function `action`; ChromeOS devices are now processed in batches.
+The batch size defaults to 10, the `actionbatchsize <Integer>` option can be used to set a batch size between 10 and 250.
+
+Updated `gam create vaultexport matter <MatterItem>` to support `corpus calendar`.
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Vault-Takeout#create-vault-exports
+
 6.66.16
 
 Added option `convertcrnl` to `gam update chromepolicy` to properly handle carriage returns (\r) and line feeds (\n)

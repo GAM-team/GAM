@@ -991,6 +991,7 @@ class GamCLArgs():
   OB_TRANSFER_ID = 'TransferID'
   OB_URI = 'URI'
   OB_URL = 'URL'
+  OB_URL_LIST = 'URLList'
   OB_USER_ENTITY = 'UserEntity'
   OB_USER_ITEM = 'UserItem'
   OB_USER_NAME = 'UserName'
