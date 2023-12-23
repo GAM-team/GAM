@@ -97,6 +97,7 @@
 <TasklistIDTaskIDList> ::= "<TasklistIDTaskID>(,<TasklistIDTaskID>)*"
 <ThreadIDList> ::= "<ThreadID>(,<ThreadID>)*"
 <TimeList> ::= "<Time>(,<Time>)*"
+<URLList> ::= "<URL>(,<URL>)*"
 <UserList> ::= "<UserItem>(,<UserItem>)*"
 <YouTubeChannelIDList> ::= "<YouTubeChannelID>(,<YouTubeChannelID>)*"
 ```

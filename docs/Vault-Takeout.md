@@ -53,6 +53,7 @@
 <MatterItem> ::= <UniqueID>|<String>
 <MatterState> ::= open|closed|deleted
 <MatterStateList> ::= "<MatterState>(,<MatterState>)*"
+<URLList> ::= "<URL>(,<URL>)*"
 
 <QueryVaultCorpus> ::= <String>
         See: https://developers.google.com/vault/reference/rest/v1/matters.holds#CorpusQuery
@@ -210,7 +211,7 @@ Create a Google Vault export request.
 ```
 gam create vaultexport|export matter <MatterItem> [name <String>] corpus calendar|drive|mail|groups|hangouts_chat|voice
         (accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
-        (shareddrives|teamdrives <SharedDriveIDList>) | (rooms <RoomList>)
+        (shareddrives|teamdrives <SharedDriveIDList>) | (rooms <RoomList>) | (sitesurl <URLList>)
         [scope all_data|held_data|unprocessed_data]
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
         [locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
@@ -242,6 +243,7 @@ Specify the search method, this option is required:
 * `everyone` - Search for all accounts in the organization
 * `shareddrives|teamdrives <SharedDriveIDList>` - Search for all accounts in the Shared Drives specified in `<SharedDriveIDList>`
 * `rooms <RoomList>` - Search in the Room specified in the chat rooms specified in `<RoomList>`
+* `sitesurl <URLList>` - Search the published site URLs of new Google Sites
 
 Specify the scope of data to include in the export:
 * `all_data` - All available data; this is the default
