@@ -38038,9 +38038,9 @@ def _buildVaultQuery(myarg, query, corpusArgumentMap):
   elif myarg == 'covereddata':
     query['voiceOptions'] = {'coveredData': getChoice(VAULT_VOICE_COVERED_DATA_MAP, mapChoice=True)}
 
-def _validateVaultQuery(body):
+def _validateVaultQuery(body, corpusArgumentMap):
   if 'corpus' not in body['query']:
-    missingArgumentExit(f'corpus {formatChoiceList(VAULT_CORPUS_ARGUMENT_MAP)}')
+    missingArgumentExit(f'corpus {formatChoiceList(corpusArgumentMap)}')
   if 'searchMethod' not in body['query']:
     missingArgumentExit(formatChoiceList(VAULT_SEARCH_METHODS_MAP))
   if 'exportOptions' in body:
@@ -38100,7 +38100,7 @@ def doCreateVaultExport():
       unknownArgumentExit()
   if not matterId:
     missingArgumentExit('matter')
-  _validateVaultQuery(body)
+  _validateVaultQuery(body, VAULT_CORPUS_ARGUMENT_MAP)
   if exportFormat is not None:
     if not exportFormat in VAULT_CORPUS_EXPORT_FORMATS[body['query']['corpus']]:
       invalidChoiceExit(exportFormat, VAULT_CORPUS_EXPORT_FORMATS[body['query']['corpus']], False)
@@ -39620,7 +39620,7 @@ def doPrintVaultCounts():
     doWait = False
   else:
     body['query'] = query
-    _validateVaultQuery(body)
+    _validateVaultQuery(body, VAULT_COUNTS_CORPUS_ARGUMENT_MAP)
     try:
       operation = callGAPI(v.matters(), 'count',
                            throwReasons=[GAPI.INVALID_ARGUMENT],
