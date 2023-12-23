@@ -38043,13 +38043,14 @@ def _validateVaultQuery(body):
     missingArgumentExit(f'corpus {formatChoiceList(VAULT_CORPUS_ARGUMENT_MAP)}')
   if 'searchMethod' not in body['query']:
     missingArgumentExit(formatChoiceList(VAULT_SEARCH_METHODS_MAP))
-  for corpus, options in iter(VAULT_CORPUS_OPTIONS_MAP.items()):
-    if body['query']['corpus'] != corpus:
-      body['exportOptions'].pop(options, None)
+  if 'exportOptions' in body:
+    for corpus, options in iter(VAULT_CORPUS_OPTIONS_MAP.items()):
+      if body['query']['corpus'] != corpus:
+        body['exportOptions'].pop(options, None)
 
 # gam create vaultexport|export matter <MatterItem> [name <String>] corpus calendar|drive|mail|groups|hangouts_chat|voice
 #	(accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
-#	(shareddrives|teamdrives <TeamDriveIDList>) | (rooms <RoomList>)
+#	(shareddrives|teamdrives <TeamDriveIDList>) | (rooms <RoomList>) | (sitesurl <URLList>)
 #	[scope <all_data|held_data|unprocessed_data>]
 #	[terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
 #	[locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]

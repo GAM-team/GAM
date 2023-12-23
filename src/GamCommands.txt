@@ -728,6 +728,7 @@ If an item contains spaces, it should be surrounded by ".
 <TasklistIDTaskIDList> ::= "<TasklistIDTaskID>(,<TasklistIDTaskID>)*"
 <ThreadIDList> ::= "<ThreadID>(,<ThreadID>)*"
 <TimeList> ::= "<Time>(,<Time>)*"
+<URLList> ::= "<URL>(,<URL>)*"
 <UserList> ::= "<UserItem>(,<UserItem>)*"
 <YouTubeChannelIDList> ::= "<YouTubeChannelID>(,<YouTubeChannelID>)*"
 
@@ -4907,7 +4908,7 @@ gam print vaultcounts [todrive <ToDriveAttributes>*]
 
 gam create vaultexport|export matter <MatterItem> [name <String>] corpus calendar|drive|mail|groups|hangouts_chat|voice
         (accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
-        (shareddrives|teamdrives <SharedDriveIDList>) | (rooms <RoomList>)
+        (shareddrives|teamdrives <SharedDriveIDList>) | (rooms <RoomList>) | (sitesurl <URLList>)
         [scope all_data|held_data|unprocessed_data]
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
         [locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
