@@ -6011,13 +6011,12 @@ gam <UserTypeEntity> copy drivefile <DriveFileEntity>
         [summary [<Boolean>]] [showpermissionmessages [<Boolean>]]
         [<DriveFileParentAttribute>]
         [mergewithparent [<Boolean>]] [recursive [depth <Number>]]
-        <DriveFileCopyAttribute>*
-        [skipids <DriveFileEntity>]
         [copysubfiles [<Boolean>]] [filenamematchpattern <RegularExpression>]
              [filemimetype [not] <MimeTypeList>]
         [copysubfilesownedby any|me|others]
         [copysubfolders [<Boolean>]] [foldernamematchpattern <RegularExpression>]
         [copysubshortcuts [<Boolean>]] [shortcutnamematchpattern <RegularExpression>]
+        <DriveFileCopyAttribute>*
         [duplicatefiles overwriteolder|overwriteall|duplicatename|uniquename|skip]
         [duplicatefolders merge|duplicatename|uniquename|skip]
         [copiedshortcutspointtocopiedfiles [<Boolean>]]
@@ -6046,7 +6045,6 @@ gam <UserTypeEntity> move drivefile <DriveFileEntity> [newfilename <DriveFileNam
         [summary [<Boolean>]] [showpermissionmessages [<Boolean>]]
         [<DriveFileParentAttribute>]
         [mergewithparent|mergewithparentretain [<Boolean>]]
-        [skipids <DriveFileEntity>]
         [createshortcutsfornonmovablefiles [<Boolean>]]
         [duplicatefiles overwriteolder|overwriteall|duplicatename|uniquename|skip]
         [duplicatefolders merge|duplicatename|uniquename|skip]
@@ -6258,7 +6256,6 @@ gam <UserTypeEntity> print filerevisions <DriveFileEntity> [todrive <ToDriveAttr
 
 gam <UserTypeEntity> transfer ownership <DriveFileEntity> <UserItem>
         [<DriveFileParentAttribute>] [includetrashed] [norecursion [<Boolean>]]
-        [skipids <DriveFileEntity>]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [preview] [filepath] [pathdelimiter <Character>] [buildtree]
         [todrive <ToDriveAttribute>*]

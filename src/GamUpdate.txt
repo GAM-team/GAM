@@ -2,25 +2,6 @@
 
 Merged GAM-Team version
 
-6.67.02
-
-Added option `skipids <DriveFileEntity>` to `gam <UserTypeEntity> transfer drive` that handles special cases
-where you want to prevent ownership from being transferred for selected files/folders.
-
-Added option `skipids <DriveFileEntity>` to `gam <UserTypeEntity> copy drivefile` that handles special cases
-where you want to prevent selected files/folders from being copied.
-
-Added option `skipids <DriveFileEntity>` to `gam <UserTypeEntity> move drivefile` that handles special cases
-where you want to prevent selected files/folders from being moved.
-
-Updated commands that create files/folders on Shared Drives to handle the following errors:
-```
-storageQuotaExceeded
-teamDriveFileLimitExceeded
-teamDriveHierarchyTooDeep
-```
-* See: https://support.google.com/a/users/answer/7338880#shared_drives_file_folder_limits
-
 6.67.01
 
 Fixed bug in `gam print vaultcounts` that caused a trap.

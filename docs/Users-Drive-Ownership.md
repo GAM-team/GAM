@@ -60,7 +60,6 @@ Use [Users - Drive - Transfer](Users-Drive-Transfer) for more complex ownership 
 ```
 gam <UserTypeEntity> transfer ownership <DriveFileEntity> <UserItem>
         [<DriveFileParentAttribute>] [includetrashed] [norecursion [<Boolean>]]
-        [skipids <DriveFileEntity>]
         (orderby <DriveOrderByFieldName> [ascending|descending])*
         [preview] [filepath] [pathdelimiter <Character>] [buildtree] [todrive <ToDriveAttribute>*]
 ```
@@ -72,9 +71,6 @@ By default, files in the trash are not transferred.
 
 By default, ownership transfer of a folder includes all of its sub files and folders.
 * `norecursion` or `norecursion true` - No sub files and folders of the selected folder have their ownership transferred.
-
-This option handles special cases where you want to prevent selected files/folders ownership from being transferred.
-* `skipids <DriveFileEntity>` - Do not transfer ownership for files/folders with the specified IDs.
 
 Specify order of file processing.
 * `(orderby <DriveOrderByFieldName> [ascending|descending])*`
@@ -111,9 +107,9 @@ By default, files in the trash are not transferred.
 Specify order of file processing.
 * `(orderby <DriveOrderByFieldName> [ascending|descending])*`
 
-These options handle special cases where you want to prevent ownership from being transferred for selected files/folders.
-* `skipids <DriveFileEntity>` - Do not transfer ownership for files/folders with the specified IDs.
-* `skipusers <UserTypeEntity>` - Do not transfer ownership for files/folders owned by the specified users.
+These options handle special cases where you want to prevent ownership from being transferred for selected files.
+* `skipids <DriveFileEntity>` - Do not transfer ownership for files with the specified IDs.
+* `skipusers <UserTypeEntity>` - Do not transfer ownership for files owned by the specified users.
 
 By default, only files owned by users in the same domain as the claiming user have their ownership transferred.
 * `subdomains <DomainNameEntity>` - Transfer ownership for files in the selected sub-domains.
