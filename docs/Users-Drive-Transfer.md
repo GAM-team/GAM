@@ -37,8 +37,8 @@ gam <UserTypeEntity> transfer drive <UserItem> [select <DriveFileEntity>]
 By default, all of the source users files will be transferred except those in the trash. If you want to transfer a subset of
 the source users files, use the `select <DriveFileEntity>` option.
 
-This option handles special cases where you want to prevent selected files from being transferred.
-* `skipids <DriveFileEntity>` - Do not transfer files with the specified IDs.
+This option handles special cases where you want to prevent selected files/folders from being transferred.
+* `skipids <DriveFileEntity>` - Do not transfer files/folders with the specified IDs.
 
 You can specify the access that the source user retains to the files that it owns.
 If no option is  specified, the source user retains no access to the transferred files.

@@ -16,6 +16,7 @@
 ## API documentation
 * https://developers.google.com/drive/api/v3/reference/files
 * https://support.google.com/a/answer/7374057
+* https://support.google.com/a/users/answer/7338880
 
 ## Definitions
 * [`<DriveFileEntity>`](Drive-File-Selection)
@@ -66,12 +67,13 @@ gam <UserTypeEntity> copy drivefile <DriveFileEntity>
         [summary [<Boolean>]] [showpermissionmessages [<Boolean>]]
         [<DriveFileParentAttribute>]
         [mergewithparent [<Boolean>]] [recursive [depth <Number>]]
+        <DriveFileCopyAttribute>*
+        [skipids <DriveFileEntity>]
         [copysubfiles [<Boolean>]] [filenamematchpattern <RegularExpression>]
              [filemimetype [not] <MimeTypeList>]
         [copysubfilesownedby any|me|others]
         [copysubfolders [<Boolean>]] [foldernamematchpattern <RegularExpression>]
         [copysubshortcuts [<Boolean>]] [shortcutnamematchpattern <RegularExpression>]
-        <DriveFileCopyAttribute>*
         [duplicatefiles overwriteolder|overwriteall|duplicatename|uniquename|skip]
         [duplicatefolders merge|duplicatename|uniquename|skip]
         [copiedshortcutspointtocopiedfiles [<Boolean>]]
@@ -124,6 +126,9 @@ The `depth <Number>` argument controls which files or folders within the top fol
 * `depth -1` - all files and folders in the top folder and below are copied; this is the default.
 * `depth 0` - the files or folders in the top folder are copied, no descendants of folders are copied.
 * `depth N` - the files and folders within the top folder and those files and folders N levels below the top folder are copied.
+
+### This option handles special cases where you want to prevent selected files/folders from being copied.
+* `skipids <DriveFileEntity>` - Do not copy files/folders with the specified IDs.
 
 ### By default, when recursively copying a top folder, all sub files, folders and shortcuts are copied, subject to the `depth` option.
 You can specify whether sub files, folders and shortcuts are copied. If sub folders are not copied, their contents are not copied.
@@ -203,6 +208,7 @@ In previous versions, copying shortcuts caused an error because shortcuts can't 
 
 If a shortcut in the source structure points to a file/folder that is not in the source structure:
  * The shortcut is re-created to point to the original file/folder.
+
 If a shortcut in the source structure points to a file/folder that is in the source structure:
 * `copiedshortcutspointtocopiedfiles` omitted or `copiedshortcutspointtocopiedfiles true` - The shortcut is re-created to point to the copied file/folder.
 * `copiedshortcutspointtocopiedfiles false` - The shortcut is re-created to point to the original file/folder.
@@ -438,6 +444,7 @@ gam <UserTypeEntity> move drivefile <DriveFileEntity> [newfilename <DriveFileNam
         [<DriveFileParentAttribute>]
         [mergewithparent|mergewithparentretain [<Boolean>]]
         [createshortcutsfornonmovablefiles [<Boolean>]]
+        [skipids <DriveFileEntity>]
         [duplicatefiles overwriteolder|overwriteall|duplicatename|uniquename|skip]
         [duplicatefolders merge|duplicatename|uniquename|skip]
         [copymergewithparentfolderpermissions [<Boolean>]]
@@ -487,6 +494,10 @@ This is the default mode.
 * `teamdriveparentid <SharedDriveID> teamdriveparentname <DriveFolderName>` - A Shared Drive ID and a folder name  on that Shared Drive.
 * `teamdriveparent <SharedDriveName> teamdriveparentname <DriveFolderName>` - A Shared Drive name and a folder name on that Shared Drive.
 * If none of the parent options are specified, the moved file/folder will be located in the source folder.
+
+### This option handles special cases where you want to prevent selected files/folders from being moved.
+* `skipids <DriveFileEntity>` - Do not move files/folders with the specified IDs.
+If any files/folders are skipped, GAM retains the top source folder and its sub folders while moving the sub files to the target folder.
 
 ### Duplicate files
 When moving files, these options control the action GAM takes when a target file has the same name and MIME type as the source file:

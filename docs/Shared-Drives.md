@@ -28,6 +28,7 @@
 * https://developers.google.com/drive/api/v3/reference/teamdrives/list
 * https://support.google.com/a/answer/7374057
 * https://workspaceupdates.googleblog.com/2022/05/shared-drives-in-organizational-units-open-beta.html
+* https://support.google.com/a/users/answer/7338880
 
 ## Query documentation
 * https://developers.google.com/drive/api/v3/search-shareddrives
