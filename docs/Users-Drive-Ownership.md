@@ -107,9 +107,9 @@ By default, files in the trash are not transferred.
 Specify order of file processing.
 * `(orderby <DriveOrderByFieldName> [ascending|descending])*`
 
-These options handle special cases where you want to prevent ownership from being transferred for selected files.
-* `skipids <DriveFileEntity>` - Do not transfer ownership for files with the specified IDs.
-* `skipusers <UserTypeEntity>` - Do not transfer ownership for files owned by the specified users.
+These options handle special cases where you want to prevent ownership from being transferred for selected files/folders.
+* `skipids <DriveFileEntity>` - Do not transfer ownership for files/folders with the specified IDs.
+* `skipusers <UserTypeEntity>` - Do not transfer ownership for files/folders owned by the specified users.
 
 By default, only files owned by users in the same domain as the claiming user have their ownership transferred.
 * `subdomains <DomainNameEntity>` - Transfer ownership for files in the selected sub-domains.

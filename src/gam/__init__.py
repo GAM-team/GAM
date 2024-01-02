@@ -57198,7 +57198,6 @@ def moveDriveFile(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    origUser = user
     user, drive, jcount = _validateUserGetFileIDs(user, i, count, fileIdEntity, entityType=Ent.DRIVE_FILE_OR_FOLDER)
     if jcount == 0:
       continue
@@ -59257,7 +59256,7 @@ def claimOwnership(users):
     for fileId in fileIdEntity['list']:
       j += 1
       filesToClaim = {}
-      kVlist = [Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, fileId]
+      kvList = [Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, fileId]
       if buildTree:
         fileEntry = fileTree.get(fileId)
         if not fileEntry:

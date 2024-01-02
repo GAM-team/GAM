@@ -2,6 +2,10 @@
 
 Merged GAM-Team version
 
+6.67.03
+
+Fixed bug introduced in 6.67.02  in `gam <UserTypeEntity> claim ownership` that caused a trap.
+
 6.67.02
 
 Added option `skipids <DriveFileEntity>` to `gam <UserTypeEntity> copy drivefile` that handles special cases

@@ -1,3 +1,4 @@
+
 # Update GAMADV-XTD3 to latest version
 Automatic update to the latest version on Linux/Mac OS/Google Cloud Shell/Raspberry Pi/ChromeOS:
 - Do not create project or authorizations, default path `$HOME/bin`
@@ -9,6 +10,26 @@ By default, a folder, `gamadv-xtd3`, is created in the default or specified path
 Add the `-s` option to the end of the above commands to suppress creating the `gamadv-xtd3` folder; the files are downloaded directly into the default or specified path.
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
+
+### 6.67.03
+
+Fixed bug introduced in 6.67.02  in `gam <UserTypeEntity> claim ownership` that caused a trap.
+
+### 6.67.02
+
+Added option `skipids <DriveFileEntity>` to `gam <UserTypeEntity> transfer drive` that handles special cases
+where you want to prevent ownership from being transferred for selected files/folders.
+
+Added option `skipids <DriveFileEntity>` to `gam <UserTypeEntity> copy drivefile` that handles special cases
+where you want to prevent selected files/folders from being copied.
+
+Updated commands that create files/folders on Shared Drives to handle the following errors:
+```
+storageQuotaExceeded
+teamDriveFileLimitExceeded
+teamDriveHierarchyTooDeep
+```
+* See: https://support.google.com/a/users/answer/7338880#shared_drives_file_folder_limits
 
 ### 6.67.01
 
