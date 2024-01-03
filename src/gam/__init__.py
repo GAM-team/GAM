@@ -68130,10 +68130,10 @@ def setForward(users):
       continue
     try:
       result = callGAPI(gmail.users().settings(), 'updateAutoForwarding',
-                        throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.FAILED_PRECONDITION, GAPI.INVALID],
+                        throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.INVALID, GAPI.FAILED_PRECONDITION, GAPI.PERMISSION_DENIED],
                         userId='me', body=body)
       _showForward(user, i, count, result)
-    except (GAPI.failedPrecondition, GAPI.invalid) as e:
+    except (GAPI.invalid, GAPI.failedPrecondition, GAPI.permissionDenied) as e:
       if enable:
         entityActionFailedWarning([Ent.USER, user, Ent.FORWARDING_ADDRESS, body['emailAddress']], str(e), i, count)
       else:
@@ -68205,13 +68205,13 @@ def _processForwardingAddress(user, i, count, emailAddress, j, jcount, gmail, fu
   try:
     result = callGAPI(gmail.users().settings().forwardingAddresses(), function,
                       throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.ALREADY_EXISTS, GAPI.DUPLICATE,
-                                                             GAPI.INVALID_ARGUMENT, GAPI.FAILED_PRECONDITION],
+                                                             GAPI.INVALID_ARGUMENT, GAPI.FAILED_PRECONDITION, GAPI.PERMISSION_DENIED],
                       userId='me', **kwargs)
     if function == 'get':
       _showForwardingAddress(j, count, result)
     else:
       entityActionPerformed([Ent.USER, user, Ent.FORWARDING_ADDRESS, emailAddress], j, jcount)
-  except (GAPI.notFound, GAPI.alreadyExists, GAPI.duplicate, GAPI.invalidArgument, GAPI.failedPrecondition) as e:
+  except (GAPI.notFound, GAPI.alreadyExists, GAPI.duplicate, GAPI.invalidArgument, GAPI.failedPrecondition, GAPI.permissionDenied) as e:
     entityActionFailedWarning([Ent.USER, user, Ent.FORWARDING_ADDRESS, emailAddress], str(e), j, jcount)
   except (GAPI.serviceNotAvailable, GAPI.badRequest):
     entityServiceNotApplicableWarning(Ent.USER, user, i, count)
@@ -68548,14 +68548,14 @@ def _processSendAs(user, i, count, entityType, emailAddress, j, jcount, gmail, f
     result = callGAPI(gmail.users().settings().sendAs(), function,
                       throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.ALREADY_EXISTS, GAPI.DUPLICATE,
                                                              GAPI.CANNOT_DELETE_PRIMARY_SENDAS, GAPI.INVALID_ARGUMENT,
-                                                             GAPI.FAILED_PRECONDITION],
+                                                             GAPI.FAILED_PRECONDITION, GAPI.PERMISSION_DENIED],
                       userId='me', **kwargs)
     if function == 'get':
       _showSendAs(result, j, jcount, sigReplyFormat, verifyOnly)
     else:
       entityActionPerformed([Ent.USER, user, entityType, emailAddress], j, jcount)
   except (GAPI.notFound, GAPI.alreadyExists, GAPI.duplicate,
-          GAPI.cannotDeletePrimarySendAs, GAPI.invalidArgument, GAPI.failedPrecondition) as e:
+          GAPI.cannotDeletePrimarySendAs, GAPI.invalidArgument, GAPI.failedPrecondition, GAPI.permissionDenied) as e:
     entityActionFailedWarning([Ent.USER, user, entityType, emailAddress], str(e), j, jcount)
   except (GAPI.serviceNotAvailable, GAPI.badRequest):
     entityServiceNotApplicableWarning(Ent.USER, user, i, count)

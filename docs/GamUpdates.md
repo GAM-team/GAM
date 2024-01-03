@@ -11,6 +11,24 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.67.05
+
+Updated the following commands:
+```
+gam <UserTypeEntity> create|delete|update delegate
+gam <UserTypeEntity> forward
+gam <UserTypeEntity> create|delete forwardingaddresses
+gam <UserTypeEntity> create|delete sendas
+```
+to handle this error:
+```
+ERROR: 403: permissionDenied - Insufficient Permission
+```
+when the following serice account scope is not enabled:
+```
+[ ] 28)  Gmail API - Sharing Settings (Delegates, Forwarding, SendAs) - write
+```
+
 ### 6.67.04
 
 Updated user attribute `replace <Tag> <UserReplacement>` to allow `field:photourl` which allows
