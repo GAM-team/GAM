@@ -130,8 +130,11 @@
         relation.<RelationSubfieldName>.<RelationSubfieldName>.<String>|
         sshkeys.<SSHkeysSubfieldName>.<SSHkeysSubfieldName>.<String>|
         website.<WebsiteSubfieldName>.<WebsiteSubfieldName>.<String>
+<UserReplacementField> ::=
+        photourl
 <Tag> ::= <String>
 <UserReplacement> ::=
+        (field:<UserReplacementField>)|
         (field:<UserReplacementFieldSubfield>)|
         (field:<UserReplacementFieldSubfieldMatchSubfield>)|
         (schema:<SchemaName>.<FieldName>)|
@@ -145,7 +148,7 @@ This command allows simple text replacement in the message.
 ```
 gam sendemail <EmailAddressEntity> [from <UserItem>] [replyto <EmailAddress>]
         [cc <EmailAddressEntity>] [bcc <EmailAddressEntity>] [singlemessage [<Boolean>]]
-        [subject <String>] [message <String>|(file <FileName> [charset <CharSet>])]
+        [subject <String>] [message <String>|(file <FileName> [charset <Charset>])]
         (replace <Tag> <String>)* [html [<Boolean>]] (attach <FileName>)*
 ```
 * Every instance of `{Tag}` in the message will be replaced by `<String>`.
@@ -162,30 +165,30 @@ These commands allow simple text replacement in the message/signature as well as
 ```
 gam create user <EmailAddress> <UserAttribute>*
         [notify <EmailAddress>] [subject <String>]
-            [message <String>|(file <FileName> [charset <CharSet>])] [html [<Boolean>]]
+            [message <String>|(file <FileName> [charset <Charset>])] [html [<Boolean>]]
             (replace <Tag> <UserReplacement>)*
 gam update user <UserItem> <UserAttribute>
         [updateprimaryemail <RegularExpression> <EmailReplacement>]
-        [updateoufromgroup <FileName> [charset <CharSet>]
+        [updateoufromgroup <FileName> [charset <Charset>]
             [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [fields <FieldNameList>] [keyfield <FieldName>] [datafield <FieldName>]]
         [clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>]
         [createifnotfound] [notify <EmailAddress>] [subject <String>]
-            [message <String>|(file <FileName> [charset <CharSet>])] [html [<Boolean>]]
+            [message <String>|(file <FileName> [charset <Charset>])] [html [<Boolean>]]
             (replace <Tag> <UserReplacement>)*
 
 gam <UserTypeEntity> draft message (<SMTPDateHeader> <Time>)*
         (<SMTPHeader> <String>)* (header <String> <String>)*
         (addlabel <LabelName>)* [labels <LabelNameList>]
-        (textmessage|message <String>)|(textfile|file <FileName> [charset <CharSet>])
-        (htmlmessage <String>)|(htmlfile <FileName> [charset <CharSet>])
-        (replace <Tag> <UserReplacement>)* (attach <FileName> [charset <CharSet>])*
+        (textmessage|message <String>)|(textfile|file <FileName> [charset <Charset>])
+        (htmlmessage <String>)|(htmlfile <FileName> [charset <Charset>])
+        (replace <Tag> <UserReplacement>)* (attach <FileName> [charset <Charset>])*
 gam <UserTypeEntity> import message (<SMTPDateHeader> <Time>)*
         (<SMTPHeader> <String>)*
         (header <String> <String>)*
         (addlabel <LabelName>)*
-        (textmessage <String>)|(textfile <FileName> [charset <CharSet>])
-        (htmlmessage <String>)|(htmlfile <FileName> [charset <CharSet>])
+        (textmessage <String>)|(textfile <FileName> [charset <Charset>])
+        (htmlmessage <String>)|(htmlfile <FileName> [charset <Charset>])
         (replace <Tag> <UserReplacement>)* (attach <FileName>)*
         [deleted [<Boolean>]] [nevermarkspam [<Boolean>]]
         [processforcalendar [<Boolean>]]
@@ -194,19 +197,19 @@ gam <UserTypeEntity> insert message
         (<SMTPHeader> <String>)*
         (header <String> <String>)*
         (addlabel <LabelName>)*
-        (textmessage <String>)|(textfile <FileName> [charset <CharSet>])
-        (htmlmessage <String>)|(htmlfile <FileName> [charset <CharSet>])
+        (textmessage <String>)|(textfile <FileName> [charset <Charset>])
+        (htmlmessage <String>)|(htmlfile <FileName> [charset <Charset>])
         (replace <Tag> <UserReplacement>)* (attach <FileName>)*
         [deleted [<Boolean>]]
 
 gam <UserTypeEntity> [create|add] sendas <EmailAddress> <String>
-        [signature|sig <String>|(file <FileName> [charset <CharSet>])
+        [signature|sig <String>|(file <FileName> [charset <Charset>])
         (replace <Tag> <UserReplacement>)*]
         [html [<Boolean>]] [replyto <EmailAddress>]
         [default] [treatasalias <Boolean>]
 
 gam <UserTypeEntity> update sendas <EmailAddress>
-        [name <String>] [signature|sig <String>|(file <FileName> [charset <CharSet>])
+        [name <String>] [signature|sig <String>|(file <FileName> [charset <Charset>])
         (replace <Tag> <UserReplacement>)*]
         [html [<Boolean>]] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
 
@@ -216,7 +219,7 @@ gam <UserTypeEntity> signature|sig <String>|(file <FileName> [charset <Charset>]
         [default] [primary] [treatasalias <Boolean>]
 
 gam <UserTypeEntity> vacation <TrueValues> subject <String>
-        [message <String>|(file <FileName> [charset <CharSet>])]
+        [message <String>|(file <FileName> [charset <Charset>])]
         (replace <Tag> <UserReplacement>)*
         [html [<Boolean>]] [contactsonly [<Boolean>]] [domainonly [<Boolean>]]
         [startdate <Date>|Started] [enddate <Date>|NotSpecified]

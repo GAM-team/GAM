@@ -59,7 +59,7 @@ Google requires that you have a Chat Bot configured in order to use the Chat API
 
 <ChatContent> ::=
         ((text <String>)|
-         (textfile <FileName> [charset <CharSet>])|
+         (textfile <FileName> [charset <Charset>])|
          (gdoc <UserGoogleDoc>)|
          (gcsdoc <StorageBucketObjectName>))
 
@@ -301,7 +301,7 @@ gam <UserTypeEntity> create chatmessage <ChatSpace>
 ```
 Specify the text of the message: `<ChatContent>`
 * `text <String>` - The message is `<String>`
-* `textfile <FileName> [charset <CharSet>]` - The message is read from a local file
+* `textfile <FileName> [charset <Charset>]` - The message is read from a local file
 * `gdoc <UserGoogleDoc>` - The message is read from a Google Doc.
 * `gcsdoc <StorageBucketObjectName>` - The message is read from a Google Cloud Storage file.
 
@@ -344,7 +344,7 @@ gam <UserTypeEntity> update chatmessage name <ChatMessage>
 ```
 Specify the text of the message: `<ChatContent>`
 * `text <String>` - The message is `<String>`
-* `textfile <FileName> [charset <CharSet>]` - The message is read from a local file
+* `textfile <FileName> [charset <Charset>]` - The message is read from a local file
 * `gdoc <UserGoogleDoc>` - The message is read from a Google Doc.
 * `gcsdoc <StorageBucketObjectName>` - The message is read from a Google Cloud Storage file.
 

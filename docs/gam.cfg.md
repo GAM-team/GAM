@@ -1043,7 +1043,7 @@ $gam csv NewGooUsers.csv gam select goo create user ~Email firstname ~FirstName 
 ```
 The gam loop command and the select and redirect arguments can be combined to perform powerful operations in a single command line.
 ```
-gam loop (-|<FileName>) [charset <CharSet>] (matchfield|skipfield <FieldName> <RegularExpression>)* gam <GAM argument list>
+gam loop (-|<FileName>) [charset <Charset>] (matchfield|skipfield <FieldName> <RegularExpression>)* gam <GAM argument list>
 ```
 Suppose you have the following CSV file, InfoDomains.csv:
 ```

@@ -15,6 +15,7 @@
 - [Display Shared Drive access](#display-shared-drive-access)
   - [Display Shared Drive access for specific Shared Drives](#display-shared-drive-access-for-specific-shared-drives)
   - [Display Shared Drive access for selected Shared Drives](#display-shared-drive-access-for-selected-shared-drives)
+- [Change User1 Shared Drive access to User2](#change-user1-shared-drive-access-to-user2)
 - [Display empty folders on a Shared Drive](#display-empty-folders-on-a-shared-drive)
 - [Delete empty folders on a Shared Drive](#delete-empty-folders-on-a-shared-drive)
 - [Empty the trash on a Shared Drive](#empty-the-trash-on-a-shared-drive)
@@ -429,6 +430,17 @@ This command must be issued by a user with Shared Drive permission role organize
 gam <UserTypeEntity> print emptydrivefolders [todrive <ToDriveAttribute>*]
         select <SharedDriveEntity>
 ```
+
+## Change User1 Shared Drive access to User2
+```
+# Get Shared Drives for User1
+gam redirect csv ./U1SharedDrives.csv user user1@domain.com print shareddriveacls pm emailaddress user1@domain.com em oneitemperrow
+# For each of those Shared Drives, delete User1 access
+gam redirect stdout ./DeleteU1SharedDriveAccess.txt multiprocess redirect stderr stdout gam delete drivefileacl "~id" "~permission.emailAddress"
+# For each of those Shared Drives, add User2 with the same role that User1 had
+gam redirect stdout ./AddU2SharedDriveAccess.txt multiprocess redirect stderr stdout gam create drivefileacl "~id" user user2@domain.com role "~permission.role"
+```
+
 ## Delete empty folders on a Shared Drive
 This command must be issued by a user with Shared Drive permission role organizer.
 ```

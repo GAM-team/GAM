@@ -211,7 +211,7 @@ gam sendemail [recipient|to] <RecipientEntity>
         [cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
         [subject <String>]
         [<MessageContent>] (replace <Tag> <String>)*
-        [html [<Boolean>]] (attach <FileName> [charset <CharSet>])*
+        [html [<Boolean>]] (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
         [newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
@@ -267,7 +267,7 @@ gam sendemail [recipient|to] <RecipientEntity> [from <EmailAddress>]
         [cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
         [subject <String>]
         [<MessageContent>] (replace <Tag> <String>)*
-        [html [<Boolean>]] (attach <FileName> [charset <CharSet>])*
+        [html [<Boolean>]] (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
         [newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
@@ -298,7 +298,7 @@ If `message` is not specified, the following value will be used:
 *    `Hello #givenname# #familyname#,\n\nYou have a new account at #domain#\nAccount details:\n\nUsername\n#user#\n\nPassword\n#password#\n\n
     Start using your new account by signing in at\nhttps://www.google.com/accounts/AccountChooser?Email=#user#&continue=https://apps.google.com/user/hub\n`
 
-If you want a language/organization specific message, use a template file: `message file <FileName> [charset <CharSet>]`
+If you want a language/organization specific message, use a template file: `message file <FileName> [charset <Charset>]`
 
 The `<SMTPDateHeader> <Time>` argument  requires `<Time>` values which will be converted to RFC2822 dates. If you have these headers with values that
 are not in `<Time>` format, use the argument `header <SMTPDateHeader> <String>`.
@@ -346,7 +346,7 @@ gam <UserTypeEntity> sendemail recipient|to <RecipientEntity>
         [cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
         [subject <String>]
         [<MessageContent>] (replace <Tag> <String>)*
-        [html [<Boolean>]] (attach <FileName> [charset <CharSet>])*
+        [html [<Boolean>]] (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
         [newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
@@ -386,7 +386,7 @@ gam <UserTypeEntity> sendemail [from <EmailAddress>]
         [cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
         [subject <String>]
         [<MessageContent>] (replace <Tag> <String>)*
-        [html [<Boolean>]] (attach <FileName> [charset <CharSet>])*
+        [html [<Boolean>]] (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
         [newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*

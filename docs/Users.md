@@ -385,7 +385,7 @@ If subject is not specified, the following value will be used:
 
 `<NotifyMessageContent>` is the message, there are four ways to specify it:
 * `message|textmessage|htmlmessage <String>` - Use `<String>` as the message
-* `file|htmlfile <FileName> [charset <CharSet>]` - Read the message from `<FileName>`
+* `file|htmlfile <FileName> [charset <Charset>]` - Read the message from `<FileName>`
 * `gdoc|ghtml <UserGoogleDoc>` - Read the message from `<UserGoogleDoc>`
 * `gcsdoc|gcshtml <StorageBucketObjectName>` - Read the message from the Google Cloud Storage file `<StorageBucketObjectName>`
 
@@ -597,7 +597,7 @@ If the mailbox is setup, a zero return code is returned; if the retries are exha
 gam update user <UserItem> [ignorenullpassword] <UserAttribute>*
         [verifynotinvitable|alwaysevict] [noactionifalias]
         [updateprimaryemail <RegularExpression> <EmailReplacement>]
-        [updateoufromgroup <FileName> [charset <CharSet>]
+        [updateoufromgroup <FileName> [charset <Charset>]
             [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [fields <FieldNameList>] [keyfield <FieldName>] [datafield <FieldName>]]
         [clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>]
@@ -618,7 +618,7 @@ gam update user <UserItem> [ignorenullpassword] <UserAttribute>*
 gam update users <UserTypeEntity> [ignorenullpassword] <UserAttribute>*
         [verifynotinvitable|alwaysevict] [noactionifalias]
         [updateprimaryemail <RegularExpression> <EmailReplacement>]
-        [updateoufromgroup <FileName> [charset <CharSet>]
+        [updateoufromgroup <FileName> [charset <Charset>]
             [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [fields <FieldNameList>] [keyfield <FieldName>] [datafield <FieldName>]]
         [clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>]
@@ -639,7 +639,7 @@ gam update users <UserTypeEntity> [ignorenullpassword] <UserAttribute>*
 gam <UserTypeEntity> update users [ignorenullpassword] <UserAttribute>*
         [verifynotinvitable|alwaysevict] [noactionifalias]
         [updateprimaryemail <RegularExpression> <EmailReplacement>]
-        [updateoufromgroup <FileName> [charset <CharSet>]
+        [updateoufromgroup <FileName> [charset <Charset>]
             [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [fields <FieldNameList>] [keyfield <FieldName>] [datafield <FieldName>]]
         [clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>]
@@ -813,7 +813,7 @@ groupz@domain.com,/Path/To/OUz
 No update is performed if a user does not belong to any group in the CSV file or belongs to multiple groups in the CSV file.
 
 ```
-[updateoufromgroup <FileName> [charset <CharSet>]
+[updateoufromgroup <FileName> [charset <Charset>]
     [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
     [fields <FieldNameList>] [keyfield <FieldName>] [datafield <FieldName>]]
 ```

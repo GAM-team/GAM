@@ -464,7 +464,7 @@ gam <UserTypeEntity> update drivefile <DriveFileEntity> [copy] [returnidonly|ret
         [stripnameprefix <String>]
         <DriveFileUpdateAttribute>*
         [(gsheet|csvsheet <SheetEntity> [clearfilter])|(addsheet <String>)]
-        [charset <CharSet>] [columndelimiter <Character>]
+        [charset <Charset>] [columndelimiter <Character>]
 ```
 By default, an existing file's attributes are updated.
 
@@ -516,7 +516,7 @@ You can update a specific sheet within a Google spreadsheet or add a new sheet t
 * `gsheet|csvsheet id:<Number>` - Specify a sheet by ID in a Google Sheets file to be updated
   * `clearfilter` - When updating a sheet, this option causes GAM to clear the spreadsheet basic filter so hidden data will be overwritten
 * `addsheet <String>` - Specify a sheet name to be added to the Google Sheets file
-* `charset <CharSet>` - Specify the character set of the local file; if not specified, the value of `charset` from `gam.cfg` will be used
+* `charset <Charset>` - Specify the character set of the local file; if not specified, the value of `charset` from `gam.cfg` will be used
 * `columndelimiter <Character>` - Columns are separated by `<Character>`; if not specified, the value of `csv_input_column_delimiter` from `gam.cfg` will be used
 If you want the Google spreadsheet to retain its name, specify: `retainname localfile LocalFile.csv`.
 

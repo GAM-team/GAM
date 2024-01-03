@@ -55,7 +55,7 @@ As of version `6.14.04`, There is now support for managing "Other Contacts".
 
 <NoteContent> ::=
         ((<String>)|
-         (file <FileName> [charset <CharSet>])|
+         (file <FileName> [charset <Charset>])|
          (gdoc <UserGoogleDoc>)|
          (gcsdoc <StorageBucketObjectName>)
 ```

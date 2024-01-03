@@ -7,6 +7,8 @@
 - [Manage file permissions/sharing](#manage-file-permissionssharing)
 - [Display file permissions/sharing](#display-file-permissionssharing)
 - [Delete all ACLs except owner from a file](#delete-all-acls-except-owner-from-a-file)
+- [Change shares to User1 to shares to User2](#change-shares-to-user1-to-shares-to-user2)
+
 ## API documentation
 * https://developers.google.com/drive/api/v3/reference/permissions
 * https://developers.google.com/drive/api/v3/ref-single-parent
@@ -302,4 +304,16 @@ gam redirect csv ./Permissions.csv user <UserItem> print drivefileacls <DriveFil
 Inspect Permissions.csv, verify that you want to proceed.
 ```
 gam config csv_input_row_drop_filter "permission.role:regex:(owner)|(organizer)" csv ./Permissions.csv gam user "~Owner" delete drivefileacl "~id" "id:~~permission.id~~"
+```
+
+## Change shares to User1 to shares to User2
+```
+# Get files shared to User1
+gam redirect csv ./FilesSharedWithU1.csv user user1@domain.com print filelist choose sharedwithme fields id,name,mimetype,owners.emailaddress
+# For each of these files, get the sharing settings for U1
+gam redirect csv ./FilesSharedWithU1Settings.csv multiprocess csv FilesSharedWithU1.csv gam user "~owners.0.emailAddress" print drivefileacls "~id" pm emailaddress "~Owner" em
+# For each of these files, delete the share to User1
+gam redirect stdout ./DeleteU1Sharing.txt multiprocess redirect stderr stdout csv FilesSharedWithU1Settings.csv gam user "~Owner" delete drivefileacl "~id" "~permissions.0.emailAddress"
+# For each of these files, add the share to User2 with the same role that User1 had
+gam redirect stdout ./AddUser2Sharing.txt multiprocess redirect stderr stdout csv FilesSharedWithU1Settings.csv gam user "~Owner" create drivefileacl "~id" user user2@domain.com role "~permissions.0.role"
 ```

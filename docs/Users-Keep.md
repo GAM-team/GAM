@@ -42,7 +42,7 @@ gam user user@domain.com check serviceaccount
 
 <NoteContent> ::=
         ((text <String>)|
-         (textfile <FileName> [charset <CharSet>])|
+         (textfile <FileName> [charset <Charset>])|
          (gdoc <UserGoogleDoc>)|
          (gcsdoc <StorageBucketObjectName>)|
          <JSONData>)
@@ -90,7 +90,7 @@ gam <UserTypeEntity> create note [title <String>]
 ```
 `<NoteContent>` is the note text, there are four ways to specify it:
 * `message|textmessage|htmlmessage <String>` - Use `<String>` as the note text
-* `file|htmlfile <FileName> [charset <CharSet>]` - Read the note text from `<FileName>`
+* `file|htmlfile <FileName> [charset <Charset>]` - Read the note text from `<FileName>`
 * `gdoc|ghtml <UserGoogleDoc>` - Read the note text from `<UserGoogleDoc>`
 * `gcsdoc|gcshtml <StorageBucketObjectName>` - Read the note text from the Google Cloud Storage file `<StorageBucketObjectName>`
 

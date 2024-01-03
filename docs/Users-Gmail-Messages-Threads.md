@@ -213,12 +213,12 @@ Add a draft message to a user's mailbox.
 gam <UserTypeEntity> draft message
         <MessageContent> (replace <Tag> <UserReplacement>)*
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
-        (attach <FileName> [charset <CharSet>])*
+        (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
 ```
 `<MessageContent>` is the message, there are five ways to specify it:
 * `message|textmessage|htmlmessage <String>` - Use `<String>` as the message
-* `file|htmlfile <FileName> [charset <CharSet>]` - Read the message from `<FileName>`
+* `file|htmlfile <FileName> [charset <Charset>]` - Read the message from `<FileName>`
 * `gdoc|ghtml <UserGoogleDoc>` - Read the message from `<UserGoogleDoc>`
 * `gcsdoc|gcshtml <StorageBucketObjectName>` - Read the message from the Google Cloud Storage file `<StorageBucketObjectName>`
 * `emlfile <FileName>` - Read the message from the EML message file `<FileName>`. SMTP headers specified in the command will replace those in the message file.
@@ -247,14 +247,14 @@ gam <UserTypeEntity> import message
         <MessageContent> (replace <Tag> <UserReplacement>)*
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
         (addlabel <LabelName>)* [labels <LabelNameList>]
-        (attach <FileName> [charset <CharSet>])*
+        (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
         [deleted [<Boolean>]] [checkspam [<Boolean>]] [processforcalendar [<Boolean>]]
 ```
 
 `<MessageContent>` is the message, there are five ways to specify it:
 * `message|textmessage|htmlmessage <String>` - Use `<String>` as the message
-* `file|htmlfile <FileName> [charset <CharSet>]` - Read the message from `<FileName>`
+* `file|htmlfile <FileName> [charset <Charset>]` - Read the message from `<FileName>`
 * `gdoc|ghtml <UserGoogleDoc>` - Read the message from `<UserGoogleDoc>`
 * `gcsdoc|gcshtml <StorageBucketObjectName>` - Read the message from the Google Cloud Storage file `<StorageBucketObjectName>`
 * `emlfile <FileName>` - Read the message from the EML message file `<FileName>`. SMTP headers specified in the command will replace those in the message.
@@ -295,14 +295,14 @@ gam <UserTypeEntity> insert message
         <MessageContent> (replace <Tag> <UserReplacement>)*
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
         (addlabel <LabelName>)* [labels <LabelNameList>]
-        (attach <FileName> [charset <CharSet>])*
+        (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
         [deleted [<Boolean>]]
 ```
 
 `<MessageContent>` is the message, there are five ways to specify it:
 * `message|textmessage|htmlmessage <String>` - Use `<String>` as the message
-* `file|htmlfile <FileName> [charset <CharSet>]` - Read the message from `<FileName>`
+* `file|htmlfile <FileName> [charset <Charset>]` - Read the message from `<FileName>`
 * `gdoc|ghtml <UserGoogleDoc>` - Read the message from `<UserGoogleDoc>`
 * `gcsdoc|gcshtml <StorageBucketObjectName>` - Read the message from the Google Cloud Storage file `<StorageBucketObjectName>`
 * `emlfile <FileName>` - Read the message from the EML message file `<FileName>`. SMTP headers specified in the command will replace those in the message file.

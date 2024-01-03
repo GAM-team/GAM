@@ -36,7 +36,7 @@ This Wiki page was built directly from Jay Lee's Wiki page; my sincere thanks fo
 
 <ChatContent> ::=
         ((text <String>)|
-         (textfile <FileName> [charset <CharSet>])|
+         (textfile <FileName> [charset <Charset>])|
          (gdoc <UserGoogleDoc>)|
          (gcsdoc <StorageBucketObjectName>))
 
@@ -162,7 +162,7 @@ gam create chatmessage space <ChatSpace>
 ```
 Specify the text of the message: `<ChatContent>`
 * `text <String>` - The message is `<String>`
-* `textfile <FileName> [charset <CharSet>]` - The message is read from a local file
+* `textfile <FileName> [charset <Charset>]` - The message is read from a local file
 * `gdoc <UserGoogleDoc>` - The message is read from a Google Doc.
 * `gcsdoc <StorageBucketObjectName>` - The message is read from a Google Cloud Storage file.
 
@@ -207,7 +207,7 @@ gam update chatmessage name <ChatMessage>
 ```
 Specify the source of the message:
 * `text <String>` - The message is `<String>`
-* `textfile <FileName> [charset <CharSet>]` - The message is read from a local file
+* `textfile <FileName> [charset <Charset>]` - The message is read from a local file
 * `gdoc <UserGoogleDoc>` - The message is read from a Google Doc.
 * `gcsdoc <StorageBucketObjectName>` - The message is read from a Google Cloud Storage file.
 

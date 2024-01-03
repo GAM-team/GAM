@@ -35,7 +35,7 @@
 
 <NoteContent> ::=
         ((<String>)|
-         (file <FileName> [charset <CharSet>])|
+         (file <FileName> [charset <Charset>])|
          (gdoc <UserGoogleDoc>)|
          (gcsdoc <StorageBucketObjectName>))
 

@@ -82,7 +82,7 @@ of the sendas address.
 
 `<SendAsContent>` is the signature, there are four ways to specify it:
 * `sig|signature|htmlsig <String>` - Use `<String>` as the signature
-* `file|htmlfile <FileName> [charset <CharSet>]` - Read the signature from `<FileName>`
+* `file|htmlfile <FileName> [charset <Charset>]` - Read the signature from `<FileName>`
 * `gdoc|ghtml <UserGoogleDoc>` - Read the signature from `<UserGoogleDoc>`
 * `gcsdoc|gcshtml <StorageBucketObjectName>` - Read the signature from the Google Cloud Storage file `<StorageBucketObjectName>`
 
@@ -142,7 +142,7 @@ gam <UserTypeEntity> signature|sig
 ```
 `<SignatureContent>` is the signature, there are four ways to specify it:
 * `<String>` - Use `<String>` as the signature
-* `file|htmlfile <FileName> [charset <CharSet>]` - Read the signature from `<FileName>`
+* `file|htmlfile <FileName> [charset <Charset>]` - Read the signature from `<FileName>`
 * `gdoc|ghtml <UserGoogleDoc>` - Read the signature from `<UserGoogleDoc>`
 * `gcsdoc|gcshtml <StorageBucketObjectName>` - Read the signature from the Google Cloud Storage file `<StorageBucketObjectName>`
 
@@ -216,7 +216,7 @@ gam <UserTypeEntity> vacation <Boolean> subject <String>
 ```
 `<VacationMessageContent>` is the vacation message, there are four ways to specify it:
 * `message|textmessage|htmlmessage <String>` - Use `<String>` as the vacation message
-* `file|htmlfile <FileName> [charset <CharSet>]` - Read the vacation message from `<FileName>`
+* `file|htmlfile <FileName> [charset <Charset>]` - Read the vacation message from `<FileName>`
 * `gdoc|ghtml <UserGoogleDoc>` - Read the vacation message from `<UserGoogleDoc>`
 * `gcsdoc|gcshtml <StorageBucketObjectName>` - Read the vacation message from the Google Cloud Storage file `<StorageBucketObjectName>`
 

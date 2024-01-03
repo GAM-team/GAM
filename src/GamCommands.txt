@@ -4858,8 +4858,11 @@ gam <UserTypeEntity> show teamdriveacls
         relation.<RelationSubfieldName>.<RelationSubfieldName>.<String>|
         sshkeys.<SSHkeysSubfieldName>.<SSHkeysSubfieldName>.<String>|
         website.<WebsiteSubfieldName>.<WebsiteSubfieldName>.<String>
+<UserReplacementField> ::=
+        photourl
 <Tag> ::= <String>
 <UserReplacement> ::=
+        (field:<UserReplacementField>)|
         (field:<UserReplacementFieldSubfield>)|
         (field:<UserReplacementFieldSubfieldMatchSubfield>)|
         (schema:<SchemaName>.<FieldName>)|

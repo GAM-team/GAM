@@ -11,6 +11,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.67.04
+
+Updated user attribute `replace <Tag> <UserReplacement>` to allow `field:photourl` which allows
+embedding a link to a user's photo in their signature. Formatting the signature HTML
+to properly display the photo is left to the GAM admin.
+
 ### 6.67.03
 
 Fixed bug introduced in 6.67.02  in `gam <UserTypeEntity> claim ownership` that caused a trap.
