@@ -11,6 +11,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.67.06
+
+Updated commands that create ACLs to handle the following error:
+```
+ERROR: 400: abusiveContentRestriction - Bad Request. User message: "You cannot share this item because it has been flagged as inappropriate."
+```
+
 ### 6.67.05
 
 Updated the following commands:

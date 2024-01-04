@@ -21,6 +21,7 @@
 """
 # callGAPI throw reasons
 ABORTED = 'aborted'
+ABUSIVE_CONTENT_RESTRICTION = 'abusiveContentRestriction'
 ACCESS_NOT_CONFIGURED = 'accessNotConfigured'
 ALREADY_EXISTS = 'alreadyExists'
 AUTH_ERROR = 'authError'
@@ -215,7 +216,7 @@ DRIVE3_CREATE_ACL_THROW_REASONS = [BAD_REQUEST, INVALID, INVALID_SHARING_REQUEST
                                    FILE_ORGANIZER_NOT_YET_ENABLED_FOR_THIS_TEAMDRIVE,
                                    FILE_ORGANIZER_ON_FOLDERS_IN_SHARED_DRIVE_ONLY,
                                    FILE_ORGANIZER_ON_NON_TEAMDRIVE_NOT_SUPPORTED,
-                                   TEAMDRIVES_FOLDER_SHARING_NOT_SUPPORTED, INVALID_LINK_VISIBILITY]
+                                   TEAMDRIVES_FOLDER_SHARING_NOT_SUPPORTED, INVALID_LINK_VISIBILITY, ABUSIVE_CONTENT_RESTRICTION]
 DRIVE3_GET_ACL_REASONS = DRIVE_USER_THROW_REASONS+[FILE_NOT_FOUND, FORBIDDEN, INTERNAL_ERROR,
                                                    INSUFFICIENT_ADMINISTRATOR_PRIVILEGES, INSUFFICIENT_FILE_PERMISSIONS,
                                                    UNKNOWN_ERROR, INVALID]
@@ -337,6 +338,8 @@ REASON_MESSAGE_MAP = {
   }
 
 class aborted(Exception):
+  pass
+class abusiveContentRestriction(Exception):
   pass
 class accessNotConfigured(Exception):
   pass
@@ -639,6 +642,7 @@ class userRateLimitExceeded(Exception):
 
 REASON_EXCEPTION_MAP = {
   ABORTED: aborted,
+  ABUSIVE_CONTENT_RESTRICTION: abusiveContentRestriction,
   ACCESS_NOT_CONFIGURED: accessNotConfigured,
   ALREADY_EXISTS: alreadyExists,
   AUTH_ERROR: authError,

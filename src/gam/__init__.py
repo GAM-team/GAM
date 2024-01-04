@@ -8595,7 +8595,7 @@ class CSVPrintFile():
                       GAPI.fileOrganizerOnFoldersInSharedDriveOnly,
                       GAPI.fileOrganizerOnNonTeamDriveNotSupported,
                       GAPI.teamDrivesFolderSharingNotSupported, GAPI.invalidLinkVisibility,
-                      GAPI.invalidSharingRequest, GAPI.fileNeverWritable) as e:
+                      GAPI.invalidSharingRequest, GAPI.fileNeverWritable, GAPI.abusiveContentRestriction) as e:
                 entityActionFailedWarning([Ent.USER, user, Ent.SPREADSHEET, title,
                                            Ent.TARGET_USER, self.todrive['share']['emailAddress'], Ent.ROLE, self.todrive['share']['role']],
                                           str(e))
@@ -55713,7 +55713,7 @@ def _copyPermissions(drive, user, i, count, j, jcount,
               GAPI.fileOrganizerNotYetEnabledForThisTeamDrive,
               GAPI.fileOrganizerOnFoldersInSharedDriveOnly,
               GAPI.fileOrganizerOnNonTeamDriveNotSupported,
-              GAPI.teamDrivesFolderSharingNotSupported, GAPI.invalidLinkVisibility) as e:
+              GAPI.teamDrivesFolderSharingNotSupported, GAPI.invalidLinkVisibility, GAPI.abusiveContentRestriction) as e:
         entityActionFailedWarning(kvList, str(e), k, kcount)
         break
       except GAPI.invalidSharingRequest as e:
@@ -56803,7 +56803,7 @@ def _updateMoveFilePermissions(drive, user, i, count,
                 GAPI.fileOrganizerNotYetEnabledForThisTeamDrive,
                 GAPI.fileOrganizerOnFoldersInSharedDriveOnly,
                 GAPI.fileOrganizerOnNonTeamDriveNotSupported,
-                GAPI.teamDrivesFolderSharingNotSupported, GAPI.invalidLinkVisibility) as e:
+                GAPI.teamDrivesFolderSharingNotSupported, GAPI.invalidLinkVisibility, GAPI.abusiveContentRestriction) as e:
           entityActionFailedWarning(kvList, str(e), k, kcount)
           break
         except GAPI.invalidSharingRequest as e:
@@ -59875,7 +59875,7 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
               GAPI.fileOrganizerOnFoldersInSharedDriveOnly,
               GAPI.fileOrganizerOnNonTeamDriveNotSupported,
               GAPI.teamDrivesFolderSharingNotSupported, GAPI.invalidLinkVisibility,
-              GAPI.invalidSharingRequest, GAPI.fileNeverWritable) as e:
+              GAPI.invalidSharingRequest, GAPI.fileNeverWritable, GAPI.abusiveContentRestriction) as e:
         entityActionFailedWarning([Ent.USER, user, entityType, fileName, Ent.PERMISSION_ID, permissionId], str(e), j, jcount)
       except GAPI.notFound as e:
         entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE, fileName], str(e), j, jcount)
@@ -60103,7 +60103,7 @@ def createDriveFilePermissions(users, useDomainAdminAccess=False):
               GAPI.fileOrganizerOnFoldersInSharedDriveOnly,
               GAPI.fileOrganizerOnNonTeamDriveNotSupported,
               GAPI.teamDrivesFolderSharingNotSupported, GAPI.invalidLinkVisibility,
-              GAPI.invalidSharingRequest, GAPI.fileNeverWritable,
+              GAPI.invalidSharingRequest, GAPI.fileNeverWritable, GAPI.abusiveContentRestriction,
               GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
         entityActionFailedWarning([Ent.DRIVE_FILE_OR_FOLDER_ID, ri[RI_ENTITY], Ent.PERMITTEE, ri[RI_ITEM]], str(e), int(ri[RI_J]), int(ri[RI_JCOUNT]))
       except GAPI.notFound as e:

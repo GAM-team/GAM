@@ -554,6 +554,14 @@ gam redirect stdout CreateUsers.log multiprocess redirect stderr stdout csv Crea
      gam create user "~useremail" firstname "~firstname" lastname "~lastname" ou "~ou" password "~password"
      notify "~~notifyemail~~,helpdesk@domain.com"
 ```
+### Create users in bulk in OU with forced 2FA, notify each user and send a second email with backup codes. Log each step.
+OU needs to be already set with forced 2FA, else you can't create backup codes in step 2.
+These three commands should be run in sequence, as commands two and three are reliant on the previous command being run.
+```
+gam redirect stdout CreateUsers.log multiprocess redirect stderr stdout csv CreateUsers.csv gam create user "~useremail" firstname "~firstname" lastname "~lastname" ou "~ou" password random notify "~~notifyemail"
+gam redirect stdout UpdateUsers.log multiprocess redirect stderr stdout csv CreateUsers.csv gam user ~useremail update backupcodes
+gam redirect stdout SendBackupCodes.log multiprocess redirect stderr stdout csv CreateUsers.csv gam user ~useremail print backupcodes | gam csv - gam sendemail "~notifyemail" subject "Backup codes for 2FA login" message "~verificationCodes"
+```
 
 ## Specify a user's attributes with JSON data
 When creating a user, you may have a set of attributes that you'd like to assign to the user without having to specify
