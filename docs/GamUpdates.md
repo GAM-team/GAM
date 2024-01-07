@@ -11,6 +11,19 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.67.07
+
+Updated `gam <UserTypeEntity> delete message` to handle this error:
+```
+ERROR: 403: permissionDenied - Insufficient Permission
+```
+when the following service account scopes are selected:
+
+```
+[ ] 24)  Gmail API - Full Access (Labels, Messages)
+[*] 25)  Gmail API - Full Access (Labels, Messages) except delete message
+```
+
 ### 6.67.06
 
 Updated commands that create ACLs to handle the following error:

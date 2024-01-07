@@ -1047,7 +1047,7 @@ By default, Gam displays fields that only an adminstrator can view.
 
 By default, Gam displays only the primary email address for each user.
 * `allfields|basic` - Display all non custom schema fields for each user.
-* `full` - Display all non custom schema fields and all custom schema fields for each user.
+* `full` - Display all fields including  all custom schema fields for each user.
 * `<UserFieldName>* [fields <UserFieldNameList>]` - Only display selected fields.
 * `schemas|custom all` - Get custom schema information for all schemas.
 * `schemas|custom <SchemaNameList>` - Get custom schema information for a selected list of schemas.
