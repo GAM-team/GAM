@@ -171,8 +171,7 @@
         (file|textfile|htmlfile <FileName> [charset <Charset>])|
         (gdoc|ghtml <UserGoogleDoc>)|
         (gcsdoc|gcshtml <StorageBucketObjectName>)|
-        (emlfile <FileName>)
-```
+        (emlfile <FileName> [charset <Charset>]))
 ## Message queries with dates
 ```
 query <QueryGmail> [querytime<String> <Date>]*
@@ -211,8 +210,8 @@ You can have GAM do the substitutions for you with the `matchlabel <LabelName>` 
 Add a draft message to a user's mailbox.
 ```
 gam <UserTypeEntity> draft message
-        <MessageContent> (replace <Tag> <UserReplacement>)*
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
+        <MessageContent>
         (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
 ```
@@ -221,7 +220,7 @@ gam <UserTypeEntity> draft message
 * `file|htmlfile <FileName> [charset <Charset>]` - Read the message from `<FileName>`
 * `gdoc|ghtml <UserGoogleDoc>` - Read the message from `<UserGoogleDoc>`
 * `gcsdoc|gcshtml <StorageBucketObjectName>` - Read the message from the Google Cloud Storage file `<StorageBucketObjectName>`
-* `emlfile <FileName>` - Read the message from the EML message file `<FileName>`. SMTP headers specified in the command will replace those in the message file.
+* `emlfile <FileName> [charset <Charset>]` - Read the message from the EML message file `<FileName>`. SMTP headers specified in the command will replace those in the message file. The default `chatser` is `ascii`.
 
 The `<SMTPDateHeader> <Time>` argument  requires `<Time>` values which will be converted to RFC2822 dates. If you have these headers with values that
 are not in `<Time>` format, use the argument `header <SMTPDateHeader> <String>`.
@@ -244,9 +243,9 @@ Your command line will have: `embedimage file1.jpg image1` embedimage file2.jpg 
 Import a message into a user's mailbox, with standard email delivery scanning and classification similar to receiving via SMTP.
 ```
 gam <UserTypeEntity> import message
-        <MessageContent> (replace <Tag> <UserReplacement>)*
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
         (addlabel <LabelName>)* [labels <LabelNameList>]
+        <MessageContent>
         (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
         [deleted [<Boolean>]] [checkspam [<Boolean>]] [processforcalendar [<Boolean>]]
@@ -257,7 +256,7 @@ gam <UserTypeEntity> import message
 * `file|htmlfile <FileName> [charset <Charset>]` - Read the message from `<FileName>`
 * `gdoc|ghtml <UserGoogleDoc>` - Read the message from `<UserGoogleDoc>`
 * `gcsdoc|gcshtml <StorageBucketObjectName>` - Read the message from the Google Cloud Storage file `<StorageBucketObjectName>`
-* `emlfile <FileName>` - Read the message from the EML message file `<FileName>`. SMTP headers specified in the command will replace those in the message.
+* `emlfile <FileName> [charset <Charset>]` - Read the message from the EML message file `<FileName>`. SMTP headers specified in the command will replace those in the message. The default `chatser` is `ascii`.
 
 When `emlfile` is not specified:
 * If `to` is not specified, it is set to the user email addresses in `<UserTypeEntity>`.
@@ -292,9 +291,9 @@ Your command line will have: `embedimage file1.jpg image1` embedimage file2.jpg 
 Insert a message into a user's mailbox similar to IMAP APPEND, bypassing most scanning and classification.
 ```
 gam <UserTypeEntity> insert message
-        <MessageContent> (replace <Tag> <UserReplacement>)*
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
         (addlabel <LabelName>)* [labels <LabelNameList>]
+        <MessageContent>
         (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
         [deleted [<Boolean>]]
@@ -305,7 +304,7 @@ gam <UserTypeEntity> insert message
 * `file|htmlfile <FileName> [charset <Charset>]` - Read the message from `<FileName>`
 * `gdoc|ghtml <UserGoogleDoc>` - Read the message from `<UserGoogleDoc>`
 * `gcsdoc|gcshtml <StorageBucketObjectName>` - Read the message from the Google Cloud Storage file `<StorageBucketObjectName>`
-* `emlfile <FileName>` - Read the message from the EML message file `<FileName>`. SMTP headers specified in the command will replace those in the message file.
+* `emlfile <FileName> [charset <Charset>]` - Read the message from the EML message file `<FileName>`. SMTP headers specified in the command will replace those in the message file. The default `chatser` is `ascii`.
 
 When `emlfile` is not specified:
 * If `to` is not specified, it is set to the user email addresses in `<UserTypeEntity>`.

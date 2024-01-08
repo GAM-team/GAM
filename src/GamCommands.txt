@@ -480,8 +480,7 @@ If an item contains spaces, it should be surrounded by ".
         (message|textmessage|htmlmessage <String>)|
         (file|textfile|htmlfile <FileName> [charset <Charset>])|
         (gdoc|ghtml <UserGoogleDoc>)|
-        (gcsdoc|gcshtml <StorageBucketObjectName>)|
-        (emlfile <FileName>)
+        (gcsdoc|gcshtml <StorageBucketObjectName>)
 <MessageID> ::= <String>
 <Namespace> ::= <String>
 <NotesName> ::= notes/<String>
@@ -4412,6 +4411,12 @@ gam print schema|schemas [todrive <ToDriveAttribute>*]
 
 # Send Email
 
+<MessageContent> ::=
+        (message|textmessage|htmlmessage <String>)|
+        (file|textfile|htmlfile <FileName> [charset <Charset>])|
+        (gdoc|ghtml <UserGoogleDoc>)|
+        (gcsdoc|gcshtml <StorageBucketObjectName>)|
+
 gam sendemail [recipient|to] <RecipientEntity>
         [from <EmailAddress>] [mailbox <EmailAddress>] [replyto <EmailAddress>]
         [cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
@@ -6932,22 +6937,29 @@ gam <UserTypeEntity> print labels|label [todrive <ToDriveAttribute>*]
         x400-trace
 <SMTPHeaderList> ::= "<SMTPDateHeader>|<SMTPHeader>(,<SMTPDateHeader>|<SMTPHeader>)*"
 
+<MessageContent> ::=
+        (message|textmessage|htmlmessage <String>)|
+        (file|textfile|htmlfile <FileName> [charset <Charset>])|
+        (gdoc|ghtml <UserGoogleDoc>)|
+        (gcsdoc|gcshtml <StorageBucketObjectName>)|
+        (emlfile <FileName> [charset <Charset>])
+
 gam <UserTypeEntity> draft message
-        (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
         <MessageContent> (replace <Tag> <UserReplacement>)*
+        (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
         (attach <FileName> [charset <CharSet>])*
         (embedimage <FileName> <String>)*
 gam <UserTypeEntity> import message
+        <MessageContent> (replace <Tag> <UserReplacement>)*
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
         (addlabel <LabelName>)* [labels <LabelNameList>]
-        <MessageContent> (replace <Tag> <UserReplacement>)*
         (attach <FileName> [charset <CharSet>])*
         (embedimage <FileName> <String>)*
         [deleted [<Boolean>]] [checkspam|nevermarkspam [<Boolean>]] [processforcalendar [<Boolean>]]
 gam <UserTypeEntity> insert message
+        <MessageContent> (replace <Tag> <UserReplacement>)*
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
         (addlabel <LabelName>)* [labels <LabelNameList>]
-        <MessageContent> (replace <Tag> <UserReplacement>)*
         (attach <FileName> [charset <CharSet>])*
         (embedimage <FileName> <String>)*
         [deleted [<Boolean>]]

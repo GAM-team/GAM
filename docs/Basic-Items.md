@@ -456,12 +456,6 @@
 <Marker> ::= <String>
 <MatterItem> ::= <UniqueID>|<String>
 <MatterState> ::= open|closed|deleted
-<MessageContent> ::=
-        (message|textmessage|htmlmessage <String>)|
-        (file|textfile|htmlfile <FileName> [charset <Charset>])|
-        (gdoc|ghtml <UserGoogleDoc>)|
-        (gcsdoc|gcshtml <StorageBucketObjectName>)|
-        (emlfile <FileName>)
 <MessageID> ::= <String>
 <Namespace> ::= <String>
 <NotesName> ::= notes/<String>

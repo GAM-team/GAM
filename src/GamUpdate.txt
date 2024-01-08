@@ -2,6 +2,11 @@
 
 Merged GAM-Team version
 
+6.67.08
+
+Added optional argument `charset <Charset>` to `emlfile <FileName>` in `gam <UserTypeEntity> draft|import|insert message`;
+the default value is `ascii`.
+
 6.67.07
 
 Updated `gam <UserTypeEntity> delete message` to handle this error:

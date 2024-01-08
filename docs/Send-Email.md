@@ -54,8 +54,7 @@ Added the option `mailbox <EmailAddress>` to `gam sendemail` to allow specifying
         (message|textmessage|htmlmessage <String>)|
         (file|textfile|htmlfile <FileName> [charset <Charset>])|
         (gdoc|ghtml <UserGoogleDoc>)|
-        (gcsdoc|gcshtml <StorageBucketObjectName>)|
-        (emlfile <FileName>)
+        (gcsdoc|gcshtml <StorageBucketObjectName>)
 ```
 ```
 <Time> ::=
