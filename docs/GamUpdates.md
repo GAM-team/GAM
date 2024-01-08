@@ -11,6 +11,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.67.09
+
+Added option `maxevents <Number>` to `gam report <ActivityApplictionName>` that limits
+the number of events displayed for each activity; the default is 0, no limit.
+Setting options `maxactivities 1 maxevents 1 maxresults 1` can be used to as efficiently as possible
+show the most recent activity/event; this can be useful when reporting drive activity for individual drive files.
+
 ### 6.67.08
 
 Added optional argument `charset <Charset>` to `emlfile <FileName>` in `gam <UserTypeEntity> draft|import|insert message`;

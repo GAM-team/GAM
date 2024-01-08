@@ -58,7 +58,7 @@ gam report <ActivityApplicationName> [todrive <ToDriveAttributes>*]
         [filtertime.* <Time>] [filter|filters <String>]
         [event|events <EventNameList>] [ip <String>]
         [groupidfilter <String>]
-        [maxactivities <Number>] [maxresults <Number>]
+        [maxactivities <Number>] [maxevents <Number>] [maxresults <Number>]
         [countsonly [summary] [eventrowfilter]]
         (addcsvdata <FieldName> <String>)* [shownoactivities]
 ```
@@ -100,8 +100,14 @@ Limit to those users that are a member of at least one of a list of groups.
 Limit the total number of activites.
 * `maxactivities <Number>`
 
+Limit the  number of events per activity; this only applies when `countsonly` is False.
+* `maxevents <Number>`
+
 Limit the number of activities downloaded per API call; infrequently used.
 * `maxresults <Number>`
+
+Setting options `maxactivities 1 maxevents 1 maxresults 1` can be used to as efficiently as possible
+show the most recent activity/event; this can be useful when reporting drive activity for individual drive files.
 
 Add additional columns of data from the command line to the output.
 * `addcsvdata <FieldName> <String>`

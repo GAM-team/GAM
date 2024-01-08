@@ -13090,7 +13090,7 @@ REPORT_ACTIVITIES_TIME_OBJECTS = {'time'}
 #	[filtertime.* <Time>] [filter|filters <String>]
 #	[event|events <EventNameList>] [ip <String>]
 #	[groupidfilter <String>]
-#	[maxactivities <Number>] [maxresults <Number>]
+#	[maxactivities <Number>] [maxevents <Number>] [maxresults <Number>]
 #	[countsonly [summary] [eventrowfilter]]
 #	(addcsvdata <FieldName> <String>)* [shownoactivities]
 # gam report users|user [todrive <ToDriveAttribute>*]
@@ -13350,7 +13350,7 @@ def doReport():
   startEndTime = StartEndTime('start', 'end')
   oneDay = datetime.timedelta(days=1)
   filterTimes = {}
-  maxActivities = 0
+  maxActivities = maxEvents = 0
   maxResults = 1000
   aggregateByDate = aggregateByUser = countsOnly = eventRowFilter = exitUserLoop = noAuthorizedApps = noDateChange = \
     normalizeUsers = select = summary = userCustomerRange = False
@@ -13432,6 +13432,8 @@ def doReport():
       noAuthorizedApps = True
     elif activityReports and myarg == 'maxactivities':
       maxActivities = getInteger(minVal=0)
+    elif activityReports and myarg == 'maxevents':
+      maxEvents = getInteger(minVal=0)
     elif activityReports and myarg in {'start', 'starttime', 'end', 'endtime', 'yesterday', 'today'}:
       startEndTime.Get(myarg)
     elif activityReports and myarg in {'event', 'events'}:
@@ -13711,7 +13713,9 @@ def doReport():
           if not countsOnly or eventRowFilter:
             activity_row = flattenJSON(activity, timeObjects=REPORT_ACTIVITIES_TIME_OBJECTS)
             purge_parameters = True
+            numEvents = 0
             for event in events:
+              numEvents += 1
               for item in event.get('parameters', []):
                 itemSet = set(item)
                 if not itemSet.symmetric_difference({'name'}):
@@ -13753,6 +13757,8 @@ def doReport():
                 if addCSVData:
                   row.update(addCSVData)
                 csvPF.WriteRowTitles(row)
+                if maxEvents > 0 and numEvents >= maxEvents:
+                  break
               elif csvPF.CheckRowTitles(row):
                 if not summary:
                   eventCounts.setdefault(actor, {})

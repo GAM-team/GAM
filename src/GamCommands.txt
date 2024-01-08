@@ -4166,7 +4166,7 @@ gam report <ActivityApplicationName> [todrive <ToDriveAttribute>*]
         [filtertime.* <Time>] [filter|filters <String>]
         [event|events <EventNameList>] [ip <String>]
         [groupidfilter <String>]
-        [maxactivities <Number>] [maxresults <Number>]
+        [maxactivities <Number>] [maxevents <Number>] [maxresults <Number>]
         [countsonly [summary] [eventrowfilter]]
         (addcsvdata <FieldName> <String>)* [shownoactivities]
 
