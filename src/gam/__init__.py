@@ -66236,6 +66236,7 @@ def _draftImportInsertMessage(users, operation):
   deleted = processForCalendar = substituteForUserInHeaders = False
   neverMarkSpam = True
   emlFile = False
+  emlEncoding = 'ascii'
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg in SMTP_HEADERS_MAP:
@@ -66267,10 +66268,13 @@ def _draftImportInsertMessage(users, operation):
       emlFile = False
     elif myarg == 'emlfile':
       filename = getString(Cmd.OB_FILE_NAME)
-      encoding =  getString(Cmd.OB_CHAR_SET) if checkArgumentPresent('charset') else 'ascii'
-      msgText = readFile(filename, encoding=encoding)
+      if checkArgumentPresent('charset'):
+        emlEncoding = getString(Cmd.OB_CHAR_SET)
+      msgText = readFile(filename, encoding=emlEncoding)
       emlFile = True
       internalDateSource = 'dateHeader'
+      if checkArgumentPresent('emlutf8'):
+        emlEncoding = UTF8
     elif myarg == 'replace':
       _getTagReplacement(tagReplacements, True)
     elif operation in IMPORT_INSERT and myarg == 'addlabel':
@@ -66380,9 +66384,9 @@ def _draftImportInsertMessage(users, operation):
         if substituteForUserInHeaders:
           value = _substituteForUser(value, user, userName)
         msgText = re.sub(fr'(?sm)\n{header}:.+?(?=[\r\n]+[a-zA-Z0-9-]+:)', f'\n{header}: {value}', msgText, 1)
-      message_bytes = msgText.encode('ascii')
+      message_bytes = msgText.encode(emlEncoding)
       base64_bytes = base64.b64encode(message_bytes)
-      body = {'raw': base64_bytes.decode('ascii')}
+      body = {'raw': base64_bytes.decode(emlEncoding)}
     try:
       if operation != 'draft':
         if addLabelNames:

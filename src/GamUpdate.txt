@@ -2,6 +2,10 @@
 
 Merged GAM-Team version
 
+6.67.10
+
+Fixed bug that caused a trap when optional argument `charset <Charset>` was used with `emlfile <FileName>` in `gam <UserTypeEntity> draft|import|insert message`.
+
 6.67.09
 
 Added option `maxevents <Number>` to `gam report <ActivityApplictionName>` that limits
