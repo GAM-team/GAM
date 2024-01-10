@@ -7137,11 +7137,11 @@ def send_email(msgSubject, msgBody, msgTo, i=0, count=0, clientAccess=False, msg
     try:
       result = callGAPI(gmail.users().messages(), 'send',
                         throwReasons=[GAPI.SERVICE_NOT_AVAILABLE, GAPI.AUTH_ERROR, GAPI.DOMAIN_POLICY,
-                                      GAPI.INVALID_ARGUMENT, GAPI.FORBIDDEN],
+                                      GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                         userId=userId, body={'raw': base64.urlsafe_b64encode(message.as_bytes()).decode()}, fields='id')
       entityActionPerformedMessage([Ent.RECIPIENT, msgTo, Ent.MESSAGE, msgSubject], f"{result['id']}", i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy,
-            GAPI.invalidArgument, GAPI.forbidden) as e:
+            GAPI.invalid, GAPI.invalidArgument, GAPI.forbidden, GAPI.permissionDenied) as e:
       entityActionFailedWarning([Ent.RECIPIENT, msgTo, Ent.MESSAGE, msgSubject], str(e), i, count)
   else:
     message['To'] = (msgTo if msgTo else mailBoxAddr).lower()
@@ -64928,11 +64928,13 @@ def createLabels(users, labelEntity):
       if not buildPath:
         try:
           callGAPI(gmail.users().labels(), 'create',
-                   throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.DUPLICATE],
+                   throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.DUPLICATE, GAPI.PERMISSION_DENIED],
                    userId='me', body=body, fields='')
           entityActionPerformed([Ent.USER, user, Ent.LABEL, label], l, lcount)
         except GAPI.duplicate:
           entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label], Msg.DUPLICATE, l, lcount)
+        except GAPI.permissionDenied as e:
+          entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label], str(e), l, lcount)
         except (GAPI.serviceNotAvailable, GAPI.badRequest):
           entityServiceNotApplicableWarning(Ent.USER, user, i, count)
       else:
@@ -65213,10 +65215,10 @@ def deleteLabelIds(users, labelEntity):
       l += 1
       try:
         callGAPI(gmail.users().labels(), 'delete',
-                 throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID],
+                 throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID, GAPI.PERMISSION_DENIED],
                  userId='me', id=labelId)
         entityActionPerformed([Ent.USER, user, Ent.LABEL_ID, labelId], l, lcount)
-      except (GAPI.notFound, GAPI.invalid) as e:
+      except (GAPI.notFound, GAPI.invalid, GAPI.permissionDenied) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.LABEL_ID, labelId], str(e), l, lcount)
       except (GAPI.serviceNotAvailable, GAPI.badRequest):
         entityServiceNotApplicableWarning(Ent.USER, user, i, count)
@@ -66080,11 +66082,11 @@ def forwardMessagesThreads(users, entityType):
           try:
             result = callGAPI(gmail.users().messages(), 'send',
                               throwReasons=[GAPI.SERVICE_NOT_AVAILABLE, GAPI.AUTH_ERROR, GAPI.DOMAIN_POLICY,
-                                            GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.FORBIDDEN],
+                                            GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                               userId='me', body={'raw': base64.urlsafe_b64encode(message.as_bytes()).decode(encoding)}, fields='id')
             entityActionPerformedMessage([Ent.RECIPIENT, msgTo], f"{result['id']}", k, kcount)
           except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy,
-                  GAPI.invalid, GAPI.invalidArgument, GAPI.forbidden, UnicodeEncodeError) as e:
+                  GAPI.invalid, GAPI.invalidArgument, GAPI.forbidden, GAPI.permissionDenied, UnicodeEncodeError) as e:
             entityActionFailedWarning([Ent.RECIPIENT, msgTo], str(e), k, kcount)
         except (GAPI.serviceNotAvailable, GAPI.badRequest):
           entityServiceNotApplicableWarning(Ent.USER, user, i, count)
@@ -66398,17 +66400,17 @@ def _draftImportInsertMessage(users, operation):
         else:
           body['labelIds'] = ['INBOX']
         result = callGAPI(gmail.users().messages(), function,
-                          throwReasons=GAPI.GMAIL_THROW_REASONS,
+                          throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED],
                           userId='me', body=body, fields='id', **kwargs)
       else:
         result = callGAPI(gmail.users().drafts(), function,
-                          throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.INVALID_ARGUMENT],
+                          throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                           userId='me', body={'message': body}, fields='id')
       entityActionPerformed([Ent.USER, user, Ent.MESSAGE, result['id']], i, count)
+    except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
+      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.badRequest):
       entityServiceNotApplicableWarning(Ent.USER, user, i, count)
-    except GAPI.invalidArgument as e:
-      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
 
 # gam <UserTypeEntity> draft message
 #	<MessageContent> (replace <Tag> <UserReplacement>)*
@@ -67574,7 +67576,7 @@ def createFilter(users):
           if not buildPath:
             try:
               result = callGAPI(gmail.users().labels(), 'create',
-                                throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.DUPLICATE],
+                                throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.DUPLICATE, GAPI.PERMISSION_DENIED],
                                 userId='me', body=lbody, fields='id')
               entityActionPerformed([Ent.USER, user, Ent.LABEL, addLabelName], l, lcount)
               addLabelId = result['id']
@@ -67595,11 +67597,12 @@ def createFilter(users):
           if field in addLabelData:
             body['action'][field][addLabelData[field]] = addLabelId
       result = callGAPI(gmail.users().settings().filters(), 'create',
-                        throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.FAILED_PRECONDITION],
+                        throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.INVALID, GAPI.INVALID_ARGUMENT,
+                                                               GAPI.FAILED_PRECONDITION, GAPI.PERMISSION_DENIED],
                         userId='me', body=body, fields='id')
       if result:
         entityActionPerformed([Ent.USER, user, Ent.FILTER, result['id']], i, count)
-    except (GAPI.invalid, GAPI.invalidArgument, GAPI.failedPrecondition) as e:
+    except (GAPI.invalid, GAPI.invalidArgument, GAPI.failedPrecondition, GAPI.permissionDenied) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.FILTER, ''], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.badRequest):
       entityServiceNotApplicableWarning(Ent.USER, user, i, count)
@@ -67620,10 +67623,10 @@ def deleteFilters(users):
       j += 1
       try:
         callGAPI(gmail.users().settings().filters(), 'delete',
-                 throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND],
+                 throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED],
                  userId='me', id=filterId)
         entityActionPerformed([Ent.USER, user, Ent.FILTER, filterId], j, jcount)
-      except GAPI.notFound as e:
+      except (GAPI.notFound, GAPI.permissionDenied) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.FILTER, filterId], str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.badRequest):
         entityServiceNotApplicableWarning(Ent.USER, user, i, count)
@@ -68339,9 +68342,11 @@ def _setImap(user, body, i, count):
   if gmail:
     try:
       result = callGAPI(gmail.users().settings(), 'updateImap',
-                        throwReasons=GAPI.GMAIL_THROW_REASONS,
+                        throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED],
                         userId='me', body=body)
       _showImap(user, i, count, result)
+    except GAPI.permissionDenied as e:
+      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.badRequest):
       entityServiceNotApplicableWarning(Ent.USER, user, i, count)
 
@@ -68409,9 +68414,11 @@ def _setPop(user, body, i, count):
   if gmail:
     try:
       result = callGAPI(gmail.users().settings(), 'updatePop',
-                        throwReasons=GAPI.GMAIL_THROW_REASONS,
+                        throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED],
                         userId='me', body=body)
       _showPop(user, i, count, result)
+    except GAPI.permissionDenied as e:
+      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.badRequest):
       entityServiceNotApplicableWarning(Ent.USER, user, i, count)
 
@@ -68469,9 +68476,11 @@ def setLanguage(users):
       continue
     try:
       result = callGAPI(gmail.users().settings(), 'updateLanguage',
-                        throwReasons=GAPI.GMAIL_THROW_REASONS,
+                        throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED],
                         userId='me', body={'displayLanguage': language})
       entityActionPerformed([Ent.USER, user, Ent.LANGUAGE, result['displayLanguage']], i, count)
+    except GAPI.permissionDenied as e:
+      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.badRequest):
       entityServiceNotApplicableWarning(Ent.USER, user, i, count)
 
@@ -68874,7 +68883,7 @@ def createSmime(users):
                  throwReasons=GAPI.GMAIL_SMIME_THROW_REASONS,
                  userId='me', sendAsEmail=sendAsEmail, id=smimeId)
         entityActionPerformedMessage([Ent.USER, user, Ent.SENDAS_ADDRESS, sendAsEmail, Ent.SMIME_ID, smimeId], Msg.DEFAULT_SMIME, i, count)
-    except (GAPI.forbidden, GAPI.invalidArgument) as e:
+    except (GAPI.forbidden, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.badRequest):
       entityServiceNotApplicableWarning(Ent.USER, user, i, count)
@@ -68946,7 +68955,7 @@ def updateSmime(users):
       entityActionPerformedMessage([Ent.USER, user, Ent.SENDAS_ADDRESS, sendAsEmail, Ent.SMIME_ID, smimeId], Msg.DEFAULT_SMIME, i, count)
     except GAPI.notFound as e:
       entityActionFailedWarning([Ent.USER, user, Ent.SMIME_ID, smimeId], str(e), i, count)
-    except (GAPI.forbidden, GAPI.invalidArgument) as e:
+    except (GAPI.forbidden, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.badRequest):
       entityServiceNotApplicableWarning(Ent.USER, user, i, count)
@@ -68984,7 +68993,7 @@ def deleteSmime(users):
       entityActionPerformed([Ent.USER, user, Ent.SENDAS_ADDRESS, sendAsEmail, Ent.SMIME_ID, smimeId], i, count)
     except GAPI.notFound as e:
       entityActionFailedWarning([Ent.USER, user, Ent.SMIME_ID, smimeId], str(e), i, count)
-    except (GAPI.forbidden, GAPI.invalidArgument) as e:
+    except (GAPI.forbidden, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.badRequest):
       entityServiceNotApplicableWarning(Ent.USER, user, i, count)
@@ -69232,10 +69241,11 @@ def setVacation(users):
         oldBody.pop('responseBodyHtml', None)
       oldBody.update(body)
       result = callGAPI(gmail.users().settings(), 'updateVacation',
-                        throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.INVALID_ARGUMENT, GAPI.FAILED_PRECONDITION],
+                        throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.INVALID_ARGUMENT,
+                                                               GAPI.FAILED_PRECONDITION, GAPI.PERMISSION_DENIED],
                         userId='me', body=oldBody)
       printEntity([Ent.USER, user, Ent.VACATION_ENABLED, result['enableAutoReply']], i, count)
-    except (GAPI.invalidArgument, GAPI.failedPrecondition) as e:
+    except (GAPI.invalidArgument, GAPI.failedPrecondition, GAPI.permissionDenied) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.VACATION_ENABLED, enable], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.badRequest):
       entityServiceNotApplicableWarning(Ent.USER, user, i, count)

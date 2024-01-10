@@ -2,6 +2,23 @@
 
 Merged GAM-Team version
 
+6.67.11
+
+Updated various Gmail related commands to handle this error:
+```
+ERROR: 403: permissionDenied - Insufficient Permission
+```
+when the following service account scopes are selected:
+
+```
+[ ] 23)  Gmail API - Basic Settings (Filters,IMAP, Language, POP, Vacation) - read/write, Sharing Settings (Delegates, Forwarding, SendAs) - read
+[ ] 24)  Gmail API - Full Access (Labels, Messages)
+[ ] 25)  Gmail API - Full Access (Labels, Messages) except delete message
+[*] 26)  Gmail API - Full Access - read only
+[ ] 27)  Gmail API - Send Messages - including todrive
+[ ] 28)  Gmail API - Sharing Settings (Delegates, Forwarding, SendAs) - write
+```
+
 6.67.10
 
 Fixed bug that caused a trap when optional argument `charset <Charset>` was used with `emlfile <FileName>` in `gam <UserTypeEntity> draft|import|insert message`.
