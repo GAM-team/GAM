@@ -11,6 +11,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.67.13
+
+Updated `gam create domain <DomainName>` to handle the following error:
+```
+ERROR: 409: conflict - Domain in request is in use by an email verified customer.
+```
+
 ### 6.67.12
 
 Added option `addcsvdata <FieldName> <String>` to `gam print datatransfers` that adds

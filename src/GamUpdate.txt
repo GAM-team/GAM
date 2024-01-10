@@ -2,6 +2,13 @@
 
 Merged GAM-Team version
 
+6.67.13
+
+Updated `gam create domain <DomainName>` to handle the following error:
+```
+ERROR: 409: conflict - Domain in request is in use by an email verified customer.
+```
+
 6.67.12
 
 Added option `addcsvdata <FieldName> <String>` to `gam print datatransfers` that adds

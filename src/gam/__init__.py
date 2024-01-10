@@ -15375,14 +15375,15 @@ def doCreateDomainAlias():
   checkForExtraneousArguments()
   try:
     callGAPI(cd.domainAliases(), 'insert',
-             throwReasons=[GAPI.DOMAIN_NOT_FOUND, GAPI.DUPLICATE, GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
+             throwReasons=[GAPI.DOMAIN_NOT_FOUND, GAPI.DUPLICATE, GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.NOT_FOUND,
+                           GAPI.FORBIDDEN, GAPI.CONFLICT],
              customer=GC.Values[GC.CUSTOMER_ID], body=body, fields='')
     entityActionPerformed([Ent.DOMAIN, body['parentDomainName'], Ent.DOMAIN_ALIAS, body['domainAliasName']])
   except GAPI.domainNotFound:
     entityActionFailedWarning([Ent.DOMAIN, body['parentDomainName']], Msg.DOES_NOT_EXIST)
   except GAPI.duplicate:
     entityActionFailedWarning([Ent.DOMAIN, body['parentDomainName'], Ent.DOMAIN_ALIAS, body['domainAliasName']], Msg.DUPLICATE)
-  except GAPI.invalid as e:
+  except (GAPI.invalid, GAPI.conflict) as e:
     entityActionFailedWarning([Ent.DOMAIN, body['parentDomainName'], Ent.DOMAIN_ALIAS, body['domainAliasName']], str(e))
   except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
     accessErrorExit(cd)
@@ -15486,11 +15487,13 @@ def doCreateDomain():
   checkForExtraneousArguments()
   try:
     callGAPI(cd.domains(), 'insert',
-             throwReasons=[GAPI.DUPLICATE, GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
+             throwReasons=[GAPI.DUPLICATE, GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.CONFLICT],
              customer=GC.Values[GC.CUSTOMER_ID], body=body, fields='')
     entityActionPerformed([Ent.DOMAIN, body['domainName']])
   except GAPI.duplicate:
     entityDuplicateWarning([Ent.DOMAIN, body['domainName']])
+  except GAPI.conflict as e:
+    entityActionFailedWarning([Ent.DOMAIN, body['domainName']], str(e))
   except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
     accessErrorExit(cd)
 
