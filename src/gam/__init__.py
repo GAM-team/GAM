@@ -16426,6 +16426,7 @@ DATA_TRANSFER_SORT_TITLES = ['id', 'requestTime', 'oldOwnerUserEmail', 'newOwner
 # gam print datatransfers|transfers [todrive <ToDriveAttribute>*]
 #	[olduser|oldowner <UserItem>] [newuser|newowner <UserItem>]
 #	[status <String>] [delimiter <Character>]]
+#	(addcsvdata <FieldName> <String>)*
 # gam show datatransfers|transfers
 #	[olduser|oldowner <UserItem>] [newuser|newowner <UserItem>]
 #	[status <String>] [delimiter <Character>]]
@@ -16437,6 +16438,7 @@ def doPrintShowDataTransfers():
   status = None
   csvPF = CSVPrintFile(['id'], DATA_TRANSFER_SORT_TITLES) if Act.csvFormat() else None
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
+  addCSVData = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -16449,6 +16451,9 @@ def doPrintShowDataTransfers():
       status = getChoice(DATA_TRANSFER_STATUS_MAP, mapChoice=True)
     elif myarg == 'delimiter':
       delimiter = getCharacter()
+    elif myarg == 'addcsvdata':
+      k = getString(Cmd.OB_STRING)
+      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
     else:
       unknownArgumentExit()
   try:
@@ -16475,6 +16480,8 @@ def doPrintShowDataTransfers():
       row['oldOwnerUserEmail'] = convertUserIDtoEmail(transfer['oldOwnerUserId'])
       row['newOwnerUserEmail'] = convertUserIDtoEmail(transfer['newOwnerUserId'])
       row['overallTransferStatusCode'] = transfer['overallTransferStatusCode']
+      if addCSVData:
+        row.update(addCSVData)
       for app in transfer['applicationDataTransfers']:
         xrow = row.copy()
         xrow['application'] = _convertTransferAppIDtoName(apps, app['applicationId'])

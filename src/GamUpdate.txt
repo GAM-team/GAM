@@ -2,6 +2,11 @@
 
 Merged GAM-Team version
 
+6.67.12
+
+Added option `addcsvdata <FieldName> <String>` to `gam print datatransfers` that adds
+additional columns of data to the CSV file output.
+
 6.67.11
 
 Updated various Gmail related commands to handle this error:

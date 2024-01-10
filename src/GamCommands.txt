@@ -3140,6 +3140,7 @@ gam info datatransfer|transfer <TransferID>
 gam print datatransfers|transfers [todrive <ToDriveAttribute>*]
         [olduser|oldowner <UserItem>] [newuser|newowner <UserItem>]
         [status completed|failed|inprogress] [delimiter <Character>]
+        (addcsvdata <FieldName> <String>)*
 gam show datatransfers|transfers
         [olduser|oldowner <UserItem>] [newuser|newowner <UserItem>]
         [status completed|failed|inprogress] [delimiter <Character>]

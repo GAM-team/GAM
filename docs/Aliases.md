@@ -129,6 +129,9 @@ By default, the aliases in a list are separated by the `csv_output_field_delimit
 
 Specifying both `onerowpertarget` and `suppressnoaliasrows` causes GAM to not display any targets that have no aliases.
 
+Add additional columns of data from the command line to the output
+* `addcsvdata <FieldName> <String>`
+
 When multiple domains are specified and a query/queries are specified, an API call is made for each domain/query combination.
 ```
 $ gam print aliases domains school.org,students.school.org queries "'email:admin*','email:test*'"

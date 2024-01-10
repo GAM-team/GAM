@@ -63,6 +63,7 @@ gam show datatransfers|transfers
 gam print datatransfers|transfers [todrive <ToDriveAttribute>*]
         [olduser|oldowner <UserItem>] [newuser|newowner <UserItem>]
         [status completed|failed|inprogress|<String>] [delimiter <Character>]
+        (addcsvdata <FieldName> <String>)*
 ```
 By default, all data transfer operations are printed, use these options to select specific transfers.
 * `olduser|oldowner <UserItem>`
@@ -72,3 +73,5 @@ By default, all data transfer operations are printed, use these options to selec
 By default, the entries in lists of items are separated by the `csv_output_field_delimiter` from `gam.cfg`.
 * `delimiter <Character>` - Separate list items with `<Character>`
 
+Add additional columns of data from the command line to the output
+* `addcsvdata <FieldName> <String>`
