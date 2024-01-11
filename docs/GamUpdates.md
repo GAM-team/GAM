@@ -11,6 +11,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.67.14
+
+Updated reseller commands to handle the following error:
+```
+ERROR: 400: invalid - Customer domain [domain.com] is linked to one or more email verified customers, please provide a customer id.
+```
+
 ### 6.67.13
 
 Updated `gam create domain <DomainName>` to handle the following error:

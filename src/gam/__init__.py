@@ -3,7 +3,7 @@
 #
 # GAM
 #
-# Copyright 2023, All Rights Reserved.
+# Copyright 2024, All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14579,10 +14579,10 @@ def doCreateResoldCustomer():
   body['customerDomain'] = customerDomain
   try:
     result = callGAPI(res.customers(), 'insert',
-                      throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                      throwReasons=GAPI.RESELLER_THROW_REASONS,
                       body=body, customerAuthToken=customerAuthToken, fields='customerId')
     entityActionPerformed([Ent.CUSTOMER_DOMAIN, body['customerDomain'], Ent.CUSTOMER_ID, result['customerId']])
-  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden) as e:
+  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.invalid) as e:
     entityActionFailedWarning([Ent.CUSTOMER_DOMAIN, body['customerDomain']], str(e))
 
 # gam update resoldcustomer <CustomerID> [customer_auth_token <String>] <ResoldCustomerAttribute>+
@@ -14592,10 +14592,10 @@ def doUpdateResoldCustomer():
   customerAuthToken, body = _getResoldCustomerAttr()
   try:
     callGAPI(res.customers(), 'patch',
-             throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+             throwReasons=GAPI.RESELLER_THROW_REASONS,
              customerId=customerId, body=body, customerAuthToken=customerAuthToken, fields='')
     entityActionPerformed([Ent.CUSTOMER_ID, customerId])
-  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden) as e:
+  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.invalid) as e:
     entityActionFailedWarning([Ent.CUSTOMER_ID, customerId], str(e))
 
 # gam info resoldcustomer <CustomerID> [formatjson]
@@ -14608,7 +14608,7 @@ def doInfoResoldCustomer():
     FJQC.GetFormatJSON(myarg)
   try:
     customerInfo = callGAPI(res.customers(), 'get',
-                            throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                            throwReasons=GAPI.RESELLER_THROW_REASONS,
                             customerId=customerId)
     if not FJQC.formatJSON:
       printKeyValueList(['Customer ID', customerInfo['customerId']])
@@ -14624,7 +14624,7 @@ def doInfoResoldCustomer():
       printKeyValueList(['Customer Admin Console URL', customerInfo['resourceUiUrl']])
     else:
       printLine(json.dumps(cleanJSON(customerInfo), ensure_ascii=False, sort_keys=False))
-  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden) as e:
+  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.invalid) as e:
     entityActionFailedWarning([Ent.CUSTOMER_ID, customerId], str(e))
 
 def getCustomerSubscription(res):
@@ -14634,9 +14634,9 @@ def getCustomerSubscription(res):
     invalidChoiceExit(skuId, SKU.getSortedSKUList(), True)
   try:
     subscriptions = callGAPIpages(res.subscriptions(), 'list', 'subscriptions',
-                                  throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                                  throwReasons=GAPI.RESELLER_THROW_REASONS,
                                   customerId=customerId, fields='nextPageToken,subscriptions(skuId,subscriptionId,plan(planName))')
-  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden) as e:
+  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.invalid) as e:
     entityActionFailedWarning([Ent.SUBSCRIPTION, None], str(e))
     sys.exit(GM.Globals[GM.SYSEXITRC])
   for subscription in subscriptions:
@@ -14712,11 +14712,11 @@ def doCreateResoldSubscription():
   customerAuthToken, body = _getResoldSubscriptionAttr(customerId)
   try:
     subscription = callGAPI(res.subscriptions(), 'insert',
-                            throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                            throwReasons=GAPI.RESELLER_THROW_REASONS,
                             customerId=customerId, customerAuthToken=customerAuthToken, body=body)
     entityActionPerformed([Ent.CUSTOMER_ID, customerId, Ent.SKU, subscription['skuId']])
     _showSubscription(subscription)
-  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden) as e:
+  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.invalid) as e:
     entityActionFailedWarning([Ent.CUSTOMER_ID, customerId], str(e))
 
 RENEWAL_TYPE_MAP = {
@@ -14780,12 +14780,12 @@ def doUpdateResoldSubscription():
       unknownArgumentExit()
   try:
     subscription = callGAPI(res.subscriptions(), function,
-                            throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                            throwReasons=GAPI.RESELLER_THROW_REASONS,
                             customerId=customerId, subscriptionId=subscriptionId, **kwargs)
     entityActionPerformed([Ent.CUSTOMER_ID, customerId, Ent.SKU, skuId])
     if subscription:
       _showSubscription(subscription)
-  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden) as e:
+  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.invalid) as e:
     entityActionFailedWarning([Ent.CUSTOMER_ID, customerId], str(e))
 
 DELETION_TYPE_MAP = {
@@ -14802,10 +14802,10 @@ def doDeleteResoldSubscription():
   checkForExtraneousArguments()
   try:
     callGAPI(res.subscriptions(), 'delete',
-             throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+             throwReasons=GAPI.RESELLER_THROW_REASONS,
              customerId=customerId, subscriptionId=subscriptionId, deletionType=deletionType)
     entityActionPerformed([Ent.CUSTOMER_ID, customerId, Ent.SKU, skuId])
-  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden) as e:
+  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.invalid) as e:
     entityActionFailedWarning([Ent.CUSTOMER_ID, customerId, Ent.SKU, skuId], str(e))
 
 # gam info resoldsubscription <CustomerID> <SKUID>
@@ -14818,12 +14818,12 @@ def doInfoResoldSubscription():
     FJQC.GetFormatJSON(myarg)
   try:
     subscription = callGAPI(res.subscriptions(), 'get',
-                            throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                            throwReasons=GAPI.RESELLER_THROW_REASONS,
                             customerId=customerId, subscriptionId=subscriptionId)
     if not FJQC.formatJSON:
       printEntity([Ent.CUSTOMER_ID, customerId, Ent.SKU, skuId])
     _showSubscription(subscription, FJQC)
-  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden) as e:
+  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.invalid) as e:
     entityActionFailedWarning([Ent.CUSTOMER_ID, customerId, Ent.SKU, skuId], str(e))
 
 PRINT_RESOLD_SUBSCRIPTIONS_TITLES = ['customerId', 'skuId', 'subscriptionId']
@@ -14857,9 +14857,9 @@ def doPrintShowResoldSubscriptions():
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   try:
     subscriptions = callGAPIpages(res.subscriptions(), 'list', 'subscriptions',
-                                  throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                                  throwReasons=GAPI.RESELLER_THROW_REASONS,
                                   fields='nextPageToken,subscriptions', **kwargs)
-  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden) as e:
+  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.invalid) as e:
     entityActionFailedWarning([Ent.SUBSCRIPTION, None], str(e))
     return
   jcount = len(subscriptions)
