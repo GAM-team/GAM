@@ -11,6 +11,24 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.67.16
+
+By default, `gam print group-members membernames` displays `Unknown` for members whose names can not be determined.
+Added option `unknownname <String>` that let's you specify an alternative value.
+
+Further improved performance of `gam print group-members membernames cachememberinfo`.
+
+### 6.67.15
+
+Update `gam print group-members membernames` to handle the following error:
+```
+ERROR: 400: failedPrecondition - Precondition check failed.
+```
+
+Added option `cachememberinfo [Boolean]` to `gam print group-members` that causes GAM to cache member info
+so that only one API call is made to get information for each user/group. This consumes
+more memory but dramatically reduces the number of API calls.
+
 ### 6.67.14
 
 Updated reseller commands to handle the following error:

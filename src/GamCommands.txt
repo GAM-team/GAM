@@ -3652,6 +3652,7 @@ gam print group-members [todrive <ToDriveAttribute>*]
         [userfields <UserFieldNameList>]
         [(recursive [noduplicates])|includederivedmembership] [nogroupemail]
         [peoplelookup|(peoplelookupuser <EmailAddress>)]
+        [unknownname <String>] [cachememberinfo [Boolean]]
         [formatjson [quotechar <Character>]]
 gam show group-members
         [([domain|domains <DomainNameEntity>] ([member|showownedby <EmailItem>]|[(query <QueryGroup>)|(queries <QueryGroupList>)]))|

@@ -32034,6 +32034,7 @@ GROUPMEMBERS_DEFAULT_FIELDS = ['group', 'type', 'role', 'id', 'status', 'email']
 #	[userfields <UserFieldNameList>]
 #	[(recursive [noduplicates])|includederivedmembership] [nogroupemail]
 #	[peoplelookup|(peoplelookupuser <EmailAddress>)]
+#	[unknownname <String>] [cachememberinfo [Boolean]]
 #	[formatjson [quotechar <Character>]]
 def doPrintGroupMembers():
   def getNameFromPeople(memberId):
@@ -32049,12 +32050,11 @@ def doPrintGroupMembers():
               return name['displayName']
     except (GAPI.notFound, GAPI.serviceNotAvailable, GAPI.forbidden):
       pass
-    return ''
+    return unknownName
 
   cd = buildGAPIObject(API.DIRECTORY)
   ci = None
   people = None
-  peopleNames = {}
   memberOptions = initMemberOptions()
   groupColumn = True
   customerKey = GC.Values[GC.CUSTOMER_ID]
@@ -32071,6 +32071,10 @@ def doPrintGroupMembers():
   typesSet = set()
   matchPatterns = {}
   showDeliverySettings = False
+  cacheMemberInfo = False
+  memberInfo = {}
+  memberNames = {}
+  unknownName = UNKNOWN
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -32127,6 +32131,10 @@ def doPrintGroupMembers():
       _, people = buildGAPIServiceObject(API.PEOPLE, getEmailAddress())
       if not people:
         return
+    elif myarg == 'unknownname':
+      unknownName = getString(Cmd.OB_STRING)
+    elif myarg == 'cachememberinfo':
+      cacheMemberInfo = getBoolean()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   if not typesSet:
@@ -32201,17 +32209,24 @@ def doPrintGroupMembers():
       memberType = member.get('type')
       if userFieldsList:
         if memberOptions[MEMBEROPTION_MEMBERNAMES]:
-          row['name'] = UNKNOWN
+          row['name'] = unknownName
         if memberType == Ent.TYPE_USER:
-          try:
-            mbinfo = callGAPI(cd.users(), 'get',
-                              throwReasons=GAPI.USER_GET_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
-                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                              userKey=memberId, fields=userFields)
-            if memberOptions[MEMBEROPTION_MEMBERNAMES]:
-              row['name'] = mbinfo['name'].pop('fullName')
-              if not mbinfo['name']:
-                mbinfo.pop('name')
+            if not cacheMemberInfo or memberId not in memberNames:
+              mbinfo = callGAPI(cd.users(), 'get',
+                                throwReasons=GAPI.USER_GET_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE, GAPI.FAILED_PRECONDITION],
+                                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                                userKey=memberId, fields=userFields)
+              if memberOptions[MEMBEROPTION_MEMBERNAMES]:
+                row['name'] = mbinfo['name'].pop('fullName')
+                if not mbinfo['name']:
+                  mbinfo.pop('name')
+              if cacheMemberInfo:
+                memberNames[memberId] = row['name']
+                if mbinfo:
+                  memberInfo[memberId] = mbinfo
+            else:
+              row['name'] = memberNames[memberId]
+              mbinfo = memberInfo.get(memberId, {})
             if not FJQC.formatJSON:
               csvPF.WriteRowTitles(flattenJSON(mbinfo, flattened=row))
             else:
@@ -32224,32 +32239,47 @@ def doPrintGroupMembers():
               csvPF.WriteRowNoFilter(fjrow)
             continue
           except GAPI.userNotFound:
-            if memberOptions[MEMBEROPTION_MEMBERNAMES] and people:
-              if memberId not in peopleNames:
-                peopleNames[memberId] = getNameFromPeople(memberId)
-              if peopleNames[memberId]:
-                row['name'] = peopleNames[memberId]
+            if memberOptions[MEMBEROPTION_MEMBERNAMES]:
+              if people:
+                if memberId not in memberNames:
+                  memberNames[memberId] = getNameFromPeople(memberId)
+              else:
+                memberNames[memberId] = unknownName
+              row['name'] = memberNames[memberId]
           except (GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
-                  GAPI.badRequest, GAPI.backendError, GAPI.systemError, GAPI.serviceNotAvailable):
-            pass
+                  GAPI.badRequest, GAPI.backendError, GAPI.systemError, GAPI.serviceNotAvailable, GAPI.failedPrecondition):
+            if memberOptions[MEMBEROPTION_MEMBERNAMES] and cacheMemberInfo:
+              memberNames[memberId] = unknownName
         elif memberType == Ent.TYPE_GROUP:
           if memberOptions[MEMBEROPTION_MEMBERNAMES]:
             try:
-              row['name'] = callGAPI(cd.groups(), 'get',
-                                     throwReasons=GAPI.GROUP_GET_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
-                                     retryReasons=GAPI.GROUP_GET_RETRY_REASONS,
-                                     groupKey=memberId, fields='name')['name']
+              if not cacheMemberInfo or memberId not in memberNames:
+                row['name'] = callGAPI(cd.groups(), 'get',
+                                       throwReasons=GAPI.GROUP_GET_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE, GAPI.FAILED_PRECONDITION],
+                                       retryReasons=GAPI.GROUP_GET_RETRY_REASONS,
+                                       groupKey=memberId, fields='name')['name']
+                if cacheMemberInfo:
+                  memberNames[memberId] = row['name']
+              else:
+                row['name'] = memberNames[memberId]
             except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden, GAPI.badRequest,
-                    GAPI.invalid, GAPI.systemError, GAPI.serviceNotAvailable):
-              pass
+                    GAPI.invalid, GAPI.systemError, GAPI.serviceNotAvailable, GAPI.failedPrecondition):
+              if memberOptions[MEMBEROPTION_MEMBERNAMES] and cacheMemberInfo:
+                memberNames[memberId] = unknownName
         elif memberType == Ent.TYPE_CUSTOMER:
           if memberOptions[MEMBEROPTION_MEMBERNAMES]:
             try:
-              row['name'] = callGAPI(cd.customers(), 'get',
-                                     throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID_INPUT, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
-                                     customerKey=memberId, fields='customerDomain')['customerDomain']
+              if not cacheMemberInfo or memberId not in memberNames:
+                row['name'] = callGAPI(cd.customers(), 'get',
+                                       throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID_INPUT, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                                       customerKey=memberId, fields='customerDomain')['customerDomain']
+                if cacheMemberInfo:
+                  memberNames[memberId] = row['name']
+              else:
+                row['name'] = memberNames[memberId]
             except (GAPI.badRequest, GAPI.invalidInput, GAPI.resourceNotFound, GAPI.forbidden):
-              pass
+              if memberOptions[MEMBEROPTION_MEMBERNAMES] and cacheMemberInfo:
+                memberNames[memberId] = unknownName
       if not FJQC.formatJSON:
         csvPF.WriteRow(row)
       else:
@@ -33239,6 +33269,7 @@ def doInfoCIGroups():
   rolesSet = set()
   typesSet = set()
   memberOptions = initMemberOptions()
+  cachedGroupMembers = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'quick':
@@ -33339,7 +33370,6 @@ def doInfoCIGroups():
         printKeyValueList([Msg.TOTAL_ITEMS_IN_ENTITY.format(Ent.Plural(entityType), Ent.Singular(Ent.CLOUD_IDENTITY_GROUP)), len(members)])
         Ind.Decrement()
       elif showMemberTree:
-        cachedGroupMembers = {}
         Ind.Increment()
         printEntity([Ent.MEMBERSHIP_TREE, ''])
         Ind.Increment()

@@ -583,6 +583,7 @@ gam print group-members [todrive <ToDriveAttribute>*]
         [userfields <UserFieldNameList>]
         [(recursive [noduplicates])|includederivedmembership] [nogroupemail]
         [peoplelookup|(peoplelookupuser <EmailAddress>)]
+        [unknownname <String>] [cachememberinfo [Boolean]]
         [formatjson [quotechar <Character>]]
 ```
 By default, the group membership of all groups in the account are displayed, these options allow selection of subsets of groups:
@@ -646,10 +647,16 @@ these options specify which fields to display:
     * `delivery|deliverysettings` - Specify this field to get delivery information; an additional API call per member is required
 * `userfields <UserFieldNameList>` - For members that are users, display these user fields; an additional API call per member is required
 
+The additional API calls can be reduced with the `cachememberinfo` option; a single API call is made for each user/group
+and the data is cached to eliminate to need to repeat the API call; this consumes more memory but dramatically reduces the number of API calls.
+
 If member names are requested, names are not available for users not in the domain; you can request that GAM use the People API to retrieve
 names for these users. Names are not retrieved in all cases and success is dependent on what user is used to perform the retrievals.
 * `peoplelookup` - Use the administrator named in oauth2.txt to perform the retrievals
 * `peoplelookupuser <EmailAddress>` - Use `<EmailAddress>` to perform the retrievals
+
+By default, when `membernames` is specified, GAM displays `Unknown` for members whose names can not be determined.
+Use `unknownname <String>` to specify an alternative value.
 
 By default, the group email address is always shown, you can suppress it with the `nogroupemail` option.
 
