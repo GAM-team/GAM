@@ -32211,6 +32211,7 @@ def doPrintGroupMembers():
         if memberOptions[MEMBEROPTION_MEMBERNAMES]:
           row['name'] = unknownName
         if memberType == Ent.TYPE_USER:
+          try:
             if not cacheMemberInfo or memberId not in memberNames:
               mbinfo = callGAPI(cd.users(), 'get',
                                 throwReasons=GAPI.USER_GET_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE, GAPI.FAILED_PRECONDITION],
