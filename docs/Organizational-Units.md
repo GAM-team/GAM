@@ -13,6 +13,7 @@
 - [Synchronize ChromeOS devices with an organizational unit](#synchronize-chromeos-devices-with-an-organizational-unit)
 - [Display organizational units](#display-organizational-units)
 - [Print organizational units](#print-organizational-units)
+- [Display orgamizational unit counts](#display-organizational-unit-counts)
 - [Display indented organizational unit tree](#display-indented-organizational-unit-tree)
 - [Special case handling for large number of organizational units](#special-case-handling-for-large-number-of-organizational-units)
 
@@ -237,6 +238,14 @@ Get file count summaries by OU; top level selector is ou, sub level selectors ar
 gam redirect csv ./TopLevelOUs.csv print ous showparent toplevelonly parentselector ou childselector ou_and_children fields orgunitpath
 gam redirect csv ./FileCounts.csv multiprocess csv ./TopLevelOUs.csv gam "~orgUnitSelector" "~orgUnitPath" print filecounts excludetrashed summary only summaryuser "~orgUnitPath"
 ```
+## Display organizational unit counts
+Display the number of organizational units.
+```
+gam print orgs|ous
+        [fromparent <OrgUnitItem>] [showparent [Boolean>]] [toplevelonly]
+        showitemcountonly
+```
+
 ## Display indented organizational unit tree
 ```
 gam show orgtree [fromparent <OrgUnitItem>] [batchsuborgs [<Boolean>]]

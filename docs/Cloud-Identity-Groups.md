@@ -9,6 +9,7 @@
 - [Manage groups](#manage-groups)
 - [Display information about individual groups](#display-information-about-individual-groups)
 - [Display information about multiple groups](#display-information-about-multiple-groups)
+- [Display group counts](#display-group-counts)
 
 ## API documentation
 * https://developers.google.com/admin-sdk/directory/reference/rest/v1/groups
@@ -376,3 +377,14 @@ gam print cigroups query "'cloudidentity.googleapis.com/groups.dynamic' in label
 ```
 gam print cigroups query "'cloudidentity.googleapis.com/groups.security' in labels"
 ```
+
+## Display group counts
+Display the number of groups.
+```
+gam print cigroups
+        [(cimember|showownedby <UserItem>)|(select <GroupEntity>)|(query <String>)]
+        [emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
+        [descriptionmatchpattern [not] <RegularExpression>]
+        showitemcountonly
+```
+

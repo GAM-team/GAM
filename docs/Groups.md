@@ -16,6 +16,7 @@
 - [Display information about selected groups](#display-information-about-selected-groups)
 - [Display a group and its parents](#Display-a-group-and-its-parents)
 - [Examples](#Examples)
+- [Display group counts](#display-group-counts)
 
 ## API documentation
 * https://developers.google.com/admin-sdk/directory/reference/rest/v1/groups
@@ -562,4 +563,15 @@ $ gam print grouptree testgroup2@domain.com showparentsaslist delimiter "|"
 Group,Name,ParentsCount,Parents,ParentsName
 testgroup2@domain.com,Test - Group 2,2,testgroup1@domain.com|testgroup@domain.com,Test Group1|Test Group Org
 testgroup2@domain.com,Test - Group 2,1,testgroup@domain.net,Test Group Net
+```
+## Display group counts
+Display the number of groups.
+```
+gam print groups
+        [([domain|domains <DomainNameEntity>] ([member|showownedby <EmailItem>]|[(query <QueryGroup>)|(queries <QueryGroupList>)]))|
+         (select <GroupEntity>)]
+        [emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
+        [descriptionmatchpattern [not] <RegularExpression>] (matchsetting [not] <GroupAttribute>)*
+        [admincreatedmatch <Boolean>]
+        showitemcountonly
 ```

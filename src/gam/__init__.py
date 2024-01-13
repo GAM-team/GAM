@@ -17148,6 +17148,7 @@ def getOrgUnitIdToPathMap(cd=None):
 #	[allfields|<OrgUnitFieldName>*|(fields <OrgUnitFieldNameList>)] [convertcrnl] [batchsuborgs [<Boolean>]]
 #	[mincroscount <Number>] [maxcroscount <Number>]
 #	[minusercount <Number>] [maxusercount <Number>]
+# 	[showitemcountonly]
 def doPrintOrgs():
   cd = buildGAPIObject(API.DIRECTORY)
   convertCRNL = GC.Values[GC.CSV_OUTPUT_CONVERT_CR_NL]
@@ -17160,6 +17161,7 @@ def doPrintOrgs():
   minCrOSCounts = maxCrOSCounts = minUserCounts = maxUserCounts = -1
   crosCounts = {}
   userCounts = {}
+  showItemCountOnly = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -17203,6 +17205,8 @@ def doPrintOrgs():
           invalidChoiceExit(field, list(ORG_ARGUMENT_TO_FIELD_MAP), True)
     elif myarg in {'convertcrnl', 'converttextnl'}:
       convertCRNL = True
+    elif myarg == 'showitemcountonly':
+      showItemCountOnly = True
     else:
       unknownArgumentExit()
   if childSelector:
@@ -17216,6 +17220,9 @@ def doPrintOrgs():
     for field in PRINT_ORGS_DEFAULT_FIELDS:
       csvPF.AddField(field, ORG_ARGUMENT_TO_FIELD_MAP, fieldsList)
   orgUnits = _getOrgUnits(cd, orgUnitPath, fieldsList, listType, showParent, batchSubOrgs, childSelector, parentSelector)
+  if showItemCountOnly:
+    writeStdout(f'{0 if orgUnits is None else (len(orgUnits))}\n')
+    return
   if orgUnits is None:
     return
   if showUserCounts:
@@ -23463,6 +23470,7 @@ CROS_INDEXED_TITLES = ['activeTimeRanges', 'recentUsers', 'deviceFiles',
 #	[(query <QueryCrOS>)|(queries <QueryCrOSList>) [querytime<String> <Time>]
 #	 [(limittoou|cros_ou <OrgUnitItem>)|(cros_ou_and_children <OrgUnitItem>)|
 #	  (cros_ous <OrgUnitList>)|(cros_ous_and_children <OrgUnitList>)]]
+# 	[showitemcountonly]
 # gam print cros [todrive <ToDriveAttribute>*] select <CrOSTypeEntity>
 # gam <CrOSTypeEntity> print cros [todrive <ToDriveAttribute>*]
 #	[orderby <CrOSOrderByFieldName> [ascending|descending]]
@@ -23473,6 +23481,7 @@ CROS_INDEXED_TITLES = ['activeTimeRanges', 'recentUsers', 'deviceFiles',
 #	[timerangeorder ascending|descending] [showdvrsfp]
 #	[sortheaders]
 #	[formatjson [quotechar <Character>]]
+# 	[showitemcountonly]
 def doPrintCrOSDevices(entityList=None):
   def _printCrOS(cros):
     checkTPMVulnerability(cros)
@@ -23607,6 +23616,7 @@ def doPrintCrOSDevices(entityList=None):
     selectionAllowed = False
   allFields = noLists = oneRow = showDVRstorageFreePercentage = sortHeaders = False
   activeTimeRangesOrder = 'ASCENDING'
+  showItemCountOnly = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -23676,6 +23686,8 @@ def doPrintCrOSDevices(entityList=None):
           invalidChoiceExit(field, CROS_LIST_FIELDS_CHOICE_MAP, True)
     elif myarg == 'showdvrsfp':
       showDVRstorageFreePercentage = True
+    elif myarg == 'showitemcountonly':
+      showItemCountOnly = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   if selectedLists:
@@ -23716,8 +23728,9 @@ def doPrintCrOSDevices(entityList=None):
             tokenRetries = 0
             pageToken, totalItems = _processGAPIpagesResult(feed, 'chromeosdevices', None, totalItems, pageMessage, None, Ent.CROS_DEVICE)
             if feed:
-              for cros in feed.get('chromeosdevices', []):
-                _printCrOS(cros)
+              if not showItemCountOnly:
+                for cros in feed.get('chromeosdevices', []):
+                  _printCrOS(cros)
               del feed
             if not pageToken:
               _finalizeGAPIpagesResult(pageMessage)
@@ -23742,7 +23755,13 @@ def doPrintCrOSDevices(entityList=None):
             return
           except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
             accessErrorExit(cd)
+    if showItemCountOnly:
+      writeStdout(f'{totalItems}\n')
+      return
   else:
+    if showItemCountOnly:
+      writeStdout(f'{len(entityList)}\n')
+      return
     sortRows = True
     if allFields or len(set(fieldsList)) > 1:
       jcount = len(entityList)
@@ -25202,7 +25221,7 @@ def _getChatMemberEmail(cd, member):
   if 'member' in member:
     if member['member']['type'] == 'HUMAN':
       _, memberUid = member['member']['name'].split('/')
-      member['member']['email'], status = convertUIDtoEmailAddressWithType(f'uid:{memberUid}', cd, emailTypes=['user'])
+      member['member']['email'], _ = convertUIDtoEmailAddressWithType(f'uid:{memberUid}', cd, emailTypes=['user'])
   elif 'groupMember' in member:
     _, memberUid = member['groupMember']['name'].split('/')
     member['groupMember']['email'], _ = convertUIDtoEmailAddressWithType(f'uid:{memberUid}', cd, emailTypes=['group'])
@@ -27348,6 +27367,7 @@ DEVICE_ORDERBY_CHOICE_MAP = {
 #	[all|company|personal|nocompanydevices|nopersonaldevices]
 #	[nodeviceusers]
 #	[formatjson [quotechar <Character>]]
+# 	[showitemcountonly]
 def doPrintCIDevices():
   ci = buildGAPICIDeviceServiceObject()
   customer = _getCustomersCustomerIdNoC()
@@ -27361,6 +27381,7 @@ def doPrintCIDevices():
   queries = [None]
   view, entityType = DEVICE_VIEW_CHOICE_MAP['all']
   getDeviceUsers = True
+  showItemCountOnly = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -27381,11 +27402,14 @@ def doPrintCIDevices():
       pass
     elif myarg == 'sortheaders':
       pass
+    elif myarg == 'showitemcountonly':
+      showItemCountOnly = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   fields = getItemFieldsFromFieldsList('devices', fieldsList)
   userFields = getItemFieldsFromFieldsList('deviceUsers', userFieldsList)
   substituteQueryTimes(queries, queryTimes)
+  itemCount = 0
   for query in queries:
     printGettingAllAccountEntities(entityType, query)
     pageMessage = getPageMessage()
@@ -27396,6 +27420,9 @@ def doPrintCIDevices():
                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                               customer=customer, filter=query,
                               orderBy=OBY.orderBy, view=view, fields=fields, pageSize=100)
+      if showItemCountOnly:
+        itemCount += len(devices)
+        continue
     except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       entityActionFailedWarning([entityType, None], str(e))
       continue
@@ -27430,6 +27457,9 @@ def doPrintCIDevices():
         csvPF.WriteRowNoFilter({'name': device['name'],
                                 'JSON': json.dumps(cleanJSON(device, timeObjects=DEVICE_TIME_OBJECTS),
                                                    ensure_ascii=False, sort_keys=True)})
+  if showItemCountOnly:
+    writeStdout(f'{itemCount}\n')
+    return
   csvPF.writeCSVfile('Devices')
 
 DEVICE_USER_ACTION_CHOICES = {'approve', 'block', 'cancelwipe', 'wipe'}
@@ -27533,6 +27563,7 @@ def doInfoCIDeviceUser():
 #	<DeviceUserFieldName>* [fields <DevieUserFieldNameList>]
 #	[orderby <DeviceOrderByFieldName> [ascending|descending]]
 #	[formatjson [quotechar <Character>]]
+# 	[showitemcountonly]
 def doPrintCIDeviceUsers():
   ci = buildGAPICIDeviceServiceObject()
   customer = _getCustomersCustomerIdNoC()
@@ -27543,6 +27574,7 @@ def doPrintCIDeviceUsers():
   queryTimes = {}
   queries = [None]
   parent = 'devices/-'
+  showItemCountOnly = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -27561,10 +27593,13 @@ def doPrintCIDeviceUsers():
       pass
     elif myarg == 'sortheaders':
       pass
+    elif myarg == 'showitemcountonly':
+      showItemCountOnly = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   userFields = getItemFieldsFromFieldsList('deviceUsers', userFieldsList)
   substituteQueryTimes(queries, queryTimes)
+  itemCount = 0
   for query in queries:
     printGettingAllAccountEntities(Ent.DEVICE_USER, query)
     pageMessage = getPageMessage()
@@ -27575,6 +27610,9 @@ def doPrintCIDeviceUsers():
                                   retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                   customer=customer, filter=query,
                                   orderBy=OBY.orderBy, parent=parent, fields=userFields, pageSize=20)
+      if showItemCountOnly:
+        itemCount += len(deviceUsers)
+        continue
       for deviceUser in deviceUsers:
         row = flattenJSON(deviceUser, timeObjects=DEVICE_TIME_OBJECTS)
         if not FJQC.formatJSON:
@@ -27586,6 +27624,9 @@ def doPrintCIDeviceUsers():
     except (GAPI.invalid, GAPI.permissionDenied) as e:
       entityActionFailedWarning([Ent.DEVICE_USER, None], str(e))
       break
+  if showItemCountOnly:
+    writeStdout(f'{itemCount}\n')
+    return
   csvPF.writeCSVfile('Device Users')
 
 DEVICE_USER_COMPLIANCE_STATE_CHOICE_MAP = {
@@ -29319,6 +29360,7 @@ MOBILE_ORDERBY_CHOICE_MAP = {
 #	[basic|full|allfields] <MobileFieldName>* [fields <MobileFieldNameList>]
 #	[delimiter <Character>] [appslimit <Number>] [oneappperrow] [listlimit <Number>]
 #	[formatjson [quotechar <Character>]]
+# 	[showitemcountonly]
 def doPrintMobileDevices():
   def _appDetails(app):
     appDetails = []
@@ -29389,6 +29431,7 @@ def doPrintMobileDevices():
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   listLimit = 1
   appsLimit = -1
+  showItemCountOnly = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -29409,6 +29452,8 @@ def doPrintMobileDevices():
       oneAppPerRow = True
     elif _getMobileFieldsArguments(myarg, parameters):
       pass
+    elif myarg == 'showitemcountonly':
+      showItemCountOnly = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if not FJQC.formatJSON:
@@ -29417,6 +29462,7 @@ def doPrintMobileDevices():
     parameters['projection'] = 'FULL'
   fields = getItemFieldsFromFieldsList('mobiledevices', parameters['fieldsList'])
   substituteQueryTimes(queries, queryTimes)
+  itemCount = 0
   for query in queries:
     printGettingAllAccountEntities(Ent.MOBILE_DEVICE, query)
     pageMessage = getPageMessage()
@@ -29428,8 +29474,11 @@ def doPrintMobileDevices():
                             customerId=GC.Values[GC.CUSTOMER_ID], query=query, projection=parameters['projection'],
                             orderBy=orderBy, sortOrder=sortOrder, fields=fields, maxResults=GC.Values[GC.MOBILE_MAX_RESULTS])
       for mobiles in feed:
+        totalItems += len(mobiles)
+        if showItemCountOnly:
+          itemCount += len(mobiles)
+          continue
         for mobile in mobiles:
-          totalItems += 1
           _printMobile(mobile)
       printGotAccountEntities(totalItems)
     except GAPI.invalidInput:
@@ -29437,6 +29486,9 @@ def doPrintMobileDevices():
       return
     except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
       accessErrorExit(cd)
+  if showItemCountOnly:
+    writeStdout(f'{itemCount}\n')
+    return
   csvPF.writeCSVfile('Mobile')
 
 GROUP_DISCOVER_CHOICES = {
@@ -31352,8 +31404,10 @@ PRINT_GROUPS_JSON_TITLES = ['email', 'JSON']
 #	[memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
 #	[convertcrnl] [delimiter <Character>] [sortheaders]
 #	[formatjson [quotechar <Character>]]
+# 	[showitemcountonly]
 def doPrintGroups():
   def _printGroupRow(groupEntity, groupSettings, groupMembers):
+    nonlocal itemCount
     row = {}
     if matchSettings:
       if not isinstance(groupSettings, dict):
@@ -31365,6 +31419,9 @@ def doPrintGroups():
         if match['values'] and gvalue not in match['values']:
           return
     if showOwnedBy and not checkGroupShowOwnedBy(showOwnedBy, groupMembers):
+      return
+    if showItemCountOnly:
+      itemCount += 1
       return
     if deprecatedAttributesSet and isinstance(groupSettings, dict):
       deprecatedKeys = []
@@ -31533,6 +31590,7 @@ def doPrintGroups():
   matchSettings = {}
   deprecatedAttributesSet = set()
   ciGroups = {}
+  showItemCountOnly = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -31613,6 +31671,8 @@ def doPrintGroups():
       pass
     elif myarg == 'includederivedmembership':
       memberOptions[MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP] = True
+    elif myarg == 'showitemcountonly':
+      showItemCountOnly = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   if not typesSet:
@@ -31751,6 +31811,7 @@ def doPrintGroups():
     gsbatch = gs.new_batch_http_request(callback=_callbackProcessGroupSettings)
     gsbcount = 0
   groupData = {}
+  itemCount = 0
   i = 0
   count = len(entityList)
   for groupEntity in entityList:
@@ -31793,6 +31854,9 @@ def doPrintGroups():
   if getSettings and gsbcount > 0:
     gsbatch.execute()
   _writeCompleteRows()
+  if showItemCountOnly:
+    writeStdout(f'{itemCount}\n')
+    return
   if sortHeaders:
     sortTitles = ['email']+GROUP_INFO_PRINT_ORDER+['aliases', 'nonEditableAliases']
     if getSettings:
@@ -33413,11 +33477,16 @@ PRINT_CIGROUPS_JSON_TITLES = ['email', 'JSON']
 #	[memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
 #	[convertcrnl] [delimiter <Character>]
 #	[formatjson [quotechar <Character>]]
+# 	[showitemcountonly]
 def doPrintCIGroups():
   def _printGroupRow(groupEntity, groupMembers):
+    nonlocal itemCount
     for member in groupMembers:
       getCIGroupMemberRoleFixType(member)
     if showOwnedBy and not checkCIGroupShowOwnedBy(showOwnedBy, groupMembers):
+      return
+    if showItemCountOnly:
+      itemCount += 1
       return
     if not keepName:
       groupEntity.pop('name', None)
@@ -33458,6 +33527,7 @@ def doPrintCIGroups():
   memberOptions = initMemberOptions()
   entitySelection = groupMembers = memberQuery = query = showOwnedBy = None
   matchPatterns = {}
+  showItemCountOnly = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -33508,6 +33578,8 @@ def doPrintCIGroups():
       pass
     elif myarg == 'memberrestrictions':
       memberRestrictions = True
+    elif myarg == 'showitemcountonly':
+      showItemCountOnly = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   if not typesSet:
@@ -33601,6 +33673,7 @@ def doPrintCIGroups():
                 GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
                 GAPI.systemError, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
           entityActionFailedWarning([Ent.CLOUD_IDENTITY_GROUP, groupEmail], str(e), i, count)
+  itemCount = 0
   i = 0
   count = len(entityList)
   for groupEntity in entityList:
@@ -33644,6 +33717,9 @@ def doPrintCIGroups():
               GAPI.systemError, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
         entityActionFailedWarning([Ent.CLOUD_IDENTITY_GROUP, groupEmail], str(e), i, count)
     _printGroupRow(groupEntity, groupMembers)
+  if showItemCountOnly:
+    writeStdout(f'{itemCount}\n')
+    return
   if sortHeaders:
     sortTitles = ['email']+CIGROUP_PRINT_ORDER
     if rolesSet:
@@ -35214,6 +35290,7 @@ RESOURCE_FIELDS_CHOICE_MAP = {
 #	[allfields|<ResourceFieldName>*|(fields <ResourceFieldNameList>)]
 #	[query <String>]
 #	[acls] [noselfowner] [calendar] [convertcrnl] [formatjson [quotechar <Character>]]
+# 	[showitemcountonly]
 def doPrintShowResourceCalendars():
   cd = buildGAPIObject(API.DIRECTORY)
   convertCRNL = GC.Values[GC.CSV_OUTPUT_CONVERT_CR_NL]
@@ -35222,6 +35299,7 @@ def doPrintShowResourceCalendars():
   fieldsList = []
   csvPF = CSVPrintFile() if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
+  showItemCountOnly = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -35254,6 +35332,8 @@ def doPrintShowResourceCalendars():
           invalidChoiceExit(field, RESOURCE_FIELDS_CHOICE_MAP, True)
     elif myarg in {'convertcrnl', 'converttextnl'}:
       convertCRNL = True
+    elif myarg == 'showitemcountonly':
+      showItemCountOnly = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   if not fieldsList:
@@ -35286,8 +35366,11 @@ def doPrintShowResourceCalendars():
   except GAPI.invalidInput as e:
     entityActionFailedWarning([Ent.RESOURCE_CALENDAR, ''], str(e))
     return
-  i = 0
   count = len(resources)
+  if showItemCountOnly:
+    writeStdout(f'{count}\n')
+    return
+  i = 0
   for resource in resources:
     i += 1
     if getCalSettings or getCalPermissions:
@@ -42487,6 +42570,7 @@ USERS_INDEXED_TITLES = ['addresses', 'aliases', 'nonEditableAliases', 'emails', 
 #	[userview] [basic|full|allfields | <UserFieldName>* | fields <UserFieldNameList>]
 #	[delimiter <Character>] [sortheaders] [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
 #	[issuspended <Boolean>] [aliasmatchpattern <RegularExpression>]
+# 	[showitemcountonly]
 #
 # gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
 #	[groups|groupsincolumns]
@@ -42497,16 +42581,19 @@ USERS_INDEXED_TITLES = ['addresses', 'aliases', 'nonEditableAliases', 'emails', 
 #	[userview] [basic|full|allfields | <UserFieldName>* | fields <UserFieldNameList>]
 #	[delimiter <Character>] [sortheaders] [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
 #	[issuspended <Boolean>] [aliasmatchpattern <RegularExpression>]
+# 	[showitemcountonly]
 #
 # gam print users [todrive <ToDriveAttribute>*]
 #	([domain <DomainName>] [(query <QueryUser>)|(queries <QueryUserList>)]
 #	 [limittoou <OrgUnitItem>] [deleted_only|only_deleted])|[select <UserTypeEntity>]
 #	[formatjson [quotechar <Character>]] [countonly]
 #	[issuspended <Boolean>] [aliasmatchpattern <RegularExpression>]
+# 	[showitemcountonly]
 #
 # gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
 #	[formatjson [quotechar <Character>]] [countonly]
 #	[issuspended <Boolean>]
+# 	[showitemcountonly]
 def doPrintUsers(entityList=None):
   def _printUser(userEntity, i, count):
     if isSuspended is None or isSuspended == userEntity.get('suspended', isSuspended):
@@ -42632,6 +42719,7 @@ def doPrintUsers(entityList=None):
   aliasMatchPattern = isSuspended = orgUnitPath = orgUnitPathLower = orderBy = sortOrder = None
   viewType = 'admin_view'
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
+  showItemCountOnly = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -42704,6 +42792,8 @@ def doPrintUsers(entityList=None):
       maxResults = getInteger(minVal=1, maxVal=500)
     elif myarg == 'quoteplusphonenumbers':
       quotePlusPhoneNumbers = True
+    elif myarg == 'showitemcountonly':
+      showItemCountOnly = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   _, _, entityList = getEntityArgument(entityList)
@@ -42739,6 +42829,7 @@ def doPrintUsers(entityList=None):
     if orgUnitPath is not None and fieldsList:
       fieldsList.append('orgUnitPath')
     fields = getItemFieldsFromFieldsList('users', fieldsList)
+    itemCount = 0
     for kwargsQuery in makeUserGroupDomainQueryFilters(kwargsDict):
       kwargs = kwargsQuery[0]
       query  = kwargsQuery[1]
@@ -42754,6 +42845,9 @@ def doPrintUsers(entityList=None):
                               showDeleted=showDeleted, orderBy=orderBy, sortOrder=sortOrder, viewType=viewType,
                               projection=projection, customFieldMask=customFieldMask, maxResults=maxResults, **kwargs)
         for users in feed:
+          if showItemCountOnly:
+            itemCount += len(users)
+            continue
           if orgUnitPath is None:
             if not printOptions['countOnly']:
               for user in users:
@@ -42785,7 +42879,13 @@ def doPrintUsers(entityList=None):
         continue
       except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
         accessErrorExit(cd)
+    if showItemCountOnly:
+      writeStdout(f'{itemCount}\n')
+      return
   else:
+    if showItemCountOnly:
+      writeStdout(f'{len(entityList)}\n')
+      return
     sortRows = True
 # If no individual fields were specified (allfields, basic, full) or individual fields other than primaryEmail were specified, look up each user
     if isSuspended is not None:
@@ -45057,6 +45157,7 @@ def _getCoursesInfo(croom, courseSelectionParameters, courseShowProperties, getO
 #	[show none|all|students|teachers] [countsonly]
 #	[fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>] [formatjson [quotechar <Character>]]
 #	[timefilter creationtime|updatetime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
+#	[showitemcountonly]
 def doPrintCourses():
   def _saveParticipants(course, participants, role, rtitles):
     jcount = len(participants)
@@ -45097,6 +45198,7 @@ def doPrintCourses():
   courseShowProperties = _initCourseShowProperties()
   ownerEmails = {}
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
+  showItemCountOnly = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -45109,6 +45211,8 @@ def doPrintCourses():
       delimiter = getCharacter()
     elif _getCourseShowProperties(myarg, courseShowProperties):
       pass
+    elif myarg == 'showitemcountonly':
+      showItemCountOnly = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   applyCourseItemFilter = _setApplyCourseItemFilter(courseItemFilter, None)
@@ -45117,6 +45221,8 @@ def doPrintCourses():
       courseShowProperties['fields'].append(courseItemFilter['timefilter'])
   coursesInfo = _getCoursesInfo(croom, courseSelectionParameters, courseShowProperties)
   if coursesInfo is None:
+    if showItemCountOnly:
+      writeStdout('0\n')
     return
   if courseShowProperties['aliases']:
     if FJQC.formatJSON:
@@ -45142,6 +45248,7 @@ def doPrintCourses():
       studentsFields = 'nextPageToken,students(profile)'
   else:
     teachersFields = studentsFields = None
+  itemCount = 0
   count = len(coursesInfo)
   i = 0
   for course in coursesInfo:
@@ -45156,6 +45263,9 @@ def doPrintCourses():
                                                          [Ent.COURSE, courseId, Ent.OWNER_ID, course['ownerId']], i, count)
       if courseShowProperties['ownerEmailMatchPattern'] and not courseShowProperties['ownerEmailMatchPattern'].match(course['ownerEmail']):
         continue
+    if showItemCountOnly:
+      itemCount += 1
+      continue
     aliases, teachers, students = _getCourseAliasesMembers(croom, courseId, courseShowProperties, teachersFields, studentsFields, True, i, count)
     if courseShowProperties['aliases']:
       if not courseShowProperties['aliasesInColumns']:
@@ -45187,6 +45297,9 @@ def doPrintCourses():
           else:
             row['JSON-students'] = json.dumps(len(students))
       csvPF.WriteRowNoFilter(row)
+  if showItemCountOnly:
+    writeStdout(f'{itemCount}\n')
+    return
   if not FJQC.formatJSON:
     if courseShowProperties['aliases']:
       csvPF.AddTitles('Aliases')
@@ -45853,6 +45966,7 @@ COURSE_PARTICIPANTS_SORT_TITLES = ['courseId', 'courseName', 'userRole', 'userId
 # gam print course-participants [todrive <ToDriveAttribute>*]
 #	(course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
 #	[show all|students|teachers] [formatjson [quotechar <Character>]]
+#	[showitemcountonly]
 def doPrintCourseParticipants():
   croom = buildGAPIObject(API.CLASSROOM)
   csvPF = CSVPrintFile(['courseId', 'courseName'])
@@ -45860,6 +45974,7 @@ def doPrintCourseParticipants():
   courseSelectionParameters = _initCourseSelectionParameters()
   courseShowProperties = _initCourseShowProperties(['name'])
   courseShowProperties['members'] = 'all'
+  showItemCountOnly = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -45868,10 +45983,14 @@ def doPrintCourseParticipants():
       pass
     elif myarg == 'show':
       courseShowProperties['members'] = getChoice(COURSE_MEMBER_ARGUMENTS)
+    elif myarg == 'showitemcountonly':
+      showItemCountOnly = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   coursesInfo = _getCoursesInfo(croom, courseSelectionParameters, courseShowProperties)
   if coursesInfo is None:
+    if showItemCountOnly:
+      writeStdout('0\n')
     return
   if courseShowProperties['members'] != 'none':
     if courseShowProperties['members'] != 'students':
@@ -45884,12 +46003,19 @@ def doPrintCourseParticipants():
     studentsFields = 'nextPageToken,students(userId,profile)'
   else:
     teachersFields = studentsFields = None
-  i = 0
+  itemCount = 0
   count = len(coursesInfo)
+  i = 0
   for course in coursesInfo:
     i += 1
     courseId = course['id']
     _, teachers, students = _getCourseAliasesMembers(croom, courseId, courseShowProperties, teachersFields, studentsFields, True, i, count)
+    if showItemCountOnly:
+      if courseShowProperties['members'] != 'students':
+        itemCount += len(teachers)
+      if courseShowProperties['members'] != 'teachers':
+        itemCount += len(students)
+      continue
     if not FJQC.formatJSON:
       if courseShowProperties['members'] != 'none':
         if courseShowProperties['members'] != 'students':
@@ -45906,6 +46032,9 @@ def doPrintCourseParticipants():
         if courseShowProperties['members'] != 'teachers':
           row['JSON-students'] = json.dumps(list(students))
       csvPF.WriteRowNoFilter(row)
+  if showItemCountOnly:
+    writeStdout(f'{itemCount}\n')
+    return
   if not FJQC.formatJSON:
     csvPF.SetSortTitles(COURSE_PARTICIPANTS_SORT_TITLES)
   csvPF.writeCSVfile('Course Participants')

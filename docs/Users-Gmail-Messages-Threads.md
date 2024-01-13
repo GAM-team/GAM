@@ -172,6 +172,7 @@
         (gdoc|ghtml <UserGoogleDoc>)|
         (gcsdoc|gcshtml <StorageBucketObjectName>)|
         (emlfile <FileName> [charset <Charset>]))
+```
 ## Message queries with dates
 ```
 query <QueryGmail> [querytime<String> <Date>]*

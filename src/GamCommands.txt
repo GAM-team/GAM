@@ -2295,6 +2295,7 @@ gam print cros [todrive <ToDriveAttribute>*]
         [timerangeorder ascending|descending] [showdvrsfp]
         [sortheaders]
         [formatjson [quotechar <Character>]]
+        [showitemcountonly]
 
 Print fields for specified CrOS devices.
 
@@ -2307,6 +2308,7 @@ gam print cros [todrive <ToDriveAttribute>*] select <CrOSTypeEntity>
         [timerangeorder ascending|descending] [showdvrsfp]
         [sortheaders]
         [formatjson [quotechar <Character>]]
+        [showitemcountonly]
 
 gam <CrOSTypeEntity> print cros [todrive <ToDriveAttribute>*]
         [orderby <CrOSOrderByFieldName> [ascending|descending]]
@@ -2317,6 +2319,7 @@ gam <CrOSTypeEntity> print cros [todrive <ToDriveAttribute>*]
         [timerangeorder ascending|descending] [showdvrsfp]
         [sortheaders]
         [formatjson [quotechar <Character>]]
+        [showitemcountonly]
 
 The first column will always be deviceId; the remaining field names will be sorted if allfields, basic, full or sortheaders is specified;
 otherwise, the remaining field names will appear in the order specified.
@@ -2901,13 +2904,16 @@ gam print courses [todrive <ToDriveAttribute>*]
         [owneremail] [owneremailmatchpattern <RegularExpression>]
         [alias|aliases|aliasesincolumns [delimiter <Character>]]
         [show all|students|teachers] [countsonly]
+        [timefilter creationtime|updatetime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
         [fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>]
         [formatjson [quotechar <Character>]]
-        [timefilter creationtime|updatetime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
+        [showitemcountonly]
+
 gam print course-participants [todrive <ToDriveAttribute>*]
         (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
         [show all|students|teachers]
         [formatjson [quotechar <Character>]]
+        [showitemcountonly]
 
 <CourseAnnouncementFieldName> ::=
         alternatelink|
@@ -3616,6 +3622,7 @@ gam print groups [todrive <ToDriveAttribute>*]
         [memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
         [convertcrnl] [delimiter <Character>] [sortheaders]
         [formatjson [quotechar <Character>]]
+        [showitemcountonly]
 
 gam print grouptree <GroupEntity> [todrive <ToDriveAttribute>*]
         [showparentsaslist [<Boolean>]] [delimiter <Character>]
@@ -3736,6 +3743,7 @@ gam print cigroups [todrive <ToDriveAttribute>*]
         [memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
         [convertcrnl] [delimiter <Character>]
         [formatjson [quotechar <Character>]]
+        [showitemcountonly]
 
 <CIGroupMembersFieldName> ::=
         createtime
@@ -3860,6 +3868,7 @@ gam print devices [todrive <ToDriveAttribute>*]
         [all|company|personal|nocompanydevices|nopersonaldevices]
         [nodeviceusers]
         [formatjson [quotechar <Character>]]
+        [showitemcountonly]
 
 <DeviceUserAction> ::=
         approve|
@@ -3883,6 +3892,7 @@ gam print deviceusers [todrive <ToDriveAttribute>*]
         <DeviceUserFieldName>* [fields <DeviceUserFieldNameList>]
         [orderby <DeviceOrderByFieldName> [ascending|descending]]
         [formatjson [quotechar <Character>]]
+        [showitemcountonly]
 
 gam info deviceuserstate <DeviceUserEntity> [clientid <String>]
 gam update deviceuserstate <DeviceUserEntity> [clientid <String>]
@@ -4025,6 +4035,7 @@ gam print mobile [todrive <ToDriveAttribute>*]
         [basic|full|allfields] <MobileFieldName>* [fields <MobileFieldNameList>]
         [delimiter <Character>] [appslimit <Number>] [oneappperrow] [listlimit <Number>]
         [formatjson [quotechar <Character>]]
+        [showitemcountonly]
 
 # Organizational Units
 
@@ -4067,6 +4078,7 @@ gam print orgs|ous [todrive <ToDriveAttribute>*]
         [allfields|<OrgUnitFieldName>*|(fields <OrgUnitFieldNameList>)] [convertcrnl] [batchsuborgs [<Boolean>]]
         [mincroscount <Number>] [maxcroscount <Number>]
         [minusercount <Number>] [maxusercount <Number>]
+        [showitemcountonly]
 gam show orgtree [fromparent <OrgUnitItem>] [batchsuborgs [<Boolean>]]
 
 # Printers
@@ -4360,6 +4372,7 @@ gam print resources [todrive <ToDriveAttribute>*] [allfields|<ResourceFieldName>
         [query <String>]
         [acls] [noselfowner] [calendar] [convertcrnl]
         [formatjson [quotechar <Character>]]
+        [showitemcountonly]
 
 <CalendarACLRole> ::= editor|freebusy|freebusyreader|owner|reader|writer|none
 <CalendarACLScope> ::= <EmailAddress>|user:<EmailAdress>|group:<EmailAddress>|domain:<DomainName>|domain|default
@@ -5342,6 +5355,7 @@ gam print users [todrive <ToDriveAttribute>*]
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
         [issuspended <Boolean>] [aliasmatchpattern <RegularExpression>]
+        [showitemcountonly]
 
 Print fields for specified users.
 
@@ -5356,6 +5370,7 @@ gam print users [todrive <ToDriveAttribute>*] select <UserTypeEntity>
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
         [issuspended <Boolean>] [aliasmatchpattern <RegularExpression>]
+        [showitemcountonly]
 
 gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
         [orderby <UserOrderByFieldName> [ascending|descending]]
@@ -5368,6 +5383,7 @@ gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
         [issuspended <Boolean>] [aliasmatchpattern <RegularExpression>]
+        [showitemcountonly]
 
 The first column will always be primaryEmail; the remaining field names will be sorted if allfields, basic, full or sortheaders is specified;
 otherwise, the remaining field names will appear in the order specified.

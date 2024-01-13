@@ -9,11 +9,13 @@
 - [Synchronize devices](#synchronize-devices)
 - [Display devices](#display-devices)
 - [Print devices](#print-devices)
+- [Display device counts](#display-device-counts)
 - [Approve or block device users](#approve-or-block-device-users)
 - [Delete device users](#delete-device-users)
 - [Wipe device users](#wipe-device-users)
 - [Perform device user actions](#perform-device-user-actions)
 - [Display device users](#display-device-users)
+- [Display device user counts](#display-device-user-counts)
 - [Print device users](#print-device-users)
 - [Display device user client state](#display-device-user-client-state)
 - [Update device user client state](#update-device-user-client-state)
@@ -225,6 +227,15 @@ When using the `formatjson` option, double quotes are used extensively in the da
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
+## Display device counts
+Display the number of devices.
+```
+gam print devices
+        [(query <QueryDevice>)|(queries <QueryDeviceList>) (querytime<String> <Time>)*]
+        [all|company|personal|nocompanydevices|nopersonaldevices]
+        showitemcountonly
+```
+
 ## Approve or block device users
 Approve or block user profiles on a device.
 ```
@@ -284,6 +295,15 @@ the quote character itself, the column delimiter (comma by default) and new-line
 When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
+
+## Display device user counts
+Display the number of device users.
+```
+gam print deviceusers [todrive <ToDriveAttribute>*]
+        [select <DeviceID>]
+        [(query <QueryDevice>)|(queries <QueryDeviceList>) (querytime<String> <Time>)*]
+        showitemcountonly
+```
 
 ## Display device user client state
 ```

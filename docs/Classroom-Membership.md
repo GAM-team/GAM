@@ -6,6 +6,7 @@
 - [Legacy manage membership](#legacy-manage-membership)
 - [Bulk membership changes](#bulk-membership-changes)
 - [Display course membership](#display-course-membership)
+- [Display course membership counts](#display-course-membership-counts)
 
 ## API documentation
 * https://developers.google.com/classroom/reference/rest/
@@ -131,3 +132,12 @@ the quote character itself, the column delimiter (comma by default) and new-line
 When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
+
+## Display course membership counts
+Display the number of course participants.
+```
+gam print course-participants
+        (course|class <CourseID>)*|([teacher <UserItem>] [student <UserItem>]) [states <CourseStateList>]
+        [show all|students|teachers]
+        showitemcountonly
+```

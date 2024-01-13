@@ -8,6 +8,7 @@
 - [Display features](#display-features)
 - [Manage resources](#manage-resources)
 - [Display resources](#display-resources)
+- [Display resource counts](#display-resource-counts)
 - [Manage resource calendar ACLs](#manage-resource-calendar-acls)
 - [Display resource calendar ACLs](#display-resource-calendar-acls)
 
@@ -243,6 +244,14 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 Print all resources and their owners.
 ```
 gam config csv_output_row_filter "role:regex:owner" redirect csv Resource.csv print resources acls
+```
+
+## Display resource counts
+Display the number of mobile devices.
+```
+gam print resources
+        [query <String>]
+        showitemcountonly
 ```
 
 ## Manage resource calendar ACLs

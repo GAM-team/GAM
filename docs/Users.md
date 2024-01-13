@@ -38,7 +38,7 @@
     - [Print domain counts for users in a specific domain and/or selected by a query](#print-domain-counts-for-users-in-a-specific-domain-and-or-selected-by-a-query)
     - [Print domain counts for users specified by `<UserTypeEntity>`](#print-domain-counts-for-users-specified-by-usertypeentity)
 - [Print user list](#print-user-list)
-- [Display user count](#display-user-count)
+- [Display user counts](#display-user-counts)
 
 ## API documentation
 * https://developers.google.com/admin-sdk/directory/reference/rest/v1/users
@@ -1206,9 +1206,15 @@ $ more UsersList.csv
  ["testuser1@domain.org",  "testuser2@domain.org",  "testuser3@domain.org",  "testuser4@domain.org"] 
 ```
 
-## Display user count
+## Display user counts
 Display the number of users in an entity.
 ```
 gam <UserTypeEntity> show count
+gam <UserTypeEntity> print users showitemcountonly
+gam print users select <UserTypeEntity> showitemcountonly
+gam print users
+        ([domain|domains <DomainNameEntity>] [(query <QueryUser>)|(queries <QueryUserList>)]
+         [limittoou <OrgUnitItem>] [deleted_only|only_deleted])|[select <UserTypeEntity>]
+        [issuspended <Boolean>]
+        showitemcountonly
 ```
-

@@ -10,6 +10,7 @@
 - [Manage course aliases](#manage-course-aliases)
 - [Manage course topics](#manage-course-topics)
 - [Display courses](#display-courses)
+- [Display course counts](#display-course-counts)
 - [Display course announcements](#display-course-announcements)
 - [Display course materials](#display-course-materials)
 - [Display course topics](#display-course-topics)
@@ -431,6 +432,15 @@ the quote character itself, the column delimiter (comma by default) and new-line
 When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
+
+## Display course counts
+Display the number of courses.
+```
+gam print courses
+        (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
+        [owneremailmatchpattern <RegularExpression>]
+        showitemcountonly
+```
 
 ## Display course announcements
 ```

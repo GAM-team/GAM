@@ -5,6 +5,7 @@
 - [Manage mobile devices](#manage-mobile-devices)
 - [Display mobile devices](#display-mobile-devices)
 - [Print mobile devices](#print-mobile-devices)
+- [Display mobile device counts](#display-mobile-device-counts)
 
 ## API documentation
 * https://developers.google.com/admin-sdk/directory/reference/rest/v1/mobiledevices
@@ -150,3 +151,10 @@ When using the `formatjson` option, double quotes are used extensively in the da
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
+## Display mobile device counts
+Display the number of mobile devices.
+```
+gam print mobile
+        [(query <QueryMobile>)|(queries <QueryMobileList>) (querytime<String> <Time>)*]
+        showitemcountonly
+```
