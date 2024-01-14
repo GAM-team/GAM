@@ -441,6 +441,24 @@ gam print courses
         [owneremailmatchpattern <RegularExpression>]
         showitemcountonly
 ```
+Example
+```
+$ gam print courses states active showitemcountonly
+Getting all Courses that match query (Course State: ACTIVE), may take some time on a large Google Workspace Account...
+Got 268 Courses...
+Got 272 Courses...
+Got 272 Courses...
+272
+```
+The `Getting` and `Got` messages are written to stderr, the count is writtem to stdout.
+
+To retrieve the count with `showitemcountonly`:
+```
+Linux/MacOS
+count=$(gam print courses states active showitemcountonly)
+Windows PowerShell
+count = & gam print courses states active showitemcountonly
+```
 
 ## Display course announcements
 ```

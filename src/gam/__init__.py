@@ -44891,15 +44891,12 @@ def _getCourseAliasesMembers(croom, courseId, courseShowProperties, teachersFiel
   aliases = []
   teachers = []
   students = []
-  if showGettings:
-    pageMessage = getPageMessageForWhom(forWhom=formatKeyValueList('',
-                                                                   [Ent.Singular(Ent.COURSE), courseId],
-                                                                   currentCount(i, count)))
-  else:
+  if not showGettings:
     pageMessage = None
   if courseShowProperties.get('aliases'):
     if showGettings:
-      Ent.SetGetting(Ent.ALIAS)
+      printGettingEntityItemForWhom(Ent.ALIAS, formatKeyValueList('', [Ent.Singular(Ent.COURSE), courseId], currentCount(i, count)))
+      pageMessage = getPageMessage()
     try:
       aliases = callGAPIpages(croom.courses().aliases(), 'list', 'aliases',
                               pageMessage=pageMessage,
@@ -44913,7 +44910,8 @@ def _getCourseAliasesMembers(croom, courseId, courseShowProperties, teachersFiel
   if courseShowProperties['members'] != 'none':
     if courseShowProperties['members'] != 'students':
       if showGettings:
-        Ent.SetGetting(Ent.TEACHER)
+        printGettingEntityItemForWhom(Ent.TEACHER, formatKeyValueList('', [Ent.Singular(Ent.COURSE), courseId], currentCount(i, count)))
+        pageMessage = getPageMessage()
       try:
         teachers = callGAPIpages(croom.courses().teachers(), 'list', 'teachers',
                                  pageMessage=pageMessage,
@@ -44926,7 +44924,8 @@ def _getCourseAliasesMembers(croom, courseId, courseShowProperties, teachersFiel
         ClientAPIAccessDeniedExit()
     if courseShowProperties['members'] != 'teachers':
       if showGettings:
-        Ent.SetGetting(Ent.STUDENT)
+        printGettingEntityItemForWhom(Ent.STUDENT, formatKeyValueList('', [Ent.Singular(Ent.COURSE), courseId], currentCount(i, count)))
+        pageMessage = getPageMessage()
       try:
         students = callGAPIpages(croom.courses().students(), 'list', 'students',
                                  pageMessage=pageMessage,

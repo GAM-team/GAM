@@ -158,3 +158,20 @@ gam print mobile
         [(query <QueryMobile>)|(queries <QueryMobileList>) (querytime<String> <Time>)*]
         showitemcountonly
 ```
+Example
+```
+$ gam print mobile showitemcountonly
+Getting all Mobile Devices, may take some time on a large Google Workspace Account...
+Got 100 Mobile Devices...
+Got 115 Mobile Devices
+115
+```
+The `Getting` and `Got` messages are written to stderr, the count is writtem to stdout.
+
+To retrieve the count with `showitemcountonly`:
+```
+Linux/MacOS
+count=$(gam print mobile showitemcountonly)
+Windows PowerShell
+count = & gam print mobile showitemcountonly
+```

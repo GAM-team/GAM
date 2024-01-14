@@ -245,6 +245,22 @@ gam print orgs|ous
         [fromparent <OrgUnitItem>] [showparent [Boolean>]] [toplevelonly]
         showitemcountonly
 ```
+Example
+```
+$ gam print orgs showitemcountonly     
+Getting all Organizational Units, may take some time on a large Google Workspace Account...
+Got 98 Organizational Units
+98
+```
+The `Getting` and `Got` messages are written to stderr, the count is writtem to stdout.
+
+To retrieve the count with `showitemcountonly`:
+```
+Linux/MacOS
+count=$(gam print orgs showitemcountonly)
+Windows PowerShell
+count = & gam print orgs showitemcountonly
+```
 
 ## Display indented organizational unit tree
 ```

@@ -235,6 +235,28 @@ gam print devices
         [all|company|personal|nocompanydevices|nopersonaldevices]
         showitemcountonly
 ```
+Example
+```
+$ gam print devices queries "'model:Mac'" showitemcountonly
+Getting all Devices that match query (model:Mac), may take some time on a large Google Workspace Account...
+Got 100 Devices...
+Got 200 Devices...
+Got 300 Devices...
+...
+Got 900 Devices...
+Got 995 Devices...
+Got 995 Devices...
+995
+```
+The `Getting` and `Got` messages are written to stderr, the count is writtem to stdout.
+
+To retrieve the count with `showitemcountonly`:
+```
+Linux/MacOS
+count=$(gam print devices queries "'model:Mac'" showitemcountonly)
+Windows PowerShell
+count = & gam print devices queries "'model:Mac'" showitemcountonly
+```
 
 ## Approve or block device users
 Approve or block user profiles on a device.
@@ -304,6 +326,29 @@ gam print deviceusers [todrive <ToDriveAttribute>*]
         [(query <QueryDevice>)|(queries <QueryDeviceList>) (querytime<String> <Time>)*]
         showitemcountonly
 ```
+Example
+```
+$ gam print deviceusers queries "'model:Mac'" showitemcountonly
+Getting all Device Users that match query (model:Mac), may take some time on a large Google Workspace Account...
+Got 20 Device Users...
+Got 40 Device Users...
+Got 60 Device Users...
+...
+Got 980 Device Users...
+Got 995 Device Users...
+Got 995 Device Users...
+995
+```
+The `Getting` and `Got` messages are written to stderr, the count is writtem to stdout.
+
+To retrieve the count with `showitemcountonly`:
+```
+Linux/MacOS
+count=$(gam print deviceusers queries "'model:Mac'" showitemcountonly)
+Windows PowerShell
+count = & gam print deviceusers queries "'model:Mac'" showitemcountonly
+```
+
 
 ## Display device user client state
 ```

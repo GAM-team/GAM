@@ -387,4 +387,19 @@ gam print cigroups
         [descriptionmatchpattern [not] <RegularExpression>]
         showitemcountonly
 ```
+Example
+```
+$ gam print cigroups showitemcountonly
+Getting all Cloud Identity Groups, may take some time on a large Google Workspace Account...
+Got 242 Cloud Identity Groups: td.current@domain.com - postmaster@domain.com
+242
+```
+The `Getting` and `Got` messages are written to stderr, the count is writtem to stdout.
 
+To retrieve the count with `showitemcountonly`:
+```
+Linux/MacOS
+count=$(gam print cigroups showitemcountonly)
+Windows PowerShell
+count = & gam print cidgroups showitemcountonly
+```

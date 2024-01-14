@@ -1218,3 +1218,19 @@ gam print users
         [issuspended <Boolean>]
         showitemcountonly
 ```
+Example
+```
+$ gam print users query "orgUnitPath='/Students/Middle School'" showitemcountonly
+Getting all Users that match query (query="orgUnitPath='/Students/Middle School'"), may take some time on a large Google Workspace Account...
+Got 221 Users: aaron-first@domain.com - zoe-last@domain.com
+221
+```
+The `Getting` and `Got` messages are written to stderr, the count is writtem to stdout.
+
+To retrieve the count with `showitemcountonly`:
+```
+Linux/MacOS
+count=$(gam print users query "orgUnitPath='/Students/Middle School'" showitemcountonly)
+Windows PowerShell
+count = & gam print users query "orgUnitPath='/Students/Middle School'" showitemcountonly
+```

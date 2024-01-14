@@ -695,6 +695,23 @@ gam print cros
           (cros_ous <OrgUnitList>)|(cros_ous_and_children <OrgUnitList>)]]
         showitemcountonly
 ```
+Example
+```
+$ gam print cros query "sync:..2020-01-01" showitemcountonly
+Getting all CrOS Devices that match query (sync:..2020-01-01) for /, may take some time on a large Organizational Unit...
+Got 77 CrOS Devices that matched query (sync:..2020-01-01) for /...
+Got 77 CrOS Devices that matched query (sync:..2020-01-01)
+77
+```
+The `Getting` and `Got` messages are written to stderr, the count is writtem to stdout.
+
+To retrieve the count with `showitemcountonly`:
+```
+Linux/MacOS
+count=$(gam print cros query "sync:..2020-01-01" showitemcountonly)
+Windows PowerShell
+count = & gam print cros query "sync:..2020-01-01" showitemcountonly
+```
 
 ## Print ChromeOS device activity
 

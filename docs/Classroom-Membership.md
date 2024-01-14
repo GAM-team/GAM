@@ -141,3 +141,26 @@ gam print course-participants
         [show all|students|teachers]
         showitemcountonly
 ```
+Example
+```
+$ gam print course-participants teacher asmith states active show students showitemcountonly
+Getting all Courses that match query (Teacher: asmith@domain.com, Course State: ACTIVE), may take some time on a large Google Workspace Account...
+Got 3 Courses...
+Getting Students for Course: 636981507234 (1/3)
+Got 30 Students...
+Got 43 Students...
+Getting Students for Course: 589346784341 (2/3)
+Got 22 Students...
+Getting Students for Course: 589345535881 (3/3)
+Got 23 Students...
+88
+```
+The `Getting` and `Got` messages are written to stderr, the count is writtem to stdout.
+
+To retrieve the count with `showitemcountonly`:
+```
+Linux/MacOS
+count=$(gam print course-participants teacher asmith states active show students showitemcountonly)
+Windows PowerShell
+count = & gam print course-participants teacher asmith states active show students showitemcountonly
+```

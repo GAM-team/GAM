@@ -575,3 +575,20 @@ gam print groups
         [admincreatedmatch <Boolean>]
         showitemcountonly
 ```
+Example
+```
+$ gam print groups showitemcountonly
+Getting all Groups, may take some time on a large Google Workspace Account...
+Got 200 Groups: 1aparents@domain.com - students-genderfood@domain.com
+Got 238 Groups: students-worldculture@domain.com - xcarestaff@domain.com
+238
+```
+The `Getting` and `Got` messages are written to stderr, the count is writtem to stdout.
+
+To retrieve the count with `showitemcountonly`:
+```
+Linux/MacOS
+count=$(gam print groups showitemcountonly)
+Windows PowerShell
+count = & gam print groups showitemcountonly
+```

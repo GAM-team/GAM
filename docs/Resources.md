@@ -253,6 +253,22 @@ gam print resources
         [query <String>]
         showitemcountonly
 ```
+Example
+```
+$ gam print resources showitemcountonly
+Getting all Resource Calendars, may take some time on a large Google Workspace Account...
+Got 32 Resource Calendars: Back 50 - Video Cameras Class Set
+32
+```
+The `Getting` and `Got` messages are written to stderr, the count is writtem to stdout.
+
+To retrieve the count with `showitemcountonly`:
+```
+Linux/MacOS
+count=$(gam print resources showitemcountonly)
+Windows PowerShell
+count = & gam print resources showitemcountonly
+```
 
 ## Manage resource calendar ACLs
 These commands operate on a single resource calendar.
