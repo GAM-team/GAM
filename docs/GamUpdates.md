@@ -11,6 +11,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.67.19
+
+Updated `gam create|update user ... notify` to encode the characters `<>&` in the password
+so that they display correctly when the notify message content is HTML.
+
 ### 6.67.18
 
 Cleaned up `Getting/Got` messages for `gam print courses|course-participants`.

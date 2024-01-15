@@ -14357,8 +14357,11 @@ def sendCreateUpdateUserNotification(body, basenotify, tagReplacements, i=0, cou
     notify[field] = notify[field].replace('#givenname#', body['name'].get('givenName', ''))
     notify[field] = notify[field].replace('#familyname#', body['name'].get('familyName', ''))
 
-  def _makePasswordSubstitutions(field):
-    notify[field] = notify[field].replace('#password#', notify['password'])
+  def _makePasswordSubstitutions(field, html):
+    if not html:
+      notify[field] = notify[field].replace('#password#', notify['password'])
+    else:
+      notify[field] = notify[field].replace('#password#', notify['password']).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
   userName, domain = splitEmailAddress(body['primaryEmail'])
   notify = basenotify.copy()
@@ -14376,8 +14379,8 @@ def sendCreateUpdateUserNotification(body, basenotify, tagReplacements, i=0, cou
     _getTagReplacementFieldValues(body['primaryEmail'], i, count, tagReplacements, body if createMessage else None)
   notify['subject'] = _processTagReplacements(tagReplacements, notify['subject'])
   notify['message'] = _processTagReplacements(tagReplacements, notify['message'])
-  _makePasswordSubstitutions('subject')
-  _makePasswordSubstitutions('message')
+  _makePasswordSubstitutions('subject', False)
+  _makePasswordSubstitutions('message', notify['html'])
   if 'from' in notify:
     msgFrom = notify['from']
   msgReplyTo = notify.get('replyto', None)

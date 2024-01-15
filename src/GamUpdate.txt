@@ -2,6 +2,11 @@
 
 Merged GAM-Team version
 
+6.67.19
+
+Updated `gam create|update user ... notify` to encode the characters `<>&` in the password
+so that they display correctly when the notify message content is HTML.
+
 6.67.18
 
 Cleaned up `Getting/Got` messages for `gam print courses|course-participants`.
