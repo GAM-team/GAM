@@ -11,6 +11,24 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.67.20
+
+Added option `onelicenseperrow|onelicenceperrow` to `gam print users ... licenses` that causes GAM to print
+a seperate user information row for each license a user is assigned. This makes processing
+the licenses in a script possible and allows better sorting in a CSV File.
+
+By default, all licenses for a user are displayed in a list on one row:
+```
+primaryEmail,LicensesCount,Licenses,LicensesDisplay
+user@domain.com,2,1010020020 1010330004,Google Workspace Enterprise Plus Google Voice Standard
+```
+With `onelicenseperrow|onelicenceperrow`, each license is on a separate row:
+```
+primaryEmail,License,LicenseDisplay
+user@domain.com,1010020020,Google Workspace Enterprise Plus
+user@domain.com 1010330004,Google Voice Standard
+```
+
 ### 6.67.19
 
 Updated `gam create|update user ... notify` to encode the characters `<>&` in the password

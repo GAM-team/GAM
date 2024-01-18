@@ -42598,6 +42598,15 @@ USERS_INDEXED_TITLES = ['addresses', 'aliases', 'nonEditableAliases', 'emails', 
 #	[issuspended <Boolean>]
 # 	[showitemcountonly]
 def doPrintUsers(entityList=None):
+  def _writeUserEntity(userEntity):
+    row = flattenJSON(userEntity, skipObjects=USER_SKIP_OBJECTS, timeObjects=USER_TIME_OBJECTS)
+    if not FJQC.formatJSON:
+      csvPF.WriteRowTitles(row)
+    elif csvPF.CheckRowTitles(row):
+      csvPF.WriteRowNoFilter({'primaryEmail': userEntity['primaryEmail'],
+                              'JSON': json.dumps(cleanJSON(userEntity, skipObjects=USER_SKIP_OBJECTS, timeObjects=USER_TIME_OBJECTS),
+                                                ensure_ascii=False, sort_keys=True)})
+
   def _printUser(userEntity, i, count):
     if isSuspended is None or isSuspended == userEntity.get('suspended', isSuspended):
       userEmail = userEntity['primaryEmail']
@@ -42635,24 +42644,31 @@ def doPrintUsers(entityList=None):
           badRequestWarning(Ent.GROUP, Ent.MEMBER, userEmail)
         except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.forbidden, GAPI.badRequest):
           accessErrorExit(cd)
+      if aliasMatchPattern and 'aliases' in userEntity:
+        userEntity['aliases'] = [alias for alias in userEntity['aliases'] if aliasMatchPattern.match(alias)]
       if printOptions['getLicenseFeed'] or printOptions['getLicenseFeedByUser']:
         if printOptions['getLicenseFeed']:
           u_licenses = licenses.get(userEmail.lower(), [])
         else:
           u_licenses = getUserLicenses(lic, userEntity, skus)
-        userEntity['LicensesCount'] = len(u_licenses)
+        if not oneLicensePerRow:
+          userEntity['LicensesCount'] = len(u_licenses)
+          if u_licenses:
+            userEntity['Licenses'] = delimiter.join(u_licenses)
+            userEntity['LicensesDisplay'] = delimiter.join([SKU.skuIdToDisplayName(skuId) for skuId in u_licenses])
+      else:
+        u_licenses = []
+      if not oneLicensePerRow:
+        _writeUserEntity(userEntity)
+      else:
         if u_licenses:
-          userEntity['Licenses'] = delimiter.join(u_licenses)
-          userEntity['LicensesDisplay'] = delimiter.join([SKU.skuIdToDisplayName(skuId) for skuId in u_licenses])
-      if aliasMatchPattern and 'aliases' in userEntity:
-        userEntity['aliases'] = [alias for alias in userEntity['aliases'] if aliasMatchPattern.match(alias)]
-      row = flattenJSON(userEntity, skipObjects=USER_SKIP_OBJECTS, timeObjects=USER_TIME_OBJECTS)
-      if not FJQC.formatJSON:
-        csvPF.WriteRowTitles(row)
-      elif csvPF.CheckRowTitles(row):
-        csvPF.WriteRowNoFilter({'primaryEmail': userEmail,
-                                'JSON': json.dumps(cleanJSON(userEntity, skipObjects=USER_SKIP_OBJECTS, timeObjects=USER_TIME_OBJECTS),
-                                                   ensure_ascii=False, sort_keys=True)})
+          for skuId in u_licenses:
+            userEntity['License'] = skuId
+            userEntity['LicenseDisplay'] = SKU.skuIdToDisplayName(skuId)
+            _writeUserEntity(userEntity)
+        else:
+          userEntity['License'] = userEntity['LicenseDisplay'] = ''
+          _writeUserEntity(userEntity)
 
   def _updateDomainCounts(emailAddress):
     atLoc = emailAddress.find('@')
@@ -42718,7 +42734,7 @@ def doPrintUsers(entityList=None):
   projection = 'basic'
   projectionSet = False
   customFieldMask = None
-  quotePlusPhoneNumbers = showDeleted = False
+  oneLicensePerRow = quotePlusPhoneNumbers = showDeleted = False
   aliasMatchPattern = isSuspended = orgUnitPath = orgUnitPathLower = orderBy = sortOrder = None
   viewType = 'admin_view'
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
@@ -42781,6 +42797,8 @@ def doPrintUsers(entityList=None):
     elif myarg in {'licensebyuser', 'licensesbyuser', 'licencebyuser', 'licencesbyuser'}:
       printOptions['getLicenseFeedByUser'] = True
       printOptions['getLicenseFeed'] = False
+    elif myarg in {'onelicenseperrow', 'onelicenceperrow'}:
+      oneLicensePerRow = True
     elif myarg in {'products', 'product'}:
       skus = SKU.convertProductListToSKUList(getGoogleProductList())
     elif myarg in {'sku', 'skus'}:
@@ -42818,7 +42836,10 @@ def doPrintUsers(entityList=None):
         else:
           csvPF.AddTitles(['Groups'])
       if printOptions['getLicenseFeed'] or printOptions['getLicenseFeedByUser']:
-        csvPF.AddTitles(['LicensesCount', 'Licenses', 'LicensesDisplay'])
+        if not oneLicensePerRow:
+          csvPF.AddTitles(['LicensesCount', 'Licenses', 'LicensesDisplay'])
+        else:
+          csvPF.AddTitles(['License', 'LicenseDisplay'])
     if printOptions['getLicenseFeed']:
       if skus is None and GM.Globals[GM.LICENSE_SKUS]:
         skus = GM.Globals[GM.LICENSE_SKUS]
@@ -42958,7 +42979,10 @@ def doPrintUsers(entityList=None):
       else:
         csvPF.MoveTitlesToEnd(['Groups']+[f'Groups{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{j}' for j in range(printOptions['maxGroups'])])
     if printOptions['getLicenseFeed'] or printOptions['getLicenseFeedByUser']:
-      csvPF.MoveTitlesToEnd(['LicensesCount', 'Licenses', 'LicensesDisplay'])
+      if not oneLicensePerRow:
+        csvPF.MoveTitlesToEnd(['LicensesCount', 'Licenses', 'LicensesDisplay'])
+      else:
+        csvPF.MoveTitlesToEnd(['License', 'LicenseDisplay'])
   elif not FJQC.formatJSON:
     for domain, count in sorted(iter(domainCounts.items())):
       csvPF.WriteRowNoFilter({'domain': domain, 'count': count})

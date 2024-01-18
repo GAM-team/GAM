@@ -5348,6 +5348,7 @@ gam print users [todrive <ToDriveAttribute>*]
         [orderby <UserOrderByFieldName> [ascending|descending]]
         [groups|groupsincolumns]
         [license|licenses|licence|licences|licensebyuser|licensesbyuser|licencebyuser|licencesbyuser]
+        [onelicenseperrow|onelicenceperrow]
         [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)]
         [schemas|custom|customschemas all|<SchemaNameList>]
         [emailpart|emailparts|username]
@@ -5363,6 +5364,7 @@ gam print users [todrive <ToDriveAttribute>*] select <UserTypeEntity>
         [orderby <UserOrderByFieldName> [ascending|descending]]
         [groups|groupsincolumns]
         [license|licenses|licence|licences|licensebyuser|licensesbyuser|licencebyuser|licencesbyuser]
+        [onelicenseperrow|onelicenceperrow]
         [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)]
         [schemas|custom|customschemas all|<SchemaNameList>]
         [emailpart|emailparts|username]
@@ -5376,6 +5378,7 @@ gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
         [orderby <UserOrderByFieldName> [ascending|descending]]
         [groups|groupsincolumns]
         [license|licenses|licence|licences|licensebyuser|licensesbyuser|licencebyuser|licencesbyuser]
+        [onelicenseperrow|onelicenceperrow]
         [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)]
         [schemas|custom|customschemas all|<SchemaNameList>]
         [emailpart|emailparts|username]
@@ -5778,7 +5781,7 @@ gam <UserTypeEntity> create workinglocation
         (home|
          (custom <String>)|
          (office <String> [building|buildingid <String>] [floor|floorname <String>]
-           		  [section|floorsection <String>] [desk|deskcode <String>]))
+                          [section|floorsection <String>] [desk|deskcode <String>]))
         ((date yyyy-mm-dd)|
          (range yyyy-mm-dd yyyy-mm-dd)|
          (daily yyyy-mm-dd N)|

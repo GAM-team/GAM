@@ -980,7 +980,9 @@ gam print users [todrive <ToDriveAttribute>*]
         ([domain|domains <DomainNameEntity>] [(query <QueryUser>)|(queries <QueryUserList>)]
          [limittoou <OrgUnitItem>] [deleted_only|only_deleted])
         [orderby <UserOrderByFieldName> [ascending|descending]]
-        [groups|groupsincolumns] [license|licenses|licence|licences]
+        [groups|groupsincolumns]
+        [license|licenses|licence|licences]
+        [onelicenseperrow|onelicenceperrow]
         [schemas|custom|customschemas all|<SchemaNameList>]
         [emailpart|emailparts|username]
         [userview] [allfields|basic|full|(<UserFieldName>*|fields <UserFieldNameList>)]
@@ -1003,6 +1005,7 @@ gam print users [todrive <ToDriveAttribute>*] select <UserTypeEntity>
         [orderby <UserOrderByFieldName> [ascending|descending]]
         [groups|groupsincolumns]
         [license|licenses|licence|licences|licensebyuser|licensesbyuser|licencebyuser|licencesbyuser]
+        [onelicenseperrow|onelicenceperrow]
         [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)]
         [schemas|custom|customschemas all|<SchemaNameList>]
         [emailpart|emailparts|username][schemas|custom all|<SchemaNameList>]
@@ -1014,6 +1017,7 @@ gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
         [orderby <UserOrderByFieldName> [ascending|descending]]
         [groups|groupsincolumns]
         [license|licenses|licence|licences|licensebyuser|licensesbyuser|licencebyuser|licencesbyuser]
+        [onelicenseperrow|onelicenceperrow]
         [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)]
         [schemas|custom|customschemas all|<SchemaNameList>]
         [emailpart|emailparts|username]
@@ -1058,6 +1062,17 @@ to limit the display of aliases to those that match `<RegularExpression>`.
 By default, the entries in lists of groups and licenses are separated by the `csv_output_field_delimiter` from `gam.cfg`.
 * `delimiter <Character>` - Separate list items with `<Character>`
 
+By default, all licenses for a user are displayed in a list on one row:
+```
+primaryEmail,LicensesCount,Licenses,LicensesDisplay
+user@domain.com,2,1010020020 1010330004,Google Workspace Enterprise Plus Google Voice Standard
+```
+With `onelicenseperrow|onelicenceperrow`, each license is on a separate row:
+```
+primaryEmail,License,LicenseDisplay
+user@domain.com,1010020020,Google Workspace Enterprise Plus
+user@domain.com 1010330004,Google Voice Standard
+```
 In the output, primaryEmail is the always the first column; these options control the sorting of the remaining columns.
 * `allfields|basic|full` - All other columns are sorted by name.
 * `sortheaders [true]` - All other columns are sorted by name.
