@@ -2,6 +2,12 @@
 
 Merged GAM-Team version
 
+6.67.22
+
+Added `permissionidlist <PermissionIDList>` to `<PermissionMatch>` that allows matching any permission ID in a list.
+
+Added option `exportlinkeddrivefiles <Boolean>` to `gam create vaultexport` that is used with `corpus mail`.
+
 6.67.21
 
 Updated `gam remove aliases <EmailAddress> user|group <EmailAddressEntity>` to give a more informative

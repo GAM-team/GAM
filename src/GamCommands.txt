@@ -4939,7 +4939,7 @@ gam create vaultexport|export matter <MatterItem> [name <String>] corpus calenda
         [includeshareddrives <Boolean>] [driveversiondate <Date>|<Time>] [includeaccessinfo <Boolean>]
         [includerooms <Boolean>]
         [excludedrafts <Boolean>] [format mbox|pst]
-        [showconfidentialmodecontent <Boolean>] [usenewexport <Boolean>]
+        [showconfidentialmodecontent <Boolean>] [usenewexport <Boolean>] [exportlinkeddrivefiles <Boolean>]
         [covereddata calllogs|textmessages|voicemails]
         [region any|europe|us] [showdetails|returnidonly]
 gam delete vaultexport|export <ExportItem> matter <MatterItem>

@@ -930,6 +930,7 @@ class GamCLArgs():
   OB_ORGUNIT_PATH = 'OrgUnitPath'
   OB_PARAMETER_VALUE = 'ParameterValue'
   OB_PASSWORD = 'Password'
+  OB_PERMISSION_ID_LIST = 'PermissionIDList'
   OB_PHOTO_FILENAME_PATTERN = 'FilenameNamePattern'
   OB_PRINTER_ID = 'PrinterID'
   OB_PRIVILEGE_LIST = 'PrivilegeList'

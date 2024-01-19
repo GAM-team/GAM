@@ -34,6 +34,7 @@
             [type <DriveFileACLType>] [role|notrole <DriveFileACLRole>]
             [allowfilediscovery|withlink <Boolean>]
             [emailaddress <RegularExpression>] [emailaddressList <EmailAddressList>]
+            [permissionidlist <PermissionIDList>
             [name|displayname <String>]
             [domain|notdomain <RegularExpression>] [domainlist|notdomainlist <DomainNameList>]
             [expirationstart <Time>] [expirationend <Time>]
@@ -77,6 +78,7 @@ In the `print/show drivefileacls` and `create/delete permissions` commands you c
 * `allowfilediscovery|withlink <Boolean>` - Whether a link is required or whether the file can be discovered through search.
 * `emailaddress <RegularExpression>` - For types user and group, the required email address.
 * `emailaddresslist <EmailAddressList>` - For types user and group, a list of required email addresses; any one of which must match.
+* `permissionidlist <PermissionIDListList>` - A list of required permission IDs; any one of which must match.
 * `name|displayname <RegularExpression>` - For types domain, user and group, the displayable name.
 * `domain <RegularExpression>` - For type domain, the required domain name. For types user and group, the required domain name in the email address.
 * `notdomain <RegularExpression>` - For type domain, any domain name that doesn't match. For types user and group, any domain name that doesn't match in the email address.

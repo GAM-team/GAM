@@ -38202,7 +38202,7 @@ def _validateVaultQuery(body, corpusArgumentMap):
 #	[includeshareddrives <Boolean>] [driveversiondate <Date>|<Time>] [includeaccessinfo <Boolean>]
 #	[includerooms <Boolean>]
 #	[excludedrafts <Boolean>] [format mbox|pst]
-#	[showconfidentialmodecontent <Boolean>] [usenewexport <Boolean>]
+#	[showconfidentialmodecontent <Boolean>] [usenewexport <Boolean>] [exportlinkeddrivefiles <Boolean>]
 #	[covereddata calllogs|textmessages|voicemails]
 #	[region any|europe|us] [showdetails|returnidonly]
 def doCreateVaultExport():
@@ -38211,6 +38211,7 @@ def doCreateVaultExport():
   body = {'query': {'dataScope': 'ALL_DATA'}, 'exportOptions': {}}
   exportFormat = None
   showConfidentialModeContent = None
+  exportLinkedDriveFiles = None
   returnIdOnly = showDetails = False
   useNewExport = None
   while Cmd.ArgumentsRemaining():
@@ -38228,6 +38229,8 @@ def doCreateVaultExport():
       exportFormat = getChoice(VAULT_EXPORT_FORMAT_MAP, mapChoice=True)
     elif myarg == 'showconfidentialmodecontent':
       showConfidentialModeContent = getBoolean()
+    elif myarg == 'exportlinkeddrivefiles':
+      exportLinkedDriveFiles = getBoolean()
     elif myarg == 'region':
       body['exportOptions']['region'] = getChoice(VAULT_EXPORT_REGION_MAP, mapChoice=True)
     elif myarg == 'includeaccessinfo':
@@ -38260,6 +38263,8 @@ def doCreateVaultExport():
         body['exportOptions'][optionsField]['showConfidentialModeContent'] = showConfidentialModeContent
       if useNewExport is not None:
         body['exportOptions'][optionsField]['useNewExport'] = useNewExport
+      if exportLinkedDriveFiles is not None:
+        body['exportOptions'][optionsField]['exportLinkedDriveFiles'] = exportLinkedDriveFiles
   try:
     export = callGAPI(v.matters().exports(), 'create',
                       throwReasons=[GAPI.ALREADY_EXISTS, GAPI.BAD_REQUEST, GAPI.BACKEND_ERROR, GAPI.INVALID_ARGUMENT,
@@ -40733,7 +40738,7 @@ class PasswordOptions():
         body[up] = body[up][5:]
       try:
         body[up] = base64.b64decode(body[up]).hex()
-      except Exception as e:
+      except Exception:
         pass
 
   def AssignPassword(self, body, notify, notFoundBody, createIfNotFound):
@@ -52502,6 +52507,9 @@ class PermissionMatch():
       elif myarg == 'emailaddresslist':
         body[myarg] = set(getString(Cmd.OB_EMAIL_ADDRESS_LIST).replace(',', ' ').split())
         self.permissionFields.add('emailAddress')
+      elif myarg == 'permissionidlist':
+        body[myarg] = set(getString(Cmd.OB_PERMISSION_ID_LIST).replace(',', ' ').split())
+        self.permissionFields.add('id')
       elif myarg in {'domain', 'notdomain'}:
         body[myarg] = getREPattern(re.IGNORECASE)
         self.permissionFields.add('domain')
@@ -52603,6 +52611,13 @@ class PermissionMatch():
         emailAddress = permission.get('emailAddress')
         if emailAddress:
           if emailAddress not in value:
+            break
+        else:
+          break
+      elif field in {'permissionidlist'}:
+        permissionId = permission.get('id')
+        if permissionId:
+          if permissionId not in value:
             break
         else:
           break

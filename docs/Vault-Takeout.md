@@ -219,7 +219,7 @@ gam create vaultexport|export matter <MatterItem> [name <String>] corpus calenda
         [includeshareddrives <Boolean>] [driveversiondate <Date>|<Time>] [includeaccessinfo <Boolean>]
         [includerooms <Boolean>]
         [excludedrafts <Boolean>] [format mbox|pst]
-        [showconfidentialmodecontent <Boolean>] [usenewexport <Boolean>]
+        [showconfidentialmodecontent <Boolean>] [usenewexport <Boolean>] [exportlinkeddrivefiles <Boolean>]
         [covereddata calllogs|textmessages|voicemails]
         [region any|europe|us] [showdetails|returnidonly]
 ```
@@ -304,6 +304,10 @@ For `corpus mail`, you can specify whether to export confidential mode content:
 For `corpus mail`, you can specify whether to use the new export system:
 * `usenewexport false` - Do not use the new export system
 * `usenewexport true` - Use the new export system
+
+For `corpus mail`, you can specify whether to enable exporting linked Drive files:
+* `exportlinkeddrivefiles false` - Do not export linked Drive files
+* `exportlinkeddrivefiles true` - Export linked Drive files
 
 See: https://support.google.com/vault/answer/4388708#new_gmail_export&zippy=%2Cfebruary-new-gmail-export-system-available
 
