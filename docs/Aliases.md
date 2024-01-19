@@ -85,7 +85,7 @@ gam <UserTypeEntity> delete aliases
 ```
 
 ## Display aliases
-Display a specific alise.
+Display a specific alias.
 ```
 gam info alias|aliases <EmailAddressEntity>
 ```

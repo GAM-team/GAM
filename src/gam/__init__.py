@@ -17591,8 +17591,10 @@ def doRemoveAliases():
                                GAPI.CONDITION_NOT_MET],
                  userKey=targetEmail, alias=aliasEmail)
         entityActionPerformed([Ent.USER, targetEmail, Ent.USER_ALIAS, aliasEmail], i, count)
-    except (GAPI.userNotFound, GAPI.badRequest, GAPI.invalid, GAPI.forbidden, GAPI.invalidResource, GAPI.conditionNotMet) as e:
+    except (GAPI.userNotFound, GAPI.badRequest, GAPI.invalid, GAPI.forbidden, GAPI.conditionNotMet) as e:
       entityActionFailedWarning([Ent.USER, targetEmail, Ent.USER_ALIAS, aliasEmail], str(e), i, count)
+    except GAPI.invalidResource:
+      entityActionFailedWarning([Ent.USER, targetEmail, Ent.USER_ALIAS, aliasEmail], Msg.DOES_NOT_EXIST, i, count)
   else:
     try:
       for aliasEmail in entityList:
@@ -17603,8 +17605,10 @@ def doRemoveAliases():
                                GAPI.CONDITION_NOT_MET],
                  groupKey=targetEmail, alias=aliasEmail)
         entityActionPerformed([Ent.GROUP, targetEmail, Ent.GROUP_ALIAS, aliasEmail], i, count)
-    except (GAPI.groupNotFound, GAPI.userNotFound, GAPI.badRequest, GAPI.invalid, GAPI.forbidden, GAPI.invalidResource, GAPI.conditionNotMet) as e:
+    except (GAPI.groupNotFound, GAPI.userNotFound, GAPI.badRequest, GAPI.invalid, GAPI.forbidden, GAPI.conditionNotMet) as e:
       entityActionFailedWarning([Ent.GROUP, targetEmail, Ent.GROUP_ALIAS, aliasEmail], str(e), i, count)
+    except GAPI.invalidResource:
+      entityActionFailedWarning([Ent.GROUP, targetEmail, Ent.GROUP_ALIAS, aliasEmail], Msg.DOES_NOT_EXIST, i, count)
 
 def _addUserAliases(cd, user, aliasList, i, count):
   jcount = len(aliasList)
@@ -40727,7 +40731,10 @@ class PasswordOptions():
     elif self.b64DecryptPassword:
       if body[up].lower()[:5] in ['{md5}', '{sha}']:
         body[up] = body[up][5:]
-      body[up] = base64.b64decode(body[up]).hex()
+      try:
+        body[up] = base64.b64decode(body[up]).hex()
+      except Exception as e:
+        pass
 
   def AssignPassword(self, body, notify, notFoundBody, createIfNotFound):
     up = 'password'
@@ -42837,9 +42844,10 @@ def doPrintUsers(entityList=None):
           csvPF.AddTitles(['Groups'])
       if printOptions['getLicenseFeed'] or printOptions['getLicenseFeedByUser']:
         if not oneLicensePerRow:
-          csvPF.AddTitles(['LicensesCount', 'Licenses', 'LicensesDisplay'])
+          licenseTitles = ['LicensesCount', 'Licenses', 'LicensesDisplay']
         else:
-          csvPF.AddTitles(['License', 'LicenseDisplay'])
+          licenseTitles = ['License', 'LicenseDisplay']
+        csvPF.AddTitles(licenseTitles)
     if printOptions['getLicenseFeed']:
       if skus is None and GM.Globals[GM.LICENSE_SKUS]:
         skus = GM.Globals[GM.LICENSE_SKUS]
@@ -42979,10 +42987,7 @@ def doPrintUsers(entityList=None):
       else:
         csvPF.MoveTitlesToEnd(['Groups']+[f'Groups{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{j}' for j in range(printOptions['maxGroups'])])
     if printOptions['getLicenseFeed'] or printOptions['getLicenseFeedByUser']:
-      if not oneLicensePerRow:
-        csvPF.MoveTitlesToEnd(['LicensesCount', 'Licenses', 'LicensesDisplay'])
-      else:
-        csvPF.MoveTitlesToEnd(['License', 'LicenseDisplay'])
+      csvPF.MoveTitlesToEnd(licenseTitles)
   elif not FJQC.formatJSON:
     for domain, count in sorted(iter(domainCounts.items())):
       csvPF.WriteRowNoFilter({'domain': domain, 'count': count})

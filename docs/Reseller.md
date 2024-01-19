@@ -1,6 +1,7 @@
 # Reseller
 - [API documentation](#api-documentation)
 - [Notes](#notes)
+- [Manage Multiple Domains](#manage-multiple-domains)
 - [Definitions](#definitions)
 - [Manage Resold Customers](#manage-resold-customers)
 - [Display Resold Customers](#display-resold-customers)
@@ -24,6 +25,11 @@ Prior to version 6.50.00, this is how the `seats <NumberOfSeats> <MaximumNumberO
     * `seats <NumberOfSeats> <MaximumNumberOfSeats>` - `<MaximumNumberOfSeats>` was properly passed to the API; `<NumberOfSeats>` was passed to the API which ignored it
 
 Now, you can still use the above option which has been corrected or you can specify `seats <Number>` which will be properly passed in the correct form to the API based on plan name.
+
+## Manage Multiple Domains
+Thanks to Duncan Isaksen-Loxton for a script to help manage multiple domains.
+
+* See: https://gist.github.com/65/b5e9cee9b5812b487b8ae3e8256e262b
 
 ## Definitions
 ```

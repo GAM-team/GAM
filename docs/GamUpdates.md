@@ -11,6 +11,15 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.67.21
+
+Updated `gam remove aliases <EmailAddress> user|group <EmailAddressEntity>` to give a more informative
+error message when the target/alias combination does not exist.
+```
+Old: User: testsimple@rdschool.org, User Alias: tsalias@rdschool.org, Remove Failed: Invalid Input: resource_id
+New: User: testsimple@rdschool.org, User Alias: tsalias@rdschool.org, Remove Failed: Does not exist
+```
+
 ### 6.67.20
 
 Added option `onelicenseperrow|onelicenceperrow` to `gam print users ... licenses` that causes GAM to print
