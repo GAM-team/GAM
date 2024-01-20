@@ -11,6 +11,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.67.23
+
+Use local copy of `googleapiclient` to remove static discovery documents to improve performance.
+
 ### 6.67.22
 
 Added `permissionidlist <PermissionIDList>` to `<PermissionMatch>` that allows matching any permission ID in a list.

@@ -108,10 +108,10 @@ from filelock import FileLock
 
 from pathvalidate import sanitize_filename, sanitize_filepath
 
-import googleapiclient
-import googleapiclient.discovery
-import googleapiclient.errors
-import googleapiclient.http
+#import googleapiclient
+#import googleapiclient.discovery
+#import googleapiclient.errors
+#import googleapiclient.http
 import google.oauth2.credentials
 import google.oauth2.id_token
 import google.auth
@@ -150,6 +150,10 @@ import gdata.apps.contacts
 import gdata.apps.contacts.service
 import gdata.apps.sites
 import gdata.apps.sites.service
+import googleapiclient
+import googleapiclient.discovery
+import googleapiclient.errors
+import googleapiclient.http
 from iso8601 import iso8601
 
 IS08601_TIME_FORMAT = '%Y-%m-%dT%H:%M:%S%z'
