@@ -108,6 +108,7 @@ from filelock import FileLock
 
 from pathvalidate import sanitize_filename, sanitize_filepath
 
+# Do not import system library, includes discovery documents
 #import googleapiclient
 #import googleapiclient.discovery
 #import googleapiclient.errors
@@ -150,6 +151,7 @@ import gdata.apps.contacts
 import gdata.apps.contacts.service
 import gdata.apps.sites
 import gdata.apps.sites.service
+# Import local library, does not include discovery documents
 import googleapiclient
 import googleapiclient.discovery
 import googleapiclient.errors
