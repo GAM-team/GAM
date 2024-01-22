@@ -2,6 +2,10 @@
 
 Merged GAM-Team version
 
+6.67.24
+
+Fixed bug that caused HTML password notification email messages to be displayed in raw form.
+
 6.67.23
 
 Use local copy of `googleapiclient` to remove static discovery documents to improve performance.

@@ -14367,7 +14367,7 @@ def sendCreateUpdateUserNotification(body, basenotify, tagReplacements, i=0, cou
     if not html:
       notify[field] = notify[field].replace('#password#', notify['password'])
     else:
-      notify[field] = notify[field].replace('#password#', notify['password']).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+      notify[field] = notify[field].replace('#password#', notify['password'].replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;'))
 
   userName, domain = splitEmailAddress(body['primaryEmail'])
   notify = basenotify.copy()
