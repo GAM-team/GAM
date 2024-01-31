@@ -246,6 +246,7 @@ FILENAME_SAFE_CHARS = ALPHANUMERIC_CHARS+'-_.() '
 CHAT_MESSAGEID_CHARS = string.ascii_lowercase+string.digits+'-'
 
 ADMIN_ACCESS_OPTIONS = {'adminaccess', 'asadmin'}
+OWNER_ACCESS_OPTIONS = {'owneraccess', 'asowner'}
 
 # Python 3 values
 DEFAULT_CSV_READ_MODE = 'r'
@@ -9503,6 +9504,7 @@ def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout,
     GM.Globals[GM.PRINT_CROS_OUS_AND_CHILDREN] = printCrosOUsAndChildren
     GM.Globals[GM.SAVED_STDOUT] = None
     GM.Globals[GM.SYSEXITRC] = 0
+    GM.Globals[GM.PARSER] = None
     if mpQueueCSVFile:
       GM.Globals[GM.CSVFILE][GM.REDIRECT_QUEUE] = mpQueueCSVFile
     if mpQueueStdout:
@@ -29869,7 +29871,7 @@ def doCreateGroup(ciGroupsAPI=False):
   except GAPI.notFound:
     entityActionFailedWarning([entityType, groupEmail], Msg.DOES_NOT_EXIST)
   except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
-          GAPI.backendError, GAPI.invalid, GAPI.invalidAttributeValue, GAPI.invalidInput, GAPI.invalidArgument,
+          GAPI.backendError, GAPI.invalid, GAPI.invalidAttributeValue, GAPI.invalidInput, GAPI.invalidArgument, GAPI.failedPrecondition,
           GAPI.badRequest, GAPI.permissionDenied, GAPI.systemError, GAPI.serviceLimit, GAPI.serviceNotAvailable, GAPI.authError) as e:
     entityActionFailedWarning([entityType, groupEmail], str(e))
   except GAPI.required:
@@ -39731,7 +39733,7 @@ def doPrintShowVaultMatters():
         if not FJQC.formatJSON:
           csvPF.WriteRowTitles(row)
         elif csvPF.CheckRowTitles(row):
-          csvPF.WriteRowNoFilter({'matterId': matter['id'], 'name': matter['name'],
+          csvPF.WriteRowNoFilter({'matterId': matter['matterId'], 'name': matter['name'],
                                   'JSON': json.dumps(cleanJSON(matter), ensure_ascii=False, sort_keys=True)})
   if csvPF:
     csvPF.writeCSVfile('Vault Matters')
@@ -44299,7 +44301,7 @@ class CourseAttributes():
     else:
       return True
     if self.members != 'none':
-      _, self.teachers, self.students = _getCourseAliasesMembers(self.croom, self.courseId, {'members': self.members},
+      _, self.teachers, self.students = _getCourseAliasesMembers(self.croom, self.croom, self.courseId, {'members': self.members},
                                                                  'nextPageToken,teachers(profile(emailAddress,id))',
                                                                  'nextPageToken,students(profile(emailAddress))')
     if self.announcementStates:
@@ -44930,7 +44932,7 @@ def _convertCourseUserIdToEmail(croom, userId, emails, entityValueList, i, count
     emails[userId] = userEmail
   return userEmail
 
-def _getCourseAliasesMembers(croom, courseId, courseShowProperties, teachersFields, studentsFields, showGettings=False, i=0, count=0):
+def _getCourseAliasesMembers(croom, ocroom, courseId, courseShowProperties, teachersFields, studentsFields, showGettings=False, i=0, count=0):
   aliases = []
   teachers = []
   students = []
@@ -44956,7 +44958,7 @@ def _getCourseAliasesMembers(croom, courseId, courseShowProperties, teachersFiel
         printGettingEntityItemForWhom(Ent.TEACHER, formatKeyValueList('', [Ent.Singular(Ent.COURSE), courseId], currentCount(i, count)))
         pageMessage = getPageMessage()
       try:
-        teachers = callGAPIpages(croom.courses().teachers(), 'list', 'teachers',
+        teachers = callGAPIpages(ocroom.courses().teachers(), 'list', 'teachers',
                                  pageMessage=pageMessage,
                                  throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.SERVICE_NOT_AVAILABLE],
                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
@@ -44970,7 +44972,7 @@ def _getCourseAliasesMembers(croom, courseId, courseShowProperties, teachersFiel
         printGettingEntityItemForWhom(Ent.STUDENT, formatKeyValueList('', [Ent.Singular(Ent.COURSE), courseId], currentCount(i, count)))
         pageMessage = getPageMessage()
       try:
-        students = callGAPIpages(croom.courses().students(), 'list', 'students',
+        students = callGAPIpages(ocroom.courses().students(), 'list', 'students',
                                  pageMessage=pageMessage,
                                  throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.SERVICE_NOT_AVAILABLE],
                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
@@ -44981,18 +44983,23 @@ def _getCourseAliasesMembers(croom, courseId, courseShowProperties, teachersFiel
         ClientAPIAccessDeniedExit()
   return (aliases, teachers, students)
 
-def _doInfoCourses(entityList):
+def _doInfoCourses(courseIdList):
   croom = buildGAPIObject(API.CLASSROOM)
   courseShowProperties = _initCourseShowProperties()
   courseShowProperties['ownerEmail'] = True
   ownerEmails = {}
+  useOwnerAccess = False
   FJQC = FormatJSONQuoteChar()
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if _getCourseShowProperties(myarg, courseShowProperties):
       pass
+    elif myarg in OWNER_ACCESS_OPTIONS:
+      useOwnerAccess = True
     else:
       FJQC.GetFormatJSON(myarg)
+  coursesInfo = {}
+  _getCoursesOwnerInfo(croom, courseIdList, coursesInfo, not useOwnerAccess)
   fields = _setCourseFields(courseShowProperties, False)
   if courseShowProperties['members'] != 'none':
     if courseShowProperties['countsOnly']:
@@ -45004,10 +45011,13 @@ def _doInfoCourses(entityList):
   else:
     teachersFields = studentsFields = None
   i = 0
-  count = len(entityList)
-  for course in entityList:
+  count = len(courseIdList)
+  for courseId in courseIdList:
     i += 1
-    courseId = addCourseIdScope(course)
+    courseId = addCourseIdScope(courseId)
+    courseInfo = coursesInfo[courseId]
+    if not courseInfo:
+      continue
     try:
       course = callGAPI(croom.courses(), 'get',
                         throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
@@ -45016,7 +45026,7 @@ def _doInfoCourses(entityList):
       if courseShowProperties['ownerEmail']:
         course['ownerEmail'] = _convertCourseUserIdToEmail(croom, course['ownerId'], ownerEmails,
                                                            [Ent.COURSE, course['id'], Ent.OWNER_ID, course['ownerId']], i, count)
-      aliases, teachers, students = _getCourseAliasesMembers(croom, courseId, courseShowProperties, teachersFields, studentsFields)
+      aliases, teachers, students = _getCourseAliasesMembers(croom, courseInfo['croom'], courseId, courseShowProperties, teachersFields, studentsFields)
       if FJQC.formatJSON:
         if courseShowProperties['aliases']:
           course.update({'aliases': list(aliases)})
@@ -45308,7 +45318,7 @@ def doPrintCourses():
     if showItemCountOnly:
       itemCount += 1
       continue
-    aliases, teachers, students = _getCourseAliasesMembers(croom, courseId, courseShowProperties, teachersFields, studentsFields, True, i, count)
+    aliases, teachers, students = _getCourseAliasesMembers(croom, croom, courseId, courseShowProperties, teachersFields, studentsFields, True, i, count)
     if courseShowProperties['aliases']:
       if not courseShowProperties['aliasesInColumns']:
         course['Aliases'] = delimiter.join([removeCourseAliasScope(alias['alias']) for alias in aliases])
@@ -46051,7 +46061,7 @@ def doPrintCourseParticipants():
   for course in coursesInfo:
     i += 1
     courseId = course['id']
-    _, teachers, students = _getCourseAliasesMembers(croom, courseId, courseShowProperties, teachersFields, studentsFields, True, i, count)
+    _, teachers, students = _getCourseAliasesMembers(croom, croom, courseId, courseShowProperties, teachersFields, studentsFields, True, i, count)
     if showItemCountOnly:
       if courseShowProperties['members'] != 'students':
         itemCount += len(teachers)
@@ -46362,31 +46372,37 @@ def doCourseAddItems(courseIdList, getEntityListArg):
 # gam course <CourseID> remove alias <CourseAlias>
 # gam courses <CourseEntity> remove topic <CourseTopicIDEntity>
 # gam course <CourseID> remove topic <CourseTopicID>
-# gam courses <CourseEntity> remove teachers|students <UserTypeEntity>
-# gam course <CourseID> remove teacher|student <EmailAddress>
+# gam courses <CourseEntity> remove teachers|students [owneracccess] <UserTypeEntity>
+# gam course <CourseID> remove teacher|student [owneracccess] <EmailAddress>
 def doCourseRemoveItems(courseIdList, getEntityListArg):
   croom = buildGAPIObject(API.CLASSROOM)
   role = getChoice(ADD_REMOVE_PARTICIPANT_TYPES_MAP, mapChoice=True)
   coursesInfo = {}
   if not getEntityListArg:
     if role in {Ent.STUDENT, Ent.TEACHER}:
+      useOwnerAccess = checkArgumentPresent(OWNER_ACCESS_OPTIONS)
       removeItems = getStringReturnInList(Cmd.OB_EMAIL_ADDRESS)
     elif role == Ent.COURSE_ALIAS:
+      useOwnerAccess = False
       removeItems = getStringReturnInList(Cmd.OB_COURSE_ALIAS)
     else: # role == Ent.COURSE_TOPIC:
+      useOwnerAccess = True
       removeItems = getStringReturnInList(Cmd.OB_COURSE_TOPIC_ID)
     courseParticipantLists = None
   else:
     if role in {Ent.STUDENT, Ent.TEACHER}:
+      useOwnerAccess = checkArgumentPresent(OWNER_ACCESS_OPTIONS)
       _, removeItems = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS,
                                          typeMap={Cmd.ENTITY_COURSEPARTICIPANTS: PARTICIPANT_EN_MAP[role]})
     elif role == Ent.COURSE_ALIAS:
+      useOwnerAccess = False
       removeItems = getEntityList(Cmd.OB_COURSE_ALIAS_ENTITY, shlexSplit=True)
     else: # role == Ent.COURSE_TOPIC:
+      useOwnerAccess = True
       removeItems = getEntityList(Cmd.OB_COURSE_TOPIC_ID_ENTITY, shlexSplit=True)
     courseParticipantLists = removeItems if isinstance(removeItems, dict) else None
   checkForExtraneousArguments()
-  _getCoursesOwnerInfo(croom, courseIdList, coursesInfo, role != Ent.COURSE_TOPIC)
+  _getCoursesOwnerInfo(croom, courseIdList, coursesInfo, not useOwnerAccess)
   i = 0
   count = len(courseIdList)
   for courseId in courseIdList:
@@ -52378,6 +52394,8 @@ def extendFileTreeParents(drive, fileTree, fields):
         if not result.get('driveId'):
           result['parents'] = [ORPHANS] if result.get('ownedByMe', False) else [SHARED_WITHME]
         else:
+          if result['name'] == TEAM_DRIVE:
+            result['name'] = _getSharedDriveNameFromId(drive, result['driveId'])
           result['parents'] = [SHARED_DRIVES] if 'sharedWithMeTime' not in f_file else [SHARED_WITHME]
       fileTree[fileId]['info'] = result
       fileTree[fileId]['info']['noDisplay'] = True
@@ -58133,12 +58151,13 @@ def collectOrphans(users):
           try:
             callGAPI(drive.files(), 'update',
                      bailOnInternalError=True,
-                     throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INTERNAL_ERROR, GAPI.INSUFFICIENT_PARENT_PERMISSIONS],
+                     throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.BAD_REQUEST, GAPI.FILE_NOT_FOUND,
+                                                                 GAPI.INTERNAL_ERROR, GAPI.INSUFFICIENT_PARENT_PERMISSIONS],
                      retryReasons=[GAPI.FILE_NOT_FOUND],
                      fileId=fileId, body={}, addParents=newParentId, fields='')
             entityModifierNewValueItemValueListActionPerformed([Ent.USER, user, fileType, fileName],
                                                                Act.MODIFIER_INTO, None, [Ent.DRIVE_FOLDER, trgtUserFolderName], j, jcount)
-          except (GAPI.fileNotFound, GAPI.internalError, GAPI.insufficientParentPermissions,) as e:
+          except (GAPI.badRequest, GAPI.fileNotFound, GAPI.internalError, GAPI.insufficientParentPermissions,) as e:
             entityActionFailedWarning([Ent.USER, user, fileType, fileName], str(e), j, jcount)
           except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
             userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
@@ -59184,7 +59203,7 @@ def transferOwnership(users):
         try:
           fileEntryInfo = callGAPI(drive.files(), 'get',
                                    throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
-                                   fileId=fileId, fields='id,name,parents,mimeType,ownedByMe,trashed')
+                                   fileId=fileId, fields='id,name,parents,mimeType,ownedByMe,trashed,shortcutDetails')
         except GAPI.fileNotFound:
           entityActionFailedWarning(kvList, Msg.NOT_FOUND, j, jcount)
           continue
@@ -59205,6 +59224,8 @@ def transferOwnership(users):
           if changeParents:
             filesToTransfer[fileId]['addParents'] = addParents
             filesToTransfer[fileId]['removeParents'] = ','.join(fileEntryInfo.get('parents', []))
+          if fileEntryInfo['mimeType'] == MIMETYPE_GA_SHORTCUT and entityType != Ent.DRIVE_SHORTCUT:
+            filesToTransfer[fileId]['shortcutDetails'] = fileEntryInfo['shortcutDetails']
         if fileEntryInfo['mimeType'] == MIMETYPE_GA_FOLDER and not noRecursion:
           if buildTree:
             _identifyFilesToTransfer(fileEntry)
@@ -59228,7 +59249,7 @@ def transferOwnership(users):
         fileDesc = f'{fileInfo["name"]} ({xferFileId})'
         kvList = [Ent.USER, user, entityType, fileDesc]
         try:
-          if entityType != Ent.DRIVE_SHORTCUT:
+          if entityType not in {Ent.DRIVE_SHORTCUT, Ent.DRIVE_FILE_SHORTCUT, Ent.DRIVE_FOLDER_SHORTCUT}:
             if changeParents:
               removeParents = fileInfo.get('removeParents', '')
               if removeParents:
@@ -59244,7 +59265,16 @@ def transferOwnership(users):
                      fileId=xferFileId, permissionId=permissionId, transferOwnership=True, body=body, fields='')
             entityModifierNewValueItemValueListActionPerformed(kvList, Act.MODIFIER_TO, None, [Ent.USER, newOwner], k, kcount)
           else:
-            entityModifierNewValueItemValueListActionPerformed(kvList, Act.MODIFIER_TO, None, [Ent.USER, newOwner], k, kcount)
+            if changeParents and entityType != Ent.DRIVE_SHORTCUT:
+              callGAPI(drive.files(), 'delete',
+                       throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS,
+                       fileId=xferFileId, supportsAllDrives=True)
+              action = Act.Get()
+              Act.Set(Act.DELETE_SHORTCUT)
+              entityActionPerformed(kvList, k, kcount)
+              Act.Set(action)
+            else:
+              entityModifierNewValueItemValueListActionPerformed(kvList, Act.MODIFIER_TO, None, [Ent.USER, newOwner], k, kcount)
         except GAPI.permissionNotFound:
           # this might happen if target user isn't explicitly in ACL (i.e. shared with anyone)
           try:
@@ -59279,11 +59309,11 @@ def transferOwnership(users):
         except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
           userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
           break
-        if entityType != Ent.DRIVE_SHORTCUT:
-          if changeParents and 'addParents' in fileInfo:
-            kvList = [Ent.USER, newOwner, entityType, fileDesc]
-            try:
-              if entityType != Ent.DRIVE_SHORTCUT:
+        kvList = [Ent.USER, newOwner, entityType, fileDesc]
+        try:
+          if entityType not in {Ent.DRIVE_SHORTCUT, Ent.DRIVE_FILE_SHORTCUT, Ent.DRIVE_FOLDER_SHORTCUT}:
+            if changeParents and 'addParents' in fileInfo:
+              if entityType != Ent.DRIVE_FILE_SHORTCUT:
                 callGAPI(targetDrive.files(), 'update',
                          throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.CANNOT_ADD_PARENT, GAPI.INSUFFICIENT_PARENT_PERMISSIONS],
                          fileId=xferFileId, addParents=fileInfo['addParents'], fields='', supportsAllDrives=True)
@@ -59291,13 +59321,27 @@ def transferOwnership(users):
                 Act.Set(Act.ADD)
                 entityModifierNewValueItemValueListActionPerformed(kvList, Act.MODIFIER_TO, None, [Ent.DRIVE_FOLDER, fileInfo['addParents']], k, kcount)
                 Act.Set(action)
-            except GAPI.fileNotFound:
-              entityActionFailedWarning(kvList, Msg.DOES_NOT_EXIST, k, kcount)
-            except (GAPI.forbidden, GAPI.cannotAddParent, GAPI.insufficientPermissions, GAPI.insufficientParentPermissions,
-                    GAPI.invalid, GAPI.badRequest, GAPI.unknownError) as e:
-              entityActionFailedWarning(kvList, str(e), k, kcount)
-            except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-              userSvcNotApplicableOrDriveDisabled(newOwner, str(e), 0, 0)
+          else:
+            if changeParents and 'addParents' in fileInfo and entityType != Ent.DRIVE_SHORTCUT:
+              body = {'name': fileInfo['name'], 'mimeType': MIMETYPE_GA_SHORTCUT,
+                      'parents': [fileInfo['addParents']], 'shortcutDetails': {'targetId': fileInfo['shortcutDetails']['targetId']}}
+              callGAPI(targetDrive.files(), 'create',
+                       throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.FORBIDDEN, GAPI.INSUFFICIENT_PERMISSIONS, GAPI.INSUFFICIENT_PARENT_PERMISSIONS,
+                                                                   GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.FILE_NOT_FOUND, GAPI.UNKNOWN_ERROR,
+                                                                   GAPI.STORAGE_QUOTA_EXCEEDED, GAPI.TEAMDRIVES_SHARING_RESTRICTION_NOT_ALLOWED,
+                                                                   GAPI.TEAMDRIVE_FILE_LIMIT_EXCEEDED, GAPI.TEAMDRIVE_HIERARCHY_TOO_DEEP, GAPI.SHORTCUT_TARGET_INVALID,
+                                                                   GAPI.TARGET_USER_ROLE_LIMITED_BY_LICENSE_RESTRICTION],
+                                body=body, fields='id', supportsAllDrives=True)
+              Act.Set(Act.CREATE_SHORTCUT)
+              entityModifierNewValueItemValueListActionPerformed(kvList, Act.MODIFIER_IN, None, [Ent.DRIVE_FOLDER, fileInfo['addParents']], k, kcount)
+              Act.Set(action)
+        except GAPI.fileNotFound:
+          entityActionFailedWarning(kvList, Msg.DOES_NOT_EXIST, k, kcount)
+        except (GAPI.forbidden, GAPI.cannotAddParent, GAPI.insufficientPermissions, GAPI.insufficientParentPermissions,
+                GAPI.invalid, GAPI.badRequest, GAPI.unknownError) as e:
+          entityActionFailedWarning(kvList, str(e), k, kcount)
+        except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
+          userSvcNotApplicableOrDriveDisabled(newOwner, str(e), 0, 0)
       Ind.Decrement()
       Ind.Decrement()
     Ind.Decrement()
@@ -59501,7 +59545,7 @@ def claimOwnership(users):
           fileEntryInfo = callGAPI(drive.files(), 'get',
                                    throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                                    fileId=fileId,
-                                   fields='id,name,parents,mimeType,ownedByMe,trashed,owners(emailAddress,permissionId)')
+                                   fields='id,name,parents,mimeType,ownedByMe,trashed,shortcutDetails,owners(emailAddress,permissionId)')
         except GAPI.fileNotFound:
           entityActionFailedWarning(kvList, Msg.NOT_FOUND, j, jcount)
           continue
@@ -59529,6 +59573,8 @@ def claimOwnership(users):
             if changeParents:
               filesToClaim[owner][fileId]['addParents'] = addParents
               filesToClaim[owner][fileId]['removeParents'] = ','.join(fileEntryInfo.get('parents', []))
+            if fileEntryInfo['mimeType'] == MIMETYPE_GA_SHORTCUT and entityType != Ent.DRIVE_SHORTCUT:
+              filesToClaim[owner][fileId]['shortcutDetails'] = fileEntryInfo['shortcutDetails']
         if fileEntryInfo['mimeType'] == MIMETYPE_GA_FOLDER:
           if buildTree:
             _identifyFilesToClaim(fileEntry)
@@ -59565,7 +59611,7 @@ def claimOwnership(users):
             fileDesc = f'{fileInfo["name"]} ({xferFileId})'
             kvList = [Ent.USER, oldOwner, entityType, fileDesc]
             try:
-              if entityType != Ent.DRIVE_SHORTCUT:
+              if entityType not in {Ent.DRIVE_SHORTCUT, Ent.DRIVE_FILE_SHORTCUT, Ent.DRIVE_FOLDER_SHORTCUT}:
                 if bodyShare:
                   callGAPI(sourceDrive.files(), 'update',
                            fileId=xferFileId, body=bodyShare, fields='')
@@ -59587,8 +59633,17 @@ def claimOwnership(users):
                 entityModifierNewValueItemValueListActionPerformed(kvList, Act.MODIFIER_FROM, None, [Ent.USER, oldOwner], l, lcount)
                 _processRetainedRole(user, i, count, oldOwner, entityType, xferFileId, fileDesc, l, lcount)
               else:
-                kvList = [Ent.USER, user, entityType, fileDesc]
-                entityModifierNewValueItemValueListActionPerformed(kvList, Act.MODIFIER_FROM, None, [Ent.USER, oldOwner], l, lcount)
+                if changeParents and entityType != Ent.DRIVE_SHORTCUT:
+                  callGAPI(sourceDrive.files(), 'delete',
+                           throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS,
+                           fileId=xferFileId, supportsAllDrives=True)
+                  action = Act.Get()
+                  Act.Set(Act.DELETE_SHORTCUT)
+                  entityActionPerformed(kvList, l, lcount)
+                  Act.Set(action)
+                else:
+                  kvList = [Ent.USER, user, entityType, fileDesc]
+                  entityModifierNewValueItemValueListActionPerformed(kvList, Act.MODIFIER_FROM, None, [Ent.USER, oldOwner], l, lcount)
             except GAPI.permissionNotFound:
               # if claimer not in ACL (file might be visible for all with link)
               try:
@@ -59624,23 +59679,37 @@ def claimOwnership(users):
             except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
               userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
               break
-            if entityType != Ent.DRIVE_SHORTCUT:
-              if changeParents and 'addParents' in fileInfo:
-                kvList = [Ent.USER, user, entityType, fileDesc]
-                try:
-                  callGAPI(drive.files(), 'update',
-                           throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.CANNOT_ADD_PARENT, GAPI.INSUFFICIENT_PARENT_PERMISSIONS],
-                           fileId=xferFileId, addParents=fileInfo['addParents'], fields='', supportsAllDrives=True)
-                  action = Act.Get()
-                  Act.Set(Act.ADD)
-                  entityModifierNewValueItemValueListActionPerformed(kvList, Act.MODIFIER_TO, None, [Ent.DRIVE_FOLDER, fileInfo['addParents']], l, lcount)
+            kvList = [Ent.USER, user, entityType, fileDesc]
+            try:
+              if entityType not in {Ent.DRIVE_SHORTCUT, Ent.DRIVE_FILE_SHORTCUT, Ent.DRIVE_FOLDER_SHORTCUT}:
+                if changeParents and 'addParents' in fileInfo:
+                    callGAPI(drive.files(), 'update',
+                             throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.CANNOT_ADD_PARENT, GAPI.INSUFFICIENT_PARENT_PERMISSIONS],
+                             fileId=xferFileId, addParents=fileInfo['addParents'], fields='', supportsAllDrives=True)
+                    action = Act.Get()
+                    Act.Set(Act.ADD)
+                    entityModifierNewValueItemValueListActionPerformed(kvList, Act.MODIFIER_TO, None, [Ent.DRIVE_FOLDER, fileInfo['addParents']], l, lcount)
+                    Act.Set(action)
+              else:
+                if changeParents and 'addParents' in fileInfo and entityType != Ent.DRIVE_SHORTCUT:
+                  body = {'name': fileInfo['name'], 'mimeType': MIMETYPE_GA_SHORTCUT,
+                          'parents': [fileInfo['addParents']], 'shortcutDetails': {'targetId': fileInfo['shortcutDetails']['targetId']}}
+                  callGAPI(drive.files(), 'create',
+                           throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.FORBIDDEN, GAPI.INSUFFICIENT_PERMISSIONS, GAPI.INSUFFICIENT_PARENT_PERMISSIONS,
+                                                                       GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.FILE_NOT_FOUND, GAPI.UNKNOWN_ERROR,
+                                                                       GAPI.STORAGE_QUOTA_EXCEEDED, GAPI.TEAMDRIVES_SHARING_RESTRICTION_NOT_ALLOWED,
+                                                                       GAPI.TEAMDRIVE_FILE_LIMIT_EXCEEDED, GAPI.TEAMDRIVE_HIERARCHY_TOO_DEEP, GAPI.SHORTCUT_TARGET_INVALID,
+                                                                       GAPI.TARGET_USER_ROLE_LIMITED_BY_LICENSE_RESTRICTION],
+                           body=body, fields='id', supportsAllDrives=True)
+                  Act.Set(Act.CREATE_SHORTCUT)
+                  entityModifierNewValueItemValueListActionPerformed(kvList, Act.MODIFIER_IN, None, [Ent.DRIVE_FOLDER, fileInfo['addParents']], l, lcount)
                   Act.Set(action)
-                except GAPI.fileNotFound:
-                  entityActionFailedWarning(kvList, Msg.DOES_NOT_EXIST, l, lcount)
-                except (GAPI.forbidden, GAPI.insufficientFilePermissions, GAPI.insufficientParentPermissions, GAPI.cannotAddParent) as e:
-                  entityActionFailedWarning(kvList, str(e), l, lcount)
-                except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-                  userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+            except GAPI.fileNotFound:
+              entityActionFailedWarning(kvList, Msg.DOES_NOT_EXIST, l, lcount)
+            except (GAPI.forbidden, GAPI.insufficientFilePermissions, GAPI.insufficientParentPermissions, GAPI.cannotAddParent) as e:
+              entityActionFailedWarning(kvList, str(e), l, lcount)
+            except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
+              userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
           Ind.Decrement()
         else:
           entityPerformActionModifierNumItemsModifier([Ent.USER, user], 'Not Performed', kcount, Ent.DRIVE_FILE_OR_FOLDER,
@@ -72883,7 +72952,7 @@ def ProcessGAMCommand(args, processGamCfg=True, inLoop=False, closeSTD=True):
         CROS_COMMANDS_WITH_OBJECTS[CL_command][CMD_FUNCTION][CL_objectName](entityList)
     sys.exit(GM.Globals[GM.SYSEXITRC])
   except KeyboardInterrupt:
-    batchWriteStderr('Control-C\n')
+    batchWriteStderr('\nControl-C\n')
     setSysExitRC(KEYBOARD_INTERRUPT_RC)
     showAPICallsRetryData()
     adjustRedirectedSTDFilesIfNotMultiprocessing()

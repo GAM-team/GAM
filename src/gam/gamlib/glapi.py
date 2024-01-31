@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2023 Ross Scroggs All Rights Reserved.
+# Copyright (C) 2024 Ross Scroggs All Rights Reserved.
 #
 # All Rights Reserved.
 #
@@ -539,6 +539,10 @@ _SVCACCT_SCOPES = [
    'api': CLASSROOM,
    'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/classroom.profile.emails'},
+  {'name': 'Classroom API - Profile Photos',
+   'api': CLASSROOM,
+   'subscopes': [],
+   'scope': 'https://www.googleapis.com/auth/classroom.profile.photos'},
   {'name': 'Classroom API - Rosters',
    'api': CLASSROOM,
    'subscopes': READONLY,
