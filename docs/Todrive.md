@@ -186,7 +186,7 @@ direct the uploaded file to a particular user and location and add a timestamp t
         (tdnoescapechar [<Boolean>])|
         (tdparent (id:<DriveFolderID>)|<DriveFolderName>)|
         (tdretaintitle [<Boolean>])|
-        (tdshare <EmailAddress> commenter|reader|writer)|
+        (tdshare <EmailAddress> commenter|reader|writer)*|
         (tdsheet (id:<Number>)|<String>)|
         (tdsheettimestamp [<Boolean>] [tdsheettimeformat <String>])
         (tdsheettitle <String>)|
@@ -213,7 +213,7 @@ It is uploaded to the root folder of the admin user named in `oauth2.txt`.
 ## Create new file
 If `tdfileid <DriveFileID>` is not specified, a new file is created.
 * `tdparent` - An existing/writable parent folder for the uploaded file; if not specified, the `todrive_parent` value from gam.cfg is used; that value defaults to the root folder.
-* `tdshare <EmailAddress> commenter|reader|writer` - Share the new file with `<EmailAddress>` with the specified role. `<EmailAddress>` must be valid within your Google Workspace.
+* `tdshare <EmailAddress> commenter|reader|writer` - Share the new file with `<EmailAddress>` with the specified role. `<EmailAddress>` must be valid within your Google Workspace. You can specify multiple shares.
 
 ## File name, file description and sheet name
 * `tdtitle` - The title for the uploaded file, if not specified, the Gam default title is used.

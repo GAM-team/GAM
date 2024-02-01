@@ -611,7 +611,7 @@ If an item contains spaces, it should be surrounded by ".
         (tdnoescapechar [<Boolean>])|
         (tdparent (id:<DriveFolderID>)|<DriveFolderName>)|
         (tdretaintitle [<Boolean>])|
-        (tdshare <EmailAddress> commenter|reader|writer)|
+        (tdshare <EmailAddress> commenter|reader|writer)*|
         (tdsheet (id:<Number>)|<String>)|
         (tdsheettimestamp [<Boolean>] [tdsheettimeformat <String>])
         (tdsheettitle <String>)|

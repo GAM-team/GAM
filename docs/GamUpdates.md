@@ -11,6 +11,47 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.67.32
+
+Updated `<ToDriveAttribute>` to allow multiple `tdshare <EmailAddress> commenter|reader|writer` options.
+
+### 6.67.31
+
+Updated `gam <UserTypeEntity> claim|transfer ownership <DriveFileEntity>` to properly
+handle the case where `<DriveFileEntity>` referencess a Drive shortcut.
+
+### 6.67.30
+
+Fixed bug where the `fullpath` option in various commands was not converting the generic shared drive name `Drive` to the drive's actual name.
+
+### 6.67.29
+
+Added optional argument `owneraccess` to `gam courses <CourseEntity> remove teachers|students [owneracccess] <UserTypeEntity` and
+`gam course <CourseID> remove teacher|student [owneraccess] <EmailAddress>` in order to test a possible API change.
+
+Updated code to avoid a trap when `gam config auto_batch_min 1 csv file.csv gam ...` was entered.
+The `config auto_batch_min 1` is not appropriate in this context and will be ignored.
+
+### 6.67.28
+
+Improved handling of `Bad Request` error in `gam <UserTypeEntity> collect orphans`.
+
+### 6.67.27
+
+Updated `gam <UserTypeEntity> collect orphans` to handle the following error:
+```
+ERROR: 400: badRequest - Bad Request
+```
+
+### 6.67.26
+
+Fixed bug in `gam print vaultexports ... formatjson` that caused a trap.
+
+### 6.67.25
+
+Added option `owneraccess` to `gam info courses <CourseEntity>` and `gam info course <CourseID>` in order
+to test a possible API change.
+
 ### 6.67.24
 
 Fixed bug that caused HTML password notification email messages to be displayed in raw form.

@@ -2,6 +2,10 @@
 
 Merged GAM-Team version
 
+6.67.32
+
+Updated `<ToDriveAttribute>` to allow multiple `tdshare <EmailAddress> commenter|reader|writer` options.
+
 6.67.31
 
 Updated `gam <UserTypeEntity> claim|transfer ownership <DriveFileEntity>` to properly

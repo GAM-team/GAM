@@ -10,7 +10,8 @@
 
 ## API documentation
 * https://developers.google.com/gmail/api/v1/reference/users/settings/delegates
-* https://support.google.com/a/answer/7223765?hl=en
+* https://support.google.com/a/answer/7223765
+* https://support.google.com/a/answer/11946994
 
 ## Definitions
 * [`<UserTypeEntity>`](Collections-of-Users)

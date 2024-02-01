@@ -713,12 +713,14 @@ The attendee changes are displayed but not processed unless `doit` is specified.
 
 ## Manage focus time events
 You can create and delete focus time events; they can not be updated.
-To update a working location event, delete the working location event and recreate it.
+To update a focus time event, delete the focus time event and recreate it.
 ```
 gam <UserTypeEntity> create focustime
         [chatstatus available|donotdisturb]|
         [declinemode none|all|new] [declinemessage <String>]|
-        (timerange <Time> <Time>)+
+        [summary <String>]
+        (timerange <Time> <Time>
+        (recurrence <RRULE, EXRULE, RDATE and EXDATE line>)*
 
 gam <UserTypeEntity> delete focustime
         (timerange <Time> <Time>)+
@@ -762,17 +764,20 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 
 ## Manage out of office events
 You can create and delete out of office events; they can not be updated.
-To update a working location event, delete the working location event and recreate it.
+To update an out of office event, delete the out of office event and recreate it.
 ```
 gam <UserTypeEntity> create outofoffice
-        [declinemode none|all|new] [declinemessage <String>]|
-        (timerange <Time> <Time>)+
+        [declinemode none|all|new]
+        [declinemessage <String>]
+        [summary <String>]
+        (timerange <Time> <Time>
+        (recurrence <RRULE, EXRULE, RDATE and EXDATE line>)*
 
 gam <UserTypeEntity> delete outofoffice
         (timerange <Time> <Time>)+
 ```
 
-out of office events span a time range:
+Out of office events span a time range:
 * `timerange <Time> <Time>` - A time range, may span multiple days
 
 ## Display out of office events
