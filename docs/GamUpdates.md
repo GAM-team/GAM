@@ -15,6 +15,9 @@ See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Win
 
 Updated `<ToDriveAttribute>` to allow multiple `tdshare <EmailAddress> commenter|reader|writer` options.
 
+Fixed bug in `gam <UserTypeEntity> print shareddrives` where `role` was improperly displayed as `unknown`
+rather than `reader` when `Allow viewers and commenters to download, print, and copy files` was unchecked for the Shared Drive.
+
 ### 6.67.31
 
 Updated `gam <UserTypeEntity> claim|transfer ownership <DriveFileEntity>` to properly

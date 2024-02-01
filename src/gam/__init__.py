@@ -61836,7 +61836,7 @@ SHAREDDRIVE_ROLES_CAPABILITIES_MAP = {
   'commenter': {'canComment': True, 'canEdit': False},
   'fileOrganizer': {'canAddChildren': True, 'canManageMembers': False},
   'organizer': {'canManageMembers': True},
-  'reader': {'canCopy': True, 'canComment': False},
+  'reader': {'canEdit': False, 'canComment': False},
   'writer': {'canEdit': True, 'canManageMembers': False},
   }
 
