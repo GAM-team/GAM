@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2023 Ross Scroggs All Rights Reserved.
+# Copyright (C) 2024 Ross Scroggs All Rights Reserved.
 #
 # All Rights Reserved.
 #
@@ -931,6 +931,8 @@ class GamCLArgs():
   OB_PARAMETER_VALUE = 'ParameterValue'
   OB_PASSWORD = 'Password'
   OB_PERMISSION_ID_LIST = 'PermissionIDList'
+  OB_PERMISSION_ROLE_LIST = 'PermissionRoleList'
+  OB_PERMISSION_TYPE_LIST = 'PermissionTypeList'
   OB_PHOTO_FILENAME_PATTERN = 'FilenameNamePattern'
   OB_PRINTER_ID = 'PrinterID'
   OB_PRIVILEGE_LIST = 'PrivilegeList'

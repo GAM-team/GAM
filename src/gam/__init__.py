@@ -52518,16 +52518,31 @@ class PermissionMatch():
     body = {}
     while Cmd.ArgumentsRemaining():
       myarg = getArgument()
-      if myarg == 'type':
-        body['type'] = getChoice(DRIVEFILE_ACL_PERMISSION_TYPES)
+      if myarg in {'type', 'nottype'}:
+        body[myarg] = set(getChoice(DRIVEFILE_ACL_PERMISSION_TYPES))
         self.permissionFields.add('type')
-      elif myarg == 'role':
+      elif myarg in {'typelist', 'nottypelist'}:
+        arg = 'type' if myarg == 'typelist' else 'nottype'
+        body[arg] = set()
+        for ptype in getString(Cmd.OB_PERMISSION_TYPE_LIST).lower().replace(',', ' ').split():
+          if ptype in DRIVEFILE_ACL_PERMISSION_TYPES:
+            body[arg].add(ptype)
+          else:
+            invalidChoiceExit(ptype, DRIVEFILE_ACL_PERMISSION_TYPES, True)
+        self.permissionFields.add('type')
+      elif myarg in {'role', 'notrole'}:
         roleLocation = Cmd.Location()
-        body['role'] = getChoice(DRIVEFILE_ACL_ROLES_MAP, mapChoice=True)
+        body[myarg] = set(getChoice(DRIVEFILE_ACL_ROLES_MAP, mapChoice=True))
         self.permissionFields.add('role')
-      elif myarg == 'notrole':
+      elif myarg in {'rolelist', 'notrolelist'}:
+        arg = 'role' if myarg == 'rolelist' else 'notrole'
+        body[arg] = set()
         roleLocation = Cmd.Location()
-        body['notrole'] = getChoice(DRIVEFILE_ACL_ROLES_MAP, mapChoice=True)
+        for prole in getString(Cmd.OB_PERMISSION_ROLE_LIST).lower().replace(',', ' ').split():
+          if prole in DRIVEFILE_ACL_ROLES_MAP:
+            body[arg].add(DRIVEFILE_ACL_ROLES_MAP[prole])
+          else:
+            invalidChoiceExit(prole, DRIVEFILE_ACL_ROLES_MAP, True)
         self.permissionFields.add('role')
       elif myarg == 'emailaddress':
         body['emailAddress'] = getREPattern(re.IGNORECASE)
@@ -52610,10 +52625,13 @@ class PermissionMatch():
     match = False
     for field, value in iter(permissionMatch[1].items()):
       if field in {'type', 'role'}:
-        if value != permission.get(field, ''):
+        if permission.get(field, '') not in value:
+          break
+      elif field in {'nottype'}:
+        if permission.get('type', '') in value:
           break
       elif field in {'notrole'}:
-        if value == permission.get('role', ''):
+        if permission.get('role', '') in value:
           break
       elif field in {'allowFileDiscovery', 'deleted'}:
         if value != permission.get(field, False):
@@ -58437,7 +58455,7 @@ def transferDrive(users):
           if addTargetParent or removeTargetParents:
             op = 'Add/Remove Target Parents'
             callGAPI(targetDrive.files(), 'update',
-                     throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.INSUFFICIENT_PARENT_PERMISSIONS],
+                     throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.CANNOT_ADD_PARENT, GAPI.INSUFFICIENT_PARENT_PERMISSIONS],
                      retryReasons=[GAPI.BAD_REQUEST, GAPI.FILE_NOT_FOUND], triesLimit=3,
                      fileId=childFileId,
                      addParents=addTargetParent, removeParents=','.join(removeTargetParents), fields='')
@@ -58448,7 +58466,7 @@ def transferDrive(users):
           else:
             entityModifierNewValueItemValueListActionPerformed([Ent.USER, sourceUser, childFileType, childFileName], Act.MODIFIER_TO, None, [Ent.USER, targetUser], j, jcount)
       except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.unknownError,
-              GAPI.badRequest, GAPI.sharingRateLimitExceeded, GAPI.insufficientParentPermissions) as e:
+              GAPI.badRequest, GAPI.sharingRateLimitExceeded, GAPI.cannotAddParent, GAPI.insufficientParentPermissions) as e:
         entityActionFailedWarning([Ent.USER, actionUser, childFileType, childFileName], f'{op}: {str(e)}', j, jcount)
       except (GAPI.insufficientFilePermissions, GAPI.fileOwnerNotMemberOfWriterDomain, GAPI.crossDomainMoveRestriction) as e:
         if not createShortcutsForNonmovableFiles:

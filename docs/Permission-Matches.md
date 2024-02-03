@@ -18,7 +18,10 @@
         contributor|editor|writer|
         manager|organizer|owner|
         reader|viewer
+<DriveFileACLRoleList> ::= "<DriveFileACLRole>(,<DriveFileACLRole>)*"
+
 <DriveFileACLType> ::= anyone|domain|group|user
+<DriveFileACLTypeList> ::= "<DriveFileACLType>(,<DriveFileACLType>)*"
 
 <EmailAddress> ::= <String>@<DomainName>
 <EmailAddressList> ::= "<EmailAddress>(,<EmailAddress>)*"
@@ -31,7 +34,8 @@
 
 <PermissionMatch> ::=
         pm|permissionmatch [not]
-            [type <DriveFileACLType>] [role|notrole <DriveFileACLRole>]
+            [type|nottype <DriveFileACLType>] [role|notrole <DriveFileACLRole>]
+            [typelist|nottypelist <DriveFileACLTypeList>] [rolelist|notrolelist <DriveFileACLRoleList>]
             [allowfilediscovery|withlink <Boolean>]
             [emailaddress <RegularExpression>] [emailaddressList <EmailAddressList>]
             [permissionidlist <PermissionIDList>
@@ -72,9 +76,14 @@ In the `print/show drivefileacls` and `create/delete permissions` commands you c
 ## Define a Match
 * `pm|permissionmatch` - Start of permission match definition.
 * `not` - Negate the match.
-* `type <DriveFileACLType>` - The type of the grantee.
-* `role <DriveFileACLRole>` - The role granted by this permission.
-* `notrole <DriveFileACLRole>` - The role granted by this permission.
+* `type <DriveFileACLType>` - The type of the grantee must match.
+* `nottype <DriveFileACLType>` - The type of the grantee must not match.
+* `typelist <DriveFileACLTypeList>` - The type of the grantee must match any value in the list.
+* `nottypelist <DriveFileACLTypeList>` - The type of the grantee must not match any value in the list.
+* `role <DriveFileACLRole>` - The role granted by this permission must match.
+* `notrole <DriveFileACLRole>` - The role granted by this permission must not match.
+* `rolelist <DriveFileACLRoleList>` - The role granted by this permission must match any value in the list..
+* `notrolelist <DriveFileACLRoleList>` - The role granted by this permission must not match any value in the list..
 * `allowfilediscovery|withlink <Boolean>` - Whether a link is required or whether the file can be discovered through search.
 * `emailaddress <RegularExpression>` - For types user and group, the required email address.
 * `emailaddresslist <EmailAddressList>` - For types user and group, a list of required email addresses; any one of which must match.

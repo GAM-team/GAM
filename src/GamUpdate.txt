@@ -2,6 +2,18 @@
 
 Merged GAM-Team version
 
+6.67.35
+
+Added the following options to `<PermissionMatch>` that allow more powerful matching.
+```
+nottype	<DriveFileACLType>
+typelist <DriveFileACLTypeList>
+nottypelist <DriveFileACLTypeList>
+rolelist <DriveFileACLRoleList>
+notrolelist <DriveFileACLRoleList>
+```
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Permission-Matches#define-a-match
+
 6.67.34
 
 Added option `movetoorgunitdelay <Integer>` to `gam <UserTypeEntity> create shareddrive <Name> ... ou|org|orgunit <OrgUnitItem>`.

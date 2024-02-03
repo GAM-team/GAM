@@ -11,6 +11,46 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.67.35
+
+Added the following options to `<PermissionMatch>` that allow more powerful matching.
+```
+nottype	<DriveFileACLType>
+typelist <DriveFileACLTypeList>
+nottypelist <DriveFileACLTypeList>
+rolelist <DriveFileACLRoleList>
+notrolelist <DriveFileACLRoleList>
+```
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Permission-Matches#define-a-match
+
+### 6.67.34
+
+Added option `movetoorgunitdelay <Integer>` to `gam <UserTypeEntity> create shareddrive <Name> ... ou|org|orgunit <OrgUnitItem>`.
+GAM creates the Shared Drive, verifies that it has been created and then tries to move it to `<OrgUnitItem>`. Google seems to
+require a delay or the following error is generated.
+```
+ERROR: 409: 409 - The operation was aborted.
+```
+`movetoorgunitdelay` defaults to 20 seconds which seems to work; `<Integer>` can range from 0 to 60.
+
+### 6.67.33
+
+Upgraded to OpenSSL 3.2.1 where possible.
+
+Fixed bug in `gam <UserTypeEntity> print shareddrives` where `role` was improperly displayed as `fileOrganizer`
+rather than `writer`.
+
+Added option `guiroles [<Boolean>]` to `gam <UserTypeEntity> info|print|show shareddrive` that maps
+the Drive API role names to the Google Drive GUI role names.
+```
+API: GUI
+commenter: Commenter
+fileOrganizer: Content manager
+organizer: Manager
+reader: Viewer
+writer: Contributor
+```
+
 ### 6.67.32
 
 Updated `<ToDriveAttribute>` to allow multiple `tdshare <EmailAddress> commenter|reader|writer` options.

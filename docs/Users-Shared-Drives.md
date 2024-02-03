@@ -277,12 +277,15 @@ gam <UserTypeEntity> unhide teamdrive <SharedDriveEntity>
 ```
 gam <UserTypeEntity> show teamdriveinfo <SharedDriveEntity>
 gam <UserTypeEntity> info teamdrive <SharedDriveEntity>
-        [fields <SharedDriveFieldNameList>] [formatjson]
+        [fields <SharedDriveFieldNameList>]
+        [guiroles [<Boolean>] [formatjson]
 gam <UserTypeEntity> show teamdriveinfo <SharedDriveEntity>
-        [fields <SharedDriveFieldNameList>] [formatjson]
+        [fields <SharedDriveFieldNameList>]
+        [guiroles [<Boolean>] [formatjson]
 gam <UserTypeEntity> show teamdrives
         [matchname <RegularExpression>] (role|roles <SharedDriveACLRoleList>)*
-        [fields <SharedDriveFieldNameList>] [formatjson]
+        [fields <SharedDriveFieldNameList>]
+        [guiroles [<Boolean>] [formatjson]
 ```
 By default, Gam displays all Teams Drives accessible by the user.
 * `matchname <RegularExpression>` - Display Shared Drives with names that match a pattern.
@@ -301,10 +304,20 @@ By default, Gam displays all Teams Drives accessible by the user.
 
 The Google Drive API does not list roles for Shared Drives so GAM generates a role from the capabilities:
 * `commenter - canComment: True, canEdit: False`
-* `fileOrganizer - canAddChildren: True, canManageMembers: False`
+* `reader - canComment: False, canEdit: False`
+* `writer - canEdit: True, canTrashChildren: False`
+* `fileOrganizer - canTrashChildren: True, canManageMembers: False`
 * `organizer - canManageMembers: True`
-* `reader - canCopy': True, canComment: False`
-* `writer - canEdit: True, canManageMembers: False`
+
+By default, the Drive API role names are displayed, use `guiroles` to display the Google Drive GUI role names.
+```
+API: GUI
+commenter: Commenter
+fileOrganizer: Content manager
+organizer: Manager
+reader: Viewer
+writer: Contributor
+```
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.

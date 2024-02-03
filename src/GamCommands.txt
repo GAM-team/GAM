@@ -664,6 +664,7 @@ If an item contains spaces, it should be surrounded by ".
 <DeviceUserList> ::= "<DeviceUserID>(,<DeviceUserID>)*"
 <DomainNameList> ::= "<DomainName>(,<DomainName>)*"
 <DriveFileACLRoleList> ::= "<DriveFileACLRole>(,<DriveFileACLRole>)*"
+<DriveFileACLTypeList> ::= "<DriveFileACLType>(,<DriveFileACLType>)*"
 <DriveFileList> ::= "<DriveFileItem>(,<DriveFileItem>)*"
 <DriveFilePermissionList> ::= "<DriveFilePermission>(,<DriveFilePermission>)*"
 <DriveFilePermissionIDList> ::= "<DriveFilePermissionID>(,<DriveFilePermissionID>)*"
@@ -4635,6 +4636,23 @@ gam <UserTypeEntity> show shareddrives
         [fields <SharedDriveFieldNameList>]
         [guiroles [<Boolean>]] [formatjson]
 
+<PermissionMatch> ::=
+        pm|permissionmatch [not]
+            [type|nottype <DriveFileACLType>] [role|notrole <DriveFileACLRole>]
+            [typelist|nottypelist <DriveFileACLTypeList>] [rolelist|notrolelist <DriveFileACLRoleList>]
+            [allowfilediscovery|withlink <Boolean>]
+            [emailaddress <RegularExpression>] [emailaddressList <EmailAddressList>]
+            [permissionidlist <PermissionIDList>
+            [name|displayname <String>]
+            [domain|notdomain <RegularExpression>] [domainlist|notdomainlist <DomainNameList>]
+            [expirationstart <Time>] [expirationend <Time>]
+            [deleted <Boolean>] [inherited <Boolean>]
+        em|endmatch
+<PermissionMatchMode> ::=
+        pmm|permissionmatchmode or|and
+<PermissionMatchAction> ::=
+        pma|permissionmatchaction process|skip
+
 These commands are used to manage the ACLs on the Team Drives themselves, not the files/folders on the Team Drives.
 
 <DrivePermissionsFieldName> ::=
@@ -5810,7 +5828,6 @@ gam <UserTypeEntity> create focustime
         [declinemessage <String>]
         [summary <String>]
         (timerange <Time> <Time> [recurrence <String>])+
-        [timezone <String>]
 
 gam <UserTypeEntity> create outofoffice
         [declinemode none|all|new]
@@ -6586,19 +6603,6 @@ gam <UserTypeEntity> collect orphans
         webviewlink|
         writerscanshare
 <DriveFieldNameList> ::= "<DriveFieldName>(,<DriveFieldName>)*"
-
-<PermissionMatch> ::=
-        permissionmatch|pm [not]
-            [type anyone|user|group|domain] [role|notrole <DriveFileACLRole>] [allowfilediscovery|withlink <Boolean>]
-            [emailaddress <RegularExpression>] [name|displayname <String>]
-            [domain|notdomain <RegularExpression>] [domainlist|notdomainlist <DomainNameList>]
-            [expirationstart <Time>] [expirationend <Time>]
-            [deleted <Boolean>] [inherited <Boolean>]
-        endmatch|em
-<PermissionMatchMode> ::=
-        permissionmatchmode|pmm or|and
-<PermissionMatchAction> ::=
-        permissionmatchaction|pma process|skip
 
 gam <UserTypeEntity> show fileinfo <DriveFileEntity>
         [returnidonly]

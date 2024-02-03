@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2023 Ross Scroggs All Rights Reserved.
+# Copyright (C) 2024 Ross Scroggs All Rights Reserved.
 #
 # All Rights Reserved.
 #
