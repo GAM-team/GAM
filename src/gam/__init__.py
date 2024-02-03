@@ -5158,6 +5158,8 @@ def checkGAPIError(e, softErrors=False, retryOnHttpError=False, mapNotFound=True
     elif http_status == 409:
       if status == 'ALREADY_EXISTS' or 'requested entity already exists' in lmessage:
         error = makeErrorDict(http_status, GAPI.ALREADY_EXISTS, message)
+      elif status == 'ABORTED':
+        error = makeErrorDict(http_status, GAPI.ABORTED, message)
     elif http_status == 412:
       if 'insufficient archived user licenses' in lmessage:
         error = makeErrorDict(http_status, GAPI.INSUFFICIENT_ARCHIVED_USER_LICENSES, message)
@@ -61418,11 +61420,12 @@ def _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci, return
             'destinationOrgUnit': f'orgUnits/{orgUnitId[3:]}'}
   try:
     callGAPI(ci.orgUnits().memberships(), 'move',
+             throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.ABORTED],
              name=name, body=cibody)
     if not returnIdOnly:
       Act.Set(Act.MOVE)
       entityModifierNewValueActionPerformed([Ent.SHAREDDRIVE, driveId], Act.MODIFIER_TO, f'{Ent.Singular(Ent.ORGANIZATIONAL_UNIT)}: {orgUnit}', i, count)
-  except (GAPI.notFound, GAPI.forbidden, GAPI.badRequest, GAPI.internalError,
+  except (GAPI.notFound, GAPI.forbidden, GAPI.aborted, GAPI.badRequest, GAPI.internalError,
           GAPI.noManageTeamDriveAdministratorPrivilege) as e:
     entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], str(e), i, count)
   except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
@@ -61435,6 +61438,7 @@ def _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci, return
 #	(<SharedDriveRestrictionsFieldName> <Boolean>)*
 #	[hide|hidden <Boolean>] [ou|org|orgunit <OrgUnitItem>]
 #	[errorretries <Integer>] [updateinitialdelay <Integer>] [updateretrydelay <Integer>]
+#	[movetoorgunitdelay <Integer>]
 #	[(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*) | returnidonly]
 def createSharedDrive(users, useDomainAdminAccess=False):
   def waitingForCreationToComplete(sleep_time):
@@ -61451,6 +61455,7 @@ def createSharedDrive(users, useDomainAdminAccess=False):
   errorRetries = 5
   updateInitialDelay = 10
   updateRetryDelay = 10
+  moveToOrgUnitDelay = 20
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if _getSharedDriveTheme(myarg, body):
@@ -61478,6 +61483,8 @@ def createSharedDrive(users, useDomainAdminAccess=False):
       updateInitialDelay = getInteger(minVal=0, maxVal=60)
     elif myarg == 'updateretrydelay':
       updateRetryDelay = getInteger(minVal=0, maxVal=60)
+    elif myarg == 'movetoorgunitdelay':
+      moveToOrgUnitDelay = getInteger(minVal=0, maxVal=60)
     else:
       unknownArgumentExit()
   if csvPF:
@@ -61531,62 +61538,58 @@ def createSharedDrive(users, useDomainAdminAccess=False):
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
         userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
         break
-    if doUpdate and (updateBody or hide or orgUnit):
-      if updateBody or hide:
-        waitingForCreationToComplete(updateInitialDelay)
+    if not (doUpdate or updateBody or hide or orgUnit):
+      continue
+    waitingForCreationToComplete(updateInitialDelay)
+    created = False
+    retry = 0
+    while True:
       try:
-        if updateBody:
-          Act.Set(Act.UPDATE)
-          retry = 0
-          while True:
-            try:
-              callGAPI(drive.drives(), 'update',
-                       bailOnInternalError=True,
-                       throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN,
-                                                                   GAPI.NO_MANAGE_TEAMDRIVE_ADMINISTRATOR_PRIVILEGE,
-                                                                   GAPI.BAD_REQUEST, GAPI.INTERNAL_ERROR, GAPI.PERMISSION_DENIED,
-                                                                   GAPI.FILE_NOT_FOUND],
-                       useDomainAdminAccess=useDomainAdminAccess, driveId=driveId, body=updateBody)
-              if not returnIdOnly and not csvPF:
-                entityActionPerformed([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], i, count)
-              break
-            except GAPI.notFound as e:
-              retry += 1
-              if retry > errorRetries:
-                entityActionFailedWarning([Ent.USER, user, Ent.REQUEST_ID, requestId], str(e), i, count)
-                break
-              waitingForCreationToComplete(updateRetryDelay)
-            except (GAPI.badRequest, GAPI.internalError, GAPI.permissionDenied) as e:
-              entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], str(e), i, count)
-              break
-            except GAPI.fileNotFound as e:
-              entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId,
-                                         Ent.DRIVE_FILE, body.get('backgroundImageFile', {}).get('id', UNKNOWN)],
-                                        str(e), i, count)
-              break
-        if hide:
-          Act.Set(Act.HIDE)
-          retry = 0
-          while True:
-            try:
-              callGAPI(drive.drives(), 'hide',
-                       throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN],
-                       driveId=driveId)
-              if not returnIdOnly and not csvPF:
-                entityActionPerformed([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], i, count)
-              break
-            except GAPI.notFound as e:
-              retry += 1
-              if retry > errorRetries:
-                entityActionFailedWarning([Ent.USER, user, Ent.REQUEST_ID, requestId], str(e), i, count)
-                break
-              waitingForCreationToComplete(updateRetryDelay)
-        if orgUnit:
-          ci = _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci, returnIdOnly)
-      except (GAPI.forbidden, GAPI.badRequest, GAPI.noManageTeamDriveAdministratorPrivilege) as e:
-        entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], str(e), i, count)
-      except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        callGAPI(drive.drives(), 'get',
+                 throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND],
+                 useDomainAdminAccess=useDomainAdminAccess,
+                 driveId=driveId, fields='id')
+        created = True
+        break
+      except GAPI.notFound as e:
+        retry += 1
+        if retry > errorRetries:
+          entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], str(e), i, count)
+          break
+        waitingForCreationToComplete(updateRetryDelay)
+    if not created:
+      continue
+    try:
+      if updateBody:
+        Act.Set(Act.UPDATE)
+        try:
+          callGAPI(drive.drives(), 'update',
+                   bailOnInternalError=True,
+                   throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN,
+                                                               GAPI.NO_MANAGE_TEAMDRIVE_ADMINISTRATOR_PRIVILEGE,
+                                                               GAPI.BAD_REQUEST, GAPI.INTERNAL_ERROR, GAPI.PERMISSION_DENIED,
+                                                               GAPI.FILE_NOT_FOUND],
+                   useDomainAdminAccess=useDomainAdminAccess, driveId=driveId, body=updateBody)
+          if not returnIdOnly and not csvPF:
+            entityActionPerformed([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], i, count)
+        except GAPI.fileNotFound as e:
+          entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId,
+                                     Ent.DRIVE_FILE, body.get('backgroundImageFile', {}).get('id', UNKNOWN)],
+                                    str(e), i, count)
+      if hide:
+        Act.Set(Act.HIDE)
+        callGAPI(drive.drives(), 'hide',
+                 throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN],
+                 driveId=driveId)
+        if not returnIdOnly and not csvPF:
+          entityActionPerformed([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], i, count)
+      if orgUnit:
+        waitingForCreationToComplete(moveToOrgUnitDelay)
+        ci = _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci, returnIdOnly or csvPF)
+    except (GAPI.notFound, GAPI.forbidden, GAPI.badRequest, GAPI.noManageTeamDriveAdministratorPrivilege) as e:
+      entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], str(e), i, count)
+    except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
+      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
   if csvPF:
     csvPF.writeCSVfile('SharedDrives')
 
@@ -61594,6 +61597,8 @@ def createSharedDrive(users, useDomainAdminAccess=False):
 #	[(theme|themeid <String>) | ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
 #	(<SharedDriveRestrictionsFieldName> <Boolean>)*
 #	[hide|hidden <Boolean>]
+#	[errorretries <Integer>] [updateinitialdelay <Integer>] [updateretrydelay <Integer>]
+#	[movetoorgunitdelay <Integer>]
 #	[(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*) | returnidonly]
 def doCreateSharedDrive():
   createSharedDrive([_getAdminEmail()], True)
@@ -61750,6 +61755,36 @@ SHAREDDRIVE_LIST_FIELDS_CHOICE_MAP = {
   'ou': 'orgUnitId',
   }
 SHAREDDRIVE_TIME_OBJECTS = {'createdTime'}
+SHAREDDRIVE_ROLES_CAPABILITIES_MAP = {
+  'commenter': {'canComment': True, 'canEdit': False},
+  'reader': {'canComment': False, 'canEdit': False},
+  'writer': {'canEdit': True, 'canTrashChildren': False},
+  'fileOrganizer': {'canTrashChildren': True, 'canManageMembers': False},
+  'organizer': {'canManageMembers': True},
+  }
+SHAREDDRIVE_API_GUI_ROLES_MAP = {
+  'commenter': 'Commenter',
+  'fileOrganizer': 'Content manager',
+  'organizer': 'Manager',
+  'reader': 'Viewer',
+  'writer': 'Contributor',
+  'unknown': 'Unknown'
+  }
+
+def _getSharedDriveRole(shareddrive):
+  if 'capabilities' not in shareddrive:
+    return None
+  for role, capabilities in iter(SHAREDDRIVE_ROLES_CAPABILITIES_MAP.items()):
+    match = True
+    for capability in capabilities:
+      if capabilities[capability] != shareddrive['capabilities'].get(capability, ''):
+        match = False
+        break
+    if match:
+      break
+  else:
+    role = 'unknown'
+  return role
 
 def _showSharedDrive(user, shareddrive, j, jcount, FJQC):
   def _showCapabilitiesRestrictions(field):
@@ -61780,17 +61815,23 @@ def _showSharedDrive(user, shareddrive, j, jcount, FJQC):
   _showCapabilitiesRestrictions('restrictions')
   Ind.Decrement()
 
-# gam <UserTypeEntity> info shareddrive <SharedDriveEntity> [adminaccess|asadmin] [fields <SharedDriveFieldNameList>] [formatjson]
+# gam <UserTypeEntity> info shareddrive <SharedDriveEntity>
+#	[adminaccess|asadmin]
+#	[fields <SharedDriveFieldNameList>]
+#	[guiroles [<Boolean>]] [formatjson]
 def infoSharedDrive(users, useDomainAdminAccess=False):
   fileIdEntity = getSharedDriveEntity()
   fieldsList = []
   FJQC = FormatJSONQuoteChar()
+  guiRoles = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg in ADMIN_ACCESS_OPTIONS:
       useDomainAdminAccess = True
     elif getFieldsList(myarg, SHAREDDRIVE_FIELDS_CHOICE_MAP, fieldsList, initialField=['id', 'name']):
       pass
+    elif myarg == 'guiroles':
+      guiRoles = getBoolean()
     else:
       FJQC.GetFormatJSON(myarg)
   fields = ','.join(set(fieldsList)) if fieldsList else '*'
@@ -61806,6 +61847,9 @@ def infoSharedDrive(users, useDomainAdminAccess=False):
                              throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND],
                              useDomainAdminAccess=useDomainAdminAccess,
                              driveId=driveId, fields=fields)
+      role = _getSharedDriveRole(shareddrive)
+      if role:
+        shareddrive['role'] = role if not guiRoles else SHAREDDRIVE_API_GUI_ROLES_MAP[role]
       _showSharedDrive(user, shareddrive, i, count, FJQC)
     except GAPI.notFound as e:
       entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], str(e), i, count)
@@ -61832,26 +61876,18 @@ SHAREDDRIVE_ACL_ROLES_MAP = {
   'writer': 'writer',
   }
 
-SHAREDDRIVE_ROLES_CAPABILITIES_MAP = {
-  'commenter': {'canComment': True, 'canEdit': False},
-  'fileOrganizer': {'canAddChildren': True, 'canManageMembers': False},
-  'organizer': {'canManageMembers': True},
-  'reader': {'canEdit': False, 'canComment': False},
-  'writer': {'canEdit': True, 'canManageMembers': False},
-  }
-
 # gam <UserTypeEntity> print shareddrives [todrive <ToDriveAttribute>*]
 #	[adminaccess|asadmin [shareddriveadminquery|query <QuerySharedDrive>]]
 #	[matchname <RegularExpression>] [orgunit|org|ou <OrgUnitPath>]
 #	(role|roles <SharedDriveACLRoleList>)*
 #	[fields <SharedDriveFieldNameList>] [noorgunits [<Boolean>]]
-#	[formatjson [quotechar <Character>]]
+#	[guiroles [<Boolean>]] [formatjson [quotechar <Character>]]
 # gam <UserTypeEntity> show shareddrives
 #	[adminaccess|asadmin [shareddriveadminquery|query <QuerySharedDrive>]]
 #	[matchname <RegularExpression>] [orgunit|org|ou <OrgUnitPath>]
 #	(role|roles <SharedDriveACLRoleLIst>)*
 #	[fields <SharedDriveFieldNameList>] [noorgunits [<Boolean>]]
-#	[formatjson]
+#	[guiroles [<Boolean>]] [formatjson]
 def printShowSharedDrives(users, useDomainAdminAccess=False):
   def stripNonShowFields(shareddrive):
     if orgUnitIdToPathMap:
@@ -61875,6 +61911,7 @@ def printShowSharedDrives(users, useDomainAdminAccess=False):
   SHAREDDRIVE_FIELDS_CHOICE_MAP.update(SHAREDDRIVE_LIST_FIELDS_CHOICE_MAP)
   showOrgUnitPaths = True
   orgUnitIdToPathMap = None
+  guiRoles = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -61902,6 +61939,8 @@ def printShowSharedDrives(users, useDomainAdminAccess=False):
       pass
     elif myarg == 'noorgunits':
       showOrgUnitPaths = not getBoolean()
+    elif myarg == 'guiroles':
+      guiRoles = getBoolean()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if query and not useDomainAdminAccess:
@@ -61953,18 +61992,9 @@ def printShowSharedDrives(users, useDomainAdminAccess=False):
       for shareddrive in feed:
         if matchPattern is not None and matchPattern.match(shareddrive['name']) is None:
           continue
-        for role, capabilities in iter(SHAREDDRIVE_ROLES_CAPABILITIES_MAP.items()):
-          match = True
-          for capability in capabilities:
-            if capabilities[capability] != shareddrive['capabilities'][capability]:
-              match = False
-              break
-          if match:
-            break
-        else:
-          role = 'unknown'
+        role = _getSharedDriveRole(shareddrive)
         if not roles or role in roles:
-          shareddrive['role'] = role
+          shareddrive['role'] = role if not guiRoles else SHAREDDRIVE_API_GUI_ROLES_MAP[role]
           matchedFeed.append(shareddrive)
     elif matchPattern is not None or orgUnitId is not None:
       for shareddrive in feed:
@@ -61995,7 +62025,7 @@ def printShowSharedDrives(users, useDomainAdminAccess=False):
           if FJQC.formatJSON:
             row = {'User': user, 'id': shareddrive['id'], 'name': shareddrive['name']}
             if not useDomainAdminAccess:
-              row['role'] = shareddrive['role']
+              row['role'] = shareddrive['role'] if not guiRoles else SHAREDDRIVE_API_GUI_ROLES_MAP[shareddrive['role']]
             row['JSON'] = json.dumps(cleanJSON(shareddrive, timeObjects=SHAREDDRIVE_TIME_OBJECTS), ensure_ascii=False, sort_keys=True)
             csvPF.WriteRow(row)
           else:

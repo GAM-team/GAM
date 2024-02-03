@@ -276,6 +276,7 @@ YOUTUBE_THROW_REASONS = [SERVICE_NOT_AVAILABLE, AUTH_ERROR, UNSUPPORTED_SUPERVIS
 REASON_MESSAGE_MAP = {
   ABORTED: [
     ('Label name exists or conflicts', DUPLICATE),
+    ('The operation was aborted', ABORTED),
     ],
   CONDITION_NOT_MET: [
     ('Cyclic memberships not allowed', CYCLIC_MEMBERSHIPS_NOT_ALLOWED),
