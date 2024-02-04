@@ -41,6 +41,7 @@ Batch files can contain the following types of lines:
   * GAM waits for all running GAM commands to complete
   * GAM prints \<String\> and waits for the user to press any key
   * GAM continues
+* sleep \<Integer\> - Batch processing will suspend for \<Integer\> seconds before the next command line is processed
 * print \<String\> - Print \<String\> on stderr
 * set \<KeywordString\> \<ValueString\>
   * Subsequent lines will have %\<KeywordString\>% replaced with \<ValueString\>

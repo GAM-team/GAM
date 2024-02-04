@@ -11,6 +11,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.67.36
+
+Updated `gam batch <BatchContent>` and `gam tbatch <BatchContent>` commands to accept lines with the following form:
+```
+sleep <Integer>
+```
+Batch processing will suspend for `<Integer>` seconds before the next command line is processed.
+
 ### 6.67.35
 
 Added the following options to `<PermissionMatch>` that allow more powerful matching.

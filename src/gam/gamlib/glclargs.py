@@ -379,6 +379,7 @@ class GamCLArgs():
   PRINT_CMD = 'print'
   SET_CMD = 'set'
   CLEAR_CMD = 'clear'
+  SLEEP_CMD = 'sleep'
 # Command line batch/csv/loop/tbatch keywords
   BATCH_CMD = 'batch'
   CSV_CMD = 'csv'

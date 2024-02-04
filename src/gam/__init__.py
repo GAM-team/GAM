@@ -9681,6 +9681,10 @@ def MultiprocessGAMCommands(items, showCmds):
       if item[0] == Cmd.PRINT_CMD:
         batchWriteStderr(Cmd.QuotedArgumentList(item[1:])+'\n')
         continue
+      if item[0] == Cmd.SLEEP_CMD:
+        batchWriteStderr(f'{currentISOformatTimeStamp()},0/{numItems},Sleepiing {item[1]} seconds\n')
+        time.sleep(int(item[1]))
+        continue
       pid += 1
       if not showCmds and ((pid % 100 == 0) or (pid == numItems)):
         batchWriteStderr(Msg.PROCESSING_ITEM_N_OF_M.format(currentISOformatTimeStamp(), pid, numItems))
@@ -9823,6 +9827,10 @@ def ThreadBatchGAMCommands(items, showCmds):
     if item[0] == Cmd.PRINT_CMD:
       batchWriteStderr(f'{currentISOformatTimeStamp()},0/{numItems},{Cmd.QuotedArgumentList(item[1:])}\n')
       continue
+    if item[0] == Cmd.SLEEP_CMD:
+      batchWriteStderr(f'{currentISOformatTimeStamp()},0/{numItems},Sleepiing {item[1]} seconds\n')
+      time.sleep(int(item[1]))
+      continue
     pid += 1
     if not showCmds and ((pid % 100 == 0) or (pid == numItems)):
       batchWriteStderr(Msg.PROCESSING_ITEM_N_OF_M.format(currentISOformatTimeStamp(), pid, numItems))
@@ -9904,6 +9912,12 @@ def doBatch(threadBatch=False):
             writeStderr(f'{ERROR_PREFIX}{Cmd.ARGUMENT_ERROR_NAMES[Cmd.ARGUMENT_INVALID][1]}: {Msg.EXPECTED} <{Cmd.CLEAR_CMD} keyword>)>\n')
             errors += 1
           continue
+        if cmd == Cmd.SLEEP_CMD:
+          if len(argv) != 2 or not argv[1].isdigit():
+            writeStderr(f'Command: >>>{Cmd.QuotedArgumentList([argv[0]])}<<< {Cmd.QuotedArgumentList(argv[1:])}\n')
+            writeStderr(f'{ERROR_PREFIX}{Cmd.ARGUMENT_ERROR_NAMES[Cmd.ARGUMENT_INVALID][1]}: {Msg.EXPECTED} <{Cmd.SLEEP_CMD} integer>)>\n')
+            errors += 1
+            continue
         if (not cmd) or ((len(argv) == 1) and (cmd not in [Cmd.COMMIT_BATCH_CMD, Cmd.PRINT_CMD])):
           continue
         if cmd in validCommands:
