@@ -66837,7 +66837,14 @@ def printShowMessagesThreads(users, entityType):
     return 'Body not available'
 
   ATTACHMENT_NAME_PATTERN = re.compile(r'^.*name="?(.*?)(?:"|;|$)')
+  CHARSET_NAME_PATTERN = re.compile(r'^.*charset="?(.*?)(?:"|;|$)')
 
+  def _showAttachmentMimeTypeSizeCharset(part, charset):
+    printKeyValueList(['mimeType', part['mimeType']])
+    printKeyValueList(['size', part['body']['size']])
+    if charset:
+      printKeyValueList(['charset', charset])
+    
   def _showSaveAttachments(messageId, payload, attachmentNamePattern):
     for part in payload.get('parts', []):
       if 'attachmentId' in part['body']:
@@ -66848,7 +66855,12 @@ def printShowMessagesThreads(users, entityType):
               continue
             attachmentName = mg.group(1)
             if (not attachmentNamePattern) or attachmentNamePattern.match(attachmentName):
-              if (part['mimeType'] == 'text/plain' and not noshow_text_plain)  or save_attachments:
+              charset = ''
+              if part['mimeType'] == 'text/plain':
+                  mg = CHARSET_NAME_PATTERN.match(header['value'])
+                  if mg:
+                    charset = mg.group(1)
+              if (part['mimeType'] == 'text/plain' and not noshow_text_plain) or save_attachments:
                 try:
                   result = callGAPI(gmail.users().messages().attachments(), 'get',
                                     throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND],
@@ -66858,10 +66870,12 @@ def printShowMessagesThreads(users, entityType):
                       printKeyValueList(['Attachment', attachmentName])
                       Ind.Increment()
                       if part['mimeType'] == 'text/plain':
-                        printKeyValueList([Ind.MultiLineText(base64.urlsafe_b64decode(str(result['data'])).decode(UTF8)+'\n')])
+                        try:
+                          printKeyValueList([Ind.MultiLineText(base64.urlsafe_b64decode(str(result['data'])).decode(charset)+'\n')])
+                        except (LookupError, UnicodeDecodeError, UnicodeError):
+                          _showAttachmentMimeTypeSizeCharset(part, charset)
                       else:
-                        printKeyValueList(['mimeType', part['mimeType']])
-                        printKeyValueList(['size', part['body']['size']])
+                        _showAttachmentMimeTypeSizeCharset(part, charset)
                       Ind.Decrement()
                     if save_attachments:
                       filename, _ = uniqueFilename(targetFolder, cleanFilename(attachmentName), overwrite)
@@ -66878,8 +66892,7 @@ def printShowMessagesThreads(users, entityType):
               elif show_attachments:
                 printKeyValueList(['Attachment', attachmentName])
                 Ind.Increment()
-                printKeyValueList(['mimeType', part['mimeType']])
-                printKeyValueList(['size', part['body']['size']])
+                _showAttachmentMimeTypeSizeCharset(part, charset)
                 Ind.Decrement()
             break
       else:
@@ -67002,8 +67015,13 @@ def printShowMessagesThreads(users, entityType):
             if not mg:
               continue
             attachmentName = mg.group(1)
+            charset = ''
+            if part['mimeType'] == 'text/plain':
+                mg = CHARSET_NAME_PATTERN.match(header['value'])
+                if mg:
+                  charset = mg.group(1)
             if (not attachmentNamePattern) or attachmentNamePattern.match(attachmentName):
-              attachments.append((attachmentName, part['mimeType'], part['body']['size']))
+              attachments.append((attachmentName, part['mimeType'], part['body']['size'], charset))
             break
       else:
         _getAttachments(messageId, part, attachmentNamePattern, attachments)
@@ -67060,6 +67078,7 @@ def printShowMessagesThreads(users, entityType):
         row[f'Attachments{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{i}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}name'] = attachment[0]
         row[f'Attachments{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{i}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}mimeType'] = attachment[1]
         row[f'Attachments{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{i}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}size'] = attachment[2]
+        row[f'Attachments{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{i}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}charset'] = attachment[3]
     csvPF.WriteRowTitles(row)
     parameters['messagesProcessed'] += 1
 
