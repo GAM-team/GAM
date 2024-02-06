@@ -184,6 +184,7 @@ direct the uploaded file to a particular user and location and add a timestamp t
         (tdnobrowser [<Boolean>])|
         (tdnoemail [<Boolean>])|
         (tdnoescapechar [<Boolean>])|
+        (tdnotify [<Boolean>])|
         (tdparent (id:<DriveFolderID>)|<DriveFolderName>)|
         (tdretaintitle [<Boolean>])|
         (tdshare <EmailAddress> commenter|reader|writer)*|
@@ -236,6 +237,7 @@ If `tdfileid <DriveFileID>` is not specified, a new file is created.
 ## Open browser and send email
 * `tdnobrowser` - If False, a browser is opened to view the file uploaded to Google Drive; if not specified, the `todrive_nobrowser` value from gam.cfg is used.
 * `tdnoemail` - If False, an email is sent to `tduser` informing them of name and URL of the uploaded file; if not specified, the `todrive_noemail` value from gam.cfg is used.
+* `tdnotify` - If True, an email is sent to all `tdshare <EmailAddress>` users informing them of name and URL of the uploaded/updated file.
 
 ## Escape character
 * `tdnoescapechar <Boolean>` - Should `\` be ignored as an escape character; if not specified, the value of `todrive_no_escape_char` from `gam.cfg` will be used

@@ -2,6 +2,11 @@
 
 Merged GAM-Team version
 
+6.67.38
+
+Added option `tdnotify [<Boolean>]` to `<ToDriveAttribute>` that causes GAM to send notification
+emails to all `tdshare <EmailAddress>` users when the file is uploaded/updated.
+
 6.67.37
 
 Fixed bug in `gam <UserTypeEntity> show messages ... showattachments` to avoid a trap when `text/plain` attachments

@@ -13,7 +13,7 @@
 - [Synchronize ChromeOS devices with an organizational unit](#synchronize-chromeos-devices-with-an-organizational-unit)
 - [Display organizational units](#display-organizational-units)
 - [Print organizational units](#print-organizational-units)
-- [Display orgamizational unit counts](#display-organizational-unit-counts)
+- [Display organizational unit counts](#display-organizational-unit-counts)
 - [Display indented organizational unit tree](#display-indented-organizational-unit-tree)
 - [Special case handling for large number of organizational units](#special-case-handling-for-large-number-of-organizational-units)
 

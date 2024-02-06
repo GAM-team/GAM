@@ -68,6 +68,10 @@
 ```
 <JSONData> ::= (json [charset <Charset>] <String>) | (json file <FileName> [charset <Charset>]) |
 
+<OrgUnitID> ::= id:<String>
+<OrgUnitPath> ::= /|(/<String>)+
+<OrgUnitItem> ::= <OrgUnitID>|<OrgUnitPath>
+
 <DriveFileACLRole> ::=
         manager|organizer|owner|
         contentmanager|fileorganizer|

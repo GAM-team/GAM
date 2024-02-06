@@ -7847,7 +7847,7 @@ class CSVPrintFile():
                     'fileId': None, 'parentId': None, 'parent': GC.Values[GC.TODRIVE_PARENT], 'retaintitle': False,
                     'localcopy': GC.Values[GC.TODRIVE_LOCALCOPY], 'uploadnodata': GC.Values[GC.TODRIVE_UPLOAD_NODATA],
                     'nobrowser': GC.Values[GC.TODRIVE_NOBROWSER], 'noemail': GC.Values[GC.TODRIVE_NOEMAIL],
-                    'share': []}
+                    'share': [], 'notify': False}
     while Cmd.ArgumentsRemaining():
       myarg = getArgument()
       if myarg == 'tduser':
@@ -7923,6 +7923,8 @@ class CSVPrintFile():
         self.todrive['share'].append({'emailAddress': normalizeEmailAddressOrUID(getString(Cmd.OB_EMAIL_ADDRESS)),
                                       'type': 'user',
                                       'role': getChoice(self.TDSHARE_ACL_ROLES_MAP, mapChoice=True)})
+      elif myarg == 'tdnotify':
+        self.todrive['notify'] = getBoolean()
       else:
         Cmd.Backup()
         break
@@ -8653,6 +8655,10 @@ class CSVPrintFile():
           printKeyValueList([msg_txt])
           if not self.todrive['noemail']:
             send_email(title, msg_txt, user, clientAccess=GC.Values[GC.TODRIVE_CLIENTACCESS])
+          if self.todrive['notify']:
+            for share in self.todrive['share']:
+              if share['emailAddress'] != user:
+                send_email(title, msg_txt, share['emailAddress'], clientAccess=GC.Values[GC.TODRIVE_CLIENTACCESS])
           if not self.todrive['nobrowser']:
             webbrowser.open(file_url)
         except (GAPI.forbidden, GAPI.insufficientPermissions):
@@ -21839,7 +21845,7 @@ def _printShowPeople(source):
   if csvPF:
     csvPF.writeCSVfile(CSVTitle)
 
-# gam info people <PeopleResourceNameEntity>
+# gam info people|peopleprofile <PeopleResourceNameEntity>
 #	[allfields|(fields <PeopleFieldNameList>)] [showmetadata]
 #	[formatjson]
 def doInfoDomainPeopleProfile():
@@ -21851,13 +21857,13 @@ def doInfoDomainPeopleProfile():
 def doInfoDomainPeopleContacts():
   _infoPeople([GC.Values[GC.DOMAIN]], Ent.DOMAIN, 'domaincontact')
 
-# gam print people [todrive <ToDriveAttribute>*]
+# gam print people|peopleprofile [todrive <ToDriveAttribute>*]
 #	[query <String>]
 #	[mergesources <PeopleMergeSourceName>]
 #	[countsonly]
 #	[allfields|(fields <PeopleFieldNameList>)] [showmetadata]
 #	[formatjson [quotechar <Character>]]
-# gam show people
+# gam show people|peopleprofile
 #	[query <String>]
 #	[mergesources <PeopleMergeSourceName>]
 #	[countsonly]

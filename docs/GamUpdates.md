@@ -11,6 +11,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.67.38
+
+Added option `tdnotify [<Boolean>]` to `<ToDriveAttribute>` that causes GAM to send notification
+emails to all `tdshare <EmailAddress>` users when the file is uploaded/updated.
+
 ### 6.67.37
 
 Fixed bug in `gam <UserTypeEntity> show messages ... showattachments` to avoid a trap when `text/plain` attachments

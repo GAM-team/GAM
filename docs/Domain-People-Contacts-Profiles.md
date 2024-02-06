@@ -133,7 +133,7 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 ## Display Domain Profiles
 ### Display as an indented list of keys and values.
 ```
-gam info people|domainprofiles <PeopleResourceNameEntity>
+gam info domainprofiles|people|peopleprofiles <PeopleResourceNameEntity>
         [allfields|(fields <PeopleFieldNameList>)]
         [formatjson]
 ```
@@ -143,7 +143,7 @@ By default, Gam displays the fields `names,emailaddresses`.
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 ```
-gam show people|domainprofiles
+gam show domainprofiles|people|peopleprofiles
         [query <String>]
         [mergesources <PeopleMergeSourceName>]
         [allfields|(fields <PeopleFieldNameList>)]
@@ -163,7 +163,7 @@ By default, Gam displays the information as an indented list of keys and values.
 
 ### Display as a CSV file.
 ```
-gam print people|domainprofiles [todrive <ToDriveAttribute>*]
+gam print domainprofiles|people|peopleprofiles [todrive <ToDriveAttribute>*]
         [query <String>]
         [mergesources <PeopleMergeSourceName>]
         [allfields|(fields <PeopleFieldNameList>)]
