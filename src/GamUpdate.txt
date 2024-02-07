@@ -2,6 +2,17 @@
 
 Merged GAM-Team version
 
+6.68.00
+
+Fixed `<PermissionMatch>` bug introduced in 6.67.35 that caused a command error like the following or would
+not properly match `type|nottype <DriveFileACLType>` and `role|notrole <DriveFileACLRole>`.
+
+```
+ERROR: permission attribute allowfilediscovery/withlink not allowed with type {'a', 'y', 'e', 'o', 'n'}
+```
+
+My sincere apologies.
+
 6.67.39
 
 Added option `wait <Integer> <Integer>` to `gam create datatransfer` that causes GAM to wait

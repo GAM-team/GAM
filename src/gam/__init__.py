@@ -52520,14 +52520,18 @@ def addFilePathsToInfo(drive, fileTree, fileEntryInfo, filePathInfo, addParentsT
       fileEntryInfo['paths'].append(path)
 
 def _validatePermissionOwnerType(location, body):
-  if body.get('role', '') == 'owner' and body['type'] != 'user':
-    Cmd.SetLocation(location)
-    usageErrorExit(Msg.INVALID_PERMISSION_ATTRIBUTE_TYPE.format(f'role {body["role"]}', body['type']))
+  if 'role' in body:
+    badTypes = body['type']-{'user'}
+    if 'owner' in body['role'] and badTypes:
+      Cmd.SetLocation(location)
+      usageErrorExit(Msg.INVALID_PERMISSION_ATTRIBUTE_TYPE.format('role owner', ','.join(badTypes)))
 
 def _validatePermissionAttributes(myarg, location, body, field, validTypes):
-  if field in body and body['type'] not in validTypes:
-    Cmd.SetLocation(location-1)
-    usageErrorExit(Msg.INVALID_PERMISSION_ATTRIBUTE_TYPE.format(myarg, body['type']))
+  if field in body:
+    badTypes = body['type']-validTypes
+    if badTypes:
+      Cmd.SetLocation(location-1)
+      usageErrorExit(Msg.INVALID_PERMISSION_ATTRIBUTE_TYPE.format(myarg, ','.join(badTypes)))
 
 DRIVEFILE_ACL_ROLES_MAP = {
   'commenter': 'commenter',
@@ -59752,13 +59756,13 @@ def claimOwnership(users):
             try:
               if entityType not in {Ent.DRIVE_SHORTCUT, Ent.DRIVE_FILE_SHORTCUT, Ent.DRIVE_FOLDER_SHORTCUT}:
                 if changeParents and 'addParents' in fileInfo:
-                    callGAPI(drive.files(), 'update',
-                             throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.CANNOT_ADD_PARENT, GAPI.INSUFFICIENT_PARENT_PERMISSIONS],
-                             fileId=xferFileId, addParents=fileInfo['addParents'], fields='', supportsAllDrives=True)
-                    action = Act.Get()
-                    Act.Set(Act.ADD)
-                    entityModifierNewValueItemValueListActionPerformed(kvList, Act.MODIFIER_TO, None, [Ent.DRIVE_FOLDER, fileInfo['addParents']], l, lcount)
-                    Act.Set(action)
+                  callGAPI(drive.files(), 'update',
+                           throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.CANNOT_ADD_PARENT, GAPI.INSUFFICIENT_PARENT_PERMISSIONS],
+                           fileId=xferFileId, addParents=fileInfo['addParents'], fields='', supportsAllDrives=True)
+                  action = Act.Get()
+                  Act.Set(Act.ADD)
+                  entityModifierNewValueItemValueListActionPerformed(kvList, Act.MODIFIER_TO, None, [Ent.DRIVE_FOLDER, fileInfo['addParents']], l, lcount)
+                  Act.Set(action)
               else:
                 if changeParents and 'addParents' in fileInfo and entityType != Ent.DRIVE_SHORTCUT:
                   body = {'name': fileInfo['name'], 'mimeType': MIMETYPE_GA_SHORTCUT,
@@ -66890,9 +66894,9 @@ def printShowMessagesThreads(users, entityType):
             if (not attachmentNamePattern) or attachmentNamePattern.match(attachmentName):
               charset = ''
               if part['mimeType'] == 'text/plain':
-                  mg = CHARSET_NAME_PATTERN.match(header['value'])
-                  if mg:
-                    charset = mg.group(1)
+                mg = CHARSET_NAME_PATTERN.match(header['value'])
+                if mg:
+                  charset = mg.group(1)
               if (part['mimeType'] == 'text/plain' and not noshow_text_plain) or save_attachments:
                 try:
                   result = callGAPI(gmail.users().messages().attachments(), 'get',
@@ -67050,9 +67054,9 @@ def printShowMessagesThreads(users, entityType):
             attachmentName = mg.group(1)
             charset = ''
             if part['mimeType'] == 'text/plain':
-                mg = CHARSET_NAME_PATTERN.match(header['value'])
-                if mg:
-                  charset = mg.group(1)
+              mg = CHARSET_NAME_PATTERN.match(header['value'])
+              if mg:
+                charset = mg.group(1)
             if (not attachmentNamePattern) or attachmentNamePattern.match(attachmentName):
               attachments.append((attachmentName, part['mimeType'], part['body']['size'], charset))
             break

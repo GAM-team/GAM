@@ -11,6 +11,17 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.68.00
+
+Fixed bug introduced in 6.67.35 that caused a command error like the following or would
+not properly match `type|nottype <DriveFileACLType>` and `role|notrole <DriveFileACLRole>`.
+
+```
+ERROR: permission attribute allowfilediscovery/withlink not allowed with type {'a', 'y', 'e', 'o', 'n'}
+```
+
+My sincere apologies.
+
 ### 6.67.39
 
 Added option `wait <Integer> <Integer>` to `gam create datatransfer` that causes GAM to wait
