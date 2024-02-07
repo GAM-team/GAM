@@ -2,6 +2,10 @@
 
 Merged GAM-Team version
 
+6.68.01
+
+Fixed `<PermissionMatch>` bug for real.
+
 6.68.00
 
 Fixed `<PermissionMatch>` bug introduced in 6.67.35 that caused a command error like the following or would

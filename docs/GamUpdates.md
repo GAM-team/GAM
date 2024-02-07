@@ -11,9 +11,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.68.01
+
+Fixed `<PermissionMatch>` bug for real.
+
 ### 6.68.00
 
-Fixed bug introduced in 6.67.35 that caused a command error like the following or would
+Fixed `<PermissionMatch>` bug introduced in 6.67.35 that caused a command error like the following or would
 not properly match `type|nottype <DriveFileACLType>` and `role|notrole <DriveFileACLRole>`.
 
 ```

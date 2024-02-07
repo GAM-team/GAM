@@ -52570,7 +52570,8 @@ class PermissionMatch():
     while Cmd.ArgumentsRemaining():
       myarg = getArgument()
       if myarg in {'type', 'nottype'}:
-        body[myarg] = set(getChoice(DRIVEFILE_ACL_PERMISSION_TYPES))
+        body[myarg] = set()
+        body[myarg].add(getChoice(DRIVEFILE_ACL_PERMISSION_TYPES))
         self.permissionFields.add('type')
       elif myarg in {'typelist', 'nottypelist'}:
         arg = 'type' if myarg == 'typelist' else 'nottype'
@@ -52583,7 +52584,8 @@ class PermissionMatch():
         self.permissionFields.add('type')
       elif myarg in {'role', 'notrole'}:
         roleLocation = Cmd.Location()
-        body[myarg] = set(getChoice(DRIVEFILE_ACL_ROLES_MAP, mapChoice=True))
+        body[myarg] = set()
+        body[myarg].add(getChoice(DRIVEFILE_ACL_ROLES_MAP, mapChoice=True))
         self.permissionFields.add('role')
       elif myarg in {'rolelist', 'notrolelist'}:
         arg = 'role' if myarg == 'rolelist' else 'notrole'
