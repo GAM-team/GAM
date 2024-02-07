@@ -3142,7 +3142,7 @@ gam print|show transferapps
 gam create|add datatransfer|transfer <OldOwnerID> <DataTransferServiceList> <NewOwnerID>
         [private|shared|all] [release_resources]
         (<ParameterKey> <ParameterValue>)*
-
+        [wait <Integer> <Integer>]
 gam info datatransfer|transfer <TransferID>
 gam print datatransfers|transfers [todrive <ToDriveAttribute>*]
         [olduser|oldowner <UserItem>] [newuser|newowner <UserItem>]
@@ -3363,16 +3363,16 @@ gam show peoplecontacts
         [allfields|(fields <PeopleFieldNameList>)] [showmetadata]
         [formatjson]
 
-gam info people <PeopleResourceNameEntity>
+gam info people|peopleprofile <PeopleResourceNameEntity>
         [allfields|(fields <PeopleFieldNameList>)] [showmetadata]
         [formatjson]
-gam print people [todrive <ToDriveAttribute>*]
+gam print people|peopleprofile [todrive <ToDriveAttribute>*]
         [query <String>]
         [mergesources <PeopleMergeSourceName>]
         [coountsonly]
         [allfields|(fields <PeopleFieldNameList>)] [showmetadata]
         [formatjson [quotechar <Character>]]
-gam show people
+gam show people|peopleprofile
         [query <String>]
         [mergesources <PeopleMergeSourceName>]
         [coountsonly]

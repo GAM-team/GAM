@@ -11,6 +11,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.67.39
+
+Added option `wait <Integer> <Integer>` to `gam create datatransfer` that causes GAM to wait
+for the transfer to complete. The first `<Integer>` must be in the range 5-60 and is the number
+of seconds between checks to see if the transfer has completed. The second `<Integer>` is the maximum
+number of checks to perform. By default, GAM does not wait for the transfer to complete.
+
 ### 6.67.38
 
 Added option `tdnotify [<Boolean>]` to `<ToDriveAttribute>` that causes GAM to send notification

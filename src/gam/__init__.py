@@ -16351,6 +16351,7 @@ PRIVACY_LEVEL_CHOICE_MAP = {
 
 # gam create datatransfer|transfer <OldOwnerID> <ServiceNameList> <NewOwnerID>
 #	[private|shared|all] [release_resources] (<ParameterKey> <ParameterValue>)*
+#	[wait <Integer> <Integer>]
 def doCreateDataTransfer():
   def _assignAppParameter(key, value, doubleBackup=False):
     keyValid = False
@@ -16375,6 +16376,7 @@ def doCreateDataTransfer():
   body = {'oldOwnerUserId': convertEmailAddressToUID(old_owner)}
   appIndicies = {}
   appNameList = []
+  waitInterval = waitRetries = 0
   i = 0
   body['applicationDataTransfers'] = []
   for appName in getString(Cmd.OB_SERVICE_NAME_LIST).split(','):
@@ -16395,6 +16397,9 @@ def doCreateDataTransfer():
     elif myarg == 'releaseresources':
       if getBoolean():
         _assignAppParameter('RELEASE_RESOURCES', ['TRUE'])
+    elif myarg == 'wait':
+      waitInterval = getInteger(minVal=5, maxVal=60)
+      waitRetries = getInteger(minVal=0)
     else:
       _assignAppParameter(Cmd.Previous().upper(), getString(Cmd.OB_PARAMETER_VALUE).upper().split(','), True)
   try:
@@ -16410,6 +16415,28 @@ def doCreateDataTransfer():
   printKeyValueList([Msg.FROM, old_owner])
   printKeyValueList([Msg.TO, new_owner])
   Ind.Decrement()
+  if waitRetries == 0:
+    return
+  retry = 0
+  status = 'inProgress'
+  dtId = result['id']
+  while True:
+    writeStderr(Ind.Spaces()+Msg.WAITING_FOR_DATA_TRANSFER_TO_COMPLETE_SLEEPING.format(waitInterval))
+    time.sleep(waitInterval)
+    try:
+      result = callGAPI(dt.transfers(), 'get',
+                        throwReasons=[GAPI.NOT_FOUND],
+                        dataTransferId=dtId, fields='overallTransferStatusCode')
+      if result['overallTransferStatusCode'] == 'completed':
+        status = result['overallTransferStatusCode']
+        break
+      retry += 1
+      if retry >= waitRetries:
+        break
+    except GAPI.notFound:
+      entityActionFailedWarning([Ent.TRANSFER_ID, dtId], Msg.DOES_NOT_EXIST)
+      break
+  printEntity([Ent.TRANSFER_ID, dtId, Ent.STATUS, status])
 
 def _showTransfer(apps, transfer, i, count):
   printEntity([Ent.TRANSFER_ID, transfer['id']], i, count)

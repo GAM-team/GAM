@@ -37,6 +37,7 @@ gam create|add datatransfer|transfer <OldOwnerID> <DataTransferServiceList> <New
         [private|shared|all] [privacy_level private|shared|private,shared]
         [releaseresources [<Boolean>]]
         (<ParameterKey> <ParameterValue>)*
+        [wait <Integer> <Integer>]
 ```
 For`datastudio` and `drive`, there are options to control the privacy level of the files to be transferred.
 * `private` or `privacy_level private` - Transfer files that are not shared with anyone
@@ -53,6 +54,10 @@ NOTE: For calendars, the behaviour is not sufficiently defined in the API docume
 As of 2020-06-10, background transfers only transfer future non-private events with at least one guest/resource.
 
 The option `<ParameterKey> <ParameterValue>` is for future expansion.
+
+By default, GAM does not wait for the transfer to complete. The option `wait <Integer> <Integer>` causes GAM to wait
+for the transfer to complete. The first `<Integer>` must be in the range 5-60 and is the number
+of seconds between checks to see if the transfer has completed. The second `<Integer>` is the maximum number of checks to perform.
 
 ## Display transfers
 ```
