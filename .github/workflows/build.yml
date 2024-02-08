@@ -61,7 +61,7 @@ jobs:
             goal: build
             arch: aarch64
             openssl_archs: darwin64-arm64
-          - os: [self-hosted, macOS, ARM64]
+          - os: macos-14
             jid: 12
             goal: build
             arch: universal2
@@ -114,7 +114,7 @@ jobs:
           path: |
             bin.tar.xz
             src/cpython
-          key: gam-${{ matrix.jid }}-20240208
+          key: gam-${{ matrix.jid }}-20240208a
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
