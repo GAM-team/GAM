@@ -1,11 +1,13 @@
-6.68.02
-
-Added options `restricted|(audience <String>)` to `gam <UserTypeEntity> create|update chatspace` that
-sets the access options for the chat space. These options are in Developer Preview and will not be generally available.
-
 7.00.00
 
 Merged GAM-Team version
+
+6.68.02
+
+Upgraded to Python 3.12.2 where possible.
+
+Added options `restricted|(audience <String>)` to `gam <UserTypeEntity> create|update chatspace` that
+sets the access options for the chat space. These options are in Developer Preview and will not be generally available.
 
 6.68.01
 

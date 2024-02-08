@@ -82,6 +82,7 @@ Google requires that you have a Chat Bot configured in order to use the Chat API
 ```
 gam <UserTypeEntity> create chatspace
         [type <ChatSpaceType>]
+        [restricted|(audience <String>)]
         [externalusersallowed <Boolean>]
         [members <UserTypeEntity>]
         [displayname <String>]
@@ -117,19 +118,25 @@ By default, Gam displays the information about the created chatspace as an inden
 
 Use the `<ChatContent>` option to send an initial message to the created chatspace.
 
+The `restricted|audience` options are in Developer Preview and will not be generally available.
+
 By default, details about the chatmessage are displayed.
 * `returnidonly` - Display the chatmessage name only
 
 ### Update a chat space
 ```
 gam <UserTypeEntity> update chatspace <ChatSpace>
-        [type space]
-        [displayname <String>]
-        [description <String>] [guidelines <String>]
-        [history <Boolean>]
+        [restricted|(audience <String>)]|
+        ([displayname <String>]
+         [type space]
+         [description <String>] [guidelines|rules <String>]
+         [history <Boolean>])
         [formatjson]
 ```
 A groupchat space can be upgraded to a space by specifying `type space` and `displayname <String>`.
+
+The `restricted|audience` options can not be combined with options `displayname,type,description,guidelines,history`.
+They are in Developer Preview and will not be generally available.
 
 By default, Gam displays the information about the created chatspace as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
