@@ -24953,19 +24953,29 @@ def _showChatSpace(space, FJQC, i=0, count=0):
   showJSON(None, space, timeObjects=CHAT_SPACE_TIME_OBJECTS)
   Ind.Decrement()
 
-def  getChatSpaceParameters(myarg, body, typeChoicesMap):
+def  getChatSpaceParameters(myarg, body, typeChoicesMap, updateMask):
   if myarg == 'displayname':
     body['displayName'] = getString(Cmd.OB_STRING, minLen=0, maxLen=128)
+    updateMask.add('displayName')
   elif myarg == 'type':
     body['spaceType'] = getChoice(typeChoicesMap, mapChoice=True)
+    updateMask.add('spaceType')
   elif myarg == 'description':
     body.setdefault('spaceDetails', {})
     body['spaceDetails']['description'] = getString(Cmd.OB_STRING, minLen=0, maxLen=150)
+    updateMask.add('spaceDetails')
   elif myarg in {'guidelines', 'rules'}:
     body.setdefault('spaceDetails', {})
     body['spaceDetails']['guidelines'] = getString(Cmd.OB_STRING, minLen=0, maxLen=5000)
+    updateMask.add('spaceDetails')
   elif myarg == 'history':
     body['spaceHistoryState'] = 'HISTORY_ON' if getBoolean() else 'HISTORY_OFF'
+    updateMask.add('spaceHistoryState')
+  elif myarg in {'audience', 'restricted'}:
+    body['accessSettings']= {'audience': None}
+    if myarg == 'audience':
+      body['accessSettings']['audience'] = getString(Cmd.OB_STRING, minLen=1, maxLen=100)
+    updateMask.add('accessSettings.audience')
   else:
     return False
   return True
@@ -24993,6 +25003,7 @@ CHAT_SPACE_MIN_MAX_MEMBERS = {
   }
 # gam <UserTypeEntity> create chatspace
 #       [type <ChatSpaceType>]
+#	[restricted|(audience <String>)]
 #	[externalusersallowed <Boolean>]
 #	[members <UserTypeEntity>]
 #	[displayname <String>]
@@ -25008,9 +25019,10 @@ def createChatSpace(users):
   members = []
   tbody = {}
   returnIdOnly = False
+  updateMask = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if getChatSpaceParameters(myarg, body['space'], CHAT_SPACE_TYPE_MAP):
+    if getChatSpaceParameters(myarg, body['space'], CHAT_SPACE_TYPE_MAP, updateMask):
       pass
     elif myarg == 'externalusersallowed':
       body['space']['externalUserAllowed'] = getBoolean()
@@ -25092,25 +25104,31 @@ CHAT_UPDATE_SPACE_TYPE_MAP = {
   }
 
 # gam <UserTypeEntity> update chatspace <ChatSpace>
-#	[displayname <String>]
-#       [type space]
-#	[description <String>] [guidelines|rules <String>]
-#	[history <Boolean>]
+#	[restricted|(audience <String>)]|
+#	([displayname <String>]
+#	 [type space]
+#	 [description <String>] [guidelines|rules <String>]
+#	 [history <Boolean>])
 #	[formatjson]
 def updateChatSpace(users):
   FJQC = FormatJSONQuoteChar()
   name = None
   body = {}
+  updateMask = set()
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
       name = getChatSpace(myarg)
-    elif getChatSpaceParameters(myarg, body, CHAT_UPDATE_SPACE_TYPE_MAP):
+    elif getChatSpaceParameters(myarg, body, CHAT_UPDATE_SPACE_TYPE_MAP, updateMask):
       pass
     else:
       FJQC.GetFormatJSON(myarg)
   if not name:
     missingArgumentExit('space')
+  if 'accessSettings.audience' in updateMask:
+    tempMask = updateMask-{'accessSettings.audience'}
+    if tempMask:
+      usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('restricted/audience', 'displayname,type,description,guidelines,history'))
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -25120,8 +25138,7 @@ def updateChatSpace(users):
     try:
       space = callGAPI(chat.spaces(), 'patch',
                        throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                       name=name, updateMask=','.join(body.keys()),
-                       body=body)
+                       name=name, updateMask=','.join(updateMask), body=body)
       if not FJQC.formatJSON:
         entityActionPerformed(kvList, i, count)
       Ind.Increment()
@@ -25802,7 +25819,6 @@ CHAT_MESSAGE_REPLY_OPTION_MAP = {
 
 # gam [<UserTypeEntityu>] create chatmessage <ChatSpace>
 #	<ChatContent>
-#	(text <String>)|(textfile <FileName> [charset <CharSet>])
 #	[messageId <ChatMessageID>]
 #	[(thread <ChatThread>)|(threadkey <String>) [replyoption fail|fallbacktonew]]
 #	[returnidonly]
@@ -41081,7 +41097,7 @@ def getUserAttributes(cd, updateCmd, noUid=False):
       parameters['immutableOUs'] = set(getEntityList(Cmd.OB_ORGUNIT_ENTITY, shlexSplit=True))
     elif not updateCmd and myarg == 'addnumericsuffixonduplicate':
       parameters['addNumericSuffixOnDuplicate'] = getInteger(minVal=0, default=0)
-    elif not updateCmd and myarg in {'license', 'licence'}:
+    elif not updateCmd and myarg in {'license', 'licence', 'licenses', 'licences'}:
       if parameters['lic'] is None:
         parameters['lic'] = buildGAPIObject(API.LICENSING)
       parameters[LICENSE_PRODUCT_SKUIDS] = getGoogleSKUList(allowUnknownProduct=True)

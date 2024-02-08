@@ -5895,6 +5895,7 @@ gam <UserTypeEntity> print focustime|outofoffice|workinglocation
 
 gam <UserTypeEntity> create chatspace
         [type <ChatSpaceType>]
+        [restricted|(audience <String>)]
         [externalusersrallowed <Boolean>]
         [members <UserTypeEntity>]
         [displayname <String>]
@@ -5903,10 +5904,11 @@ gam <UserTypeEntity> create chatspace
         [<ChatContent>]
         [formatjson|returnidonly]
 gam <UserTypeEntity> update chatspace <ChatSpace>
-        [type space]
-        [displayname <String>]
-        [description <String>] [guidelines <String>]
-        [history <Boolean>]
+        [restricted|(audience <String>)]|
+        ([displayname <String>]
+         [type space]
+         [description <String>] [guidelines|rules <String>]
+         [history <Boolean>])
         [formatjson]
 gam <UserTypeEntity> delete chatspace <ChatSpace>
 
