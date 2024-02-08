@@ -177,15 +177,15 @@ jobs:
           sudo apt-get -qq --yes install swig libpcsclite-dev libxslt1-dev
 
       - name: MacOS install tools
-        if: runner.os == 'macOS' && runner.arch == 'x86_64'
+        if: runner.os == 'macOS'
         run: |
           # Install latest Rust
           curl $curl_retry -fsS -o rust.sh https://sh.rustup.rs
           bash ./rust.sh -y
           source $HOME/.cargo/env
-          # needed for Rust to compile cryptography Python package for universal2
-          # not needed since MacOS ARM and universal will be on self-hosted
-          #rustup target add aarch64-apple-darwin
+          # Install needed packages
+          brew update
+          brew install gpg swig
 
       - name: Windows Configure VCode
         uses: ilammy/msvc-dev-cmd@v1
@@ -215,14 +215,11 @@ jobs:
             CHOC_OPS="--forcex86"
           fi
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
-            #brew install coreutils
-            #brew install bash
             MAKE=make
             MAKEOPT="-j$(sysctl -n hw.logicalcpu)"
             PERL=perl
             echo "MACOSX_DEPLOYMENT_TARGET=10.15" >> $GITHUB_ENV
             echo "PYTHON=${PYTHON_INSTALL_PATH}/bin/python3" >> $GITHUB_ENV
-            #echo "PIP_ARGS=--no-binary=:all:" >> $GITHUB_ENV
           elif [[ "${RUNNER_OS}" == "Linux" ]]; then
             MAKE=make
             MAKEOPT="-j$(nproc)"
@@ -635,9 +632,6 @@ jobs:
         env:
           PASSCODE: ${{ secrets.PASSCODE }}
         run: |
-             if ([ "${RUNNER_OS}" == "macOS" ] && which gpg > /dev/null); then
-               brew install gnupg
-             fi
              source ../.github/actions/decrypt.sh ../.github/actions/creds.tar.xz.gpg creds.tar.xz "${GAMCFGDIR}"
              mv -v "${GAMCFGDIR}/oauth2.txt-gam-gha-${JID}" "${GAMCFGDIR}/oauth2.txt"
              rm -v $GAMCFGDIR/oauth2.txt-gam*
