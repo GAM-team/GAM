@@ -56,7 +56,7 @@ jobs:
             goal: build
             arch: x86_64
             openssl_archs: darwin64-x86_64
-          - os: [self-hosted, macOS, ARM64]
+          - os: macos-14
             jid: 7
             goal: build
             arch: aarch64
