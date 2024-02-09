@@ -72,13 +72,13 @@ gam redirect stdout ./NewStudents.out redirect stderr ./NewStudents.err tbatch N
 gam csv <FileName>|-|(gsheet <UserGoogleSheet>)|(gdoc <UserGoogleDoc>) [charset <Charset>] [warnifnodata]
         [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>] [fields <FieldNameList>]
         (matchfield|skipfield <FieldName> <RegularExpression>)* [showcmds [<Boolean>]]
-        [maxrows <Integer>]
+        [skiprows <Integer>] [maxrows <Integer>]
         gam <GAMArgumentList>
 
 gam loop <FileName>|-|(gsheet <UserGoogleSheet>)|(gdoc <UserGoogleDoc>) [charset <Charset>] [warnifnodata]
         [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>] [fields <FieldNameList>]
         (matchfield|skipfield <FieldName> <RegularExpression>)* [showcmds [<Boolean>]]
-        [maxrows <Integer>]
+        [skiprows <Integer>] [maxrows <Integer>]
         gam <GAMArgumentList>
 ```
 * `gam csv` - Use parallel processing
@@ -93,7 +93,10 @@ gam loop <FileName>|-|(gsheet <UserGoogleSheet>)|(gdoc <UserGoogleDoc>) [charset
 * `fields <FieldNameList>` - The column headings of a CSV file that does not contain column headings.
 * `(matchfield|skipfield <FieldName> <RegularExpression>)*` - The criteria to select rows from the CSV file; can be used multiple times; if not specified, all rows are selected
 * `showcmds` - Write `timestamp,command number/number of commands,command` to stderr when each command starts; write `timestamp, command number/numberof commands,complete` to stderr when command completes
-* `maxrows <Integer>` - Limit the number of filtered rows processed from the CSV file/Google Sheet.
+* `skiprows <Integer>` - Skip filtered rows from the CSV file/Google Sheet.
+  * `skiprows 0` - All rows are processed, this is the default
+  * `skiprows N` - The first N filtered rows are skipped
+* `maxrows <Integer>` - Limit the number of filtered rows processed from the CSV file/Google Sheet after any skipped rows.
   * `maxrows 0` - All rows are processed, this is the default
   * `maxrows N` - N filtered rows are processed
 

@@ -1288,13 +1288,13 @@ gam tbatch <BatchContent> [showcmds [<Boolean>]]
 gam csv <CSVLoopContent> [warnifnodata]
         [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>] [fields <FieldNameList>]
         (matchfield|skipfield <FieldName> <RegularExpression>)* [showcmds [<Boolean>]]
-        [maxrows <Integer>]
+        [skiprows <Integer>] [maxrows <Integer>]
         gam <GAMArgumentList>
 
 gam loop <CSVLoopContent> [warnifnodata]
         [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>] [fields <FieldNameList>]
         (matchfield|skipfield <FieldName> <RegularExpression>)* [showcmds [<Boolean>]]
-        [maxrows <Integer>]
+        [skiprows <Integer>] [maxrows <Integer>]
         gam <GAMArgumentList>
 
 You can make substitutions in <GAMArgumentList> with values from the CSV file.

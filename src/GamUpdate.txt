@@ -2,6 +2,12 @@
 
 Merged GAM-Team version
 
+6.68.04
+
+Added option `skiprows <Integer>` to `gam csv|loop` that causes GAM to skip processing the first `<Integer>` filtered rows.
+
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Bulk-Processing#csv-files
+
 6.68.03
 
 Fixed bug in `gam <UserTypeEntity> create drivefileacl` that caused a trap.

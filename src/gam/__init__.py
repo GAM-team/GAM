@@ -9859,6 +9859,12 @@ def _getShowCommands():
     return getBoolean()
   return GC.Values[GC.SHOW_COMMANDS]
 
+def _getSkipRows():
+  if checkArgumentPresent('skiprows'):
+    return getInteger(minVal=0)
+#  return GC.Values[GC.CSV_INPUT_ROW_SKIP]
+  return 0
+
 def _getMaxRows():
   if checkArgumentPresent('maxrows'):
     return getInteger(minVal=0)
@@ -10041,7 +10047,7 @@ def processSubFields(GAM_argv, row, subFields):
 # gam csv <CSVLoopContent> [warnifnodata]
 #	[columndelimiter <Character>] [quotechar <Character>] [fields <FieldNameList>]
 #	(matchfield|skipfield <FieldName> <RegularExpression>)* [showcmds [<Boolean>]]
-#	[maxrows <Integer>]
+#	[skiprows <Integer>] [maxrows <Integer>]
 #	gam <GAM argument list>
 def doCSV(testMode=False):
   filename = getString(Cmd.OB_FILE_NAME)
@@ -10051,6 +10057,7 @@ def doCSV(testMode=False):
   f, csvFile, fieldnames = openCSVFileReader(filename)
   matchFields, skipFields = getMatchSkipFields(fieldnames)
   showCmds = _getShowCommands()
+  skipRows = _getSkipRows()
   maxRows = _getMaxRows()
   checkArgumentPresent(Cmd.GAM_CMD, required=True)
   if not Cmd.ArgumentsRemaining():
@@ -10065,8 +10072,13 @@ def doCSV(testMode=False):
   i = 0
   for row in csvFile:
     if checkMatchSkipFields(row, fieldnames, matchFields, skipFields):
-      items.append(processSubFields(GAM_argv, row, subFields))
       i += 1
+      if skipRows:
+        if i <= skipRows:
+          continue
+        i = 1
+        skipRows = 0
+      items.append(processSubFields(GAM_argv, row, subFields))
       if maxRows and i >= maxRows:
         break
   closeFile(f)
@@ -10091,7 +10103,7 @@ def doCSVTest():
 # gam loop <CSVLoopContent> [warnifnodata]
 #	[columndelimiter <Character>] [quotechar <Character>] [fields <FieldNameList>]
 #	(matchfield|skipfield <FieldName> <RegularExpression>)* [showcmds [<Boolean>]]
-#	[maxrows <Integer>]
+#	[skiprows <Integer>] [maxrows <Integer>]
 #	gam <GAM argument list>
 def doLoop(loopCmd):
   filename = getString(Cmd.OB_FILE_NAME)
@@ -10101,6 +10113,7 @@ def doLoop(loopCmd):
   f, csvFile, fieldnames = openCSVFileReader(filename)
   matchFields, skipFields = getMatchSkipFields(fieldnames)
   showCmds = _getShowCommands()
+  skipRows = _getSkipRows()
   maxRows = _getMaxRows()
   checkArgumentPresent(Cmd.GAM_CMD, required=True)
   if not Cmd.ArgumentsRemaining():
@@ -10136,9 +10149,14 @@ def doLoop(loopCmd):
     i = 0
     for row in csvFile:
       if checkMatchSkipFields(row, fieldnames, matchFields, skipFields):
+        i += 1
+        if skipRows:
+          if i <= skipRows:
+            continue
+          i = 1
+          skipRows = 0
         item = processSubFields(GAM_argv, row, subFields)
         logCmd = Cmd.QuotedArgumentList(item)
-        i += 1
         if i % 100 == 0:
           batchWriteStderr(Msg.PROCESSING_ITEM_N.format(currentISOformatTimeStamp(), i))
         sysRC = ProcessGAMCommand(item, processGamCfg=processGamCfg, inLoop=True)
@@ -10154,8 +10172,13 @@ def doLoop(loopCmd):
     i = 0
     for row in csvFile:
       if checkMatchSkipFields(row, fieldnames, matchFields, skipFields):
-        items.append(processSubFields(GAM_argv, row, subFields))
         i += 1
+        if skipRows:
+          if i <= skipRows:
+            continue
+          i = 1
+          skipRows = 0
+        items.append(processSubFields(GAM_argv, row, subFields))
         if maxRows and i >= maxRows:
           break
     closeFile(f)
