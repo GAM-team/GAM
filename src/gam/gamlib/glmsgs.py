@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2023 Ross Scroggs All Rights Reserved.
+# Copyright (C) 2024 Ross Scroggs All Rights Reserved.
 #
 # All Rights Reserved.
 #
@@ -191,6 +191,7 @@ CSV_DATA_ALREADY_SAVED = 'CSV data already saved'
 CSV_FILE_HEADERS = 'The CSV file ({0}) has the following headers:\n'
 CSV_SAMPLE_COMMANDS = 'Here are the first {0} commands {1} will run\n'
 DATA_FIELD_MISMATCH = 'datafield {0} does not match saved datafield {1}'
+DATA_TRANSFER_COMPLETED = 'Data Transfer completed: {0}\n'
 DATA_UPLOADED_TO_DRIVE_FILE = 'Data uploaded to Drive File'
 DEFAULT_SMIME = 'Default S/MIME'
 DELETED = 'Deleted'
@@ -479,6 +480,7 @@ USE_DOIT_ARGUMENT_TO_PERFORM_ACTION = 'Use the "doit" argument to perform action
 USING_N_PROCESSES = '{0},0/{1},Using {2} {3}...\n'
 VALUES_ARE_NOT_CONSISTENT = 'Values are not consistent'
 VERSION_UPDATE_AVAILABLE = 'Version update available'
+WAITING_FOR_DATA_TRANSFER_TO_COMPLETE_SLEEPING = 'Waiting for Data Transfer to complete. Sleeping {0} seconds\n'
 WAITING_FOR_SERVICE_ACCOUNT_CREATION_TO_COMPLETE_SLEEPING = 'Waiting for Service Account creation to complete. Sleeping {0} seconds\n'
 WAITING_FOR_SHARED_DRIVE_CREATION_TO_COMPLETE_SLEEPING = 'Waiting for Shared Drive creation to complete. Sleeping {0} seconds\n'
 WHAT_IS_YOUR_PROJECT_ID = '\nWhat is your project ID? '
