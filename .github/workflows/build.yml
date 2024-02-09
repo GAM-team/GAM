@@ -112,15 +112,14 @@ jobs:
         id: cache-python-ssl
         with:
           path: |
-            bin.tar.xz
-            src/cpython
-          key: gam-${{ matrix.jid }}-20240208b
+            cache.tar.xz
+          key: gam-${{ matrix.jid }}-20240209
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
         working-directory: ${{ github.workspace }}
         run: |
-          tar xvvf bin.tar.xz
+          tar xvvf cache.tar.xz
 
       - name: Use pre-compiled Python for testing
         if: matrix.python != ''
@@ -840,7 +839,12 @@ jobs:
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         working-directory: ${{ github.workspace }}
         run: |
-          tar cJvvf bin.tar.xz bin/
+          if [[ "${RUNNER_OS}" == "Windows" ]]; then
+            tar_folder="src/cpython/"
+          else
+            tar_folder="bin/"
+          fi
+          tar cJvvf cache.tar.xz "$tar_folder"
 
   publish:
     if: github.event_name == 'push'
