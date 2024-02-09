@@ -113,7 +113,7 @@ jobs:
         with:
           path: |
             cache.tar.xz
-          key: gam-${{ matrix.jid }}-20240209
+          key: gam-${{ matrix.jid }}-20240209a
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
@@ -840,11 +840,11 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: |
           if [[ "${RUNNER_OS}" == "Windows" ]]; then
-            tar_folder="src/cpython/"
+            tar_folders="src/cpython/ bin/ssl"
           else
-            tar_folder="bin/"
+            tar_folders="bin/"
           fi
-          tar cJvvf cache.tar.xz "$tar_folder"
+          tar cJvvf cache.tar.xz $tar_folders
 
   publish:
     if: github.event_name == 'push'
