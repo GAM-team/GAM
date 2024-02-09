@@ -52535,6 +52535,16 @@ def addFilePathsToInfo(drive, fileTree, fileEntryInfo, filePathInfo, addParentsT
     else:
       fileEntryInfo['paths'].append(path)
 
+def _validateACLOwnerType(location, body):
+  if body.get('role', '') == 'owner' and body['type'] != 'user':
+    Cmd.SetLocation(location)
+    usageErrorExit(Msg.INVALID_PERMISSION_ATTRIBUTE_TYPE.format(f'role {body["role"]}', body['type']))
+
+def _validateACLAttributes(myarg, location, body, field, validTypes):
+  if field in body and body['type'] not in validTypes:
+    Cmd.SetLocation(location-1)
+    usageErrorExit(Msg.INVALID_PERMISSION_ATTRIBUTE_TYPE.format(myarg, body['type']))
+
 def _validatePermissionOwnerType(location, body):
   if 'role' in body:
     badTypes = body['type']-{'user'}
@@ -60190,9 +60200,9 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
         mappedDomain = mapPermissionsDomains.get(permissionId, None)
         if mappedDomain:
           body['domain'] = permissionId = mappedDomain
-  _validatePermissionOwnerType(roleLocation, body)
-  _validatePermissionAttributes('allowfilediscovery/withlink', withLinkLocation, body, 'allowFileDiscovery', ['anyone', 'domain'])
-  _validatePermissionAttributes('expiration', expirationLocation, body, 'expirationTime', ['user', 'group'])
+  _validateACLOwnerType(roleLocation, body)
+  _validateACLAttributes('allowfilediscovery/withlink', withLinkLocation, body, 'allowFileDiscovery', ['anyone', 'domain'])
+  _validateACLAttributes('expiration', expirationLocation, body, 'expirationTime', ['user', 'group'])
   printKeys, timeObjects = _getDriveFileACLPrintKeysTimeObjects()
   if csvPF:
     if showTitles:

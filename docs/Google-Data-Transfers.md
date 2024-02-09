@@ -15,7 +15,7 @@
 <DataTransferService> ::=
         calendar|
         currents|
-        datastudio|"google data studio"|
+        datastudio|lookerstudio|"google data studio"|
         drive|gdrive|googledrive|"drive and docs"
 <DataTransferServiceList> ::= "<DataTransferService>(,<DataTransferService>)*"
 
