@@ -61,7 +61,7 @@ jobs:
             goal: build
             arch: aarch64
             openssl_archs: darwin64-arm64
-          - os: macos-14
+          - os: macos-12
             jid: 7
             goal: build
             arch: universal2
@@ -163,6 +163,8 @@ jobs:
           else
            GAMOS='unknown'
           fi
+          echo "GAMOS=${GAMOS}" >> $GITHUB_ENV
+          echo "GAMOS is: ${GAMOS}"
 
       - name: Set env variables for test
         if: matrix.goal == 'test'
