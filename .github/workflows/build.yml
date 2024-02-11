@@ -858,8 +858,12 @@ jobs:
             src/*.msi
 
   merge:
+    if: (github.event_name == 'push' || github.event_name == 'schedule') && matrix.goal != 'test'
     runs-on: ubuntu-latest
     needs: build
+    permissions:
+      contents: write
+      packages: write
     steps:
       - name: Merge Artifacts
         uses: actions/upload-artifact/merge@v4
