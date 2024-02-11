@@ -849,7 +849,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: (github.event_name == 'push' || github.event_name == 'schedule') && matrix.goal != 'test'
         with:
-          name: gam-binaries-${{ env.GAMOS }}-${{ env.arch }}
+          name: gam-binaries-${{ env.GAMOS }}-${{ env.arch }}-${{ matrix.jid }}
           path: |
             src/*.tar.xz
             src/*.zip
