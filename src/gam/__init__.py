@@ -108,11 +108,6 @@ from filelock import FileLock
 
 from pathvalidate import sanitize_filename, sanitize_filepath
 
-# Do not import system library, includes discovery documents
-#import googleapiclient
-#import googleapiclient.discovery
-#import googleapiclient.errors
-#import googleapiclient.http
 import google.oauth2.credentials
 import google.oauth2.id_token
 import google.auth
@@ -31804,7 +31799,6 @@ def doPrintGroups():
     if not showCIgroupKey:
       groupFieldsLists['ci'].append('groupKey(id)')
     cifields = ','.join(set(groupFieldsLists['ci']))
-    cifieldsnp = f'nextPageToken,groups({cifields})'
     ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
   getRolesSet = rolesSet.copy()
   if showOwnedBy:
@@ -31843,24 +31837,6 @@ def doPrintGroups():
           badRequestWarning(Ent.GROUP, Ent.DOMAIN, kwargs['domain'])
         else:
           accessErrorExit(cd)
-      if getCloudIdentity:
-        printGettingAllAccountEntities(Ent.CLOUD_IDENTITY_GROUP)
-        try:
-          ciGroupList = callGAPIpages(ci.groups(), 'list', 'groups',
-                                      pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute=['groupKey', 'id'],
-                                      throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
-                                      parent=f'customers/{GC.Values[GC.CUSTOMER_ID]}', view='FULL',
-                                      fields=cifieldsnp, pageSize=500)
-        except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
-                GAPI.forbidden, GAPI.badRequest, GAPI.invalid, GAPI.invalidArgument,
-                GAPI.systemError, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
-          accessErrorExitNonDirectory(API.CLOUDIDENTITY_GROUPS, str(e))
-        for ciGroup in ciGroupList:
-          key = ciGroup['groupKey']['id']
-          if not showCIgroupKey:
-            ciGroup.pop('groupKey')
-          ciGroups[key] = ciGroup.copy()
-        del ciGroupList
   else:
     svcargs = dict([('groupKey', None), ('fields', cdfields)]+GM.Globals[GM.EXTRA_ARGS_LIST])
     cdmethod = getattr(cd.groups(), 'get')
@@ -31881,22 +31857,6 @@ def doPrintGroups():
         executeBatch(cdbatch)
         cdbatch = cd.new_batch_http_request(callback=_callbackProcessGroupBasic)
         cdbcount = 0
-      if getCloudIdentity:
-        _, name, groupEmail = convertGroupEmailToCloudID(ci, groupEmail, i, count)
-        printGettingEntityItemForWhom(Ent.CLOUD_IDENTITY_GROUP, groupEmail, i, count)
-        if name:
-          try:
-            ciGroup = callGAPI(ci.groups(), 'get',
-                               throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
-                               name=name, fields=cifields)
-            key = ciGroup['groupKey']['id']
-            if not showCIgroupKey:
-              ciGroup.pop('groupKey')
-            ciGroups[key] = ciGroup
-          except (GAPI.notFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
-                  GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
-                  GAPI.systemError, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
-            entityActionFailedWarning([Ent.GROUP, groupEmail, Ent.CLOUD_IDENTITY_GROUP, None], str(e), i, count)
     if cdbcount > 0:
       cdbatch.execute()
   required = 0
@@ -31927,6 +31887,22 @@ def doPrintGroups():
     if not showDetails:
       _printGroupRow(groupEntity, None, None)
       continue
+    if getCloudIdentity:
+      _, name, groupEmail = convertGroupEmailToCloudID(ci, groupEmail, i, count)
+      printGettingEntityItemForWhom(Ent.CLOUD_IDENTITY_GROUP, groupEmail, i, count)
+      if name:
+        try:
+          ciGroup = callGAPI(ci.groups(), 'get',
+                             throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
+                             name=name, fields=cifields)
+          key = ciGroup['groupKey']['id']
+          if not showCIgroupKey:
+            ciGroup.pop('groupKey')
+          ciGroups[key] = ciGroup
+        except (GAPI.notFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
+                GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
+                GAPI.systemError, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
+          entityActionFailedWarning([Ent.GROUP, groupEmail, Ent.CLOUD_IDENTITY_GROUP, None], str(e), i, count)
     groupData[i] = {'entity': groupEntity, 'cloudIdentity': {}, 'settings': getSettings, 'members': [], 'required': required}
     if getRoles:
       printGettingEntityItemForWhom(getRoles, groupEmail, i, count)
@@ -33075,7 +33051,7 @@ def doUpdateCIGroups():
           memberEmail = convertUIDtoEmailAddress(member, cd=cd, emailTypes='any', checkForCustomerId=True)
           try:
             memberName = callGAPI(ci.groups().memberships(), 'lookup',
-                                  throwReasons=GAPI.GROUP_GET_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED],
+                                  throwReasons=GAPI.CIGROUP_GET_THROW_REASONS,
                                   parent=parent, memberKey_id=member, fields='name').get('name')
             callGAPI(ci.groups().memberships(), 'delete',
                      throwReasons=GAPI.MEMBERS_THROW_REASONS+[GAPI.FAILED_PRECONDITION],
@@ -33230,7 +33206,7 @@ def doUpdateCIGroups():
           memberEmail = convertUIDtoEmailAddress(member, cd=cd, emailTypes='any', checkForCustomerId=True)
           try:
             memberName = callGAPI(ci.groups().memberships(), 'lookup',
-                                  throwReasons=GAPI.GROUP_GET_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED],
+                                  throwReasons=GAPI.CIGROUP_GET_THROW_REASONS,
                                   parent=parent, memberKey_id=memberEmail, fields='name').get('name')
           except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden,
                   GAPI.notFound, GAPI.memberNotFound, GAPI.permissionDenied, GAPI.invalidMember) as e:
@@ -48035,11 +48011,11 @@ def _showCalendar(calendar, j, jcount, FJQC, acls=None):
 def _processCalendarList(user, calId, j, jcount, cal, function, **kwargs):
   try:
     callGAPI(cal.calendarList(), function,
-             throwReasons=[GAPI.NOT_FOUND, GAPI.DUPLICATE, GAPI.UNKNOWN_ERROR,
+             throwReasons=[GAPI.NOT_FOUND, GAPI.DUPLICATE, GAPI.UNKNOWN_ERROR, GAPI.SERVICE_NOT_AVAILABLE,
                            GAPI.CANNOT_CHANGE_OWN_ACL, GAPI.CANNOT_CHANGE_OWN_PRIMARY_SUBSCRIPTION],
              **kwargs)
     entityActionPerformed([Ent.USER, user, Ent.CALENDAR, calId], j, jcount)
-  except (GAPI.notFound, GAPI.duplicate, GAPI.unknownError,
+  except (GAPI.notFound, GAPI.duplicate, GAPI.unknownError, GAPI.serviceNotAvailable,
           GAPI.cannotChangeOwnAcl, GAPI.cannotChangeOwnPrimarySubscription) as e:
     entityActionFailedWarning([Ent.USER, user, Ent.CALENDAR, calId], str(e), j, jcount)
 

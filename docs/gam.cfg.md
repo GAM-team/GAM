@@ -213,7 +213,7 @@ csv_output_header_force
         for inclusion in the CSV file written by a gam print command
         Default: ''
 csv_output_line_terminator
-p        Allowed values: cr, lf, crlf
+        Allowed values: cr, lf, crlf
         Designates character(s) used to terminate the lines of a CSV file.
         For Linux and Mac OS, this would typically be lf.
         For Windows, this would typically be crlf.

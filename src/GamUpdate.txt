@@ -2,6 +2,11 @@
 
 Merged GAM-Team version
 
+6.68.05
+
+Updated `gam print groups ... ciallfields|(cifields <CIGroupFieldNameList>)` to account for an
+API shortcoming that failed to get all of the Cloud Identity fields.
+
 6.68.04
 
 Added option `skiprows <Integer>` to `gam csv|loop` that causes GAM to skip processing the first `<Integer>` filtered rows.
