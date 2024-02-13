@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.68.06
+
+Fixed bug in `gam <UserTypeEntity> copy drivefile <DriveFileID> ... mergewithparent` that incorrectly named
+the copied file with the name of the parent folder.
+
+Updated `gam <UserTypeEntity> copy|move drivefile` to avoid copying/moving the same file twice.
+
 ### 6.68.05
 
 Updated `gam print groups ... ciallfields|(cifields <CIGroupFieldNameList>)` to account for an

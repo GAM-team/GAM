@@ -56816,6 +56816,10 @@ def copyDriveFile(users):
         sourceNameId = f"{sourceName}({source['id']})"
         copyMoveOptions['sourceDriveId'] = source.get('driveId')
         kvList = [Ent.USER, user, _getEntityMimeType(source), sourceNameId]
+        if fileId in copiedSourceFiles:
+          entityActionNotPerformedWarning(kvList, Msg.DUPLICATE, j, jcount)
+          _incrStatistic(statistics, STAT_FILE_DUPLICATE)
+          continue
         if fileId in skipFileIdEntity['list']:
           entityActionNotPerformedWarning(kvList, Msg.IN_SKIPIDS, j, jcount)
           _incrStatistic(statistics, STAT_FILE_IN_SKIPIDS)
@@ -56862,7 +56866,7 @@ def copyDriveFile(users):
                                            'includeItemsFromAllDrives': True, 'supportsAllDrives': True}
         if copyMoveOptions['newFilename']:
           destName = copyMoveOptions['newFilename']
-        elif copyMoveOptions['mergeWithParent']:
+        elif (sourceMimeType == MIMETYPE_GA_FOLDER) and copyMoveOptions['mergeWithParent']:
           destName = dest['name']
         elif ((newParentsSpecified and newParentId not in sourceParents) or
               ((newParentId in sourceParents and
@@ -57576,6 +57580,10 @@ def moveDriveFile(users):
         sourceNameId = f"{sourceName}({source['id']})"
         copyMoveOptions['sourceDriveId'] = source.get('driveId')
         kvList = [Ent.USER, user, _getEntityMimeType(source), sourceNameId]
+        if fileId in movedFiles:
+          entityActionNotPerformedWarning(kvList, Msg.DUPLICATE, j, jcount)
+          _incrStatistic(statistics, STAT_FILE_DUPLICATE)
+          continue
         if copyMoveOptions['sourceDriveId']:
 # If moving from a Shared Drive, user has to be an organizer
           if verifyOrganizer and not _verifyUserIsOrganizer(drive, user, i, count, copyMoveOptions['sourceDriveId']):
@@ -66908,7 +66916,7 @@ def printShowMessagesThreads(users, entityType):
     printKeyValueList(['size', part['body']['size']])
     if charset:
       printKeyValueList(['charset', charset])
-    
+
   def _showSaveAttachments(messageId, payload, attachmentNamePattern):
     for part in payload.get('parts', []):
       if 'attachmentId' in part['body']:
