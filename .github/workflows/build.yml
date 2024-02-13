@@ -857,20 +857,20 @@ jobs:
             src/*.zip
             src/*.msi
 
-#  merge:
-#    if: (github.event_name == 'push' || github.event_name == 'schedule')
-#    runs-on: ubuntu-latest
-#    needs: build
-#    permissions:
-#      contents: write
-#      packages: write
-#    steps:
-#      - name: Merge Artifacts
-#        uses: actions/upload-artifact/merge@v4
-#        with:
-#          name: gam-binaries
-#          pattern: gam-binaries-*
-#
+  merge:
+    if: (github.event_name == 'push' || github.event_name == 'schedule')
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Merge Artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: gam-binaries
+          pattern: gam-binaries-*
+
 #      - name: Delete Artifacts
 #        uses: geekyeggo/delete-artifact@v4
 #        with:
@@ -879,8 +879,7 @@ jobs:
   publish:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    needs: build
-#    needs: merge
+    needs: merge
     permissions:
       contents: write
       packages: write
@@ -918,5 +917,4 @@ jobs:
           prerelease: false
           draft: true
           files: |
-#            gam-binaries/*
-            gam-binaries-*/*
+            gam-binaries/*
