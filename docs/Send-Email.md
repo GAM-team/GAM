@@ -241,7 +241,7 @@ Your HTML message will contain lines like this:
 <img src="cid:image2"/>
 ```
 
-Your command line will have: `embedimage file1.jpg image1` embedimage file2.jpg image2`
+Your command line will have: `embedimage file1.jpg image1 embedimage file2.jpg image2`
 
 ## Send an email from a user sendas
 You want to send an email from a user's sendas address.
@@ -312,7 +312,7 @@ Your HTML message will contain lines like this:
 <img src="cid:image2"/>
 ```
 
-Your command line will have: `embedimage file1.jpg image1` embedimage file2.jpg image2`
+Your command line will have: `embedimage file1.jpg image1 embedimage file2.jpg image2`
 
 ### Examples
 Send an email to a user's personal address notifying them of their new Google Workspace account;
@@ -376,7 +376,7 @@ Your HTML message will contain lines like this:
 <img src="cid:image2"/>
 ```
 
-Your command line will have: `embedimage file1.jpg image1` embedimage file2.jpg image2`
+Your command line will have: `embedimage file1.jpg image1 embedimage file2.jpg image2`
 
 ## Send an email to users
 ```
@@ -418,7 +418,7 @@ Your HTML message will contain lines like this:
 <img src="cid:image2"/>
 ```
 
-Your command line will have: `embedimage file1.jpg image1` embedimage file2.jpg image2`
+Your command line will have: `embedimage file1.jpg image1 embedimage file2.jpg image2`
 
 ## Example
 Send a message to a user, save the Message-ID so that a later reminder message can be sent

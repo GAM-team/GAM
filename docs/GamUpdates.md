@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.68.07
+
+Updated `gam info user ... locations formatjson` to include the `buildingName` field in the
+`locations` entries. If `gam.cfg` contains `quick_info_user = true` or the `quick` option
+is included on the command line, add the option `buildingnames` to the command line.
+
 ### 6.68.06
 
 Fixed bug in `gam <UserTypeEntity> copy drivefile <DriveFileID> ... mergewithparent` that incorrectly named

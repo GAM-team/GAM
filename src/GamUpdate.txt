@@ -1,13 +1,19 @@
+7.00.00
+
+Merged GAM-Team version
+
+6.68.07
+
+Updated `gam info user ... locations formatjson` to include the `buildingName` field in the
+`locations` entries. If `gam.cfg` contains `quick_info_user = true` or the `quick` option
+is included on the command line, add the option `buildingnames` to the command line.
+
 6.68.06
 
 Fixed bug in `gam <UserTypeEntity> copy drivefile <DriveFileID> ... mergewithparent` that incorrectly named
 the copied file with the name of the parent folder.
 
 Updated `gam <UserTypeEntity> copy|move drivefile` to avoid copying/moving the same file twice.
-
-7.00.00
-
-Merged GAM-Team version
 
 6.68.05
 
