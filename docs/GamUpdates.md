@@ -10,6 +10,15 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.68.08
+
+Updated `gam <UserTypeEntity> print filelist|drivefileacls|shareddriveacls ... oneitemperrow` to print
+ACLs with multiple permission details on separate rows for each basic permission/permission detail combination.
+This case occurs when a member of a Shared Drive has access to a file and also has explicitly granted access to the same file.
+
+Added `pmtype member|file` to `<PermissionMatch>` that allows determining whether an ACL on a Shared Drive file was
+derived from membership or explicitly granted.
+
 ### 6.68.07
 
 Updated `gam info user ... locations formatjson` to include the `buildingName` field in the

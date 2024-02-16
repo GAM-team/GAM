@@ -267,9 +267,10 @@
         <DriveOwnersSubfieldName>|
         parents|
         <DriveParentsSubfieldName>|
+        permissionids|
+        permissiondetails|
         permissions|
         <DrivePermissionsSubfieldName>|
-        permissionids|
         properties|
         quotabytesused|quotaused|
         resourcekey|
@@ -1005,7 +1006,7 @@ gam <UserTypeEntity> print|show filelist [todrive <ToDriveAttribute>*]
         [excludetrashed]
         [maxfiles <Integer>] [nodataheaders <String>]
         [countsonly [summary none|only|plus] [summaryuser <String>]
-	            [showsource] [showsize] [showmimetypesize]] [countsrowfilter]
+                    [showsource] [showsize] [showmimetypesize]] [countsrowfilter]
         [filepath|fullpath [pathdelimiter <Character>] [addpathstojson] [showdepth]] [buildtree]
         [allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
         [showdrivename] [showshareddrivepermissions]

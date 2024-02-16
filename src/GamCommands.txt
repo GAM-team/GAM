@@ -4646,7 +4646,7 @@ gam <UserTypeEntity> show shareddrives
             [name|displayname <String>]
             [domain|notdomain <RegularExpression>] [domainlist|notdomainlist <DomainNameList>]
             [expirationstart <Time>] [expirationend <Time>]
-            [deleted <Boolean>] [inherited <Boolean>]
+            [deleted <Boolean>] [inherited <Boolean>] [permtype member|file]
         em|endmatch
 <PermissionMatchMode> ::=
         pmm|permissionmatchmode or|and
@@ -6567,9 +6567,10 @@ gam <UserTypeEntity> collect orphans
         <DriveOwnersSubfieldName>|
         parents|
         <DriveParentsSubfieldName>|
+        permissionids|
+        permissiondetails|
         permissions|
         <DrivePermissionsSubfieldName>|
-        permissionids|
         properties|
         quotabytesused|quotaused|
         resourcekey|
