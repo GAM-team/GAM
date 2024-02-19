@@ -13,3 +13,4 @@ Thank you.
 * Goldy Arora - https://www.goldyarora.com/license-notifier/
 * Paul Ogier (Taming.Tech) - GAMADV-XTD3 Tutorials https://www.youtube.com/watch?v=g9LDeyXQNLI&list=PL_dLiK09pJVhKJxZHNk9CHK0q5hkZ856w
 * Paul Ogier (Taming.Tech) - GAMADV-XTD3 Course on Udemy https://taming.tech/GAMCourse
+* Paul Ogier (Taming.Tech) - https://taming.tech/taming-gam-a-practical-guide-to-gam-and-gamadv-xtd3/

@@ -2876,7 +2876,7 @@ gam course <CourseID> delete topic <CourseTopicID>
 
 gam course <CourseID> create|add teachers [makefirstteacherowner] <UserItem>
 gam course <CourseID> create|add students <UserItem>
-gam course <CourseID> delete|remove teachers|students <UserItem>
+gam course <CourseID> delete|remove teachers|students [owneraccess] <UserItem>
 gam course <CourseID> clear teachers|students
 gam course <CourseID> sync teachers [addonly|removeonly] [makefirstteacherowner] <UserTypeEntity>
 gam course <CourseID> sync students [addonly|removeonly] <UserTypeEntity>
@@ -2889,15 +2889,17 @@ gam courses <CourseEntity> delete topic <CourseTopicIDEntity>
 
 gam courses <CourseEntity> create|add teachers [makefirstteacherowner] <UserTypeEntity>
 gam courses <CourseEntity> create|add students <UserTypeEntity>
-gam courses <CourseEntity> delete|remove teachers|students <UserTypeEntity>
+gam courses <CourseEntity> delete|remove teachers|students [owneraccess] <UserTypeEntity>
 gam courses <CourseEntity> clear teachers|students
 gam courses <CourseEntity> sync teachers [addonly|removeonly] [makefirstteacherowner] <UserTypeEntity>
 gam courses <CourseEntity> sync students [addonly|removeonly] <UserTypeEntity>
 
-gam info course <CourseID> [owneremail] [alias|aliases] [show all|students|teachers] [countsonly]
+gam info course <CourseID> [owneraccess]
+        [owneremail] [alias|aliases] [show all|students|teachers] [countsonly]
         [fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>]
         [formatjson]
-gam info courses <CourseEntity> [owneremail] [alias|aliases] [show all|students|teachers] [countsonly]
+gam info courses <CourseEntity> [owneraccess]
+        [owneremail] [alias|aliases] [show all|students|teachers] [countsonly]
         [fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>]
         [formatjson]
 gam print courses [todrive <ToDriveAttribute>*]
@@ -3041,8 +3043,8 @@ gam print course-works [todrive <ToDriveAttribute>*]
 # Classroom - Invitations
 
 gam <UserTypeEntity> create classroominvitation courses <CourseEntity> [role owner|student|teacher]
-        [adminaccess|asadmin] [csv|csvformat] [todrive <ToDriveAttribute>*]
-        [formatjson [quotechar <Character>]]
+        [adminaccess|asadmin]
+        [csv|csvformat] [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]
 gam <UserTypeEntity> accept classroominvitation (ids <ClassroomInvitationIDEntity>)|([courses <CourseEntity>] [role all|owner|student|teacher])
 gam <UserTypeEntity> delete classroominvitation (ids <ClassroomInvitationIDEntity>)|([courses <CourseEntity>] [role all|owner|student|teacher])
 gam <UserTypeEntity> show classroominvitations [role all|owner|student|teacher]
@@ -3050,6 +3052,7 @@ gam <UserTypeEntity> show classroominvitations [role all|owner|student|teacher]
 gam <UserTypeEntity> print classroominvitations [todrive <ToDriveAttribute>*] [role all|owner|student|teacher]
         [formatjson [quotechar <Character>]]
 
+gam delete classroominvitation courses <CourseEntity> (ids <ClassroomInvitationIDEntity>)|(role all|owner|student|teacher)
 gam show classroominvitations (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
         [role all|owner|student|teacher]
         [formatjson]

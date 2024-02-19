@@ -2,6 +2,26 @@
 
 Merged GAM-Team version
 
+6.69.00
+
+Added `use_classroom_owner_access` Boolean variable to `gam.cfg` that controls how GAM gets
+classroom member information and removes students/teachers. Client access does not provide
+complete information about non-domain students/teachers.
+* `False` - Use client access; this is the default. Use if you don't have non-domain members in your courses.
+* `True` - Use service account access as the classroom owner. An extra API call is required per course to authenticate the owner; this will affect performance
+
+Added the following command which must be used to delete classroom invitations for non-domain students/teachers.
+```
+gam delete classroominvitation courses <CourseEntity> (ids <ClassroomInvitationIDEntity>)|(role all|owner|student|teacher)
+```
+You can obtain the classroom invitation IDs with these commands:
+```
+gam show classroominvitations (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
+        [role all|owner|student|teacher] [formatjson]
+gam print classroominvitations [todrive <ToDriveAttribute>*] (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
+        [role all|owner|student|teacher] [formatjson [quotechar <Character>]]
+```
+
 6.68.08
 
 Updated `gam <UserTypeEntity> print filelist|drivefileacls|shareddriveacls ... oneitemperrow` to print

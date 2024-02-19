@@ -150,7 +150,7 @@ csv_input_column_delimiter
         Default: ','
 csv_input_no_escape_char
         When reading a CSV file, should `\` be ignored as an escape character.
-	Set this to False if the input file data was written using `\` as an escape character.
+        Set this to False if the input file data was written using `\` as an escape character.
         Default: True
 csv_input_quote_char
         A one-character string used to quote fields containing special characters,
@@ -220,7 +220,7 @@ csv_output_line_terminator
         Default: lf
 csv_output_no_escape_char
         When writing a CSV file, should `\` be ignored as an escape character.
-	Set this to True if the output file data is to be read by a non-Python program.
+        Set this to True if the output file data is to be read by a non-Python program.
         Default: False
 csv_output_quote_char
         A one-character string used to quote fields containing special characters,
@@ -420,23 +420,23 @@ print_agu_domains
           gam print groups
           gam print|show group-members
           gam print users
-	This allows predefining the list of domains so they don't have to be specified in each command.
+        This allows predefining the list of domains so they don't have to be specified in each command.
         Default: Blank
 print_cros_ous
         A comma separated list of org unit that are used in these commands:
           gam print cros
           gam print crosactivity
-	This allows predefining the list of org units so they don't have to be specified in each command.
+        This allows predefining the list of org units so they don't have to be specified in each command.
         Default: Blank
 print_cros_ous_and_children
         A comma separated list of org unit names that are used in these commands:
           gam print cros
           gam print crosactivity
-	This allows predefining the list of org units so they don't have to be specified in each command.
+        This allows predefining the list of org units so they don't have to be specified in each command.
         Default: Blank
 process_wait_limit
-	When processing batch/CSV files, how long (in seconds) GAM should wait for all batch|csv processes to complete
-	after all have been started. If the limit is reached, GAM terminates any remaining processes.
+        When processing batch/CSV files, how long (in seconds) GAM should wait for all batch|csv processes to complete
+        after all have been started. If the limit is reached, GAM terminates any remaining processes.
         Default: 0: no limit
         Range: 0 - Unlimited
 quick_cros_move
@@ -572,6 +572,13 @@ update_cros_ou_with_id
         Update the OU of a Chromebook with the OU ID rather than the OU path.
         Set to true if you are getting the following error:
         `400: invalidInput - Invalid Input: Inconsistent Orgunit id and path in request`
+        Default: False
+use_classroom_owner_access
+        How is classroom member information obtained and how are classroom members deleted.
+        Client access does not provide complete information about non-domain students/teachers.
+        When False, GAM uses client access to get classroom member information and to delete members
+        When True, GAM uses service account access as the classroom owner.
+        An extra API call is required per course to authenticate the owner
         Default: False
 use_projectid_as_name
         When False, new projects have a default project name of "GAM Project"

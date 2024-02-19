@@ -49,9 +49,6 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 If the above commands fail, you can try to loop through all accounts, however this might take a long time if you are on a large Google Workspace Account.
 
 ```
-gam config auto_batch_min 1 redirect csv - multiprocess redirect stderr null multiprocess all users print filelist select id <DriveFileID> fields id,name,owners.emailaddress norecursion showownedby any
-```
-Starting with version 6.07.26, this can be made more efficient by terminating processing after the owner is identified.
-```
 gam config auto_batch_min 1 multiprocessexit rc=0 redirect csv - multiprocess redirect stderr null multiprocess all users print filelist select id <DriveFileID> fields id,name,owners.emailaddress norecursion showownedby any
+gam config auto_batch_min 1 multiprocessexit rc=0 redirect csv - multiprocess redirect stderr null multiprocess all users print filelist select name <DriveFileName> fields id,name,owners.emailaddress norecursion showownedby any
 ```
