@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2023 Ross Scroggs All Rights Reserved.
+# Copyright (C) 2024 Ross Scroggs All Rights Reserved.
 #
 # All Rights Reserved.
 #
@@ -150,12 +150,14 @@ class GamEntity():
   CRITERIA = 'crit'
   CROS_DEVICE = 'cros'
   CROS_SERIAL_NUMBER = 'crsn'
+  CSE_IDENTITY = 'csei'
+  CSE_KEYPAIR = 'csek'
   CUSTOMER_DOMAIN = 'cudo'
   CUSTOMER_ID = 'cuid'
   DATE = 'date'
   DEFAULT_LANGUAGE = 'dfla'
   DELEGATE = 'dele'
-  DELETED_USER = 'del'
+  DELETED_USER = 'delu'
   DELIVERY = 'deli'
   DEVICE = 'devi'
   DEVICE_FILE = 'devf'
@@ -163,7 +165,7 @@ class GamEntity():
   DEVICE_USER = 'devu'
   DEVICE_USER_CLIENT_STATE = 'ducs'
   DISCOVERY_JSON_FILE = 'disc'
-  DOCUMENT = 'doc '
+  DOCUMENT = 'docu'
   DOMAIN = 'doma'
   DOMAIN_ALIAS = 'doal'
   DOMAIN_CONTACT = 'doco'
@@ -483,6 +485,8 @@ class GamEntity():
     CRITERIA: ['Criteria', 'Criteria'],
     CROS_DEVICE: ['CrOS Devices', 'CrOS Device'],
     CROS_SERIAL_NUMBER: ['CrOS Serial Numbers', 'CrOS Serial Numbers'],
+    CSE_IDENTITY: ['CSE Identities', 'CSE Identity'],
+    CSE_KEYPAIR: ['CSE KeyPairs', 'CSE KeyPair'],
     CUSTOMER_DOMAIN: ['Customer Domains', 'Customer Domain'],
     CUSTOMER_ID: ['Customer IDs', 'Customer ID'],
     DATE: ['Dates', 'Date'],

@@ -573,7 +573,7 @@ The `querytime<String> <Time>` value replaces the string `#querytime<String>#` i
 The characters following `querytime` can be any combination of lowercase letters and numbers. This is most useful in scripts
 where you can specify a relative date without having to change the script.
 
-For example, query for files last modified me than 5 years ago:
+For example, query for files last modified more than 5 years ago:
 ```
 querytime5years -5y query "modifiedTime<'#querytime5years#'"
 ```

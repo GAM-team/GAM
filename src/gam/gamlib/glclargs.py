@@ -520,6 +520,10 @@ class GamCLArgs():
   ARG_CROSES = 'croses'
   ARG_CROSACTIVITY = 'crosactivity'
   ARG_CROSTELEMETRY = 'crostelemetry'
+  ARG_CSEIDENTITY = 'cseidentity'
+  ARG_CSEIDENTITIES = 'cseidentities'
+  ARG_CSEKEYPAIR = 'csekeypair'
+  ARG_CSEKEYPAIRS = 'csekeypairs'
   ARG_CURRENTPROJECTID = 'currentprojectid'
   ARG_CUSTOMER = 'customer'
   ARG_DATASTUDIOASSET = 'datastudioasset'
@@ -846,6 +850,7 @@ class GamCLArgs():
   OB_COURSE_WORK_STATE_LIST = "CourseWorkStateList"
   OB_CROS_DEVICE_ENTITY = 'CrOSDeviceEntity'
   OB_CROS_ENTITY = 'CrOSEntity'
+  OB_CSE_KEYPAIR_ID = 'CSEKeyPairID'
   OB_CUSTOMER_ID = 'CustomerID'
   OB_CUSTOMER_AUTH_TOKEN = 'CustomerAuthToken'
   OB_DEVICE_FILE_ENTITY = 'DeviceFileEntity'

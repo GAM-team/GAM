@@ -10,6 +10,19 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.70.01
+
+Added `gmail_cse_incert_dir` and `gmail_cse_inkey_dir` path variables to `gam.cfg` that provide
+default values for the `incertdir <FilePath>` and `inkeydir <FilePath>` options in `gam <UserTypeEntity> create csekeypair`.
+
+### 6.70.00
+
+Added support for Gmail Client Side Encryption.
+
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Gmail-CSE
+
+This is an initial, minimally tested release; proceed with care and report all issues.
+
 ### 6.69.00
 
 Added `use_classroom_owner_access` Boolean variable to `gam.cfg` that controls how GAM gets

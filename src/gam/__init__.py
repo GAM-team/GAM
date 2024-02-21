@@ -2210,7 +2210,7 @@ def getJSON(deleteFields):
       jsonData = json.loads(readFile(filename, encoding=encoding))
     except (IndexError, KeyError, SyntaxError, TypeError, ValueError) as e:
       Cmd.Backup()
-      usageErrorExit(f'{str(e)}: {filename}')
+      usageErrorExit(Msg.JSON_ERROR.format(str(e), filename))
   for field in deleteFields:
     jsonData.pop(field, None)
   return jsonData
@@ -3630,6 +3630,8 @@ def SetGlobalVariables():
 
   def _getCfgDirectory(sectionName, itemName):
     dirPath = os.path.expanduser(_stripStringQuotes(GM.Globals[GM.PARSER].get(sectionName, itemName)))
+    if (not dirPath) and (itemName in {GC.GMAIL_CSE_INCERT_DIR, GC.GMAIL_CSE_INKEY_DIR}):
+      return dirPath
     if (not dirPath) or (not os.path.isabs(dirPath)):
       if (sectionName != configparser.DEFAULTSECT) and (GM.Globals[GM.PARSER].has_option(sectionName, itemName)):
         dirPath = os.path.join(os.path.expanduser(_stripStringQuotes(GM.Globals[GM.PARSER].get(configparser.DEFAULTSECT, itemName))), dirPath)
@@ -3707,6 +3709,8 @@ def SetGlobalVariables():
     for itemName, itemEntry in iter(GC.VAR_INFO.items()):
       if itemEntry[GC.VAR_TYPE] == GC.TYPE_DIRECTORY:
         dirPath = GC.Values[itemName]
+        if (not dirPath) and (itemName in {GC.GMAIL_CSE_INCERT_DIR, GC.GMAIL_CSE_INKEY_DIR}):
+          return
         if (itemName != GC.CACHE_DIR or not GC.Values[GC.NO_CACHE]) and not os.path.isdir(dirPath):
           writeStderr(formatKeyValueList(WARNING_PREFIX,
                                          [Ent.Singular(Ent.CONFIG_FILE), GM.Globals[GM.GAM_CFG_FILE],
@@ -69610,6 +69614,283 @@ def printShowSmimes(users):
   if csvPF:
     csvPF.writeCSVfile('S/MIME')
 
+def _showCSEItem(result, entityType, keyField, timeObjects, i, count, FJQC):
+  if FJQC.formatJSON:
+    printLine(json.dumps(cleanJSON(result, timeObjects=timeObjects), ensure_ascii=False, sort_keys=True))
+    return
+  Ind.Increment()
+  printEntity([entityType, result[keyField]], i, count)
+  Ind.Increment()
+  showJSON(None, result, timeObjects=timeObjects)
+  Ind.Decrement()
+  Ind.Decrement()
+
+CSE_IDENTITY_TIME_OBJECTS = {}
+CSE_KEYPAIR_TIME_OBJECTS = {'disableTime'}
+
+def _printShowCSEItems(users, entityType, keyField, timeObjects):
+  csvPF = CSVPrintFile(['User', keyField]) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    else:
+      FJQC.GetFormatJSONQuoteChar(myarg, True)
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
+    if not gmail:
+      continue
+    printGettingAllEntityItemsForWhom(entityType, user, i, count)
+    kvList = [Ent.USER, user, entityType, None]
+    try:
+      if entityType == Ent.CSE_IDENTITY:
+        results = callGAPIpages(gmail.users().settings().cse().identities(), 'list', 'cseIdentities',
+                                throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED],
+                                userId='me', fields='nextPageToken,cseIdentities')
+      else:
+        results = callGAPIpages(gmail.users().settings().cse().keypairs(), 'list', 'cseKeyPairs',
+                                throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED],
+                                userId='me', fields='nextPageToken,cseKeyPairs')
+
+    except GAPI.permissionDenied as e:
+      entityActionFailedWarning(kvList, str(e), i, count)
+      continue
+    except (GAPI.serviceNotAvailable, GAPI.badRequest):
+      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+      continue
+    jcount = len(results)
+    if not csvPF:
+      if not  FJQC.formatJSON:
+        entityPerformActionNumItems([Ent.USER, user], jcount, entityType, i, count)
+      j = 0
+      for result in results:
+        j += 1
+        _showCSEItem(result, entityType, keyField, timeObjects, j, jcount, FJQC)
+    else:
+      for result in results:
+        row = flattenJSON(result, flattened={'User': user})
+        if not FJQC.formatJSON:
+          csvPF.WriteRowTitles(row)
+        elif csvPF.CheckRowTitles(row):
+          csvPF.WriteRowNoFilter({'User': user, keyField: result[keyField],
+                                  'JSON':  json.dumps(cleanJSON(result, timeObjects=timeObjects), ensure_ascii=False, sort_keys=True)})
+  if csvPF:
+    csvPF.writeCSVfile(Ent.Plural(entityType))
+
+CSE_IDENTITY_ACTION_FUNCTION_MAP = {
+  Act.CREATE: 'create',
+  Act.UPDATE: 'patch',
+  Act.DELETE: 'delete',
+  Act.INFO: 'get',
+  }
+
+# gam <UserTypeEntity> create cseidentity <KeyPairID> [kpemail <EmailAddress>]
+#	[formatjson]
+# gam <UserTypeEntity> update cseidentity <KeyPairID> [kpemail <EmailAddress>]
+#	[formatjson]
+# gam <UserTypeEntity> delete cseidentity [kpemail <EmailAddress>]
+# gam <UserTypeEntity> info cseidentity [kpemail <EmailAddress>]
+#	[formatjson]
+def processCSEIdentity(users):
+  function = CSE_IDENTITY_ACTION_FUNCTION_MAP[Act.Get()]
+  keyPairId = getString(Cmd.OB_CSE_KEYPAIR_ID) if function in {'create', 'patch'} else None
+  FJQC = FormatJSONQuoteChar()
+  kpEmail = None
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'kpemail':
+      kpEmail = getEmailAddress(noUid=True)
+    else:
+      FJQC.GetFormatJSON(myarg)
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
+    if not gmail:
+      continue
+    if keyPairId:
+      identity = {'keyPairId': keyPairId, 'emailAddress': user if not kpEmail else kpEmail}
+      kwargs = {'body': identity}
+      if function == 'patch':
+        kwargs['emailAddress'] = identity['emailAddress']
+      kvList = [Ent.USER, user, Ent.CSE_IDENTITY, identity['emailAddress'], Ent.CSE_KEYPAIR, keyPairId]
+    else:
+      kwargs = {'cseEmailAddress': user if not kpEmail else kpEmail}
+      kvList = [Ent.USER, user, Ent.CSE_IDENTITY, kwargs['cseEmailAddress']]
+    try:
+      result = callGAPI(gmail.users().settings().cse().identities(), function,
+                        throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED],
+                        userId='me', **kwargs)
+      if not  FJQC.formatJSON:
+        entityActionPerformed(kvList, i, count)
+      if function != 'delete':
+        _showCSEItem(result, Ent.CSE_IDENTITY, 'emailAddress', CSE_IDENTITY_TIME_OBJECTS, i, count, FJQC)
+    except GAPI.permissionDenied as e:
+      entityActionFailedWarning(kvList, str(e), i, count)
+    except (GAPI.serviceNotAvailable, GAPI.badRequest):
+      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+
+# gam <UserTypeEntity> show cseidentities
+#	[formatjson]
+# gam <UserTypeEntity> print cseidentities [todrive <ToDriveAttribute>*]
+#	[formatjson [quotechar <Character>]]
+def printShowCSEIdentities(users):
+  _printShowCSEItems(users, Ent.CSE_IDENTITY, 'emailAddress', CSE_IDENTITY_TIME_OBJECTS)
+
+# gam <UserTypeEntity> create csekeypair [incertdir <FilePath>] [inkeydir <FilePath>]
+#	[addidentity [<Boolean>]] [kpemail <EmailAddress>]
+#	[formatjson|returnidonly]
+def createCSEKeyPair(users):
+  def _getFolderPath(myarg):
+    filepath = os.path.expanduser(getString(Cmd.OB_FILE_PATH))
+    if not os.path.isdir(filepath):
+      entityDoesNotExistExit(Ent.DIRECTORY, f'{myarg} {filepath}')
+    return filepath
+
+  FJQC = FormatJSONQuoteChar()
+  incertdir = GC.Values[GC.GMAIL_CSE_INCERT_DIR]
+  inkeydir = GC.Values[GC.GMAIL_CSE_INKEY_DIR]
+  addIdentity = returnIdOnly = False
+  kpEmail = None
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'incertdir':
+      incertdir = _getFolderPath(myarg)
+    elif myarg == 'inkeydir':
+      inkeydir = _getFolderPath(myarg)
+    elif myarg == 'addidentity':
+      addIdentity = getBoolean()
+    elif myarg == 'kpemail':
+      kpEmail = getEmailAddress(noUid=True)
+    elif myarg == 'returnidonly':
+      returnIdOnly = True
+    else:
+      FJQC.GetFormatJSON(myarg)
+  if not incertdir:
+    missingArgumentExit('incertdir <FilePath>')
+  if not inkeydir:
+    missingArgumentExit('inkeydir <FilePath>')
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
+    if not gmail:
+      continue
+    smimeFilename = os.path.join(incertdir, user+'.p7pem')
+    if not os.path.isfile(smimeFilename):
+      entityActionNotPerformedWarning([Ent.USER, user, Ent.CSE_KEYPAIR, None],
+                                      Msg.FILE_NOT_FOUND.format(smimeFilename), i, count)
+      continue
+    smimeData = readFile(smimeFilename, mode='rb', continueOnError=True)
+    if smimeData is None:
+      continue
+    kaclFilename = os.path.join(inkeydir, user+'.wrap')
+    if not os.path.isfile(kaclFilename):
+      entityActionNotPerformedWarning([Ent.USER, user, Ent.CSE_KEYPAIR, None],
+                                      Msg.FILE_NOT_FOUND.format(kaclFilename), i, count)
+      continue
+    jsonData = readFile(kaclFilename, mode='r', encoding=UTF8, continueOnError=True)
+    if jsonData is None:
+      continue
+    try:
+      keyData = json.loads(jsonData)
+      key = 'kacls_url'
+      kaclsUri = keyData[key]
+      key = 'wrapped_private_key'
+      kaclsData = keyData[key]
+      cseKeyPair = {
+        'pkcs7': smimeData.decode(UTF8),
+        'privateKeyMetadata': [{'kaclsKeyMetadata': {'kaclsUri': kaclsUri, 'kaclsData': kaclsData}}]
+      }
+    except KeyError:
+      entityActionNotPerformedWarning([Ent.USER, user, Ent.CSE_KEYPAIR, None],
+                                      Msg.JSON_KEY_NOT_FOUND.format(key, kaclFilename), i, count)
+      continue
+    except (IndexError, SyntaxError, TypeError, ValueError) as e:
+      entityActionNotPerformedWarning([Ent.USER, user, Ent.CSE_KEYPAIR, None],
+                                      Msg.JSON_ERROR.format(str(e), kaclFilename) , i, count)
+      continue
+    kvList = [Ent.USER, user, Ent.CSE_KEYPAIR, None]
+    try:
+      result = callGAPI(gmail.users().settings().cse().keypairs(), 'create',
+                        throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED],
+                        userId='me', body=cseKeyPair)
+
+      keyPairId = result['keyPairId']
+      if not returnIdOnly:
+        kvList[-1] = keyPairId
+        if not  FJQC.formatJSON:
+          entityActionPerformed(kvList, i, count)
+        _showCSEItem(result, Ent.CSE_KEYPAIR, 'keyPairId', CSE_KEYPAIR_TIME_OBJECTS, i, count, FJQC)
+      elif not addIdentity:
+        writeStdout(f'{keyPairId}\n')
+      if addIdentity:
+        identity = {'keyPairId': keyPairId, 'emailAddress': user if not kpEmail else kpEmail}
+        kvList = [Ent.USER, user, Ent.CSE_IDENTITY, identity['emailAddress'], Ent.CSE_KEYPAIR, keyPairId]
+        result = callGAPI(gmail.users().settings().cse().identities(), 'create',
+                          throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED],
+                          userId='me', body=identity)
+        if not returnIdOnly:
+          if not  FJQC.formatJSON:
+            entityActionPerformed(kvList, i, count)
+          _showCSEItem(result, Ent.CSE_IDENTITY, 'emailAddress', CSE_IDENTITY_TIME_OBJECTS, i, count, FJQC)
+        else:
+          writeStdout(f'{keyPairId}-{user}\n')
+    except GAPI.permissionDenied as e:
+      entityActionFailedWarning(kvList, str(e), i, count)
+    except (GAPI.serviceNotAvailable, GAPI.badRequest):
+      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+
+CSE_KEYPAIR_ACTION_FUNCTION_MAP = {
+  Act.DISABLE: 'disable',
+  Act.ENABLE: 'enable',
+  Act.OBLITERATE: 'obliterate',
+  Act.INFO: 'get',
+  }
+
+# gam <UserTypeEntity> disable csekeypair <KeyPairID>
+#	[formatjson]
+# gam <UserTypeEntity> enable csekeypair <KeyPairID>
+#	[formatjson]
+# gam <UserTypeEntity> obliterate csekeypair <KeyPairID>
+# gam <UserTypeEntity> info csekeypair <KeyPairID>
+#	[formatjson]
+def processCSEKeyPair(users):
+  function = CSE_KEYPAIR_ACTION_FUNCTION_MAP[Act.Get()]
+  keyPairId = getString(Cmd.OB_CSE_KEYPAIR_ID)
+  FJQC = FormatJSONQuoteChar(formatJSONOnly=True)
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
+    if not gmail:
+      continue
+    kvList = [Ent.USER, user, Ent.CSE_KEYPAIR, keyPairId]
+    try:
+      result = callGAPI(gmail.users().settings().cse().keypairs(), function,
+                        throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED],
+                        userId='me', keyPairId=keyPairId)
+      if function != 'obliterate':
+        if not FJQC.formatJSON:
+          entityActionPerformed(kvList, i, count)
+        _showCSEItem(result, Ent.CSE_KEYPAIR, 'keyPairId', CSE_KEYPAIR_TIME_OBJECTS, i, count, FJQC)
+      else:
+        entityActionPerformed(kvList, i, count)
+    except GAPI.permissionDenied as e:
+      entityActionFailedWarning(kvList, str(e), i, count)
+    except (GAPI.serviceNotAvailable, GAPI.badRequest):
+      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+
+# gam <UserTypeEntity> show csekeypairs
+#	[formatjson]
+# gam <UserTypeEntity> print csekeypairs [todrive <ToDriveAttribute>*]
+#	[formatjson [quotechar <Character>]]
+def printShowCSEKeyPairs(users):
+  _printShowCSEItems(users, Ent.CSE_KEYPAIR, 'keyPairId', CSE_KEYPAIR_TIME_OBJECTS)
+
 # gam <UserTypeEntity> signature|sig
 #	<SignatureContent>
 #	(replace <Tag> <String>)*
@@ -71044,7 +71325,7 @@ def importTasklist(users):
     jsonData = json.loads(readFile(filename, encoding=encoding))
   except (IndexError, KeyError, SyntaxError, TypeError, ValueError) as e:
     Cmd.Backup()
-    usageErrorExit(f'{str(e)}: {filename}')
+    usageErrorExit(Msg.JSON_ERROR.format(str(e), filename))
   if jsonData.get('kind', '') != 'tasks#taskLists':
     Cmd.Backup()
     usageErrorExit(f'{"Not a Tasks takeout JSON file"}: {filename}')
@@ -72417,6 +72698,8 @@ USER_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_CHATSPACE:		createChatSpace,
   Cmd.ARG_CLASSROOMINVITATION:	createClassroomInvitations,
   Cmd.ARG_CONTACTDELEGATE:	processContactDelegates,
+  Cmd.ARG_CSEIDENTITY:		processCSEIdentity,
+  Cmd.ARG_CSEKEYPAIR:		createCSEKeyPair,
   Cmd.ARG_LOOKERSTUDIOPERMISSION:	processLookerStudioPermissions,
   Cmd.ARG_DELEGATE:		processDelegates,
   Cmd.ARG_DRIVEFILE:		createDriveFile,
@@ -72529,6 +72812,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHATSPACE:	deleteChatSpace,
       Cmd.ARG_CLASSROOMINVITATION:	deleteClassroomInvitations,
       Cmd.ARG_CONTACTDELEGATE:	processContactDelegates,
+      Cmd.ARG_CSEIDENTITY:	processCSEIdentity,
       Cmd.ARG_LOOKERSTUDIOPERMISSION:	processLookerStudioPermissions,
       Cmd.ARG_DELEGATE:		processDelegates,
       Cmd.ARG_DRIVEFILE:	deleteDriveFile,
@@ -72568,6 +72852,11 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_WORKINGLOCATION:	deleteWorkingLocation,
      }
     ),
+  'disable':
+    (Act.DISABLE,
+     {Cmd.ARG_CSEKEYPAIR:	processCSEKeyPair,
+     }
+    ),
   'draft':
     (Act.DRAFT,
      {Cmd.ARG_MESSAGE:		draftMessage,
@@ -72577,6 +72866,11 @@ USER_COMMANDS_WITH_OBJECTS = {
     (Act.EMPTY,
      {Cmd.ARG_CALENDARTRASH:	emptyCalendarTrash,
       Cmd.ARG_DRIVETRASH:	emptyDriveTrash,
+     }
+    ),
+  'enable':
+    (Act.ENABLE,
+     {Cmd.ARG_CSEKEYPAIR:	processCSEKeyPair,
      }
     ),
   'export':
@@ -72616,6 +72910,8 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHATSPACE:	infoChatSpace,
       Cmd.ARG_CHATSPACEDM:	infoChatSpaceDM,
       Cmd.ARG_CIGROUPMEMBERS:	infoCIGroupMembers,
+      Cmd.ARG_CSEIDENTITY:	processCSEIdentity,
+      Cmd.ARG_CSEKEYPAIR:	processCSEKeyPair,
       Cmd.ARG_DRIVEFILE:	showFileInfo,
       Cmd.ARG_DRIVEFILEACL:	infoDriveFileACLs,
       Cmd.ARG_DRIVELABEL:	infoDriveLabels,
@@ -72657,6 +72953,11 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_TASK:		processTasks,
      }
     ),
+  'obliterate':
+    (Act.OBLITERATE,
+     {Cmd.ARG_CSEKEYPAIR:	processCSEKeyPair,
+     }
+    ),
   'purge':
     (Act.PURGE,
      {Cmd.ARG_DRIVEFILE:	purgeDriveFile,
@@ -72681,6 +72982,8 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CLASSROOMINVITATION:	printShowClassroomInvitations,
       Cmd.ARG_CLASSROOMPROFILE:	printShowClassroomProfile,
       Cmd.ARG_CONTACTDELEGATE:	printShowContactDelegates,
+      Cmd.ARG_CSEIDENTITY:	printShowCSEIdentities,
+      Cmd.ARG_CSEKEYPAIR:	printShowCSEKeyPairs,
       Cmd.ARG_LOOKERSTUDIOASSET:	printShowLookerStudioAssets,
       Cmd.ARG_LOOKERSTUDIOPERMISSION:	printShowLookerStudioPermissions,
       Cmd.ARG_DELEGATE:		printShowDelegates,
@@ -72778,6 +73081,8 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CLASSROOMPROFILE:	printShowClassroomProfile,
       Cmd.ARG_CONTACTDELEGATE:	printShowContactDelegates,
       Cmd.ARG_COUNT: 		showCountUser,
+      Cmd.ARG_CSEIDENTITY:	printShowCSEIdentities,
+      Cmd.ARG_CSEKEYPAIR:	printShowCSEKeyPairs,
       Cmd.ARG_LOOKERSTUDIOASSET:	printShowLookerStudioAssets,
       Cmd.ARG_LOOKERSTUDIOPERMISSION:	printShowLookerStudioPermissions,
       Cmd.ARG_DELEGATE:		printShowDelegates,
@@ -72902,6 +73207,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHATMEMBER:	deleteUpdateChatMember,
       Cmd.ARG_CHATMESSAGE:	updateChatMessage,
       Cmd.ARG_CHATSPACE:	updateChatSpace,
+      Cmd.ARG_CSEIDENTITY:	processCSEIdentity,
       Cmd.ARG_LOOKERSTUDIOPERMISSION:	processLookerStudioPermissions,
       Cmd.ARG_DELEGATE:		updateDelegates,
       Cmd.ARG_DRIVEFILE:	updateDriveFile,
@@ -72982,6 +73288,8 @@ USER_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_CONTACTGROUPS:	Cmd.ARG_PEOPLECONTACTGROUP,
   Cmd.ARG_CONTACTPHOTO:		Cmd.ARG_PEOPLECONTACTPHOTO,
   Cmd.ARG_CONTACTPHOTOS:	Cmd.ARG_PEOPLECONTACTPHOTO,
+  Cmd.ARG_CSEIDENTITIES:	Cmd.ARG_CSEIDENTITY,
+  Cmd.ARG_CSEKEYPAIRS:		Cmd.ARG_CSEKEYPAIR,
   Cmd.ARG_COUNTS:		Cmd.ARG_COUNT,
   Cmd.ARG_DATASTUDIOASSET:	Cmd.ARG_LOOKERSTUDIOASSET,
   Cmd.ARG_DATASTUDIOPERMISSION:	Cmd.ARG_LOOKERSTUDIOPERMISSION,

@@ -161,6 +161,10 @@ ENABLE_GCLOUD_REAUTH = 'enable_gcloud_reauth'
 EVENT_MAX_RESULTS = 'event_max_results'
 # Path to extra_args.txt
 EXTRA_ARGS = 'extra_args'
+# Gmail CSE certificates directory
+GMAIL_CSE_INCERT_DIR = 'gmail_cse_incert_dir'
+# Gmail CSE KACL wrapped key files
+GMAIL_CSE_INKEY_DIR = 'gmail_cse_inkey_dir'
 # When processing items in batches, how many seconds should GAM wait between batches
 INTER_BATCH_WAIT = 'inter_batch_wait'
 # When retrieving lists of licenses from API, how many should be retrieved in each chunk
@@ -284,6 +288,8 @@ TODRIVE_UPLOAD_NODATA = 'todrive_upload_nodata'
 TODRIVE_USER = 'todrive_user'
 # Update CrOS org unit with orgUnitId
 UPDATE_CROS_OU_WITH_ID = 'update_cros_ou_with_id'
+# Use course owner for course access
+USE_COURSE_OWNER_ACCESS = 'use_course_owner_access'
 # Use Project ID as Project Name and App Name
 USE_PROJECTID_AS_NAME = 'use_projectid_as_name'
 # When retrieving lists of Users from API, how many should be retrieved in each chunk
@@ -359,6 +365,8 @@ Defaults = {
   ENABLE_GCLOUD_REAUTH: FALSE,
   EVENT_MAX_RESULTS: '250',
   EXTRA_ARGS: '',
+  GMAIL_CSE_INCERT_DIR: '',
+  GMAIL_CSE_INKEY_DIR: '',
   INTER_BATCH_WAIT: '0',
   LICENSE_MAX_RESULTS: '100',
   LICENSE_SKUS: '',
@@ -420,6 +428,7 @@ Defaults = {
   TODRIVE_UPLOAD_NODATA: TRUE,
   TODRIVE_USER: '',
   UPDATE_CROS_OU_WITH_ID: FALSE,
+  USE_COURSE_OWNER_ACCESS: FALSE,
   USE_PROJECTID_AS_NAME: FALSE,
   USER_MAX_RESULTS: '500',
   USER_SERVICE_ACCOUNT_ACCESS_ONLY: FALSE,
@@ -514,6 +523,8 @@ VAR_INFO = {
   ENABLE_GCLOUD_REAUTH: {VAR_TYPE: TYPE_BOOLEAN},
   EVENT_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 2500)},
   EXTRA_ARGS: {VAR_TYPE: TYPE_FILE, VAR_SIGFILE: FN_EXTRA_ARGS_TXT, VAR_SFFT: ('', FN_EXTRA_ARGS_TXT), VAR_ACCESS: os.R_OK},
+  GMAIL_CSE_INCERT_DIR: {VAR_TYPE: TYPE_DIRECTORY},
+  GMAIL_CSE_INKEY_DIR: {VAR_TYPE: TYPE_DIRECTORY},
   INTER_BATCH_WAIT: {VAR_TYPE: TYPE_FLOAT, VAR_LIMITS: (0.0, 60.0)},
   LICENSE_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (10, 1000)},
   LICENSE_SKUS: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
@@ -575,6 +586,7 @@ VAR_INFO = {
   TODRIVE_UPLOAD_NODATA: {VAR_TYPE: TYPE_BOOLEAN},
   TODRIVE_USER: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
   UPDATE_CROS_OU_WITH_ID: {VAR_TYPE: TYPE_BOOLEAN},
+  USE_COURSE_OWNER_ACCESS: {VAR_TYPE: TYPE_BOOLEAN},
   USE_PROJECTID_AS_NAME: {VAR_TYPE: TYPE_BOOLEAN},
   USER_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 500)},
   USER_SERVICE_ACCOUNT_ACCESS_ONLY: {VAR_TYPE: TYPE_BOOLEAN},

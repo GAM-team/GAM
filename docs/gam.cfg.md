@@ -322,6 +322,12 @@ extra_args
         Path to extra_args.txt
         Default: Blank
         Data file: extra_args.txt
+gmail_cse_incert_dir
+        Directory for the S/MIME certificate files used by Gmail Client Side Encryption.
+        Default: Blank
+gmail_cse_inkey_dir
+        Directory for the Key Access Control List (KACL) wrapped private key data files used by Gmail Client Side Encryption.
+        Default: Blank
 inter_batch_wait
         When processing items in batches, how many seconds should GAM wait between batches
         Default: 0

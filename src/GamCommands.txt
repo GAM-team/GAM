@@ -7126,6 +7126,15 @@ gam <UserTypeEntity> show signature|sig [compact|format|html]
 gam <UserTypeEntity> print signature [compact]
         [primary|default] [verifyonly] [todrive <ToDriveAttribute>*]
 
+gam <UserTypeEntity> vacation <Boolean> subject <String>
+        [<VacationMessageContent> (replace <Tag> <UserReplacement>)*]
+        [html [<Boolean>]] [contactsonly [<Boolean>]] [domainonly [<Boolean>]]
+        [start|startdate <Date>|Started] [end|enddate <Date>|NotSpecified]
+gam <UserTypeEntity> show vacation [compact|format|html] [enabledonly]
+gam <UserTypeEntity> print vacation [compact] [enabledonly] [todrive <ToDriveAttribute>*]
+
+# Users - Gmail - S/MIME
+
 gam <UserTypeEntity> create|add smime file <FileName> [password <Password>]
         [sendas|sendasemail <EmailAddress>] [default]
 gam <UserTypeEntity> update smime default
@@ -7137,12 +7146,37 @@ gam <UserTypeEntity> show smimes
 gam <UserTypeEntity> print smimes [todrive <ToDriveAttribute>*]
         [primary|default|(sendas|sendasemail <EmailAddress>)]
 
-gam <UserTypeEntity> vacation <Boolean> subject <String>
-        [<VacationMessageContent> (replace <Tag> <UserReplacement>)*]
-        [html [<Boolean>]] [contactsonly [<Boolean>]] [domainonly [<Boolean>]]
-        [start|startdate <Date>|Started] [end|enddate <Date>|NotSpecified]
-gam <UserTypeEntity> show vacation [compact|format|html] [enabledonly]
-gam <UserTypeEntity> print vacation [compact] [enabledonly] [todrive <ToDriveAttribute>*]
+# Users - Gmail Client Side Encryption
+
+gam <UserTypeEntity> create cseidentity <KeyPairID> [kpemail <EmailAddress>]
+        [formatjson]
+gam <UserTypeEntity> update cseidentity <KeyPairID> [kpemail <EmailAddress>]
+        [formatjson]
+gam <UserTypeEntity> delete cseidentity [kpemail <EmailAddress>]
+
+gam <UserTypeEntity> info cseidentity [kpemail <EmailAddress>]
+        [formatjson]
+gam <UserTypeEntity> show cseidentities
+        [formatjson]
+gam <UserTypeEntity> print cseidentities [todrive <ToDriveAttribute>*]
+        [formatjson [quotechar <Character>]]
+
+gam <UserTypeEntity> create csekeypair
+        [incertdir <FilePath>] [inkeydir <FilePath>]
+        [addidentity [<Boolean>]] [kpemail <EmailAddress>]
+        [formatjson|returnidonly]
+gam <UserTypeEntity> disable csekeypair <KeyPairID>
+        [formatjson]
+gam <UserTypeEntity> enable csekeypair <KeyPairID>
+        [formatjson]
+gam <UserTypeEntity> obliterate csekeypair <KeyPairID>
+
+gam <UserTypeEntity> info csekeypair <KeyPairID>
+        [formatjson]
+gam <UserTypeEntity> show csekeypairs
+        [formatjson]
+gam <UserTypeEntity> print csekeypairs [todrive <ToDriveAttribute>*]
+        [formatjson [quotechar <Character>]]
 
 # Users - Gmail - Settings
 

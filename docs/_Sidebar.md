@@ -141,6 +141,7 @@ Service Account Access
 * [Users - Drive - Shortcuts](Users-Drive-Shortcuts)
 * [Users - Drive - Transfer](Users-Drive-Transfer)
 * [Users - Forms](Users-Forms)
+* [Users - Gmail - Client Side Encryption](Users-Gmail-CSE)
 * [Users - Gmail - Delegates](Users-Gmail-Delegates)
 * [Users - Gmail - Filters](Users-Gmail-Filters)
 * [Users - Gmail - Forwarding](Users-Gmail-Forwarding)

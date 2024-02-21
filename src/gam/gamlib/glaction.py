@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2023 Ross Scroggs All Rights Reserved.
+# Copyright (C) 2024 Ross Scroggs All Rights Reserved.
 #
 # All Rights Reserved.
 #
@@ -77,6 +77,7 @@ class GamAction():
   MOVE_MERGE = 'movm'
   NOACTION = 'noac'
   NOACTION_PREVIEW = 'noap'
+  OBLITERATE = 'obli'
   PERFORM = 'perf'
   PRE_PROVISIONED_DISABLE ='ppdi'
   PRE_PROVISIONED_REENABLE ='ppre'
@@ -193,6 +194,7 @@ class GamAction():
     MOVE_MERGE: ['Moved(Merge)', 'Move(Merge)'],
     NOACTION: ['No Action', 'No Action'],
     NOACTION_PREVIEW: ['No Action (Preview)', 'No Action (Preview)'],
+    OBLITERATE: ['Obliterated', 'Obliterate'],
     PERFORM: ['Action Performed', 'Perform Action'],
     PRE_PROVISIONED_DISABLE: ['PreProvisioned Disabled', 'PreProvisioned Disable'],
     PRE_PROVISIONED_REENABLE: ['PreProvisioned Reenabled', 'PreProvisioned Reenable'],
