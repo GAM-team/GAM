@@ -44381,10 +44381,12 @@ class CourseAttributes():
     else:
       return True
 # ocroom - copyfrom course owner
-    if self.announcementStates or self.materialStates or self.workStates or self.copyTopics or self.members != 'none':
-      _, self.ocroom = buildGAPIServiceObject(API.CLASSROOM, f'uid:{self.ownerId}')
-      if self.ocroom is None:
-        return False
+    self.ocroom = self.croom
+    if GC.Values[GC.USE_COURSE_OWNER_ACCESS]:
+      if self.announcementStates or self.materialStates or self.workStates or self.copyTopics or self.members != 'none':
+        _, self.ocroom = buildGAPIServiceObject(API.CLASSROOM, f'uid:{self.ownerId}')
+        if self.ocroom is None:
+          return False
     if self.members != 'none':
       _, self.teachers, self.students = _getCourseAliasesMembers(self.croom, self.ocroom, self.courseId, {'members': self.members},
                                                                  'nextPageToken,teachers(profile(emailAddress,id))',

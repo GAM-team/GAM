@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.70.02
+
+In 6.69.00, GAM starting using course owner access when using `copyfrom` in `gam create|update course`
+regardless of the value of `gam.cfg/use_course_owner_access`. This prevents copying from courses
+with a deleted user. GAM now uses the value of `gam.cfg/use_course_owner_access` when `copyfrom` is used.o
+
 ### 6.70.01
 
 Added `gmail_cse_incert_dir` and `gmail_cse_inkey_dir` path variables to `gam.cfg` that provide
@@ -25,10 +31,10 @@ This is an initial, minimally tested release; proceed with care and report all i
 
 ### 6.69.00
 
-Added `use_classroom_owner_access` Boolean variable to `gam.cfg` that controls how GAM gets
-classroom member information and removes students/teachers. Client access does not provide
+Added `use_course_owner_access` Boolean variable to `gam.cfg` that controls how GAM gets
+classroom member information and removes students/teachers. Client/admin access does not provide
 complete information about non-domain students/teachers.
-* `False` - Use client access; this is the default. Use if you don't have non-domain members in your courses.
+* `False` - Use client/admin access; this is the default. Use if you don't have non-domain members in your courses.
 * `True` - Use service account access as the classroom owner. An extra API call is required per course to authenticate the owner; this will affect performance
 
 Added the following command which must be used to delete classroom invitations for non-domain students/teachers.

@@ -2,6 +2,12 @@
 
 Merged GAM-Team version
 
+6.70.02
+
+In 6.69.00, GAM starting using course owner access when using `copyfrom` in `gam create|update course`
+regardless of the value of `gam.cfg/use_course_owner_access`. This prevents copying from courses
+with a deleted user. GAM now uses the value of `gam.cfg/use_course_owner_access` when `copyfrom` is used.
+
 6.70.01
 
 Added `gmail_cse_incert_dir` and `gmail_cse_inkey_dir` path variables to `gam.cfg` that provide
