@@ -24,7 +24,7 @@
 | Cloud Identity Free | 101001 |
 | Cloud Identity Premium | 101005 |
 | Cloud Search | 101035 |
-| Duet AI | 101047 |
+| Gemini | 101047 |
 | Google Chrome Device Management | Google-Chrome-Device-Management |
 | Google Drive Storage | Google-Drive-storage |
 | Google Meet Global Dialing | 101036 |
@@ -46,11 +46,12 @@
 | Cloud Identity Free | 1010010001 | cloudidentity |
 | Cloud Identity Premium | 1010050001 | cloudidentitypremium |
 | Cloud Search | 1010350001 | cloudsearch |
-| Duet AI | 1010470001 | duetai |
 | G Suite Basic | Google-Apps-For-Business | gsuitebasic |
 | G Suite Business | Google-Apps-Unlimited | gsuitebusiness |
 | G Suite Legacy | Google-Apps | standard |
 | G Suite Lite | Google-Apps-Lite | gsuitelite |
+| Gemini Business | 1010470003 | geminibiz
+| Gemini Enterprise | 1010470001 | geminient | duetai |
 | Google Apps Message Security | Google-Apps-For-Postini | postini |
 | Google Chrome Device Management | Google-Chrome-Device-Management | cdm |
 | Google Drive Storage 16TB | Google-Drive-storage-16TB | 16tb |

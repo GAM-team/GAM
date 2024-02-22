@@ -10,6 +10,19 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.70.03
+
+Renamed license product DuetAI to Gemini
+* ProductID - 101047
+
+Renamed license SKU DuetAI for Google Workspace to Gemini Enterprise
+* ProductID - 101047
+* SKUID - 1010470001 | geminient | duetai 
+
+Added support for license SKU Gemini Business
+* ProductID - 101047
+* SKUID - 1010470003 | geminibiz
+
 ### 6.70.02
 
 In 6.69.00, GAM starting using course owner access when using `copyfrom` in `gam create|update course`
