@@ -89,15 +89,6 @@ If you run a Google Workspace Education SKU, verify that the super admin you'll 
 * Choose "All users are 18 or older"
 * Click "SAVE"
 
-Verify whether the super admin you'll be using is in an OU where reauthentication is required.
-* Access the admin console and go to Security -> Overview
-* Scroll down and open Google Cloud session control section
-* Select the OU containing the super admin
-* If Require reauthentication is selected and Exempt Trusted apps is not checked, you'll have to do `gam oauth create` at whatever frequency is specified
-* If that sounds unappealing, check Exempt Trusted apps
-* Click "OVERRIDE"
-* Follow the steps below to mark GAM as a trusted app
-
 Based on your domain policies, you may have to mark GAM as a trusted app. These steps are performed after a project is created.
 * Access the admin console and go to Security -> Access and data control -> API controls
 * Check Trust internal, domain-owned apps
@@ -113,6 +104,15 @@ Based on your domain policies, you may have to mark GAM as a trusted app. These 
 * Click Trusted: App can request access to all Google data
 * Click Next/Continue
 * Click Finish
+
+Verify whether the super admin you'll be using is in an OU where reauthentication is required.
+* Access the admin console and go to Security -> Overview
+* Scroll down and open Google Cloud session control section
+* Select the OU containing the super admin
+* If Require reauthentication is selected and Exempt Trusted apps is not checked, you'll have to do `gam oauth create` at whatever frequency is specified
+* If that sounds unappealing, check Exempt Trusted apps
+* Click "OVERRIDE"
+* Follow the steps below to mark GAM as a trusted app
 
 ## Headless computers and Cloud Shells
 With many thanks to Jay, `gam oauth create` now uses a new client access authentication flow

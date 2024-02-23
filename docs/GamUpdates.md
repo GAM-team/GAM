@@ -10,6 +10,18 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.70.04
+
+Added option `showvalidcolumn` to `gam print users` that can be used to identify whether
+users are defined in the domain. Typically, you would read CSV file of email addresses
+to verify as domain members.
+
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users#verify-domain-membership
+
+Added option `addcsvdata <FieldName> <String>` to `gam print users` that adds
+additional columns of data to the CSV file output. Typically, you would read CSV file of email addresses
+to generate a CSV file of results and copy data from the input CSV to the outout CSV.
+
 ### 6.70.03
 
 Renamed license product DuetAI to Gemini

@@ -42672,6 +42672,7 @@ USERS_INDEXED_TITLES = ['addresses', 'aliases', 'nonEditableAliases', 'emails', 
 #	[delimiter <Character>] [sortheaders] [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
 #	[issuspended <Boolean>] [aliasmatchpattern <RegularExpression>]
 # 	[showitemcountonly]
+#	[showvalidcolumn] (addcsvdata <FieldName> <String>)*
 #
 # gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
 #	[groups|groupsincolumns]
@@ -42683,6 +42684,7 @@ USERS_INDEXED_TITLES = ['addresses', 'aliases', 'nonEditableAliases', 'emails', 
 #	[delimiter <Character>] [sortheaders] [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
 #	[issuspended <Boolean>] [aliasmatchpattern <RegularExpression>]
 # 	[showitemcountonly]
+#	[showvalidcolumn] (addcsvdata <FieldName> <String>)*
 #
 # gam print users [todrive <ToDriveAttribute>*]
 #	([domain <DomainName>] [(query <QueryUser>)|(queries <QueryUserList>)]
@@ -42690,6 +42692,7 @@ USERS_INDEXED_TITLES = ['addresses', 'aliases', 'nonEditableAliases', 'emails', 
 #	[formatjson [quotechar <Character>]] [countonly]
 #	[issuspended <Boolean>] [aliasmatchpattern <RegularExpression>]
 # 	[showitemcountonly]
+#	[showvalidcolumn] (addcsvdata <FieldName> <String>)*
 #
 # gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
 #	[formatjson [quotechar <Character>]] [countonly]
@@ -42697,16 +42700,23 @@ USERS_INDEXED_TITLES = ['addresses', 'aliases', 'nonEditableAliases', 'emails', 
 # 	[showitemcountonly]
 def doPrintUsers(entityList=None):
   def _writeUserEntity(userEntity):
+    if addCSVData:
+      userEntity.update(addCSVData)
     row = flattenJSON(userEntity, skipObjects=USER_SKIP_OBJECTS, timeObjects=USER_TIME_OBJECTS)
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
-      csvPF.WriteRowNoFilter({'primaryEmail': userEntity['primaryEmail'],
-                              'JSON': json.dumps(cleanJSON(userEntity, skipObjects=USER_SKIP_OBJECTS, timeObjects=USER_TIME_OBJECTS),
-                                                ensure_ascii=False, sort_keys=True)})
+      row = {'primaryEmail': userEntity['primaryEmail']}
+      if showValidColumn:
+        row[showValidColumn] = userEntity[showValidColumn]
+      row['JSON'] = json.dumps(cleanJSON(userEntity, skipObjects=USER_SKIP_OBJECTS, timeObjects=USER_TIME_OBJECTS),
+                               ensure_ascii=False, sort_keys=True)
+      csvPF.WriteRowNoFilter(row)
 
   def _printUser(userEntity, i, count):
     if isSuspended is None or isSuspended == userEntity.get('suspended', isSuspended):
+      if showValidColumn:
+        userEntity[showValidColumn] = True
       userEmail = userEntity['primaryEmail']
       if printOptions['emailParts']:
         if userEmail.find('@') != -1:
@@ -42785,7 +42795,10 @@ def doPrintUsers(entityList=None):
     else:
       http_status, reason, message = checkGAPIError(exception)
       if reason in GAPI.USER_GET_THROW_REASONS:
-        entityUnknownWarning(Ent.USER, ri[RI_ITEM], int(ri[RI_J]), int(ri[RI_JCOUNT]))
+        if not showValidColumn:
+          entityUnknownWarning(Ent.USER, ri[RI_ITEM], int(ri[RI_J]), int(ri[RI_JCOUNT]))
+        else:
+          _writeUserEntity({'primaryEmail': ri[RI_ITEM], showValidColumn: False})
       elif (reason == GAPI.INVALID_INPUT) and customFieldMask:
         entityActionFailedWarning([Ent.USER, ri[RI_ITEM]], invalidUserSchema(customFieldMask), int(ri[RI_J]), int(ri[RI_JCOUNT]))
       elif reason not in GAPI.DEFAULT_RETRY_REASONS:
@@ -42799,7 +42812,10 @@ def doPrintUsers(entityList=None):
                           userKey=ri[RI_ITEM], projection=projection, customFieldMask=customFieldMask, viewType=viewType, fields=fields)
           _printUser(user, int(ri[RI_J]), int(ri[RI_JCOUNT]))
         except (GAPI.userNotFound, GAPI.resourceNotFound):
-          entityUnknownWarning(Ent.USER, ri[RI_ITEM], int(ri[RI_J]), int(ri[RI_JCOUNT]))
+          if not showValidColumn:
+            entityUnknownWarning(Ent.USER, ri[RI_ITEM], int(ri[RI_J]), int(ri[RI_JCOUNT]))
+          else:
+            _writeUserEntity({'primaryEmail': ri[RI_ITEM], showValidColumn: False})
         except (GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
                 GAPI.badRequest, GAPI.backendError, GAPI.systemError, GAPI.rateLimitExceeded) as e:
           entityActionFailedWarning([Ent.USER, ri[RI_ITEM]], str(e), int(ri[RI_J]), int(ri[RI_JCOUNT]))
@@ -42836,7 +42852,9 @@ def doPrintUsers(entityList=None):
   aliasMatchPattern = isSuspended = orgUnitPath = orgUnitPathLower = orderBy = sortOrder = None
   viewType = 'admin_view'
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
+  showValidColumn = ''
   showItemCountOnly = False
+  addCSVData = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -42913,6 +42931,11 @@ def doPrintUsers(entityList=None):
       quotePlusPhoneNumbers = True
     elif myarg == 'showitemcountonly':
       showItemCountOnly = True
+    elif myarg == 'showvalidcolumn':
+      showValidColumn = 'Valid'
+    elif myarg == 'addcsvdata':
+      k = getString(Cmd.OB_STRING)
+      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   _, _, entityList = getEntityArgument(entityList)
@@ -42926,8 +42949,16 @@ def doPrintUsers(entityList=None):
   else:
     if FJQC.formatJSON:
       printOptions['sortHeaders'] = False
-      csvPF.SetJSONTitles(['primaryEmail', 'JSON'])
+      titles = ['primaryEmail']
+      if showValidColumn:
+        titles.append(showValidColumn)
+      titles.append('JSON')
+      csvPF.SetJSONTitles(titles)
     else:
+      if showValidColumn:
+        csvPF.AddTitles([showValidColumn])
+      if addCSVData:
+        csvPF.AddTitles(sorted(addCSVData.keys()))
       if printOptions['getGroupFeed']:
         if not printOptions['groupsInColumns']:
           csvPF.AddTitles(['GroupsCount', 'Groups'])
@@ -43013,7 +43044,7 @@ def doPrintUsers(entityList=None):
 # If no individual fields were specified (allfields, basic, full) or individual fields other than primaryEmail were specified, look up each user
     if isSuspended is not None:
       fieldsList.append('suspended')
-    if projectionSet or len(set(fieldsList)) > 1:
+    if projectionSet or len(set(fieldsList)) > 1 or showValidColumn:
       jcount = len(entityList)
       fields = getFieldsFromFieldsList(fieldsList)
       if GC.Values[GC.BATCH_SIZE] > 1 and jcount > 1:
@@ -43045,7 +43076,10 @@ def doPrintUsers(entityList=None):
                             userKey=userEmail, projection=projection, customFieldMask=customFieldMask, viewType=viewType, fields=fields)
             _printUser(user, j, jcount)
           except (GAPI.userNotFound, GAPI.resourceNotFound):
-            entityUnknownWarning(Ent.USER, userEmail, j, jcount)
+            if not showValidColumn:
+              entityUnknownWarning(Ent.USER, userEmail, j, jcount)
+            else:
+              _writeUserEntity({'primaryEmail': userEmail, showValidColumn: False})
           except (GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
                   GAPI.badRequest, GAPI.backendError, GAPI.systemError, GAPI.rateLimitExceeded) as e:
             entityActionFailedWarning([Ent.USER, userEmail], str(e), j, jcount)

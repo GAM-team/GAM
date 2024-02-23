@@ -39,6 +39,7 @@
     - [Print domain counts for users specified by `<UserTypeEntity>`](#print-domain-counts-for-users-specified-by-usertypeentity)
 - [Print user list](#print-user-list)
 - [Display user counts](#display-user-counts)
+- [Verify domain membership]($verify-domain-membership)
 
 ## API documentation
 * https://developers.google.com/admin-sdk/directory/reference/rest/v1/users
@@ -981,14 +982,16 @@ gam print users [todrive <ToDriveAttribute>*]
          [limittoou <OrgUnitItem>] [deleted_only|only_deleted])
         [orderby <UserOrderByFieldName> [ascending|descending]]
         [groups|groupsincolumns]
-        [license|licenses|licence|licences]
+        [license|licenses|licence|licences|licensebyuser|licensesbyuser|licencebyuser|licencesbyuser]
         [onelicenseperrow|onelicenceperrow]
+        [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)]
         [schemas|custom|customschemas all|<SchemaNameList>]
         [emailpart|emailparts|username]
         [userview] [allfields|basic|full|(<UserFieldName>*|fields <UserFieldNameList>)]
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
         [issuspended <Boolean>] [aliasmatchpattern <RegularExpression>]
+        [showvalidcolumn] (addcsvdata <FieldName> <String>)*
 ```
 
 By default, users in all domains in the account are selected; these options allow selection of subsets of users:
@@ -1008,11 +1011,13 @@ gam print users [todrive <ToDriveAttribute>*] select <UserTypeEntity>
         [onelicenseperrow|onelicenceperrow]
         [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)]
         [schemas|custom|customschemas all|<SchemaNameList>]
-        [emailpart|emailparts|username][schemas|custom all|<SchemaNameList>]
-        [userview] [allfields|basic|full|(<UserFieldName>*|fields <UserFieldNameList>)]
+        [emailpart|emailparts|username]
+        [userview] [basic|full|allfields|(<UserFieldName>*|fields <UserFieldNameList>)]
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
         [issuspended <Boolean>] [aliasmatchpattern <RegularExpression>]
+        [showvalidcolumn] (addcsvdata <FieldName> <String>)*
+
 gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
         [orderby <UserOrderByFieldName> [ascending|descending]]
         [groups|groupsincolumns]
@@ -1021,10 +1026,11 @@ gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
         [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)]
         [schemas|custom|customschemas all|<SchemaNameList>]
         [emailpart|emailparts|username]
-        [userview] [allfields|basic|full|(<UserFieldName>*|fields <UserFieldNameList>)]
+        [userview] [basic|full|allfields|(<UserFieldName>*|fields <UserFieldNameList>)]
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
         [issuspended <Boolean>] [aliasmatchpattern <RegularExpression>]
+        [showvalidcolumn] (addcsvdata <FieldName> <String>)*
 ```
 
 By default, Gam gets no group membership information for each user. The `groups` and `groupsincolumns`
@@ -1078,6 +1084,17 @@ In the output, primaryEmail is the always the first column; these options contro
 * `sortheaders [true]` - All other columns are sorted by name.
 * `<UserFieldName>*|fields <UserFieldNameList>` - The columns appear in the order that the fields are specified.
 * `scalarsfirst [true]` - When columns are sorted by name, scalar fields appear before repeating fields.
+
+By default, if `<UserTypeEntity>` includes an email address the is not a user member of the domain,
+an error message is generated.
+```
+User: testuserxxx@domain.com, Does not exist
+```
+
+Using option `showvalidcolumn`, a new column `Found` indicates domain membership; no errors are generated
+
+Add additional columns of data from the command line to the output
+* `addcsvdata <FieldName> <String>`
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format:
 * `formatjson` - Display the fields in JSON format.
@@ -1249,3 +1266,34 @@ count=$(gam print users query "orgUnitPath='/Students/Middle School'" showitemco
 Windows PowerShell
 count = & gam print users query "orgUnitPath='/Students/Middle School'" showitemcountonly
 ```
+## Verify domain membership
+You have a CSV file of email addresses and want to verify of the addresses are valid users in your domain.
+```
+# Users.csv
+$ more Users.csv
+primaryEmail,name
+testuser1@domain.com,Test User 1
+testuserxxx@domain.com,Test User XXX
+testuser2@domain.com,Test User 2
+
+# Without showvalidcolumn, non-domain users generate an error
+$ gam redirect csv - multiprocess csv Users.csv gam user "~primaryEmail" print users fields primaryemail,id addcsvdata name "~name"
+2024-02-23T11:29:00.407-08:00,0/3,Using 3 processes...
+2024-02-23T11:29:00.410-08:00,0,Processing item 3/3
+User: testuserxxx@domain.com, Does not exist
+2024-02-23T11:29:06.511-08:00,0/3,Processing complete
+primaryEmail,id,name
+testuser1@domain.com,118080758787650801331,Test User 1
+testuser2@domain.com,107344800159717682514,Test User 2
+
+# Using showvalidcolumn, a new column `Valid` indicates domain membership; no errors are generated
+$ gam redirect csv - multiprocess csv Users.csv gam user "~primaryEmail" print users fields primaryemail,id addcsvdata name "~name" showvalidcolumn
+2024-02-23T11:29:22.287-08:00,0/3,Using 3 processes...
+2024-02-23T11:29:22.292-08:00,0,Processing item 3/3
+2024-02-23T11:29:23.366-08:00,0/3,Processing complete
+primaryEmail,id,Valid,name
+testuser1@domain.com,118080758787650801331,True,Test User 1
+testuserxxx@domain.com,,False,Test User XXX
+testuser2@domain.com,107344800159717682514,True,Test User 2
+```
+

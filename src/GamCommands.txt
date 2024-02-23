@@ -5413,10 +5413,11 @@ gam print users [todrive <ToDriveAttribute>*]
         [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)]
         [schemas|custom|customschemas all|<SchemaNameList>]
         [emailpart|emailparts|username]
-        [userview] [basic|full|allfields | <UserFieldName>* | fields <UserFieldNameList>]
+        [userview] [basic|full|allfields|(<UserFieldName>*|fields <UserFieldNameList>)]
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
         [issuspended <Boolean>] [aliasmatchpattern <RegularExpression>]
+        [showvalidcolumn] (addcsvdata <FieldName> <String>)*
         [showitemcountonly]
 
 Print fields for specified users.
@@ -5429,10 +5430,11 @@ gam print users [todrive <ToDriveAttribute>*] select <UserTypeEntity>
         [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)]
         [schemas|custom|customschemas all|<SchemaNameList>]
         [emailpart|emailparts|username]
-        [userview] [basic|full|allfields | <UserFieldName>* | fields <UserFieldNameList>]
+        [userview] [basic|full|allfields|(<UserFieldName>*|fields <UserFieldNameList>)]
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
         [issuspended <Boolean>] [aliasmatchpattern <RegularExpression>]
+        [showvalidcolumn] (addcsvdata <FieldName> <String>)*
         [showitemcountonly]
 
 gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
@@ -5443,10 +5445,11 @@ gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
         [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)]
         [schemas|custom|customschemas all|<SchemaNameList>]
         [emailpart|emailparts|username]
-        [userview] [basic|full|allfields | <UserFieldName>* | fields <UserFieldNameList>]
+        [userview] [basic|full|allfields|(<UserFieldName>*|fields <UserFieldNameList>)]
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
         [issuspended <Boolean>] [aliasmatchpattern <RegularExpression>]
+        [showvalidcolumn] (addcsvdata <FieldName> <String>)*
         [showitemcountonly]
 
 The first column will always be primaryEmail; the remaining field names will be sorted if allfields, basic, full or sortheaders is specified;
