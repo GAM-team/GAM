@@ -42228,7 +42228,8 @@ def infoUsers(entityList):
 
   cd = buildGAPIObject(API.DIRECTORY)
   ci = None
-  getAliases = getBuildingNames = getCIGroupsTree = getGroups = getGroupsTree = getLicenses = getSchemas = not GC.Values[GC.QUICK_INFO_USER]
+  getAliases = getBuildingNames = getCIGroupsTree = getGroups = getLicenses = getSchemas = not GC.Values[GC.QUICK_INFO_USER]
+  getGroupsTree = False
   FJQC = FormatJSONQuoteChar()
   projection = 'full'
   customFieldMask = None

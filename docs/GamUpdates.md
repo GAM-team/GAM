@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.70.06
+
+Updated `gam info users <UserTypeEntity>` to not include group tree infornation unless option `grouptree` is specified.
+
 ### 6.70.05
 
 Added commands to create|delete|display Drive Label permissions.

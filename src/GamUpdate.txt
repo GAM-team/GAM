@@ -2,6 +2,10 @@
 
 Merged GAM-Team version
 
+6.70.06
+
+Updated `gam info users <UserTypeEntity>` to not include group tree infornation unless option `grouptree` is specified.
+
 6.70.05
 
 Added commands to create|delete|display Drive Label permissions.

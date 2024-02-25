@@ -8,6 +8,7 @@
 - [Display file permissions/sharing](#display-file-permissionssharing)
 - [Delete all ACLs except owner from a file](#delete-all-acls-except-owner-from-a-file)
 - [Change shares to User1 to shares to User2](#change-shares-to-user1-to-shares-to-user2)
+- [Map All ACLs from an old domain to a new domain](#map-all-acls-from-an-old-domain-to-a-new-domain)
 
 ## API documentation
 * https://developers.google.com/drive/api/v3/reference/permissions
@@ -317,3 +318,25 @@ gam redirect stdout ./DeleteU1Sharing.txt multiprocess redirect stderr stdout cs
 # For each of these files, add the share to User2 with the same role that User1 had
 gam redirect stdout ./AddUser2Sharing.txt multiprocess redirect stderr stdout csv FilesSharedWithU1Settings.csv gam user "~Owner" create drivefileacl "~id" user user2@domain.com role "~permissions.0.role"
 ```
+
+## Map All ACLs from an old domain to a new domain
+* Get ACLs
+```
+gam redirect csv ./allUsersFiles.csv multiprocess all users print filelist fields name,id,basicpermissions oneitemperrow pmfilter pm domain olddomain.com em
+```
+
+* Delete ACLs with olddomain.com
+```
+gam redirect stdout ./DeleteOldDomainACLs.csv multiprocess redirect stderr stdout csv ./allUsersFiles.csv gam user "~Owner" delete drivefileacl "~id" "id:~~permission.id~~"
+```
+
+* Add user/group ACLs replacing olddomain.com with newdomain.com
+```
+gam config csv_input_row_filter "permission.type:regex:user|group" redirect stdout ./AddNewDomainACLsUserGroupShares.csv multiprocess redirect stderr stdout csv ./allUsersFiles.csv gam user "~Owner" create drivefileacl "~id" "~permission.type" "~permission.emailAddress" role "~permission.role" mappermissionsdomain olddomain.com newdomain.com
+```
+
+* Add domain ACLs replacing olddomain.com with newdomain.com
+```
+gam config csv_input_row_filter "permission.type:regex:domain" redirect stdout ./AddNewDomainACLsDomainShares.csv multiprocess redirect stderr stdout csv ./allUsersFiles.csv gam user "~Owner" create drivefileacl "~id" "~permission.type" "~permission.domain" role "~permission.role" allowfilediscovery "~permission.allowFileDiscovery" mappermissionsdomain olddomain.com newdomain.com
+```
+    
