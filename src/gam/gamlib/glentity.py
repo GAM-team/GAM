@@ -191,6 +191,8 @@ class GamEntity():
   DRIVE_LABEL_FIELD_ID = 'dlfi'
   DRIVE_LABEL_ID = 'dlid'
   DRIVE_LABEL_NAME = 'dlna'
+  DRIVE_LABEL_PERMISSION = 'dlpe'
+  DRIVE_LABEL_PERMISSION_NAME = 'dlpn'
   DRIVE_ORPHAN_FILE_OR_FOLDER = 'orph'
   DRIVE_PARENT_FOLDER = 'fipf'
   DRIVE_PARENT_FOLDER_ID = 'fipi'
@@ -526,6 +528,8 @@ class GamEntity():
     DRIVE_LABEL_FIELD_ID: ['Drive Label Field IDs', 'Drive Label Field ID'],
     DRIVE_LABEL_ID: ['Drive Label IDs', 'Drive Label ID'],
     DRIVE_LABEL_NAME: ['Drive Label Names', 'Drive Label Name'],
+    DRIVE_LABEL_PERMISSION: ['Drive Label Permissions', 'Drive Label Permission'],
+    DRIVE_LABEL_PERMISSION_NAME: ['Drive Label Permission Names', 'Drive Label Permission Name'],
     DRIVE_ORPHAN_FILE_OR_FOLDER: ['Drive Orphan Files/Folders', 'Drive Orphan File/Folder'],
     DRIVE_PARENT_FOLDER: ['Drive Parent Folders', 'Drive Parent Folder'],
     DRIVE_PARENT_FOLDER_ID: ['Drive Parent Folder IDs', 'Drive Parent Folder ID'],

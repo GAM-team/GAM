@@ -24,6 +24,7 @@ ABORTED = 'aborted'
 ABUSIVE_CONTENT_RESTRICTION = 'abusiveContentRestriction'
 ACCESS_NOT_CONFIGURED = 'accessNotConfigured'
 ALREADY_EXISTS = 'alreadyExists'
+APPLY_LABEL_FORBIDDEN = 'applyLabelForbidden'
 AUTH_ERROR = 'authError'
 BACKEND_ERROR = 'backendError'
 BAD_GATEWAY = 'badGateway'
@@ -243,6 +244,7 @@ DRIVE3_DELETE_ACL_THROW_REASONS = [BAD_REQUEST, CANNOT_REMOVE_OWNER,
                                    INSUFFICIENT_ADMINISTRATOR_PRIVILEGES, SHARING_RATE_LIMIT_EXCEEDED,
                                    NOT_FOUND, PERMISSION_NOT_FOUND]
 DRIVE3_MODIFY_LABEL_THROW_REASONS = DRIVE_USER_THROW_REASONS+[FILE_NOT_FOUND, NOT_FOUND, FORBIDDEN, INTERNAL_ERROR,
+                                                              FILE_NEVER_WRITABLE, APPLY_LABEL_FORBIDDEN,
                                                               INSUFFICIENT_ADMINISTRATOR_PRIVILEGES, INSUFFICIENT_FILE_PERMISSIONS,
                                                               UNKNOWN_ERROR, INVALID_INPUT, BAD_REQUEST,
                                                               LABEL_MULTIPLE_VALUES_FOR_SINGULAR_FIELD, LABEL_MUTATION_FORBIDDEN,
@@ -348,6 +350,8 @@ class abusiveContentRestriction(Exception):
 class accessNotConfigured(Exception):
   pass
 class alreadyExists(Exception):
+  pass
+class applyLabelForbidden(Exception):
   pass
 class authError(Exception):
   pass
@@ -649,6 +653,7 @@ REASON_EXCEPTION_MAP = {
   ABUSIVE_CONTENT_RESTRICTION: abusiveContentRestriction,
   ACCESS_NOT_CONFIGURED: accessNotConfigured,
   ALREADY_EXISTS: alreadyExists,
+  APPLY_LABEL_FORBIDDEN: applyLabelForbidden,
   AUTH_ERROR: authError,
   BACKEND_ERROR: backendError,
   BAD_REQUEST: badRequest,

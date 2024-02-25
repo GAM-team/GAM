@@ -43,6 +43,7 @@
 <DriveFolderNameList> ::= "<DriveFolderName>(,<DriveFolderName>)*"
 <DriveLabelIDList> ::= "<DriveLabelID>(,<DriveLabelID>)*"
 <DriveLabelNameList> ::= "<DriveLabelName>(,<DriveLabelName>)*"
+<DriveLabelPermissionNameList> ::= "<DriveLabelPermissionName>(,<DriveLabelPermissionName>)*"
 <DriveLabelFieldIDList> ::= "<DriveLabelFieldID>(,<DriveLabelFieldID>)*"
 <DriveLabelSelectionIDList> ::= "<DriveLabelSelectionID>(,<DriveLabelSelectionID>)*"
 <EmailAddressList> ::= "<EmailAddress>(,<EmailAddress>)*"

@@ -119,7 +119,7 @@
         #7a4706|#8a1c0a|#994a64|#ffffff
 <LanguageCode> ::=
         ach|af|ag|ak|am|ar|az|be|bem|bg|bn|br|bs|ca|chr|ckb|co|crs|cs|cy|da|de|
-        ee|el|en|en-gb|en-us|eo|es|es-419|et|eu|fa|fi|fil|fo|fr|fr-ca|fy|
+        ee|el|en|en-ca|en-gb|en-us|eo|es|es-419|et|eu|fa|fi|fil|fo|fr|fr-ca|fy|
         ga|gaa|gd|gl|gn|gu|ha|haw|he|hi|hr|ht|hu|hy|ia|id|ig|in|is|it|iw|ja|jw|
         ka|kg|kk|km|kn|ko|kri|ku|ky|la|lg|ln|lo|loz|lt|lua|lv|
         mfe|mg|mi|mk|ml|mn|mo|mr|ms|mt|my|ne|nl|nn|no|nso|ny|nyn|oc|om|or|
@@ -232,8 +232,11 @@
         101035 |
         101036 |
         101037 |
+        101038 |
         101039 |
         101040 |
+        101043 |
+        101047 |
         Google-Apps |
         Google-Chrome-Device-Management |
         Google-Drive-storage |
@@ -249,12 +252,17 @@
         4tb | drive4tb | googledrivestorage4tb | Google-Drive-storage-4TB |
         8tb | drive8tb | googledrivestorage8tb | Google-Drive-storage-8TB |
         16tb | drive16tb | googledrivestorage16tb | Google-Drive-storage-16TB |
+        appsheetcore | 1010380001 |
+        appsheetstandard | appsheetenterprisestandard | 1010380002 |
+        appsheetplus | appsheetenterpriseplus | 1010380003 |
         assuredcontrols | 1010390001 |
         bce | beyondcorp | beyondcorpenterprise | 1010400001 |
         cdm | chrome | googlechromedevicemanagement | Google-Chrome-Device-Management |
         cloudidentity | identity | 1010010001 |
         cloudidentitypremium | identitypremium | 1010050001 |
         cloudsearch | 1010350001 |
+        geminibiz | 1010470003 |
+        geminient| duetai | 1010470001 |
         gsuitebasic | gafb | gafw | basic | Google-Apps-For-Business |
         gsuitebusiness | gau | gsb | unlimited | Google-Apps-Unlimited |
         gsuitebusinessarchived | gsbau | businessarchived | 1010340002 |
@@ -270,6 +278,7 @@
         gwesstaff | workspaceeducationstandardstaff | 1010310006 |
         gwesstudent | workspaceeducationstandardstudent | 1010310007 |
         gwetlu | workspaceeducationupgrade | 1010370001 |
+        gwlabs | workspacelabs | 1010470002
         meetdialing | googlemeetglobaldialing | 1010360001 |
         postini | gams | gsuitegams | gsuitepostini | gsuitemessagesecurity | Google-Apps-For-Postini |
         standard | free | Google-Apps |
@@ -278,16 +287,22 @@
         voicepremier | gvpremier | googlevoicepremier | 1010330002 |
         voicestandard | gvstandard | googlevoicestandard | 1010330004 |
         voicestarter | gvstarter | googlevoicestarter | 1010330003 |
+        wsas | plusstorage | 1010430001 |
         wsbizplus | workspacebusinessplus | 1010020025 |
         wsbizplusarchived | workspacebusinessplusarchived | 1010340003 |
         wsbizstan | workspacebusinessstandard | 1010020028 |
+        wsbizstanarchived | workspacebusinessstandardarchived | 1010340006 |
         wsbizstarter | workspacebusinessstarter | wsbizstart | 1010020027 |
+        wsbizstarterarchived | workspacebusinessstarterarchived | 1010340005 |
         wsentess | workspaceenterpriseessentials | 1010060003 |
         wsentplus | workspaceenterpriseplus | gae | gse | enterprise | gsuiteenterprise | 1010020020 |
         wsentstan | workspaceenterprisestandard | 1010020026 |
         wsentstanarchived | workspaceenterprisestandardarchived | 1010340004 |
+        wsentstarter | workspaceenterprisestarter | 1010020029 | wes |
         wsess | workspaceesentials | gsuiteessentials | essentials | d4e | driveenterprise | drive4enterprise | 1010060001 |
-        wsflw | workspacefrontline | workspacefrontlineworker | 1010020030
+        wsessplus | workspaceessentialsplus | 1010060005 |
+        wsflw | workspacefrontline | workspacefrontlineworker | 1010020030 |
+        wsflwstan | workspacefrontlinestan | workspacefrontlineworkerstan | 1010020031
 ```
 ## Items built from primitives
 ```
@@ -346,7 +361,7 @@
 <ChannelCustomerID> ::= <String>
 <ChatMember> ::= spaces/<String>/members/<String>
 <ChatMessage> ::= spaces/<String>/messages/<String>
-<ChatSpace> ::= spaces/<String> | <String>
+<ChatSpace> ::= spaces/<String> | space <String> | space spaces/<String>
 <ChatThread> ::= spaces/<String>/threads/<String>
 <ClassroomInvitationID> ::= <String>
 <ClientID> ::= <String>
@@ -421,6 +436,7 @@
 <DriveLabelFieldID> ::= <String>
 <DriveLabelSelectionID> ::= <String>
 <DriveLabelName> ::= labels/<DriveLabelID>[@latest|@published|@<Number>]
+<DriveLabelPermissionName> ::= labels/<DriveLabelID>[@latest|@published|@<Number>]/permissions/(audiences|groups|people)/<String>
 <EmailAddress> ::= <String>@<DomainName>
 <EmailItem> ::= <EmailAddress>|<UniqueID>|<String>
 <EmailReplacement> ::= <String>
@@ -456,6 +472,11 @@
 <Marker> ::= <String>
 <MatterItem> ::= <UniqueID>|<String>
 <MatterState> ::= open|closed|deleted
+<MessageContent> ::=
+        (message|textmessage|htmlmessage <String>)|
+        (file|textfile|htmlfile <FileName> [charset <Charset>])|
+        (gdoc|ghtml <UserGoogleDoc>)|
+        (gcsdoc|gcshtml <StorageBucketObjectName>)
 <MessageID> ::= <String>
 <Namespace> ::= <String>
 <NotesName> ::= notes/<String>
@@ -529,7 +550,7 @@
 <ServiceAccountDisplayName> ::= <String>
         Maximum of 100 characters
 <ServiceAccountDescrition> ::= <String>
-       Maximumof 256 chcracters
+       Maximum of 256 chcracters
 <ServiceAccountEmail> ::= <ServiceAccountName>@<ProjectID>.iam.gserviceaccount.com
 <ServiceAccountUniqueID> ::= <Number>
 <ServiceAccountKey> ::= <String>
@@ -584,8 +605,10 @@
         (tdlocale <Locale>)|
         (tdnobrowser [<Boolean>])|
         (tdnoemail [<Boolean>])|
+        (tdnoescapechar [<Boolean>])|
         (tdparent (id:<DriveFolderID>)|<DriveFolderName>)|
-        (tdshare <EmailAddress> commenter|reader|writer)|
+        (tdretaintitle [<Boolean>])|
+        (tdshare <EmailAddress> commenter|reader|writer)*|
         (tdsheet (id:<Number>)|<String>)|
         (tdsheettimestamp [<Boolean>] [tdsheettimeformat <String>])
         (tdsheettitle <String>)|

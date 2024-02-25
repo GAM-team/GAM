@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.70.05
+
+Added commands to create|delete|display Drive Label permissions.
+
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Labels
+
 ### 6.70.04
 
 Added option `showvalidcolumn` to `gam print users` that can be used to identify whether

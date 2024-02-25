@@ -2,6 +2,12 @@
 
 Merged GAM-Team version
 
+6.70.05
+
+Added commands to create|delete|display Drive Label permissions.
+
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Labels
+
 6.70.04
 
 Added option `showvalidcolumn` to `gam print users` that can be used to identify whether

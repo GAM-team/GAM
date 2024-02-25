@@ -61177,7 +61177,7 @@ def doPrintShowDriveFileACLs():
   printShowDriveFileACLs([_getAdminEmail()], True)
 
 DRIVELABELS_PROJECTION_CHOICE_MAP = {'basic': 'LABEL_VIEW_BASIC', 'full': 'LABEL_VIEW_FULL'}
-DRIVELABELS_MINIMUM_ROLE_MAP = {
+DRIVELABELS_PERMISSION_ROLE_MAP = {
   'applier': 'APPLIER',
   'editor': 'EDITOR',
   'organizer': 'ORGANIZER',
@@ -61196,7 +61196,7 @@ def _getDisplayDriveLabelsParameters(myarg, parameters):
   elif myarg == 'publishedonly':
     parameters['publishedOnly'] = getBoolean()
   elif myarg == 'minimumrole':
-    parameters['minimumRole'] = getChoice(DRIVELABELS_MINIMUM_ROLE_MAP, mapChoice=True)
+    parameters['minimumRole'] = getChoice(DRIVELABELS_PERMISSION_ROLE_MAP, mapChoice=True)
   else:
     return False
   return True
@@ -61214,6 +61214,22 @@ def normalizeDriveLabelName(driveLabelName):
     return driveLabelName
   return f'labels/{driveLabelName}'
 
+def validateDriveLabelName(name, kvList, j, jcount, permName=False):
+  name = normalizeDriveLabelName(name)
+# Label name
+  if not permName:
+    mg = re.match(r'^(labels/[^/]+)$', name)
+    if not mg:
+      entityActionNotPerformedWarning(kvList, 'Expected labels/<String>', j, jcount)
+      return None
+    return name
+# Label permission name
+  mg = re.match(r'^(labels/[^/]+)/permissions/(?:audiences|groups|people)/.+$', name)
+  if not mg:
+    entityActionNotPerformedWarning(kvList, 'Expected labels/<String>/permissions/(audiences|groups|people)/<String>', j, jcount)
+    return (None, None)
+  return (name, mg.group(1))
+
 def _showDriveLabel(label, j, jcount, FJQC):
   if FJQC.formatJSON:
     printLine(json.dumps(cleanJSON(label, timeObjects=DRIVELABELS_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
@@ -61227,7 +61243,7 @@ def _showDriveLabel(label, j, jcount, FJQC):
 #	[[basic|full] [languagecode <BCP47LanguageCode>]
 #	[formatjson] [adminaccess|asadmin]
 def infoDriveLabels(users, useAdminAccess=False):
-  driveLabelNameEntity = getUserObjectEntity(Cmd.OB_DRIVE_LABEL_NAME, Ent.DRIVE_LABEL_NAME, shlexSplit=True)
+  driveLabelNameEntity = getUserObjectEntity(Cmd.OB_DRIVE_LABEL_NAME, Ent.DRIVE_LABEL, shlexSplit=True)
   FJQC = FormatJSONQuoteChar()
   parameters = {'useAdminAccess': useAdminAccess}
   while Cmd.ArgumentsRemaining():
@@ -61240,15 +61256,18 @@ def infoDriveLabels(users, useAdminAccess=False):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, drive, noteNames, jcount = _validateUserGetObjectList(user, i, count, driveLabelNameEntity,
-                                                                api=api, showAction=FJQC is None or not FJQC.formatJSON)
+    user, drive, labelNames, jcount = _validateUserGetObjectList(user, i, count, driveLabelNameEntity,
+                                                                 api=api, showAction=not FJQC.formatJSON)
     if jcount == 0:
       continue
     Ind.Increment()
     j = 0
-    for name in noteNames:
+    for name in labelNames:
       j += 1
-      name = normalizeDriveLabelName(name)
+      kvList = [Ent.USER, user, Ent.DRIVE_LABEL_NAME, name]
+      name = validateDriveLabelName(name, kvList, j, jcount, False)
+      if name is None:
+        continue
       try:
         label = callGAPI(drive.labels(), 'get',
                          bailOnInternalError=True,
@@ -61257,13 +61276,14 @@ def infoDriveLabels(users, useAdminAccess=False):
                          name=name, **parameters)
         _showDriveLabel(label, j, jcount, FJQC)
       except GAPI.notFound as e:
-        entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_LABEL_NAME, name], str(e), j, jcount)
+        entityActionFailedWarning(kvList, str(e), j, jcount)
       except (GAPI.permissionDenied, GAPI.invalidArgument, GAPI.internalError) as e:
-        entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_LABEL_NAME, name], str(e), j, jcount)
+        entityActionFailedWarning(kvList, str(e), j, jcount)
         break
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
         userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
         break
+    Ind.Decrement()
 
 def doInfoDriveLabels():
   infoDriveLabels([_getAdminEmail()], True)
@@ -61306,7 +61326,7 @@ def printShowDriveLabels(users, useAdminAccess=False):
       labels = callGAPIpages(drive.labels(), 'list', 'labels',
                              pageMessage=pageMessage,
                              throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.PERMISSION_DENIED],
-                             **parameters, fields='nextPageToken,labels', pageSize=GC.Values[GC.DRIVE_MAX_RESULTS])
+                             **parameters, fields='nextPageToken,labels', pageSize=200)
       if not csvPF:
         jcount = len(labels)
         if not FJQC.formatJSON:
@@ -61336,6 +61356,234 @@ def printShowDriveLabels(users, useAdminAccess=False):
 
 def doPrintShowDriveLabels():
   printShowDriveLabels([_getAdminEmail()], True)
+
+def _showDriveLabelPermission(labelperm, j, jcount, FJQC):
+  if FJQC.formatJSON:
+    printLine(json.dumps(cleanJSON(labelperm), ensure_ascii=False, sort_keys=True))
+    return
+  printEntity([Ent.DRIVE_LABEL_PERMISSION_NAME, f'{labelperm["name"]}'], j, jcount)
+  Ind.Increment()
+  showJSON(None, labelperm)
+  Ind.Decrement()
+
+# gam [<UserTypeEntity>] create drivelabelpermission <DriveLabelNameEntity>
+#	(user <UserItem>) | (group <GroupItem) | (audience <String>)
+#	role applier|editor|organizer|reader
+#	[nodetails|formatjson] [adminaccess|asadmin]
+def createDriveLabelPermissions(users, useAdminAccess=False):
+  driveLabelNameEntity = getUserObjectEntity(Cmd.OB_DRIVE_LABEL_NAME, Ent.DRIVE_LABEL_PERMISSION, shlexSplit=True)
+  FJQC = FormatJSONQuoteChar()
+  parameters = {'useAdminAccess': useAdminAccess}
+  body = {}
+  showDetails = True
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg in ADMIN_ACCESS_OPTIONS:
+      parameters['useAdminAccess'] = True
+    elif myarg == 'role':
+      body['role'] = getChoice(DRIVELABELS_PERMISSION_ROLE_MAP, mapChoice=True)
+    elif myarg in {'user', 'group'}:
+      email = getEmailAddress(returnUIDprefix='id:')
+      body['email'], status = convertUIDtoEmailAddressWithType(email, emailTypes=[myarg])
+      if status == 'unknown':
+        Cmd.Backup()
+        usageErrorExit(Msg.ENTITY_DOES_NOT_EXIST.format(email))
+    elif myarg == 'audience':
+      audience = getString(Cmd.OB_STRING)
+      if not audience.startswith('audiences/'):
+        audience = 'audiences/'+audience
+      body['audience'] = audience
+    elif myarg == 'nodetails':
+      showDetails = False
+    else:
+      FJQC.GetFormatJSON(myarg)
+  if 'role' not in body:
+    missingArgumentExit(f'role {"|".join(DRIVELABELS_PERMISSION_ROLE_MAP.keys())}')
+  if 'email' not in body and 'audience' not in body:
+    missingArgumentExit('(user <UserItem>) | (group <GroupItem) | (audience <String>)')
+  api = API.DRIVELABELS_ADMIN if parameters['useAdminAccess'] else API.DRIVELABELS_USER
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, drive, labelNames, jcount = _validateUserGetObjectList(user, i, count, driveLabelNameEntity,
+                                                                 api=api, showAction=not FJQC.formatJSON)
+    if jcount == 0:
+      continue
+    Ind.Increment()
+    j = 0
+    for name in labelNames:
+      j += 1
+      kvList = [Ent.USER, user, Ent.DRIVE_LABEL_NAME, name, Ent.DRIVE_LABEL_PERMISSION, None]
+      name = validateDriveLabelName(name, kvList, j, jcount, False)
+      if name is None:
+        continue
+      try:
+        labelperm = callGAPI(drive.labels().permissions(), 'create',
+                             bailOnInternalError=True,
+                             throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.PERMISSION_DENIED, GAPI.NOT_FOUND,
+                                                                         GAPI.INVALID, GAPI.INTERNAL_ERROR],
+                             parent=name, body=body, **parameters)
+        kvList = [Ent.USER, user, Ent.DRIVE_LABEL_PERMISSION, labelperm['name']]
+        if not FJQC.formatJSON:
+          entityActionPerformed(kvList, j, jcount)
+        if showDetails:
+          Ind.Increment()
+          _showDriveLabelPermission(labelperm, j, jcount, FJQC)
+          Ind.Decrement()
+      except (GAPI.permissionDenied, GAPI.notFound, GAPI.invalid, GAPI.internalError)  as e:
+        entityActionFailedWarning(kvList, str(e), j, jcount)
+      except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
+        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        break
+    Ind.Decrement()
+
+def doCreateDriveLabelPermissions():
+  createDriveLabelPermissions([_getAdminEmail()], True)
+
+# gam [<UserTypeEntity>] delete drivelabelpermission <DriveLabelNameEntity>
+#	(user <UserItem>) | (group <GroupItem) | (audience <String>)
+#	[adminaccess|asadmin]
+# gam [<UserTypeEntity>] remove drivelabelpermission <DriveLabelPermissionNameEntity>
+#	[adminaccess|asadmin]
+def deleteDriveLabelPermissions(users, useAdminAccess=False):
+  doDelete = Act.Get() == Act.DELETE
+  if doDelete:
+    driveLabelNameEntity = getUserObjectEntity(Cmd.OB_DRIVE_LABEL_NAME, Ent.DRIVE_LABEL, shlexSplit=True)
+  else:
+    driveLabelNameEntity = getUserObjectEntity(Cmd.OB_DRIVE_LABEL_PERMISSION_NAME, Ent.DRIVE_LABEL_PERMISSION, shlexSplit=True)
+  parameters = {'useAdminAccess': useAdminAccess, 'requests': [None]}
+  labelperm = ''
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg in ADMIN_ACCESS_OPTIONS:
+      parameters['useAdminAccess'] = True
+    elif doDelete and myarg in {'user', 'group'}:
+      labelperm = ['people/', 'groups/'][myarg == 'group']+convertEmailAddressToUID(getEmailAddress(), cd=None, emailType=myarg, savedLocation=None)
+    elif doDelete and myarg == 'audience':
+      audience = getString(Cmd.OB_STRING)
+      if not audience.startswith('audiences/'):
+        audience = 'audiences/'+audience
+      labelperm = audience
+    else:
+      unknownArgumentExit()
+  if doDelete and not labelperm:
+    missingArgumentExit('(user <UserItem>) | (group <GroupItem) | (audience <String>)')
+  api = API.DRIVELABELS_ADMIN if parameters['useAdminAccess'] else API.DRIVELABELS_USER
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, drive, labelPermNames, jcount = _validateUserGetObjectList(user, i, count, driveLabelNameEntity,
+                                                                     api=api, showAction=True)
+    if jcount == 0:
+      continue
+    Ind.Increment()
+    j = 0
+    for name in labelPermNames:
+      j += 1
+      kvList = [Ent.USER, user, Ent.DRIVE_LABEL_PERMISSION_NAME, name]
+      if doDelete:
+        parent = validateDriveLabelName(name, kvList, j, jcount, False)
+        if parent is None:
+          continue
+        name = parent+'/permissions/'+labelperm
+      else:
+        name, parent = validateDriveLabelName(name, kvList, j, jcount, True)
+        if name is None:
+          continue
+      kvList[-1] = name
+      parameters['requests'][0] = {'name': name}
+      try:
+        callGAPI(drive.labels().permissions(), 'batchDelete',
+                 throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.PERMISSION_DENIED, GAPI.INVALID, GAPI.NOT_FOUND],
+                 parent=parent, body=parameters)
+        entityActionPerformed(kvList, j, jcount)
+      except (GAPI.permissionDenied, GAPI.invalid, GAPI.notFound) as e:
+        entityActionFailedWarning(kvList, str(e), j, jcount)
+      except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
+        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        break
+    Ind.Decrement()
+
+def doDeleteDriveLabelPermissions():
+  deleteDriveLabelPermissions([_getAdminEmail()], True)
+
+# gam [<UserTypeEntity>] print drivelabelpermissions <DriveLabelNameEntity> [todrive <ToDriveAttribute>*]
+#	[formatjson [quotechar <Character>]] [adminaccess|asadmin]
+# gam [<UserTypeEntity>] show drivelabelpermissions <DriveLabelNameEntity>
+#	[formatjson] [adminaccess|asadmin]
+def printShowDriveLabelPermissions(users, useAdminAccess=False):
+  csvPF = CSVPrintFile(['User', 'name', 'email', 'role', 'person', 'group', 'audience'], 'sortall') if Act.csvFormat() else None
+  driveLabelNameEntity = getUserObjectEntity(Cmd.OB_DRIVE_LABEL_NAME, Ent.DRIVE_LABEL_PERMISSION, shlexSplit=True)
+  FJQC = FormatJSONQuoteChar(csvPF)
+  parameters = {'useAdminAccess': useAdminAccess}
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif myarg in ADMIN_ACCESS_OPTIONS:
+      parameters['useAdminAccess'] = True
+    else:
+      FJQC.GetFormatJSONQuoteChar(myarg, True)
+  if csvPF and FJQC.formatJSON:
+    csvPF.SetJSONTitles(['User', 'name', 'JSON'])
+  api = API.DRIVELABELS_ADMIN if parameters['useAdminAccess'] else API.DRIVELABELS_USER
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, drive, labelNames, jcount = _validateUserGetObjectList(user, i, count, driveLabelNameEntity,
+                                                                 api=api, showAction=FJQC is None or not FJQC.formatJSON)
+    if jcount == 0:
+      continue
+    Ind.Increment()
+    j = 0
+    for name in labelNames:
+      j += 1
+      kvList = [Ent.USER, user, Ent.DRIVE_LABEL_NAME, name, Ent.DRIVE_LABEL_PERMISSION, None]
+      name = validateDriveLabelName(name, kvList, j, jcount, False)
+      if name is None:
+        continue
+      kvList = [Ent.USER, user, Ent.DRIVE_LABEL_NAME, name]
+      if csvPF:
+        printGettingAllEntityItemsForWhom(Ent.DRIVE_LABEL_PERMISSION, name, j, jcount)
+        pageMessage = getPageMessageForWhom()
+      else:
+        pageMessage = None
+      try:
+        labelperms = callGAPIpages(drive.labels().permissions(), 'list', 'labelPermissions',
+                                   pageMessage=pageMessage,
+                                   throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.PERMISSION_DENIED, GAPI.NOT_FOUND],
+                                   parent=name, **parameters, fields='nextPageToken,labelPermissions', pageSize=200)
+        if not csvPF:
+          jcount = len(labelperms)
+          if not FJQC.formatJSON:
+            entityPerformActionNumItems(kvList, jcount, Ent.DRIVE_LABEL_PERMISSION, i, count)
+          Ind.Increment()
+          j = 0
+          for labelperm in labelperms:
+            j += 1
+            _showDriveLabelPermission(labelperm, j, jcount, FJQC)
+          Ind.Decrement()
+        else:
+          for labelperm in labelperms:
+            row = flattenJSON(labelperm, flattened={'User': user})
+            if not FJQC.formatJSON:
+              csvPF.WriteRowTitles(row)
+            elif csvPF.CheckRowTitles(row):
+              row = {'User': user, 'name': labelperm['name']}
+              row['JSON'] = json.dumps(cleanJSON(labelperm),
+                                       ensure_ascii=False, sort_keys=True)
+              csvPF.WriteRowNoFilter(row)
+      except (GAPI.permissionDenied, GAPI.notFound) as e:
+        entityActionFailedWarning(kvList, str(e), j, jcount)
+      except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
+        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        break
+    Ind.Decrement()
+  if csvPF:
+    csvPF.writeCSVfile('Drive Label Permissions')
+
+def doPrintShowDriveLabelPermissions():
+  printShowDriveLabelPermissions([_getAdminEmail()], True)
 
 DRIVELABEL_FIELD_TYPE_MAP = {
   'text': 'setTextValues',
@@ -61440,6 +61688,7 @@ def processFileDriveLabels(users):
             entityActionFailedWarning(kvList, str(e), j, jcount)
             break
           except (GAPI.notFound, GAPI.forbidden, GAPI.internalError,
+                  GAPI.fileNeverWritable, GAPI.applyLabelForbidden,
                   GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.invalidInput, GAPI.badRequest,
                   GAPI.labelMutationUnknownField, GAPI.labelMutationIllegalSelection, GAPI.labelMutationForbidden,
                   GAPI.labelMultipleValuesForSingularField) as e:
@@ -71743,6 +71992,7 @@ MAIN_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_DOMAIN:		doCreateDomain,
   Cmd.ARG_DOMAINALIAS:		doCreateDomainAlias,
   Cmd.ARG_DRIVEFILEACL:		doCreateDriveFileACL,
+  Cmd.ARG_DRIVELABELPERMISSION:	doCreateDriveLabelPermissions,
   Cmd.ARG_FEATURE:		doCreateFeature,
   Cmd.ARG_GCPSERVICEACCOUNT:	doCreateGCPServiceAccount,
   Cmd.ARG_GROUP:		doCreateGroup,
@@ -71855,6 +72105,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_DOMAINALIAS:	doDeleteDomainAlias,
       Cmd.ARG_DOMAINCONTACT:	doDeleteDomainContacts,
       Cmd.ARG_DRIVEFILEACL:	doDeleteDriveFileACLs,
+      Cmd.ARG_DRIVELABELPERMISSION:	doDeleteDriveLabelPermissions,
       Cmd.ARG_FEATURE:		doDeleteFeature,
       Cmd.ARG_GROUP:		doDeleteGroups,
       Cmd.ARG_GUARDIAN:		doDeleteGuardian,
@@ -72032,6 +72283,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_DOMAINCONTACT:	doPrintShowDomainContacts,
       Cmd.ARG_DRIVEFILEACL:	doPrintShowDriveFileACLs,
       Cmd.ARG_DRIVELABEL:	doPrintShowDriveLabels,
+      Cmd.ARG_DRIVELABELPERMISSION:	doPrintShowDriveLabelPermissions,
       Cmd.ARG_FEATURE:		doPrintShowFeatures,
       Cmd.ARG_GAL:		doPrintShowGAL,
       Cmd.ARG_GROUP:		doPrintGroups,
@@ -72078,6 +72330,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
   'remove':
     (Act.REMOVE,
      {Cmd.ARG_ALIAS:		doRemoveAliases,
+      Cmd.ARG_DRIVELABELPERMISSION:	doDeleteDriveLabelPermissions,
      }
     ),
   'reopen':
@@ -72145,6 +72398,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_DOMAINCONTACT:	doPrintShowDomainContacts,
       Cmd.ARG_DRIVEFILEACL:	doPrintShowDriveFileACLs,
       Cmd.ARG_DRIVELABEL:	doPrintShowDriveLabels,
+      Cmd.ARG_DRIVELABELPERMISSION:	doPrintShowDriveLabelPermissions,
       Cmd.ARG_FEATURE:		doPrintShowFeatures,
       Cmd.ARG_GAL:		doPrintShowGAL,
       Cmd.ARG_GROUPMEMBERS:	doShowGroupMembers,
@@ -72330,6 +72584,7 @@ MAIN_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_DOMAINPROFILES:	Cmd.ARG_PEOPLEPROFILE,
   Cmd.ARG_DRIVEFILEACLS:	Cmd.ARG_DRIVEFILEACL,
   Cmd.ARG_DRIVELABELS:		Cmd.ARG_DRIVELABEL,
+  Cmd.ARG_DRIVELABELPERMISSIONS:	Cmd.ARG_DRIVELABELPERMISSION,
   Cmd.ARG_EXPORT:		Cmd.ARG_VAULTEXPORT,
   Cmd.ARG_EXPORTS:		Cmd.ARG_VAULTEXPORT,
   Cmd.ARG_FEATURES:		Cmd.ARG_FEATURE,
@@ -72742,6 +72997,7 @@ USER_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_DRIVEFILEACL:		createDriveFileACL,
   Cmd.ARG_DRIVEFILESHORTCUT:	createDriveFileShortcut,
   Cmd.ARG_DRIVEFOLDERPATH:	createDriveFolderPath,
+  Cmd.ARG_DRIVELABELPERMISSION:	createDriveLabelPermissions,
   Cmd.ARG_EVENT:		createCalendarEvent,
   Cmd.ARG_FILTER:		createFilter,
   Cmd.ARG_FOCUSTIME:		createFocusTime,
@@ -72853,6 +73109,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_DELEGATE:		processDelegates,
       Cmd.ARG_DRIVEFILE:	deleteDriveFile,
       Cmd.ARG_DRIVEFILEACL:	deleteDriveFileACLs,
+      Cmd.ARG_DRIVELABELPERMISSION:	deleteDriveLabelPermissions,
       Cmd.ARG_EMPTYDRIVEFOLDERS:	deleteEmptyDriveFolders,
       Cmd.ARG_EVENT:		deleteCalendarEvents,
       Cmd.ARG_FILEREVISION:	deleteFileRevisions,
@@ -73027,6 +73284,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_DRIVEACTIVITY:	printDriveActivity,
       Cmd.ARG_DRIVEFILEACL:	printShowDriveFileACLs,
       Cmd.ARG_DRIVELABEL:	printShowDriveLabels,
+      Cmd.ARG_DRIVELABELPERMISSION:	printShowDriveLabelPermissions,
       Cmd.ARG_DRIVESETTINGS:	printShowDriveSettings,
       Cmd.ARG_EMPTYDRIVEFOLDERS:	printEmptyDriveFolders,
       Cmd.ARG_EVENT:		printShowCalendarEvents,
@@ -73091,6 +73349,7 @@ USER_COMMANDS_WITH_OBJECTS = {
     (Act.REMOVE,
      {Cmd.ARG_CALENDAR:		removeCalendars,
       Cmd.ARG_CHATMEMBER:	deleteUpdateChatMember,
+      Cmd.ARG_DRIVELABELPERMISSION:	deleteDriveLabelPermissions,
      }
     ),
   'replacedomain':
@@ -73126,6 +73385,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_DRIVEACTIVITY:	printDriveActivity,
       Cmd.ARG_DRIVEFILEACL:	printShowDriveFileACLs,
       Cmd.ARG_DRIVELABEL:	printShowDriveLabels,
+      Cmd.ARG_DRIVELABELPERMISSION:	printShowDriveLabelPermissions,
       Cmd.ARG_DRIVESETTINGS:	printShowDriveSettings,
       Cmd.ARG_EVENT:		printShowCalendarEvents,
       Cmd.ARG_FILECOUNT:	printShowFileCounts,
@@ -73340,6 +73600,7 @@ USER_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_FILEDRIVELABELS:	Cmd.ARG_FILEDRIVELABEL,
   Cmd.ARG_DRIVEFILESHORTCUTS:	Cmd.ARG_DRIVEFILESHORTCUT,
   Cmd.ARG_DRIVELABELS:		Cmd.ARG_DRIVELABEL,
+  Cmd.ARG_DRIVELABELPERMISSIONS:	Cmd.ARG_DRIVELABELPERMISSION,
   Cmd.ARG_EVENTS:		Cmd.ARG_EVENT,
   Cmd.ARG_FILECOUNTS:		Cmd.ARG_FILECOUNT,
   Cmd.ARG_FILEPATHS:		Cmd.ARG_FILEPATH,

@@ -262,6 +262,8 @@ Data fields identified in a `csvkmd` argument.
         <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 <DriveLabelNameEntity> ::=
         <DriveLabelNameList> | <FileSelector> | <CSVFileSelector> | <CSVDataSelector>
+<DriveLabelPermissionNameEntity> ::=
+        <DriveLabelPermissionNameList> | <FileSelector> | <CSVFileSelector> | <CSVDataSelector>
 <EmailAddressEntity> ::=
         <EmailAddressList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 <FilterIDEntity> ::=
