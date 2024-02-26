@@ -327,16 +327,16 @@ gam redirect csv ./allUsersFiles.csv multiprocess all users print filelist field
 
 * Delete ACLs with olddomain.com
 ```
-gam redirect stdout ./DeleteOldDomainACLs.csv multiprocess redirect stderr stdout csv ./allUsersFiles.csv gam user "~Owner" delete drivefileacl "~id" "id:~~permission.id~~"
+gam redirect stdout ./DeleteOldDomainACLs.txt multiprocess redirect stderr stdout csv ./allUsersFiles.csv gam user "~Owner" delete drivefileacl "~id" "id:~~permission.id~~"
 ```
 
 * Add user/group ACLs replacing olddomain.com with newdomain.com
 ```
-gam config csv_input_row_filter "permission.type:regex:user|group" redirect stdout ./AddNewDomainACLsUserGroupShares.csv multiprocess redirect stderr stdout csv ./allUsersFiles.csv gam user "~Owner" create drivefileacl "~id" "~permission.type" "~permission.emailAddress" role "~permission.role" mappermissionsdomain olddomain.com newdomain.com
+gam config csv_input_row_filter "permission.type:regex:user|group" redirect stdout ./AddNewDomainACLsUserGroupShares.txt multiprocess redirect stderr stdout csv ./allUsersFiles.csv gam user "~Owner" create drivefileacl "~id" "~permission.type" "~permission.emailAddress" role "~permission.role" mappermissionsdomain olddomain.com newdomain.com
 ```
 
 * Add domain ACLs replacing olddomain.com with newdomain.com
 ```
-gam config csv_input_row_filter "permission.type:regex:domain" redirect stdout ./AddNewDomainACLsDomainShares.csv multiprocess redirect stderr stdout csv ./allUsersFiles.csv gam user "~Owner" create drivefileacl "~id" "~permission.type" "~permission.domain" role "~permission.role" allowfilediscovery "~permission.allowFileDiscovery" mappermissionsdomain olddomain.com newdomain.com
+gam config csv_input_row_filter "permission.type:regex:domain" redirect stdout ./AddNewDomainACLsDomainShares.txt multiprocess redirect stderr stdout csv ./allUsersFiles.csv gam user "~Owner" create drivefileacl "~id" "~permission.type" "~permission.domain" role "~permission.role" allowfilediscovery "~permission.allowFileDiscovery" mappermissionsdomain olddomain.com newdomain.com
 ```
     

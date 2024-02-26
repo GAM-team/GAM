@@ -10303,11 +10303,7 @@ def getOAuthClientIDAndSecret():
 
 def getScopesFromUser(scopesList, clientAccess, currentScopes=None):
   OAUTH2_CMDS = ['s', 'u', 'e', 'c']
-  oauth2_menu = '''
-Select the authorized scopes by entering a number.
-Append an 'r' to grant read-only access or an 'a' to grant action-only access.
-
-'''
+  oauth2_menu = ''
   numScopes = len(scopesList)
   for a_scope in scopesList:
     oauth2_menu += f"[%%s] %2d)  {a_scope['name']}"
@@ -10315,10 +10311,18 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
       oauth2_menu += f' (supports {" and ".join(a_scope["subscopes"])})'
     oauth2_menu += '\n'
   oauth2_menu += '''
-     s)  Select all scopes
-     u)  Unselect all scopes
-     e)  Exit without changes
-     c)  Continue to authorization
+Select an unselected scope [ ] by entering a number; yields [*]
+For scopes that support readonly, enter a number and an 'r' to grant read-only access; yields [R]
+For scopes that support action, enter a number and an 'a' to grant action-only access; yields [A]
+Clear read-only access [R] or action-only access [A] from a scope by entering a number; yields [*]
+Unselect a selected scope [*] by entering a number; yields [ ]
+Select all default scopes by entering an 's'; yields [*] for default scopes, [ ] for others
+Unselect all scopes by entering a 'u'; yields [ ] for all scopes
+Exit without changes/authorization by entering an 'e'
+Continue to authorization by entering a 'c'
+'''
+  if clientAccess:
+    oauth2_menu += '''  Note, if all scopes are selected, Google will probably generate an authorization error
 '''
   menu = oauth2_menu % tuple(range(numScopes))
   selectedScopes = ['*'] * numScopes
@@ -10368,7 +10372,7 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
     for a_scope in scopesList:
       selectedScopes[i] = ' ' if a_scope.get('offByDefault', False) else '*'
       i += 1
-  prompt = f'Please enter 0-{numScopes-1}[a|r] or {"|".join(OAUTH2_CMDS)}: '
+  prompt = f'\nPlease enter 0-{numScopes-1}[a|r] or {"|".join(OAUTH2_CMDS)}: '
   while True:
     os.system(['clear', 'cls'][sys.platform.startswith('win')])
     sys.stdout.write(menu % tuple(selectedScopes))
@@ -10403,8 +10407,10 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
           break
         if isinstance(selection, str) and selection in OAUTH2_CMDS:
           if selection == 's':
-            for i in range(numScopes):
-              selectedScopes[i] = '*'
+            i = 0
+            for a_scope in scopesList:
+              selectedScopes[i] = ' ' if a_scope.get('offByDefault', False) else '*'
+              i += 1
           elif selection == 'u':
             for i in range(numScopes):
               selectedScopes[i] = ' '
