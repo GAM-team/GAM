@@ -404,60 +404,70 @@ writes the credentials into the file oauth2.txt.
 ```
 gam oauth create
 
-Select the authorized scopes by entering a number.
-Append an 'r' to grant read-only access or an 'a' to grant action-only access.
-
 [*]  0)  Calendar API (supports readonly)
 [*]  1)  Chrome Browser Cloud Management API (supports readonly)
-[*]  2)  Chrome Management API - Telemetry read only
-[*]  3)  Chrome Management API - read only
-[*]  4)  Chrome Policy API (supports readonly)
-[*]  5)  Chrome Printer Management API (supports readonly)
-[*]  6)  Chrome Version History API
-[*]  7)  Classroom API - Course Announcements (supports readonly)
-[*]  8)  Classroom API - Course Topics (supports readonly)
-[*]  9)  Classroom API - Course Work/Materials (supports readonly)
-[*] 10)  Classroom API - Course Work/Submissions (supports readonly)
-[*] 11)  Classroom API - Courses (supports readonly)
-[*] 12)  Classroom API - Profile Emails
-[*] 13)  Classroom API - Profile Photos
-[*] 14)  Classroom API - Rosters (supports readonly)
-[*] 15)  Classroom API - Student Guardians (supports readonly)
-[*] 16)  Cloud Identity Groups API (supports readonly)
-[*] 17)  Cloud Storage (Vault Export - read only)
-[*] 18)  Contact Delegation API (supports readonly)
-[*] 19)  Contacts API - Domain Shared and Users and GAL
-[*] 20)  Data Transfer API (supports readonly)
-[*] 21)  Directory API - Chrome OS Devices (supports readonly)
-[*] 22)  Directory API - Customers (supports readonly)
-[*] 23)  Directory API - Domains (supports readonly)
-[*] 24)  Directory API - Groups (supports readonly)
-[*] 25)  Directory API - Mobile Devices Directory (supports readonly and action)
-[*] 26)  Directory API - Organizational Units (supports readonly)
-[*] 27)  Directory API - Resource Calendars (supports readonly)
-[*] 28)  Directory API - Roles (supports readonly)
-[*] 29)  Directory API - User Schemas (supports readonly)
-[*] 30)  Directory API - User Security
-[*] 31)  Directory API - Users (supports readonly)
-[*] 32)  Email Audit API
-[*] 33)  Groups Migration API
-[*] 34)  Groups Settings API
-[*] 35)  License Manager API
-[*] 36)  People API (supports readonly)
-[*] 37)  People Directory API - read only
-[ ] 38)  Pub / Sub API
-[*] 39)  Reports API - Audit Reports
-[*] 40)  Reports API - Usage Reports
-[ ] 41)  Reseller API
-[*] 42)  Site Verification API
-[*] 43)  Sites API
-[*] 44)  Vault API (supports readonly)
+[*]  2)  Chrome Management API - AppDetails read only
+[*]  3)  Chrome Management API - Telemetry read only
+[*]  4)  Chrome Management API - read only
+[*]  5)  Chrome Policy API (supports readonly)
+[*]  6)  Chrome Printer Management API (supports readonly)
+[*]  7)  Chrome Version History API
+[*]  8)  Classroom API - Course Announcements (supports readonly)
+[*]  9)  Classroom API - Course Topics (supports readonly)
+[*] 10)  Classroom API - Course Work/Materials (supports readonly)
+[*] 11)  Classroom API - Course Work/Submissions (supports readonly)
+[*] 12)  Classroom API - Courses (supports readonly)
+[*] 13)  Classroom API - Profile Emails
+[*] 14)  Classroom API - Profile Photos
+[*] 15)  Classroom API - Rosters (supports readonly)
+[*] 16)  Classroom API - Student Guardians (supports readonly)
+[ ] 17)  Cloud Channel API (supports readonly)
+[*] 18)  Cloud Identity - Inbound SSO Settings (supports readonly)
+[*] 19)  Cloud Identity Groups API (supports readonly)
+[*] 20)  Cloud Identity OrgUnits API (supports readonly)
+[*] 21)  Cloud Identity User Invitations API (supports readonly)
+[ ] 22)  Cloud Storage API (Read Only, Vault/Takeout Download, Cloud Storage)
+[ ] 23)  Cloud Storage API (Read/Write, Vault/Takeout Copy/Download, Cloud Storage)
+[*] 24)  Contact Delegation API (supports readonly)
+[*] 25)  Contacts API - Domain Shared Contacts and GAL
+[*] 26)  Data Transfer API (supports readonly)
+[*] 27)  Directory API - Chrome OS Devices (supports readonly)
+[*] 28)  Directory API - Customers (supports readonly)
+[*] 29)  Directory API - Domains (supports readonly)
+[*] 30)  Directory API - Groups (supports readonly)
+[*] 31)  Directory API - Mobile Devices Directory (supports readonly and action)
+[*] 32)  Directory API - Organizational Units (supports readonly)
+[*] 33)  Directory API - Resource Calendars (supports readonly)
+[*] 34)  Directory API - Roles (supports readonly)
+[*] 35)  Directory API - User Schemas (supports readonly)
+[*] 36)  Directory API - User Security
+[*] 37)  Directory API - Users (supports readonly)
+[ ] 38)  Email Audit API
+[*] 39)  Groups Migration API
+[*] 40)  Groups Settings API
+[*] 41)  License Manager API
+[*] 42)  People API (supports readonly)
+[*] 43)  People Directory API - read only
+[ ] 44)  Pub / Sub API
+[*] 45)  Reports API - Audit Reports
+[*] 46)  Reports API - Usage Reports
+[ ] 47)  Reseller API
+[*] 48)  Site Verification API
+[ ] 49)  Sites API
+[*] 50)  Vault API (supports readonly)
 
-     s)  Select all scopes
-     u)  Unselect all scopes
-     e)  Exit without changes
-     c)  Continue to authorization
-Please enter 0-42[a|r] or s|u|e|c: 
+Select an unselected scope [ ] by entering a number; yields [*]
+For scopes that support readonly, enter a number and an 'r' to grant read-only access; yields [R]
+For scopes that support action, enter a number and an 'a' to grant action-only access; yields [A]
+Clear read-only access [R] or action-only access [A] from a scope by entering a number; yields [*]
+Unselect a selected scope [*] by entering a number; yields [ ]
+Select all default scopes by entering an 's'; yields [*] for default scopes, [ ] for others
+Unselect all scopes by entering a 'u'; yields [ ] for all scopes
+Exit without changes/authorization by entering an 'e'
+Continue to authorization by entering a 'c'
+  Note, if all scopes are selected, Google will probably generate an authorization error
+
+Please enter 0-50[a|r] or s|u|e|c: c
 
 Enter your Google Workspace admin email address? admin@domain.com
 
@@ -487,60 +497,70 @@ writes the credentials into the file `oauth2.txt`.
 ```
 gam oauth update
 
-Select the authorized scopes by entering a number.
-Append an 'r' to grant read-only access or an 'a' to grant action-only access.
-
 [*]  0)  Calendar API (supports readonly)
 [*]  1)  Chrome Browser Cloud Management API (supports readonly)
-[*]  2)  Chrome Management API - Telemetry read only
-[*]  3)  Chrome Management API - read only
-[*]  4)  Chrome Policy API (supports readonly)
-[*]  5)  Chrome Printer Management API (supports readonly)
-[*]  6)  Chrome Version History API
-[*]  7)  Classroom API - Course Announcements (supports readonly)
-[*]  8)  Classroom API - Course Topics (supports readonly)
-[*]  9)  Classroom API - Course Work/Materials (supports readonly)
-[*] 10)  Classroom API - Course Work/Submissions (supports readonly)
-[*] 11)  Classroom API - Courses (supports readonly)
-[*] 12)  Classroom API - Profile Emails
-[*] 13)  Classroom API - Profile Photos
-[*] 14)  Classroom API - Rosters (supports readonly)
-[*] 15)  Classroom API - Student Guardians (supports readonly)
-[*] 16)  Cloud Identity Groups API (supports readonly)
-[*] 17)  Cloud Storage (Vault Export - read only)
-[*] 18)  Contact Delegation API (supports readonly)
-[*] 19)  Contacts API - Domain Shared and Users and GAL
-[*] 20)  Data Transfer API (supports readonly)
-[*] 21)  Directory API - Chrome OS Devices (supports readonly)
-[*] 22)  Directory API - Customers (supports readonly)
-[*] 23)  Directory API - Domains (supports readonly)
-[*] 24)  Directory API - Groups (supports readonly)
-[*] 25)  Directory API - Mobile Devices Directory (supports readonly and action)
-[*] 26)  Directory API - Organizational Units (supports readonly)
-[*] 27)  Directory API - Resource Calendars (supports readonly)
-[*] 28)  Directory API - Roles (supports readonly)
-[*] 29)  Directory API - User Schemas (supports readonly)
-[*] 30)  Directory API - User Security
-[*] 31)  Directory API - Users (supports readonly)
-[*] 32)  Email Audit API
-[*] 33)  Groups Migration API
-[*] 34)  Groups Settings API
-[*] 35)  License Manager API
-[*] 36)  People API (supports readonly)
-[*] 37)  People Directory API - read only
-[ ] 38)  Pub / Sub API
-[*] 39)  Reports API - Audit Reports
-[*] 40)  Reports API - Usage Reports
-[ ] 41)  Reseller API
-[*] 42)  Site Verification API
-[*] 43)  Sites API
-[*] 44)  Vault API (supports readonly)
+[*]  2)  Chrome Management API - AppDetails read only
+[*]  3)  Chrome Management API - Telemetry read only
+[*]  4)  Chrome Management API - read only
+[*]  5)  Chrome Policy API (supports readonly)
+[*]  6)  Chrome Printer Management API (supports readonly)
+[*]  7)  Chrome Version History API
+[*]  8)  Classroom API - Course Announcements (supports readonly)
+[*]  9)  Classroom API - Course Topics (supports readonly)
+[*] 10)  Classroom API - Course Work/Materials (supports readonly)
+[*] 11)  Classroom API - Course Work/Submissions (supports readonly)
+[*] 12)  Classroom API - Courses (supports readonly)
+[*] 13)  Classroom API - Profile Emails
+[*] 14)  Classroom API - Profile Photos
+[*] 15)  Classroom API - Rosters (supports readonly)
+[*] 16)  Classroom API - Student Guardians (supports readonly)
+[ ] 17)  Cloud Channel API (supports readonly)
+[*] 18)  Cloud Identity - Inbound SSO Settings (supports readonly)
+[*] 19)  Cloud Identity Groups API (supports readonly)
+[*] 20)  Cloud Identity OrgUnits API (supports readonly)
+[*] 21)  Cloud Identity User Invitations API (supports readonly)
+[ ] 22)  Cloud Storage API (Read Only, Vault/Takeout Download, Cloud Storage)
+[ ] 23)  Cloud Storage API (Read/Write, Vault/Takeout Copy/Download, Cloud Storage)
+[*] 24)  Contact Delegation API (supports readonly)
+[*] 25)  Contacts API - Domain Shared Contacts and GAL
+[*] 26)  Data Transfer API (supports readonly)
+[*] 27)  Directory API - Chrome OS Devices (supports readonly)
+[*] 28)  Directory API - Customers (supports readonly)
+[*] 29)  Directory API - Domains (supports readonly)
+[*] 30)  Directory API - Groups (supports readonly)
+[*] 31)  Directory API - Mobile Devices Directory (supports readonly and action)
+[*] 32)  Directory API - Organizational Units (supports readonly)
+[*] 33)  Directory API - Resource Calendars (supports readonly)
+[*] 34)  Directory API - Roles (supports readonly)
+[*] 35)  Directory API - User Schemas (supports readonly)
+[*] 36)  Directory API - User Security
+[*] 37)  Directory API - Users (supports readonly)
+[ ] 38)  Email Audit API
+[*] 39)  Groups Migration API
+[*] 40)  Groups Settings API
+[*] 41)  License Manager API
+[*] 42)  People API (supports readonly)
+[*] 43)  People Directory API - read only
+[ ] 44)  Pub / Sub API
+[*] 45)  Reports API - Audit Reports
+[*] 46)  Reports API - Usage Reports
+[ ] 47)  Reseller API
+[*] 48)  Site Verification API
+[ ] 49)  Sites API
+[*] 50)  Vault API (supports readonly)
 
-     s)  Select all scopes
-     u)  Unselect all scopes
-     e)  Exit without changes
-     c)  Continue to authorization
-Please enter 0-42[a|r] or s|u|e|c: 
+Select an unselected scope [ ] by entering a number; yields [*]
+For scopes that support readonly, enter a number and an 'r' to grant read-only access; yields [R]
+For scopes that support action, enter a number and an 'a' to grant action-only access; yields [A]
+Clear read-only access [R] or action-only access [A] from a scope by entering a number; yields [*]
+Unselect a selected scope [*] by entering a number; yields [ ]
+Select all default scopes by entering an 's'; yields [*] for default scopes, [ ] for others
+Unselect all scopes by entering a 'u'; yields [ ] for all scopes
+Exit without changes/authorization by entering an 'e'
+Continue to authorization by entering a 'c'
+  Note, if all scopes are selected, Google will probably generate an authorization error
+
+Please enter 0-50[a|r] or s|u|e|c: c
 
 Enter your Google Workspace admin email address? admin@domain.com
 
@@ -817,24 +837,38 @@ By default, the following scopes are verified:
 ```
 https://mail.google.com/
 https://sites.google.com/feeds
-https://www.google.com/m8/feeds
+https://www.googleapis.com/auth/analytics.readonly
 https://www.googleapis.com/auth/apps.alerts
 https://www.googleapis.com/auth/calendar
+https://www.googleapis.com/auth/chat.delete
+https://www.googleapis.com/auth/chat.memberships
+https://www.googleapis.com/auth/chat.messages
+https://www.googleapis.com/auth/chat.spaces
 https://www.googleapis.com/auth/classroom.announcements
 https://www.googleapis.com/auth/classroom.coursework.students
+https://www.googleapis.com/auth/classroom.courseworkmaterials
 https://www.googleapis.com/auth/classroom.profile.emails
+https://www.googleapis.com/auth/classroom.profile.photos
 https://www.googleapis.com/auth/classroom.rosters
 https://www.googleapis.com/auth/classroom.topics
 https://www.googleapis.com/auth/cloud-identity
 https://www.googleapis.com/auth/cloud-platform
-https://www.googleapis.com/auth/cloudprint
 https://www.googleapis.com/auth/contacts
+https://www.googleapis.com/auth/contacts.other.readonly
+https://www.googleapis.com/auth/datastudio
+https://www.googleapis.com/auth/directory.readonly
+https://www.googleapis.com/auth/documents
 https://www.googleapis.com/auth/drive
 https://www.googleapis.com/auth/drive.activity
+https://www.googleapis.com/auth/drive.admin.labels
+https://www.googleapis.com/auth/drive.labels
 https://www.googleapis.com/auth/gmail.modify
 https://www.googleapis.com/auth/gmail.settings.basic
 https://www.googleapis.com/auth/gmail.settings.sharing
+https://www.googleapis.com/auth/keep
 https://www.googleapis.com/auth/spreadsheets
+https://www.googleapis.com/auth/tasks
+https://www.googleapis.com/auth/userinfo.profile
 ```
 This scope is verified when `user_service_account_access_only = true` in `gam.cfg`.
 ```

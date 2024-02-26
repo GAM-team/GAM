@@ -642,6 +642,7 @@ _SVCACCT_SCOPES = [
   {'name': 'Youtube API - read only',
    'api': YOUTUBE,
    'subscopes': [],
+   'offByDefault': True,
    'scope': 'https://www.googleapis.com/auth/youtube.readonly'},
   ]
 

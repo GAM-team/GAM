@@ -99,9 +99,6 @@ writes the credentials into the file oauth2.txt.
 ```
 admin@server:/Users/admin/bin/gamadv-xtd3$ ./gam oauth create
 
-Select the authorized scopes by entering a number.
-Append an 'r' to grant read-only access or an 'a' to grant action-only access.
-
 [*]  0)  Calendar API (supports readonly)
 [*]  1)  Chrome Browser Cloud Management API (supports readonly)
 [*]  2)  Chrome Management API - AppDetails read only
@@ -109,7 +106,7 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
 [*]  4)  Chrome Management API - read only
 [*]  5)  Chrome Policy API (supports readonly)
 [*]  6)  Chrome Printer Management API (supports readonly)
-[ ]  7)  Chrome Version History API
+[*]  7)  Chrome Version History API
 [*]  8)  Classroom API - Course Announcements (supports readonly)
 [*]  9)  Classroom API - Course Topics (supports readonly)
 [*] 10)  Classroom API - Course Work/Materials (supports readonly)
@@ -119,7 +116,7 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
 [*] 14)  Classroom API - Profile Photos
 [*] 15)  Classroom API - Rosters (supports readonly)
 [*] 16)  Classroom API - Student Guardians (supports readonly)
-[*] 17)  Cloud Channel API (supports readonly)
+[ ] 17)  Cloud Channel API (supports readonly)
 [*] 18)  Cloud Identity - Inbound SSO Settings (supports readonly)
 [*] 19)  Cloud Identity Groups API (supports readonly)
 [*] 20)  Cloud Identity OrgUnits API (supports readonly)
@@ -149,15 +146,22 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
 [ ] 44)  Pub / Sub API
 [*] 45)  Reports API - Audit Reports
 [*] 46)  Reports API - Usage Reports
-[*] 47)  Reseller API
+[ ] 47)  Reseller API
 [*] 48)  Site Verification API
 [ ] 49)  Sites API
 [*] 50)  Vault API (supports readonly)
 
-     s)  Select all scopes
-     u)  Unselect all scopes
-     e)  Exit without changes
-     c)  Continue to authorization
+Select an unselected scope [ ] by entering a number; yields [*]
+For scopes that support readonly, enter a number and an 'r' to grant read-only access; yields [R]
+For scopes that support action, enter a number and an 'a' to grant action-only access; yields [A]
+Clear read-only access [R] or action-only access [A] from a scope by entering a number; yields [*]
+Unselect a selected scope [*] by entering a number; yields [ ]
+Select all default scopes by entering an 's'; yields [*] for default scopes, [ ] for others
+Unselect all scopes by entering a 'u'; yields [ ] for all scopes
+Exit without changes/authorization by entering an 'e'
+Continue to authorization by entering a 'c'
+  Note, if all scopes are selected, Google will probably generate an authorization error
+
 Please enter 0-50[a|r] or s|u|e|c: c
 
 Enter your Google Workspace admin email address? admin@domain.com
@@ -382,9 +386,6 @@ writes the credentials into the file oauth2.txt.
 ```
 C:\GAMADV-XTD3>gam oauth create
 
-Select the authorized scopes by entering a number.
-Append an 'r' to grant read-only access or an 'a' to grant action-only access.
-
 [*]  0)  Calendar API (supports readonly)
 [*]  1)  Chrome Browser Cloud Management API (supports readonly)
 [*]  2)  Chrome Management API - AppDetails read only
@@ -392,7 +393,7 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
 [*]  4)  Chrome Management API - read only
 [*]  5)  Chrome Policy API (supports readonly)
 [*]  6)  Chrome Printer Management API (supports readonly)
-[ ]  7)  Chrome Version History API
+[*]  7)  Chrome Version History API
 [*]  8)  Classroom API - Course Announcements (supports readonly)
 [*]  9)  Classroom API - Course Topics (supports readonly)
 [*] 10)  Classroom API - Course Work/Materials (supports readonly)
@@ -402,7 +403,7 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
 [*] 14)  Classroom API - Profile Photos
 [*] 15)  Classroom API - Rosters (supports readonly)
 [*] 16)  Classroom API - Student Guardians (supports readonly)
-[*] 17)  Cloud Channel API (supports readonly)
+[ ] 17)  Cloud Channel API (supports readonly)
 [*] 18)  Cloud Identity - Inbound SSO Settings (supports readonly)
 [*] 19)  Cloud Identity Groups API (supports readonly)
 [*] 20)  Cloud Identity OrgUnits API (supports readonly)
@@ -432,15 +433,22 @@ Append an 'r' to grant read-only access or an 'a' to grant action-only access.
 [ ] 44)  Pub / Sub API
 [*] 45)  Reports API - Audit Reports
 [*] 46)  Reports API - Usage Reports
-[*] 47)  Reseller API
+[ ] 47)  Reseller API
 [*] 48)  Site Verification API
 [ ] 49)  Sites API
 [*] 50)  Vault API (supports readonly)
 
-     s)  Select all scopes
-     u)  Unselect all scopes
-     e)  Exit without changes
-     c)  Continue to authorization
+Select an unselected scope [ ] by entering a number; yields [*]
+For scopes that support readonly, enter a number and an 'r' to grant read-only access; yields [R]
+For scopes that support action, enter a number and an 'a' to grant action-only access; yields [A]
+Clear read-only access [R] or action-only access [A] from a scope by entering a number; yields [*]
+Unselect a selected scope [*] by entering a number; yields [ ]
+Select all default scopes by entering an 's'; yields [*] for default scopes, [ ] for others
+Unselect all scopes by entering a 'u'; yields [ ] for all scopes
+Exit without changes/authorization by entering an 'e'
+Continue to authorization by entering a 'c'
+  Note, if all scopes are selected, Google will probably generate an authorization error
+
 Please enter 0-50[a|r] or s|u|e|c: c
 
 Enter your Google Workspace admin email address? admin@domain.com
