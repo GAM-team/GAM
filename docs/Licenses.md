@@ -24,6 +24,7 @@
 | Cloud Identity Free | 101001 |
 | Cloud Identity Premium | 101005 |
 | Cloud Search | 101035 |
+| Education Endpoint Management | 101049 |
 | Gemini | 101047 |
 | Google Chrome Device Management | Google-Chrome-Device-Management |
 | Google Drive Storage | Google-Drive-storage |
@@ -46,6 +47,7 @@
 | Cloud Identity Free | 1010010001 | cloudidentity |
 | Cloud Identity Premium | 1010050001 | cloudidentitypremium |
 | Cloud Search | 1010350001 | cloudsearch |
+| Endpoint Education Upgrade | 1010490001 | eeu |
 | G Suite Basic | Google-Apps-For-Business | gsuitebasic |
 | G Suite Business | Google-Apps-Unlimited | gsuitebusiness |
 | G Suite Legacy | Google-Apps | standard |

@@ -14,6 +14,13 @@ See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Win
 
 Added additional error handling to Gmail Client Side Encryption commands.
 
+Added license product Education Endpoint Management
+* ProductID - 101049
+
+Added license SKU Endpoint Education Upgrade
+* ProductID - 101049
+* SKUID - 1010490001 | eeu
+
 ### 6.71.05
 
 Fixed a bug introduced in 6.71.00 that caused a trap in `gam <UserTypeEntity> print filelist`.
