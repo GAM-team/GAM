@@ -70295,7 +70295,7 @@ def processCSEKeyPair(users):
     try:
       result = callGAPI(gmail.users().settings().cse().keypairs(), function,
                         throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED, GAPI.INVALID_ARGUMENT,
-                                                               GAPI.FAILED_PRECONDITION, GAPI.ALREADY_EXISTS],
+                                                               GAPI.NOT_FOUND, GAPI.FAILED_PRECONDITION, GAPI.ALREADY_EXISTS],
                         userId='me', keyPairId=keyPairId)
       if function != 'obliterate':
         if not FJQC.formatJSON:
@@ -70304,7 +70304,7 @@ def processCSEKeyPair(users):
         _showCSEItem(result, Ent.CSE_KEYPAIR, 'keyPairId', CSE_KEYPAIR_TIME_OBJECTS, i, count, FJQC)
       else:
         entityActionPerformed(kvList, i, count)
-    except (GAPI.permissionDenied, GAPI.invalidArgument, GAPI.failedPrecondition, GAPI.alreadyExists) as e:
+    except (GAPI.permissionDenied, GAPI.invalidArgument, GAPI.notFound, GAPI.failedPrecondition, GAPI.alreadyExists) as e:
       entityActionFailedWarning(kvList, str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.badRequest):
       entityServiceNotApplicableWarning(Ent.USER, user, i, count)
