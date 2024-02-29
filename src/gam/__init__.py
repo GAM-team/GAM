@@ -3408,16 +3408,6 @@ def SetGlobalVariables():
       _printValueError(sectionName, itemName, f'"{value}"', f'{Msg.INVALID_LIST}: {filters}')
     return headerFilters
 
-  def _getCfgHeaderForce(sectionName, itemName):
-    value = GM.Globals[GM.PARSER].get(sectionName, itemName)
-    headerForce = []
-    if not value or (len(value) == 2 and _stringInQuotes(value)):
-      return headerForce
-    splitStatus, headerForce = shlexSplitListStatus(value)
-    if not splitStatus:
-      _printValueError(sectionName, itemName, f'"{value}"', f'{Msg.INVALID_LIST}: {headerForce}')
-    return headerForce
-
   def _getCfgHeaderFilterFromForce(sectionName, itemName):
     headerFilters = []
     for filterStr in GC.Values[itemName]:
@@ -3612,6 +3602,16 @@ def SetGlobalVariables():
       return value
     _printValueError(sectionName, itemName, f'"{value}"', f'{Msg.EXPECTED}: {integerLimits(minLen, maxLen, Msg.STRING_LENGTH)}')
     return ''
+
+  def _getCfgStringList(sectionName, itemName):
+    value = GM.Globals[GM.PARSER].get(sectionName, itemName)
+    stringlist = []
+    if not value or (len(value) == 2 and _stringInQuotes(value)):
+      return stringlist
+    splitStatus, stringlist = shlexSplitListStatus(value)
+    if not splitStatus:
+      _printValueError(sectionName, itemName, f'"{value}"', f'{Msg.INVALID_LIST}: {stringlist}')
+    return stringlist
 
   def _getCfgTimezone(sectionName, itemName):
     value = _stripStringQuotes(GM.Globals[GM.PARSER].get(sectionName, itemName).lower())
@@ -3946,7 +3946,7 @@ def SetGlobalVariables():
             value = bytes(value[2:-1], UTF8)
         elif varType == GC.TYPE_TIMEZONE:
           value = getString(Cmd.OB_STRING, checkBlank=True)
-        else:
+        else: # GC.TYPE_STRING, GC.TYPE_STRINGLIST
           minLen, maxLen = itemEntry.get(GC.VAR_LIMITS, (0, None))
           value = _quoteStringIfLeadingTrailingBlanks(getString(Cmd.OB_STRING, minLen=minLen, maxLen=maxLen))
         GM.Globals[GM.PARSER].set(sectionName, itemName, value)
@@ -3973,14 +3973,14 @@ def SetGlobalVariables():
       GC.Values[itemName] = _getCfgNumber(sectionName, itemName)
     elif varType == GC.TYPE_HEADERFILTER:
       GC.Values[itemName] = _getCfgHeaderFilter(sectionName, itemName)
-    elif varType == GC.TYPE_HEADERFORCE:
-      GC.Values[itemName] = _getCfgHeaderForce(sectionName, itemName)
     elif varType == GC.TYPE_LOCALE:
       GC.Values[itemName] = _getCfgLocale(sectionName, itemName)
     elif varType == GC.TYPE_PASSWORD:
       GC.Values[itemName] = _getCfgPassword(sectionName, itemName)
     elif varType == GC.TYPE_STRING:
       GC.Values[itemName] = _getCfgString(sectionName, itemName)
+    elif varType in {GC.TYPE_STRINGLIST, GC.TYPE_HEADERFORCE}:
+      GC.Values[itemName] = _getCfgStringList(sectionName, itemName)
     elif varType == GC.TYPE_FILE:
       GC.Values[itemName] = _getCfgFile(sectionName, itemName)
 # Row filters
@@ -3996,7 +3996,7 @@ def SetGlobalVariables():
     GC.Values[GC.CSV_INPUT_ROW_DROP_FILTER_MODE] = _getCfgChoice(inputFilterSectionName, GC.CSV_INPUT_ROW_DROP_FILTER_MODE)
     GC.Values[GC.CSV_INPUT_ROW_LIMIT] = _getCfgNumber(inputFilterSectionName, GC.CSV_INPUT_ROW_LIMIT)
   if outputFilterSectionName:
-    GC.Values[GC.CSV_OUTPUT_HEADER_FORCE] = _getCfgHeaderForce(outputFilterSectionName, GC.CSV_OUTPUT_HEADER_FORCE)
+    GC.Values[GC.CSV_OUTPUT_HEADER_FORCE] = _getCfgStringList(outputFilterSectionName, GC.CSV_OUTPUT_HEADER_FORCE)
     if GC.Values[GC.CSV_OUTPUT_HEADER_FORCE]:
       GC.Values[GC.CSV_OUTPUT_HEADER_FILTER] = _getCfgHeaderFilterFromForce(outputFilterSectionName, GC.CSV_OUTPUT_HEADER_FORCE)
     else:
@@ -4007,6 +4007,7 @@ def SetGlobalVariables():
     GC.Values[GC.CSV_OUTPUT_ROW_DROP_FILTER] = _getCfgRowFilter(outputFilterSectionName, GC.CSV_OUTPUT_ROW_DROP_FILTER)
     GC.Values[GC.CSV_OUTPUT_ROW_DROP_FILTER_MODE] = _getCfgChoice(outputFilterSectionName, GC.CSV_OUTPUT_ROW_DROP_FILTER_MODE)
     GC.Values[GC.CSV_OUTPUT_ROW_LIMIT] = _getCfgNumber(outputFilterSectionName, GC.CSV_OUTPUT_ROW_LIMIT)
+    GC.Values[GC.CSV_OUTPUT_SORT_HEADERS] = _getCfgStringList(outputFilterSectionName, GC.CSV_OUTPUT_SORT_HEADERS)
   elif GC.Values[GC.CSV_OUTPUT_HEADER_FORCE]:
     GC.Values[GC.CSV_OUTPUT_HEADER_FILTER] = _getCfgHeaderFilterFromForce(sectionName, GC.CSV_OUTPUT_HEADER_FORCE)
   if status['errors']:
@@ -4049,7 +4050,7 @@ def SetGlobalVariables():
     _setMultiprocessExit()
 # redirect csv <FileName> [multiprocess] [append] [noheader] [charset <CharSet>]
 #	       [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]]
-#	       [timestampcolumn <String>]
+#	       [sortheaders <StringList>] [timestampcolumn <String>]
 #	       [todrive <ToDriveAttribute>*]
 # redirect stdout <FileName> [multiprocess] [append]
 # redirect stdout null
@@ -4070,6 +4071,8 @@ def SetGlobalVariables():
         GM.Globals[GM.CSV_OUTPUT_QUOTE_CHAR] = GC.Values[GC.CSV_OUTPUT_QUOTE_CHAR] = getCharacter()
       if checkArgumentPresent('noescapechar'):
         GM.Globals[GM.CSV_OUTPUT_NO_ESCAPE_CHAR] = GC.Values[GC.CSV_OUTPUT_NO_ESCAPE_CHAR] = getBoolean()
+      if checkArgumentPresent('sortheaders'):
+        GM.Globals[GM.CSV_OUTPUT_SORT_HEADERS] = GC.Values[GC.CSV_OUTPUT_SORT_HEADERS] = getString(Cmd.OB_STRING_LIST, minLen=0).replace(',', ' ').split()
       if checkArgumentPresent('timestampcolumn'):
         GM.Globals[GM.CSV_OUTPUT_TIMESTAMP_COLUMN] = GC.Values[GC.CSV_OUTPUT_TIMESTAMP_COLUMN] = getString(Cmd.OB_STRING, minLen=0)
       _setCSVFile(filename, mode, encoding, writeHeader, multi)
@@ -5134,12 +5137,12 @@ def checkGAPIError(e, softErrors=False, retryOnHttpError=False, mapNotFound=True
     elif http_status == 400:
       if '@attachmentnotvisible' in lmessage:
         error = makeErrorDict(http_status, GAPI.BAD_REQUEST, message)
-      elif 'does not match' in lmessage or 'invalid' in lmessage:
-        error = makeErrorDict(http_status, GAPI.INVALID, message)
-      elif status == 'FAILED_PRECONDITION' or 'precondition check failed' in lmessage:
-        error = makeErrorDict(http_status, GAPI.FAILED_PRECONDITION, message)
       elif status == 'INVALID_ARGUMENT':
         error = makeErrorDict(http_status, GAPI.INVALID_ARGUMENT, message)
+      elif status == 'FAILED_PRECONDITION' or 'precondition check failed' in lmessage:
+        error = makeErrorDict(http_status, GAPI.FAILED_PRECONDITION, message)
+      elif 'does not match' in lmessage or 'invalid' in lmessage:
+        error = makeErrorDict(http_status, GAPI.INVALID, message)
     elif http_status == 401:
       if 'active session is invalid' in lmessage and reason == 'authError':
         message += ' Drive SDK API access disabled'
@@ -7618,6 +7621,7 @@ class CSVPrintFile():
     self.titlesList = []
     self.JSONtitlesSet = set()
     self.JSONtitlesList = []
+    self.sortHeaders = []
     self.SetHeaderForce(GC.Values[GC.CSV_OUTPUT_HEADER_FORCE])
     if not self.headerForce and titles is not None:
       self.SetTitles(titles)
@@ -7631,6 +7635,9 @@ class CSVPrintFile():
       GM.Globals[GM.CSV_OUTPUT_NO_ESCAPE_CHAR] = GC.Values.get(GC.CSV_OUTPUT_NO_ESCAPE_CHAR, False)
     self.SetNoEscapeChar(GM.Globals[GM.CSV_OUTPUT_NO_ESCAPE_CHAR])
     self.SetQuoteChar(GM.Globals[GM.CSV_OUTPUT_QUOTE_CHAR])
+    if GM.Globals.get(GM.CSV_OUTPUT_SORT_HEADERS) is None:
+      GM.Globals[GM.CSV_OUTPUT_SORT_HEADERS] = GC.Values.get(GC.CSV_OUTPUT_SORT_HEADERS, [])
+    self.SetSortHeaders(GM.Globals[GM.CSV_OUTPUT_SORT_HEADERS])
     if GM.Globals.get(GM.CSV_OUTPUT_TIMESTAMP_COLUMN) is None:
       GM.Globals[GM.CSV_OUTPUT_TIMESTAMP_COLUMN] = GC.Values.get(GC.CSV_OUTPUT_TIMESTAMP_COLUMN, '')
     self.SetTimestampColumn(GM.Globals[GM.CSV_OUTPUT_TIMESTAMP_COLUMN])
@@ -7846,7 +7853,7 @@ class CSVPrintFile():
                     'fileId': None, 'parentId': None, 'parent': GC.Values[GC.TODRIVE_PARENT], 'retaintitle': False,
                     'localcopy': GC.Values[GC.TODRIVE_LOCALCOPY], 'uploadnodata': GC.Values[GC.TODRIVE_UPLOAD_NODATA],
                     'nobrowser': GC.Values[GC.TODRIVE_NOBROWSER], 'noemail': GC.Values[GC.TODRIVE_NOEMAIL],
-                    'share': [], 'notify': False}
+                    'alert': [], 'share': [], 'notify': False, 'subject': None, 'from': None}
     while Cmd.ArgumentsRemaining():
       myarg = getArgument()
       if myarg == 'tduser':
@@ -7918,12 +7925,18 @@ class CSVPrintFile():
         self.todrive['noemail'] = getBoolean()
       elif myarg == 'tdnoescapechar':
         self.todrive['noescapechar'] = getBoolean()
+      elif myarg == 'tdalert':
+        self.todrive['alert'].append({'emailAddress': normalizeEmailAddressOrUID(getString(Cmd.OB_EMAIL_ADDRESS))})
       elif myarg == 'tdshare':
         self.todrive['share'].append({'emailAddress': normalizeEmailAddressOrUID(getString(Cmd.OB_EMAIL_ADDRESS)),
                                       'type': 'user',
                                       'role': getChoice(self.TDSHARE_ACL_ROLES_MAP, mapChoice=True)})
       elif myarg == 'tdnotify':
         self.todrive['notify'] = getBoolean()
+      elif myarg == 'tdsubject':
+        self.todrive['subject'] = getString(Cmd.OB_STRING, minLen=0)
+      elif myarg == 'tdfrom':
+        self.todrive['from'] = getString(Cmd.OB_EMAIL_ADDRESS)
       else:
         Cmd.Backup()
         break
@@ -8164,6 +8177,9 @@ class CSVPrintFile():
     else:
       self.todaysTime = todaysTime().strftime(GC.Values[GC.OUTPUT_TIMEFORMAT])
 
+  def SetSortHeaders(self, sortHeaders):
+    self.sortHeaders = sortHeaders
+
   def SetFormatJSON(self, formatJSON):
     self.formatJSON = formatJSON
 
@@ -8340,11 +8356,26 @@ class CSVPrintFile():
                                                            Ent.FormatEntityValueList(entityValueList)+[Act.NotPerformed(), errMsg],
                                                            currentCountNL(0, 0)))
 
+    @staticmethod
+    def itemgetter(*items):
+      if len(items) == 1:
+        item = items[0]
+        def g(obj):
+          return obj.get(item, '')
+      else:
+        def g(obj):
+          return tuple(obj.get(item, '') for item in items)
+      return g      
+
     def writeCSVData(writer):
       try:
         if GM.Globals[GM.CSVFILE][GM.REDIRECT_WRITE_HEADER]:
           writer.writerow(dict((item, item) for item in writer.fieldnames))
-        writer.writerows(self.rows)
+        if not self.sortHeaders:
+          writer.writerows(self.rows)
+        else:
+          for row in sorted(self.rows, key=itemgetter(*self.sortHeaders)):
+            writer.writerow(row)
         return True
       except IOError as e:
         stderrErrorMsg(e)
@@ -8361,6 +8392,13 @@ class CSVPrintFile():
         'skipinitialspace': False,
         'strict': False}
       return writerDialect
+
+    def normalizeSortHeaders():
+      if self.sortHeaders:
+        writerKeyMap = {}
+        for k in titlesList:
+          writerKeyMap[k.lower()] = k
+        self.sortHeaders = [writerKeyMap[k.lower()] for k in self.sortHeaders if k.lower() in writerKeyMap]
 
     def writeCSVToStdout():
       csvFile = StringIOobject()
@@ -8652,12 +8690,16 @@ class CSVPrintFile():
           file_url = result['webViewLink']
           msg_txt = f'{Msg.DATA_UPLOADED_TO_DRIVE_FILE}:\n{file_url}'
           printKeyValueList([msg_txt])
+          if not self.todrive['subject']:
+            subject = title
+          else:
+            subject = self.todrive['subject'].replace('#file#', title).replace('#sheet#', sheetTitle)
           if not self.todrive['noemail']:
-            send_email(title, msg_txt, user, clientAccess=GC.Values[GC.TODRIVE_CLIENTACCESS])
+            send_email(subject, msg_txt, user, clientAccess=GC.Values[GC.TODRIVE_CLIENTACCESS], msgFrom=self.todrive['from'])
           if self.todrive['notify']:
-            for share in self.todrive['share']:
-              if share['emailAddress'] != user:
-                send_email(title, msg_txt, share['emailAddress'], clientAccess=GC.Values[GC.TODRIVE_CLIENTACCESS])
+            for recipient in self.todrive['share']+self.todrive['alert']:
+              if recipient['emailAddress'] != user:
+                send_email(subject, msg_txt, recipient['emailAddress'], clientAccess=GC.Values[GC.TODRIVE_CLIENTACCESS], msgFrom=self.todrive['from'])
           if not self.todrive['nobrowser']:
             webbrowser.open(file_url)
         except (GAPI.forbidden, GAPI.insufficientPermissions):
@@ -8679,7 +8721,7 @@ class CSVPrintFile():
                                                      (self.titlesList, self.sortTitlesList, self.indexedTitles,
                                                       self.formatJSON, self.JSONtitlesList,
                                                       self.columnDelimiter, self.noEscapeChar, self.quoteChar,
-                                                      self.timestampColumn,
+                                                      self.sortHeaders, self.timestampColumn,
                                                       self.mapDrive3Titles,
                                                       self.fixPaths,
                                                       self.mapNodataFields,
@@ -8732,6 +8774,7 @@ class CSVPrintFile():
         else:
           self.AddJSONTitle(self.timestampColumn)
       titlesList = self.JSONtitlesList
+    normalizeSortHeaders()
     if (not self.todrive) or self.todrive['localcopy']:
       if GM.Globals[GM.CSVFILE][GM.REDIRECT_NAME] == '-':
         if GM.Globals[GM.STDOUT][GM.REDIRECT_MULTI_FD]:
@@ -9285,6 +9328,7 @@ def CSVFileQueueHandler(mpQueue, mpQueueStdout, mpQueueStderr, csvPF, datetimeNo
     csvPF.SetColumnDelimiter(GC.Values[GC.CSV_OUTPUT_COLUMN_DELIMITER])
     csvPF.SetNoEscapeChar(GC.Values[GC.CSV_OUTPUT_NO_ESCAPE_CHAR])
     csvPF.SetQuoteChar(GC.Values[GC.CSV_OUTPUT_QUOTE_CHAR])
+    csvPF.SetSortHeaders(GC.Values[GC.CSV_OUTPUT_SORT_HEADERS])
     csvPF.SetTimestampColumn(GC.Values[GC.CSV_OUTPUT_TIMESTAMP_COLUMN])
     csvPF.SetHeaderFilter(GC.Values[GC.CSV_OUTPUT_HEADER_FILTER])
     csvPF.SetHeaderDropFilter(GC.Values[GC.CSV_OUTPUT_HEADER_DROP_FILTER])
@@ -9307,12 +9351,13 @@ def CSVFileQueueHandler(mpQueue, mpQueueStdout, mpQueueStderr, csvPF, datetimeNo
       csvPF.SetColumnDelimiter(dataItem[5])
       csvPF.SetNoEscapeChar(dataItem[6])
       csvPF.SetQuoteChar(dataItem[7])
-      csvPF.SetTimestampColumn(dataItem[8])
-      csvPF.SetMapDrive3Titles(dataItem[9])
-      csvPF.SetFixPaths(dataItem[10])
-      csvPF.SetNodataFields(dataItem[11], dataItem[12], dataItem[13], dataItem[14], dataItem[15])
-      csvPF.SetShowPermissionsLast(dataItem[16])
-      csvPF.SetZeroBlankMimeTypeCounts(dataItem[17])
+      csvPF.SetSortHeaders(dataItem[8])
+      csvPF.SetTimestampColumn(dataItem[9])
+      csvPF.SetMapDrive3Titles(dataItem[10])
+      csvPF.SetFixPaths(dataItem[11])
+      csvPF.SetNodataFields(dataItem[12], dataItem[13], dataItem[14], dataItem[15], dataItem[16])
+      csvPF.SetShowPermissionsLast(dataItem[17])
+      csvPF.SetZeroBlankMimeTypeCounts(dataItem[18])
     elif dataType == GM.REDIRECT_QUEUE_DATA:
       csvPF.rows.extend(dataItem)
     elif dataType == GM.REDIRECT_QUEUE_ARGS:
@@ -9327,6 +9372,7 @@ def CSVFileQueueHandler(mpQueue, mpQueueStdout, mpQueueStderr, csvPF, datetimeNo
       csvPF.SetColumnDelimiter(GC.Values[GC.CSV_OUTPUT_COLUMN_DELIMITER])
       csvPF.SetNoEscapeChar(GC.Values[GC.CSV_OUTPUT_NO_ESCAPE_CHAR])
       csvPF.SetQuoteChar(GC.Values[GC.CSV_OUTPUT_QUOTE_CHAR])
+      csvPF.SetSortHeaders(GC.Values[GC.CSV_OUTPUT_SORT_HEADERS])
       csvPF.SetTimestampColumn(GC.Values[GC.CSV_OUTPUT_TIMESTAMP_COLUMN])
       csvPF.SetHeaderFilter(GC.Values[GC.CSV_OUTPUT_HEADER_FILTER])
       csvPF.SetHeaderDropFilter(GC.Values[GC.CSV_OUTPUT_HEADER_DROP_FILTER])
@@ -9470,7 +9516,7 @@ def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout,
                            printCrosOUs, printCrosOUsAndChildren,
                            output_dateformat, output_timeformat,
                            csvColumnDelimiter, csvNoEscapeChar, csvQuoteChar,
-                           csvTimestampColumn,
+                           csvSortHeaders, csvTimestampColumn,
                            csvHeaderFilter, csvHeaderDropFilter,
                            csvHeaderForce,
                            csvRowFilter, csvRowFilterMode, csvRowDropFilter, csvRowDropFilterMode,
@@ -9501,6 +9547,7 @@ def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout,
     GM.Globals[GM.CSV_OUTPUT_ROW_FILTER] = csvRowFilter[:]
     GM.Globals[GM.CSV_OUTPUT_ROW_FILTER_MODE] = csvRowFilterMode
     GM.Globals[GM.CSV_OUTPUT_ROW_LIMIT] = csvRowLimit
+    GM.Globals[GM.CSV_OUTPUT_SORT_HEADERS] = csvSortHeaders
     GM.Globals[GM.CSV_OUTPUT_TIMESTAMP_COLUMN] = csvTimestampColumn
     GM.Globals[GM.CSV_TODRIVE] = todrive.copy()
     GM.Globals[GM.DEBUG_LEVEL] = debugLevel
@@ -9708,6 +9755,7 @@ def MultiprocessGAMCommands(items, showCmds):
                                                   GC.Values[GC.CSV_OUTPUT_COLUMN_DELIMITER],
                                                   GC.Values[GC.CSV_OUTPUT_NO_ESCAPE_CHAR],
                                                   GC.Values[GC.CSV_OUTPUT_QUOTE_CHAR],
+                                                  GC.Values[GC.CSV_OUTPUT_SORT_HEADERS],
                                                   GC.Values[GC.CSV_OUTPUT_TIMESTAMP_COLUMN],
                                                   GC.Values[GC.CSV_OUTPUT_HEADER_FILTER],
                                                   GC.Values[GC.CSV_OUTPUT_HEADER_DROP_FILTER],
@@ -12543,8 +12591,8 @@ def _showMailboxMonitorRequestStatus(request, i=0, count=0):
   printKeyValueList(['End', request['endDate']])
   printKeyValueList(['Monitor Incoming', request['outgoingEmailMonitorLevel']])
   printKeyValueList(['Monitor Outgoing', request['incomingEmailMonitorLevel']])
-  printKeyValueList(['Monitor Chats', request['chatMonitorLevel']])
-  printKeyValueList(['Monitor Drafts', request['draftMonitorLevel']])
+  printKeyValueList(['Monitor Chats', request.get('chatMonitorLevel', 'NONE')])
+  printKeyValueList(['Monitor Drafts', request.get('draftMonitorLevel', 'NONE')])
   Ind.Decrement()
 
 # gam audit monitor create <EmailAddress> <DestEmailAddress> [begin <DateTime>] [end <DateTime>] [incoming_headers] [outgoing_headers] [nochats] [nodrafts] [chat_headers] [draft_headers]
@@ -69908,7 +69956,8 @@ def printShowSmimes(users):
 
 def _showCSEItem(result, entityType, keyField, timeObjects, i, count, FJQC):
   if FJQC.formatJSON:
-    printLine(json.dumps(cleanJSON(result, timeObjects=timeObjects), ensure_ascii=False, sort_keys=True))
+    printLine(json.dumps(cleanJSON(result, timeObjects=timeObjects),
+                         ensure_ascii=False, sort_keys=True))
     return
   Ind.Increment()
   printEntity([entityType, result[keyField]], i, count)
@@ -69917,16 +69966,39 @@ def _showCSEItem(result, entityType, keyField, timeObjects, i, count, FJQC):
   Ind.Decrement()
   Ind.Decrement()
 
+def _initCSEKeyPairSkipObjects():
+  return {'pem', 'kaclsData'}
+
+def _resetCSEKeyPairSkipObjects(myarg, skipObjects):
+  if myarg == 'showpem':
+    skipObjects.discard('pem')
+  elif myarg == 'showkaclsdata':
+    skipObjects.discard('kaclsData')
+  else:
+    return False
+  return True
+
+def _stripCSEKeyPairSkipObjects(result, skipObjects):
+  if 'pem' in skipObjects:
+    result.pop('pem', None)
+  if 'kaclsData' in skipObjects:
+    for privateKeyMetadata in result.get('privateKeyMetadata', []):
+      if 'kaclsKeyMetadata' in privateKeyMetadata:
+        privateKeyMetadata['kaclsKeyMetadata'].pop('kaclsData', None)
+
 CSE_IDENTITY_TIME_OBJECTS = {}
 CSE_KEYPAIR_TIME_OBJECTS = {'disableTime'}
 
 def _printShowCSEItems(users, entityType, keyField, timeObjects):
   csvPF = CSVPrintFile(['User', keyField]) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
+  skipObjects = _initCSEKeyPairSkipObjects() if entityType == Ent.CSE_KEYPAIR else set()
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
+    elif entityType == Ent.CSE_KEYPAIR and _resetCSEKeyPairSkipObjects(myarg, skipObjects):
+      pass
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   i, count, users = getEntityArgument(users)
@@ -69960,6 +70032,8 @@ def _printShowCSEItems(users, entityType, keyField, timeObjects):
       j = 0
       for result in results:
         j += 1
+        if entityType == Ent.CSE_KEYPAIR:
+          _stripCSEKeyPairSkipObjects(result, skipObjects)
         _showCSEItem(result, entityType, keyField, timeObjects, j, jcount, FJQC)
     else:
       for result in results:
@@ -69968,7 +70042,8 @@ def _printShowCSEItems(users, entityType, keyField, timeObjects):
           csvPF.WriteRowTitles(row)
         elif csvPF.CheckRowTitles(row):
           csvPF.WriteRowNoFilter({'User': user, keyField: result[keyField],
-                                  'JSON':  json.dumps(cleanJSON(result, timeObjects=timeObjects), ensure_ascii=False, sort_keys=True)})
+                                  'JSON':  json.dumps(cleanJSON(result, skipObjects=skipObjects, timeObjects=timeObjects),
+                                                      ensure_ascii=False, sort_keys=True)})
   if csvPF:
     csvPF.writeCSVfile(Ent.Plural(entityType))
 
@@ -69979,16 +70054,72 @@ CSE_IDENTITY_ACTION_FUNCTION_MAP = {
   Act.INFO: 'get',
   }
 
-# gam <UserTypeEntity> create cseidentity <KeyPairID> [kpemail <EmailAddress>]
+# gam <UserTypeEntity> create cseidentity
+#	(primarykeypairid <KeyPairID>) | (signingkeypairid <KeyPairID> encryptionkeypairid <KeyPairID>)
+#	[kpemail <EmailAddress>]
 #	[formatjson]
-# gam <UserTypeEntity> update cseidentity <KeyPairID> [kpemail <EmailAddress>]
+# gam <UserTypeEntity> update cseidentity
+#	(primarykeypairid <KeyPairID>) | (signingkeypairid <KeyPairID> encryptionkeypairid <KeyPairID>)
+#	[kpemail <EmailAddress>]
 #	[formatjson]
+def createUpdateCSEIdentity(users):
+  function = CSE_IDENTITY_ACTION_FUNCTION_MAP[Act.Get()]
+  primaryKeyPairId = signingKeyPairId = encryptionKeyPairId = None
+  FJQC = FormatJSONQuoteChar()
+  kpEmail = None
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'primarykeypairid':
+      primaryKeyPairId = getString(Cmd.OB_CSE_KEYPAIR_ID)
+    elif myarg == 'signingkeypairid':
+      signingKeyPairId = getString(Cmd.OB_CSE_KEYPAIR_ID)
+    elif myarg == 'encryptionkeypairid':
+      encryptionKeyPairId = getString(Cmd.OB_CSE_KEYPAIR_ID)
+    elif myarg == 'kpemail':
+      kpEmail = getEmailAddress(noUid=True)
+    else:
+      FJQC.GetFormatJSON(myarg)
+  if primaryKeyPairId:
+    if signingKeyPairId or encryptionKeyPairId:
+      usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('primarykeypairid', 'signingkeypairid/encryptionkeypairid'))
+    identity = {'primaryKeyPairId': primaryKeyPairId, 'emailAddress': None}
+    keyPairId = primaryKeyPairId
+  elif signingKeyPairId or encryptionKeyPairId:
+    if not signingKeyPairId or not encryptionKeyPairId:
+      usageErrorExit(Msg.ARE_BOTH_REQUIRED.format('signingkeypairid', 'encryptionkeypairid'))
+    identity = {'signAndEncryptKeyPairs': {'signingKeyPairId': signingKeyPairId, 'encryptionKeyPairId': encryptionKeyPairId},
+                'emailAddress': None}
+    keyPairId = f'{signingKeyPairId}/{encryptionKeyPairId}'
+  else:
+    missingArgumentExit('primarykeypairid|(signingkeypairid & encryptionkeypairid)')
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
+    if not gmail:
+      continue
+    identity['emailAddress'] = user if not kpEmail else kpEmail
+    kwargs = {'body': identity}
+    if function == 'patch':
+      kwargs['emailAddress'] = identity['emailAddress']
+    kvList = [Ent.USER, user, Ent.CSE_IDENTITY, identity['emailAddress'], Ent.CSE_KEYPAIR, keyPairId]
+    try:
+      result = callGAPI(gmail.users().settings().cse().identities(), function,
+                        throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED, GAPI.INVALID_ARGUMENT, GAPI.NOT_FOUND, GAPI.ALREADY_EXISTS],
+                        userId='me', **kwargs)
+      if not  FJQC.formatJSON:
+        entityActionPerformed(kvList, i, count)
+      _showCSEItem(result, Ent.CSE_IDENTITY, 'emailAddress', CSE_IDENTITY_TIME_OBJECTS, i, count, FJQC)
+    except (GAPI.permissionDenied, GAPI.invalidArgument, GAPI.notFound, GAPI.alreadyExists) as e:
+      entityActionFailedWarning(kvList, str(e), i, count)
+    except (GAPI.serviceNotAvailable, GAPI.badRequest):
+      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+
 # gam <UserTypeEntity> delete cseidentity [kpemail <EmailAddress>]
 # gam <UserTypeEntity> info cseidentity [kpemail <EmailAddress>]
 #	[formatjson]
 def processCSEIdentity(users):
   function = CSE_IDENTITY_ACTION_FUNCTION_MAP[Act.Get()]
-  keyPairId = getString(Cmd.OB_CSE_KEYPAIR_ID) if function in {'create', 'patch'} else None
   FJQC = FormatJSONQuoteChar()
   kpEmail = None
   while Cmd.ArgumentsRemaining():
@@ -70003,24 +70134,17 @@ def processCSEIdentity(users):
     user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
     if not gmail:
       continue
-    if keyPairId:
-      identity = {'keyPairId': keyPairId, 'emailAddress': user if not kpEmail else kpEmail}
-      kwargs = {'body': identity}
-      if function == 'patch':
-        kwargs['emailAddress'] = identity['emailAddress']
-      kvList = [Ent.USER, user, Ent.CSE_IDENTITY, identity['emailAddress'], Ent.CSE_KEYPAIR, keyPairId]
-    else:
-      kwargs = {'cseEmailAddress': user if not kpEmail else kpEmail}
-      kvList = [Ent.USER, user, Ent.CSE_IDENTITY, kwargs['cseEmailAddress']]
+    kwargs = {'cseEmailAddress': user if not kpEmail else kpEmail}
+    kvList = [Ent.USER, user, Ent.CSE_IDENTITY, kwargs['cseEmailAddress']]
     try:
       result = callGAPI(gmail.users().settings().cse().identities(), function,
-                        throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED],
+                        throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED, GAPI.NOT_FOUND],
                         userId='me', **kwargs)
-      if not  FJQC.formatJSON:
+      if not FJQC.formatJSON:
         entityActionPerformed(kvList, i, count)
       if function != 'delete':
         _showCSEItem(result, Ent.CSE_IDENTITY, 'emailAddress', CSE_IDENTITY_TIME_OBJECTS, i, count, FJQC)
-    except GAPI.permissionDenied as e:
+    except (GAPI.permissionDenied, GAPI.notFound) as e:
       entityActionFailedWarning(kvList, str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.badRequest):
       entityServiceNotApplicableWarning(Ent.USER, user, i, count)
@@ -70034,7 +70158,7 @@ def printShowCSEIdentities(users):
 
 # gam <UserTypeEntity> create csekeypair [incertdir <FilePath>] [inkeydir <FilePath>]
 #	[addidentity [<Boolean>]] [kpemail <EmailAddress>]
-#	[formatjson|returnidonly]
+#	[showpem] [showkaclsdata] [formatjson|returnidonly]
 def createCSEKeyPair(users):
   def _getFolderPath(myarg):
     filepath = os.path.expanduser(getString(Cmd.OB_FILE_PATH))
@@ -70047,6 +70171,7 @@ def createCSEKeyPair(users):
   inkeydir = GC.Values[GC.GMAIL_CSE_INKEY_DIR]
   addIdentity = returnIdOnly = False
   kpEmail = None
+  skipObjects = _initCSEKeyPairSkipObjects()
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'incertdir':
@@ -70059,6 +70184,8 @@ def createCSEKeyPair(users):
       kpEmail = getEmailAddress(noUid=True)
     elif myarg == 'returnidonly':
       returnIdOnly = True
+    elif _resetCSEKeyPairSkipObjects(myarg, skipObjects):
+      pass
     else:
       FJQC.GetFormatJSON(myarg)
   if not incertdir:
@@ -70071,18 +70198,17 @@ def createCSEKeyPair(users):
     user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
     if not gmail:
       continue
+    kvList = [Ent.USER, user, Ent.CSE_KEYPAIR, None]
     smimeFilename = os.path.join(incertdir, user+'.p7pem')
     if not os.path.isfile(smimeFilename):
-      entityActionNotPerformedWarning([Ent.USER, user, Ent.CSE_KEYPAIR, None],
-                                      Msg.FILE_NOT_FOUND.format(smimeFilename), i, count)
+      entityActionNotPerformedWarning(kvList, Msg.FILE_NOT_FOUND.format(smimeFilename), i, count)
       continue
     smimeData = readFile(smimeFilename, mode='rb', continueOnError=True)
     if smimeData is None:
       continue
     kaclFilename = os.path.join(inkeydir, user+'.wrap')
     if not os.path.isfile(kaclFilename):
-      entityActionNotPerformedWarning([Ent.USER, user, Ent.CSE_KEYPAIR, None],
-                                      Msg.FILE_NOT_FOUND.format(kaclFilename), i, count)
+      entityActionNotPerformedWarning(kvList, Msg.FILE_NOT_FOUND.format(kaclFilename), i, count)
       continue
     jsonData = readFile(kaclFilename, mode='r', encoding=UTF8, continueOnError=True)
     if jsonData is None:
@@ -70098,17 +70224,14 @@ def createCSEKeyPair(users):
         'privateKeyMetadata': [{'kaclsKeyMetadata': {'kaclsUri': kaclsUri, 'kaclsData': kaclsData}}]
       }
     except KeyError:
-      entityActionNotPerformedWarning([Ent.USER, user, Ent.CSE_KEYPAIR, None],
-                                      Msg.JSON_KEY_NOT_FOUND.format(key, kaclFilename), i, count)
+      entityActionNotPerformedWarning(kvList, Msg.JSON_KEY_NOT_FOUND.format(key, kaclFilename), i, count)
       continue
     except (IndexError, SyntaxError, TypeError, ValueError) as e:
-      entityActionNotPerformedWarning([Ent.USER, user, Ent.CSE_KEYPAIR, None],
-                                      Msg.JSON_ERROR.format(str(e), kaclFilename) , i, count)
+      entityActionNotPerformedWarning(kvList, Msg.JSON_ERROR.format(str(e), kaclFilename) , i, count)
       continue
-    kvList = [Ent.USER, user, Ent.CSE_KEYPAIR, None]
     try:
       result = callGAPI(gmail.users().settings().cse().keypairs(), 'create',
-                        throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED],
+                        throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED, GAPI.ALREADY_EXISTS],
                         userId='me', body=cseKeyPair)
 
       keyPairId = result['keyPairId']
@@ -70116,14 +70239,15 @@ def createCSEKeyPair(users):
         kvList[-1] = keyPairId
         if not  FJQC.formatJSON:
           entityActionPerformed(kvList, i, count)
+        _stripCSEKeyPairSkipObjects(result, skipObjects)
         _showCSEItem(result, Ent.CSE_KEYPAIR, 'keyPairId', CSE_KEYPAIR_TIME_OBJECTS, i, count, FJQC)
       elif not addIdentity:
         writeStdout(f'{keyPairId}\n')
       if addIdentity:
         identity = {'keyPairId': keyPairId, 'emailAddress': user if not kpEmail else kpEmail}
-        kvList = [Ent.USER, user, Ent.CSE_IDENTITY, identity['emailAddress'], Ent.CSE_KEYPAIR, keyPairId]
+        kvList = [Ent.USER, user, Ent.CSE_KEYPAIR, keyPairId, Ent.CSE_IDENTITY, identity['emailAddress']]
         result = callGAPI(gmail.users().settings().cse().identities(), 'create',
-                          throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED],
+                          throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED, GAPI.ALREADY_EXISTS],
                           userId='me', body=identity)
         if not returnIdOnly:
           if not  FJQC.formatJSON:
@@ -70131,7 +70255,7 @@ def createCSEKeyPair(users):
           _showCSEItem(result, Ent.CSE_IDENTITY, 'emailAddress', CSE_IDENTITY_TIME_OBJECTS, i, count, FJQC)
         else:
           writeStdout(f'{keyPairId}-{user}\n')
-    except GAPI.permissionDenied as e:
+    except (GAPI.permissionDenied, GAPI.alreadyExists) as e:
       entityActionFailedWarning(kvList, str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.badRequest):
       entityServiceNotApplicableWarning(Ent.USER, user, i, count)
@@ -70144,16 +70268,23 @@ CSE_KEYPAIR_ACTION_FUNCTION_MAP = {
   }
 
 # gam <UserTypeEntity> disable csekeypair <KeyPairID>
-#	[formatjson]
+#	[showpem] [showkaclsdata] [formatjson]
 # gam <UserTypeEntity> enable csekeypair <KeyPairID>
-#	[formatjson]
+#	[showpem] [showkaclsdata] [formatjson]
 # gam <UserTypeEntity> obliterate csekeypair <KeyPairID>
-# gam <UserTypeEntity> info csekeypair <KeyPairID>
-#	[formatjson]
+# gam <UserTypeEntity> info csekey3pair <KeyPairID>
+#	[showpem] [showkaclsdata] [formatjson]
 def processCSEKeyPair(users):
   function = CSE_KEYPAIR_ACTION_FUNCTION_MAP[Act.Get()]
   keyPairId = getString(Cmd.OB_CSE_KEYPAIR_ID)
-  FJQC = FormatJSONQuoteChar(formatJSONOnly=True)
+  FJQC = FormatJSONQuoteChar()
+  skipObjects = _initCSEKeyPairSkipObjects()
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if _resetCSEKeyPairSkipObjects(myarg, skipObjects):
+      pass
+    else:
+      FJQC.GetFormatJSON(myarg)
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -70163,23 +70294,25 @@ def processCSEKeyPair(users):
     kvList = [Ent.USER, user, Ent.CSE_KEYPAIR, keyPairId]
     try:
       result = callGAPI(gmail.users().settings().cse().keypairs(), function,
-                        throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED],
+                        throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED, GAPI.INVALID_ARGUMENT,
+                                                               GAPI.FAILED_PRECONDITION, GAPI.ALREADY_EXISTS],
                         userId='me', keyPairId=keyPairId)
       if function != 'obliterate':
         if not FJQC.formatJSON:
           entityActionPerformed(kvList, i, count)
+        _stripCSEKeyPairSkipObjects(result, skipObjects)
         _showCSEItem(result, Ent.CSE_KEYPAIR, 'keyPairId', CSE_KEYPAIR_TIME_OBJECTS, i, count, FJQC)
       else:
         entityActionPerformed(kvList, i, count)
-    except GAPI.permissionDenied as e:
+    except (GAPI.permissionDenied, GAPI.invalidArgument, GAPI.failedPrecondition, GAPI.alreadyExists) as e:
       entityActionFailedWarning(kvList, str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.badRequest):
       entityServiceNotApplicableWarning(Ent.USER, user, i, count)
 
 # gam <UserTypeEntity> show csekeypairs
-#	[formatjson]
+#	[showpem] [showkaclsdata] [formatjson]
 # gam <UserTypeEntity> print csekeypairs [todrive <ToDriveAttribute>*]
-#	[formatjson [quotechar <Character>]]
+#	[showpem] [showkaclsdata] [formatjson [quotechar <Character>]]
 def printShowCSEKeyPairs(users):
   _printShowCSEItems(users, Ent.CSE_KEYPAIR, 'keyPairId', CSE_KEYPAIR_TIME_OBJECTS)
 
@@ -72996,7 +73129,7 @@ USER_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_CHATSPACE:		createChatSpace,
   Cmd.ARG_CLASSROOMINVITATION:	createClassroomInvitations,
   Cmd.ARG_CONTACTDELEGATE:	processContactDelegates,
-  Cmd.ARG_CSEIDENTITY:		processCSEIdentity,
+  Cmd.ARG_CSEIDENTITY:		createUpdateCSEIdentity,
   Cmd.ARG_CSEKEYPAIR:		createCSEKeyPair,
   Cmd.ARG_LOOKERSTUDIOPERMISSION:	processLookerStudioPermissions,
   Cmd.ARG_DELEGATE:		processDelegates,
@@ -73510,7 +73643,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHATMEMBER:	deleteUpdateChatMember,
       Cmd.ARG_CHATMESSAGE:	updateChatMessage,
       Cmd.ARG_CHATSPACE:	updateChatSpace,
-      Cmd.ARG_CSEIDENTITY:	processCSEIdentity,
+      Cmd.ARG_CSEIDENTITY:	createUpdateCSEIdentity,
       Cmd.ARG_LOOKERSTUDIOPERMISSION:	processLookerStudioPermissions,
       Cmd.ARG_DELEGATE:		updateDelegates,
       Cmd.ARG_DRIVEFILE:	updateDriveFile,

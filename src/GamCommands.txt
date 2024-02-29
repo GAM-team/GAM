@@ -600,6 +600,7 @@ If an item contains spaces, it should be surrounded by ".
 <Title> ::= <String>
 <ToDriveAttribute> ::=
         (tdaddsheet [<Boolean>])|
+        (tdalert <EmailAddress>)*|
         (tdbackupsheet (id:<Number>)|<String>)|
         (tdcellnumberformat text|number)|
         (tdcellwrap clip|overflow|wrap)|
@@ -607,20 +608,23 @@ If an item contains spaces, it should be surrounded by ".
         (tdcopysheet (id:<Number>)|<String>)|
         (tddescription <String>)|
         (tdfileid <DriveFileID>)|
+        (tdfrom <EmailAddress>)|
         (tdlocalcopy [<Boolean>])|
         (tdlocale <Locale>)|
         (tdnobrowser [<Boolean>])|
         (tdnoemail [<Boolean>])|
         (tdnoescapechar [<Boolean>])|
+        (tdnotify [<Boolean>])|
         (tdparent (id:<DriveFolderID>)|<DriveFolderName>)|
         (tdretaintitle [<Boolean>])|
         (tdshare <EmailAddress> commenter|reader|writer)*|
         (tdsheet (id:<Number>)|<String>)|
         (tdsheettimestamp [<Boolean>] [tdsheettimeformat <String>])
         (tdsheettitle <String>)|
+        (tdsubject <String>)|
         ([tdsheetdaysoffset <Number>] [tdsheethoursoffset <Number>])|
         (tdtimestamp [<Boolean>] [tdtimeformat <String>]
-            [tddaysoffset <Number>] [tdhoursoffset <Number>])|
+            ([tddaysoffset <Number>] [tdhoursoffset <Number>])|
         (tdtimezone <TimeZone>)|
         (tdtitle <String>)|
         (tdupdatesheet [<Boolean>])|
@@ -1247,7 +1251,7 @@ For redirect csv, the optional arguments must appear in the order shown.
 <Redirect> ::=
         redirect csv <FileName> [multiprocess] [append] [noheader] [charset <Charset>]
                      [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
-                     [timestampcolumn <String>]
+                     [sortheaders <StringList>] [timestampcolumn <String>]
                      [todrive <ToDriveAttribute>*] |
         redirect stdout <FileName> [multiprocess] [append] |
         redirect stdout null [multiprocess] |
@@ -7173,9 +7177,13 @@ gam <UserTypeEntity> print smimes [todrive <ToDriveAttribute>*]
 
 # Users - Gmail Client Side Encryption
 
-gam <UserTypeEntity> create cseidentity <KeyPairID> [kpemail <EmailAddress>]
+gam <UserTypeEntity> create cseidentity
+        (primarykeypairid <KeyPairID>) | (signingkeypairid <KeyPairID> encryptionkeypairid <KeyPairID>)
+        [kpemail <EmailAddress>]
         [formatjson]
-gam <UserTypeEntity> update cseidentity <KeyPairID> [kpemail <EmailAddress>]
+gam <UserTypeEntity> update cseidentity
+        (primarykeypairid <KeyPairID>) | (signingkeypairid <KeyPairID> encryptionkeypairid <KeyPairID>)
+        [kpemail <EmailAddress>]
         [formatjson]
 gam <UserTypeEntity> delete cseidentity [kpemail <EmailAddress>]
 
@@ -7189,19 +7197,19 @@ gam <UserTypeEntity> print cseidentities [todrive <ToDriveAttribute>*]
 gam <UserTypeEntity> create csekeypair
         [incertdir <FilePath>] [inkeydir <FilePath>]
         [addidentity [<Boolean>]] [kpemail <EmailAddress>]
-        [formatjson|returnidonly]
+        [showpem] [showkaclsdata] [formatjson|returnidonly]
 gam <UserTypeEntity> disable csekeypair <KeyPairID>
-        [formatjson]
+        [showpem] [showkaclsdata] [formatjson]
 gam <UserTypeEntity> enable csekeypair <KeyPairID>
-        [formatjson]
+        [showpem] [showkaclsdata] [formatjson]
 gam <UserTypeEntity> obliterate csekeypair <KeyPairID>
 
 gam <UserTypeEntity> info csekeypair <KeyPairID>
-        [formatjson]
+        [showpem] [showkaclsdata] [formatjson]
 gam <UserTypeEntity> show csekeypairs
-        [formatjson]
+        [showpem] [showkaclsdata] [formatjson]
 gam <UserTypeEntity> print csekeypairs [todrive <ToDriveAttribute>*]
-        [formatjson [quotechar <Character>]]
+        [showpem] [showkaclsdata] [formatjson [quotechar <Character>]]
 
 # Users - Gmail - Settings
 

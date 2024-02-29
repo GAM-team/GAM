@@ -255,6 +255,10 @@ csv_output_row_filter_mode
 csv_output_row_limit
         A limit on the number of rows to write to a CSV file; a value of 0 sets no limit.
         Default: 0
+csv_output_sort_headers
+        A list of column headers that causes GAM to sort CSV output rows by those headers.
+        The column headers are case insensitive and if column header does not appear in the CSV output, it is ignored.
+        Default: Blank
 csv_output_subfield_delimiter
         Character used to delimit fields and subfields in headers when writing CSV files;
         this must be a single character

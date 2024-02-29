@@ -2,6 +2,61 @@
 
 Merged GAM-Team version
 
+6.71.05
+
+Fixed a bug introduced in 6.71.00 that caused a trap in `gam <UserTypeEntity> print filelist`.
+
+Added option `tdfrom <EmailAddress>` to  `<ToDriveAttribute>` that causes GAM to use `<EmailAddress>` as the from address
+in all emails sent. By default, the from address is the Google Workspace Admin in `gam oauth info`.o
+
+6.71.04
+
+Updated `gam <UserTypeEntity> create|update cseidentity` to accept either of the following key pair options:
+* `primarykeypairid <KeyPairID>` - The configuration of a CSE identity that uses the same key pair for signing and encryption.
+* `signingkeypairid <KeyPairID> encryptionkeypairid <KeyPairID>` - The configuration of a CSE identity that uses different key pairs for signing and encryption.
+
+Updated CSV output row sorting to avoid a trap that occurred when a row was missing one of the sort fields.
+
+6.71.03
+
+Added option `tdalert <EmailAddress>` to `<ToDriveAttribute>`. When a todrive file is created or updated,
+GAM will send notification emails to all `tdalert <EmailAddress>` users if `tdnotify` is true.
+`<EmailAddress>` must be valid within your Google Workspace.
+
+6.71.02
+
+Added additional error handling to Gmail Client Side Encryption commands.
+
+6.71.01
+
+Fixed bug in `gam audit monitor create` that caused a trap.
+
+6.71.00
+
+Added `csv_output_sort_headers` string list variable to `gam.cfg` that causes GAM to sort CSV output
+rows by the column headers specified in the variable. The column headers are case insensitive and
+if column header does not appear in the CSV output, it is ignored.
+
+Added `sortheaders <StringList>` to `redirect csv <FileName>` that has the same effect as above.
+
+The sort keys specified in `redirect csv ... sortheaders <StringList>` take precedence over the values from `gam.cfg`.
+
+Added option `tdsubject <String>` to  `<ToDriveAttribute>` that causes GAM to use `<String>` as the subject
+in all emails sent. In `<String>`, `#file#` will, be replaced by the file title and `#sheet#` will be replaced
+by the sheet/tab title. By default, the subject is the file title.
+
+6.70.09
+
+Added additional error handling to Gmail Client Side Encryption commands.
+
+Added options `showpem` and `showkaclsdata` to all Gmail CSE commands that process/display
+CSE key pairs. By default, the `pem` and `kaclsdata` fields will not be displayed unless
+the corresponding `show` option is specified.
+
+6.70.08
+
+Fixed bug in `gam <UserTypeEntity> create cseidentity <KeyPairID>` that caused an error.
+
 6.70.07
 
 Updated user instructions in `gam oauth create` and `gam <UserTypeEntity> update serviceaccount`

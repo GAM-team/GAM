@@ -174,11 +174,15 @@ direct the uploaded file to a particular user and location and add a timestamp t
 ```
 <ToDriveAttribute> ::=
         (tdaddsheet [<Boolean>])|
+        (tdalert <EmailAddress>)*|
         (tdbackupsheet (id:<Number>)|<String>)|
+        (tdcellnumberformat text|number)|
+        (tdcellwrap clip|overflow|wrap)|
         (tdclearfilter [<Boolean>])|
         (tdcopysheet (id:<Number>)|<String>)|
         (tddescription <String>)|
         (tdfileid <DriveFileID>)|
+        (tdfrom <EmailAddress>)|
         (tdlocalcopy [<Boolean>])|
         (tdlocale <Locale>)|
         (tdnobrowser [<Boolean>])|
@@ -191,13 +195,12 @@ direct the uploaded file to a particular user and location and add a timestamp t
         (tdsheet (id:<Number>)|<String>)|
         (tdsheettimestamp [<Boolean>] [tdsheettimeformat <String>])
         (tdsheettitle <String>)|
-        ([tdsheetdaysoffset <Number>] [tdsheethoursoffset <Number])|
-        (tdtimestamp [<Boolean>] [tdtimeformat <String>])|
-        ([tddaysoffset <Number>] [tdhoursoffset <Number])|
+        (tdsubject <String>)|
+        ([tdsheetdaysoffset <Number>] [tdsheethoursoffset <Number>])|
+        (tdtimestamp [<Boolean>] [tdtimeformat <String>]
+            ([tddaysoffset <Number>] [tdhoursoffset <Number>])|
         (tdtimezone <TimeZone>)|
         (tdtitle <String>)|
-        (tdcellwrap clip|overflow|wrap)|
-        (tdcellnumberformat text|plain)|
         (tdupdatesheet [<Boolean>])|
         (tduploadnodata [<Boolean>])|
         (tduser <EmailAddress>)
@@ -227,6 +230,7 @@ If `tdfileid <DriveFileID>` is not specified, a new file is created.
 * `tdtimeformat` - Format of the timestamp added to the title of the uploaded file; if not specified, the `todrive_timeformat` value from gam.cfg is used, that value defaults to '' which selects an ISO format timestamp.
   * See: https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
 * `tddaysoffset` and `tdhoursoffset` - Values that subtract time from the timestamp, they default to 0. A possible use for these values is as documentation to reflect the end of the time period that the uploaded report covers.
+* `tdsubject <String>` - Use `<String>` as the subject in all emails sent. In `<String>`, `#file#` will, be replaced by the file title and `#sheet#` will be replaced by the sheet/tab title. By default, the subject is the file title.
 
 ## Spreadsheet settings
 * `tdlocale <Locale>` - The Spreadsheet settings Locale value.
@@ -235,9 +239,10 @@ If `tdfileid <DriveFileID>` is not specified, a new file is created.
 * `tdcellnumberformat text|number` - The Spreadsheet number format.
 
 ## Open browser and send email
-* `tdnobrowser` - If False, a browser is opened to view the file uploaded to Google Drive; if not specified, the `todrive_nobrowser` value from gam.cfg is used.
-* `tdnoemail` - If False, an email is sent to `tduser` informing them of name and URL of the uploaded file; if not specified, the `todrive_noemail` value from gam.cfg is used.
-* `tdnotify` - If True, an email is sent to all `tdshare <EmailAddress>` users informing them of name and URL of the uploaded/updated file.
+* `tdnobrowser` - If False, a browser is opened to view the file uploaded to Google Drive; if not specified, the `todrive_nobrowser` value from gam.cfg is used. If True, no browser is opened.
+* `tdnoemail` - If False, an email is sent to `tduser` informing them of name and URL of the uploaded file; if not specified, the `todrive_noemail` value from gam.cfg is used. If True, no email is sent to `tduser`.
+* `tdnotify` - If True, an email is sent to all `tdshare <EmailAddress>` and `tdalert <EmailAddress>` users informing them of name and URL of the uploaded/updated file. If False, no emails are sent.
+* `tdfrom <EmailAddress>` - Emails will be sent with `<EmailAddress>` as the from address. By default, the from address is the Google Workspace Admin in `gam oauth info`.
 
 ## Escape character
 * `tdnoescapechar <Boolean>` - Should `\` be ignored as an escape character; if not specified, the value of `todrive_no_escape_char` from `gam.cfg` will be used

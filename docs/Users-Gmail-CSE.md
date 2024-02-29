@@ -49,9 +49,15 @@ Creates and configures a client-side encryption identity that's authorized to se
 Google publishes the S/MIME certificate to a shared domain-wide directory so that people within a Google Workspace organization can encrypt and send mail to the identity.
 
 ```
-gam <UserTypeEntity> create cseidentity <KeyPairID> [kpemail <EmailAddress>]
+gam <UserTypeEntity> create cseidentity
+        (primarykeypairid <KeyPairID>) | (signingkeypairid <KeyPairID> encryptionkeypairid <KeyPairID>)
+        [kpemail <EmailAddress>]
         [formatjson]
 ```
+One of the following is required:
+* `primarykeypairid <KeyPairID>` - The configuration of a CSE identity that uses the same key pair for signing and encryption.
+* `signingkeypairid <KeyPairID> encryptionkeypairid <KeyPairID>` - The configuration of a CSE identity that uses different key pairs for signing and encryption.
+
 If `kpemail <EmailAddress>` is not specified, the user's primary email address is used for the identity.
 
 By default, Gam displays the identity as an indented list of keys and values; the following option causes the output to be in JSON format:
@@ -60,10 +66,16 @@ By default, Gam displays the identity as an indented list of keys and values; th
 ## Update Gmail CSE Identity
 Associates a different key pair with an existing client-side encryption identity. The updated key pair must validate against Google's S/MIME certificate profiles.
 ```
-gam <UserTypeEntity> update cseidentity <KeyPairID> [kpemail <EmailAddress>]
+gam <UserTypeEntity> update cseidentity
+        (primarykeypairid <KeyPairID>) | (signingkeypairid <KeyPairID> encryptionkeypairid <KeyPairID>)
+        [kpemail <EmailAddress>]
         [formatjson]
 ```
-If `kpemail <EmailAddress>` is not specified, the key pair for the user's primary email address is identity updated.
+One of the following is required:
+* `primarykeypairid <KeyPairID>` - The configuration of a CSE identity that uses the same key pair for signing and encryption.
+* `signingkeypairid <KeyPairID> encryptionkeypairid <KeyPairID>` - The configuration of a CSE identity that uses different key pairs for signing and encryption.
+
+bIf `kpemail <EmailAddress>` is not specified, the key pair for the user's primary email address is identity updated.
 
 By default, Gam displays the identity as an indented list of keys and values; the following option causes the output to be in JSON format:
 * `formatjson` - Display the fields in JSON format.
@@ -112,7 +124,7 @@ Create a CSE Key Pair for the primary address of a user.
 gam <UserTypeEntity> create csekeypair
         [incertdir <FilePath>] [inkeydir <FilePath>]
         [addidentity [<Boolean>]] [kpemail <EmailAddress>]
-        [formatjson|returnidonly]
+        [showpem] [showkaclsdata] [formatjson|returnidonly]
 ```
 * The S/MIME certificate files for the users are in the `incertdir <FilePath>` folder/directory.
 * If this option is not specified, the directory is taken from `gam.cfg/gmail_cse_incert_dir`.
@@ -125,6 +137,8 @@ gam <UserTypeEntity> create csekeypair
 * The files are in JSON format with two keys:
     * `kacls_url` - The URI of the key access control list service that manages the private key.
     * `wrapped_private_key` - Opaque data generated and used by the key access control list service.
+
+By default, the `pem` and `kaclsdata` fields will not be displayed unless the corresponding `showpem` and `showkaclsdata` option is specified.
 
 By default, Gam displays the new key pair as an indented list of keys and values; the following options cause the output to be displayed in alternate forms.
 * `formatjson` - Display the fields in JSON format.
@@ -139,11 +153,14 @@ By default, Gam displays the identity as an indented list of keys and values; th
 
 
 ## Action Gmail CSE Key Pairs
+### Display pem and kaclsdata fields
+By default, the `pem` and `kaclsdata` fields will not be displayed unless the corresponding `showpem` and `showkaclsdata` option is specified.
+
 ### Disable
 Turns off a client-side encryption key pair. The authenticated user can no longer use the key pair to decrypt incoming CSE message texts or sign outgoing CSE mail.
 ```
 gam <UserTypeEntity> disable csekeypair <KeyPairID>
-        [formatjson]
+        [showpem] [showkaclsdata] [formatjson]
 ```
 By default, Gam displays the disabled key pair as an indented list of keys and values; the following option causes the output to be displayed in alternate forms.
 * `formatjson` - Display the fields in JSON format.
@@ -152,7 +169,7 @@ By default, Gam displays the disabled key pair as an indented list of keys and v
 Turn on a client-side encryption key pair that was turned off. The key pair becomes active again for any associated client-side encryption identities.
 ```
 gam <UserTypeEntity> ensable csekeypair <KeyPairID>
-        [formatjson]
+        [showpem] [showkaclsdata] [formatjson]
 ```
 By default, Gam displays the enabled key pair as an indented list of keys and values; the following option causes the output to be displayed in alternate forms.
 * `formatjson` - Display the fields in JSON format.
@@ -167,10 +184,13 @@ gam <UserTypeEntity> obliterate csekeypair <KeyPairID>
 Gmail can't restore or decrypt any messages that were encrypted by an obliterated key. Authenticated users and Google Workspace administrators lose access to reading the encrypted messages.
 
 ## Display Gmail CSE Key Pairs
+### Display pem and kaclsdata fields
+By default, the `pem` and `kaclsdata` fields will not be displayed unless the corresponding `showpem` and `showkaclsdata` option is specified.
+
 ### Display an existing client-side encryption key pair.
 ```
 gam <UserTypeEntity> info csekeypair <KeyPairID>
-        [formatjson]
+        [showpem] [showkaclsdata] [formatjson]
 ```
 By default, Gam displays the key pairs as an indented list of keys and values; the following option causes the output to be in JSON format:
 * `formatjson` - Display the fields in JSON format.
@@ -179,14 +199,14 @@ By default, Gam displays the key pairs as an indented list of keys and values; t
 ### Display all client-side encryption key pairs for an authenticated user.
 ```
 gam <UserTypeEntity> show csekeypairs
-        [formatjson]
+        [showpem] [showkaclsdata] [formatjson]
 ```
 By default, Gam displays the key pairs as an indented list of keys and values; the following option causes the output to be in JSON format:
 * `formatjson` - Display the fields in JSON format.
 
 ```
 gam <UserTypeEntity> print csekeypairs [todrive <ToDriveAttribute>*]
-        [formatjson [quotechar <Character>]]
+        [showpem] [showkaclsdata] [formatjson [quotechar <Character>]]
 ```
 By default, Gam displays the key pairs as columns of fields; the following option causes the output to be in JSON format:
 * `formatjson` - Display the fields in JSON format.

@@ -56,6 +56,7 @@ The only `<VariableNames>` recognized in this `<Section>` are:
 * `csv_output_row_drop_filter`
 * `csv_output_row_drop_filter_mode`
 * `csv_output_row_limit`
+* `csv_output_sort_headers`
 
 ### Select input filter section
 Select an input filter section from gam.cfg and process a GAM command using values from that section.
@@ -113,7 +114,7 @@ You can redirect stdout and stderr to null and stderr can be redirected to stdou
 <Redirect> ::=
         redirect csv <FileName> [multiprocess] [append] [noheader] [charset <Charset>]
                      [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
-                     [timestampcolumn <String>]
+                     [sortheaders <StringList>] [timestampcolumn <String>]
                      [todrive <ToDriveAttribute>*] |
         redirect stdout <FileName> [multiprocess] [append] |
         redirect stdout null [multiprocess] |
@@ -150,6 +151,9 @@ is the value of `csv_output_no_escape_char` in `gam.cfg` which defaults to False
 The `quotechar <Character>` subargument sets the character used to quote fields in the CSV file
 that contaim special charactere; the default value is the value of `csv_output_quote_char` in `gam.cfg`
 which defaults to double quote.
+
+The `sortheaders <StringList>` argument causes GAM to sort CSV output rows by the column headers specified in `<StringList>`.
+The column headers are case insensitive and if column header does not appear in the CSV output, it is ignored.
 
 The `timestampcolumn <String>` adds a column named `<String>` to the CSV file; the value is the
 timestamp of when the GAM command started.

@@ -592,6 +592,13 @@ To empty the calendar trash a temporary calendar is created, the deleted events 
 gam <UserTypeEntity> empty calendartrash <UserCalendarEntity>
 ```
 
+## Move calendar events to another calendar
+Generally you won't move all events from one calendar to another; typically, you'll move events created by the event creator
+using `matchfield creatoremail <RegularExpression>` in conjunction with other `<EventSelectProperty>` and `<EventMatchProperty>` options.
+```
+gam <UserTypeEntity> move events <UserCalendarEntity> [<EventEntity>] destination|to <CalendarItem> [<EventNotificationAttribute>]
+```
+
 ## Display calendar events
 ```
 gam <UserTypeEntity> info events <UserCalendarEntity> [<EventEntity>] [maxinstances <Number>]

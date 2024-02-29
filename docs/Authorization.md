@@ -896,6 +896,118 @@ gam <UserTypeEntity> update serviceaccount (scope|scopes <APIScopeURLList>)*
 * `<UserTypeEntity>` - Typically `user <EmailAddress>`, a non-Google Workspace administrator.
 * `scopes <APIScopeURLList>` - Verify/enable service account access for a set of specific scopes rather than selecting the scopes.
 
+```
+gam user user@domain.com update serviceaccount
+
+[*]  0)  AlertCenter API
+[*]  1)  Analytics API - read only
+[*]  2)  Analytics Admin API - read only
+[*]  3)  Calendar API (supports readonly)
+[*]  4)  Chat API - Memberships (supports readonly)
+[*]  5)  Chat API - Messages (supports readonly)
+[*]  6)  Chat API - Spaces (supports readonly)
+[*]  7)  Chat API - Spaces Delete
+[*]  8)  Classroom API - Course Announcements (supports readonly)
+[*]  9)  Classroom API - Course Topics (supports readonly)
+[*] 10)  Classroom API - Course Work/Materials (supports readonly)
+[*] 11)  Classroom API - Course Work/Submissions (supports readonly)
+[*] 12)  Classroom API - Profile Emails
+[*] 13)  Classroom API - Profile Photos
+[*] 14)  Classroom API - Rosters (supports readonly)
+[*] 15)  Cloud Identity Devices API (supports readonly)
+[*] 16)  Cloud Resource Manager API v3
+[*] 17)  Docs API (supports readonly)
+[*] 18)  Drive API (supports readonly)
+[*] 19)  Drive API - todrive
+[*] 20)  Drive Activity API v2 - must pair with Drive API
+[*] 21)  Drive Labels API v2beta - Admin (supports readonly)
+[*] 22)  Drive Labels API v2beta - User (supports readonly)
+[*] 23)  Forms API
+[*] 24)  Gmail API - Basic Settings (Filters,IMAP, Language, POP, Vacation) - read/write, Sharing Settings (Delegates, Forwarding, SendAs) - read
+[*] 25)  Gmail API - Full Access (Labels, Messages)
+[*] 26)  Gmail API - Full Access (Labels, Messages) except delete message
+[ ] 27)  Gmail API - Full Access - read only
+[ ] 28)  Gmail API - Send Messages - including todrive
+[*] 29)  Gmail API - Sharing Settings (Delegates, Forwarding, SendAs) - write
+[*] 30)  Identity and Access Management API
+[*] 31)  Keep API (supports readonly)
+[*] 32)  Looker Studio API (supports readonly)
+[*] 33)  OAuth2 API
+[*] 34)  People API (supports readonly)
+[*] 35)  People API - Other Contacts - read only
+[*] 36)  People Directory API - read only
+[*] 37)  Sheets API (supports readonly)
+[*] 38)  Sheets API - todrive
+[*] 39)  Sites API
+[*] 40)  Tasks API (supports readonly)
+[ ] 41)  Youtube API - read only
+
+Select an unselected scope [ ] by entering a number; yields [*]
+For scopes that support readonly, enter a number and an 'r' to grant read-only access; yields [R]
+For scopes that support action, enter a number and an 'a' to grant action-only access; yields [A]
+Clear read-only access [R] or action-only access [A] from a scope by entering a number; yields [*]
+Unselect a selected scope [*] by entering a number; yields [ ]
+Select all default scopes by entering an 's'; yields [*] for default scopes, [ ] for others
+Unselect all scopes by entering a 'u'; yields [ ] for all scopes
+Exit without changes/authorization by entering an 'e'
+Continue to authorization by entering a 'c'
+
+Please enter 0-41[a|r] or s|u|e|c: c
+
+System time status
+  Your system time differs from admin.googleapis.com by less than 1 second  PASS
+Service Account Private Key Authentication
+  Authentication                                                            PASS
+Service Account Private Key age; Google recommends rotating keys on a routine basis
+  Service Account Private Key age: 364 days                                 WARN
+Domain-wide Delegation authentication:, User: user@domain.com, Scopes: 34
+  https://mail.google.com/                                                  PASS (1/34)
+  https://sites.google.com/feeds                                            PASS (2/34)
+  https://www.googleapis.com/auth/analytics.readonly                        PASS (3/34)
+  https://www.googleapis.com/auth/apps.alerts                               PASS (4/34)
+  https://www.googleapis.com/auth/calendar                                  PASS (5/34)
+  https://www.googleapis.com/auth/chat.delete                               PASS (6/34)
+  https://www.googleapis.com/auth/chat.memberships                          PASS (7/34)
+  https://www.googleapis.com/auth/chat.messages                             PASS (8/34)
+  https://www.googleapis.com/auth/chat.spaces                               PASS (9/34)
+  https://www.googleapis.com/auth/classroom.announcements                   PASS (10/34)
+  https://www.googleapis.com/auth/classroom.coursework.students             PASS (11/34)
+  https://www.googleapis.com/auth/classroom.courseworkmaterials             PASS (12/34)
+  https://www.googleapis.com/auth/classroom.profile.emails                  PASS (13/34)
+  https://www.googleapis.com/auth/classroom.profile.photos                  PASS (14/34)
+  https://www.googleapis.com/auth/classroom.rosters                         PASS (15/34)
+  https://www.googleapis.com/auth/classroom.topics                          PASS (16/34)
+  https://www.googleapis.com/auth/cloud-identity                            PASS (17/34)
+  https://www.googleapis.com/auth/cloud-platform                            PASS (18/34)
+  https://www.googleapis.com/auth/contacts                                  PASS (19/34)
+  https://www.googleapis.com/auth/contacts.other.readonly                   PASS (20/34)
+  https://www.googleapis.com/auth/datastudio                                PASS (21/34)
+  https://www.googleapis.com/auth/directory.readonly                        PASS (22/34)
+  https://www.googleapis.com/auth/documents                                 PASS (23/34)
+  https://www.googleapis.com/auth/drive                                     PASS (24/34)
+  https://www.googleapis.com/auth/drive.activity                            PASS (25/34)
+  https://www.googleapis.com/auth/drive.admin.labels                        FAIL (26/34)
+  https://www.googleapis.com/auth/drive.labels                              FAIL (27/34)
+  https://www.googleapis.com/auth/gmail.modify                              PASS (28/34)
+  https://www.googleapis.com/auth/gmail.settings.basic                      PASS (29/34)
+  https://www.googleapis.com/auth/gmail.settings.sharing                    PASS (30/34)
+  https://www.googleapis.com/auth/keep                                      PASS (31/34)
+  https://www.googleapis.com/auth/spreadsheets                              PASS (32/34)
+  https://www.googleapis.com/auth/tasks                                     PASS (33/34)
+  https://www.googleapis.com/auth/userinfo.profile                          PASS (34/34)
+Some scopes Failed!
+To authorize them, please go to the following link in your browser:
+
+    https://admin.google.com/ac/owl/domainwidedelegation?clientScopeToAdd=https://mail.google.com/,...
+
+You will be directed to the Google Workspace admin console Security > API Controls > Domain-wide Delegation page
+The "Add a new Client ID" box will open
+Make sure that "Overwrite existing client ID" is checked
+Click AUTHORIZE
+When the box closes you're done
+After authorizing it may take some time for this test to pass so wait a few moments and then try this command again.
+```
+
 ## Configure Limited access
 You can configure GAM to allow users limited access to your domain via GAM.
 You can limit both client and service account access.
