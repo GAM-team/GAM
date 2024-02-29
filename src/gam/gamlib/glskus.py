@@ -35,6 +35,7 @@ _PRODUCTS = {
   '101040': 'Beyond Corp Enterprise',
   '101043': 'Google Workspace Additional Storage',
   '101047': 'Gemini',
+  '101049': 'Education Endpoint Management',
   'Google-Apps': 'Google Workspace',
   'Google-Chrome-Device-Management': 'Google Chrome Device Management',
   'Google-Drive-storage': 'Google Drive Storage',
@@ -91,6 +92,8 @@ _SKUS = {
     'product': '101047', 'aliases': ['gwlabs', 'workspacelabs'], 'displayName': 'Google Workspace Labs'},
   '1010470003': {
     'product': '101047', 'aliases': ['geminibiz'], 'displayName': 'Gemini Business'},
+  '1010490001': {
+    'product': '101049', 'aliases': ['eeu'], 'displayName': 'Endpoint Education Upgrade'},
   'Google-Apps': {
     'product': 'Google-Apps', 'aliases': ['standard', 'free'], 'displayName': 'G Suite Legacy'},
   'Google-Apps-For-Business': {
