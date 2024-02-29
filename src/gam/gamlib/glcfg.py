@@ -131,6 +131,8 @@ CSV_OUTPUT_ROW_DROP_FILTER = 'csv_output_row_drop_filter'
 CSV_OUTPUT_ROW_DROP_FILTER_MODE = 'csv_output_row_drop_filter_mode'
 # Limit number of output rows
 CSV_OUTPUT_ROW_LIMIT = 'csv_output_row_limit'
+# Output sort headers
+CSV_OUTPUT_SORT_HEADERS = 'csv_output_sort_headers'
 # Column header subfield name delimiter in CSV output file
 CSV_OUTPUT_SUBFIELD_DELIMITER = 'csv_output_subfield_delimiter'
 # Add timestamp column to CSV output file
@@ -350,6 +352,7 @@ Defaults = {
   CSV_OUTPUT_ROW_DROP_FILTER: '',
   CSV_OUTPUT_ROW_DROP_FILTER_MODE: 'anymatch',
   CSV_OUTPUT_ROW_LIMIT: '0',
+  CSV_OUTPUT_SORT_HEADERS: '',
   CSV_OUTPUT_SUBFIELD_DELIMITER: '.',
   CSV_OUTPUT_TIMESTAMP_COLUMN: '',
   CSV_OUTPUT_USERS_AUDIT: FALSE,
@@ -454,6 +457,7 @@ TYPE_LOCALE = 'locl'
 TYPE_PASSWORD = 'pass'
 TYPE_ROWFILTER = 'rowf'
 TYPE_STRING = 'stri'
+TYPE_STRINGLIST = 'strl'
 TYPE_TIMEZONE = 'tmzn'
 
 VAR_TYPE = 'type'
@@ -508,6 +512,7 @@ VAR_INFO = {
   CSV_OUTPUT_ROW_DROP_FILTER: {VAR_TYPE: TYPE_ROWFILTER},
   CSV_OUTPUT_ROW_DROP_FILTER_MODE: {VAR_TYPE: TYPE_CHOICE, VAR_CHOICES: {'allmatch': True, 'anymatch': False}},
   CSV_OUTPUT_ROW_LIMIT: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (0, None)},
+  CSV_OUTPUT_SORT_HEADERS: {VAR_TYPE: TYPE_STRINGLIST},
   CSV_OUTPUT_SUBFIELD_DELIMITER: {VAR_TYPE: TYPE_CHARACTER},
   CSV_OUTPUT_TIMESTAMP_COLUMN: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
   CSV_OUTPUT_USERS_AUDIT: {VAR_TYPE: TYPE_BOOLEAN},

@@ -81,6 +81,8 @@ CSV_OUTPUT_ROW_FILTER_MODE = 'corm'
 CSV_OUTPUT_ROW_LIMIT = 'corl'
 # Add timestamp column to CSV output file
 CSV_OUTPUT_TIMESTAMP_COLUMN = 'csv_output_timestamp_column'
+# Output sort headers
+CSV_OUTPUT_SORT_HEADERS = 'cosh'
 # CSV todrive options
 CSV_TODRIVE = 'todr'
 # Current API services
@@ -236,6 +238,7 @@ Globals = {
   CSV_OUTPUT_ROW_FILTER: [],
   CSV_OUTPUT_ROW_FILTER_MODE: True,
   CSV_OUTPUT_ROW_LIMIT: 0,
+  CSV_OUTPUT_SORT_HEADERS: [],
   CSV_OUTPUT_TIMESTAMP_COLUMN: None,
   CSV_TODRIVE: {},
   CURRENT_API_SERVICES: {},
