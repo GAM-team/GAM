@@ -62,12 +62,12 @@ _SKUS = {
     'product': '101031', 'aliases': ['gwepstaff', 'workspaceeducationplusstaff'], 'displayName': 'Google Workspace for Education Plus (Staff)'},
   '1010310010': {
     'product': '101031', 'aliases': ['gwepstudent', 'workspaceeducationplusstudent'], 'displayName': 'Google Workspace for Education Plus (Extra Student)'},
+  '1010330002': {
+    'product': '101033', 'aliases': ['gvpremier', 'voicepremier', 'googlevoicepremier'], 'displayName': 'Google Voice Premier'},
   '1010330003': {
     'product': '101033', 'aliases': ['gvstarter', 'voicestarter', 'googlevoicestarter'], 'displayName': 'Google Voice Starter'},
   '1010330004': {
     'product': '101033', 'aliases': ['gvstandard', 'voicestandard', 'googlevoicestandard'], 'displayName': 'Google Voice Standard'},
-  '1010330002': {
-    'product': '101033', 'aliases': ['gvpremier', 'voicepremier', 'googlevoicepremier'], 'displayName': 'Google Voice Premier'},
   '1010350001': {
     'product': '101035', 'aliases': ['cloudsearch'], 'displayName': 'Cloud Search'},
   '1010360001': {

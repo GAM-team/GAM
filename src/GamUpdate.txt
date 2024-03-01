@@ -2,9 +2,22 @@
 
 Merged GAM-Team version
 
+6.71.07
+
+Added command to upload changes to Google Docs.
+
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Files-Manage#upload-changes-to-google-documents
+
 6.71.06
 
 Added additional error handling to Gmail Client Side Encryption commands.
+
+Added license product Education Endpoint Management
+* ProductID - 101049
+
+Added license SKU Endpoint Education Upgrade
+* ProductID - 101049
+* SKUID - 1010490001 | eeu
 
 6.71.05
 

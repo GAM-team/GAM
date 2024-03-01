@@ -58328,6 +58328,55 @@ def getGoogleDocument(users):
         break
     Ind.Decrement()
 
+# gam <UserTypeEntity> update docuument <DriveFileEntity>
+#	((json [charset <Charset>] <SpreadsheetJSONUpdateRequest>) |
+#	 (json file <FileName> [charset <Charset>]))
+#	[formatjson]
+def updateGoogleDocument(users):
+  fileIdEntity = getDriveFileEntity()
+  body = {}
+  FJQC = FormatJSONQuoteChar()
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'json':
+      body = getJSON([])
+    else:
+      FJQC.GetFormatJSON(myarg)
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, drive, jcount = _validateUserGetFileIDs(user, i, count, fileIdEntity, entityType=Ent.DOCUMENT if not FJQC.formatJSON else None)
+    if jcount == 0:
+      continue
+    _, docs = buildGAPIServiceObject(API.DOCS, user, i, count)
+    if not docs:
+      continue
+    Ind.Increment()
+    j = 0
+    for documentId in fileIdEntity['list']:
+      j += 1
+      try:
+        result = callGAPI(docs.documents(), 'batchUpdate',
+                          throwReasons=GAPI.DOCS_ACCESS_THROW_REASONS,
+                          documentId=documentId, body=body)
+        if FJQC.formatJSON:
+          printLine('{'+f'"User": "{user}", "documentId": "{documentId}", "JSON": {json.dumps(result, ensure_ascii=False, sort_keys=False)}'+'}')
+          continue
+        entityActionPerformed([Ent.USER, user, Ent.DOCUMENT, documentId], j, jcount)
+        Ind.Increment()
+        for field in ['replies', 'writeControl']:
+          if field in result:
+            showJSON(field, result[field])
+        Ind.Decrement()
+      except (GAPI.fileNotFound, GAPI.forbidden, GAPI.permissionDenied,
+              GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.badRequest,
+              GAPI.invalid, GAPI.invalidArgument, GAPI.failedPrecondition) as e:
+        entityActionFailedWarning([Ent.USER, user, Ent.DOCUMENT, documentId], str(e), j, jcount)
+      except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
+        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        break
+    Ind.Decrement()
+
 # gam <UserTypeEntity> collect orphans
 #	[(targetuserfoldername <DriveFolderName>)(targetuserfolderid <DriveFolderID>)]
 #	[useshortcuts [<Boolean>]]
@@ -73646,6 +73695,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CSEIDENTITY:	createUpdateCSEIdentity,
       Cmd.ARG_LOOKERSTUDIOPERMISSION:	processLookerStudioPermissions,
       Cmd.ARG_DELEGATE:		updateDelegates,
+      Cmd.ARG_DOCUMENT:		updateGoogleDocument,
       Cmd.ARG_DRIVEFILE:	updateDriveFile,
       Cmd.ARG_DRIVEFILEACL:	updateDriveFileACLs,
       Cmd.ARG_EVENT:		updateCalendarEvents,
