@@ -10,6 +10,18 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.71.08
+
+Added option `oneitemperrow` to 'gam print admins|adminroles` to have each of a
+roles privileges displayed on a separate row with all of the other admin/role fields.
+This produces a CSV file that can be used in subsequent commands without further script processing.
+
+### 6.71.07
+
+Added command to upload changes to Google Docs.
+
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Files-Manage#upload-changes-to-google-documents
+
 ### 6.71.06
 
 Added additional error handling to Gmail Client Side Encryption commands.

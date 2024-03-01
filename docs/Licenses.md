@@ -118,6 +118,7 @@
         101040 |
         101043 |
         101047 |
+        101049 |
         Google-Apps |
         Google-Chrome-Device-Management |
         Google-Drive-storage |
@@ -135,52 +136,58 @@
         4tb | drive4tb | googledrivestorage4tb | Google-Drive-storage-4TB |
         8tb | drive8tb | googledrivestorage8tb | Google-Drive-storage-8TB |
         16tb | drive16tb | googledrivestorage16tb | Google-Drive-storage-16TB |
-        appsheetcore | 1010380001 |
-        appsheetstandard | appsheetenterprisestandard | 1010380002 |
-        appsheetplus | appsheetenterpriseplus | 1010380003 |
-        assuredcontrols | 1010390001 |
-        bce | beyondcorp | beyondcorpenterprise | 1010400001 |
+        appsheetcore | 1010380001 | AppSheet Core |
+        appsheetstandard | appsheetenterprisestandard | 1010380002 | AppSheet Enterprise Standard |
+        appsheetplus | appsheetenterpriseplus | 1010380003 | AppSheet Enterprise Plus |
+        assuredcontrols | 1010390001 | Assured Controls |
+        bce | beyondcorp | beyondcorpenterprise | 1010400001 | Beyond Corp Enterprise |
         cdm | chrome | googlechromedevicemanagement | Google-Chrome-Device-Management |
-        cloudidentity | identity | 1010010001 |
-        cloudidentitypremium | identitypremium | 1010050001 |
-        cloudsearch | 1010350001 |
-        duetai | 1010470001 |
+        cloudidentity | identity | 1010010001 | Cloud Identity |
+        cloudidentitypremium | identitypremium | 1010050001 | Cloud Identity Premium |
+        cloudsearch | 1010350001 | Cloud Search |
+        eeu | 1010490001 | SKU Endpoint Education Upgrade |
+        geminibiz | 1010470003 | Gemini Business |
+        geminient| duetai | 1010470001 | Gemini Enterprise |
         gsuitebasic | gafb | gafw | basic | Google-Apps-For-Business |
         gsuitebusiness | gau | gsb | unlimited | Google-Apps-Unlimited |
-        gsuitebusinessarchived | gsbau | businessarchived | 1010340002 |
-        gsuiteenterprisearchived | gseau | enterprisearchived | 1010340001 |
-        gsuiteenterpriseeducation | gsefe | e4e | 1010310002 |
-        gsuiteenterpriseeducationstudent | gsefes | e4es | 1010310003 |
+        gsuitebusinessarchived | gsbau | businessarchived | 1010340002 | Google Workspace Business - Archived User |
+        gsuiteenterprisearchived | gseau | enterprisearchived | 1010340001 | Google Workspace Enterprise Plus - Archived User |
+        gsuiteenterpriseeducation | gsefe | e4e | 1010310002 | Google Workspace for Education Plus - Legacy |
+        gsuiteenterpriseeducationstudent | gsefes | e4es | 1010310003 | Google Workspace for Education Plus - Legacy (Student) |
         gsuitegov | gafg | gsuitegovernment | Google-Apps-For-Government |
         gsuitelite | gal | gsl | lite | Google-Apps-Lite |
-        gwep | workspaceeducationplus | 1010310008 |
-        gwepstaff | workspaceeducationplusstaff | 1010310009 |
-        gwepstudent | workspaceeducationplusstudent | 1010310010 |
-        gwes | workspaceeducationstandard | 1010310005 |
-        gwesstaff | workspaceeducationstandardstaff | 1010310006 |
-        gwesstudent | workspaceeducationstandardstudent | 1010310007 |
-        gwetlu | workspaceeducationupgrade | 1010370001 |
-        gwlabs | workspacelabs | 1010470002
-        meetdialing | googlemeetglobaldialing | 1010360001 |
+        gwep | workspaceeducationplus | 1010310008 | Google Workspace for Education Plus |
+        gwepstaff | workspaceeducationplusstaff | 1010310009 | Google Workspace for Education Plus (Staff) |
+        gwepstudent | workspaceeducationplusstudent | 1010310010 | Google Workspace for Education Plus (Extra Student)|
+        gwes | workspaceeducationstandard | 1010310005 | Google Workspace for Education Standard |
+        gwesstaff | workspaceeducationstandardstaff | 1010310006 | Google Workspace for Education Standard (Staff) |
+        gwesstudent | workspaceeducationstandardstudent | 1010310007 | Google Workspace for Education Standard (Extra Student)
+        gwetlu | workspaceeducationupgrade | 1010370001 | Google Workspace for Education: Teaching and Learning Upgrade |
+        gwlabs | workspacelabs | 1010470002 | Google Workspace Labs |
+        meetdialing | googlemeetglobaldialing | 1010360001 |  Google Meet Global Dialing |
         postini | gams | gsuitegams | gsuitepostini | gsuitemessagesecurity | Google-Apps-For-Postini |
         standard | free | Google-Apps |
         vault | googlevault | Google-Vault |
         vfe | googlevaultformeremployee | Google-Vault-Former-Employee |
-        voicepremier | gvpremier | googlevoicepremier | 1010330002 |
-        voicestandard | gvstandard | googlevoicestandard | 1010330004 |
-        voicestarter | gvstarter | googlevoicestarter | 1010330003 |
-        wsas | plusstorage | 1010430001 |
-        wsbizplus | workspacebusinessplus | 1010020025 |
-        wsbizplusarchived | workspacebusinessplusarchived | 1010340003 |
-        wsbizstan | workspacebusinessstandard | 1010020028 |
-        wsbizstarter | workspacebusinessstarter | wsbizstart | 1010020027 |
-        wsentess | workspaceenterpriseessentials | 1010060003 |
-        wsentplus | workspaceenterpriseplus | gae | gse | enterprise | gsuiteenterprise | 1010020020 |
-        wsentstan | workspaceenterprisestandard | 1010020026 |
-        wsentstanarchived | workspaceenterprisestandardarchived | 1010340004 |
-        wsentstarter | workspaceenterprisestarter | 1010020029 | wes |
-        wsess | workspaceesentials | gsuiteessentials | essentials | d4e | driveenterprise | drive4enterprise | 1010060001 |
-        wsflw | workspacefrontline | workspacefrontlineworker | 1010020030
+        voicepremier | gvpremier | googlevoicepremier | 1010330002 | Google Voice Premier 
+        voicestandard | gvstandard | googlevoicestandard | 1010330004 | Google Voice Standard |
+        voicestarter | gvstarter | googlevoicestarter | 1010330003 | Google Voice Starter |
+        wsas | plusstorage | 1010430001 | Google Workspace Additional Storage |
+        wsbizplus | workspacebusinessplus | 1010020025 | Google Workspace Business Plus |
+        wsbizplusarchived | workspacebusinessplusarchived | 1010340003 | Google Workspace Business Plus - Archived User |
+        wsbizstan | workspacebusinessstandard | 1010020028 | Google Workspace Business Standard }
+        wsbizstanarchived | workspacebusinessstandardarchived | 1010340006 | Google Workspace Business Standard - Archived User |
+        wsbizstarter | workspacebusinessstarter | wsbizstart | 1010020027 | Google Workspace Business Starter |
+        wsbizstarterarchived | workspacebusinessstarterarchived | 1010340005 | Google Workspace Business Starter - Archived User |
+        wsentess | workspaceenterpriseessentials | 1010060003 | Google Workspace Enterprise Essentials |
+        wsentplus | workspaceenterpriseplus | gae | gse | enterprise | gsuiteenterprise | 1010020020 | Google Workspace Enterprise Plus |
+        wsentstan | workspaceenterprisestandard | 1010020026 | Google Workspace Enterprise Standard |
+        wsentstanarchived | workspaceenterprisestandardarchived | 1010340004 | Google Workspace Enterprise Standard - Archived User |
+        wsentstarter | workspaceenterprisestarter | wes | 1010020029 | Workspace Enterprise Starter |
+        wsess | workspaceesentials | gsuiteessentials | essentials | d4e | driveenterprise | drive4enterprise | 1010060001 | Google Workspace Essentials |
+        wsessplus | workspaceessentialsplus | 1010060005 | Google Workspace Essentials Plus |
+        wsflw | workspacefrontline | workspacefrontlineworker | 1010020030 | Google Workspace Frontline Starter |
+        wsflwstan | workspacefrontlinestan | workspacefrontlineworkerstan | 1010020031 | Google Workspace Frontline Standard
 <SKUIDList> ::= "<SKUID>(,<SKUID>)*"
 ```
 ## Notes

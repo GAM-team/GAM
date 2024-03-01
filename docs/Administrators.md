@@ -851,10 +851,14 @@ gam delete adminrole <RoleItem>
 ## Display administrative roles
 ```
 gam info adminrole <RoleItem> [privileges]
-gam print adminroles|roles [todrive <ToDriveAttribute>*] [privileges]
+gam print adminroles|roles [todrive <ToDriveAttribute>*]
+        [privileges] [oneitemperrow]
 gam show adminroles|roles [todrive <ToDriveAttribute>*] [privileges]
 ```
 * `privileges` - Display privileges associated with each role
+
+By default, all privileges for a role are shown on one row as a repeating item.
+When `oneitemperrow` is specified, each privilege is output on a separate row/line with the other role fields.
 
 ## Create an administrator
 Add an administrator role to an administrator.
@@ -877,7 +881,8 @@ gam delete admin <RoleAssignmentId>
 ## Display administrators
 ```
 gam print admins [todrive <ToDriveAttribute>*]
-        [user|group <EmailAddress>|<UniqueID>] [role <RoleItem>] [condition] [privileges]
+        [user|group <EmailAddress>|<UniqueID>] [role <RoleItem>] [condition]
+        [privileges] [oneitemperrow]
 gam show admins
         [user|group <EmailAddress>|<UniqueID>] [role <RoleItem>] [condition] [privileges]
 ```
@@ -888,6 +893,9 @@ options to limit the display:
 
 * `condition` - Display any conditions associated with a role assignment
 * `privileges` - Display privileges associated with each role assignment
+
+By default, all role privileges for an admin are shown on one row as a repeating item.
+When `oneitemperrow` is specified, each role privilege is output on a separate row/line with the other admin fields.
 
 In versions prior to 6.07.01, specification of both `user <UserItem>`
 and `role <RoleItem>` generated no output due to an undocumented API rule that disallows both.

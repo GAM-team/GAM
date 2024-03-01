@@ -1438,7 +1438,8 @@ gam create adminrole <String> privileges all|all_ou|<PrivilegesList> [descriptio
 gam update adminrole <RoleItem> [name <String>] [privileges all|all_ou|<PrivilegesList>] [description <String>]
 gam delete adminrole <RoleItem>
 gam info adminrole <RoleItem> [privileges]
-gam print adminroles|roles [todrive <ToDriveAttribute>*] [privileges]
+gam print adminroles|roles [todrive <ToDriveAttribute>*]
+        [privileges] [oneitemperrow]
 gam show adminroles|roles [privileges]
 
 gam create|add admin <EmailAddress>|<UniqueID> <RoleItem> customer|(org_unit <OrgUnitItem>)
@@ -1446,7 +1447,8 @@ gam create|add admin <EmailAddress>|<UniqueID> <RoleItem> customer|(org_unit <Or
 gam delete admin <RoleAssignmentId>
 
 gam print admins [todrive <ToDriveAttribute>*]
-        [user|group <EmailAddress>|<UniqueID>] [role <RoleItem>] [condition] [privileges]
+        [user|group <EmailAddress>|<UniqueID>] [role <RoleItem>] [condition]
+        [privileges] [oneitemperrow]
 gam show admins
         [user|group <EmailAddress>|<UniqueID>] [role <RoleItem>] [condition] [privileges]
 

@@ -19,6 +19,7 @@
 - [Shortcuts](Users-Drive-Shortcuts)
 - [Drive Labels](Users-Drive-Labels)
 - [Download Google Documents as JSON](#download-google-documents-as-json)
+- [Upload changes to Google Documents](#upload-changes-to-google-documents)
 
 ## API documentation
 * https://developers.google.com/drive/api/v3/reference/files
@@ -642,8 +643,6 @@ gam <UserTypeEntity> delete|del drivefile <DriveFileEntity> purge
 ```
 
 ## Download Google Documents as JSON
-This command was added in version 5.31.04, you'll have to do `gam update project` and
-`gam <UserTypeEntity> check|update serviceaccount` to enable it.
 ```
 gam <UserTypeEntity> get document <DriveFileEntity>
         [viewmode default|suggestions_inline|preview_suggestions_accepted|preview_without_suggestions]
@@ -666,3 +665,31 @@ By default, when getting a document, an existing local file will not be overwrit
 * `overwrite` - Overwite an existing file
 * `overwrite true` - Overwite an existing file
 * `overwrite false` - Do not overwite an existing file; add a numeric prefix and create a new file
+
+## Upload changes to Google Documents
+
+```
+<DocumentJSONUpdateRequest> ::=
+        '{"requests": [{object (Request)}], "writeControl": {object (WriteControl) }`
+See: https://developers.google.com/docs/api/reference/rest/v1/documents/request
+
+gam <UserTypeEntity> update document <DriveFileEntity>
+        ((json [charset <Charset>] <DocumentJSONUpdateRequest>) |
+         (json file <FileName> [charset <Charset>]))
+        [formatjson]
+```
+The JSON data can be read from a command line argument or a file. On the command line, the
+JSON data is enclosed in single quotes; these should not be present when the JSON data is read from a file.
+
+The output is formatted for human readability. Use the following option to produce JSON output for program parsing.
+* `formatjson` - Display output in JSON format.
+
+### Examples
+Replace Foo with Goo in a document.
+```
+File Update.json contains:
+{ "requests": [{"replaceAllText": {"replaceText": "Goo", "containsText": {"text": "Foo", "matchCase": "True"}}}]}
+
+
+gam user testuser@domain.com update document <DriveFileItem> json file Update.json
+```

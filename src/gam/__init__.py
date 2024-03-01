@@ -8365,7 +8365,7 @@ class CSVPrintFile():
       else:
         def g(obj):
           return tuple(obj.get(item, '') for item in items)
-      return g      
+      return g
 
     def writeCSVData(writer):
       try:
@@ -16137,23 +16137,29 @@ def doInfoAdminRole():
   except (GAPI.badRequest, GAPI.customerNotFound):
     accessErrorExit(cd)
 
-# gam print adminroles|roles [todrive <ToDriveAttribute>*] [privileges]
+# gam print adminroles|roles [todrive <ToDriveAttribute>*]
+#	[privileges] [oneitemperrow]
 # gam show adminroles|roles [privileges]
 def doPrintShowAdminRoles():
   cd = buildGAPIObject(API.DIRECTORY)
   fieldsList = PRINT_ADMIN_ROLES_FIELDS[:]
   csvPF = CSVPrintFile(fieldsList, PRINT_ADMIN_ROLES_FIELDS) if Act.csvFormat() else None
+  oneItemPerRow = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'privileges':
-      if csvPF:
-        csvPF.AddField(myarg, {myarg: 'rolePrivileges'}, fieldsList)
-      else:
-        fieldsList.append('rolePrivileges')
+      fieldsList.append('rolePrivileges')
+    elif myarg == 'oneitemperrow':
+      oneItemPerRow = True
     else:
       unknownArgumentExit()
+  if csvPF:
+    if not oneItemPerRow:
+      csvPF.AddTitles(['rolePrivileges'])
+    else:
+      csvPF.AddTitles(['privilegeName', 'serviceId'])
   fields = getItemFieldsFromFieldsList('items', fieldsList)
   printGettingAllAccountEntities(Ent.ADMIN_ROLE)
   try:
@@ -16177,7 +16183,14 @@ def doPrintShowAdminRoles():
     Ind.Decrement()
   else:
     for role in roles:
-      csvPF.WriteRowTitles(flattenJSON(role))
+      if not oneItemPerRow or 'rolePrivileges' not in role:
+        csvPF.WriteRowTitles(flattenJSON(role))
+      else:
+        privileges = role.pop('rolePrivileges')
+        baserow = flattenJSON(role)
+        for privilege in privileges:
+          row = flattenJSON(privilege, flattened=baserow.copy())
+          csvPF.WriteRowTitles(row)
   if csvPF:
     csvPF.writeCSVfile('Admin Roles')
 
@@ -16262,21 +16275,25 @@ PRINT_ADMIN_FIELDS = ['roleAssignmentId', 'roleId', 'assignedTo', 'scopeType', '
 PRINT_ADMIN_TITLES = ['roleAssignmentId', 'roleId', 'role', 'assignedTo', 'assignedToUser', 'assignedToGroup', 'scopeType', 'orgUnitId', 'orgUnit']
 
 # gam print admins [todrive <ToDriveAttribute>*]
-#	[user|group <EmailAddress>|<UniqueID>] [role <RoleItem>] [condition] [privileges]
+#	[user|group <EmailAddress>|<UniqueID>] [role <RoleItem>] [condition]
+#	[privileges] [oneitemperrow]
 # gam show admins
 #	[user|group <EmailAddress>|<UniqueID>] [role <RoleItem>] [condition] [privileges]
 def doPrintShowAdmins():
   def _getPrivileges(admin):
     if showPrivileges:
-      try:
-        return callGAPI(cd.roles(), 'get',
-                        throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND, GAPI.FORBIDDEN]+[GAPI.NOT_FOUND],
-                        customer=GC.Values[GC.CUSTOMER_ID], roleId=admin['roleId'], fields='rolePrivileges')
-      except (GAPI.notFound, GAPI.forbidden) as e:
-        entityActionFailedExit([Ent.USER, userKey, Ent.ADMIN_ROLE, admin['roleId']], str(e))
-      except (GAPI.badRequest, GAPI.customerNotFound):
-        accessErrorExit(cd)
-    return None
+      roleId = admin['roleId']
+      if roleId not in rolePrivileges:
+        try:
+          rolePrivileges[roleId] = callGAPI(cd.roles(), 'get',
+                                            throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND, GAPI.FORBIDDEN]+[GAPI.NOT_FOUND],
+                                            customer=GC.Values[GC.CUSTOMER_ID], roleId=roleId, fields='rolePrivileges')
+        except (GAPI.notFound, GAPI.forbidden) as e:
+          entityActionFailedExit([Ent.USER, userKey, Ent.ADMIN_ROLE, admin['roleId']], str(e))
+          rolePrivileges[roleId] = None
+        except (GAPI.badRequest, GAPI.customerNotFound):
+          accessErrorExit(cd)
+      return rolePrivileges[roleId]
 
   def _setNamesFromIds(admin, privileges):
     admin['role'] = role_from_roleid(admin['roleId'])
@@ -16300,7 +16317,7 @@ def doPrintShowAdmins():
     if assignedToField:
       admin[assignedToField] = assignedToIdEmailMap[assignedTo]['assigneeEmail']
     if privileges is not None:
-      admin['rolePrivileges'] = privileges
+      admin.update(privileges)
     if 'orgUnitId' in admin:
       admin['orgUnit'] = convertOrgUnitIDtoPath(cd, f'id:{admin["orgUnitId"]}')
     if 'condition' in admin:
@@ -16310,11 +16327,12 @@ def doPrintShowAdmins():
         admin['condition'] = 'nonsecuritygroup'
 
   cd = buildGAPIObject(API.DIRECTORY)
-  csvPF = CSVPrintFile() if Act.csvFormat() else None
+  csvPF = CSVPrintFile(PRINT_ADMIN_TITLES) if Act.csvFormat() else None
   roleId = None
   userKey = None
-  showPrivileges = False
+  oneItemPerRow = showPrivileges = False
   kwargs = {}
+  rolePrivileges = {}
   fieldsList = PRINT_ADMIN_FIELDS
   assignedToIdEmailMap = {}
   while Cmd.ArgumentsRemaining():
@@ -16327,19 +16345,19 @@ def doPrintShowAdmins():
       _, roleId = getRoleId()
     elif myarg == 'condition':
       fieldsList.append('condition')
-      PRINT_ADMIN_TITLES.append('condition')
+      if csvPF:
+        csvPF.AddTitle('condition')
       cd = buildGAPIObject(API.DIRECTORY_BETA)
     elif myarg == 'privileges':
       showPrivileges = True
-      PRINT_ADMIN_TITLES.append('rolePrivileges')
+    elif myarg == 'oneitemperrow':
+      oneItemPerRow = True
     else:
       unknownArgumentExit()
   if roleId and not kwargs:
     kwargs['roleId'] = roleId
     roleId = None
   fields = getItemFieldsFromFieldsList('items', fieldsList)
-  if csvPF:
-    csvPF.SetTitles(PRINT_ADMIN_TITLES)
   printGettingAllAccountEntities(Ent.ADMIN_ROLE_ASSIGNMENT)
   try:
     admins = callGAPIpages(cd.roleAssignments(), 'list', 'items',
@@ -16380,7 +16398,14 @@ def doPrintShowAdmins():
       if roleId and roleId != admin['roleId']:
         continue
       _setNamesFromIds(admin, _getPrivileges(admin))
-      csvPF.WriteRowTitles(flattenJSON(admin))
+      if not oneItemPerRow or 'rolePrivileges' not in admin:
+        csvPF.WriteRowTitles(flattenJSON(admin))
+      else:
+        privileges = admin.pop('rolePrivileges')
+        baserow = flattenJSON(admin)
+        for privilege in privileges:
+          row = flattenJSON(privilege, flattened=baserow.copy())
+          csvPF.WriteRowTitles(row)
   if csvPF:
     csvPF.writeCSVfile('Admins')
 
@@ -58345,7 +58370,7 @@ def updateGoogleDocument(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, drive, jcount = _validateUserGetFileIDs(user, i, count, fileIdEntity, entityType=Ent.DOCUMENT if not FJQC.formatJSON else None)
+    user, _, jcount = _validateUserGetFileIDs(user, i, count, fileIdEntity, entityType=Ent.DOCUMENT if not FJQC.formatJSON else None)
     if jcount == 0:
       continue
     _, docs = buildGAPIServiceObject(API.DOCS, user, i, count)

@@ -2,6 +2,12 @@
 
 Merged GAM-Team version
 
+6.71.08
+
+Added option `oneitemperrow` to 'gam print admins|adminroles` to have each of a
+roles privileges displayed on a separate row with all of the other admin/role fields.
+This produces a CSV file that can be used in subsequent commands without further script processing.
+
 6.71.07
 
 Added command to upload changes to Google Docs.
