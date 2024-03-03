@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.71.09
+
+Improved the performance of `gam <UserTypeEntity> print filelist` when `showmimetype` and `filepath|fullpath`
+are both specified.
+
 ### 6.71.08
 
 Added option `oneitemperrow` to 'gam print admins|adminroles` to have each of a

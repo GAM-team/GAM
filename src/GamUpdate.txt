@@ -2,6 +2,11 @@
 
 Merged GAM-Team version
 
+6.71.09
+
+Improved the performance of `gam <UserTypeEntity> print filelist` when `showmimetype` and `filepath|fullpath`
+are both specified.
+
 6.71.08
 
 Added option `oneitemperrow` to 'gam print admins|adminroles` to have each of a
