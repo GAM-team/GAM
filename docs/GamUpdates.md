@@ -10,6 +10,16 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.71.10
+
+Reverted change made in 6.71.09 to `gam <UserTypeEntity> print filelist` when `showmimetype` and `filepath|fullpath`
+were both specified. The change improved the performance when `showmimetype` selected a small number of files;
+the information for just those files was downloaded and then additional API calls were made to construct the file paths.
+However, if a large number of files were selected, the additional APIs calls decreased performance.
+
+Added option `mimetypeinquery` can be used when you expect the query to return a small number of files
+relative to the total number of files.
+
 ### 6.71.09
 
 Improved the performance of `gam <UserTypeEntity> print filelist` when `showmimetype` and `filepath|fullpath`

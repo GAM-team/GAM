@@ -53264,7 +53264,7 @@ SIZE_FIELD_CHOICE_MAP = {
 #	[select <DriveFileEntity> [selectsubquery <QueryDriveFile>]
 #	    [(norecursion [<Boolean>])|(depth <Number>)] [showparent]]
 #	[anyowner|(showownedby any|me|others)]
-#	[showmimetype [not] <MimeTypeList>]
+#	[showmimetype [not] <MimeTypeList>] [mimetypeinquery [<Boolean>]]
 #	[sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
 #	[filenamematchpattern <RegularExpression>]
 #	<PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>] [pmfilter] [oneitemperrow]
@@ -53501,7 +53501,7 @@ def printFileList(users):
   csvPF = CSVPrintFile('Owner', indexedTitles=DRIVE_INDEXED_TITLES)
   FJQC = FormatJSONQuoteChar(csvPF)
   addPathsToJSON = countsRowFilter = buildTree = countsOnly = filepath = fullpath = getPermissionsForSharedDrives = \
-    noRecursion = oneItemPerRow = stripCRsFromName = \
+    mimeTypeInQuery = noRecursion = oneItemPerRow = stripCRsFromName = \
     showParentsIdsAsList = showDepth = showParent = showSize = showMimeTypeSize = showSource = False
   sizeField = 'quotaBytesUsed'
   pathDelimiter = '/'
@@ -53541,6 +53541,8 @@ def printFileList(users):
       selectSubQuery = getString(Cmd.OB_QUERY, minLen=0)
     elif myarg == 'norecursion':
       noRecursion = getBoolean()
+    elif myarg == 'mimetypeinquery':
+      mimeTypeInQuery = getBoolean()
     elif myarg == 'depth':
       maxdepth = getInteger(minVal=-1)
     elif myarg == 'showdepth':
@@ -53635,7 +53637,7 @@ def printFileList(users):
                  and not fileIdEntity['shareddrivefilequery']
                  and _simpleFileIdEntityList(fileIdEntity['list']))
   incrementalPrint = buildTree and (not filepath) and noSelect and not DLP.locationSet and not showParent
-  if buildTree and noSelect and not DLP.locationSet and not showParent:
+  if buildTree and ((not filepath) or mimeTypeInQuery) and noSelect and not DLP.locationSet and not showParent:
     DLP.AddMimeTypeToQuery()
   if buildTree:
     if not fileIdEntity.get('shareddrive'):
