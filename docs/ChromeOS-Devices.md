@@ -551,6 +551,7 @@ gam print cros [todrive <ToDriveAttribute>*]
         [start <Date>] [end <Date>] [listlimit <Number>]
         [reverselists <CrOSListFieldNameList>]
         [timerangeorder ascending|descending] [showdvrsfp]
+        (addcsvdata <FieldName> <String>)*
         [sortheaders]
         [formatjson [quotechar <Character>]]
 ```
@@ -593,6 +594,9 @@ otherwise, the remaining field names will appear in the order specified.
 - `timerangeorder descending` - Change the `activetimeranges` order from ascending (oldest to newest) to descending (newest to oldest); this makes it easy to get the `N` most recent values with `timeranges listlimit N timerangeorder descending`.
 - `showdvrsfp` - Display a field `diskVolumeReports.volumeInfo.storageFreePercentage` which is calculated as: `(diskVolumeReports.volumeInfo.storageFree/diskVolumeReports.volumeInfo.storageTotal)*100`
 
+Add additional columns of data from the command line to the output
+* `addcsvdata <FieldName> <String>`
+
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format:
 
 - `formatjson` - Display the fields in JSON format.
@@ -615,6 +619,7 @@ gam <CrOSTypeEntity> print cros [todrive <ToDriveAttribute>*]
         [start <Date>] [end <Date>] [listlimit <Number>]
         [reverselists <CrOSListFieldNameList>]
         [timerangeorder ascending|descending] [showdvrsfp]
+        (addcsvdata <FieldName> <String>)*
         [sortheaders]
         [formatjson [quotechar <Character>]]
 
@@ -642,6 +647,9 @@ otherwise, the remaining field names will appear in the order specified.
 - `reverselists <CrOSListFieldNameList>` - For each list, change order from ascending (oldest to newest) to descending (newest to oldest); this makes it easy to get the `N` most recent values with `listlimit N reverselists timeranges`
 - `timerangeorder descending` - Change the `activetimeranges` order from ascending (oldest to newest) to descending (newest to oldest); this makes it easy to get the `N` most recent values with `timeranges listlimit N timerangeorder descending`.
 - `showdvrsfp` - Display a field `diskVolumeReports.volumeInfo.storageFreePercentage` which is calculated as: `(diskVolumeReports.volumeInfo.storageFree/diskVolumeReports.volumeInfo.storageTotal)*100`
+
+Add additional columns of data from the command line to the output
+* `addcsvdata <FieldName> <String>`
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format:
 

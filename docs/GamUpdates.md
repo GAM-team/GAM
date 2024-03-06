@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.71.11
+
+Added option `addcsvdata <FieldName> <String>` to `gam print cros` that adds
+additional columns of data to the CSV file output. Typically, you would read CSV file of device IDs/serial numbers
+to generate a CSV file of results and copy data from the input CSV to the outout CSV.
+
 ### 6.71.10
 
 Reverted change made in 6.71.09 to `gam <UserTypeEntity> print filelist` when `showmimetype` and `filepath|fullpath`

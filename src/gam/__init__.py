@@ -23649,6 +23649,7 @@ CROS_INDEXED_TITLES = ['activeTimeRanges', 'recentUsers', 'deviceFiles',
 #	[start <Date>] [end <Date>] [listlimit <Number>]
 #	[reverselists <CrOSListFieldNameList>]
 #	[timerangeorder ascending|descending] [showdvrsfp]
+#	(addcsvdata <FieldName> <String>)*
 #	[sortheaders]
 #	[formatjson [quotechar <Character>]]
 # 	[showitemcountonly]
@@ -23664,6 +23665,8 @@ def doPrintCrOSDevices(entityList=None):
         cros[field].reverse()
     if 'orgUnitId' in cros:
       cros['orgUnitId'] = f"id:{cros['orgUnitId']}"
+    if addCSVData:
+      cros.update(addCSVData)
     if FJQC.formatJSON:
       if (not csvPF.rowFilter and not csvPF.rowDropFilter) or csvPF.CheckRowTitles(flattenJSON(cros, listLimit=listLimit, timeObjects=CROS_TIME_OBJECTS)):
         csvPF.WriteRowNoFilter({'deviceId': cros['deviceId'],
@@ -23703,6 +23706,8 @@ def doPrintCrOSDevices(entityList=None):
           row[attrib] = cros[attrib]
         else:
           row[attrib] = formatLocalTime(cros[attrib])
+    if addCSVData:
+      row.update(addCSVData)
     if noLists or (not activeTimeRanges and not recentUsers and not deviceFiles and
                    not cpuStatusReports and not diskVolumeReports and not lastKnownNetworks and not screenshotFiles and not systemRamFreeReports):
       csvPF.WriteRowTitles(row)
@@ -23787,6 +23792,7 @@ def doPrintCrOSDevices(entityList=None):
   allFields = noLists = oneRow = showDVRstorageFreePercentage = sortHeaders = False
   activeTimeRangesOrder = 'ASCENDING'
   showItemCountOnly = False
+  addCSVData = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -23858,6 +23864,9 @@ def doPrintCrOSDevices(entityList=None):
       showDVRstorageFreePercentage = True
     elif myarg == 'showitemcountonly':
       showItemCountOnly = True
+    elif csvPF and myarg == 'addcsvdata':
+      k = getString(Cmd.OB_STRING)
+      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   if selectedLists:
@@ -62766,16 +62775,18 @@ SHOW_NO_PERMISSIONS_DRIVES_CHOICE_MAP = {
 #	[matchname <RegularExpression>] [orgunit|org|ou <OrgUnitPath>]
 #	[user|group <EmailAddress> [checkgroups]] (role|roles <SharedDriveACLRoleList>)*
 #	<PermissionMatch>* [<PermissionMatchAction>] [pmselect]
-#	[oneitemperrow] [<DrivePermissionsFieldName>*|(fields <DrivePermissionsFieldNameList>)]
+#	[oneitemperrow] [maxitems <Integer>]
 #	[shownopermissionsdrives false|true|only]
+#	[<DrivePermissionsFieldName>*|(fields <DrivePermissionsFieldNameList>)]
 #	[formatjson [quotechar <Character>]]
 # gam [<UserTypeEntity>] show shareddriveacls
 #	[adminaccess|asadmin] [shareddriveadminquery|query <QuerySharedDrive>]
 #	[matchname <RegularExpression>] [orgunit|org|ou <OrgUnitPath>]
 #	[user|group <EmailAddress> [checkgroups]] (role|roles <SharedDriveACLRoleList>)*
 #	<PermissionMatch>* [<PermissionMatchAction>] [pmselect]
-#	[oneitemperrow] [<DrivePermissionsFieldName>*|(fields <DrivePermissionsFieldNameList>)]
+#	[oneitemperrow] [maxitems <Integer>]
 #	[shownopermissionsdrives false|true|only]
+#	[<DrivePermissionsFieldName>*|(fields <DrivePermissionsFieldNameList>)]
 #	[formatjsn]
 def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
   def _printPermissionRow(baserow, permission):
@@ -62797,6 +62808,7 @@ def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
   fieldsList = []
   cd = emailAddress = orgUnitId = query = matchPattern = permtype = None
   PM = PermissionMatch()
+  maxItems = 0
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -62823,6 +62835,8 @@ def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
       checkGroups = True
     elif myarg == 'oneitemperrow':
       oneItemPerRow = True
+    elif myarg == 'maxitems':
+      maxItems = getInteger(minVal=0)
     elif getDriveFilePermissionsFields(myarg, fieldsList):
       pass
     elif myarg in ADMIN_ACCESS_OPTIONS:
@@ -62920,10 +62934,11 @@ def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
                                     useDomainAdminAccess=useDomainAdminAccess,
                                     fileId=shareddrive['id'], fields=fields, supportsAllDrives=True)
         if not permissions:
-          if showNoPermissionsDrives == 0:
+          if showNoPermissionsDrives == 0: # no permissions and showNoPermissionDrives False - ignore
             continue
-          matchFeed.append(shareddrive)
-        elif showNoPermissionsDrives < 0:
+          matchFeed.append(shareddrive) # no permissions and showNoPermissionDrives Only/True - keep
+          continue
+        if showNoPermissionsDrives < 0: # permissions and showNoPermissionDrives Only/True - ignore
           continue
         if pmselect:
           if not PM.CheckPermissionMatches(permissions):
@@ -62941,6 +62956,9 @@ def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
           elif checkGroups and permission['emailAddress'] in groupsSet:
             shareddrive['permissions'].append(permission)
         if shareddrive['permissions']:
+          numItems = len(shareddrive['permissions'])
+          if numItems > maxItems > 0:
+            shareddrive['permissions'] = shareddrive['permissions'][0:maxItems]
           matchFeed.append(shareddrive)
       except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
               GAPI.insufficientAdministratorPrivileges, GAPI.insufficientFilePermissions,
