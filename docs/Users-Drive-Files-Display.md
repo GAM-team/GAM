@@ -71,6 +71,7 @@
         g3pshortcut|
         gsite
 <MimeTypeName> ::= application|audio|font|image|message|model|multipart|text|video
+<MimeTypeNameList> ::= "<MimeTypeName>(,<MimeTypeName>)*"
 <MimeType> ::= <MimeTypeShortcut>|(<MimeTypeName>/<String>)
 <MimeTypeList> ::= "<MimeType>(,<MimeType>)*"
 ```
@@ -611,9 +612,11 @@ By default, all types of files and folders are selected. You can specify a list 
 This option updates the current query.
 ```
 showmimetype [not] <MimeTypeList>
+showmimetype category <MimeTypeNameList>
 ```
 * `showmimetype <MimeTypeList>` - Select files and folders with the specified MIME types
 * `showmimetype not <MimeTypeList>` - Select files and folders with MIME types other than those specified
+* `showmimetype category <MimeTypeNameList>` - Select files and folders with the specified MIME type categories
 
 ## File selection by file size
 These options would typically be used with `showmimetype` to select files of a particular type. This
@@ -649,7 +652,7 @@ gam <UserTypeEntity> print filecounts [todrive <ToDriveAttribute>*]
         [corpora <CorporaAttribute>]
         [select <SharedDriveEntity>]
         [anyowner|(showownedby any|me|others)]
-        [showmimetype [not] <MimeTypeList>]
+        [showmimetype [not] <MimeTypeList>] [showmimetype category <MimeTypeNameList>]
         [sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
         [filenamematchpattern <RegularExpression>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
@@ -662,7 +665,7 @@ gam <UserTypeEntity> show filecounts
         [corpora <CorporaAttribute>]
         [select <SharedDriveEntity>]
         [anyowner|(showownedby any|me|others)]
-        [showmimetype [not] <MimeTypeList>]
+        [showmimetype [not] <MimeTypeList>] [showmimetype category <MimeTypeNameList>]
         [sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
         [filenamematchpattern <RegularExpression>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
@@ -894,7 +897,7 @@ gam <UserTypeEntity> print filetree [todrive <ToDriveAttribute>*]
         [select <DriveFileEntity> [selectsubquery <QueryDriveFile>]
             [depth <Number>]]
         [anyowner|(showownedby any|me|others)]
-        [showmimetype [not] <MimeTypeList>]
+        [showmimetype [not] <MimeTypeList>] [showmimetype category <MimeTypeNameList>]
         [sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
         [filenamematchpattern <RegularExpression>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
@@ -906,7 +909,7 @@ gam <UserTypeEntity> show filetree
         [select <DriveFileEntity> [selectsubquery <QueryDriveFile>]
             [depth <Number>]]
         [anyowner|(showownedby any|me|others)]
-        [showmimetype [not] <MimeTypeList>]
+        [showmimetype [not] <MimeTypeList>] [showmimetype category <MimeTypeNameList>]
         [sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
         [filenamematchpattern <RegularExpression>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
@@ -999,7 +1002,7 @@ gam <UserTypeEntity> print|show filelist [todrive <ToDriveAttribute>*]
         [select <DriveFileEntity> [selectsubquery <QueryDriveFile>]
             [(norecursion [<Boolean>])|(depth <Number>)] [showparent]]
         [anyowner|(showownedby any|me|others)]
-        [showmimetype [not] <MimeTypeList>] [mimetypeinquery [<Boolean>]]
+        [showmimetype [not] <MimeTypeList>] [showmimetype category <MimeTypeNameList>] [mimetypeinquery [<Boolean>]]
         [sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
         [filenamematchpattern <RegularExpression>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>] [pmfilter] [oneitemperrow]

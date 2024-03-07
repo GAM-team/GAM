@@ -709,6 +709,7 @@ If an item contains spaces, it should be surrounded by ".
 <MatterStateList> ::= "<MatterState>(,<MatterState>)*"
 <MessageIDList> ::= "<MessageID>(,<MessageID>)*"
 <MimeTypeList> ::= "<MimeType>(,<MimeType>)*"
+<MimeTypeNameList> ::= "<MimeTypeName>(,<MimeTypeName>)*"
 <NamespaceList> ::= "<Namespace>(,<Namespace>)*"
 <NotesNameList> ::= "<NotesName>(,<NotesName>)*"
 <OrgUnitList> ::= "<OrgUnitItem>(,<OrgUnitItem>)*"
@@ -6676,7 +6677,7 @@ gam <UserTypeEntity> print filecounts [todrive <ToDriveAttribute>*]
         [corpora <CorporaAttribute>]
         [select <SharedDriveEntity>]
         [anyowner|(showownedby any|me|others)]
-        [showmimetype [not] <MimeTypeList>]
+        [showmimetype [not] <MimeTypeList>] [showmimetype category <MimeTypeNameList>]
         [sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
         [filenamematchpattern <RegularExpression>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
@@ -6689,7 +6690,7 @@ gam <UserTypeEntity> show filecounts
         [corpora <CorporaAttribute>]
         [select <SharedDriveEntity>]
         [anyowner|(showownedby any|me|others)]
-        [showmimetype [not] <MimeTypeList>]
+        [showmimetype [not] <MimeTypeList>] [`<showmimetype category <MimeTypeNameList>]
         [sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
         [filenamematchpattern <RegularExpression>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
@@ -6721,7 +6722,7 @@ gam <UserTypeEntity> print filetree [todrive <ToDriveAttribute>*]
         [select <DriveFileEntity> [selectsubquery <QueryDriveFile>]
             [depth <Number>]]
         [anyowner|(showownedby any|me|others)]
-        [showmimetype [not] <MimeTypeList>]
+        [showmimetype [not] <MimeTypeList>] [showmimetype category <MimeTypeNameList>]
         [sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
         [filenamematchpattern <RegularExpression>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
@@ -6733,7 +6734,7 @@ gam <UserTypeEntity> show filetree
         [select <DriveFileEntity> [selectsubquery <QueryDriveFile>]
             [depth <Number>]]
         [anyowner|(showownedby any|me|others)]
-        [showmimetype [not] <MimeTypeList>]
+        [showmimetype [not] <MimeTypeList>] [showmimetype category <MimeTypeNameList>]
         [sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
         [filenamematchpattern <RegularExpression>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
@@ -6753,7 +6754,7 @@ gam <UserTypeEntity> print filelist [todrive <ToDriveAttribute>*]
         [select <DriveFileEntity> [selectsubquery <QueryDriveFile>]
             [(norecursion [<Boolean>])|(depth <Number>)] [showparent]]
         [anyowner|(showownedby any|me|others)]
-        [showmimetype [not] <MimeTypeList>] [mimetypeinquery [<Boolean>]]
+        [showmimetype [not] <MimeTypeList>] [showmimetype category <MimeTypeNameList>] [mimetypeinquery [<Boolean>]]
         [sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
         [filenamematchpattern <RegularExpression>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>] [pmfilter] [oneitemperrow]

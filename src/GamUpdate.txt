@@ -2,6 +2,18 @@
 
 Merged GAM-Team version
 
+6.71.12
+
+Added option `showmimetype category <MimeTypeNameList>` to `gam <UserTypeEntity> print|show filecounts|filelist|filetree`
+```
+<MimeTypeName> ::= application|audio|font|image|message|model|multipart|text|video
+<MimeTypeNameList> ::= "<MimeTypeName>(,<MimeTypeName>)*"
+
+gam user user@domain.com print filelist fields id,name,mimetype showmimetype prefixes audio,video
+```
+
+Fix bug in `gam <UserTypeEntity> info|show sheet <DriveFileEntity>` that caused a trap.
+
 6.71.11
 
 Added option `addcsvdata <FieldName> <String>` to `gam print cros` that adds

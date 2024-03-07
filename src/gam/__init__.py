@@ -8887,8 +8887,7 @@ def flattenJSON(topStructure, flattened=None,
 
 # Show a json object
 def showJSON(showName, showValue, skipObjects=None, timeObjects=None,
-             simpleLists=None, dictObjectsKey=None, sortDictKeys=True,
-             noIndents=False):
+             simpleLists=None, dictObjectsKey=None, sortDictKeys=True):
   def _show(objectName, objectValue, subObjectKey, level, subSkipObjects):
     if objectName in subSkipObjects:
       return
@@ -8920,7 +8919,7 @@ def showJSON(showName, showValue, skipObjects=None, timeObjects=None,
       if objectName is not None:
         printBlankLine()
         Ind.Increment()
-      elif (level > 0) and not noIndents:
+      elif level > 0:
         indentAfterFirst = unindentAfterLast = True
       subObjects = sorted(objectValue) if sortDictKeys else objectValue.keys()
       if subObjectKey and (subObjectKey in subObjects):
@@ -21336,8 +21335,7 @@ def _showPerson(userEntityType, user, entityType, person, i, count, FJQC, parame
   if not FJQC.formatJSON:
     printEntity([userEntityType, user, entityType, person['resourceName']], i, count)
     Ind.Increment()
-#    showJSON(None, person, noIndents=True)
-    showJSON(None, person, noIndents=False)
+    showJSON(None, person)
     Ind.Decrement()
   else:
     printLine(json.dumps(cleanJSON(person), ensure_ascii=False, sort_keys=True))
@@ -22410,7 +22408,7 @@ def _showContactGroup(userEntityType, user, entityType, contactGroup, i, count, 
   normalizedContactGroup = _normalizeContactGroupMetadata(contactGroup)
   printEntity([userEntityType, user, entityType, contactGroup['resourceName']], i, count)
   Ind.Increment()
-  showJSON(None, normalizedContactGroup, timeObjects=PEOPLE_GROUP_TIME_OBJECTS, noIndents=True)
+  showJSON(None, normalizedContactGroup, timeObjects=PEOPLE_GROUP_TIME_OBJECTS)
   Ind.Decrement()
 
 def _printContactGroup(entityTypeName, user, contactGroup, csvPF, FJQC):
@@ -50576,8 +50574,16 @@ class MimeTypeCheck():
   def __init__(self):
     self.mimeTypes = set()
     self.reverse = False
+    self.category = set()
 
   def Get(self):
+    if checkArgumentPresent('category'):
+      for mimeType in getString(Cmd.OB_MIMETYPE_LIST).lower().replace(',', ' ').split():
+        if mimeType in MIMETYPE_TYPES:
+          self.category.add(mimeType)
+        else:
+          invalidChoiceExit(mimeType, MIMETYPE_TYPES, True)
+      return
     self.reverse = checkArgumentPresent('not')
     for mimeType in getString(Cmd.OB_MIMETYPE_LIST).lower().replace(',', ' ').split():
       self.mimeTypes.add(validateMimeType(mimeType))
@@ -50590,6 +50596,8 @@ class MimeTypeCheck():
     if not self.reverse:
       for mimeType in self.mimeTypes:
         query += f"mimeType = '{mimeType}' or "
+      for mimeType in self.category:
+        query += f"mimeType contains '{mimeType}' or "
       query = query[:-4]
     else:
       for mimeType in self.mimeTypes:
@@ -50599,8 +50607,11 @@ class MimeTypeCheck():
     return query
 
   def Check(self, fileEntry):
-    if not self.mimeTypes:
+    if not self.mimeTypes and not self.category:
       return True
+    for mimeType in self.category:
+      if fileEntry['mimeType'].startswith(mimeType):
+        return True
     if not self.reverse:
       return fileEntry['mimeType'] in self.mimeTypes
     return fileEntry['mimeType'] not in self.mimeTypes
@@ -53178,7 +53189,7 @@ class DriveListParameters():
   def AddMimeTypeToQuery(self):
     if not self.fileIdEntity:
       self.fileIdEntity = initDriveFileEntity()
-    if self.mimeTypeCheck.mimeTypes:
+    if self.mimeTypeCheck.mimeTypes or self.mimeTypeCheck.category:
       self.fileIdEntity['query'] = self.mimeTypeCheck.AddMimeTypeToQuery(self.fileIdEntity['query'])
 
   def Finalize(self, fileIdEntity):
@@ -53273,7 +53284,7 @@ SIZE_FIELD_CHOICE_MAP = {
 #	[select <DriveFileEntity> [selectsubquery <QueryDriveFile>]
 #	    [(norecursion [<Boolean>])|(depth <Number>)] [showparent]]
 #	[anyowner|(showownedby any|me|others)]
-#	[showmimetype [not] <MimeTypeList>] [mimetypeinquery [<Boolean>]]
+#	[showmimetype [not] <MimeTypeList>] [showmimetype category <MimeTypeNameList>] [mimetypeinquery [<Boolean>]]
 #	[sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
 #	[filenamematchpattern <RegularExpression>]
 #	<PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>] [pmfilter] [oneitemperrow]
@@ -54090,7 +54101,7 @@ def printFileParentTree(users):
 #	[corpora <CorporaAttribute>]
 #	[select <SharedDriveEntity>]
 #	[anyowner|(showownedby any|me|others)]
-#	[showmimetype [not] <MimeTypeList>]
+#	[showmimetype [not] <MimeTypeList>] [showmimetype category <MimeTypeNameList>]
 #	[sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
 #	[filenamematchpattern <RegularExpression>]
 #	<PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
@@ -54101,7 +54112,7 @@ def printFileParentTree(users):
 #	[corpora <CorporaAttribute>]
 #	[select <SharedDriveEntity>]
 #	[anyowner|(showownedby any|me|others)]
-#	[showmimetype [not] <MimeTypeList>]
+#	[showmimetype [not] <MimeTypeList>] [showmimetype category <MimeTypeNameList>]
 #	[sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
 #	[filenamematchpattern <RegularExpression>]
 #	<PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
@@ -54638,7 +54649,7 @@ FILETREE_FIELDS_PRINT_ORDER = ['id', 'parents', 'owners', 'mimeType', 'size', 'e
 # gam <UserTypeEntity> print filetree [todrive <ToDriveAttribute>*]
 #	[select <DriveFileEntity> [selectsubquery <QueryDriveFile>] [depth <Number>]]
 #	[anyowner|(showownedby any|me|others)]
-#	[showmimetype [not] <MimeTypeList>]
+#	[showmimetype [not] <MimeTypeList>] [showmimetype category <MimeTypeNameList>]
 #	[sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
 #	[filenamematchpattern <RegularExpression>]
 #	<PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
@@ -54649,7 +54660,7 @@ FILETREE_FIELDS_PRINT_ORDER = ['id', 'parents', 'owners', 'mimeType', 'size', 'e
 # gam <UserTypeEntity> show filetree
 #	[select <DriveFileEntity> [selectsubquery <QueryDriveFile>] [depth <Number>]]
 #	[anyowner|(showownedby any|me|others)]
-#	[showmimetype [not] <MimeTypeList>]
+#	[showmimetype [not] <MimeTypeList>] [showmimetype category <MimeTypeNameList>]
 #	[sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
 #	[filenamematchpattern <RegularExpression>]
 #	<PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
@@ -64928,18 +64939,18 @@ def infoPrintShowSheets(users):
           Ind.Increment()
           if 'spreadsheetUrl' in result:
             printKeyValueList(['spreadsheetUrl', result['spreadsheetUrl']])
-          for field in ['properties', 'sheets', 'namedRanges', 'developerMetadata']:
+          for field in ['properties', 'sheets', 'namedRanges', 'developerMetadata', 'dataSources', 'dataSourceSchedules']:
             if field in result:
               if field != 'sheets':
                 showJSON(field, result[field])
               else:
                 jcount = len(result[field])
                 j = 0
-                for sheet in result[field]:
+                for usheet in result[field]:
                   j += 1
-                  printEntity([Ent.SHEET, sheet.get('properties', {}).get('title', '')], j, jcount)
+                  printEntity([Ent.SHEET, usheet.get('properties', {}).get('title', '')], j, jcount)
                   Ind.Increment()
-                  showJSON(None, sheet, noIndents=True)
+                  showJSON(None, usheet)
                   Ind.Decrement()
           Ind.Decrement()
         else:

@@ -69,6 +69,7 @@
 <MatterStateList> ::= "<MatterState>(,<MatterState>)*"
 <MessageIDList> ::= "<MessageID>(,<MessageID>)*"
 <MimeTypeList> ::= "<MimeType>(,<MimeType>)*"
+<MimeTypeNameList> ::= "<MimeTypeName>(,<MimeTypeName>)*"
 <NamespaceList> ::= "<Namespace>(,<Namespace>)*"
 <NotesNameList> ::= "<NotesName>(,<NotesName>)*"
 <OrgUnitList> ::= "<OrgUnitItem>(,<OrgUnitItem>)*"

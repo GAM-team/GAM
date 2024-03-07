@@ -10,6 +10,16 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.71.12
+
+Added option `showmimetype category <MimeTypeNameList>` to `gam <UserTypeEntity> print|show filecounts|filelist|filetree`
+```
+<MimeTypeName> ::= application|audio|font|image|message|model|multipart|text|video
+<MimeTypeNameList> ::= "<MimeTypeName>(,<MimeTypeName>)*"
+
+gam user user@domain.com print filelist fields id,name,mimetype showmimetype prefixes audio,video
+```
+
 ### 6.71.11
 
 Added option `addcsvdata <FieldName> <String>` to `gam print cros` that adds
