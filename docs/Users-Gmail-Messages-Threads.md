@@ -1,4 +1,5 @@
 # Users - Gmail - Messages/Threads
+_ [Notes](#notes)
 - [API documentation](#api-documentation)
 - [Query documentation](#query-documentation)
 - [Definitions](#definitions)
@@ -24,6 +25,13 @@
   - [Download attachments](#download-attachments)
   - [Display messages sent by delegates for delegator](#display-messages-sent-by-delegates-for-delegator)
 - [User attribute `replace <Tag> <UserReplacement>` processing](Tag-Replace)
+
+## Notes
+Restrict email messages to authorized addresses or domains only
+* https://support.google.com/a/answer/2640542
+
+Block emails between specific user groups
+* https://support.google.com/a/answer/9175444
 
 ## API documentation
 * https://developers.google.com/gmail/api/v1/reference/users/messages

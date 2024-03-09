@@ -338,6 +338,10 @@ relation manager manageremail@domain.com
 externalid organization "Employee ID"
 
 ```
+`<UserMultiAttribute>.location.buildingid <String>` allows non-validated building IDs
+by specifying `nv:` at the beginning of `<String>`; e.g., `nv:Building X' sets the building ID to `Building X`.
+
+
 ## Passwords
 To set a user's password, you specify a `<Password>` string and a hash method that specifies how to interpret the string
 * `password random|uniquerandom` - A 25 character plain text string of ASCII uppercase/lowecase letters, digits and punctuation

@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.71.23
+
+Updated `<UserMultiAttribute>.location.buildingid <String>` to allow non-validated building IDs
+by specifying `nv:` at the beginning of `<String>`; e.g., `nv:Building X' sets the building ID to `Building X`.
+
 ### 6.71.12
 
 Added option `showmimetype category <MimeTypeNameList>` to `gam <UserTypeEntity> print|show filecounts|filelist|filetree`

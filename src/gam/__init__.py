@@ -34822,13 +34822,15 @@ def _makeBuildingIdNameMap(cd=None):
     GM.Globals[GM.MAP_BUILDING_ID_TO_NAME][building['buildingId']] = building['buildingName']
     GM.Globals[GM.MAP_BUILDING_NAME_TO_ID][building['buildingName']] = building['buildingId']
 
-def _getBuildingByNameOrId(cd, minLen=1):
+def _getBuildingByNameOrId(cd, minLen=1, allowNV=False):
   which_building = getString(Cmd.OB_BUILDING_ID, minLen=minLen)
   if not which_building or (minLen == 0 and which_building in {'id:', 'uid:'}):
     return ''
   cg = UID_PATTERN.match(which_building)
   if cg:
     return cg.group(1)
+  if allowNV and which_building.startswith('nv:'):
+    return which_building[3:]
   if GM.Globals[GM.MAKE_BUILDING_ID_NAME_MAP]:
     _makeBuildingIdNameMap(cd)
 # Exact name match, return ID
@@ -34867,7 +34869,7 @@ def _getBuildingByNameOrId(cd, minLen=1):
 def _getBuildingNameById(cd, buildingId):
   if GM.Globals[GM.MAKE_BUILDING_ID_NAME_MAP]:
     _makeBuildingIdNameMap(cd)
-  return GM.Globals[GM.MAP_BUILDING_ID_TO_NAME].get(buildingId, 'UNKNOWN')
+  return GM.Globals[GM.MAP_BUILDING_ID_TO_NAME].get(buildingId, buildingId)
 
 # gam update building <BuildIngID> <BuildingAttribute>*
 def doUpdateBuilding():
@@ -41354,7 +41356,7 @@ def getUserAttributes(cd, updateCmd, noUid=False):
           elif argument == 'area':
             entry['area'] = getString(Cmd.OB_STRING)
           elif argument in {'building', 'buildingid'}:
-            entry['buildingId'] = _getBuildingByNameOrId(cd)
+            entry['buildingId'] = _getBuildingByNameOrId(cd, allowNV=True)
           elif argument in {'floor', 'floorname'}:
             entry['floorName'] = getString(Cmd.OB_STRING, minLen=0)
           elif argument in {'section', 'floorsection'}:
