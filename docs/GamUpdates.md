@@ -10,7 +10,16 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
-### 6.71.23
+### 6.71.14
+
+Added a command to update a Gmail label's settings by specifying it's ID rather than it's name.
+```
+gam <UserTypeEntity> update labelid <LabelID> [name <String>]
+        [messagelistvisibility hide|show] [labellistvisibility hide|show|showifunread]
+        [backgroundcolor <LabelColorHex>] [textcolor <LabelColorHex>]
+```
+
+### 6.71.13
 
 Updated `<UserMultiAttribute>.location.buildingid <String>` to allow non-validated building IDs
 by specifying `nv:` at the beginning of `<String>`; e.g., `nv:Building X' sets the building ID to `Building X`.

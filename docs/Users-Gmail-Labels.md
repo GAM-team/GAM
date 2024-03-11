@@ -88,8 +88,14 @@ all parent labels are created as necessary.
 Example: `gam user user@domain.com add label "Top/Middle/Bottom" buildpath`
 
 ## Update a label's settings
+The two commands are equivalent; in the first you specify a `<LabelName>`, in the second you specify a `<LabelId>`.
 ```
 gam <UserTypeEntity> update labelsettings <LabelName> [name <String>]
+        [messagelistvisibility hide|show] [labellistvisibility hide|show|showifunread]
+        [backgroundcolor "<LabelColorHex>|<LabelBackgroundColorHex>|custom:<ColorHex>"]
+        [textcolor "<LabelColorHex>|<LabelTextColorHex>|custom:<ColorHex>"]
+
+gam <UserTypeEntity> update labelid <LabelID> [name <String>]
         [messagelistvisibility hide|show] [labellistvisibility hide|show|showifunread]
         [backgroundcolor "<LabelColorHex>|<LabelBackgroundColorHex>|custom:<ColorHex>"]
         [textcolor "<LabelColorHex>|<LabelTextColorHex>|custom:<ColorHex>"]

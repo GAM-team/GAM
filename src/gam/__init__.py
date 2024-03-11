@@ -65955,6 +65955,35 @@ def updateLabelSettings(users):
       entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label_name], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.badRequest):
       entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+
+# gam <UserTypeEntity> update labelid <LabelID> [name <String>]
+#	[messagelistvisibility hide|show] [labellistvisibility hide|show|showifunread]
+#	[backgroundcolor <LabelColorHex>] [textcolor <LabelColorHex>]
+def updateLabelSettingsById(users):
+  labelId = getString(Cmd.OB_LABEL_ID)
+  body = {}
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'name':
+      body['name'] = getString(Cmd.OB_STRING)
+    else:
+      getLabelAttributes(myarg, body)
+  checkLabelColor(body)
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
+    if not gmail:
+      continue
+    try:
+      result = callGAPI(gmail.users().labels(), 'patch',
+                        throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT],
+                        userId='me', id=labelId, body=body, fields='name')
+      entityActionPerformed([Ent.USER, user, Ent.LABEL_ID, labelId, Ent.LABEL, result['name']], i, count)
+    except (GAPI.notFound, GAPI.invalidArgument) as e:
+      entityActionFailedWarning([Ent.USER, user, Ent.LABEL_ID, labelId], str(e), i, count)
+    except (GAPI.serviceNotAvailable, GAPI.badRequest):
+      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
 #
 def cleanLabelQuery(labelQuery):
   for ch in '/ (){}':
@@ -73762,6 +73791,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_FORM:		updateForm,
       Cmd.ARG_GROUP:		updateUserGroups,
       Cmd.ARG_LABEL:		updateLabels,
+      Cmd.ARG_LABELID:		updateLabelSettingsById,
       Cmd.ARG_LABELSETTINGS:	updateLabelSettings,
       Cmd.ARG_LICENSE:		updateLicense,
       Cmd.ARG_OTHERCONTACT:	processUserPeopleOtherContacts,
