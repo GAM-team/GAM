@@ -65944,10 +65944,10 @@ def updateLabelSettings(users):
     try:
       for label in labels['labels']:
         if label['name'].lower() == label_name_lower:
-          callGAPI(gmail.users().labels(), 'patch',
-                   throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT],
-                   userId='me', id=label['id'], body=body, fields='')
-          entityActionPerformed([Ent.USER, user, Ent.LABEL, label_name], i, count)
+          result = callGAPI(gmail.users().labels(), 'patch',
+                            throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT],
+                            userId='me', id=label['id'], body=body, fields='name')
+          entityActionPerformed([Ent.USER, user, Ent.LABEL, result['name']], i, count)
           break
       else:
         entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label_name], Msg.DOES_NOT_EXIST, i, count)
