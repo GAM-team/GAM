@@ -10,6 +10,15 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.71.15
+
+Updated `gam create project` to handle the following error:
+```
+ERROR: 403: permissionDenied - Authentication error: 7; Error Details: User not allowed to access GCP services.
+```
+This error occurs when the Google Workspace admin or GCP project manager email address used in the command
+is in an OU where Google Cloud Platform is not enabled in Apps/Additional Google services.
+
 ### 6.71.14
 
 Added a command to update a Gmail label's settings by specifying it's ID rather than it's name.

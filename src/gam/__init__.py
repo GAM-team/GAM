@@ -11487,9 +11487,13 @@ def _checkForExistingProjectFiles(projectFiles):
     if os.path.exists(a_file):
       systemErrorExit(JSON_ALREADY_EXISTS_RC, Msg.AUTHORIZATION_FILE_ALREADY_EXISTS.format(a_file, Act.ToPerform()))
 
-def getGCPOrg(crm, login_domain):
-  getorg = callGAPI(crm.organizations(), 'search',
-                    query=f'domain:{login_domain}')
+def getGCPOrg(crm, login_hint, login_domain):
+  try:
+    getorg = callGAPI(crm.organizations(), 'search',
+                      throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                      query=f'domain:{login_domain}') 
+  except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
+    entityActionFailedExit([Ent.USER, login_hint, Ent.DOMAIN, login_domain], str(e))
   try:
     organization = getorg['organizations'][0]['name']
     sys.stdout.write(Msg.YOUR_ORGANIZATION_NAME_IS.format(organization))
@@ -11519,7 +11523,7 @@ def doCreateGCPFolder():
   login_hint = _getValidateLoginHint(login_hint)
   login_domain = getEmailAddressDomain(login_hint)
   _, crm = getCRMService(login_hint)
-  organization = getGCPOrg(crm, login_domain)
+  organization = getGCPOrg(crm, login_hint, login_domain)
   try:
     result = callGAPI(crm.folders(), 'create',
                       throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
@@ -11547,9 +11551,10 @@ def doCreateProject():
     sys.stdout.write(Msg.CREATING_PROJECT.format(body['displayName']))
     try:
       create_operation = callGAPI(crm.projects(), 'create',
-                                  throwReasons=[GAPI.BAD_REQUEST, GAPI.ALREADY_EXISTS, GAPI.FAILED_PRECONDITION],
+                                  throwReasons=[GAPI.BAD_REQUEST, GAPI.ALREADY_EXISTS,
+                                                GAPI.FAILED_PRECONDITION, GAPI.PERMISSION_DENIED],
                                   body=body)
-    except (GAPI.badRequest, GAPI.alreadyExists, GAPI.failedPrecondition) as e:
+    except (GAPI.badRequest, GAPI.alreadyExists, GAPI.failedPrecondition, GAPI.permissionDenied) as e:
       entityActionFailedExit([Ent.USER, login_hint, Ent.PROJECT, projectInfo['projectId']], str(e))
     operation_name = create_operation['name']
     time.sleep(5) # Google recommends always waiting at least 5 seconds
@@ -11560,7 +11565,7 @@ def doCreateProject():
       if 'error' in status:
         if status['error'].get('message', '') == 'No permission to create project in organization':
           sys.stdout.write(Msg.NO_RIGHTS_GOOGLE_CLOUD_ORGANIZATION)
-          organization = getGCPOrg(crm, login_domain)
+          organization = getGCPOrg(crm, login_hint, login_domain)
           org_policy = callGAPI(crm.organizations(), 'getIamPolicy',
                                 resource=organization)
           if 'bindings' not in org_policy:
@@ -72271,6 +72276,7 @@ MAIN_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_DRIVEFILEACL:		doCreateDriveFileACL,
   Cmd.ARG_DRIVELABELPERMISSION:	doCreateDriveLabelPermissions,
   Cmd.ARG_FEATURE:		doCreateFeature,
+  Cmd.ARG_GCPFOLDER:		doCreateGCPFolder,
   Cmd.ARG_GCPSERVICEACCOUNT:	doCreateGCPServiceAccount,
   Cmd.ARG_GROUP:		doCreateGroup,
   Cmd.ARG_GUARDIAN:		doInviteGuardian,

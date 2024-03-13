@@ -1843,7 +1843,7 @@ gam calendar <CalendarEntity> deleteevent (id|eventid <EventID>)+ [doit] [<Event
         [csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]]
 gam calendar <CalendarEntity> moveevent (id|eventid <EventID>)+ destination <CalendarItem> [<EventNotificationAttribute>]
 gam calendar <CalendarEntity> wipe
-gam calendar <CalendarEntity> printevents <EventSelectProperty>* <EventDisplayProperty>* [fields <EventFieldNameList>]
+gam calendar <CalendarEntity> printevents <EventSelectProperty>* <EventDisplayProperty>*
         [fields <EventFieldNameList>] [showdayofweek]
         [countsonly]
         [formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
