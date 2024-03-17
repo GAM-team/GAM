@@ -25,7 +25,7 @@
 * https://cloud.google.com/identity/docs/reference/rest/v1/groups
 
 ## Name guidelines
-* https://support.google.com/a/answer/9193374?hl=en
+* https://support.google.com/a/answer/9193374
 
 ## Query documentation
 * https://developers.google.com/admin-sdk/directory/v1/guides/search-groups

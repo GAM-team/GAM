@@ -50878,6 +50878,7 @@ DRIVE_ACTIVITY_ACTION_MAP = {
   'untrash': 'RESTORE',
   'upload': 'CREATE',
   }
+
 CONSOLIDATION_GROUPING_STRATEGY_CHOICE_MAP = {'driveui': 'legacy', 'legacy': 'legacy', 'none': 'none'}
 
 # gam <UserTypeEntity> print|show driveactivity [todrive <ToDriveAttribute>*]
@@ -69605,7 +69606,9 @@ def getSendAsAttributes(myarg, body, tagReplacements):
   elif myarg == 'name':
     body['displayName'] = getString(Cmd.OB_NAME, minLen=0)
   elif myarg == 'replyto':
-    body['replyToAddress'] = getEmailAddress(noUid=True, minLen=0)
+    body['replyToAddress'] = getString(Cmd.OB_EMAIL_ADDRESS, minLen=0)
+    if len(body['replyToAddress']) > 0:
+      body['replyToAddress'] = normalizeEmailAddressOrUID(body['replyToAddress'], noUid=True, noLower=True)
   elif myarg == 'default':
     body['isDefault'] = True
   elif myarg == 'treatasalias':
@@ -69628,7 +69631,7 @@ SMTPMSA_REQUIRED_FIELDS = ['host', 'port', 'username', 'password']
 #	[html [<Boolean>]] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
 def createUpdateSendAs(users):
   updateCmd = Act.Get() == Act.UPDATE
-  emailAddress = getEmailAddress(noUid=True)
+  emailAddress = normalizeEmailAddressOrUID(getString(Cmd.OB_EMAIL_ADDRESS), noUid=True, noLower=True)
   if not updateCmd:
     body = {'sendAsEmail': emailAddress}
     checkArgumentPresent(['name'])

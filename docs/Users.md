@@ -46,7 +46,7 @@
 * https://developers.google.com/admin-sdk/directory/reference/rest/v1/schemas
 
 ## Name guidelines
-* https://support.google.com/a/answer/9193374?hl=en
+* https://support.google.com/a/answer/9193374
 
 ## Query documentation
 * https://developers.google.com/admin-sdk/directory/v1/guides/search-users
