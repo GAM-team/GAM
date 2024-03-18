@@ -10,6 +10,15 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.71.17
+
+Added `depth` column to output of `gam <UserTypeEntity> print diskusage <DriveFileEntity>` that can
+be used to filter the depth of the folders displayed. Depth `-1` is the top level folder, depth `0`
+are its immediate children, depth `2` are the children of depth `1` and so forth.
+```
+gam config csv_output_row_filter "depth:count<1" user organizer@domain.com  print diskusage teamdriveid <TeamDriveID>
+```
+
 ### 6.71.16
 
 Updated `gam <UserTypeEntity> create|update sendas <EmailAddress> ... replyto <EmailAddress>`

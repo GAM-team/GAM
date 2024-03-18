@@ -54318,7 +54318,8 @@ DISKUSAGE_SHOW_CHOICES = {'all', 'summary', 'summaryandtrash'}
 #	(addcsvdata <FieldName> <String>)*
 #	[noprogress] [show all|summary|summaryandtrash]
 def printDiskUsage(users):
-  def _getChildDriveFolderInfo(drive, fileEntry, user, i, count):
+  def _getChildDriveFolderInfo(drive, fileEntry, user, i, count, depth):
+    fileEntry['depth'] = depth
     q = WITH_PARENTS.format(fileEntry['id'])
     try:
       children = callGAPIpages(drive.files(), 'list', 'files',
@@ -54358,7 +54359,7 @@ def printDiskUsage(users):
         childEntryInfo['path'] = fileEntry['path']+pathDelimiter+childEntryInfo['name']
         childEntryInfo.pop(sizeField, None)
         foldersList.append(childEntryInfo)
-        _getChildDriveFolderInfo(drive, childEntryInfo, user, i, count)
+        _getChildDriveFolderInfo(drive, childEntryInfo, user, i, count, depth+1)
         fileEntry['totalFileCount'] += childEntryInfo['totalFileCount']
         fileEntry['totalFileSize'] += childEntryInfo['totalFileSize']
         fileEntry['totalFolderCount'] += childEntryInfo['totalFolderCount']
@@ -54380,7 +54381,7 @@ def printDiskUsage(users):
 
   csvPF = CSVPrintFile(['User', 'Owner', 'id', 'name', 'ownedByMe', 'trashed', 'explicitlyTrashed',
                         'directFileCount', 'directFileSize', 'directFolderCount',
-                        'totalFileCount', 'totalFileSize', 'totalFolderCount', 'path'])
+                        'totalFileCount', 'totalFileSize', 'totalFolderCount', 'depth', 'path'])
   excludeTrashed = stripCRsFromName = False
   includeOwner = True
   orderBy = 'folder,name'
@@ -54481,7 +54482,7 @@ def printDiskUsage(users):
         topFolder.update(zeroFolderInfo)
         topFolder.pop(sizeField, None)
         foldersList.append(topFolder)
-        _getChildDriveFolderInfo(drive, topFolder, user, i, count)
+        _getChildDriveFolderInfo(drive, topFolder, user, i, count, -1)
       except GAPI.fileNotFound:
         entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FOLDER, fileId], Msg.NOT_FOUND, j, jcount)
         continue
@@ -54506,6 +54507,7 @@ def printDiskUsage(users):
         trashFolder['explicitlyTrashed'] = trashFolder['directFileCount']+trashFolder['directFolderCount'] > 0
         if addCSVData:
           trashFolder.update(addCSVData)
+        trashFolder['depth'] = -1
         csvPF.WriteRow(trashFolder)
   csvPF.writeCSVfile('Drive Disk Usage')
 
