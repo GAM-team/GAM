@@ -105,7 +105,9 @@ The second form is backwards compatible with Standard GAM and selection with `<C
         annotatedlocation|location|
         annotateduser|user|
         autoupdateexpiration|
+        backlightinfo|
         bootmode|
+        cpuinfo|
         cpustatusreports|
         deprovisionreason|
         devicefiles|

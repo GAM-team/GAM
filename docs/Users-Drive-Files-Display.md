@@ -1542,6 +1542,10 @@ For each folder in `<DriveFileEntity>`, the following items are displayed:
 * `totalFileCount` - The number of files directly in the folder and all of its subfolders
 * `totalFileSize` - The sum of the sizes of the files directly in the folder and all of its subfolders
 * `totalFolderCount` - The number of folders directly in the folder and all of its subfolders
+* `depth` - The depth of the folder
+  * `-1` - The top level folder
+  * `0` - Immediate children of the top level folder
+  * `1` - Immediate children of level 0 folders
 * `path` - The path of the folder
 
 There is a final row detailing files and folders in the trash; it is omitted if `excludetrashed` or `show summary` are specified.
@@ -1558,7 +1562,12 @@ There is a final row detailing files and folders in the trash; it is omitted if 
 * `totalFileCount` - The number of files in the trash
 * `totalFileSize` - The sum of the sizes of the files in the trash
 * `totalFolderCount` - The number of folders in the trash
+* `depth` - Always -1
 * `path` - Trash
+
+GAM version `6.71.17` added the `depth` column that can be used to filter the depth of the folders displayed.
+Depth `-1` is the top level folder, depth `0` are its immediate children, depth `2` are the children of depth `1` and so forth.
+For example to limit the display to the top folder and its immediate children, use `config csv_output_row_filter depth:count<1`.
 
 By default, files owned by the user are counted. These options update the current query with the desired ownership.
 * `showownedby me` - Count files owned by the user; this is the default
@@ -1589,24 +1598,37 @@ Use the `show` option to control the display of data:
 $ gam redirect csv ./MyDriveUsage.csv user testsimple@domain.com print diskusage mydrive 
 User: testsimple@domain.com, Print 1 Drive Disk Usage
 $ more MyDriveUsage.csv
-User,Owner,id,name,ownedByMe,trashed,explicitlyTrashed,directFileCount,directFileSize,directFolderCount,totalFileCount,totalFileSize,totalFolderCount,path
-testsimple@domain.com,testsimple@domain.com,012YenC8f12ALUk9PVA,My Drive,,False,False,100,138212,24,167,189598,79,My Drive
-testsimple@domain.com,testsimple@domain.com,456YenC8f12ALfndaQ1NHc0RtUG92Y1BIUUl4bjVBRmNkWG5oakNqVVFDcXJWOHNmdFlwZmc,Classroom,True,False,False,0,0,15,9,6840,17,My Drive/Classroom
+User,Owner,id,name,ownedByMe,trashed,explicitlyTrashed,directFileCount,directFileSize,directFolderCount,totalFileCount,totalFileSize,totalFolderCount,depth,path
+testsimple@domain.com,testsimple@domain.com,012YenC8f12ALUk9PVA,My Drive,,False,False,100,138212,24,167,189598,79,-1,My Drive
+testsimple@domain.com,testsimple@domain.com,456YenC8f12ALfndaQ1NHc0RtUG92Y1BIUUl4bjVBRmNkWG5oakNqVVFDcXJWOHNmdFlwZmc,Classroom,True,False,False,0,0,15,9,6840,17,0,My Drive/Classroom
+testsimple@domain.com,testsimple@domain.com,0B3YenC8f12ALfmRuX3I4WFlqaTRnMGhXNkVvWV9UUG1zRDQwY1BwVkJhUGx5WHVIcjJKZUU,TestUpdate,True,False,False,2,3420,0,2,3420,0,1,My Drive/Classroom/TestUpdate
+testsimple@domain.com,testsimple@domain.com,1MT5xJ897oYa0Q2OuzBDfLHvig6k_b0EKaovVA2imGYcnrmqZu5hjlJkEPMH-rHKj4qDyy9_j,TS Course,True,False,False,0,0,0,0,0,0,1,My Drive/Classroom/TS Course
+testsimple@domain.com,testsimple@domain.com,1gsbqsbhhwBx9hCF0sqtE213tpUn6Ebj2klLFhHb4xkzBKIdEFkvvwCVtZpYWPgOA796fIPEN,TS Course 2,True,False,False,0,0,0,0,0,0,1,My Drive/Classroom/TS Course 2
 ...
-testsimple@domain.com,testsimple@domain.com,1bHS_Tp77W3KSGRNSs_jP1RhAJhIGRCaI,XferFolder,True,False,False,1,1024,0,1,1024,0,My Drive/XferFolder
-testsimple@domain.com,testsimple@domain.com,Trash,Trash,,True,True,0,0,1,3,3072,9,Trash
+testsimple@domain.com,testsimple@domain.com,1bHS_Tp77W3KSGRNSs_jP1RhAJhIGRCaI,XferFolder,True,False,False,1,1024,0,1,1024,0,0,My Drive/XferFolder
+testsimple@domain.com,testsimple@domain.com,Trash,Trash,,True,True,0,0,1,3,3072,9,-1,Trash
+
+$ gam config csv_output_row_filter "depth:count<1" redirect csv ./MyDriveUsage.csv user testsimple@domain.com print diskusage mydrive 
+User: testsimple@domain.com, Print 1 Drive Disk Usage
+$ more MyDriveUsage.csv
+User,Owner,id,name,ownedByMe,trashed,explicitlyTrashed,directFileCount,directFileSize,directFolderCount,totalFileCount,totalFileSize,totalFolderCount,depth,path
+testsimple@domain.com,testsimple@domain.com,012YenC8f12ALUk9PVA,My Drive,,False,False,100,138212,24,167,189598,79,-1,My Drive
+testsimple@domain.com,testsimple@domain.com,456YenC8f12ALfndaQ1NHc0RtUG92Y1BIUUl4bjVBRmNkWG5oakNqVVFDcXJWOHNmdFlwZmc,Classroom,True,False,False,0,0,15,9,6840,17,0,My Drive/Classroom
+...
+testsimple@domain.com,testsimple@domain.com,1bHS_Tp77W3KSGRNSs_jP1RhAJhIGRCaI,XferFolder,True,False,False,1,1024,0,1,1024,0,0,My Drive/XferFolder
+testsimple@domain.com,testsimple@domain.com,Trash,Trash,,True,True,0,0,1,3,3072,9,-1,Trash
 
 $ gam redirect csv ./MyDriveUsage.csv user testsimple@domain.com print diskusage mydrive show summaryandtrash
 User: testsimple@domain.com, Print 1 Drive Disk Usage
 $ more MyDriveUsage.csv 
-User,Owner,id,name,ownedByMe,trashed,explicitlyTrashed,directFileCount,directFileSize,directFolderCount,totalFileCount,totalFileSize,totalFolderCount,path
-testsimple@domain.com,testsimple@domain.com,012YenC8f12ALUk9PVA,My Drive,,False,False,100,138212,24,167,189598,79,My Drive
-testsimple@domain.com,testsimple@domain.com,Trash,Trash,,True,True,0,0,1,3,3072,9,Trash
+User,Owner,id,name,ownedByMe,trashed,explicitlyTrashed,directFileCount,directFileSize,directFolderCount,totalFileCount,totalFileSize,totalFolderCount,depth,path
+testsimple@domain.com,testsimple@domain.com,012YenC8f12ALUk9PVA,My Drive,,False,False,100,138212,24,167,189598,79,-1,My Drive
+testsimple@domain.com,testsimple@domain.com,Trash,Trash,,True,True,0,0,1,3,3072,9,-1,Trash
 
 $ gam redirect csv ./MyDriveUsage.csv user testsimple@domain.com print diskusage shareddriveid 0AL5LiIe4dqxZUk9PVA  show summaryandtrash
 User: testsimple@domain.com, Print 1 Drive Disk Usage
 $ more MyDriveUsage.csv 
-User,id,name,trashed,explicitlyTrashed,directFileCount,directFileSize,directFolderCount,totalFileCount,totalFileSize,totalFolderCount,path
-testsimple@domain.com,0125LiIe4dqxZUk9PVA,TS Shared Drive 1,False,False,16,6144,7,42,73799,25,SharedDrives/TS Shared Drive 1
-testsimple@domain.com,Trash,Trash,True,True,1,1024,0,1,1024,0,Trash
+User,id,name,trashed,explicitlyTrashed,directFileCount,directFileSize,directFolderCount,totalFileCount,totalFileSize,totalFolderCount,depth,path
+testsimple@domain.com,0125LiIe4dqxZUk9PVA,TS Shared Drive 1,False,False,16,6144,7,42,73799,25,-1,SharedDrives/TS Shared Drive 1
+testsimple@domain.com,Trash,Trash,True,True,1,1024,0,1,1024,0,-1,Trash
 ```

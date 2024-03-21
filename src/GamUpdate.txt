@@ -2,6 +2,10 @@
 
 Merged GAM-Team version
 
+6.71.18
+
+Updated `<CrOSFieldName>` to include `cpuinfo` and `backlightinfo`.
+
 6.71.17
 
 Added `depth` column to output of `gam <UserTypeEntity> print diskusage <DriveFileEntity>` that can

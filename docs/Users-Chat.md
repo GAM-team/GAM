@@ -92,21 +92,21 @@ gam <UserTypeEntity> create chatspace
         [formatjson|returnidonly]
 ```
 For `type space`, the following apply:
-* `member <UserTypeEntity>` - Optional, can not specify more that 20 users
+* `members <UserTypeEntity>` - Optional, can not specify more that 20 users
 * `displayname <String>` - Required
 * `description <String>` - Optional
 * `guidelines <String>` - Optional
 * `history <Boolean>` - Optional
 
 For `type groupchat`, the following apply:
-* `member <UserTypeEntity>` - Required, must specify between 2 and 20 users
+* `members <UserTypeEntity>` - Required, must specify between 2 and 20 users
 * `displayname <String>` - Ignored
 * `description <String>` - Optional
 * `guidelines <String>` - Optional
 * `history <Boolean>` - Optional
 
 For `type directmessage`, the following apply:
-* `member <UserTypeEntity>` - Required, must specify 1 user
+* `members <UserTypeEntity>` - Required, must specify 1 user
 * `displayname <String>` - Ignored
 * `description <String>` - Ignored
 * `guidelines <String>` - Ignored
