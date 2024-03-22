@@ -129,6 +129,7 @@ Service Account Access
 * [Users - Drive - File Selection](Drive-File-Selection)
 * [Users - Drive - Activity/Settings](Users-Drive-Activity-Settings)
 * [Users - Drive - Cleanup](Users-Drive-Cleanup)
+* [Users - Drive - Comments](Users-Drive-Comments)
 * [Users - Drive - Copy/Move](Users-Drive-Copy-Move)
 * [Users - Drive - Files-Display](Users-Drive-Files-Display)
 * [Users - Drive - Files-Manage](Users-Drive-Files-Manage)

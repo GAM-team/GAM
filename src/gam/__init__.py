@@ -11491,7 +11491,7 @@ def getGCPOrg(crm, login_hint, login_domain):
   try:
     getorg = callGAPI(crm.organizations(), 'search',
                       throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                      query=f'domain:{login_domain}') 
+                      query=f'domain:{login_domain}')
   except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
     entityActionFailedExit([Ent.USER, login_hint, Ent.DOMAIN, login_domain], str(e))
   try:
@@ -53924,6 +53924,239 @@ def printFileList(users):
     else:
       csvPFco.writeCSVfile('Drive File Counts')
 
+FILECOMMENTS_FIELDS_CHOICE_MAP = {
+  'action': 'action',
+  'author': 'author',
+  'content': 'content',
+  'createddate': 'createdTime',
+  'createdtime': 'createdTime',
+  'deleted': 'deleted',
+  'htmlcontent': 'htmlContent',
+  'id': 'id',
+  'modifieddate': 'modifiedTime',
+  'modifiedtime': 'modifiedTime',
+  'quotedfilecontent': 'quotedFileContent',
+  'replies': 'replies',
+  'resolved': 'resolved',
+  }
+
+FILECOMMENTS_AUTHOR_SUBFIELDS_CHOICE_MAP = {
+  'displayname': 'displayName',
+  'emailaddress': 'emailAddress',
+  'me': 'me',
+  'permissionid': 'permissionId',
+  'photolink': 'photoLink',
+  }
+
+FILECOMMENTS_REPLIES_SUBFIELDS_CHOICE_MAP = {
+  'action': 'action',
+  'author': 'author',
+  'content': 'content',
+  'createddate': 'createdTime',
+  'createdtime': 'createdTime',
+  'deleted': 'deleted',
+  'htmlcontent': 'htmlContent',
+  'id': 'id',
+  'modifieddate': 'modifiedTime',
+  'modifiedtime': 'modifiedTime',
+  }
+
+FILECOMMENTS_SUBFIELDS_CHOICE_MAP = {
+  'author': FILECOMMENTS_AUTHOR_SUBFIELDS_CHOICE_MAP,
+  'replies': FILECOMMENTS_REPLIES_SUBFIELDS_CHOICE_MAP,
+  }
+
+def _getCommentFields(fieldsList):
+  for field in _getFieldsList():
+    if field.find('.') == -1:
+      if field in FILECOMMENTS_FIELDS_CHOICE_MAP:
+        addFieldToFieldsList(field, FILECOMMENTS_FIELDS_CHOICE_MAP, fieldsList)
+      else:
+        invalidChoiceExit(field, FILECOMMENTS_FIELDS_CHOICE_MAP, True)
+    else:
+      field, subField = field.split('.', 1)
+      if field in FILECOMMENTS_SUBFIELDS_CHOICE_MAP:
+        if subField.find('.') == -1:
+          if subField in FILECOMMENTS_SUBFIELDS_CHOICE_MAP[field]:
+            fieldsList.append(f'{FILECOMMENTS_FIELDS_CHOICE_MAP[field]}.{FILECOMMENTS_SUBFIELDS_CHOICE_MAP[field][subField]}')
+          else:
+            invalidChoiceExit(subField, FILECOMMENTS_SUBFIELDS_CHOICE_MAP[field], True)
+        else:
+          subField, subSubField = subField.split('.', 1)
+          if subField in FILECOMMENTS_SUBFIELDS_CHOICE_MAP[field]:
+            if subSubField in FILECOMMENTS_SUBFIELDS_CHOICE_MAP[subField]:
+              fieldsList.append(f'{FILECOMMENTS_FIELDS_CHOICE_MAP[field]}.{FILECOMMENTS_SUBFIELDS_CHOICE_MAP[field][subField]}.{FILECOMMENTS_SUBFIELDS_CHOICE_MAP[subField][subSubField]}')
+            else:
+              invalidChoiceExit(subSubField, FILECOMMENTS_SUBFIELDS_CHOICE_MAP[subField], True)
+          else:
+            invalidChoiceExit(subField, FILECOMMENTS_SUBFIELDS_CHOICE_MAP[field], True)
+      else:
+        invalidChoiceExit(field, FILECOMMENTS_SUBFIELDS_CHOICE_MAP, True)
+
+FILECOMMENTS_INDEXED_TITLES = ['replies']
+FILECOMMENTS_TIME_OBJECTS = {'createdTime', 'modifiedTime'}
+
+def _stripCommentPhotoLinks(comment):
+  if 'author' in comment:
+    comment['author'].pop('photoLink', None)
+  for reply in comment.get('replies', []):
+    if 'author' in reply:
+      reply['author'].pop('photoLink', None)
+    
+def _showComment(comment, stripPhotoLinks, timeObjects, i=0, count=0, FJQC=None):
+  if stripPhotoLinks:
+    _stripCommentPhotoLinks(comment)
+  if FJQC is not None and FJQC.formatJSON:
+    printLine(json.dumps(cleanJSON(comment, timeObjects=FILECOMMENTS_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
+    return
+  printEntity([Ent.DRIVE_FILE_COMMENT, comment['id']], i, count)
+  Ind.Increment()
+  showJSON(None, comment, ['id'], timeObjects)
+  Ind.Decrement()
+
+# gam <UserTypeEntity> show filecomments <DriveFileEntity>
+#	[showdeleted] [start <Date>|<Time>] [countsonly]
+#	[fields <CommentsFieldNameList>] [showphotolinks]
+#	[countsonly]
+#	(addcsvdata <FieldName> <String>)*
+#	[formatjson]
+# gam <UserTypeEntity> print filecomments <DriveFileEntity> [todrive <ToDriveAttribute>*]
+#	[showdeleted] [start <Date>|<Time>]
+#	[fields <CommentsFieldNameList>] [showphotolinks]
+#	[countsonly]
+#	(addcsvdata <FieldName> <String>)*
+#	[formatjson [quotechar <Character>]]
+def printShowFileComments(users):
+  def _printComment(comment, commentId, baserow):
+    row = flattenJSON(comment, flattened=baserow.copy(), timeObjects=timeObjects)
+    row['commentId'] = commentId
+    if not FJQC.formatJSON:
+      csvPF.WriteRowTitles(row)
+    elif csvPF.CheckRowTitles(row):
+      row = baserow.copy()
+      row['commentId'] = commentId
+      comment['id'] = commentId
+      row['JSON'] = json.dumps(cleanJSON(comment, timeObjects=timeObjects),
+                               ensure_ascii=False, sort_keys=True)
+      csvPF.WriteRowNoFilter(row)
+
+  csvPF = CSVPrintFile(['User', 'fileId']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
+  fieldsList = []
+  fileIdEntity = getDriveFileEntity()
+  countsOnly = False
+  stripPhotoLinks = True
+  kwargs = {}
+  addCSVData = {}
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif myarg == 'showdeleted':
+      kwargs['includeDeleted'] = True
+    elif myarg == 'start':
+      kwargs['startModifiedTime'] = getTimeOrDeltaFromNow()
+    elif myarg == 'showphotolinks':
+      stripPhotoLinks = False
+    elif myarg == 'fields':
+      _getCommentFields(fieldsList)
+    elif myarg == 'addcsvdata':
+      k = getString(Cmd.OB_STRING)
+      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+    elif myarg == 'countsonly':
+      countsOnly = True
+    else:
+      FJQC.GetFormatJSONQuoteChar(myarg)
+  if csvPF:
+    if addCSVData:
+      csvPF.AddTitles(sorted(addCSVData.keys()))
+    if not countsOnly:
+      csvPF.AddTitles(['commentId', 'replyId'])
+    else:
+      csvPF.AddTitles(['comments', 'replies'])
+    if FJQC.formatJSON:
+      csvPF.AddTitles(['JSON'])
+      csvPF.SetJSONTitles(csvPF.titlesList)
+  if fieldsList:
+    if 'id' not in fieldsList:
+      fieldsList.append('id')
+    if 'replies' not in fieldsList:
+      for field in fieldsList.copy():
+        if field.startswith('replies.'):
+          fieldsList.append('replies.id')
+          break
+    fields = getItemFieldsFromFieldsList('comments', fieldsList)
+  else:
+    fields = '*'
+  timeObjects = FILECOMMENTS_TIME_OBJECTS
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, drive, jcount = _validateUserGetFileIDs(user, i, count, fileIdEntity,
+                                                  entityType=[Ent.DRIVE_FILE_COMMENT, None][csvPF is not None])
+    if jcount == 0:
+      continue
+    Ind.Increment()
+    j = 0
+    for fileId in fileIdEntity['list']:
+      j += 1
+      try:
+        comments = callGAPIpages(drive.comments(), 'list', 'comments',
+                                 throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.BAD_REQUEST],
+                                 fileId=fileId, fields=fields, **kwargs)
+      except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.unknownError,
+              GAPI.badRequest) as e:
+        entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_ID, fileId], str(e), j, jcount)
+        continue
+      except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
+        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        break
+      kcount = len(comments)
+      if countsOnly:
+        numReplies = 0
+        for comment in comments:
+          numReplies += len(comment['replies'])
+      if not csvPF:
+        if countsOnly:
+          printKeyValueList([Ent.Singular(Ent.DRIVE_FILE_ID), fileId, 'comments', kcount, 'replies', numReplies])
+        else:
+          if not FJQC.formatJSON:
+            entityPerformActionNumItems([Ent.DRIVE_FILE_ID, fileId], kcount, Ent.DRIVE_FILE_COMMENT, j, jcount)
+          Ind.Increment()
+          if not countsOnly:
+            k = 0
+            for comment in comments:
+              k += 1
+              _showComment(comment, stripPhotoLinks, timeObjects, k, kcount, FJQC)
+        Ind.Decrement()
+      elif countsOnly:
+        row = {'User': user, 'fileId': fileId}
+        if addCSVData:
+          row.update(addCSVData)
+        row['comments'] = kcount
+        row['replies'] = numReplies
+        csvPF.WriteRowTitles(row)
+      elif comments:
+        baserow = {'User': user, 'fileId': fileId}
+        if addCSVData:
+          baserow.update(addCSVData)
+        for comment in comments:
+          if stripPhotoLinks:
+            _stripCommentPhotoLinks(comment)
+          commentId = comment.pop('id')
+          replies = comment.pop('replies')
+          if not replies:
+            _printComment(comment, commentId, baserow)
+          else:
+            for reply in replies:
+              comment['reply'] = reply
+              baserow['replyId'] = reply['id']
+              _printComment(comment, commentId, baserow)
+    Ind.Decrement()
+  if csvPF:
+    csvPF.SetIndexedTitles(FILECOMMENTS_INDEXED_TITLES)
+    csvPF.writeCSVfile('Drive File Comments')
+
 # gam <UserTypeEntity> print filepaths <DriveFileEntity> [todrive <ToDriveAttribute>*]
 #	(orderby <DriveFileOrderByFieldName> [ascending|descending])*
 #	[oneitemperrow]
@@ -73578,6 +73811,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_DRIVESETTINGS:	printShowDriveSettings,
       Cmd.ARG_EMPTYDRIVEFOLDERS:	printEmptyDriveFolders,
       Cmd.ARG_EVENT:		printShowCalendarEvents,
+      Cmd.ARG_FILECOMMENT:	printShowFileComments,
       Cmd.ARG_FILECOUNT:	printShowFileCounts,
       Cmd.ARG_FILEINFO:		showFileInfo,
       Cmd.ARG_FILELIST:		printFileList,
@@ -73678,6 +73912,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_DRIVELABELPERMISSION:	printShowDriveLabelPermissions,
       Cmd.ARG_DRIVESETTINGS:	printShowDriveSettings,
       Cmd.ARG_EVENT:		printShowCalendarEvents,
+      Cmd.ARG_FILECOMMENT:	printShowFileComments,
       Cmd.ARG_FILECOUNT:	printShowFileCounts,
       Cmd.ARG_FILEINFO:		showFileInfo,
       Cmd.ARG_FILELIST:		printFileList,
@@ -73894,6 +74129,7 @@ USER_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_DRIVELABELS:		Cmd.ARG_DRIVELABEL,
   Cmd.ARG_DRIVELABELPERMISSIONS:	Cmd.ARG_DRIVELABELPERMISSION,
   Cmd.ARG_EVENTS:		Cmd.ARG_EVENT,
+  Cmd.ARG_FILECOMMENTS:		Cmd.ARG_FILECOMMENT,
   Cmd.ARG_FILECOUNTS:		Cmd.ARG_FILECOUNT,
   Cmd.ARG_FILEPATHS:		Cmd.ARG_FILEPATH,
   Cmd.ARG_FILEREVISIONS:	Cmd.ARG_FILEREVISION,

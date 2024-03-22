@@ -471,7 +471,7 @@ section
         Default section of gam.cfg.
         Default: DEFAULT
 show_api_calls_retry_data
-        Enable/disable display of Google API calls retry data and end of processing
+        Enable/disable display of Google API calls retry data at end of processing
         Default: False
 show_commands
         Enable/disable display of commands to stderr when executing `gam batch|tbatch|csv|loop`.

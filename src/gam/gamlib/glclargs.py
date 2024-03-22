@@ -578,6 +578,8 @@ class GamCLArgs():
   ARG_EXPORTS = 'exports'
   ARG_FEATURE = 'feature'
   ARG_FEATURES = 'features'
+  ARG_FILECOMMENT = 'filecomment'
+  ARG_FILECOMMENTS = 'filecomments'
   ARG_FILECOUNT = 'filecount'
   ARG_FILECOUNTS = 'filecounts'
   ARG_FILEDRIVELABEL = 'filedrivelabel'

@@ -6354,6 +6354,52 @@ gam print ownership <DriveFileID>|(drivefilename <DriveFileName>) [todrive <ToDr
         (addcsvdata <FieldName> <String>)*
         [formatjson [quotechar <Character>]]
 
+<CommentsAuthorSubfieldName> ::=
+        author.displayname|
+        author.emailaddress|
+        author.me|
+        author.permissionid|
+        author.photolink
+
+<CommentsRepliesSubfieldName> ::=
+        replies.action|
+        replies.author|
+        replies.author.<CommentsAuthorSubfieldName>|
+        replies.content|
+        replies.createddate|createdtime|
+        replies.deleted|
+        replies.htmlcontent|
+        replies.id|
+        replies.modifieddate|modifiedtime
+
+<CommentsFieldName> ::=
+        action|
+        author|
+        content|
+        <CommentsAuthorSubfieldName>|
+        <CommentsRepliesSubfieldName>|
+        createddate|createdtime|
+        deleted|
+        htmlcontent|
+        id|
+        modifieddate|modifiedtime|
+        quotedfilecontent|
+        replies|
+        resolved
+<CommentsFieldNameList> ::= "<CommentsFieldName>(,<CommentsFieldName>)*"
+
+gam <UserTypeEntity> show filecomments <DriveFileEntity>
+        [showdeleted] [start <Date>|<Time>]
+        [fields <CommentsFieldNameList>] [showphotolinks]
+        [countsonly]
+        [formatjson]
+gam <UserTypeEntity> print filecomments <DriveFileEntity> [todrive <ToDriveAttribute>*]
+        [showdeleted] [start <Date>|<Time>]
+        [fields <CommentsFieldNameList>] [showphotolinks]
+        [countsonly]
+        (addcsvdata <FieldName> <String>)*
+        [formatjson [quotechar <Character>]]
+
 <RevisionsFieldName> ::=
         filesize|
         id|

@@ -173,6 +173,7 @@ class GamEntity():
   DOMAIN_PROFILE = 'dopr'
   DRIVE_DISK_USAGE = 'drdu'
   DRIVE_FILE = 'dfil'
+  DRIVE_FILE_COMMENT = 'filc'
   DRIVE_FILE_ID = 'fili'
   DRIVE_FILE_NAME = 'filn'
   DRIVE_FILE_RENAMED = 'firn'
@@ -290,6 +291,7 @@ class GamEntity():
   PERSONAL_DEVICE = 'pedv'
   PHOTO = 'phot'
   POP_ENABLED = 'popa'
+  PRESENTATION = 'pres'
   PRINTER = 'prin'
   PRINTER_ID = 'prid'
   PRINTER_MODEL = 'prmd'
@@ -510,6 +512,7 @@ class GamEntity():
     DOMAIN_PROFILE: ['Domain Profiles', 'Domain Profile'],
     DRIVE_DISK_USAGE: ['Drive Disk Usages', 'Drive Disk Usage'],
     DRIVE_FILE: ['Drive Files', 'Drive File'],
+    DRIVE_FILE_COMMENT: ['Drive File Comments', 'Drive File Comment'],
     DRIVE_FILE_ID: ['Drive File IDs', 'Drive File ID'],
     DRIVE_FILE_NAME: ['Drive File Names', 'Drive File Name'],
     DRIVE_FILE_REVISION: ['Drive File Revisions', 'Drive File Revision'],
@@ -627,6 +630,7 @@ class GamEntity():
     PERSONAL_DEVICE: ['Personal Devices', 'Personal Device'],
     PHOTO: ['Photos', 'Photo'],
     POP_ENABLED: ['POP Enabled', 'POP Enabled'],
+    PRESENTATION: ['Presentations', 'Presentation'],
     PRINTER: ['Printers', 'Printer'],
     PRINTER_ID: ['Printer IDs', 'Printer ID'],
     PRINTER_MODEL: ['Printer Models', 'Printer Model'],
