@@ -53936,6 +53936,7 @@ FILECOMMENTS_FIELDS_CHOICE_MAP = {
   'modifieddate': 'modifiedTime',
   'modifiedtime': 'modifiedTime',
   'quotedfilecontent': 'quotedFileContent',
+  'reply': 'replies',
   'replies': 'replies',
   'resolved': 'resolved',
   }
@@ -53963,6 +53964,7 @@ FILECOMMENTS_REPLIES_SUBFIELDS_CHOICE_MAP = {
 
 FILECOMMENTS_SUBFIELDS_CHOICE_MAP = {
   'author': FILECOMMENTS_AUTHOR_SUBFIELDS_CHOICE_MAP,
+  'reply': FILECOMMENTS_REPLIES_SUBFIELDS_CHOICE_MAP,
   'replies': FILECOMMENTS_REPLIES_SUBFIELDS_CHOICE_MAP,
   }
 
@@ -54027,15 +54029,19 @@ def _showComment(comment, stripPhotoLinks, timeObjects, i=0, count=0, FJQC=None)
 #	(addcsvdata <FieldName> <String>)*
 #	[formatjson [quotechar <Character>]]
 def printShowFileComments(users):
-  def _printComment(comment, commentId, baserow):
+  def _printComment(comment, commentId, replyId, baserow):
     row = flattenJSON(comment, flattened=baserow.copy(), timeObjects=timeObjects)
     row['commentId'] = commentId
+    row['replyId'] = replyId
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
       row = baserow.copy()
       row['commentId'] = commentId
       comment['id'] = commentId
+      row['replyId'] = replyId
+      if replyId:
+        comment['reply']['id'] = replyId
       row['JSON'] = json.dumps(cleanJSON(comment, timeObjects=timeObjects),
                                ensure_ascii=False, sort_keys=True)
       csvPF.WriteRowNoFilter(row)
@@ -54146,12 +54152,13 @@ def printShowFileComments(users):
           commentId = comment.pop('id')
           replies = comment.pop('replies')
           if not replies:
-            _printComment(comment, commentId, baserow)
+            _printComment(comment, commentId, '', baserow)
           else:
             for reply in replies:
+              replyId = reply.pop('id')
+              baserow['replyId'] = replyId
               comment['reply'] = reply
-              baserow['replyId'] = reply['id']
-              _printComment(comment, commentId, baserow)
+              _printComment(comment, commentId, replyId, baserow)
     Ind.Decrement()
   if csvPF:
     csvPF.SetIndexedTitles(FILECOMMENTS_INDEXED_TITLES)

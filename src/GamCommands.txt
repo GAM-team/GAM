@@ -6362,15 +6362,15 @@ gam print ownership <DriveFileID>|(drivefilename <DriveFileName>) [todrive <ToDr
         author.photolink
 
 <CommentsRepliesSubfieldName> ::=
-        replies.action|
-        replies.author|
-        replies.author.<CommentsAuthorSubfieldName>|
-        replies.content|
-        replies.createddate|createdtime|
-        replies.deleted|
-        replies.htmlcontent|
-        replies.id|
-        replies.modifieddate|modifiedtime
+        reply.action|
+        reply.author|
+        reply.author.<CommentsAuthorSubfieldName>|
+        reply.content|
+        reply.createddate|createdtime|
+        reply.deleted|
+        reply.htmlcontent|
+        reply.id|
+        reply.modifieddate|modifiedtime
 
 <CommentsFieldName> ::=
         action|
@@ -6384,7 +6384,7 @@ gam print ownership <DriveFileID>|(drivefilename <DriveFileName>) [todrive <ToDr
         id|
         modifieddate|modifiedtime|
         quotedfilecontent|
-        replies|
+        reply|replies|
         resolved
 <CommentsFieldNameList> ::= "<CommentsFieldName>(,<CommentsFieldName>)*"
 
