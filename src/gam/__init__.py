@@ -16264,13 +16264,13 @@ def doDeleteAdmin():
   try:
     callGAPI(cd.roleAssignments(), 'delete',
              throwReasons=[GAPI.NOT_FOUND, GAPI.OPERATION_NOT_SUPPORTED, GAPI.FORBIDDEN,
-                           GAPI.INVALID_INPUT, GAPI.SERVICE_NOT_AVAILABLE,
+                           GAPI.INVALID_INPUT, GAPI.SERVICE_NOT_AVAILABLE, GAPI.RESOURCE_NOT_FOUND,
                            GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND],
              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
              customer=GC.Values[GC.CUSTOMER_ID], roleAssignmentId=roleAssignmentId)
     entityActionPerformed([Ent.ADMIN_ROLE_ASSIGNMENT, roleAssignmentId])
   except (GAPI.notFound, GAPI.operationNotSupported, GAPI.forbidden,
-          GAPI.invalidInput, GAPI.serviceNotAvailable) as e:
+          GAPI.invalidInput, GAPI.serviceNotAvailable, GAPI.resourceNotFound) as e:
     entityActionFailedWarning([Ent.ADMIN_ROLE_ASSIGNMENT, roleAssignmentId], str(e))
   except (GAPI.badRequest, GAPI.customerNotFound):
     accessErrorExit(cd)

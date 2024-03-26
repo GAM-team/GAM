@@ -2,6 +2,14 @@
 
 Merged GAM-Team version
 
+6.72.02
+
+Updated `gam delete admin <RoleAssignmentId>` to handle the following error that
+occurs when `<RoleAssignmentId>` references a user that has been deleted.
+```
+ERROR: 404: resourceNotFound - Does not exist
+```
+
 6.72.01
 
 Improved commands to display drive file comments.

@@ -1,5 +1,5 @@
 # Users - Gmail - Messages/Threads
-_ [Notes](#notes)
+- [Notes](#notes)
 - [API documentation](#api-documentation)
 - [Query documentation](#query-documentation)
 - [Definitions](#definitions)

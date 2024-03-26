@@ -293,7 +293,7 @@ gam <UserTypeEntity> show teamdrives
 ```
 By default, Gam displays all Teams Drives accessible by the user.
 * `matchname <RegularExpression>` - Display Shared Drives with names that match a pattern.
-* `(role|roles <SharedDriveACLRoleList>)* - Display Shared Drives where the user has one of the specified roles.
+* `(role|roles <SharedDriveACLRoleList>)*` - Display Shared Drives where the user has one of the specified roles.
 
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.

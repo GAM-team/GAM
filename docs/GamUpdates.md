@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.72.02
+
+Updated `gam delete admin <RoleAssignmentId>` to handle the following error that
+occurs when `<RoleAssignmentId>` references a user that has been deleted.
+```
+ERROR: 404: resourceNotFound - Does not exist
+```
+
 ### 6.72.01
 
 Improved commands to display drive file comments.
