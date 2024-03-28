@@ -192,6 +192,7 @@ By default, all users of the org units are displayed:
 * `nousers` - Don't display users of the org units
 * `notsuspended` - Display non-suspended users of the org units
 * `suspended` - Display suspended users of the org units
+* `children|child` - Display users in any child org unit
 
 ## Print organizational units
 This command displays information in CSV format.

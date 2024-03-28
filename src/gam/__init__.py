@@ -25137,7 +25137,7 @@ def createChatSpace(users):
   members = []
   tbody = {}
   returnIdOnly = False
-  updateMask = {}
+  updateMask = set()
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if getChatSpaceParameters(myarg, body['space'], CHAT_SPACE_TYPE_MAP, updateMask):
