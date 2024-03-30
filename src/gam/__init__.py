@@ -25039,6 +25039,45 @@ def exitIfChatNotConfigured(chat, kvList, errMsg, i, count):
     systemErrorExit(API_ACCESS_DENIED_RC, Msg.TO_SET_UP_GOOGLE_CHAT.format(setupChatURL(chat)))
   entityActionFailedWarning(kvList, errMsg, i, count)
 
+def _cleanChatSpace(space):
+  space.pop('type', None)
+  space.pop('threaded', None)
+
+def _cleanChatMessage(message):
+  message.pop('cards', None)
+
+CHAT_TIME_OBJECTS = {'createTime', 'deleteTime', 'eventTime', 'lastUpdateTime'}
+
+def _showChatItem(citem, entityType, FJQC, i=0, count=0):
+  if entityType == Ent.CHAT_SPACE:
+    _cleanChatSpace(citem)
+  elif entityType == Ent.CHAT_MESSAGE:
+    _cleanChatMessage(citem)
+  if FJQC.formatJSON:
+    printLine(json.dumps(cleanJSON(citem, timeObjects=CHAT_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
+    return
+  printEntity([entityType, citem['name']], i, count)
+  Ind.Increment()
+  showJSON(None, citem, timeObjects=CHAT_TIME_OBJECTS)
+  Ind.Decrement()
+
+def _printChatItem(user, citem, parent, entityType, csvPF, FJQC):
+  if entityType == Ent.CHAT_SPACE:
+    _cleanChatSpace(citem)
+    baserow = {'User': user} if user is not None else {}
+  else:
+    if entityType == Ent.CHAT_MESSAGE:
+      _cleanChatMessage(citem)
+    baserow = {'User': user, 'space.name': parent} if user is not None else {'space.name': parent}
+  row = flattenJSON(citem, flattened=baserow.copy(), timeObjects=CHAT_TIME_OBJECTS)
+  if not FJQC.formatJSON:
+    csvPF.WriteRowTitles(row)
+  elif csvPF.CheckRowTitles(row):
+    row = baserow.copy()
+    row.update({'name': citem['name'],
+                'JSON': json.dumps(cleanJSON(citem, timeObjects=CHAT_TIME_OBJECTS), ensure_ascii=False, sort_keys=True)})
+    csvPF.WriteRowNoFilter(row)
+
 # gam setup chat
 def doSetupChat():
   checkForExtraneousArguments()
@@ -25056,23 +25095,6 @@ def getChatSpace(myarg):
   else: # myarg.startswith('spaces/') or myarg.startswith('space/')
     _, chatSpace = Cmd.Previous().split('/', 1)
   return 'spaces/'+chatSpace
-
-def _cleanChatSpace(space):
-  space.pop('type', None)
-  space.pop('threaded', None)
-
-CHAT_SPACE_TIME_OBJECTS = {'createTime'}
-
-def _showChatSpace(space, FJQC, i=0, count=0):
-  _cleanChatSpace(space)
-  if FJQC.formatJSON:
-    printLine(json.dumps(cleanJSON(space, timeObjects=CHAT_SPACE_TIME_OBJECTS),
-                         ensure_ascii=False, sort_keys=True))
-    return
-  printEntity([Ent.CHAT_SPACE, space['name']], i, count)
-  Ind.Increment()
-  showJSON(None, space, timeObjects=CHAT_SPACE_TIME_OBJECTS)
-  Ind.Decrement()
 
 def  getChatSpaceParameters(myarg, body, typeChoicesMap, updateMask):
   if myarg == 'displayname':
@@ -25195,7 +25217,7 @@ def createChatSpace(users):
         if not FJQC.formatJSON:
           entityActionPerformed(kvList, i, count)
         Ind.Increment()
-        _showChatSpace(space, FJQC)
+        _showChatItem(space, Ent.CHAT_SPACE, FJQC)
         Ind.Decrement()
       else:
         writeStdout(f'{space["name"]}\n')
@@ -25263,7 +25285,7 @@ def updateChatSpace(users):
       if not FJQC.formatJSON:
         entityActionPerformed(kvList, i, count)
       Ind.Increment()
-      _showChatSpace(space, FJQC)
+      _showChatItem(space, Ent.CHAT_SPACE, FJQC)
       Ind.Decrement()
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
@@ -25319,7 +25341,7 @@ def infoChatSpace(users, name=None):
       if not FJQC.formatJSON:
         entityPerformAction(kvList, i, count)
       Ind.Increment()
-      _showChatSpace(space, FJQC)
+      _showChatItem(space, Ent.CHAT_SPACE, FJQC)
       Ind.Decrement()
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
@@ -25350,20 +25372,6 @@ CHAT_PAGE_SIZE = 1000
 #	[types <ChatSpaceTypeList>]
 #	[formatjson [quotechar <Character>]]
 def printShowChatSpaces(users):
-  def _printChatSpace(user, space):
-    _cleanChatSpace(space)
-    row = flattenJSON(space, timeObjects=CHAT_SPACE_TIME_OBJECTS)
-    if user is not None:
-      row['User'] = user
-    if not FJQC.formatJSON:
-      csvPF.WriteRowTitles(row)
-    elif csvPF.CheckRowTitles(row):
-      row = {'User': user} if user is not None else {}
-      row.update({'name': space['name'],
-                  'JSON': json.dumps(cleanJSON(space, timeObjects=CHAT_SPACE_TIME_OBJECTS),
-                                     ensure_ascii=False, sort_keys=True)})
-      csvPF.WriteRowNoFilter(row)
-
   csvPF = CSVPrintFile(['User', 'name'] if not isinstance(users, list) else ['name']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   pfilter = ''
@@ -25410,11 +25418,11 @@ def printShowChatSpaces(users):
       j = 0
       for space in spaces:
         j += 1
-        _showChatSpace(space, FJQC, j, jcount)
+        _showChatItem(space, Ent.CHAT_SPACE, FJQC, j, jcount)
       Ind.Decrement()
     else:
       for space in spaces:
-        _printChatSpace(user, space)
+        _printChatItem(user, space, None, Ent.CHAT_SPACE, csvPF, FJQC)
   if csvPF:
     csvPF.writeCSVfile('Chat Spaces')
 
@@ -25429,18 +25437,6 @@ def _getChatMemberEmail(cd, member):
   elif 'groupMember' in member:
     _, memberUid = member['groupMember']['name'].split('/')
     member['groupMember']['email'], _ = convertUIDtoEmailAddressWithType(f'uid:{memberUid}', cd, emailTypes=['group'])
-
-CHAT_MEMBER_TIME_OBJECTS = {'createTime', 'deleteTime'}
-
-def _showChatMember(member, FJQC, i=0, count=0):
-  if FJQC.formatJSON:
-    printLine(json.dumps(cleanJSON(member, timeObjects=CHAT_MEMBER_TIME_OBJECTS),
-                         ensure_ascii=False, sort_keys=True))
-    return
-  printEntity([Ent.CHAT_MEMBER, member['name']], i, count)
-  Ind.Increment()
-  showJSON(None, member, timeObjects=CHAT_MEMBER_TIME_OBJECTS)
-  Ind.Decrement()
 
 # gam <UserTypeEntity> create chatmember <ChatSpace>
 #	[type human|bot] [role member|manager]
@@ -25475,7 +25471,7 @@ def createChatMember(users):
           if not FJQC.formatJSON:
             entityActionPerformed(kvList, j, jcount)
           Ind.Increment()
-          _showChatMember(member, FJQC)
+          _showChatItem(member, Ent.CHAT_MEMBER, FJQC)
           Ind.Decrement()
         else:
           writeStdout(f'{member["name"]}\n')
@@ -25566,6 +25562,7 @@ def _deleteChatMembers(chat, kvList, jcount, memberNames, i, count):
 #	members <ChatMemberList>
 def deleteUpdateChatMember(users):
   cd = buildGAPIObject(API.DIRECTORY)
+  FJQC = FormatJSONQuoteChar()
   action = Act.Get()
   deleteMode =  action in {Act.DELETE, Act.REMOVE}
   parent = None
@@ -25633,7 +25630,7 @@ def deleteUpdateChatMember(users):
                             name=name, updateMask='role', body=body)
           _getChatMemberEmail(cd, member)
           Ind.Increment()
-          _showChatMember(member, None, j, jcount)
+          _showChatItem(member, Ent.CHAT_MEMBER, FJQC, j, jcount)
           Ind.Decrement()
         except GAPI.notFound as e:
           entityActionFailedWarning(kvList, str(e), j, jcount)
@@ -25834,7 +25831,7 @@ def infoChatMember(users):
                           name=name)
         _getChatMemberEmail(cd, member)
         Ind.Increment()
-        _showChatMember(member, FJQC, j, jcount)
+        _showChatItem(member, Ent.CHAT_MEMBER, FJQC, j, jcount)
         Ind.Decrement()
       except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
         exitIfChatNotConfigured(chat, kvList, str(e), i, count)
@@ -25849,18 +25846,6 @@ def doInfoChatMember():
 #	[showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
 #	[formatjson [quotechar <Character>]]
 def printShowChatMembers(users):
-  def _printChatMember(user, member):
-    row = {'User': user, 'space.name': parent} if user is not None else {'space.name': parent}
-    flattenJSON(member, flattened=row, timeObjects=CHAT_MEMBER_TIME_OBJECTS)
-    if not FJQC.formatJSON:
-      csvPF.WriteRowTitles(row)
-    elif csvPF.CheckRowTitles(row):
-      row = {'User': user, 'space.name': parent} if user is not None else {'space.name': parent}
-      row.update({'name': member['name'],
-                  'JSON': json.dumps(cleanJSON(member, timeObjects=CHAT_MEMBER_TIME_OBJECTS),
-                                     ensure_ascii=False, sort_keys=True)})
-      csvPF.WriteRowNoFilter(row)
-
   cd = buildGAPIObject(API.DIRECTORY)
   csvPF = CSVPrintFile(['User', 'space.name', 'name'] if not isinstance(users, list) else ['space.name', 'name']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
@@ -25909,11 +25894,11 @@ def printShowChatMembers(users):
       j = 0
       for member in members:
         j += 1
-        _showChatMember(member, FJQC, j, jcount)
+        _showChatItem(member, Ent.CHAT_MEMBER, FJQC, j, jcount)
       Ind.Decrement()
     else:
       for member in members:
-        _printChatMember(user, member)
+        _printChatItem(user, member, parent, Ent.CHAT_MEMBER, csvPF, FJQC)
   if csvPF:
     csvPF.writeCSVfile('Chat Members')
 
@@ -26067,22 +26052,6 @@ def deleteChatMessage(users):
 def doDeleteChatMessage():
   deleteChatMessage([None])
 
-def _cleanChatMessage(message):
-  message.pop('cards', None)
-
-CHAT_MESSAGE_TIME_OBJECTS = {'createTime', 'deleteTime', 'lastUpdateTime'}
-
-def _showChatMessage(message, FJQC, i=0, count=0):
-  _cleanChatMessage(message)
-  if FJQC.formatJSON:
-    printLine(json.dumps(cleanJSON(message, timeObjects=CHAT_MESSAGE_TIME_OBJECTS),
-                         ensure_ascii=False, sort_keys=True))
-    return
-  printEntity([Ent.CHAT_MESSAGE, message['name']], i, count)
-  Ind.Increment()
-  showJSON(None, message, timeObjects=CHAT_MESSAGE_TIME_OBJECTS)
-  Ind.Decrement()
-
 # gam [<UserTypeEntity>] info chatmessage name <ChatMessage>
 #	[formatjson]
 def infoChatMessage(users):
@@ -26111,7 +26080,7 @@ def infoChatMessage(users):
       if not FJQC.formatJSON:
         entityPerformAction(kvList, i, count)
       Ind.Increment()
-      _showChatMessage(message, FJQC)
+      _showChatItem(message, Ent.CHAT_MESSAGE, FJQC)
       Ind.Decrement()
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
@@ -26126,19 +26095,6 @@ def doInfoChatMessage():
 #	[showdeleted [<Boolean>]] [filter <String>]
 #	[formatjson [quotechar <Character>]]
 def printShowChatMessages(users):
-  def _printChatMessage(user, message):
-    _cleanChatMessage(message)
-    row = {'User': user, 'space.name': parent} if user is not None else {'space.name': parent}
-    flattenJSON(message, flattened=row, timeObjects=CHAT_MESSAGE_TIME_OBJECTS)
-    if not FJQC.formatJSON:
-      csvPF.WriteRowTitles(row)
-    elif csvPF.CheckRowTitles(row):
-      row = {'User': user, 'space.name': parent} if user is not None else {'space.name': parent}
-      row.update({'name': message['name'],
-                  'JSON': json.dumps(cleanJSON(message, timeObjects=CHAT_MESSAGE_TIME_OBJECTS),
-                                     ensure_ascii=False, sort_keys=True)})
-      csvPF.WriteRowNoFilter(row)
-
   cd = buildGAPIObject(API.DIRECTORY)
   csvPF = CSVPrintFile(['User', 'space.name', 'name'] if not isinstance(users, list) else ['space.name', 'name']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
@@ -26186,25 +26142,13 @@ def printShowChatMessages(users):
       j = 0
       for message in messages:
         j += 1
-        _showChatMessage(message, FJQC, j, jcount)
+        _showChatItem(message, Ent.CHAT_MESSAGE, FJQC, j, jcount)
       Ind.Decrement()
     else:
       for message in messages:
-        _printChatMessage(user, message)
+        _printChatItem(user, message, parent, Ent.CHAT_MESSAGE, csvPF, FJQC)
   if csvPF:
     csvPF.writeCSVfile('Chat Messages')
-
-CHAT_EVENT_TIME_OBJECTS = {'createTime', 'deleteTime', 'eventTime', 'lastUpdateTime'}
-
-def _showChatEvent(event, FJQC, i=0, count=0):
-  if FJQC.formatJSON:
-    printLine(json.dumps(cleanJSON(event, timeObjects=CHAT_EVENT_TIME_OBJECTS),
-                         ensure_ascii=False, sort_keys=True))
-    return
-  printEntity([Ent.CHAT_EVENT, event['name']], i, count)
-  Ind.Increment()
-  showJSON(None, event, timeObjects=CHAT_EVENT_TIME_OBJECTS)
-  Ind.Decrement()
 
 # gam <UserTypeEntity> info chatevent name <ChatEvent>
 #	[formatjson]
@@ -26232,7 +26176,7 @@ def infoChatEvent(users):
       if not FJQC.formatJSON:
         entityPerformAction(kvList, i, count)
       Ind.Increment()
-      _showChatEvent(event, FJQC)
+      _showChatItem(event, Ent.CHAT_EVENT, FJQC)
       Ind.Decrement()
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
@@ -26247,18 +26191,6 @@ def doInfoChatEvent():
 #	filter <String>
 #	[formatjson [quotechar <Character>]]
 def printShowChatEvents(users):
-  def _printChatEvent(user, event):
-    row = {'User': user, 'space.name': parent} if user is not None else {'space.name': parent}
-    flattenJSON(event, flattened=row, timeObjects=CHAT_EVENT_TIME_OBJECTS)
-    if not FJQC.formatJSON:
-      csvPF.WriteRowTitles(row)
-    elif csvPF.CheckRowTitles(row):
-      row = {'User': user, 'space.name': parent} if user is not None else {'space.name': parent}
-      row.update({'name': event['name'],
-                  'JSON': json.dumps(cleanJSON(event, timeObjects=CHAT_EVENT_TIME_OBJECTS),
-                                     ensure_ascii=False, sort_keys=True)})
-      csvPF.WriteRowNoFilter(row)
-
   csvPF = CSVPrintFile(['User', 'space.name', 'name'] if not isinstance(users, list) else ['space.name', 'name']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   parent = pfilter = None
@@ -26285,7 +26217,7 @@ def printShowChatEvents(users):
       continue
     try:
       events = callGAPIpages(chat.spaces().spaceEvents(), 'list', 'spaceEvents',
-                             pageMessage=_getChatPageMessage(Ent.CHAT_MESSAGE, user, i, count, qfilter),
+                             pageMessage=_getChatPageMessage(Ent.CHAT_EVENT, user, i, count, qfilter),
                              throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                              pageSize=CHAT_PAGE_SIZE, parent=parent, filter=pfilter)
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
@@ -26299,11 +26231,11 @@ def printShowChatEvents(users):
       j = 0
       for event in events:
         j += 1
-        _showChatEvent(event, FJQC, j, jcount)
+        _showChatItem(event, Ent.CHAT_EVENT, FJQC, j, jcount)
       Ind.Decrement()
     else:
       for event in events:
-        _printChatEvent(user, event)
+        _printChatItem(user, event, parent, Ent.CHAT_EVENT, csvPF, FJQC)
   if csvPF:
     csvPF.writeCSVfile('Chat Events')
 

@@ -2,6 +2,10 @@
 
 Merged GAM-Team version
 
+6.72.05
+
+Cleaned up code for all commands that display Chat objects.
+
 6.72.04
 
 Added commands to display Chat events.
