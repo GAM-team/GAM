@@ -9,11 +9,15 @@
 - [Display Chat Members](#display-chat-members)
 - [Manage Chat Messages](#manage-chat-messages)
 - [Display Chat Messages](#display-chat-messages)
+- [Display Chat Events](#display-chat-events)
 - [Bulk Operations](#bulk-operations)
 
 ## API documentation
-* https://developers.google.com/chat/concepts
-* https://developers.google.com/chat/reference/rest
+* https://developers.google.com/workspace/chat/overview
+* https://developers.google.com/workspace/chat/api/reference/rest
+* https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.members/list
+* https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.messages/list
+* https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.spaceEvents/list
 * https://support.google.com/chat/answer/7655820
 
 ## Introduction
@@ -63,6 +67,7 @@ Google requires that you have a Chat Bot configured in order to use the Chat API
          (gdoc <UserGoogleDoc>)|
          (gcsdoc <StorageBucketObjectName>))
 
+<ChatEvent> ::= spaces/<String>/spaceEvents/<String>
 <ChatMember> ::= spaces/<String>/members/<String>
 <ChatMemberList> ::= "<ChatMember>(,<ChatMember>)*"
 <ChatMessage> ::= spaces/<String>/messages/<String>
@@ -378,7 +383,6 @@ Display a specific Chat message.
 
 ```
 gam <UserTypeEntity> info chatmessage name <ChatMessage>
-        [filter <String>]
         [formatjson]
 ```
 By default, Gam displays the information as an indented list of keys and values.
@@ -445,6 +449,69 @@ filter 'createTime > \"2012-04-21T11:30:00-04:00\"'
 filter 'createTime > \"2012-04-21T11:30:00-04:00\" AND thread.name = spaces/AAAAAAAAAAA/threads/123"'
 filter 'createTime > \"2012-04-21T11:30:00+00:00\" AND createTime < \"2013-01-01T00:00:00+00:00\" AND thread.name = spaces/AAAAAAAAAAA/threads/123'
 filter 'thread.name = spaces/AAAAAAAAAAA/threads/123'
+```
+
+## Display Chat Events
+Display a specific Chat event.
+
+```
+gam <UserTypeEntity> info chatevent name <ChatEvent>
+        [formatjson]
+```
+By default, Gam displays the information as an indented list of keys and values.
+* `formatjson` - Display the fields in JSON format.
+
+### Example
+```
+gam user user@domain.com info chatevent name spaces/AAAAsUhqjkg/spaceEvents/MTcxMTY4ODM2NDE3OTQzOV81X3VwZGF0ZWQ
+```
+
+### Display information about all chat events in a chat space
+```
+gam <UserTypeEntity> show chatevents <ChatSpace>
+        filter <String>
+        [formatjson]
+```
+By default, Gam displays the information as an indented list of keys and values.
+* `formatjson` - Display the fields in JSON format.
+
+```
+gam <UserTypeEntity> print chatevents [todrive <ToDriveAttribute>*] <ChatSpace>
+        filter <String>
+        [formatjson [quotechar <Character>]]
+```
+By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
+* `formatjson` - Display the fields in JSON format.
+
+By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
+the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
+When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
+The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
+`quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
+
+Use `filter <String>` to filter events by when they occurred and by the type of event.
+
+To filter events by the date they happened, specify the start_time and end_time with a timestamp in RFC-3339 format and double quotation marks.
+
+You must specify at least one event type (event_types) using the has : operator. To filter by multiple event types, use the OR operator.
+For a list of supported event types, see: https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.spaceEvents#SpaceEvent.FIELDS.event_type
+
+For example, the following queries are valid on Linux/MacOS:
+```
+filter 'start_time="2024-03-15T11:30:00-04:00" AND event_types:"google.workspace.chat.message.v1.created"'
+filter 'start_time="2024-03-15T11:30:00+00:00" AND end_time="2024-03-3100:00:00+00:00"event_types:"google.workspace.chat.message.v1.created"'
+```
+
+For example, the following queries are valid on Windows Command Prompt:
+```
+filter "start_time=\"2024-03-15T11:30:00-04:00\" AND event_types:\"google.workspace.chat.message.v1.created\""
+filter "start_time=\"2024-03-15T11:30:00+00:00\" AND end_time=\"2024-03-3100:00:00+00:00\" AND event_types:\"google.workspace.chat.message.v1.created\""
+```
+
+For example, the following queries are valid on Windows PowerShell:
+```
+filter 'start_time=\"2024-03-15T11:30:00-04:00\" AND event_types:\"google.workspace.chat.message.v1.created\"'
+filter 'start_time=\"2024-03-15T11:30:00+00:00\" AND end_time=\"2024-03-3100:00:00+00:00\" AND event_types:\"google.workspace.chat.message.v1.created\"'
 ```
 
 ## Bulk Operations

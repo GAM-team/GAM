@@ -4738,7 +4738,7 @@ def getSvcAcctCredentials(scopesOrAPI, userEmail, softErrors=False, forceOauth=F
       GM.Globals[GM.CURRENT_SVCACCT_API_SCOPES] = GM.Globals[GM.SVCACCT_SCOPES].get(scopesOrAPI, [])
     else:
       GM.Globals[GM.CURRENT_SVCACCT_API_SCOPES] = API.JWT_APIS[scopesOrAPI]
-    if not GM.Globals[GM.CURRENT_SVCACCT_API_SCOPES]:
+    if scopesOrAPI != API.CHAT_EVENTS and not GM.Globals[GM.CURRENT_SVCACCT_API_SCOPES]:
       if softErrors:
         return None
       SvcAcctAPIAccessDeniedExit()
@@ -4746,6 +4746,9 @@ def getSvcAcctCredentials(scopesOrAPI, userEmail, softErrors=False, forceOauth=F
       GM.Globals[GM.CURRENT_SVCACCT_API_SCOPES].append(API.USERINFO_PROFILE_SCOPE)
       if scopesOrAPI in {API.PEOPLE_OTHERCONTACTS}:
         GM.Globals[GM.CURRENT_SVCACCT_API_SCOPES].append(API.PEOPLE_SCOPE)
+    elif scopesOrAPI == API.CHAT_EVENTS:
+      for chatAPI in [API.CHAT_SPACES, API.CHAT_MEMBERSHIPS, API.CHAT_MESSAGES]:
+        GM.Globals[GM.CURRENT_SVCACCT_API_SCOPES].extend(GM.Globals[GM.SVCACCT_SCOPES].get(chatAPI, []))
   else:
     GM.Globals[GM.CURRENT_SVCACCT_API] = ''
     GM.Globals[GM.CURRENT_SVCACCT_API_SCOPES] = scopesOrAPI
@@ -25847,10 +25850,8 @@ def doInfoChatMember():
 #	[formatjson [quotechar <Character>]]
 def printShowChatMembers(users):
   def _printChatMember(user, member):
-    row = flattenJSON(member, timeObjects=CHAT_MEMBER_TIME_OBJECTS)
-    if user is not None:
-      row['User'] = user
-    row['space.name'] = parent
+    row = {'User': user, 'space.name': parent} if user is not None else {'space.name': parent}
+    flattenJSON(member, flattened=row, timeObjects=CHAT_MEMBER_TIME_OBJECTS)
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
@@ -26127,13 +26128,12 @@ def doInfoChatMessage():
 def printShowChatMessages(users):
   def _printChatMessage(user, message):
     _cleanChatMessage(message)
-    row = flattenJSON(message, timeObjects=CHAT_MESSAGE_TIME_OBJECTS)
-    if user is not None:
-      row['User'] = user
+    row = {'User': user, 'space.name': parent} if user is not None else {'space.name': parent}
+    flattenJSON(message, flattened=row, timeObjects=CHAT_MESSAGE_TIME_OBJECTS)
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
-      row = {'User': user} if user is not None else {}
+      row = {'User': user, 'space.name': parent} if user is not None else {'space.name': parent}
       row.update({'name': message['name'],
                   'JSON': json.dumps(cleanJSON(message, timeObjects=CHAT_MESSAGE_TIME_OBJECTS),
                                      ensure_ascii=False, sort_keys=True)})
@@ -26193,6 +26193,119 @@ def printShowChatMessages(users):
         _printChatMessage(user, message)
   if csvPF:
     csvPF.writeCSVfile('Chat Messages')
+
+CHAT_EVENT_TIME_OBJECTS = {'createTime', 'deleteTime', 'eventTime', 'lastUpdateTime'}
+
+def _showChatEvent(event, FJQC, i=0, count=0):
+  if FJQC.formatJSON:
+    printLine(json.dumps(cleanJSON(event, timeObjects=CHAT_EVENT_TIME_OBJECTS),
+                         ensure_ascii=False, sort_keys=True))
+    return
+  printEntity([Ent.CHAT_EVENT, event['name']], i, count)
+  Ind.Increment()
+  showJSON(None, event, timeObjects=CHAT_EVENT_TIME_OBJECTS)
+  Ind.Decrement()
+
+# gam <UserTypeEntity> info chatevent name <ChatEvent>
+#	[formatjson]
+def infoChatEvent(users):
+  FJQC = FormatJSONQuoteChar()
+  name = None
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'name':
+      name = getString(Cmd.OB_CHAT_EVENT)
+    else:
+      FJQC.GetFormatJSON(myarg)
+  if not name:
+    missingArgumentExit('name')
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, chat, kvList = buildChatServiceObject(API.CHAT_EVENTS, user, i, count, [Ent.CHAT_EVENT, name])
+    if not chat:
+      continue
+    try:
+      event = callGAPI(chat.spaces().spaceEvents(), 'get',
+                       throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                       name=name)
+      if not FJQC.formatJSON:
+        entityPerformAction(kvList, i, count)
+      Ind.Increment()
+      _showChatEvent(event, FJQC)
+      Ind.Decrement()
+    except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+      exitIfChatNotConfigured(chat, kvList, str(e), i, count)
+
+def doInfoChatEvent():
+  infoChatEvent([None])
+
+# gam <UserTypeEntity> show chatevents <ChatSpace>
+#	filter <String>
+#	[formatjson]
+# gam <UserTypeEntity> print chatevents [todrive <ToDriveAttribute>*] <ChatSpace>
+#	filter <String>
+#	[formatjson [quotechar <Character>]]
+def printShowChatEvents(users):
+  def _printChatEvent(user, event):
+    row = {'User': user, 'space.name': parent} if user is not None else {'space.name': parent}
+    flattenJSON(event, flattened=row, timeObjects=CHAT_EVENT_TIME_OBJECTS)
+    if not FJQC.formatJSON:
+      csvPF.WriteRowTitles(row)
+    elif csvPF.CheckRowTitles(row):
+      row = {'User': user, 'space.name': parent} if user is not None else {'space.name': parent}
+      row.update({'name': event['name'],
+                  'JSON': json.dumps(cleanJSON(event, timeObjects=CHAT_EVENT_TIME_OBJECTS),
+                                     ensure_ascii=False, sort_keys=True)})
+      csvPF.WriteRowNoFilter(row)
+
+  csvPF = CSVPrintFile(['User', 'space.name', 'name'] if not isinstance(users, list) else ['space.name', 'name']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
+  parent = pfilter = None
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
+      parent = getChatSpace(myarg)
+    elif myarg =='filter':
+      pfilter = getString(Cmd.OB_STRING)
+    else:
+      FJQC.GetFormatJSONQuoteChar(myarg, True)
+  if not parent:
+    missingArgumentExit('space')
+  if not pfilter:
+    missingArgumentExit('filter')
+  qfilter = f'{Ent.Singular(Ent.CHAT_SPACE)}: {parent}, {pfilter}'
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, chat, kvList = buildChatServiceObject(API.CHAT_EVENTS, user, i, count, [Ent.CHAT_SPACE, parent])
+    if not chat:
+      continue
+    try:
+      events = callGAPIpages(chat.spaces().spaceEvents(), 'list', 'spaceEvents',
+                             pageMessage=_getChatPageMessage(Ent.CHAT_MESSAGE, user, i, count, qfilter),
+                             throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                             pageSize=CHAT_PAGE_SIZE, parent=parent, filter=pfilter)
+    except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+      exitIfChatNotConfigured(chat, kvList, str(e), i, count)
+      continue
+    if not csvPF:
+      jcount = len(events)
+      if not FJQC.formatJSON:
+        entityPerformActionNumItems(kvList, jcount, Ent.CHAT_EVENT, i, count)
+      Ind.Increment()
+      j = 0
+      for event in events:
+        j += 1
+        _showChatEvent(event, FJQC, j, jcount)
+      Ind.Decrement()
+    else:
+      for event in events:
+        _printChatEvent(user, event)
+  if csvPF:
+    csvPF.writeCSVfile('Chat Events')
 
 def _getOrgunitsOrgUnitIdPath(orgUnit):
   if orgUnit.startswith('orgunits/'):
@@ -54004,7 +54117,7 @@ def _stripCommentPhotoLinks(comment):
   for reply in comment.get('replies', []):
     if 'author' in reply:
       reply['author'].pop('photoLink', None)
-    
+
 def _showComment(comment, stripPhotoLinks, timeObjects, i=0, count=0, FJQC=None):
   if stripPhotoLinks:
     _stripCommentPhotoLinks(comment)
@@ -66457,10 +66570,11 @@ def deleteLabelIds(users, labelEntity):
       l += 1
       try:
         callGAPI(gmail.users().labels(), 'delete',
-                 throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID, GAPI.PERMISSION_DENIED],
+                 throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID,
+                                                        GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                  userId='me', id=labelId)
         entityActionPerformed([Ent.USER, user, Ent.LABEL_ID, labelId], l, lcount)
-      except (GAPI.notFound, GAPI.invalid, GAPI.permissionDenied) as e:
+      except (GAPI.notFound, GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.LABEL_ID, labelId], str(e), l, lcount)
       except (GAPI.serviceNotAvailable, GAPI.badRequest):
         entityServiceNotApplicableWarning(Ent.USER, user, i, count)
@@ -67174,13 +67288,13 @@ def exportMessagesThreads(users, entityType):
     Ind.Decrement()
 
 # gam <UserTypeEntity> export message|messages
-#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_export <Number>])|(ids <MessageIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [max_to_export <Number>])|(ids <MessageIDEntity>)
 #	[targetfolder <FilePath>] [targetname <FileName>] [overwrite [<Boolean>]]
 def exportMessages(users):
   exportMessagesThreads(users, Ent.MESSAGE)
 
 # gam <UserTypeEntity> export thread|threads
-#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_export <Number>])|(ids <ThreadIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [max_to_export <Number>])|(ids <ThreadIDEntity>)
 #	[targetfolder <FilePath>] [targetname <FileName>] [overwrite [<Boolean>]]
 def exportThreads(users):
   exportMessagesThreads(users, Ent.THREAD)
@@ -72698,6 +72812,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_ALIAS:		doInfoAliases,
       Cmd.ARG_BUILDING:		doInfoBuilding,
       Cmd.ARG_BROWSER:		doInfoBrowsers,
+      Cmd.ARG_CHATEVENT:	doInfoChatEvent,
       Cmd.ARG_CHATMEMBER:	doInfoChatMember,
       Cmd.ARG_CHATMESSAGE:	doInfoChatMessage,
       Cmd.ARG_CHATSPACE:	doInfoChatSpace,
@@ -73728,6 +73843,7 @@ USER_COMMANDS_WITH_OBJECTS = {
     (Act.INFO,
      {Cmd.ARG_CALENDAR:		infoCalendars,
       Cmd.ARG_CALENDARACL:	infoCalendarACLs,
+      Cmd.ARG_CHATEVENT:	infoChatEvent,
       Cmd.ARG_CHATMEMBER:	infoChatMember,
       Cmd.ARG_CHATMESSAGE:	infoChatMessage,
       Cmd.ARG_CHATSPACE:	infoChatSpace,
@@ -73799,6 +73915,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CALENDAR:		printShowCalendars,
       Cmd.ARG_CALENDARACL:	printShowCalendarACLs,
       Cmd.ARG_CALSETTINGS:	printShowCalSettings,
+      Cmd.ARG_CHATEVENT:	printShowChatEvents,
       Cmd.ARG_CHATMEMBER:	printShowChatMembers,
       Cmd.ARG_CHATMESSAGE:	printShowChatMessages,
       Cmd.ARG_CHATSPACE:	printShowChatSpaces,
@@ -73900,6 +74017,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CALENDAR:		printShowCalendars,
       Cmd.ARG_CALENDARACL:	printShowCalendarACLs,
       Cmd.ARG_CALSETTINGS:	printShowCalSettings,
+      Cmd.ARG_CHATEVENT:	printShowChatEvents,
       Cmd.ARG_CHATMEMBER:	printShowChatMembers,
       Cmd.ARG_CHATMESSAGE:	printShowChatMessages,
       Cmd.ARG_CHATSPACE:	printShowChatSpaces,
@@ -74106,6 +74224,7 @@ USER_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_CALENDARS:		Cmd.ARG_CALENDAR,
   Cmd.ARG_CALENDARACLS:		Cmd.ARG_CALENDARACL,
   Cmd.ARG_CLASSROOMINVITATIONS:	Cmd.ARG_CLASSROOMINVITATION,
+  Cmd.ARG_CHATEVENTS:		Cmd.ARG_CHATEVENT,
   Cmd.ARG_CHATMEMBERS:		Cmd.ARG_CHATMEMBER,
   Cmd.ARG_CHATMESSAGES:		Cmd.ARG_CHATMESSAGE,
   Cmd.ARG_CHATSPACES:		Cmd.ARG_CHATSPACE,

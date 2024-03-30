@@ -27,6 +27,7 @@ ANALYTICS_ADMIN = 'analyticsadmin'
 CALENDAR = 'calendar'
 CBCM = 'cbcm'
 CHAT = 'chat'
+CHAT_EVENTS = 'chatevents'
 CHAT_MEMBERSHIPS = 'chatmemberships'
 CHAT_MESSAGES = 'chatmessages'
 CHAT_SPACES = 'chatspaces'
@@ -190,6 +191,7 @@ _INFO = {
   CALENDAR: {'name': 'Calendar API', 'version': 'v3', 'v2discovery': True, 'mappedAPI': 'calendar-json'},
   CBCM: {'name': 'Chrome Browser Cloud Management API', 'version': 'v1.1beta1', 'v2discovery': True, 'localjson': True},
   CHAT: {'name': 'Chat API', 'version': 'v1', 'v2discovery': True},
+  CHAT_EVENTS: {'name': 'Chat API - Events', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},
   CHAT_MEMBERSHIPS: {'name': 'Chat API - Memberships', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},
   CHAT_MESSAGES: {'name': 'Chat API - Messages', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},
   CHAT_SPACES: {'name': 'Chat API - Spaces', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},

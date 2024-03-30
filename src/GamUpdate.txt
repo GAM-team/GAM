@@ -2,6 +2,12 @@
 
 Merged GAM-Team version
 
+6.72.04
+
+Added commands to display Chat events.
+
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Chat#display-chat-events
+
 6.72.03
 
 Fixed bug in `gam <UserTypeEntity> create chatspace` that caused a trap.
@@ -236,12 +242,12 @@ Added support for Gmail Client Side Encryption.
 
 This is an initial, minimally tested release; proceed with care and report all issues.
 
-c6.69.00
+6.69.00
 
-Added `use_classroom_owner_access` Boolean variable to `gam.cfg` that controls how GAM gets
-classroom member information and removes students/teachers. Client access does not provide
+Added `use_course_owner_access` Boolean variable to `gam.cfg` that controls how GAM gets
+classroom member information and removes students/teachers. Client/admin access does not provide
 complete information about non-domain students/teachers.
-* `False` - Use client access; this is the default. Use if you don't have non-domain members in your courses.
+* `False` - Use client/admin access; this is the default. Use if you don't have non-domain members in your courses.
 * `True` - Use service account access as the classroom owner. An extra API call is required per course to authenticate the owner; this will affect performance
 
 Added the following command which must be used to delete classroom invitations for non-domain students/teachers.
@@ -443,8 +449,8 @@ Added option `exportlinkeddrivefiles <Boolean>` to `gam create vaultexport` that
 Updated `gam remove aliases <EmailAddress> user|group <EmailAddressEntity>` to give a more informative
 error message when the target/alias combination does not exist.
 ```
-Old: User: testsimple@rdschool.org, User Alias: tsalias@rdschool.org, Remove Failed: Invalid Input: resource_id
-New: User: testsimple@rdschool.org, User Alias: tsalias@rdschool.org, Remove Failed: Does not exist
+Old: User: testsimple@domain.com, User Alias: tsalias@domain.com, Remove Failed: Invalid Input: resource_id
+New: User: testsimple@domain.com, User Alias: tsalias@domain.com, Remove Failed: Does not exist
 ```
 
 6.67.20

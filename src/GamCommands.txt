@@ -2043,6 +2043,9 @@ gam delete chatmessage name <ChatMessage>
 gam info chatmessage name <ChatMessage>
         [formatjson]
 
+gam info chatevent name <ChatEvent>
+        [formatjson]
+
 # Chrome Installed Apps Counts
 
 gam show chromeapps
@@ -5999,6 +6002,15 @@ gam <UserTypeEntity> show chatmessages <ChatSpace>
         [formatjson]
 gam <UserTypeEntity> print chatmessages [todrive <ToDriveAttribute>*] <ChatSpace>
         [showdeleted [<Boolean>]] [filter <String>]
+        [formatjson [quotechar <Character>]]
+
+gam <UserTypeEntity> info chatevent name <ChatEvent>
+        [formatjson]
+gam <UserTypeEntity> show chatevents <ChatSpace>
+        filter <String>
+        [formatjson]
+gam <UserTypeEntity> print chatevents [todrive <ToDriveAttribute>*] <ChatSpace>
+        filter <String>
         [formatjson [quotechar <Character>]]
 
 # Users - Drive
