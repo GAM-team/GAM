@@ -6975,8 +6975,8 @@ def getEntityList(item, shlexSplit=False):
     return getEntitySelection(entitySelector, shlexSplit)
   return convertEntityToList(getString(item, minLen=0), shlexSplit=shlexSplit)
 
-def getNormalizedEmailAddressEntity(shlexSplit=False, noUid=True):
-  return [normalizeEmailAddressOrUID(emailAddress, noUid) for emailAddress in getEntityList(Cmd.OB_EMAIL_ADDRESS_ENTITY, shlexSplit)]
+def getNormalizedEmailAddressEntity(shlexSplit=False, noUid=True, noLower=False):
+  return [normalizeEmailAddressOrUID(emailAddress, noUid=noUid, noLower=noLower) for emailAddress in getEntityList(Cmd.OB_EMAIL_ADDRESS_ENTITY, shlexSplit)]
 
 def getUserObjectEntity(clObject, itemType, shlexSplit=False):
   entity = {'item': itemType, 'list': getEntityList(clObject, shlexSplit), 'dict': None}
@@ -7136,7 +7136,7 @@ def send_email(msgSubject, msgBody, msgTo, i=0, count=0, clientAccess=False, msg
         message[header] = value
   if mailBox is None:
     mailBox = msgFrom
-  mailBoxAddr = normalizeEmailAddressOrUID(cleanAddr(mailBox), noUid=True)
+  mailBoxAddr = normalizeEmailAddressOrUID(cleanAddr(mailBox), noUid=True, noLower=True)
   action = Act.Get()
   Act.Set(Act.SENDEMAIL)
   if not GC.Values[GC.SMTP_HOST]:
@@ -7147,7 +7147,7 @@ def send_email(msgSubject, msgBody, msgTo, i=0, count=0, clientAccess=False, msg
     else:
       userId = mailBoxAddr
       gmail = buildGAPIObject(API.GMAIL)
-    message['To'] = (msgTo if msgTo else userId).lower()
+    message['To'] = msgTo if msgTo else userId
     try:
       result = callGAPI(gmail.users().messages(), 'send',
                         throwReasons=[GAPI.SERVICE_NOT_AVAILABLE, GAPI.AUTH_ERROR, GAPI.DOMAIN_POLICY,
@@ -7158,7 +7158,7 @@ def send_email(msgSubject, msgBody, msgTo, i=0, count=0, clientAccess=False, msg
             GAPI.invalid, GAPI.invalidArgument, GAPI.forbidden, GAPI.permissionDenied) as e:
       entityActionFailedWarning([Ent.RECIPIENT, msgTo, Ent.MESSAGE, msgSubject], str(e), i, count)
   else:
-    message['To'] = (msgTo if msgTo else mailBoxAddr).lower()
+    message['To'] = msgTo if msgTo else mailBoxAddr
     server = None
     try:
       server = smtplib.SMTP(GC.Values[GC.SMTP_HOST], 587, GC.Values[GC.SMTP_FQDN])
@@ -14504,6 +14504,12 @@ def sendCreateUpdateUserNotification(body, basenotify, tagReplacements, i=0, cou
     send_email(notify['subject'], notify['message'], recipient, i, count,
                msgFrom=msgFrom, msgReplyTo=msgReplyTo, html=notify['html'], charset=notify['charset'], mailBox=mailBox)
 
+def getRecipients():
+  if checkArgumentPresent('select'):
+    _, recipients = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
+    return [normalizeEmailAddressOrUID(emailAddress, noUid=True, noLower=True) for emailAddress in recipients]
+  return getNormalizedEmailAddressEntity(shlexSplit=True, noLower=True)
+
 # gam sendemail [recipient|to] <RecipientEntity> [from <EmailAddress>] [mailbox <EmailAddress>] [replyto <EmailAddress>]
 #	[cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
 #	[subject <String>]
@@ -14529,12 +14535,6 @@ def sendCreateUpdateUserNotification(body, basenotify, tagReplacements, i=0, cou
 #	[newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
 #	(<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
 def doSendEmail(users=None):
-  def getRecipients():
-    if checkArgumentPresent('select'):
-      _, recipients = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
-      return [normalizeEmailAddressOrUID(emailAddress, noUid=True) for emailAddress in recipients]
-    return getNormalizedEmailAddressEntity(shlexSplit=True)
-
   body = {}
   notify = {'subject': '', 'message': '', 'html': False, 'charset': UTF8, 'password': ''}
   msgFroms = [_getAdminEmail()]
@@ -41205,7 +41205,7 @@ def getUserAttributes(cd, updateCmd, noUid=False):
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'notify':
-      notify['recipients'] = getNormalizedEmailAddressEntity(shlexSplit=True)
+      notify['recipients'] = getNormalizedEmailAddressEntity(shlexSplit=True, noLower=True)
     elif myarg == 'subject':
       notify['subject'] = getString(Cmd.OB_STRING)
     elif myarg in SORF_MSG_FILE_ARGUMENTS:
@@ -67254,12 +67254,6 @@ def _decodeHeader(header):
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_forward <Number>])|(ids <ThreadIDEntity>)
 #	[subject <String>] [addorigfieldstosubject [<Boolean>]] [altcharset <String>]
 def forwardMessagesThreads(users, entityType):
-  def getRecipients():
-    if checkArgumentPresent('select'):
-      _, recipients = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
-      return [normalizeEmailAddressOrUID(emailAddress, noUid=True) for emailAddress in recipients]
-    return getNormalizedEmailAddressEntity()
-
   checkArgumentPresent({'recipient', 'recipients', 'to'})
   recipients = getRecipients()
   parameters = _initMessageThreadParameters(entityType, False, 1)

@@ -2,6 +2,10 @@
 
 Merged GAM-Team version
 
+6.72.07
+
+Updated commands that send emails to not downshift `'First Last<firstlast@domain.com>'` to `'first last<firstlast@domain.com>'`.
+
 6.72.06
 
 Updated the following commands to properly handle emailaddress lists containing addresses of the form: `'First Last<firstlast@domain.com>'`.
