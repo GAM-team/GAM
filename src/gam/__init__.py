@@ -14533,7 +14533,7 @@ def doSendEmail(users=None):
     if checkArgumentPresent('select'):
       _, recipients = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
       return [normalizeEmailAddressOrUID(emailAddress, noUid=True) for emailAddress in recipients]
-    return getNormalizedEmailAddressEntity()
+    return getNormalizedEmailAddressEntity(shlexSplit=True)
 
   body = {}
   notify = {'subject': '', 'message': '', 'html': False, 'charset': UTF8, 'password': ''}
@@ -41205,7 +41205,7 @@ def getUserAttributes(cd, updateCmd, noUid=False):
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'notify':
-      notify['recipients'] = getNormalizedEmailAddressEntity()
+      notify['recipients'] = getNormalizedEmailAddressEntity(shlexSplit=True)
     elif myarg == 'subject':
       notify['subject'] = getString(Cmd.OB_STRING)
     elif myarg in SORF_MSG_FILE_ARGUMENTS:
@@ -57799,7 +57799,8 @@ def moveDriveFile(users):
                                                                GAPI.TARGET_USER_ROLE_LIMITED_BY_LICENSE_RESTRICTION,
                                                                GAPI.CANNOT_MOVE_TRASHED_ITEM_INTO_TEAMDRIVE,
                                                                GAPI.CANNOT_MOVE_TRASHED_ITEM_OUT_OF_TEAMDRIVE,
-                                                               GAPI.CROSS_DOMAIN_MOVE_RESTRICTION],
+                                                               GAPI.CROSS_DOMAIN_MOVE_RESTRICTION,
+                                                               GAPI.STORAGE_QUOTA_EXCEEDED],
                  fileId=folderId,
                  addParents=newParentId, removeParents=removeParents,
                  body=body, fields=None, supportsAllDrives=True)
@@ -57811,7 +57812,7 @@ def moveDriveFile(users):
       except (GAPI.badRequest, GAPI.insufficientParentPermissions, GAPI.fileOwnerNotMemberOfTeamDrive, GAPI.fileOwnerNotMemberOfWriterDomain,
               GAPI.fileWriterTeamDriveMoveInDisabled, GAPI.targetUserRoleLimitedByLicenseRestriction,
               GAPI.cannotMoveTrashedItemIntoTeamDrive, GAPI.cannotMoveTrashedItemOutOfTeamDrive,
-              GAPI.crossDomainMoveRestriction) as e:
+              GAPI.crossDomainMoveRestriction, GAPI.storageQuotaExceeded) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FOLDER, folderName], str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
         userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
@@ -57926,20 +57927,21 @@ def moveDriveFile(users):
                                                              GAPI.CANNOT_MOVE_TRASHED_ITEM_INTO_TEAMDRIVE,
                                                              GAPI.CANNOT_MOVE_TRASHED_ITEM_OUT_OF_TEAMDRIVE,
                                                              GAPI.TEAMDRIVES_SHORTCUT_FILE_NOT_SUPPORTED,
-                                                             GAPI.CROSS_DOMAIN_MOVE_RESTRICTION],
+                                                             GAPI.CROSS_DOMAIN_MOVE_RESTRICTION,
+                                                             GAPI.STORAGE_QUOTA_EXCEEDED],
                fileId=childId, addParents=newParentId, removeParents=removeParents,
                body=body, fields='', supportsAllDrives=True)
       entityModifierItemValueListActionPerformed(kvList, Act.MODIFIER_TO,
                                                  [Ent.DRIVE_FOLDER, newParentNameId, entityType, f'{newChildName}({childId})'],
                                                  k, kcount)
       _incrStatistic(statistics, STAT_FILE_COPIED_MOVED)
+      return
     except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.unknownError, GAPI.badRequest,
             GAPI.targetUserRoleLimitedByLicenseRestriction,
             GAPI.cannotMoveTrashedItemIntoTeamDrive, GAPI.cannotMoveTrashedItemOutOfTeamDrive,
-            GAPI.teamDrivesShortcutFileNotSupported) as e:
+            GAPI.teamDrivesShortcutFileNotSupported, GAPI.storageQuotaExceeded) as e:
       entityActionFailedWarning(kvList, str(e), k, kcount)
       _incrStatistic(statistics, STAT_FILE_FAILED)
-      copyMoveOptions['retainSourceFolders'] = True
     except (GAPI.insufficientFilePermissions, GAPI.insufficientParentPermissions,
             GAPI.fileOwnerNotMemberOfTeamDrive, GAPI.fileOwnerNotMemberOfWriterDomain,
             GAPI.fileWriterTeamDriveMoveInDisabled,
@@ -57949,7 +57951,7 @@ def moveDriveFile(users):
         _incrStatistic(statistics, STAT_FILE_FAILED)
       else:
         _makeMoveShortcut(drive, user, k, kcount, entityType, childId, childName, newParentId, newParentName)
-      copyMoveOptions['retainSourceFolders'] = True
+    copyMoveOptions['retainSourceFolders'] = True
 
   def _recursiveFolderMove(drive, user, i, count, j, jcount,
                            source, targetChildren, newFolderName, newParentId, newParentName, mergeParentModifiedTime, atTop):

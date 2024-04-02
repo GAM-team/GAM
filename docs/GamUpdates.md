@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.72.06
+
+Updated the following commands to properly handle emailaddress lists containing addresses of the form: `'First Last<firstlast@domain.com>'`.
+```
+gam <UserTypeEntity> sendemail recipient|to <RecipientEntity> [cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
+gam create|update user ... notify <EmailAddressList>
+```
+
 ### 6.72.05
 
 Cleaned up code for all commands that display Chat objects.

@@ -114,6 +114,10 @@ Verify whether the super admin you'll be using is in an OU where reauthenticatio
 * Click "OVERRIDE"
 * Follow the steps below to mark GAM as a trusted app
 
+Additional steps may be required if errors are encountered.
+* [Authorize a super admin to create projects](#authorize-a-super-admin-to-create-projects)
+* [Authorize GAM to create projects](#authorize-gam-to-create-projects)
+
 ## Headless computers and Cloud Shells
 With many thanks to Jay, `gam oauth create` now uses a new client access authentication flow
 as required by Google for headless computers/cloud shells; this is required as of February 28, 2022.
