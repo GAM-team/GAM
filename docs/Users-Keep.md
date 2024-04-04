@@ -131,12 +131,16 @@ Display all notes
 ```
 gam <UserTypeEntity> show notes
         [fields <NotesFieldList>] [filter <String>]
-        [role owner|writwer]
+        [role owner|writer]
+        [countsonly]
         [compact|formatjson]
 ```
 By default, GAM displays all non-trashed notes:
 * `filter trashed` - Display notes in the trash
 * `role owner|writer` - Display notes where the user has the specified role
+
+When  option `countsonly` is specified, the number of notes a user owns and the number of notes of user can edit
+if displayed.
 
 By default, Gam displays the information as an indented list of keys and values; the note text is displayed as individual lines.
 * `compact` - Display the note text with escaped carriage returns as \r and newlines as \n
@@ -145,13 +149,17 @@ By default, Gam displays the information as an indented list of keys and values;
 ```
 gam <UserTypeEntity> print notes [todrive <ToDriveAttribute>*]
         [fields <NotesFieldList>] [filter <String>]
-        [role owner|writwer]
+        [role owner|writer]
+        [countsonly]
         [formatjson [quotechar <Character>]]
 
 ```
 By default, GAM displays all non-trashed notes:
 * `filter trashed` - Display notes in the trash
 * `role owner|writer` - Display notes where the user has the specified role
+
+When  option `countsonly` is specified, the number of notes a user owns and the number of notes of user can edit
+if displayed.
 
 By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
 the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.

@@ -7391,10 +7391,12 @@ gam <UserTypeEntity> info note <NotesNameEntity>
 gam <UserTypeEntity> show notes
         [fields <NotesFieldList>] [filter <String>]
         [role owner|writer]
+        [countsonly]
         [compact|formatjson]
 gam <UserTypeEntity> print notes [todrive <ToDriveAttribute>*]
         [fields <NotesFieldList>] [filter <String>]
         [role owner|writer]
+        [countsonly]
         [formatjson [quotechar <Character>]]
 
 gam <UserTypeEntity> get noteattachments <NotesNameEntity>

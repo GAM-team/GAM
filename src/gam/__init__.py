@@ -70998,7 +70998,7 @@ def _assignNoteOwner(note, user):
       note['ownedByMe'] = noteOwner == user
       break
 
-def _checkNoteUserkRole(note, user, role):
+def _checkNoteUserRole(note, user, role):
   for permission in note['permissions']:
     if permission['role'] == role and permission.get('user', {}).get('email', '').lower() == user:
       return True
@@ -71295,20 +71295,27 @@ NOTES_ROLE_CHOICE_MAP = {
   'writer': 'WRITER',
   }
 
+NOTES_COUNTS_MAP = {
+  'OWNER': 'noteOwner',
+  'WRITER': 'noteWriter',
+  }
+
 # gam <UserTypeEntity> show notes
 #	[fields <NotesFieldList>] [filter <String>]
 #	[role owner|writer]
+#	[countsonly]
 #	[compact] [formatjson]
 # gam <UserTypeEntity> print notes [todrive <ToDriveAttribute>*]
 #	[fields <NotesFieldList>] [filter <String>]
 #	[role owner|writer]
+#	[countsonly]
 #	[formatjson [quotechar <Character>]]
 def printShowNotes(users):
   csvPF = CSVPrintFile(['User', 'name', 'title', 'owner', 'ownedByMe']) if Act.csvFormat() else None
   if csvPF:
     csvPF.SetNoEscapeChar(True)
   FJQC = FormatJSONQuoteChar(csvPF)
-  compact = False
+  compact = countsOnly = False
   fieldsList = []
   noteFilter = None
   role = None
@@ -71325,6 +71332,8 @@ def printShowNotes(users):
       role = getChoice(NOTES_ROLE_CHOICE_MAP, mapChoice=True)
     elif not csvPF and myarg == 'compact':
       compact = True
+    elif myarg == 'countsonly':
+      countsOnly = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if FJQC.formatJSON:
@@ -71333,10 +71342,16 @@ def printShowNotes(users):
     showPermissions = False
     fieldsList.append('permissions')
     if csvPF:
-      if not FJQC.formatJSON:
-        csvPF.RemoveTitles(['owner', 'ownedByMe'])
-      else:
-        csvPF.RemoveJSONTitles(['owner', 'ownedByMe'])
+      if not countsOnly:
+        if not FJQC.formatJSON:
+          csvPF.RemoveTitles(['owner', 'ownedByMe'])
+        else:
+          csvPF.RemoveJSONTitles(['owner', 'ownedByMe'])
+  if countsOnly and csvPF:
+    if not FJQC.formatJSON:
+      csvPF.SetTitles(['User', 'noteOwner', 'noteWriter'])
+    else:
+      csvPF.SetJSONTitles(['User', 'JSON'])
   fields = getItemFieldsFromFieldsList('notes', fieldsList, returnItemIfNoneList=False)
   i, count, users = getEntityArgument(users)
   for user in users:
@@ -71354,6 +71369,27 @@ def printShowNotes(users):
                             pageMessage=pageMessage,
                             throwReasons=GAPI.KEEP_THROW_REASONS,
                             filter=noteFilter, fields=fields)
+      if countsOnly:
+        noteCounts = {'User': user, 'noteOwner': 0, 'noteWriter': 0}
+        for note in notes:
+          for permission in note['permissions']:
+            if permission.get('user', {}).get('email', '').lower() == user:
+              noteCounts[NOTES_COUNTS_MAP[permission['role']]] += 1
+              break
+        if not csvPF:
+          if not FJQC.formatJSON:
+            printEntityKVList([Ent.USER, user], ['noteOwner', noteCounts['noteOwner'], 'noteWriter', noteCounts['noteWriter']], i, count)
+          else:
+            printLine(json.dumps(cleanJSON(noteCounts), ensure_ascii=False, sort_keys=True))
+        else:
+          row = {'User': user, 'noteOwner': noteCounts['noteOwner'], 'noteWriter': noteCounts['noteWriter']}
+          if not FJQC.formatJSON:
+            csvPF.WriteRowTitles(row)
+          elif csvPF.CheckRowTitles(row):
+            row = {'User': noteCounts.pop('User')}
+            row['JSON'] = json.dumps(cleanJSON(noteCounts), ensure_ascii=False, sort_keys=True)
+            csvPF.WriteRowNoFilter(row)
+        continue
       if not csvPF:
         jcount = len(notes)
         if not FJQC.formatJSON:
@@ -71364,7 +71400,7 @@ def printShowNotes(users):
           j += 1
           if showPermissions:
             _assignNoteOwner(note, user)
-          if role is None or _checkNoteUserkRole(note, user, role):
+          if role is None or _checkNoteUserRole(note, user, role):
             if not showPermissions:
               note.pop('permissions', None)
             _showNote(note, j, jcount, FJQC, compact)
@@ -71373,7 +71409,7 @@ def printShowNotes(users):
         for note in notes:
           if showPermissions:
             _assignNoteOwner(note, user)
-          if role is None or _checkNoteUserkRole(note, user, role):
+          if role is None or _checkNoteUserRole(note, user, role):
             if not showPermissions:
               note.pop('permissions', None)
             row = flattenJSON(note, flattened={'User': user}, timeObjects=NOTES_TIME_OBJECTS)

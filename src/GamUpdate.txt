@@ -2,6 +2,11 @@
 
 Merged GAM-Team version
 
+6.72.08
+
+Added option `countsonly` to `gam <UserTypeEntity> print|show notes` that displays
+the number of notes a user owns and the number of notes of user can edit.
+
 6.72.07
 
 Updated commands that send emails to not downshift `'First Last<firstlast@domain.com>'` to `'first last<firstlast@domain.com>'`.
