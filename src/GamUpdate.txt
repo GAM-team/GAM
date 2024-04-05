@@ -2,10 +2,14 @@
 
 Merged GAM-Team version
 
+6.72.09
+
+Updated `countsonly` option of `gam <UserTypeEntity> print|show notes` to additionally display the total number of notes.
+
 6.72.08
 
 Added option `countsonly` to `gam <UserTypeEntity> print|show notes` that displays
-the number of notes a user owns and the number of notes of user can edit.
+the number of notes a user owns and the number of notes a user can edit.
 
 6.72.07
 
