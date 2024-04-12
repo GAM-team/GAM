@@ -9,6 +9,7 @@
 - [Manage vacation](#manage-vacation)
 - [Display vacation](#display-vacation)
 - [User attribute `replace <Tag> <UserReplacement>` processing](Tag-Replace)
+- [Standardize user signatures](#standardize-user-signatures)
 
 ## API documentation
 * https://developers.google.com/gmail/api/reference/rest/v1/users.settings.sendAs
@@ -245,3 +246,37 @@ Gam displays the information in CSV form.
 * `compact` - Strip carriage returns and newlines in original HTML; this makes these values easier to process in the CSV file
 and can be used as input to GAM.
 * `enabledonly` - Do not display users with vacation autoreply disabled.
+
+## Standardize user signatures
+You can standardize user signatures by creating a signature template and a CSV file with data for each user.
+
+You can create a signature template by defining the signature in the Gmail Settings GUI of a test user.
+You must use the default signature `My signature`.
+Use text like `{FirstName}` and `{Email}` in the locations where the actual values will go.
+
+Once you're created the template signature, do the following:
+```
+$ gam user testuser@domain.com show signature compact > SimpleSig.html
+$ more SimpleSig.html
+SendAs Address: <testuser@domain.com>
+  IsPrimary: True
+  Default: True
+  Signature: <div dir="ltr">--<div>Name: {FirstName} {LastName}<div>Phone: {Phone}</div><div>Email: {Email}</div></div><div><br></div><div>Company Name</div><div>Company Address</div><div><br></div></div>\n
+```
+Edit SimpleSig.html and delete all text from `SendAs ` through `Signature: `.
+The result should be:
+```
+<div dir="ltr">--<div>Name: {FirstName} {LastName}<div>Phone: {Phone}</div><div>Email: {Email}</div></div><div><br></div><div>Company Name</div><div>Company Address</div><div><br></div></div>\n
+```
+
+This is a sample Users.csv file.
+```
+email,first,last,phone
+bsmith@domain.com,Bob,Smith,510-555-1212 x 123
+mjones@domain.com,Mary,Jones,510-555-1212 x 456
+```
+
+This command will update the user's signatures.
+```
+gam csv Users.csv gam user "~email" signature htmlfile SimpleSig.html replace FirstName "~first"  replace LastName "~last" replace Phone "~phone" replace Email "~email"
+```

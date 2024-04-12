@@ -3420,6 +3420,7 @@ def SetGlobalVariables():
   ROW_FILTER_ANY_ALL_PATTERN = re.compile(r'^(any:|all:)(.+)$', re.IGNORECASE)
   ROW_FILTER_COMP_PATTERN = re.compile(r'^(date|time|count|length)\s*([<>]=?|=|!=)(.+)$', re.IGNORECASE)
   ROW_FILTER_RANGE_PATTERN = re.compile(r'^(daterange|timerange|countrange|lengthrange)(=|!=)(\S+)/(\S+)$', re.IGNORECASE)
+  ROW_FILTER_TIMEOFDAYRANGE_PATTERN = re.compile(r'^(timeofdayrange)(=|!=)(\d\d):(\d\d)/(\d\d):(\d\d)$', re.IGNORECASE)
   ROW_FILTER_BOOL_PATTERN = re.compile(r'^(boolean):(.+)$', re.IGNORECASE)
   ROW_FILTER_TEXT_PATTERN = re.compile(r'^(text)([<>]=?|=|!=)(.*)$', re.IGNORECASE)
   ROW_FILTER_TEXTRANGE_PATTERN = re.compile(r'^(textrange)(=|!=)(.*)/(.*)$', re.IGNORECASE)
@@ -3520,6 +3521,19 @@ def SetGlobalVariables():
           else:
             _printValueError(sectionName, itemName, f'"{column}": "{filterStr}"', f'{Msg.EXPECTED}: <Number>/<Number>')
         continue
+      mg = ROW_FILTER_TIMEOFDAYRANGE_PATTERN.match(filterStr)
+      if mg:
+        filterType = mg.group(1).lower()
+        startHour = int(mg.group(3))
+        startMinute = int(mg.group(4))
+        endHour = int(mg.group(5))
+        endMinute = int(mg.group(6))
+        if startHour > 23 or startMinute > 59 or endHour > 23 or endMinute > 59 or \
+           endHour < startHour or (endHour == startHour and endMinute < startMinute):
+          Cmd.Backup()
+          usageErrorExit(Msg.INVALID_TIMEOFDAY_RANGE.format(f'{startHour:02d}:{startMinute:02d}', f'{endHour:02d}:{endMinute:02d}'))
+        rowFilters.append((columnPat, anyMatch, filterType, mg.group(2), f'{startHour:02d}:{startMinute:02d}', f'{endHour:02d}:{endMinute:02d}'))
+        continue
       mg = ROW_FILTER_BOOL_PATTERN.match(filterStr)
       if mg:
         filterType = mg.group(1).lower()
@@ -3558,7 +3572,7 @@ def SetGlobalVariables():
           rowFilters.append((columnPat, anyMatch, filterType, getEntitiesFromCSVFile(False, returnSet=True)))
         Cmd.RestoreArguments()
         continue
-      _printValueError(sectionName, itemName, f'"{column}": "{filterStr}"', f'{Msg.EXPECTED}: date|time|count|text<Operator><Value> or boolean:<Boolean> or regex:<RegularExpression> or data:<DataSelector>')
+      _printValueError(sectionName, itemName, f'"{column}": "{filterStr}"', f'{Msg.EXPECTED}: <RowValueFilter>')
     return rowFilters
 
   def _getCfgSection(sectionName, itemName):
@@ -7307,6 +7321,36 @@ def RowFilterMatch(row, titlesList, rowFilter, rowFilterModeAll, rowDropFilter, 
         return False
     return True
 
+  def getHourMinuteFromDateTime(rowDate):
+    if YYYYMMDD_PATTERN.match(rowDate):
+      return None
+    try:
+      rowTime, _ = iso8601.parse_date(rowDate)
+    except (iso8601.ParseError, OverflowError):
+      return None
+    return f'{rowTime.hour:02d}:{rowTime.minute:02d}'
+
+  def rowTimeOfDayRangeFilterMatch(op, startHourMinute, endHourMinute):
+    def checkMatch(rowDate):
+      if not rowDate or not isinstance(rowDate, str) or rowDate == GC.Values[GC.NEVER_TIME]:
+        return False
+      rowHourMinute = getHourMinuteFromDateTime(rowDate)
+      if not rowHourMinute:
+        return False
+      if op == '!=':
+        return not startHourMinute <= rowHourMinute <= endHourMinute
+      return startHourMinute <= rowHourMinute <= endHourMinute
+
+    if anyMatch:
+      for column in columns:
+        if checkMatch(row.get(column, '')):
+          return True
+      return False
+    for column in columns:
+      if not checkMatch(row.get(column, '')):
+        return False
+    return True
+
   def rowCountFilterMatch(op, filterCount):
     def checkMatch(rowCount):
       if isinstance(rowCount, str):
@@ -7508,6 +7552,9 @@ def RowFilterMatch(row, titlesList, rowFilter, rowFilterModeAll, rowDropFilter, 
         return True
     elif filterVal[2] in {'daterange', 'timerange'}:
       if rowDateTimeRangeFilterMatch(filterVal[2] == 'date', filterVal[3], filterVal[4], filterVal[5]):
+        return True
+    elif filterVal[2] == 'timeofdayrange':
+      if rowTimeOfDayRangeFilterMatch(filterVal[3], filterVal[4], filterVal[5]):
         return True
     elif filterVal[2] == 'count':
       if rowCountFilterMatch(filterVal[3], filterVal[4]):

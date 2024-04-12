@@ -3,6 +3,10 @@
 - [Definitions](#definitions)
 - [Quoting rules](#quoting-rules)
 - [Column row filtering](#column-row-filtering)
+  - [Field names](#field-names)
+  - [Inclusive filters](#inclusive-filters)
+  - [Exclusive filters](#exclusive-filters)
+  - [Matches](#matches)
 - [Column row limiting](#column-row-limiting)
 - [Saving filters in gam.cfg](#saving-filters-in-gamcfg)
 - [Validate filters](#validate-filters)
@@ -39,28 +43,30 @@ These filters can be used alone or in conjunction with the `matchfield|skipfield
 
 <FieldNameFilter> :: = <RegularExpression>
 <RowValueFilter> ::=
-        [(any|all):]count<Operator><Number>|
-        [(any|all):]countrange=<Number>/<Number>|
-        [(any|all):]countrange!=<Number>/<Number>|
-        [(any|all):]date<Operator><Date>|
-        [(any|all):]daterange=<Date>/<Date>|
-        [(any|all):]daterange!=<Date>/<Date>|
-        [(any|all):]length<Operator><Number>|
-        [(any|all):]lengthrange=<Number>/<Number>|
-        [(any|all):]lengthrange!=<Number>/<Number>|
-        [(any|all):]text<Operator><String>|
-        [(any|all):]textrange=<String>/<String>|
-        [(any|all):]textrange!=<String>/<String>|
-        [(any|all):]time<Operator><Time>|
-        [(any|all):]timerange=<Time>/<Time>|
-        [(any|all):]timerange!=<Time>/<Time>|
         [(any|all):]boolean:<Boolean>|
-        [(any|all):]regex:<RegularExpression>|
-        [(any|all):]regexcs:<RegularExpression>|
+        [(any|all):]count<Operator><Number>|
+        [(any|all):]countrange!=<Number>/<Number>|
+        [(any|all):]countrange=<Number>/<Number>|
+        [(any|all):]data:<DataSelector>|
+        [(any|all):]date<Operator><Date>|
+        [(any|all):]daterange!=<Date>/<Date>|
+        [(any|all):]daterange=<Date>/<Date>|
+        [(any|all):]length<Operator><Number>|
+        [(any|all):]lengthrange!=<Number>/<Number>|
+        [(any|all):]lengthrange=<Number>/<Number>|
+        [(any|all):]notdata:<DataSelector>|
         [(any|all):]notregex:<RegularExpression>|
         [(any|all):]notregexcs:<RegularExpression>|
-        [(any|all):]data:<DataSelector>|
-        [(any|all):]notdata:<DataSelector>|
+        [(any|all):]regex:<RegularExpression>|
+        [(any|all):]regexcs:<RegularExpression>|
+        [(any|all):]text<Operator><String>|
+        [(any|all):]textrange!=<String>/<String>|
+        [(any|all):]textrange=<String>/<String>|
+        [(any|all):]time<Operator><Time>|
+        [(any|all):]timeofdayrange!=<Hour>:<Minute>/<Hour>:<Minute>|
+        [(any|all):]timeofdayrange=<Hour>:<Minute>/<Hour>:<Minute>|
+        [(any|all):]timerange!=<Time>/<Time>|
+        [(any|all):]timerange=<Time>/<Time>|
 <RowValueFilterList> ::=
         "'<FieldNameFilter>:<RowValueFilter>'(,'<FieldNameFilter>:<RowValueFilter>')*"
 <RowValueFilterJSONList> ::=
@@ -156,11 +162,13 @@ In the case of `notregex|notregexcs|notdata`, the filter matches if some (not al
 If neither `any` or `all` is explicitly specified, `any` is the default.
 
 These are the row value filter types:
+* `boolean:<Boolean>` - Used on fields with Boolean values; a blank field is considered False
 * `count<Operator><Number>` - Used on fields with numbers; a blank field will not match
 * `countrange=<Number>/<Number>` - Used on fields with numbers; a blank field will not match
   * The field value must be `>=` the left `<Number>` and `<=` the right `<Number>`
 * `countrange!=<Number>/<Number>` - Used on fields with numbers; a blank field will not match
   * The field value must be `<` the left `<Number>` or `>` the right `<Number>`
+* `data:<DataSelector>` - Used on fields with text; field value must match some value in `<DataSelector>`; case sensitive
 * `date<Operator><Date>` - Used on fields with dates or times; only the date portion of a time field is compared; a blank field will not match
 * `daterange=<Date>/<Date>` - Used on fields with dates or times; only the date portion of a time field is compared; a blank field will not match
   * The field value must be `>=` the left `<Date>` and `<=` the right `<Date>`
@@ -171,23 +179,25 @@ These are the row value filter types:
   * The field length must be `>=` the left `<Number>` and `<=` the right `<Number>`
 * `lengthrange!=<Number>/<Number>` - Used on fields with strings; non string fields will not match
   * The field length must be `<` the left `<Number>` or `>` the right `<Number>`
+* `notdata:<DataSelector>` - Used on fields with text; field value must not match any value in `<DataSelector>`; case sensitive
+* `notregex:<RegularExpression>` - Used on fields with text; field value must not match `<RegularExpression>`; case insensitive
+* `notregexcs:<RegularExpression>` - Used on fields with text; field value must not match `<RegularExpression>`; case sensitive
+* `regex:<RegularExpression>` - Used on fields with text; field value must match `<RegularExpression>`; case insensitive
+* `regexcs:<RegularExpression>` - Used on fields with text; field value must match `<RegularExpression>`; case sensitive
 * `text<Operator><String>` - Used on fields with text
 * `textrange=<String>/<String>` - Used on fields with strings
   * The field value must be `>=` the left `<String>` and `<=` the right `<String>`
 * `textrange!=<String>/<String>` - Used on fields with strings
   * The field value must be `<` the left `<String>` or `>` the right `<String>`
 * `time<Operator><Time>` - Used on fields with times; a blank field will not match
+* `timeofdayrange=<Hour>:<Minute>/<Hour>:<Minute>` - Used on fields with times; a blank field will not match
+  * The field value must be `>=` the left `<Hour>:<Minute>` and `<=` the right `<Hour>:<Minute>`
+* `timeofdayrange!=<Hour>:<Minute>/<Hour>:<Minute>` - Used on fields with times; a blank field will not match
+  * The field value must be `<` the left `<Hour>:<Minute>` or `>` the right `<Hour>:<Minute>`
 * `timerange=<Time>/<Time>` - Used on fields with times; a blank field will not match
   * The field value must be `>=` the left `<Time>` and `<=` the right `<Time>`
 * `timerange!=<Time>/<Time>` - Used on fields with times; a blank field will not match
   * The field value must be `<` the left `<Time>` or `>` the right `<Time>`
-* `boolean:<Boolean>` - Used on fields with Boolean values; a blank field is considered False
-* `regex:<RegularExpression>` - Used on fields with text; field value must match `<RegularExpression>`; case insensitive
-* `regexcs:<RegularExpression>` - Used on fields with text; field value must match `<RegularExpression>`; case sensitive
-* `notregex:<RegularExpression>` - Used on fields with text; field value must not match `<RegularExpression>`; case insensitive
-* `notregexcs:<RegularExpression>` - Used on fields with text; field value must not match `<RegularExpression>`; case sensitive
-* `data:<DataSelector>` - Used on fields with text; field value must match some value in `<DataSelector>`; case sensitive
-* `notdata:<DataSelector>` - Used on fields with text; field value must not match any value in `<DataSelector>`; case sensitive
 
 ### **Change in behavior.**
 In versions prior to `5.12.00`, `regex:<RegularExpression>` and `notregex:<RegularExpression>` were processed in a case sensitive manner;
