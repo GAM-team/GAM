@@ -657,7 +657,11 @@ By default, Gam displays the information as an indented list of keys and values.
 gam print vaultholds|holds [todrive <ToDriveAttributes>*] [matters <MatterItemList>]
         [fields <VaultHoldFieldNameList>] [shownames]
         [formatjson [quotechar <Character>]]
+        [oneitemperrow]
 ```
+By default, all accounts for a hold are displayed on a single row;
+use `oneitemperrow` to have each account displayed on a separate row.
+
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.
 

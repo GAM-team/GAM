@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.72.11
+
+Added option `oneitemperrow` to 'gam print vaultholds` to have each of a
+hold's accounts displayed on a separate row with all of the other hold fields.
+
 ### 6.72.10
 
 Added `timeofdayrange=<HH:MM>/<HH:MM>` and `timeofdayrange!=<HH:MM>/<HH:MM>` to `<RowValueFilter>` that allows

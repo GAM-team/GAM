@@ -5137,6 +5137,7 @@ gam info vaulthold|hold <MatterItem> <HoldItem>
 gam print vaultholds|holds [todrive <ToDriveAttribute>*] [matters <MatterItemList>]
         [fields <VaultHoldFieldNameList>] [shownames]
         [formatjson [quotechar <Character>]]
+        [oneitemperrow]
 gam show vaultholds|holds [matters <MatterItemList>]
         [fields <VaultHoldFieldNameList>] [shownames]
         [formatjson]

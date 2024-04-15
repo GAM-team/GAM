@@ -39316,16 +39316,27 @@ PRINT_VAULT_HOLDS_TITLES = ['matterId', 'matterName', 'holdId', 'name', 'updateT
 # gam print vaultholds|holds [todrive <ToDriveAttribute>*] [matters <MatterItemList>]
 #	[fields <VaultHoldFieldNameList>] [shownames]
 #	[formatjson [quotechar <Character>]]
+#	[oneitemperrow]
 # gam show vaultholds|holds [matters <MatterItemList>]
 #	[fields <VaultHoldFieldNameList>] [shownames]
 #	[formatjson]
 def doPrintShowVaultHolds():
+  def _printVaultHold(hold):
+    row = flattenJSON(hold, flattened={'matterId': matterId, 'matterName': matterName}, timeObjects=VAULT_HOLD_TIME_OBJECTS)
+    if not FJQC.formatJSON:
+      csvPF.WriteRowTitles(row)
+    elif csvPF.CheckRowTitles(row):
+      csvPF.WriteRowNoFilter({'matterId': matterId, 'matterName': matterName,
+                              'holdId': hold['holdId'], 'name': hold['name'],
+                              'JSON': json.dumps(cleanJSON(hold, timeObjects=VAULT_HOLD_TIME_OBJECTS), ensure_ascii=False, sort_keys=True)})
+
   v = buildGAPIObject(API.VAULT)
   csvPF = CSVPrintFile(PRINT_VAULT_HOLDS_TITLES, 'sortall') if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar()
   matters = []
   cd = None
   fieldsList = []
+  oneItemPerRow = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -39336,6 +39347,8 @@ def doPrintShowVaultHolds():
       cd = buildGAPIObject(API.DIRECTORY)
     elif getFieldsList(myarg, VAULT_HOLD_FIELDS_CHOICE_MAP, fieldsList, initialField=['holdId', 'name']):
       pass
+    elif csvPF and myarg == 'oneitemperrow':
+      oneItemPerRow = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   fields = getItemFieldsFromFieldsList('holds', fieldsList)
@@ -39399,13 +39412,12 @@ def doPrintShowVaultHolds():
     else:
       for hold in holds:
         _cleanVaultHold(hold, cd)
-        row = flattenJSON(hold, flattened={'matterId': matterId, 'matterName': matterName}, timeObjects=VAULT_HOLD_TIME_OBJECTS)
-        if not FJQC.formatJSON:
-          csvPF.WriteRowTitles(row)
-        elif csvPF.CheckRowTitles(row):
-          csvPF.WriteRowNoFilter({'matterId': matterId, 'matterName': matterName,
-                                  'holdId': hold['holdId'], 'name': hold['name'],
-                                  'JSON': json.dumps(cleanJSON(hold, timeObjects=VAULT_HOLD_TIME_OBJECTS), ensure_ascii=False, sort_keys=True)})
+        if not oneItemPerRow or not hold.get('accounts', []):
+          _printVaultHold(hold)
+        else:
+          for account in hold.pop('accounts'):
+            hold['account'] = account
+            _printVaultHold(hold)
   if csvPF:
     csvPF.writeCSVfile('Vault Holds')
 
