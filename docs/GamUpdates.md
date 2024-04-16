@@ -10,6 +10,20 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.72.12
+
+Added the following options to `<EventMatchProperty>` that can be used to select
+events based on the domains of the attendees.
+```
+matchfield attendeesdomainlist <DomainNameList>
+matchfield attendeesnotdomainlist <DomainNameList>
+```
+The first returns true if any attendee's email address is in a domain in `<DomainNameList>`;
+for example this lets you look for events with attendees in specific external domains.
+
+The second returns true if any attendee's email address is in a domain other than those in `<DomainNameList>`;
+for example this lets you look for events with attendees not in your internal domains.
+
 ### 6.72.11
 
 Added option `oneitemperrow` to 'gam print vaultholds` to have each of a

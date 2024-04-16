@@ -1597,6 +1597,8 @@ gam calendar <CalendarEntity> printacl [todrive <ToDriveAttribute>*]
 
 <EventMatchProperty> ::=
         (matchfield attendees <EmailAddressEntity>)|
+        (matchfield attendeesdomainlist <DomainNameList>)|
+        (matchfield attendeesnotdomainlist <DomainNameList>)|
         (matchfield attendeespattern <RegularExpression>)|
         (matchfield attendeesstatus [<AttendeeAttendance>] [<AttendeeStatus>] <EmailAddressEntity>)|
         (matchfield creatoremail <RegularExpression>)|

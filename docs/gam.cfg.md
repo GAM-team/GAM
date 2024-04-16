@@ -123,7 +123,9 @@ clock_skew_in_seconds
         Default: 10
         Range: 10 - 3600
 cmdlog
-        Path to GAM Log file; there is no logging if cmdlog is empty
+        Path to GAM Log file; there is no logging if cmdlog is empty.
+        If cmdlog specifies a relative path, e.g., just a filename, it is appended to GamConfigDir.
+        If cmdlog specifies a full path, it is used as is.
         Default: ''
 cmdlog_max_backups
         Maximum number of backup log files
