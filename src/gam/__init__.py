@@ -36164,6 +36164,7 @@ LIST_EVENTS_SELECT_PROPERTIES = {
 
 LIST_EVENTS_MATCH_FIELDS = {
   'attendees': ['attendees', 'email'],
+  'attendeesonlydomainlist': ['attendees', 'onlydomainlist'],
   'attendeesdomainlist': ['attendees', 'domainlist'],
   'attendeesnotdomainlist': ['attendees', 'notdomainlist'],
   'attendeespattern': ['attendees', 'match'],
@@ -36237,7 +36238,7 @@ def getCalendarEventEntity():
         calendarEventEntity['matches'].append((matchField, getBoolean()))
       elif matchField[0] != 'attendees' or matchField[1] == 'match':
         calendarEventEntity['matches'].append((matchField, getREPattern(re.IGNORECASE)))
-      elif matchField[0] == 'attendees' and matchField[1] in {'domainlist', 'notdomainlist'}:
+      elif matchField[0] == 'attendees' and matchField[1] in {'onlydomainlist', 'domainlist', 'notdomainlist'}:
         calendarEventEntity['matches'].append((matchField, set(getString(Cmd.OB_DOMAIN_NAME_LIST).replace(',', ' ').split())))
       elif matchField[1] == 'email':
         calendarEventEntity['matches'].append((matchField, getNormalizedEmailAddressEntity()))
@@ -36513,6 +36514,12 @@ def _eventMatches(event, match):
       if match[1].search(attendee) is not None:
         return True
     return False
+  if match[0][1] == 'onlydomainlist':
+    for attendee in attendees:
+      _, domain = attendee.lower().split('@', 1)
+      if domain not in match[1]:
+        return False
+    return True
   if match[0][1] == 'domainlist':
     for attendee in attendees:
       _, domain = attendee.lower().split('@', 1)

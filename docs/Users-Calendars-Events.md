@@ -261,6 +261,7 @@
 
 <EventMatchProperty> ::=
         (matchfield attendees <EmailAddressEntity>)|
+        (matchfield attendeesonlydomainlist <DomainNameList>)|
         (matchfield attendeesdomainlist <DomainNameList>)|
         (matchfield attendeesnotdomainlist <DomainNameList>)|
         (matchfield attendeespattern <RegularExpression>)|
@@ -440,10 +441,12 @@ The Google Calendar API processes `<EventSelectProperty>*`; you may specify none
 
 GAM processes `<EventMatchProperty>*`; you may specify none or multiple properties.
 * `matchfield attendees <EmailAddressEntity>` - All of the attendees in `<EmailAddressEntity>` must be present
+* `matchfield attendeesonlydomainlist <DomainNameList>` - All attendee's email addresses must be in a domain in `<DomainNameList>`
+  * For example, this lets you look for events with all attendees in your internal domains
 * `matchfield attendeesdomainlist <DomainNameList>` - Some attendee's email address must be in a domain in `<DomainNameList>`
   * For example, this lets you look for events with attendees in specific external domains
 * `matchfield attendeesnotdomainlist <DomainNameList>` - Some attendee's email address must be in a domain not in `<DomainNameList>`
-  * For example, this let you look for events with attendees not in your internal domains
+  * For example, this lets you look for events with attendees not in your internal domains
 * `matchfield attendeespattern <RegularExpression>` - Some attendee's email address must match `<RegularExpression>`
 * `matchfield attendeesstatus [<AttendeeAttendance>] [<AttendeeStatus>] <EmailAddressEntity>` - All of the attendees in `<EmailAddressEntity>` must be present
 and must have the specified values.
