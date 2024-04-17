@@ -3,10 +3,10 @@
 Print the current version of Gam with details
 ```
 gam version
-GAMADV-XTD3 6.72.13 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
+GAMADV-XTD3 6.72.14 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
 Ross Scroggs <ross.scroggs@gmail.com>
-Python 3.12.2 64-bit final
-MacOS Sonoma 14.2.1 x86_64
+Python 3.12.3 64-bit final
+MacOS Sonoma 14.4.1 x86_64
 Path: /Users/Admin/bin/gamadv-xtd3
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
 Time: 2023-06-02T21:10:00-07:00
@@ -15,10 +15,10 @@ Time: 2023-06-02T21:10:00-07:00
 Print the current version of Gam with details and time offset information
 ```
 gam version timeoffset
-GAMADV-XTD3 6.72.13 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
+GAMADV-XTD3 6.72.14 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
 Ross Scroggs <ross.scroggs@gmail.com>
-Python 3.12.2 64-bit final
-MacOS Sonoma 14.2.1 x86_64
+Python 3.12.3 64-bit final
+MacOS Sonoma 14.4.1 x86_64
 Path: /Users/Admin/bin/gamadv-xtd3
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
 Your system time differs from www.googleapis.com by less than 1 second
@@ -27,17 +27,17 @@ Your system time differs from www.googleapis.com by less than 1 second
 Print the current version of Gam with extended details and SSL information
 ```
 gam version extended
-GAMADV-XTD3 6.72.13 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
+GAMADV-XTD3 6.72.14 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
 Ross Scroggs <ross.scroggs@gmail.com>
-Python 3.12.2 64-bit final
-MacOS Sonoma 14.2.1 x86_64
+Python 3.12.3 64-bit final
+MacOS Sonoma 14.4.1 x86_64
 Path: /Users/Admin/bin/gamadv-xtd3
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
 Time: 2023-06-02T21:10:00-07:00
 Your system time differs from admin.googleapis.com by less than 1 second
 OpenSSL 3.1.1 30 May 2023
 cryptography 41.0.1
-filelock 3.12.2
+filelock 3.12.3
 google-api-python-client 2.88.0
 google-auth-httplib2 0.1.0
 google-auth-oauthlib 1.0.0
@@ -64,7 +64,7 @@ MacOS High Sierra 10.13.6 x86_64
 Path: /Users/Admin/bin/gamadv-xtd3
 Version Check:
   Current: 5.35.08
-   Latest: 6.72.13
+   Latest: 6.72.14
 echo $?
 1
 ```
@@ -72,7 +72,7 @@ echo $?
 Print the current version number without details
 ```
 gam version simple
-6.72.13
+6.72.14
 ```
 In Linux/MacOS you can do:
 ```
@@ -82,10 +82,10 @@ echo $VER
 Print the current version of Gam and address of this Wiki
 ```
 gam help
-GAM 6.72.13 - https://github.com/taers232c/GAMADV-XTD3
+GAM 6.72.14 - https://github.com/taers232c/GAMADV-XTD3
 Ross Scroggs <ross.scroggs@gmail.com>
-Python 3.12.2 64-bit final
-MacOS Sonoma 14.2.1 x86_64
+Python 3.12.3 64-bit final
+MacOS Sonoma 14.4.1 x86_64
 Path: /Users/Admin/bin/gamadv-xtd3
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
 Time: 2023-06-02T21:10:00-07:00
