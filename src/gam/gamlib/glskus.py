@@ -32,7 +32,7 @@ _PRODUCTS = {
   '101037': 'Google Workspace for Education',
   '101038': 'AppSheet',
   '101039': 'Assured Controls',
-  '101040': 'Beyond Corp Enterprise',
+  '101040': 'Chrome Enterprise',
   '101043': 'Google Workspace Additional Storage',
   '101047': 'Gemini',
   '101049': 'Education Endpoint Management',
@@ -83,7 +83,7 @@ _SKUS = {
   '1010390001': {
     'product': '101039', 'aliases': ['assuredcontrols'], 'displayName': 'Assured Controls'},
   '1010400001': {
-    'product': '101040', 'aliases': ['beyondcorp', 'beyondcorpenterprise', 'bce'], 'displayName': 'Beyond Corp Enterprise'},
+    'product': '101040', 'aliases': ['beyondcorp', 'beyondcorpenterprise', 'bce', 'cep', 'chromeenterprisepremium'], 'displayName': 'Chrome Enterprise Premium'},
   '1010430001': {
     'product': '101043', 'aliases': ['gwas', 'plusstorage'], 'displayName': 'Google Workspace Additional Storage'},
   '1010470001': {
