@@ -263,7 +263,7 @@ If an item contains spaces, it should be surrounded by ".
         appsheetstandard | appsheetenterprisestandard | 1010380002 | AppSheet Enterprise Standard |
         appsheetplus | appsheetenterpriseplus | 1010380003 | AppSheet Enterprise Plus |
         assuredcontrols | 1010390001 | Assured Controls |
-        bce | beyondcorp | beyondcorpenterprise | 1010400001 | Beyond Corp Enterprise |
+        bce | beyondcorp | beyondcorpenterprise | cep | chromeenterprisepremium | 1010400001 | Chrome Enterprise Premium |
         cdm | chrome | googlechromedevicemanagement | Google-Chrome-Device-Management |
         cloudidentity | identity | 1010010001 | Cloud Identity |
         cloudidentitypremium | identitypremium | 1010050001 | Cloud Identity Premium |

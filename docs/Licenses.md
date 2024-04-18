@@ -20,7 +20,7 @@
 |--------------|------------|
 | AppSheet | 101038 |
 | Assured Controls | 101039 |
-| Beyond Corp Enterprise | 101040 |
+| Chrome Enterprise | 101040 |
 | Cloud Identity Free | 101001 |
 | Cloud Identity Premium | 101005 |
 | Cloud Search | 101035 |
@@ -43,7 +43,7 @@
 | AppSheet Enterprise Standard | 1010380002 | appsheetstandard |
 | AppSheet Enterprise Plus | 1010380003 | appsheetplus |
 | Assured Controls | 1010390001 | assuredcontrols |
-| Beyond Corp Enterprise | 1010400001 | bce |
+| Chrome Enterprise Premium | 1010400001 | cep | chromeenterprisepremium |
 | Cloud Identity Free | 1010010001 | cloudidentity |
 | Cloud Identity Premium | 1010050001 | cloudidentitypremium |
 | Cloud Search | 1010350001 | cloudsearch |
@@ -140,7 +140,7 @@
         appsheetstandard | appsheetenterprisestandard | 1010380002 | AppSheet Enterprise Standard |
         appsheetplus | appsheetenterpriseplus | 1010380003 | AppSheet Enterprise Plus |
         assuredcontrols | 1010390001 | Assured Controls |
-        bce | beyondcorp | beyondcorpenterprise | 1010400001 | Beyond Corp Enterprise |
+        bce | beyondcorp | beyondcorpenterprise | cep | chromeenterprisepremium | 1010400001 | Chrome Enterprise Premium |
         cdm | chrome | googlechromedevicemanagement | Google-Chrome-Device-Management |
         cloudidentity | identity | 1010010001 | Cloud Identity |
         cloudidentitypremium | identitypremium | 1010050001 | Cloud Identity Premium |

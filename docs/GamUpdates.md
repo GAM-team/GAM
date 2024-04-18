@@ -10,10 +10,18 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.72.16
+
+Updated `emailaddressList <EmailAddressList>` and `domainlist|notdomainlist <DomainNameList>`
+in `<PermissionMatch>` to perform case-insensitive matches as the API is returning mixed case
+ACL email addresses in some cases.
+
 ### 6.75.15
 
 Updated all commands that display tasks to display the due date in GMT as the time portion
 is not supported by the API and converting the due date to local time may display the wrong date.
+
+Renamed license SKU `1010400001` from `Beyond Corp Enterprise` to `Chrome Enterprise Premium`.
 
 ### 6.72.14
 

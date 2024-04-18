@@ -52958,7 +52958,7 @@ class PermissionMatch():
         body['emailAddress'] = getREPattern(re.IGNORECASE)
         self.permissionFields.add('emailAddress')
       elif myarg == 'emailaddresslist':
-        body[myarg] = set(getString(Cmd.OB_EMAIL_ADDRESS_LIST).replace(',', ' ').split())
+        body[myarg] = set(getString(Cmd.OB_EMAIL_ADDRESS_LIST).replace(',', ' ').lower().split())
         self.permissionFields.add('emailAddress')
       elif myarg == 'permissionidlist':
         body[myarg] = set(getString(Cmd.OB_PERMISSION_ID_LIST).replace(',', ' ').split())
@@ -52968,7 +52968,7 @@ class PermissionMatch():
         self.permissionFields.add('domain')
         self.permissionFields.add('emailAddress')
       elif myarg in {'domainlist', 'notdomainlist'}:
-        body[myarg] = set(getString(Cmd.OB_DOMAIN_NAME_LIST).replace(',', ' ').split())
+        body[myarg] = set(getString(Cmd.OB_DOMAIN_NAME_LIST).replace(',', ' ').lower().split())
         self.permissionFields.add('domain')
         self.permissionFields.add('emailAddress')
       elif myarg == 'withlink':
@@ -53075,7 +53075,7 @@ class PermissionMatch():
       elif field == 'emailaddresslist':
         emailAddress = permission.get('emailAddress')
         if emailAddress:
-          if emailAddress not in value:
+          if emailAddress.lower() not in value:
             break
         else:
           break
@@ -53091,9 +53091,9 @@ class PermissionMatch():
           break
       else:
         if 'domain' in permission:
-          domain = permission['domain']
+          domain = permission['domain'].lower()
         elif 'emailAddress' in permission and permission['emailAddress']:
-          _, domain = splitEmailAddress(permission['emailAddress'])
+          _, domain = splitEmailAddress(permission['emailAddress'].lower())
         else:
           break
         if ((field == 'domain' and not value.match(domain)) or

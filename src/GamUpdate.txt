@@ -2,10 +2,18 @@
 
 Merged GAM-Team version
 
+6.72.16
+
+Updated `emailaddressList <EmailAddressList>` and `domainlist|notdomainlist <DomainNameList>`
+in `<PermissionMatch>` to perform case-insensitive matches as the API is returning mixed case
+ACL email addresses in some cases.
+
 6.72.15
 
 Updated all commands that display tasks to display the due date in GMT as the time portion
 is not supported by the API and converting the due date to local time may display the wrong date.
+
+Renamed license SKU `1010400001` from `Beyond Corp Enterprise` to `Chrome Enterprise Premium`.
 
 6.72.14
 
