@@ -4194,6 +4194,7 @@ def SetGlobalVariables():
 # Set environment variables so GData API can find cacerts.pem
     os.environ['REQUESTS_CA_BUNDLE'] = GC.Values[GC.CACERTS_PEM]
     os.environ['DEFAULT_CA_BUNDLE_PATH'] = GC.Values[GC.CACERTS_PEM]
+    os.environ['HTTPLIB2_CA_CERTS'] = GC.Values[GC.CACERTS_PEM]
     os.environ['SSL_CERT_FILE'] = GC.Values[GC.CACERTS_PEM]
     httplib2.CA_CERTS = GC.Values[GC.CACERTS_PEM]
 # Needs to be set so oauthlib doesn't puke when Google changes our scopes
@@ -71789,7 +71790,7 @@ def getTaskListIDfromTitle(svc, userTasklists, title, user, i, count):
   return userTasklists, None
 
 TASK_SKIP_OBJECTS = ['selfLink']
-TASK_TIME_OBJECTS = ['due', 'completed', 'updated']
+TASK_TIME_OBJECTS = ['completed', 'updated']
 
 def _showTask(tasklist, task, j=0, jcount=0, FJQC=None, compact=False):
   task['tasklistId'] = tasklist

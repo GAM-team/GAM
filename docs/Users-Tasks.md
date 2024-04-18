@@ -69,6 +69,8 @@ gam <UserTypeEntity> create task <TasklistEntity>
         <TaskAttribute>* [parent <TaskID>] [previous <TaskID>]
         [compact|formatjson|returnidonly]
 ```
+The API only supports all-day tasks; you should specify: `due YYYY-MM-DDT00:00:00Z`.
+
 By default, Gam displays the created task as an indented list of keys and values; the task notes text is displayed as individual lines.
 * `compact` - Display the task notes text with escaped carriage returns as \r and newlines as \n
 * `formatjson` - Display the task in JSON format
@@ -100,6 +102,9 @@ By default, Gam displays the moved task as an indented list of keys and values; 
 * `formatjson` - Display the task in JSON format
 
 ## Display Tasks
+All commands that display tasks display the due date in GMT as the time portion
+is not supported by the API and converting the due date to local time may display the wrong date.
+
 ### Display selected tasks
 ```
 gam <UserTypeEntity> info task <TasklistIDTaskIDEntity>
@@ -119,6 +124,13 @@ gam <UserTypeEntity> show tasks [tasklists <TasklistEntity>]
         [orderby completed|due|updated]
         [countsonly|compact|formatjson]
 ```
+The API only supports dates in `duemin` and `duemax' but you must supply a null time:
+* `duemin YYYY-MM-DDT00:00:00Z` - Specify the starting due date
+* `duemax YYYY-MM-DDT00:00:00Z` - Specify one day beyond the ending due date
+
+For example: `duemin 2024-05-01T00:00:00Z duemax 2024-05-02T00:00:00Z` will
+display all tasks on 2024-05-01.
+
 By default, tasks are displayed in hierarchical order.
 * `orderby completed` - Display tasks in completed date order regardless of the hierarchy.
 * `orderby due` - Display tasks in due date order regardless of the hierarchy.
@@ -142,6 +154,13 @@ gam <UserTypeEntity> print tasks [tasklists <TasklistEntity>] [todrive <ToDriveA
         [orderby completed|due|updated]
         [countsonly | (formatjson [quotechar <Character>])]
 ```
+The API only supports dates in `duemin` and `duemax' but you must supply a null time:
+* `duemin YYYY-MM-DDT00:00:00Z` - Specify the starting due date
+* `duemax YYYY-MM-DDT00:00:00Z` - Specify one day beyond the ending due date
+
+For example: `duemin 2024-05-01T00:00:00Z duemax 2024-05-02T00:00:00Z` will
+display all tasks on 2024-05-01.
+
 By default, tasks are displayed in hierarchical order.
 * `orderby completed` - Display tasks in completed date order regardless of the hierarchy.
 * `orderby due` - Display tasks in due date order regardless of the hierarchy.

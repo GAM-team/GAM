@@ -7,6 +7,7 @@
 - [Definitions](#definitions)
 - [Manage Projects](#manage-projects)
   - [Authorize a super admin to create projects](#authorize-a-super-admin-to-create-projects)
+  - [Authorize Service Account Key Uploads](#authorize-service-account-key-uploads)
   - [Authorize GAM to create projects](#authorize-gam-to-create-projects)
   - [Create a new GCP project folder](#create-a-new-gcp-project-folder)
   - [Create a new project for GAM authorization](#create-a-new-project-for-gam-authorization)
@@ -116,6 +117,7 @@ Verify whether the super admin you'll be using is in an OU where reauthenticatio
 
 Additional steps may be required if errors are encountered.
 * [Authorize a super admin to create projects](#authorize-a-super-admin-to-create-projects)
+* [Authorize Service Account Key Uploads](#authorize-service-account-key-uploads)
 * [Authorize GAM to create projects](#authorize-gam-to-create-projects)
 
 ## Headless computers and Cloud Shells
@@ -204,6 +206,46 @@ perform these steps and then retry the create project command.
 * Type project creator in the Filter box
 * Click Project Creator
 * Click Save
+
+## Authorize Service Account Key Uploads
+
+If you try to create a project and get an error saying that Constraint `constraints/iam.disableServiceAccountKeyUpload violated for service account projects/gam-project-xxx`
+perform these steps and then retry the create project command.
+
+* Login as an existing super admin at console.cloud.google.com
+* In the upper left click the three lines to the left of Google Cloud and select IAM & Admin
+* Under IAM & Admin select IAM
+* Click the down arrow in the box to the right of Google Cloud
+* Click the three dots at the right and select IAM/Permissions
+* Now you should be at "Permissions for organization ..."
+* Click on Grant Access
+* Enter the new admin address in Principals
+* Click in the Select a role box
+* Type orgpolicy.policies.update in the Filter box
+* Click Organization Policy Administrator
+* Click Save
+* In the upper left click the three lines to the left of Google Cloud and select IAM & Admin
+* Under IAM & Admin select IAM
+* Click the down arrow in the box to the right of Google Cloud
+* Click the three dots at the right and select Manage Resources
+* Click the three dots and the end of the line for the GAM project just created
+* Click Settings
+* Click Organization Policies in the left column
+* Now you should be at "Policies for Gam Project"
+* Click in the Filter box
+* Enter iam.disableServiceAccountKeyUpload
+* Click the three dots at the end of the Disable Service Account Key Upload
+* Choose Edit policy
+* Click Override parent's policy
+* Click Add A Rule
+* Select Enforcement/Off
+* Click Done
+* Click Set Policy
+
+Do the following to upload the service account key:
+```
+gam update sakey
+```
 
 ## Authorize GAM to create projects
 If you try to create a project and get an error saying "This app has been blocked on your domain for either being
