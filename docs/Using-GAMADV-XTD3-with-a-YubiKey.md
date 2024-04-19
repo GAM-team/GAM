@@ -28,7 +28,7 @@ The YubiKey can be configured with a PIN that must be entered in order for it to
 Yes but in practice this does not work very well with GAMADV-XTD3. The YubiKey will need to be touched every time there is a GAMADV-XTD3 command running which for batch or cron jobs may be constant. GAMADV-XTD3 can use a PIN configured on the YubiKey in order to offer an additional layer of protection.
 
 ### If I use a YubiKey, do I need to rotate the private key regularly?
-No, because the YubiKey generated the private key it cannot be digitally exported from the YubiKey so there is not chance for it to be copied and stolen. Instead you should physically secure the YubiKey from theft.
+No, because the YubiKey generated the private key it cannot be digitally exported from the YubiKey so there is no chance for it to be copied and stolen. Instead you should physically secure the YubiKey from theft.
 
 ### What data does the service account private key have access to?
 When using domain-wide delegation with GAMADV-XTD3, the service account and anyone possessing the service account private key oauth2service.json file has access to the Gmail, Drive and Calendar data of ALL Workspace users in your domain. For this reason, whether using a YubiKey or not, you should take strong measures to protect the service account private key.
