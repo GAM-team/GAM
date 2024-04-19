@@ -5980,6 +5980,12 @@ gam <UserTypeEntity> delete chatmember <ChatSpace>
         ((user <UserItem>)|(members <UserTypeEntity>)|
          (group <GroupItem>)|(groups <GroupEntity>))+
 gam <UserTypeEntity> remove chatmember members <ChatMemberList>
+gam <UserTypeEntity> update chatmember <ChatSpace>
+        role member|manager
+        ((user <UserItem>)|(members <UserTypeEntity>))+
+gam <UserTypeEntity> modify chatmember
+        role member|manager
+        members <ChatMemberList>
 
 gam <UserTypeEntity> info chatmember members <ChatMemberList>
         [formatjson]

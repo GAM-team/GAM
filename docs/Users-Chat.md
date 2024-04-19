@@ -238,6 +238,20 @@ Delete members by specifying chatmember names.
 gam <UserTypeEntity> remove chatmember members <ChatMemberList>
 ```
 
+### Update members role
+Update members by specifying a chat space, user/group email addresses and role.
+```
+gam <UserTypeEntity> update chatmember <ChatSpace>
+        role member|manager
+        ((user <UserItem>)|(members <UserTypeEntity>))+
+```
+Update members by specifying chatmember names and role.
+```
+gam <UserTypeEntity> modify chatmember
+        role member|manager
+        members <ChatMemberList>
+```
+
 ## Display Chat Members
 ### Display information about a specific chat members
 ```

@@ -25512,7 +25512,7 @@ def createChatMember(users):
           member = callGAPI(chat.spaces().members(), 'patch',
                             bailOnInternalError=True,
                             throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
-                            name=name, updateMask='role', body={'role': role})
+                            name=member['name'], updateMask='role', body={'role': role})
         if not returnIdOnly:
           kvList[-1] = member['name']
           _getChatMemberEmail(cd, member)

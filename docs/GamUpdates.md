@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.73.00
+
+The Google Chat API has been updated so that chat members can now have their role set to manager.
+
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Chat#manage-chat-members
+
 ### 6.72.16
 
 Updated `emailaddressList <EmailAddressList>` and `domainlist|notdomainlist <DomainNameList>`

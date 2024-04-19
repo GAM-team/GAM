@@ -2,6 +2,12 @@
 
 Merged GAM-Team version
 
+6.73.00
+
+The Google Chat API has been updated so that chat members can now have their role set to manager.
+
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Chat#manage-chat-members
+
 6.72.16
 
 Updated `emailaddressList <EmailAddressList>` and `domainlist|notdomainlist <DomainNameList>`
