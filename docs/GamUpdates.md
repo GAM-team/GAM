@@ -16,7 +16,7 @@ Added `truncate_client_id` Boolean variable to `gam.cfg`. Prior to version 6.74.
 '.apps.googleusercontent.com' from `client_id` in `oauth2.txt` and passed the truncated value in API calls.
 At Jay's suggestion this is no longer performed by default; setting `truncate_client_id = true` restores the previous behavior.
 
-Do `gam aouth delete` and `gam aouth create` to set the untruncated value of `client_id` in `oauth2.txt`.
+Do `gam oauth delete` and `gam oauth create` to set the untruncated value of `client_id` in `oauth2.txt`.
 
 ### 6.73.00
 
