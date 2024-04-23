@@ -213,6 +213,7 @@ Section: DEFAULT
   todrive_timezone = ''
   todrive_upload_nodata = true
   todrive_user = ''
+  truncate_client_id = false
   update_cros_ou_with_id = false
   use_projectid_as_name = false
   user_max_results = 500
@@ -334,7 +335,7 @@ writes the credentials into the file oauth2.txt.
 admin@server:/Users/admin/bin/gamadv-xtd3$ rm -f /Users/admin/GAMConfig/oauth2.txt
 admin@server:/Users/admin/bin/gamadv-xtd3$ ./gam version
 WARNING: Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, Item: oauth2_txt, Value: /Users/admin/GAMConfig/oauth2.txt, Not Found
-GAMADV-XTD3 6.73.00 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
+GAMADV-XTD3 6.74.00 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
 Ross Scroggs <ross.scroggs@gmail.com>
 Python 3.12.3 64-bit final
 MacOS Sonoma 14.4.1 x86_64
@@ -661,6 +662,7 @@ Section: DEFAULT
   todrive_timezone = ''
   todrive_upload_nodata = true
   todrive_user = ''
+  truncate_client_id = false
   update_cros_ou_with_id = false
   use_projectid_as_name = false
   user_max_results = 500
@@ -863,6 +865,7 @@ Section: DEFAULT
   todrive_timezone = ''
   todrive_upload_nodata = true
   todrive_user = ''
+  truncate_client_id = false
   update_cros_ou_with_id = false
   use_projectid_as_name = false
   user_max_results = 500
@@ -1006,7 +1009,7 @@ writes the credentials into the file oauth2.txt.
 C:\GAMADV-XTD3>del C:\GAMConfig\oauth2.txt
 C:\GAMADV-XTD3>gam version
 WARNING: Config File: C:\GAMConfig\gam.cfg, Section: DEFAULT, Item: oauth2_txt, Value: C:\GAMConfig\oauth2.txt, Not Found
-GAMADV-XTD3 6.73.00 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
+GAMADV-XTD3 6.74.00 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
 Ross Scroggs <ross.scroggs@gmail.com>
 Python 3.12.3 64-bit final
 Windows-10-10.0.17134 AMD64
@@ -1335,6 +1338,7 @@ Section: DEFAULT
   todrive_timezone = ''
   todrive_upload_nodata = true
   todrive_user = ''
+  truncate_client_id = false
   update_cros_ou_with_id = false
   use_projectid_as_name = false
   user_max_results = 500

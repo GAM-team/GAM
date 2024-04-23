@@ -580,6 +580,10 @@ todrive_upload_nodata
 todrive_user
         Email address of user to receive CSV files when todrive is specified
         Default: '' which becomes admin user in admin_email or address from oauth2.txt
+truncate_client_id
+        Prior to version 6.74.00, GAM stripped '.apps.googleusercontent.com' from the client_id in oauth2.txt
+        and passed the truncated value in API calls; this is no longer performed unless truncate_client_id is true
+        Default: False
 update_cros_ou_with_id
         Update the OU of a Chromebook with the OU ID rather than the OU path.
         Set to true if you are getting the following error:
@@ -730,6 +734,7 @@ Section: DEFAULT
   todrive_timezone = ''
   todrive_upload_nodata = true
   todrive_user = ''
+  truncate_client_id = false
   update_cros_ou_with_id = false
   use_projectid_as_name = false
   user_max_results = 500
@@ -916,6 +921,7 @@ todrive_timestamp = false
 todrive_timezone = ''
 todrive_upload_nodata = true
 todrive_user = ''
+truncate_client_id = false
 update_cros_ou_with_id = false
 use_projectid_as_name = false
 

@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.74.00
+
+Added `truncate_client_id` Boolean variable to `gam.cfg`. Prior to version 6.74.00, GAM stripped
+'.apps.googleusercontent.com' from `client_id` in `oauth2.txt` and passed the truncated value in API calls.
+At Jay's suggestion this is no longer performed by default; setting `truncate_client_id = true` restores the previous behavior.
+
+Do `gam aouth delete` and `gam aouth create` to set the untruncated value of `client_id` in `oauth2.txt`.
+
 ### 6.73.00
 
 The Google Chat API has been updated so that chat members can now have their role set to manager.
