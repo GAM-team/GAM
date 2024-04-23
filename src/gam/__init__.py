@@ -60914,7 +60914,7 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
           if showDetails:
             _showDriveFilePermission(permission, printKeys, timeObjects)
       except (GAPI.badRequest, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
-              GAPI.cannotSetExpiration,
+              GAPI.cannotSetExpiration, GAPI.expirationDateNotAllowedForSharedDriveMembers,
               GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.ownershipChangeAcrossDomainNotPermitted,
               GAPI.teamDriveDomainUsersOnlyRestriction, GAPI.teamDriveTeamMembersOnlyRestriction,
               GAPI.targetUserRoleLimitedByLicenseRestriction, GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
@@ -61043,7 +61043,7 @@ def updateDriveFileACLs(users, useDomainAdminAccess=False):
           if showDetails:
             _showDriveFilePermission(permission, printKeys, timeObjects)
       except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.unknownError,
-              GAPI.cannotSetExpiration,
+              GAPI.cannotSetExpiration, GAPI.expirationDateNotAllowedForSharedDriveMembers,
               GAPI.badRequest, GAPI.invalidOwnershipTransfer, GAPI.cannotRemoveOwner,
               GAPI.fileNeverWritable, GAPI.ownershipChangeAcrossDomainNotPermitted, GAPI.sharingRateLimitExceeded,
               GAPI.targetUserRoleLimitedByLicenseRestriction, GAPI.insufficientAdministratorPrivileges,
@@ -61143,6 +61143,7 @@ def createDriveFilePermissions(users, useDomainAdminAccess=False):
                  body=_makePermissionBody(ri[RI_ITEM]), fields='', supportsAllDrives=True)
         entityActionPerformed([Ent.DRIVE_FILE_OR_FOLDER_ID, ri[RI_ENTITY], Ent.PERMITTEE, ri[RI_ITEM]], int(ri[RI_J]), int(ri[RI_JCOUNT]))
       except (GAPI.badRequest, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
+              GAPI.cannotSetExpiration, GAPI.expirationDateNotAllowedForSharedDriveMembers,
               GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.ownershipChangeAcrossDomainNotPermitted,
               GAPI.teamDriveDomainUsersOnlyRestriction, GAPI.teamDriveTeamMembersOnlyRestriction,
               GAPI.targetUserRoleLimitedByLicenseRestriction, GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,

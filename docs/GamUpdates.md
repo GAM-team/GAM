@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.74.01
+
+Updated `gam create|update drivefileacl <DriveFileEntity> ... expiration <Time>` to handle
+the following error caused by tryig to add an expiration time to a member of a Shared Drive.
+```
+ERROR: 403: expirationDateNotAllowedForSharedDriveMembers - Expiration dates are not allowed for shared drive members.
+```
+
 ### 6.74.00
 
 Added `truncate_client_id` Boolean variable to `gam.cfg`. Prior to version 6.74.00, GAM stripped
