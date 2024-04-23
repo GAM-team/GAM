@@ -4446,6 +4446,9 @@ def getOauth2TxtCredentials(exitOnError=True, api=None, noDASA=False, refreshOnl
         else:
           GM.Globals[GM.CREDENTIALS_SCOPES] = set(jsonDict.pop('scopes', API.REQUIRED_SCOPES))
         token_expiry = jsonDict.get('token_expiry', REFRESH_EXPIRY)
+        if GC.Values[GC.TRUNCATE_CLIENT_ID]:
+          # chop off .apps.googleusercontent.com suffix as it's not needed and we need to keep things short for the Auth URL.
+          jsonDict['client_id'] = re.sub(r'\.apps\.googleusercontent\.com$', '', jsonDict['client_id'])
         creds = google.oauth2.credentials.Credentials.from_authorized_user_info(jsonDict)
         if 'id_token_jwt' not in jsonDict:
           creds.token = jsonDict['token']
@@ -10393,9 +10396,7 @@ def getOAuthClientIDAndSecret():
     cs_json = json.loads(cs_data)
     if not cs_json:
       systemErrorExit(CLIENT_SECRETS_JSON_REQUIRED_RC, Msg.NO_CLIENT_ACCESS_CREATE_UPDATE_ALLOWED)
-    # chop off .apps.googleusercontent.com suffix as it's not needed and we need to keep things short for the Auth URL.
-    return (re.sub(r'\.apps\.googleusercontent\.com$', '', cs_json['installed']['client_id']),
-            cs_json['installed']['client_secret'])
+    return (cs_json['installed']['client_id'], cs_json['installed']['client_secret'])
   except (IndexError, KeyError, SyntaxError, TypeError, ValueError) as e:
     invalidClientSecretsJsonExit(str(e))
 
