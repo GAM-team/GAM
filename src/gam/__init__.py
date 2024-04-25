@@ -10813,7 +10813,7 @@ class Credentials(google.oauth2.credentials.Credentials):
         'client_id': client_id,
         'client_secret': client_secret,
         'redirect_uris': ['http://localhost'],
-        'auth_uri': 'https://accounts.google.com/o/oauth2/v2/auth',
+        'auth_uri': API.GOOGLE_OAUTH2_ENDPOINT,
         'token_uri': API.GOOGLE_OAUTH2_TOKEN_ENDPOINT,
         }
     }
@@ -11271,8 +11271,8 @@ def _createClientSecretsOauth2service(httpObj, login_hint, appInfo, projectInfo,
 # Deleted: "redirect_uris": ["http://localhost", "urn:ietf:wg:oauth:2.0:oob"],
   cs_data = f'''{{
     "installed": {{
-        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-        "auth_uri": "https://accounts.google.com/o/oauth2/v2/auth",
+        "auth_provider_x509_cert_url": "{API.GOOGLE_AUTH_PROVIDER_X509_CERT_URL}",
+        "auth_uri": "{API.GOOGLE_OAUTH2_ENDPOINT}",
         "client_id": "{client_id}",
         "client_secret": "{client_secret}",
         "created_by": "{login_hint}",
@@ -12317,8 +12317,8 @@ def _generatePrivateKeyAndPublicCert(projectId, clientEmail, name, key_size, b64
 
 def _formatOAuth2ServiceData(service_data):
   quotedEmail = quote(service_data.get('client_email', ''))
-  service_data['auth_provider_x509_cert_url'] = 'https://www.googleapis.com/oauth2/v1/certs'
-  service_data['auth_uri'] = 'https://accounts.google.com/o/oauth2/auth'
+  service_data['auth_provider_x509_cert_url'] = API.GOOGLE_AUTH_PROVIDER_X509_CERT_URL
+  service_data['auth_uri'] = API.GOOGLE_OAUTH2_ENDPOINT
   service_data['client_x509_cert_url'] = f'https://www.googleapis.com/robot/v1/metadata/x509/{quotedEmail}'
   service_data['token_uri'] = API.GOOGLE_OAUTH2_TOKEN_ENDPOINT
   service_data['type'] = 'service_account'
@@ -62959,6 +62959,9 @@ def printShowSharedDrives(users, useDomainAdminAccess=False):
     if fieldsList:
       showFields.add('role')
     csvPF.AddTitle('role')
+    if FJQC.formatJSON:
+      csvPF.AddJSONTitles(['role'])
+      csvPF.MoveJSONTitlesToEnd(['JSON'])
   if showOrgUnitPaths and useDomainAdminAccess and ((not showFields) or ('orgUnitId' in showFields)):
     orgUnitIdToPathMap = getOrgUnitIdToPathMap(cd)
     if showFields:

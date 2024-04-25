@@ -143,7 +143,8 @@ Get Shared Drives ID and Name
 ```
 gam redirect csv ./SharedDrives.csv print shareddrives fields id,name
 ```
-Options:
+
+Options for the `gam report drive` commands below:
 * `maxactivities 1` - Limits the number of activities displayed for Shared Drives with activity.
 * `shownoactivities` - Displays a row for Shared Drives with no activity.
 * `addcsvdata shared_drive_id "~id"` adds the Shared Drive ID to the output.
