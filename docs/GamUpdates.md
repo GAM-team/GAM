@@ -12,7 +12,7 @@ See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Win
 
 ### 6.75.01
 
-Improved code in `gam upload sakey`.
+Added option `admin <EmailAddress>` to  `gam upload sakey`.
 
 ### 6.75.00
 
