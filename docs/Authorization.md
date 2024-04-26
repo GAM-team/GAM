@@ -864,13 +864,13 @@ gam delete sakeys <ServiceAccountKeyList>+ [doit]
 ```
 ## Upload a Service Account key to a service account with no keys
 There are two cases where you will use this command:
-* Your workspace is configured to disable service account private key uploads.
-* All of your service account keys have been deleted, eith mamually or with the `gam delete sakeys` command.
+* Your workspace is configured to disable service account private key uploads and you are creating a project.
+* All of your service account keys have been deleted, either manually or with the `gam delete sakeys` command.
 
 The `oauth2service.json` file is updated with the new private key. If you had previously distributed
 any `oauth2service.json` file to other users, you must redistribute the updated file with the new key.
 ```
-gam upload sakey
+gam upload sakey [admin <EmailAddress>]
         (algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
         ((localkeysize 1024|2048|4096 [validityhours <Number>])|
         (yubikey yubikey_pin yubikey_slot AUTHENTICATION 

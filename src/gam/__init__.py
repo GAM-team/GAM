@@ -12537,14 +12537,15 @@ def doUpdateSvcAcctKeys():
 def doReplaceSvcAcctKeys():
   doProcessSvcAcctKeys(mode='retainnone')
 
-# gam upload sakey|sakeys
+# gam upload sakey|sakeys [admin <EmailAddress>]
 #	(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
 #	((localkeysize 1024|2048|4096 [validityhours <Number>])|
 #	(yubikey yubikey_pin yubikey_slot AUTHENTICATION
 #	 yubikey_serialnumber <String>
 #	 [localkeysize 1024|2048|4096])
 def doUploadSvcAcctKeys():
-  _, httpObj, _, _, _, _ = _getLoginHintProjectInfo(True)
+  login_hint = getEmailAddress(noUid=True) if checkArgumentPresent(['admin']) else None
+  httpObj, _ = getCRMService(login_hint)
   iam = getAPIService(API.IAM, httpObj)
   if doProcessSvcAcctKeys(mode='upload', iam=iam):
     sa_email = GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['client_email']
