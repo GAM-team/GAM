@@ -91,7 +91,21 @@ Please go to:
 8. Press enter here on the terminal once trust is complete.
 '''
 
-YOUR_GAM_PROJECT_IS_CREATED_AND_READY_TO_USE = 'That\'s it! Your GAM Project is created and ready to use.\n'
+ENABLE_SERVICE_ACCOUNT_PRIVATE_KEY_UPLOAD = '''
+Your workspace is configured to disable service account private key uploads.
+
+Please go to:
+
+  https://github.com/taers232c/GAMADV-XTD3/wiki/Authorization#authorize-service-account-key-uploads
+
+Follow the steps to allow a service account private key upload for the project ({0}) just created.
+Once those steps are completed, you can continue with your project authentication.
+'''
+
+YOUR_GAM_PROJECT_IS_CREATED_AND_READY_TO_USE = '''
+That\'s it! Your GAM Project is created and ready to use.
+Proceed to the authentication steps.
+'''
 
 # check|update service messages in order of appearance
 SYSTEM_TIME_STATUS = 'System time status'

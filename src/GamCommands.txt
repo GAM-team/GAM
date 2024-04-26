@@ -1406,6 +1406,13 @@ gam rotate sakey|sakeys retain_none
          yubikey_serialnumber <Number>
          [localkeysize 1024|2048|4096])
 
+gam upload sakey
+        (algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
+        ((localkeysize 1024|2048|4096 [validityhours <Number>])|
+        (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE
+         yubikey_serialnumber <Number>
+         [localkeysize 1024|2048|4096])
+
 gam delete sakeys <ServiceAccountKeyList>+ [doit]
 gam show sakeys [all|system|user]
 

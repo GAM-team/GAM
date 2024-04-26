@@ -2,6 +2,12 @@
 
 Merged GAM-Team version
 
+6.75.00
+
+Updated `gam create project` to simplify handling the situation when your workspace is configured to disable service account private key uploads.
+
+Added command `gam upload sakey` to aid in this process.
+
 6.74.02
 
 Fixed bug in `gam <UserTypeEntity> print shareddrives ... formatjson` that caused a trap.

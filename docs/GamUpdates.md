@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.75.00
+
+Updated `gam create project` to simplify handling the situation when your workspace is configured to disable service account private key uploads.
+
+Added command `gam upload sakey` to aid in this process.
+
 ### 6.74.02
 
 Fixed bug in `gam <UserTypeEntity> print shareddrives ... formatjson` that caused a trap.

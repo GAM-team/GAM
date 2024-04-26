@@ -11251,8 +11251,6 @@ def _createClientSecretsOauth2service(httpObj, login_hint, appInfo, projectInfo,
     return
   if appInfo:
     setGAMProjectConsentScreen(httpObj, projectInfo['projectId'], appInfo)
-  if not _createOauth2serviceJSON(httpObj, projectInfo, svcAcctInfo):
-    return
   console_url = f'https://console.cloud.google.com/apis/credentials/oauthclient?project={projectInfo["projectId"]}&authuser={login_hint}'
   csHttpObj = getHttpObj()
   while True:
@@ -11284,6 +11282,8 @@ def _createClientSecretsOauth2service(httpObj, login_hint, appInfo, projectInfo,
   sys.stdout.write(Msg.GO_BACK_TO_YOUR_BROWSER_AND_CLICK_OK_TO_CLOSE_THE_OAUTH_CLIENT_POPUP)
   sys.stdout.write(Msg.TRUST_GAM_CLIENT_ID.format(GAM, client_id))
   readStdin('')
+  if not _createOauth2serviceJSON(httpObj, projectInfo, svcAcctInfo):
+    return
   sys.stdout.write(Msg.YOUR_GAM_PROJECT_IS_CREATED_AND_READY_TO_USE)
 
 def _getProjects(crm, pfilter, returnNF=False):
@@ -12335,8 +12335,9 @@ def doProcessSvcAcctKeys(mode=None, iam=None, projectId=None, clientEmail=None, 
   local_key_size = 2048
   validityHours = 0
   body = {}
-  if iam is None:
-    _, iam = buildGAPIServiceObject(API.IAM, None)
+  if iam is None or mode == 'upload':
+    if iam is None:
+      _, iam = buildGAPIServiceObject(API.IAM, None)
     _getSvcAcctData()
     currentPrivateKeyId, projectId, clientEmail, clientId = _getSvcAcctKeyProjectClientFields()
     # dict() ensures we have a real copy, not pointer
@@ -12413,6 +12414,7 @@ def doProcessSvcAcctKeys(mode=None, iam=None, projectId=None, clientEmail=None, 
         result = callGAPI(iam.projects().serviceAccounts().keys(), 'upload',
                           throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                           name=name, body={'publicKeyData': publicKeyData})
+        newPrivateKeyId = result['name'].rsplit('/', 1)[-1]
         break
       except GAPI.notFound as e:
         if retry == maxRetries:
@@ -12424,10 +12426,19 @@ def doProcessSvcAcctKeys(mode=None, iam=None, projectId=None, clientEmail=None, 
           entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], Msg.UPDATE_PROJECT_TO_VIEW_MANAGE_SAKEYS)
           return False
         waitForCompletion(retry)
-      except (GAPI.badRequest, GAPI.failedPrecondition) as e:
+      except GAPI.badRequest as e:
         entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], str(e))
         return False
-    newPrivateKeyId = result['name'].rsplit('/', 1)[-1]
+      except GAPI.failedPrecondition as e:
+        entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], str(e))
+        if 'iam.disableServiceAccountKeyUpload' not in str(e):
+          return False
+        if retry == maxRetries or mode != 'upload':
+          sys.stdout.write(Msg.ENABLE_SERVICE_ACCOUNT_PRIVATE_KEY_UPLOAD.format(projectId))
+          new_data['private_key'] = ''
+          newPrivateKeyId = ''
+          break
+        waitForCompletion(retry)
     new_data['private_key_id'] = newPrivateKeyId
     oauth2service_data = _formatOAuth2ServiceData(new_data)
   else:
@@ -12438,6 +12449,7 @@ def doProcessSvcAcctKeys(mode=None, iam=None, projectId=None, clientEmail=None, 
         result = callGAPI(iam.projects().serviceAccounts().keys(), 'create',
                           throwReasons=[GAPI.BAD_REQUEST, GAPI.PERMISSION_DENIED],
                           name=name, body=body)
+        newPrivateKeyId = result['name'].rsplit('/', 1)[-1]
         break
       except GAPI.permissionDenied:
         if retry == maxRetries:
@@ -12447,9 +12459,9 @@ def doProcessSvcAcctKeys(mode=None, iam=None, projectId=None, clientEmail=None, 
       except GAPI.badRequest as e:
         entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], str(e))
         return False
-    newPrivateKeyId = result['name'].rsplit('/', 1)[-1]
     oauth2service_data = base64.b64decode(result['privateKeyData']).decode(UTF8)
-  entityActionPerformed([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail, Ent.SVCACCT_KEY, newPrivateKeyId])
+  if newPrivateKeyId != '':
+    entityActionPerformed([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail, Ent.SVCACCT_KEY, newPrivateKeyId])
   if GM.Globals[GM.SVCACCT_SCOPES_DEFINED]:
     try:
       GM.Globals[GM.OAUTH2SERVICE_JSON_DATA] = json.loads(oauth2service_data)
@@ -12461,35 +12473,36 @@ def doProcessSvcAcctKeys(mode=None, iam=None, projectId=None, clientEmail=None, 
   Act.Set(Act.UPDATE)
   entityActionPerformed([Ent.OAUTH2SERVICE_JSON_FILE, GC.Values[GC.OAUTH2SERVICE_JSON],
                          Ent.SVCACCT_KEY, newPrivateKeyId])
-  if mode != 'retainexisting':
-    Act.Set(Act.REVOKE)
-    count = len(keys) if mode == 'retainnone' else 1
-    entityPerformActionNumItems([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], count, Ent.SVCACCT_KEY)
-    Ind.Increment()
-    i = 0
-    for key in keys:
-      keyName = key['name'].rsplit('/', 1)[-1]
-      if mode == 'retainnone' or keyName == currentPrivateKeyId and keyName != newPrivateKeyId:
-        i += 1
-        maxRetries = 5
-        for retry in range(1, maxRetries+1):
-          try:
-            callGAPI(iam.projects().serviceAccounts().keys(), 'delete',
-                     throwReasons=[GAPI.BAD_REQUEST, GAPI.PERMISSION_DENIED],
-                     name=key['name'])
-            entityActionPerformed([Ent.SVCACCT_KEY, keyName], i, count)
-            break
-          except GAPI.permissionDenied:
-            if retry == maxRetries:
-              entityActionFailedWarning([Ent.SVCACCT_KEY, keyName], Msg.UPDATE_PROJECT_TO_VIEW_MANAGE_SAKEYS)
-              break
-            waitForCompletion(retry)
-          except GAPI.badRequest as e:
-            entityActionFailedWarning([Ent.SVCACCT_KEY, keyName], str(e), i, count)
-            break
-        if mode != 'retainnone':
+  if mode in {'retainexisting', 'upload'}:
+    return newPrivateKeyId != ''
+  Act.Set(Act.REVOKE)
+  count = len(keys) if mode == 'retainnone' else 1
+  entityPerformActionNumItems([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], count, Ent.SVCACCT_KEY)
+  Ind.Increment()
+  i = 0
+  for key in keys:
+    keyName = key['name'].rsplit('/', 1)[-1]
+    if mode == 'retainnone' or keyName == currentPrivateKeyId and keyName != newPrivateKeyId:
+      i += 1
+      maxRetries = 5
+      for retry in range(1, maxRetries+1):
+        try:
+          callGAPI(iam.projects().serviceAccounts().keys(), 'delete',
+                   throwReasons=[GAPI.BAD_REQUEST, GAPI.PERMISSION_DENIED],
+                   name=key['name'])
+          entityActionPerformed([Ent.SVCACCT_KEY, keyName], i, count)
           break
-    Ind.Decrement()
+        except GAPI.permissionDenied:
+          if retry == maxRetries:
+            entityActionFailedWarning([Ent.SVCACCT_KEY, keyName], Msg.UPDATE_PROJECT_TO_VIEW_MANAGE_SAKEYS)
+            break
+          waitForCompletion(retry)
+        except GAPI.badRequest as e:
+          entityActionFailedWarning([Ent.SVCACCT_KEY, keyName], str(e), i, count)
+          break
+      if mode != 'retainnone':
+        break
+  Ind.Decrement()
   return True
 
 # gam create sakey|sakeys
@@ -12523,6 +12536,20 @@ def doUpdateSvcAcctKeys():
 #	 [localkeysize 1024|2048|4096])
 def doReplaceSvcAcctKeys():
   doProcessSvcAcctKeys(mode='retainnone')
+
+# gam upload sakey|sakeys
+#	(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
+#	((localkeysize 1024|2048|4096 [validityhours <Number>])|
+#	(yubikey yubikey_pin yubikey_slot AUTHENTICATION
+#	 yubikey_serialnumber <String>
+#	 [localkeysize 1024|2048|4096])
+def doUploadSvcAcctKeys():
+  _, httpObj, _, _, _, _ = _getLoginHintProjectInfo(True)
+  iam = getAPIService(API.IAM, httpObj)
+  if doProcessSvcAcctKeys(mode='upload', iam=iam):
+    sa_email = GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['client_email']
+    _grantRotateRights(iam, GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['project_id'], sa_email, sa_email)
+    sys.stdout.write(Msg.YOUR_GAM_PROJECT_IS_CREATED_AND_READY_TO_USE)
 
 # gam delete sakeys <ServiceAccountKeyList>
 def doDeleteSvcAcctKeys():
@@ -73213,6 +73240,11 @@ MAIN_COMMANDS_WITH_OBJECTS = {
     (Act.UNSUSPEND,
      {Cmd.ARG_USER:		doSuspendUnsuspendUser,
       Cmd.ARG_USERS:		doSuspendUnsuspendUsers,
+     }
+    ),
+  'upload':
+    (Act.USE,
+     {Cmd.ARG_SAKEY:		doUploadSvcAcctKeys,
      }
     ),
   'use':

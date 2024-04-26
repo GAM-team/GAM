@@ -31,6 +31,7 @@
   - [Update an existing Service Account key](#update-an-existing-service-account-key)
   - [Replace all existing Service Account keys](#replace-all-existing-service-account-keys)
   - [Delete Service Account keys](#delete-service-account-keys)
+  - [Upload a Service Account key to a service account with no keys](#upload-a-service-account-key-to-a-service-account-with-no-keys)
   - [Display Service Account keys](#display-service-account-keys)
 - [Manage Service Account access](#manage-service-account-access)
   - [Full Service Account access](#full-service-account-access)
@@ -209,8 +210,8 @@ perform these steps and then retry the create project command.
 
 ## Authorize Service Account Key Uploads
 
-If you try to create a project and get an error saying that Constraint `constraints/iam.disableServiceAccountKeyUpload violated for service account projects/gam-project-xxx`
-perform these steps and then retry the create project command.
+If you try to create a project and get an error saying that Constraint `constraints/iam.disableServiceAccountKeyUpload violated for service account projects/gam-project-xxx`,
+perform these steps and then you should be able to authorize and use your project.
 
 * Login as an existing super admin at console.cloud.google.com
 * In the upper left click the three lines to the left of Google Cloud and select IAM & Admin
@@ -242,9 +243,9 @@ perform these steps and then retry the create project command.
 * Click Done
 * Click Set Policy
 
-Do the following to upload the service account key:
+Wait a couple of minutes for the policy updates to complete and then do the following to upload the service account key:
 ```
-gam update sakey
+gam upload sakey
 ```
 
 ## Authorize GAM to create projects
@@ -856,9 +857,25 @@ delete a service account key for a distributed copy of an `oauth2service.json` f
 that user's service account access.
 
 You can disable your current Service Account key if you specify the `doit` argument. This is your
-acknowledgement that you will have to manually create a new Service Account key in the Developer's Console.
+acknowledgement that you will have to manually create a new Service Account key in the Developer's Console
+or upload a new key with the `gam upload sakey` command.
 ```
 gam delete sakeys <ServiceAccountKeyList>+ [doit]
+```
+## Upload a Service Account key to a service account with no keys
+There are two cases where you will use this command:
+* Your workspace is configured to disable service account private key uploads.
+* All of your service account keys have been deleted, eith mamually or with the `gam delete sakeys` command.
+
+The `oauth2service.json` file is updated with the new private key. If you had previously distributed
+any `oauth2service.json` file to other users, you must redistribute the updated file with the new key.
+```
+gam upload sakey
+        (algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
+        ((localkeysize 1024|2048|4096 [validityhours <Number>])|
+        (yubikey yubikey_pin yubikey_slot AUTHENTICATION 
+         yubikey_serialnumber <Number>
+         [localkeysize 1024|2048|4096])
 ```
 ## Display Service Account keys
 There are system keys and user keys; user keys are what Gam uses; GCP uses system keys.
