@@ -206,6 +206,9 @@ perform these steps and then retry the create project command.
 * Click in the Select a role box
 * Type project creator in the Filter box
 * Click Project Creator
+* Click + Add Another Role
+* Type organization policy administrator in the Filter box
+* Click Orgainzation Policy Administrator
 * Click Save
 
 ## Authorize Service Account Key Uploads
@@ -245,7 +248,7 @@ perform these steps and then you should be able to authorize and use your projec
 
 Wait a couple of minutes for the policy updates to complete and then do the following to upload the service account key:
 ```
-gam upload sakey
+gam upload sakey [admin <EmailAddress>]
 ```
 
 ## Authorize GAM to create projects

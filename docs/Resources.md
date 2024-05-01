@@ -1,6 +1,7 @@
 # Resources
 - [API documentation](#api-documentation)
 - [Definitions](#definitions)
+- [Region Codes](#region-codes)
 - [Special quoting](#special-quoting)
 - [Manage buildings](#manage-buildings)
 - [Display buildings](#display-buildings)
@@ -121,6 +122,252 @@ See [Collections of Items](Collections-of-Items)
         uservisibledescription
 <ResourceFieldNameList> ::= "<ResourceFieldName>(,<ResourceFieldName>)*"
 ```
+
+## Region Codes
+
+| Region | Code |
+|--------|------|
+| Afghanistan | AF |
+| Aland Islands | AX |
+| Albania | AL |
+| Algeria | DZ |
+| American Samoa | AS |
+| Andorra | AD |
+| Angola | AO |
+| Anguilla | AI |
+| Antarctica | AQ |
+| Antigua & Barbuda | AG |
+| Argentina | AR |
+| Armenia | AM |
+| Aruba | AW |
+| Ascension Island | AC |
+| Australia | AU |
+| Austria | AT |
+| Azerbaijan | AZ |
+| Bahamas | BS |
+| Bahrain | BH |
+| Bangladesh | BD |
+| Barbados | BB |
+| Belarus | BY |
+| Belgium | BE |
+| Belize | BZ |
+| Benin | BJ |
+| Bermuda | BM |
+| Bhutan | BT |
+| Bolivia | BO |
+| Bosnia & Herzegovina | BA |
+| Botswana | BW |
+| Bouvet Island | BV |
+| Brazil | BR |
+| British Indian Ocean Territory | IO |
+| British Virgin Islands | VG |
+| Brunei | BN |
+| Bulgaria | BG |
+| Burkina Faso | BF |
+| Burundi | BI |
+| Cambodia | KH |
+| Cameroon | CM |
+| Canada | CA |
+| Canary Islands | IC |
+| Cape Verde | CV |
+| Caribbean Netherlands | BQ |
+| Cayman Islands | KY |
+| Central African Republic | CF |
+| Ceuta & Melilla | EA |
+| Chad | TD |
+| Chile | CL |
+| China | CN |
+| Christmas Island | CX |
+| Clipperton Island | CP |
+| Cocos (Keeling) Islands | CC |
+| Columbia | CO |
+| Comoros | KM |
+| Congo - Brazzaville | CG |
+| Congo - Kinshasa | CD |
+| Cook Islands | CK |
+| Costa Rica | CR |
+| Cote d’Ivoire | CI |
+| Croatia | HR |
+| Cuba | CU |
+| Curacao | CW |
+| Cyprus | CY |
+| Czech Republic | CZ |
+| Falkland Islands | FK |
+| Faroe Islands | FO |
+| Fiji | FJ |
+| Finland | FI |
+| France | FR |
+| Gabon | GA |
+| Gambia | GM |
+| Georgia | GE |
+| Germany | DE |
+| Ghana | GH |
+| Gibraltar | GI |
+| Greece | GR |
+| Greenland | GL |
+| Grenada | GD |
+| Guadeloupe | GP |
+| Guam | GU |
+| Guatemala | GT |
+| Guernsey | GG |
+| Guinea | GN |
+| Guinea-Bissau | GW |
+| Guyana | GY |
+| Haiti | HT |
+| Heard & McDonald Islands | HM |
+| Honduras | HN |
+| Hong Kong SAR China | HK |
+| Hungary | HU |
+| Iceland | IS |
+| India | IN |
+| Indonesia | ID |
+| Iran | IR |
+| Iraq | IQ |
+| Ireland | IE |
+| Isle of Man | IM |
+| Israel | IL |
+| Italy | IT |
+| Jamaica | JM |
+| Japan | JP |
+| Jersey | JE |
+| Jordan | JO |
+| Kazakhstan | KZ |
+| Kenya | KE |
+| Kiribati | KI |
+| Kosovo | XK |
+| Kuwait | KW |
+| Kyrgyzstan | KG |
+| Laos | LA |
+| Latvia | LV |
+| Lebanon | LB |
+| Lesotho | LS |
+| Liberia | LR |
+| Libya | LY |
+| Liechtenstein | LI |
+| Lithuania | LT |
+| Luxembourg | LU |
+| Macau SAR China | MO |
+| Macedonia | MK |
+| Madagascar | MG |
+| Malawi | MW |
+| Malaysia | MY |
+| Maldives | MV |
+| Mali | ML |
+| Malta | MT |
+| Marshall Islands | MH |
+| Martinique | MQ |
+| Mauritania | MR |
+| Mauritius | MU |
+| Mayotte | YT |
+| Mexico | MX |
+| Micronesia | FM |
+| Moldova | MD |
+| Monaco | MC |
+| Mongolia | MN |
+| Montenegro | ME |
+| Montserrat | MS |
+| Morocco | MA |
+| Mozambique | MZ |
+| Myanmar | MM |
+| Namibia | NA |
+| Nauru | NR |
+| Nepal | NP |
+| Netherlands | NL |
+| New Caledonia | NC |
+| New Zealand | NZ |
+| Nicaragua | NI |
+| Niger | NE |
+| Nigeria | NG |
+| Niue | NU |
+| Norfolk Island | NF |
+| North Korea | KP |
+| Northern Mariana Islands | MP |
+| Norway | NO |
+| Oman | OM |
+| Pakistan | PK |
+| Palau | PW |
+| Palestinia Territories | PS |
+| Panama | PA |
+| Papua New Guinea | PG |
+| Paraguay | PY |
+| Peru | PE |
+| Philippines | PH |
+| Pitcairn Islands | PN |
+| Poland | PL |
+| Portugal | PT |
+| Puerto Rico | PR |
+| Qatar | QA |
+| Reunion | RE |
+| Romania | RO |
+| Russia | RU |
+| Rwanda | RW |
+| Samoa | WS |
+| San Marino | SM |
+| Sao Tomm & Principe | ST |
+| Saudi Arabia | SA |
+| Senegal | SN |
+| Serbia | RS |
+| Seychelles | SC |
+| Sierra Leone | SL |
+| Singapore | SG |
+| Sint Maarten | SX |
+| Slovakia | SK |
+| Slovenia | SI |
+| Solomon Islands | SB |
+| Somalia | SO |
+| South Africa | ZA |
+| South Georgia & South Sandwich Islands | GS |
+| South Korea | KR |
+| South Sudan | SS |
+| Spain | ES |
+| Sri Lanka | LK |
+| St. Barthelemy | BL |
+| St. Helena | SH |
+| St. Kitts & Nevis | KN |
+| St. Lucia | LC |
+| St. Martin | MF |
+| St. Pierre & Miquelon | PM |
+| St. Vincent & Grenadines | VC |
+| Sudan | SD |
+| Suriname | SR |
+| Svalbard & Jan Mayen | SJ |
+| Swaziland | SZ |
+| Sweden | SE |
+| Switzerland | CH |
+| Syria | SY |
+| Taiwan | TW |
+| Tajikistan | TJ |
+| Tanzania | TZ |
+| Thailand | TH |
+| Timor-Leste | TL |
+| Togo | TG |
+| Tokelau | TK |
+| Tonga | TO |
+| Trinidad & Tobago | TT |
+| Tristan da Cunha | TA |
+| Tunisia | TN |
+| Turkey | TR |
+| Turkmenistan | TM |
+| Turks & Caicos Islands | TC |
+| Tuvalu | TV |
+| U.S. Outlying Islands | UM |
+| U.S. Virgin Islands | VI |
+| Uganda | UG |
+| Ukraine | UA |
+| United Arab Emirates | AE |
+| United Kingdom | GB |
+| United States | US |
+| Unknown Region | ZZ |
+| Uraguay | UY |
+| Uzbekistan | UZ |
+| Vanuatu | VU |
+| Vatican City | VA |
+| Venezuela | VE |
+| Vietnam | VN |
+| Yemen | YE |
+| Zambia | ZM |
+| Zimbabwe | ZW |
+
 ## Special quoting
 When entering `<FeatureNameList>` with `<FeatureName>s`containing spaces, enclose the list in `"` and the names containing spaces in `'`.
 ```
@@ -133,10 +380,8 @@ When creating a building, at a minimum you must enter `address|addresslines` and
 
 * Enter a single-line address as `address "123 Main Street"`
 * Enter a multi-line address as `addresslines "123 Main Street\nAnytown, US"`
-
-For `country|regioncode` see: http://www.unicode.org/cldr/charts/30/supplemental/territory_information.html
 ```
-gam create|add building <BuildIngID> <Name> <BuildingAttribute>*
+gam create|add building <Name> <BuildingAttribute>*
 gam update building <BuildIngID> <BuildingAttribute>*
 gam delete building <BuildingID>
 ```

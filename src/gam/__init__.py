@@ -13881,7 +13881,8 @@ def doReport():
         try:
           feed = callGAPIpages(service, 'list', 'items',
                                pageMessage=pageMessage, maxItems=maxActivities,
-                               throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.AUTH_ERROR],
+                               throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.AUTH_ERROR, GAPI.SERVICE_NOT_AVAILABLE],
+                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                applicationName=report, userKey=user, customerId=customerId,
                                actorIpAddress=actorIpAddress, orgUnitID=orgUnitId,
                                startTime=startEndTime.startTime, endTime=startEndTime.endTime,
@@ -13893,7 +13894,7 @@ def doReport():
             continue
           printErrorMessage(BAD_REQUEST_RC, Msg.BAD_REQUEST)
           break
-        except (GAPI.invalid, GAPI.invalidInput) as e:
+        except (GAPI.invalid, GAPI.invalidInput, GAPI.serviceNotAvailable) as e:
           systemErrorExit(GOOGLE_API_ERROR_RC, str(e))
         except GAPI.authError:
           accessErrorExit(None)

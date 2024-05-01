@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.75.02
+
+Updated `gam report  <ActivityApplictionName>` to retry/handle the following error:
+```
+ERROR: 503: serviceNotAvailable - The service is currently unavailable.
+```
+
 ### 6.75.01
 
 Added option `admin <EmailAddress>` to  `gam upload sakey`.
