@@ -42,6 +42,7 @@ Batch files can contain the following types of lines:
   * GAM prints \<String\> and waits for the user to press any key
   * GAM continues
 * sleep \<Integer\> - Batch processing will suspend for \<Integer\> seconds before the next command line is processed
+  * To be effective, this should immediately follow commit-batch
 * print \<String\> - Print \<String\> on stderr
 * set \<KeywordString\> \<ValueString\>
   * Subsequent lines will have %\<KeywordString\>% replaced with \<ValueString\>
@@ -129,25 +130,29 @@ gam csv gsheet <user> <fileID> "<sheetName>" gam update user "~primaryEmail" add
 ## CSV files with redirection and select
 You should use the `multiprocess` option on any redirected files: `csv`, `stdout`, `stderr`.
 ```
-gam redirect csv ./filelistperms.csv multiprocess csv Users.csv gam user ~primaryEmail print filelist fields id,title,permissions,owners.emailaddress
+gam redirect csv ./filelistperms.csv multiprocess csv Users.csv gam user ~primaryEmail print filelist fields id,name,mimetype,basicpermissions
+gam redirect csv - multiprocess todrive csv Users.csv gam user ~primaryEmail print filelist fields id,name,mimetype,basicpermissions
 ```
 
 If you want to select a `gam.cfg` section for the command, you can select the section at the outer `gam` and save it
 or select the section at the inner `gam`.
 ```
-gam select <Section> save redirect csv ./filelistperms.csv multiprocess csv Users.csv gam user ~primaryEmail print filelist fields id,title,permissions,owners.emailaddress
-gam redirect csv ./filelistperms.csv multiprocess csv Users.csv gam select <Section> user ~primaryEmail print filelist fields id,title,permissions,owners.emailaddress
+gam select <Section> save redirect csv ./filelistperms.csv multiprocess csv Users.csv gam user ~primaryEmail print filelist fields id,name,mimetype,basicpermissions
+gam redirect csv ./filelistperms.csv multiprocess csv Users.csv gam select <Section> user ~primaryEmail print filelist fields id,name,mimetype,basicpermissions
+gam select <Section> save redirect csv - multiprocess todrive csv Users.csv gam user ~primaryEmail print filelist fields id,name,mimetype,basicpermissions
+gam redirect csv - multiprocess todrive csv Users.csv gam select <Section> user ~primaryEmail print filelist fields id,name,mimetype,basicpermissions
 ```
 
 ## Automatic batch processing
 You can enable automatic batch (parallel) processing when issuing commands of the form `gam <UserTypeEntity> ...`.
 In the following example, if the number of users in group sales@domain.com exceeds 1, then the `print filelist` command will be processed in parallel.
 ```
-gam config auto_batch_min 1 redirect csv ./filelistperms.csv multiprocess group sales@domain.com print filelist fields id,title,permissions,owners.emailaddress
+gam config auto_batch_min 1 redirect csv ./filelistperms.csv multiprocess group sales@domain.com print filelist fields id,name,mimetype,basicpermissions
+gam config auto_batch_min 1 redirect csv - multiprocess todrive group sales@domain.com print filelist fields id,name,mimetype,basicpermissions
 ```
 With automatic batch processing, you should use the `multiprocess` option on any redirected files: `csv`, `stdout`, `stderr`.
 
 If you want to select a `gam.cfg` section for the command, you must select and save it for it to be processed correctly.
 ```
-gam select <Section> save config auto_batch_min 1 redirect csv ./filelistperms.csv multiprocess group sales@domain.com print filelist fields id,title,permissions,owners.emailaddress
+gam select <Section> save config auto_batch_min 1 redirect csv ./filelistperms.csv multiprocess group sales@domain.com print filelist fields id,name,mimetype,basicpermissions
 ```

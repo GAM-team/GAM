@@ -2,6 +2,13 @@
 
 Merged GAM-Team version
 
+6.75.03
+
+Fixed bug in `gam batch|tbatch` where the line `sleep <Integer>` in the batch file caused the error:
+```
+ERROR: Invalid argument: Expected <gam|commit-batch|print>
+```
+
 6.75.02
 
 Updated `gam report  <ActivityApplictionName>` to retry/handle the following error:

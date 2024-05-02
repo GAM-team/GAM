@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.75.03
+
+Fixed bug in `gam batch|tbatch` where the line `sleep <Integer>` in the batch file caused the error:
+```
+ERROR: Invalid argument: Expected <gam|commit-batch|print>
+```
+
 ### 6.75.02
 
 Updated `gam report  <ActivityApplictionName>` to retry/handle the following error:

@@ -9895,8 +9895,8 @@ def threadBatchWorker(showCmds=False, numItems=0):
       batchWriteStderr(f'{currentISOformatTimeStamp()},{pid}/{numItems},Error,{str(e)},{logCmd}\n')
     GM.Globals[GM.TBATCH_QUEUE].task_done()
 
-BATCH_COMMANDS = [Cmd.GAM_CMD, Cmd.COMMIT_BATCH_CMD, Cmd.PRINT_CMD]
-TBATCH_COMMANDS = [Cmd.GAM_CMD, Cmd.COMMIT_BATCH_CMD, Cmd.EXECUTE_CMD, Cmd.PRINT_CMD]
+BATCH_COMMANDS = [Cmd.GAM_CMD, Cmd.COMMIT_BATCH_CMD, Cmd.PRINT_CMD, Cmd.SLEEP_CMD]
+TBATCH_COMMANDS = [Cmd.GAM_CMD, Cmd.COMMIT_BATCH_CMD, Cmd.EXECUTE_CMD, Cmd.PRINT_CMD, Cmd.SLEEP_CMD]
 
 def ThreadBatchGAMCommands(items, showCmds):
   if not items:
@@ -9934,7 +9934,7 @@ def ThreadBatchGAMCommands(items, showCmds):
       batchWriteStderr(f'{currentISOformatTimeStamp()},0/{numItems},{Cmd.QuotedArgumentList(item[1:])}\n')
       continue
     if item[0] == Cmd.SLEEP_CMD:
-      batchWriteStderr(f'{currentISOformatTimeStamp()},0/{numItems},Sleepiing {item[1]} seconds\n')
+      batchWriteStderr(f'{currentISOformatTimeStamp()},0/{numItems},Sleeping {item[1]} seconds\n')
       time.sleep(int(item[1]))
       continue
     pid += 1
