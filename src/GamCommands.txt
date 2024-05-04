@@ -5529,6 +5529,11 @@ gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
         [formatjson [quotechar <Character>]] [countsonly|countonly]
         [issuspended <Boolean>]
 
+Print user counts by OrgUnits
+
+gam print usercountsbyorgunit [todrive <ToDriveAttribute>*]
+        [domain <String>]
+
 Print lists of users
 
 gam <UserTypeEntity> print userlist [todrive <ToDriveAttribute>*]
@@ -7202,9 +7207,10 @@ gam <UserTypeEntity> show messages|threads
         [countsonly|positivecountsonly] [useronly]
         [headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
         [showlabels] [delimiter <Character>] [showbody] [showdate] [showsize] [showsnippet]
-        [showattachments [attachmentnamepattern <RegularExpression>] [noshowtextplain]]
-        [saveattachments [attachmentnamepattern <RegularExpression>]]
-            [targetfolder <FilePath>] [overwrite [<Boolean>]]
+        [[attachmentnamepattern <RegularExpression>]
+            [showattachments [noshowtextplain]]
+            [saveattachments [targetfolder <FilePath>] [overwrite [<Boolean>]]]
+            [uploadattachments [<DriveFileParentAttribute>]]]
 gam <UserTypeEntity> print messages|threads [todrive <ToDriveAttribute>*]
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])*
          [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <MessageIDEntity>)
@@ -7212,7 +7218,8 @@ gam <UserTypeEntity> print messages|threads [todrive <ToDriveAttribute>*]
         [countsonly|positivecountsonly] [useronly]
         [headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String> [dateheaderconverttimezone [<Boolean>]]]
         [showlabels] [delimiter <Character>] [showbody] [showdate] [showsize] [showsnippet]
-        [showattachments [attachmentnamepattern <RegularExpression>]]
+        [[attachmentnamepattern <RegularExpression>]
+            [showattachments [noshowtextplain]]]
         [convertcrnl]
 
 # Users - Gmail - Profile

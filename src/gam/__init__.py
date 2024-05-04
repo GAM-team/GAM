@@ -11659,6 +11659,25 @@ def doCreateProject():
     elif 'error' in status:
       systemErrorExit(2, status['error']+'\n')
     break
+# Try to set policy on project to allow Service Account Key Upload
+#  orgp = getAPIService(API.ORGPOLICY, httpObj)
+#  projectParent = f"projects/{projectInfo['projectId']}"
+#  policyName = f'{projectParent}/policies/iam.disableServiceAccountKeyUpload'
+#  try:
+#    result = callGAPI(orgp.projects().policies(), 'get',
+#                      throwReasons=[GAPI.NOT_FOUND, GAPI.FAILED_PRECONDITION, GAPI.PERMISSION_DENIED],
+#                      name=policyName)
+#    if result['spec']['rules'][0]['enforce']:
+#      callGAPI(orgp.projects().policies(), 'patch',
+#               throwReasons=[GAPI.FAILED_PRECONDITION, GAPI.PERMISSION_DENIED],
+#               name=policyName, body={'spec': {'rules': [{'enforce': False}]}}, updateMask='policy.spec')
+#  except GAPI.notFound:
+#    callGAPI(orgp.projects().policies(), 'create',
+#             throwReasons=[GAPI.BAD_REQUEST, GAPI.FAILED_PRECONDITION, GAPI.PERMISSION_DENIED],
+#             parent=projectParent, body={'name': policyName, 'spec': {'rules': [{'enforce': False}]}})
+#  except (GAPI.badRequest, GAPI.failedPrecondition, GAPI.permissionDenied):
+#    pass
+# Create client_secrets.json and oauth2service.json
   _createClientSecretsOauth2service(httpObj, login_hint, appInfo, projectInfo, svcAcctInfo)
 
 # gam use project [<EmailAddress>] [<ProjectID>]
@@ -43033,6 +43052,7 @@ def doPrintUsers(entityList=None):
           _writeUserEntity(userEntity)
 
   def _updateDomainCounts(emailAddress):
+    nonlocal domainCounts
     atLoc = emailAddress.find('@')
     if atLoc == -1:
       dom = UNKNOWN
@@ -43407,6 +43427,67 @@ def doPrintUserList(entityList):
   else:
     csvPF.WriteRow({'title': title, 'count': count, 'users': json.dumps(cleanJSON(entityList), ensure_ascii=False, sort_keys=True)})
   csvPF.writeCSVfile('User List')
+
+# gam print usercountsbyorgunit [todrive <ToDriveAttribute>*]
+#	[domain <String>]
+def doPrintUserCountsByOrgUnit():
+  def _printUserCounts(title, v):
+    csvPF.WriteRow({'orgUnitPath': title, 'archived': v['archived'], 'active': v['active'], 'suspended': v['suspended'], 'total': v['total']})
+    
+  USER_COUNTS_FIELDS = ['archived', 'active', 'suspended', 'total']
+  USER_COUNTS_ZERO_FIELDS = {'archived': 0, 'active': 0, 'suspended': 0, 'total': 0}
+  cd = buildGAPIObject(API.DIRECTORY)
+  csvPF = CSVPrintFile(['orgUnitPath']+USER_COUNTS_FIELDS)
+  FJQC = FormatJSONQuoteChar(csvPF)
+  kwargs = {'customer': GC.Values[GC.CUSTOMER_ID]}
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif myarg == 'domain':
+      kwargs = {'domain': getString(Cmd.OB_DOMAIN_NAME)}
+    else:
+      FJQC.GetFormatJSONQuoteChar(myarg, False)
+  if 'domain' in kwargs:
+    printGettingAllEntityItemsForWhom(Ent.USER, kwargs['domain'], entityType=Ent.DOMAIN)
+    pageMessage = getPageMessageForWhom()
+    title = f"Total({kwargs['domain']})"
+  else:
+    printGettingAllAccountEntities(Ent.USER)
+    pageMessage = getPageMessage()
+    title = f"Total({kwargs['customer']})"
+  userCounts = {}
+  try:
+    result = callGAPIpages(cd.users(), 'list', 'users',
+                           pageMessage=pageMessage,
+                           throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.DOMAIN_NOT_FOUND, GAPI.FORBIDDEN],
+                           orderBy='email', fields='nextPageToken,users(orgUnitPath,archived,suspended)',
+                           maxResults=GC.Values[GC.USER_MAX_RESULTS], **kwargs)
+  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.domainNotFound):
+    if 'domain' in kwargs:
+      checkEntityDNEorAccessErrorExit(cd, Ent.DOMAIN, kwargs['domain'])
+    else:
+      checkEntityDNEorAccessErrorExit(cd, Ent.CUSTOMER_ID, kwargs['customer'])
+    return
+  for user in result:
+    orgUnitPath = user['orgUnitPath']
+    if orgUnitPath not in userCounts:
+      userCounts[orgUnitPath] = USER_COUNTS_ZERO_FIELDS.copy()
+    if user['suspended'] or user['archived']:
+      if user['archived']:
+        userCounts[orgUnitPath]['archived'] += 1
+      if user['suspended']:
+        userCounts[orgUnitPath]['suspended'] += 1
+    else:
+      userCounts[orgUnitPath]['active'] += 1
+    userCounts[orgUnitPath]['total'] += 1
+  totalCounts = USER_COUNTS_ZERO_FIELDS.copy()
+  for k, v in sorted(iter(userCounts.items())):
+    _printUserCounts(k, v)
+    for f in USER_COUNTS_FIELDS:
+      totalCounts[f] += v[f]
+  _printUserCounts(title, totalCounts)
+  csvPF.writeCSVfile('User Counts by OrgUnit')
 
 def isolateCIUserInvitatonsEmail(name):
   ''' converts long name into email address'''
@@ -67891,7 +67972,7 @@ def printShowMessagesThreads(users, entityType):
     if charset:
       printKeyValueList(['charset', charset])
 
-  def _showSaveAttachments(messageId, payload, attachmentNamePattern):
+  def _showSaveAttachments(messageId, payload, attachmentNamePattern, j, jcount):
     for part in payload.get('parts', []):
       if 'attachmentId' in part['body']:
         for header in part['headers']:
@@ -67906,7 +67987,7 @@ def printShowMessagesThreads(users, entityType):
                 mg = CHARSET_NAME_PATTERN.match(header['value'])
                 if mg:
                   charset = mg.group(1)
-              if (part['mimeType'] == 'text/plain' and not noshow_text_plain) or save_attachments:
+              if (part['mimeType'] == 'text/plain' and not noshow_text_plain) or save_attachments or upload_attachments:
                 try:
                   result = callGAPI(gmail.users().messages().attachments(), 'get',
                                     throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND],
@@ -67933,6 +68014,34 @@ def printShowMessagesThreads(users, entityType):
                       else:
                         entityActionFailedWarning([Ent.ATTACHMENT, filename], str(e))
                       Act.Set(action)
+                    if upload_attachments:
+                      filename = cleanFilename(attachmentName)
+                      uploadAttachmentBody.update({'name': filename, 'mimeType': part['mimeType']})
+                      action = Act.Get()
+                      Act.Set(Act.CREATE)
+                      media_body = googleapiclient.http.MediaIoBaseUpload(io.BytesIO(base64.urlsafe_b64decode(str(result['data']))), mimetype=part['mimeType'], resumable=True)
+                      try:
+                        result = callGAPI(drive.files(), 'create',
+                                          throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.FORBIDDEN, GAPI.INSUFFICIENT_PERMISSIONS, GAPI.INSUFFICIENT_PARENT_PERMISSIONS,
+                                                                                      GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.CANNOT_ADD_PARENT,
+                                                                                      GAPI.FILE_NOT_FOUND, GAPI.UNKNOWN_ERROR, GAPI.INTERNAL_ERROR,
+                                                                                      GAPI.STORAGE_QUOTA_EXCEEDED, GAPI.TEAMDRIVES_SHARING_RESTRICTION_NOT_ALLOWED,
+                                                                                      GAPI.TEAMDRIVE_FILE_LIMIT_EXCEEDED, GAPI.TEAMDRIVE_HIERARCHY_TOO_DEEP,
+                                                                                      GAPI.UPLOAD_TOO_LARGE, GAPI.TEAMDRIVES_SHORTCUT_FILE_NOT_SUPPORTED],
+                                          media_body=media_body, body=uploadAttachmentBody, fields='id,name', supportsAllDrives=True)
+                        entityModifierItemValueListActionPerformed([Ent.DRIVE_FILE, f"{result['name']}({result['id']})"],
+                                                                   Act.MODIFIER_WITH_CONTENT_FROM, [Ent.ATTACHMENT, filename], j, jcount)
+                      except (GAPI.forbidden, GAPI.insufficientPermissions, GAPI.insufficientParentPermissions,
+                              GAPI.invalid, GAPI.badRequest, GAPI.cannotAddParent,
+                              GAPI.fileNotFound, GAPI.unknownError, GAPI.internalError,
+                              GAPI.storageQuotaExceeded, GAPI.teamdrivesSharingRestrictionNotAllowed,
+                              GAPI.teamdrivefileLimitExceeded, GAPI.teamdriveHierarchyTooDeep,
+                              GAPI.uploadTooLarge, GAPI.teamdrivesShortcutFileNotSupported) as e:
+                        entityModifierItemValueListActionFailedWarning([Ent.DRIVE_FILE, None],
+                                                                       Act.MODIFIER_WITH_CONTENT_FROM, [Ent.ATTACHMENT, filename], str(e), j, jcount)
+                      except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
+                        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+                      Act.Set(action)
                 except (GAPI.serviceNotAvailable, GAPI.badRequest, GAPI.notFound):
                   pass
               elif show_attachments:
@@ -67942,7 +68051,7 @@ def printShowMessagesThreads(users, entityType):
                 Ind.Decrement()
             break
       else:
-        _showSaveAttachments(messageId, part, attachmentNamePattern)
+        _showSaveAttachments(messageId, part, attachmentNamePattern, j, jcount)
 
   def _initSenderLabelsMap(sender):
     if sender not in senderLabelsMaps:
@@ -68047,8 +68156,8 @@ def printShowMessagesThreads(users, entityType):
       Ind.Increment()
       printKeyValueList([Ind.MultiLineText(_getMessageBody(result['payload']))])
       Ind.Decrement()
-    if show_attachments or save_attachments:
-      _showSaveAttachments(result['id'], result['payload'], attachmentNamePattern)
+    if show_attachments or save_attachments or upload_attachments:
+      _showSaveAttachments(result['id'], result['payload'], attachmentNamePattern, j, jcount)
     Ind.Decrement()
     parameters['messagesProcessed'] += 1
 
@@ -68217,7 +68326,7 @@ def printShowMessagesThreads(users, entityType):
     try:
       response = callGAPI(service, 'get',
                           throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_MESSAGE_ID],
-                          userId='me', id=ri[RI_ITEM], format=['metadata', 'full'][show_size or show_body or show_attachments or save_attachments])
+                          userId='me', id=ri[RI_ITEM], format=['metadata', 'full'][show_size or show_body or show_attachments or save_attachments or upload_attachments])
       if countsOnly:
         _callbacks['process'](ri[RI_ENTITY], response)
       else:
@@ -68254,7 +68363,7 @@ def printShowMessagesThreads(users, entityType):
       _handleGmailError(exception, ri)
 
   def _batchPrintShowMessagesThreads(service, user, jcount, messageIds):
-    svcargs = dict([('userId', 'me'), ('id', None), ('format', ['metadata', 'full'][show_body or show_attachments or save_attachments])]+GM.Globals[GM.EXTRA_ARGS_LIST])
+    svcargs = dict([('userId', 'me'), ('id', None), ('format', ['metadata', 'full'][show_body or show_attachments or save_attachments or upload_attachments])]+GM.Globals[GM.EXTRA_ARGS_LIST])
     if countsOnly:
       if show_labels:
         if not senderMatchPattern:
@@ -68290,7 +68399,7 @@ def printShowMessagesThreads(users, entityType):
   parameters = _initMessageThreadParameters(entityType, True, 0)
   convertCRNL = GC.Values[GC.CSV_OUTPUT_CONVERT_CR_NL]
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
-  countsOnly = positiveCountsOnly = includeSpamTrash = onlyUser = overwrite = save_attachments = False
+  countsOnly = positiveCountsOnly = includeSpamTrash = onlyUser = overwrite = save_attachments = upload_attachments = False
   show_all_headers = show_attachments = show_body = show_date = show_labels = show_size = show_snippet = False
   noshow_text_plain = False
   attachmentNamePattern = None
@@ -68301,6 +68410,8 @@ def printShowMessagesThreads(users, entityType):
   showMode = Act.Get() == Act.SHOW
   dateHeaderFormat = ''
   dateHeaderConvertTimezone = False
+  uploadAttachmentBody = {}
+  parentParms = initDriveFileAttributes()
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -68336,6 +68447,10 @@ def printShowMessagesThreads(users, entityType):
       targetFolderPattern = os.path.expanduser(getString(Cmd.OB_FILE_PATH))
     elif showMode and myarg == 'overwrite':
       overwrite = getBoolean()
+    elif showMode and myarg == 'uploadattachments':
+      upload_attachments = True
+    elif showMode and getDriveFileParentAttribute(myarg, parentParms):
+      pass
     elif myarg == 'includespamtrash':
       includeSpamTrash = True
     elif myarg == 'countsonly':
@@ -68400,6 +68515,12 @@ def printShowMessagesThreads(users, entityType):
     if not gmail:
       continue
     service = gmail.users().messages() if entityType == Ent.MESSAGE else gmail.users().threads()
+    if upload_attachments:
+      _, drive = buildGAPIServiceObject(API.DRIVE3, user, i, count)
+      if not drive:
+        continue
+      if not _getDriveFileParentInfo(drive, user, i, count, uploadAttachmentBody, parentParms):
+        continue
     if show_labels or labelMatchPattern:
       labels = _getUserGmailLabels(gmail, user, i, count, 'labels(id,name,type)')
       if not labels:
@@ -68548,17 +68669,20 @@ def printShowMessagesThreads(users, entityType):
 #	[labelmatchpattern <RegularExpression>] [sendermatchpattern <RegularExpression>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
 #	[showlabels] [showbody] [showdate] [showsize] [showsnippet]
-#	[showattachments [attachmentnamepattern <RegularExpression>]]
 #	[convertcrnl] [delimiter <Character>] [todrive <ToDriveAttribute>*]
 #	[countsonly|positivecountsonly] [useronly]
+#	[[attachmentnamepattern <RegularExpression>]
+#	    [showattachments [noshowtextplain]]]
 # gam <UserTypeEntity> show message|messages
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])* [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <MessageIDEntity>)
 #	[labelmatchpattern <RegularExpression>] [sendermatchpattern <RegularExpression>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
 #	[showlabels] [showbody] [showdate] [showsize] [showsnippet]
-#	[showattachments [attachmentnamepattern <RegularExpression>] [noshowtextplain]]
 #	[countsonly|positivecountsonly] [useronly]
-#       [saveattachments [attachmentnamepattern <RegularExpression>]] [targetfolder <FilePath>] [overwrite [<Boolean>]]
+#	[[attachmentnamepattern <RegularExpression>]
+#	    [showattachments [noshowtextplain]]
+#	    [saveattachments [targetfolder <FilePath>] [overwrite [<Boolean>]]]
+#	    [uploadattachments [<DriveFileParentAttribute>]]]
 def printShowMessages(users):
   printShowMessagesThreads(users, Ent.MESSAGE)
 
@@ -68567,17 +68691,20 @@ def printShowMessages(users):
 #	[labelmatchpattern <RegularExpression>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
 #	[showlabels] [showbody] [showdate] [showsize] [showsnippet]
-#	[showattachments [attachmentnamepattern <RegularExpression>]]
 #	[convertcrnl] [delimiter <Character>] [todrive <ToDriveAttribute>*]
 #	[countsonly|positivecountsonly] [useronly]
+#	[[attachmentnamepattern <RegularExpression>]
+#	    [showattachments [noshowtextplain]]]
 # gam <UserTypeEntity> show thread|threads
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])* [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <ThreadIDEntity>)
 #	[labelmatchpattern <RegularExpression>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
 #	[showlabels] [showbody] [showdate] [showsize] [showsnippet]
-#	[showattachments [attachmentnamepattern <RegularExpression>] [noshowtextplain]]
 #	[countsonly|positivecountsonly] [useronly]
-#       [saveattachments [attachmentnamepattern <RegularExpression>]] [targetfolder <FilePath>] [overwrite [<Boolean>]]
+#	[[attachmentnamepattern <RegularExpression>]
+#	    [showattachments [noshowtextplain]]
+#	    [saveattachments [targetfolder <FilePath>] [overwrite [<Boolean>]]]
+#	    [uploadattachments [<DriveFileParentAttribute>]]]
 def printShowThreads(users):
   printShowMessagesThreads(users, Ent.THREAD)
 
@@ -73048,6 +73175,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_TRANSFERAPPS:	doShowTransferApps,
       Cmd.ARG_USER:		doPrintUsers,
       Cmd.ARG_USERS:		doPrintUsers,
+      Cmd.ARG_USERCOUNTSBYORGUNIT:	doPrintUserCountsByOrgUnit,
       Cmd.ARG_USERINVITATION:	doPrintShowCIUserInvitations,
       Cmd.ARG_VAULTCOUNT:	doPrintVaultCounts,
       Cmd.ARG_VAULTEXPORT:	doPrintShowVaultExports,

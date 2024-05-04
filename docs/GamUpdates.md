@@ -10,6 +10,19 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.75.04
+
+Added a command to print user counts by OrgUnit. By default, all users in the workspace are counted;
+you can specify a domain to only count users in that domain.
+```
+gam print usercountsbyorgunit [todrive <ToDriveAttribute>*]
+        [domain <String>]
+```
+
+Added option `uploadattachments [<DriveFileParentAttribute>]` to `gam <UserTypeEntity> show messages|threads` that
+causes GAM to upload all message attachments to the user's `My Drive`, the default, or to a specific folder.
+The existing option `attachmentnamepattern <RegularExpression>` can be used to select attachments to upload.
+
 ### 6.75.03
 
 Fixed bug in `gam batch|tbatch` where the line `sleep <Integer>` in the batch file caused the error:

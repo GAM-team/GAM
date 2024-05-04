@@ -37,6 +37,7 @@
 - [Print user domain counts](#print-user-domain-counts)
     - [Print domain counts for users in a specific domain and/or selected by a query](#print-domain-counts-for-users-in-a-specific-domain-and-or-selected-by-a-query)
     - [Print domain counts for users specified by `<UserTypeEntity>`](#print-domain-counts-for-users-specified-by-usertypeentity)
+- [Print user counts by OrgUnit](print-user-counts-by-orgunit)
 - [Print user list](#print-user-list)
 - [Display user counts](#display-user-counts)
 - [Verify domain membership]($verify-domain-membership)
@@ -1240,6 +1241,15 @@ Got 12 Users in the Organizational Unit for /Test...
 Got 4 Users directly in the Organizational Unit for /Test
 $ more UsersList.csv 
  ["testuser1@domain.org",  "testuser2@domain.org",  "testuser3@domain.org",  "testuser4@domain.org"] 
+```
+
+## Print user counts by OrgUnit
+Display the count of archived, suspended and total users in each OrgUnit; display a grand total.
+
+By default, all users in the workspace are counted; you can specify a domain to only count users in that domain.
+```
+gam print usercountsbyorgunit [todrive <ToDriveAttribute>*]
+        [domain <String>]
 ```
 
 ## Display user counts

@@ -72,6 +72,7 @@ KEEP = 'keep'
 LICENSING = 'licensing'
 LOOKERSTUDIO = 'datastudio'
 OAUTH2 = 'oauth2'
+ORGPOLICY = 'orgpolicy'
 PEOPLE = 'people'
 PEOPLE_DIRECTORY = 'peopledirectory'
 PEOPLE_OTHERCONTACTS = 'peopleothercontacts'
@@ -112,7 +113,7 @@ REQUIRED_SCOPES_SET = set(REQUIRED_SCOPES)
 JWT_APIS = {
   ACCESSCONTEXTMANAGER: [CLOUD_PLATFORM_SCOPE],
   CHAT: ['https://www.googleapis.com/auth/chat.bot'],
-  CLOUDRESOURCEMANAGER: [CLOUD_PLATFORM_SCOPE]
+  ORGPOLICY: [CLOUD_PLATFORM_SCOPE],
   }
 #
 APIS_NEEDING_ACCESS_TOKEN = {
@@ -236,6 +237,7 @@ _INFO = {
   LICENSING: {'name': 'License Manager API', 'version': 'v1', 'v2discovery': True},
   LOOKERSTUDIO: {'name': 'Looker Studio API', 'version': 'v1', 'v2discovery': True, 'localjson': True},
   OAUTH2: {'name': 'OAuth2 API', 'version': 'v2', 'v2discovery': False},
+  ORGPOLICY: {'name': 'Organization Policy API', 'version': 'v2', 'v2discovery': True},
   PEOPLE: {'name': 'People API', 'version': 'v1', 'v2discovery': True},
   PEOPLE_DIRECTORY: {'name': 'People Directory API', 'version': 'v1', 'v2discovery': True, 'mappedAPI': PEOPLE},
   PEOPLE_OTHERCONTACTS: {'name': 'People  API - Other Contacts', 'version': 'v1', 'v2discovery': True, 'mappedAPI': PEOPLE},

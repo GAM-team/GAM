@@ -23,6 +23,7 @@
   - [Print only options](#print-only-options)
   - [Show only options](#show-only-options)
   - [Download attachments](#download-attachments)
+  - [Upload attachments](#upload-attachments)
   - [Display messages sent by delegates for delegator](#display-messages-sent-by-delegates-for-delegator)
 - [User attribute `replace <Tag> <UserReplacement>` processing](Tag-Replace)
 
@@ -180,6 +181,20 @@ Block emails between specific user groups
         (gdoc|ghtml <UserGoogleDoc>)|
         (gcsdoc|gcshtml <StorageBucketObjectName>)|
         (emlfile <FileName> [charset <Charset>]))
+
+<DriveFolderID> ::= <String>
+<DriveFolderName> ::= <String>
+<SharedDriveID> ::= <String>
+<SharedDriveName> ::= <String>
+
+<DriveFileParentAttribute> ::=
+        (parentid <DriveFolderID>)|
+        (parentname <DriveFolderName>)|
+        (anyownerparentname <DriveFolderName>)|
+        (teamdriveparentid <DriveFolderID>)|
+        (teamdriveparent <SharedDriveName>)|
+        (teamdriveparentid <SharedDriveID> teamdriveparentname <DriveFolderName>)|
+        (teamdriveparent <SharedDriveName> teamdriveparentname <DriveFolderName>)
 ```
 ## Message queries with dates
 ```
@@ -594,6 +609,16 @@ By default, when downloading attachments, an existing local file will not be ove
 * `overwrite` - Overwite an existing file
 * `overwrite true` - Overwite an existing file
 * `overwrite false` - Do not overwite an existing file; add a numeric prefix and create a new file
+
+## Upload attachments
+These options are valid with `show'.
+
+By default, message attachments are not uploaded to Google Drive.
+* `uploadattachments` - Upload message attachments
+* `attachmentnamepattern <RegularExpression>` - Limit the attachments uploaded to those whose names match `<RegularExpression>`
+
+By default, message attachments are uploaded to the root of the user's My Drive.
+* `<DriveFileParentAttributeh>` - Specify an alternate location for the uploaded attachments
 
 ## Display messages sent by delegates for delegator
 Display messages sent by a particular delegate for a delegator; the message is

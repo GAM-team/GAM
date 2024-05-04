@@ -776,6 +776,7 @@ class GamCLArgs():
   ARG_TRUSTEDAPPS = 'trustedapps'
   ARG_USER = 'user'
   ARG_USERS = 'users'
+  ARG_USERCOUNTSBYORGUNIT = 'usercountsbyorgunit'
   ARG_USERINVITATION = 'userinvitation'
   ARG_USERINVITATIONS = 'userinvitations'
   ARG_USERLIST = 'userlist'
