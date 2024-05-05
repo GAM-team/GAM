@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.75.05
+
+Added option `csv [todrive <ToDriveAttribute>*]` to `gam <UserTypeEntity> archive|delete|modify|spam|trash|untrash messages|threads`
+that causes GAM to display the command results in CSV form.
+
 ### 6.75.04
 
 Added a command to print user counts by OrgUnit. By default, all users in the workspace are counted;

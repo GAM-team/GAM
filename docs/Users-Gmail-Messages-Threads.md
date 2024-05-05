@@ -360,9 +360,13 @@ Your command line will have: `embedimage file1.jpg image1` embedimage file2.jpg 
 gam <UserTypeEntity> archive messages <GroupItem>
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [quick|notquick] [doit] [max_to_archive <Number>])|(ids <MessageIDEntity>)
+        [csv [todrive <ToDriveAttribute>*]]
 ```
 
 Messages are archived to the group specified by `<GroupItem>`.
+
+By default, the command results are displayed as indented keys and values. Use the `csv` option
+to display the command results in CSV form.
 
 See below for message selection.
 
@@ -421,20 +425,29 @@ See below for message selection.
 gam <UserTypeEntity> delete messages|threads
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [quick|notquick] [doit] [max_to_delete <Number>])|(ids <MessageIDEntity>)
+        [csv [todrive <ToDriveAttribute>*]]
 gam <UserTypeEntity> modify messages|threads
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [quick|notquick] [doit] [max_to_modify <Number>])|(ids <MessageIDEntity>)
         (addlabel <LabelName>)* (removelabel <LabelName>)*
+        [csv [todrive <ToDriveAttribute>*]]
 gam <UserTypeEntity> spam messages|threads
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [quick|notquick] [doit] [max_to_spam <Number>])|(ids <MessageIDEntity>)
+        [csv [todrive <ToDriveAttribute>*]]
 gam <UserTypeEntity> trash messages|threads
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [quick|notquick] [doit] [max_to_trash <Number>])|(ids <MessageIDEntity>)
+        [csv [todrive <ToDriveAttribute>*]]
 gam <UserTypeEntity> untrash messages|threads
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [quick|notquick] [doit] [max_to_untrash <Number>])|(ids <MessageIDEntity>)
+        [csv [todrive <ToDriveAttribute>*]]
 ```
+
+By default, the command results are displayed as indented keys and values. Use the `csv` option
+to display the command results in CSV form.
+
 ### Manage a specific set of messages
 * `ids <MessageIDEntity>` - A list of message ids
 

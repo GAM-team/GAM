@@ -67050,14 +67050,27 @@ def _finalizeMessageSelectParameters(parameters, queryOrIdsRequired):
 
 # gam <UserTypeEntity> archive messages <GroupItem>
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_archive <Number>])|(ids <MessageIDEntity>)
+#	[csv [todrive <ToDriveAttribute>*]]
 def archiveMessages(users):
+  def _processMessageFailed(user, idsList, errMsg, j=0, jcount=0):
+    if not csvPF:
+      entityActionFailedWarning([Ent.USER, user, entityType, idsList], errMsg, j, jcount)
+    else:
+      csvPF.WriteRow({'User': user, entityHeader: idsList, 'action': Act.Failed(), 'error': errMsg})
+
   entityType = Ent.MESSAGE
+  entityHeader = 'id'
   parameters = _initMessageThreadParameters(entityType, False, 0)
   group = getEmailAddress()
+  csvPF = None
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if _getMessageSelectParameters(myarg, parameters):
       pass
+    elif myarg == 'csv':
+      csvPF = CSVPrintFile(['User', entityHeader, 'action', 'error'])
+    elif csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
     else:
       unknownArgumentExit()
   _finalizeMessageSelectParameters(parameters, False)
@@ -67115,7 +67128,7 @@ def archiveMessages(users):
       j += 1
       try:
         message = callGAPI(service, 'get',
-                           throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT],
+                           throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_MESSAGE_ID],
                            userId='me', id=messageId, format='raw')
         stream = io.BytesIO()
         stream.write(base64.urlsafe_b64decode(str(message['raw'])))
@@ -67124,20 +67137,31 @@ def archiveMessages(users):
                    throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.BAD_REQUEST, GAPI.INVALID,
                                                           GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN],
                    groupId=group, media_body=googleapiclient.http.MediaIoBaseUpload(stream, mimetype='message/rfc822', resumable=True))
-          entityActionPerformed([Ent.USER, user, entityType, messageId], j, jcount)
+          if not csvPF:
+            entityActionPerformed([Ent.USER, user, entityType, messageId], j, jcount)
+          else:
+            csvPF.WriteRow({'User': user, entityHeader: messageId, 'action': Act.Performed()})
         except GAPI.serviceNotAvailable:
           entityServiceNotApplicableWarning(Ent.USER, user, i, count)
           break
         except (GAPI.badRequest, GAPI.invalid, GAPI.failedPrecondition, GAPI.forbidden) as e:
-          entityActionFailedWarning([Ent.USER, user, entityType, messageId], str(e), j, jcount)
+          _processMessageFailed(user, messageId, str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.badRequest):
         entityServiceNotApplicableWarning(Ent.USER, user, i, count)
         break
-      except (GAPI.notFound, GAPI.invalidArgument) as e:
-        entityActionFailedWarning([Ent.USER, user, entityType, messageId], str(e), j, jcount)
+      except (GAPI.notFound, GAPI.invalidMessageId) as e:
+        _processMessageFailed(user, messageId, str(e), j, jcount)
     Ind.Decrement()
+  if csvPF:
+    csvPF.writeCSVfile(f'{Act.ToPerform()} Messages')
 
 def _processMessagesThreads(users, entityType):
+  def _processMessageFailed(user, idsList, errMsg, j=0, jcount=0):
+    if not csvPF:
+      entityActionFailedWarning([Ent.USER, user, entityType, idsList], errMsg, j, jcount)
+    else:
+      csvPF.WriteRow({'User': user, entityHeader: idsList, 'action': Act.Failed(), 'error': errMsg})
+
   def _batchDeleteModifyMessages(gmail, function, user, jcount, messageIds, body):
     mcount = 0
     bcount = min(jcount-mcount, GC.Values[GC.MESSAGE_BATCH_SIZE])
@@ -67154,34 +67178,37 @@ def _processMessagesThreads(users, entityType):
                  userId='me', body=body)
         for messageId in body['ids']:
           mcount += 1
-          entityActionPerformed([Ent.USER, user, entityType, messageId], mcount, jcount)
+          if not csvPF:
+            entityActionPerformed([Ent.USER, user, entityType, messageId], mcount, jcount)
+          else:
+            csvPF.WriteRow({'User': user, entityHeader: messageId, 'action': Act.Performed()})
       except (GAPI.serviceNotAvailable, GAPI.badRequest):
         mcount += bcount
       except (GAPI.invalid, GAPI.permissionDenied) as e:
-        entityActionFailedWarning([Ent.USER, user, entityType, idsList], f'{str(e)} ({mcount+1}-{mcount+bcount}/{jcount})')
+        _processMessageFailed(user, idsList, f'{str(e)} ({mcount+1}-{mcount+bcount}/{jcount})')
         mcount += bcount
       except GAPI.invalidMessageId:
-        entityActionFailedWarning([Ent.USER, user, entityType, idsList], f'{Msg.INVALID_MESSAGE_ID} ({mcount+1}-{mcount+bcount}/{jcount})')
+        _processMessageFailed(user, idsList, f'{Msg.INVALID_MESSAGE_ID} ({mcount+1}-{mcount+bcount}/{jcount})')
         mcount += bcount
       except GAPI.failedPrecondition:
-        entityActionFailedWarning([Ent.USER, user, entityType, idsList], f'{Msg.FAILED_PRECONDITION} ({mcount+1}-{mcount+bcount}/{jcount})')
+        _processMessageFailed(user, idsList, f'{Msg.FAILED_PRECONDITION} ({mcount+1}-{mcount+bcount}/{jcount})')
         mcount += bcount
       bcount = min(jcount-mcount, GC.Values[GC.MESSAGE_BATCH_SIZE])
 
   _GMAIL_ERROR_REASON_TO_MESSAGE_MAP = {GAPI.NOT_FOUND: Msg.DOES_NOT_EXIST,
                                         GAPI.INVALID_MESSAGE_ID: Msg.INVALID_MESSAGE_ID,
                                         GAPI.FAILED_PRECONDITION: Msg.FAILED_PRECONDITION}
-  def _handleProcessGmailError(exception, ri):
-    http_status, reason, message = checkGAPIError(exception)
-    errMsg = getHTTPError(_GMAIL_ERROR_REASON_TO_MESSAGE_MAP, http_status, reason, message)
-    entityActionFailedWarning([Ent.USER, ri[RI_ENTITY], entityType, ri[RI_ITEM]], errMsg, int(ri[RI_J]), int(ri[RI_JCOUNT]))
 
   def _callbackProcessMessage(request_id, response, exception):
     ri = request_id.splitlines()
     if exception is None:
-      entityActionPerformed([Ent.USER, ri[RI_ENTITY], entityType, ri[RI_ITEM]], int(ri[RI_J]), int(ri[RI_JCOUNT]))
+      if not csvPF:
+        entityActionPerformed([Ent.USER, ri[RI_ENTITY], entityType, ri[RI_ITEM]], int(ri[RI_J]), int(ri[RI_JCOUNT]))
+      else:
+        csvPF.WriteRow({'User': ri[RI_ENTITY], entityHeader: ri[RI_ITEM], 'action': Act.Performed()})
     else:
-      _handleProcessGmailError(exception, ri)
+      http_status, reason, message = checkGAPIError(exception)
+      _processMessageFailed(ri[RI_ENTITY], ri[RI_ITEM], getHTTPError(_GMAIL_ERROR_REASON_TO_MESSAGE_MAP, http_status, reason, message), int(ri[RI_J]), int(ri[RI_JCOUNT]))
 
   def _batchProcessMessagesThreads(service, function, user, jcount, messageIds, **kwargs):
     svcargs = dict([('userId', 'me'), ('id', None), ('fields', '')]+list(kwargs.items())+GM.Globals[GM.EXTRA_ARGS_LIST])
@@ -67210,6 +67237,8 @@ def _processMessagesThreads(users, entityType):
   addLabelIds = []
   removeLabelNames = []
   removeLabelIds = []
+  csvPF = None
+  entityHeader = 'id' if entityType == Ent.MESSAGE else 'threadId'
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if _getMessageSelectParameters(myarg, parameters):
@@ -67218,6 +67247,10 @@ def _processMessagesThreads(users, entityType):
       addLabelNames.append(getString(Cmd.OB_LABEL_NAME))
     elif (function == 'modify') and (myarg == 'removelabel'):
       removeLabelNames.append(getString(Cmd.OB_LABEL_NAME))
+    elif myarg == 'csv':
+      csvPF = CSVPrintFile(['User', entityHeader, 'action', 'error'])
+    elif csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
     else:
       unknownArgumentExit()
   _finalizeMessageSelectParameters(parameters, True)
@@ -67285,32 +67318,44 @@ def _processMessagesThreads(users, entityType):
         kwargs = {}
       _batchProcessMessagesThreads(service, function, user, jcount, messageIds, **kwargs)
     Ind.Decrement()
+  if csvPF:
+    csvPF.writeCSVfile(f'{Act.ToPerform()} Messages')
 
 # gam <UserTypeEntity> delete message|messages
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_delete <Number>])|(ids <MessageIDEntity>)
+#	[csv [todrive <ToDriveAttribute>*]]
 # gam <UserTypeEntity> modify message|messages
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_modify <Number>])|(ids <MessageIDEntity>)
 #	(addlabel <LabelName>)* (removelabel <LabelName>)*
+#	[csv [todrive <ToDriveAttribute>*]]
 # gam <UserTypeEntity> spam message|messages
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_spam <Number>])|(ids <MessageIDEntity>)
+#	[csv [todrive <ToDriveAttribute>*]]
 # gam <UserTypeEntity> trash message|messages
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_trash <Number>])|(ids <MessageIDEntity>)
+#	[csv [todrive <ToDriveAttribute>*]]
 # gam <UserTypeEntity> untrash message|messages
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_untrash <Number>])|(ids <MessageIDEntity>)
+#	[csv [todrive <ToDriveAttribute>*]]
 def processMessages(users):
   _processMessagesThreads(users, Ent.MESSAGE)
 
 # gam <UserTypeEntity> delete thread|threads
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_delete <Number>])|(ids <ThreadIDEntity>)
+#	[csv [todrive <ToDriveAttribute>*]]
 # gam <UserTypeEntity> modify thread|threads
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_modify <Number>])|(ids <ThreadIDEntity>)
 #	(addlabel <LabelName>)* (removelabel <LabelName>)*
+#	[csv [todrive <ToDriveAttribute>*]]
 # gam <UserTypeEntity> spam thread|threads
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_spam <Number>])|(ids <ThreadIDEntity>)
+#	[csv [todrive <ToDriveAttribute>*]]
 # gam <UserTypeEntity> trash thread|threads
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_trash <Number>])|(ids <MessageIDEntity>)
+#	[csv [todrive <ToDriveAttribute>*]]
 # gam <UserTypeEntity> untrash thread|threads
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_untrash <Number>])|(ids <ThreadIDEntity>)
+#	[csv [todrive <ToDriveAttribute>*]]
 def processThreads(users):
   _processMessagesThreads(users, Ent.THREAD)
 
@@ -67397,7 +67442,7 @@ def exportMessagesThreads(users, entityType):
         k += 1
         try:
           result = callGAPI(gmail.users().messages(), 'get',
-                            throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT],
+                            throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_MESSAGE_ID],
                             userId='me', id=messageId, format='raw')
           if targetName:
             msgName = targetName.replace('#id#', messageId)
@@ -67412,7 +67457,7 @@ def exportMessagesThreads(users, entityType):
         except (GAPI.serviceNotAvailable, GAPI.badRequest):
           entityServiceNotApplicableWarning(Ent.USER, user, i, count)
           break
-        except (GAPI.notFound, GAPI.invalidArgument) as e:
+        except (GAPI.notFound, GAPI.invalidMessageId) as e:
           entityActionFailedWarning([Ent.USER, user, Ent.MESSAGE, messageId], str(e), k, kcount)
           continue
       if entityType == Ent.THREAD:
@@ -67514,7 +67559,7 @@ def forwardMessagesThreads(users, entityType):
       if entityType == Ent.THREAD:
         try:
           result = callGAPI(gmail.users().threads(), 'get',
-                             throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT],
+                             throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_MESSAGE_ID],
                              userId='me', id=entityId, fields='messages(id)')
           messageIds = [message['id'] for message in result['messages']]
           kcount = len(messageIds)
@@ -67524,7 +67569,7 @@ def forwardMessagesThreads(users, entityType):
         except (GAPI.serviceNotAvailable, GAPI.badRequest):
           entityServiceNotApplicableWarning(Ent.USER, user, i, count)
           break
-        except (GAPI.notFound, GAPI.invalidArgument) as e:
+        except (GAPI.notFound, GAPI.invalidMessageId) as e:
           entityActionFailedWarning([Ent.USER, user, Ent.THREAD, entityId], str(e), j, jcount)
           continue
       else:
@@ -67535,7 +67580,7 @@ def forwardMessagesThreads(users, entityType):
         k += 1
         try:
           result = callGAPI(gmail.users().messages(), 'get',
-                            throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT],
+                            throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_MESSAGE_ID],
                             userId='me', id=messageId, format='raw')
           for encoding in encodings:
             try:
@@ -67573,7 +67618,7 @@ def forwardMessagesThreads(users, entityType):
         except (GAPI.serviceNotAvailable, GAPI.badRequest):
           entityServiceNotApplicableWarning(Ent.USER, user, i, count)
           break
-        except (GAPI.notFound, GAPI.invalidArgument) as e:
+        except (GAPI.notFound, GAPI.invalidMessageId) as e:
           entityActionFailedWarning([Ent.USER, user, Ent.MESSAGE, messageId], str(e), k, kcount)
           continue
       if entityType == Ent.THREAD:
