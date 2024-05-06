@@ -546,10 +546,6 @@ jobs:
           fi
           export gam="${gampath}/gam"
           echo "gampath=${gampath}" >> $GITHUB_ENV
-          if [[ "${RUNNER_OS}" == "Windows" ]]; then
-            export gam=$(cygpath -w "$gam")
-          fi
-          echo "gam=${gam}" >> $GITHUB_ENV
           echo -e "GAM: ${gam}\nGAMPATH: ${gampath}"
           # TEMP force everything back to one file.
           export PYINSTALLER_BUILD_ONEFILE="yes"
@@ -557,6 +553,17 @@ jobs:
           export gampath="${distpath}"
           "${PYTHON}" -m PyInstaller --clean --noconfirm --distpath="${distpath}" gam.spec
           cat build/gam/warn-gam.txt
+          if [ -x "$(command -v realpath)" ]; then
+               realpath=realpath
+             else
+               brew install coreutils
+               realpath=grealpath
+             fi
+          if [[ "${RUNNER_OS}" == "Windows" ]]; then
+            export gam=$(cygpath -w "$gam")
+          fi
+          export gam=$(realpath "$gam")
+          echo "gam=${gam}" >> $GITHUB_ENV
 
       - name: Copy extra package files
         if: matrix.goal == 'build'
