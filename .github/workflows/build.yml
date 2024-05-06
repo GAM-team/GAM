@@ -867,9 +867,9 @@ jobs:
         if: (github.event_name == 'push' || github.event_name == 'schedule') && matrix.goal == 'build'
         with:
           subject-path: |
-            gam*.tar.xz
-            gam*.zip
-            gam*.msi
+            src/gam*.tar.xz
+            src/gam*.zip
+            src/gam*.msi
 
       - name: Archive production artifacts
         uses: actions/upload-artifact@v4
@@ -877,9 +877,9 @@ jobs:
         with:
           name: gam-binaries-${{ env.GAMOS }}-${{ env.arch }}-${{ matrix.jid }}
           path: |
-            src/*.tar.xz
-            src/*.zip
-            src/*.msi
+            src/gam*.tar.xz
+            src/gam*.zip
+            src/gam*.msi
 
   merge:
     if: (github.event_name == 'push' || github.event_name == 'schedule')
@@ -894,11 +894,6 @@ jobs:
         with:
           name: gam-binaries
           pattern: gam-binaries-*
-
-#      - name: Delete Artifacts
-#        uses: geekyeggo/delete-artifact@v4
-#        with:
-#          name: gam-binaries-*
 
   publish:
     if: github.event_name == 'push'
