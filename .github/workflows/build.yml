@@ -547,7 +547,7 @@ jobs:
           export gam="${gampath}/gam"
           echo "gampath=${gampath}" >> $GITHUB_ENV
           if [[ "${RUNNER_OS}" == "Windows" ]]; then
-            gam=$(cygpath -w "$gam")
+            export gam=$(cygpath -w "$gam")
           fi
           echo "gam=${gam}" >> $GITHUB_ENV
           echo -e "GAM: ${gam}\nGAMPATH: ${gampath}"
