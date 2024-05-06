@@ -9,6 +9,7 @@ on:
 permissions:
   contents: read
   id-token: write
+  attestations: write
 
 defaults:
   run:
@@ -546,6 +547,9 @@ jobs:
           export gam="${gampath}/gam"
           echo "gampath=${gampath}" >> $GITHUB_ENV
           echo "gam=${gam}" >> $GITHUB_ENV
+          if [[ "${RUNNER_OS}" == "Windows" ]]; then
+               gam=$(cygpath -w "$gam")
+             fi
           echo -e "GAM: ${gam}\nGAMPATH: ${gampath}"
           # TEMP force everything back to one file.
           export PYINSTALLER_BUILD_ONEFILE="yes"
@@ -595,6 +599,12 @@ jobs:
           export GAMVERSION=$($gam version simple)
           echo "GAM Version ${GAMVERSION}"
           echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
+
+      - name: Attest Binary Provenance
+        uses: actions/attest-build-provenance@v1
+        if: matrix.goal == 'build'
+        with:
+          subject-path: ${{ env.gam }}
 
       - name: Linux/MacOS package
         if: runner.os != 'Windows' && matrix.goal == 'build'
@@ -851,6 +861,15 @@ jobs:
             tar_folders="bin/"
           fi
           tar cJvvf cache.tar.xz $tar_folders
+
+      - name: Attest Build Archive Provenance
+        uses: actions/attest-build-provenance@v1
+        if: (github.event_name == 'push' || github.event_name == 'schedule') && matrix.goal == 'build'
+        with:
+          subject-path: |
+            gam*.tar.xz
+            gam*.zip
+            gam*.msi
 
       - name: Archive production artifacts
         uses: actions/upload-artifact@v4
