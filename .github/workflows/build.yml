@@ -558,11 +558,11 @@ jobs:
                brew install coreutils
                realpath=grealpath
              fi
+          export gam=$(realpath "$gam")
           if [[ "${RUNNER_OS}" == "Windows" ]]; then
             export gam=$(cygpath -w "$gam")
             echo "GAM on Windows at ${gam}"
           fi
-          export gam=$(realpath "$gam")
           echo "gam=${gam}" >> $GITHUB_ENV
           echo -e "GAM: ${gam}\nGAMPATH: ${gampath}"
 
