@@ -1338,10 +1338,16 @@ gam create project [admin <EmailAddress>] [project <ProjectID>]
         [projectname <ProjectName>] [parent <String>]
         [saname <ServiceAccountName>] [sadisplayname <ServiceAccountDisplayName>]
         [sadescription <ServiceAccountDescription>]
+        [(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
+         (localkeysize 1024|2048|4096 [validityhours <Number>])|
+         (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)]
 gam use project [<EmailAddress>] [<ProjectID>]
 gam use project [admin <EmailAddress>] [project <ProjectID>]
         [saname <ServiceAccountName>] [sadisplayname <ServiceAccountDisplayName>]
         [sadescription <ServiceAccountDescription>]
+        [(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
+         (localkeysize 1024|2048|4096 [validityhours <Number>])|
+         (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)]
 gam update project [[admin] <EmailAddress>] [<ProjectIDEntity>]
 gam delete project [[admin] <EmailAddress>] [<ProjectIDEntity>]
 gam show projects [[admin] <EmailAddress>] [all|<ProjectIDEntity>]
@@ -1354,6 +1360,9 @@ gam info currentprojectid
 gam create|add svcacct [[admin] <EmailAddress>] [<ProjectIDEntity>]
         [saname <ServiceAccountName>] [sadisplayname <ServiceAccountDisplayName>]
         [sadescription <ServiceAccountDescription>]
+        [(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
+         (localkeysize 1024|2048|4096 [validityhours <Number>])|
+         (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)]
 gam delete svcacct [[admin] <EmailAddress>] [<ProjectIDEntity>]
         (saemail <ServiceAccountEmail>)|(saname <ServiceAccountName>)|(sauniqueid <ServiceAccountUniqueID>)
 gam check svcacct <UserTypeEntity> (scope|scopes <APIScopeURLList>)*
@@ -1367,51 +1376,35 @@ gam print svcaccts [[admin] <EmailAddress>] [all|<ProjectIDEntity>]
 
 gam create sakey
         (algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
-        ((localkeysize 1024|2048|4096 [validityhours <Number>])|
-        (localkeysize 1024|2048|4096)|
-        (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE
-         yubikey_serialnumber <Number>
-         [localkeysize 1024|2048|4096])
+        (localkeysize 1024|2048|4096 [validityhours <Number>])|
+        (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)
 gam rotate sakey|sakeys retain_existing
         (algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
-        ((localkeysize 1024|2048|4096 [validityhours <Number>])|
-        (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE
-         yubikey_serialnumber <Number>
-         [localkeysize 1024|2048|4096])
+        (localkeysize 1024|2048|4096 [validityhours <Number>])|
+        (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)
 
 gam update sakey
         (algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
-        ((localkeysize 1024|2048|4096 [validityhours <Number>])|
-        (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE
-         yubikey_serialnumber <Number>
-         [localkeysize 1024|2048|4096])
+        (localkeysize 1024|2048|4096 [validityhours <Number>])|
+        (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)
 gam rotate sakey|sakeys replace_current
         (algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
-        ((localkeysize 1024|2048|4096 [validityhours <Number>])|
-        (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE
-         yubikey_serialnumber <Number>
-         [localkeysize 1024|2048|4096])
+        (localkeysize 1024|2048|4096 [validityhours <Number>])|
+        (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)
 
 gam replace sakeys
         (algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
-        ((localkeysize 1024|2048|4096 [validityhours <Number>])|
-        (localkeysize 1024|2048|4096)|
-        (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE
-         yubikey_serialnumber <Number>
-         [localkeysize 1024|2048|4096])
+        (localkeysize 1024|2048|4096 [validityhours <Number>])|
+        (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)
 gam rotate sakey|sakeys retain_none
         (algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
-        ((localkeysize 1024|2048|4096 [validityhours <Number>])|
-        (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE
-         yubikey_serialnumber <Number>
-         [localkeysize 1024|2048|4096])
+        (localkeysize 1024|2048|4096 [validityhours <Number>])|
+        (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)
 
 gam upload sakey [admin <EmailAddress>]
         (algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
-        ((localkeysize 1024|2048|4096 [validityhours <Number>])|
-        (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE
-         yubikey_serialnumber <Number>
-         [localkeysize 1024|2048|4096])
+        (localkeysize 1024|2048|4096 [validityhours <Number>])|
+        (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)
 
 gam delete sakeys <ServiceAccountKeyList>+ [doit]
 gam show sakeys [all|system|user]

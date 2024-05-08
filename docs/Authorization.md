@@ -315,6 +315,9 @@ gam create project [admin <EmailAddress>] [project <ProjectID>]
         [projectname <ProjectName>] [parent <String>]
         [saname <ServiceAccountName>] [sadisplayname <ServiceAccountDisplayName>]
         [sadescription <ServiceAccountDescription>]
+        [(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
+         (localkeysize 1024|2048|4096 [validityhours <Number>])|
+         (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)]
 ```
 * `admin <EmailAddress>` - Google Workspace admin/GCP project manager; if omitted, you will be prompted for the address
 * `appname <String>` - Application name, defaults to `GAM`
@@ -325,6 +328,8 @@ gam create project [admin <EmailAddress>] [project <ProjectID>]
 * `saname <ServiceAccountName>` - Service account name; combined with `<ProjectID>` to form `<ServiceAccountEmail>`
 * `sadisplayname <ServiceAccountDisplayName>` - Service account display name
 * `sadescription <ServiceAccountDescription>` - Service account description
+
+You can optionally specify the type of service account key with `algorithm|localkeysize|yubikey`: [Manage Service Account keys](#manage-service-account-keys)
 
 ## Use an existing project for GAM authorization
 Use an existing project to create and download two files: `client_secrets.json` for the Client and `oauth2service.json` for the Service Account.
@@ -351,12 +356,17 @@ can not be re-downloaded.
 gam use project [admin <EmailAddress>] [project <ProjectID>]
         [saname <ServiceAccountName>] [sadisplayname <ServiceAccountDisplayName>]
         [sadescription <ServiceAccountDescription>]
+        [(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
+         (localkeysize 1024|2048|4096 [validityhours <Number>])|
+         (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)]
 ```
 * `admin <EmailAddress>` - Google Workspace admin/GCP project manager; if omitted, you will be prompted for the address
 * `project <ProjectID>` - An existing Google project ID; if omitted, you will be prompted for the ID
 * `saname <ServiceAccountName>` - Service account name; combined with `<ProjectID>` to form `<ServiceAccountEmail>`
 * `sadisplayname <ServiceAccountDisplayName>` - Service account display name
 * `sadescription <ServiceAccountDescription>` - Service account description
+
+You can optionally specify the type of service account key with `algorithm|localkeysize|yubikey`: [Manage Service Account keys](#manage-service-account-keys)
 
 ## Update an existing project for GAM authorization
 This command is used when GAM has added new capabilities that require additional APIs to be added to your project.
@@ -695,6 +705,9 @@ file or define a new section in `gam.cfg` that references a different `oauth2ser
 gam create|add svcacct [[admin] <EmailAddress>] [<ProjectIDEntity>]
         [saname <ServiceAccountName>] [sadisplayname <ServiceAccountDisplayName>]
         [sadescription <ServiceAccountDescription>]
+        [(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
+         (localkeysize 1024|2048|4096 [validityhours <Number>])|
+         (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)]
 ```
 * `<EmailAddress>` - Google Workspace admin/GCP project manager; if omitted, you will be prompted for the address
 
@@ -708,6 +721,8 @@ Use these options to select user-specified values..
 * `saname <ServiceAccountName>` - Service account name; combined with `<ProjectID>` to form `<ServiceAccountEmail>`
 * `sadisplayname <ServiceAccountDisplayName>` - Service account display name
 * `sadescription <ServiceAccountDescription>` - Service account description
+
+You can optionally specify the type of service account key with `algorithm|localkeysize|yubikey`: [Manage Service Account keys](#manage-service-account-keys)
 
 After adding an additional service account, you can select specific access APIs for it.
 [Selective Service Account access](#selective-service-account-access)
@@ -765,6 +780,7 @@ There are several methods for generating private keys:
 * `localkeysize 1024` - Gam generates a 1024 bit key; this is not recommended
 * `localkeysize 2048` - Gam generates a 2048 bit key; this is the default
 * `localkeysize 4096` - Gam generates a 4096 bit key
+* `yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)]` - [Using GAMADV-XTD3 with a YubiKey](Using-GAMADV-XTD3-with-a-YubiKey)
 
 When `localkeysize` is specified, the optional argument `validityhours <Number>` sets the length of time during which the key will be valid and should be used when the [GCP constraints/iam.serviceAccountKeyExpiryHours organization policy](https://cloud.google.com/resource-manager/docs/organization-policy/restricting-service-accounts#limit_key_expiry) is in use. Note that in order to account for system clock skew, GAM sets the key to be valid two minutes earlier than the current system time and thus it will also expire two minutes earlier.
 
@@ -790,16 +806,12 @@ The two forms of the command are equivalent; the second form is used by Basic Ga
 ```
 gam create sakey
         (algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
-        ((localkeysize 1024|2048|4096 [validityhours <Number>])|
-        (yubikey yubikey_pin yubikey_slot AUTHENTICATION 
-         yubikey_serialnumber <Number>
-         [localkeysize 1024|2048|4096])
+        (localkeysize 1024|2048|4096 [validityhours <Number>])|
+        (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)
 gam rotate sakey retain_existing
         (algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
-        ((localkeysize 1024|2048|4096 [validityhours <Number>])|
-        (yubikey yubikey_pin yubikey_slot AUTHENTICATION 
-         yubikey_serialnumber <Number>
-         [localkeysize 1024|2048|4096])
+        (localkeysize 1024|2048|4096 [validityhours <Number>])|
+        (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)
 ```
 To distribute `oauth2service.json` files with unique private keys perform the following steps:
 ```
@@ -820,16 +832,12 @@ The two forms of the command are equivalent; the second form is used by Basic Ga
 ```
 gam update sakey
         (algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
-        ((localkeysize 1024|2048|4096 [validityhours <Number>])|
-        (yubikey yubikey_pin yubikey_slot AUTHENTICATION 
-         yubikey_serialnumber <Number>
-         [localkeysize 1024|2048|4096])
+        (localkeysize 1024|2048|4096 [validityhours <Number>])|
+        (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)
 gam rotate sakey replace_existing
         (algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
-        ((localkeysize 1024|2048|4096 [validityhours <Number>])|
-        (yubikey yubikey_pin yubikey_slot AUTHENTICATION 
-         yubikey_serialnumber <Number>
-         [localkeysize 1024|2048|4096])
+        (localkeysize 1024|2048|4096 [validityhours <Number>])|
+        (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)
 ```
 ## Replace all existing Service Account keys
 Create a new Service Account private key; all existing private keys are revoked.
@@ -843,16 +851,12 @@ The two forms of the command are equivalent; the second form is used by Basic Ga
 ```
 gam replace sakeys
         (algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
-        ((localkeysize 1024|2048|4096 [validityhours <Number>])|
-        (yubikey yubikey_pin yubikey_slot AUTHENTICATION 
-         yubikey_serialnumber <Number>
-         [localkeysize 1024|2048|4096])
+        (localkeysize 1024|2048|4096 [validityhours <Number>])|
+        (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)
 gam rotate sakeys retain_none
         (algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
-        ((localkeysize 1024|2048|4096 [validityhours <Number>])|
-        (yubikey yubikey_pin yubikey_slot AUTHENTICATION 
-         yubikey_serialnumber <Number>
-         [localkeysize 1024|2048|4096])
+        (localkeysize 1024|2048|4096 [validityhours <Number>])|
+        (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)
 ```
 ## Delete Service Account keys
 You can delete Service Accounts keys thus revoking access for that key. Generally, you will
@@ -875,10 +879,8 @@ any `oauth2service.json` file to other users, you must redistribute the updated 
 ```
 gam upload sakey [admin <EmailAddress>]
         (algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
-        ((localkeysize 1024|2048|4096 [validityhours <Number>])|
-        (yubikey yubikey_pin yubikey_slot AUTHENTICATION 
-         yubikey_serialnumber <Number>
-         [localkeysize 1024|2048|4096])
+        (localkeysize 1024|2048|4096 [validityhours <Number>])|
+        (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)
 ```
 ## Display Service Account keys
 There are system keys and user keys; user keys are what Gam uses; GCP uses system keys.

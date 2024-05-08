@@ -10,6 +10,16 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.76.00
+
+Updated versions of `gam create|use project` that use keyword options to also accept the following options
+to define non-default Service Account key characteristics.
+```
+(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
+(localkeysize 1024|2048|4096 [validityhours <Number>])|
+(yubikey yubikey_pin yubikey_slot AUTHENTICATION yubikey_serialnumber <String>)
+```
+
 ### 6.75.05
 
 Added option `csv [todrive <ToDriveAttribute>*]` to `gam <UserTypeEntity> archive|delete|modify|spam|trash|untrash messages|threads`

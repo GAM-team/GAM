@@ -367,6 +367,17 @@ Messages are archived to the group specified by `<GroupItem>`.
 
 By default, the command results are displayed as indented keys and values. Use the `csv` option
 to display the command results in CSV form.
+```
+$ gam user user@domain.com archive messages ids 18e9fc6581b9acab,18e9fc58c5491f4c    
+User: user@domain.com, Archive 2 Messages
+  User: user@domain.com, Message: 18e9fc6581b9acab, Archived (1/2)
+  User: user@domain.com, Message: 18e9fc58c5491f4c, Archived (2/2)
+$ gam user user@domain.com archive messages ids 18e9fc6581b9acab,18e9fc58c5491f4c csv
+User: user@domain.com, Archive 2 Messages
+User,id,action,error
+user@domain.com,18e9fc6581b9acab,Archived,
+user@domain.com,18e9fc58c5491f4c,Archived,
+```
 
 See below for message selection.
 
@@ -447,6 +458,17 @@ gam <UserTypeEntity> untrash messages|threads
 
 By default, the command results are displayed as indented keys and values. Use the `csv` option
 to display the command results in CSV form.
+```
+$ gam user user@domain.com delete messages ids 18e9fc6581b9acab,18e9fc58c5491f4c    
+User: user@domain.com, Delete 2 Messages
+  User: user@domain.com, Message: 18e9fc6581b9acab, Deleted (1/2)
+  User: user@domain.com, Message: 18e9fc58c5491f4c, Deleted (2/2)
+$ gam user user@domain.com delete messages ids 18e9fc6581b9acab,18e9fc58c5491f4c csv
+User: user@domain.com, Delete 2 Messages
+User,id,action,error
+user@domain.com,18e9fc6581b9acab,Deleted,
+user@domain.com,18e9fc58c5491f4c,Deleted,
+```
 
 ### Manage a specific set of messages
 * `ids <MessageIDEntity>` - A list of message ids

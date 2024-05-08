@@ -11377,7 +11377,9 @@ def _getLoginHintProjectInfo(createCmd):
   appInfo = {'applicationTitle': '', 'supportEmail': ''}
   projectInfo = {'projectId': '', 'parent': '', 'name': ''}
   svcAcctInfo = {'name': '', 'displayName': '', 'description': ''}
-  if not Cmd.PeekArgumentPresent(['admin', 'appname', 'supportemail', 'project', 'parent', 'projectname', 'saname', 'sadisplayname', 'sadescription']):
+  if not Cmd.PeekArgumentPresent(['admin', 'appname', 'supportemail', 'project', 'parent',
+                                  'projectname', 'saname', 'sadisplayname', 'sadescription',
+                                  'algorithm', 'localkeysize', 'yubikey']):
     login_hint = getString(Cmd.OB_EMAIL_ADDRESS, optional=True)
     if login_hint and login_hint.find('@') == -1:
       Cmd.Backup()
@@ -11403,6 +11405,9 @@ def _getLoginHintProjectInfo(createCmd):
         pass
       elif createCmd and _getAppInfo(myarg, appInfo):
         pass
+      elif myarg in {'algorithm', 'localkeysize', 'yubikey'}:
+        Cmd.Backup()
+        break
       else:
         unknownArgumentExit()
   if not projectInfo['projectId']:
@@ -11589,6 +11594,9 @@ def doCreateGCPFolder():
 #	[appname <String>] [supportemail <EmailAddress>]
 #	[projectname <ProjectName>] [parent <String>]
 #	[saname <ServiceAccountName>] [sadisplayname <ServiceAccountDisplayName>] [sadescription <ServiceAccountDescription>]
+#	[(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
+#	 (localkeysize 1024|2048|4096 [validityhours <Number>])|
+#	 (yubikey yubikey_pin yubikey_slot AUTHENTICATION yubikey_serialnumber <String>)]
 def doCreateProject():
   _checkForExistingProjectFiles([GC.Values[GC.OAUTH2SERVICE_JSON], GC.Values[GC.CLIENT_SECRETS_JSON]])
   sys.stdout.write(Msg.TRUST_GAM_CLIENT_ID.format(GAM_PROJECT_CREATION, GAM_PROJECT_CREATION_CLIENT_ID))
@@ -11683,6 +11691,9 @@ def doCreateProject():
 # gam use project [<EmailAddress>] [<ProjectID>]
 # gam use project [admin <EmailAddress>] [project <ProjectID>]
 #	[saname <ServiceAccountName>] [sadisplayname <ServiceAccountDisplayName>] [sadescription <ServiceAccountDescription>]
+#	[(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
+#	 (localkeysize 1024|2048|4096 [validityhours <Number>])|
+#	 (yubikey yubikey_pin yubikey_slot AUTHENTICATION yubikey_serialnumber <String>)]
 def doUseProject():
   _checkForExistingProjectFiles([GC.Values[GC.OAUTH2SERVICE_JSON], GC.Values[GC.CLIENT_SECRETS_JSON]])
   _, httpObj, login_hint, _, projectInfo, svcAcctInfo = _getLoginHintProjectInfo(False)
@@ -11887,6 +11898,9 @@ def doInfoCurrentProjectId():
 
 # gam create svcacct [[admin] <EmailAddress>] [<ProjectIDEntity>]
 #	[saname <ServiceAccountName>] [sadisplayname <ServiceAccountDisplayName>] [sadescription <ServiceAccountDescription>]
+#	[(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
+#	 (localkeysize 1024|2048|4096 [validityhours <Number>])|
+#	 (yubikey yubikey_pin yubikey_slot AUTHENTICATION yubikey_serialnumber <String>)]
 def doCreateSvcAcct():
   _checkForExistingProjectFiles([GC.Values[GC.OAUTH2SERVICE_JSON]])
   _, httpObj, login_hint, projects = _getLoginHintProjects(createSvcAcctCmd=True)
@@ -12344,7 +12358,29 @@ def _formatOAuth2ServiceData(service_data):
   GM.Globals[GM.OAUTH2SERVICE_JSON_DATA] = service_data.copy()
   return json.dumps(GM.Globals[GM.OAUTH2SERVICE_JSON_DATA], indent=2, sort_keys=True)
 
-def doProcessSvcAcctKeys(mode=None, iam=None, projectId=None, clientEmail=None, clientId=None):
+def doProcessSvcAcctKeys(mode, iam=None, projectId=None, clientEmail=None, clientId=None):
+  def getSAKeyParms(body, new_data):
+    nonlocal local_key_size, validityHours
+    while Cmd.ArgumentsRemaining():
+      myarg = getArgument()
+      if myarg == 'algorithm':
+        body['keyAlgorithm'] = getChoice(["key_alg_rsa_1024", "key_alg_rsa_2048"]).upper()
+        local_key_size = 0
+      elif myarg == 'localkeysize':
+        local_key_size = int(getChoice(['1024', '2048', '4096']))
+      elif myarg == 'yubikey':
+        new_data['key_type'] = 'yubikey'
+      elif myarg == 'yubikeyslot':
+        new_data['yubikey_slot'] = getString(Cmd.OB_STRING).upper()
+      elif myarg == 'yubikeypin':
+        new_data['yubikey_pin'] = readStdin('Enter your YubiKey PIN: ')
+      elif myarg == 'yubikeyserialnumber':
+        new_data['yubikey_serial_number'] = getInteger()
+      elif myarg == 'validityhours':
+        validityHours = getInteger()
+      else:
+        unknownArgumentExit()
+    
   def waitForCompletion(i):
     sleep_time = i*5
     if i > 3:
@@ -12363,29 +12399,7 @@ def doProcessSvcAcctKeys(mode=None, iam=None, projectId=None, clientEmail=None, 
     new_data = dict(GM.Globals[GM.OAUTH2SERVICE_JSON_DATA])
     # assume default key type unless we are told otherwise
     new_data['key_type'] = 'default'
-    while Cmd.ArgumentsRemaining():
-      myarg = getArgument()
-      if myarg == 'algorithm':
-        body['keyAlgorithm'] = getChoice(["key_alg_rsa_1024", "key_alg_rsa_2048"]).upper()
-        local_key_size = 0
-      elif myarg == 'localkeysize':
-        local_key_size = int(getChoice(['1024', '2048', '4096']))
-      elif myarg == 'yubikey':
-        new_data['key_type'] = 'yubikey'
-      elif myarg == 'yubikeyslot':
-        new_data['yubikey_slot'] = getString(Cmd.OB_STRING).upper()
-      elif myarg == 'yubikeypin':
-        new_data['yubikey_pin'] = readStdin('Enter your YubiKey PIN: ')
-      elif myarg == 'yubikeyserialnumber':
-        new_data['yubikey_serial_number'] = getInteger()
-      elif myarg == 'validityhours':
-        validityHours = getInteger()
-      elif mode is None and myarg in ['retainnone', 'retainexisting', 'replacecurrent']:
-        mode = myarg
-      else:
-        unknownArgumentExit()
-    if mode is None:
-      mode = 'retainnone'
+    getSAKeyParms(body, new_data)
   else:
     new_data = {
       'client_email': clientEmail,
@@ -12393,6 +12407,7 @@ def doProcessSvcAcctKeys(mode=None, iam=None, projectId=None, clientEmail=None, 
       'client_id': clientId,
       'key_type': 'default'
     }
+    getSAKeyParms(body, new_data)
   name = f'projects/{projectId}/serviceAccounts/{clientId}'
   if mode != 'retainexisting':
     try:
@@ -12527,41 +12542,31 @@ def doProcessSvcAcctKeys(mode=None, iam=None, projectId=None, clientEmail=None, 
 # gam create sakey|sakeys
 # gam rotate sakey|sakeys retain_existing
 #	(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
-#	((localkeysize 1024|2048|4096 [validityhours <Number>])|
-#	(yubikey yubikey_pin yubikey_slot AUTHENTICATION
-#	 yubikey_serialnumber <String>
-#	 [localkeysize 1024|2048|4096])
-#	[(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|(localkeysize 1024|2048|4096)]
+#	(localkeysize 1024|2048|4096 [validityhours <Number>])|
+#	(yubikey yubikey_pin yubikey_slot AUTHENTICATION yubikey_serialnumber <String>)
 def doCreateSvcAcctKeys():
   doProcessSvcAcctKeys(mode='retainexisting')
 
 # gam update sakey|sakeys
 # gam rotate sakey|sakeys replace_current
 #	(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
-#	((localkeysize 1024|2048|4096 [validityhours <Number>])|
-#	(yubikey yubikey_pin yubikey_slot AUTHENTICATION
-#	 yubikey_serialnumber <String>
-#	 [localkeysize 1024|2048|4096])
-#	[(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|(localkeysize 1024|2048|4096)]
+#	(localkeysize 1024|2048|4096 [validityhours <Number>])|
+#	(yubikey yubikey_pin yubikey_slot AUTHENTICATION yubikey_serialnumber <String>)
 def doUpdateSvcAcctKeys():
   doProcessSvcAcctKeys(mode='replacecurrent')
 
 # gam replace sakey|sakeys
 # gam rotate sakey|sakeys retain_none
 #	(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
-#	((localkeysize 1024|2048|4096 [validityhours <Number>])|
-#	(yubikey yubikey_pin yubikey_slot AUTHENTICATION
-#	 yubikey_serialnumber <String>
-#	 [localkeysize 1024|2048|4096])
+#	(localkeysize 1024|2048|4096 [validityhours <Number>])|
+#	(yubikey yubikey_pin yubikey_slot AUTHENTICATION yubikey_serialnumber <String>)
 def doReplaceSvcAcctKeys():
   doProcessSvcAcctKeys(mode='retainnone')
 
 # gam upload sakey|sakeys [admin <EmailAddress>]
 #	(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
-#	((localkeysize 1024|2048|4096 [validityhours <Number>])|
-#	(yubikey yubikey_pin yubikey_slot AUTHENTICATION
-#	 yubikey_serialnumber <String>
-#	 [localkeysize 1024|2048|4096])
+#	(localkeysize 1024|2048|4096 [validityhours <Number>])|
+#	(yubikey yubikey_pin yubikey_slot AUTHENTICATION yubikey_serialnumber <String>)
 def doUploadSvcAcctKeys():
   login_hint = getEmailAddress(noUid=True) if checkArgumentPresent(['admin']) else None
   httpObj, _ = getCRMService(login_hint)
