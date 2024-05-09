@@ -5097,7 +5097,7 @@ gam show vaultexports|exports
         [fields <VaultExportFieldNameList>] [shownames]
         [formatjson]
 
-gam create vaulthold|hold matter <MatterItem> [name <String>] corpus drive|mail|groups|hangouts_chat
+gam create vaulthold|hold matter <MatterItem> [name <String>] corpus calendar|drive|mail|groups|hangouts_chat|voice
         [(accounts|groups|users <EmailItemList>) | (orgunit|org|ou <OrgUnit>)]
         [query <QueryVaultCorpus>]
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]

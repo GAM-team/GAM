@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.76.01
+
+Fixed bug in `gam create vaulthold matter <MatterItem> ... corpus calendar` that caused a trap.
+
 ### 6.76.00
 
 Updated versions of `gam create|use project` that use keyword options to also accept the following options

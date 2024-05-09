@@ -38446,6 +38446,7 @@ VAULT_CORPUS_OPTIONS_MAP = {
   'VOICE': 'voiceOptions',
   }
 VAULT_CORPUS_QUERY_MAP = {
+  'CALENDAR': None,
   'DRIVE': 'driveQuery',
   'MAIL': 'mailQuery',
   'GROUPS': 'groupsQuery',
@@ -39103,6 +39104,8 @@ def _getHoldQueryParameters(myarg, queryParameters):
 
 def _setHoldQuery(body, queryParameters):
   queryType = VAULT_CORPUS_QUERY_MAP[body['corpus']]
+  if queryType is None:
+    return
   body['query'] = {queryType: {}}
   if body['corpus'] == 'DRIVE':
     if queryParameters.get('query'):

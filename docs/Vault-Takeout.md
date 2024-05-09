@@ -546,7 +546,7 @@ The `shownames` argument controls whether account and org unit names are display
 ## Vault Holds
 ## Create Vault Holds
 ```
-gam create vaulthold|hold matter <MatterItem> [name <String>] corpus drive|mail|groups|hangouts_chat
+gam create vaulthold|hold matter <MatterItem> [name <String>] corpus calendar|drive|mail|groups|hangouts_chat|voice
         [(accounts|groups|users <EmailItemList>) | (orgunit|org|ou <OrgUnit>)]
         [query <QueryVaultCorpus>]
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
@@ -560,10 +560,12 @@ Specify the name of the hold:
 * `default` - The hold will be named `GAM <corpus> Hold - <Time>`
 
 Specify the corpus of data, this option is required:
+* `calendar`
 * `drive`
 * `mail`
 * `groups`
 * `hangouts_chat`
+* `voice`
 
 Specify the search method, this option is required:
 * `accounts|groups|users <EmailAddressEntity>` - Search all accounts specified in `<EmailAddressEntity>`
