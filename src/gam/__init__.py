@@ -5496,7 +5496,7 @@ def buildGAPIObject(api, credentials=None):
 def getSaUser(user):
   currentClientAPI = GM.Globals[GM.CURRENT_CLIENT_API]
   currentClientAPIScopes = GM.Globals[GM.CURRENT_CLIENT_API_SCOPES]
-  userEmail = convertUIDtoEmailAddress(user) if user else ''
+  userEmail = convertUIDtoEmailAddress(user) if user else None 
   GM.Globals[GM.CURRENT_CLIENT_API] = currentClientAPI
   GM.Globals[GM.CURRENT_CLIENT_API_SCOPES] = currentClientAPIScopes
   return userEmail
