@@ -1,5 +1,6 @@
  Groups - Membership
 - [API documentation](#api-documentation)
+- [Query documentation](#query-documentation)
 - [Python Regular Expressions](Python-Regular-Expressions) Match function
 - [Definitions](#definitions)
 - [Collections of Users](#collections-of-users)
@@ -17,6 +18,10 @@
 
 ## API documentation
 * https://developers.google.com/admin-sdk/directory/v1/reference/members
+
+## Query documentation
+* https://developers.google.com/admin-sdk/directory/v1/guides/search-groups
+* https://cloud.google.com/identity/docs/reference/rest/v1/groups#dynamicgroupquery
 
 ## Definitions
 See [Collections of Items](Collections-of-Items)

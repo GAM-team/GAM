@@ -23,7 +23,7 @@ gam update project
 ```
 
 ## API documentation
-* https://cloud.google.com/access-context-manager/docs/reference/rest/v1/accessPolicies/list
+* https://cloud.google.com/access-context-manager/docs/reference/rest/v1/accessPolicies
 
 ## Grant Service Account Rights to Manage CAA
 In order for GAM to manage CAA access levels, you need to grant your service account a special role for your GCP organization.

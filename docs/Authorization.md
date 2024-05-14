@@ -340,8 +340,8 @@ Use an existing project to create and download two files: `client_secrets.json` 
 * `<ServiceAccountDescription>` - `<ServiceAccountDisplayName>`
 
 ### Basic
-Use an existing project with default values for the service account. This is typically used when
-the system administrators have created a basic project and you now want to configure it as a GAM project.
+Use an existing uninitialized/uncredentialed project and configure it to be a GAM project; this typically used when
+the GCP  administrators have created a basic project because project creation is not available for most users.
 ```
 gam use project [<EmailAddress>] [project <ProjectID>]
 ```

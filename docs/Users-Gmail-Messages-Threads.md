@@ -556,6 +556,7 @@ By default, Gam displays all messages.
   * `labelmatchpattern xyz` - Label must start with xyz
   * `labelmatchpattern .*xyz.*` - Label must contain xyz
   * `labelmatchpattern .*xyz` - Label must end with xyz
+  * `labelmatchpattern ^xyz$` - Label must extctly match xyz
 * `sendermatchpattern <RegularExpression>` - Only display messages if the sender matches the `<RegularExpression>`
 
 When `matchlabel <LabelName>` is specified, the following characters are replaced with a `-` in the generated query.

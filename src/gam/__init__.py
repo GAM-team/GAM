@@ -672,7 +672,7 @@ def SvcAcctAPIAccessDeniedExit():
   apiOrScopes = API.getAPIName(GM.Globals[GM.CURRENT_SVCACCT_API]) if GM.Globals[GM.CURRENT_SVCACCT_API] else ','.join(sorted(GM.Globals[GM.CURRENT_SVCACCT_API_SCOPES]))
   writeStderr(Msg.API_CHECK_SVCACCT_AUTHORIZATION.format(GM.Globals[GM.OAUTH2SERVICE_CLIENT_ID],
                                                          apiOrScopes,
-                                                         GM.Globals[GM.CURRENT_SVCACCT_USER] or 'user@domain.com'))
+                                                         GM.Globals[GM.CURRENT_SVCACCT_USER] or _getAdminEmail()))
   systemErrorExit(API_ACCESS_DENIED_RC, None)
 
 def SvcAcctAPIDisabledExit():

@@ -89,13 +89,16 @@ Name:value form.
 * If `<FieldNameFilter>` contains a `:` or a space, it should be enclosed in `\"`.
 * If `<RegularExpression>` or `<DataSelector>` in `<RowValueFilter>` contain a space, it should be enclosed in `\"`.
 * If `<FieldNameFilter>` or `<RegularExpression>` in `<RowValueFilter>` contain a `\` to escape a special character
-or enter a special sequence, enter `\\\`.
+or enter a special sequence, enter `\\\` on Linux and Mac OS, `\\` on Windows,
 
-Example:
+Examples:
 ```
 csv_output_row_filter "'\"accounts:used_quota_in_mb\":count>15000'"
 csv_output_row_filter "'email:data:\"csvfile gsheet:email user@domain.com FileID Sheet1\"'"
+Linux and Mac OS
 csv_output_row_filter "'phones.\\\d+.value:regex:(?:^\\\(510\\\) )|(?:^510[- ])\\\d{3}-\\\d{4}'"
+Windows
+csv_output_row_filter "'phones.\\d+.value:regex:(?:^\\(510\\) )|(?:^510[- ])\\d{3}-\\d{4}'"
 ```
 JSON form.
 ```

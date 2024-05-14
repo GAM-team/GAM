@@ -9,7 +9,7 @@ Scroll down to Install Git
 
 You can install GAM as a Python library with pip.
 ```
-pip install git+https://github.com/taers232c/GAMADV-XTD3.git#subdirectory=src --use-pep517
+pip install git+https://github.com/taers232c/GAMADV-XTD3.git#subdirectory=src
 ```
 
 Or as a PEP 508 Requirement Specifier, e.g. in requirements.txt file:
@@ -29,7 +29,7 @@ dependencies = [
 
 Target a specific revision or tag:
 ```
-advanced-gam-for-google-workspace @ git+https://github.com/taers232c/GAMADV-XTD3.git@v6.58.00#subdirectory=src
+advanced-gam-for-google-workspace @ git+https://github.com/taers232c/GAMADV-XTD3.git@v6.76.01#subdirectory=src
 ```
 
 ## Using the library
