@@ -672,7 +672,7 @@ def SvcAcctAPIAccessDeniedExit():
   apiOrScopes = API.getAPIName(GM.Globals[GM.CURRENT_SVCACCT_API]) if GM.Globals[GM.CURRENT_SVCACCT_API] else ','.join(sorted(GM.Globals[GM.CURRENT_SVCACCT_API_SCOPES]))
   writeStderr(Msg.API_CHECK_SVCACCT_AUTHORIZATION.format(GM.Globals[GM.OAUTH2SERVICE_CLIENT_ID],
                                                          apiOrScopes,
-                                                         GM.Globals[GM.CURRENT_SVCACCT_USER]))
+                                                         GM.Globals[GM.CURRENT_SVCACCT_USER] or 'user@domain.com'))
   systemErrorExit(API_ACCESS_DENIED_RC, None)
 
 def SvcAcctAPIDisabledExit():
@@ -5496,7 +5496,7 @@ def buildGAPIObject(api, credentials=None):
 def getSaUser(user):
   currentClientAPI = GM.Globals[GM.CURRENT_CLIENT_API]
   currentClientAPIScopes = GM.Globals[GM.CURRENT_CLIENT_API_SCOPES]
-  userEmail = convertUIDtoEmailAddress(user) if user else None 
+  userEmail = convertUIDtoEmailAddress(user) if user else None
   GM.Globals[GM.CURRENT_CLIENT_API] = currentClientAPI
   GM.Globals[GM.CURRENT_CLIENT_API_SCOPES] = currentClientAPIScopes
   return userEmail
@@ -11379,7 +11379,7 @@ def _getLoginHintProjectInfo(createCmd):
   svcAcctInfo = {'name': '', 'displayName': '', 'description': ''}
   if not Cmd.PeekArgumentPresent(['admin', 'appname', 'supportemail', 'project', 'parent',
                                   'projectname', 'saname', 'sadisplayname', 'sadescription',
-                                  'algorithm', 'localkeysize', 'yubikey']):
+                                  'algorithm', 'localkeysize', 'validityhours', 'yubikey']):
     login_hint = getString(Cmd.OB_EMAIL_ADDRESS, optional=True)
     if login_hint and login_hint.find('@') == -1:
       Cmd.Backup()
@@ -11405,7 +11405,7 @@ def _getLoginHintProjectInfo(createCmd):
         pass
       elif createCmd and _getAppInfo(myarg, appInfo):
         pass
-      elif myarg in {'algorithm', 'localkeysize', 'yubikey'}:
+      elif myarg in {'algorithm', 'localkeysize', 'validityhours', 'yubikey'}:
         Cmd.Backup()
         break
       else:
@@ -12368,6 +12368,8 @@ def doProcessSvcAcctKeys(mode, iam=None, projectId=None, clientEmail=None, clien
         local_key_size = 0
       elif myarg == 'localkeysize':
         local_key_size = int(getChoice(['1024', '2048', '4096']))
+      elif myarg == 'validityhours':
+        validityHours = getInteger()
       elif myarg == 'yubikey':
         new_data['key_type'] = 'yubikey'
       elif myarg == 'yubikeyslot':
@@ -12376,8 +12378,6 @@ def doProcessSvcAcctKeys(mode, iam=None, projectId=None, clientEmail=None, clien
         new_data['yubikey_pin'] = readStdin('Enter your YubiKey PIN: ')
       elif myarg == 'yubikeyserialnumber':
         new_data['yubikey_serial_number'] = getInteger()
-      elif myarg == 'validityhours':
-        validityHours = getInteger()
       else:
         unknownArgumentExit()
     
@@ -39132,7 +39132,7 @@ def _setHoldQuery(body, queryParameters):
     if queryParameters.get('coveredData'):
       body['query'][queryType]['coveredData'] = queryParameters['coveredData']
 
-# gam create vaulthold|hold matter <MatterItem> [name <String>] corpus drive|mail|groups|hangouts_chat
+# gam create vaulthold|hold matter <MatterItem> [name <String>] corpus calendar|drive|mail|groups|hangouts_chat|voice
 #	[(accounts|groups|users <EmailItemList>) | (orgunit|org|ou <OrgUnit>)]
 #	[query <QueryVaultCorpus>]
 #	[terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
