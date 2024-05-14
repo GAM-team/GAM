@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.76.02
+
+Updated `gam update group` to handle the following error:
+```
+ERROR: 400: invalidArgument - Failed request validation in update settings: WHO_CAN_VIEW_MEMBERSHIP_CANNOT_BE_BROADER_THAN_WHO_CAN_SEE_GROUP
+```
+
 ### 6.76.01
 
 Fixed bug in `gam create vaulthold matter <MatterItem> ... corpus calendar` that caused a trap.
