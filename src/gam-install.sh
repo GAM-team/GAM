@@ -161,13 +161,14 @@ else
 fi
 
 if [ -z ${GHCLIENT+x} ]; then
-  check_type="unauthenticated"
-else
+  check_type="unauthenticated"e
+  echo_yellow "Checking GitHub URL $release_url for $gamversion GAM release ($check_type)..."
+  release_json=$(curl -s "$release_url" 2>&1 /dev/null)
+lse
   check_type="authenticated"
+  echo_yellow "Checking GitHub URL $release_url for $gamversion GAM release ($check_type)..."
+  release_json=$(curl -s "$GHCLIENT" "$release_url" 2>&1 /dev/null)
 fi
-
-echo_yellow "Checking GitHub URL $release_url for $gamversion GAM release ($check_type)..."
-release_json=$(curl -s "$GHCLIENT" "$release_url" 2>&1 /dev/null)
 
 echo_yellow "Getting file and download URL..."
 # Python is sadly the nearest to universal way to safely handle JSON with Bash
