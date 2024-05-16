@@ -161,7 +161,7 @@ else
 fi
 
 if [ -z ${GHCLIENT+x} ]; then
-  check_type="unauthenticated"e
+  check_type="unauthenticated"
   echo_yellow "Checking GitHub URL $release_url for $gamversion GAM release ($check_type)..."
   release_json=$(curl -s "$release_url" 2>&1 /dev/null)
 lse
