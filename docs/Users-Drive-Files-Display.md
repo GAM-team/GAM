@@ -396,7 +396,7 @@ Display file details in indented keyword: value format. The two forms are equiva
 ```
 gam <UserTypeEntity> show fileinfo <DriveFileEntity>
         [returnidonly]
-        [filepath|fullpath] [pathdelimiter <Character>]
+        [filepath|fullpath] [folderpathonly [<Boolean>]] [pathdelimiter <Character>]
         [allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [showdrivename] [showshareddrivepermissions]
@@ -406,7 +406,7 @@ gam <UserTypeEntity> show fileinfo <DriveFileEntity>
         [formatjson]
 gam <UserTypeEntity> info drivefile <DriveFileEntity>
         [returnidonly]
-        [filepath|fullpath] [pathdelimiter <Character>]
+        [filepath|fullpath] [folderpathonly [<Boolean>]] [pathdelimiter <Character>]
         [allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [showdrivename] [showshareddrivepermissions]
@@ -420,6 +420,10 @@ Use `returnidonly` to display just the file ID of the files in `<DriveFileEntity
 Use `filepath` to display the path(s) to the files in `<DriveFileEntity>`.
 
 Use `fullpath` to add additional path information indicating that a file is an Orphan or Shared with me.
+
+By default, the path to a file includes the file name as the last element of the path.
+Use `folderpathonly` to display only the folder names when displaying the path to a file. This folder only path
+an be used in  `gam <UserTypeEntity> create drivefolderpath` to recreate the folder hierarchy.
 
 By default, file path components are separated by `/`; use `pathdelimiter <Character>` to use `<Character>` as the separator.
 
@@ -479,15 +483,20 @@ By default, Gam displays the information as an indented list of keys and values.
 gam <UserTypeEntity> show filepath <DriveFileEntity>
         [returnpathonly]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
-        [stripcrsfromname] [fullpath] [pathdelimiter <Character>]
+        [stripcrsfromname]
+        [folderpathonly [<Boolean>]] [fullpath] [pathdelimiter <Character>]
 gam <UserTypeEntity> print filepath <DriveFileEntity> [todrive <ToDriveAttribute>*]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
-        [stripcrsfromname] [fullpath] [pathdelimiter <Character>]
-        [oneitemperrow]
+        [stripcrsfromname] [oneitemperrow]
+        [fullpath] [folderpathonly [<Boolean>]] [pathdelimiter <Character>]
 ```
 Use `returnpathonly` to display just the file path of the files in `<DriveFileEntity>`.
 
 Use `fullpath` to add additional path information indicating that a file is an Orphan or Shared with me.
+
+By default, the path to a file includes the file name as the last element of the path.
+Use `folderpathonly` to display only the folder names when displaying the path to a file. This folder only path
+an be used in  `gam <UserTypeEntity> create drivefolderpath` to recreate the folder hierarchy.
 
 By default, file path components are separated by `/`; use `pathdelimiter <Character>` to use `<Character>` as the separator.
 
@@ -1009,8 +1018,9 @@ gam <UserTypeEntity> print|show filelist [todrive <ToDriveAttribute>*]
         [excludetrashed]
         [maxfiles <Integer>] [nodataheaders <String>]
         [countsonly [summary none|only|plus] [summaryuser <String>]
-                    [showsource] [showsize] [showmimetypesize]] [countsrowfilter]
-        [filepath|fullpath [pathdelimiter <Character>] [addpathstojson] [showdepth]] [buildtree]
+                    [showsource] [showsize] [showmimetypesize]]
+        [countsrowfilter]
+        [filepath|fullpath [folderpathonly [<Boolean>]] [pathdelimiter <Character>] [addpathstojson] [showdepth]] [buildtree]
         [allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
         [showdrivename] [showshareddrivepermissions]
         [(showlabels details|ids)|(includelabels <DriveLabelIDList>)]
@@ -1117,19 +1127,23 @@ By default, when a folder is selected, only its contents are displayed.
 ## Choose what fields to display
 If no query or select is performed, use these options to get file path information:
 * `filepath|fullpath` - For files and folders, display the full path(s) to them starting at the root (My Drive)
-* `addcsvdata <FieldName> <String>` - Add additional columns of data from the command line to the output
 * `addpathstojson` - When this option and `formatjson` are specified, the path information will be included in the
 JSON data rather than as additional columns
+* `addcsvdata <FieldName> <String>` - Add additional columns of data from the command line to the output
 
 When used with `filepath` or `fullpath`, `showdepth` will display a `depth` column.
 Files/folders directly in `My Drive` are at depth 0, the depth increases by 1
-for each containing folder. For files with multiple parents, the maximum depth is displayed.
+for each containing folder.
 
 If a query or select is performed, use these options to get file path information:
 * `filepath` - For files, no path information is shown; for folders, the paths of all of its children are shown starting at the selected folder
 * `fullpath` - For files and folders, display the full path(s) to them starting at the root (My Drive or Shared Drive)
 * `addpathstojson` - When this option and `formatjson` are specified, the path information will be included in the
 JSON data rather than as additional columns
+
+By default, the path to a file includes the file name as the last element of the path.
+Use `folderpathonly` to display only the folder names when displaying the path to a file. This folder only path
+an be used in  `gam <UserTypeEntity> create drivefolderpath` to recreate the folder hierarchy.
 
 By default, file path components are separated by `/`; use `pathdelimiter <Character>` to use `<Character>` as the separator.
 

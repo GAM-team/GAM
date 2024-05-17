@@ -10,6 +10,18 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.76.03
+
+Added option `folderpathonly [<Boolean>]` to the following commands that causes GAM
+to display only the folder names when displaying the path to a file. This folder only path
+an be used in  `gam <UserTypeEntity> create drivefolderpath` to recreate the folder hierarchy.
+```
+gam <UserTypeEntity> info drivefile ... filepath|fullpath
+gam <UserTypeEntity> show fileinfo ... filepath|fullpath
+gam <UserTypeEntity> print|show filepath
+gam <UserTypeEntity> print filelist ... filepath|fullpath
+```
+
 ### 6.76.02
 
 Updated `gam update group` to handle the following error:

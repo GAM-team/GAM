@@ -37796,6 +37796,7 @@ def _showSchema(schema, i=0, count=0):
 
 SCHEMA_FIELDTYPE_CHOICE_MAP = {
   'bool': 'BOOL',
+  'boolean': 'BOOL',
   'date': 'DATE',
   'double': 'DOUBLE',
   'email': 'EMAIL',
@@ -51540,7 +51541,8 @@ def doShowSharedDriveThemes():
 def initFilePathInfo(delimiter):
   return {'ids': {}, 'allPaths': {}, 'localPaths': None, 'delimiter': delimiter}
 
-def getFilePaths(drive, fileTree, initialResult, filePathInfo, addParentsToTree=False, fullpath=False, showDepth=False):
+def getFilePaths(drive, fileTree, initialResult, filePathInfo, addParentsToTree=False,
+                 fullpath=False, showDepth=False, folderPathOnly=False):
   def _getParentName(result):
     if (result['mimeType'] == MIMETYPE_GA_FOLDER) and result.get('driveId') and (result['name'] == TEAM_DRIVE):
       parentName = _getSharedDriveNameFromId(drive, result['driveId'])
@@ -51594,7 +51596,8 @@ def getFilePaths(drive, fileTree, initialResult, filePathInfo, addParentsToTree=
           if depth > maxDepth:
             maxDepth = depth-1
         fp.reverse()
-        fp.append(name)
+        if initialMimeType == MIMETYPE_GA_FOLDER or not folderPathOnly:
+          fp.append(name)
         filePaths.append(filePathInfo['delimiter'].join(fp))
       else:
         maxDepth = _makeFilePaths(v, fplist, filePaths, name, maxDepth)
@@ -51603,6 +51606,7 @@ def getFilePaths(drive, fileTree, initialResult, filePathInfo, addParentsToTree=
 
   filePaths = []
   parents = initialResult.get('parents', [])
+  initialMimeType = initialResult['mimeType']
   if parents:
     filePathInfo['localPaths'] = {}
     for parentId in parents:
@@ -51612,7 +51616,7 @@ def getFilePaths(drive, fileTree, initialResult, filePathInfo, addParentsToTree=
     fplist = []
     maxDepth = _makeFilePaths(filePathInfo['localPaths'], fplist, filePaths, initialResult['name'], -1)
   else:
-    if (fullpath and initialResult['mimeType'] == MIMETYPE_GA_FOLDER and
+    if (fullpath and initialMimeType == MIMETYPE_GA_FOLDER and
         ((initialResult['name'] == MY_DRIVE) or
          (initialResult.get('driveId') and initialResult['name'].startswith(SHARED_DRIVES)))):
       filePaths.append(initialResult['name'])
@@ -52114,22 +52118,22 @@ def _formatFileDriveLabels(showLabels, labels, result, printMode, delimiter):
 
 # gam <UserTypeEntity> info drivefile <DriveFileEntity>
 #	[returnidonly]
-#	[filepath|fullpath] [pathdelimiter <Character>]
+#	[filepath|fullpath] [folderpathonly [<Boolean>]] [pathdelimiter <Character>]
 #	[allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)] [formatjson]
 #	(orderby <DriveFileOrderByFieldName> [ascending|descending])*
 #	[showdrivename] [showshareddrivepermissions]
 #	[(showlabels details|ids)|(includelabels <DriveLabelIDList>)]
 #	[showparentsidsaslist]
-#	[stripcrsfromname]
+#	[stripcrsfromname] [formatjson]
 # gam <UserTypeEntity> show fileinfo <DriveFileEntity>
 #	[returnidonly]
-#	[filepath|fullpath] [pathdelimiter <Character>]
+#	[filepath|fullpath] [folderpathonly [<Boolean>]] [pathdelimiter <Character>]
 #	[allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)] [formatjson]
 #	(orderby <DriveFileOrderByFieldName> [ascending|descending])*
 #	[showdrivename] [showshareddrivepermissions]
 #	[(showlabels details|ids)|(includelabels <DriveLabelIDList>)]
 #	[showparentsidsaslist]
-#	[stripcrsfromname]
+#	[stripcrsfromname] [formatjson]
 def showFileInfo(users):
   def _setSelectionFields():
     _setSkipObjects(skipObjects, FILEINFO_FIELDS_TITLES, DFF.fieldsList)
@@ -52138,7 +52142,7 @@ def showFileInfo(users):
     if getPermissionsForSharedDrives or DFF.showSharedDriveNames:
       _setSkipObjects(skipObjects, ['driveId'], DFF.fieldsList)
 
-  getPermissionsForSharedDrives = filepath = fullpath = returnIdOnly = showParentsIdsAsList = showNoParents = stripCRsFromName = False
+  getPermissionsForSharedDrives = filepath = fullpath = folderPathOnly = returnIdOnly = showParentsIdsAsList = showNoParents = stripCRsFromName = False
   pathDelimiter = '/'
   showLabels = None
   simpleLists = []
@@ -52150,13 +52154,15 @@ def showFileInfo(users):
     myarg = getArgument()
     if myarg == 'filepath':
       filepath = True
+    elif myarg == 'fullpath':
+      filepath = fullpath = True
+    elif myarg == 'folderpathonly':
+      folderPathOnly = getBoolean()
+    elif myarg == 'pathdelimiter':
+      pathDelimiter = getCharacter()
     elif myarg == 'showparentsidsaslist':
       showParentsIdsAsList = True
       simpleLists.append('parentsIds')
-    elif myarg == 'fullpath':
-      filepath = fullpath = True
-    elif myarg == 'pathdelimiter':
-      pathDelimiter = getCharacter()
     elif myarg == 'stripcrsfromname':
       stripCRsFromName = True
     elif myarg == 'showlabels':
@@ -52257,7 +52263,8 @@ def showFileInfo(users):
             extendFileTree(fileTree, [result], None, False)
             extendFileTreeParents(drive, fileTree, pathFields)
           if not FJQC.formatJSON:
-            _, paths, _ = getFilePaths(drive, fileTree, result, filePathInfo, addParentsToTree=True, fullpath=fullpath)
+            _, paths, _ = getFilePaths(drive, fileTree, result, filePathInfo, addParentsToTree=True,
+                                       fullpath=fullpath, folderPathOnly=folderPathOnly)
             kcount = len(paths)
             printKeyValueList(['paths', kcount])
             Ind.Increment()
@@ -52265,7 +52272,8 @@ def showFileInfo(users):
               printKeyValueList(['path', path])
             Ind.Decrement()
           else:
-            addFilePathsToInfo(drive, fileTree, result, filePathInfo, addParentsToTree=True)
+            addFilePathsToInfo(drive, fileTree, result, filePathInfo,
+                               addParentsToTree=True, folderPathOnly=folderPathOnly)
         if fullpath:
           # Save simple parents list as mappings turn it into a list of dicts
           fpparents = result['parents'][:]
@@ -52959,8 +52967,10 @@ def buildFileTree(feed, drive):
       fileTree[parentId]['children'].append(fileId)
   return fileTree
 
-def addFilePathsToRow(drive, fileTree, fileEntryInfo, filePathInfo, csvPF, row, fullpath=False, showDepth=False):
-  _, paths, maxDepth = getFilePaths(drive, fileTree, fileEntryInfo, filePathInfo, fullpath=fullpath, showDepth=showDepth)
+def addFilePathsToRow(drive, fileTree, fileEntryInfo, filePathInfo, csvPF, row,
+                      fullpath=False, showDepth=False, folderPathOnly=False):
+  _, paths, maxDepth = getFilePaths(drive, fileTree, fileEntryInfo, filePathInfo,
+                                    fullpath=fullpath, showDepth=showDepth, folderPathOnly=folderPathOnly)
   kcount = len(paths)
   if showDepth:
     row['depth'] = maxDepth
@@ -52975,8 +52985,9 @@ def addFilePathsToRow(drive, fileTree, fileEntryInfo, filePathInfo, csvPF, row, 
       row[key] = path
     k += 1
 
-def addFilePathsToInfo(drive, fileTree, fileEntryInfo, filePathInfo, addParentsToTree=False):
-  _, paths, _ = getFilePaths(drive, fileTree, fileEntryInfo, filePathInfo, addParentsToTree=addParentsToTree, showDepth=False)
+def addFilePathsToInfo(drive, fileTree, fileEntryInfo, filePathInfo, addParentsToTree=False, folderPathOnly=False):
+  _, paths, _ = getFilePaths(drive, fileTree, fileEntryInfo, filePathInfo, addParentsToTree=addParentsToTree,
+                             showDepth=False, folderPathOnly=folderPathOnly)
   fileEntryInfo['paths'] = []
   for path in sorted(paths):
     if GC.Values[GC.CSV_OUTPUT_CONVERT_CR_NL] and (path.find('\n') >= 0 or path.find('\r') >= 0):
@@ -53550,7 +53561,7 @@ SIZE_FIELD_CHOICE_MAP = {
 #	[countsonly [summary none|only|plus] [summaryuser <String>]
 #		    [showsource] [showsize] [showmimetypesize]]
 #	[countsrowfilter]
-#	[filepath|fullpath [pathdelimiter <Character>] [addpathstojson] [showdepth]] [buildtree]
+#	[filepath|fullpath [folderpathonly [<Boolean>]] [pathdelimiter <Character>] [addpathstojson] [showdepth]] [buildtree]
 #	[allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
 #	[showdrivename] [showshareddrivepermissions]
 #	(showlabels details|ids)|(includelabels <DriveLabelIDList>)]
@@ -53644,9 +53655,10 @@ def printFileList(users):
       fileInfo['driveName'] = _getSharedDriveNameFromId(drive, driveId)
     if filepath:
       if not FJQC.formatJSON or not addPathsToJSON:
-        addFilePathsToRow(drive, fileTree, fileInfo, filePathInfo, csvPF, row, fullpath=fullpath, showDepth=showDepth)
+        addFilePathsToRow(drive, fileTree, fileInfo, filePathInfo, csvPF, row,
+                          fullpath=fullpath, showDepth=showDepth, folderPathOnly=folderPathOnly)
       else:
-        addFilePathsToInfo(drive, fileTree, fileInfo, filePathInfo)
+        addFilePathsToInfo(drive, fileTree, fileInfo, filePathInfo, folderPathOnly=folderPathOnly)
     if showParentsIdsAsList and 'parents' in fileInfo:
       fileInfo['parentsIds'] = fileInfo.pop('parents')
     if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES]:
@@ -53777,8 +53789,8 @@ def printFileList(users):
 
   csvPF = CSVPrintFile('Owner', indexedTitles=DRIVE_INDEXED_TITLES)
   FJQC = FormatJSONQuoteChar(csvPF)
-  addPathsToJSON = countsRowFilter = buildTree = countsOnly = filepath = fullpath = getPermissionsForSharedDrives = \
-    mimeTypeInQuery = noRecursion = oneItemPerRow = stripCRsFromName = \
+  addPathsToJSON = countsRowFilter = buildTree = countsOnly = filepath = fullpath = folderPathOnly = \
+    getPermissionsForSharedDrives = mimeTypeInQuery = noRecursion = oneItemPerRow = stripCRsFromName = \
     showParentsIdsAsList = showDepth = showParent = showSize = showMimeTypeSize = showSource = False
   sizeField = 'quotaBytesUsed'
   pathDelimiter = '/'
@@ -53832,6 +53844,8 @@ def printFileList(users):
       filepath = True
     elif myarg == 'fullpath':
       filepath = fullpath = True
+    elif myarg == 'folderpathonly':
+      folderPathOnly = getBoolean()
     elif myarg == 'pathdelimiter':
       pathDelimiter = getCharacter()
     elif myarg == 'addpathstojson':
@@ -54117,7 +54131,8 @@ def printFileList(users):
           userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
           break
       if fullpath:
-        getFilePaths(drive, fileTree, fileEntryInfo, filePathInfo, addParentsToTree=True, fullpath=fullpath, showDepth=showDepth)
+        getFilePaths(drive, fileTree, fileEntryInfo, filePathInfo, addParentsToTree=True,
+                     fullpath=fullpath, showDepth=showDepth, folderPathOnly=folderPathOnly)
       if ((showParent and (fileEntryInfo['id'] not in {ORPHANS, SHARED_WITHME, SHARED_DRIVES})) or
           fileEntryInfo['mimeType'] != MIMETYPE_GA_FOLDER or noRecursion):
         if fileId not in filesPrinted:
@@ -54413,17 +54428,18 @@ def printShowFileComments(users):
 
 # gam <UserTypeEntity> print filepaths <DriveFileEntity> [todrive <ToDriveAttribute>*]
 #	(orderby <DriveFileOrderByFieldName> [ascending|descending])*
-#	[oneitemperrow]
-#	[stripcrsfromname] [fullpath] [pathdelimiter <Character>]
+#	[stripcrsfromname] [oneitemperrow]
+#	[fullpath] [folderpathonly [<Boolean>]] [pathdelimiter <Character>]
 # gam <UserTypeEntity> show filepaths <DriveFileEntity>
 #	[returnpathonly]
 #	(orderby <DriveFileOrderByFieldName> [ascending|descending])*
-#	[stripcrsfromname] [fullpath] [pathdelimiter <Character>]
+#	[stripcrsfromname]
+#	[fullpath] [folderpathonly [<Boolean>]] [pathdelimiter <Character>]
 def printShowFilePaths(users):
   fileNameTitle = 'title' if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES] else 'name'
   csvPF = CSVPrintFile(['Owner', 'id', fileNameTitle, 'paths'], 'sortall', ['paths']) if Act.csvFormat() else None
   fileIdEntity = getDriveFileEntity()
-  fullpath = oneItemPerRow = returnPathOnly = stripCRsFromName = False
+  fullpath = folderPathOnly = oneItemPerRow = returnPathOnly = stripCRsFromName = False
   pathDelimiter = '/'
   OBY = OrderBy(DRIVEFILE_ORDERBY_CHOICE_MAP)
   while Cmd.ArgumentsRemaining():
@@ -54432,6 +54448,8 @@ def printShowFilePaths(users):
       csvPF.GetTodriveParameters()
     elif myarg == 'fullpath':
       fullpath = True
+    elif myarg == 'folderpathonly':
+      folderPathOnly = getBoolean()
     elif myarg == 'pathdelimiter':
       pathDelimiter = getCharacter()
     elif myarg == 'stripcrsfromname':
@@ -54492,7 +54510,8 @@ def printShowFilePaths(users):
         if fullpath:
           extendFileTree(fileTree, [result], None, False)
           extendFileTreeParents(drive, fileTree, pathFields)
-        entityType, paths, _ = getFilePaths(drive, fileTree, result, filePathInfo, addParentsToTree=True, fullpath=fullpath)
+        entityType, paths, _ = getFilePaths(drive, fileTree, result, filePathInfo, addParentsToTree=True,
+                                            fullpath=fullpath, folderPathOnly=folderPathOnly)
         if returnPathOnly:
           for path in paths:
             writeStdout(f'{path}\n')
