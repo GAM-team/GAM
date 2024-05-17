@@ -2,6 +2,16 @@
 
 Merged GAM-Team version
 
+6.76.04
+
+Added the following fields to `<CrOSFieldName>`:
+```
+autoupdatethrough
+extendedsupporteligible
+extendedsupportstart
+extendedsupportenabled
+```
+
 6.76.03
 
 Added option `folderpathonly [<Boolean>]` to the following commands that causes GAM

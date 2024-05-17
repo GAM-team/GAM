@@ -2230,6 +2230,7 @@ gam <CrOSTypeEntity> update <CrOSAttribute>+ [quickcrosmove [<Boolean>]] [nobatc
         annotatedlocation|location|
         annotateduser|user|
         autoupdateexpiration|
+        autoupdatethrough|
         backlightinfo|
         bootmode|
         cpuinfo|
@@ -2242,6 +2243,9 @@ gam <CrOSTypeEntity> update <CrOSAttribute>+ [quickcrosmove [<Boolean>]] [nobatc
         dockmacaddress|
         ethernetmacaddress|
         ethernetmacaddress0|
+        extendedsupporteligible|
+        extendedsupportstart|
+        extendedsupportenabled|
         firmwareversion|
         firstenrollmenttime|
         lastdeprovisiontimestamp|

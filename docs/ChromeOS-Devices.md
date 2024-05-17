@@ -105,6 +105,7 @@ The second form is backwards compatible with Standard GAM and selection with `<C
         annotatedlocation|location|
         annotateduser|user|
         autoupdateexpiration|
+        autoupdatethrough|
         backlightinfo|
         bootmode|
         cpuinfo|
@@ -117,6 +118,9 @@ The second form is backwards compatible with Standard GAM and selection with `<C
         dockmacaddress|
         ethernetmacaddress|
         ethernetmacaddress0|
+        extendedsupporteligible|
+        extendedsupportstart|
+        extendedsupportenabled|
         firmwareversion|
         firstenrollmenttime|
         lastdeprovisiontimestamp|
