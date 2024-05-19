@@ -5701,12 +5701,12 @@ gam <UserTypeEntity> print calendaracls <UserCalendarEntity> [todrive <ToDriveAt
         [noselfowner] (addcsvdata <FieldName> <String>)*
         [formatjson [quotechar <Character>]]
 
-Transfer ownership of a selection of users calendars to another user
+Transfer ownership of a selection of a users secondary calendars to another user
 
-gam <UserTypeEntity> transfer calendars <UserItem> <UserCalendarEntity>
+gam <UserTypeEntity> transfer calendars|seccals <UserItem> [<UserCalendarEntity>]
         [keepuser | (retainrole <CalendarACLRole>)] [sendnotifications <Boolean>] [noretentionmessages]
-        <CalendarSettings>] [append description|location|summary] [noupdatemessages]
-gam <UserTypeEntity> transfer seccals <UserItem> [keepuser] [sendnotifications <Boolean>]
+        <CalendarSettings>* [append description|location|summary] [noupdatemessages]
+        [deletefromoldowner] [addtonewowner <CalendarAttribute>*] [nolistmessages]
 
 <AttendeeAttendance> ::= optional|required
 <AttendeeStatus> ::= accepted|declined|needsaction|tentative

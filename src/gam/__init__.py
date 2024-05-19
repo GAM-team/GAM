@@ -48357,8 +48357,7 @@ CALENDAR_NOTIFICATION_TYPES_MAP = {
   'agenda': 'agenda',
   }
 
-def _getCalendarAttributes(body):
-  colorRgbFormat = False
+def _getCalendarAttributes(body, returnOnUnknownArgument=False):
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'selected':
@@ -48374,10 +48373,8 @@ def _getCalendarAttributes(body):
     elif myarg in {'backgroundcolor', 'backgroundcolour'}:
       body['backgroundColor'] = getColor()
       body.setdefault('foregroundColor', '#000000')
-      colorRgbFormat = True
     elif myarg in {'foregroundcolor', 'foregroundcolour'}:
       body['foregroundColor'] = getColor()
-      colorRgbFormat = True
     elif myarg == 'reminder':
       body.setdefault('defaultReminders', [])
       if not checkArgumentPresent(Cmd.CLEAR_NONE_ARGUMENT):
@@ -48394,9 +48391,11 @@ def _getCalendarAttributes(body):
             invalidChoiceExit(ntype, CALENDAR_NOTIFICATION_TYPES_MAP, True)
       else:
         body['notificationSettings']['notifications'] = []
+    elif returnOnUnknownArgument:
+      Cmd.Backup()
+      return
     else:
       unknownArgumentExit()
-  return colorRgbFormat
 
 def _showCalendar(calendar, j, jcount, FJQC, acls=None):
   if FJQC.formatJSON:
@@ -48453,11 +48452,12 @@ def _processCalendarList(user, calId, j, jcount, cal, function, **kwargs):
           GAPI.cannotChangeOwnAcl, GAPI.cannotChangeOwnPrimarySubscription) as e:
     entityActionFailedWarning([Ent.USER, user, Ent.CALENDAR, calId], str(e), j, jcount)
 
-# gam <UserTypeEntity> add calendars <UserCalendarAddEntity> <CalendarAttribute>
+# gam <UserTypeEntity> add calendars <UserCalendarAddEntity> <CalendarAttribute>*
 def addCalendars(users):
   calendarEntity = getUserCalendarEntity()
   body = {'selected': True, 'hidden': False}
-  colorRgbFormat = _getCalendarAttributes(body)
+  _getCalendarAttributes(body)
+  colorRgbFormat = 'backgroundColor' in body or 'foregroundColor' in body
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -48489,11 +48489,12 @@ def _updateDeleteCalendars(users, calendarEntity, function, **kwargs):
                            calendarId=calId, **kwargs)
     Ind.Decrement()
 
-# gam <UserTypeEntity> update calendars <UserCalendarEntity> <CalendarAttribute>
+# gam <UserTypeEntity> update calendars <UserCalendarEntity> <CalendarAttribute>+
 def updateCalendars(users):
   calendarEntity = getUserCalendarEntity()
   body = {}
-  colorRgbFormat = _getCalendarAttributes(body)
+  _getCalendarAttributes(body)
+  colorRgbFormat = 'backgroundColor' in body or 'foregroundColor' in body
   _updateDeleteCalendars(users, calendarEntity, 'patch', body=body, colorRgbFormat=colorRgbFormat, fields='')
 
 # gam <UserTypeEntity> delete calendars <UserCalendarEntity>
@@ -48923,18 +48924,20 @@ def printShowCalendarACLs(users):
 
 TRANSFER_CALENDAR_APPEND_FIELDS = ['description', 'location', 'summary']
 
-# gam <UserTypeEntity> transfer calendars <UserItem> <UserCalendarEntity>
+# gam <UserTypeEntity> transfer calendars|seccals <UserItem> [<UserCalendarEntity>]
 #	[keepuser | (retainrole <CalendarACLRole>)] [sendnotifications <Boolean>] [noretentionmessages]
-#	[<CalendarSettings>] [append description|location|summary] [noupdatemessages]
-# gam <UserTypeEntity> transfer seccals <UserItem> [keepuser] [sendnotifications <Boolean>]
+#	<CalendarSettings>* [append description|location|summary] [noupdatemessages]
+#	[deletefromoldowner] [addtonewowner <CalendarAttribute>*] [nolistmessages]
 def transferCalendars(users):
   targetUser = getEmailAddress()
   calendarEntity = getUserCalendarEntity(noSelectionKwargs={'minAccessRole': 'owner', 'showHidden': True})
   notAllowedForbidden = Msg.FORBIDDEN if (not calendarEntity['all']) and (not calendarEntity.get('kwargs', {}).get('minAccessRole', '') == 'owner') else Msg.NOT_ALLOWED
   retainRoleBody = {'role': 'none'}
-  sendNotifications = showUpdateMessages = showRetentionMessages = True
+  sendNotifications = showListMessages = showRetentionMessages = showUpdateMessages = True
   updateBody = {}
   appendFieldsList = []
+  addToNewOwner = deleteFromOldOwner = False
+  targetListBody = {'selected': True, 'hidden': False}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'keepuser':
@@ -48943,8 +48946,6 @@ def transferCalendars(users):
       retainRoleBody['role'] = getChoice(CALENDAR_ACL_ROLES_MAP, mapChoice=True)
     elif myarg == 'sendnotifications':
       sendNotifications = getBoolean()
-    elif myarg == 'noretentionmessages':
-      showRetentionMessages = False
     elif _getCalendarSetting(myarg, updateBody):
       pass
     elif myarg == 'append':
@@ -48953,13 +48954,25 @@ def transferCalendars(users):
           appendFieldsList.append(field)
         else:
           invalidChoiceExit(field, TRANSFER_CALENDAR_APPEND_FIELDS, True)
+    elif myarg == 'nolistmessages':
+      showListMessages = False
+    elif myarg == 'noretentionmessages':
+      showRetentionMessages = False
     elif myarg == 'noupdatemessages':
       showUpdateMessages = False
+    elif myarg == 'deletefromoldowner':
+      deleteFromOldOwner = True
+    elif myarg == 'addtonewowner':
+      addToNewOwner = True
+      _getCalendarAttributes(targetListBody, returnOnUnknownArgument=True)
     else:
       unknownArgumentExit()
   targetUser, targetCal = validateCalendar(targetUser)
   if not targetCal:
     return
+  colorRgbFormat = 'backgroundColor' in targetListBody or 'foregroundColor' in targetListBody
+  if 'summaryOverride' in targetListBody and 'summary' not in updateBody:
+    updateBody['summary'] = targetListBody.pop('summaryOverride')
   if updateBody:
     timestamp = currentISOformatTimeStamp('seconds')
     appendFields = ','.join(set(appendFieldsList))
@@ -48992,7 +49005,7 @@ def transferCalendars(users):
                  calendarId=calId, body=targetRoleBody, sendNotifications=sendNotifications, fields='')
         entityModifierNewValueItemValueListActionPerformed([Ent.CALENDAR, calId], Act.MODIFIER_TO, None, [Ent.USER, targetUser], j, jcount)
       except (GAPI.forbidden, GAPI.requiredAccessLevel) as e:
-        entityActionFailedWarning([Ent.CALENDAR, calId], str(e), j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.CALENDAR, calId], str(e), j, jcount)
         continue
       except (GAPI.notFound, GAPI.invalid):
         entityUnknownWarning(Ent.CALENDAR, calId, j, jcount)
@@ -49024,6 +49037,19 @@ def transferCalendars(users):
           entityActionFailedWarning([Ent.CALENDAR, calId], str(e), j, jcount)
         except (GAPI.serviceNotAvailable, GAPI.authError):
           entityServiceNotApplicableWarning(Ent.CALENDAR, calId, j, jcount)
+      if addToNewOwner:
+        Act.Set(Act.ADD)
+        targetListBody['id'] = calId
+        try:
+          callGAPI(targetCal.calendarList(), 'insert',
+                   throwReasons=[GAPI.NOT_FOUND, GAPI.DUPLICATE, GAPI.UNKNOWN_ERROR, GAPI.SERVICE_NOT_AVAILABLE,
+                                 GAPI.CANNOT_CHANGE_OWN_ACL, GAPI.CANNOT_CHANGE_OWN_PRIMARY_SUBSCRIPTION],
+                   body=targetListBody, colorRgbFormat=colorRgbFormat, fields='')
+          if showListMessages:
+            entityModifierNewValueItemValueListActionPerformed([Ent.CALENDAR, calId], Act.MODIFIER_TO, None, [Ent.USER, targetUser], j, jcount)
+        except (GAPI.notFound, GAPI.duplicate, GAPI.unknownError, GAPI.serviceNotAvailable,
+                GAPI.cannotChangeOwnAcl, GAPI.cannotChangeOwnPrimarySubscription) as e:
+          entityActionFailedWarning([Ent.CALENDAR, calId], str(e), j, jcount)
       Act.Set(Act.RETAIN)
       if retainRoleBody['role'] == 'owner':
         if showRetentionMessages:
@@ -49052,6 +49078,23 @@ def transferCalendars(users):
             entityActionPerformed([Ent.CALENDAR, calId, Ent.CALENDAR_ACL, formatACLScopeRole(sourceRuleId, retainRoleBody['role'])], j, jcount)
         except (GAPI.notFound, GAPI.invalid):
           entityUnknownWarning(Ent.CALENDAR, calId, j, jcount)
+      if deleteFromOldOwner:
+        Act.Set(Act.DELETE)
+        try:
+          callGAPI(sourceCal.calendarList(), 'delete',
+                   throwReasons=[GAPI.NOT_FOUND, GAPI.DUPLICATE, GAPI.UNKNOWN_ERROR, GAPI.SERVICE_NOT_AVAILABLE,
+                                 GAPI.CANNOT_CHANGE_OWN_ACL, GAPI.CANNOT_CHANGE_OWN_PRIMARY_SUBSCRIPTION],
+                   calendarId=calId)
+          entityModifierNewValueItemValueListActionPerformed([Ent.CALENDAR, calId], Act.MODIFIER_FROM, None, [Ent.USER, user], j, jcount)
+        except GAPI.notFound as e:
+          if retainRoleBody['role'] == 'none':
+            if showListMessages:
+              entityModifierNewValueItemValueListActionPerformed([Ent.CALENDAR, calId], Act.MODIFIER_FROM, None, [Ent.USER, user], j, jcount)
+          else:
+            entityActionFailedWarning([Ent.CALENDAR, calId], str(e), j, jcount)
+        except (GAPI.duplicate, GAPI.unknownError, GAPI.serviceNotAvailable,
+                GAPI.cannotChangeOwnAcl, GAPI.cannotChangeOwnPrimarySubscription) as e:
+          entityActionFailedWarning([Ent.CALENDAR, calId], str(e), j, jcount)
     Ind.Decrement()
 
 def _createImportCalendarEvent(users, function):
