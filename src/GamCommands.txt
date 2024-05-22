@@ -6904,8 +6904,12 @@ gam <UserTypeEntity> print|show driveactivity [todrive <ToDriveAttribute>*]
         usageindrivetrash
 <DriveSettingsFieldNameList> ::= "<DriveSettingsFieldName>(,<DriveSettingsFieldName>)*"
 
-gam <UserTypeEntity> print drivesettings [todrive <ToDriveAttribute>*] [allfields|<DriveSettingsFieldName>*|(fields <DriveSettingsFieldNameList>)] [delimiter <Character>]
-gam <UserTypeEntity> show drivesettings [allfields|<DriveSettingsFieldName>*|(fields <DriveSettingsFieldNameList>)] [delimiter <Character>]
+gam <UserTypeEntity> print drivesettings [todrive <ToDriveAttribute>*]
+        [allfields|<DriveSettingsFieldName>*|(fields <DriveSettingsFieldNameList>)]
+        [delimiter <Character>] [showusagebytes]
+gam <UserTypeEntity> show drivesettings
+        [allfields|<DriveSettingsFieldName>*|(fields <DriveSettingsFieldNameList>)]
+        [delimiter <Character>] [showusagebytes]
 
 gam <UserTypeEntity> print emptydrivefolders [todrive <ToDriveAttribute>*]
         [select <DriveFileEntity>]

@@ -51424,6 +51424,12 @@ DRIVESETTINGS_SCALAR_FIELDS = [
   'usageInDriveTrash',
   ]
 
+DRIVESETTINGS_USAGE_BYTES_FIELDS = {
+  'usage': 'usageBytes',
+  'usageInDrive': 'usageInDriveBytes',
+  'usageInDriveTrash': 'usageInDriveTrashBytes',
+  }
+
 def _showSharedDriveThemeSettings(themes):
   Ind.Increment()
   for theme in themes:
@@ -51435,9 +51441,11 @@ def _showSharedDriveThemeSettings(themes):
   Ind.Decrement()
 
 # gam <UserTypeEntity> print drivesettings [todrive <ToDriveAttribute>*]
-#	[allfields|<DriveSettingsFieldName>*|(fields <DriveSettingsFieldNameList>)] [delimiter <Character>]
+#	[allfields|<DriveSettingsFieldName>*|(fields <DriveSettingsFieldNameList>)]
+#	[delimiter <Character>] [showusagebytes]
 # gam <UserTypeEntity> show drivesettings
-#	[allfields|<DriveSettingsFieldName>*|(fields <DriveSettingsFieldNameList>)] [delimiter <Character>]
+#	[allfields|<DriveSettingsFieldName>*|(fields <DriveSettingsFieldNameList>)]
+#	[delimiter <Character>] [showusagebytes]
 def printShowDriveSettings(users):
   def _showFormats(title):
     if title in fieldsList and title in feed:
@@ -51473,6 +51481,7 @@ def printShowDriveSettings(users):
   csvPF = CSVPrintFile(['email'], ['email']+DRIVESETTINGS_SCALAR_FIELDS) if Act.csvFormat() else None
   fieldsList = []
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
+  showUsageBytes = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -51483,6 +51492,8 @@ def printShowDriveSettings(users):
       fieldsList.extend(DRIVESETTINGS_FIELDS_CHOICE_MAP.values())
     elif getFieldsList(myarg, DRIVESETTINGS_FIELDS_CHOICE_MAP, fieldsList):
       pass
+    elif myarg == 'showusagebytes':
+      showUsageBytes = True
     else:
       unknownArgumentExit()
   if not fieldsList:
@@ -51507,7 +51518,10 @@ def printShowDriveSettings(users):
       else:
         feed['limit'] = 'UNLIMITED'
       for setting in ['usage', 'usageInDrive', 'usageInDriveTrash']:
-        feed[setting] = formatFileSize(int(feed['storageQuota'].get(setting, '0')))
+        uval = int(feed['storageQuota'].get(setting, '0'))
+        feed[setting] = formatFileSize(uval)
+        if showUsageBytes:
+          feed[DRIVESETTINGS_USAGE_BYTES_FIELDS[setting]] = uval
       if 'rootFolderId' in fieldsList:
         feed['rootFolderId'] = callGAPI(drive.files(), 'get',
                                         throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
@@ -51521,6 +51535,10 @@ def printShowDriveSettings(users):
         Ind.Increment()
         for setting in DRIVESETTINGS_SCALAR_FIELDS:
           _showSetting(setting)
+        if showUsageBytes:
+          for title, setting in DRIVESETTINGS_USAGE_BYTES_FIELDS.items():
+            if title in fieldsList and setting in feed:
+              printKeyValueList([setting, feed[setting]])
         _showSetting('folderColorPalette')
         _showFormats('exportFormats')
         _showFormats('importFormats')
@@ -51538,6 +51556,10 @@ def printShowDriveSettings(users):
         row = {'email': user}
         for setting in DRIVESETTINGS_SCALAR_FIELDS:
           _addSetting(row, setting)
+        if showUsageBytes:
+          for title, setting in DRIVESETTINGS_USAGE_BYTES_FIELDS.items():
+            if title in fieldsList and setting in feed:
+              row[setting] = feed[setting]
         _addSetting(row, 'folderColorPalette')
         _addFormats(row, 'exportFormats')
         _addFormats(row, 'importFormats')

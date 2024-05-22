@@ -141,10 +141,16 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 ```
 gam <UserTypeEntity> print drivesettings [todrive <ToDriveAttribute>*]
         [allfields|<DriveSettingsFieldName>*|(fields <DriveSettingsFieldNameList>)]
-        [delimiter <Character>]
+        [delimiter <Character>] [showusagebytes]
 gam <UserTypeEntity> show drivesettings
         [allfields|<DriveSettingsFieldName>*|(fields <DriveSettingsFieldNameList>)]
-        [delimiter <Character>]
+        [delimiter <Character>] [showusagebytes]
 ```
 If no fields are selected, these fields will be displayed:
     `name,appInstalled,largestChangeId,limit,maxUploadSize,permissionId,rootFolderId,usage,usageInDrive,usageInDriveTrash`
+
+By default, these fields are displayed in formatted form with units: ```usage,usageInDrive,usageInDriveTrash```.
+
+The option `showusagebytes` also displays the following fields in bytes ```usageBytes,usageInDriveBytes,usageInDriveTrashBytes```.
+
+This will be most useful with `print` as the rows can be sorted based on the `usagexxxBytes` columns.

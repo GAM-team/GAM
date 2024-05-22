@@ -182,7 +182,7 @@ gam user testuser show fileinfo anydrivefilename "Test File"
 gam user testuser show fileinfo anydrivefilename:"Test File"
 ```
 ## Select file ownership
-By default, files the user owns are sisplayed; you can select the ownership characteristic.
+By default, files the user owns are displayed; you can select the ownership characteristic.
 ```
 anyowner|(showownedby any|me|others)
 ```

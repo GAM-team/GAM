@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.76.06
+
+Added option `showusagebytes` to `gam <UserTypeEntity> print|show drivesettings` that displays
+the following fields in bytes ```usageBytes,usageInDriveBytes,usageInDriveTrashBytes```
+in addition to the fields in their formatted form with units: ```usage,usageInDrive,usageInDriveTrash```.
+This will be most useful with `print` as the rows can be sorted based on the `usagexxxBytes` columns.
+
 ### 6.76.05
 
 Added options `deletefromoldowner`, `addtonewowner <CalendarAttribute>*` and `nolistmessages`
