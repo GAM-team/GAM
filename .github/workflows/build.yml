@@ -498,15 +498,15 @@ jobs:
           cd pyinstaller
           export latest_release=$(git tag --list | grep -v dev | grep -v rc | sort -Vr | head -n1)
           #V6.0.0 causes errors on staticx
-          if [[ "${staticx}" == "yes" ]]; then
-            git checkout "v5.13.2"
-          elif [[ "${RUNNER_OS}" == "Windows" ]]; then
-            git checkout "v5.13.2"
-          elif [[ "${RUNNER_OS}" == "macOS" ]]; then
-            git checkout "v5.13.2"
-          else
-            git checkout "${latest_release}"
-          fi
+          #if [[ "${staticx}" == "yes" ]]; then
+          #  git checkout "v5.13.2"
+          #elif [[ "${RUNNER_OS}" == "Windows" ]]; then
+          #  git checkout "v5.13.2"
+          #elif [[ "${RUNNER_OS}" == "macOS" ]]; then
+          #  git checkout "v5.13.2"
+          #else
+          git checkout "${latest_release}"
+          #fi
           # remove pre-compiled bootloaders so we fail if bootloader compile fails
           rm -rvf PyInstaller/bootloader/*-*/*
           cd bootloader
