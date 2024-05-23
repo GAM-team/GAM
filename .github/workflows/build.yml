@@ -192,17 +192,6 @@ jobs:
           sudo apt-get -qq --yes update
           sudo apt-get -qq --yes install swig libpcsclite-dev libxslt1-dev
 
-      - name: MacOS install tools
-        if: runner.os == 'macOS'
-        run: |
-          # Install latest Rust
-          curl $curl_retry -fsS -o rust.sh https://sh.rustup.rs
-          bash ./rust.sh -y
-          source $HOME/.cargo/env
-          # Install needed packages
-          brew update
-          brew install gpg swig
-
       - name: Windows Configure VCode
         uses: ilammy/msvc-dev-cmd@v1
         if: runner.os == 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
