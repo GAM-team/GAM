@@ -35,13 +35,11 @@ jobs:
             goal: build
             arch: x86_64
             openssl_archs: linux-x86_64
-            fullGamTest: yes
           - os: [self-hosted, linux, arm64]
             jid: 2
             goal: build
             arch: aarch64
             openssl_archs: linux-aarch64
-            fullGamTest: yes
           - os: ubuntu-20.04
             jid: 3
             goal: build
@@ -59,13 +57,11 @@ jobs:
             goal: build
             arch: x86_64
             openssl_archs: darwin64-x86_64
-            fullGamTest: yes
           - os: macos-14
             jid: 6
             goal: build
             arch: aarch64
             openssl_archs: darwin64-arm64
-            fullGamTest: yes
           - os: macos-14
             jid: 7
             goal: build
@@ -76,7 +72,6 @@ jobs:
             goal: build
             arch: Win64
             openssl_archs: VC-WIN64A
-            fullGamTest: yes
           - os: ubuntu-22.04
             goal: test
             python: "3.8"
@@ -650,7 +645,7 @@ jobs:
           echo "We successfully compiled Python ${this_python} and OpenSSL ${this_openssl}"
 
       - name: Live API tests push only
-        if: (github.event_name == 'push' || github.event_name == 'schedule') && matrix.fullGamTest == 'yes'
+        if: (github.event_name == 'push' || github.event_name == 'schedule')
         env:
           PASSCODE: ${{ secrets.PASSCODE }}
         run: |
