@@ -4163,6 +4163,8 @@ def SetGlobalVariables():
       GC.Values[GC.PRINT_CROS_OUS] = GM.Globals[GM.PRINT_CROS_OUS]
     if not GC.Values[GC.PRINT_CROS_OUS_AND_CHILDREN]:
       GC.Values[GC.PRINT_CROS_OUS_AND_CHILDREN] = GM.Globals[GM.PRINT_CROS_OUS_AND_CHILDREN]
+    GC.Values[GC.SHOW_GETTINGS] = GM.Globals[GM.SHOW_GETTINGS]
+    GC.Values[GC.SHOW_GETTINGS_GOT_NL] = GM.Globals[GM.SHOW_GETTINGS_GOT_NL]
 # customer_id, domain and admin_email must be set when enable_dasa = true
   if GC.Values[GC.ENABLE_DASA]:
     errors = 0
@@ -9574,6 +9576,7 @@ def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout,
                            csvHeaderForce,
                            csvRowFilter, csvRowFilterMode, csvRowDropFilter, csvRowDropFilterMode,
                            csvRowLimit,
+                           showGettings, showGettingsGotNL,
                            args):
   global mplock
 
@@ -9612,6 +9615,8 @@ def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout,
     GM.Globals[GM.PRINT_CROS_OUS] = printCrosOUs
     GM.Globals[GM.PRINT_CROS_OUS_AND_CHILDREN] = printCrosOUsAndChildren
     GM.Globals[GM.SAVED_STDOUT] = None
+    GM.Globals[GM.SHOW_GETTINGS] = showGettings
+    GM.Globals[GM.SHOW_GETTINGS_GOT_NL] = showGettingsGotNL
     GM.Globals[GM.SYSEXITRC] = 0
     GM.Globals[GM.PARSER] = None
     if mpQueueCSVFile:
@@ -9818,6 +9823,7 @@ def MultiprocessGAMCommands(items, showCmds):
                                                   GC.Values[GC.CSV_OUTPUT_ROW_DROP_FILTER],
                                                   GC.Values[GC.CSV_OUTPUT_ROW_DROP_FILTER_MODE],
                                                   GC.Values[GC.CSV_OUTPUT_ROW_LIMIT],
+                                                  GC.Values[GC.SHOW_GETTINGS], GC.Values[GC.SHOW_GETTINGS_GOT_NL],
                                                   item])
       poolProcessResults[0] += 1
       if parallelPoolProcesses > 0:
@@ -12380,7 +12386,7 @@ def doProcessSvcAcctKeys(mode, iam=None, projectId=None, clientEmail=None, clien
         new_data['yubikey_serial_number'] = getInteger()
       else:
         unknownArgumentExit()
-    
+
   def waitForCompletion(i):
     sleep_time = i*5
     if i > 3:
@@ -25470,6 +25476,11 @@ def _getChatPageMessage(entityType, user, i, count, pfilter):
   return getPageMessage()
 
 CHAT_PAGE_SIZE = 1000
+CHAT_SPACES_ADMIN_ORDERBY_CHOICE_MAP = {
+  'createtime': 'createTime',
+  'lastactivetime': 'lastActiveTime',
+  'membershipcount': 'membershipCount.joined_direct_human_user_count'
+  }
 
 # gam [<UserTypeEntity>] show chatspaces
 #	[types <ChatSpaceTypeList>]
@@ -25477,15 +25488,34 @@ CHAT_PAGE_SIZE = 1000
 # gam [<UserTypeEntity>] print chatspaces [todrive <ToDriveAttribute>*]
 #	[types <ChatSpaceTypeList>]
 #	[formatjson [quotechar <Character>]]
+# gam [<UserTypeEntity>] show chatspaces adminaccess|asadmin
+#	[query <String>]]
+#	[orderby <ChatSpaceAdminOrderByFieldName> [ascending|descending]]
+#	[formatjson]
+# gam [<UserTypeEntity>] print chatspaces adminaccess|asadmin [todrive <ToDriveAttribute>*]
+#	[query <String>]]
+#	[orderby <ChatSpaceAdminOrderByFieldName> [ascending|descending]]
+#	[formatjson [quotechar <Character>]]
 def printShowChatSpaces(users):
   csvPF = CSVPrintFile(['User', 'name'] if not isinstance(users, list) else ['name']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
+  useAdminAccess = checkArgumentPresent(ADMIN_ACCESS_OPTIONS)
+  OBY = OrderBy(CHAT_SPACES_ADMIN_ORDERBY_CHOICE_MAP)
   pfilter = ''
+  kwargs = {}
+  if not useAdminAccess:
+    api = API.CHAT_SPACES
+    function = 'list'
+  else:
+    api = API.CHAT_SPACES_ADMIN
+    function = 'search'
+    kwargs['useAdminAccess'] = True
+    kwargs['query'] = 'customer = "customers/my_customer" AND spaceType = "SPACE"'
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif myarg in {'type', 'types'}:
+    elif not useAdminAccess and myarg in {'type', 'types'}:
       for ctype in getString(Cmd.OB_GROUP_ROLE_LIST).lower().replace(',', ' ').split():
         if ctype in CHAT_SPACE_TYPE_MAP:
           if pfilter:
@@ -25493,23 +25523,30 @@ def printShowChatSpaces(users):
           pfilter += f'spaceType = "{CHAT_SPACE_TYPE_MAP[ctype]}"'
         else:
           invalidChoiceExit(ctype, CHAT_SPACE_TYPE_MAP, True)
+    elif useAdminAccess and myarg == 'orderby':
+      OBY.GetChoice()
+    elif useAdminAccess and myarg == 'query':
+      kwargs['query'] += ' AND '+ getString(Cmd.OB_QUERY)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
-  if not pfilter:
-    pfilter = None
+  if not useAdminAccess:
+    if pfilter:
+      kwargs['filter'] = pfilter
+    else:
+      kwargs['orderBy'] = OBY.orderBy
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, chat, kvList = buildChatServiceObject(API.CHAT_SPACES, user, i, count)
+    user, chat, kvList = buildChatServiceObject(api, user, i, count)
     if not chat:
       continue
     try:
-      spaces = callGAPIpages(chat.spaces(), 'list', 'spaces',
+      spaces = callGAPIpages(chat.spaces(), function, 'spaces',
                              pageMessage=_getChatPageMessage(Ent.CHAT_SPACE, user, i, count, pfilter),
                              bailOnInternalError=True,
                              throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR,
                                            GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
-                             pageSize=CHAT_PAGE_SIZE, filter=pfilter)
+                             pageSize=CHAT_PAGE_SIZE, **kwargs)
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.internalError,
             GAPI.permissionDenied, GAPI.failedPrecondition) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
@@ -43446,7 +43483,7 @@ def doPrintUserList(entityList):
 def doPrintUserCountsByOrgUnit():
   def _printUserCounts(title, v):
     csvPF.WriteRow({'orgUnitPath': title, 'archived': v['archived'], 'active': v['active'], 'suspended': v['suspended'], 'total': v['total']})
-    
+
   USER_COUNTS_FIELDS = ['archived', 'active', 'suspended', 'total']
   USER_COUNTS_ZERO_FIELDS = {'archived': 0, 'active': 0, 'suspended': 0, 'total': 0}
   cd = buildGAPIObject(API.DIRECTORY)
@@ -68552,6 +68589,7 @@ def printShowMessagesThreads(users, entityType):
   dateHeaderFormat = ''
   dateHeaderConvertTimezone = False
   uploadAttachmentBody = {}
+  addCSVData = {}
   parentParms = initDriveFileAttributes()
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -68610,6 +68648,9 @@ def printShowMessagesThreads(users, entityType):
       dateHeaderConvertTimezone = getBoolean()
       if not dateHeaderFormat:
         dateHeaderFormat = RFC2822_TIME_FORMAT
+    elif myarg == 'addcsvdata':
+      k = getString(Cmd.OB_STRING)
+      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
     else:
       unknownArgumentExit()
   labelMatchPattern = parameters['labelMatchPattern']
@@ -68634,11 +68675,15 @@ def printShowMessagesThreads(users, entityType):
         _callbacks = {'batch': _callbackCountLabels, 'process': _countMessages if entityType == Ent.MESSAGE else _countThreads}
       if show_size:
         sortTitles.append('size')
+      if addCSVData:
+        sortTitles.extend(sorted(addCSVData.keys()))
       csvPF.SetTitles(sortTitles)
     else:
       sortTitles = ['User', 'threadId', 'id']
       csvPF.SetTitles(sortTitles)
       sortTitles.extend(defaultHeaders)
+      if addCSVData:
+        sortTitles.extend(sorted(addCSVData.keys()))
       _callbacks = {'batch': _callbackPrint, 'process': _printMessage if entityType == Ent.MESSAGE else _printThread}
     csvPF.SetSortTitles(sortTitles)
   else:
@@ -68670,6 +68715,8 @@ def printShowMessagesThreads(users, entityType):
       if not senderMatchPattern:
         _initSenderLabelsMap(user)
     messageThreadCounts = {'User': user, parameters['listType']: 0, 'size': 0}
+    if addCSVData:
+      messageThreadCounts.update(addCSVData)
     senderCounts = {}
     if save_attachments:
       _, userName, _ = splitEmailAddressOrUID(user)
@@ -68700,14 +68747,14 @@ def printShowMessagesThreads(users, entityType):
     if jcount == 0:
       setSysExitRC(NO_ENTITIES_FOUND_RC)
     if countsOnly and not show_labels and not senderMatchPattern and not show_size:
-      if not csvPF:
-        printEntityKVList([Ent.USER, user], [parameters['listType'], jcount], i, count)
-      else:
-        csvPF.WriteRow({'User': user, parameters['listType']: jcount})
-      continue
-    if jcount == 0:
-      if not csvPF:
-        entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.NO_ENTITIES_MATCHED.format(Ent.Plural(entityType)), i, count)
+      if not positiveCountsOnly or jcount > 0:
+        if not csvPF:
+          printEntityKVList([Ent.USER, user], [parameters['listType'], jcount], i, count)
+        else:
+          row = {'User': user, parameters['listType']: jcount}
+          if addCSVData:
+            row.update(addCSVData)
+          csvPF.WriteRow(row)
       continue
     if not csvPF and not countsOnly:
       if (parameters['messageEntity'] is not None or
@@ -68763,32 +68810,46 @@ def printShowMessagesThreads(users, entityType):
             if not show_size:
               for label in labelsMap.values():
                 label.pop('size', None)
+            if addCSVData:
+              row.update(addCSVData)
             csvPF.WriteRowTitles(flattenJSON({'Labels': sorted(iter(labelsMap.values()), key=lambda k: k['name'])}, flattened=row))
       elif not senderMatchPattern:
-        if not csvPF:
-          if not show_size:
-            printEntityKVList([Ent.USER, user], [parameters['listType'], messageThreadCounts[parameters['listType']]], i, count)
+        v = messageThreadCounts[parameters['listType']]
+        if not positiveCountsOnly or v > 0:
+          if not csvPF:
+            if not show_size:
+              printEntityKVList([Ent.USER, user], [parameters['listType'], v], i, count)
+            else:
+              printEntityKVList([Ent.USER, user], [parameters['listType'], v, 'size', messageThreadCounts['size']], i, count)
           else:
-            printEntityKVList([Ent.USER, user], [parameters['listType'], messageThreadCounts[parameters['listType']], 'size', messageThreadCounts['size']], i, count)
-        else:
-          if not show_size:
-            messageThreadCounts.pop('size', None)
-          csvPF.WriteRow(messageThreadCounts)
+            if not show_size:
+              messageThreadCounts.pop('size', None)
+            csvPF.WriteRow(messageThreadCounts)
       else:
         if not show_size:
           if not csvPF:
             for k, v in sorted(iter(senderCounts.items())):
-              printEntityKVList([Ent.USER, user, Ent.SENDER, k], [parameters['listType'], v['count']], i, count)
+              if not positiveCountsOnly or v['count'] > 0:
+                printEntityKVList([Ent.USER, user, Ent.SENDER, k], [parameters['listType'], v['count']], i, count)
           else:
             for k, v in sorted(iter(senderCounts.items())):
-              csvPF.WriteRow({'User': user, 'Sender': k, parameters['listType']: v['count']})
+              if not positiveCountsOnly or v['count'] > 0:
+                row = {'User': user, 'Sender': k, parameters['listType']: v['count']}
+                if addCSVData:
+                  row.update(addCSVData)
+                csvPF.WriteRow(row)
         else:
           if not csvPF:
             for k, v in sorted(iter(senderCounts.items())):
-              printEntityKVList([Ent.USER, user, Ent.SENDER, k], [parameters['listType'], v['count'], 'size', v['size']], i, count)
+              if not positiveCountsOnly or v['count'] > 0:
+                printEntityKVList([Ent.USER, user, Ent.SENDER, k], [parameters['listType'], v['count'], 'size', v['size']], i, count)
           else:
             for k, v in sorted(iter(senderCounts.items())):
-              csvPF.WriteRow({'User': user, 'Sender': k, parameters['listType']: v['count'], 'size': v['size']})
+              if not positiveCountsOnly or v['count'] > 0:
+                row = {'User': user, 'Sender': k, parameters['listType']: v['count'], 'size': v['size']}
+                if addCSVData:
+                  row.update(addCSVData)
+                csvPF.WriteRow(row)
   if csvPF:
     if not countsOnly:
       csvPF.RemoveTitles(['SizeEstimate', 'LabelsCount', 'Labels', 'Snippet', 'Body'])
@@ -68805,15 +68866,16 @@ def printShowMessagesThreads(users, entityType):
     else:
       csvPF.writeCSVfile('Message Counts' if not show_labels else 'Message Label Counts')
 
-# gam <UserTypeEntity> print message|messages
+# gam <UserTypeEntity> print message|messages [todrive <ToDriveAttribute>*]
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])* [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <MessageIDEntity>)
 #	[labelmatchpattern <RegularExpression>] [sendermatchpattern <RegularExpression>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
 #	[showlabels] [showbody] [showdate] [showsize] [showsnippet]
-#	[convertcrnl] [delimiter <Character>] [todrive <ToDriveAttribute>*]
+#	[convertcrnl] [delimiter <Character>]
 #	[countsonly|positivecountsonly] [useronly]
 #	[[attachmentnamepattern <RegularExpression>]
 #	    [showattachments [noshowtextplain]]]
+#	(addcsvdata <FieldName> <String>)*
 # gam <UserTypeEntity> show message|messages
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])* [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <MessageIDEntity>)
 #	[labelmatchpattern <RegularExpression>] [sendermatchpattern <RegularExpression>]
@@ -68827,15 +68889,16 @@ def printShowMessagesThreads(users, entityType):
 def printShowMessages(users):
   printShowMessagesThreads(users, Ent.MESSAGE)
 
-# gam <UserTypeEntity> print thread|threads
+# gam <UserTypeEntity> print thread|threads [todrive <ToDriveAttribute>*]
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])* [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <ThreadIDEntity>)
 #	[labelmatchpattern <RegularExpression>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
 #	[showlabels] [showbody] [showdate] [showsize] [showsnippet]
-#	[convertcrnl] [delimiter <Character>] [todrive <ToDriveAttribute>*]
+#	[convertcrnl] [delimiter <Character>]
 #	[countsonly|positivecountsonly] [useronly]
 #	[[attachmentnamepattern <RegularExpression>]
 #	    [showattachments [noshowtextplain]]]
+#	(addcsvdata <FieldName> <String>)*
 # gam <UserTypeEntity> show thread|threads
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])* [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <ThreadIDEntity>)
 #	[labelmatchpattern <RegularExpression>]

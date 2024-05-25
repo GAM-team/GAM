@@ -365,6 +365,10 @@ gam <UserTypeEntity> archive messages <GroupItem>
 
 Messages are archived to the group specified by `<GroupItem>`.
 
+When `query` is specified:
+* `max_to_archive 0` - All messages selected will be archived; this is the default
+* `max_to_archive <Number>` - No messages will be archived if the number messages selected is > `<Number>`
+
 By default, the command results are displayed as indented keys and values. Use the `csv` option
 to display the command results in CSV form.
 ```
@@ -406,6 +410,10 @@ By default, when exporting a message, an existing local file will not be overwri
 * `overwrite true` - Overwite an existing file
 * `overwrite false` - Do not overwite an existing file; add a numeric prefix and create a new file
 
+When `query` is specified:
+* `max_to_export 0` - All messages selected will be exported
+* `max_to_export <Number>` - No messages will be exported if the number messages selected is > `<Number>`; `<Number>` defaults to 1.
+
 See below for message selection.
 
 ## Forward messages/threads
@@ -428,6 +436,10 @@ If `addorigfieldstosubject` is specified, GAM appends the original `from`, `to` 
 ```
 Fwd: Ross to TestUser (Original From: Ross Scroggs <ross.scroggs@gmail.com> To: testuser@domain.com Date: Thu, 23 Nov 2023 07:01:59 -0800)
 ```
+
+When `query` is specified:
+* `max_to_forward 0` - All messages selected will be forwarded
+* `max_to_forward <Number>` - No messages will be forwarded if the number messages selected is > `<Number>`; `<Number>` defaults to 1.
 
 See below for message selection.
 
@@ -542,7 +554,8 @@ gam <UserTypeEntity> print messages|threads [todrive <ToDriveAttribute>*]
 ```
 ## Display all messages
 By default, Gam displays all messages.
-* `max_to_xxx` - Limit the number of messages that will be displayed
+* `max_to_print|max_to_show 0` - All messages will be displayed; this is the default
+* `max_to_print|max_to_show <Number>` - Limit the number of messages that will be displayed to `<Number>`
 * `includespamtrash` - Include messages in the Spam and Trash folders
 
 ## Display a specific set of messages
@@ -550,7 +563,8 @@ By default, Gam displays all messages.
 
 ## Display a selected set of messages
 * `((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+` - Criteria to select messages
-* `max_to_xxx` - Limit the number of messages that will be displayed
+* `max_to_print|max_to_show 0` - All selected messages will be displayed; this is the default
+* `max_to_print|max_to_show <Number>` - Limit the number of selected  messages that will be displayed to `<Number>`
 * `includespamtrash` - Include messages in the Spam and Trash folders
 * `labelmatchpattern <RegularExpression>` - Only display messages with some label that matches `<RegularExpression>`
   * `labelmatchpattern xyz` - Label must start with xyz

@@ -12,6 +12,11 @@ See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Win
 
 ### 6.76.06
 
+Fixed bug in `gam <UserTypeEntity> print messages ... positivecountsonly` where message counts with value 0 were deiplayed.
+
+Added option `addcsvdata <FieldName> <String>` to `gam <UserTypeEntity> print|messages` that adds
+additional columns of data to the CSV file output.
+
 Added option `showusagebytes` to `gam <UserTypeEntity> print|show drivesettings` that displays
 the following fields in bytes ```usageBytes,usageInDriveBytes,usageInDriveTrashBytes```
 in addition to the fields in their formatted form with units: ```usage,usageInDrive,usageInDriveTrash```.

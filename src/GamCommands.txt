@@ -7226,9 +7226,10 @@ gam <UserTypeEntity> print messages|threads [todrive <ToDriveAttribute>*]
         [countsonly|positivecountsonly] [useronly]
         [headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String> [dateheaderconverttimezone [<Boolean>]]]
         [showlabels] [delimiter <Character>] [showbody] [showdate] [showsize] [showsnippet]
+        [convertcrnl] [delimiter <Character>]
         [[attachmentnamepattern <RegularExpression>]
             [showattachments [noshowtextplain]]]
-        [convertcrnl]
+        (addcsvdata <FieldName> <String>)*
 
 # Users - Gmail - Profile
 

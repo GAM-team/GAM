@@ -171,6 +171,10 @@ RATE_CHECK_COUNT = 'rccn'
 RATE_CHECK_START = 'rcst'
 # Section name from outer gam, passed to inner gams
 SECTION = 'sect'
+# Enable/disable "Getting ... " messages
+SHOW_GETTINGS = 'shog'
+# Enable/disable NL at end of "Got ..." messages
+SHOW_GETTINGS_GOT_NL = 'shgn'
 # redirected files
 SAVED_STDOUT = 'svso'
 STDERR = 'stde'
@@ -287,6 +291,8 @@ Globals = {
   RATE_CHECK_COUNT: 0,
   RATE_CHECK_START: 0,
   SECTION: None,
+  SHOW_GETTINGS: True,
+  SHOW_GETTINGS_GOT_NL: False,
   SAVED_STDOUT: None,
   STDERR: {},
   STDOUT: {},

@@ -29,8 +29,10 @@ CBCM = 'cbcm'
 CHAT = 'chat'
 CHAT_EVENTS = 'chatevents'
 CHAT_MEMBERSHIPS = 'chatmemberships'
+CHAT_MEMBERSHIPS_ADMIN = 'chatmembershipsadmin'
 CHAT_MESSAGES = 'chatmessages'
 CHAT_SPACES = 'chatspaces'
+CHAT_SPACES_ADMIN = 'chatspacesadmin'
 CHAT_SPACES_DELETE = 'chatspacesdelete'
 CHROMEMANAGEMENT = 'chromemanagement'
 CHROMEMANAGEMENT_APPDETAILS = 'chromemanagementappdetails'
@@ -197,8 +199,10 @@ _INFO = {
   CHAT: {'name': 'Chat API', 'version': 'v1', 'v2discovery': True},
   CHAT_EVENTS: {'name': 'Chat API - Events', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},
   CHAT_MEMBERSHIPS: {'name': 'Chat API - Memberships', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},
+  CHAT_MEMBERSHIPS_ADMIN: {'name': 'Chat API - Admin Memberships', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},
   CHAT_MESSAGES: {'name': 'Chat API - Messages', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},
   CHAT_SPACES: {'name': 'Chat API - Spaces', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},
+  CHAT_SPACES_ADMIN: {'name': 'Chat API - Admin  Spaces', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},
   CHAT_SPACES_DELETE: {'name': 'Chat API - Spaces Delete', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},
   CLASSROOM: {'name': 'Classroom API', 'version': 'v1', 'v2discovery': True},
   CHROMEMANAGEMENT: {'name': 'Chrome Management API', 'version': 'v1', 'v2discovery': True},
@@ -514,6 +518,10 @@ _SVCACCT_SCOPES = [
    'api': CHAT_MEMBERSHIPS,
    'subscopes': READONLY,
    'scope': 'https://www.googleapis.com/auth/chat.memberships'},
+  {'name': 'Chat API - Admin Memberships',
+   'api': CHAT_MEMBERSHIPS_ADMIN,
+   'subscopes': READONLY,
+   'scope': 'https://www.googleapis.com/auth/chat.admin.memberships'},
   {'name': 'Chat API - Messages',
    'api': CHAT_MESSAGES,
    'subscopes': READONLY,
@@ -522,6 +530,10 @@ _SVCACCT_SCOPES = [
    'api': CHAT_SPACES,
    'subscopes': READONLY,
    'scope': 'https://www.googleapis.com/auth/chat.spaces'},
+  {'name': 'Chat API - Admin Spaces',
+   'api': CHAT_SPACES_ADMIN,
+   'subscopes': READONLY,
+   'scope': 'https://www.googleapis.com/auth/chat.admin.spaces'},
   {'name': 'Chat API - Spaces Delete',
    'api': CHAT_SPACES_DELETE,
    'subscopes': [],
