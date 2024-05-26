@@ -114,7 +114,7 @@ jobs:
         with:
           path: |
             cache.tar.xz
-          key: gam-${{ matrix.jid }}-20240416
+          key: gam-${{ matrix.jid }}-20240526
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
@@ -207,12 +207,6 @@ jobs:
             GAM_ARCHIVE_ARCH="x86_64"
             WIX_ARCH="x64"
             CHOC_OPS=""
-          elif [[ "${arch}" == "Win32" ]]; then
-            PYEXTERNALS_PATH="win32"
-            PYBUILDRELEASE_ARCH="Win32"
-            GAM_ARCHIVE_ARCH="x86"
-            WIX_ARCH="x86"
-            CHOC_OPS="--forcex86"
           fi
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
             MAKE=make
@@ -494,10 +488,8 @@ jobs:
           # remove pre-compiled bootloaders so we fail if bootloader compile fails
           rm -rvf PyInstaller/bootloader/*-*/*
           cd bootloader
+          export PYINSTALLER_BUILD_ARGS=""
           case "${arch}" in
-            "Win32")
-              export PYINSTALLER_BUILD_ARGS="--target-arch=32bit"
-              ;;
             "Win64")
               export PYINSTALLER_BUILD_ARGS="--target-arch=64bit"
               ;;
@@ -524,7 +516,7 @@ jobs:
           elif [[ "${RUNNER_OS}" == "Windows" ]]; then
             # Work around issue where PyInstaller picks up python3.dll from other Python versions
             # https://github.com/pyinstaller/pyinstaller/issues/7102
-            export PATH="/usr/bin"
+            export PATH="$(dirname ${PYTHON}):/usr/bin"
           else
             export gampath=$(realpath "${gampath}")
           fi
@@ -602,15 +594,16 @@ jobs:
         if: runner.os != 'Windows' && matrix.goal == 'build'
         run: |
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
-              GAM_ARCHIVE="gam-${GAMVERSION}-macos-${arch}.tar.xz"
+            GAM_ARCHIVE="gam-${GAMVERSION}-macos-${arch}.tar.xz"
           elif [[ "${RUNNER_OS}" == "Linux" ]]; then
-              if [[ "${staticx}" == "yes" ]]; then
-                libver="legacy"
-              else
-                libver="glibc$(ldd --version | awk '/ldd/{print $NF}')"
-              fi
-              GAM_ARCHIVE="gam-${GAMVERSION}-linux-$(arch)-${libver}.tar.xz"
+            if [[ "${staticx}" == "yes" ]]; then
+              libver="legacy"
+            else
+              libver="glibc$(ldd --version | awk '/ldd/{print $NF}')"
+            fi
+            GAM_ARCHIVE="gam-${GAMVERSION}-linux-$(arch)-${libver}.tar.xz"
           fi
+          echo "GAM Archive ${GAM_ARCHIVE}"
           tar -C dist/ --create --verbose --exclude-from "${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" --file $GAM_ARCHIVE --xz gam
 
       - name: Windows package
