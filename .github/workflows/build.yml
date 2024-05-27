@@ -187,6 +187,18 @@ jobs:
           sudo apt-get -qq --yes update
           sudo apt-get -qq --yes install swig libpcsclite-dev libxslt1-dev
 
+      - name: MacOS install tools
+        if: runner.os == 'macOS'
+        run: |
+          # Install latest Rust
+          curl $curl_retry -fsS -o rust.sh https://sh.rustup.rs
+          bash ./rust.sh -y
+          source $HOME/.cargo/env
+          # Install needed packages
+          # brew update
+          # brew install gpg
+          brew install swig
+
       - name: Windows Configure VCode
         uses: ilammy/msvc-dev-cmd@v1
         if: runner.os == 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
@@ -725,7 +737,7 @@ jobs:
           $gam info group $newgroup
           $gam info cigroup $newgroup membertree
           # confirm mailbox is provisoned before continuing
-          $gam user $newuser waitformailbox
+          $gam user $newuser waitformailbox retries 20
           $gam user $newuser imap on
           $gam user $newuser show imap
           $gam user $newuser show delegates
@@ -739,7 +751,7 @@ jobs:
           $gam user $gam_user insertemail subject "GHA insert $newbase" file gam.py labels INBOX,UNREAD # yep body is gam code
           $gam user $gam_user sendemail subject "GHA send $gam_user $newbase" file gam.py recipient admin@pdl.jaylee.us
           $gam user $gam_user draftemail subject "GHA draft $newbase" message "Draft message test"
-          $gam csvfile sample.csv:email waitformailbox
+          $gam csvfile sample.csv:email waitformailbox retries 20
           $gam user $newuser delegate to "${newbase}-bulkuser-1" || if [ $? != 50 ]; then exit $?; fi # expect a 50 return code (delegation failed)
           $gam users "$gam_user $newbase-bulkuser-1 $newbase-bulkuser-2 $newbase-bulkuser-3" delete messages query in:anywhere maxtodelete 99999 doit || if [ $? != 60 ]; then exit $?; fi # expect a 60 return code (no messages)
           $gam users "$newbase-bulkuser-4 $newbase-bulkuser-5 $newbase-bulkuser-6" trash messages query in:anywhere maxtotrash 99999 doit || if [ $? != 60 ]; then exit $?; fi # expect a 60 return code (no messages)
