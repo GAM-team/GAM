@@ -9695,16 +9695,18 @@ def MultiprocessGAMCommands(items, showCmds):
       GM.Globals[GM.MULTIPROCESS_EXIT_PROCESSING] = True
 
   def signal_handler(sig, frame):
-    controlC['trapped'] = True
+    nonlocal controlC
+    controlC = True
 
   def handleControlC(source):
+    nonlocal controlC
     batchWriteStderr(f'Control-C (Multiprocess-{source})\n')
     setSysExitRC(KEYBOARD_INTERRUPT_RC)
     batchWriteStderr(Msg.BATCH_CSV_TERMINATE_N_PROCESSES.format(currentISOformatTimeStamp(),
                                                                 numItems, poolProcessResults[0],
                                                                 PROCESS_PLURAL_SINGULAR[poolProcessResults[0] == 1]))
     pool.terminate()
-    controlC['trapped']  = False
+    controlC = False
 
   if not items:
     return
@@ -9758,7 +9760,7 @@ def MultiprocessGAMCommands(items, showCmds):
   else:
     mpQueueCSVFile = None
 #  signal.signal(signal.SIGINT, origSigintHandler)
-  controlC = {'trapped': False}
+  controlC = False
   signal.signal(signal.SIGINT, signal_handler)
   batchWriteStderr(Msg.USING_N_PROCESSES.format(currentISOformatTimeStamp(),
                                                 numItems, numPoolProcesses,
@@ -9769,7 +9771,7 @@ def MultiprocessGAMCommands(items, showCmds):
     for item in items:
       if GM.Globals[GM.MULTIPROCESS_EXIT_PROCESSING]:
         break
-      if controlC['trapped']:
+      if controlC:
         break
       if item[0] == Cmd.COMMIT_BATCH_CMD:
         batchWriteStderr(Msg.COMMIT_BATCH_WAIT_N_PROCESSES.format(currentISOformatTimeStamp(),
@@ -9839,7 +9841,7 @@ def MultiprocessGAMCommands(items, showCmds):
             break
           time.sleep(1)
     processWaitStart = time.time()
-    if not controlC['trapped']:
+    if not controlC:
       if GC.Values[GC.PROCESS_WAIT_LIMIT] > 0:
         waitRemaining = GC.Values[GC.PROCESS_WAIT_LIMIT]
       else:
@@ -9857,6 +9859,9 @@ def MultiprocessGAMCommands(items, showCmds):
         for p in completedProcesses:
           del poolProcessResults[p]
         if poolProcessResults[0] > 0:
+          if controlC:
+            handleControlC('SIG')
+            break
           time.sleep(5)
           if GC.Values[GC.PROCESS_WAIT_LIMIT] > 0:
             delta = int(time.time()-processWaitStart)
