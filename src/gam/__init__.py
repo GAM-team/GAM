@@ -41917,7 +41917,7 @@ def verifyUserPrimaryEmail(cd, user, createIfNotFound, i, count):
 #	[updateprimaryemail <RegularExpression> <EmailReplacement>]
 #	[updateoufromgroup <CSVFileInput> [keyfield <FieldName>] [datafield <FieldName>]]
 #	[immutableous <OrgUnitEntity>]|
-#	[clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>]
+#	[clearschema <SchemaName>|<SchemaNameField>]
 #	[createifnotfound] [notfoundpassword (random [<Integer>])|blocklogin|<Password>]
 #	(groups [<GroupRole>] [[delivery] <DeliverySetting>] <GroupEntity>)*
 #	[alias|aliases <EmailAddressList>]
@@ -42523,6 +42523,44 @@ def _formatLanguagesList(propertyValue, delimiter):
       languages.append(lang)
   return delimiter.join(languages)
 
+def _initSchemaParms(projection):
+  return {'projection': projection, 'customFieldMask': None, 'selectedSchemaFields': {}}
+
+def _getSchemaNameList(schemaParms):
+  customFieldMask = getString(Cmd.OB_SCHEMA_NAME_LIST).replace(' ', ',')
+  if customFieldMask.lower() == 'all':
+    schemaParms['projection'] = 'full'
+    schemaParms['customFieldMask'] = None
+    schemaParms['selectedSchemaFields'] = {}
+  else:
+    schemaParms['projection'] = 'custom'
+    customFieldMaskList = []
+    for schemaField in customFieldMask.split(','):
+      if schemaField.find('.') == -1:
+        customFieldMaskList.append(schemaField)
+      else:
+        schemaName, fieldName = schemaField.split('.', 1)
+        customFieldMaskList.append(schemaName)
+        schemaParms['selectedSchemaFields'] .setdefault(schemaName, set())
+        schemaParms['selectedSchemaFields'][schemaName].add(fieldName)
+    schemaParms['customFieldMask'] = ','.join(customFieldMaskList)
+
+def _filterSchemaFields(userEntity, schemaParms):
+  schemas = userEntity.pop('customSchemas', None)
+  if schemas is None:
+    return
+  customSchemas = {}
+  for schema in sorted(schemas):
+    if schema in schemaParms['selectedSchemaFields']:
+      for field, value in sorted(iter(schemas[schema].items())):
+        if field not in schemaParms['selectedSchemaFields'][schema]:
+          continue
+        customSchemas.setdefault(schema, {})
+        customSchemas[schema][field] = value
+    else:
+      customSchemas[schema] = schemas[schema]
+  userEntity['customSchemas'] = customSchemas
+
 def infoUsers(entityList):
   def printUserCIGroupMap(parent, group_name_mappings, seen_group_count, edges, direction):
     for a_parent, a_child in edges:
@@ -42558,8 +42596,7 @@ def infoUsers(entityList):
   getAliases = getBuildingNames = getCIGroupsTree = getGroups = getLicenses = getSchemas = not GC.Values[GC.QUICK_INFO_USER]
   getGroupsTree = False
   FJQC = FormatJSONQuoteChar()
-  projection = 'full'
-  customFieldMask = None
+  schemaParms = _initSchemaParms('full')
   viewType = 'admin_view'
   fieldsList = []
   groups = []
@@ -42582,19 +42619,13 @@ def infoUsers(entityList):
       getLicenses = myarg in {'licenses', 'licences'}
     elif myarg == 'noschemas':
       getSchemas = False
-      projection = 'basic'
+      schemaParms = _initSchemaParms('basic')
     elif myarg == 'allschemas':
       getSchemas = True
-      projection = 'full'
+      schemaParms = _initSchemaParms('full')
     elif myarg in {'custom', 'schemas', 'customschemas'}:
       getSchemas = True
-      customFieldMask = getString(Cmd.OB_SCHEMA_NAME_LIST).replace(' ', ',')
-      if customFieldMask.lower() == 'all':
-        customFieldMask = None
-        projection = 'full'
-      else:
-        projection = 'custom'
-      fieldsList.append('customSchemas')
+      _getSchemaNameList(schemaParms)
     elif myarg in {'products', 'product'}:
       skus = SKU.convertProductListToSKUList(getGoogleProductList())
     elif myarg in {'sku', 'skus'}:
@@ -42611,6 +42642,8 @@ def infoUsers(entityList):
       FJQC.GetFormatJSON(myarg)
   if fieldsList:
     fieldsList.append('primaryEmail')
+    if getSchemas:
+      fieldsList.append('customSchemas')
     if getAliases:
       fieldsList.extend(['aliases', 'nonEditableAliases'])
   fields = getFieldsFromFieldsList(fieldsList)
@@ -42627,7 +42660,8 @@ def infoUsers(entityList):
     try:
       user = callGAPI(cd.users(), 'get',
                       throwReasons=GAPI.USER_GET_THROW_REASONS+[GAPI.INVALID_INPUT, GAPI.RESOURCE_NOT_FOUND],
-                      userKey=userEmail, projection=projection, customFieldMask=customFieldMask, viewType=viewType, fields=fields)
+                      userKey=userEmail, projection=schemaParms['projection'], customFieldMask=schemaParms['customFieldMask'],
+                      viewType=viewType, fields=fields)
       groups = []
       memberships = []
       if getGroups or getGroupsTree:
@@ -42859,25 +42893,29 @@ def infoUsers(entityList):
           typeKey = userProperty[UProp.TYPE_KEYWORDS][UProp.PTKW_ATTR_TYPE_KEYWORD]
           typeCustomValue = userProperty[UProp.TYPE_KEYWORDS][UProp.PTKW_ATTR_TYPE_CUSTOM_VALUE]
           customTypeKey = userProperty[UProp.TYPE_KEYWORDS][UProp.PTKW_ATTR_CUSTOMTYPE_KEYWORD]
-          printKeyValueList([UProp.PROPERTIES[up][UProp.TITLE], None])
-          Ind.Increment()
-          for schema in sorted(propertyValue):
-            printKeyValueList(['Schema', schema])
+          if schemaParms['selectedSchemaFields']:
+            _filterSchemaFields(user, schemaParms)
+          propertyValue = user[up]
+          if propertyValue:
+            printKeyValueList([UProp.PROPERTIES[up][UProp.TITLE], None])
             Ind.Increment()
-            for field in propertyValue[schema]:
-              if isinstance(propertyValue[schema][field], list):
-                printKeyValueList([field])
-                Ind.Increment()
-                for an_item in propertyValue[schema][field]:
-                  _showType(an_item, typeKey, typeCustomValue, customTypeKey, defaultType='work')
+            for schema in sorted(propertyValue):
+              printKeyValueList(['Schema', schema])
+              Ind.Increment()
+              for field in propertyValue[schema]:
+                if isinstance(propertyValue[schema][field], list):
+                  printKeyValueList([field])
                   Ind.Increment()
-                  printKeyValueList(['value', an_item['value']])
+                  for an_item in propertyValue[schema][field]:
+                    _showType(an_item, typeKey, typeCustomValue, customTypeKey, defaultType='work')
+                    Ind.Increment()
+                    printKeyValueList(['value', an_item['value']])
+                    Ind.Decrement()
                   Ind.Decrement()
-                Ind.Decrement()
-              else:
-                printKeyValueList([field, propertyValue[schema][field]])
+                else:
+                  printKeyValueList([field, propertyValue[schema][field]])
+              Ind.Decrement()
             Ind.Decrement()
-          Ind.Decrement()
       if getAliases:
         for up in ['aliases', 'nonEditableAliases']:
           propertyValue = user.get(up, [])
@@ -42942,8 +42980,8 @@ def infoUsers(entityList):
             GAPI.badRequest, GAPI.backendError, GAPI.systemError) as e:
       entityActionFailedWarning([Ent.USER, userEmail], str(e), i, count)
     except (GAPI.invalidInput, GAPI.invalidMember) as e:
-      if customFieldMask:
-        entityActionFailedWarning([Ent.USER, userEmail], invalidUserSchema(customFieldMask), i, count)
+      if schemaParms['customFieldMask']:
+        entityActionFailedWarning([Ent.USER, userEmail], invalidUserSchema(schemaParms['customFieldMask']), i, count)
       else:
         entityActionFailedWarning([Ent.USER, userEmail], str(e), i, count)
 
@@ -43058,6 +43096,8 @@ def doPrintUsers(entityList=None):
           phoneNumber = phone.get('value', '')
           if phoneNumber.startswith('+'):
             phone['value'] = "'"+phoneNumber
+      if schemaParms['selectedSchemaFields']:
+        _filterSchemaFields(userEntity, schemaParms)
       if printOptions['getGroupFeed']:
         printGettingAllEntityItemsForWhom(Ent.GROUP_MEMBERSHIP, userEmail, i, count)
         try:
@@ -43128,8 +43168,8 @@ def doPrintUsers(entityList=None):
           entityUnknownWarning(Ent.USER, ri[RI_ITEM], int(ri[RI_J]), int(ri[RI_JCOUNT]))
         else:
           _writeUserEntity({'primaryEmail': ri[RI_ITEM], showValidColumn: False})
-      elif (reason == GAPI.INVALID_INPUT) and customFieldMask:
-        entityActionFailedWarning([Ent.USER, ri[RI_ITEM]], invalidUserSchema(customFieldMask), int(ri[RI_J]), int(ri[RI_JCOUNT]))
+      elif (reason == GAPI.INVALID_INPUT) and schemaParms['customFieldMask']:
+        entityActionFailedWarning([Ent.USER, ri[RI_ITEM]], invalidUserSchema(schemaParms['customFieldMask']), int(ri[RI_J]), int(ri[RI_JCOUNT]))
       elif reason not in GAPI.DEFAULT_RETRY_REASONS:
         errMsg = getHTTPError(_PRINT_USER_REASON_TO_MESSAGE_MAP, http_status, reason, message)
         printKeyValueList([ERROR, errMsg])
@@ -43138,7 +43178,8 @@ def doPrintUsers(entityList=None):
         try:
           user = callGAPI(cd.users(), 'get',
                           throwReasons=GAPI.USER_GET_THROW_REASONS+[GAPI.INVALID_INPUT, GAPI.RESOURCE_NOT_FOUND, GAPI.RATE_LIMIT_EXCEEDED],
-                          userKey=ri[RI_ITEM], projection=projection, customFieldMask=customFieldMask, viewType=viewType, fields=fields)
+                          userKey=ri[RI_ITEM], projection=schemaParms['projection'], customFieldMask=schemaParms['customFieldMask'],
+                          viewType=viewType, fields=fields)
           _printUser(user, int(ri[RI_J]), int(ri[RI_JCOUNT]))
         except (GAPI.userNotFound, GAPI.resourceNotFound):
           if not showValidColumn:
@@ -43149,8 +43190,8 @@ def doPrintUsers(entityList=None):
                 GAPI.badRequest, GAPI.backendError, GAPI.systemError, GAPI.rateLimitExceeded) as e:
           entityActionFailedWarning([Ent.USER, ri[RI_ITEM]], str(e), int(ri[RI_J]), int(ri[RI_JCOUNT]))
         except GAPI.invalidInput as e:
-          if customFieldMask:
-            entityActionFailedWarning([Ent.USER, ri[RI_ITEM]], invalidUserSchema(customFieldMask), int(ri[RI_J]), int(ri[RI_JCOUNT]))
+          if schemaParms['customFieldMask']:
+            entityActionFailedWarning([Ent.USER, ri[RI_ITEM]], invalidUserSchema(schemaParms['customFieldMask']), int(ri[RI_J]), int(ri[RI_JCOUNT]))
           else:
             entityActionFailedWarning([Ent.USER, ri[RI_ITEM]], str(e), int(ri[RI_J]), int(ri[RI_JCOUNT]))
 
@@ -43174,9 +43215,8 @@ def doPrintUsers(entityList=None):
   lic = None
   skus = None
   maxResults = GC.Values[GC.USER_MAX_RESULTS]
-  projection = 'basic'
+  schemaParms = _initSchemaParms('basic')
   projectionSet = False
-  customFieldMask = None
   oneLicensePerRow = quotePlusPhoneNumbers = showDeleted = False
   aliasMatchPattern = isSuspended = orgUnitPath = orgUnitPathLower = orderBy = sortOrder = None
   viewType = 'admin_view'
@@ -43203,27 +43243,22 @@ def doPrintUsers(entityList=None):
       orderBy, sortOrder = getOrderBySortOrder(USERS_ORDERBY_CHOICE_MAP)
     elif myarg == 'userview':
       viewType = 'domain_public'
+    elif myarg in {'allfields', 'basic'}:
+      schemaParms = _initSchemaParms('basic')
+      projectionSet = printOptions['sortHeaders'] = True
+      fieldsList = []
+    elif myarg == 'full':
+      if schemaParms['projection'] != 'custom':
+        schemaParms = _initSchemaParms(myarg)
+      projectionSet = printOptions['sortHeaders'] = True
+      fieldsList = []
     elif myarg in {'custom', 'schemas', 'customschemas'}:
-      if not fieldsList:
-        fieldsList = ['primaryEmail']
-      fieldsList.append('customSchemas')
-      customFieldMask = getString(Cmd.OB_SCHEMA_NAME_LIST).replace(' ', ',')
-      if customFieldMask.lower() == 'all':
-        customFieldMask = None
-        projection = 'full'
-      else:
-        projection = 'custom'
       projectionSet = True
+      _getSchemaNameList(schemaParms)
+      if fieldsList:
+        fieldsList.append('customSchemas')
     elif myarg == 'delimiter':
       delimiter = getCharacter()
-    elif myarg in PROJECTION_CHOICE_MAP:
-      projection = myarg
-      projectionSet = printOptions['sortHeaders'] = True
-      fieldsList = []
-    elif myarg == 'allfields':
-      projection = 'basic'
-      projectionSet = printOptions['sortHeaders'] = True
-      fieldsList = []
     elif myarg == 'sortheaders':
       printOptions['sortHeaders'] = getBoolean()
     elif myarg == 'scalarsfirst':
@@ -43326,7 +43361,8 @@ def doPrintUsers(entityList=None):
                                             GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
                               query=query, fields=fields,
                               showDeleted=showDeleted, orderBy=orderBy, sortOrder=sortOrder, viewType=viewType,
-                              projection=projection, customFieldMask=customFieldMask, maxResults=maxResults, **kwargs)
+                              projection=schemaParms['projection'], customFieldMask=schemaParms['customFieldMask'],
+                              maxResults=maxResults, **kwargs)
         for users in feed:
           if showItemCountOnly:
             itemCount += len(users)
@@ -43351,12 +43387,12 @@ def doPrintUsers(entityList=None):
         entityActionFailedWarning([Ent.USER, None, Ent.DOMAIN, kwargs['domain']], Msg.NOT_FOUND)
         continue
       except (GAPI.invalidOrgunit, GAPI.invalidInput) as e:
-        if query and not customFieldMask:
+        if query and not schemaParms['customFieldMask']:
           entityActionFailedWarning([Ent.USER, None], invalidQuery(query))
-        elif customFieldMask and not query:
-          entityActionFailedWarning([Ent.USER, None], invalidUserSchema(customFieldMask))
-        elif query and customFieldMask:
-          entityActionFailedWarning([Ent.USER, None], f'{invalidQuery(query)} or {invalidUserSchema(customFieldMask)}')
+        elif schemaParms['customFieldMask'] and not query:
+          entityActionFailedWarning([Ent.USER, None], invalidUserSchema(schemaParms['customFieldMask']))
+        elif query and schemaParms['customFieldMask']:
+          entityActionFailedWarning([Ent.USER, None], f'{invalidQuery(query)} or {invalidUserSchema(schemaParms['customFieldMask'])}')
         else:
           entityActionFailedWarning([Ent.USER, None], str(e))
         continue
@@ -43377,7 +43413,9 @@ def doPrintUsers(entityList=None):
       jcount = len(entityList)
       fields = getFieldsFromFieldsList(fieldsList)
       if GC.Values[GC.BATCH_SIZE] > 1 and jcount > 1:
-        svcargs = dict([('userKey', None), ('fields', fields), ('projection', projection), ('customFieldMask', customFieldMask), ('viewType', viewType)]+GM.Globals[GM.EXTRA_ARGS_LIST])
+        svcargs = dict([('userKey', None), ('fields', fields),
+                        ('projection', schemaParms['projection']), ('customFieldMask', schemaParms['customFieldMask']),
+                        ('viewType', viewType)]+GM.Globals[GM.EXTRA_ARGS_LIST])
         method = getattr(cd.users(), 'get')
         dbatch = cd.new_batch_http_request(callback=_callbackPrintUser)
         bcount = 0
@@ -43402,7 +43440,8 @@ def doPrintUsers(entityList=None):
           try:
             user = callGAPI(cd.users(), 'get',
                             throwReasons=GAPI.USER_GET_THROW_REASONS+[GAPI.INVALID_INPUT, GAPI.RESOURCE_NOT_FOUND, GAPI.RATE_LIMIT_EXCEEDED],
-                            userKey=userEmail, projection=projection, customFieldMask=customFieldMask, viewType=viewType, fields=fields)
+                            userKey=userEmail, projection=schemaParms['projection'], customFieldMask=schemaParms['customFieldMask'],
+                            viewType=viewType, fields=fields)
             _printUser(user, j, jcount)
           except (GAPI.userNotFound, GAPI.resourceNotFound):
             if not showValidColumn:
@@ -43413,8 +43452,8 @@ def doPrintUsers(entityList=None):
                   GAPI.badRequest, GAPI.backendError, GAPI.systemError, GAPI.rateLimitExceeded) as e:
             entityActionFailedWarning([Ent.USER, userEmail], str(e), j, jcount)
           except GAPI.invalidInput as e:
-            if customFieldMask:
-              entityActionFailedWarning([Ent.USER, userEmail], invalidUserSchema(customFieldMask), j, jcount)
+            if schemaParms['customFieldMask']:
+              entityActionFailedWarning([Ent.USER, userEmail], invalidUserSchema(schemaParms['customFieldMask']), j, jcount)
             else:
               entityActionFailedWarning([Ent.USER, userEmail], str(e), j, jcount)
 # The only field specified was primaryEmail, just list the users/count the domains
@@ -53951,10 +53990,9 @@ def printFileList(users):
       showParent = getBoolean()
     elif myarg == 'nodataheaders':
       nodataFields = getString(Cmd.OB_FIELD_NAME_LIST).replace('_', '').replace(',', ' ').split()
-    elif myarg == 'filepath':
+    elif myarg in {'filepath', 'fullpath'}:
       filepath = True
-    elif myarg == 'fullpath':
-      filepath = fullpath = True
+      fullpath = myarg == 'fullpath'
     elif myarg == 'folderpathonly':
       folderPathOnly = getBoolean()
     elif myarg == 'pathdelimiter':

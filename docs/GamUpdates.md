@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.76.08
+
+Updated `<SchemaNameList>` to `"<SchemaName>|<SchemaFieldName>(,<SchemaName>|<SchemaFieldName>)*"`
+that allows `schemas <SchemaNameList>` in `gam info user` and `gam print users` to display all fields or selected fields
+of the specified custom schemas.
+
 ### 6.76.07
 
 Fixed bug where control-C was not recognized when GAM had processed all rows in a CSV file

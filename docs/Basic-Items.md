@@ -457,6 +457,7 @@
 <ResellerID> ::= <String>
 <ResourceID> ::= <String>
 <SchemaName> ::= <String>
+<SchemaNameField> ::= <SchemaName>.<FieldName>
 <Section> ::= <String>
 <SendAsContent> ::=
         (sig|signature|htmlsig <String>)|
@@ -513,6 +514,7 @@
 <Title> ::= <String>
 <ToDriveAttribute> ::=
         (tdaddsheet [<Boolean>])|
+        (tdalert <EmailAddress>)*|
         (tdbackupsheet (id:<Number>)|<String>)|
         (tdcellnumberformat text|number)|
         (tdcellwrap clip|overflow|wrap)|
@@ -520,17 +522,20 @@
         (tdcopysheet (id:<Number>)|<String>)|
         (tddescription <String>)|
         (tdfileid <DriveFileID>)|
+        (tdfrom <EmailAddress>)|
         (tdlocalcopy [<Boolean>])|
         (tdlocale <Locale>)|
         (tdnobrowser [<Boolean>])|
         (tdnoemail [<Boolean>])|
         (tdnoescapechar [<Boolean>])|
+        (tdnotify [<Boolean>])|
         (tdparent (id:<DriveFolderID>)|<DriveFolderName>)|
         (tdretaintitle [<Boolean>])|
         (tdshare <EmailAddress> commenter|reader|writer)*|
         (tdsheet (id:<Number>)|<String>)|
         (tdsheettimestamp [<Boolean>] [tdsheettimeformat <String>])
         (tdsheettitle <String>)|
+        (tdsubject <String>)|
         ([tdsheetdaysoffset <Number>] [tdsheethoursoffset <Number>])|
         (tdtimestamp [<Boolean>] [tdtimeformat <String>]
             [tddaysoffset <Number>] [tdhoursoffset <Number>])|

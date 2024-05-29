@@ -110,6 +110,11 @@ queries "`"orgUnitPath=\'/Students/Lower\ School/2027\'`",`"orgUnitPath=\'/Stude
 <QueryUser> ::= <String>
         See: https://developers.google.com/admin-sdk/directory/v1/guides/search-users
 
+<FieldName> ::= <String>
+<SchemaName> ::= <String>
+<SchemaNameField> ::= <SchemaName>.<FieldName>
+<SchemaNameList> ::= "<SchemaName>|<SchemaFieldName>(,<SchemaName>|<SchemaFieldName>)*"
+
 <StorageBucketName> ::= <String>
 <StorageObjectName> ::= <String>
 <StorageBucketObjectName> ::=
@@ -488,7 +493,7 @@ clearschema <SchemaName>
 ```
 Clear a specific field in a schema:
 ```
-clearschema <SchemaName>.<FieldName>
+clearschema <SchemaNameField>
 ```
 
 ## Create a user
@@ -614,7 +619,7 @@ gam update user <UserItem> [ignorenullpassword] <UserAttribute>*
         [updateoufromgroup <FileName> [charset <Charset>]
             [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [fields <FieldNameList>] [keyfield <FieldName>] [datafield <FieldName>]]
-        [clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>]
+        [clearschema <SchemaName>|<SchemaNameField>]
         [createifnotfound] [notfoundpassword random|<Password>]
         (groups [<GroupRole>] [[delivery] <DeliverySetting>] <GroupEntity>)*
         [alias|aliases <EmailAddressList>]
@@ -635,7 +640,7 @@ gam update users <UserTypeEntity> [ignorenullpassword] <UserAttribute>*
         [updateoufromgroup <FileName> [charset <Charset>]
             [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [fields <FieldNameList>] [keyfield <FieldName>] [datafield <FieldName>]]
-        [clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>]
+        [clearschema <SchemaName>|<SchemaNameField>]
         [createifnotfound] [notfoundpassword random|<Password>]
         (groups [<GroupRole>] [[delivery] <DeliverySetting>] <GroupEntity>)*
         [alias|aliases <EmailAddressList>]
@@ -656,7 +661,7 @@ gam <UserTypeEntity> update users [ignorenullpassword] <UserAttribute>*
         [updateoufromgroup <FileName> [charset <Charset>]
             [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [fields <FieldNameList>] [keyfield <FieldName>] [datafield <FieldName>]]
-        [clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>]
+        [clearschema <SchemaName>|<SchemaNameField>]
         [createifnotfound] [notfoundpassword random|<Password>]
         (groups [<GroupRole>] [[delivery] <DeliverySetting>] <GroupEntity>)*
         [alias|aliases <EmailAddressList>]
@@ -954,7 +959,7 @@ Starting in version `5.23.01`, the variable `quick_info_user` was added to `gam.
 
 These existing options enable the display of additional information.
 * `(products|product <ProductIDList>)|(skus|sku <SKUIDList>)` - Display license information for a selected list of products/SKUs.
-* `schemas|custom|customschemas <SchemaNameList>` - Display the specified custom schemas
+* `schemas|custom|customschemas <SchemaNameList>` - Display all fields or selected fields of the specified custom schemas
 
 By default, Gam displays fields that only an adminstrator can view.
 * `userview` - Only display fields that other users in the domain can view.
@@ -1064,8 +1069,8 @@ By default, Gam displays only the primary email address for each user.
 * `allfields|basic` - Display all non custom schema fields for each user.
 * `full` - Display all fields including  all custom schema fields for each user.
 * `<UserFieldName>* [fields <UserFieldNameList>]` - Only display selected fields.
-* `schemas|custom all` - Get custom schema information for all schemas.
-* `schemas|custom <SchemaNameList>` - Get custom schema information for a selected list of schemas.
+* `schemas|custom all` - Display custom schema information for all schemas.
+* `schemas|custom <SchemaNameList>` - Display all fields or selected fields of the specified custom schemas
 
 By default, when aliases are displayed, all aliases are displayed. Use `aliasmatchpattern <RegularExpression>`
 to limit the display of aliases to those that match `<RegularExpression>`.

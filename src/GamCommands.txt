@@ -546,6 +546,7 @@ If an item contains spaces, it should be surrounded by ".
 <ResellerID> ::= <String>
 <ResourceID> ::= <String>
 <SchemaName> ::= <String>
+<SchemaNameField> ::= <SchemaName>.<FieldName>
 <Section> ::= <String>
 <SendAsContent> ::=
         (sig|signature|htmlsig <String>)|
@@ -626,7 +627,7 @@ If an item contains spaces, it should be surrounded by ".
         (tdsubject <String>)|
         ([tdsheetdaysoffset <Number>] [tdsheethoursoffset <Number>])|
         (tdtimestamp [<Boolean>] [tdtimeformat <String>]
-            ([tddaysoffset <Number>] [tdhoursoffset <Number>])|
+            [tddaysoffset <Number>] [tdhoursoffset <Number>])|
         (tdtimezone <TimeZone>)|
         (tdtitle <String>)|
         (tdupdatesheet [<Boolean>])|
@@ -725,7 +726,7 @@ If an item contains spaces, it should be surrounded by ".
 <QueryMobileList> ::= "<QueryMobile>(,<QueryMobile>)*"
 <QueryUserList> ::= "<QueryUser>(,<QueryUser>)*"
 <ResourceIDList> ::= "<ResourceID>(,<ResourceID>)*"
-<SchemaNameList> ::= "<SchemaName>(,<SchemaName>)*"
+<SchemaNameList> ::= "<SchemaName>|<SchemaFieldName>(,<SchemaName>|<SchemaFieldName>)*"
 <SerialNumberList> ::= "<SerialNumber>(,<SerialNumber>)*"
 <ServiceAccountKeyList> ::= "<ServiceAccountKey>(,<ServiceAccountKey>)*"
 <SiteACLScopeList> ::= "<SiteACLScope>(,<SiteACLScope>)*"
@@ -4991,7 +4992,7 @@ gam <UserTypeEntity> show teamdriveacls
         (field:<UserReplacementField>)|
         (field:<UserReplacementFieldSubfield>)|
         (field:<UserReplacementFieldSubfieldMatchSubfield>)|
-        (schema:<SchemaName>.<FieldName>)|
+        (schema:<SchemaNameField>)|
         <String>
 
 # Vault/Takeout
@@ -5256,9 +5257,9 @@ gam download storagefile <StorageBucketObjectName>
         (recoveryemail <EmailAddress>)|
         (recoveryphone <string>)|
         (suspend|suspended <Boolean>)|
-        (<SchemaName>.<FieldName> [scalarnonempty|
-                                   [multivalued|multivalue|value|multinonempty [type home|other|work|(custom <String>)]]]
-                                  <String>)
+        (<SchemaNameField> [scalarnonempty|
+                             [multivalued|multivalue|value|multinonempty [type home|other|work|(custom <String>)]]]
+                           <String>)
 
 <UserMultiAttribute> ::=
         (address type home|other|work|(custom <String>)
@@ -5347,7 +5348,7 @@ gam update user <UserItem> [ignorenullpassword] <UserAttribute>*
             [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [fields <FieldNameList>] [keyfield <FieldName>] [datafield <FieldName>]]
         [immutableous <OrgUnitEntity>]|
-        [clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>]
+        [clearschema <SchemaName> |  <SchemaNameField>]
         [createifnotfound] [notfoundpassword (random [<Integer>])|blocklogin|<Password>]
         (groups [<GroupRole>] [[delivery] <DeliverySetting>] <GroupEntity>)*
         [alias|aliases <EmailAddressList>]
@@ -5382,7 +5383,7 @@ gam update users <UserTypeEntity> [ignorenullpassword] <UserAttribute>*
         [updateoufromgroup <FileName> [charset <CharSet>]
             [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [fields <FieldNameList>] [keyfield <FieldName>] [datafield <FieldName>]]
-        [clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>]
+        [clearschema <SchemaName>|<SchemaNameField>]
         [createifnotfound] [notfoundpassword (random [<Integer>])|blocklogin|<Password>]
         (groups [<GroupRole>] [[delivery] <DeliverySetting>] <GroupEntity>)*
         [alias|aliases <EmailAddressList>]
@@ -5415,7 +5416,7 @@ gam <UserTypeEntity> update users [ignorenullpassword] <UserAttribute>*
         [verifynotinvitable] [noactionifalias]
         [updateprimaryemail <RegularExpression> <EmailReplacement>]
         [updateoufromgroup <CSVFileInput> [keyfield <FieldName>] [datafield <FieldName>]]
-        [clearschema <SchemaName>] [clearschema <SchemaName>.<FieldName>]
+        [clearschema <SchemaName> | <SchemaNameField>]
         [createifnotfound] [notfoundpassword (random [<Integer>])|blocklogin|<Password>]
         (groups [<GroupRole>] [[delivery] <DeliverySetting>] <GroupEntity>)*
         [alias|aliases <EmailAddressList>]

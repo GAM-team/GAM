@@ -85,7 +85,7 @@
 <QueryMobileList> ::= "<QueryMobile>(,<QueryMobile>)*"
 <QueryUserList> ::= "<QueryUser>(,<QueryUser>)*"
 <ResourceIDList> ::= "<ResourceID>(,<ResourceID>)*"
-<SchemaNameList> ::= "<SchemaName>(,<SchemaName>)*"
+<SchemaNameList> ::= "<SchemaName>|<SchemaFieldName>(,<SchemaName>|<SchemaFieldName>)*"
 <SerialNumberList> ::= "<SerialNumber>(,<SerialNumber>)*"
 <ServiceAccountKeyList> ::= "<ServiceAccountKey>(,<ServiceAccountKey>)*"
 <SiteACLScopeList> ::= "<SiteACLScope>(,<SiteACLScope>)*"
