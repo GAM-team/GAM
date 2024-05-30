@@ -16186,12 +16186,12 @@ def doCreateUpdateAdminRoles():
                         customer=GC.Values[GC.CUSTOMER_ID], body=body, fields='roleId,roleName')
     else:
       result = callGAPI(cd.roles(), 'patch',
-                        throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND, GAPI.FORBIDDEN]+[GAPI.NOT_FOUND],
+                        throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND, GAPI.FORBIDDEN]+[GAPI.NOT_FOUND, GAPI.FAILED_PRECONDITION],
                         customer=GC.Values[GC.CUSTOMER_ID], roleId=roleId, body=body, fields='roleId,roleName')
     entityActionPerformed([Ent.ADMIN_ROLE, f"{result['roleName']}({result['roleId']})"])
   except GAPI.duplicate as e:
     entityActionFailedWarning([Ent.ADMIN_ROLE, f"{body['roleName']}"], str(e))
-  except (GAPI.notFound, GAPI.forbidden) as e:
+  except (GAPI.notFound, GAPI.forbidden, GAPI.failedPrecondition) as e:
     entityActionFailedWarning([Ent.ADMIN_ROLE, roleId], str(e))
   except (GAPI.badRequest, GAPI.customerNotFound):
     accessErrorExit(cd)
@@ -16203,10 +16203,10 @@ def doDeleteAdminRole():
   checkForExtraneousArguments()
   try:
     callGAPI(cd.roles(), 'delete',
-             throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND, GAPI.FORBIDDEN]+[GAPI.NOT_FOUND],
+             throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND, GAPI.FORBIDDEN]+[GAPI.NOT_FOUND, GAPI.FAILED_PRECONDITION],
              customer=GC.Values[GC.CUSTOMER_ID], roleId=roleId)
     entityActionPerformed([Ent.ADMIN_ROLE, f"{role}({roleId})"])
-  except (GAPI.notFound, GAPI.forbidden) as e:
+  except (GAPI.notFound, GAPI.forbidden, GAPI.failedPrecondition) as e:
     entityActionFailedWarning([Ent.ADMIN_ROLE, roleId], str(e))
   except (GAPI.badRequest, GAPI.customerNotFound):
     accessErrorExit(cd)
@@ -16247,12 +16247,12 @@ def doInfoAdminRole():
   fields = ','.join(set(fieldsList))
   try:
     role = callGAPI(cd.roles(), 'get',
-                    throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND, GAPI.FORBIDDEN]+[GAPI.NOT_FOUND],
+                    throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND, GAPI.FORBIDDEN]+[GAPI.NOT_FOUND, GAPI.FAILED_PRECONDITION],
                     customer=GC.Values[GC.CUSTOMER_ID], roleId=roleId, fields=fields)
     role.setdefault('isSuperAdminRole', False)
     role.setdefault('isSystemRole', False)
     _showAdminRole(role)
-  except (GAPI.notFound, GAPI.forbidden) as e:
+  except (GAPI.notFound, GAPI.forbidden, GAPI.failedPrecondition) as e:
     entityActionFailedWarning([Ent.ADMIN_ROLE, roleId], str(e))
   except (GAPI.badRequest, GAPI.customerNotFound):
     accessErrorExit(cd)
@@ -16406,9 +16406,9 @@ def doPrintShowAdmins():
       if roleId not in rolePrivileges:
         try:
           rolePrivileges[roleId] = callGAPI(cd.roles(), 'get',
-                                            throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND, GAPI.FORBIDDEN]+[GAPI.NOT_FOUND],
+                                            throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND, GAPI.FORBIDDEN]+[GAPI.NOT_FOUND, GAPI.FAILED_PRECONDITION],
                                             customer=GC.Values[GC.CUSTOMER_ID], roleId=roleId, fields='rolePrivileges')
-        except (GAPI.notFound, GAPI.forbidden) as e:
+        except (GAPI.notFound, GAPI.forbidden, GAPI.failedPrecondition) as e:
           entityActionFailedExit([Ent.USER, userKey, Ent.ADMIN_ROLE, admin['roleId']], str(e))
           rolePrivileges[roleId] = None
         except (GAPI.badRequest, GAPI.customerNotFound):
@@ -43392,7 +43392,7 @@ def doPrintUsers(entityList=None):
         elif schemaParms['customFieldMask'] and not query:
           entityActionFailedWarning([Ent.USER, None], invalidUserSchema(schemaParms['customFieldMask']))
         elif query and schemaParms['customFieldMask']:
-          entityActionFailedWarning([Ent.USER, None], f'{invalidQuery(query)} or {invalidUserSchema(schemaParms['customFieldMask'])}')
+          entityActionFailedWarning([Ent.USER, None], f'{invalidQuery(query)} or {invalidUserSchema(schemaParms["customFieldMask"])}')
         else:
           entityActionFailedWarning([Ent.USER, None], str(e))
         continue

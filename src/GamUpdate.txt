@@ -2,6 +2,13 @@
 
 Merged GAM-Team version
 
+6.76.09
+
+Updated `gam update|delete|info adminrole` to handle the following error:
+```
+ERROR: 400: failedPrecondition - Precondition check failed.
+```
+
 6.76.08
 
 Updated `<SchemaNameList>` to `"<SchemaName>|<SchemaFieldName>(,<SchemaName>|<SchemaFieldName>)*"`

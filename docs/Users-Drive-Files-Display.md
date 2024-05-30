@@ -1036,6 +1036,10 @@ When `allfields` is specified (or no fields are specified), use `showshareddrive
 when shared drives are queried/selected. In this case, the Drive API returns the permission IDs
 but not the permissions themselves so GAM makes an additional API call per file to get the permissions.
 
+By default, when `showimimetype` and `filepath|fullpath`are both specified, GAM locally filters files by MimeType;
+this may be slow if the user has a large number of files. Adding the option `mimetypeinquery` or `mimetypeinquery true`
+causes GAM to have Google filter files by MimeType; this will increase performance.
+
 See [Select files for Display file counts, list, tree](#select-files-for-display-file-counts-list-tree)
 
 ## File selection by name and entity shortcuts for Display file list
