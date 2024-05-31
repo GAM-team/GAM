@@ -178,6 +178,7 @@ Client access works when accessing Resource calendars.
 <EventType> ::=
         default|
         focustime|
+        fromgmail|
         outofoffice|
         workinglocation
 <EventTypeList> ::= "<EventType>(,<EventType>)*"

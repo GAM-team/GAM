@@ -12369,7 +12369,7 @@ def _formatOAuth2ServiceData(service_data):
   GM.Globals[GM.OAUTH2SERVICE_JSON_DATA] = service_data.copy()
   return json.dumps(GM.Globals[GM.OAUTH2SERVICE_JSON_DATA], indent=2, sort_keys=True)
 
-def doProcessSvcAcctKeys(mode, iam=None, projectId=None, clientEmail=None, clientId=None):
+def doProcessSvcAcctKeys(mode=None, iam=None, projectId=None, clientEmail=None, clientId=None):
   def getSAKeyParms(body, new_data):
     nonlocal local_key_size, validityHours
     while Cmd.ArgumentsRemaining():
@@ -12401,6 +12401,8 @@ def doProcessSvcAcctKeys(mode, iam=None, projectId=None, clientEmail=None, clien
   local_key_size = 2048
   validityHours = 0
   body = {}
+  if mode is None:
+    mode = getChoice(['retainnone', 'retainexisting', 'replacecurrent'])
   if iam is None or mode == 'upload':
     if iam is None:
       _, iam = buildGAPIServiceObject(API.IAM, None)
@@ -36188,32 +36190,36 @@ def doCalendarsPrintShowACLs(calIds):
 
 EVENT_TYPE_DEFAULT = 'default'
 EVENT_TYPE_FOCUSTIME = 'focusTime'
+EVENT_TYPE_FROMGMAIL = 'fromGmail'
 EVENT_TYPE_OUTOFOFFICE = 'outOfOffice'
 EVENT_TYPE_WORKINGLOCATION = 'workingLocation'
 
 EVENT_TYPES_CHOICE_MAP = {
   'default': EVENT_TYPE_DEFAULT,
   'focustime': EVENT_TYPE_FOCUSTIME,
+  'fromgmail': EVENT_TYPE_FROMGMAIL,
   'outofoffice': EVENT_TYPE_OUTOFOFFICE,
   'workinglocation': EVENT_TYPE_WORKINGLOCATION,
   }
 
-EVENT_TYPE_DEFAULT_PROPERTIES_MAP = {
-  EVENT_TYPE_DEFAULT: {'eventType': EVENT_TYPE_DEFAULT},
-  EVENT_TYPE_FOCUSTIME: {'eventType': EVENT_TYPE_FOCUSTIME,
-                         'focusTimeProperties': {'autoDeclineMode': 'declineNone', 'declineMessage': 'Declined', 'chatStatus': 'doNotDisturb'},
-                         'transparency':'opaque'},
-  EVENT_TYPE_OUTOFOFFICE: {'eventType': EVENT_TYPE_OUTOFOFFICE,
-                           'outOfOfficeProperties': {'autoDeclineMode': 'declineOnlyNewConflictingInvitations', 'declineMessage': 'Declined'},
-                           'transparency':'opaque'},
-  EVENT_TYPE_WORKINGLOCATION: {'eventType': EVENT_TYPE_WORKINGLOCATION,
-                               'workingLocationProperties': {},
-                               'visibility': 'public', 'transparency':'transparent'},
-  }
+#EVENT_TYPE_DEFAULT_PROPERTIES_MAP = {
+#  EVENT_TYPE_DEFAULT: {'eventType': EVENT_TYPE_DEFAULT},
+#  EVENT_TYPE_FOCUSTIME: {'eventType': EVENT_TYPE_FOCUSTIME,
+#                         'focusTimeProperties': {'autoDeclineMode': 'declineNone', 'declineMessage': 'Declined', 'chatStatus': 'doNotDisturb'},
+#                         'transparency':'opaque'},
+#  EVENT_TYPE_FROMGMAIL: {'eventType': EVENT_TYPE_FROMGMAIL},
+#  EVENT_TYPE_OUTOFOFFICE: {'eventType': EVENT_TYPE_OUTOFOFFICE,
+#                           'outOfOfficeProperties': {'autoDeclineMode': 'declineOnlyNewConflictingInvitations', 'declineMessage': 'Declined'},
+#                           'transparency':'opaque'},
+#  EVENT_TYPE_WORKINGLOCATION: {'eventType': EVENT_TYPE_WORKINGLOCATION,
+#                               'workingLocationProperties': {},
+#                               'visibility': 'public', 'transparency':'transparent'},
+#  }
 
 EVENT_TYPE_PROPERTIES_NAME_MAP = {
   EVENT_TYPE_DEFAULT: None,
   EVENT_TYPE_FOCUSTIME: f'{EVENT_TYPE_FOCUSTIME}Properties',
+  EVENT_TYPE_FROMGMAIL: None,
   EVENT_TYPE_OUTOFOFFICE: f'{EVENT_TYPE_OUTOFOFFICE}Properties',
   EVENT_TYPE_WORKINGLOCATION: f'{EVENT_TYPE_WORKINGLOCATION}Properties',
   }
@@ -36221,6 +36227,7 @@ EVENT_TYPE_PROPERTIES_NAME_MAP = {
 EVENT_TYPE_ENTITY_MAP = {
   EVENT_TYPE_DEFAULT: None,
   EVENT_TYPE_FOCUSTIME: Ent.EVENT_FOCUSTIME,
+  EVENT_TYPE_FROMGMAIL: None,
   EVENT_TYPE_OUTOFOFFICE: Ent.EVENT_OUTOFOFFICE,
   EVENT_TYPE_WORKINGLOCATION: Ent.EVENT_WORKINGLOCATION,
   }

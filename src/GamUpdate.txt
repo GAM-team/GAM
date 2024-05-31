@@ -2,6 +2,12 @@
 
 Merged GAM-Team version
 
+6.76.10
+
+Added `fromgmail` to `<EventType>` that can be used in `gam calendars <CalendarEntity> print|show events ... eventtype fromgmail`.
+
+* See: https://workspaceupdates.googleblog.com/2024/05/google-calendar-api-event-type-fromgmail.html
+
 6.76.09
 
 Updated `gam update|delete|info adminrole` to handle the following error:

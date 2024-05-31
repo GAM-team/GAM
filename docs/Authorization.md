@@ -837,7 +837,7 @@ gam update sakey
         (algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
         (localkeysize 1024|2048|4096 [validityhours <Number>])|
         (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)
-gam rotate sakey replace_existing
+gam rotate sakey replace_current
         (algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
         (localkeysize 1024|2048|4096 [validityhours <Number>])|
         (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)

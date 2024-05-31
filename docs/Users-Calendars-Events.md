@@ -243,6 +243,7 @@
 <EventType> ::=
         default|
         focustime|
+        fromgmail|
         outofoffice|
         workinglocation
 <EventTypeList> ::= "<EventType>(,<EventType>)*"
