@@ -4221,7 +4221,8 @@ gam report usage customer [todrive <ToDriveAttribute>*]
         rules|
         saml|
         token|tokens|oauthtoken|
-        useraccounts
+        useraccounts|
+        vault
 
 gam report <ActivityApplicationName> [todrive <ToDriveAttribute>*]
         [(user all|<UserItem>)|(orgunit|org|ou <OrgUnitPath> [showorgunit])|(select <UserTypeEntity>)]

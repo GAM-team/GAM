@@ -13297,6 +13297,7 @@ REPORT_CHOICE_MAP = {
   'user': 'user',
   'users': 'user',
   'useraccounts': 'user_accounts',
+  'vault': 'vault',
   }
 
 REPORT_ACTIVITIES_UPPERCASE_EVENTS = {
