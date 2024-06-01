@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.76.11
+
+Updated `gam <UserTypeEntity> print filelist ... showshareddrivepermissions` to display
+progress messages to stderr as a separate API call must be made for every file/folder on the Shared Drive
+to get its permissions. As this can take a long time, the progress messages indicate that progress is being made.
+
 ### 6.76.10
 
 Added `fromgmail` to `<EventType>` that can be used in `gam calendars <CalendarEntity> print|show events ... eventtype fromgmail`.

@@ -59,11 +59,13 @@ Thanks to Duncan Isaksen-Loxton for a script to help manage multiple domains.
         4tb | drive4tb | googledrivestorage4tb | Google-Drive-storage-4TB |
         8tb | drive8tb | googledrivestorage8tb | Google-Drive-storage-8TB |
         16tb | drive16tb | googledrivestorage16tb | Google-Drive-storage-16TB |
+        aimeetingsandmessaging | 1010470007 | AI Meetings and Messaging |
+        aisecurity | 1010470006 | AI Security |
         appsheetcore | 1010380001 | AppSheet Core |
         appsheetstandard | appsheetenterprisestandard | 1010380002 | AppSheet Enterprise Standard |
         appsheetplus | appsheetenterpriseplus | 1010380003 | AppSheet Enterprise Plus |
         assuredcontrols | 1010390001 | Assured Controls |
-        bce | beyondcorp | beyondcorpenterprise | 1010400001 | Beyond Corp Enterprise |
+        bce | beyondcorp | beyondcorpenterprise | cep | chromeenterprisepremium | 1010400001 | Chrome Enterprise Premium |
         cdm | chrome | googlechromedevicemanagement | Google-Chrome-Device-Management |
         cloudidentity | identity | 1010010001 | Cloud Identity |
         cloudidentitypremium | identitypremium | 1010050001 | Cloud Identity Premium |

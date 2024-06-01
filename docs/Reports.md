@@ -49,7 +49,8 @@
         rules|
         saml|
         token|tokens|oauthtoken|
-        useraccounts
+        useraccounts|
+        vault
 
 gam report <ActivityApplicationName> [todrive <ToDriveAttributes>*]
         [(user all|<UserItem>)|(orgunit|org|ou <OrgUnitPath> [showorgunit])|(select <UserTypeEntity>)]
