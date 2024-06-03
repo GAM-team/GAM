@@ -10,7 +10,22 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.76.12
+
+Fixed bug in `gam <UserTypeEntity> print|show chatspaces` that caused the following error:
+```
+ERROR: Got an unexpected keyword argument orderBy
+```
+
 ### 6.76.11
+
+Thanks to Jay, added `gam report vault`.
+
+Thanks to Jay, added the following Gemini SKUs:
+```
+1010470006 - AI Security
+1010470007 - AI Meetings and Messaging
+```
 
 Updated `gam <UserTypeEntity> print filelist ... showshareddrivepermissions` to display
 progress messages to stderr as a separate API call must be made for every file/folder on the Shared Drive

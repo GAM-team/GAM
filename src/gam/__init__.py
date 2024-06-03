@@ -25540,8 +25540,8 @@ def printShowChatSpaces(users):
   if not useAdminAccess:
     if pfilter:
       kwargs['filter'] = pfilter
-    else:
-      kwargs['orderBy'] = OBY.orderBy
+  else:
+    kwargs['orderBy'] = OBY.orderBy
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
