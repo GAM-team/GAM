@@ -11,6 +11,7 @@ datas = []
 for pkg in GAM_VER_LIBS:
     datas += copy_metadata(pkg, recursive=True)
 datas += [('cbcm-v1.1beta1.json', '.')]
+datas += [('chat-v1.json', '.')]
 datas += [('contactdelegation-v1.json', '.')]
 datas += [('admin-directory_v1.1beta1.json', '.')]
 datas += [('cacerts.pem', '.')]

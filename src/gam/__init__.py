@@ -25411,12 +25411,18 @@ def updateChatSpace(users):
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
 
 # gam <UserTypeEntity> delete chatspace <ChatSpace>
+# [adminaccess|asadmin]
 def deleteChatSpace(users):
   name = None
+  useAdminAccess = None
+  api = API.CHAT_SPACES_DELETE
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
       name = getChatSpace(myarg)
+    elif myarg in ADMIN_ACCESS_OPTIONS:
+      useAdminAccess = True
+      api = API.CHAT_ADMIN_DELETE
     else:
       unknownArgumentExit()
   if not name:
@@ -25424,11 +25430,12 @@ def deleteChatSpace(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, chat, kvList = buildChatServiceObject(API.CHAT_SPACES_DELETE, user, i, count, [Ent.CHAT_SPACE, name])
+    user, chat, kvList = buildChatServiceObject(api, user, i, count, [Ent.CHAT_SPACE, name])
     if not chat:
       continue
     try:
       callGAPI(chat.spaces(), 'delete',
+               useAdminAccess=useAdminAccess,
                throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                name=name)
       entityActionPerformed(kvList, i, count)
@@ -25511,14 +25518,14 @@ def printShowChatSpaces(users):
   OBY = OrderBy(CHAT_SPACES_ADMIN_ORDERBY_CHOICE_MAP)
   pfilter = ''
   kwargs = {}
-  if not useAdminAccess:
-    api = API.CHAT_SPACES
-    function = 'list'
-  else:
+  if useAdminAccess:
     api = API.CHAT_SPACES_ADMIN
     function = 'search'
     kwargs['useAdminAccess'] = True
     kwargs['query'] = 'customer = "customers/my_customer" AND spaceType = "SPACE"'
+  else:
+    api = API.CHAT_SPACES
+    function = 'list'
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -25593,7 +25600,7 @@ def _getChatMemberEmail(cd, member):
 #	[type human|bot] [role member|manager]
 #	(user <UserItem>)* (members <UserTypeEntity>)*
 #	(group <GroupItem>)* (groups <GroupEntity>)*
-#	[formatjson|returnidonly]
+#   [adminaccess|asadmin] [formatjson|returnidonly]
 def createChatMember(users):
   def addMembers(members, field, entityType, i, count):
     jcount = len(members)
@@ -25608,11 +25615,13 @@ def createChatMember(users):
       kvList[-1] = body[field]['name']
       try:
         member = callGAPI(chat.spaces().members(), 'create',
+                          useAdminAccess=useAdminAccess,
                           bailOnInternalError=True,
                           throwReasons=[GAPI.ALREADY_EXISTS, GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
                           parent=parent, body=body)
         if role != 'ROLE_MEMBER' and entityType == Ent.CHAT_MANAGER_USER:
           member = callGAPI(chat.spaces().members(), 'patch',
+                            useAdminAccess=useAdminAccess,
                             bailOnInternalError=True,
                             throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
                             name=member['name'], updateMask='role', body={'role': role})
@@ -25638,6 +25647,8 @@ def createChatMember(users):
   userList = []
   groupList = []
   returnIdOnly = False
+  useAdminAccess = None
+  api = API.CHAT_MEMBERSHIPS
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
@@ -25657,6 +25668,9 @@ def createChatMember(users):
       mtype = getChoice(CHAT_MEMBER_TYPE_MAP, mapChoice=True)
     elif myarg == 'returnidonly':
       returnIdOnly = True
+    elif myarg in ADMIN_ACCESS_OPTIONS:
+      useAdminAccess = True
+      api = API.CHAT_MEMBERSHIPS_ADMIN
     else:
       FJQC.GetFormatJSON(myarg)
   if not parent:
@@ -25675,7 +25689,7 @@ def createChatMember(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, chat, kvList = buildChatServiceObject(API.CHAT_MEMBERSHIPS, user, i, count, [Ent.CHAT_SPACE, parent])
+    user, chat, kvList = buildChatServiceObject(api, user, i, count, [Ent.CHAT_SPACE, parent])
     if not chat:
       continue
     Ind.Increment()
@@ -25685,13 +25699,14 @@ def createChatMember(users):
       addMembers(groupMembers, 'groupMember', Ent.CHAT_MEMBER_GROUP, i, count)
     Ind.Decrement()
 
-def _deleteChatMembers(chat, kvList, jcount, memberNames, i, count):
+def _deleteChatMembers(chat, kvList, jcount, memberNames, i, count, useAdminAccess=None):
   j = 0
   for name in memberNames:
     j += 1
     kvList[-1] = name
     try:
       callGAPI(chat.spaces().members(), 'delete',
+               useAdminAccess=useAdminAccess,
                bailOnInternalError=True,
                throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
                name=name)
@@ -25704,6 +25719,7 @@ def _deleteChatMembers(chat, kvList, jcount, memberNames, i, count):
 # gam <UserTypeEntity> delete chatmember <ChatSpace>
 #	((user <UserItem>)|(members <UserTypeEntity>)|
 #	 (group <GroupItem>)|(groups <GroupEntity>))+
+#   [adminaccess|asadmin]
 # gam <UserTypeEntity> remove chatmember members <ChatMemberList>
 # gam <UserTypeEntity> update chatmember <ChatSpace>
 #	role member|manager
@@ -25720,6 +25736,8 @@ def deleteUpdateChatMember(users):
   body = {}
   memberNames = []
   userGroupList = []
+  useAdminAccess = None
+  api = API.CHAT_MEMBERSHIPS
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if action in {Act.UPDATE, Act.MODIFY} and myarg == 'role':
@@ -25742,6 +25760,9 @@ def deleteUpdateChatMember(users):
         userGroupList.append(getEmailAddress(returnUIDprefix='uid:'))
       elif deleteMode and myarg == 'groups':
         userGroupList.extend(getEntityList(Cmd.OB_GROUP_ENTITY))
+      elif myarg in ADMIN_ACCESS_OPTIONS:
+        useAdminAccess = True
+        api = API.CHAT_MEMBERSHIPS_ADMIN
       else:
         unknownArgumentExit()
   if not deleteMode and 'role' not in body:
@@ -25760,7 +25781,7 @@ def deleteUpdateChatMember(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, chat, kvList = buildChatServiceObject(API.CHAT_MEMBERSHIPS, user, i, count, [Ent.CHAT_SPACE, parent] if parent is not None else None)
+    user, chat, kvList = buildChatServiceObject(api, user, i, count, [Ent.CHAT_SPACE, parent] if parent is not None else None)
     if not chat:
       continue
     jcount = len(memberNames)
@@ -25768,7 +25789,7 @@ def deleteUpdateChatMember(users):
     kvList.extend([Ent.CHAT_MEMBER, ''])
     Ind.Increment()
     if deleteMode:
-      _deleteChatMembers(chat, kvList, jcount, memberNames, i, count)
+      _deleteChatMembers(chat, kvList, jcount, memberNames, i, count, useAdminAccess=useAdminAccess)
     else:
       j = 0
       for name in memberNames:
@@ -25992,16 +26013,18 @@ def doInfoChatMember():
 
 # gam [<UserTypeEntity>] show chatmembers <ChatSpace>
 #	[showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
-#	[formatjson]
+#	[formatjson] [adminaccess|asadmin]
 # gam [<UserTypeEntity>] print chatmembers [todrive <ToDriveAttribute>*] <ChatSpace>
 #	[showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
-#	[formatjson [quotechar <Character>]]
+#	[formatjson [quotechar <Character>]] [adminaccess|asadmin]
 def printShowChatMembers(users):
   cd = buildGAPIObject(API.DIRECTORY)
   csvPF = CSVPrintFile(['User', 'space.name', 'name'] if not isinstance(users, list) else ['space.name', 'name']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   kwargs = {}
   parent = None
+  api = API.CHAT_MEMBERSHIPS
+  useAdminAccess = None
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -26014,21 +26037,29 @@ def printShowChatMembers(users):
       kwargs['showGroups'] = getBoolean()
     elif myarg =='filter':
       kwargs['filter'] = getString(Cmd.OB_STRING)
+    elif myarg in ADMIN_ACCESS_OPTIONS:
+      useAdminAccess = True
+      api = API.CHAT_MEMBERSHIPS_ADMIN
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if not parent:
     missingArgumentExit('space')
+  if useAdminAccess and 'filter' in kwargs:
+    invalidArgumentExit('asadmin not compatible with filter')
+  elif useAdminAccess:
+    kwargs['filter'] = 'member.type != "BOT'
   qfilter = f'{Ent.Singular(Ent.CHAT_SPACE)}: {parent}'
   if 'filter' in kwargs:
     qfilter += f', {kwargs["filter"]}'
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, chat, kvList = buildChatServiceObject(API.CHAT_MEMBERSHIPS, user, i, count, [Ent.CHAT_SPACE, parent])
+    user, chat, kvList = buildChatServiceObject(api, user, i, count, [Ent.CHAT_SPACE, parent])
     if not chat:
       continue
     try:
       members = callGAPIpages(chat.spaces().members(), 'list', 'memberships',
+                              useAdminAccess=useAdminAccess,
                               pageMessage=_getChatPageMessage(Ent.CHAT_MEMBER, user, i, count, qfilter),
                               throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                               pageSize=CHAT_PAGE_SIZE, parent=parent, **kwargs)
