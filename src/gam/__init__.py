@@ -52445,6 +52445,7 @@ def showFileInfo(users):
         if showLabels is not None:
           labels = callGAPIitems(drive.files(), 'listLabels', 'labels',
                                  throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
+                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS+[GAPI.UNKNOWN_ERROR],
                                  fileId=fileId)
           _formatFileDriveLabels(showLabels, labels, result, False, ' ')
         if not FJQC.formatJSON:
@@ -53948,6 +53949,7 @@ def printFileList(users):
         if showLabels is not None:
           labels = callGAPIitems(drive.files(), 'listLabels', 'labels',
                                  throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
+                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS+[GAPI.UNKNOWN_ERROR],
                                  fileId=childFileId)
           _formatFileDriveLabels(showLabels, labels, childEntryInfo, True, delimiter)
         if filepath:
@@ -54259,6 +54261,7 @@ def printFileList(users):
             for f_file in files:
               labels = callGAPIitems(drive.files(), 'listLabels', 'labels',
                                      throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
+                                     retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS+[GAPI.UNKNOWN_ERROR],
                                      fileId=f_file['id'])
               _formatFileDriveLabels(showLabels, labels, f_file, True, delimiter)
           if not incrementalPrint:
@@ -54315,6 +54318,7 @@ def printFileList(users):
           if showLabels is not None:
             labels = callGAPIitems(drive.files(), 'listLabels', 'labels',
                                    throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
+                                   retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS+[GAPI.UNKNOWN_ERROR],
                                    fileId=fileId)
             _formatFileDriveLabels(showLabels, labels, fileEntryInfo, True, delimiter)
           if filepath:

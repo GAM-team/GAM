@@ -1,12 +1,11 @@
 # Chrome Installed Apps Counts
 
-- [Chrome Policies](#chrome-policies)
-  - [API documentation](#api-documentation)
-  - [Definitions](#definitions)
-  - [Quoting rules](#quoting-rules)
-  - [Display Chrome installed app details](#display-chrome-installed-app-details)
-  - [Display Chrome installed apps counts](#display-chrome-installed-apps-counts)
-  - [Display Chrome devices with a specific installed application](#display-chrome-devices-with-a-specific-installed-application)
+- [API documentation](#api-documentation)
+- [Definitions](#definitions)
+- [Quoting rules](#quoting-rules)
+- [Display Chrome installed app details](#display-chrome-installed-app-details)
+- [Display Chrome installed apps counts](#display-chrome-installed-apps-counts)
+- [Display Chrome devices with a specific installed application](#display-chrome-devices-with-a-specific-installed-application)
 
 ## API documentation
 

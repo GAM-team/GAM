@@ -10,6 +10,15 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.76.13
+
+Updated `gam <UserTypeEntity> show fileinfo ... showlabels` and `gam <UserTypeEntity> print filelist ... showlabels`
+to retry these errors that occur when trying to get the drive labels for a file/folder.
+```
+ERROR: 500: unknownError - Unknown Error.
+ERROR: 503: serviceNotAvailable - The service is currently unavailable.
+```
+
 ### 6.76.12
 
 Fixed bug in `gam <UserTypeEntity> print|show chatspaces` that caused the following error:
