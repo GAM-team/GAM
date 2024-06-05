@@ -5972,8 +5972,7 @@ gam <UserTypeEntity> update chatspace <ChatSpace>
          [description <String>] [guidelines|rules <String>]
          [history <Boolean>])
         [formatjson]
-gam <UserTypeEntity> delete chatspace <ChatSpace>
-        [adminaccess|asadmin]
+gam <UserTypeEntity> delete chatspace [adminaccess|asadmin] <ChatSpace>
 
 gam <UserTypeEntity> info chatspace <ChatSpace>
         [formatjson]
@@ -5985,20 +5984,24 @@ gam <UserTypeEntity> show chatspaces
 gam <UserTypeEntity> print chatspaces [todrive <ToDriveAttribute>*]
         [types <ChatSpaceTypeList>]
         [formatjson [quotechar <Character>]]
-        [adminaccess|asadmin]
+gam [<UserTypeEntity>] show chatspaces adminaccess|asadmin
+        [query <String>] [querytime<String> <Time>]
+        [orderby <ChatSpaceAdminOrderByFieldName> [ascending|descending]]
+        [formatjson]
+gam [<UserTypeEntity>] print chatspaces adminaccess|asadmin [todrive <ToDriveAttribute>*]
+        [query <String>] [querytime<String> <Time>]
+        [orderby <ChatSpaceAdminOrderByFieldName> [ascending|descending]]
+        [formatjson [quotechar <Character>]]
 
-gam <UserTypeEntity> create chatmember <ChatSpace>
+gam <UserTypeEntity> create chatmember [adminaccess|asadmin] <ChatSpace>
         [type human|bot] [role member|manager]
         (user <UserItem>)* (members <UserTypeEntity>)*
         (group <GroupItem>)* (groups <GroupEntity>)*
         [formatjson|returnidonly]
-        [adminaccess|asadmin]
-gam <UserTypeEntity> delete chatmember <ChatSpace>
+gam <UserTypeEntity> delete chatmember [adminaccess|asadmin] <ChatSpace>
         ((user <UserItem>)|(members <UserTypeEntity>)|
          (group <GroupItem>)|(groups <GroupEntity>))+
-        [adminaccess|asadmin]
-gam <UserTypeEntity> remove chatmember members <ChatMemberList>
-        [adminaccess|asadmin]
+gam <UserTypeEntity> remove chatmember [adminaccess|asadmin] members <ChatMemberList>
 gam <UserTypeEntity> update chatmember <ChatSpace>
         role member|manager
         ((user <UserItem>)|(members <UserTypeEntity>))+
@@ -6008,14 +6011,12 @@ gam <UserTypeEntity> modify chatmember
 
 gam <UserTypeEntity> info chatmember members <ChatMemberList>
         [formatjson]
-gam <UserTypeEntity> show chatmembers <ChatSpace>
+gam <UserTypeEntity> show chatmembers [adminaccess|asadmin] <ChatSpace>
         [showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
         [formatjson]
-        [adminaccess|asadmin]
-gam <UserTypeEntity> print chatmembers [todrive <ToDriveAttribute>*] <ChatSpace>
+gam <UserTypeEntity> print chatmembers [adminaccess|asadmin] [todrive <ToDriveAttribute>*] <ChatSpace>
         [showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
         [formatjson [quotechar <Character>]]
-        [adminaccess|asadmin]
 
 gam <UserTypeEntity> create chatmessage <ChatSpace>
         <ChatContent>

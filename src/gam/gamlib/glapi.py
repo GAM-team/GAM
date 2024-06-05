@@ -33,8 +33,8 @@ CHAT_MEMBERSHIPS_ADMIN = 'chatmembershipsadmin'
 CHAT_MESSAGES = 'chatmessages'
 CHAT_SPACES = 'chatspaces'
 CHAT_SPACES_ADMIN = 'chatspacesadmin'
-CHAT_ADMIN_DELETE = 'chatadmindelete'
 CHAT_SPACES_DELETE = 'chatspacesdelete'
+CHAT_SPACES_DELETE_ADMIN = 'chatspacesdeleteadmin'
 CHROMEMANAGEMENT = 'chromemanagement'
 CHROMEMANAGEMENT_APPDETAILS = 'chromemanagementappdetails'
 CHROMEMANAGEMENT_TELEMETRY = 'chromemanagementtelemetry'
@@ -198,14 +198,14 @@ _INFO = {
   CALENDAR: {'name': 'Calendar API', 'version': 'v3', 'v2discovery': True, 'mappedAPI': 'calendar-json'},
   CBCM: {'name': 'Chrome Browser Cloud Management API', 'version': 'v1.1beta1', 'v2discovery': True, 'localjson': True},
   CHAT: {'name': 'Chat API', 'version': 'v1', 'v2discovery': True, 'localjson': True},
-  CHAT_ADMIN_DELETE: {'name': 'Chat API - Admin Delete', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT, 'localjson': True},
-  CHAT_EVENTS: {'name': 'Chat API - Events', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT, 'localjson': True},
-  CHAT_MEMBERSHIPS: {'name': 'Chat API - Memberships', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT, 'localjson': True},
-  CHAT_MEMBERSHIPS_ADMIN: {'name': 'Chat API - Admin Memberships', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT, 'localjson': True},
-  CHAT_MESSAGES: {'name': 'Chat API - Messages', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT, 'localjson': True},
-  CHAT_SPACES: {'name': 'Chat API - Spaces', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT, 'localjson': True},
-  CHAT_SPACES_ADMIN: {'name': 'Chat API - Admin  Spaces', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT, 'localjson': True},
-  CHAT_SPACES_DELETE: {'name': 'Chat API - Spaces Delete', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT, 'localjson': True},
+  CHAT_EVENTS: {'name': 'Chat API - Events', 'version': 'v1', 'v2discovery': True, 'localjson': True, 'mappedAPI': CHAT},
+  CHAT_MEMBERSHIPS: {'name': 'Chat API - Memberships', 'version': 'v1', 'v2discovery': True, 'localjson': True, 'mappedAPI': CHAT},
+  CHAT_MEMBERSHIPS_ADMIN: {'name': 'Chat API - Memberships Admin', 'version': 'v1', 'v2discovery': True, 'localjson': True, 'mappedAPI': CHAT},
+  CHAT_MESSAGES: {'name': 'Chat API - Messages', 'version': 'v1', 'v2discovery': True, 'localjson': True, 'mappedAPI': CHAT},
+  CHAT_SPACES: {'name': 'Chat API - Spaces', 'version': 'v1', 'v2discovery': True, 'localjson': True, 'mappedAPI': CHAT},
+  CHAT_SPACES_ADMIN: {'name': 'Chat API - Spaces Admin', 'version': 'v1', 'v2discovery': True, 'localjson': True, 'mappedAPI': CHAT},
+  CHAT_SPACES_DELETE: {'name': 'Chat API - Spaces Delete', 'version': 'v1', 'v2discovery': True, 'localjson': True, 'mappedAPI': CHAT},
+  CHAT_SPACES_DELETE_ADMIN: {'name': 'Chat API - Spaces Delete Admin', 'version': 'v1', 'v2discovery': True, 'localjson': True, 'mappedAPI': CHAT},
   CLASSROOM: {'name': 'Classroom API', 'version': 'v1', 'v2discovery': True},
   CHROMEMANAGEMENT: {'name': 'Chrome Management API', 'version': 'v1', 'v2discovery': True},
   CHROMEMANAGEMENT_APPDETAILS: {'name': 'Chrome Management API - AppDetails', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHROMEMANAGEMENT},
@@ -520,10 +520,10 @@ _SVCACCT_SCOPES = [
    'api': CHAT_MEMBERSHIPS,
    'subscopes': READONLY,
    'scope': 'https://www.googleapis.com/auth/chat.memberships'},
-  {'name': 'Chat API - Admin Memberships',
+  {'name': 'Chat API - Memberships Admin',
    'api': CHAT_MEMBERSHIPS_ADMIN,
    'subscopes': READONLY,
-    'scope': 'https://www.googleapis.com/auth/chat.admin.memberships'},
+   'scope': 'https://www.googleapis.com/auth/chat.admin.memberships'},
   {'name': 'Chat API - Messages',
    'api': CHAT_MESSAGES,
    'subscopes': READONLY,
@@ -532,7 +532,7 @@ _SVCACCT_SCOPES = [
    'api': CHAT_SPACES,
    'subscopes': READONLY,
    'scope': 'https://www.googleapis.com/auth/chat.spaces'},
-  {'name': 'Chat API - Admin Spaces',
+  {'name': 'Chat API - Spaces Admin',
    'api': CHAT_SPACES_ADMIN,
    'subscopes': READONLY,
    'scope': 'https://www.googleapis.com/auth/chat.admin.spaces'},
@@ -540,8 +540,8 @@ _SVCACCT_SCOPES = [
    'api': CHAT_SPACES_DELETE,
    'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/chat.delete'},
-  {'name': 'Chat API - Admin Delete',
-   'api': CHAT_ADMIN_DELETE,
+  {'name': 'Chat API - Spaces Delete Admin',
+   'api': CHAT_SPACES_DELETE_ADMIN,
    'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/chat.admin.delete'},
   {'name': 'Classroom API - Course Announcements',
