@@ -24,6 +24,8 @@ ERROR: 500: unknownError - Unknown Error.
 ERROR: 503: serviceNotAvailable - The service is currently unavailable.
 ```
 
+Upgraded to OpenSSL 3.3.1 where possible.
+
 6.76.12
 
 Fixed bug in `gam <UserTypeEntity> print|show chatspaces` that caused the following error:

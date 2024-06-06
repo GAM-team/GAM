@@ -114,7 +114,7 @@ jobs:
         with:
           path: |
             cache.tar.xz
-          key: gam-${{ matrix.jid }}-20240604
+          key: gam-${{ matrix.jid }}-20240606
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
@@ -257,7 +257,11 @@ jobs:
           cd "${GITHUB_WORKSPACE}/src"
           git clone https://github.com/openssl/openssl.git
           cd "${OPENSSL_SOURCE_PATH}"
-          export LATEST_STABLE_TAG=$(git tag --list openssl-* | grep -v alpha | grep -v beta | sort -Vr | head -n1)
+          if ([ "${RUNNER_OS}" == "macOS" ] && [ "$arch" == "x86_64" ]); then
+            export LATEST_STABLE_TAG="openssl-3.3.0"
+          else
+            export LATEST_STABLE_TAG=$(git tag --list openssl-* | grep -v alpha | grep -v beta | sort -Vr | head -n1)
+          fi
           echo "Checking out version ${LATEST_STABLE_TAG}"
           git checkout "${LATEST_STABLE_TAG}"
           export COMPILED_OPENSSL_VERSION=${LATEST_STABLE_TAG:8} # Trim the openssl- prefix

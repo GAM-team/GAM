@@ -53941,7 +53941,7 @@ def printFileList(users):
                                pageMessage=pageMessage, noFinalize=True,
                                throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID_QUERY, GAPI.INVALID,
                                                                            GAPI.BAD_REQUEST],
-                               retryReasons=[GAPI.UNKNOWN_ERROR],
+                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS+[GAPI.UNKNOWN_ERROR],
                                q=q, orderBy=DFF.orderBy, includeLabels=includeLabels, fields=pagesFields,
                                pageSize=GC.Values[GC.DRIVE_MAX_RESULTS], includeItemsFromAllDrives=True, supportsAllDrives=True)
       for childEntryInfo in children:
@@ -54253,7 +54253,7 @@ def printFileList(users):
                               throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID_QUERY, GAPI.INVALID,
                                                                           GAPI.BAD_REQUEST, GAPI.FILE_NOT_FOUND,
                                                                           GAPI.NOT_FOUND, GAPI.TEAMDRIVE_MEMBERSHIP_REQUIRED],
-                              retryReasons=[GAPI.UNKNOWN_ERROR],
+                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS+[GAPI.UNKNOWN_ERROR],
                               q=DLP.fileIdEntity['query'], orderBy=DFF.orderBy, includeLabels=includeLabels,
                               fields=pagesFields, pageSize=GC.Values[GC.DRIVE_MAX_RESULTS], **btkwargs)
         for files in feed:
