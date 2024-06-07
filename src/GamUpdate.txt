@@ -15,6 +15,14 @@ gam <UserTypeEntity> delete|remove chatmember asadmin
 gam <UserTypeEntity> print|show chatmembers|asadmin
 ```
 
+6.76.14
+
+Added the following Gemini License SKUs:
+```
+1010470004 - Gemini Education
+1010470005 - Gemini Education Premium
+```
+
 6.76.13
 
 Updated `gam <UserTypeEntity> show fileinfo ... showlabels` and `gam <UserTypeEntity> print filelist ... showlabels`
@@ -37,7 +45,7 @@ ERROR: Got an unexpected keyword argument orderBy
 
 Thanks to Jay, added `gam report vault`.
 
-Thanks to Jay, added the following Gemini SKUs:
+Thanks to Jay, added the following Gemini License SKUs:
 ```
 1010470006 - AI Security
 1010470007 - AI Meetings and Messaging

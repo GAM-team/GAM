@@ -272,6 +272,8 @@ If an item contains spaces, it should be surrounded by ".
         cloudsearch | 1010350001 | Cloud Search |
         eeu | 1010490001 | SKU Endpoint Education Upgrade |
         geminibiz | 1010470003 | Gemini Business |
+        geminiedu | 1010470004 | Gemini Education |
+        geminiedupremium| 1010470005 | Gemini Education Premium |
         geminient| duetai | 1010470001 | Gemini Enterprise |
         gsuitebasic | gafb | gafw | basic | Google-Apps-For-Business |
         gsuitebusiness | gau | gsb | unlimited | Google-Apps-Unlimited |

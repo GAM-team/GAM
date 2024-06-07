@@ -92,6 +92,10 @@ _SKUS = {
     'product': '101047', 'aliases': ['gwlabs', 'workspacelabs'], 'displayName': 'Google Workspace Labs'},
   '1010470003': {
     'product': '101047', 'aliases': ['geminibiz'], 'displayName': 'Gemini Business'},
+  '1010470004': {
+    'product': '101047', 'aliases': ['geminiedu'], 'displayName': 'Gemini Education'},
+  '1010470005': {
+    'product': '101047', 'aliases': ['geminiedupremium'], 'displayName': 'Gemini Education Premium'},
   '1010470006': {
     'product': '101047', 'aliases': ['aisecurity'], 'displayName': 'AI Security'},
   '1010470007': {

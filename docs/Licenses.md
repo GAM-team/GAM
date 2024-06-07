@@ -55,6 +55,8 @@
 | G Suite Legacy | Google-Apps | standard |
 | G Suite Lite | Google-Apps-Lite | gsuitelite |
 | Gemini Business | 1010470003 | geminibiz
+| Gemini Education | 1010470004 | geminiedu |
+| Gemini Education Premium | 1010470005 | geminiedupremium |
 | Gemini Enterprise | 1010470001 | geminient | duetai |
 | Google Apps Message Security | Google-Apps-For-Postini | postini |
 | Google Chrome Device Management | Google-Chrome-Device-Management | cdm |
@@ -151,6 +153,8 @@
         cloudsearch | 1010350001 | Cloud Search |
         eeu | 1010490001 | SKU Endpoint Education Upgrade |
         geminibiz | 1010470003 | Gemini Business |
+        geminiedu | 1010470004 | Gemini Education |
+        geminiedupremium| 1010470005 | Gemini Education Premium |
         geminient| duetai | 1010470001 | Gemini Enterprise |
         gsuitebasic | gafb | gafw | basic | Google-Apps-For-Business |
         gsuitebusiness | gau | gsb | unlimited | Google-Apps-Unlimited |
