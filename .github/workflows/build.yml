@@ -53,7 +53,7 @@ jobs:
             arch: aarch64
             openssl_archs: linux-aarch64
             staticx: yes
-          - os: macos-13
+          - os: macos-14
             jid: 5
             goal: build
             arch: x86_64
@@ -196,10 +196,10 @@ jobs:
           bash ./rust.sh -y
           source $HOME/.cargo/env
           # Install needed packages
-          brew update
-          brew install gpg
-          brew install swig
-          brew install ncurses
+          #brew update
+          #brew install gpg
+          #brew install swig
+          #brew install ncurses
 
       - name: Windows Configure VCode
         uses: ilammy/msvc-dev-cmd@v1
