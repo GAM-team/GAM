@@ -53,7 +53,7 @@ jobs:
             arch: aarch64
             openssl_archs: linux-aarch64
             staticx: yes
-          - os: macos-14
+          - os: macos-12
             jid: 5
             goal: build
             arch: x86_64
@@ -261,7 +261,11 @@ jobs:
           cd "${GITHUB_WORKSPACE}/src"
           git clone https://github.com/openssl/openssl.git
           cd "${OPENSSL_SOURCE_PATH}"
-          export LATEST_STABLE_TAG=$(git tag --list openssl-* | grep -v alpha | grep -v beta | sort -Vr | head -n1)
+          if ([ "${RUNNER_OS}" == "macOS" ] && [ "$arch" == "x86_64" ]); then
+            export LATEST_STABLE_TAG="openssl-3.3.0"
+          else
+            export LATEST_STABLE_TAG=$(git tag --list openssl-* | grep -v alpha | grep -v beta | sort -Vr | head -n1)
+          fi
           echo "Checking out version ${LATEST_STABLE_TAG}"
           git checkout "${LATEST_STABLE_TAG}"
           export COMPILED_OPENSSL_VERSION=${LATEST_STABLE_TAG:8} # Trim the openssl- prefix
