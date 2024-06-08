@@ -196,9 +196,10 @@ jobs:
           bash ./rust.sh -y
           source $HOME/.cargo/env
           # Install needed packages
-          # brew update
-          # brew install gpg
+          brew update
+          brew install gpg
           brew install swig
+          brew install ncurses
 
       - name: Windows Configure VCode
         uses: ilammy/msvc-dev-cmd@v1
