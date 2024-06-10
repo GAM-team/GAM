@@ -30278,7 +30278,7 @@ def doCreateGroup(ciGroupsAPI=False):
       callGAPI(gs.groups(), 'update',
                bailOnInvalidError='messageModerationLevel' in settings,
                throwReasons=GAPI.GROUP_SETTINGS_THROW_REASONS,
-               retryReasons=GAPI.GROUP_SETTINGS_RETRY_REASONS+[GAPI.NOT_FOUND],
+               retryReasons=GAPI.GROUP_SETTINGS_RETRY_REASONS+[GAPI.NOT_FOUND,GAPI.INVALID_ARGUMENT],
                groupUniqueId=mapGroupEmailForSettings(groupEmail), body=settings, fields='')
     entityActionPerformed([entityType, groupEmail])
   except (GAPI.alreadyExists, GAPI.duplicate):
