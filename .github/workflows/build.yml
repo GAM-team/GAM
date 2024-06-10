@@ -262,7 +262,7 @@ jobs:
           git clone https://github.com/openssl/openssl.git
           cd "${OPENSSL_SOURCE_PATH}"
           if ([ "${RUNNER_OS}" == "macOS" ] && [ "$arch" == "x86_64" ]); then
-            export LATEST_STABLE_TAG="openssl-3.3.0"
+            export LATEST_STABLE_TAG="openssl-3.3"
           else
             export LATEST_STABLE_TAG=$(git tag --list openssl-* | grep -v alpha | grep -v beta | sort -Vr | head -n1)
           fi
