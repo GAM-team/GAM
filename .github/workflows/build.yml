@@ -262,7 +262,7 @@ jobs:
           git clone https://github.com/openssl/openssl.git
           cd "${OPENSSL_SOURCE_PATH}"
           if ([ "${RUNNER_OS}" == "macOS" ] && [ "$arch" == "x86_64" ]); then
-            export LATEST_STABLE_TAG="openssl-3.2.2"
+            export LATEST_STABLE_TAG="openssl-3.3.1"
           else
             export LATEST_STABLE_TAG=$(git tag --list openssl-* | grep -v alpha | grep -v beta | sort -Vr | head -n1)
           fi
@@ -330,15 +330,15 @@ jobs:
                  -output "${GITHUB_WORKSPACE}/bin/ssl/bin/openssl"
             rm -rf ${GITHUB_WORKSPACE}/bin/ssl-darwin64-x86_64
             rm -rf ${GITHUB_WORKSPACE}/bin/ssl-darwin64-arm64
-            echo "LDFLAGS=-L${OPENSSL_INSTALL_PATH}/lib" >> $GITHUB_ENV
-            echo "CRYPTOGRAPHY_SUPPRESS_LINK_FLAGS=1" >> $GITHUB_ENV
-            echo "CFLAGS=-I${OPENSSL_INSTALL_PATH}/include -arch arm64 -arch x86_64 ${CFLAGS}" >> $GITHUB_ENV
             echo "ARCHFLAGS=-arch x86_64 -arch arm64" >> $GITHUB_ENV
           else
             cd "${GITHUB_WORKSPACE}/src/openssl-${openssl_archs}"
             # install_sw saves us ages processing man pages :-)
             $MAKE install_sw
           fi
+          echo "LDFLAGS=-L${OPENSSL_INSTALL_PATH}/lib" >> $GITHUB_ENV
+          echo "CRYPTOGRAPHY_SUPPRESS_LINK_FLAGS=1" >> $GITHUB_ENV
+          echo "CFLAGS=-I${OPENSSL_INSTALL_PATH}/include -arch arm64 -arch x86_64 ${CFLAGS}" >> $GITHUB_ENV
 
       - name: Run OpenSSL
         if: matrix.goal == 'build'
