@@ -262,7 +262,7 @@ jobs:
           git clone https://github.com/openssl/openssl.git
           cd "${OPENSSL_SOURCE_PATH}"
           if ([ "${RUNNER_OS}" == "macOS" ] && [ "$arch" == "x86_64" ]); then
-            export LATEST_STABLE_TAG="openssl-3.3.1"
+            export LATEST_STABLE_TAG="openssl-3.3.0"
           else
             export LATEST_STABLE_TAG=$(git tag --list openssl-* | grep -v alpha | grep -v beta | sort -Vr | head -n1)
           fi
@@ -658,14 +658,14 @@ jobs:
           export this_python=${python_arr[1]}
           if [[ "${this_python}" != "${COMPILED_PYTHON_VERSION}" ]]; then
             echo "ERROR: Tried to compile Python ${COMPILED_PYTHON_VERSION} but ended up with ${this_python}"
-            #exit 1
+            exit 1
           fi
           export openssl_line=$(echo -e "${voutput}" | grep "OpenSSL ")
           export openssl_arr=($openssl_line)
           export this_openssl="${openssl_arr[1]}"
           if [[ "${this_openssl}" != "${COMPILED_OPENSSL_VERSION}" ]]; then
             echo "ERROR: Tried to compile OpenSSL ${COMPILED_OPENSSL_VERSION} but ended up with ${this_openssl}"
-            #exit 1
+            exit 1
           fi
           echo "We successfully compiled Python ${this_python} and OpenSSL ${this_openssl}"
 
