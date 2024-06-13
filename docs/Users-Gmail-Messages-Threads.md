@@ -244,7 +244,7 @@ gam <UserTypeEntity> draft message
 * `file|htmlfile <FileName> [charset <Charset>]` - Read the message from `<FileName>`
 * `gdoc|ghtml <UserGoogleDoc>` - Read the message from `<UserGoogleDoc>`
 * `gcsdoc|gcshtml <StorageBucketObjectName>` - Read the message from the Google Cloud Storage file `<StorageBucketObjectName>`
-* `emlfile <FileName> [charset <Charset>]` - Read the message from the EML message file `<FileName>`. SMTP headers specified in the command will replace those in the message file. The default `chatser` is `ascii`.
+* `emlfile <FileName> [charset <Charset>]` - Read the message from the EML message file `<FileName>`. SMTP headers specified in the command will replace those in the message file. The default `charset` is `ascii`.
 
 The `<SMTPDateHeader> <Time>` argument  requires `<Time>` values which will be converted to RFC2822 dates. If you have these headers with values that
 are not in `<Time>` format, use the argument `header <SMTPDateHeader> <String>`.
@@ -261,7 +261,7 @@ Your HTML message will contain lines like this:
 <img src="cid:image2"/>
 ```
 
-Your command line will have: `embedimage file1.jpg image1` embedimage file2.jpg image2`
+Your command line will have: `embedimage file1.jpg image1 embedimage file2.jpg image2`
 
 ## Import messages
 Import a message into a user's mailbox, with standard email delivery scanning and classification similar to receiving via SMTP.

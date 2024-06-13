@@ -391,6 +391,10 @@ Report on users Google Drive usage.
 ```
 gam report users parameters accounts:drive_used_quota_in_mb,accounts:total_quota_in_mb,accounts:used_quota_in_mb,accounts:used_quota_in_percentage
 ```
+Report on users total storage usage.
+```
+gam report users parameters accounts:drive_used_quota_in_mb,accounts:gmail_used_quota_in_mb,accounts:gplus_photos_used_quota_in_mb,accounts:total_quota_in_mb,accounts:used_quota_in_mb,accounts:used_quota_in_percentage
+```
 Report on email activity for individual users.
 ```
 $ gam report users select users testuser1,testuser2,testuser3 fields gmail:num_emails_received,gmail:num_emails_sent range 2023-07-01 2023-07-07 

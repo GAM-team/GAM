@@ -2,18 +2,11 @@
 
 Merged GAM-Team version
 
-6.77.00
+6.76.15
 
-Added option `asadmin` to the following Chat commands that allows admin access.
-These commands are in Developer Preview, your project must have Developer Preview enabled for the Chat API
-in order to use these commands.
-```
-gam <UserTypeEntity> delete chatspace asadmin
-gam <UserTypeEntity> print|show chatspaces asadmin
-gam <UserTypeEntity> create chatmember asadmin
-gam <UserTypeEntity> delete|remove chatmember asadmin
-gam <UserTypeEntity> print|show chatmembers|asadmin
-```
+Fixed bug in `gam <UserTypeEntity> print|show filesharecounts summary only summaryuser <String>`
+that printed an erroneous row if `<UserTypeEntity>` specified a single user and `<String>` matched
+the user's email address.
 
 6.76.14
 

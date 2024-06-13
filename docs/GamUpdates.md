@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.76.15
+
+Fixed bug in `gam <UserTypeEntity> print|show filesharecounts summary only summaryuser <String>`
+that printed an erroneous row if `<UserTypeEntity>` specified a single user and `<String>` matched
+the user's email address.
+
 ### 6.76.14
 
 Added the following Gemini License SKUs:

@@ -30278,7 +30278,7 @@ def doCreateGroup(ciGroupsAPI=False):
       callGAPI(gs.groups(), 'update',
                bailOnInvalidError='messageModerationLevel' in settings,
                throwReasons=GAPI.GROUP_SETTINGS_THROW_REASONS,
-               retryReasons=GAPI.GROUP_SETTINGS_RETRY_REASONS+[GAPI.NOT_FOUND,GAPI.INVALID_ARGUMENT],
+               retryReasons=GAPI.GROUP_SETTINGS_RETRY_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT],
                groupUniqueId=mapGroupEmailForSettings(groupEmail), body=settings, fields='')
     entityActionPerformed([entityType, groupEmail])
   except (GAPI.alreadyExists, GAPI.duplicate):
@@ -54853,7 +54853,7 @@ def printShowFileCounts(users):
 
   def showMimeTypeInfo(user, mimeTypeInfo, sharedDriveId, sharedDriveName, i, count):
     if summary != FILECOUNT_SUMMARY_NONE:
-      if user != summaryUser:
+      if count != 0:
         for mimeType, mtinfo in iter(mimeTypeInfo.items()):
           summaryMimeTypeInfo.setdefault(mimeType, {'count': 0, 'size': 0})
           summaryMimeTypeInfo[mimeType]['count'] += mtinfo['count']
@@ -55264,7 +55264,7 @@ def printShowFileShareCounts(users):
 
   def showShareCounts(user, shareCounts, i, count):
     if summary != FILECOUNT_SUMMARY_NONE:
-      if user != summaryUser:
+      if count != 0:
         for field, shareCount in iter(shareCounts.items()):
           summaryShareCounts[field] += shareCount
         if summary == FILECOUNT_SUMMARY_ONLY:
