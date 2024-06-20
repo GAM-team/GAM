@@ -338,14 +338,14 @@ jobs:
               echo "CFLAGS=-I${OPENSSL_INSTALL_PATH}/include -arch arm64 -arch x86_64 ${CFLAGS}" >> $GITHUB_ENV
               echo "ARCHFLAGS=-arch x86_64 -arch arm64" >> $GITHUB_ENV
               ;;
-            #x86_64)
-            #  echo "CFLAGS=-I${OPENSSL_INSTALL_PATH}/include -arch x86_64 ${CFLAGS}" >> $GITHUB_ENV
-            #  echo "ARCHFLAGS=-arch x86_64" >> $GITHUB_ENV
-            #  ;;
-            #aarch64)
-            #  echo "CFLAGS=-I${OPENSSL_INSTALL_PATH}/include -arch arm64 ${CFLAGS}" >> $GITHUB_ENV
-            #  echo "ARCHFLAGS=-arch arm64" >> $GITHUB_ENV
-            #  ;;
+            x86_64)
+              echo "CFLAGS=-I${OPENSSL_INSTALL_PATH}/include ${CFLAGS}" >> $GITHUB_ENV
+              echo "ARCHFLAGS=-arch x86_64" >> $GITHUB_ENV
+              ;;
+            aarch64)
+              echo "CFLAGS=-I${OPENSSL_INSTALL_PATH}/include ${CFLAGS}" >> $GITHUB_ENV
+              echo "ARCHFLAGS=-arch arm64" >> $GITHUB_ENV
+              ;;
           esac
 
       - name: Run OpenSSL
