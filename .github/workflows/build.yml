@@ -387,6 +387,7 @@ jobs:
                       --enable-optimizations \
                       --with-lto \
                       "${extra_args[@]}"
+          cat config.log
 
       - name: Windows Get External Python deps
         if: matrix.goal == 'build' && runner.os == 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
