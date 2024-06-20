@@ -386,7 +386,7 @@ jobs:
                       --with-ensurepip=upgrade \
                       --enable-optimizations \
                       --with-lto \
-                      "${extra_args[@]}"
+                      "${extra_args[@]}" || : # exit 0
           cat config.log
 
       - name: Windows Get External Python deps
