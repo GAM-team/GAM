@@ -10,6 +10,7 @@
 - [Definitions](#definitions)
 - [GUI API Group settings mapping](#gui-api-group-settings-mapping)
 - [GUI API Group access type settings mapping](#gui-api-group-access-type-settings-mapping)
+- [whoCanViewMembership and whoCanDiscoverGroup interactions](#whocanviewmembership-and-whocandiscovergroup-interactions)
 - [Manage groups](#manage-groups)
 - [Update a group's settings with JSON data](#update-a-groups-settings-with-json-data)
 - [Display information about specific groups](#display-information-about-specific-groups)
@@ -301,6 +302,46 @@ Restricted
   whoCanPostMessage ALL_MEMBERS_CAN_POST
   whoCanViewGroup ALL_MEMBERS_CAN_VIEW
   whoCanViewMembership ALL_MEMBERS_CAN_VIEW
+```
+
+## whoCanViewMembership and whoCanDiscoverGroup interactions
+Some combinations of these two settings are not allowed:
+```
+gam update group group@domain.com whoCanViewMembership ALL_IN_DOMAIN_CAN_VIEW whoCanDiscoverGroup ANYONE_CAN_DISCOVER
+Group: group@domain.com, Updated
+
+gam update group group@domain.com whoCanViewMembership ALL_OWNERS_CAN_VIEW whoCanDiscoverGroup ANYONE_CAN_DISCOVER
+Group: group@domain.com, Update Failed: Failed request validation in update settings: DONT_USE_OR_ELSE_WHO_CAN_MANAGE_MEMBERS_CANNOT_BE_BROADER_THAN_WHO_CAN_VIEW_MEMBERSHIP
+
+gam update group group@domain.com whoCanViewMembership ALL_MANAGERS_CAN_VIEW whoCanDiscoverGroup ANYONE_CAN_DISCOVER
+Group: group@domain.com, Updated
+
+gam update group group@domain.com whoCanViewMembership ALL_MEMBERS_CAN_VIEW whoCanDiscoverGroup ANYONE_CAN_DISCOVER
+Group: group@domain.com, Updated
+
+gam update group group@domain.com whoCanViewMembership ALL_IN_DOMAIN_CAN_VIEW whoCanDiscoverGroup ALL_IN_DOMAIN_CAN_DISCOVER
+Group: group@domain.com, Updated
+
+gam update group group@domain.com whoCanViewMembership ALL_OWNERS_CAN_VIEW whoCanDiscoverGroup ALL_IN_DOMAIN_CAN_DISCOVER
+Group: group@domain.com, Update Failed: Failed request validation in update settings: DONT_USE_OR_ELSE_WHO_CAN_MANAGE_MEMBERS_CANNOT_BE_BROADER_THAN_WHO_CAN_VIEW_MEMBERSHIP
+
+gam update group group@domain.com whoCanViewMembership ALL_MANAGERS_CAN_VIEW whoCanDiscoverGroup ALL_IN_DOMAIN_CAN_DISCOVER
+Group: group@domain.com, Updated
+
+gam update group group@domain.com whoCanViewMembership ALL_MEMBERS_CAN_VIEW whoCanDiscoverGroup ALL_IN_DOMAIN_CAN_DISCOVER
+Group: group@domain.com, Updated
+
+gam update group group@domain.com whoCanViewMembership ALL_IN_DOMAIN_CAN_VIEW whoCanDiscoverGroup ALL_MEMBERS_CAN_DISCOVER
+Group: group@domain.com, Update Failed: Failed request validation in update settings: WHO_CAN_VIEW_MEMBERSHIP_CANNOT_BE_BROADER_THAN_WHO_CAN_SEE_GROUP
+
+gam update group group@domain.com whoCanViewMembership ALL_OWNERS_CAN_VIEW whoCanDiscoverGroup ALL_MEMBERS_CAN_DISCOVER
+Group: group@domain.com, Update Failed: Failed request validation in update settings: DONT_USE_OR_ELSE_WHO_CAN_MANAGE_MEMBERS_CANNOT_BE_BROADER_THAN_WHO_CAN_VIEW_MEMBERSHIP
+
+gam update group group@domain.com whoCanViewMembership ALL_MANAGERS_CAN_VIEW whoCanDiscoverGroup ALL_MEMBERS_CAN_DISCOVER
+Group: group@domain.com, Updated
+
+gam update group group@domain.com whoCanViewMembership ALL_MEMBERS_CAN_VIEW whoCanDiscoverGroup ALL_MEMBERS_CAN_DISCOVER
+Group: group@domain.com, Updated
 ```
 
 ## Manage groups

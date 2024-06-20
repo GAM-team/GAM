@@ -47,6 +47,64 @@ This Wiki page was built directly from Jay Lee's Wiki page; my sincere thanks fo
 <ChatMessageID> ::= client-<String>
         <String> must contain only lowercase letters, numbers, and hyphens up to 56 characters in length.
 ```
+```
+<ChatSpaceFieldName> ::=
+        accesssettings|
+        admininstalled|
+        createtime|
+        displayname|
+        externaluserallowed|
+        importmode|
+        lastactivetime|
+        membershipcount|
+        name|
+        singleuserbotdm|
+        spacedetails|
+        spacehistorystate|
+        spacethreadingstate|threaded|
+        spacetype|type|
+        spaceuri
+<ChatSpaceFieldNameList> ::= "<ChatSpaceFieldName>(,<ChatSpaceFieldName>)*"
+
+<ChatMemberFieldName> ::=
+        createtime|
+        deletetime|
+        groupmember|
+        member|
+        name|
+        role|
+        state|
+<ChatMemberFieldNameList> ::= "<ChatMemberFieldName>(,<ChatMemberFieldName>)*"
+
+<ChatMessageFieldName> ::=
+        accessorywidgets|
+        actionresponse|
+        annotations|
+        argumenttext|
+        attachedgifs|
+        attachment|
+        cards|
+        cardsv2|
+        clientassignedmessageid|
+        createtime|
+        deletetime|
+        deletionmetadata|
+        emojireactionsummaries|
+        fallbacktext|
+        formattedtext|
+        lastupdatetime|
+        matchedurl|
+        name|
+        privatemessageviewer|
+        quotedmessagemetadata|
+        sender|
+        slashcommand|
+        space|
+        text|
+        thread|
+        threadreply
+<ChatMessageFieldNameList> ::= "<ChatMessageFieldName>(,<ChatMessageFieldName>)*"
+```
 
 ## Set up a Chat Bot
 Since GAM 6.04.00, GAM is capable of acting as a Chat Bot and sending messages to Chat Rooms or direct messages to users. You first need to configure your Chat Bot.
@@ -69,6 +127,7 @@ At first you'll have no spaces listed. Try [finding your bot and chatting it](ht
 ### Display information about a specific chat space
 ```
 gam info chatspace space <ChatSpace>
+        [fields <ChatSpaceFieldNameList>]
         [formatjson]
 ```
 By default, Gam displays the information as an indented list of keys and values.
@@ -77,6 +136,7 @@ By default, Gam displays the information as an indented list of keys and values.
 ### Display information about all chat spaces
 ```
 gam show chatspaces
+        [fields <ChatSpaceFieldNameList>]
         [formatjson]
 ```
 By default, Gam displays the information as an indented list of keys and values.
@@ -84,11 +144,12 @@ By default, Gam displays the information as an indented list of keys and values.
 
 ```
 gam print chatspaces [todrive <ToDriveAttribute>*]
+        [fields <ChatSpaceFieldNameList>]
         [formatjson [quotechar <Character>]]
 ```
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.
-
+`
 By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
 the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
 When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
@@ -101,6 +162,7 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 ### Display information about a specific chat member
 ```
 gam info chatmember member <ChatMember>
+        [fields <ChatMemberFieldNameList>]
         [formatjson]
 ```
 By default, Gam displays the information as an indented list of keys and values.
@@ -110,6 +172,7 @@ By default, Gam displays the information as an indented list of keys and values.
 ```
 gam show chatmembers space <ChatSpace>
         [showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
+        [fields <ChatMemberFieldNameList>]
         [formatjson]
 ```
 By default, Gam displays the information as an indented list of keys and values.
@@ -118,6 +181,7 @@ By default, Gam displays the information as an indented list of keys and values.
 ```
 gam print chatmembers [todrive <ToDriveAttribute>*] space <ChatSpace>
         [showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
+        [fields <ChatMemberFieldNameList>]
         [formatjson [quotechar <Character>]]
 ```
 
@@ -238,6 +302,7 @@ Display the given Chat message.
 
 ```
 gam info chatmessage name <ChatMessage>
+        [fields <ChatMessageFieldNameList>]
         [formatjson]
 ```
 By default, Gam displays the information as an indented list of keys and values.

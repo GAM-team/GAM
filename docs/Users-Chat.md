@@ -1,6 +1,7 @@
 # Users - Chat
 - [API documentation](#api-documentation)
 - [Introduction](#introduction)
+- [Developer Preview Admin Access](#developer-preview-admin-access)
 - [Set up a Chat Bot](#set-up-a-chat-bot)
 - [Definitions](#definitions)
 - [Manage Chat Spaces](#manage-chat-spaces)
@@ -19,6 +20,7 @@
 * https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.messages/list
 * https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.spaceEvents/list
 * https://support.google.com/chat/answer/7655820
+* https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces/search
 
 ## Introduction
 These features were added in version 6.60.00.
@@ -27,12 +29,42 @@ To use these commands you must update your service account authorization.
 ```
 gam user user@domain.com update serviceaccount
 
-[*]  3)  Chat API - Memberships (supports readonly)
-[*]  4)  Chat API - Messages (supports readonly)
-[*]  5)  Chat API - Spaces (supports readonly)
-[*]  6)  Chat API - Spaces Delete
+[*]  4)  Chat API - Memberships (supports readonly)
+[*]  6)  Chat API - Messages (supports readonly)
+[*]  7)  Chat API - Spaces (supports readonly)
+[*]  9)  Chat API - Spaces Delete
 
 ```
+
+## Developer Preview Admin Access
+The Chat API Developer Preview allows an admin to perform certain actions
+on all Chat Spaces. These commands were added in version 6.77.00.
+
+You must be enrolled in the Developer Preview program for the CHAT API to use these commands.
+
+```
+gam <UserItem> delete chatspace asadmin
+gam <UserItem> update chatspace asadmin
+gam <UserItem> info chatspace asadmin
+gam <UserItem> print|show chatspaces asadmin
+gam <UserItem> create chatmember asadmin
+gam <UserItem> delete|remove chatmember asadmin
+gam <UserItem> update|modify chatmember asadmin
+gam <UserItem> sync chatmembers asadmin
+gam <UserItem> info chatmember asadmin
+gam <UserItem> print|show chatmembers|asadmin
+```
+To use these commands you must update your service account authorization.
+```
+gam user user@domain.com update serviceaccount
+
+```
+[*]  5)  Chat API - Memberships Admin (supports readonly)
+[*]  8)  Chat API - Spaces Admin (supports readonly)
+[*] 10)  Chat API - Spaces Delete Admin
+```
+
+
 Google requires that you have a Chat Bot configured in order to use the Chat API; set up a Chat Bot as described in the next section.
 
 ## Set up a Chat Bot
@@ -81,6 +113,65 @@ Google requires that you have a Chat Bot configured in order to use the Chat API
 <ChatMessageID> ::= client-<String>
         <String> must contain only lowercase letters, numbers, and hyphens up to 56 characters in length.
 ```
+```
+<ChatSpaceFieldName> ::=
+        accesssettings|
+        admininstalled|
+        createtime|
+        displayname|
+        externaluserallowed|
+        importmode|
+        lastactivetime|
+        membershipcount|
+        name|
+        singleuserbotdm|
+        spacedetails|
+        spacehistorystate|
+        spacethreadingstate|threaded|
+        spacetype|type|
+        spaceuri
+<ChatSpaceFieldNameList> ::= "<ChatSpaceFieldName>(,<ChatSpaceFieldName>)*"
+
+<ChatMemberFieldName> ::=
+        createtime|
+        deletetime|
+        groupmember|
+        member|
+        name|
+        role|
+        state|
+<ChatMemberFieldNameList> ::= "<ChatMemberFieldName>(,<ChatMemberFieldName>)*"
+
+<ChatMessageFieldName> ::=
+        accessorywidgets|
+        actionresponse|
+        annotations|
+        argumenttext|
+        attachedgifs|
+        attachment|
+        cards|
+        cardsv2|
+        clientassignedmessageid|
+        createtime|
+        deletetime|
+        deletionmetadata|
+        emojireactionsummaries|
+        fallbacktext|
+        formattedtext|
+        lastupdatetime|
+        matchedurl|
+        name|
+        privatemessageviewer|
+        quotedmessagemetadata|
+        sender|
+        slashcommand|
+        space|
+        text|
+        thread|
+        threadreply
+<ChatMessageFieldNameList> ::= "<ChatMessageFieldName>(,<ChatMessageFieldName>)*"
+
+```
 
 ## Manage Chat Spaces
 ### Create a chat space
@@ -128,7 +219,7 @@ The `restricted|audience` options are in Developer Preview and will not be gener
 By default, details about the chatmessage are displayed.
 * `returnidonly` - Display the chatmessage name only
 
-### Update a chat space
+### Update a user's chat space
 ```
 gam <UserTypeEntity> update chatspace <ChatSpace>
         [restricted|(audience <String>)]|
@@ -146,15 +237,39 @@ They are in Developer Preview and will not be generally available.
 By default, Gam displays the information about the created chatspace as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 
-### Delete a chat space
+### Update a chat space, asadmin
+```
+gam <UserItem> update chatspace asadmin <ChatSpace>
+        [restricted|(audience <String>)]|
+        ([displayname <String>]
+         [type space]
+         [description <String>] [guidelines|rules <String>]
+         [history <Boolean>])
+        [formatjson]
+```
+A groupchat space can be upgraded to a space by specifying `type space` and `displayname <String>`.
+
+The `restricted|audience` options can not be combined with options `displayname,type,description,guidelines,history`.
+They are in Developer Preview and will not be generally available.
+
+By default, Gam displays the information about the created chatspace as an indented list of keys and values.
+* `formatjson` - Display the fields in JSON format.
+
+### Delete a user's chat space
 ```
 gam <UserTypeEntity> delete chatspace <ChatSpace>
+```
+
+### Delete a chat space, asadmin
+```
+gam <UserItem> delete chatspace asadmin <ChatSpace>
 ```
 
 ## Display Chat Spaces
 ### Display information about a specific chat space for a user
 ```
 gam <UserTypeEntity> info chatspace <ChatSpace>
+        [fields <ChatSpaceFieldNameList>]
         [formatjson]
 ```
 By default, Gam displays the information as an indented list of keys and values.
@@ -163,6 +278,7 @@ By default, Gam displays the information as an indented list of keys and values.
 ### Display information about a direct message chat space between two users
 ```
 gam <UserTypeEntity> info chatspacedm <UserItem>
+        [fields <ChatSpaceFieldNameList>]
         [formatjson]
 ```
 By default, Gam displays the information as an indented list of keys and values.
@@ -172,16 +288,24 @@ By default, Gam displays the information as an indented list of keys and values.
 ```
 gam <UserTypeEntity> show chatspaces
         [types <ChatSpaceTypeList>]
+        [fields <ChatSpaceFieldNameList>]
         [formatjson]
 ```
+By default, chat spaces of all types are displayed.
+* `types <ChatSpaceTypeList>` - Display specific types of spaces.
+
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 
 ```
 gam <UserTypeEntity> print chatspaces [todrive <ToDriveAttribute>*]
         [types <ChatSpaceTypeList>]
+        [fields <ChatSpaceFieldNameList>]
         [formatjson [quotechar <Character>]]
 ```
+By default, chat spaces of all types are displayed.
+* `types <ChatSpaceTypeList>` - Display specific types of spaces.
+
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.
 
@@ -191,7 +315,7 @@ When using the `formatjson` option, double quotes are used extensively in the da
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
-### Display information about all chat spaces
+### Display information about all user's chat spaces
 ```
 # Local file
 gam config auto_batch_min 1 redirect csv ./AllChatSpaces.csv multiprocess redirect stdout - multiprocess redirect stderr stdout all users print chatspaces
@@ -212,8 +336,54 @@ When using the `formatjson` option, double quotes are used extensively in the da
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
+### Display information about a specific chat space, asadmin
+```
+gam <UserItem> info chatspace asadmin <ChatSpace>
+        [fields <ChatSpaceFieldNameList>]
+        [formatjson]
+```
+By default, Gam displays the information as an indented list of keys and values.
+* `formatjson` - Display the fields in JSON format.
+
+### Display information about all chat spaces, asadmin
+For query and orderby information, see: https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces/search
+```
+gam <UserItem> show chatspaces asadmin
+        [query <String>] [querytime<String> <Time>]
+        [orderby <ChatSpaceAdminOrderByFieldName> [ascending|descending]]
+        [fields <ChatSpaceFieldNameList>]
+        [formatjson]
+```
+By default, all chat spaces of type SPACE are displayed.
+* `query <String> [querytime<String> <Time>]` - Display selected chat spaces
+  * See: https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces/search
+
+By default, Gam displays the information as an indented list of keys and values.
+* `formatjson` - Display the fields in JSON format.
+
+```
+gam <UserItem> print chatspaces asadmin [todrive <ToDriveAttribute>*]
+        [query <String>] [querytime<String> <Time>]
+        [orderby <ChatSpaceAdminOrderByFieldName> [ascending|descending]]
+        [fields <ChatSpaceFieldNameList>]
+        [formatjson [quotechar <Character>]]
+```
+By default, all chat spaces of type SPACE are displayed.
+* `query <String> [querytime<String> <Time>]` - Display selected chat spaces
+  * See: https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces/search
+
+By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
+* `formatjson` - Display the fields in JSON format.
+
+By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
+the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
+When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
+The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
+`quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
+
+
 ## Manage Chat Members
-### Add members to a chat space
+### Add members to a user's chat space
 ```
 gam <UserTypeEntity> create chatmember <ChatSpace>
         [type human|bot] [role member|manager]
@@ -225,7 +395,7 @@ By default, Gam displays the information about the chatmember as an indented lis
 * `formatjson` - Display the fields in JSON format.
 * `returnidonly` - Display the chatmember name only
 
-### Delete members from a chat space
+### Delete members from a user's chat space
 Delete members by specifying a chat space and user/group email addresses.
 ```
 gam <UserTypeEntity> delete chatmember <ChatSpace>
@@ -233,12 +403,37 @@ gam <UserTypeEntity> delete chatmember <ChatSpace>
          (group <GroupItem>)|(groups <GroupEntity>))+
 ```
 
-Delete members by specifying chatmember names.
+Delete members from a user's chat space by specifying chatmember names.
 ```
 gam <UserTypeEntity> remove chatmember members <ChatMemberList>
 ```
 
-### Update members role
+### Add members to a chat space, asadmin
+```
+gam <UserItem> create chatmember asadmin <ChatSpace>
+        [type human|bot] [role member|manager]
+        (user <UserItem>)* (members <UserTypeEntity>)*
+        (group <GroupItem>)* (groups <GroupEntity>)*
+        [formatjson|returnidonly]
+```
+By default, Gam displays the information about the chatmember as an indented list of keys and values.
+* `formatjson` - Display the fields in JSON format.
+* `returnidonly` - Display the chatmember name only
+
+### Delete members from a chat space, asadmin
+Delete members by specifying a chat space and user/group email addresses.
+```
+gam <UserItem> delete chatmember asadmin <ChatSpace>
+        ((user <UserItem>)|(members <UserTypeEntity>)|
+         (group <GroupItem>)|(groups <GroupEntity>))+
+```
+
+Delete members from a chat space by specifying chatmember names, asadmin
+```
+gam <UserItem> remove chatmember members asadmin <ChatMemberList>
+```
+
+### Update a members role in a user's chat space
 Update members by specifying a chat space, user/group email addresses and role.
 ```
 gam <UserTypeEntity> update chatmember <ChatSpace>
@@ -252,29 +447,96 @@ gam <UserTypeEntity> modify chatmember
         members <ChatMemberList>
 ```
 
+### Update a members role in a chat space, asadmin
+Update members by specifying a chat space, user/group email addresses and role.
+```
+gam <UserItem> update chatmember asadmin <ChatSpace>
+        role member|manager
+        ((user <UserItem>)|(members <UserTypeEntity>))+
+```
+Update members by specifying chatmember names and role.
+```
+gam <UserItem> modify chatmember asadmin
+        role member|manager
+        members <ChatMemberList>
+```
+
 ## Display Chat Members
-### Display information about a specific chat members
+### Display information about a user's specific chat members
 ```
 gam <UserTypeEntity> info chatmember members <ChatMemberList>
+        [fields <ChatMemberFieldNameList>]
         [formatjson]
 ```
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 
-### Display information about all chat members in a chat space
+### Display information about members in a user's chat spaces
 ```
-gam <UserTypeEntity> show chatmembers <ChatSpace>
+gam <UserTypeEntity> show chatmembers
+        <ChatSpace>* [types <ChatSpaceTypeList>]
         [showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
+        [fields <ChatMemberFieldNameList>]
         [formatjson]
+```
+
+By default, members for all of a user's chat spaces of all types are displayed.
+* `<ChatSpace>` - Display members for a specific chat space
+* `types <ChatSpaceTypeList>` - Display members for specific types of spaces.
+
+By default, all JOINED user members in a chat space are displayed.
+* `showinvited` - Display `INVITED` members.
+* `showgroups` - Display group members,
+* `filter <String>` - Filter memberships by a member's `role `and `member.type`.
+  * To filter by role, set role to ROLE_MEMBER or ROLE_MANAGER.
+  * To filter by type, set member.type to HUMAN or BOT.
+  * To filter by both role and type, use the AND operator.
+  * To filter by either role or type, use the OR operator.
+
+For example, the following filters are valid:
+```
+role = "ROLE_MANAGER" OR role = "ROLE_MEMBER"
+member.type = "HUMAN" AND role = "ROLE_MANAGER"
+```
+The following filters are invalid:
+```
+member.type = "HUMAN" AND member.type = "BOT"
+role = "ROLE_MANAGER" AND role = "ROLE_MEMBER"
 ```
 
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 
 ```
-gam <UserTypeEntity> print chatmembers [todrive <ToDriveAttribute>*] <ChatSpace>
+gam <UserTypeEntity> print chatmembers [todrive <ToDriveAttribute>*]
+        <ChatSpace>* [types <ChatSpaceTypeList>]
         [showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
+        [fields <ChatMemberFieldNameList>]
         [formatjson [quotechar <Character>]]
+```
+
+By default, members for all of a user's chat spaces of all types are displayed.
+* `<ChatSpace>` - Display members for a specific chat space
+* `types <ChatSpaceTypeList>` - Display members for specific types of spaces.
+
+By default, all JOINED user members in a chat space are displayed.
+* `showinvited` - Display `INVITED` members.
+* `showgroups` - Display group members,
+* `filter <String>` - Filter memberships by a member's `role `and `member.type`.
+  * To filter by role, set role to ROLE_MEMBER or ROLE_MANAGER.
+  * To filter by type, set member.type to HUMAN or BOT.
+  * To filter by both role and type, use the AND operator.
+  * To filter by either role or type, use the OR operator.
+
+For example, the following filters are valid:
+```
+role = "ROLE_MANAGER" OR role = "ROLE_MEMBER"
+member.type = "HUMAN" AND role = "ROLE_MANAGER"
+```
+The following filters are invalid:
+```
+member.type = "HUMAN" AND member.type = "BOT"
+role = "ROLE_MANAGER" AND role = "ROLE_MEMBER"
 ```
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
@@ -286,24 +548,94 @@ When using the `formatjson` option, double quotes are used extensively in the da
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
-By default, only `JOINED` members are displayed; use `showinvited` to also display `INVITED` members.
+### Display information about specific chat members, asadmin
+```
+gam <UserItem> info chatmember asadmin members <ChatMemberList>
+        [fields <ChatMemberFieldNameList>]
+        [formatjson]
+```
+By default, Gam displays the information as an indented list of keys and values.
+* `formatjson` - Display the fields in JSON format.
 
-Use `filter <String>` to filter memberships by a member's `role `and `member.type`.
-* To filter by role, set role to ROLE_MEMBER or ROLE_MANAGER.
-* To filter by type, set member.type to HUMAN or BOT.
-* To filter by both role and type, use the AND operator.
-* To filter by either role or type, use the OR operator.
+### Display information about members all chat spaces, asadmin
+For query and orderby information, see: https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces/search
+```
+gam <UserItem> show chatmembers asadmin
+        <ChatSpace>*  [query <String>] [querytime<String> <Time>]
+        [showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
+        [fields <ChatMemberFieldNameList>]
+        [formatjson]
+```
 
-For example, the following queries are valid:
+By default, members for all chat spaces of type SPACE are displayed.
+* `<ChatSpace>` - Display members for a specific chat space
+* `query <String> [querytime<String> <Time>]` - Display members for selected chat spaces
+  * See: https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces/search
+
+By default, all JOINED user members in a chat space are displayed.
+* `showinvited` - Display `INVITED` members.
+* `showgroups` - Display group members,
+* `filter <String>` - Filter memberships by a member's `role `and `member.type`.
+  * To filter by role, set role to ROLE_MEMBER or ROLE_MANAGER.
+  * To filter by type, set member.type to HUMAN or BOT.
+  * To filter by both role and type, use the AND operator.
+  * To filter by either role or type, use the OR operator.
+
+For example, the following filters are valid:
 ```
 role = "ROLE_MANAGER" OR role = "ROLE_MEMBER"
 member.type = "HUMAN" AND role = "ROLE_MANAGER"
 ```
-The following queries are invalid:
+The following filters are invalid:
 ```
 member.type = "HUMAN" AND member.type = "BOT"
 role = "ROLE_MANAGER" AND role = "ROLE_MEMBER"
 ```
+
+By default, Gam displays the information as an indented list of keys and values.
+* `formatjson` - Display the fields in JSON format.
+
+```
+gam <UserItem> print chatmembers asadmin  [todrive <ToDriveAttribute>*]
+        <ChatSpace>*  [query <String>] [querytime<String> <Time>]
+        [showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
+        [fields <ChatMemberFieldNameList>]
+        [formatjson [quotechar <Character>]]
+```
+
+By default, members for all chat spaces of type SPACE are displayed.
+* `<ChatSpace>` - Display members for a specific chat space
+* `query <String> [querytime<String> <Time>]` - Display members for selected chat spaces
+  * See: https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces/search
+
+By default, all JOINED user members in a chat space are displayed.
+* `showinvited` - Display `INVITED` members.
+* `showgroups` - Display group members,
+* `filter <String>` - Filter memberships by a member's `role `and `member.type`.
+  * To filter by role, set role to ROLE_MEMBER or ROLE_MANAGER.
+  * To filter by type, set member.type to HUMAN or BOT.
+  * To filter by both role and type, use the AND operator.
+  * To filter by either role or type, use the OR operator.
+
+For example, the following filters are valid:
+```
+role = "ROLE_MANAGER" OR role = "ROLE_MEMBER"
+member.type = "HUMAN" AND role = "ROLE_MANAGER"
+```
+The following filters are invalid:
+```
+member.type = "HUMAN" AND member.type = "BOT"
+role = "ROLE_MANAGER" AND role = "ROLE_MEMBER"
+```
+
+By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
+* `formatjson` - Display the fields in JSON format.
+
+By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
+the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
+When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
+The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
+`quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
 ### Delete a user from their `space` and `groupchat` spaces
 There is no way to delete a user from a directmessage space.
@@ -397,6 +729,7 @@ Display a specific Chat message.
 
 ```
 gam <UserTypeEntity> info chatmessage name <ChatMessage>
+        [fields <ChatMessageFieldNameList>]
         [formatjson]
 ```
 By default, Gam displays the information as an indented list of keys and values.
@@ -409,16 +742,20 @@ gam user user@domain.com info chatmessage name spaces/AAAADi-pvqc/messages/PKJrx
 
 ### Display information about all chat messages in a chat space
 ```
-gam <UserTypeEntity> show chatmessages <ChatSpace>
+gam <UserTypeEntity> show chatmessages
+        <ChatSpace>+
         [showdeleted [<Boolean>]] [filter <String>]
+        [fields <ChatMessageFieldNameList>]
         [formatjson]
 ```
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 
 ```
-gam <UserTypeEntity> print chatmessages [todrive <ToDriveAttribute>*] <ChatSpace>
+gam <UserTypeEntity> print chatmessages [todrive <ToDriveAttribute>*]
+        <ChatSpace>+
         [showdeleted [<Boolean>]] [filter <String>]
+        [fields <ChatMessageFieldNameList>]
         [formatjson [quotechar <Character>]]
 ```
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
@@ -482,7 +819,8 @@ gam user user@domain.com info chatevent name spaces/AAAAsUhqjkg/spaceEvents/MTcx
 
 ### Display information about all chat events in a chat space
 ```
-gam <UserTypeEntity> show chatevents <ChatSpace>
+gam <UserTypeEntity> show chatevents
+        <ChatSpace>+
         filter <String>
         [formatjson]
 ```
@@ -490,7 +828,8 @@ By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 
 ```
-gam <UserTypeEntity> print chatevents [todrive <ToDriveAttribute>*] <ChatSpace>
+gam <UserTypeEntity> print chatevents [todrive <ToDriveAttribute>*]
+        <ChatSpace>+
         filter <String>
         [formatjson [quotechar <Character>]]
 ```

@@ -279,6 +279,7 @@ If `actioncsv` is specified, a CSV file with columns `group,email,role,action,me
 that shows the actions performed when updating the group.
 
 The option `additionalmembers [<GroupRole>] <EmailAddressEntity>` can be used to specify members in addition to those specified with `<UserTypeEntity>`.
+If a <GroupRole> is specified, it must match the same role as the one used for the group sync.
 
 For example,
 ```

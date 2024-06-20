@@ -97,7 +97,7 @@ In the `print/show drivefileacls` and `create/delete permissions` commands you c
 * `expirationend <Time>` - For types user and group, will the permission expire before or on <Time>.
 * `deleted <Boolean>` - For types user and groups, has the user or group been deleted.
 * `inherited <Boolean>` - For Shared Drive files/folders, is the permission inherited
-* `pmtype member|file` - For Shared Drive files/folders, is the permission derived from  membership or explicitly granted.
+* `pmtype member|file` - For Shared Drive files/folders, is the permission derived from membership or explicitly granted.
 * `em|endmatch` - End of permission match definition
 
 ## File Selection Examples

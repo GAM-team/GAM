@@ -272,6 +272,7 @@ gam create|add course [id|alias <CourseAlias>] <CourseAttribute>*
             [announcementstates <CourseAnnouncementStateList>]
             [materialstates <CourseMaterialStateList>]
             [workstates <CourseWorkStateList>]
+                [individualstudentassignments copy|delete|maptoall]
                 [removeduedate [<Boolean>]]
                 [mapsharemodestudentcopy edit|none|view]
             [copymaterialsfiles [<Boolean>]]
@@ -286,6 +287,7 @@ gam update course <CourseID> <CourseAttribute>+
             [announcementstates <CourseAnnouncementStateList>]
             [materialstates <CourseMaterialStateList>]
             [workstates <CourseWorkStateList>]
+                [individualstudentassignments copy|delete|maptoall]
                 [removeduedate [<Boolean>]]
                 [mapsharemodestudentcopy edit|none|view]
             [copymaterialsfiles [<Boolean>]]
@@ -299,6 +301,7 @@ gam update courses <CourseEntity> <CourseAttribute>+
             [announcementstates <CourseAnnouncementStateList>]
             [materialstates <CourseMaterialStateList>]
             [workstates <CourseWorkStateList>]
+                [individualstudentassignments copy|delete|maptoall]
                 [removeduedate [<Boolean>]]
                 [mapsharemodestudentcopy edit|none|view]
             [copymaterialsfiles [<Boolean>]]
@@ -315,6 +318,9 @@ gam update courses <CourseEntity> <CourseAttribute>+
     * `materialstates <CourseMaterialsStateList>` - Copy class materials with the specified states
 * Work - By default, no course work is copied
     * `workstates <CourseWorkStateList>` - Copy class work with the specified states
+        * `individualstudentassignments copy` - Copy individual student assignments; this is the default. You will get an error if the student is not a member of the course.
+        * `individualstudentassignments delete` - Delete individual student assignments
+        * `individualstudentassignments maptoall` - Map individual student assignments to all student assignments
         * `removeduedate false` - Remove due dates before the current time; this is the default
         * `removeduedate|removeduedate true` - Remove all due dates
 * Announcements, Materials and Work Materials files

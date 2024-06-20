@@ -1993,7 +1993,7 @@ gam revoke browsertoken <BrowserTokenPermanentID>
         state|
         token|
         tokenpermanentid
-<BrowserTokenFieldNameList> ::= "<BrowseTokenFieldName>(,<BrowserTokenFieldName>)*"
+<BrowserTokenFieldNameList> ::= "<BrowserTokenFieldName>(,<BrowserTokenFieldName>)*"
 
 gam show browsertokens
         ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowserToken>)|(queries <QueryBrowserTokenList>)))
@@ -2024,20 +2024,55 @@ gam print browsertokens [todrive <ToDriveAttribute>*]
 
 gam setup chat
 
+<ChatSpaceFieldName> ::=
+        accesssettings|
+        admininstalled|
+        createtime|
+        displayname|
+        externaluserallowed|
+        importmode|
+        lastactivetime|
+        membershipcount|
+        name|
+        singleuserbotdm|
+        spacedetails|
+        spacehistorystate|
+        spacethreadingstate|threaded|
+        spacetype|type|
+        spaceuri
+<ChatSpaceFieldNameList> ::= "<ChatSpaceFieldName>(,<ChatSpaceFieldName>)*"
+
 gam info chatspace <ChatSpace>
+        [fields <ChatSpaceFieldNameList>]
         [formatjson]
 gam show chatspaces
+        [fields <ChatSpaceFieldNameList>]
         [formatjson]
 gam print chatspaces [todrive <ToDriveAttribute>*]
+        [fields <ChatSpaceFieldNameList>]
         [formatjson [quotechar <Character>]]
 
+<ChatMemberFieldName> ::=
+        createtime|
+        deletetime|
+        groupmember|
+        member|
+        name|
+        role|
+        state|
+<ChatMemberFieldNameList> ::= "<ChatMemberFieldName>(,<ChatMemberFieldName>)*"
+
 gam info chatmember member <ChatMember>
+        [fields <ChatMemberFieldNameList>]
         [formatjson]
 gam show chatmembers <ChatSpace>
         [showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
+        [fields <ChatMemberFieldNameList>]
         [formatjson]
 gam print chatmembers [todrive <ToDriveAttribute>*] <ChatSpace>
         [showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
+        [fields <ChatMemberFieldNameList>]
+        (addcsvdata <FieldName> <String>)*
         [formatjson [quotechar <Character>]]
 
 gam create chatmessage <ChatSpace>
@@ -2049,7 +2084,37 @@ gam update chatmessage name <ChatMessage>
         <ChatContent>
 gam delete chatmessage name <ChatMessage>
 
+<ChatMessageFieldName> ::=
+        accessorywidgets|
+        actionresponse|
+        annotations|
+        argumenttext|
+        attachedgifs|
+        attachment|
+        cards|
+        cardsv2|
+        clientassignedmessageid|
+        createtime|
+        deletetime|
+        deletionmetadata|
+        emojireactionsummaries|
+        fallbacktext|
+        formattedtext|
+        lastupdatetime|
+        matchedurl|
+        name|
+        privatemessageviewer|
+        quotedmessagemetadata|
+        sender|
+        slashcommand|
+        space|
+        text|
+        thread|
+        threadreply
+<ChatMessageFieldNameList> ::= "<ChatMessageFieldName>(,<ChatMessageFieldName>)*"
+
 gam info chatmessage name <ChatMessage>
+        [fields <ChatMessageFieldNameList>]
         [formatjson]
 
 gam info chatevent name <ChatEvent>
@@ -2869,6 +2934,7 @@ gam create|add course [id|alias <CourseAlias>] <CourseAttribute>*
             [announcementstates <CourseAnnouncementStateList>]
             [materialstates <CourseMaterialStateList>]
             [workstates <CourseWorkStateList>]
+                [individualstudentassignments copy|delete|maptoall]
                 [removeduedate [<Boolean>]]
                 [mapsharemodestudentcopy edit|none|view]
             [copymaterialsfiles [<Boolean>]]
@@ -2881,6 +2947,7 @@ gam update course <CourseID> <CourseAttribute>+
             [announcementstates <CourseAnnouncementStateList>]
             [materialstates <CourseMaterialStateList>]
             [workstates <CourseWorkStateList>]
+                [individualstudentassignments copy|delete|maptoall]
                 [removeduedate [<Boolean>]]
                 [mapsharemodestudentcopy edit|none|view]
             [copymaterialsfiles [<Boolean>]]
@@ -2895,6 +2962,7 @@ gam update courses <CourseEntity> <CourseAttribute>+
             [announcementstates <CourseAnnouncementStateList>]
             [materialstates <CourseMaterialStateList>]
             [workstates <CourseWorkStateList>]
+                [individualstudentassignments copy|delete|maptoall]
                 [removeduedate [<Boolean>]]
                 [mapsharemodestudentcopy edit|none|view]
             [copymaterialsfiles [<Boolean>]]
@@ -5974,50 +6042,148 @@ gam <UserTypeEntity> update chatspace <ChatSpace>
          [description <String>] [guidelines|rules <String>]
          [history <Boolean>])
         [formatjson]
-gam <UserTypeEntity> delete chatspace [adminaccess|asadmin] <ChatSpace>
+gam <UserTypeEntity> delete chatspace <ChatSpace>
+
+gam <UserItem> update chatspace asadmin <ChatSpace>
+        [restricted|(audience <String>)]|
+        ([displayname <String>]
+         [type space]
+         [description <String>] [guidelines|rules <String>]
+         [history <Boolean>])
+        [formatjson]
+gam <UserItem> delete chatspace asadmin <ChatSpace>
+
+<ChatSpaceFieldName> ::=
+        accesssettings|
+        admininstalled|
+        createtime|
+        displayname|
+        externaluserallowed|
+        importmode|
+        lastactivetime|
+        membershipcount|
+        name|
+        singleuserbotdm|
+        spacedetails|
+        spacehistorystate|
+        spacethreadingstate|threaded|
+        spacetype|type|
+        spaceuri
+<ChatSpaceFieldNameList> ::= "<ChatSpaceFieldName>(,<ChatSpaceFieldName>)*"
 
 gam <UserTypeEntity> info chatspace <ChatSpace>
+        [fields <ChatSpaceFieldNameList>]
         [formatjson]
 gam <UserTypeEntity> info chatspacedm <UserItem>
+        [fields <ChatSpaceFieldNameList>]
         [formatjson]
 gam <UserTypeEntity> show chatspaces
         [types <ChatSpaceTypeList>]
+        [fields <ChatSpaceFieldNameList>]
         [formatjson]
 gam <UserTypeEntity> print chatspaces [todrive <ToDriveAttribute>*]
         [types <ChatSpaceTypeList>]
-        [formatjson [quotechar <Character>]]
-gam [<UserTypeEntity>] show chatspaces adminaccess|asadmin
-        [query <String>] [querytime<String> <Time>]
-        [orderby <ChatSpaceAdminOrderByFieldName> [ascending|descending]]
-        [formatjson]
-gam [<UserTypeEntity>] print chatspaces adminaccess|asadmin [todrive <ToDriveAttribute>*]
-        [query <String>] [querytime<String> <Time>]
-        [orderby <ChatSpaceAdminOrderByFieldName> [ascending|descending]]
+        [fields <ChatSpaceFieldNameList>]
         [formatjson [quotechar <Character>]]
 
-gam <UserTypeEntity> create chatmember [adminaccess|asadmin] <ChatSpace>
+gam <UserItem> info chatspace asadmin <ChatSpace>
+        [fields <ChatSpaceFieldNameList>]
+        [formatjson]
+gam <UserItem> show chatspaces asadmin
+        [query <String>] [querytime<String> <Time>]
+        [orderby <ChatSpaceAdminOrderByFieldName> [ascending|descending]]
+        [fields <ChatSpaceFieldNameList>]
+        [formatjson]
+gam <UserItem> print chatspaces asadmin [todrive <ToDriveAttribute>*]
+        [query <String>] [querytime<String> <Time>]
+        [orderby <ChatSpaceAdminOrderByFieldName> [ascending|descending]]
+        [fields <ChatSpaceFieldNameList>]
+        [formatjson [quotechar <Character>]]
+
+gam <UserTypeEntity> create chatmember <ChatSpace>
         [type human|bot] [role member|manager]
         (user <UserItem>)* (members <UserTypeEntity>)*
         (group <GroupItem>)* (groups <GroupEntity>)*
         [formatjson|returnidonly]
-gam <UserTypeEntity> delete chatmember [adminaccess|asadmin] <ChatSpace>
+gam <UserTypeEntity> delete chatmember <ChatSpace>
         ((user <UserItem>)|(members <UserTypeEntity>)|
          (group <GroupItem>)|(groups <GroupEntity>))+
-gam <UserTypeEntity> remove chatmember [adminaccess|asadmin] members <ChatMemberList>
+gam <UserTypeEntity> remove chatmember members <ChatMemberList>
 gam <UserTypeEntity> update chatmember <ChatSpace>
         role member|manager
         ((user <UserItem>)|(members <UserTypeEntity>))+
 gam <UserTypeEntity> modify chatmember
         role member|manager
         members <ChatMemberList>
+gam <UserTypeEntity> sync chatmembers <ChatSpace>
+        [role member|manager] [type human|bot]
+        [addonly|removeonly]
+        [preview [actioncsv]]
+        (users <UserTypeEntity>)* (groups <GroupEntity>)*
 
-gam <UserTypeEntity> info chatmember members <ChatMemberList>
+gam <UserItem> create chatmember asadmin <ChatSpace>
+        [type human|bot] [role member|manager]
+        (user <UserItem>)* (members <UserTypeEntity>)*
+        (group <GroupItem>)* (groups <GroupEntity>)*
+        [formatjson|returnidonly]
+gam <UserItem> remove chatmember asadmin members <ChatMemberList>
+gam <UserItem> delete chatmember asadmin <ChatSpace>
+        ((user <UserItem>)|(members <UserTypeEntity>)|
+         (group <GroupItem>)|(groups <GroupEntity>))+
+gam <UserItem> update chatmember asadmin <ChatSpace>
+        role member|manager
+        ((user <UserItem>)|(members <UserTypeEntity>))+
+gam <UserItem> modify chatmember asadmin
+        role member|manager
+        members <ChatMemberList>
+gam <UserItem> sync chatmembers asadmin <ChatSpace>
+        [role member|manager] [type human|bot]
+        [addonly|removeonly]
+        [preview [actioncsv]]
+        (users <UserTypeEntity>)* (groups <GroupEntity>)*
+
+<ChatMemberFieldName> ::=
+        createtime|
+        deletetime|
+        groupmember|
+        member|
+        name|
+        role|
+        state|
+<ChatMemberFieldNameList> ::= "<ChatMemberFieldName>(,<ChatMemberFieldName>)*"
+
+gam <UserTypeEntity> info chatmember
+        members <ChatMemberList>
+        [fields <ChatMemberFieldNameList>]
         [formatjson]
-gam <UserTypeEntity> show chatmembers [adminaccess|asadmin] <ChatSpace>
+gam <UserTypeEntity> show chatmembers
+        <ChatSpace>* [types <ChatSpaceTypeList>]
         [showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
+        [fields <ChatMemberFieldNameList>]
         [formatjson]
-gam <UserTypeEntity> print chatmembers [adminaccess|asadmin] [todrive <ToDriveAttribute>*] <ChatSpace>
+gam <UserTypeEntity> print chatmembers [todrive <ToDriveAttribute>*]
+        <ChatSpace>* [types <ChatSpaceTypeList>]
         [showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
+        [fields <ChatMemberFieldNameList>]
+        (addcsvdata <FieldName> <String>)*
+        [formatjson [quotechar <Character>]]
+
+gam <UserItem> info chatmember asadmin
+        members <ChatMemberList>
+        [fields <ChatMemberFieldNameList>]
+        [formatjson]
+gam <UserItem> show chatmembers asadmin
+        <ChatSpace>* [query <String>] [querytime<String> <Time>]
+        [orderby <ChatSpaceAdminOrderByFieldName> [ascending|descending]]
+        [showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
+        [fields <ChatMemberFieldNameList>]
+        [formatjson]
+gam <UserItem> print chatmembers asadmin [todrive <ToDriveAttribute>*]
+        <ChatSpace>* [query <String>] [querytime<String> <Time>]
+        [orderby <ChatSpaceAdminOrderByFieldName> [ascending|descending]]
+        [showinvited [<Boolean>]] [showgroups [<Boolean>]] [filter <String>]
+        [fields <ChatMemberFieldNameList>]
+        (addcsvdata <FieldName> <String>)*
         [formatjson [quotechar <Character>]]
 
 gam <UserTypeEntity> create chatmessage <ChatSpace>
@@ -6029,21 +6195,57 @@ gam <UserTypeEntity> update chatmessage name <ChatMessage>
         <ChatContent>
 gam <UserTypeEntity> delete chatmessage name <ChatMessage>
 
+<ChatMessageFieldName> ::=
+        accessorywidgets|
+        actionresponse|
+        annotations|
+        argumenttext|
+        attachedgifs|
+        attachment|
+        cards|
+        cardsv2|
+        clientassignedmessageid|
+        createtime|
+        deletetime|
+        deletionmetadata|
+        emojireactionsummaries|
+        fallbacktext|
+        formattedtext|
+        lastupdatetime|
+        matchedurl|
+        name|
+        privatemessageviewer|
+        quotedmessagemetadata|
+        sender|
+        slashcommand|
+        space|
+        text|
+        thread|
+        threadreply
+<ChatMessageFieldNameList> ::= "<ChatMessageFieldName>(,<ChatMessageFieldName>)*"
+
 gam <UserTypeEntity> info chatmessage name <ChatMessage>
+        [fields <ChatMessageFieldNameList>]
         [formatjson]
-gam <UserTypeEntity> show chatmessages <ChatSpace>
+gam <UserTypeEntity> show chatmessages
+        <ChatSpace>+
         [showdeleted [<Boolean>]] [filter <String>]
+        [fields <ChatMessageFieldNameList>]
         [formatjson]
-gam <UserTypeEntity> print chatmessages [todrive <ToDriveAttribute>*] <ChatSpace>
+gam <UserTypeEntity> print chatmessages [todrive <ToDriveAttribute>*]
+        <ChatSpace>+
         [showdeleted [<Boolean>]] [filter <String>]
+        [fields <ChatMessageFieldNameList>]
         [formatjson [quotechar <Character>]]
 
 gam <UserTypeEntity> info chatevent name <ChatEvent>
         [formatjson]
-gam <UserTypeEntity> show chatevents <ChatSpace>
+gam <UserTypeEntity> show chatevents
+        <ChatSpace>+
         filter <String>
         [formatjson]
-gam <UserTypeEntity> print chatevents [todrive <ToDriveAttribute>*] <ChatSpace>
+gam <UserTypeEntity> print chatevents [todrive <ToDriveAttribute>*]
+        <ChatSpace>+
         filter <String>
         [formatjson [quotechar <Character>]]
 
