@@ -38,6 +38,14 @@ gam <UserItem> print|show chatmembers|asadmin
 
 * See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Chat
 
+Added `use_chat_admin_access` Boolean variable to `gam.cfg`. 
+```
+* When False, GAM uses user access when making all Chat API calls. For calls that support admin access,
+    this can be overridden with the asadmin command line option.
+* When True, GAM uses admin access for Chat API calls that support admin access; other calls will use user access.
+* Default: False
+```
+
 ### 6.76.15
 
 Fixed bug in `gam <UserTypeEntity> print|show filesharecounts summary only summaryuser <String>`

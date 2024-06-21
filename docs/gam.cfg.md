@@ -589,6 +589,12 @@ update_cros_ou_with_id
         Set to true if you are getting the following error:
         `400: invalidInput - Invalid Input: Inconsistent Orgunit id and path in request`
         Default: False
+use_chat_admin_access
+        When False, GAM uses user access when making Chat API calls. For calls that support admin access,
+        this can be overridden with the asadmin command line option.
+        When True, GAM uses admin access for Chat API calls that support admin access;
+        other calls will use user access.
+        Default: False
 use_classroom_owner_access
         How is classroom member information obtained and how are classroom members deleted.
         Client access does not provide complete information about non-domain students/teachers.

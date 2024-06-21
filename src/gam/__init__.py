@@ -25163,7 +25163,7 @@ def exitIfChatNotConfigured(chat, kvList, errMsg, i, count):
   entityActionFailedWarning(kvList, errMsg, i, count)
 
 def _getChatAdminAccess(adminAPI, userAPI):
-  if checkArgumentPresent(ADMIN_ACCESS_OPTIONS):
+  if checkArgumentPresent(ADMIN_ACCESS_OPTIONS) or GC.Values[GC.USE_CHAT_ADMIN_ACCESS]:
     return (True, adminAPI)
   return (False, userAPI)
 

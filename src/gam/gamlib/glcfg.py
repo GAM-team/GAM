@@ -292,6 +292,8 @@ TODRIVE_USER = 'todrive_user'
 TRUNCATE_CLIENT_ID  = 'truncate_client_id'
 # Update CrOS org unit with orgUnitId
 UPDATE_CROS_OU_WITH_ID = 'update_cros_ou_with_id'
+# Use chat asadmin where possible
+USE_CHAT_ADMIN_ACCESS = 'use_chat_admin_access'
 # Use course owner for course access
 USE_COURSE_OWNER_ACCESS = 'use_course_owner_access'
 # Use Project ID as Project Name and App Name
@@ -434,6 +436,7 @@ Defaults = {
   TODRIVE_USER: '',
   TRUNCATE_CLIENT_ID: FALSE,
   UPDATE_CROS_OU_WITH_ID: FALSE,
+  USE_CHAT_ADMIN_ACCESS: FALSE,
   USE_COURSE_OWNER_ACCESS: FALSE,
   USE_PROJECTID_AS_NAME: FALSE,
   USER_MAX_RESULTS: '500',
@@ -595,6 +598,7 @@ VAR_INFO = {
   TODRIVE_USER: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
   TRUNCATE_CLIENT_ID: {VAR_TYPE: TYPE_BOOLEAN},
   UPDATE_CROS_OU_WITH_ID: {VAR_TYPE: TYPE_BOOLEAN},
+  USE_CHAT_ADMIN_ACCESS: {VAR_TYPE: TYPE_BOOLEAN},
   USE_COURSE_OWNER_ACCESS: {VAR_TYPE: TYPE_BOOLEAN},
   USE_PROJECTID_AS_NAME: {VAR_TYPE: TYPE_BOOLEAN},
   USER_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 500)},
