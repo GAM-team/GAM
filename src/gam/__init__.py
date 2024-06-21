@@ -48587,21 +48587,29 @@ def deleteBackupCodes(users):
       entityActionNotPerformedWarning([Ent.USER, user, Ent.BACKUP_VERIFICATION_CODES, None],
                                       Msg.IS_SUSPENDED_NO_BACKUPCODES, i, count)
 
-# gam <UserTypeEntity> print backupcodes|verificationcodes [todrive <ToDriveAttribute>*] [delimiter <Character>]
+# gam <UserTypeEntity> print backupcodes|verificationcodes [todrive <ToDriveAttribute>*] [delimiter <Character>] [countsonly]
 # gam <UserTypeEntity> show backupcodes|verificationcodes
 def printShowBackupCodes(users):
   cd = buildGAPIObject(API.DIRECTORY)
-  csvPF = CSVPrintFile(['User', 'verificationCodes']) if Act.csvFormat() else None
+  csvPF = CSVPrintFile(['User', 'verificationCodes', 'verificationCodesCount']) if Act.csvFormat() else None
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
+  counts_only = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'delimiter':
       delimiter = getCharacter()
+    elif myarg == 'countsonly':
+      counts_only = True
     else:
       unknownArgumentExit()
   i, count, users = getEntityArgument(users)
+  # if we're only getting counts, we don't want actual codes pulled down
+  if counts_only:
+      fields = 'items(etag)'
+  else:
+      fields = 'items(verificationCode)'
   for user in users:
     i += 1
     user = normalizeEmailAddressOrUID(user)
@@ -48610,11 +48618,14 @@ def printShowBackupCodes(users):
     try:
       codes = callGAPIitems(cd.verificationCodes(), 'list', 'items',
                             throwReasons=[GAPI.USER_NOT_FOUND],
-                            userKey=user, fields='items(verificationCode)')
+                            userKey=user, fields=fields)
       if not csvPF:
         _showBackupCodes(user, codes, i, count)
+      elif counts_only:
+        csvPF.WriteRow({'User': user, 'verificationCodesCount': len(codes)})
       else:
         csvPF.WriteRow({'User': user,
+                        'verificationCodesCount': len(codes),
                         'verificationCodes': delimiter.join([code['verificationCode'] for code in codes if 'verificationCode' in code])})
     except GAPI.userNotFound:
       entityUnknownWarning(Ent.USER, user, i, count)

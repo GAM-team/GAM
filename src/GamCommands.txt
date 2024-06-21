@@ -5629,6 +5629,7 @@ gam <UserTypeEntity> delete backupcodes|verificationcodes
 gam <UserTypeEntity> show backupcodes|verificationcodes
 gam <UserTypeEntity> print backupcodes|verificationcodes [todrive <ToDriveAttribute>*]
         [delimiter <Character>]
+        [countsonly]
 
 # Users - Calendars
 
