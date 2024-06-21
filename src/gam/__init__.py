@@ -11196,7 +11196,7 @@ def _grantRotateRights(iam, projectId, service_account, email, account_type='ser
   callGAPI(iam.projects().serviceAccounts(), 'setIamPolicy',
            resource=f'projects/{projectId}/serviceAccounts/{service_account}', body=body)
 
-def _createOauth2serviceJSON(httpObj, projectInfo, svcAcctInfo):
+def _createOauth2serviceJSON(httpObj, projectInfo, svcAcctInfo, create_key=True):
   iam = getAPIService(API.IAM, httpObj)
   try:
     service_account = callGAPI(iam.projects().serviceAccounts(), 'create',
@@ -11213,7 +11213,7 @@ def _createOauth2serviceJSON(httpObj, projectInfo, svcAcctInfo):
     entityActionFailedWarning([Ent.PROJECT, projectInfo['projectId'], Ent.SVCACCT, svcAcctInfo['name']], str(e))
     return False
   GM.Globals[GM.SVCACCT_SCOPES_DEFINED] = False
-  if not doProcessSvcAcctKeys(mode='retainexisting', iam=iam, projectId=service_account['projectId'],
+  if create_key and not doProcessSvcAcctKeys(mode='retainexisting', iam=iam, projectId=service_account['projectId'],
                               clientEmail=service_account['email'], clientId=service_account['uniqueId']):
     return False
   sa_email = service_account['name'].rsplit('/', 1)[-1]
@@ -11230,7 +11230,7 @@ def setGAMProjectConsentScreen(httpObj, projectId, appInfo):
   except (GAPI.invalidArgument, GAPI.alreadyExists):
     pass
 
-def _createClientSecretsOauth2service(httpObj, login_hint, appInfo, projectInfo, svcAcctInfo):
+def _createClientSecretsOauth2service(httpObj, login_hint, appInfo, projectInfo, svcAcctInfo, create_key=True):
 
   def _checkClientAndSecret(csHttpObj, client_id, client_secret):
     post_data = {'client_id': client_id, 'client_secret': client_secret,
@@ -11293,7 +11293,7 @@ def _createClientSecretsOauth2service(httpObj, login_hint, appInfo, projectInfo,
   sys.stdout.write(Msg.GO_BACK_TO_YOUR_BROWSER_AND_CLICK_OK_TO_CLOSE_THE_OAUTH_CLIENT_POPUP)
   sys.stdout.write(Msg.TRUST_GAM_CLIENT_ID.format(GAM, client_id))
   readStdin('')
-  if not _createOauth2serviceJSON(httpObj, projectInfo, svcAcctInfo):
+  if not _createOauth2serviceJSON(httpObj, projectInfo, svcAcctInfo, create_key):
     return
   sys.stdout.write(Msg.YOUR_GAM_PROJECT_IS_CREATED_AND_READY_TO_USE)
 
@@ -11385,6 +11385,7 @@ def _generateProjectSvcAcctId(prefix):
 
 def _getLoginHintProjectInfo(createCmd):
   login_hint = None
+  create_key = True
   appInfo = {'applicationTitle': '', 'supportEmail': ''}
   projectInfo = {'projectId': '', 'parent': '', 'name': ''}
   svcAcctInfo = {'name': '', 'displayName': '', 'description': ''}
@@ -11404,6 +11405,8 @@ def _getLoginHintProjectInfo(createCmd):
       myarg = getArgument()
       if myarg == 'admin':
         login_hint = getEmailAddress(noUid=True)
+      elif myarg == 'nokey':
+        create_key = False
       elif myarg == 'project':
         projectInfo['projectId'] = getString(Cmd.OB_STRING, minLen=6, maxLen=30)
         _checkProjectId(projectInfo['projectId'])
@@ -11453,7 +11456,7 @@ def _getLoginHintProjectInfo(createCmd):
   else:
     if projects:
       entityActionFailedExit([Ent.USER, login_hint, Ent.PROJECT, projectInfo['projectId']], Msg.DUPLICATE)
-  return (crm, httpObj, login_hint, appInfo, projectInfo, svcAcctInfo)
+  return (crm, httpObj, login_hint, appInfo, projectInfo, svcAcctInfo, create_key)
 
 def _getCurrentProjectId():
   jsonData = readFile(GC.Values[GC.OAUTH2SERVICE_JSON], continueOnError=True, displayError=False)
@@ -11607,12 +11610,13 @@ def doCreateGCPFolder():
 #	[saname <ServiceAccountName>] [sadisplayname <ServiceAccountDisplayName>] [sadescription <ServiceAccountDescription>]
 #	[(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
 #	 (localkeysize 1024|2048|4096 [validityhours <Number>])|
-#	 (yubikey yubikey_pin yubikey_slot AUTHENTICATION yubikey_serialnumber <String>)]
+#	 (yubikey yubikey_pin yubikey_slot AUTHENTICATION yubikey_serialnumber <String>)|
+#    (nokey)]
 def doCreateProject():
   _checkForExistingProjectFiles([GC.Values[GC.OAUTH2SERVICE_JSON], GC.Values[GC.CLIENT_SECRETS_JSON]])
   sys.stdout.write(Msg.TRUST_GAM_CLIENT_ID.format(GAM_PROJECT_CREATION, GAM_PROJECT_CREATION_CLIENT_ID))
   readStdin('')
-  crm, httpObj, login_hint, appInfo, projectInfo, svcAcctInfo = _getLoginHintProjectInfo(True)
+  crm, httpObj, login_hint, appInfo, projectInfo, svcAcctInfo, create_key = _getLoginHintProjectInfo(True)
   login_domain = getEmailAddressDomain(login_hint)
   body = {'projectId': projectInfo['projectId'], 'displayName': projectInfo['name']}
   if projectInfo['parent']:
@@ -11697,7 +11701,7 @@ def doCreateProject():
 #  except (GAPI.badRequest, GAPI.failedPrecondition, GAPI.permissionDenied):
 #    pass
 # Create client_secrets.json and oauth2service.json
-  _createClientSecretsOauth2service(httpObj, login_hint, appInfo, projectInfo, svcAcctInfo)
+  _createClientSecretsOauth2service(httpObj, login_hint, appInfo, projectInfo, svcAcctInfo, create_key)
 
 # gam use project [<EmailAddress>] [<ProjectID>]
 # gam use project [admin <EmailAddress>] [project <ProjectID>]
