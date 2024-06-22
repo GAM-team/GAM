@@ -10,6 +10,15 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.77.01
+
+Thanks to Jay, added column `verificationCodesCount` to `gam <UserTypeEntity> print backupcodes`
+that displays the number of available backup codes in addtion to the codes.
+
+Added option `countsonly` that displays only the number of available backup codes but not the codes themselves.
+
+Thanks to Jay, added option `nokey` to `gam create project` that creates a project with no service account key, `oauth2service.json`.
+
 ### 6.77.00
 
 Added option `individualstudentassignments copy|delete|maptoall` to `gam create|update course ... copyfrom`

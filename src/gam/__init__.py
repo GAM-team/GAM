@@ -11213,8 +11213,10 @@ def _createOauth2serviceJSON(httpObj, projectInfo, svcAcctInfo, create_key=True)
     entityActionFailedWarning([Ent.PROJECT, projectInfo['projectId'], Ent.SVCACCT, svcAcctInfo['name']], str(e))
     return False
   GM.Globals[GM.SVCACCT_SCOPES_DEFINED] = False
-  if create_key and not doProcessSvcAcctKeys(mode='retainexisting', iam=iam, projectId=service_account['projectId'],
-                              clientEmail=service_account['email'], clientId=service_account['uniqueId']):
+  if create_key and not doProcessSvcAcctKeys(mode='retainexisting', iam=iam,
+                                             projectId=service_account['projectId'],
+                                             clientEmail=service_account['email'],
+                                             clientId=service_account['uniqueId']):
     return False
   sa_email = service_account['name'].rsplit('/', 1)[-1]
   _grantRotateRights(iam, projectInfo['projectId'], sa_email, sa_email)
@@ -11231,7 +11233,6 @@ def setGAMProjectConsentScreen(httpObj, projectId, appInfo):
     pass
 
 def _createClientSecretsOauth2service(httpObj, login_hint, appInfo, projectInfo, svcAcctInfo, create_key=True):
-
   def _checkClientAndSecret(csHttpObj, client_id, client_secret):
     post_data = {'client_id': client_id, 'client_secret': client_secret,
                  'code': 'ThisIsAnInvalidCodeOnlyBeingUsedToTestIfClientAndSecretAreValid',
@@ -11391,7 +11392,7 @@ def _getLoginHintProjectInfo(createCmd):
   svcAcctInfo = {'name': '', 'displayName': '', 'description': ''}
   if not Cmd.PeekArgumentPresent(['admin', 'appname', 'supportemail', 'project', 'parent',
                                   'projectname', 'saname', 'sadisplayname', 'sadescription',
-                                  'algorithm', 'localkeysize', 'validityhours', 'yubikey']):
+                                  'algorithm', 'localkeysize', 'validityhours', 'yubikey', 'nokey']):
     login_hint = getString(Cmd.OB_EMAIL_ADDRESS, optional=True)
     if login_hint and login_hint.find('@') == -1:
       Cmd.Backup()
@@ -11611,7 +11612,7 @@ def doCreateGCPFolder():
 #	[(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
 #	 (localkeysize 1024|2048|4096 [validityhours <Number>])|
 #	 (yubikey yubikey_pin yubikey_slot AUTHENTICATION yubikey_serialnumber <String>)|
-#    (nokey)]
+#	 nokey]
 def doCreateProject():
   _checkForExistingProjectFiles([GC.Values[GC.OAUTH2SERVICE_JSON], GC.Values[GC.CLIENT_SECRETS_JSON]])
   sys.stdout.write(Msg.TRUST_GAM_CLIENT_ID.format(GAM_PROJECT_CREATION, GAM_PROJECT_CREATION_CLIENT_ID))
@@ -45118,7 +45119,7 @@ class CourseAttributes():
     }
 
   COURSE_WORK_INDIVIDUAL_STUDENT_ASSIGNMENTS_OPTIONS = {'copy', 'delete', 'maptoall'}
-  
+
   def GetAttributes(self):
     while Cmd.ArgumentsRemaining():
       myarg = getArgument()
@@ -48587,11 +48588,12 @@ def deleteBackupCodes(users):
       entityActionNotPerformedWarning([Ent.USER, user, Ent.BACKUP_VERIFICATION_CODES, None],
                                       Msg.IS_SUSPENDED_NO_BACKUPCODES, i, count)
 
-# gam <UserTypeEntity> print backupcodes|verificationcodes [todrive <ToDriveAttribute>*] [delimiter <Character>] [countsonly]
+# gam <UserTypeEntity> print backupcodes|verificationcodes [todrive <ToDriveAttribute>*]
+#	[delimiter <Character>] [countsonly]
 # gam <UserTypeEntity> show backupcodes|verificationcodes
 def printShowBackupCodes(users):
   cd = buildGAPIObject(API.DIRECTORY)
-  csvPF = CSVPrintFile(['User', 'verificationCodes', 'verificationCodesCount']) if Act.csvFormat() else None
+  csvPF = CSVPrintFile(['User', 'verificationCodesCount', 'verificationCodes']) if Act.csvFormat() else None
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   counts_only = False
   while Cmd.ArgumentsRemaining():
@@ -48604,12 +48606,13 @@ def printShowBackupCodes(users):
       counts_only = True
     else:
       unknownArgumentExit()
-  i, count, users = getEntityArgument(users)
   # if we're only getting counts, we don't want actual codes pulled down
   if counts_only:
-      fields = 'items(etag)'
+    csvPF.RemoveTitles('verificationCodes')
+    fields = 'items(etag)'
   else:
-      fields = 'items(verificationCode)'
+    fields = 'items(verificationCode)'
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user = normalizeEmailAddressOrUID(user)
