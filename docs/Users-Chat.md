@@ -58,12 +58,25 @@ To use these commands you must update your service account authorization.
 ```
 gam user user@domain.com update serviceaccount
 
-```
 [*]  5)  Chat API - Memberships Admin (supports readonly)
 [*]  8)  Chat API - Spaces Admin (supports readonly)
 [*] 10)  Chat API - Spaces Delete Admin
 ```
 
+Added `use_chat_admin_access` Boolean variable to `gam.cfg`. 
+```
+* When False, GAM uses user access when making all Chat API calls. For calls that support admin access,
+    this can be overridden with the asadmin command line option.
+* When True, GAM uses admin access for Chat API calls that support admin access; other calls will use user access.
+* Default: False
+```
+
+If your account is not enrolled in the Chat API Developer Preview, you will see errors like this:
+```
+$ gam user admin@domain.com show chatspaces asadmin
+Getting all Chat Spaces that match query (customer = "customers/my_customer" AND spaceType = "SPACE") for admin@domain.com(asadmin)
+Chat Admin: admin@domain.com(asadmin), Show Failed: Method not found.
+```
 
 Google requires that you have a Chat Bot configured in order to use the Chat API; set up a Chat Bot as described in the next section.
 

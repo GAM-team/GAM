@@ -36,7 +36,7 @@ gam <UserItem> info chatmember asadmin
 gam <UserItem> print|show chatmembers|asadmin
 ```
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Chat
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Chat#developer-preview-admin-access
 
 Added `use_chat_admin_access` Boolean variable to `gam.cfg`. 
 ```
