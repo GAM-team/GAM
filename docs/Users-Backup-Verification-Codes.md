@@ -31,8 +31,10 @@ Exit Status of 0 indicates no errors, and backup codes are sent to stdout.
 
 Exit status of 60 indicates no errors, and that no backup codes are available for this user.
 ```
-gam <UserTypeEntity> print backupcodes|verificationcodes [todrive <ToDriveAttributes>*] [delimiter <Character>]
+gam <UserTypeEntity> print backupcodes|verificationcodes [todrive <ToDriveAttributes>*]
+        [delimiter <Character>] [countsonly]
 ```
-Gam displays the information in CSV form.
+GAM displays the information in CSV form.
 
 * `delimiter <Character>` - Separate `verificationCodes` entries with `<Character>`; the default value is `csv_output_field_delimiter` from `gam.cfg`.
+* `countsonly` - Display only the number of available backup codes but not the codes themselves.

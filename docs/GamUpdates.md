@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.77.02
+
+Cleaned up problems with some of the new Chat API asadmin commands.
+Some remaining problems may require a Google fix.
+
 ### 6.77.01
 
 Thanks to Jay, added column `verificationCodesCount` to `gam <UserTypeEntity> print backupcodes`

@@ -317,7 +317,8 @@ gam create project [admin <EmailAddress>] [project <ProjectID>]
         [sadescription <ServiceAccountDescription>]
         [(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
          (localkeysize 1024|2048|4096 [validityhours <Number>])|
-         (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)]
+         (yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)|
+         nokey}
 ```
 * `admin <EmailAddress>` - Google Workspace admin/GCP project manager; if omitted, you will be prompted for the address
 * `appname <String>` - Application name, defaults to `GAM`
@@ -330,6 +331,8 @@ gam create project [admin <EmailAddress>] [project <ProjectID>]
 * `sadescription <ServiceAccountDescription>` - Service account description
 
 You can optionally specify the type of service account key with `algorithm|localkeysize|yubikey`: [Manage Service Account keys](#manage-service-account-keys)
+
+Use `nokey` if you do not want a service account key created for the project.
 
 ## Use an existing project for GAM authorization
 Use an existing project to create and download two files: `client_secrets.json` for the Client and `oauth2service.json` for the Service Account.

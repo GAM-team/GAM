@@ -25169,8 +25169,8 @@ def exitIfChatNotConfigured(chat, kvList, errMsg, i, count):
 
 def _getChatAdminAccess(adminAPI, userAPI):
   if checkArgumentPresent(ADMIN_ACCESS_OPTIONS) or GC.Values[GC.USE_CHAT_ADMIN_ACCESS]:
-    return (True, adminAPI)
-  return (False, userAPI)
+    return (True, adminAPI, {'useAdminAccess': True})
+  return (False, userAPI, {})
 
 def _chkChatAdminAccess(count):
   if count != 1:
@@ -25395,7 +25395,7 @@ CHAT_UPDATE_SPACE_TYPE_MAP = {
 #	[formatjson]
 def updateChatSpace(users):
   FJQC = FormatJSONQuoteChar()
-  useAdminAccess, api = _getChatAdminAccess(API.CHAT_SPACES_ADMIN, API.CHAT_SPACES)
+  useAdminAccess, api, kwargsUAA = _getChatAdminAccess(API.CHAT_SPACES_ADMIN, API.CHAT_SPACES)
   name = None
   body = {}
   updateMask = set()
@@ -25424,8 +25424,7 @@ def updateChatSpace(users):
     try:
       space = callGAPI(chat.spaces(), 'patch',
                        throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                       useAdminAccess=useAdminAccess,
-                       name=name, updateMask=','.join(updateMask), body=body)
+                       name=name, updateMask=','.join(updateMask), body=body, **kwargsUAA)
       if not FJQC.formatJSON:
         entityActionPerformed(kvList, i, count)
       Ind.Increment()
@@ -25438,7 +25437,7 @@ def updateChatSpace(users):
 # gam <UserItem> delete chatspace asadmin <ChatSpace>
 def deleteChatSpace(users):
   name = None
-  useAdminAccess, api = _getChatAdminAccess(API.CHAT_SPACES_DELETE_ADMIN, API.CHAT_SPACES_DELETE)
+  useAdminAccess, api, kwargsUAA = _getChatAdminAccess(API.CHAT_SPACES_DELETE_ADMIN, API.CHAT_SPACES_DELETE)
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
@@ -25457,9 +25456,8 @@ def deleteChatSpace(users):
       continue
     try:
       callGAPI(chat.spaces(), 'delete',
-               useAdminAccess=useAdminAccess,
                throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-               name=name)
+               name=name, **kwargsUAA)
       entityActionPerformed(kvList, i, count)
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
@@ -25494,13 +25492,12 @@ def infoChatSpace(users, name=None):
   FJQC = FormatJSONQuoteChar()
   if name is None:
     function = 'get'
-    useAdminAccess, api = _getChatAdminAccess(API.CHAT_SPACES_ADMIN, API.CHAT_SPACES)
-    kwargs = {'useAdminAccess': True}
+    useAdminAccess, api, kwargsUAA = _getChatAdminAccess(API.CHAT_SPACES_ADMIN, API.CHAT_SPACES)
   else:
     function = 'findDirectMessage'
     useAdminAccess = None
+    kwargsUAA = {}
     api = API.CHAT_SPACES
-    kwargs = {}
   fieldsList = []
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -25524,7 +25521,7 @@ def infoChatSpace(users, name=None):
     try:
       space = callGAPI(chat.spaces(), function,
                        throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                       name=name, fields=fields, **kwargs)
+                       name=name, fields=fields, **kwargsUAA)
       if not FJQC.formatJSON:
         entityPerformAction(kvList, i, count)
       Ind.Increment()
@@ -25605,7 +25602,7 @@ def printShowChatSpaces(users):
   csvPF = CSVPrintFile(['User', 'name'] if not isinstance(users, list) else ['name']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   OBY = OrderBy(CHAT_SPACES_ADMIN_ORDERBY_CHOICE_MAP)
-  useAdminAccess, api = _getChatAdminAccess(API.CHAT_SPACES_ADMIN, API.CHAT_SPACES)
+  useAdminAccess, api, kwargs = _getChatAdminAccess(API.CHAT_SPACES_ADMIN, API.CHAT_SPACES)
   fieldsList = []
   queries = []
   queryTimes = {}
@@ -25613,7 +25610,6 @@ def printShowChatSpaces(users):
   kwargs = {}
   if useAdminAccess:
     function = 'search'
-    kwargs['useAdminAccess'] = True
     queries = ['customer = "customers/my_customer" AND spaceType = "SPACE"']
   else:
     function = 'list'
@@ -25708,14 +25704,12 @@ def createChatMember(users):
         member = callGAPI(chat.spaces().members(), 'create',
                           bailOnInternalError=True,
                           throwReasons=[GAPI.ALREADY_EXISTS, GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
-                          useAdminAccess=useAdminAccess,
-                          parent=parent, body=body)
+                          parent=parent, body=body, **kwargsUAA)
         if role != 'ROLE_MEMBER' and entityType == Ent.CHAT_MANAGER_USER:
           member = callGAPI(chat.spaces().members(), 'patch',
                             bailOnInternalError=True,
                             throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
-                            useAdminAccess=useAdminAccess,
-                            name=member['name'], updateMask='role', body={'role': role})
+                            name=member['name'], updateMask='role', body={'role': role}, **kwargsUAA)
         if not returnIdOnly:
           kvList[-1] = member['name']
           _getChatMemberEmail(cd, member)
@@ -25738,7 +25732,7 @@ def createChatMember(users):
   userList = []
   groupList = []
   returnIdOnly = False
-  useAdminAccess, api = _getChatAdminAccess(API.CHAT_MEMBERSHIPS_ADMIN, API.CHAT_MEMBERSHIPS)
+  useAdminAccess, api, kwargsUAA = _getChatAdminAccess(API.CHAT_MEMBERSHIPS_ADMIN, API.CHAT_MEMBERSHIPS)
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
@@ -25788,17 +25782,16 @@ def createChatMember(users):
       addMembers(groupMembers, 'groupMember', Ent.CHAT_MEMBER_GROUP, i, count)
     Ind.Decrement()
 
-def _deleteChatMembers(chat, kvList, jcount, memberNames, i, count, useAdminAccess=None):
+def _deleteChatMembers(chat, kvList, jcount, memberNames, i, count, kwargsUAA):
   j = 0
   for name in memberNames:
     j += 1
     kvList[-1] = name
     try:
       callGAPI(chat.spaces().members(), 'delete',
-               useAdminAccess=useAdminAccess,
                bailOnInternalError=True,
                throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
-               name=name)
+               name=name, **kwargsUAA)
       entityActionPerformed(kvList, j, jcount)
     except GAPI.notFound as e:
       entityActionFailedWarning(kvList, str(e), j, jcount)
@@ -25836,7 +25829,7 @@ def deleteUpdateChatMember(users):
   body = {}
   memberNames = []
   userGroupList = []
-  useAdminAccess, api = _getChatAdminAccess(API.CHAT_MEMBERSHIPS_ADMIN, API.CHAT_MEMBERSHIPS)
+  useAdminAccess, api, kwargsUAA = _getChatAdminAccess(API.CHAT_MEMBERSHIPS_ADMIN, API.CHAT_MEMBERSHIPS)
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if action in {Act.UPDATE, Act.MODIFY} and myarg == 'role':
@@ -25887,7 +25880,7 @@ def deleteUpdateChatMember(users):
     kvList.extend([Ent.CHAT_MEMBER, ''])
     Ind.Increment()
     if deleteMode:
-      _deleteChatMembers(chat, kvList, jcount, memberNames, i, count, useAdminAccess=useAdminAccess)
+      _deleteChatMembers(chat, kvList, jcount, memberNames, i, count, kwargsUAA)
     else:
       j = 0
       for name in memberNames:
@@ -25897,8 +25890,7 @@ def deleteUpdateChatMember(users):
           member = callGAPI(chat.spaces().members(), 'patch',
                             bailOnInternalError=True,
                             throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
-                            useAdminAccess=useAdminAccess,
-                            name=name, updateMask='role', body=body)
+                            name=name, updateMask='role', body=body, **kwargsUAA)
           _getChatMemberEmail(cd, member)
           Ind.Increment()
           _showChatItem(member, Ent.CHAT_MEMBER, FJQC, j, jcount)
@@ -25947,14 +25939,12 @@ def syncChatMembers(users):
         callGAPI(chat.spaces().members(), 'create',
                  bailOnInternalError=True,
                  throwReasons=[GAPI.ALREADY_EXISTS, GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
-                 useAdminAccess=useAdminAccess,
-                 parent=parent, body=body)
+                 parent=parent, body=body, **kwargsUAA)
         if role != 'ROLE_MEMBER' and entityType == Ent.CHAT_MANAGER_USER:
           callGAPI(chat.spaces().members(), 'patch',
                    bailOnInternalError=True,
                    throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
-                   useAdminAccess=useAdminAccess,
-                   name=memberName, updateMask='role', body={'role': role})
+                   name=memberName, updateMask='role', body={'role': role}, **kwargsUAA)
         entityActionPerformed(kvList, j, jcount)
       except (GAPI.alreadyExists, GAPI.notFound, GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
         entityActionFailedWarning(kvList, str(e), j, jcount)
@@ -25971,11 +25961,11 @@ def syncChatMembers(users):
       return
     kvList.extend([entityType, ''])
     Ind.Increment()
-    _deleteChatMembers(chat, kvList, jcount, memberNames, i, count, useAdminAccess=useAdminAccess)
+    _deleteChatMembers(chat, kvList, jcount, memberNames, i, count, kwargsUAA)
     Ind.Decrement()
     del kvList[-2:]
 
-  useAdminAccess, api = _getChatAdminAccess(API.CHAT_MEMBERSHIPS_ADMIN, API.CHAT_MEMBERSHIPS)
+  useAdminAccess, api, kwargsUAA = _getChatAdminAccess(API.CHAT_MEMBERSHIPS_ADMIN, API.CHAT_MEMBERSHIPS)
   cd = buildGAPIObject(API.DIRECTORY)
   parent = None
   role = CHAT_MEMBER_ROLE_MAP['member']
@@ -26045,7 +26035,7 @@ def syncChatMembers(users):
       members = callGAPIpages(chat.spaces().members(), 'list', 'memberships',
                               pageMessage=_getChatPageMessage(Ent.CHAT_MEMBER, user, i, count, qfilter),
                               throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                              pageSize=CHAT_PAGE_SIZE, parent=parent, showGroups=groupsSpecified)
+                              pageSize=CHAT_PAGE_SIZE, parent=parent, showGroups=groupsSpecified, **kwargsUAA)
       for member in members:
         if 'member' in member:
           if member['member']['type'] == mtype and member['role'] == role:
@@ -26091,7 +26081,7 @@ CHAT_MEMBERS_FIELDS_CHOICE_MAP = {
 def infoChatMember(users):
   cd = buildGAPIObject(API.DIRECTORY)
   FJQC = FormatJSONQuoteChar()
-  useAdminAccess, api = _getChatAdminAccess(API.CHAT_MEMBERSHIPS_ADMIN, API.CHAT_MEMBERSHIPS)
+  useAdminAccess, api, kwargsUAA = _getChatAdminAccess(API.CHAT_MEMBERSHIPS_ADMIN, API.CHAT_MEMBERSHIPS)
   fieldsList = []
   memberNames = []
   while Cmd.ArgumentsRemaining():
@@ -26125,8 +26115,7 @@ def infoChatMember(users):
         member = callGAPI(chat.spaces().members(), 'get',
                           bailOnInternalError=True,
                           throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
-                          useAdminAccess=useAdminAccess,
-                          name=name, fields=fields)
+                          name=name, fields=fields, **kwargsUAA)
         _getChatMemberEmail(cd, member)
         Ind.Increment()
         _showChatItem(member, Ent.CHAT_MEMBER, FJQC, j, jcount)
@@ -26166,7 +26155,7 @@ def printShowChatMembers(users):
   csvPF = CSVPrintFile(['User', 'space.name', 'space.displayName', 'name'] if not isinstance(users, list) else ['space.name', 'space.displayName', 'name']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   OBY = OrderBy(CHAT_SPACES_ADMIN_ORDERBY_CHOICE_MAP)
-  useAdminAccess, api = _getChatAdminAccess(API.CHAT_MEMBERSHIPS_ADMIN, API.CHAT_MEMBERSHIPS)
+  useAdminAccess, api, kwargsUAA = _getChatAdminAccess(API.CHAT_MEMBERSHIPS_ADMIN, API.CHAT_MEMBERSHIPS)
   if useAdminAccess:
     queries = ['customer = "customers/my_customer" AND spaceType = "SPACE"']
     queryTimes = {}
@@ -26277,14 +26266,12 @@ def printShowChatMembers(users):
         if not parent['displayName']:
           space = callGAPI(chatsp.spaces(), 'get',
                            throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                           useAdminAccess=useAdminAccess,
-                           name=parentName, fields='displayName')
+                           name=parentName, fields='displayName', **kwargsUAA)
           parent['displayName'] = space.get('displayName', 'None')
         members = callGAPIpages(chat.spaces().members(), 'list', 'memberships',
-                                useAdminAccess=useAdminAccess,
                                 pageMessage=_getChatPageMessage(Ent.CHAT_MEMBER, user, j, jcount, qfilter),
                                 throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                                parent=parentName, fields=fields, pageSize=CHAT_PAGE_SIZE, **kwargs)
+                                parent=parentName, fields=fields, pageSize=CHAT_PAGE_SIZE, **kwargs, **kwargsUAA)
         for member in members:
           _getChatMemberEmail(cd, member)
       except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
