@@ -36,6 +36,7 @@ _PRODUCTS = {
   '101043': 'Google Workspace Additional Storage',
   '101047': 'Gemini',
   '101049': 'Education Endpoint Management',
+  '101050': 'Colab',
   'Google-Apps': 'Google Workspace',
   'Google-Chrome-Device-Management': 'Google Chrome Device Management',
   'Google-Drive-storage': 'Google Drive Storage',
@@ -102,6 +103,10 @@ _SKUS = {
     'product': '101047', 'aliases': ['aimeetingsandmessaging'], 'displayName': 'AI Meetings and Messaging'},
   '1010490001': {
     'product': '101049', 'aliases': ['eeu'], 'displayName': 'Endpoint Education Upgrade'},
+  '1010500001': {
+    'product': '101050', 'aliases': ['colabpro'], 'displayName': 'Colab Pro'},
+  '1010500002': {
+    'product': '101050', 'aliases': ['colabpro+', 'colabproplus'], 'displayName': 'Colab Pro+'},
   'Google-Apps': {
     'product': 'Google-Apps', 'aliases': ['standard', 'free'], 'displayName': 'G Suite Legacy'},
   'Google-Apps-For-Business': {
