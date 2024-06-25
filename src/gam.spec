@@ -15,6 +15,7 @@ datas += [('cbcm-v1.1beta1.json', '.')]
 datas += [('chat-v1.json', '.')]
 datas += [('contactdelegation-v1.json', '.')]
 datas += [('datastudio-v1.json', '.')]
+datas += [('serviceaccountlookup-v1.json', '.')]
 datas += [('cacerts.pem', '.')]
 hiddenimports = [
      'gam.auth.yubikey',

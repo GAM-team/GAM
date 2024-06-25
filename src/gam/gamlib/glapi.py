@@ -83,6 +83,7 @@ PRINTERS = 'printers'
 PUBSUB = 'pubsub'
 REPORTS = 'reports'
 RESELLER = 'reseller'
+SERVICEACCOUNTLOOKUP = 'serviceaccountlookup'
 SERVICEMANAGEMENT = 'servicemanagement'
 SERVICEUSAGE = 'serviceusage'
 SHEETS = 'sheets'
@@ -252,6 +253,7 @@ _INFO = {
   PUBSUB: {'name': 'Pub / Sub API', 'version': 'v1', 'v2discovery': True},
   REPORTS: {'name': 'Reports API', 'version': 'reports_v1', 'v2discovery': True, 'mappedAPI': 'admin'},
   RESELLER: {'name': 'Reseller API', 'version': 'v1', 'v2discovery': True},
+  SERVICEACCOUNTLOOKUP: {'name': 'Service Account Lookup psuedo-API', 'version': 'v1', 'v2discovery': True, 'localjson': True},
   SERVICEMANAGEMENT: {'name': 'Service Management API', 'version': 'v1', 'v2discovery': True},
   SERVICEUSAGE: {'name': 'Service Usage API', 'version': 'v1', 'v2discovery': True},
   SHEETS: {'name': 'Sheets API', 'version': 'v4', 'v2discovery': True},
@@ -467,6 +469,10 @@ _CLIENT_SCOPES = [
    'subscopes': [],
    'offByDefault': True,
    'scope': 'https://www.googleapis.com/auth/apps.order'},
+  {'name': 'Service Account Lookup psuedo-API',
+   'api': SERVICEACCOUNTLOOKUP,
+   'subscopes': [],
+   'scope': ''},
   {'name': 'Site Verification API',
    'api': SITEVERIFICATION,
    'subscopes': [],
