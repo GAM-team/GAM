@@ -292,7 +292,7 @@ TODRIVE_USER = 'todrive_user'
 TRUNCATE_CLIENT_ID  = 'truncate_client_id'
 # Update CrOS org unit with orgUnitId
 UPDATE_CROS_OU_WITH_ID = 'update_cros_ou_with_id'
-# Use chat asadmin where possible
+# Use admin access for chat where possible
 USE_CHAT_ADMIN_ACCESS = 'use_chat_admin_access'
 # Use course owner for course access
 USE_COURSE_OWNER_ACCESS = 'use_course_owner_access'

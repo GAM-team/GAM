@@ -519,6 +519,7 @@ You can update a specific sheet within a Google spreadsheet or add a new sheet t
 * `addsheet <String>` - Specify a sheet name to be added to the Google Sheets file
 * `charset <Charset>` - Specify the character set of the local file; if not specified, the value of `charset` from `gam.cfg` will be used
 * `columndelimiter <Character>` - Columns are separated by `<Character>`; if not specified, the value of `csv_input_column_delimiter` from `gam.cfg` will be used
+
 If you want the Google spreadsheet to retain its name, specify: `retainname localfile LocalFile.csv`.
 
 By default, the user, file name, updated file name and id values are displayed on stdout.

@@ -360,6 +360,8 @@ By default, Gam displays the information as an indented list of keys and values.
 
 ### Display information about all chat spaces, asadmin
 For query and orderby information, see: https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces/search
+
+Only spaces of `<ChatSpaceType>` `space` are displayed; spaces of `<ChatSpaceType>` `groupchat` and `directmessage` are not displayed.
 ```
 gam <UserItem> show chatspaces asadmin
         [query <String>] [querytime<String> <Time>]

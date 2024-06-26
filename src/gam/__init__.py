@@ -5485,8 +5485,7 @@ def buildGAPIObject(api, credentials=None):
       API_Scopes = set(API.VAULT_SCOPES) if api == API.VAULT else set()
     GM.Globals[GM.CURRENT_CLIENT_API] = api
     GM.Globals[GM.CURRENT_CLIENT_API_SCOPES] = API_Scopes.intersection(GM.Globals[GM.CREDENTIALS_SCOPES])
-    scopeless_apis = {API.OAUTH2, API.CHROMEVERSIONHISTORY, API.SERVICEACCOUNTLOOKUP}
-    if api not in scopeless_apis and not GM.Globals[GM.CURRENT_CLIENT_API_SCOPES]:
+    if api not in API.SCOPELESS_APIS and not GM.Globals[GM.CURRENT_CLIENT_API_SCOPES]:
       systemErrorExit(NO_SCOPES_FOR_API_RC, Msg.NO_SCOPES_FOR_API.format(API.getAPIName(api)))
     if not GC.Values[GC.DOMAIN]:
       GC.Values[GC.DOMAIN] = GM.Globals[GM.DECODED_ID_TOKEN].get('hd', 'UNKNOWN').lower()
@@ -5604,7 +5603,6 @@ def getSitesObject(entityType=Ent.DOMAIN, entityName=None, i=0, count=0):
     sitesObject.debug = True
   return (userEmail, sitesObject)
 
-
 def getUserEmailFromID(uid, cd):
   try:
     result = callGAPI(cd.users(), 'get',
@@ -5623,6 +5621,26 @@ def getGroupEmailFromID(uid, cd):
     return result.get('email')
   except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden, GAPI.badRequest):
     return None
+
+def getServiceAccountEmailFromID(account_id, sal=None):
+  if sal is None:
+    sal = buildGAPIObject('serviceaccountlookup')
+  try:
+    certs = callGAPI(sal.serviceaccounts(), 'lookup',
+                     throwReasons = [GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND,  GAPI.INVALID_ARGUMENT],
+                     account=account_id)
+  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.invalidArgument):
+    return None
+  sa_cn_rx = r'CN=(.+)\.(.+).iam\.gservice.*'
+  sa_emails = []
+  for _, raw_cert in certs.items():
+    cert = x509.load_pem_x509_certificate(raw_cert.encode(), default_backend())
+    mg = re.match(sa_cn_rx, cert.issuer.rfc4514_string())
+    if mg:
+      sa_email = f'{mg.group(1)}@{mg.group(2)}.iam.gserviceaccount.com'
+      if sa_email not in sa_emails:
+        sa_emails.append(sa_email)
+  return GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER].join(sa_emails)
 
 # Convert UID to email address and type
 def convertUIDtoEmailAddressWithType(emailAddressOrUID, cd=None, sal=None, emailTypes=None,
@@ -5677,34 +5695,10 @@ def convertUIDtoEmailAddressWithType(emailAddressOrUID, cd=None, sal=None, email
     except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
       pass
   if 'serviceaccount' in emailTypes:
-    if sal is None:
-      sal = buildGAPIObject(API.SERVICEACCOUNTLOOKUP)
     uid = getServiceAccountEmailFromID(normalizedEmailAddressOrUID, sal)
     if uid:
       return (uid, 'serviceaccount')
   return (normalizedEmailAddressOrUID, 'unknown')
-
-def getServiceAccountEmailFromID(account_id, sal=None):
-  if sal is None:
-    sal = buildGAPIObject('serviceaccountlookup')
-  throwReasons = [GAPI.BAD_REQUEST,
-                  GAPI.RESOURCE_NOT_FOUND,
-                  GAPI.INVALID_ARGUMENT]
-  try:
-    certs = callGAPI(sal.serviceaccounts(),
-                     'lookup',
-                     account=account_id,
-                     throwReasons=throwReasons)
-  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.invalidArgument):
-    return
-  sa_cn_rx = r'CN=.*\.gserviceaccount\.com$'
-  sa_emails = []
-  for kid, raw_cert in certs.items():
-    cert = x509.load_pem_x509_certificate(raw_cert.encode(), default_backend())
-    subject = cert.issuer.rfc4514_string()
-    if re.match(sa_cn_rx, subject):
-      sa_emails.append(subject[3:])
-  return ' or '.join(sa_emails)
 
 # Convert UID to email address
 def convertUIDtoEmailAddress(emailAddressOrUID, cd=None, emailTypes=None,
@@ -16287,10 +16281,8 @@ def doInfoAdminRole():
   fields = ','.join(set(fieldsList))
   try:
     role = callGAPI(cd.roles(), 'get',
-                    throwReasons=[GAPI.BAD_REQUEST,
-                                  GAPI.CUSTOMER_NOT_FOUND,
-                                  GAPI.FORBIDDEN]+[GAPI.NOT_FOUND,
-                                                   GAPI.FAILED_PRECONDITION],
+                    throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.FAILED_PRECONDITION,
+                                  GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND],
                     customer=GC.Values[GC.CUSTOMER_ID], roleId=roleId, fields=fields)
     role.setdefault('isSuperAdminRole', False)
     role.setdefault('isSystemRole', False)
@@ -16434,8 +16426,15 @@ def doDeleteAdmin():
   except (GAPI.badRequest, GAPI.customerNotFound):
     accessErrorExit(cd)
 
+ASSIGNEE_EMAILTYPE_TOFIELD_MAP = {
+  'user': 'assignedToUser',
+  'group': 'assignedToGroup',
+  'serviceaccount': 'assignedToServiceAccount',
+  }
 PRINT_ADMIN_FIELDS = ['roleAssignmentId', 'roleId', 'assignedTo', 'scopeType', 'orgUnitId']
-PRINT_ADMIN_TITLES = ['roleAssignmentId', 'roleId', 'role', 'assignedTo', 'assignedToUser', 'assignedToGroup', 'scopeType', 'orgUnitId', 'orgUnit']
+PRINT_ADMIN_TITLES = ['roleAssignmentId', 'roleId', 'role',
+                      'assignedTo', 'assignedToUser', 'assignedToGroup', 'assignedToServiceAccount',
+                      'scopeType', 'orgUnitId', 'orgUnit']
 
 # gam print admins [todrive <ToDriveAttribute>*]
 #	[user|group <EmailAddress>|<UniqueID>] [role <RoleItem>] [condition]
@@ -16449,10 +16448,8 @@ def doPrintShowAdmins():
       if roleId not in rolePrivileges:
         try:
           rolePrivileges[roleId] = callGAPI(cd.roles(), 'get',
-                                            throwReasons=[GAPI.BAD_REQUEST,
-                                                          GAPI.CUSTOMER_NOT_FOUND,
-                                                          GAPI.FORBIDDEN]+[GAPI.NOT_FOUND,
-                                                                           GAPI.FAILED_PRECONDITION],
+                                            throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.FAILED_PRECONDITION,
+                                                          GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND],
                                             customer=GC.Values[GC.CUSTOMER_ID],
                                             roleId=roleId,
                                             fields='rolePrivileges')
@@ -16468,26 +16465,13 @@ def doPrintShowAdmins():
     assignedTo = admin['assignedTo']
     if assignedTo not in assignedToIdEmailMap:
       assigneeType = admin.get('assigneeType')
-      if assigneeType == 'user':
-        assignedToField = 'assignedToUser'
-      elif assigneeType == 'group':
-        assignedToField = 'assignedToGroup'
-      elif assigneeType == 'serviceaccount':
-        assignedToField = 'assignedToServiceAccount'
-      else:
-        assignedToField = None
-      emailTypes = ['user', 'group', 'serviceaccount']
+      assignedToField = ASSIGNEE_EMAILTYPE_TOFIELD_MAP.get(assigneeType, None)
       assigneeEmail, assigneeType = convertUIDtoEmailAddressWithType(f'uid:{assignedTo}',
                                                                      cd,
                                                                      sal,
-                                                                     emailTypes=emailTypes)
-      if not assignedToField and assigneeType in ['user', 'group', 'serviceaccount']:
-        if assigneeType == 'user':
-          assignedToField = 'assignedToUser'
-        elif assigneeType == 'group':
-          assignedToField = 'assignedToGroup'
-        elif assigneeType == 'serviceaccount':
-          assignedToField = 'assignedToServiceAccount'
+                                                                     emailTypes=list(ASSIGNEE_EMAILTYPE_TOFIELD_MAP.keys()))
+      if not assignedToField and assigneeType in ASSIGNEE_EMAILTYPE_TOFIELD_MAP:
+        assignedToField = ASSIGNEE_EMAILTYPE_TOFIELD_MAP[assigneeType]
       assignedToIdEmailMap[assignedTo] = {'assignedToField': assignedToField, 'assigneeEmail': assigneeEmail}
     assignedToField = assignedToIdEmailMap[assignedTo]['assignedToField']
     if assignedToField:

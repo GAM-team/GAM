@@ -121,6 +121,12 @@ JWT_APIS = {
   ORGPOLICY: [CLOUD_PLATFORM_SCOPE],
   }
 #
+SCOPELESS_APIS = {
+  CHROMEVERSIONHISTORY,
+  OAUTH2,
+  SERVICEACCOUNTLOOKUP,
+  }
+#
 APIS_NEEDING_ACCESS_TOKEN = {
   CBCM: ['https://www.googleapis.com/auth/admin.directory.device.chromebrowsers']
   }

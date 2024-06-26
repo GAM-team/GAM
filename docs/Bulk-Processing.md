@@ -8,6 +8,7 @@
 - [CSV files](#csv-files)
 - [CSV files with redirection and select](#csv-files-with-redirection-and-select)
 - [Automatic batch processing](#automatic-batch-processing)
+- [Process Google Sheet commands and save results](#process-google-sheet-commands-and-save-results)
 
 ## Introduction
 Batch and CSV file processing can improve performance by executing Gam commands in parallel.
@@ -155,4 +156,19 @@ With automatic batch processing, you should use the `multiprocess` option on any
 If you want to select a `gam.cfg` section for the command, you must select and save it for it to be processed correctly.
 ```
 gam select <Section> save config auto_batch_min 1 redirect csv ./filelistperms.csv multiprocess group sales@domain.com print filelist fields id,name,mimetype,basicpermissions
+```
+
+## Process Google Sheet commands and save results
+You want to process data from a Google Sheet tab and save the results to another tab in the same sheet.
+Make a Google sheet with two tabs: Commands, Results; get the File ID and the two tab IDs.
+Put your command data in the Commands tab.
+
+Run your command, write the results to Results.txt
+```
+gam redirect stdout ./Results.txt multiprocess redirect stderr stdout csv gsheet user@domain.com <FileID> id:<CommandsTabID> gam ... Command
+```
+
+Upload Results.txt to the Results tab of the sheet.
+```
+gam user user@domain.com update drivefile <FileID> localfile Results.txt retainname gsheet id:<ResultsTabID>
 ```

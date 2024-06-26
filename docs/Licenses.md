@@ -24,6 +24,7 @@
 | Cloud Identity Free | 101001 |
 | Cloud Identity Premium | 101005 |
 | Cloud Search | 101035 |
+| Colab | 101050 |
 | Education Endpoint Management | 101049 |
 | Gemini | 101047 |
 | Google Chrome Device Management | Google-Chrome-Device-Management |
@@ -49,6 +50,8 @@
 | Cloud Identity Free | 1010010001 | cloudidentity |
 | Cloud Identity Premium | 1010050001 | cloudidentitypremium |
 | Cloud Search | 1010350001 | cloudsearch |
+| Colab Pro | 1010500001 | colabpro |
+| Colab Pro+ | 1010500002 | colabpro+ | colabproplus |
 | Endpoint Education Upgrade | 1010490001 | eeu |
 | G Suite Basic | Google-Apps-For-Business | gsuitebasic |
 | G Suite Business | Google-Apps-Unlimited | gsuitebusiness |
@@ -123,6 +126,7 @@
         101043 |
         101047 |
         101049 |
+        101050 |
         Google-Apps |
         Google-Chrome-Device-Management |
         Google-Drive-storage |
@@ -151,6 +155,8 @@
         cloudidentity | identity | 1010010001 | Cloud Identity |
         cloudidentitypremium | identitypremium | 1010050001 | Cloud Identity Premium |
         cloudsearch | 1010350001 | Cloud Search |
+        colabpro | 1010500001 | Colab Pro |
+        colabpro+ | colabproplus | 1010500002 | Colab Pro+ |
         eeu | 1010490001 | SKU Endpoint Education Upgrade |
         geminibiz | 1010470003 | Gemini Business |
         geminiedu | 1010470004 | Gemini Education |

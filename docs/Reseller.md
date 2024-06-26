@@ -70,6 +70,8 @@ Thanks to Duncan Isaksen-Loxton for a script to help manage multiple domains.
         cloudidentity | identity | 1010010001 | Cloud Identity |
         cloudidentitypremium | identitypremium | 1010050001 | Cloud Identity Premium |
         cloudsearch | 1010350001 | Cloud Search |
+        colabpro | 1010500001 | Colab Pro |
+        colabpro+ | colabproplus | 1010500002 | Colab Pro+ |
         eeu | 1010490001 | SKU Endpoint Education Upgrade |
         geminibiz | 1010470003 | Gemini Business |
         geminiedu | 1010470004 | Gemini Education |

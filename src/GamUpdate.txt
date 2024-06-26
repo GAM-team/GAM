@@ -2,6 +2,17 @@
 
 Merged GAM-Team version
 
+6.77.03
+
+Thanks to jay, added the following Colab License SKUs:
+```
+1010500001 - Colab Pro
+1010500002 - Colab Pro+
+```
+
+Thanks to Jay, updated `gam print|show admins` to properly display addresses
+of service accounts with admin role assignments.
+
 6.77.02
 
 Cleaned up problems with some of the new Chat API asadmin commands.
