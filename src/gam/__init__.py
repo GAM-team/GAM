@@ -5631,7 +5631,7 @@ def getServiceAccountEmailFromID(account_id, sal=None):
                      account=account_id)
   except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.invalidArgument):
     return None
-  sa_cn_rx = r'CN=(.+)\.(.+).iam\.gservice.*'
+  sa_cn_rx = r'CN=(.+)\.(.+)\.iam\.gservice.*'
   sa_emails = []
   for _, raw_cert in certs.items():
     cert = x509.load_pem_x509_certificate(raw_cert.encode(), default_backend())
