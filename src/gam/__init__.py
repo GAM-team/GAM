@@ -5624,7 +5624,7 @@ def getGroupEmailFromID(uid, cd):
 
 def getServiceAccountEmailFromID(account_id, sal=None):
   if sal is None:
-    sal = buildGAPIObject('serviceaccountlookup')
+    sal = buildGAPIObject(API.SERVICEACCOUNTLOOKUP)
   try:
     certs = callGAPI(sal.serviceaccounts(), 'lookup',
                      throwReasons = [GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND,  GAPI.INVALID_ARGUMENT],
