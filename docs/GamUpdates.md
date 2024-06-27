@@ -21,6 +21,17 @@ Thanks to jay, added the following Colab License SKUs:
 Thanks to Jay, updated `gam print|show admins` to properly display addresses
 of service accounts with admin role assignments.
 
+Added option `limitdatechanges <Integer>` to `gam report users|customers`.
+
+If no report is available for the specified date, can an earlier date be used?
+* `limitdatechanges -1' - Back up to earlier dates to find report data; this is the default.
+* `limitdatechanges 0 | nodatechange' - Do not report on an earlier date if no report data is available for the specified date.
+* `limitdatechanges N' - Back up to earlier dates to find report data; do not back up more than N times.
+
+By default, when `gam report user user <UserItem>` is specified and no report data is available, there is no output.
+If `csv_output_users_audit = true` in `gam.cfg`, then a row with columns `email,date` will be displayed
+where `date` is the earliest date for which report data was requested.
+
 ### 6.77.02
 
 Cleaned up problems with some of the new Chat API asadmin commands.

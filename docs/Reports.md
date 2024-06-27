@@ -234,7 +234,7 @@ Customer reports are generally available up to two days before the current date.
 gam report customers|customer|domain [todrive <ToDriveAttributes>*]
         [(date <Date>)|(range <Date> <Date>)|
          yesterday|today|thismonth|(previousmonths <Integer>)]
-        [nodatechange|(fulldatarequired all|<CustomerServiceNameList>)]
+        [(nodatechange | limitdatechanges <Integer>) | (fulldatarequired all|<CustomerServiceNameList>)]
         [(fields|parameters <String>)|(services <CustomerServiceNameList>)]
         [noauthorizedapps]
 ```
@@ -247,7 +247,9 @@ Specify the report date; the default is today's date.
 * `previousmonths <Integer>` - A number in the range 1 to 6 indicating calendar months previous to the current month; there is an API call per date
 
 If no report is available for the specified date, can an earlier date be used?
-* `nodatechange` - Do not report on an earlier date if no report is available for the specified date.
+* `limitdatechanges -1' - Back up to earlier dates to find report data; this is the default.
+* `limitdatechanges 0 | nodatechange' - Do not report on an earlier date if no report data is available for the specified date.
+* `limitdatechanges N' - Back up to earlier dates to find report data; do not back up more than N times.
 
 If only partial report data is available for the specified date and applications, can an earlier date be used?
 * `fulldatarequired all` - Back up to an earlier date to get complete data until all applications have full report data
@@ -328,7 +330,7 @@ gam report users|user [todrive <ToDriveAttributes>*]
         [allverifyuser <UserItem>]
         [(date <Date>)|(range <Date> <Date>)|
          yesterday|today|thismonth|(previousmonths <Integer>)]
-        [nodatechange|(fulldatarequired all|<UserServiceNameList>)]
+        [(nodatechange | limitdatechanges <Integer>) | (fulldatarequired all|<UserServiceNameList>)]
         [filtertime.* <Time>] [filter|filters <String>]
         [(fields|parameters <String>)|(services <UserServiceNameList>)]
         [aggregatebydate|aggregatebyuser [Boolean]]
@@ -353,11 +355,17 @@ Specify the report date; the default is today's date.
 * `previousmonths <Integer>` - A number in the range 1 to 6 indicating calendar months previous to the current month; there is an API call per date
 
 If no report is available for the specified date, can an earlier date be used?
-* `nodatechange` - Do not report on an earlier date if no report is available for the specified date.
+* `limitdatechanges -1' - Back up to earlier dates to find report data; this is the default.
+* `limitdatechanges 0 | nodatechange' - Do not report on an earlier date if no report data is available for the specified date.
+* `limitdatechanges N' - Back up to earlier dates to find report data; do not back up more than N times.
 
 If only partial report data is available for the specified date and applications, can an earlier date be used?
 * `fulldatarequired all` - Back up to an earlier date to get complete data until all applications have full report data
 * `fulldatarequired <UserServiceNameList>` - Back up to an earlier date to get complete data until all applications in `<UserServiceNameList>` have full report data
+
+By default, when `user <UserItem>` is specified and no report data is available, there is no output.
+If `csv_output_users_audit = true` in `gam.cfg`, then a row with columns `email,date` will be displayed
+where `date` is the earliest date for which report data was requested.
 
 Apply filters.
 * `filter|filters <String>` - `<String>` is a comma separated list of filter expressions.

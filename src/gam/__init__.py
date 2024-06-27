@@ -11735,8 +11735,8 @@ def doCreateProject():
 #	 (yubikey yubikey_pin yubikey_slot AUTHENTICATION yubikey_serialnumber <String>)]
 def doUseProject():
   _checkForExistingProjectFiles([GC.Values[GC.OAUTH2SERVICE_JSON], GC.Values[GC.CLIENT_SECRETS_JSON]])
-  _, httpObj, login_hint, _, projectInfo, svcAcctInfo = _getLoginHintProjectInfo(False)
-  _createClientSecretsOauth2service(httpObj, login_hint, {}, projectInfo, svcAcctInfo)
+  _, httpObj, login_hint, _, projectInfo, svcAcctInfo, create_key = _getLoginHintProjectInfo(False)
+  _createClientSecretsOauth2service(httpObj, login_hint, {}, projectInfo, svcAcctInfo, create_key)
 
 # gam update project [[admin] <EmailAddress>] [<ProjectIDEntity>]
 def doUpdateProject():
@@ -12910,7 +12910,7 @@ def doWhatIs():
     entityUnknownWarning(Ent.EMAIL, email)
     setSysExitRC(ENTITY_IS_UKNOWN_RC)
 
-def _adjustTryDate(errMsg, noDateChange, prevTryDate):
+def _adjustTryDate(errMsg, numDateChanges, limitDateChanges, prevTryDate):
   match_date = re.match('Data for dates later than (.*) is not yet available. Please check back later', errMsg)
   if match_date:
     tryDate = match_date.group(1)
@@ -12923,7 +12923,7 @@ def _adjustTryDate(errMsg, noDateChange, prevTryDate):
       if match_date:
         tryDateTime = datetime.datetime.strptime(prevTryDate, YYYYMMDD_FORMAT)-datetime.timedelta(days=1)
         tryDate = tryDateTime.strftime(YYYYMMDD_FORMAT)
-  if (not match_date) or noDateChange:
+  if (not match_date) or (numDateChanges > limitDateChanges >= 0):
     printWarningMessage(DATA_NOT_AVALIABLE_RC, errMsg)
     return None
   return tryDate
@@ -13034,7 +13034,7 @@ def doReportUsageParameters():
       printErrorMessage(BAD_REQUEST_RC, Msg.BAD_REQUEST)
       return
     except GAPI.invalid as e:
-      tryDate = _adjustTryDate(str(e), False, tryDate)
+      tryDate = _adjustTryDate(str(e), 0, -1, tryDate)
       if not tryDate:
         break
   for parameter in sorted(allParameters):
@@ -13610,8 +13610,9 @@ def doReport():
   filterTimes = {}
   maxActivities = maxEvents = 0
   maxResults = 1000
-  aggregateByDate = aggregateByUser = countsOnly = eventRowFilter = exitUserLoop = noAuthorizedApps = noDateChange = \
+  aggregateByDate = aggregateByUser = countsOnly = eventRowFilter = exitUserLoop = noAuthorizedApps = \
     normalizeUsers = select = summary = userCustomerRange = False
+  limitDateChanges = -1
   allVerifyUser = userKey = 'all'
   cd = orgUnit = orgUnitId = None
   userOrgUnits = {}
@@ -13651,9 +13652,12 @@ def doReport():
       startEndTime.Get('start' if myarg == 'date' else myarg)
       startEndTime.endDateTime = startEndTime.startDateTime
       userCustomerRange = False
-    elif usageReports and myarg == 'nodatechange':
-      noDateChange = True
-      if (startEndTime.startDateTime is not None) and (startEndTime.endDateTime == startEndTime.startDateTime):
+    elif usageReports and myarg in {'nodatechange', 'limitdatechanges'}:
+      if myarg == 'nodatechange':
+        limitDateChanges = 0
+      else:
+        limitDateChanges = getInteger(minVal=-1)
+      if (limitDateChanges == 0) and (startEndTime.startDateTime is not None) and (startEndTime.endDateTime == startEndTime.startDateTime):
         userCustomerRange = True
     elif usageReports and myarg in {'fields', 'parameters'}:
       for field in getString(Cmd.OB_STRING).replace(',', ' ').split():
@@ -13787,6 +13791,7 @@ def doReport():
       startDateTime = startEndTime.startDateTime
       endDateTime = startEndTime.endDateTime
       lastDate = None
+      numDateChanges = 0
       while startDateTime <= endDateTime:
         tryDate = startDateTime.strftime(YYYYMMDD_FORMAT)
         try:
@@ -13796,13 +13801,15 @@ def doReport():
                               userKey=verifyUser, date=tryDate, customerId=customerId,
                               orgUnitID=orgUnitId, parameters=parameters,
                               fields='warnings,usageReports', maxResults=1)
+            prevTryDate = tryDate
             fullData, tryDate, usageReports = _checkDataRequiredServices(result, tryDate,
                                                                          dataRequiredServices, parameterServices, True)
             if fullData < 0:
               printWarningMessage(DATA_NOT_AVALIABLE_RC, Msg.NO_REPORT_AVAILABLE.format(report))
               break
+            numDateChanges += 1
             if fullData == 0:
-              if noDateChange:
+              if numDateChanges > limitDateChanges >= 0:
                 break
               startDateTime = endDateTime = datetime.datetime.strptime(tryDate, YYYYMMDD_FORMAT)
               continue
@@ -13810,6 +13817,7 @@ def doReport():
             pageMessage = getPageMessageForWhom(forWhom, showDate=tryDate)
           else:
             pageMessage = getPageMessageForWhom(user, showDate=tryDate)
+          prevTryDate = tryDate
           usage = callGAPIpages(service, 'get', 'usageReports',
                                 pageMessage=pageMessage,
                                 throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
@@ -13825,7 +13833,8 @@ def doReport():
           if not status:
             break
         except GAPI.invalid as e:
-          tryDate = _adjustTryDate(str(e), noDateChange, tryDate)
+          numDateChanges += 1
+          tryDate = _adjustTryDate(str(e), numDateChanges, limitDateChanges, tryDate)
           if not tryDate:
             break
           startDateTime = endDateTime = datetime.datetime.strptime(tryDate, YYYYMMDD_FORMAT)
@@ -13844,6 +13853,8 @@ def doReport():
         startDateTime += oneDay
       if exitUserLoop:
         break
+      if user != 'all' and lastDate is None and GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+        csvPF.WriteRowNoFilter({'date': prevTryDate, 'email': user})
     if aggregateByDate:
       for usageDate, events in iter(eventCounts.items()):
         row = {'date': usageDate}
@@ -13875,6 +13886,7 @@ def doReport():
     startDateTime = startEndTime.startDateTime
     endDateTime = startEndTime.endDateTime
     lastDate = None
+    numDateChanges = 0
     while startDateTime <= endDateTime:
       tryDate = startDateTime.strftime(YYYYMMDD_FORMAT)
       try:
@@ -13887,8 +13899,9 @@ def doReport():
           if fullData < 0:
             printWarningMessage(DATA_NOT_AVALIABLE_RC, Msg.NO_REPORT_AVAILABLE.format(report))
             break
+          numDateChanges += 1
           if fullData == 0:
-            if noDateChange:
+            if numDateChanges > limitDateChanges >= 0:
               break
             startDateTime = endDateTime = datetime.datetime.strptime(tryDate, YYYYMMDD_FORMAT)
             continue
@@ -13902,7 +13915,8 @@ def doReport():
         if not status:
           break
       except GAPI.invalid as e:
-        tryDate = _adjustTryDate(str(e), noDateChange, tryDate)
+        numDateChanges += 1
+        tryDate = _adjustTryDate(str(e), numDateChanges, limitDateChanges, tryDate)
         if not tryDate:
           break
         startDateTime = endDateTime = datetime.datetime.strptime(tryDate, YYYYMMDD_FORMAT)
@@ -14016,7 +14030,7 @@ def doReport():
                 if addCSVData:
                   row.update(addCSVData)
                 csvPF.WriteRowTitles(row)
-                if maxEvents > 0 and numEvents >= maxEvents:
+                if numEvents >= maxEvents > 0:
                   break
               elif csvPF.CheckRowTitles(row):
                 if not summary:
@@ -15836,7 +15850,7 @@ def _showCustomerLicenseInfo(customerInfo, FJQC):
         continue
       break
     except GAPI.invalid as e:
-      tryDate = _adjustTryDate(str(e), False, tryDate)
+      tryDate = _adjustTryDate(str(e), 0, -1, tryDate)
       if not tryDate:
         return
       continue
@@ -45495,7 +45509,7 @@ class CourseAttributes():
             entityModifierItemValueListActionNotPerformedWarning([Ent.COURSE, newCourseId, Ent.COURSE_WORK, f'{body.get("title", courseWorkId)}'], Act.MODIFIER_FROM,
                                                                  [Ent.COURSE, self.courseId], 'individualStudentAssignments delete', j, jcount)
             continue
-          elif self.individualStudentAssignments == 'maptoall':
+          if self.individualStudentAssignments == 'maptoall':
             body['assigneeMode'] = 'ALL_STUDENTS'
             body.pop('individualStudentsOptions', None)
         if self.copyMaterialsFiles:

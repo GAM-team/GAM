@@ -4331,7 +4331,7 @@ gam report <ActivityApplicationName> [todrive <ToDriveAttribute>*]
 gam report customers|customer|domain [todrive <ToDriveAttribute>*]
         [(date <Date>)|(range <Date> <Date>)|
           yesterday|today|thismonth|(previousmonths <Integer>)]
-        [nodatechange | (fulldatarequired all|<CustomerServiceNameList>)]
+        [(nodatechange | limitdatechanges <Integer>) | (fulldatarequired all|<CustomerServiceNameList>)]
         [(fields|parameters <String>)|(services <CustomerServiceNameList>)] [noauthorizedapps]
 
 <UserServiceName> ::=
@@ -4348,7 +4348,7 @@ gam report users|user [todrive <ToDriveAttribute>*]
         [allverifyuser <UserItem>]
         [(date <Date>)|(range <Date> <Date>)|
           yesterday|today|thismonth|(previousmonths <Integer>)]
-        [nodatechange | (fulldatarequired all|<UserServiceNameList>)]
+        [(nodatechange | limitdatechanges <Integer>) | (fulldatarequired all|<UserServiceNameList>)]
         [filtertime.* <Time>] [filter|filters <String>]
         [(fields|parameters <String>)|(services <UserServiceNameList>)]
         [aggregatebydate|aggregatebyuser [Boolean]]
