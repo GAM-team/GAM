@@ -130,7 +130,7 @@ If you have a CSV file, UpdateBrowsers.csv with two columns: deviceId,notes
 this command will add a new line of notes to the front of the existing notes:
 
 ```
-gam csv UpdateBrowsers.csv gam update browser ~deviceId updatenotes "~~notes~~\n#notes#"
+gam csv UpdateBrowsers.csv gam update browser "~deviceId" updatenotes "~~notes~~\n#notes#"
 ```
 
 ## Move Chrome browsers from one OU to another

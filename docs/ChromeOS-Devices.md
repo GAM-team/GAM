@@ -364,7 +364,7 @@ If you have a CSV file, UpdateCrOS.csv with two columns: deviceId,notes
 this command will add a new line of notes to the front of the existing notes:
 
 ```
-gam csv UpdateCrOS.csv gam update cros ~deviceId updatenotes "~~notes~~\n#notes#"
+gam csv UpdateCrOS.csv gam update cros "~deviceId" updatenotes "~~notes~~\n#notes#"
 ```
 
 ## Add ChromeOS devices to an organizational unit
@@ -856,7 +856,7 @@ gam redirect stdout ./CrOSDeviceFiles.out redirect stderr stdout csvkmd cros ./C
 Download the device files in parallel.
 
 ```
-gam redirect stdout ./CrOSDeviceFiles.out multiprocess redirect stderr stdout csv ./CrOSDeviceFiles.csv matchfield deviceFiles.type LOG_FILE gam cros ~deviceId get devicefile select ~deviceFiles.createTime
+gam redirect stdout ./CrOSDeviceFiles.out multiprocess redirect stderr stdout csv ./CrOSDeviceFiles.csv matchfield deviceFiles.type LOG_FILE gam cros "~deviceId" get devicefile select "~deviceFiles".createTime
 ```
 
 Suppose you want only the last device file for each Chromebook.

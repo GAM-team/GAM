@@ -239,7 +239,7 @@ queries "`"orgUnitPath=\'/Students/Lower\ School/2027\'`",`"orgUnitPath=\'/Stude
                 protocol aim|gtalk|icq|jabber|msn|net_meeting|qq|
                 skype|yahoo|(custom_protocol <String>) <String>
                 notprimary|primary)|
-        (keyword mission|occupation|outlook|(custom <string>) <String>)|
+        (keyword mission|occupation|outlook|(custom <String>) <String>)|
         (location [type default|desk|<String>] area <String>
                 [building|buildingid <String>] [floor|floorname <String>]
                 [section|floorsection <String>] [desk|deskcode <String>] endlocation)|
@@ -250,7 +250,7 @@ queries "`"orgUnitPath=\'/Students/Lower\ School/2027\'`",`"orgUnitPath=\'/Stude
                 [description <String>] [domain <String>]
                 [fulltimeequivalent <Integer>]
                 notprimary|primary)|
-        (otheremail home|other|work|<String> <String>)|
+        (otheremail home|other|work|(custom <String>)|<String> <String>)|
         (phone [type assistant|callback|car|company_main|grand_central|home|
                 home_fax|isdn|main|mobile|other|other_fax|pager|radio|telex|tty_tdd|
                 work|work_fax|work_mobile|work_pager|(custom <String>)]
@@ -262,10 +262,10 @@ queries "`"orgUnitPath=\'/Students/Lower\ School/2027\'`",`"orgUnitPath=\'/Stude
                 [primary <Boolean>] endposix)|
         (relation admin_assistant|assistant|brother|child|domestic_partner|
                 dotted-line_manager|exec_assistant|father|friend|manager|mother|
-                parent|partner|referred_by|relative|sister|spouse|<String> <String>)|
+                parent|partner|referred_by|relative|sister|spouse|(custom <String>)|<String> <String>)|
         (sshkeys key <String> [expires <Integer>] endssh)|
         (website app_install_page|blog|ftp|home|home_page|other|
-                profile|reservations|resume|work|<String> <URL>
+                profile|reservations|resume|work|(custom <String>)|<String> <URL>
                 notprimary|primary)
 
 <UserClearAttribute> ::=
@@ -464,7 +464,7 @@ If you specify `scalarnonempty`, empty values will be suppressed. This is most u
 
 For example, to suppress errors when empty values would cause an error or are simply undesirable:
 ```
-GeoData.Region scalarnonempty ~region GeoData.State scalarnonempty ~state GeoData.City scalarnonempty ~city
+GeoData.Region scalarnonempty "~region" GeoData.State scalarnonempty "~state" GeoData.City scalarnonempty "~city"
 ```
 ### Multivalued fields
 ```
@@ -541,7 +541,7 @@ When creating a user, you can send a message with the account details to an emai
 If you create a user with `random password`, the `lograndompassword <FileName>` option causes GAM
 to append the user email address and random password to `<FileName>`. If `<FileName>` is `-`, the data is written to stdout.
 
-Option `ignorenullpassword` causes GAM to ignore options like `password ""` or `password ~password` where the
+Option `ignorenullpassword` causes GAM to ignore options like `password ""` or `password "~password"` where the
 CSV entry `password` is null; it must appear in the command before any null passwords.
 If `ignorenullpassword` and a null password are entered, the user will be assigned a random password.
 
@@ -570,8 +570,8 @@ OU needs to be already set with forced 2FA, else you can't create backup codes i
 These three commands should be run in sequence, as commands two and three are reliant on the previous command being run.
 ```
 gam redirect stdout CreateUsers.log multiprocess redirect stderr stdout csv CreateUsers.csv gam create user "~useremail" firstname "~firstname" lastname "~lastname" ou "~ou" password random notify "~~notifyemail"
-gam redirect stdout UpdateUsers.log multiprocess redirect stderr stdout csv CreateUsers.csv gam user ~useremail update backupcodes
-gam redirect stdout SendBackupCodes.log multiprocess redirect stderr stdout csv CreateUsers.csv gam user ~useremail print backupcodes | gam csv - gam sendemail "~notifyemail" subject "Backup codes for 2FA login" message "~verificationCodes"
+gam redirect stdout UpdateUsers.log multiprocess redirect stderr stdout csv CreateUsers.csv gam user "~useremail" update backupcodes
+gam redirect stdout SendBackupCodes.log multiprocess redirect stderr stdout csv CreateUsers.csv gam user "~useremail" print backupcodes | gam csv - gam sendemail "~notifyemail" subject "Backup codes for 2FA login" message "~verificationCodes"
 ```
 
 ## Specify a user's attributes with JSON data
@@ -713,19 +713,19 @@ The user aliases in `alias|aliases <EmailAddressList>` will be created.
 
 For example, you are given a CSV file Users.csv with these headers: email,firstname,lastname,password,ou,altemail
 ```
-gam csv Users.csv gam update user ~email firstname ~firstname lastname ~lastname password ~password ou ~ou createifnotfound notify ~altemail
+gam csv Users.csv gam update user "~email" firstname "~firstname" lastname "~lastname" password "~password" ou "~ou" createifnotfound notify "~altemail"
 ```
 The existing users (including their passwords) will be updated and the new users will be created; if `notify` is specified, a notification email message is sent as in (#create-a-user).
 
 If you don't want to update the passwords of the existing users but must supply a password for newly created users, use the `notfoundpassword` option.
 ```
-gam csv Users.csv gam update user ~email firstname ~firstname lastname ~lastname notfoundpassword ~password ou ~ou createifnotfound notify ~altemail
+gam csv Users.csv gam update user "~email" firstname "~firstname" lastname "~lastname" notfoundpassword "~password" ou "~ou" createifnotfound notify "~altemail"
 ```
 The existing users (but not their passwords) will be updated and the new users will be created; if `notify` is specified, a notification email message is sent as in (#create-a-user).
 
 If you don't want to force a password change of the existing users but do want newly created users to change their password, use the `setchangepasswordoncreate` option.
 ```
-gam csv Users.csv gam update user ~email firstname ~firstname lastname ~lastname notfoundpassword ~password ou ~ou createifnotfound notify ~altemail setchangepasswordoncreate true
+gam csv Users.csv gam update user "~email" firstname "~firstname" lastname "~lastname" notfoundpassword "~password" ou "~ou" createifnotfound notify "~altemail" setchangepasswordoncreate true
 ```
 
 ## Update a user's name
@@ -742,7 +742,7 @@ assigned a unique random password, specify `password uniquerandom`.
 If you update a user with `password random|uniquerandom`, the `lograndompassword <FileName>` option causes GAM
 to append the user email address and random password to `<FileName>`. If `<FileName` is `-`, the data is written to stdout.
 
-Option `ignorenullpassword` causes GAM to ignore options like `password ""` or `password ~password` or `notfoundpassword ~password` where the
+Option `ignorenullpassword` causes GAM to ignore options like `password ""` or `password "~password"` or `notfoundpassword "~password"` where the
 CSV entry `password` is null; it must appear in the command before any null passwords.
 This option would typically be used when processing CSV files where only selected user's passwords are being updated.
 
@@ -813,7 +813,7 @@ $ gam redirect csv ./phones.csv group group@domain.com print users phones format
 ```
 Edit phones.csv and change the work number; update.
 ```
-$ gam csv ./phones.csv quotechar "'" gam update user ~primaryEmail json ~JSON
+$ gam csv ./phones.csv quotechar "'" gam update user "~primaryEmail" json "~JSON"
 ```
 ## Update a user's OU based on group membership
 This option would typically be used when an external service creates a Google user and assigns it to a group but does not place it in an OU.

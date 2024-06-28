@@ -305,10 +305,10 @@ seniors@domain.org,/Students/ClassOf2023
 juniors@domain.org,/Students/ClassOf2024
 ...
 ```
-This allows you to do: `gam csv GradeOU.csv gam update group ~Grade sync members ou ~OU`
+This allows you to do: `gam csv GradeOU.csv gam update group "~Grade" sync members ou "~OU"`
 But suppose that at each grade level there are additional group members that are groups of faculty/staff; e.g., senioradvisors@domain.org.
 In this scenario, you can't do the `update group sync` command as the members that are groups will be deleted; the `usersonly` option allows
-the `update group sync` command to work: `gam csv GradeOU.csv gam update group ~Grade sync members usersonly ou ~OU`
+the `update group sync` command to work: `gam csv GradeOU.csv gam update group "~Grade" sync members usersonly ou "~OU"`
 The users from the OU are matched against the user members of the group and adds/deletes are done as necessary to synchronize them;
 the group members of the group are unaffected.
 

@@ -1501,8 +1501,8 @@ Getting all Drive Files/Folders that match query ('me' in owners and name contai
 Got 0 Drive Files/Folders that matched query ('me' in owners and name contains 'abcd') for user@domain.com...
 $ more Files.csv
 Owner
-$ gam csv Files.csv gam user ~Owner show fileinfo ~id permissions
-Command: /Users/admin/bin/gam csv Files.csv gam user ~Owner show fileinfo >>>~id<<< permissions
+$ gam csv Files.csv gam user "~Owner" show fileinfo "~id" permissions
+Command: /Users/admin/bin/gam csv Files.csv gam user "~Owner" show fileinfo >>>~id<<< permissions
 
 ERROR: Header "id" not found in CSV headers of "Owner".
 Help: Syntax in file /Users/admin/bin/gam/GamCommands.txt
@@ -1516,7 +1516,7 @@ Getting all Drive Files/Folders that match query ('me' in owners and name contai
 Got 0 Drive Files/Folders that matched query ('me' in owners and name contains 'abcd') for user@domain.com...
 $ more Files.csv
 Owner,id,name
-$ gam csv Files.csv gam user ~Owner show fileinfo ~id permissions
+$ gam csv Files.csv gam user "~Owner" show fileinfo "~id" permissions
 $
 ```
 

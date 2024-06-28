@@ -58,7 +58,7 @@ Tbatch files can also contain the following line:
 * You have a CSV file NewStudents.csv with columns: Email,First,Last,GradYear,Password
 * You have a batch file NewStudents.bat containing these commands:
 ```
-gam csv NewStudents.csv gam create user ~Email firstname ~First lastname ~Last org "/Students/~~GradYear~~" password ~Password
+gam csv NewStudents.csv gam create user "~Email" firstname "~First" lastname "~Last" org "/Students/~~GradYear~~" password "~Password"
 commit-batch
 gam update group seniors sync members ou /Students/2020
 gam update group juniors sync members ou /Students/2021
@@ -121,7 +121,7 @@ Put a space in front of the `~`: `targetfolder " ~/Documents/GamWork"` to avoid 
 * You want a note field that shows their email address as name AT domain.com
 * You have a CSV file Users.csv with columns: primaryEmail,Street,City,State,ZIP
 ```
-gam csv Users.csv gam update user ~primaryEmail address type work unstructured "~~Street~~, ~~City~~, ~~State~~ ~~ZIP~~" primary note text_plain "~~primaryEmail~!~^(.+)@(.+)$~!~\1 AT \2~~"
+gam csv Users.csv gam update user "~primaryEmail" address type work unstructured "~~Street~~, ~~City~~, ~~State~~ ~~ZIP~~" primary note text_plain "~~primaryEmail~!~^(.+)@(.+)$~!~\1 AT \2~~"
 ```
 * You want to do the above using a Google Sheet
 ```
@@ -131,17 +131,17 @@ gam csv gsheet <user> <fileID> "<sheetName>" gam update user "~primaryEmail" add
 ## CSV files with redirection and select
 You should use the `multiprocess` option on any redirected files: `csv`, `stdout`, `stderr`.
 ```
-gam redirect csv ./filelistperms.csv multiprocess csv Users.csv gam user ~primaryEmail print filelist fields id,name,mimetype,basicpermissions
-gam redirect csv - multiprocess todrive csv Users.csv gam user ~primaryEmail print filelist fields id,name,mimetype,basicpermissions
+gam redirect csv ./filelistperms.csv multiprocess csv Users.csv gam user "~primaryEmail" print filelist fields id,name,mimetype,basicpermissions
+gam redirect csv - multiprocess todrive csv Users.csv gam user "~primaryEmail" print filelist fields id,name,mimetype,basicpermissions
 ```
 
 If you want to select a `gam.cfg` section for the command, you can select the section at the outer `gam` and save it
 or select the section at the inner `gam`.
 ```
-gam select <Section> save redirect csv ./filelistperms.csv multiprocess csv Users.csv gam user ~primaryEmail print filelist fields id,name,mimetype,basicpermissions
-gam redirect csv ./filelistperms.csv multiprocess csv Users.csv gam select <Section> user ~primaryEmail print filelist fields id,name,mimetype,basicpermissions
-gam select <Section> save redirect csv - multiprocess todrive csv Users.csv gam user ~primaryEmail print filelist fields id,name,mimetype,basicpermissions
-gam redirect csv - multiprocess todrive csv Users.csv gam select <Section> user ~primaryEmail print filelist fields id,name,mimetype,basicpermissions
+gam select <Section> save redirect csv ./filelistperms.csv multiprocess csv Users.csv gam user "~primaryEmail" print filelist fields id,name,mimetype,basicpermissions
+gam redirect csv ./filelistperms.csv multiprocess csv Users.csv gam select <Section> user "~primaryEmail" print filelist fields id,name,mimetype,basicpermissions
+gam select <Section> save redirect csv - multiprocess todrive csv Users.csv gam user "~primaryEmail" print filelist fields id,name,mimetype,basicpermissions
+gam redirect csv - multiprocess todrive csv Users.csv gam select <Section> user "~primaryEmail" print filelist fields id,name,mimetype,basicpermissions
 ```
 
 ## Automatic batch processing

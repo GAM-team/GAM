@@ -304,15 +304,15 @@ gam redirect csv - todrive tdtitle "CrOS" tdtimestamp true tdfileid 12345-mizZ6Q
 
 For a collection of users, generate a list of files shared with anyone; combine the output for all users into a single file.
 ```
-gam redirect csv - multiprocess todrive tdtitle AnyoneShares-All csv Users.csv gam user ~primaryEmail print filelist fields id,name,permissions pm type anyone em
+gam redirect csv - multiprocess todrive tdtitle AnyoneShares-All csv Users.csv gam user "~primaryEmail" print filelist fields id,name,permissions pm type anyone em
 ```
 
 For a collection of users, generate a list of files shared with anyone; generate a separate file for each user.
 The two forms of the command are equivalent.
 ```
-gam csv Users.csv gam redirect csv - todrive tdtitle "AnyoneShares-~~primaryEmail~~" user ~primaryEmail print filelist fields id,name,permissions pm type anyone em
+gam csv Users.csv gam redirect csv - todrive tdtitle "AnyoneShares-~~primaryEmail~~" user "~primaryEmail" print filelist fields id,name,permissions pm type anyone em
 
-gam csv Users.csv gam user ~primaryEmail print filelist fields id,name,permissions pm type anyone em todrive tdtitle "AnyoneShares-~~primaryEmail~~" 
+gam csv Users.csv gam user "~primaryEmail" print filelist fields id,name,permissions pm type anyone em todrive tdtitle "AnyoneShares-~~primaryEmail~~" 
 ```
 
 Suppose you have a spreadsheet with sheets `Monday` ... `Friday`, `Backup Monday` ... `Backup Friday` and `Latest`.

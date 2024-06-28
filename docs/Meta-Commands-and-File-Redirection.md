@@ -171,9 +171,9 @@ If the pattern `{{Section}}` appears in `<FileName>`, it will be replaced with t
 ### Examples - redirect CSV
 Suppose that you have a CSV file CourseList.csv with a column labeled CourseId that contains course Ids. You want a single CSV file with participant information for these courses.
 ```
-gam redirect csv ./CourseInfo.csv multiprocess csv CourseList.csv gam print course-participants course ~CourseId
+gam redirect csv ./CourseInfo.csv multiprocess csv CourseList.csv gam print course-participants course "~CourseId"
 ```
-`redirect csv ./CourseInfo.csv multiprocess` causes gam to collect output from all of the processes started by `csv CourseList.csv gam print course-participants course ~CourseId` and produces a single CSV file CourseInfo.csv.
+`redirect csv ./CourseInfo.csv multiprocess` causes gam to collect output from all of the processes started by `csv CourseList.csv gam print course-participants course "~CourseId"` and produces a single CSV file CourseInfo.csv.
 
 Generate a list of CrOS devices and update an existing sheet in a Google spreadsheet. The file ID and sheet IDs are preserved so other appplications can access the data using the file ID and sheet ID.
 By setting 'tdtimestamp true`, the file name will the updated to reflect the time of execution, but the file ID will not change.
@@ -183,23 +183,23 @@ gam redirect csv - todrive tdtitle "CrOS" tdtimestamp true tdfileid 12345-mizZ6Q
 
 For a collection of users, generate a list of files shared with anyone; combine the output for all users into a single file.
 ```
-gam redirect csv - multiprocess todrive tdtitle AnyoneShares-All csv Users.csv gam user ~primaryEmail print filelist fields id,name,permissions pm type anyone em
+gam redirect csv - multiprocess todrive tdtitle AnyoneShares-All csv Users.csv gam user "~primaryEmail" print filelist fields id,name,permissions pm type anyone em
 ```
 
 For a collection of users, generate a list of files shared with anyone; generate a separate file for each user.
 The two forms of the command are equivalent.
 ```
-gam csv Users.csv gam redirect csv - todrive tdtitle "AnyoneShares-~~primaryEmail~~" user ~primaryEmail print filelist fields id,name,permissions pm type anyone em
+gam csv Users.csv gam redirect csv - todrive tdtitle "AnyoneShares-~~primaryEmail~~" user "~primaryEmail" print filelist fields id,name,permissions pm type anyone em
 
-gam csv Users.csv gam user ~primaryEmail print filelist fields id,name,permissions pm type anyone em todrive tdtitle "AnyoneShares-~~primaryEmail~~" 
+gam csv Users.csv gam user "~primaryEmail" print filelist fields id,name,permissions pm type anyone em todrive tdtitle "AnyoneShares-~~primaryEmail~~" 
 ```
 
 ### Examples - Redirect stdout
-The output from each of the `gam info user ~primaryEmail` commands will be combined into the single file Users.txt.
+The output from each of the `gam info user "~primaryEmail"` commands will be combined into the single file Users.txt.
 The value of `show_multiprocess_info` from `gam.cfg` controls whether information identifying the processes is also shown.
 
 ```
-$ gam config show_multiprocess_info false redirect stdout ./Users.txt multiprocess csv Users.csv gam info user ~primaryEmail
+$ gam config show_multiprocess_info false redirect stdout ./Users.txt multiprocess csv Users.csv gam info user "~primaryEmail"
 $ more Users.txt
 User: testuser1@domain.com (1/1)
   Settings:
@@ -214,9 +214,9 @@ User: testuser2@domain.com@ (1/1)
     Full Name: Test User2
 ...
 
-$ gam config show_multiprocess_info true redirect stdout ./Users.txt multiprocess csv Users.csv gam info user ~primaryEmail
+$ gam config show_multiprocess_info true redirect stdout ./Users.txt multiprocess csv Users.csv gam info user "~primaryEmail"
 $ more Users.txt
-stdout:      0, Start: 2017-01-26T11:35:00.897773-08:00, RC:   0, Cmd: /Users/admin/gam config show_multiprocess_info true redirect stdout ./Users.txt multiprocess csv Users.csv gam info user ~primaryEmail
+stdout:      0, Start: 2017-01-26T11:35:00.897773-08:00, RC:   0, Cmd: /Users/admin/gam config show_multiprocess_info true redirect stdout ./Users.txt multiprocess csv Users.csv gam info user "~primaryEmail"
 stdout:      1, Start: 2017-01-26T11:35:00.902709-08:00, RC:   0, Cmd: gam info user testuser1@domain.com
 User: testuser1@domain.com (1/1)
   Settings:
@@ -233,5 +233,5 @@ User: testuser2@domain.com@ (1/1)
     Full Name: Test User2
 ...
 stdout:      2,   End: 2017-01-26T11:35:02.849646-08:00, RC:   0, Cmd: gam info user testuser2@domain.com
-stdout:      0,   End: 2017-01-26T11:35:02.907141-08:00, RC:   0, Cmd: /Users/admin/gam config show_multiprocess_info true redirect stdout ./Users.txt multiprocess csv Users.csv gam info user ~primaryEmail
+stdout:      0,   End: 2017-01-26T11:35:02.907141-08:00, RC:   0, Cmd: /Users/admin/gam config show_multiprocess_info true redirect stdout ./Users.txt multiprocess csv Users.csv gam info user "~primaryEmail"
 ```

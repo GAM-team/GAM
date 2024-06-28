@@ -1039,24 +1039,24 @@ goo,gooadmin
 ```
 For each of the domains, you want to get user information about the domain administrator.
 ```
-$gam csv InfoAdmins.csv gam select ~Section info user "~AdminUser" nolicenses
+$gam csv InfoAdmins.csv gam select "~Section" info user "~AdminUser" nolicenses
 ```
 For each of the domains, you also want to list the Google Drive files for the domain administrator.
 ```
-$gam csv InfoAdmins.csv gam select ~Section user "~AdminUser" print filelist id
+$gam csv InfoAdmins.csv gam select "~Section" user "~AdminUser" print filelist id
 ```
 Suppose you have two CSV files, NewFooUsers.csv and NewGooUsers.csv, with the columns: Email,FirstName,LastName,Password.
 You will use these files to create new users in the foo.com and goo.com domains.
 
 To process the files sequentially, there are two forms:
 ```
-$gam select foo save csv NewFooUsers.csv gam create user ~Email firstname ~FirstName lastname ~LastName password ~Password
-$gam select goo save csv NewGooUsers.csv gam create user ~Email firstname ~FirstName lastname ~LastName password ~Password
+$gam select foo save csv NewFooUsers.csv gam create user "~Email" firstname "~FirstName" lastname "~LastName" password "~Password"
+$gam select goo save csv NewGooUsers.csv gam create user "~Email" firstname "~FirstName" lastname "~LastName" password "~Password"
 ```
 You could also do:
 ```
-$gam csv NewFooUsers.csv gam select foo create user ~Email firstname ~FirstName lastname ~LastName password ~Password
-$gam csv NewGooUsers.csv gam select goo create user ~Email firstname ~FirstName lastname ~LastName password ~Password
+$gam csv NewFooUsers.csv gam select foo create user "~Email" firstname "~FirstName" lastname "~LastName" password "~Password"
+$gam csv NewGooUsers.csv gam select goo create user "~Email" firstname "~FirstName" lastname "~LastName" password "~Password"
 ```
 In the first form, the select/save before csv sets the default section which then applies to each gam instance.
 
@@ -1066,11 +1066,11 @@ To process the files in parallel in separate shells, you have to use the second 
 
 In shell number 1, do:
 ```
-$gam csv NewFooUsers.csv gam select foo create user ~Email firstname ~FirstName lastname ~LastName password ~Password
+$gam csv NewFooUsers.csv gam select foo create user "~Email" firstname "~FirstName" lastname "~LastName" password "~Password"
 ```
 In shell number 2, do:
 ```
-$gam csv NewGooUsers.csv gam select goo create user ~Email firstname ~FirstName lastname ~LastName password ~Password
+$gam csv NewGooUsers.csv gam select goo create user "~Email" firstname "~FirstName" lastname "~LastName" password "~Password"
 ```
 The gam loop command and the select and redirect arguments can be combined to perform powerful operations in a single command line.
 ```
@@ -1086,23 +1086,23 @@ For each of the domains, you want to get user information about the domain admin
 to stdout, so you'll redirect stdout. In the first case, you want all of the output in a single file so stdout is
 redirected to a file before the csv command.
 ```
-$gam redirect stdout InfoDomainAdmins.lst multiprocess csv InfoDomains.csv gam select ~Section info user "~AdminUser" nolicenses
+$gam redirect stdout InfoDomainAdmins.lst multiprocess csv InfoDomains.csv gam select "~Section" info user "~AdminUser" nolicenses
 ```
 In the second case, you want the output for each domain administrator in a separate file so stdout is redirected after
 the csv command.
 ```
-$gam csv InfoDomains.csv select ~Section redirect stdout Info-~~Domain~~-Admin.lst info user "~AdminUser" nolicenses
+$gam csv InfoDomains.csv select "~Section" redirect stdout Info-~~Domain~~-Admin.lst info user "~AdminUser" nolicenses
 ```
 For each of the domains, you also want to list the Google Drive files for the domain administrator. GAM writes this information
 to a csv file, so you'll redirect csv output. In the first case, you want all of the output in a single file so csv output is
 redirected to a file before the csv command.
 ```
-$gam redirect csv FilesDomainAdmins.csv multiprocess csv  InfoDomains.csv gam select ~Section user "~AdminUser" print filelist id
+$gam redirect csv FilesDomainAdmins.csv multiprocess csv  InfoDomains.csv gam select "~Section" user "~AdminUser" print filelist id
 ```
 In the second case, you want the output for each domain administrator in a separate file so csv output is redirected after
 the csv command.
 ```
-$gam csv InfoDomains.csv select ~Section redirect csv Files-~~Domain~~-Admin.csv user "~AdminUser" print filelist id
+$gam csv InfoDomains.csv select "~Section" redirect csv Files-~~Domain~~-Admin.csv user "~AdminUser" print filelist id
 ```
 
 ## Multiple Users-Projects on One Computer

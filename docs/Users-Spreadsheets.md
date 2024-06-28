@@ -133,7 +133,7 @@ CSV file Sheet.csv contains:
 User,spreadsheetId,JSON
 user@domain.com,1MOq6umgWSM7NF8-CQ-Aj3_n1DIu_GvyCcuLxxxxxx,'[{"range": "Sheet1!A1:C1", "values": [["1", "2", "3"]], "majorDimension": "ROWS"}, {"range": "Sheet1!A3:C3", "values": [["10/01/2017 10:30:00", true, "6"]], "majorDimension": "ROWS"}]'
 
-gam csv Sheet.csv quotechar "'" gam user ~User update sheetranges ~spreadsheetId json ~JSON userentered includevaluesinresponse
+gam csv Sheet.csv quotechar "'" gam user "~User" update sheetranges "~spreadsheetId" json "~JSON" userentered includevaluesinresponse
 ```
 ## Create spreadsheets
 ```

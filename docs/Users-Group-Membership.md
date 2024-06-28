@@ -81,7 +81,7 @@ $ gam csvkmd users UserGroupRole.csv keyfield User print groups
 User,Group,Role,Status,Delivery
 
 # Add users to groups
-$ gam redirect stdout - multiprocess csv UserGroupRole.csv gam user ~User add group ~Role ~Delivery ~Group
+$ gam redirect stdout - multiprocess csv UserGroupRole.csv gam user "~User" add group "~Role" "~Delivery" "~Group"
 Using 5 processes...
 User: testuser1@domain.com, Add to 1 Group
   Group: testgroup1@domain.com, Owner: testuser1@domain.com, Added
@@ -249,7 +249,7 @@ testuser2@domain.com,testgroup2@domain.com,MANAGER,ACTIVE,DAILY
 testuser3@domain.com,testgroup2@domain.com,OWNER,ACTIVE,DIGEST
 
 # Update roles/delivery settings
-$ gam redirect stdout - multiprocess csv UserGroupRoleNew.csv gam user ~User update group ~Role ~Delivery ~Group
+$ gam redirect stdout - multiprocess csv UserGroupRoleNew.csv gam user "~User" update group "~Role" "~Delivery" "~Group"
 Using 3 processes...
 User: testuser2@domain.com, Update to 1 Group
   Group: testgroup2@domain.com, Manager: testuser2@domain.com, Updated
@@ -357,7 +357,7 @@ testuser3@domain.com,testgroup1@domain.com,MEMBER,ACTIVE,ALL_MAIL
 testuser3@domain.com,testgroup2@domain.com,OWNER,ACTIVE,ALL_MAIL
 
 # Update roles/delivery settings
-$ gam redirect stdout - multiprocess csv UserGroupRole.csv gam user ~User update group ~Role ~Delivery ~Group
+$ gam redirect stdout - multiprocess csv UserGroupRole.csv gam user "~User" update group "~Role" "~Delivery" "~Group"
 Using 5 processes...
 User: testuser2@domain.com, Update to 1 Group
   Group: testgroup1@domain.com, Member: testuser2@domain.com, Updated

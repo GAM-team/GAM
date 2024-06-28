@@ -87,3 +87,8 @@ Show forwarding addresses for all users with forwarding on.
 gam config auto_batch_min 1 num_threads 5 redirect csv ./FowardEnabledUsers.csv multiprocess redirect stdout - multiprocess redirect stderr stdout all users print forward enabledonly
 gam redirect csv ./FowardEnabledUsersForwardingAddresses.csv multiprocess redirect stdout - multiprocess redirect stderr stdout csv ./FowardEnabledUsers.csv gam user "~User" print forwardingaddresses
 ```
+
+Show forwarding addresses that are not your domain for all users with forwarding on.
+```
+gam config csv_output_row_drop_filter "forwardTo:regex:yourdomain.com" auto_batch_min 1 num_threads 20 redirect csv ./NonDomainForwards.csv multiprocess redirect stdout - multiprocess redirect stderr stdout all users print forward enabledonly
+```

@@ -384,7 +384,7 @@ Getting Group Settings for testgroup4@domain.com (4/4)
 ```
 Perform your experiments and then restore the original settings.
 ```
-$ gam csv ./groups.csv quotechar "'" gam update group ~email json ~JSON-settings
+$ gam csv ./groups.csv quotechar "'" gam update group "~email" json "~JSON-settings"
 Using 4 processes...
 Group: testgroup1@domain.com, Updated
 Group: testgroup2@domain.com, Updated

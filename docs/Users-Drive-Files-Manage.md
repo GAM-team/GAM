@@ -284,7 +284,7 @@ mary@domain.com, Mary Smith
 
 # Create the student folders on the Shared Drive
 gam redirect csv ./StudentFolders.csv multiprocess csv Students.csv gam user admin@domain.com create drivefile mimetype gfolder drivefilename "~~Name~~ Digital Portfolio" parentid <TeamDriveID> csv addcsvdata primaryEmail "~primaryEmail"
-# Add ACLs granting the students write access to their folders; ~User refers to admin@domain.com
+# Add ACLs granting the students write access to their folders; "~User" refers to admin@domain.com
 gam csv StudentFolders.csv gam user "~User" add drivefileacl "~id" user "~primaryEmail" role fileorganizer
 # Add a shortcut to the folder on the student's My Drive
 gam csv StudentFolders.csv gam user "~primaryEmail" create drivefileshortcut "~id" parentid root
@@ -618,7 +618,7 @@ Suppose you have a Google Sheets file UserSheet with multiple sheets, one of whi
 
 The following command will download the sheet and show the name for each user in the column.
 ```
-gam user user@domain.com get drivefile drivefilename UserSheet csvsheet NewUsers targetname - | gam redirect stdout - multiprocess csv - gam info user ~primaryEmail name nogroups nolicenses
+gam user user@domain.com get drivefile drivefilename UserSheet csvsheet NewUsers targetname - | gam redirect stdout - multiprocess csv - gam info user "~primaryEmail" name nogroups nolicenses
 ```
 * The `redirect stdout - multiprocess` option produces clean output from the multiple processes
 

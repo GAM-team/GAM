@@ -69,7 +69,7 @@ gam redirect stdout ./Invites.out redirect stderr stdout csvkmd users CourseStud
 ```
 This command will invite all students to their courses in parallel
 ```
-gam redirect stdout ./Invites.out multiprocess redirect stderr stdout multiprocess csv CourseStudent.csv gam user ~Student create classroominvitation role student course ~Course
+gam redirect stdout ./Invites.out multiprocess redirect stderr stdout multiprocess csv CourseStudent.csv gam user "~Student" create classroominvitation role student course "~Course"
 ```
 ## Accept classroom invitations by user
 Accept classroom invitations for users.
