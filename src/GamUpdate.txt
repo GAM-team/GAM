@@ -13,6 +13,11 @@ where `date` is the earliest date for which report data was requested.
 
 Merged GAM-Team version
 
+6.77.04
+
+Fixed bug in `gam report users ... range <Date> <Date>` where an extraneous API call
+was made if a date was reached where no API data was available.
+
 6.77.03
 
 Thanks to jay, added the following Colab License SKUs:

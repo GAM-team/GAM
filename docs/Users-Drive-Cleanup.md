@@ -39,7 +39,7 @@ gam <UserTypeEntity> delete emptydrivefolders
         [<SharedDriveEntity>]
         [pathdelimiter <Character>]
 ```
-By default, empty folders on My Drive are deleted. Use `select <DriveFileEntity>`
+By default, empty folders on My Drive are deleted(purged). Use `select <DriveFileEntity>`
 to select a Shared Drive or an alternate starting point folder on My Drive or a Shared Drive.
 
 By default, folder path components are separated by `/`; use `pathdelimiter <Character>` to use `<Character>` as the separator.

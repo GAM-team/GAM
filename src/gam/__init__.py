@@ -13833,6 +13833,8 @@ def doReport():
           if not status:
             break
         except GAPI.invalid as e:
+          if userCustomerRange:
+            break
           numDateChanges += 1
           tryDate = _adjustTryDate(str(e), numDateChanges, limitDateChanges, tryDate)
           if not tryDate:
@@ -13915,6 +13917,8 @@ def doReport():
         if not status:
           break
       except GAPI.invalid as e:
+        if userCustomerRange:
+          break
         numDateChanges += 1
         tryDate = _adjustTryDate(str(e), numDateChanges, limitDateChanges, tryDate)
         if not tryDate:

@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.77.04
+
+Fixed bug in `gam report users ... range <Date> <Date>` where an extraneous API call
+was made if a date was reached where no API data was available.
+
 ### 6.77.03
 
 Thanks to jay, added the following Colab License SKUs:
