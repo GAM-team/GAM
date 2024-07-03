@@ -12,7 +12,7 @@ See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Win
 
 ### 6.77.05
 
-Added option `onlyusers <UserTypeEntity>` to gam <UserTypeEntity> claim ownership <DriveFileEntity>`
+Added option `onlyusers <UserTypeEntity>` to `gam <UserTypeEntity> claim ownership <DriveFileEntity>`
 that causes GAM to only claim ownership of files/folders owned by `onlyusers <UserTypeEntity>`.
 This option is multually exclusive with `skipusers <UserTypeEntity>`.
 
