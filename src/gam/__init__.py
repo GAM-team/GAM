@@ -60805,7 +60805,7 @@ def transferOwnership(users):
 
 # gam <UserTypeEntity> claim ownership <DriveFileEntity>
 #	[<DriveFileParentAttribute>] [includetrashed]
-#	[skipids <DriveFileEntity>] [skipusers <UserTypeEntity>] [subdomains <DomainNameEntity>]
+#	[skipids <DriveFileEntity>] [onlyUsers|skipusers <UserTypeEntity>] [subdomains <DomainNameEntity>]
 #	[restricted [<Boolean>]] [writerscanshare|writerscantshare [<Boolean>]]
 #	[keepuser | (retainrole reader|commenter|writer|editor|none)] [noretentionmessages]
 #	(orderby <DriveFileOrderByFieldName> [ascending|descending])*
@@ -60822,7 +60822,7 @@ def claimOwnership(users):
         childEntryInfo = childEntry['info']
         if includeTrashed or not childEntryInfo['trashed']:
           owner = childEntryInfo['owners'][0]['emailAddress']
-          if not childEntryInfo['ownedByMe'] and owner not in skipusers:
+          if (not childEntryInfo['ownedByMe']) and ((not checkOwner) or (checkOnly and owner in onlyOwners) or (checkSkip and owner not in skipOwners)):
             oldOwnerPermissionIds[owner] = childEntryInfo['owners'][0]['permissionId']
             filesToClaim.setdefault(owner, {})
             if childFileId not in filesToClaim[owner]:
@@ -60850,7 +60850,7 @@ def claimOwnership(users):
         if filepath:
           fileTree[childFileId] = {'info': childEntryInfo}
         owner = childEntryInfo['owners'][0]['emailAddress']
-        if not childEntryInfo['ownedByMe'] and owner not in skipusers:
+        if (not childEntryInfo['ownedByMe']) and ((not checkOwner) or (checkOnly and owner in onlyOwners) or (checkSkip and owner not in skipOwners)):
           oldOwnerPermissionIds[owner] = childEntryInfo['owners'][0]['permissionId']
           filesToClaim.setdefault(owner, {})
           if childFileId not in filesToClaim[owner]:
@@ -60885,7 +60885,9 @@ def claimOwnership(users):
   skipFileIdEntity = initDriveFileEntity()
   OBY = OrderBy(DRIVEFILE_ORDERBY_CHOICE_MAP)
   body = {}
-  skipusers = []
+  checkOnly = checkSkip = False
+  onlyOwners = set()
+  skipOwners = set()
   subdomains = []
   filepath = includeTrashed = False
   pathDelimiter = '/'
@@ -60908,8 +60910,14 @@ def claimOwnership(users):
       showRetentionMessages = False
     elif myarg == 'skipids':
       skipFileIdEntity = getDriveFileEntity()
+    elif myarg == 'onlyusers':
+      _, userList = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
+      checkOnly = True
+      onlyOwners = set(userList)
     elif myarg == 'skipusers':
-      _, skipusers = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
+      _, userList = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
+      checkSkip = len(userList) > 0
+      skipOwners = set(userList)
     elif myarg == 'subdomains':
       subdomains = getEntityList(Cmd.OB_DOMAIN_NAME_ENTITY)
     elif myarg == 'includetrashed':
@@ -60936,6 +60944,9 @@ def claimOwnership(users):
       changeParents = True
     else:
       unknownArgumentExit()
+  if checkOnly and checkSkip:
+    usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('onlyusers', 'skipusers'))
+  checkOwner = checkOnly or checkSkip
   Act.Set(Act.CLAIM_OWNERSHIP)
   if csvPF:
     if filepath:
@@ -61020,7 +61031,7 @@ def claimOwnership(users):
       filesTransferred.add(fileId)
       if fileId not in skipFileIdEntity['list'] and (includeTrashed or not fileEntryInfo['trashed']):
         owner = fileEntryInfo['owners'][0]['emailAddress']
-        if not fileEntryInfo['ownedByMe'] and owner not in skipusers:
+        if (not fileEntryInfo['ownedByMe']) and ((not checkOwner) or (checkOnly and owner in onlyOwners) or (checkSkip and owner not in skipOwners)):
           oldOwnerPermissionIds[owner] = fileEntryInfo['owners'][0]['permissionId']
           filesToClaim.setdefault(owner, {})
           if fileId not in filesToClaim[owner]:

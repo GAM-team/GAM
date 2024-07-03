@@ -92,7 +92,7 @@ point to control the students further access to the files.
 ```
 gam <UserTypeEntity> claim ownership <DriveFileEntity>
         [<DriveFileParentAttribute>] [includetrashed]
-        [skipids <DriveFileEntity>] [skipusers <UserTypeEntity>] [subdomains <DomainNameEntity>]
+        [skipids <DriveFileEntity>] [onlyusers|skipusers <UserTypeEntity>] [subdomains <DomainNameEntity>]
         [restricted [<Boolean>]] [writerscanshare|writerscantshare [<Boolean>]]
         [keepuser | (retainrole reader|commenter|writer|editor|none)] [noretentionmessages]
         (orderby <DriveOrderByFieldName> [ascending|descending])*
@@ -107,8 +107,11 @@ By default, files in the trash are not transferred.
 Specify order of file processing.
 * `(orderby <DriveOrderByFieldName> [ascending|descending])*`
 
-These options handle special cases where you want to prevent ownership from being transferred for selected files/folders.
+This option handles special cases where you want to prevent ownership from being transferred for selected files/folders.
 * `skipids <DriveFileEntity>` - Do not transfer ownership for files/folders with the specified IDs.
+
+These mutually exclusive  options handle special cases where you want to prevent ownership from being transferred based on the current file/folder owner.
+* `onlyusers <UserTypeEntity>` - Only transfer ownership for files/folders owned by the specified users.
 * `skipusers <UserTypeEntity>` - Do not transfer ownership for files/folders owned by the specified users.
 
 By default, only files owned by users in the same domain as the claiming user have their ownership transferred.

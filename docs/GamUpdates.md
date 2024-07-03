@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.77.05
+
+Added option `onlyusers <UserTypeEntity>` to gam <UserTypeEntity> claim ownership <DriveFileEntity>`
+that causes GAM to only claim ownership of files/folders owned by `onlyusers <UserTypeEntity>`.
+This option is multually exclusive with `skipusers <UserTypeEntity>`.
+
 ### 6.77.04
 
 Fixed bug in `gam report users ... range <Date> <Date>` where an extraneous API call

@@ -6696,7 +6696,7 @@ gam <UserTypeEntity> transfer ownership <DriveFileEntity> <UserItem>
         [todrive <ToDriveAttribute>*]
 gam <UserTypeEntity> claim ownership <DriveFileEntity>
         [<DriveFileParentAttribute>] [includetrashed]
-        [skipids <DriveFileEntity>] [skipusers <UserTypeEntity>] [subdomains <DomainNameEntity>]
+        [skipids <DriveFileEntity>] [onlyusers|skipusers <UserTypeEntity>] [subdomains <DomainNameEntity>]
         [restricted [<Boolean>]] [writerscanshare|writerscantshare [<Boolean>]]
         [keepuser | (retainrole commenter|reader|writer|editor|fileorganizer|none)] [noretentionmessages]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
