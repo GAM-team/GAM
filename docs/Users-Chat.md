@@ -78,6 +78,8 @@ Getting all Chat Spaces that match query (customer = "customers/my_customer" AND
 Chat Admin: admin@domain.com(asadmin), Show Failed: Method not found.
 ```
 
+To enroll in the Developer Preview program, see: https://developers.google.com/workspace/preview
+
 Google requires that you have a Chat Bot configured in order to use the Chat API; set up a Chat Bot as described in the next section.
 
 ## Set up a Chat Bot

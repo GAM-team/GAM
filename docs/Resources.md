@@ -452,7 +452,7 @@ gam show resources
         [formatjson]
 ```
 Optional data may be displayed for the resource:
-* `acls` - Display the resource calendar ACLs
+* `acls` - Display the resource calendar ACLs. This adds Scope and Role values.
 * `calendar` - Display the resource calendar settings
 
 Option `noselfowner` suppresses the display of ACLs that reference the calendar itself as its owner.
@@ -467,7 +467,7 @@ gam print resources [todrive <ToDriveAttribute>*]
         [formatjson [quotechar <Character>]]
 ```
 Optional data may be displayed for the resource:
-* `acls` - Display the resource calendar ACLs
+* `acls` - Display the resource calendar ACLs. This adds columns: id, role, scope.type, scope.value
 * `calendar` - Display the resource calendar settings
 
 Option `noselfowner` suppresses the display of ACLs that reference the calendar itself as its owner.

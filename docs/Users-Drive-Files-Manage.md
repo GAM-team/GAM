@@ -544,6 +544,7 @@ gam <UserTypeEntity> get drivefile <DriveFileEntity> [revision <DriveFileRevisio
         [(format <FileFormatList>)|(gsheet|csvsheet <SheetEntity>)] [exportsheetaspdf <String>]
         [targetfolder <FilePath>] [targetname <FileName>|-]
         [donotfollowshortcuts [<Boolean>]] [overwrite [<Boolean>]] [showprogress [<Boolean>]]
+        [acknowledgeabuse [<Boolean>]]
 ```
 By default, Google Docs/Sheets/Slides are converted to Open Office format when downloaded. If you want a
 different format for these files or are downloading a different type of file, you must specify the format.
@@ -613,6 +614,16 @@ When getting a drivefile, you can show download progress information with the `s
 * `showprogress true` - Show download progress information
 * `showprogress false` - Do not show download progress information
 
+You may get the following error from Google when trying to download a file:
+```
+Download Failed: This file has been identified as malware or spam and cannot be downloaded.
+```
+Use the `acknowledgeabuse` option to control downloading the file.
+* `acknowledgeabuse` - Download the file
+* `acknowledgeabuse true` - Download the file
+* `acknowledgeabuse false` - Do not download the file; this is the default
+
+Whether the user is acknowledging the risk of downloading known malware or other abusive files.
 ### Example: Download a CSV file and execute a Gam command on its contents
 Suppose you have a Google Sheets file UserSheet with multiple sheets, one of which is named NewUsers; it has a column labelled primaryEmail.
 
