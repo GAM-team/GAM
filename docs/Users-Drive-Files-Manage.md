@@ -619,11 +619,10 @@ You may get the following error from Google when trying to download a file:
 Download Failed: This file has been identified as malware or spam and cannot be downloaded.
 ```
 Use the `acknowledgeabuse` option to control downloading the file.
-* `acknowledgeabuse` - Download the file
-* `acknowledgeabuse true` - Download the file
+* `acknowledgeabuse` - Download the file; `the user is acknowledging the risk of downloading known malware or other abusive files`
+* `acknowledgeabuse true` - Download the file; `the user is acknowledging the risk of downloading known malware or other abusive files`
 * `acknowledgeabuse false` - Do not download the file; this is the default
 
-Whether the user is acknowledging the risk of downloading known malware or other abusive files.
 ### Example: Download a CSV file and execute a Gam command on its contents
 Suppose you have a Google Sheets file UserSheet with multiple sheets, one of which is named NewUsers; it has a column labelled primaryEmail.
 
