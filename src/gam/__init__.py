@@ -25742,6 +25742,12 @@ def _getChatMemberEmail(cd, member):
 #	(group <GroupItem>)* (groups <GroupEntity>)*
 #	[formatjson|returnidonly]
 def createChatMember(users):
+  def normalizeUserMember(user):
+    userList.append(convertEmailAddressToUID(user, cd, emailType='user'))
+
+  def normalizeGroupMember(group):
+    groupList.append(convertEmailAddressToUID(group, cd, emailType='group'))
+
   def addMembers(members, field, entityType, i, count):
     jcount = len(members)
     entityPerformActionNumItems(kvList, jcount, entityType, i, count)
@@ -25791,14 +25797,16 @@ def createChatMember(users):
     if myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
       parent = getChatSpace(myarg)
     elif myarg == 'user':
-      userList.append(getEmailAddress(returnUIDprefix='uid:'))
+      normalizeUserMember(getEmailAddress(returnUIDprefix='uid:'))
     elif myarg in {'member', 'members'}:
       _, members = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
-      userList.extend(members)
+      for user in members:
+        normalizeUserMember(user)
     elif myarg == 'group':
-      groupList.append(getEmailAddress(returnUIDprefix='uid:'))
+      normalizeGroupMember(getEmailAddress(returnUIDprefix='uid:'))
     elif myarg == 'groups':
-      groupList.extend(getEntityList(Cmd.OB_GROUP_ENTITY))
+      for group in getEntityList(Cmd.OB_GROUP_ENTITY):
+        normalizeGroupMember(group)
     elif myarg == 'role':
       role = getChoice(CHAT_MEMBER_ROLE_MAP, mapChoice=True)
     elif myarg == 'type':
@@ -25814,12 +25822,10 @@ def createChatMember(users):
   userEntityType = Ent.CHAT_MEMBER_USER if role == 'ROLE_MEMBER' else Ent.CHAT_MANAGER_USER
   userMembers = []
   for user in userList:
-    name = normalizeEmailAddressOrUID(user)
-    userMembers.append({'member': {'name': f'users/{name}', 'type': mtype}})
+    userMembers.append({'member': {'name': f'users/{user}', 'type': mtype}})
   groupMembers = []
   for group in groupList:
-    name = normalizeEmailAddressOrUID(group)
-    groupMembers.append({'groupMember': {'name': f'groups/{name}'}})
+    groupMembers.append({'groupMember': {'name': f'groups/{group}'}})
   i, count, users = getEntityArgument(users)
   if useAdminAccess:
     _chkChatAdminAccess(count)
