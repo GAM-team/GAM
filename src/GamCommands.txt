@@ -6462,6 +6462,7 @@ gam <UserTypeEntity> get drivefile <DriveFileEntity> [revision <DriveFileRevisio
         [(format <FileFormatList>)|(gsheet|csvsheet <SheetEntity>)] [exportsheetaspdf <String>]
         [targetfolder <FilePath>] [targetname <FileName>|-]
         [donotfollowshortcuts [<Boolean>]] [overwrite [<Boolean>]] [showprogress [<Boolean>]]
+        [acknowledgeabuse [<Boolean>]]
 
 gam <UserTypeEntity> delete drivefile <DriveFileEntity> [purge|untrash|trash]
 gam <UserTypeEntity> purge drivefile <DriveFileEntity>

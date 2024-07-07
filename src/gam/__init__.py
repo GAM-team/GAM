@@ -17213,13 +17213,15 @@ def _doUpdateOrgs(entityList):
       try:
         callGAPI(cd.orgunits(), 'update',
                  throwReasons=[GAPI.INVALID_ORGUNIT, GAPI.ORGUNIT_NOT_FOUND, GAPI.BACKEND_ERROR, GAPI.INVALID_ORGUNIT_NAME,
-                               GAPI.BAD_REQUEST, GAPI.INVALID_CUSTOMER_ID, GAPI.LOGIN_REQUIRED],
+                               GAPI.CONDITION_NOT_MET, GAPI.BAD_REQUEST, GAPI.INVALID_CUSTOMER_ID, GAPI.LOGIN_REQUIRED],
                  customerId=GC.Values[GC.CUSTOMER_ID], orgUnitPath=encodeOrgUnitPath(makeOrgUnitPathRelative(orgUnitPath)), body=body, fields='')
         entityActionPerformed([Ent.ORGANIZATIONAL_UNIT, orgUnitPath], i, count)
       except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError):
         entityActionFailedWarning([Ent.ORGANIZATIONAL_UNIT, orgUnitPath], Msg.DOES_NOT_EXIST, i, count)
       except GAPI.invalidOrgunitName as e:
         entityActionFailedWarning([Ent.ORGANIZATIONAL_UNIT, orgUnitPath, Ent.NAME, body['name']], str(e), i, count)
+      except GAPI.conditionNotMet as e:
+        entityActionFailedWarning([Ent.ORGANIZATIONAL_UNIT, orgUnitPath], str(e), i, count)
       except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
         checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, orgUnitPath)
 
@@ -59160,6 +59162,7 @@ HTTP_ERROR_PATTERN = re.compile(r'^.*returned "(.*)">$')
 #	[(format <FileFormatList>)|(gsheet|csvsheet <SheetEntity>)] [exportsheetaspdf <String>]
 #	[targetfolder <FilePath>] [targetname -|<FileName>]
 #	[donotfollowshortcuts [<Boolean>]] [overwrite [<Boolean>]] [showprogress [<Boolean>]]
+#	[acknowledgeabuse [<Boolean>]]
 def getDriveFile(users):
   def closeRemoveTargetFile(f):
     if f and not targetStdout:

@@ -2,6 +2,14 @@
 
 Merged GAM-Team version
 
+6.77.06
+
+Updated `gam update ou <OrgUnitItem> ... parent <OrgUnitItem>` to handle the following error
+that occurs when `parent <OrgUnitItem>` is the same as or a sub-OU of `ou <OrgUnitItem>`.
+```
+ERROR: 412: conditionNotMet - OrgUnit hierarchy has cycle
+```
+
 6.77.05
 
 Added option `onlyusers <UserTypeEntity>` to `gam <UserTypeEntity> claim ownership <DriveFileEntity>`
