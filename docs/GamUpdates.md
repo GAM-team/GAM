@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.77.08
+
+Fixed bugs in `gam <UserTypeEntity> delete chatmember <ChatSpace> ... group <GroupItem>`
+and `gam <UserTypeEntity> delete chatmember <ChatSpace> ... groups <GroupEntity>` that caused an error.
+
 ### 6.77.07
 
 Fixed bug in `gam <UserTypeEntity> create chatmember <ChatSpace> ... group <GroupItem>` that caused an error.

@@ -25731,6 +25731,12 @@ def _getChatMemberEmail(cd, member):
     _, memberUid = member['groupMember']['name'].split('/')
     member['groupMember']['email'], _ = convertUIDtoEmailAddressWithType(f'uid:{memberUid}', cd, None, emailTypes=['group'])
 
+def normalizeUserMember(cd, user, userList):
+  userList.append(convertEmailAddressToUID(user, cd, emailType='user'))
+
+def normalizeGroupMember(cd, group, groupList):
+  groupList.append(convertEmailAddressToUID(group, cd, emailType='group'))
+
 # gam <UserTypeEntity> create chatmember <ChatSpace>
 #	[type human|bot] [role member|manager]
 #	(user <UserItem>)* (members <UserTypeEntity>)*
@@ -25742,12 +25748,6 @@ def _getChatMemberEmail(cd, member):
 #	(group <GroupItem>)* (groups <GroupEntity>)*
 #	[formatjson|returnidonly]
 def createChatMember(users):
-  def normalizeUserMember(user):
-    userList.append(convertEmailAddressToUID(user, cd, emailType='user'))
-
-  def normalizeGroupMember(group):
-    groupList.append(convertEmailAddressToUID(group, cd, emailType='group'))
-
   def addMembers(members, field, entityType, i, count):
     jcount = len(members)
     entityPerformActionNumItems(kvList, jcount, entityType, i, count)
@@ -25797,16 +25797,16 @@ def createChatMember(users):
     if myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
       parent = getChatSpace(myarg)
     elif myarg == 'user':
-      normalizeUserMember(getEmailAddress(returnUIDprefix='uid:'))
+      normalizeUserMember(cd, getEmailAddress(returnUIDprefix='uid:'), userList)
     elif myarg in {'member', 'members'}:
       _, members = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
       for user in members:
-        normalizeUserMember(user)
+        normalizeUserMember(cd, user, userList)
     elif myarg == 'group':
-      normalizeGroupMember(getEmailAddress(returnUIDprefix='uid:'))
+      normalizeGroupMember(cd, getEmailAddress(returnUIDprefix='uid:'), groupList)
     elif myarg == 'groups':
       for group in getEntityList(Cmd.OB_GROUP_ENTITY):
-        normalizeGroupMember(group)
+        normalizeGroupMember(cd, group, groupList)
     elif myarg == 'role':
       role = getChoice(CHAT_MEMBER_ROLE_MAP, mapChoice=True)
     elif myarg == 'type':
@@ -25887,7 +25887,8 @@ def deleteUpdateChatMember(users):
   parent = None
   body = {}
   memberNames = []
-  userGroupList = []
+  userList = []
+  groupList = []
   useAdminAccess, api, kwargsUAA = _getChatAdminAccess(API.CHAT_MEMBERSHIPS_ADMIN, API.CHAT_MEMBERSHIPS)
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -25903,14 +25904,16 @@ def deleteUpdateChatMember(users):
       if myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
         parent = getChatSpace(myarg)
       elif myarg == 'user':
-        userGroupList.append(getEmailAddress(returnUIDprefix='uid:'))
+        normalizeUserMember(cd, getEmailAddress(returnUIDprefix='uid:'), userList)
       elif myarg in {'member', 'members'}:
         _, members = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
-        userGroupList.extend(members)
+        for user in members:
+          normalizeUserMember(cd, user, userList)
       elif deleteMode and myarg == 'group':
-        userGroupList.append(getEmailAddress(returnUIDprefix='uid:'))
+        normalizeGroupMember(cd, getEmailAddress(returnUIDprefix='uid:'), groupList)
       elif deleteMode and myarg == 'groups':
-        userGroupList.extend(getEntityList(Cmd.OB_GROUP_ENTITY))
+        for group in getEntityList(Cmd.OB_GROUP_ENTITY):
+          normalizeGroupMember(cd, group, groupList)
       else:
         unknownArgumentExit()
   if not deleteMode and 'role' not in body:
@@ -25921,11 +25924,12 @@ def deleteUpdateChatMember(users):
   else: # {Act.DELETE, Act.UPDATE}
     if not parent:
       missingArgumentExit('space')
-    if not userGroupList:
+    if not userList and not groupList:
       missingArgumentExit('user|members|group|groups')
-    for user in userGroupList:
-      name = normalizeEmailAddressOrUID(user)
-      memberNames.append(f'{parent}/members/{name}')
+    for user in userList:
+      memberNames.append(f'{parent}/members/{user}')
+    for group in groupList:
+      memberNames.append(f'{parent}/members/group-{group}')
   i, count, users = getEntityArgument(users)
   if useAdminAccess:
     _chkChatAdminAccess(count)
@@ -26030,6 +26034,7 @@ def syncChatMembers(users):
   role = CHAT_MEMBER_ROLE_MAP['member']
   mtype = CHAT_MEMBER_TYPE_MAP['human']
   syncOperation = 'addremove'
+  kwargs = {}
   preview = False
   csvPF = None
   userList = []
@@ -26051,14 +26056,17 @@ def syncChatMembers(users):
     elif myarg == 'actioncsv':
       csvPF = CSVPrintFile(CHAT_SYNC_PREVIEW_TITLES)
     elif myarg == 'users':
-      userList.extend(getEntityList(Cmd.OB_USER_ENTITY))
+      for user in getEntityList(Cmd.OB_USER_ENTITY):
+        normalizeUserMember(cd, user, userList)
       usersSpecified = True
     elif myarg in {'member', 'members'}:
       _, members = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
-      userList.extend(members)
+      for user in members:
+        normalizeUserMember(cd, user, userList)
       usersSpecified = True
     elif myarg == 'groups':
-      groupList.extend(getEntityList(Cmd.OB_GROUP_ENTITY))
+      for group in getEntityList(Cmd.OB_GROUP_ENTITY):
+        normalizeGroupMember(cd, group, groupList)
       groupsSpecified = True
     else:
       unknownArgumentExit()
@@ -26068,20 +26076,19 @@ def syncChatMembers(users):
   userMembers = {}
   syncUsersSet = set()
   for user in userList:
-    name = normalizeEmailAddressOrUID(user)
-    memberName = f'{parent}/members/{name}'
-    userMembers[memberName] = {'member': {'name': f'users/{name}', 'type': mtype}}
+    memberName = f'{parent}/members/{user}'
+    userMembers[memberName] = {'member': {'name': f'users/{user}', 'type': mtype}}
     syncUsersSet.add(memberName)
   groupMembers = {}
   syncGroupsSet = set()
   for group in groupList:
-    name = normalizeEmailAddressOrUID(group)
-    memberName = f'{parent}/members/{name}'
-    groupMembers[memberName] = {'groupMember': {'name': f'groups/{name}'}}
+    memberName = f'{parent}/members/group-{group}'
+    groupMembers[memberName] = {'groupMember': {'name': f'groups/{group}'}}
     syncGroupsSet.add(memberName)
   qfilter = f'{Ent.Singular(Ent.CHAT_SPACE)}: {parent}'
   i, count, users = getEntityArgument(users)
   if useAdminAccess:
+    kwargs['filter'] = 'member.type != "BOT"'
     _chkChatAdminAccess(count)
   for user in users:
     i += 1
@@ -26094,15 +26101,13 @@ def syncChatMembers(users):
       members = callGAPIpages(chat.spaces().members(), 'list', 'memberships',
                               pageMessage=_getChatPageMessage(Ent.CHAT_MEMBER, user, i, count, qfilter),
                               throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                              pageSize=CHAT_PAGE_SIZE, parent=parent, showGroups=groupsSpecified, **kwargsUAA)
+                              parent=parent, showGroups=groupsSpecified, pageSize=CHAT_PAGE_SIZE, **kwargs, **kwargsUAA)
       for member in members:
         if 'member' in member:
           if member['member']['type'] == mtype and member['role'] == role:
-            _getChatMemberEmail(cd, member)
-            currentUsersSet.add(f"{parent}/members/{member['member']['email']}")
+            currentUsersSet.add(member['name'])
         elif 'groupMember' in member:
-          _getChatMemberEmail(cd, member)
-          currentGroupsSet.add(f"{parent}/members/{member['groupMember']['email']}")
+          currentGroupsSet.add(member['name'])
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
       continue
