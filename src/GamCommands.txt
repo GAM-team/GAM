@@ -8181,11 +8181,18 @@ gam <UserTypeEntity> show sheetrange <DriveFileEntity>
 gam <UserTypeEntity> delete tokens clientid <ClientID>
 
 gam <UserTypeEntity> print tokens|token [todrive <ToDriveAttribute>*] [clientid <ClientID>]
-        [aggregateby|orderby clientid|id|appname|displaytext] [delimiter <Character>]
+        [usertokencounts|(aggregateusersby|orderby clientid|id|appname|displaytext)]
+        [delimiter <Character>]
 gam <UserTypeEntity> show tokens|token|3lo|oauth [clientid <ClientID>]
-        [aggregateby|orderby clientid|id|appname|displaytext]
+        [usertokencounts|(aggregateusersby|orderby clientid|id|appname|displaytext)]
+        [delimiter <Character>]
 gam print tokens|token [todrive <ToDriveAttribute>*] [clientid <ClientID>]
-        [aggregateby|orderby clientid|id|appname|displaytext] [delimiter <Character>]
+        [usertokencounts|(aggregateusersby|orderby clientid|id|appname|displaytext)]
+        [delimiter <Character>]
+        [<UserTypeEntity>]
+gam show tokens|token [clientid <ClientID>]
+        [usertokencounts|(aggregateusersby|orderby clientid|id|appname|displaytext)]
+        [delimiter <Character>]
         [<UserTypeEntity>]
 
 # Users - YouTube

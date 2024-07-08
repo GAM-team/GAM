@@ -66434,7 +66434,7 @@ def deleteTokens(users):
 
 TOKENS_FIELDS_TITLES = ['clientId', 'displayText', 'anonymous', 'nativeApp', 'userKey', 'scopes']
 TOKENS_AGGREGATE_FIELDS_TITLES = ['clientId', 'displayText', 'anonymous', 'nativeApp', 'users', 'scopes']
-TOKENS_ORDERBY_CHOICE_MAP = {
+TOKENS_AGGREGATE_ORDERBY_CHOICE_MAP = {
   'clientid': 'clientId',
   'id': 'clientId',
   'displaytext': 'displayText',
@@ -66443,6 +66443,7 @@ TOKENS_ORDERBY_CHOICE_MAP = {
 TOKENS_TITLE_MAP = {
   'clientId': 'Client ID',
   'displayText': 'App Name',
+  'user': 'user',
   }
 
 def _printShowTokens(entityType, users):
@@ -66484,11 +66485,13 @@ def _printShowTokens(entityType, users):
     elif myarg == 'clientid':
       clientId = commonClientIds(getString(Cmd.OB_CLIENT_ID))
     elif myarg == 'orderby':
-      orderBy = getChoice(TOKENS_ORDERBY_CHOICE_MAP, mapChoice=True)
+      orderBy = getChoice(TOKENS_AGGREGATE_ORDERBY_CHOICE_MAP, mapChoice=True)
     elif myarg == 'aggregateusersby':
-      aggregateUsersBy = getChoice(TOKENS_ORDERBY_CHOICE_MAP, mapChoice=True)
+      aggregateUsersBy = getChoice(TOKENS_AGGREGATE_ORDERBY_CHOICE_MAP, mapChoice=True)
       if aggregateUsersBy == 'displayText':
         tokenNameIdMap = {}
+    elif myarg == 'usertokencounts':
+      aggregateUsersBy = 'user'
     elif myarg == 'delimiter':
       delimiter = getCharacter()
     elif not entityType:
@@ -66501,8 +66504,10 @@ def _printShowTokens(entityType, users):
   if csvPF:
     if not aggregateUsersBy:
       csvPF.SetTitles(['user']+TOKENS_FIELDS_TITLES)
-    else:
+    elif aggregateUsersBy != 'user':
       csvPF.SetTitles(TOKENS_AGGREGATE_FIELDS_TITLES)
+    else:
+      csvPF.SetTitles(['user', 'tokenCount'])
   else:
     if not aggregateUsersBy:
       tokenTitle = TOKENS_TITLE_MAP[orderBy]
@@ -66527,8 +66532,8 @@ def _printShowTokens(entityType, users):
                                 throwReasons=[GAPI.USER_NOT_FOUND, GAPI.DOMAIN_NOT_FOUND,
                                               GAPI.DOMAIN_CANNOT_USE_APIS, GAPI.FORBIDDEN, GAPI.BAD_REQUEST],
                                 userKey=user, fields=f'items({fields})')
+      jcount = len(results)
       if not aggregateUsersBy:
-        jcount = len(results)
         if not csvPF:
           entityPerformActionNumItems([Ent.USER, user], jcount, Ent.ACCESS_TOKEN, i, count)
           Ind.Increment()
@@ -66547,7 +66552,7 @@ def _printShowTokens(entityType, users):
               csvPF.WriteRow(row)
           elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
             csvPF.WriteRowNoFilter({'user': user})
-      else:
+      elif aggregateUsersBy != 'user':
         if results:
           for token in results:
             tokcid = token['clientId']
@@ -66561,6 +66566,8 @@ def _printShowTokens(entityType, users):
               if tokname not in tokenNameIdMap:
                 tokenNameIdMap[tokname] = set()
               tokenNameIdMap[tokname].add(tokcid)
+      else: # aggregateUsersBy == 'user':
+        aggregateTokensById[user] = jcount
     except (GAPI.notFound, GAPI.resourceNotFound) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.ACCESS_TOKEN, clientId], str(e), i, count)
     except (GAPI.userNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden, GAPI.badRequest):
@@ -66593,6 +66600,16 @@ def _printShowTokens(entityType, users):
       for _, tokenIds in sorted(iter(tokenNameIdMap.items())):
         for tokcid in sorted(tokenIds):
           _printToken(aggregateTokensById[tokcid])
+  else: # aggregateUsersBy == 'user':
+    if not csvPF:
+      jcount = len(aggregateTokensById)
+      j = 0
+      for user, count in sorted(iter(aggregateTokensById.items())):
+        j += 1
+        printEntityKVList([Ent.USER, user], [Ent.Plural(Ent.ACCESS_TOKEN), count], j, jcount)
+    else:
+      for user, count in sorted(iter(aggregateTokensById.items())):
+        csvPF.WriteRow({'user': user, 'tokenCount': count})
   if csvPF:
     csvPF.writeCSVfile('OAuth Tokens')
 

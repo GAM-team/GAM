@@ -3,6 +3,7 @@
 - [Definitions](#definitions)
 - [Delete a user's token](#delete-a-users-token)
 - [Display individual user's tokens](#display-individual-users-tokens)
+- [Display individual user's token counts](#display-individual-users-token-counts)
 - [Display aggregated user's tokens](#display-aggregated-users-tokens)
 
 ## API documentation
@@ -27,6 +28,9 @@ gam <UserTypeEntity> show tokens|token|3lo|oauth [clientid <ClientID>]
 gam print tokens|token [todrive <ToDriveAttributes>*] [clientid <ClientID>]
         [orderby clientid|id|appname|displaytext] [delimiter <Character>]
         [<UserTypeEntity>]
+gam show tokens|token [clientid <ClientID>]
+        [orderby clientid|id|appname|displaytext] [delimiter <Character>]
+        [<UserTypeEntity>]
 ```
 By default, all client tokens for a user are displayed, use `clientid <ClientID>` to display a specific client token.
 
@@ -41,6 +45,26 @@ For `print tokens`:
 This example shows which domain users have the Google Apps Sync for Microsoft Outlook app allowed for their account
 ```
 gam all users print token clientid 1095133494869.apps.googleusercontent.com
+```
+
+## Display individual user's token counts
+```
+gam <UserTypeEntity> print tokens|token [todrive <ToDriveAttributes>*] [clientid <ClientID>]
+        usertokencounts
+gam <UserTypeEntity> show tokens|token|3lo|oauth [clientid <ClientID>]
+        usertokencounts
+gam print tokens|token [todrive <ToDriveAttributes>*] [clientid <ClientID>]
+        usertokencounts
+        [<UserTypeEntity>]
+gam show tokens|token [clientid <ClientID>]
+        usertokencounts
+        [<UserTypeEntity>]
+```
+
+### Example
+This example shows which domain users have any access tokens.
+```
+gam config csv_output_row_filter "tokenCount:count>0" all users print tokens usertokencounts
 ```
 
 ## Display aggregated user's tokens
