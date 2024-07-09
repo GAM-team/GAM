@@ -65755,7 +65755,7 @@ def getPhoto(users, profileMode):
             entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, filename], Msg.NOT_ALLOWED, i, count)
             continue
           if showPhotoData:
-            writeStdout(base64.urlsafe_b64encode(photo_data).decode(UTF8)+'\n')
+            writeStdout(base64.encodebytes(photo_data).decode(UTF8))
         except (httplib2.HttpLib2Error, google.auth.exceptions.TransportError, RuntimeError) as e:
           entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, filename], str(e), i, count)
           continue
@@ -66614,16 +66614,19 @@ def _printShowTokens(entityType, users):
     csvPF.writeCSVfile('OAuth Tokens')
 
 # gam <UserTypeEntity> print tokens|token [todrive <ToDriveAttribute>*] [clientid <ClientID>]
-#	[aggregateusersby|orderby clientid|id|appname|displaytext] [delimiter <Character>]
+#	[usertokencounts|(aggregateusersby|orderby clientid|id|appname|displaytext)] [delimiter <Character>]
 # gam <UserTypeEntity> show tokens|token|3lo|oauth [clientid <ClientID>]
-#	[aggregateusersby|orderby clientid|id|appname|displaytext]
+#	[usertokencounts|(aggregateusersby|orderby clientid|id|appname|displaytext)] [delimiter <Character>]
 def printShowTokens(users):
   _printShowTokens(Cmd.ENTITY_USERS, users)
 
 # gam print tokens|token [todrive <ToDriveAttribute>*] [clientid <ClientID>]
-#	[aggregateusersby|orderby clientid|id|appname|displaytext] [delimiter <Character>]
+#	[usertokencounts|(aggregateusersby|orderby clientid|id|appname|displaytext)] [delimiter <Character>]
 #	[<UserTypeEntity>]
-def doPrintTokens():
+# gam show tokens|token [clientid <ClientID>]
+#	[usertokencounts|(aggregateusersby|orderby clientid|id|appname|displaytext)] [delimiter <Character>]
+#	[<UserTypeEntity>]
+def doPrintShowTokens():
   _printShowTokens(None, None)
 
 # gam <UserTypeEntity> deprovision|deprov [popimap] [signout] [turnoff2sv]
@@ -73875,7 +73878,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_SITEACL:		doProcessDomainSiteACLs,
       Cmd.ARG_SITEACTIVITY:	doPrintDomainSiteActivity,
       Cmd.ARG_SVCACCT:		doPrintShowSvcAccts,
-      Cmd.ARG_TOKEN:		doPrintTokens,
+      Cmd.ARG_TOKEN:		doPrintShowTokens,
       Cmd.ARG_TRANSFERAPPS:	doShowTransferApps,
       Cmd.ARG_USER:		doPrintUsers,
       Cmd.ARG_USERS:		doPrintUsers,
@@ -73990,6 +73993,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_SITE:		doPrintShowDomainSites,
       Cmd.ARG_SITEACL:		doProcessDomainSiteACLs,
       Cmd.ARG_SVCACCT:		doPrintShowSvcAccts,
+      Cmd.ARG_TOKEN:		doPrintShowTokens,
       Cmd.ARG_TRANSFERAPPS:	doShowTransferApps,
       Cmd.ARG_USERINVITATION:	doPrintShowCIUserInvitations,
       Cmd.ARG_VAULTEXPORT:	doPrintShowVaultExports,

@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.77.10
+
+Fixed bug in `gam <UserTypeEntity> get profilephoto` where data written to stdout, e.g. `> filename`,
+was not properly base64 encoded.
+
 ### 6.77.09
 
 Added option `usertokencounts` to `gam <UserTypeEntity> print|show tokens` that causes GAM to display

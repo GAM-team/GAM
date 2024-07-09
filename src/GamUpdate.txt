@@ -2,6 +2,11 @@
 
 Merged GAM-Team version
 
+6.77.10
+
+Fixed bug in `gam <UserTypeEntity> get profilephoto` where data written to stdout, e.g. `> filename`,
+was not properly base64 encoded.
+
 6.77.09
 
 Added option `usertokencounts` to `gam <UserTypeEntity> print|show tokens` that causes GAM to display
