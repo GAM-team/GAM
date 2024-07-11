@@ -13063,6 +13063,12 @@ def getUserOrgUnits(cd, orgUnit, orgUnitId):
           GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.resourceNotFound, GAPI.forbidden):
     checkEntityDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, orgUnit)
 
+# Convert report mb item to gb
+def convertReportMBtoGB(name, item):
+  if item is not None:
+    item['intValue'] = f"{int(item['intValue'])/1024:.2f}"
+  return name.replace('_in_mb', '_in_gb')
+
 REPORTS_PARAMETERS_SIMPLE_TYPES = ['intValue', 'boolValue', 'datetimeValue', 'stringValue']
 
 # gam report usage user [todrive <ToDriveAttribute>*]
@@ -13070,10 +13076,12 @@ REPORTS_PARAMETERS_SIMPLE_TYPES = ['intValue', 'boolValue', 'datetimeValue', 'st
 #	[([start|startdate <Date>] [end|enddate <Date>])|(range <Date> <Date>)|
 #	 thismonth|(previousmonths <Integer>)]
 #	[fields|parameters <String>)]
+#	[convertmbtogb]
 # gam report usage customer [todrive <ToDriveAttribute>*]
 #	[([start|startdate <Date>] [end|enddate <Date>])|(range <Date> <Date>)|
 #	 thismonth|(previousmonths <Integer>)]
 #	[fields|parameters <String>)]
+#	[convertmbtogb]
 def doReportUsage():
   def usageEntitySelectors():
     selectorChoices = Cmd.USER_ENTITY_SELECTORS+Cmd.USER_CSVDATA_ENTITY_SELECTORS
@@ -13118,7 +13126,7 @@ def doReportUsage():
   if customerId == GC.MY_CUSTOMER:
     customerId = None
   parameters = set()
-  select = showOrgUnit = False
+  convertMbToGb = select = showOrgUnit = False
   userKey = 'all'
   cd = orgUnit = orgUnitId = None
   userOrgUnits = {}
@@ -13178,6 +13186,8 @@ def doReportUsage():
       _, users = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
       orgUnit = orgUnitId = None
       select = True
+    elif myarg == 'convertmbtogb':
+      convertMbToGb = True
     else:
       unknownArgumentExit()
   if startEndTime.endDateTime is None:
@@ -13259,6 +13269,8 @@ def doReportUsage():
               for ptype in REPORTS_PARAMETERS_SIMPLE_TYPES:
                 if ptype in item:
                   if ptype != 'datetimeValue':
+                    if convertMbToGb and name.endswith('_in_mb'):
+                      name = convertReportMBtoGB(name, item)
                     row[name] = item[ptype]
                   else:
                     row[name] = formatLocalTime(item[ptype])
@@ -13361,11 +13373,13 @@ REPORT_ACTIVITIES_TIME_OBJECTS = {'time'}
 #	[(fields|parameters <String>)|(services <UserServiceNameList>)]
 #	[aggregatebydate|aggregatebyuser [Boolean]]
 #	[maxresults <Number>]
+#	[convertmbtogb]
 # gam report customers|customer|domain [todrive <ToDriveAttribute>*]
 #	[(date <Date>)|(range <Date> <Date>)|
 #	 yesterday|today|thismonth|(previousmonths <Integer>)]
 #	[nodatechange | (fulldatarequired all|<CustomerServiceNameList>)]
 #	[(fields|parameters <String>)|(services <CustomerServiceNameList>)] [noauthorizedapps]
+#	[convertmbtogb]
 def doReport():
   def processUserUsage(usage, lastDate):
     if not usage:
@@ -13399,6 +13413,8 @@ def doReport():
               csvPF.AddTitles('accounts:disabled_time')
             except ValueError:
               pass
+        elif convertMbToGb and name.endswith('_in_mb'):
+          name = convertReportMBtoGB(name, item)
         csvPF.AddTitles(name)
         for ptype in REPORTS_PARAMETERS_SIMPLE_TYPES:
           if ptype in item:
@@ -13432,6 +13448,8 @@ def doReport():
         if repsvc not in includeServices:
           continue
         if 'intValue' in item:
+          if convertMbToGb and name.endswith('_in_mb'):
+            name = convertReportMBtoGB(name, None)
           csvPF.AddTitles(name)
           eventCounts.setdefault(email, {})
           eventCounts[email].setdefault(name, 0)
@@ -13455,6 +13473,8 @@ def doReport():
         if repsvc not in includeServices:
           continue
         if 'intValue' in item:
+          if convertMbToGb and name.endswith('_in_mb'):
+            name = convertReportMBtoGB(name, None)
           csvPF.AddTitles(name)
           eventCounts.setdefault(lastDate, {})
           eventCounts[lastDate].setdefault(name, 0)
@@ -13477,6 +13497,8 @@ def doReport():
         continue
       for ptype in REPORTS_PARAMETERS_SIMPLE_TYPES:
         if ptype in item:
+          if convertMbToGb and name.endswith('_in_mb'):
+            name = convertReportMBtoGB(name, item)
           csvPF.AddTitles(name)
           if ptype != 'datetimeValue':
             row[name] = item[ptype]
@@ -13541,6 +13563,8 @@ def doReport():
       for ptype in REPORTS_PARAMETERS_SIMPLE_TYPES:
         if ptype in item:
           if ptype != 'datetimeValue':
+            if convertMbToGb and name.endswith('_in_mb'):
+              name = convertReportMBtoGB(name, item)
             csvPF.WriteRow({'date': lastDate, 'name': name, 'value': item[ptype]})
           else:
             csvPF.WriteRow({'date': lastDate, 'name': name, 'value': formatLocalTime(item[ptype])})
@@ -13610,8 +13634,8 @@ def doReport():
   filterTimes = {}
   maxActivities = maxEvents = 0
   maxResults = 1000
-  aggregateByDate = aggregateByUser = countsOnly = eventRowFilter = exitUserLoop = noAuthorizedApps = \
-    normalizeUsers = select = summary = userCustomerRange = False
+  aggregateByDate = aggregateByUser = convertMbToGb = countsOnly = eventRowFilter = exitUserLoop = \
+    noAuthorizedApps = normalizeUsers = select = summary = userCustomerRange = False
   limitDateChanges = -1
   allVerifyUser = userKey = 'all'
   cd = orgUnit = orgUnitId = None
@@ -13690,6 +13714,8 @@ def doReport():
           includeServices.add(repsvc)
         else:
           invalidChoiceExit(repsvc, fullDataServices, True)
+    elif usageReports and myarg == 'convertmbtogb':
+      convertMbToGb = True
     elif customerReports and myarg == 'noauthorizedapps':
       noAuthorizedApps = True
     elif activityReports and myarg == 'maxactivities':
@@ -13861,6 +13887,8 @@ def doReport():
       for usageDate, events in iter(eventCounts.items()):
         row = {'date': usageDate}
         for event, count in iter(events.items()):
+          if convertMbToGb and event.endswith('_in_gb'):
+            count = f'{count/1024:.2f}'
           row[event] = count
         csvPF.WriteRow(row)
       csvPF.SortRows('date', False)
@@ -13871,6 +13899,8 @@ def doReport():
         if showOrgUnit:
           row['orgUnitPath'] = userOrgUnits.get(email, UNKNOWN)
         for event, count in iter(events.items()):
+          if convertMbToGb and event.endswith('_in_gb'):
+            count = f'{count/1024:.2f}'
           row[event] = count
         csvPF.WriteRow(row)
       csvPF.SortRows('email', False)

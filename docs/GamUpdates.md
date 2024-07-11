@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.77.11
+
+Added option `convertmbtogb` to `gam report usage customer|user` and
+`gam report customer|user` that causes GAM to convert parameters expressed in megabytes
+(name ends with _in_mb) to gigabytes (name converted to _in_gb) with two decimal places.
+
 ### 6.77.10
 
 Fixed bug in `gam <UserTypeEntity> get profilephoto` where data written to stdout, e.g. `> filename`,

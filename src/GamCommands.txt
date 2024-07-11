@@ -1073,6 +1073,7 @@ Specify a collection of items by directly specifying them; the item type is dete
         others_3p_shortcuts |
         others_items |
         writable_files
+
 <DriveFileEntityShortcut> ::=
         alldrives |
         mydrive_any |
@@ -1088,6 +1089,7 @@ Specify a collection of items by directly specifying them; the item type is dete
         sharedwithme_all |
         sharedwithme_mydrive |
         sharedwithme_notmydrive
+
 <DriveFileEntity> ::=
         <DriveFileIDEntity> |
         <DriveFileNameEntity> |
@@ -4269,11 +4271,13 @@ gam report usage user [todrive <ToDriveAttribute>*]
          thismonth|(previousmonths <Integer>)]
         [skipdates <Date>[:<Date>](,<Date>[:<Date>])*] [skipdaysofweek <DayOfWeek>(,<DayOfWeek>)*]
         [fields|parameters <String>]
+        [convertmbtogb]
 gam report usage customer [todrive <ToDriveAttribute>*]
         [([start|startdate <Date>] [end|enddate <Date>])|(range <Date> <Date>)|
          thismonth|(previousmonths <Integer>)]
         [skipdates <Date>[:<Date>](,<Date>[:<Date>])*] [skipdaysofweek <DayOfWeek>(,<DayOfWeek>)*]
         [fields|parameters <String>]
+        [convertmbtogb]
 
 <ActivityApplicationName> ::=
         access|accesstransparency|
@@ -4333,6 +4337,7 @@ gam report customers|customer|domain [todrive <ToDriveAttribute>*]
           yesterday|today|thismonth|(previousmonths <Integer>)]
         [(nodatechange | limitdatechanges <Integer>) | (fulldatarequired all|<CustomerServiceNameList>)]
         [(fields|parameters <String>)|(services <CustomerServiceNameList>)] [noauthorizedapps]
+        [convertmbtogb]
 
 <UserServiceName> ::=
         accounts|
@@ -4353,6 +4358,7 @@ gam report users|user [todrive <ToDriveAttribute>*]
         [(fields|parameters <String>)|(services <UserServiceNameList>)]
         [aggregatebydate|aggregatebyuser [Boolean]]
         [maxresults <Number>]
+        [convertmbtogb]
 
 # Reseller
 

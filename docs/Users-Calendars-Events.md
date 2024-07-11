@@ -429,7 +429,7 @@ If none of the following options are selected, all events are selected.
 * `<EventSelectProperty>* <EventMatchProperty>*` - Properties used to select events
 
 The Google Calendar API processes `<EventSelectProperty>*`; you may specify none or multiple properties.
-* `after|starttime|timemin <Time>` - Lower bound (inclusive) for an event's end time to filter by. If timeMax is set, timeMin must be smaller than timeMax.
+* `after|starttime|timemin <Time>` - Lower bound (exclusive) for an event's end time to filter by. If timeMax is set, timeMin must be smaller than timeMax.
 * `before|endtime|timemax <Time>` - Upper bound (exclusive) for an event's start time to filter by. If timeMin is set, timeMax must be greater than timeMin.
 * `eventtypes <EventTypeList>` - Select events based on their type.
 * `query <QueryCalendar>` - Free text search terms to find events that match these terms in any field, except for extended properties

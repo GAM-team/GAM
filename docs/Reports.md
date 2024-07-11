@@ -188,6 +188,7 @@ gam report usage customer [todrive <ToDriveAttribute>*]
          thismonth|(previousmonths <Integer>)]
         [skipdates <Date>[:<Date>](,<Date>[:<Date>])*] [skipdaysofweek <DayOfWeek>(,<DayOfWeek>)*]
         [fields|parameters <String>]
+        [convertmbtogb]
 ```
 Limit the time period.
 * `start <Date>` - Default value is 30 days prior to `end <Date>`
@@ -195,6 +196,9 @@ Limit the time period.
 * `range <Date> <Date>` - Equivalent to `start <Date> end <Date>`
 * `thismonth` - The current calendar month up to the current time
 * `previousmonths <Integer>` - A number in the range 1 to 6 indicating calendar months previous to the current month
+
+Option `convertmbtogb` causes GAM to convert parameters expressed in megabytes
+(name ends with _in_mb) to gigabytes (name converted to _in_gb) with two decimal places.
 
 ### Example
 Jay provided this example.
@@ -237,6 +241,7 @@ gam report customers|customer|domain [todrive <ToDriveAttributes>*]
         [(nodatechange | limitdatechanges <Integer>) | (fulldatarequired all|<CustomerServiceNameList>)]
         [(fields|parameters <String>)|(services <CustomerServiceNameList>)]
         [noauthorizedapps]
+        [convertmbtogb]
 ```
 Specify the report date; the default is today's date.
 * `date <Date>` - A single date; there is one API call
@@ -245,6 +250,9 @@ Specify the report date; the default is today's date.
 * `today` - Today; there is one API call
 * `thismonth` - The current calendar month up to the current time; there is an API call per date
 * `previousmonths <Integer>` - A number in the range 1 to 6 indicating calendar months previous to the current month; there is an API call per date
+
+Option `convertmbtogb` causes GAM to convert parameters expressed in megabytes
+(name ends with _in_mb) to gigabytes (name converted to _in_gb) with two decimal places.
 
 If no report is available for the specified date, can an earlier date be used?
 * `limitdatechanges -1' - Back up to earlier dates to find report data; this is the default.
@@ -298,6 +306,7 @@ gam report usage user [todrive]
          thismonth|(previousmonths <Integer>)]
         [skipdates <Date>[:<Date>](,<Date>[:<Date>])*] [skipdaysofweek <DayOfWeek>(,<DayOfWeek>)*]
         [fields|parameters <String>]
+        [convertmbtogb]
 ```
 Select the users for whom information is desired.
 * `user all` - All users, the default; there is one API call
@@ -312,6 +321,9 @@ Limit the time period.
 * `range <Date> <Date>` - Equivalent to `start <Date> end <Date>`
 * `thismonth` - The current calendar month up to the current time
 * `previousmonths <Integer>` - A number in the range 1 to 6 indicating calendar months previous to the current month
+
+Option `convertmbtogb` causes GAM to convert parameters expressed in megabytes
+(name ends with _in_mb) to gigabytes (name converted to _in_gb) with two decimal places.
 
 ## User reports
 User reports are generally available up to four days before the current date.
@@ -335,6 +347,7 @@ gam report users|user [todrive <ToDriveAttributes>*]
         [(fields|parameters <String>)|(services <UserServiceNameList>)]
         [aggregatebydate|aggregatebyuser [Boolean]]
         [maxresults <Number>]
+        [convertmbtogb]
 ```
 Select the users for whom information is desired.
 * `user all` - All users, the default; there is one API call
@@ -353,6 +366,9 @@ Specify the report date; the default is today's date.
 * `today` - Today; there is one API call
 * `thismonth` - The current calendar month up to the current time; there is an API call per date
 * `previousmonths <Integer>` - A number in the range 1 to 6 indicating calendar months previous to the current month; there is an API call per date
+
+Option `convertmbtogb` causes GAM to convert parameters expressed in megabytes
+(name ends with _in_mb) to gigabytes (name converted to _in_gb) with two decimal places.
 
 If no report is available for the specified date, can an earlier date be used?
 * `limitdatechanges -1' - Back up to earlier dates to find report data; this is the default.

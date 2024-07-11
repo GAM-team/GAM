@@ -540,6 +540,9 @@ See: [Drive File Selection](Drive-File-Selection) for details of `<DriveFileName
         my_3p_shortcuts |
         my_items |
         my_forms |
+        my_top_files |
+        my_top_folders |
+        my_top_items |
         others_files |
         others_folders |
         others_forms |
