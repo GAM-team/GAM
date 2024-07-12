@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.77.12
+
+Fixed bug in `gam <UserTypeEntity> print chatspaces todrive` that caused an error.
+
 ### 6.77.11
 
 Added option `convertmbtogb` to `gam report usage customer|user` and

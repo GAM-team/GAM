@@ -16464,12 +16464,12 @@ def doDeleteAdmin():
     callGAPI(cd.roleAssignments(), 'delete',
              throwReasons=[GAPI.NOT_FOUND, GAPI.OPERATION_NOT_SUPPORTED, GAPI.FORBIDDEN,
                            GAPI.INVALID_INPUT, GAPI.SERVICE_NOT_AVAILABLE, GAPI.RESOURCE_NOT_FOUND,
-                           GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND],
+                           GAPI.FAILED_PRECONDITION, GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND],
              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
              customer=GC.Values[GC.CUSTOMER_ID], roleAssignmentId=roleAssignmentId)
     entityActionPerformed([Ent.ADMIN_ROLE_ASSIGNMENT, roleAssignmentId])
   except (GAPI.notFound, GAPI.operationNotSupported, GAPI.forbidden,
-          GAPI.invalidInput, GAPI.serviceNotAvailable, GAPI.resourceNotFound) as e:
+          GAPI.invalidInput, GAPI.serviceNotAvailable, GAPI.resourceNotFound, GAPI.failedPrecondition) as e:
     entityActionFailedWarning([Ent.ADMIN_ROLE_ASSIGNMENT, roleAssignmentId], str(e))
   except (GAPI.badRequest, GAPI.customerNotFound):
     accessErrorExit(cd)
@@ -25700,7 +25700,7 @@ def printShowChatSpaces(users):
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    if getFieldsList(myarg, CHAT_SPACES_FIELDS_CHOICE_MAP, fieldsList, initialField='name', onlyFieldsArg=True):
+    elif getFieldsList(myarg, CHAT_SPACES_FIELDS_CHOICE_MAP, fieldsList, initialField='name', onlyFieldsArg=True):
       pass
     elif not useAdminAccess and _getChatSpaceListParms(myarg, kwargs):
       pass

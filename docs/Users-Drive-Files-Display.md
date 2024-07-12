@@ -28,7 +28,7 @@
 - [Display file list](#display-file-list)
   - [File selection by name and entity shortcuts for Display file list](#file-selection-by-name-and-entity-shortcuts-for-display-file-list)
   - [File selection starting point for Display file list](#file-selection-starting-point-for-display-file-list)
-  - [File selection with a particular drive label](#file-selection-with-a-particular-drive-label)
+  - [File selection with or without a particular drive label](#file-selection-with-or-without-a-particular-drive-label)
   - [Handle empty file lists](#handle-empty-file-lists)
 - [Display disk usage](#display-disk-usage)
 
@@ -1478,7 +1478,7 @@ testuser@domain.com,Bottom Folder 11,1,My Drive/Top Folder/Middle Folder 1/Botto
 testuser@domain.com,Bottom Sheet 11,1,My Drive/Top Folder/Middle Folder 1/Bottom Folder 11/Bottom Sheet 11
 ```
 
-## File selection with a particular drive label
+## File selection with or without a particular drive label
 The Drive API doesn't support querying for a drive label, so GAM must do the filtering.
 
 Get the label id.
@@ -1488,9 +1488,13 @@ gam show drivelabels
 
 Find the label with properties:title: XXX where XXX is the desired label title, then get its id: value
 
-List the files.
+List the files with the label
 ```
-gam config csv_output_row_filter "labelInfo.labels.0.id:regex:PutLabelIdHere" user user@domain.com print filelist fields id,name,labelinfo includelabels PutLabelIdHere
+gam config csv_output_row_filter "labels:count>0" user user@domain.com print filelist fields id,name,mimetype showlabels ids includelabels PutLabelIdHere
+```
+List the files without the label
+```
+gam config csv_output_row_filter "labels:count=0" user user@domain.com print filelist fields id,name,mimetype showlabels ids includelabels PutLabelIdHere
 ```
 
 Adjust the `fields` list as desired.
