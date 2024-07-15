@@ -42,31 +42,21 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
   - Download the archive, extract the contents into some directory.
   - Start a terminal session and cd to the install directory.
 
-* Executable Archive, Manual, Mac OS, versions prior to Big Sur
-  - `gamadv-xtd3-6.wx.yz-macos-x86_64-legacy.tar`
-  - Download the archive, extract the contents into some directory.
-  - Start a terminal session and cd to the install directory.
-
 * Executable Archive, Manual, Windows 64 bit
   - `gamadv-xtd3-6.wx.yz-windows-x86_64.zip`
   - Download the archive, extract the contents into some directory.
-  - Start a terminal session and cd to the install directory.
+  - Start a Command Prompt/PowerShell session and cd to the install directory.
 
 * Executable Installer, Manual, Windows 64 bit
   - `gamadv-xtd3-6.wx.yz-windows-x86_64.msi`
   - Download the installer and run it.
   - Start a Command Prompt/PowerShell session and cd to the install directory.
 
-* Executable Archive, Manual, Windows 32 bit
-  - `gamadv-xtd3-6.wx.yz-windows-x86.zip`
-  - Download the archive, extract the contents into some directory.
-  - Start a terminal session and cd to the install directory.
-
-* Executable Installer, Manual, Windows 32 bit
-  - `gamadv-xtd3-6.wx.yz-windows-x86.msi`
-  - Download the installer and run it.
+* Winget
+  - `winget install taers232c.GAMADV-XTD3 --location C:\GAMADV-XTD3`
+  - Specify an alternate location if desired
   - Start a Command Prompt/PowerShell session and cd to the install directory.
-
+  
 * Source, all platforms
   - `Source code(zip)`
   - `Source code(tar.gz)`

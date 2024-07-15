@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.77.13
+
+Updated `gam <UserTypeEntity> print|show filecounts` to reflect that Shared Drives now
+have a capacity of 500000 files/folders/shortcuts.
+
+
 ### 6.77.12
 
 Fixed bug in `gam <UserTypeEntity> print chatspaces todrive` that caused an error.

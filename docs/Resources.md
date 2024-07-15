@@ -519,13 +519,17 @@ count = & gam print resources showitemcountonly
 These commands operate on a single resource calendar.
 ```
 gam resource <ResourceID> add acls|calendaracls <CalendarACLRole> <CalendarACLScopeEntity>
+        [sendnotifications <Boolean>]
 gam resource <ResourceID> update acls|calendaracls <CalendarACLRole> <CalendarACLScopeEntity>
+        [sendnotifications <Boolean>]
 gam resource <ResourceID> delete acls|calendaracls [<CalendarACLRole>] <CalendarACLScopeEntity>
 ```
 These commands operate on multiple resource calendars.
 ```
 gam resources <ResourceEntity> add acls|calendaracls <CalendarACLRole> <CalendarACLScopeEntity>
+        [sendnotifications <Boolean>]
 gam resources <ResourceEntity> update acls|calendaracls <CalendarACLRole> <CalendarACLScopeEntity>
+        [sendnotifications <Boolean>]
 gam resources <ResourceEntity> delete acls|calendaracls [<CalendarACLRole>] <CalendarACLScopeEntity>
 ```
 ## Display resource calendar ACLs
