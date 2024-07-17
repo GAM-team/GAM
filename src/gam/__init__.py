@@ -5703,6 +5703,8 @@ def convertUIDtoEmailAddressWithType(emailAddressOrUID, cd=None, sal=None, email
 # Convert UID to email address
 def convertUIDtoEmailAddress(emailAddressOrUID, cd=None, emailTypes=None,
                              checkForCustomerId=False, ciGroupsAPI=False, aliasAllowed=True):
+  if emailAddressOrUID.startswith('cbcm-browser.'):
+    return emailAddressOrUID
   email, _ = convertUIDtoEmailAddressWithType(emailAddressOrUID, cd, emailTypes,
                                               checkForCustomerId, ciGroupsAPI, aliasAllowed)
   return email
