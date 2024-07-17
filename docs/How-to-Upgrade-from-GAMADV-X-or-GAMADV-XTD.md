@@ -2,10 +2,10 @@
 Use these steps if you have used any version of GAMADV-X or GAMADV-XTD in your domain.
 They will update your GAM project and all necessary authentications.
 
-- [Downloads](Downloads)
-- [GAM Configuration](gam.cfg)
+- [Downloads-Installs](Downloads-Installs)
 - [Linux and MacOS and Google Cloud Shell](#linux-and-mac-os-and-google-cloud-shell)
 - [Windows](#windows)
+- [GAM Configuration](gam.cfg)
 
 ## Linux and MacOS and Google Cloud Shell
 
@@ -23,29 +23,32 @@ GAMADV-XTD3 uses the same configuration directory and gam.cfg file as GAMADV-X a
 ### Update your alias
 You should update your alias to point to /Users/admin/bin/gamadv-xtd3/gam.
 
-Add the following line:
+Add/edit the following line:
 ```
 alias gam="/Users/admin/bin/gamadv-xtd3/gam"
 ```
-to one of these files if you're running bash or an equivalent file if you're running some other shell:
+to one of these files based on your shell:
 ```
 ~/.bash_aliases
 ~/.bash_profile
 ~/.bashrc
+~/.zshrc
+~/.profile
 ```
 
-If you already have a gam alias for standard GAM and want to run it and GAMADV-XTD3, give your new alias a different name:
+Issue the following command replacing `<Filename>` with the name of the file you edited:
 ```
-alias gam3="/Users/admin/bin/gamadv-xtd3/gam"
+source <Filename>
 ```
+
 ### Do you have a browser?
 If your computer doesn't support a browser, Google Cloud Shell for instance, execute this command:
 ```
-admin@server:/Users/admin/bin/gamadv-xtd3$ gam config no_browser true save
+admin@server:/Users/admin$ gam config no_browser true save
 ```
 ### Update your project to include the additional APIs that GAMADV-XTD3 uses.
 ```
-admin@server:/Users/admin/bin/gamadv-xtd3$ gam update project
+admin@server:/Users/admin$ gam update project
 
 Enter your Google Workspace admin or GCP project manager email address authorized to manage project(s) gam-project-abc-123-xyz? admin@domain.com
 
@@ -75,7 +78,7 @@ Enable 3 APIs
   API: groupsmigration.googleapis.com, Enabled (2/3)
   API: sheets.googleapis.com, Enabled (3/3)
 
-admin@server:/Users/admin/bin/gamadv-xtd3$
+admin@server:/Users/admin$
 ```
 ### Update GAMADV-XTD3 client access.
 
@@ -90,7 +93,7 @@ gam config no_browser true oauth update
 ```
 You will be given instructions on how to get the authorization on another computer and apply it locally.
 ```
-admin@server:/Users/admin/bin/gamadv-xtd3$ ./gam oauth update
+admin@server:/Users/admin$ gam oauth update
 
 Select the authorized scopes by entering a number.
 Append an 'r' to grant read-only access or an 'a' to grant action-only access.
@@ -165,11 +168,11 @@ set no_browser = true in gam.cfg and re-run this command.
 Authentication successful.
 Client OAuth2 File: /Users/admin/GAMConfig/oauth2.txt, Updated
 
-admin@server:/Users/admin/bin/gamadv-xtd3$
+admin@server:/Users/admin$
 ```
 ### Update GAMADV-XTD3 service account access.
 ```
-admin@server:/Users/admin/bin/gamadv-xtd3$ ./gam user user@domain.com check serviceaccount
+admin@server:/Users/admin$ gam user user@domain.com check serviceaccount
 System time status:
   Your system time differs by less than 1 second from Google                PASS
 Service Account Private Key Authentication:
@@ -218,7 +221,7 @@ Scopes fields will be pre-populated. Please click Authorize to allow these
 scopes access. After authorizing it may take some time for this test to pass so
 wait a few moments and then try this command again.
 
-admin@server:/Users/admin/bin/gamadv-xtd3$
+admin@server:/Users/admin$
 ```
 The link shown in the error message should take you directly to the authorization screen.
 If not, make sure that you are logged in as a domain admin, then re-enter the link.
@@ -228,7 +231,7 @@ If not, make sure that you are logged in as a domain admin, then re-enter the li
 Wait a moment and then perform the following command; it it still fails, wait a bit longer, it can sometimes take serveral minutes
 for the authorization to complete.
 ```
-admin@server:/Users/admin/bin/gamadv-xtd3$ ./gam user user@domain.com check serviceaccount
+admin@server:/Users/admin$ gam user user@domain.com check serviceaccount
 System time status:
   Your system time differs by less than 1 second from Google                PASS
 Service Account Private Key Authentication:
@@ -271,7 +274,7 @@ Domain-wide Delegation authentication:, User: admin@domain.com, Scopes: 34
 All scopes PASSED!
 Service Account Client name: SVCACCTID is fully authorized.
 
-admin@server:/Users/admin/bin/gamadv-xtd3$
+admin@server:/Users/admin$
 ```
 
 ## Windows
@@ -305,15 +308,17 @@ Click OK
 Exit Control Panel
 ```
 
+At this point, you should restart Command Prompt so that it has the updated path and environment variables.
+
 ### Do you have a compatible browser?
 If the computer on which you are running GAM does not have access to a browser or
 your default browser is Internet Explorer or Edge, issue this command:
 ```
-C:\GAMADV-X>gam config no_browser true save
+C:\>gam config no_browser true save
 ```
 ### Update your project to include the additional APIs that GAMADV-XTD3 uses.
 ```
-C:\GAMADV-XTD3>gam update project
+C:\>gam update project
 
 Enter your Google Workspace admin or GCP project manager email address authorized to manage project(s) gam-project-abc-123-xyz? admin@domain.com
 
@@ -343,7 +348,7 @@ Enable 3 APIs
   API: groupsmigration.googleapis.com, Enabled (2/3)
   API: sheets.googleapis.com, Enabled (3/3)
 
-C:\GAMADV-XTD3>
+C:\>
 ```
 ### Update GAMADV-XTD3 client access.
 
@@ -361,7 +366,7 @@ You can open the file with Notepad/Wordpad, do a control-A to select the text, c
 start a browser and paste the URL (control-V) into the address bar. Authenticate and copy the Verification code
 back to your Command Prompt/PowerShell window.
 ```
-C:\GAMADV-XTD3>gam oauth update
+C:\>gam oauth update
 
 Select the authorized scopes by entering a number.
 Append an 'r' to grant read-only access or an 'a' to grant action-only access.
@@ -436,11 +441,11 @@ set no_browser = true in gam.cfg and re-run this command.
 Authentication successful.
 Client OAuth2 File: C:\GAMConfig\oauth2.txt, Updated
 
-C:\GAMADV-XTD3>
+C:\>
 ```
 ### Enable GAMADV-XTD3 service account access.
 ```
-C:\GAMADV-XTD3>gam user user@domain.com check serviceaccount
+C:\>gam user user@domain.com check serviceaccount
 System time status:
   Your system time differs by less than 1 second from Google                PASS
 Service Account Private Key Authentication:
@@ -489,7 +494,7 @@ Scopes fields will be pre-populated. Please click Authorize to allow these
 scopes access. After authorizing it may take some time for this test to pass so
 wait a few moments and then try this command again.
 
-C:\GAMADV-XTD3>
+C:\>
 ```
 The link shown in the error message should take you directly to the authorization screen.
 If not, make sure that you are logged in as a domain admin, then re-enter the link.
@@ -499,7 +504,7 @@ If not, make sure that you are logged in as a domain admin, then re-enter the li
 Wait a moment and then perform the following command; it it still fails, wait a bit longer, it can sometimes take serveral minutes
 for the authorization to complete.
 ```
-C:\GAMADV-XTD3>gam user user@domain.com check serviceaccount
+C:\>gam user user@domain.com check serviceaccount
 System time status:
   Your system time differs by less than 1 second from Google                PASS
 Service Account Private Key Authentication:
@@ -542,5 +547,5 @@ Domain-wide Delegation authentication:, User: admin@domain.com, Scopes: 34
 All scopes PASSED!
 Service Account Client name: SVCACCTID is fully authorized.
 
-C:\GAMADV-XTD3>
+C:\>
 ```

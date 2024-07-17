@@ -2,9 +2,9 @@
 Use these steps to update your version of GAMADV-XTD3.
 
 - [Downloads](Downloads)
-- [GAM Configuration](gam.cfg)
 - [Linux and MacOS and Google Cloud Shell](#linux-and-mac-os-and-google-cloud-shell)
 - [Windows](#windows)
+- [GAM Configuration](gam.cfg)
 
 ## Linux and MacOS and Google Cloud Shell
 

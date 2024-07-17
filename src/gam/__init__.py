@@ -36916,7 +36916,7 @@ def _getCalendarEventAttribute(myarg, body, parameters, function):
       parameters['attendees'].append(addAttendee)
   elif myarg == 'json':
     jsonData = getJSON(EVENT_JSON_CLEAR_FIELDS)
-    if function == 'insert':
+    if function in {'insert', 'import'}:
       body.update(jsonData)
       clearJSONfields(body, EVENT_JSON_INSERT_CLEAR_FIELDS)
     elif function == 'update':

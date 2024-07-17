@@ -203,6 +203,17 @@ File Sheet.json contains:
 gam user testuser@domain.com update sheet <DriveFileItem> json file Sheet.json
 ```
 
+Rename a tab/sheet in a spreadsheet. 
+```
+Get the sheet IDs.
+gam user testuser@domain.com info sheet <DriveFileItem> fields sheets
+Get the desired sheetId from the output.
+File Sheet.json contains:
+{"requests": [{"updateSheetProperties": {"properties": {"sheetId": 1234567890, "title": "New Title"}, "fields": "title"}}]}
+
+gam user testuser@domain.com update sheet <DriveFileItem> json file Sheet.json
+```
+
 Delete a column from a tab in a spreadsheet.
 ```
 Get the sheet IDs.

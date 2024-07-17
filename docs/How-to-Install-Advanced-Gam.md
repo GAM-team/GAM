@@ -2,10 +2,10 @@
 Use these steps if you have never used any version of GAM in your domain. They will create your GAM project
 and all necessary authentications.
 
-- [Downloads](Downloads)
-- [GAM Configuration](gam.cfg)
+- [Downloads-Installs](Downloads-Installs)
 - [Linux and MacOS and Google Cloud Shell](#linux-and-mac-os-and-google-cloud-shell)
 - [Windows](#windows)
+- [GAM Configuration](gam.cfg)
 
 ## Linux and MacOS and Google Cloud Shell
 
@@ -24,6 +24,11 @@ The default GAM configuration directory is /Users/admin/.gam; for more flexibili
 probably want to select a non-hidden location. This example assumes that the GAM
 configuration directory will be /Users/admin/GAMConfig; If you've chosen another directory,
 substitute that value in the directions.
+
+Make the directory:
+```
+mkdir -p /Users/admin/GAMconfig
+```
 
 Add the following line:
 ```
@@ -52,11 +57,6 @@ source <Filename>
 You need to make sure the GAM configuration directory actually exists. Test that like this:
 ```
 ls -l $GAMCFGDIR
-```
-
-If this gives you an error, make the directory:
-```
-mkdir -p $GAMCFGDIR
 ```
 
 ### Set a working directory
@@ -98,8 +98,7 @@ ln -s "/Users/admin/bin/gamadv-xtd3/gam" /usr/local/bin/gam
 
 ### Initialize GAMADV-XTD3; this should be the first GAMADV-XTD3 command executed.
 ```
-admin@server:~$ cd /Users/admin/bin/gamadv-xtd3
-admin@server:/Users/admin/bin/gamadv-xtd3$ ./gam config drive_dir /Users/admin/GAMWork verify
+admin@server:/Users/admin$ gam config drive_dir /Users/admin/GAMWork verify
 Created: /Users/admin/GAMConfig
 Created: /Users/admin/GAMConfig/gamcache
 Config File: /Users/admin/GAMConfig/gam.cfg, Initialized
@@ -109,20 +108,20 @@ Section: DEFAULT
   [long list of all config settings that should match the directories you specified]
   ...
 
-admin@server:/Users/admin/bin/gamadv-xtd3$
+admin@server:/Users/admin$
 ```
 ### Verify initialization, this was a successful installation.
 ```
-admin@server:/Users/admin/bin/gamadv-xtd3$ ls -l $GAMCFGDIR
+admin@server:/Users/admin$ ls -l $GAMCFGDIR
 total 48
 -rw-r-----+ 1 admin  staff  1069 Mar  3 09:23 gam.cfg
 drwxr-x---+ 2 admin  staff    68 Mar  3 09:23 gamcache
 -rw-rw-rw-+ 1 admin  staff     0 Mar  3 09:23 oauth2.txt.lock
-admin@server:/Users/admin/bin/gamadv-xtd3$ 
+admin@server:/Users/admin$ 
 ```
 ### Create your project with local browser
 ```
-admin@server:/Users/admin/bin/gamadv-xtd3$ gam create project
+admin@server:/Users/admin$ gam create project
 WARNING: Config File: /Users/admin/GAMConfig/gam.cfg, Item: client_secrets_json, Value: /Users/admin/GAMConfig/client_secrets.json, Not Found
 WARNING: Config File: /Users/admin/GAMConfig/gam.cfg, Item: oauth2service_json, Value: /Users/admin/GAMConfig/oauth2service.json, Not Found
 
@@ -186,12 +185,12 @@ Enter your Client Secret: CLIENTSECRET
 6. Go back to your browser and click OK to close the "OAuth client" popup if it's still open.
 That's it! Your GAM Project is created and ready to use.
 
-admin@server:/Users/admin/bin/gamadv-xtd3$ 
+admin@server:/Users/admin$ 
 ```
 ### Create your project without local browser (Google Cloud Shell for instance)
 ```
-admin@server:/Users/admin/bin/gamadv-xtd3$ gam config no_browser true save
-admin@server:/Users/admin/bin/gamadv-xtd3$ gam create project
+admin@server:/Users/admin$ gam config no_browser true save
+admin@server:/Users/admin$ gam create project
 WARNING: Config File: /Users/admin/GAMConfig/gam.cfg, Item: client_secrets_json, Value: /Users/admin/GAMConfig/client_secrets.json, Not Found
 WARNING: Config File: /Users/admin/GAMConfig/gam.cfg, Item: oauth2service_json, Value: /Users/admin/GAMConfig/oauth2service.json, Not Found
 
@@ -254,7 +253,7 @@ Enter your Client Secret: CLIENTSECRET
 6. Go back to your browser and click OK to close the "OAuth client" popup if it's still open.
 That's it! Your GAM Project is created and ready to use.
 
-admin@server:/Users/admin/bin/gamadv-xtd3$ 
+admin@server:/Users/admin$ 
 ```
 ### Enable GAMADV-XTD3 client access
 
@@ -262,7 +261,7 @@ You select a list of scopes, GAM uses a browser to get final authorization from 
 writes the credentials into the file oauth2.txt.
 
 ```
-admin@server:/Users/admin/bin/gamadv-xtd3$ ./gam oauth create
+admin@server:/Users/admin$ gam oauth create
 
 [*]  0)  Calendar API (supports readonly)
 [*]  1)  Chrome Browser Cloud Management API (supports readonly)
@@ -343,14 +342,14 @@ Enter verification code or paste "Unable to connect" URL from other computer (on
 The authentication flow has completed.
 Client OAuth2 File: /Users/admin/GAMConfig/oauth2.txt, Created
 
-admin@server:/Users/admin/bin/gamadv-xtd3$ 
+admin@server:/Users/admin$ 
 ```
 
 If clicking on the link in the instructions does not work (i.e. you get a 404 or 400 error message, instead of something about 'unable to connect') the URL in the link is too long. Most likely, you have selected all scopes. Try again with fewer scopes until it works. (there is no harm in repeatedly trying)
 
 ### Enable GAMADV-XTD3 service account access.
 ```
-admin@server:/Users/admin/bin/gamadv-xtd3$ ./gam user admin@domain.com check serviceaccount
+admin@server:/Users/admin$ gam user admin@domain.com check serviceaccount
 $ gam user admin@domain.com check serviceaccount
 System time status
   Your system time differs from www.googleapis.com by less than 1 second    PASS
@@ -405,7 +404,7 @@ Click AUTHORIZE
 When the box closes you're done
 After authorizing it may take some time for this test to pass so wait a few moments and then try this command again.
 
-admin@server:/Users/admin/bin/gamadv-xtd3$
+admin@server:/Users/admin$
 ```
 The link shown in the error message should take you directly to the authorization screen.
 If not, make sure that you are logged in as a domain admin, then re-enter the link.
@@ -415,7 +414,7 @@ If not, make sure that you are logged in as a domain admin, then re-enter the li
 Wait a moment and then perform the following command; it it still fails, wait a bit longer, it can sometimes take serveral minutes
 for the authorization to complete.
 ```
-admin@server:/Users/admin/bin/gamadv-xtd3$ ./gam user admin@domain.com check serviceaccount
+admin@server:/Users/admin$ gam user admin@domain.com check serviceaccount
 System time status:
   Your system time differs from www.googleapis.com by less than 1 second    PASS
 Service Account Private Key Authentication:
@@ -459,14 +458,14 @@ All scopes PASSED!
 
 Service Account Client name: SVCACCTID is fully authorized.
 
-admin@server:/Users/admin/bin/gamadv-xtd3$ 
+admin@server:/Users/admin$ 
 ```
 ### Update gam.cfg with some basic values
 * `customer_id` - Having this data keeps Gam from having to make extra API calls
 * `domain` - This allows you to omit the domain portion of email addresses
 * `timezone local` - Gam will convert all UTC times to your local timezone
 ```
-admin@server:/Users/admin/bin/gamadv-xtd3$ ./gam info domain
+admin@server:/Users/admin$ gam info domain
 Customer ID: C01234567
 Primary Domain: domain.com
 Customer Creation Time: 2007-06-06T15:47:55.444Z
@@ -474,7 +473,7 @@ Primary Domain Verified: True
 Default Language: en
 ...
 
-admin@server:/Users/admin/bin/gamadv-xtd3$ ./gam config customer_id C01234567 domain domain.com timezone local save verify
+admin@server:/Users/admin$ gam config customer_id C01234567 domain domain.com timezone local save verify
 Config File: /Users/admin/GAMConfig/gam.cfg, Saved
 Section: DEFAULT
   activity_max_results = 100
@@ -482,7 +481,7 @@ Section: DEFAULT
   [long list of all config settings that should match the data you specified]
   ...
 
-admin@server:/Users/admin/bin/gamadv-xtd3$
+admin@server:/Users/admin$
 ```
 
 ## Windows
@@ -538,8 +537,7 @@ At this point, you should restart Command Prompt so that it has the updated path
 
 ### Initialize GAMADV-XTD3; this should be the first GAMADV-XTD3 command executed.
 ```
-C:>cd C:\GAMADV-XTD3
-C:\GAMADV-XTD3>gam config drive_dir C:\GAMWork verify
+C:\>gam config drive_dir C:\GAMWork verify
 Created: C:\GAMConfig
 Created: C:\GAMConfig\gamcache
 Config File: C:\GAMConfig\gam.cfg, Initialized
@@ -549,11 +547,11 @@ Section: DEFAULT
   [long list of all config settings that should match the directories you specified]
   ...
 
-C:\GAMADV-XTD3>
+C:\>
 ```
 ### Verify initialization, this was a successful installation.
 ```
-C:\GAMADV-XTD3>dir %GAMCFGDIR%
+C:\>dir %GAMCFGDIR%
  Volume in drive C has no label.
  Volume Serial Number is 663F-DA8B
 
@@ -566,12 +564,12 @@ C:\GAMADV-XTD3>dir %GAMCFGDIR%
 03/03/2017  10:15 AM                 0 oauth2.txt.lock
                2 File(s)         15,769 bytes
                3 Dir(s)  110,532,562,944 bytes free
-C:\GAMADV-XTD3>
+C:\>
 ```
 
 ### Create your project with local browser
 ```
-C:\GAMADV-XTD3>gam create project
+C:\>gam create project
 WARNING: Config File: C:\GAMConfig\gam.cfg, Item: client_secrets_json, Value: C:\GAMConfig\client_secrets.json, Not Found
 WARNING: Config File: C:\GAMConfig\gam.cfg, Item: oauth2service_json, Value: C:\GAMConfig\oauth2service.json, Not Found
 
@@ -635,12 +633,12 @@ Enter your Client Secret: CLIENTSECRET
 6. Go back to your browser and click OK to close the "OAuth client" popup if it's still open.
 That's it! Your GAM Project is created and ready to use.
 
-C:\GAMADV-XTD3>
+C:\>
 ```
 ### Create your project without local browser (headless server for instance)
 ```
-C:\GAMADV-XTD3>gam config no_browser true save
-C:\GAMADV-XTD3>gam create project
+C:\>gam config no_browser true save
+C:\>gam create project
 WARNING: Config File: C:\GAMConfig\gam.cfg, Item: client_secrets_json, Value: C:\GAMConfig\client_secrets.json, Not Found
 WARNING: Config File: C:\GAMConfig\gam.cfg, Item: oauth2service_json, Value: C:\GAMConfig\oauth2service.json, Not Found
 
@@ -703,7 +701,7 @@ Enter your Client Secret: CLIENTSECRET
 6. Go back to your browser and click OK to close the "OAuth client" popup if it's still open.
 That's it! Your GAM Project is created and ready to use.
 
-C:\GAMADV-XTD3>
+C:\>
 ```
 ### Enable GAMADV-XTD3 client access
 
@@ -711,7 +709,7 @@ You select a list of scopes, GAM uses a browser to get final authorization from 
 writes the credentials into the file oauth2.txt.
 
 ```
-C:\GAMADV-XTD3>gam oauth create
+C:\>gam oauth create
 
 [*]  0)  Calendar API (supports readonly)
 [*]  1)  Chrome Browser Cloud Management API (supports readonly)
@@ -792,11 +790,11 @@ Enter verification code or paste "Unable to connect" URL from other computer (on
 The authentication flow has completed.
 Client OAuth2 File: C:\GAMConfig\oauth2.txt, Created
 
-C:\GAMADV-XTD3>
+C:\>
 ```
 ### Enable GAMADV-XTD3 service account access.
 ```
-C:\GAMADV-XTD3>gam user admin@domain.com check serviceaccount
+C:\>gam user admin@domain.com check serviceaccount
 System time status
   Your system time differs from www.googleapis.com by less than 1 second    PASS
 Service Account Private Key Authentication
@@ -850,7 +848,7 @@ Click AUTHORIZE
 When the box closes you're done
 After authorizing it may take some time for this test to pass so wait a few moments and then try this command again.
 
-C:\GAMADV-XTD3>
+C:\>
 ```
 The link shown in the error message should take you directly to the authorization screen.
 If not, make sure that you are logged in as a domain admin, then re-enter the link.
@@ -860,7 +858,7 @@ If not, make sure that you are logged in as a domain admin, then re-enter the li
 Wait a moment and then perform the following command; it it still fails, wait a bit longer, it can sometimes take serveral minutes
 for the authorization to complete.
 ```
-C:\GAMADV-XTD3>gam user admin@domain.com check serviceaccount
+C:\>gam user admin@domain.com check serviceaccount
 System time status:
   Your system time differs from www.googleapis.com by less than 1 second    PASS
 Service Account Private Key Authentication:
@@ -904,14 +902,14 @@ All scopes PASSED!
 
 Service Account Client name: SVCACCTID is fully authorized.
 
-C:\GAMADV-XTD3>
+C:\>
 ```
 ### Update gam.cfg with some basic values
 * `customer_id` - Having this data keeps Gam from having to make extra API calls
 * `domain` - This allows you to omit the domain portion of email addresses
 * `timezone local` - Gam will convert all UTC times to your local timezone
 ```
-C:\GAMADV-XTD3>gam info domain
+C:\>gam info domain
 Customer ID: C01234567
 Primary Domain: domain.com
 Customer Creation Time: 2007-06-06T15:47:55.444Z
@@ -919,7 +917,7 @@ Primary Domain Verified: True
 Default Language: en
 ...
 
-C:\GAMADV-XTD3>gam config customer_id C01234567 domain domain.com timezone local save verify
+C:\>gam config customer_id C01234567 domain domain.com timezone local save verify
 Config File: C:\GAMConfig\gam.cfg, Saved
 Section: DEFAULT
   activity_max_results = 100
@@ -927,5 +925,5 @@ Section: DEFAULT
   [long list of all config settings that should match the directories you specified]
   ...
 
-C:\GAMADV-XTD3>
+C:\>
 ```

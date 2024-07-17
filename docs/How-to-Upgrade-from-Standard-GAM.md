@@ -2,10 +2,10 @@
 Use these steps if you have used any version of GAM in your domain. They will update your GAM project
 and all necessary authentications.
 
-- [Downloads](Downloads)
-- [GAM Configuration](gam.cfg)
+- [Downloads-Installs](Downloads-Installs)
 - [Linux and MacOS and Google Cloud Shell](#linux-and-mac-os-and-google-cloud-shell)
 - [Windows](#windows)
+- [GAM Configuration](gam.cfg)
 
 ## Linux and MacOS and Google Cloud Shell
 
@@ -24,6 +24,11 @@ The default GAM configuration directory is /Users/admin/.gam; for more flexibili
 probably want to select a non-hidden location. This example assumes that the GAM
 configuration directory will be /Users/admin/GAMConfig; If you've chosen another directory,
 substitute that value in the directions.
+
+Make the directory:
+```
+mkdir -p /Users/admin/GAMconfig
+```
 
 Add the following line:
 ```
@@ -69,32 +74,38 @@ to one of these files based on your shell:
 ~/.profile
 ```
 
+If you already have an alias for standard GAM but are no longer going to run it, delete these lines:
+```
+function gam() { "/Users/admin/bin/gam/gam" "$@" ; }"
+alias gam="/Users/admin/bin/gam/gam"
+```
+
+If you already have an alias for standard GAM and want to run it and GAMADV-XTD3, give your old alias a different name:
+```
+function gamstd() { "/Users/admin/bin/gam/gam" "$@" ; }"
+alias gamstd="/Users/admin/bin/gam/gam"
+```
+
 Issue the following command replacing `<Filename>` with the name of the file you edited:
 ```
 source <Filename>
 ```
 
-If you already have a gam alias for standard GAM and want to run it and GAMADV-XTD3, give your new alias a different name:
-```
-alias gam3="/Users/admin/bin/gamadv-xtd3/gam"
-```
-
 Set environment variable OLDGAMPATH to point to the existing Gam directory; /Users/admin/bin/gam will be used in this example.
 If your existing Gam is in another directory, substitute that value in the directions.
 ```
-admin@server:~$ cd /Users/admin/bin/gamadv-xtd3
-admin@server:/Users/admin/bin/gamadv-xtd3$ export OLDGAMPATH=/Users/admin/bin/gam
+admin@server:/Users/admin$ export OLDGAMPATH=/Users/admin/bin/gam
 ```
 Verify that OLDGAMPATH points to the correct location.
 ```
-admin@server:/Users/admin/bin/gamadv-xtd3$ ls -l $OLDGAMPATH/*.json
+admin@server:/Users/admin$ ls -l $OLDGAMPATH/*.json
 -rw-r-----@ 1 admin  staff   553 Feb 26 10:39 /Users/admin/bin/gam/client_secrets.json
 -rw-r-----@ 1 admin  staff  2377 Feb 26 10:39 /Users/admin/bin/gam/oauth2service.json
-admin@server:/Users/admin/bin/gamadv-xtd3$ 
+admin@server:/Users/admin$ 
 ```
 ### Initialize GAMADV-XTD3; this should be the first GAMADV-XTD3 command executed.
 ```
-admin@server:/Users/admin/bin/gamadv-xtd3$ ./gam config drive_dir /Users/admin/GAMWork verify
+admin@server:/Users/admin$ gam config drive_dir /Users/admin/GAMWork verify
 Created: /Users/admin/GAMConfig
 Created: /Users/admin/GAMConfig/gamcache
 Copied: /Users/admin/bin/gam/oauth2service.json, To: /Users/admin/GAMConfig/oauth2service.json
@@ -219,11 +230,11 @@ Section: DEFAULT
   user_max_results = 500
   user_service_account_access_only = false
 
-admin@server:/Users/admin/bin/gamadv-xtd3$
+admin@server:/Users/admin$
 ```
 ### Verify initialization, this was a successful installation.
 ```
-admin@server:/Users/admin/bin/gamadv-xtd3$ ls -l $GAMCFGDIR
+admin@server:/Users/admin$ ls -l $GAMCFGDIR
 total 48
 -rw-r-----+ 1 admin  staff   553 Mar  3 09:23 client_secrets.json
 -rw-r-----+ 1 admin  staff  1069 Mar  3 09:23 gam.cfg
@@ -232,21 +243,21 @@ drwxr-x---+ 2 admin  staff    68 Mar  3 09:23 gamcache
 -rw-r-----+ 1 admin  staff  5104 Mar  3 09:23 oauth2.txt
 -rw-rw-rw-+ 1 admin  staff     0 Mar  3 09:23 oauth2.txt.lock
 -rw-r-----+ 1 admin  staff  2377 Mar  3 09:23 oauth2service.json
-admin@server:/Users/admin/bin/gamadv-xtd3$ 
+admin@server:/Users/admin$ 
 ```
 If the verification looks like this, then you'll have to copy client_secrets.json and oauth2service.json manually.
 ```
-admin@server:/Users/admin/bin/gamadv-xtd3$ ls -l $GAMCFGDIR
+admin@server:/Users/admin$ ls -l $GAMCFGDIR
 total 40
 -rw-r-----+  1 admin  admin  1427 Nov  1 11:38 gam.cfg
 drwxr-x---+ 16 admin  admin   544 Nov  2 07:25 gamcache
 -rw-r--r--+  1 admin  admin    10 Nov  2 15:31 lastupdatecheck.txt
 -rw-rw-rw-+  1 admin  admin     0 Sep 19 17:28 oauth2.txt.lock
 
-admin@server:/Users/admin/bin/gamadv-xtd3$ cp -p $OLDGAMPATH/client_secrets.json $GAMCFGDIR/
-admin@server:/Users/admin/bin/gamadv-xtd3$ cp -p $OLDGAMPATH/oauth2service.json $GAMCFGDIR/
-admin@server:/Users/admin/bin/gamadv-xtd3$ cp -p $OLDGAMPATH/oauth2.txt $GAMCFGDIR/
-admin@server:/Users/admin/bin/gamadv-xtd3$ ls -l $GAMCFGDIR
+admin@server:/Users/admin$ cp -p $OLDGAMPATH/client_secrets.json $GAMCFGDIR/
+admin@server:/Users/admin$ cp -p $OLDGAMPATH/oauth2service.json $GAMCFGDIR/
+admin@server:/Users/admin$ cp -p $OLDGAMPATH/oauth2.txt $GAMCFGDIR/
+admin@server:/Users/admin$ ls -l $GAMCFGDIR
 total 40
 -rw-r-----+ 1 admin  staff   553 Mar  3 09:23 client_secrets.json
 -rw-r-----+ 1 admin  staff  1069 Mar  3 09:23 gam.cfg
@@ -258,7 +269,7 @@ drwxr-x---+ 2 admin  staff    68 Mar  3 09:23 gamcache
 ```
 ### Update your project with local browser to include the additional APIs that GAMADV-XTD3 uses.
 ```
-admin@server:/Users/admin/bin/gamadv-xtd3$ gam update project
+admin@server:/Users/admin$ gam update project
 
 Enter your Google Workspace admin or GCP project manager email address authorized to manage project(s) gam-project-abc-123-xyz? admin@domain.com
 
@@ -288,12 +299,12 @@ Enable 3 APIs
   API: groupsmigration.googleapis.com, Enabled (2/3)
   API: sheets.googleapis.com, Enabled (3/3)
 
-admin@server:/Users/admin/bin/gamadv-xtd3$
+admin@server:/Users/admin$
 ```
 ### Update your project without local browser (Google Cloud Shell for instance) to include the additional APIs that GAMADV-XTD3 uses
 ```
-admin@server:/Users/admin/bin/gamadv-xtd3$ gam config no_browser true save
-admin@server:/Users/admin/bin/gamadv-xtd3$ gam update project
+admin@server:/Users/admin$ gam config no_browser true save
+admin@server:/Users/admin$ gam update project
 
 Enter your Google Workspace admin or GCP project manager email address authorized to manage project(s) gam-project-abc-123-xyz? admin@domain.com
 
@@ -322,7 +333,7 @@ Enable 3 APIs
   API: groupsmigration.googleapis.com, Enabled (2/3)
   API: sheets.googleapis.com, Enabled (3/3)
 
-admin@server:/Users/admin/bin/gamadv-xtd3$
+admin@server:/Users/admin$
 ```
 ### Enable GAMADV-XTD3 client access
 
@@ -332,17 +343,17 @@ You select a list of scopes, GAM uses a browser to get final authorization from 
 writes the credentials into the file oauth2.txt.
 
 ```
-admin@server:/Users/admin/bin/gamadv-xtd3$ rm -f /Users/admin/GAMConfig/oauth2.txt
-admin@server:/Users/admin/bin/gamadv-xtd3$ ./gam version
+admin@server:/Users/admin$ rm -f /Users/admin/GAMConfig/oauth2.txt
+admin@server:/Users/admin$ gam version
 WARNING: Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, Item: oauth2_txt, Value: /Users/admin/GAMConfig/oauth2.txt, Not Found
-GAMADV-XTD3 6.77.13 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
+GAMADV-XTD3 6.77.14 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
 Ross Scroggs <ross.scroggs@gmail.com>
 Python 3.12.4 64-bit final
 MacOS Sonoma 14.5 x86_64
 Path: /Users/admin/bin/gamadv-xtd3
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
 
-admin@server:/Users/admin/bin/gamadv-xtd3$ ./gam oauth create
+admin@server:/Users/admin$ gam oauth create
 
 [*]  0)  Calendar API (supports readonly)
 [*]  1)  Chrome Browser Cloud Management API (supports readonly)
@@ -423,11 +434,11 @@ Enter verification code or paste "Unable to connect" URL from other computer (on
 The authentication flow has completed.
 Client OAuth2 File: /Users/admin/GAMConfig/oauth2.txt, Created
 
-admin@server:/Users/admin/bin/gamadv-xtd3$
+admin@server:/Users/admin$
 ```
 ### Enable GAMADV-XTD3 service account access.
 ```
-admin@server:/Users/admin/bin/gamadv-xtd3$ ./gam user admin@domain.com check serviceaccount
+admin@server:/Users/admin$ gam user admin@domain.com check serviceaccount
 $ gam user admin@domain.com check serviceaccount
 System time status
   Your system time differs from www.googleapis.com by less than 1 second    PASS
@@ -482,7 +493,7 @@ Click AUTHORIZE
 When the box closes you're done
 After authorizing it may take some time for this test to pass so wait a few moments and then try this command again.
 
-admin@server:/Users/admin/bin/gamadv-xtd3$
+admin@server:/Users/admin$
 ```
 The link shown in the error message should take you directly to the authorization screen.
 If not, make sure that you are logged in as a domain admin, then re-enter the link.
@@ -492,7 +503,7 @@ If not, make sure that you are logged in as a domain admin, then re-enter the li
 Wait a moment and then perform the following command; it it still fails, wait a bit longer, it can sometimes take serveral minutes
 for the authorization to complete.
 ```
-admin@server:/Users/admin/bin/gamadv-xtd3$ ./gam user admin@domain.com check serviceaccount
+admin@server:/Users/admin$ gam user admin@domain.com check serviceaccount
 System time status:
   Your system time differs from www.googleapis.com by less than 1 second    PASS
 Service Account Private Key Authentication:
@@ -536,14 +547,14 @@ All scopes PASSED!
 
 Service Account Client name: SVCACCTID is fully authorized.
 
-admin@server:/Users/admin/bin/gamadv-xtd3$
+admin@server:/Users/admin$
 ```
 ### Update gam.cfg with some basic values
 * `customer_id` - Having this data keeps Gam from having to make extra API calls
 * `domain` - This allows you to omit the domain portion of email addresses
 * `timezone local` - Gam will convert all UTC times to your local timezone
 ```
-admin@server:/Users/admin/bin/gamadv-xtd3$ ./gam info domain
+admin@server:/Users/admin$ gam info domain
 Customer ID: C01234567
 Primary Domain: domain.com
 Customer Creation Time: 2007-06-06T15:47:55.444Z
@@ -551,7 +562,7 @@ Primary Domain Verified: True
 Default Language: en
 ...
 
-admin@server:/Users/admin/bin/gamadv-xtd3$ ./gam config customer_id C01234567 domain domain.com timezone local save verify
+admin@server:/Users/admin$ gam config customer_id C01234567 domain domain.com timezone local save verify
 Config File: /Users/admin/GAMConfig/gam.cfg, Saved
 Section: DEFAULT
   activity_max_results = 100
@@ -668,7 +679,7 @@ Section: DEFAULT
   user_max_results = 500
   user_service_account_access_only = false
 
-admin@server:/Users/admin/bin/gamadv-xtd3$
+admin@server:/Users/admin$
 ```
 
 ## Windows
@@ -728,12 +739,11 @@ At this point, you should restart Command Prompt so that it has the updated path
 Set environment variable OLDGAMPATH to point to the existing Gam directory; C:\GAM will be used in this example.
 If your existing Gam is in another directory, substitute that value in the directions.
 ```
-C:>cd C:\GAMADV-XTD3
-C:\GAMADV-XTD3>set OLDGAMPATH=C:\GAM
+C:\>set OLDGAMPATH=C:\GAM
 ```
 ### Verify that OLDGAMPATH points to the correct location.
 ```
-C:\GAMADV-XTD3>dir %OLDGAMPATH%\*.json
+C:\>dir %OLDGAMPATH%\*.json
  Volume in drive C has no label.
  Volume Serial Number is 663F-DA8B
 
@@ -748,8 +758,7 @@ C:\GAMADV-XTD3>dir %OLDGAMPATH%\*.json
 ```
 ### Initialize GAMADV-XTD3; this should be the first GAMADV-XTD3 command executed.
 ```
-C:>cd C:\GAMADV-XTD3
-C:\GAMADV-XTD3>gam config drive_dir C:\GAMWork verify
+C:\>gam config drive_dir C:\GAMWork verify
 Created: C:\GAMConfig
 Created: C:\GAMConfig\gamcache
 Copied: C:\GAM\oauth2service.json, To: C:\GAMConfig\oauth2service.json
@@ -871,11 +880,11 @@ Section: DEFAULT
   user_max_results = 500
   user_service_account_access_only = false
 
-C:\GAMADV-XTD3>
+C:\>
 ```
 ### Verify initialization, this was a successful installation.
 ```
-C:\GAMADV-XTD3>dir %GAMCFGDIR%
+C:\>dir %GAMCFGDIR%
  Volume in drive C has no label.
  Volume Serial Number is 663F-DA8B
 
@@ -892,11 +901,11 @@ C:\GAMADV-XTD3>dir %GAMCFGDIR%
 03/03/2017  10:15 AM             2,377 oauth2service.json
                6 File(s)         15,769 bytes
                3 Dir(s)  110,532,562,944 bytes free
-C:\GAMADV-XTD3>
+C:\>
 ```
 If the verification looks like this, then you'll have to copy client_secrets.json and oauth2service.json manually.
 ```
-C:\GAMADV-XTD3>dir %GAMCFGDIR%
+C:\>dir %GAMCFGDIR%
  Volume in drive C has no label.
  Volume Serial Number is 663F-DA8B
 
@@ -911,13 +920,13 @@ C:\GAMADV-XTD3>dir %GAMCFGDIR%
                3 File(s)          1,135 bytes
                3 Dir(s)  110,532,562,944 bytes free
 
-C:\GAMADV-XTD3>copy %OLDGAMPATH%\client_secrets.json %HOMEPATH%\.gam\
+C:\>copy %OLDGAMPATH%\client_secrets.json %GAMCFGDIR%
         1 file(s) copied.
 
-C:\GAMADV-XTD3>copy %OLDGAMPATH%\oauth2service.json %HOMEPATH%\.gam\
+C:\>copy %OLDGAMPATH%\oauth2service.json %GAMCFGDIR%
         1 file(s) copied.
 
-C:\GAMADV-XTD3>dir %GAMCFGDIR%
+C:\>dir %GAMCFGDIR%
  Volume in drive C has no label.
  Volume Serial Number is 663F-DA8B
 
@@ -936,7 +945,7 @@ C:\GAMADV-XTD3>dir %GAMCFGDIR%
 ```
 ### Update your project with local browser to include the additional APIs that GAMADV-XTD3 uses.
 ```
-C:\GAMADV-XTD3>gam update project
+C:\>gam update project
 
 Enter your Google Workspace admin or GCP project manager email address authorized to manage project(s) gam-project-abc-123-xyz? admin@domain.com
 
@@ -963,12 +972,12 @@ Enable 3 APIs
   API: groupsmigration.googleapis.com, Enabled (2/3)
   API: sheets.googleapis.com, Enabled (3/3)
 
-C:\GAMADV-XTD3>
+C:\>
 ```
 ### Update your project without local browser (headless server for instance) to include the additional APIs that GAMADV-XTD3 uses
 ```
-C:\GAMADV-XTD3>gam config no_browser true save
-C:\GAMADV-XTD3>gam update project
+C:\>gam config no_browser true save
+C:\>gam update project
 
 Enter your Google Workspace admin or GCP project manager email address authorized to manage project(s) gam-project-abc-123-xyz? admin@domain.com
 
@@ -997,7 +1006,7 @@ Enable 3 APIs
   API: groupsmigration.googleapis.com, Enabled (2/3)
   API: sheets.googleapis.com, Enabled (3/3)
 
-C:\GAMADV-XTD3>
+C:\>
 ```
 ### Enable GAMADV-XTD3 client access
 
@@ -1006,17 +1015,17 @@ Create oauth2.txt; it must be deleted and recreated because it is in a different
 You select a list of scopes, GAM uses a browser to get final authorization from Google for these scopes and
 writes the credentials into the file oauth2.txt.
 ```
-C:\GAMADV-XTD3>del C:\GAMConfig\oauth2.txt
-C:\GAMADV-XTD3>gam version
+C:\>del C:\GAMConfig\oauth2.txt
+C:\>gam version
 WARNING: Config File: C:\GAMConfig\gam.cfg, Section: DEFAULT, Item: oauth2_txt, Value: C:\GAMConfig\oauth2.txt, Not Found
-GAMADV-XTD3 6.77.13 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
+GAMADV-XTD3 6.77.14 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
 Ross Scroggs <ross.scroggs@gmail.com>
 Python 3.12.4 64-bit final
 Windows-10-10.0.17134 AMD64
 Path: C:\GAMADV-XTD3
 Config File: C:\GAMConfig\gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
 
-C:\GAMADV-XTD3>gam oauth create
+C:\>gam oauth create
 
 [*]  0)  Calendar API (supports readonly)
 [*]  1)  Chrome Browser Cloud Management API (supports readonly)
@@ -1097,12 +1106,12 @@ Enter verification code or paste "Unable to connect" URL from other computer (on
 The authentication flow has completed.
 Client OAuth2 File: C:\GAMConfig\oauth2.txt, Created
 
-C:\GAMADV-XTD3>
+C:\>
 ```
 
 ### Enable GAMADV-XTD3 service account access.
 ```
-C:\GAMADV-XTD3>gam user admin@domain.com check serviceaccount
+C:\>gam user admin@domain.com check serviceaccount
 System time status
   Your system time differs from www.googleapis.com by less than 1 second    PASS
 Service Account Private Key Authentication
@@ -1156,7 +1165,7 @@ Click AUTHORIZE
 When the box closes you're done
 After authorizing it may take some time for this test to pass so wait a few moments and then try this command again.
 
-C:\GAMADV-XTD3>
+C:\>
 ```
 The link shown in the error message should take you directly to the authorization screen.
 If not, make sure that you are logged in as a domain admin, then re-enter the link.
@@ -1166,7 +1175,7 @@ If not, make sure that you are logged in as a domain admin, then re-enter the li
 Wait a moment and then perform the following command; it it still fails, wait a bit longer, it can sometimes take serveral minutes
 for the authorization to complete.
 ```
-C:\GAMADV-XTD3>gam user admin@domain.com check serviceaccount
+C:\>gam user admin@domain.com check serviceaccount
 System time status:
   Your system time differs from www.googleapis.com by less than 1 second    PASS
 Service Account Private Key Authentication:
@@ -1210,14 +1219,14 @@ All scopes PASSED!
 
 Service Account Client name: SVCACCTID is fully authorized.
 
-C:\GAMADV-XTD3>
+C:\>
 ```
 ### Update gam.cfg with some basic values
 * `customer_id` - Having this data keeps Gam from having to make extra API calls
 * `domain` - This allows you to omit the domain portion of email addresses
 * `timezone local` - Gam will convert all UTC times to your local timezone
 ```
-C:\GAMADV-XTD3>gam info domain
+C:\>gam info domain
 Customer ID: C01234567
 Primary Domain: domain.com
 Customer Creation Time: 2007-06-06T15:47:55.444Z
@@ -1225,7 +1234,7 @@ Primary Domain Verified: True
 Default Language: en
 ...
 
-C:\GAMADV-XTD3>gam config customer_id C01234567 domain domain.com timezone local save verify
+C:\>gam config customer_id C01234567 domain domain.com timezone local save verify
 Config File: C:\GAMConfig\gam.cfg, Saved
 Section: DEFAULT
   activity_max_results = 100
@@ -1344,5 +1353,5 @@ Section: DEFAULT
   user_max_results = 500
   user_service_account_access_only = false
 
-C:\GAMADV-XTD3>
+C:\>
 ```

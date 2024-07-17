@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.77.14
+
+Fixed bug in `gam calendars <CalendarEntity> import event icaluid <iCalUID> json <JSONdata>` that caused an error.
+
 ### 6.77.13
 
 Updated `gam <UserTypeEntity> print|show filecounts` to reflect that Shared Drives now
