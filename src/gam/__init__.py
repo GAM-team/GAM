@@ -54413,7 +54413,7 @@ def printFileList(users):
   simpleLists = ['permissionIds', 'spaces']
   skipObjects = set()
   fileIdEntity = {}
-  selectSubQuery = ''
+  getSharedDriveACLsCountMsg = selectSubQuery = ''
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   DLP = DriveListParameters({'allowChoose': True, 'allowCorpora': True, 'allowQuery': True, 'mimeTypeInQuery': False})
   DFF = DriveFileFields()
