@@ -36922,9 +36922,9 @@ def _getCalendarEventAttribute(myarg, body, parameters, function):
       body.update(jsonData)
       clearJSONfields(body, EVENT_JSON_INSERT_CLEAR_FIELDS)
     elif function == 'import':
+      if 'id' in jsonData:
+        jsonData['iCalUID'] = jsonData.pop('id')
       body.update(jsonData)
-      if 'id' in body:
-        body['iCalUID'] = body.pop('id')
     elif function == 'update':
       if 'event' in jsonData and 'attendees' in jsonData['event']:
         parameters['attendees'].extend(jsonData['event'].pop('attendees'))
