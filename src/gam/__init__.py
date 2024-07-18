@@ -16090,18 +16090,33 @@ def doInfoDomain():
 
 DOMAIN_SORT_TITLES = ['domainName', 'parentDomainName', 'creationTime', 'type', 'verified']
 
-# gam print domains [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]
-# gam show domains [formatjson]
+# gam print domains [todrive <ToDriveAttribute>*]
+#	[formatjson [quotechar <Character>]]
+#	[showitemcountonly]
+# gam show domains
+#	[formatjson]
+#	[showitemcountonly]
 def doPrintShowDomains():
   cd = buildGAPIObject(API.DIRECTORY)
   csvPF = CSVPrintFile(['domainName'], DOMAIN_SORT_TITLES) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
-  getTodriveFJQCOnly(csvPF, FJQC, True)
+  showItemCountOnly = False
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif myarg == 'showitemcountonly':
+      showItemCountOnly = True
+    else:
+      FJQC.GetFormatJSONQuoteChar(myarg, True)
   try:
     domains = callGAPIitems(cd.domains(), 'list', 'domains',
                             throwReasons=[GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
                             customer=GC.Values[GC.CUSTOMER_ID])
     count = len(domains)
+    if showItemCountOnly:
+      writeStdout(f'{count}\n')
+      return
     i = 0
     for domain in domains:
       i += 1

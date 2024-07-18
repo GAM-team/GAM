@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
 
+### 6.77.17
+
+Added option `showitemcountonly` to `gam print domains` that causes GAM to display the
+number of domains on stdout; no CSV file is written.
+	 
 ### 6.77.16
 
 Fixed bug in `gam <UserTypeEntity> print filelist` that caused a trap.

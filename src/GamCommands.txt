@@ -3275,9 +3275,13 @@ gam delete domain <DomainName>
 
 gam info domain [<DomainName>]
         [formatjson]
-gam print domains [todrive <ToDriveAttribute>*]
+gam print domains
+        [todrive <ToDriveAttribute>*]
         [formatjson [quotechar <Character>]]
-gam show domains [formatjson]
+        [showitemcountonly]
+gam show domains
+        [formatjson]
+        [showitemcountonly]
 
 gam create|add domainalias|aliasdomain <DomainAlias> <DomainName>
 gam delete domainalias|aliasdomain <DomainAlias>

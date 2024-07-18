@@ -38,7 +38,9 @@ For `info`, if `<DomainName>` is omitted, information about the primary domain w
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 ```
-gam print domains [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]
+gam print domains
+        [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]
+        [showitemcountonly]
 ```
 By default, Gam displays the information as columns of fields.
 * `formatjson` - Display the fields in JSON format.
@@ -49,6 +51,12 @@ When using the `formatjson` option, double quotes are used extensively in the da
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
+## Display domain counts
+Display the number of domains.
+```
+gam print domains
+        showitemcountonly
+```
 ## Create and delete domain aliases
 ```
 gam create domainalias|aliasdomain <DomainAlias> <DomainName>
