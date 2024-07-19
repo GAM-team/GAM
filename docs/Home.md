@@ -39,7 +39,7 @@ To run all commands properly, GAMADV-XTD3 requires three things:
 Use these steps if you have never used any version of GAM in your domain. They will create a GAM project
 and all necessary authentications.
 
-* Download: [Downloads](Downloads)
+* Download: [Downloads-Installs](Downloads-Installs)
 * Configuration: [GAM Configuration](gam.cfg)
 * Install: [How to Install Advanced GAM](How-to-Install-Advanced-GAM)
 
@@ -47,7 +47,7 @@ and all necessary authentications.
 Use these steps if you have used any version of GAM in your domain. They will update your GAM project
 and all necessary authentications.
 
-* Download: [Downloads](Downloads)
+* Download: [Downloads-Installs](Downloads-Installs)
 * Configuration: [GAM Configuration](gam.cfg)
 * Upgrade: [How to Upgrade from Standard GAM](How-to-Upgrade-from-Standard-GAM)
 
@@ -56,7 +56,7 @@ Use these steps if you already use GAMADV-X or GAMADV-XTD or GAMADV-XTD3. The up
 or authentications because new features have been included.
 
 * Updates: [GAM Updates]
-* Download: [Downloads](Downloads)
+* Download: [Downloads-Installs](Downloads-Installs)
 
 You can install multiple versions of GAM and GAMADV-XTD3 in different parallel directories.
 

@@ -509,7 +509,7 @@ Find all the organizers and file organizers on the Golgafrincham shared drive in
 ```
 
 By default, all Shared Drives specified are displayed; use the following option to select a subset of those Shared Drives.
-* `<PermissionMatch>* [<PermissionMatchAction>] pmselect` - Use permission matching to select Shared Drives
+* `<PermissionMatch>* [<PermissionMatchAction>] pmselect` - Use permission matching to select Shared Drives; all ACLs are displayed for the selected Shared Drives
 
 By default, all ACLS are displayed; use the following option to select a subset of the ACLS to display.
 * `<PermissionMatch>* [<PermissionMatchAction>]` - Use permission matching to display a subset of the ACLs for each Shared Drive; this only applies when `pmselect` is not specified
@@ -548,7 +548,7 @@ By default, all Shared Drives are displayed; use the following options to select
 * `teamdriveadminquery|query <QueryTeamDrive>` - Use a query to select Shared Drives
 * `matchname <RegularExpression>` - Retrieve Shared Drives with names that match a pattern.
 * `orgunit|org|ou <OrgUnitPath>` - Only Shared Drives in the specified Org Unit are selected
-* `<PermissionMatch>* [<PermissionMatchAction>] pmselect` -  Use permission matching to select Shared Drives
+* `<PermissionMatch>* [<PermissionMatchAction>] pmselect` -  Use permission matching to select Shared Drives; all ACLs are displayed for the selected Shared Drives
 
 By default, Shared Drives with no permissions are not displayed; use the `shownopermissionsdrives` to control whether
 Shared Drives with no permissions are displayed.

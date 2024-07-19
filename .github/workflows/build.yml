@@ -460,7 +460,7 @@ jobs:
           "${PYTHON}" get-pip.py
           "${PYTHON}" -m pip install --upgrade pip
           "${PYTHON}" -m pip install --upgrade wheel
-          "${PYTHON}" -m pip install --upgrade setuptools==70.3.0 --force-reinstall
+          "${PYTHON}" -m pip install --upgrade setuptools
 
       - name: Install pip requirements
         run: |

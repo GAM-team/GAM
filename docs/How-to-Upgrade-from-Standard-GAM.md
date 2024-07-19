@@ -27,7 +27,7 @@ substitute that value in the directions.
 
 Make the directory:
 ```
-mkdir -p /Users/admin/GAMconfig
+mkdir -p /Users/admin/GAMConfig
 ```
 
 Add the following line:
@@ -47,7 +47,10 @@ Issue the following command replacing `<Filename>` with the name of the file you
 source <Filename>
 ```
 
-* Make the /Users/admin/GAMConfig directory before proceeding.
+You need to make sure the GAM configuration directory actually exists. Test that like this:
+```
+ls -l $GAMCFGDIR
+```
 
 ### Set a working directory
 
@@ -56,10 +59,15 @@ data in this folder and execute GAM commands from this folder. You should not us
 /Users/admin/bin/gamadv-xtd3 or /Users/admin/GAMConfig for this purpose.
 This example assumes that the GAM working directory will be /Users/admin/GAMWork; If you've chosen
 another directory, substitute that value in the directions.
-* Make the /Users/admin/GAMWork directory before proceeding.
+
+Make the directory:
+```
+mkdir -p /Users/admin/GAMWork
+```
 
 ### Set an alias
 You should set an alias to point to /Users/admin/bin/gamadv-xtd3/gam so you can operate from the /Users/admin/GAMWork directory.
+Aliases aren't available in scripts, so you may want to set a symlink instead, see below.
 
 Add the following line:
 ```
@@ -91,6 +99,12 @@ Issue the following command replacing `<Filename>` with the name of the file you
 source <Filename>
 ```
 
+### Set a symlink
+Set a symlink in `/usr/local/bin` (or some other location on $PATH) to point to GAM. 
+```
+ln -s "/Users/admin/bin/gamadv-xtd3/gam" /usr/local/bin/gam
+```
+
 Set environment variable OLDGAMPATH to point to the existing Gam directory; /Users/admin/bin/gam will be used in this example.
 If your existing Gam is in another directory, substitute that value in the directions.
 ```
@@ -113,122 +127,13 @@ Copied: /Users/admin/bin/gam/oauth2.txt, To: /Users/admin/GAMConfig/oauth2.txt
 Copied: /Users/admin/bin/gam/client_secrets.json, To: /Users/admin/GAMConfig/client_secrets.json
 Config File: /Users/admin/GAMConfig/gam.cfg, Initialized
 Section: DEFAULT
-  activity_max_results = 100
-  admin_email = ''
-  api_calls_rate_check = false
-  api_calls_rate_limit = 100
-  api_calls_tries_limit = 10
-  auto_batch_min = 0
-  bail_on_internal_error_tries = 2
-  batch_size = 50
-  cacerts_pem = ''
+  ...
   cache_dir = /Users/admin/GAMConfig/gamcache
-  cache_discovery_only = true
-  channel_customer_id = ''
-  charset = utf-8
-  classroom_max_results = 0
-  client_secrets_json = client_secrets.json ; /Users/admin/GAMConfig/client_secrets.json
-  clock_skew_in_seconds = 10
-  cmdlog = ''
-  cmdlog_max_backups = 5
-  cmdlog_max_kilo_bytes = 1000
+  ...
   config_dir = /Users/admin/GAMConfig
-  contact_max_results = 100
-  csv_input_column_delimiter = ,
-  csv_input_quote_char = '"'
-  csv_input_row_drop_filter = ''
-  csv_input_row_drop_filter_mode = anymatch
-  csv_input_row_filter = ''
-  csv_input_row_filter_mode = allmatch
-  csv_input_row_limit = 0
-  csv_output_column_delimiter = ,
-  csv_output_convert_cr_nl = false
-  csv_output_field_delimiter = ' '
-  csv_output_header_drop_filter = ''
-  csv_output_header_filter = ''
-  csv_output_header_force = ''
-  csv_output_line_terminator = lf
-  csv_output_quote_char = '"'
-  csv_output_row_drop_filter = ''
-  csv_output_row_drop_filter_mode = anymatch
-  csv_output_row_filter = ''
-  csv_output_row_filter_mode = allmatch
-  csv_output_row_limit = 0
-  csv_output_subfield_delimiter = '.'
-  csv_output_timestamp_column = ''
-  csv_output_users_audit = false
-  customer_id = my_customer
-  debug_level = 0
-  device_max_results = 200
-  domain = ''
+  ...
   drive_dir = /Users/admin/GAMWork
-  drive_max_results = 1000
-  drive_v3_native_names = true
-  email_batch_size = 50
-  enable_dasa = false
-  event_max_results = 250
-  extra_args = ''
-  inter_batch_wait = 0
-  license_max_results = 100
-  license_skus = ''
-  member_max_results = 200
-  message_batch_size = 50
-  message_max_results = 500
-  mobile_max_results = 100
-  multiprocess_pool_limit = 0
-  never_time = Never
-  no_browser = false
-  no_cache = false
-  no_update_check = true
-  no_verify_ssl = false
-  num_tbatch_threads = 2
-  num_threads = 5
-  oauth2_txt = oauth2.txt ; /Users/admin/GAMConfig/oauth2.txt
-  oauth2service_json = oauth2service.json ; /Users/admin/GAMConfig/oauth2service.json
-  people_max_results = 100
-  print_agu_domains = ''
-  print_cros_ous = ''
-  print_cros_ous_and_children = ''
-  process_wait_limit = 0
-  quick_cros_move = false
-  quick_info_user = false
-  reseller_id = ''
-  retry_api_service_not_available = false
-  section = ''
-  show_api_calls_retry_data = false
-  show_commands = false
-  show_convert_cr_nl = false
-  show_counts_min = 1
-  show_gettings = true
-  show_gettings_got_nl = false
-  show_multiprocess_info = false
-  smtp_fqdn = ''
-  smtp_host = ''
-  smtp_password = ''
-  smtp_username = ''
-  timezone = utc
-  tls_max_version = ''
-  tls_min_version = 'TLSv1_2'
-  todrive_clearfilter = false
-  todrive_clientaccess = false
-  todrive_conversion = true
-  todrive_localcopy = false
-  todrive_locale = ''
-  todrive_nobrowser = false
-  todrive_noemail = true
-  todrive_parent = root
-  todrive_sheet_timeformat = ''
-  todrive_sheet_timestamp = false
-  todrive_timeformat = ''
-  todrive_timestamp = false
-  todrive_timezone = ''
-  todrive_upload_nodata = true
-  todrive_user = ''
-  truncate_client_id = false
-  update_cros_ou_with_id = false
-  use_projectid_as_name = false
-  user_max_results = 500
-  user_service_account_access_only = false
+  ...
 
 admin@server:/Users/admin$
 ```
@@ -346,7 +251,7 @@ writes the credentials into the file oauth2.txt.
 admin@server:/Users/admin$ rm -f /Users/admin/GAMConfig/oauth2.txt
 admin@server:/Users/admin$ gam version
 WARNING: Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, Item: oauth2_txt, Value: /Users/admin/GAMConfig/oauth2.txt, Not Found
-GAMADV-XTD3 6.77.17 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
+GAMADV-XTD3 6.77.18 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
 Ross Scroggs <ross.scroggs@gmail.com>
 Python 3.12.4 64-bit final
 MacOS Sonoma 14.5 x86_64
@@ -1018,7 +923,7 @@ writes the credentials into the file oauth2.txt.
 C:\>del C:\GAMConfig\oauth2.txt
 C:\>gam version
 WARNING: Config File: C:\GAMConfig\gam.cfg, Section: DEFAULT, Item: oauth2_txt, Value: C:\GAMConfig\oauth2.txt, Not Found
-GAMADV-XTD3 6.77.17 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
+GAMADV-XTD3 6.77.18 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
 Ross Scroggs <ross.scroggs@gmail.com>
 Python 3.12.4 64-bit final
 Windows-10-10.0.17134 AMD64

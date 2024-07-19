@@ -27,7 +27,7 @@ substitute that value in the directions.
 
 Make the directory:
 ```
-mkdir -p /Users/admin/GAMconfig
+mkdir -p /Users/admin/GAMConfig
 ```
 
 Add the following line:
@@ -42,14 +42,7 @@ to one of these files based on your shell:
 ~/.profile
 ```
 
-You need to enable this setting in the environment. The easiest way is probably to close your terminal and open a new session. This will load the environment variables, including the one you just added. Test this by issuing this command:
-```
-echo $GAMCFGDIR
-```
-
-This should print the name of the directory you used above.
-
-Alternatively, without starting a new session, load the new variable in this session directly: issue the following command replacing `<Filename>` with the name of the file you edited:
+Issue the following command replacing `<Filename>` with the name of the file you edited:
 ```
 source <Filename>
 ```
@@ -66,7 +59,11 @@ data in this folder and execute GAM commands from this folder. You should not us
 /Users/admin/bin/gamadv-xtd3 or /Users/admin/GAMConfig for this purpose.
 This example assumes that the GAM working directory will be /Users/admin/GAMWork; If you've chosen
 another directory, substitute that value in the directions.
-* Make the /Users/admin/GAMWork directory before proceeding.
+
+Make the directory:
+```
+mkdir -p /Users/admin/GAMWork
+```
 
 ### Set an alias
 You should set an alias to point to /Users/admin/bin/gamadv-xtd3/gam so you can operate from the /Users/admin/GAMWork directory.
@@ -103,9 +100,12 @@ Created: /Users/admin/GAMConfig
 Created: /Users/admin/GAMConfig/gamcache
 Config File: /Users/admin/GAMConfig/gam.cfg, Initialized
 Section: DEFAULT
-  activity_max_results = 100
   ...
-  [long list of all config settings that should match the directories you specified]
+  cache_dir = /Users/admin/GAMConfig/gamcache
+  ...
+  config_dir = /Users/admin/GAMConfig
+  ...
+  drive_dir = /Users/admin/GAMWork
   ...
 
 admin@server:/Users/admin$
@@ -476,9 +476,12 @@ Default Language: en
 admin@server:/Users/admin$ gam config customer_id C01234567 domain domain.com timezone local save verify
 Config File: /Users/admin/GAMConfig/gam.cfg, Saved
 Section: DEFAULT
-  activity_max_results = 100
   ...
-  [long list of all config settings that should match the data you specified]
+  customer_id = C01234567
+  ...
+  domain = domain.com
+  ...
+  timezone = local
   ...
 
 admin@server:/Users/admin$
@@ -542,9 +545,12 @@ Created: C:\GAMConfig
 Created: C:\GAMConfig\gamcache
 Config File: C:\GAMConfig\gam.cfg, Initialized
 Section: DEFAULT
-  activity_max_results = 100
   ...
-  [long list of all config settings that should match the directories you specified]
+  cache_dir = C:\GAMConfig\gamcache
+  ...
+  config_dir = C:\GAMConfig
+  ...
+  drive_dir = C:\GAMWork
   ...
 
 C:\>
@@ -920,9 +926,12 @@ Default Language: en
 C:\>gam config customer_id C01234567 domain domain.com timezone local save verify
 Config File: C:\GAMConfig\gam.cfg, Saved
 Section: DEFAULT
-  activity_max_results = 100
   ...
-  [long list of all config settings that should match the directories you specified]
+  customer_id = C01234567
+  ...
+  domain = domain.com
+  ...
+  timezone = local
   ...
 
 C:\>

@@ -13,7 +13,7 @@ Use these steps to update your version of GAMADV-XTD3.
 This example assumes that GAMADV-XTD3 has been installed in /Users/admin/bin/gamadv-xtd3.
 If you've installed GAMADV-XTD3 in another directory, substitute that value in the directions when downloading.
 
-See: [Downloads](Downloads)
+See: [Downloads-Installs](Downloads-Installs)
 
 In these examples, your Google Super admin is shown as admin@domain.com; replace with the
 actual email adddress.
@@ -301,7 +301,7 @@ admin@server:/Users/admin/bin/gamadv-xtd3$
 This example assumes that GAMADV-XTD3 has been installed in C:\GAMADV-XTD3.
 If you've installed GAMADV-XTD3 in another directory, substitute that value in the directions when downloading.
 
-See: [Downloads](Downloads)
+See: [Downloads-Installs](Downloads-Installs)
 
 In these examples, your Google Super admin is shown as admin@domain.com; replace with the
 actual email adddress.

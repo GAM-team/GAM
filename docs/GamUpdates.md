@@ -8,7 +8,12 @@ Automatic update to the latest version on Linux/Mac OS/Google Cloud Shell/Raspbe
 By default, a folder, `gamadv-xtd3`, is created in the default or specified path and the files are downloaded into that folder.
 Add the `-s` option to the end of the above commands to suppress creating the `gamadv-xtd3` folder; the files are downloaded directly into the default or specified path.
 
-See [Downloads](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads) for Windows or other options, including manual installation
+See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
+
+### 6.77.18
+
+Added option `showitemcountonly` to `gam print domainaliasess` that causes GAM to display the
+number of domain aliasess on stdout; no CSV file is written.
 
 ### 6.77.17
 
