@@ -15,6 +15,7 @@
 - [Print organizational units](#print-organizational-units)
 - [Display organizational unit counts](#display-organizational-unit-counts)
 - [Display indented organizational unit tree](#display-indented-organizational-unit-tree)
+- [Check organizational unit for contained items](#check-organizational-unit-for-contained-items)
 - [Special case handling for large number of organizational units](#special-case-handling-for-large-number-of-organizational-units)
 
 ## API documentation
@@ -269,6 +270,44 @@ gam show orgtree [fromparent <OrgUnitItem>] [batchsuborgs [<Boolean>]]
 ```
 By default, Gam displays the organizational unit tree starting at /.
 * `fromparent <OrgUnitItem>` - Display the organizational unit tree starting at `<OrgUnitItem>`.
+
+## Check organizational unit for contained items
+An organizational unit can be deleted only when it contains no items:
+  * Chrome Browsers
+  * ChromeOS Devices
+  * Shared Drives
+  * Sub Org Units
+  * Users
+
+This command counts those items and displays a CSV file with the item counts.
+  * All counts are zero - A return code of 0 is returned and the `empty` column is `True`
+  * Some count is greater than 0 - A return code of 25 is returned and the `empty` column is `False`
+
+Only items directly within the OU are counted, items in sub-OUs are not counted.
+```
+<OrgUnitCheckName> ::=
+        browsers|
+        devices|
+        shareddrives|
+        subous|
+        users
+<OrgUnitCheckNameList> ::= "<OrgUnitCheckName>(,<OrgUnitCheckName>)*"
+
+gam check org|ou <OrgUnitItem> [todrive <ToDriveAttribute>*]
+        [<OrgUnitCheckName>*|(fields <OrgUnitCheckNameList>)]
+        [formatjson [quotechar <Character>]]
+```
+By default, GAM checks each of the five items; you can select specfic fields
+with `<OrgUnitCheckName>*` or `fields <OrgUnitCheckNameList>`.
+
+By default, GAM displays the information as columns of fields; the following option causes the output to be in JSON format:
+* `formatjson` - Display the fields in JSON format.
+
+By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
+the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
+When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
+The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
+`quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
 ## Special case handling for large number of organizational units
 

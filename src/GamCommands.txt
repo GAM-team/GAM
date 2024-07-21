@@ -3275,8 +3275,7 @@ gam delete domain <DomainName>
 
 gam info domain [<DomainName>]
         [formatjson]
-gam print domains
-        [todrive <ToDriveAttribute>*]
+gam print domains [todrive <ToDriveAttribute>*]
         [formatjson [quotechar <Character>]]
         [showitemcountonly]
 gam show domains
@@ -3286,10 +3285,14 @@ gam show domains
 gam create|add domainalias|aliasdomain <DomainAlias> <DomainName>
 gam delete domainalias|aliasdomain <DomainAlias>
 
-gam info domainalias|aliasdomain <DomainAlias> [formatjson]
+gam info domainalias|aliasdomain <DomainAlias>
+        [formatjson]
 gam print domainaliases|aliasdomains [todrive <ToDriveAttribute>*]
         [formatjson [quotechar <Character>]]
-gam show domainaliases|aliasdomains [formatjson]
+        [showitemcountonly]
+gam show domainaliases|aliasdomains
+        [formatjson]
+        [showitemcountonly]
 
 # Domain - Contacts and Global Address List
 
@@ -4213,6 +4216,18 @@ gam print orgs|ous [todrive <ToDriveAttribute>*]
         [minusercount <Number>] [maxusercount <Number>]
         [showitemcountonly]
 gam show orgtree [fromparent <OrgUnitItem>] [batchsuborgs [<Boolean>]]
+
+<OrgUnitCheckName> ::=
+        browsers|
+        devices|
+        shareddrives|
+        subous|
+        users
+<OrgUnitCheckNameList> ::= "<OrgUnitCheckName>(,<OrgUnitCheckName>)*"
+
+gam check org|ou <OrgUnitItem> [todrive <ToDriveAttribute>*]
+        [<OrgUnitCheckName>*|(fields <OrgUnitCheckNameList>)]
+        [formatjson [quotechar <Character>]]
 
 # Printers
 

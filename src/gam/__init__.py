@@ -332,6 +332,7 @@ ENTITY_IS_A_USER_ALIAS_RC = 21
 ENTITY_IS_A_GROUP_RC = 22
 ENTITY_IS_A_GROUP_ALIAS_RC = 23
 ENTITY_IS_AN_UNMANAGED_ACCOUNT_RC = 24
+ORGUNIT_NOT_EMPTY_RC = 25
 CHECK_USER_GROUPS_ERROR_RC = 29
 ORPHANS_COLLECTED_RC = 30
 # Warnings/Errors
@@ -8890,14 +8891,6 @@ def getTodriveOnly(csvPF):
     else:
       unknownArgumentExit()
 
-def getTodriveFJQCOnly(csvPF, FJQC, addTitle=False, noExit=False):
-  while Cmd.ArgumentsRemaining():
-    myarg = getArgument()
-    if csvPF and myarg == 'todrive':
-      csvPF.GetTodriveParameters()
-    else:
-      FJQC.GetFormatJSONQuoteChar(myarg, addTitle, noExit)
-
 DEFAULT_SKIP_OBJECTS = {'kind', 'etag', 'etags', '@type'}
 
 # Clean a JSON object
@@ -15763,18 +15756,33 @@ def _printDomain(domain, csvPF):
 
 DOMAIN_ALIAS_SORT_TITLES = ['domainAliasName', 'parentDomainName', 'creationTime', 'verified']
 
-# gam print domainaliases [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]
-# gam show domainaliases [formatjson]
+# gam print domainaliases [todrive <ToDriveAttribute>*]
+#	[formatjson [quotechar <Character>]]
+#	[showitemcountonly]
+# gam show domainaliases
+#	[formatjson]
+#	[showitemcountonly]
 def doPrintShowDomainAliases():
   cd = buildGAPIObject(API.DIRECTORY)
   csvPF = CSVPrintFile(['domainAliasName'], DOMAIN_ALIAS_SORT_TITLES) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
-  getTodriveFJQCOnly(csvPF, FJQC, True)
+  showItemCountOnly = False
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif myarg == 'showitemcountonly':
+      showItemCountOnly = True
+    else:
+      FJQC.GetFormatJSONQuoteChar(myarg, True)
   try:
     domainAliases = callGAPIitems(cd.domainAliases(), 'list', 'domainAliases',
                                   throwReasons=[GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
                                   customer=GC.Values[GC.CUSTOMER_ID])
     count = len(domainAliases)
+    if showItemCountOnly:
+      writeStdout(f'{count}\n')
+      return
     i = 0
     for domainAlias in domainAliases:
       i += 1
@@ -17477,7 +17485,11 @@ def _getOrgUnits(cd, orgUnitPath, fieldsList, listType, showParent, batchSubOrgs
   else:
     fields = ','.join(set(fieldsList))
   listfields = f'organizationUnits({fields})'
-  printGettingAllAccountEntities(Ent.ORGANIZATIONAL_UNIT)
+  if listType == 'all' and  orgUnitPath == '/':
+    printGettingAllAccountEntities(Ent.ORGANIZATIONAL_UNIT)
+  else:
+    printGettingAllEntityItemsForWhom(Ent.CHILD_ORGANIZATIONAL_UNIT, orgUnitPath,
+                                      qualifier=' (Direct Children)' if listType == 'children' else '', entityType=Ent.ORGANIZATIONAL_UNIT)
   if listType == 'children':
     batchSubOrgs = False
   try:
@@ -17515,7 +17527,10 @@ def _getOrgUnits(cd, orgUnitPath, fieldsList, listType, showParent, batchSubOrgs
       except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError,
               GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
         pass
-  printGotAccountEntities(len(orgUnits))
+  if listType == 'all' and  orgUnitPath == '/':
+    printGotAccountEntities(len(orgUnits))
+  else:
+    printGotEntityItemsForWhom(len(orgUnits))
   if childSelector is not None:
     for orgUnit in orgUnits:
       orgUnit[ORG_UNIT_SELECTOR_FIELD] = childSelector if orgUnit['orgUnitPath'] != orgUnitPath else parentSelector
@@ -17748,6 +17763,157 @@ def doShowOrgTree():
   for org in sorted(orgTree):
     printOrgUnit(org, orgTree)
 
+ORG_ITEMS_FIELD_MAP = {
+  'browsers': 'browsers',
+  'devices': 'devices',
+  'shareddrives': 'sharedDrives',
+  'subous': 'subOus',
+  'users': 'users',
+  }
+
+# gam check org|ou <OrgUnitItem> [todrive <ToDriveAttribute>*]
+#	[<OrgUnitCheckName>*|(fields <OrgUnitCheckNameList>)]
+#	[formatjson [quotechar <Character>]]
+def doCheckOrgUnit():
+  cd = buildGAPIObject(API.DIRECTORY)
+  csvPF = CSVPrintFile(['orgUnitPath', 'orgUnitId', 'empty'])
+  FJQC = FormatJSONQuoteChar(csvPF)
+  orgUnitPath = None
+  fieldsList = []
+  titlesList = []
+  status, orgUnitPath, orgUnitId = checkOrgUnitPathExists(cd, getOrgUnitItem())
+  orgUnitPathLower = orgUnitPath.lower()
+  if not status:
+    entityDoesNotExistExit(Ent.ORGANIZATIONAL_UNIT, orgUnitPath)
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif myarg in ORG_ITEMS_FIELD_MAP:
+      fieldsList.append(myarg)
+    elif myarg == 'fields':
+      for field in _getFieldsList():
+        if field in ORG_ITEMS_FIELD_MAP:
+          fieldsList.append(field)
+        else:
+          invalidChoiceExit(field, list(ORG_ITEMS_FIELD_MAP), True)
+    else:
+      FJQC.GetFormatJSONQuoteChar(myarg, True)
+  if orgUnitPath is None:
+    missingArgumentExit('orgunit <OrgUnitItem>')
+  if not fieldsList:
+    fieldsList = ORG_ITEMS_FIELD_MAP.keys()
+  orgUnitItemCounts = {}
+  for field in sorted(fieldsList):
+    title = ORG_ITEMS_FIELD_MAP[field]
+    orgUnitItemCounts[title] = 0
+    if not FJQC.formatJSON:
+      titlesList.append(title)
+  if 'browsers' in fieldsList:
+    cbcm = buildGAPIObject(API.CBCM)
+    customerId = _getCustomerIdNoC()
+    printGettingAllEntityItemsForWhom(Ent.CHROME_BROWSER, orgUnitPath, entityType=Ent.ORGANIZATIONAL_UNIT)
+    pageMessage = getPageMessage()
+    try:
+      feed = yieldGAPIpages(cbcm.chromebrowsers(), 'list', 'browsers',
+                            pageMessage=pageMessage, messageAttribute='deviceId',
+                            throwReasons=[GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.INVALID_ORGUNIT, GAPI.FORBIDDEN],
+                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                            customer=customerId, orgUnitPath=orgUnitPath, projection='BASIC',
+                            fields='nextPageToken,browsers(deviceId)')
+      for browsers in feed:
+        orgUnitItemCounts['browsers'] += len(browsers)
+    except (GAPI.invalidInput, GAPI.forbidden) as e:
+      entityActionFailedWarning([Ent.CHROME_BROWSER, None], str(e))
+    except GAPI.invalidOrgunit  as e:
+      entityActionFailedExit([Ent.CHROME_BROWSER, None], str(e))
+    except (GAPI.badRequest, GAPI.resourceNotFound):
+      accessErrorExit(None)
+  if 'devices' in fieldsList:
+    printGettingAllEntityItemsForWhom(Ent.CROS_DEVICE, orgUnitPath, entityType=Ent.ORGANIZATIONAL_UNIT)
+    pageMessage = getPageMessageForWhom()
+    pageToken = None
+    totalItems = 0
+    tokenRetries = 0
+    while True:
+      try:
+        feed = callGAPI(cd.chromeosdevices(), 'list',
+                        throwReasons=[GAPI.INVALID_INPUT, GAPI.INVALID_ORGUNIT,
+                                      GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                        retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                        pageToken=pageToken, customerId=GC.Values[GC.CUSTOMER_ID],
+                        orgUnitPath=orgUnitPath, fields='nextPageToken,chromeosdevices(deviceId)', maxResults=GC.Values[GC.DEVICE_MAX_RESULTS])
+        tokenRetries = 0
+        pageToken, totalItems = _processGAPIpagesResult(feed, 'chromeosdevices', None, totalItems, pageMessage, None, Ent.CROS_DEVICE)
+        if feed:
+          orgUnitItemCounts['devices'] += len(feed.get('chromeosdevices', []))
+          del feed
+        if not pageToken:
+          _finalizeGAPIpagesResult(pageMessage)
+          printGotAccountEntities(totalItems)
+          break
+      except GAPI.invalidInput as e:
+        message = str(e)
+# Invalid Input: xyz - Check for invalid pageToken!!
+# 0123456789012345
+        if message[15:] == pageToken:
+          tokenRetries += 1
+          if tokenRetries <= 2:
+            writeStderr(f'{WARNING_PREFIX}{Msg.LIST_CHROMEOS_INVALID_INPUT_PAGE_TOKEN_RETRY}')
+            time.sleep(tokenRetries*5)
+            continue
+          entityActionFailedWarning([Ent.CROS_DEVICE, None], message)
+          break
+        entityActionFailedWarning([Ent.CROS_DEVICE, None], message)
+        break
+      except GAPI.invalidOrgunit as e:
+        entityActionFailedExit([Ent.CROS_DEVICE, None], str(e))
+      except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
+        accessErrorExit(cd)
+  if 'shareddrives' in fieldsList:
+    ci = buildGAPIObject(API.CLOUDIDENTITY_ORGUNITS_BETA)
+    printGettingAllEntityItemsForWhom(Ent.SHAREDDRIVE, orgUnitPath, entityType=Ent.ORGANIZATIONAL_UNIT)
+    sds = callGAPIpages(ci.orgUnits().memberships(), 'list', 'orgMemberships',
+                        pageMessage=getPageMessageForWhom(),
+                        parent=f'orgUnits/{orgUnitId[3:]}',
+                        customer=_getCustomersCustomerIdWithC(),
+                        filter="type == 'shared_drive'")
+    orgUnitItemCounts['sharedDrives'] = len(sds)
+  if 'subous' in fieldsList:
+    orgUnitItemCounts['subOus'] = len(_getOrgUnits(cd, orgUnitPath, ['orgUnitPath'], 'children', False, False, None, None))
+  if 'users' in fieldsList:
+    printGettingAllEntityItemsForWhom(Ent.USER, orgUnitPath, entityType=Ent.ORGANIZATIONAL_UNIT)
+    pageMessage = getPageMessageForWhom()
+    try:
+      feed = yieldGAPIpages(cd.users(), 'list', 'users',
+                            pageMessage=pageMessage,
+                            throwReasons=[GAPI.INVALID_ORGUNIT, GAPI.ORGUNIT_NOT_FOUND,
+                                          GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                            customer=GC.Values[GC.CUSTOMER_ID], query=orgUnitPathQuery(orgUnitPath, None),
+                            fields='nextPageToken,users(orgUnitPath)', maxResults=GC.Values[GC.USER_MAX_RESULTS])
+      for users in feed:
+        for user in users:
+          if orgUnitPathLower == user.get('orgUnitPath', '').lower():
+            orgUnitItemCounts['users'] += 1
+    except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.invalidInput, GAPI.badRequest, GAPI.backendError,
+            GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.resourceNotFound, GAPI.forbidden):
+      checkEntityDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, orgUnitPath)
+  empty = True
+  for count in orgUnitItemCounts.values():
+    if count > 0:
+      empty = False
+      break
+  baseRow = {'orgUnitPath': orgUnitPath, 'orgUnitId': orgUnitId, 'empty': empty}
+  row = flattenJSON(orgUnitItemCounts, baseRow.copy())
+  if not FJQC.formatJSON:
+    csvPF.WriteRowTitles(row)
+  elif csvPF.CheckRowTitles(row):
+    baseRow['JSON'] = json.dumps(cleanJSON(orgUnitItemCounts), ensure_ascii=False, sort_keys=True)
+    csvPF.WriteRowNoFilter(baseRow)
+  csvPF.writeCSVfile(f'OrgUnit {orgUnitPath} Item Counts')
+  if not empty and GM.Globals[GM.SYSEXITRC] == 0:
+    setSysExitRC(ORGUNIT_NOT_EMPTY_RC)
+  
 ALIAS_TARGET_TYPES = ['user', 'group', 'target']
 
 # gam create aliases|nicknames <EmailAddressEntity> user|group|target <UniqueID>|<EmailAddress>
@@ -25050,10 +25216,10 @@ def doPrintShowBrowsers():
         else:
           entityActionFailedWarning([Ent.CHROME_BROWSER, None], str(e))
         return
-      except GAPI.invalidOrgunit as e:
+      except (GAPI.invalidOrgunit, GAPI.forbidden) as e:
         entityActionFailedWarning([Ent.CHROME_BROWSER, None], str(e))
         return
-      except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
+      except (GAPI.badRequest, GAPI.resourceNotFound):
         accessErrorExit(None)
   else:
     sortRows = True
@@ -43806,18 +43972,21 @@ def doPrintUsers(entityList=None):
                               projection=schemaParms['projection'], customFieldMask=schemaParms['customFieldMask'],
                               maxResults=maxResults, **kwargs)
         for users in feed:
-          if showItemCountOnly:
-            itemCount += len(users)
-            continue
           if orgUnitPath is None:
-            if not printOptions['countOnly']:
+            if showItemCountOnly:
+              itemCount += len(users)
+            elif not printOptions['countOnly']:
               for user in users:
                 _printUser(user, 0, 0)
             else:
               for user in users:
                 _updateDomainCounts(user['primaryEmail'])
           else:
-            if not printOptions['countOnly']:
+            if showItemCountOnly:
+              for user in users:
+                if orgUnitPathLower == user.get('orgUnitPath', '').lower():
+                  itemCount += 1
+            elif not printOptions['countOnly']:
               for user in users:
                 if orgUnitPathLower == user.get('orgUnitPath', '').lower():
                   _printUser(user, 0, 0)
@@ -63853,7 +64022,9 @@ def doPrintShowOrgunitSharedDrives():
   if csvPF and FJQC.formatJSON:
     csvPF.SetJSONTitles(['name', 'JSON'])
   _, orgUnitId = getOrgUnitId(None, orgUnitPath)
+  printGettingAllEntityItemsForWhom(Ent.SHAREDDRIVE, orgUnitPath, entityType=Ent.ORGANIZATIONAL_UNIT)
   sds = callGAPIpages(ci.orgUnits().memberships(), 'list', 'orgMemberships',
+                      pageMessage=getPageMessageForWhom(),
                       parent=f'orgUnits/{orgUnitId[3:]}',
                       customer=_getCustomersCustomerIdWithC(),
                       filter="type == 'shared_drive'")
@@ -73666,6 +73837,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
      {Cmd.ARG_SVCACCT:		doCheckUpdateSvcAcct,
       Cmd.ARG_USERINVITATION:	doCheckCIUserInvitations,
       Cmd.ARG_ISINVITABLE:	doCheckCIUserInvitations,
+      Cmd.ARG_ORG:		doCheckOrgUnit,
      }
     ),
   'clear':

@@ -94,6 +94,7 @@ class GamEntity():
   CHAT_MESSAGE_ID = 'chmi'
   CHAT_SPACE = 'chsp'
   CHAT_THREAD = 'chth'
+  CHILD_ORGANIZATIONAL_UNIT = 'corg'
   CHROME_APP = 'capp'
   CHROME_APP_DEVICE = 'capd'
   CHROME_BROWSER = 'chbr'
@@ -435,6 +436,7 @@ class GamEntity():
     CHAT_MEMBER_USER: ['Chat User Members', 'Chat User Member'],
     CHAT_SPACE: ['Chat Spaces', 'Chat Space'],
     CHAT_THREAD: ['Chat Threads', 'Chat Thread'],
+    CHILD_ORGANIZATIONAL_UNIT: ['Child Organizational Units', 'Child Organizational Unit'],
     CHROME_APP: ['Chrome Applications', 'Chrome Application'],
     CHROME_APP_DEVICE: ['Chrome Application Devices', 'Chrome Application Device'],
     CHROME_BROWSER: ['Chrome Browsers', 'Chrome Browser'],

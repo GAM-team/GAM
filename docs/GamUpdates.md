@@ -10,9 +10,16 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.78.00
+
+Added command to check if an OU contains items; this is useful when tryng to delete an OU
+as it must not contain any items in order to be deleted.
+
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Organizational-Units#check-organizational-unit-for-contained-items
+
 ### 6.77.18
 
-Added option `showitemcountonly` to `gam print domainaliasess` that causes GAM to display the
+Added option `showitemcountonly` to `gam print domainaliases` that causes GAM to display the
 number of domain aliasess on stdout; no CSV file is written.
 
 ### 6.77.17
