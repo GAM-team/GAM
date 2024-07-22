@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.79.00
+
+Updated code to work around a Cryptography library change that caused service account private key creation to fail.
+
 ### 6.78.00
 
 Added command to check if an OU contains items; this is useful when tryng to delete an OU
