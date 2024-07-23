@@ -1,10 +1,15 @@
-6.79.00
-
-Updated code to work around a Cryptography library change that caused service account private key creation to fail.
-
 7.00.00
 
 Merged GAM-Team version
+
+6.79.01
+
+Updated commands that take `<RoleItem>` as an argument to take the value in any case,
+e.g., _SEED_ADMIN_ROLE or _seed_admin_role.
+
+6.79.00
+
+Updated code to work around a Cryptography library change that caused service account private key creation to fail.
 
 6.78.00
 

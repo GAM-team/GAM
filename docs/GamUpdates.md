@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.79.01
+
+Updated commands that take `<RoleItem>` as an argument to take the value in any case,
+e.g., _SEED_ADMIN_ROLE or _seed_admin_role.
+
 ### 6.79.00
 
 Updated code to work around a Cryptography library change that caused service account private key creation to fail.

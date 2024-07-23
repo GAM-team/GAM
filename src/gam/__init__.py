@@ -16210,7 +16210,7 @@ def makeRoleIdNameMap():
     accessErrorExit(cd)
   for role in result:
     GM.Globals[GM.MAP_ROLE_ID_TO_NAME][role['roleId']] = role['roleName']
-    GM.Globals[GM.MAP_ROLE_NAME_TO_ID][role['roleName']] = role['roleId']
+    GM.Globals[GM.MAP_ROLE_NAME_TO_ID][role['roleName'].lower()] = role['roleId']
 
 def role_from_roleid(roleid):
   if GM.Globals[GM.MAKE_ROLE_ID_NAME_MAP]:
@@ -16220,7 +16220,7 @@ def role_from_roleid(roleid):
 def roleid_from_role(role):
   if GM.Globals[GM.MAKE_ROLE_ID_NAME_MAP]:
     makeRoleIdNameMap()
-  return GM.Globals[GM.MAP_ROLE_NAME_TO_ID].get(role, None)
+  return GM.Globals[GM.MAP_ROLE_NAME_TO_ID].get(role.lower(), None)
 
 def getRoleId():
   role = getString(Cmd.OB_ROLE_ITEM)
@@ -16344,7 +16344,7 @@ def _showAdminRole(role, i=0, count=0):
 def doInfoAdminRole():
   cd = buildGAPIObject(API.DIRECTORY)
   fieldsList = PRINT_ADMIN_ROLES_FIELDS[:]
-  role, roleId = getRoleId()
+  _, roleId = getRoleId()
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'privileges':
