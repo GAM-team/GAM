@@ -5628,9 +5628,9 @@ def getServiceAccountEmailFromID(account_id, sal=None):
     sal = buildGAPIObject(API.SERVICEACCOUNTLOOKUP)
   try:
     certs = callGAPI(sal.serviceaccounts(), 'lookup',
-                     throwReasons = [GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND,  GAPI.INVALID_ARGUMENT],
+                     throwReasons = [GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.RESOURCE_NOT_FOUND,  GAPI.INVALID_ARGUMENT],
                      account=account_id)
-  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.invalidArgument):
+  except (GAPI.badRequest, GAPI.notFound, GAPI.resourceNotFound, GAPI.invalidArgument):
     return None
   sa_cn_rx = r'CN=(.+)\.(.+)\.iam\.gservice.*'
   sa_emails = []

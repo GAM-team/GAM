@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.79.02
+
+Updated `gam print admins` to handle the following error that occurs when a service account admin no longer exists.
+```
+ERROR: 404: notFound - Requested entity was not found.
+```
+
 ### 6.79.01
 
 Updated commands that take `<RoleItem>` as an argument to take the value in any case,
