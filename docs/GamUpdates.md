@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.79.03
+
+Added column|field `assignedToUnknown` to `gam print|show admins` that will be True when
+the API `assignedTo` value can not be converted to an email address; it will be False when
+the email address is determinable.
+
 ### 6.79.02
 
 Updated `gam print admins` to handle the following error that occurs when a service account admin no longer exists.

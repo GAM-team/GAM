@@ -16506,7 +16506,7 @@ ASSIGNEE_EMAILTYPE_TOFIELD_MAP = {
   }
 PRINT_ADMIN_FIELDS = ['roleAssignmentId', 'roleId', 'assignedTo', 'scopeType', 'orgUnitId']
 PRINT_ADMIN_TITLES = ['roleAssignmentId', 'roleId', 'role',
-                      'assignedTo', 'assignedToUser', 'assignedToGroup', 'assignedToServiceAccount',
+                      'assignedTo', 'assignedToUser', 'assignedToGroup', 'assignedToServiceAccount', 'assignedToUnknown',
                       'scopeType', 'orgUnitId', 'orgUnit']
 
 # gam print admins [todrive <ToDriveAttribute>*]
@@ -16536,6 +16536,7 @@ def doPrintShowAdmins():
   def _setNamesFromIds(admin, privileges):
     admin['role'] = role_from_roleid(admin['roleId'])
     assignedTo = admin['assignedTo']
+    admin['assignedToUnknown'] = False
     if assignedTo not in assignedToIdEmailMap:
       assigneeType = admin.get('assigneeType')
       assignedToField = ASSIGNEE_EMAILTYPE_TOFIELD_MAP.get(assigneeType, None)
@@ -16545,10 +16546,11 @@ def doPrintShowAdmins():
                                                                      emailTypes=list(ASSIGNEE_EMAILTYPE_TOFIELD_MAP.keys()))
       if not assignedToField and assigneeType in ASSIGNEE_EMAILTYPE_TOFIELD_MAP:
         assignedToField = ASSIGNEE_EMAILTYPE_TOFIELD_MAP[assigneeType]
+      if assigneeType == 'unknown':
+        assignedToField = 'assignedToUnknown'
+        assigneeEmail = True
       assignedToIdEmailMap[assignedTo] = {'assignedToField': assignedToField, 'assigneeEmail': assigneeEmail}
-    assignedToField = assignedToIdEmailMap[assignedTo]['assignedToField']
-    if assignedToField:
-      admin[assignedToField] = assignedToIdEmailMap[assignedTo]['assigneeEmail']
+    admin[assignedToIdEmailMap[assignedTo]['assignedToField']] = assignedToIdEmailMap[assignedTo]['assigneeEmail']
     if privileges is not None:
       admin.update(privileges)
     if 'orgUnitId' in admin:
