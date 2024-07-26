@@ -17881,10 +17881,10 @@ def doCheckOrgUnit():
         if not pageToken:
           _finalizeGAPIpagesResult(pageMessage)
           printGotAccountEntities(totalItems)
+          if f is not None and orgUnitItemCounts['devices'] > 0:
+            writeCommandInfo('devices')
+            f.write(f'gam update  ou {moveToOrgUnitPath} add cros_ou {orgUnitPath}\n')
           break
-        if f is not None and orgUnitItemCounts['devices'] > 0:
-          writeCommandInfo('devices')
-          f.write(f'gam update  ou {moveToOrgUnitPath} add cros_ou {orgUnitPath}\n')
       except GAPI.invalidInput as e:
         message = str(e)
 # Invalid Input: xyz - Check for invalid pageToken!!
