@@ -295,6 +295,7 @@ Only items directly within the OU are counted, items in sub-OUs are not counted.
 
 gam check org|ou <OrgUnitItem> [todrive <ToDriveAttribute>*]
         [<OrgUnitCheckName>*|(fields <OrgUnitCheckNameList>)]
+        [filename <FileName>] [movetoou <OrgUnitItem>]
         [formatjson [quotechar <Character>]]
 ```
 By default, GAM checks each of the five items; you can select specfic fields
@@ -308,6 +309,17 @@ the quote character itself, the column delimiter (comma by default) and new-line
 When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
+
+If `movetoou <OrgUnitItem>` is specified, GAM will create a batch file of GAM commands that will move any remaining items
+in `ou <OrgUnitItem>` to `movetoou <OrgUnitItem>`.
+
+By default, the batch file will be named `CleanOuBatch.txt` and will be created in `gam.cfg/drive_dir`.
+This can be overridden with `filename <FileName>`.
+
+You can inspect the file and execute it if desired; substitute actual filenames as desired.
+```
+gam redirect stdout CleanOuLog.txt multiproces redirect stderr stdout batch CleanOuBatch.txt
+```
 
 ## Special case handling for large number of organizational units
 

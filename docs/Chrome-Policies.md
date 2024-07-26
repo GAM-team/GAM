@@ -199,6 +199,16 @@ gam update chromepolicy convertcrnl chrome.devices.DisabledDeviceReturnInstructi
 ```
 
 ### Examples
+Restrict use of Chromebooks in an OU to a specific list of users.
+```
+gam update chromepolicy chrome.devices.SignInRestriction deviceAllowNewUsers RESTRICTED_LIST userAllowlist "user1@domain.com,user2@domain.com" ou "<Path/To/Ou>"
+```
+
+Restrict use of Chromebooks in an OU to users in a specific domain.
+```
+gam update chromepolicy chrome.devices.SignInRestriction deviceAllowNewUsers RESTRICTED_LIST userAllowlist "*@domain.com" ou "<Path/To/Ou>"
+```
+
 Restrict student users from adding additional printers and set default printing to black and white.
 ```
 gam update chromepolicy chrome.users.UserPrintersAllowed userPrintersAllowed false chrome.users.DefaultPrintColor printingColorDefault MONOCHROME orgunit "/Students" 

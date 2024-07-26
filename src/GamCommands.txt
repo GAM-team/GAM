@@ -4225,8 +4225,9 @@ gam show orgtree [fromparent <OrgUnitItem>] [batchsuborgs [<Boolean>]]
         users
 <OrgUnitCheckNameList> ::= "<OrgUnitCheckName>(,<OrgUnitCheckName>)*"
 
-gam check org|ou <OrgUnitItem> [todrive <ToDriveAttribute>*]
+gam check ou|org <OrgUnitItem> [todrive <ToDriveAttribute>*]
         [<OrgUnitCheckName>*|(fields <OrgUnitCheckNameList>)]
+        [filename <FileName>] [movetoou <OrgUnitItem>]
         [formatjson [quotechar <Character>]]
 
 # Printers

@@ -2810,6 +2810,15 @@ def entityModifierNewValueKeyValueActionPerformed(entityValueList, modifier, new
 def cleanFilename(filename):
   return sanitize_filename(filename, '_')
 
+def setFilePath(fileName):
+  if fileName.startswith('./') or fileName.startswith('.\\'):
+    fileName = os.path.join(os.getcwd(), fileName[2:])
+  else:
+    fileName = os.path.expanduser(fileName)
+  if not os.path.isabs(fileName):
+    fileName = os.path.join(GC.Values[GC.DRIVE_DIR], fileName)
+  return fileName
+
 def uniqueFilename(targetFolder, filetitle, overwrite, extension=None):
   filename = filetitle
   y = 0
@@ -3773,12 +3782,7 @@ def SetGlobalVariables():
 
   def _setCSVFile(fileName, mode, encoding, writeHeader, multi):
     if fileName != '-':
-      if fileName.startswith('./') or fileName.startswith('.\\'):
-        fileName = os.path.join(os.getcwd(), fileName[2:])
-      else:
-        fileName = os.path.expanduser(fileName)
-      if not os.path.isabs(fileName):
-        fileName = os.path.join(GC.Values[GC.DRIVE_DIR], fileName)
+      fileName = setFilePath(fileName)
     GM.Globals[GM.CSVFILE][GM.REDIRECT_NAME] = fileName
     GM.Globals[GM.CSVFILE][GM.REDIRECT_MODE] = mode
     GM.Globals[GM.CSVFILE][GM.REDIRECT_ENCODING] = encoding
@@ -3799,12 +3803,7 @@ def SetGlobalVariables():
       else:
         GM.Globals[stdtype][GM.REDIRECT_FD] = os.fdopen(os.dup(sys.stderr.fileno()), mode, encoding=GM.Globals[GM.SYS_ENCODING])
     else:
-      if fileName.startswith('./') or fileName.startswith('.\\'):
-        fileName = os.path.join(os.getcwd(), fileName[2:])
-      else:
-        fileName = os.path.expanduser(fileName)
-      if not os.path.isabs(fileName):
-        fileName = os.path.join(GC.Values[GC.DRIVE_DIR], fileName)
+      fileName = setFilePath(fileName)
       if multi and mode == DEFAULT_FILE_WRITE_MODE:
         deleteFile(fileName)
         mode = DEFAULT_FILE_APPEND_MODE
@@ -17773,20 +17772,32 @@ ORG_ITEMS_FIELD_MAP = {
   'users': 'users',
   }
 
-# gam check org|ou <OrgUnitItem> [todrive <ToDriveAttribute>*]
+# gam check ou|org <OrgUnitItem> [todrive <ToDriveAttribute>*]
 #	[<OrgUnitCheckName>*|(fields <OrgUnitCheckNameList>)]
+#	[filename <FileName>] [movetoou <OrgUnitItem>]
 #	[formatjson [quotechar <Character>]]
 def doCheckOrgUnit():
+  def writeCommandInfo(field):
+    nonlocal commitBatch
+    if commitBatch:
+      f.write(f'{Cmd.COMMIT_BATCH_CMD}\n')
+    else:
+      commitBatch = True
+    f.write(f'{Cmd.PRINT_CMD} Move {field} from {orgUnitPath} to {moveToOrgUnitPath}\n')
+
   cd = buildGAPIObject(API.DIRECTORY)
   csvPF = CSVPrintFile(['orgUnitPath', 'orgUnitId', 'empty'])
   FJQC = FormatJSONQuoteChar(csvPF)
-  orgUnitPath = None
+  f = orgUnitPath = None
   fieldsList = []
   titlesList = []
   status, orgUnitPath, orgUnitId = checkOrgUnitPathExists(cd, getOrgUnitItem())
-  orgUnitPathLower = orgUnitPath.lower()
   if not status:
     entityDoesNotExistExit(Ent.ORGANIZATIONAL_UNIT, orgUnitPath)
+  orgUnitPathLower = orgUnitPath.lower()
+  fileName = 'CleanOuBatch.txt'
+  moveToOrgUnitPath = moveToOrgUnitPathLower = None
+  commitBatch = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -17799,12 +17810,26 @@ def doCheckOrgUnit():
           fieldsList.append(field)
         else:
           invalidChoiceExit(field, list(ORG_ITEMS_FIELD_MAP), True)
+    elif myarg == 'filename':
+      fileName = setFilePath(getString(Cmd.OB_FILE_NAME))
+    elif myarg == 'movetoou':
+      movetoouLocation = Cmd.Location()
+      status, moveToOrgUnitPath, _ = checkOrgUnitPathExists(cd, getOrgUnitItem())
+      moveToOrgUnitPathLower = moveToOrgUnitPath.lower()
+      if not status:
+        entityDoesNotExistExit(Ent.ORGANIZATIONAL_UNIT, moveToOrgUnitPath)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
-  if orgUnitPath is None:
-    missingArgumentExit('orgunit <OrgUnitItem>')
   if not fieldsList:
     fieldsList = ORG_ITEMS_FIELD_MAP.keys()
+  if moveToOrgUnitPath is not None:
+    Cmd.SetLocation(movetoouLocation)
+    if orgUnitPathLower == moveToOrgUnitPathLower:
+      usageErrorExit(Msg.OU_AND_MOVETOOU_CANNOT_BE_IDENTICAL.format(orgUnitPath, moveToOrgUnitPath))
+    if 'subous' in fieldsList and moveToOrgUnitPathLower.startswith(orgUnitPathLower):
+      usageErrorExit(Msg.OU_SUBOUS_CANNOT_BE_MOVED_TO_MOVETOOU.format(orgUnitPath, moveToOrgUnitPath))
+    fileName = setFilePath(fileName)
+    f = openFile(fileName, DEFAULT_FILE_WRITE_MODE)
   orgUnitItemCounts = {}
   for field in sorted(fieldsList):
     title = ORG_ITEMS_FIELD_MAP[field]
@@ -17825,6 +17850,9 @@ def doCheckOrgUnit():
                             fields='nextPageToken,browsers(deviceId)')
       for browsers in feed:
         orgUnitItemCounts['browsers'] += len(browsers)
+      if f is not None and orgUnitItemCounts['browsers'] > 0:
+        writeCommandInfo('browsers')
+        f.write(f'gam move browsers ou {moveToOrgUnitPath} browserou {orgUnitPath}\n')
     except (GAPI.invalidInput, GAPI.forbidden) as e:
       entityActionFailedWarning([Ent.CHROME_BROWSER, None], str(e))
     except GAPI.invalidOrgunit  as e:
@@ -17854,6 +17882,9 @@ def doCheckOrgUnit():
           _finalizeGAPIpagesResult(pageMessage)
           printGotAccountEntities(totalItems)
           break
+        if f is not None and orgUnitItemCounts['devices'] > 0:
+          writeCommandInfo('devices')
+          f.write(f'gam update  ou {moveToOrgUnitPath} add cros_ou {orgUnitPath}\n')
       except GAPI.invalidInput as e:
         message = str(e)
 # Invalid Input: xyz - Check for invalid pageToken!!
@@ -17881,8 +17912,18 @@ def doCheckOrgUnit():
                         customer=_getCustomersCustomerIdWithC(),
                         filter="type == 'shared_drive'")
     orgUnitItemCounts['sharedDrives'] = len(sds)
+    if f is not None and orgUnitItemCounts['sharedDrives'] > 0:
+      writeCommandInfo('Shared Drives')
+      for sd in sds:
+        name = sd['name'].split(';')[1]
+        f.write(f'gam update shareddrive {name} ou {moveToOrgUnitPath}\n')
   if 'subous' in fieldsList:
-    orgUnitItemCounts['subOus'] = len(_getOrgUnits(cd, orgUnitPath, ['orgUnitPath'], 'children', False, False, None, None))
+    subOus = _getOrgUnits(cd, orgUnitPath, ['orgUnitPath'], 'children', False, False, None, None)
+    orgUnitItemCounts['subOus'] = len(subOus)
+    if f is not None and orgUnitItemCounts['subOus'] > 0:
+      writeCommandInfo('Sub OrgUnit')
+      for ou in subOus:
+        f.write(f'gam update ou {ou["orgUnitPath"]} parent {moveToOrgUnitPath}\n')
   if 'users' in fieldsList:
     printGettingAllEntityItemsForWhom(Ent.USER, orgUnitPath, entityType=Ent.ORGANIZATIONAL_UNIT)
     pageMessage = getPageMessageForWhom()
@@ -17897,9 +17938,15 @@ def doCheckOrgUnit():
         for user in users:
           if orgUnitPathLower == user.get('orgUnitPath', '').lower():
             orgUnitItemCounts['users'] += 1
+      if f is not None and orgUnitItemCounts['users'] > 0:
+        writeCommandInfo('users')
+        f.write(f'gam update ou {moveToOrgUnitPath} add ou {orgUnitPath}\n')
     except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.invalidInput, GAPI.badRequest, GAPI.backendError,
             GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.resourceNotFound, GAPI.forbidden):
       checkEntityDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, orgUnitPath)
+  if f is not None:
+    closeFile(f)
+    writeStderr(Msg.GAM_BATCH_FILE_WRITTEN.format(fileName))
   empty = True
   for count in orgUnitItemCounts.values():
     if count > 0:
@@ -17915,7 +17962,7 @@ def doCheckOrgUnit():
   csvPF.writeCSVfile(f'OrgUnit {orgUnitPath} Item Counts')
   if not empty and GM.Globals[GM.SYSEXITRC] == 0:
     setSysExitRC(ORGUNIT_NOT_EMPTY_RC)
-  
+
 ALIAS_TARGET_TYPES = ['user', 'group', 'target']
 
 # gam create aliases|nicknames <EmailAddressEntity> user|group|target <UniqueID>|<EmailAddress>
@@ -68384,8 +68431,8 @@ def forwardMessagesThreads(users, entityType):
     if not gmail:
       continue
     service = gmail.users().messages() if entityType == Ent.MESSAGE else gmail.users().threads()
-    try:
-      if parameters['messageEntity'] is None:
+    if parameters['messageEntity'] is None:
+      try:
         printGettingAllEntityItemsForWhom(entityType, user, i, count)
         listResult = callGAPIpages(service, 'list', parameters['listType'],
                                    pageMessage=getPageMessageForWhom(), maxItems=parameters['maxItems'],
@@ -68393,12 +68440,12 @@ def forwardMessagesThreads(users, entityType):
                                    userId='me', q=parameters['query'], fields=parameters['fields'], includeSpamTrash=includeSpamTrash,
                                    maxResults=GC.Values[GC.MESSAGE_MAX_RESULTS])
         entityIds = [entity['id'] for entity in listResult]
-    except (GAPI.failedPrecondition, GAPI.permissionDenied, GAPI.invalid, GAPI.invalidArgument) as e:
-      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
-      continue
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
-      continue
+      except (GAPI.failedPrecondition, GAPI.permissionDenied, GAPI.invalid, GAPI.invalidArgument) as e:
+        entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+        continue
+      except (GAPI.serviceNotAvailable, GAPI.badRequest):
+        entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+        continue
     jcount = len(entityIds)
     if jcount == 0:
       entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.NO_ENTITIES_MATCHED.format(Ent.Plural(entityType)), i, count)

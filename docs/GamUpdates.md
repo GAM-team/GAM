@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.79.04
+
+Added options `filename <FileName>` and `movetoou <OrgUnitItem>` to `gam check ou <OrgUnitItem>`
+that causes GAM to create a batch file of GAM commands that will move any remaining items
+in `ou <OrgUnitItem>` to `movetoou <OrgUnitItem>`; executing the batch file will then allow
+`ou <OrgUnitItem>` to be deleted if desired.
+
 ### 6.79.03
 
 Added column|field `assignedToUnknown` to `gam print|show admins` that will be True when

@@ -2,6 +2,13 @@
 
 Merged GAM-Team version
 
+6.79.04
+
+Added options `filename <FileName>` and `movetoou <OrgUnitItem>` to `gam check ou <OrgUnitItem>`
+that causes GAM to create a batch file of GAM commands that will move any remaining items
+in `ou <OrgUnitItem>` to `movetoou <OrgUnitItem>`; executing the batch file will then allow
+`ou <OrgUnitItem>` to be deleted if desired.
+
 6.79.03
 
 Added column|field `assignedToUnknown` to `gam print|show admins` that will be True when
