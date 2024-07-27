@@ -61670,10 +61670,10 @@ def emptyDriveTrash(users):
       kwargs['driveId'] = fileIdEntity['shareddrive']['driveId']
     try:
       callGAPI(drive.files(), 'emptyTrash',
-               throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND],
+               throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INSUFFICIENT_FILE_PERMISSIONS],
                **kwargs)
       entityActionPerformed([Ent.USER, user, Ent.DRIVE_TRASH, kwargs['driveId']], i, count)
-    except GAPI.notFound as e:
+    except (GAPI.notFound, GAPI.insufficientFilePermissions) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, kwargs['driveId']], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
       userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)

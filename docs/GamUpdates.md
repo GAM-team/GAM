@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.79.05
+
+Updated `gam <UserTypeEntity> empty drivetrash <SharedDriveEntity>` to handle this error that
+occurs when the user is not a Manager of the Shared Drive.
+```
+ERROR: 403: insufficientFilePermissions - The user does not have sufficient permissions for this file.
+```
+
 ### 6.79.04
 
 Added options `filename <FileName>` and `movetoou <OrgUnitItem>` to `gam check ou <OrgUnitItem>`
