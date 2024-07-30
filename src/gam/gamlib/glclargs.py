@@ -672,6 +672,8 @@ class GamCLArgs():
   ARG_ORG = 'org'
   ARG_ORGS = 'orgs'
   ARG_ORGTREE = 'orgtree'
+  ARG_ORGUNIT = 'orgunit'
+  ARG_ORGUNITS = 'orgunits'
   ARG_ORGUNITSHAREDDRIVE = 'orgunitshareddrive'
   ARG_ORGUNITSHAREDDRIVES = 'orgunitshareddrives'
   ARG_ORPHANS = 'orphans'

@@ -25,6 +25,22 @@
 <UniqueID> ::= id:<String>
 <UserItem> ::= <EmailAddress>|<UniqueID>|<String>
 
+<DriveFileOrderByFieldName> ::=
+        createddate|createdtime|
+        folder|
+        lastviewedbyme|lastviewedbymedate|lastviewedbymetime|lastviewedbyuser|
+        modifiedbyme|modifiedbymedate|modifiedbymetime|modifiedbyuser|
+        modifieddate|modifiedtime|
+        name|
+        name_natural|
+        quotabytesused|quotaused|
+        recency|
+        sharedwithmedate|sharedwithmetime|
+        starred|
+        title|
+        title_natural|
+        viewedbymedate|viewedbymetime
+
 <DrivePermissionsFieldName> ::=
         additionalroles|
         allowfilediscovery|

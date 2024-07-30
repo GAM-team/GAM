@@ -63,6 +63,10 @@ gam <UserTypeEntity> transfer ownership <DriveFileEntity> <UserItem>
         (orderby <DriveOrderByFieldName> [ascending|descending])*
         [preview] [filepath] [pathdelimiter <Character>] [buildtree] [todrive <ToDriveAttribute>*]
 ```
+`<DriveFileEntity>` specifies a file/folder owned by the source user `<UserTypeEntity>`.
+
+The target user is specified by `<UserItem>`.
+
 By default, there is no change of parents for the transferred files/folders, they remain in their current location.
 * `<DriveFileParentAttribute>` - Specify a parent folder in the My Drive of the target user `<UserItem>`.
 

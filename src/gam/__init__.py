@@ -5183,7 +5183,7 @@ def checkGAPIError(e, softErrors=False, retryOnHttpError=False, mapNotFound=True
     elif http_status == 409:
       if status == 'ALREADY_EXISTS' or 'requested entity already exists' in lmessage:
         error = makeErrorDict(http_status, GAPI.ALREADY_EXISTS, message)
-      elif status == 'ABORTED':
+      elif status == 'ABORTED' or 'the operation was aborted' in lmessage:
         error = makeErrorDict(http_status, GAPI.ABORTED, message)
     elif http_status == 412:
       if 'insufficient archived user licenses' in lmessage:
@@ -13659,7 +13659,7 @@ def doReport():
     elif myarg in {'range', 'thismonth', 'previousmonths'}:
       startEndTime.Get(myarg)
       userCustomerRange = True
-    elif myarg in {'orgunit', 'org', 'ou'}:
+    elif myarg in {'ou', 'org', 'orgunit'}:
       if cd is None:
         cd = buildGAPIObject(API.DIRECTORY)
       orgUnit, orgUnitId = getOrgUnitId(cd)
@@ -24832,7 +24832,7 @@ def doInfoPrintShowCrOSTelemetry():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif myarg in ['ou', 'org', 'orgunit', 'limittoou', 'ouandchildren', 'crossn', 'filter']:
+    elif myarg in {'ou', 'org', 'orgunit', 'limittoou', 'ouandchildren', 'crossn', 'filter'}:
       if pfilters:
         Cmd.Backup()
         usageErrorExit(Msg.ONLY_ONE_DEVICE_SELECTION_ALLOWED.format(pfilters[0][1]))
@@ -25038,7 +25038,7 @@ def doMoveBrowsers():
   queryTimes = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if myarg in ['ou', 'org', 'orgunit']:
+    if myarg in {'ou', 'org', 'orgunit'}:
       orgUnitPath = getOrgUnitItem()
     elif myarg == 'ids':
       deviceIds.extend(convertEntityToList(getString(Cmd.OB_DEVICE_ID_LIST, minLen=0)))
@@ -25203,7 +25203,7 @@ def doPrintShowBrowsers():
       queries = getQueries(myarg)
     elif myarg.startswith('querytime'):
       queryTimes[myarg] = getTimeOrDeltaFromNow()[0:19]
-    elif myarg in ['ou', 'org', 'orgunit', 'browserou']:
+    elif myarg in {'ou', 'org', 'orgunit', 'browserou'}:
       orgUnitPath = getOrgUnitItem(pathOnly=True, absolutePath=True)
     elif myarg == 'select':
       _, entityList = getEntityToModify(defaultEntityType=Cmd.ENTITY_BROWSER, browserAllowed=True, crosAllowed=False, userAllowed=False)
@@ -25312,7 +25312,7 @@ def doCreateBrowserToken():
   body = {'token_type': 'CHROME_BROWSER'}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if myarg in ['ou', 'org', 'orgunit', 'browserou']:
+    if myarg in {'ou', 'org', 'orgunit', 'browserou'}:
       body['org_unit_path'] = getOrgUnitItem(pathOnly=True, absolutePath=True)
     elif myarg in ['expire', 'expires']:
       body['expire_time'] = getTimeOrDeltaFromNow()
@@ -25356,6 +25356,7 @@ BROWSER_TOKEN_FIELDS_CHOICE_MAP = {
   'org': 'orgUnitPath',
   'orgunit': 'orgUnitPath',
   'orgunitpath': 'orgUnitPath',
+  'ou': 'orgUnitPath',
   'revoketime': 'revokeTime',
   'revokerid': 'revokerId',
   'state': 'state',
@@ -25404,7 +25405,7 @@ def doPrintShowBrowserTokens():
       queries = getQueries(myarg)
     elif myarg.startswith('querytime'):
       queryTimes[myarg] = getTimeOrDeltaFromNow()[0:19]
-    elif myarg in ['ou', 'org', 'orgunit', 'browserou']:
+    elif myarg in {'ou', 'org', 'orgunit', 'browserou'}:
       orgUnitPath = getOrgUnitItem(pathOnly=True, absolutePath=True)
     elif myarg == 'orderby':
       orderBy, sortOrder = getOrderBySortOrder(BROWSER_TOKEN_FIELDS_CHOICE_MAP, 'DESCENDING', True)
@@ -28848,7 +28849,7 @@ def _getPrinterAttributes(cd, jsonDeleteFields):
       body['displayName'] = getString(Cmd.OB_STRING)
     elif myarg == 'makeandmodel':
       body['makeAndModel'] = getString(Cmd.OB_STRING)
-    elif myarg in ['ou', 'org', 'orgunit', 'orgunitid']:
+    elif myarg in {'ou', 'org', 'orgunit', 'orgunitid'}:
       _, body['orgUnitId'] = getOrgUnitId(cd)
       body['orgUnitId'] = body['orgUnitId'][3:]
     elif myarg == 'uri':
@@ -37606,6 +37607,8 @@ def _updateCalendarEvents(origUser, user, origCal, calIds, count, calendarEventE
                     body['attendees'].append(addAttendee)
               elif parameters['attendees']:
                 body['attendees'] = parameters['attendees']
+              else:
+                body['attendees'] = []
             elif parameters['attendees']:
               body['attendees'] = parameters['attendees']
             else:
@@ -39862,7 +39865,7 @@ def doCreateVaultHold():
     elif myarg in {'accounts', 'users', 'groups'}:
       accountsLocation = Cmd.Location()
       accounts = getEntityList(Cmd.OB_EMAIL_ADDRESS_ENTITY)
-    elif myarg in {'orgunit', 'org', 'ou'}:
+    elif myarg in {'ou', 'org', 'orgunit'}:
       body['orgUnit'] = {'orgUnitId': getOrgUnitId()[1]}
     elif _getHoldQueryParameters(myarg, queryParameters):
       pass
@@ -39930,7 +39933,7 @@ def doUpdateVaultHold():
     elif myarg in {'removeusers', 'removeaccounts', 'removegroups'}:
       removeAccountsLocation = Cmd.Location()
       removeAccounts = getEntityList(Cmd.OB_EMAIL_ADDRESS_ENTITY)
-    elif myarg in {'orgunit', 'org', 'ou'}:
+    elif myarg in {'ou', 'org', 'orgunit'}:
       body['orgUnit'] = {'orgUnitId': getOrgUnitId()[1]}
     elif _getHoldQueryParameters(myarg, queryParameters):
       pass
@@ -43136,6 +43139,7 @@ USER_FIELDS_CHOICE_MAP = {
   'organizations': 'organizations',
   'organisation': 'organizations',
   'organisations': 'organizations',
+  'orgunit': 'orgUnitPath',
   'orgunitpath': 'orgUnitPath',
   'otheremail': 'emails',
   'otheremails': 'emails',
@@ -44941,7 +44945,7 @@ def _getInboundSSOAssignmentArguments(ci, cd, body):
       body['signInBehavior'] = {'redirectCondition': 'NEVER'}
     elif myarg == 'group':
       _, body['targetGroup'], _ = convertGroupEmailToCloudID(ci, getString(Cmd.OB_STRING))
-    elif myarg in ['ou', 'org', 'orgunit']:
+    elif myarg in {'ou', 'org', 'orgunit'}:
       body['targetOrgUnit'] = getCIOrgunitID(cd, getString(Cmd.OB_ORGUNIT_ITEM))
     else:
       unknownArgumentExit()
@@ -64064,7 +64068,7 @@ def doPrintShowOrgunitSharedDrives():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif myarg in ['ou', 'org', 'orgunit']:
+    elif myarg in {'ou', 'org', 'orgunit'}:
       orgUnitPath = getString(Cmd.OB_ORGUNIT_ITEM)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
@@ -74452,6 +74456,8 @@ MAIN_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_MOBILES:		Cmd.ARG_MOBILE,
   Cmd.ARG_NICKNAME:		Cmd.ARG_ALIAS,
   Cmd.ARG_NICKNAMES:		Cmd.ARG_ALIAS,
+  Cmd.ARG_ORGUNIT:		Cmd.ARG_ORG,
+  Cmd.ARG_ORGUNITS:		Cmd.ARG_ORGS,
   Cmd.ARG_ORGUNITSHAREDDRIVES:	Cmd.ARG_ORGUNITSHAREDDRIVE,
   Cmd.ARG_OU:			Cmd.ARG_ORG,
   Cmd.ARG_OUS:			Cmd.ARG_ORGS,

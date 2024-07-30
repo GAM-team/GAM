@@ -72,6 +72,22 @@
 <OrgUnitPath> ::= /|(/<String>)+
 <OrgUnitItem> ::= <OrgUnitID>|<OrgUnitPath>
 
+<DriveFileOrderByFieldName> ::=
+        createddate|createdtime|
+        folder|
+        lastviewedbyme|lastviewedbymedate|lastviewedbymetime|lastviewedbyuser|
+        modifiedbyme|modifiedbymedate|modifiedbymetime|modifiedbyuser|
+        modifieddate|modifiedtime|
+        name|
+        name_natural|
+        quotabytesused|quotaused|
+        recency|
+        sharedwithmedate|sharedwithmetime|
+        starred|
+        title|
+        title_natural|
+        viewedbymedate|viewedbymetime
+
 <DriveFileACLRole> ::=
         manager|organizer|owner|
         contentmanager|fileorganizer|

@@ -193,7 +193,8 @@ Select the fields to be displayed:
 * `annotated` - Display these fields: deviceId,annotatedAssetId,annotatedLocation,annotatedNotes,annotatedUser
 * `basic` - Display all fields except: browsers, lastDeviceUsers, lastStatusReportTime, machinePloicies; this is the default
 * `allfields/full` - Display all fields
-* `<BrowserFieldName>* [fields <BrowserFieldNameList>]` - Displaya selected list of fields
+* `<BrowserFieldName>* [fields <BrowserFieldNameList>]` - Display a selected list of fields
+  * Note that `ou, org and orgunit` are both command line options and field names; use `fields` to include them in the selected list of fields
 
 By default, Gam displays the information as an indented list of keys and values:
 - `formatjson` - Display the fields in JSON format.
@@ -232,7 +233,8 @@ Select the fields to be displayed:
 * `annotated` - Display these fields: deviceId,annotatedAssetId,annotatedLocation,annotatedNotes,annotatedUser
 * `basic` - Display all fields except: browsers, lastDeviceUsers, lastStatusReportTime, machinePloicies; this is the default
 * `allfields/full` - Display all fields
-* `<BrowserFieldName>* [fields <BrowserFieldNameList>]` - Displaya selected list of fields
+* `<BrowserFieldName>* [fields <BrowserFieldNameList>]` - Display a selected list of fields
+  * Note that `ou, org and orgunit` are both command line options and field names; use `fields` to include them in the selected list of fields
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format:
 * `formatjson` - Display the fields in JSON format.

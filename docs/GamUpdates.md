@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.79.06
+
+Fixed bug in `gam calendars <CalendarEntity> update event ... removeattendee <EmailAddress>` that caused a trap
+if the event had no attendees.
+
 ### 6.79.05
 
 Updated `gam <UserTypeEntity> empty drivetrash <SharedDriveEntity>` to handle this error that
