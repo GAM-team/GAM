@@ -63546,7 +63546,7 @@ def createSharedDrive(users, useDomainAdminAccess=False):
     waitingForCreationToComplete(updateInitialDelay)
     created = False
     retry = 0
-    while True:
+    while not created:
       try:
         callGAPI(drive.drives(), 'get',
                  throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND],
@@ -65275,16 +65275,16 @@ def checkUserInGroups(users):
 
 # gam <UserTypeEntity> print groups [todrive <ToDriveAttribute>*]
 #	[(domain <DomainName>)|(customerid <CustomerID>)]
-#	[roles <GroupRoleList>] [countsonly|nodetails]
+#	[roles <GroupRoleList>] [countsonly|totalonly|nodetails]
 # gam <UserTypeEntity> show groups
 #	[(domain <DomainName>)|(customerid <CustomerID>)]
-#	[roles <GroupRoleList>] [countsonly|nodetails]
+#	[roles <GroupRoleList>] [countsonly|totalonly|nodetails]
 def printShowUserGroups(users):
   cd = buildGAPIObject(API.DIRECTORY)
   kwargs = {'customer': GC.Values[GC.CUSTOMER_ID]}
   csvPF = CSVPrintFile(['User', 'Group', 'Role', 'Status', 'Delivery'], 'sortall') if Act.csvFormat() else None
   rolesSet = set()
-  countsOnly = noDetails = False
+  countsOnly = noDetails = totalOnly = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -65299,6 +65299,8 @@ def printShowUserGroups(users):
           invalidChoiceExit(role, GROUP_ROLES_MAP, True)
     elif myarg == 'countsonly':
       countsOnly = True
+    elif myarg == 'totalonly':
+      countsOnly = totalOnly = True
     elif myarg == 'nodetails':
       noDetails = True
     else:
@@ -65312,15 +65314,17 @@ def printShowUserGroups(users):
       csvPF.SetTitles(titles)
       csvPF.SetSortTitles([])
   elif countsOnly:
-    zeroCounts = {'User': None}
-    for role in [Ent.ROLE_MEMBER, Ent.ROLE_MANAGER, Ent.ROLE_OWNER]:
-      if role in rolesSet:
-        zeroCounts[role] = 0
-    if csvPF:
-      titles = ['User']
+    zeroCounts = {'User': None, 'Total': 0}
+    if not totalOnly:
       for role in [Ent.ROLE_MEMBER, Ent.ROLE_MANAGER, Ent.ROLE_OWNER]:
         if role in rolesSet:
-          titles.append(role)
+          zeroCounts[role] = 0
+    if csvPF:
+      titles = ['User', 'Total']
+      if not totalOnly:
+        for role in [Ent.ROLE_MEMBER, Ent.ROLE_MANAGER, Ent.ROLE_OWNER]:
+          if role in rolesSet:
+            titles.append(role)
       csvPF.SetTitles(titles)
       csvPF.SetSortTitles([])
   i, count, users = getEntityArgument(users)
@@ -65348,6 +65352,12 @@ def printShowUserGroups(users):
         return
       accessErrorExit(cd)
     jcount = len(entityList)
+    if totalOnly:
+      if not csvPF:
+        printEntityKVList([Ent.USER, user], ['Total', jcount])
+      else:
+        csvPF.WriteRow({'User': user, 'Total': jcount})
+      continue
     if not csvPF:
       if allRoles:
         entityPerformActionNumItems([Ent.USER, user], jcount, Ent.GROUP, i, count)
@@ -65393,8 +65403,11 @@ def printShowUserGroups(users):
       except (GAPI.memberNotFound, GAPI.invalidMember, GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.GROUP, groupEmail], str(e), j, jcount)
     if countsOnly:
+      for role in [Ent.ROLE_MEMBER, Ent.ROLE_MANAGER, Ent.ROLE_OWNER]:
+        if role in rolesSet:
+          userCounts['Total'] += userCounts[role]
       if not csvPF:
-        kvList = []
+        kvList = ['Total', userCounts['Total']]
         for role in [Ent.ROLE_MEMBER, Ent.ROLE_MANAGER, Ent.ROLE_OWNER]:
           if role in rolesSet:
             kvList.extend([role, userCounts[role]])

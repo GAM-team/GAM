@@ -1994,6 +1994,7 @@ gam revoke browsertoken <BrowserTokenPermanentID>
         org|
         orgunit|
         orgunitpath|
+        ou|
         revoketime|
         revokerid|
         state|
@@ -5356,7 +5357,7 @@ gam download storagefile <StorageBucketObjectName>
         (note clear|([text_html|text_plain] <String>|
                                             (file|htmlfile <FileName> [charset <Charset>])|
                                             (gdoc|ghtml <UserGoogleDoc>)))|
-        (org|ou|orgunitpath <OrgUnitPath>|<OrgUnitID>)
+        (ou|org|orgunitpath <OrgUnitPath>|<OrgUnitID>)
         (password (random [<Integer>])|(uniquerandom [<Integer>])|blocklogin|<Password>)|
         (recoveryemail <EmailAddress>)|
         (recoveryphone <string>)|
@@ -7603,10 +7604,10 @@ gam <UserTypeEntity> check group|groups
         [roles <GroupRoleList>] [includederivedmembership] [csv] <GroupEntity>
 gam <UserTypeEntity> print groups [todrive <ToDriveAttribute>*]
         [(domain <DomainName>)|(customerid <CustomerID>)]
-        [roles <GroupRoleList>] [countsonly|nodetails]
+        [roles <GroupRoleList>] [countsonly|totalonly|nodetails]
 gam <UserTypeEntity> show groups
         [(domain <DomainName>)|(customerid <CustomerID>)]
-        [roles <GroupRoleList>] [countsonly|nodetails]
+        [roles <GroupRoleList>] [countsonly|totalonly|nodetails]
 gam <UserTypeEntity> print grouptree [todrive <ToDriveAttribute>*]
         [(domain <DomainName>)|(customerid <CustomerID>)]
         [roles <GroupRoleList>]

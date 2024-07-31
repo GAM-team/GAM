@@ -14,6 +14,8 @@
   - [Display group details in CSV format](#display-group-details-in-csv-format)
   - [Display group counts as an indented list](#display-group-counts-as-an-indented-list)
   - [Display group counts in CSV format](#display-group-counts-in-csv-format)
+  - [Display total group counts as an indented list](#display-total-group-counts-as-an-indented-list)
+  - [Display total group counts in CSV format](#display-total-group-counts-in-csv-format)
   - [Display group addresses in CSV format](#display-group-addresses-in-csv-format)
   - [Display groups and their parents](#display-groups-and-their-parents)
 - [Add a target user to the same groups as a source user](#add-a-target-user-to-the-same-groups-as-a-source-user)
@@ -461,6 +463,10 @@ gam <UserTypeEntity> show groups
         [(domain <DomainName>)|(customerid <CustomerID>)]
         [roles <GroupRoleList>] countsonly
 ```
+By default, all groups to which a member belongs are displayed, these options allow selection of subsets of groups:
+* `domain <DomainName>` - Limit display to groups in the domain `<DomainName>` of which they are a member
+* `customerid <CustomerID>` - For resellers, display all groups in a resold workspace of which they are a member
+* `roles <GroupRoleList>` - Limit display to those groups for which the user has a specific role
 
 ### Display group counts in CSV format
 There is one row per user displaying the number of groups, by role, to which a user belongs.
@@ -475,6 +481,33 @@ By default, all groups to which a member belongs are displayed, these options al
 * `domain <DomainName>` - Limit display to groups in the domain `<DomainName>` of which they are a member
 * `customerid <CustomerID>` - For resellers, display all groups in a resold workspace of which they are a member
 * `roles <GroupRoleList>` - Limit display to those groups for which the user has a specific role
+
+### Display total group counts as an indented list
+There is one row per user displaying the number of groups to which a user belongs.
+
+There is one API call per user to get the total group count.
+```
+gam <UserTypeEntity> show groups
+        [(domain <DomainName>)|(customerid <CustomerID>)]
+        totalonly
+```
+By default, all groups to which a member belongs are displayed, these options allow selection of subsets of groups:
+* `domain <DomainName>` - Limit display to groups in the domain `<DomainName>` of which they are a member
+* `customerid <CustomerID>` - For resellers, display all groups in a resold workspace of which they are a member
+
+
+### Display total group counts in CSV format
+There is one row per user displaying the total number of groups to which a user belongs.
+
+There is one API call per user to get the total group count.
+```
+gam <UserTypeEntity> print groups [todrive <ToDriveAttribute>*]
+        [(domain <DomainName>)|(customerid <CustomerID>)]
+        totalonly
+```
+By default, all groups to which a member belongs are displayed, these options allow selection of subsets of groups:
+* `domain <DomainName>` - Limit display to groups in the domain `<DomainName>` of which they are a member
+* `customerid <CustomerID>` - For resellers, display all groups in a resold workspace of which they are a member
 
 ### Display group addresses in CSV format
 There is one row per user showing the number and list of groups to which a user directly belongs.

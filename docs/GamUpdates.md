@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.79.07
+
+Added option `totalonly` to `gam <UserTypeEntity> print|show groups` that displays
+the user email address and the total number of groups to which it belongs. This is in
+contrast to `countsonly` that has to make an additional API call per group per user to get the user's role.
+When `countsonly` is specified, an additional column `Total` is displayed that is the sum
+of the role counts.
+
 ### 6.79.06
 
 Fixed bug in `gam calendars <CalendarEntity> update event ... removeattendee <EmailAddress>` that caused a trap
