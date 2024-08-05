@@ -3619,6 +3619,8 @@ def SetGlobalVariables():
 
   def _getCfgString(sectionName, itemName):
     value = _stripStringQuotes(GM.Globals[GM.PARSER].get(sectionName, itemName))
+    if itemName == GC.DOMAIN:
+      value = value.strip()
     minLen, maxLen = GC.VAR_INFO[itemName].get(GC.VAR_LIMITS, (None, None))
     if ((minLen is None) or (len(value) >= minLen)) and ((maxLen is None) or (len(value) <= maxLen)):
       if itemName == GC.LICENSE_SKUS and value:
@@ -65663,9 +65665,9 @@ def _createLicenses(lic, productId, skuId, parameters, jcount, users, i, count, 
   noAvailableLicenses = False
   doneSet = set()
   if not returnDoneSet:
-    entityPerformActionNumItems([Ent.LICENSE, SKU.skuIdToDisplayName(skuId)], jcount, Ent.USER, i, count)
+    entityPerformActionModifierNumItems([Ent.LICENSE, SKU.skuIdToDisplayName(skuId)], Msg.TO_LC, jcount, Ent.USER, i, count)
   else:
-    entityPerformActionModifierNumItems([Ent.LICENSE, SKU.skuIdToDisplayName(skuId)], Msg.MAXIMUM_OF, jcount, Ent.USER, i, count)
+    entityPerformActionModifierNumItems([Ent.LICENSE, SKU.skuIdToDisplayName(skuId)], Msg.TO_MAXIMUM_OF, jcount, Ent.USER, i, count)
   Ind.Increment()
   j = 0
   for user in users:
@@ -65730,7 +65732,7 @@ def updateLicense(users):
     message = Act.PREVIEW
   productId, skuId, oldSkuId = parameters[LICENSE_PRODUCT_SKUIDS][0]
   body = {'skuId': skuId}
-  entityPerformActionNumItems([Ent.LICENSE, SKU.skuIdToDisplayName(skuId)], jcount, Ent.USER)
+  entityPerformActionModifierNumItems([Ent.LICENSE, SKU.skuIdToDisplayName(skuId)], Msg.FOR, jcount, Ent.USER)
   Ind.Increment()
   for user in users:
     j += 1
@@ -65763,7 +65765,7 @@ def _deleteLicenses(lic, productId, skuId, parameters, jcount, users, i, count):
   Act.Set([Act.DELETE, Act.DELETE_PREVIEW][parameters['preview']])
   if parameters['preview']:
     message = Act.PREVIEW
-  entityPerformActionNumItems([Ent.LICENSE, SKU.skuIdToDisplayName(skuId)], jcount, Ent.USER, i, count)
+  entityPerformActionModifierNumItems([Ent.LICENSE, SKU.skuIdToDisplayName(skuId)], Msg.FROM_LC, jcount, Ent.USER, i, count)
   Ind.Increment()
   j = 0
   for user in users:

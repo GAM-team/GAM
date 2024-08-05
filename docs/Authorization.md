@@ -225,7 +225,7 @@ perform these steps and then you should be able to authorize and use your projec
 * Click on Grant Access
 * Enter the new admin address in Principals
 * Click in the Select a role box
-* Type orgpolicy.policies.update in the Filter box
+* Type organization policy administrator in the Filter box
 * Click Organization Policy Administrator
 * Click Save
 * In the upper left click the three lines to the left of Google Cloud and select IAM & Admin

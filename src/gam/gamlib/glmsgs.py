@@ -257,6 +257,7 @@ FORBIDDEN = 'Forbidden'
 FORMAT_NOT_AVAILABLE = 'Format ({0}) not available'
 FORMAT_NOT_DOWNLOADABLE = 'Format not downloadable'
 FROM = 'From'
+FROM_LC = 'from'
 FULL_PATH_MUST_START_WITH_DRIVE = 'fullpath must start with {0} or {1}'
 GAM_BATCH_FILE_WRITTEN = 'GAM batch file {0} written\n'
 GAM_LATEST_VERSION_NOT_AVAILABLE = 'GAM Latest Version information not available'
@@ -468,6 +469,8 @@ TASKLIST_TITLE_NOT_FOUND = 'Task list title not found'
 THREAD = 'thread'
 THREADS = 'threads'
 TO = 'To'
+TO_LC = 'to'
+TO_MAXIMUM_OF = 'to maximum of'
 TO_SET_UP_GOOGLE_CHAT = """
 To set up Google Chat for your API project, please go to:
 

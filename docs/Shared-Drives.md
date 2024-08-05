@@ -13,6 +13,8 @@
   - [Change Shared Drive visibility](#change-shared-drive-visibility)
 - [Display Shared Drives](#display-shared-drives)
 - [Display List of Shared Drives in an Organizational Unit](#display-list-of-shared-drives-in-an-organizational-unit)
+- [Display all Shared Drives with a specific organizer](#display-all-shared-drives-with-a-specific-organizer)
+- [Display all Shared Drives without a specific organizer](#display-all-shared-drives-without-a-specific-organizer)
 - [Manage Shared Drive access](#manage-shared-drive-access)
 - [Transfer Shared Drive access](#transfer-shared-drive-access)
 - [Display Shared Drive access](#display-shared-drive-access)
@@ -396,6 +398,18 @@ Print information about Shared Drives that have admin@domain.com as a member.
 ```
 gam user admin@domain.com print teamdrives
 ```
+## Display all Shared Drives with a specific organizer
+Substitute actual email address for `organizer@domain.com`.
+```
+gam config csv_output_header_filter "id,name" print teamdriveacls pm emailaddress organizer@domain.com role organizer em pma process pmselect
+```
+
+## Display all Shared Drives without a specific organizer
+Substitute actual email address for `organizer@domain.com`.
+```
+gam config csv_output_header_filter "id,name" print teamdriveacls pm emailaddress organizer@domain.com role organizer em pma skip pmselect
+```
+
 ## Display List of Shared Drives in an Organizational Unit
 To use this command you must add the `Cloud Identity API` to your project and authorize
 the appropriate scope: `Cloud Identity OrgUnits API`.
@@ -596,10 +610,12 @@ Print ACLs for all Shared Drives in the organization created after November 1, 2
 ```
 gam print teamdriveacls teamdriveadminquery "createdTime > '2017-11-01T00:00:00'"
 ```
+
 Print ACLs for all Shared Drives in the organization with foo@bar.com as an organizer.
 ```
 gam print teamdriveacls user foo@bar.com role organizer
 ```
+
 Print ACLs for all Shared Drives in the organization with foo@bar.com or groups that contain foo@bar.com as a reader.
 ```
 gam print teamdriveacls user foo@bar.com role reader checkgroups

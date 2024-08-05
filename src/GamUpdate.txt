@@ -2,6 +2,10 @@
 
 Merged GAM-Team version
 
+6.79.08
+
+Clarified action to perform messages when creating/deleting/updating licenses.
+
 6.79.07
 
 Added option `totalonly` to `gam <UserTypeEntity> print|show groups` that displays

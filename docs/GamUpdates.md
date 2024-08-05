@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.79.08
+
+Clarified action to perform messages when creating/deleting/updating licenses.
+
 ### 6.79.07
 
 Added option `totalonly` to `gam <UserTypeEntity> print|show groups` that displays
