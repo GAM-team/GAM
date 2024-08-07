@@ -2,6 +2,10 @@
 
 Merged GAM-Team version
 
+6.79.10
+
+Updated commands to handle a trap that occurs when oauth2service.json specifies a YubiKey but the YubiKey is not insertd.
+
 6.79.09
 
 Added option `addcsvdata <FieldName> <String>` to `gam <UserTypeEntity> print teamdriveacls` that adds

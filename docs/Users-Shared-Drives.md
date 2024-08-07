@@ -392,7 +392,6 @@ When deleting permissions from JSON data, permissions with role `owner` true are
 These commands are used to display the ACLs on Shared Drives themselves, not the files/folders on the Shared Drives.
 
 ## Display Shared Drive access for specific Shared Drives
-These commands must be issued by a user with Shared Drive permission role organizer.
 ```
 gam <UserTypeEntity> show drivefileacls <DriveFileEntity>
         <PermissionMatch>* [<PermissionMatchAction>] [pmselect]
@@ -421,7 +420,6 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
 ## Display Shared Drive access for selected Shared Drives
-These commands must be issued by a user with Shared Drive permission role organizer.
 ```
 gam <UserTypeEntity> show teamdriveacls
         adminaccess [teamdriveadminquery|query <QueryTeamDrive>]
@@ -438,6 +436,10 @@ gam <UserTypeEntity> print teamdriveacls [todrive <ToDriveAttribute>*]
         [oneitemperrow] [<DrivePermissionsFieldName>*|(fields <DrivePermissionsFieldNameList>)]
         [formatjson [quotechar <Character>]]
 ```
+By default,only Shared Drives with `<UserTypeEntity>` as a member are displayed. To display all
+Shared Drives in the workspace, `<UserTypeEntity>` should specify a super admin and the `adminaccess`
+option shoud be used.
+
 By default, all Shared Drives are displayed; use the following options to select a subset of Shared Drives:
 * `teamdriveadminquery|query <QueryTeamDrive>` - Use a query to select Shared Drives
 * `matchname <RegularExpression>` - Retrieve Shared Drives with names that match a pattern.

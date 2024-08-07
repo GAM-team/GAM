@@ -112,6 +112,8 @@ class YubiKey():
       return publicKeyData
     except ValueError as err:
       systemErrorExit(YUBIKEY_VALUE_ERROR_RC, f'YubiKey - {err}')
+    except TypeError as err:
+      systemErrorExit(YUBIKEY_NOT_FOUND_RC, f'YubiKey - {err} - {Msg.IS_YUBIKEY_INSERTED}')
 
   def get_serial_number(self):
     try:
@@ -168,6 +170,8 @@ class YubiKey():
         piv.put_object(OBJECT_ID.CHUID, generate_chuid())
     except ValueError as err:
       systemErrorExit(YUBIKEY_VALUE_ERROR_RC, f'YubiKey - {err}')
+    except TypeError as err:
+      systemErrorExit(YUBIKEY_NOT_FOUND_RC, f'YubiKey - {err} - {Msg.IS_YUBIKEY_INSERTED}')
 
   def sign(self, message):
     if mplock is not None:
@@ -191,6 +195,8 @@ class YubiKey():
           systemErrorExit(YUBIKEY_APDU_ERROR_RC, f'YubiKey - {err}')
     except ValueError as err:
       systemErrorExit(YUBIKEY_VALUE_ERROR_RC, f'YubiKey - {err}')
+    except TypeError as err:
+      systemErrorExit(YUBIKEY_NOT_FOUND_RC, f'YubiKey - {err} - {Msg.IS_YUBIKEY_INSERTED}')
     if mplock is not None:
       mplock.release()
     return signed
