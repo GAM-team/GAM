@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.79.09
+
+Added option `addcsvdata <FieldName> <String>` to `gam <UserTypeEntity> print teamdriveacls` that adds
+additional columns of data to the CSV file output. This can be used when ACLs for selected users are to be
+replaced with a different user email address.
+
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Shared-Drives#bulk-change-user1-shared-drive-access-to-user2
+
 ### 6.79.08
 
 Clarified action to perform messages when creating/deleting/updating licenses.

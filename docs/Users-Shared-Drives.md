@@ -15,7 +15,8 @@
 - [Display Shared Drive access](#display-shared-drive-access)
   - [Display Shared Drive access for specific Shared Drives](#display-shared-drive-access-for-specific-shared-drives)
   - [Display Shared Drive access for selected Shared Drives](#display-shared-drive-access-for-selected-shared-drives)
-- [Change User1 Shared Drive access to User2](#change-user1-shared-drive-access-to-user2)
+- [Change single User1 Shared Drive access to User2](#change-single-user1-shared-drive-access-to-user2)
+- [Bulk change User1 Shared Drive access to User2](#bulk-change-user1-shared-drive-access-to-user2)
 - [Display empty folders on a Shared Drive](#display-empty-folders-on-a-shared-drive)
 - [Delete empty folders on a Shared Drive](#delete-empty-folders-on-a-shared-drive)
 - [Empty the trash on a Shared Drive](#empty-the-trash-on-a-shared-drive)
@@ -464,14 +465,27 @@ gam <UserTypeEntity> print emptydrivefolders [todrive <ToDriveAttribute>*]
         select <SharedDriveEntity>
 ```
 
-## Change User1 Shared Drive access to User2
+## Change single User1 Shared Drive access to User2
 ```
 # Get Shared Drives for User1
 gam redirect csv ./U1SharedDrives.csv user user1@domain.com print shareddriveacls pm emailaddress user1@domain.com em oneitemperrow
 # For each of those Shared Drives, delete User1 access
-gam redirect stdout ./DeleteU1SharedDriveAccess.txt multiprocess redirect stderr stdout gam delete drivefileacl "~id" "~permission.emailAddress"
+gam redirect stdout ./DeleteU1SharedDriveAccess.txt multiprocess redirect stderr stdout csv ./U1SharedDrives.csv gam delete drivefileacl "~id" "~permission.emailAddress"
 # For each of those Shared Drives, add User2 with the same role that User1 had
-gam redirect stdout ./AddU2SharedDriveAccess.txt multiprocess redirect stderr stdout gam create drivefileacl "~id" user user2@domain.com role "~permission.role"
+gam redirect stdout ./AddU2SharedDriveAccess.txt multiprocess redirect stderr stdout csv ./U1SharedDrives.csv gam create drivefileacl "~id" user user2@domain.com role "~permission.role"
+```
+
+## Bulk change User1 Shared Drive access to User2
+This requires GAM version 6.79.09 or higher.
+
+Make a CSV file Users.csv with two email address columns: User,Replace
+```
+# Get Shared Drives for all Users in CSV file
+gam redirect csv ./U1SharedDrives.csv multiprocess csv Users.csv gam user "~User" print shareddriveacls pm emailaddress "~User" em oneitemperrow addscvdata Replace "~Replace"
+# For each of those Shared Drives, delete User access
+gam redirect stdout ./DeleteU1SharedDriveAccess.txt multiprocess redirect stderr stdout csv ./U1SharedDrives.csv gam delete drivefileacl "~id" "~permission.emailAddress"
+# For each of those Shared Drives, add Replace with the same role that User had
+gam redirect stdout ./AddU2SharedDriveAccess.txt multiprocess redirect stderr stdout csv ./U1SharedDrives.csv gam create drivefileacl "~id" user "~Replace" role "~permission.role"
 ```
 
 ## Delete empty folders on a Shared Drive

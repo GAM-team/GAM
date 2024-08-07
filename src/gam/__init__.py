@@ -16854,7 +16854,7 @@ def doPrintShowDataTransfers():
       status = getChoice(DATA_TRANSFER_STATUS_MAP, mapChoice=True)
     elif myarg == 'delimiter':
       delimiter = getCharacter()
-    elif myarg == 'addcsvdata':
+    elif csvPF and myarg == 'addcsvdata':
       k = getString(Cmd.OB_STRING)
       addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
     else:
@@ -55134,7 +55134,6 @@ def _showComment(comment, stripPhotoLinks, timeObjects, i=0, count=0, FJQC=None)
 #	[showdeleted] [start <Date>|<Time>] [countsonly]
 #	[fields <CommentsFieldNameList>] [showphotolinks]
 #	[countsonly]
-#	(addcsvdata <FieldName> <String>)*
 #	[formatjson]
 # gam <UserTypeEntity> print filecomments <DriveFileEntity> [todrive <ToDriveAttribute>*]
 #	[showdeleted] [start <Date>|<Time>]
@@ -55180,7 +55179,7 @@ def printShowFileComments(users):
       stripPhotoLinks = False
     elif myarg == 'fields':
       _getCommentFields(fieldsList)
-    elif myarg == 'addcsvdata':
+    elif csvPF and myarg == 'addcsvdata':
       k = getString(Cmd.OB_STRING)
       addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
     elif myarg == 'countsonly':
@@ -64179,6 +64178,7 @@ SHOW_NO_PERMISSIONS_DRIVES_CHOICE_MAP = {
 #	[oneitemperrow] [maxitems <Integer>]
 #	[shownopermissionsdrives false|true|only]
 #	[<DrivePermissionsFieldName>*|(fields <DrivePermissionsFieldNameList>)]
+#	(addcsvdata <FieldName> <String>)*
 #	[formatjson [quotechar <Character>]]
 # gam [<UserTypeEntity>] show shareddriveacls
 #	[asadmin] [shareddriveadminquery|query <QuerySharedDrive>]
@@ -64210,6 +64210,7 @@ def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
   cd = emailAddress = orgUnitId = query = matchPattern = permtype = None
   PM = PermissionMatch()
   maxItems = 0
+  addCSVData = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -64248,6 +64249,9 @@ def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
       pmselect = True
     elif myarg == 'shownopermissionsdrives':
       showNoPermissionsDrives = getChoice(SHOW_NO_PERMISSIONS_DRIVES_CHOICE_MAP, mapChoice=True)
+    elif csvPF and myarg == 'addcsvdata':
+      k = getString(Cmd.OB_STRING)
+      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if query and not useDomainAdminAccess:
@@ -64279,6 +64283,11 @@ def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
       groupsSet = {group['email'] for group in groups}
     else:
       checkGroups = False
+  if csvPF and addCSVData:
+    csvPF.AddTitles(sorted(addCSVData.keys()))
+    if FJQC.formatJSON:
+      csvPF.AddJSONTitles(sorted(addCSVData.keys()))
+      csvPF.MoveJSONTitlesToEnd(['JSON'])
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -64388,6 +64397,8 @@ def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
       if oneItemPerRow:
         for shareddrive in matchFeed:
           baserow = {'User': user, 'id': shareddrive['id'], 'name': shareddrive['name'], 'createdTime': shareddrive['createdTime']}
+          if addCSVData:
+            baserow.update(addCSVData)
           if shareddrive['permissions']:
             for permission in shareddrive['permissions']:
               _mapDrivePermissionNames(permission)
@@ -64407,6 +64418,8 @@ def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
       else:
         for shareddrive in matchFeed:
           baserow = {'User': user, 'id': shareddrive['id'], 'name': shareddrive['name'], 'createdTime': shareddrive['createdTime']}
+          if addCSVData:
+            baserow.update(addCSVData)
           row = baserow.copy()
           if shareddrive['permissions']:
             for permission in shareddrive['permissions']:
@@ -69441,7 +69454,7 @@ def printShowMessagesThreads(users, entityType):
       dateHeaderConvertTimezone = getBoolean()
       if not dateHeaderFormat:
         dateHeaderFormat = RFC2822_TIME_FORMAT
-    elif myarg == 'addcsvdata':
+    elif csvPF and myarg == 'addcsvdata':
       k = getString(Cmd.OB_STRING)
       addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
     else:
@@ -70453,7 +70466,7 @@ def printShowForms(users):
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif myarg == 'addcsvdata':
+    elif csvPF and myarg == 'addcsvdata':
       k = getString(Cmd.OB_STRING)
       addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
     else:
@@ -70537,7 +70550,7 @@ def printShowFormResponses(users):
       frfilter = getString(Cmd.OB_STRING)
     elif myarg == 'countsonly':
       countsOnly = True
-    elif myarg == 'addcsvdata':
+    elif csvPF and myarg == 'addcsvdata':
       k = getString(Cmd.OB_STRING)
       addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
     else:

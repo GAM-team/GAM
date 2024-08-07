@@ -4928,6 +4928,7 @@ gam print teamdriveacls [todrive <ToDriveAttribute>*]
         [user|group <EmailAddress> [checkgroups]] (role|roles <SharedDriveACLRoleList>)*
         <PermissionMatch>* [<PermissionMatchAction>] [pmselect]
         [oneitemperrow] [<DrivePermissionsFieldName>*|(fields <DrivePermissionsFieldNameList>)]
+        (addcsvdata <FieldName> <String>)*
         [formatjson [quotechar <Character>]]
 gam show teamdriveacls
         [teamdriveadminquery|query <QueryTeamDrive>]
@@ -4957,6 +4958,7 @@ gam <UserTypeEntity> print teamdriveacls [todrive <ToDriveAttribute>*]
         <PermissionMatch>* [<PermissionMatchAction>] [pmselect]
         [oneitemperrow] [<DrivePermissionsFieldName>*|(fields <DrivePermissionsFieldNameList>)]
         [shownopermissionsdrives false|true|only]
+        (addcsvdata <FieldName> <String>)*
         [formatjson [quotechar <Character>]]
 gam <UserTypeEntity> show teamdriveacls
         [adminaccess|asadmin] [teamdriveadminquery|query <QueryTeamDrive>]

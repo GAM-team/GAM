@@ -2,6 +2,14 @@
 
 Merged GAM-Team version
 
+6.79.09
+
+Added option `addcsvdata <FieldName> <String>` to `gam <UserTypeEntity> print teamdriveacls` that adds
+additional columns of data to the CSV file output. This can be used when ACLs for selected users are to be
+replaced with a different user email address.
+
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Shared-Drives#bulk-change-user1-shared-drive-access-to-user2
+
 6.79.08
 
 Clarified action to perform messages when creating/deleting/updating licenses.
@@ -285,7 +293,7 @@ and was `Waiting for N running processes to finish before terminating`.
 
 Fixed bug in `gam <UserTypeEntity> print messages ... positivecountsonly` where message counts with value 0 were deiplayed.
 
-Added option `addcsvdata <FieldName> <String>` to `gam <UserTypeEntity> print|messages` that adds
+Added option `addcsvdata <FieldName> <String>` to `gam <UserTypeEntity> print messages` that adds
 additional columns of data to the CSV file output.
 
 Added option `showusagebytes` to `gam <UserTypeEntity> print|show drivesettings` that displays
