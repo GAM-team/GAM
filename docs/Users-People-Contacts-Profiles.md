@@ -59,6 +59,7 @@ gam user user@domain.com check serviceaccount
 
 ```
 <JSONData> ::= (json [charset <Charset>] <String>) | (json file <FileName> [charset <Charset>]) |
+<QueryContact> ::= <String>
 
 <PeopleResourceName> ::= people/<String>
 <PeopleResourceNameList> ::= "<PeopleResourceName>(,<PeopleResourceName>)*"

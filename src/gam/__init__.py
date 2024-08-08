@@ -26523,16 +26523,16 @@ def printShowChatMembers(users):
       substituteQueryTimes(queries, queryTimes)
       kwargsCS['query'] = queries[0]
       kwargsCS['useAdminAccess'] = True
-    if pfilter:
-      if 'member.type' not in pfilter:
-        kwargs['filter'] = 'member.type != "BOT" AND '+pfilter
-      else:
-        kwargs['filter'] = pfilter
-    else:
-      kwargs['filter'] = 'member.type != "BOT"'
   else:
     if not parentList and not kwargsCS:
       kwargsCS['filter'] = 'spaceType = "SPACE" OR spaceType = "GROUP_CHAT" OR spaceType = "DIRECT_MESSAGE"'
+  if pfilter:
+    if 'member.type' not in pfilter:
+      kwargs['filter'] = 'member.type != "BOT" AND '+pfilter
+    else:
+      kwargs['filter'] = pfilter
+  else:
+    kwargs['filter'] = 'member.type != "BOT"'
   fields = getItemFieldsFromFieldsList('memberships', fieldsList)
   i, count, users = getEntityArgument(users)
   if useAdminAccess:
@@ -26568,7 +26568,7 @@ def printShowChatMembers(users):
       else:
         try:
           spaces = callGAPIpages(chatsp.spaces(), 'list', 'spaces',
-                                 pageMessage=_getChatPageMessage(Ent.CHAT_SPACE, user, i, count, pfilter),
+                                 pageMessage=_getChatPageMessage(Ent.CHAT_SPACE, user, i, count, kwargsCS['filter']),
                                  bailOnInternalError=True,
                                  throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR,
                                                GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],

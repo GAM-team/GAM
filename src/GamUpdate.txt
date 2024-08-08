@@ -2,9 +2,13 @@
 
 Merged GAM-Team version
 
+6.79.11
+
+Fixed bug in `gam <UserItem> print|show chatmembers` where the `filter <String>` was not applied.
+
 6.79.10
 
-Updated commands to handle a trap that occurs when oauth2service.json specifies a YubiKey but the YubiKey is not insertd.
+Updated commands to handle a trap that occurs when oauth2service.json specifies a YubiKey but the YubiKey is not inserted.
 
 6.79.09
 
