@@ -25920,12 +25920,11 @@ def printShowChatSpaces(users):
   csvPF = CSVPrintFile(['User', 'name'] if not isinstance(users, list) else ['name']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   OBY = OrderBy(CHAT_SPACES_ADMIN_ORDERBY_CHOICE_MAP)
-  useAdminAccess, api, kwargs = _getChatAdminAccess(API.CHAT_SPACES_ADMIN, API.CHAT_SPACES)
+  useAdminAccess, api, kwargsCS = _getChatAdminAccess(API.CHAT_SPACES_ADMIN, API.CHAT_SPACES)
   fieldsList = []
   queries = []
   queryTimes = {}
   pfilter = ''
-  kwargs = {}
   if useAdminAccess:
     function = 'search'
     queries = ['customer = "customers/my_customer" AND spaceType = "SPACE"']
@@ -25937,7 +25936,7 @@ def printShowChatSpaces(users):
       csvPF.GetTodriveParameters()
     elif getFieldsList(myarg, CHAT_SPACES_FIELDS_CHOICE_MAP, fieldsList, initialField='name', onlyFieldsArg=True):
       pass
-    elif not useAdminAccess and _getChatSpaceListParms(myarg, kwargs):
+    elif not useAdminAccess and _getChatSpaceListParms(myarg, kwargsCS):
       pass
     elif useAdminAccess and _getChatSpaceSearchParms(myarg, queries, queryTimes, OBY):
       pass
@@ -25947,9 +25946,10 @@ def printShowChatSpaces(users):
   i, count, users = getEntityArgument(users)
   if useAdminAccess:
     _chkChatAdminAccess(count)
-    kwargs['orderBy'] = OBY.orderBy
+    kwargsCS['orderBy'] = OBY.orderBy
     substituteQueryTimes(queries, queryTimes)
-    pfilter = kwargs['query'] = queries[0]
+    pfilter = kwargsCS['query'] = queries[0]
+    kwargsCS['useAdminAccess'] = True
   for user in users:
     i += 1
     user, chat, kvList = buildChatServiceObject(api, user, i, count, None, useAdminAccess)
@@ -25961,7 +25961,7 @@ def printShowChatSpaces(users):
                              bailOnInternalError=True,
                              throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR,
                                            GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
-                             fields=fields, pageSize=CHAT_PAGE_SIZE, **kwargs)
+                             fields=fields, pageSize=CHAT_PAGE_SIZE, **kwargsCS)
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.internalError,
             GAPI.permissionDenied, GAPI.failedPrecondition) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
@@ -26600,6 +26600,7 @@ def printShowChatMembers(users):
         members = callGAPIpages(chat.spaces().members(), 'list', 'memberships',
                                 pageMessage=_getChatPageMessage(Ent.CHAT_MEMBER, user, j, jcount, qfilter),
                                 throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                 parent=parentName, fields=fields, pageSize=CHAT_PAGE_SIZE, **kwargs, **kwargsUAA)
         for member in members:
           _getChatMemberEmail(cd, member)

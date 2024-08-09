@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.79.12
+
+Fixed bug in `gam user admin@domain.com print chatspaces asadmin` that caused the following error:
+```
+Chat Admin: admin@domain.com(asadmin), Print Failed: This method doesn't support non-admin user authentication. Authenticate with an admin account.
+```
+
 ### 6.79.11
 
 Fixed bug in `gam <UserItem> print|show chatmembers` where the `filter <String>` was not applied.
