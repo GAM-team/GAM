@@ -44131,23 +44131,27 @@ def doPrintUsers(entityList=None):
       for userEntity in entityList:
         _updateDomainCounts(normalizeEmailAddressOrUID(userEntity))
   if not printOptions['countOnly']:
-    if printOptions['sortHeaders']:
-      sortTitles = ['primaryEmail']
-      if printOptions['scalarsFirst']:
-        sortTitles.extend([f'name{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{field}' for field in USER_NAME_PROPERTY_PRINT_ORDER]+sorted(USER_LANGUAGE_PROPERTY_PRINT_ORDER+USER_SCALAR_PROPERTY_PRINT_ORDER))
-      csvPF.SetSortTitles(sortTitles)
-      csvPF.SortTitles()
-      csvPF.SetSortTitles([])
-    if sortRows and orderBy:
-      orderBy = 'primaryEmail' if orderBy == 'email' else f'name.{orderBy}'
-      csvPF.SortRows(orderBy, reverse=sortOrder == 'DESCENDING')
-    if printOptions['getGroupFeed']:
-      if not printOptions['groupsInColumns']:
-        csvPF.MoveTitlesToEnd(['GroupsCount', 'Groups'])
-      else:
-        csvPF.MoveTitlesToEnd(['Groups']+[f'Groups{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{j}' for j in range(printOptions['maxGroups'])])
-    if printOptions['getLicenseFeed'] or printOptions['getLicenseFeedByUser']:
-      csvPF.MoveTitlesToEnd(licenseTitles)
+    if not FJQC.formatJSON:
+      if printOptions['sortHeaders']:
+        sortTitles = ['primaryEmail']
+        if printOptions['scalarsFirst']:
+          sortTitles.extend([f'name{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{field}' for field in USER_NAME_PROPERTY_PRINT_ORDER]+sorted(USER_LANGUAGE_PROPERTY_PRINT_ORDER+USER_SCALAR_PROPERTY_PRINT_ORDER))
+        csvPF.SetSortTitles(sortTitles)
+        csvPF.SortTitles()
+        csvPF.SetSortTitles([])
+      if printOptions['getGroupFeed']:
+        if not printOptions['groupsInColumns']:
+          csvPF.MoveTitlesToEnd(['GroupsCount', 'Groups'])
+        else:
+          csvPF.MoveTitlesToEnd(['Groups']+[f'Groups{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{j}' for j in range(printOptions['maxGroups'])])
+      if printOptions['getLicenseFeed'] or printOptions['getLicenseFeedByUser']:
+        csvPF.MoveTitlesToEnd(licenseTitles)
+      if sortRows and orderBy:
+        orderBy = 'primaryEmail' if orderBy == 'email' else f'name.{orderBy}'
+        csvPF.SortRows(orderBy, reverse=sortOrder == 'DESCENDING')
+    else:
+      if sortRows and orderBy == 'email':
+        csvPF.SortRows('primaryEmail', reverse=sortOrder == 'DESCENDING')
   elif not FJQC.formatJSON:
     for domain, count in sorted(iter(domainCounts.items())):
       csvPF.WriteRowNoFilter({'domain': domain, 'count': count})
