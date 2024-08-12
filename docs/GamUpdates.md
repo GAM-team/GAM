@@ -10,9 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
-### 6.79.13
+### 6.80.00
 
 Fixed bug in `gam <UserTypeEntity> print users ... license ... formatjson` that caused a trap.
+
+Upgraded to Python 3.12.5 where possible.
 
 ### 6.79.12
 
