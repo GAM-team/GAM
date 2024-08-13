@@ -2,6 +2,18 @@
 
 Merged GAM-Team version
 
+6.80.01
+
+Added options `showstudentsaslist [<Boolean>]` and `delimiter <Character>` to `gam print course-work`.
+By default, when course work is assigned to individual students, the student IDs are displayed in multiple indexed columns.
+Use these options to display the student IDs in a single column as a delimited list.
+
+Updated `gam <UserTypeEntity> vacation [<Boolean>]` to make `<Boolean>` optional; this allows changes
+to other fields without affecting the current responder state.
+
+Updated `gam <UserTypeEntity> print|show vacation` to avoid a trap when invalid start or end dates
+have been entered in the Gmail user interface. Invalid dates are represented as `1970-01-01`.
+
 6.80.00
 
 Fixed bug in `gam <UserTypeEntity> print users ... license ... formatjson` that caused a trap

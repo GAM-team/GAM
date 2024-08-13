@@ -354,7 +354,7 @@ Drive files with `shareMode` `Each student will get a copy` don't seem to be abl
 
 ## Delete courses
 Classes can only be deleted when they are in the ARCHIVED state; to delete a class, you can update its state to ARCHIVED
-and then delete it or you can specify that it be archived as part of the delete command.
+and then delete it or you can specify that it be archived as parot of the delete command.
 ```
 gam delete course <CourseID> [archived]
 gam delete courses <CourseEntity> [archived]
@@ -603,7 +603,9 @@ gam print course-work [todrive <ToDriveAttribute>*]
         (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] states <CourseStateList>])
         (workids <CourseWorkIDEntity>)|(workstates <CourseWorkStateList>)*
         (orderby <CourseWorkOrderByFieldName> [ascending|descending])*)
-        [showcreatoremails] [showtopicnames] [fields <CourseWorkFieldNameList>] [formatjson [quotechar <Character>]]
+        [showcreatoremails] [showtopicnames] [fields <CourseWorkFieldNameList>]
+        [showstudentsaslist [<Boolean>]] [delimiter <Character>]
+        [formatjson [quotechar <Character>]]
         [timefilter creationtime|updatetime|scheduledtime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
 ```
 By default, the `print course-work` command displays course work information for all courses.
@@ -625,7 +627,7 @@ To get information about course work created/updated/scheduled within a particul
 * `end|endtime <Date>|<Time>` - specify the end of the time frame; if not specified, the time frame will be open ended at the end
 For the filter to apply, `timefilter` and at least one of `start|starttime` and `end|endtime` must be specified.
 
-By default, all pub`lished course work for a course is displayed; use the following options to select specific course work.
+By default, all published course work for a course is displayed; use the following options to select specific course work.
 * `workids <CourseWorkIDEntity>` - Display course work with the IDs specified in `<CourseWorkIDEntity>`.
 * `workstates <CourseWorkStateList>` - Display course work with any of the specified states.
 
@@ -633,6 +635,9 @@ By default, all course work fields are displayed; use the following options to m
 * `showcreatoremails` - Display course work creator email; requires an additional API call per course work.
 * `showtopicnames` - Display topic names; requires and additional API call per course.
 * `fields <CourseWorkFieldNameList>` - Select specific fields to display.
+
+By default, when course work is assigned to individual students, the student IDs are displayed in multiple indexed columns.
+Use options `showstudentsaslist [<Boolean>]` and `delimiter <Character>` to display the student IDs is a single column as a delimited list.
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.

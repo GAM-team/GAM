@@ -3148,6 +3148,7 @@ gam print course-works [todrive <ToDriveAttribute>*]
         (workids <CourseWorkIDEntity>)|((workstates <CourseWorkStateList>)*
         (orderby <CourseWorkOrderByFieldName> [ascending|descending])*)
         [showcreatoremails|creatoremail] [showtopicnames] [fields <CourseWorkFieldNameList>]
+        [showstudentsaslist [<Boolean>]] [delimiter <Character>]
         [formatjson [quotechar <Character>]]
         [timefilter creationtime|updatetime|scheduledtime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
 
@@ -7515,7 +7516,7 @@ gam <UserTypeEntity> show signature|sig [compact|format|html]
 gam <UserTypeEntity> print signature [compact]
         [primary|default] [verifyonly] [todrive <ToDriveAttribute>*]
 
-gam <UserTypeEntity> vacation <Boolean> subject <String>
+gam <UserTypeEntity> vacation [<Boolean>] [subject <String>]
         [<VacationMessageContent> (replace <Tag> <UserReplacement>)*]
         [html [<Boolean>]] [contactsonly [<Boolean>]] [domainonly [<Boolean>]]
         [start|startdate <Date>|Started] [end|enddate <Date>|NotSpecified]

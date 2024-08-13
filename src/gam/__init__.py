@@ -2344,9 +2344,12 @@ def formatLocalTimestampUTC(timestamp):
   return ISOformatTimeStamp(datetime.datetime.fromtimestamp(int(timestamp)//1000, iso8601.UTC))
 
 def formatLocalDatestamp(timestamp):
-  if not GC.Values[GC.OUTPUT_DATEFORMAT]:
-    return datetime.datetime.fromtimestamp(int(timestamp)//1000, GC.Values[GC.TIMEZONE]).strftime(YYYYMMDD_FORMAT)
-  return datetime.datetime.fromtimestamp(int(timestamp)//1000, GC.Values[GC.TIMEZONE]).strftime(GC.Values[GC.OUTPUT_DATEFORMAT])
+  try:
+    if not GC.Values[GC.OUTPUT_DATEFORMAT]:
+      return datetime.datetime.fromtimestamp(int(timestamp)//1000, GC.Values[GC.TIMEZONE]).strftime(YYYYMMDD_FORMAT)
+    return datetime.datetime.fromtimestamp(int(timestamp)//1000, GC.Values[GC.TIMEZONE]).strftime(GC.Values[GC.OUTPUT_DATEFORMAT])
+  except OverflowError:
+    return NEVER_DATE
 
 def formatMaxMessageBytes(maxMessageBytes, oneKiloBytes, oneMegaBytes):
   if maxMessageBytes < oneKiloBytes:
@@ -46935,7 +46938,8 @@ def doPrintCourseWM(entityIDType, entityStateType):
       topicId = courseWM.get('topicId')
       if topicId:
         courseWM['topicName'] = topicNames.get(topicId, topicId)
-    row = flattenJSON(courseWM, flattened={'courseId': course['id'], 'courseName': course['name']}, timeObjects=TimeObjects)
+    row = flattenJSON(courseWM, flattened={'courseId': course['id'], 'courseName': course['name']}, timeObjects=TimeObjects,
+                      simpleLists=['studentIds'] if showStudentsAsList else None, delimiter=delimiter)
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
@@ -46980,6 +46984,8 @@ def doPrintCourseWM(entityIDType, entityStateType):
   OBY = OrderBy(OrderbyChoiceMap)
   creatorEmails = {}
   showCreatorEmail = showTopicNames = False
+  delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
+  showStudentsAsList = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -47000,6 +47006,10 @@ def doPrintCourseWM(entityIDType, entityStateType):
       showTopicNames = True
     elif getFieldsList(myarg, FieldsChoiceMap, fieldsList, initialField='id'):
       pass
+    elif myarg == 'showstudentsaslist':
+      showStudentsAsList = getBoolean()
+    elif myarg == 'delimiter':
+      delimiter = getCharacter()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if showCreatorEmail and fieldsList:
@@ -47072,6 +47082,7 @@ def doPrintCourseMaterials():
 #	(workids <CourseWorkIDEntity>)|((workstates <CourseWorkStateList>)*
 #	(orderby <CourseWorkOrderByFieldName> [ascending|descending])*)
 #	[showcreatoremails|creatoremail] [showtopicnames] [fields <CourseWorkFieldNameList>] [formatjson [quotechar <Character>]]
+#	[showstudentsaslist [<Boolean>]] [delimiter <Character>]
 #	[timefilter creationtime|updatetime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
 def doPrintCourseWork():
   doPrintCourseWM(Ent.COURSE_WORK_ID, Ent.COURSE_WORK_STATE)
@@ -72101,13 +72112,14 @@ def _showVacation(user, i, count, result, showDisabled, sigReplyFormat):
       printKeyValueList(['Message', 'None'])
   Ind.Decrement()
 
-# gam <UserTypeEntity> vacation <Boolean> subject <String>
+# gam <UserTypeEntity> vacation [<Boolean>] [subject <String>]
 #	[<VacationMessageContent> (replace <Tag> <UserReplacement>)*]
 #	[html [<Boolean>]] [contactsonly [<Boolean>]] [domainonly [<Boolean>]]
 #	[start|startdate <Date>|Started] [end|enddate <Date>|NotSpecified]
 def setVacation(users):
-  enable = getBoolean(None)
-  body = {'enableAutoReply': enable}
+  body = {}
+  if Cmd.PeekArgumentPresent(TRUE_VALUES) or Cmd.PeekArgumentPresent(FALSE_VALUES):
+    body['enableAutoReply'] = getBoolean(None)
   responseBodyType = 'responseBodyPlainText'
   message = subject = None
   tagReplacements = _initTagReplacements()
@@ -72172,7 +72184,7 @@ def setVacation(users):
                         userId='me', body=oldBody)
       printEntity([Ent.USER, user, Ent.VACATION_ENABLED, result['enableAutoReply']], i, count)
     except (GAPI.invalidArgument, GAPI.failedPrecondition, GAPI.permissionDenied) as e:
-      entityActionFailedWarning([Ent.USER, user, Ent.VACATION_ENABLED, enable], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user, Ent.VACATION_ENABLED, oldBody['enableAutoReply']], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.badRequest):
       entityServiceNotApplicableWarning(Ent.USER, user, i, count)
 

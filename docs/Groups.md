@@ -584,7 +584,7 @@ gam print grouptree <GroupEntity> [todrive <ToDriveAttribute>*]
 ```
 By default, the group parent emails and names are displayed in multiple indexed columns.
 Use options `showparentsaslist [<Boolean>]` and `delimiter <Character>` to display
-the group parent emails and names in two columns as delimited lists .
+the group parent emails and names in two columns as delimited lists.
 
 #### Examples
 ```

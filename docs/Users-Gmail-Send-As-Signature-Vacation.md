@@ -210,11 +210,13 @@ gam config csv_output_row_filter "signature:boolean:false"
 
 ## Manage vacation
 ```
-gam <UserTypeEntity> vacation <Boolean> subject <String>
+gam <UserTypeEntity> vacation [<Boolean>] [subject <String>]
         [<VacationMessageContent> (replace <Tag> <UserReplacement>)*]
         [html [<Boolean>]] [contactsonly [<Boolean>]] [domainonly [<Boolean>]]
         [start|startdate <Date>|Started] [end|enddate <Date>|NotSpecified]
 ```
+The initial `<Boolean>` can be omitted to allow updates to other fields without affecting the current responder state.
+
 `<VacationMessageContent>` is the vacation message, there are four ways to specify it:
 * `message|textmessage|htmlmessage <String>` - Use `<String>` as the vacation message
 * `file|htmlfile <FileName> [charset <Charset>]` - Read the vacation message from `<FileName>`
