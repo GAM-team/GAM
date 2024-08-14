@@ -134,6 +134,7 @@ gam user user@domain.com check|update serviceaccount
         creationtime|
         creator|creatoruserid|
         id|
+        individualstudentsoptions|
         materials|
         scheduledtime|
         state|
@@ -154,6 +155,7 @@ gam user user@domain.com check|update serviceaccount
         creator|creatoruserid|
         description|
         id|
+        individualstudentsoptions|
         materials|
         scheduledtime|
         state|
@@ -179,6 +181,7 @@ gam user user@domain.com check|update serviceaccount
         duedate|
         duetime|
         id|
+        individualstudentsoptions|
         materials|
         maxpoints|
         scheduledtime|
@@ -187,6 +190,7 @@ gam user user@domain.com check|update serviceaccount
         title|
         topicid|
         updatetime|
+        workid|
         worktype
 <CourseWorkFieldNameList> ::= "<CourseWorkFieldName>(,<CourseWorkFieldName>)*"
 
@@ -270,7 +274,9 @@ The options `name <String>` and `teacher <UserItem>` are required when creating 
 gam create|add course [id|alias <CourseAlias>] <CourseAttribute>*
         [copyfrom <CourseID>
             [announcementstates <CourseAnnouncementStateList>]
+                [individualstudentannouncements copy|delete|maptoall]
             [materialstates <CourseMaterialStateList>]
+                [individualstudentmaterials copy|delete|maptoall]
             [workstates <CourseWorkStateList>]
                 [individualstudentassignments copy|delete|maptoall]
                 [removeduedate [<Boolean>]]
@@ -285,7 +291,9 @@ gam create|add course [id|alias <CourseAlias>] <CourseAttribute>*
 gam update course <CourseID> <CourseAttribute>+
         [copyfrom <CourseID>
             [announcementstates <CourseAnnouncementStateList>]
+                [individualstudentannouncements copy|delete|maptoall]
             [materialstates <CourseMaterialStateList>]
+                [individualstudentmaterials copy|delete|maptoall]
             [workstates <CourseWorkStateList>]
                 [individualstudentassignments copy|delete|maptoall]
                 [removeduedate [<Boolean>]]
@@ -299,7 +307,9 @@ gam update course <CourseID> <CourseAttribute>+
 gam update courses <CourseEntity> <CourseAttribute>+
         [copyfrom <CourseID>
             [announcementstates <CourseAnnouncementStateList>]
+                [individualstudentannouncements copy|delete|maptoall]
             [materialstates <CourseMaterialStateList>]
+                [individualstudentmaterials copy|delete|maptoall]
             [workstates <CourseWorkStateList>]
                 [individualstudentassignments copy|delete|maptoall]
                 [removeduedate [<Boolean>]]
@@ -314,11 +324,17 @@ gam update courses <CourseEntity> <CourseAttribute>+
 `copyfrom <CourseID>` allows copying of course announcements, work, topics and members from one course to another.
 * Accouncements - By default, no course announcements are copied
     * `announcementstates <CourseAnnouncementStateList>` - Copy class announcements with the specified states
+        * `individualstudentannouncements copy` - Copy individual student announcements; this is the default. You will get an error if a student is not a member of the course
+        * `individualstudentannouncements delete` - Delete individual student announcements
+        * `individualstudentannouncements maptoall` - Map individual student announcements to all student announcements
 * Materials - By default, no course materials are copied
     * `materialstates <CourseMaterialsStateList>` - Copy class materials with the specified states
+        * `individualstudentmaterials copy` - Copy individual student materials; this is the default. You will get an error if a student is not a member of the course
+        * `individualstudentmaterials delete` - Delete individual student materials
+        * `individualstudentmaterials maptoall` - Map individual student materials to all student materials
 * Work - By default, no course work is copied
     * `workstates <CourseWorkStateList>` - Copy class work with the specified states
-        * `individualstudentassignments copy` - Copy individual student assignments; this is the default. You will get an error if the student is not a member of the course.
+        * `individualstudentassignments copy` - Copy individual student assignments; this is the default. You will get an error if the student is not a member of the course
         * `individualstudentassignments delete` - Delete individual student assignments
         * `individualstudentassignments maptoall` - Map individual student assignments to all student assignments
         * `removeduedate false` - Remove due dates before the current time; this is the default

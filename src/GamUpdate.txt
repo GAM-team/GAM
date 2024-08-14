@@ -2,6 +2,20 @@
 
 Merged GAM-Team version
 
+6.80.02
+
+Added option `addcsvdata <FieldName> <String>` to `gam <UserTypeEntity> print filecounts` that adds
+additional columns of data to the CSV file output.
+
+Added  options `individualstudentannouncements copy|delete|maptoall` and `individualstudentmaterials copy|delete|maptoall`
+to `gam create|update course ... copyfrom` that controls how individual student announcements and materials in the `copyfrom` course are processed.
+* `individualstudentannouncements copy` - Copy individual student announcements; this is the default. You will get an error if a student is not a member of the course
+* `individualstudentannouncements delete` - Delete individual student announcements
+* `individualstudentannouncements maptoall` - Map individual student announcements to all student announcements
+* `individualstudentmaterials copy` - Copy individual student materials; this is the default. You will get an error if a student is not a member of the course
+* `individualstudentmaterials delete` - Delete individual student materials
+* `individualstudentmaterials maptoall` - Map individual student materials to all student materials
+
 6.80.01
 
 Added options `showstudentsaslist [<Boolean>]` and `delimiter <Character>` to `gam print course-work`.
@@ -16,7 +30,7 @@ have been entered in the Gmail user interface. Invalid dates are represented as 
 
 6.80.00
 
-Fixed bug in `gam <UserTypeEntity> print users ... license ... formatjson` that caused a trap
+Fixed bug in `gam <UserTypeEntity> print users ... license ... formatjson` that caused a trap.
 
 Upgraded to Python 3.12.5 where possible.
 
@@ -220,7 +234,7 @@ Thanks to Jay, added option `nokey` to `gam create project` that creates a proje
 
 Added option `individualstudentassignments copy|delete|maptoall` to `gam create|update course ... copyfrom`
 that controls how individual student assignments in the `copyfrom` course are processed.
-* `individualstudentassignments copy` - Copy individual student assignments; this is the default. You will get an error if the student is not a member of the course.
+* `individualstudentassignments copy` - Copy individual student assignments; this is the default. You will get an error if a student is not a member of the course
 * `individualstudentassignments delete` - Delete individual student assignments
 * `individualstudentassignments maptoall` - Map individual student assignments to all student assignments
 
@@ -18233,4 +18247,3 @@ This isn't elegant but it's a start; you can say:
     with open(GAM_STDOUT, 'rU') as f:
         for line in f:
             sys.stdout.write(line)
-

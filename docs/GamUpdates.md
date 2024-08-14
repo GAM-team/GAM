@@ -10,6 +10,20 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.80.02
+
+Added option `addcsvdata <FieldName> <String>` to `gam <UserTypeEntity> print filecounts` that adds
+additional columns of data to the CSV file output.
+
+Added  options `individualstudentannouncements copy|delete|maptoall` and `individualstudentmaterials copy|delete|maptoall`
+to `gam create|update course ... copyfrom` that controls how individual student announcements and materials in the `copyfrom` course are processed.
+* `individualstudentannouncements copy` - Copy individual student announcements; this is the default. You will get an error if a student is not a member of the course
+* `individualstudentannouncements delete` - Delete individual student announcements
+* `individualstudentannouncements maptoall` - Map individual student announcements to all student announcements
+* `individualstudentmaterials copy` - Copy individual student materials; this is the default. You will get an error if a student is not a member of the course
+* `individualstudentmaterials delete` - Delete individual student materials
+* `individualstudentmaterials maptoall` - Map individual student materials to all student materials
+
 ### 6.80.01
 
 Added options `showstudentsaslist [<Boolean>]` and `delimiter <Character>` to `gam print course-work`.

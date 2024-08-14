@@ -78,7 +78,7 @@
 
 <SharedDriveID> ::= <String>
 <SharedDriveName> ::= <String>
-<SharedDriveIDEntity> ::= (teamdriveid <DriveFileItem>) | (teamdriveid:<DriveFileItem>)
+<SharedDriveIDEntity> ::= (teamdriveid <SharedDriveID>) | (teamdriveid:<SharedDriveID>)
 <SharedDriveNameEntity> ::= (teamdrive <SharedDriveName>) | (teamdrive:<SharedDriveName>)
 <SharedDriveFileNameEntity> ::= (teamdrivefilename <DriveFileName>) | (teamdrivefilename:<DriveFileName>)
 

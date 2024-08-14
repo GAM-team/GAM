@@ -55,6 +55,16 @@
         never|
         now|today
 
+<SharedDriveID> ::= <String>
+<SharedDriveName> ::= <String>
+<SharedDriveIDEntity> ::= (teamdriveid <SharedDriveID>) | (teamdriveid:<SharedDriveID>)
+<SharedDriveNameEntity> ::= (teamdrive <SharedDriveName>) | (teamdrive:<SharedDriveName>)
+<SharedDriveFileNameEntity> ::= (teamdrivefilename <DriveFileName>) | (teamdrivefilename:<DriveFileName>)
+
+<SharedDriveEntity> ::=
+        <SharedDriveIDEntity> |
+        <SharedDriveNameEntity>
+
 <MimeTypeShortcut> ::=
         gdoc|gdocument|
         gdrawing|
@@ -669,7 +679,7 @@ gam <UserTypeEntity> print filecounts [todrive <ToDriveAttribute>*]
         [filenamematchpattern <RegularExpression>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
         [excludetrashed]
-        [showsize] [showmimetypesize]
+        [showsize] [showmimetypesize] (addcsvdata <FieldName> <String>)*
         [summary none|only|plus] [summaryuser <String>]
 gam <UserTypeEntity> show filecounts
         [((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>)
@@ -691,6 +701,9 @@ By default, print filecounts displays counts of all files owned by the specified
 The `showsize` option displays the total size (in bytes) of the files counted.
 
 The showmimetypesize' displays the total size (in bytes) of each MIME type counted.
+
+For print filecouts, add additional columns of data from the command line to the output:
+* `addcsvdata <FieldName> <String>` - Add additional columns of data from the command line to the output
 
 See [Select files for Display file counts, list, tree](#select-files-for-display-file-counts-list-tree)
 

@@ -45376,6 +45376,8 @@ class CourseAttributes():
     self.courseMaterials = []
     self.workStates = []
     self.courseWorks = []
+    self.individualStudentAnnouncements = 'copy'
+    self.individualStudentMaterials = 'copy'
     self.individualStudentAssignments = 'copy'
     self.copyTopics = False
     self.topicsById = {}
@@ -45452,7 +45454,7 @@ class CourseAttributes():
     'view': 'VIEW'
     }
 
-  COURSE_WORK_INDIVIDUAL_STUDENT_ASSIGNMENTS_OPTIONS = {'copy', 'delete', 'maptoall'}
+  COURSE_INDIVIDUAL_STUDENT_OPTIONS = {'copy', 'delete', 'maptoall'}
 
   def GetAttributes(self):
     while Cmd.ArgumentsRemaining():
@@ -45483,8 +45485,12 @@ class CourseAttributes():
         _getCourseStates(Cmd.OB_COURSE_WORK_STATE_LIST, self.workStates)
       elif myarg in {'materialstate', 'materialstates', 'coursematerialstate', 'coursematerialstates'}:
         _getCourseStates(Cmd.OB_COURSE_MATERIAL_STATE_LIST, self.materialStates)
+      elif myarg == 'individualstudentannouncements':
+        self.individualStudentAnnouncements = getChoice(self.COURSE_INDIVIDUAL_STUDENT_OPTIONS)
+      elif myarg == 'individualstudentmaterials':
+        self.individualStudentMaterials = getChoice(self.COURSE_INDIVIDUAL_STUDENT_OPTIONS)
       elif myarg == 'individualstudentassignments':
-        self.individualStudentAssignments = getChoice(self.COURSE_WORK_INDIVIDUAL_STUDENT_ASSIGNMENTS_OPTIONS)
+        self.individualStudentAssignments = getChoice(self.COURSE_INDIVIDUAL_STUDENT_OPTIONS)
       elif myarg == 'members':
         self.members = getChoice(COURSE_MEMBER_ARGUMENTS)
       elif myarg == 'markdraftaspublished':
@@ -45671,6 +45677,24 @@ class CourseAttributes():
         pass
     return False
 
+  def checkItemCopyable(self, state, newCourseId, entityType, entityId, body, individualStudentOption, clarg, j, jcount):
+    if state == 'DELETED':
+      entityModifierItemValueListActionNotPerformedWarning([Ent.COURSE, newCourseId, entityType, entityId], Act.MODIFIER_FROM,
+                                                           [Ent.COURSE, self.courseId], Msg.DELETED, j, jcount)
+      return False
+    if body['assigneeMode'] == 'INDIVIDUAL_STUDENTS':
+      if individualStudentOption == 'delete':
+        entityModifierItemValueListActionNotPerformedWarning([Ent.COURSE, newCourseId, entityType, entityId], Act.MODIFIER_FROM,
+                                                             [Ent.COURSE, self.courseId], f'{clarg} delete', j, jcount)
+        return False
+      if individualStudentOption == 'maptoall':
+        body['assigneeMode'] = 'ALL_STUDENTS'
+        body.pop('individualStudentsOptions', None)
+      else: # individualStudentOption == 'copy':
+        if 'individualStudentsOptions' not in body:
+          body['assigneeMode'] = 'ALL_STUDENTS'
+    return True
+
   def CopyAttributes(self, newCourse, i=0, count=0):
     newCourseId = newCourse['id']
     ownerId = newCourse['ownerId']
@@ -45736,9 +45760,8 @@ class CourseAttributes():
         j += 1
         body = courseAnnouncement.copy()
         courseAnnouncementId = body.pop('id')
-        if courseAnnouncement['state'] == 'DELETED':
-          entityModifierItemValueListActionNotPerformedWarning([Ent.COURSE, newCourseId, Ent.COURSE_ANNOUNCEMENT_ID, courseAnnouncementId], Act.MODIFIER_FROM,
-                                                               [Ent.COURSE, self.courseId], Msg.DELETED, j, jcount)
+        if not self.checkItemCopyable(courseAnnouncement['state'], newCourseId, Ent.COURSE_ANNOUNCEMENT_ID, courseAnnouncementId,
+                                      body, self.individualStudentAnnouncements, 'individualstudentannouncements', j, jcount):
           continue
         if self.copyMaterialsFiles:
           self.CopyMaterials(tdrive, newCourseId, body, Ent.COURSE_ANNOUNCEMENT_ID, courseAnnouncementId, teacherFolderId)
@@ -45764,9 +45787,8 @@ class CourseAttributes():
         j += 1
         body = courseMaterial.copy()
         courseMaterialId = body.pop('id')
-        if courseMaterial['state'] == 'DELETED':
-          entityModifierItemValueListActionNotPerformedWarning([Ent.COURSE, newCourseId, Ent.COURSE_MATERIAL_ID, courseMaterialId], Act.MODIFIER_FROM,
-                                                               [Ent.COURSE, self.courseId], Msg.DELETED, j, jcount)
+        if not self.checkItemCopyable(courseMaterial['state'], newCourseId, Ent.COURSE_MATERIAL_ID, courseMaterialId,
+                                      body, self.individualStudentMaterials, 'individualstudentmaterials', j, jcount):
           continue
         if self.copyMaterialsFiles:
           self.CopyMaterials(tdrive, newCourseId, body, Ent.COURSE_MATERIAL_ID, courseMaterialId, teacherFolderId)
@@ -45800,18 +45822,9 @@ class CourseAttributes():
         j += 1
         body = courseWork.copy()
         courseWorkId = body.pop('id')
-        if courseWork['state'] == 'DELETED':
-          entityModifierItemValueListActionNotPerformedWarning([Ent.COURSE, newCourseId, Ent.COURSE_WORK, f'{body.get("title", courseWorkId)}'], Act.MODIFIER_FROM,
-                                                               [Ent.COURSE, self.courseId], Msg.DELETED, j, jcount)
+        if not self.checkItemCopyable(courseWork['state'], newCourseId, Ent.COURSE_WORK_ID, courseWorkId,
+                                      body, self.individualStudentAssignments, 'individualstudentassignments', j, jcount):
           continue
-        if body['assigneeMode'] == 'INDIVIDUAL_STUDENTS':
-          if self.individualStudentAssignments == 'delete':
-            entityModifierItemValueListActionNotPerformedWarning([Ent.COURSE, newCourseId, Ent.COURSE_WORK, f'{body.get("title", courseWorkId)}'], Act.MODIFIER_FROM,
-                                                                 [Ent.COURSE, self.courseId], 'individualStudentAssignments delete', j, jcount)
-            continue
-          if self.individualStudentAssignments == 'maptoall':
-            body['assigneeMode'] = 'ALL_STUDENTS'
-            body.pop('individualStudentsOptions', None)
         if self.copyMaterialsFiles:
           self.CopyMaterials(tdrive, newCourseId, body, Ent.COURSE_WORK_ID, courseWorkId, teacherFolderId)
         topicId = body.pop('topicId', None)
@@ -45859,8 +45872,11 @@ class CourseAttributes():
 # gam create course [id|alias <CourseAlias>] <CourseAttribute>*
 #	 [copyfrom <CourseID>
 #	    [announcementstates <CourseAnnouncementStateList>]
+#		[individualstudentannouncements copy|delete|maptoall]
 #	    [materialstates <CourseMaterialStateList>]
+#		[individualstudentmaterials copy|delete|maptoall]
 #	    [workstates <CourseWorkStateList>]
+#		[individualstudentassignments copy|delete|maptoall]
 #		[removeduedate [<Boolean>]]
 #		[mapsharemodestudentcopy edit|none|view]
 #           [copymaterialsfiles [<Boolean>]]
@@ -45962,8 +45978,11 @@ def _doUpdateCourses(entityList):
 # gam update courses <CourseEntity> <CourseAttribute>+
 #	 [copyfrom <CourseID>
 #	    [announcementstates <CourseAnnouncementStateList>]
+#		[individualstudentannouncements copy|delete|maptoall]
 #	    [materialstates <CourseMaterialStateList>]
+#		[individualstudentmaterials copy|delete|maptoall]
 #	    [workstates <CourseWorkStateList>]
+#		[individualstudentassignments copy|delete|maptoall]
 #		[removeduedate [<Boolean>]]
 #		[mapsharemodestudentcopy edit|none|view]
 #           [copymaterialsfiles [<Boolean>]]
@@ -45977,8 +45996,11 @@ def doUpdateCourses():
 # gam update course <CourseID> <CourseAttribute>+
 #	 [copyfrom <CourseID>
 #	    [announcementstates <CourseAnnouncementStateList>]
+#		[individualstudentannouncements copy|delete|maptoall]
 #	    [materialstates <CourseMaterialStateList>]
+#		[individualstudentmaterials copy|delete|maptoall]
 #	    [workstates <CourseWorkStateList>]
+#		[individualstudentassignments copy|delete|maptoall]
 #		[removeduedate [<Boolean>]]
 #		[mapsharemodestudentcopy edit|none|view]
 #           [copymaterialsfiles [<Boolean>]]
@@ -46639,6 +46661,7 @@ COURSE_ANNOUNCEMENTS_FIELDS_CHOICE_MAP = {
   'creator': 'creatorUserId',
   'creatoruserid': 'creatorUserId',
   'id': 'id',
+  'individualstudentsoptions': 'individualStudentsOptions',
   'materials': 'materials',
   'scheduledtime': 'scheduledTime',
   'state': 'state',
@@ -46868,6 +46891,7 @@ COURSE_MATERIAL_FIELDS_CHOICE_MAP = {
   'creatoruserid': 'creatorUserId',
   'description': 'description',
   'id': 'id',
+  'individualstudentsoptions': 'individualStudentsOptions',
   'materialid': 'id',
   'materials': 'materials',
   'scheduledtime': 'scheduledTime',
@@ -46896,6 +46920,7 @@ COURSE_WORK_FIELDS_CHOICE_MAP = {
   'duedate': 'dueDate',
   'duetime': 'dueTime',
   'id': 'id',
+  'individualstudentsoptions': 'individualStudentsOptions',
   'materials': 'materials',
   'maxpoints': 'maxPoints',
   'scheduledtime': 'scheduledTime',
@@ -55488,8 +55513,9 @@ def printFileParentTree(users):
 #	[sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
 #	[filenamematchpattern <RegularExpression>]
 #	<PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
-#	[excludetrashed]
-#	[summary none|only|plus] [summaryuser <String>] [showsize]
+#	[excludetrashed] (addcsvdata <FieldName> <String>)*
+#	[showsize] [showmimetypesize]
+#	[summary none|only|plus] [summaryuser <String>]
 # gam <UserTypeEntity> show filecounts
 #	[((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>) (querytime<String> <Time>)*]
 #	[corpora <CorporaAttribute>]
@@ -55500,7 +55526,8 @@ def printFileParentTree(users):
 #	[filenamematchpattern <RegularExpression>]
 #	<PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
 #	[excludetrashed]
-#	[summary none|only|plus] [summaryuser <String>] [showsize]
+#	[showsize] [showmimetypesize]
+#	[summary none|only|plus] [summaryuser <String>]
 def printShowFileCounts(users):
   def _setSelectionFields():
     if DLP.showOwnedBy is not None:
@@ -55554,6 +55581,8 @@ def printShowFileCounts(users):
         row = {'User': user, 'Total': countTotal}
       if showSize:
         row['Size'] = sizeTotal
+      if addCSVData:
+        row.update(addCSVData)
       for mimeType, mtinfo in sorted(iter(mimeTypeInfo.items())):
         row[f'{mimeType}'] = mtinfo['count']
         if showMimeTypeSize:
@@ -55572,6 +55601,7 @@ def printShowFileCounts(users):
   summaryUser = FILECOUNT_SUMMARY_USER
   summaryMimeTypeInfo = {}
   fileIdEntity = {}
+  addCSVData = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -55592,6 +55622,9 @@ def printShowFileCounts(users):
       summary = getChoice(FILECOUNT_SUMMARY_CHOICE_MAP, mapChoice=True)
     elif myarg == 'summaryuser':
       summaryUser = getString(Cmd.OB_STRING)
+    elif csvPF and myarg == 'addcsvdata':
+      k = getString(Cmd.OB_STRING)
+      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
     else:
       unknownArgumentExit()
   if not fileIdEntity:
@@ -55612,6 +55645,8 @@ def printShowFileCounts(users):
     sortTitles = ['User', 'id', 'name', 'Total', 'Item cap'] if fileIdEntity.get('shareddrive') else ['User', 'Total']
     if showSize:
       sortTitles.insert(sortTitles.index('Total')+1, 'Size')
+    if addCSVData:
+      sortTitles.extend(sorted(addCSVData.keys()))
     csvPF.SetTitles(sortTitles)
     csvPF.SetSortAllTitles()
   pagesFields = getItemFieldsFromFieldsList('files', fieldsList)
@@ -75740,3 +75775,4 @@ def ProcessGAMCommand(args, processGamCfg=True, inLoop=False, closeSTD=True):
 # Process GAM command
 def CallGAMCommand(args, processGamCfg=True, inLoop=False, closeSTD=False):
   return ProcessGAMCommand(args, processGamCfg=processGamCfg, inLoop=inLoop, closeSTD=closeSTD)
+o

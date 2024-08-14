@@ -2939,44 +2939,55 @@ gam <UserTypeEntity> show contactdelegates [shownames] [csv]
 gam create|add course [id|alias <CourseAlias>] <CourseAttribute>*
         [copyfrom <CourseID>
             [announcementstates <CourseAnnouncementStateList>]
+                [individualstudentannouncements copy|delete|maptoall]
             [materialstates <CourseMaterialStateList>]
+                [individualstudentmaterials copy|delete|maptoall]
             [workstates <CourseWorkStateList>]
                 [individualstudentassignments copy|delete|maptoall]
                 [removeduedate [<Boolean>]]
                 [mapsharemodestudentcopy edit|none|view]
             [copymaterialsfiles [<Boolean>]]
             [copytopics [<Boolean>]]
+            [markdraftaspublished [<Boolean>]]
             [markpublishedasdraft [<Boolean>]]
             [members none|all|students|teachers]]
             [logdrivefileids [<Boolean>]]
+
 gam update course <CourseID> <CourseAttribute>+
         [copyfrom <CourseID>
             [announcementstates <CourseAnnouncementStateList>]
+                [individualstudentannouncements copy|delete|maptoall]
             [materialstates <CourseMaterialStateList>]
+                [individualstudentmaterials copy|delete|maptoall]
             [workstates <CourseWorkStateList>]
                 [individualstudentassignments copy|delete|maptoall]
                 [removeduedate [<Boolean>]]
                 [mapsharemodestudentcopy edit|none|view]
             [copymaterialsfiles [<Boolean>]]
             [copytopics [<Boolean>]]
+            [markdraftaspublished [<Boolean>]]
             [markpublishedasdraft [<Boolean>]]
             [members none|all|students|teachers]]
             [logdrivefileids [<Boolean>]]
-gam delete course <CourseID> [archive|archived]
 
 gam update courses <CourseEntity> <CourseAttribute>+
         [copyfrom <CourseID>
             [announcementstates <CourseAnnouncementStateList>]
+                [individualstudentannouncements copy|delete|maptoall]
             [materialstates <CourseMaterialStateList>]
+                [individualstudentmaterials copy|delete|maptoall]
             [workstates <CourseWorkStateList>]
                 [individualstudentassignments copy|delete|maptoall]
                 [removeduedate [<Boolean>]]
                 [mapsharemodestudentcopy edit|none|view]
             [copymaterialsfiles [<Boolean>]]
             [copytopics [<Boolean>]]
+            [markdraftaspublished [<Boolean>]]
             [markpublishedasdraft [<Boolean>]]
             [members none|all|students|teachers]]
             [logdrivefileids [<Boolean>]]
+
+gam delete course <CourseID> [archive|archived]
 gam delete courses <CourseEntity> [archive|archived]
 
 gam course <CourseID> create|add alias <CourseAlias>
@@ -3037,6 +3048,7 @@ gam print course-participants [todrive <ToDriveAttribute>*]
         creationtime|
         creator|creatoruserid|
         id|
+        individualstudentsoptions|
         materials|
         scheduledtime|
         state|
@@ -3057,6 +3069,7 @@ gam print course-participants [todrive <ToDriveAttribute>*]
         creator|creatoruserid|
         description|
         id|
+        individualstudentsoptions|
         materials|
         scheduledtime|
         state|
@@ -3099,6 +3112,7 @@ gam print course-participants [todrive <ToDriveAttribute>*]
         duedate|
         duetime|
         id|
+        individualstudentsoptions|
         materials|
         maxpoints|
         scheduledtime|
@@ -7014,7 +7028,7 @@ gam <UserTypeEntity> print filecounts [todrive <ToDriveAttribute>*]
         [filenamematchpattern <RegularExpression>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
         [excludetrashed]
-        [showsize] [showmimetypesize]
+        [showsize] [showmimetypesize] (addcsvdata <FieldName> <String>)*
         [summary none|only|plus] [summaryuser <String>]
 gam <UserTypeEntity> show filecounts
         [((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>)
