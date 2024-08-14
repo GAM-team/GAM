@@ -2,6 +2,11 @@
 
 Merged GAM-Team version
 
+6.80.03
+
+Added option `stripcrsfromname` to `gam <UserTypeEntity> print driveactivity` that causes carriage returns,
+linefeeds and nulls to be stripped from file names.
+
 6.80.02
 
 Added option `addcsvdata <FieldName> <String>` to `gam <UserTypeEntity> print filecounts` that adds

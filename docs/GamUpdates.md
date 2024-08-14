@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.80.03
+
+Added option `stripcrsfromname` to `gam <UserTypeEntity> print driveactivity` that causes carriage returns,
+linefeeds and nulls to be stripped from file names.
+
 ### 6.80.02
 
 Added option `addcsvdata <FieldName> <String>` to `gam <UserTypeEntity> print filecounts` that adds

@@ -70,7 +70,7 @@ Google has introduced Drive Activity API v2; it adds time and action filtering a
 Drive Activity API v1 has been deprecated.
 * https://developers.google.com/drive/activity/v2/migrating
 ```
-gam <UserTypeEntity> print|show driveactivity [v2] [todrive <ToDriveAttributes>*]
+gam <UserTypeEntity> print driveactivity [v2] [todrive <ToDriveAttributes>*]
         [(fileid <DriveFileID>)|(folderid <DriveFolderID>)|
          (drivefilename <DriveFileName>)|(drivefoldername <DriveFolderName>)|
          (query <QueryDriveFile>)]
@@ -79,7 +79,7 @@ gam <UserTypeEntity> print|show driveactivity [v2] [todrive <ToDriveAttributes>*
         [action|actions [not] <DriveActivityActionList>]
         [consolidationstrategy legacy|none]
         [idmapfile <FileName>|(gsheet <UserGoogleSheet>) [charset <String>] [columndelimiter <Character>] [noescapechar <Boolean>]  [quotechar <Character>]]
-        [formatjson [quotechar <Character>]]
+        [stripcrsfromname] [formatjson [quotechar <Character>]]
 ```
 By default, Drive Activity API v2 is used; the `v2` option is ignored.
 
@@ -127,6 +127,9 @@ Then, use the `idmapfile Users.csv` option to have Gam generate a `user.emailAdd
 must be present in the file; the column `name.fullName` will be used if present.
 
 If you don't use the `idmapfile` option, Gam makes an additional API call per user to get the name and email address.
+
+The `stripcrsfromname` option strips nulls, carriage returns and linefeeds from drive file names.
+Use this option if you discover filenames containing these special characters; it is not common.
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.

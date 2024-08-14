@@ -7142,7 +7142,7 @@ gam <UserTypeEntity> print diskusage <DriveFileEntity> [todrive <ToDriveAttribut
         upload
 <DriveActivityActionList> ::= "<DriveActivityAction>(,<DriveActivityAction>)*"
 
-gam <UserTypeEntity> print|show driveactivity [todrive <ToDriveAttribute>*]
+gam <UserTypeEntity> print driveactivity [todrive <ToDriveAttribute>*]
         [(fileid <DriveFileID>) | (folderid <DriveFolderID>) |
          (drivefilename <DriveFileName>) | (drivefoldername <DriveFolderName>) | (query <QueryDriveFile>)]
         [([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date>)|<Time>|
@@ -7150,7 +7150,7 @@ gam <UserTypeEntity> print|show driveactivity [todrive <ToDriveAttribute>*]
         [action|actions [not] <DriveActivityActionList>]
         [consolidationstrategy legacy|none]
         [idmapfile <CSVFileInput> endcsv]
-        [formatjson [quotechar <Character>]]
+        [stripcrsfromname] [formatjson [quotechar <Character>]]
 
 <DriveSettingsFieldName> ::=
         appinstalled|

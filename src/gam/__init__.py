@@ -51992,7 +51992,7 @@ DRIVE_ACTIVITY_ACTION_MAP = {
 
 CONSOLIDATION_GROUPING_STRATEGY_CHOICE_MAP = {'driveui': 'legacy', 'legacy': 'legacy', 'none': 'none'}
 
-# gam <UserTypeEntity> print|show driveactivity [todrive <ToDriveAttribute>*]
+# gam <UserTypeEntity> print driveactivity [todrive <ToDriveAttribute>*]
 #	[(fileid <DriveFileID>) | (folderid <DriveFolderID>) |
 #	 (drivefilename <DriveFileName>) | (drivefoldername <DriveFolderName>) | (query <QueryDriveFile>)]
 #	[([start <Date>|<Time>] [end <Date>|<Time>])|(range <Date>|<Time> <Date>|<Time>)|
@@ -52000,7 +52000,7 @@ CONSOLIDATION_GROUPING_STRATEGY_CHOICE_MAP = {'driveui': 'legacy', 'legacy': 'le
 #	[action|actions [not] <DriveActivityActionList>]
 #	[consolidationstrategy legacy|none]
 #	[idmapfile <CSVFileInput> endcsv]
-#	[formatjson [quotechar <Character>]]
+#	[stripcrsfromname] [formatjson [quotechar <Character>]]
 def printDriveActivity(users):
   def _getUserInfo(userId):
     if userId.startswith('people/'):
@@ -52041,7 +52041,7 @@ def printDriveActivity(users):
   activityFilter = ''
   actions = set()
   strategy = 'none'
-  negativeAction = False
+  negativeAction = stripCRsFromName = False
   checkArgumentPresent(['v2'])
   csvPF = CSVPrintFile([f'user{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}name',
                         f'user{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}emailAddress',
@@ -52086,6 +52086,8 @@ def printDriveActivity(users):
       for row in csvFile:
         userInfo[row['id']] = (row['primaryEmail'], row.get('name.fullName', UNKNOWN))
       closeFile(f)
+    elif myarg == 'stripcrsfromname':
+      stripCRsFromName = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if not baseFileList and not query:
@@ -52173,12 +52175,16 @@ def printDriveActivity(users):
               driveItem = targets[0].get('driveItem')
               if driveItem:
                 eventRow[f'target{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}id'] = driveItem['name'][6:]
+                if stripCRsFromName:
+                  driveItem['title'] = _stripControlCharsFromName(driveItem['title'])
                 eventRow[f'target{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}name'] = driveItem['title']
                 eventRow[f'target{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}mimeType'] = driveItem['mimeType']
               else:
                 sharedDrive = targets[0].get('teamDrive')
                 if sharedDrive:
                   eventRow[f'target{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}id'] = sharedDrive['name'][11:]
+                  if stripCRsFromName:
+                    sharedDrive['title'] = _stripControlCharsFromName(sharedDrive['title'])
                   eventRow[f'target{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}name'] = sharedDrive['title']
             if 'timestamp' in activityEvent:
               eventRow['eventTime'] = formatLocalTime(activityEvent['timestamp'])
