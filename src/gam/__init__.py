@@ -45410,6 +45410,13 @@ class CourseAttributes():
     'updateTime',
     ]
 
+  MAX_TITLE_DISPLAY_LENGTH = 34
+
+  def trimTitle(self, title):
+    if len(title) <= self.MAX_TITLE_DISPLAY_LENGTH:
+      return title
+    return title[:self.MAX_TITLE_DISPLAY_LENGTH]+'...'
+
   def CleanMaterials(self, body, entityType, entityId):
     if 'materials' not in body:
       return
@@ -45438,7 +45445,7 @@ class CourseAttributes():
         action = Act.Get()
         Act.Set(Act.COPY)
         entityActionNotPerformedWarning([Ent.COURSE, self.courseId, entityType, entityId,
-                                         Ent.COURSE_MATERIAL_FORM, material['form'].get('title', UNKNOWN)],
+                                         Ent.COURSE_MATERIAL_FORM, self.trimTitle(material['form'].get('title', UNKNOWN))],
                                         Msg.NOT_COPYABLE)
         Act.Set(action)
 
@@ -45677,6 +45684,10 @@ class CourseAttributes():
         pass
     return False
 
+  def getItemIdTitle(self, body):
+    id = body.pop('id')
+    return self.trimTitle(body.get('title', id))
+
   def checkItemCopyable(self, state, newCourseId, entityType, entityId, body, individualStudentOption, clarg, j, jcount):
     if state == 'DELETED':
       entityModifierItemValueListActionNotPerformedWarning([Ent.COURSE, newCourseId, entityType, entityId], Act.MODIFIER_FROM,
@@ -45759,12 +45770,12 @@ class CourseAttributes():
       for courseAnnouncement in self.courseAnnouncements:
         j += 1
         body = courseAnnouncement.copy()
-        courseAnnouncementId = body.pop('id')
-        if not self.checkItemCopyable(courseAnnouncement['state'], newCourseId, Ent.COURSE_ANNOUNCEMENT_ID, courseAnnouncementId,
+        courseAnnouncementId = self.getItemIdTitle(body)
+        if not self.checkItemCopyable(courseAnnouncement['state'], newCourseId, Ent.COURSE_ANNOUNCEMENT, courseAnnouncementId,
                                       body, self.individualStudentAnnouncements, 'individualstudentannouncements', j, jcount):
           continue
         if self.copyMaterialsFiles:
-          self.CopyMaterials(tdrive, newCourseId, body, Ent.COURSE_ANNOUNCEMENT_ID, courseAnnouncementId, teacherFolderId)
+          self.CopyMaterials(tdrive, newCourseId, body, Ent.COURSE_ANNOUNCEMENT, courseAnnouncementId, teacherFolderId)
         try:
           result = callGAPI(self.tcroom.courses().announcements(), 'create',
                             throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.FORBIDDEN,
@@ -45772,26 +45783,26 @@ class CourseAttributes():
                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                             courseId=newCourseId, body=body, fields='id')
           entityModifierItemValueListActionPerformed([Ent.COURSE, newCourseId, Ent.COURSE_ANNOUNCEMENT_ID, result['id']], Act.MODIFIER_FROM,
-                                                     [Ent.COURSE, self.courseId, Ent.COURSE_ANNOUNCEMENT_ID, courseAnnouncementId], j, jcount)
+                                                     [Ent.COURSE, self.courseId, Ent.COURSE_ANNOUNCEMENT, courseAnnouncementId], j, jcount)
         except GAPI.notFound as e:
           entityActionFailedWarning([Ent.COURSE, newCourseId], str(e), i, count)
           return
         except (GAPI.badRequest, GAPI.failedPrecondition, GAPI.backendError, GAPI.internalError,
                 GAPI.permissionDenied, GAPI.forbidden, GAPI.serviceNotAvailable) as e:
           entityModifierItemValueListActionFailedWarning([Ent.COURSE, newCourseId], Act.MODIFIER_FROM,
-                                                         [Ent.COURSE, self.courseId, Ent.COURSE_ANNOUNCEMENT_ID, courseAnnouncementId], str(e), j, jcount)
+                                                         [Ent.COURSE, self.courseId, Ent.COURSE_ANNOUNCEMENT, courseAnnouncementId], str(e), j, jcount)
     if self.courseMaterials:
       jcount = len(self.courseMaterials)
       j = 0
       for courseMaterial in self.courseMaterials:
         j += 1
         body = courseMaterial.copy()
-        courseMaterialId = body.pop('id')
-        if not self.checkItemCopyable(courseMaterial['state'], newCourseId, Ent.COURSE_MATERIAL_ID, courseMaterialId,
+        courseMaterialId = self.getItemIdTitle(body)
+        if not self.checkItemCopyable(courseMaterial['state'], newCourseId, Ent.COURSE_MATERIAL, courseMaterialId,
                                       body, self.individualStudentMaterials, 'individualstudentmaterials', j, jcount):
           continue
         if self.copyMaterialsFiles:
-          self.CopyMaterials(tdrive, newCourseId, body, Ent.COURSE_MATERIAL_ID, courseMaterialId, teacherFolderId)
+          self.CopyMaterials(tdrive, newCourseId, body, Ent.COURSE_MATERIAL, courseMaterialId, teacherFolderId)
         topicId = body.pop('topicId', None)
         if self.copyTopics:
           if topicId:
@@ -45807,26 +45818,26 @@ class CourseAttributes():
                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                             courseId=newCourseId, body=body, fields='id')
           entityModifierItemValueListActionPerformed([Ent.COURSE, newCourseId, Ent.COURSE_MATERIAL_ID, result['id']], Act.MODIFIER_FROM,
-                                                     [Ent.COURSE, self.courseId, Ent.COURSE_MATERIAL_ID, courseMaterialId], j, jcount)
+                                                     [Ent.COURSE, self.courseId, Ent.COURSE_MATERIAL, courseMaterialId], j, jcount)
         except GAPI.notFound as e:
           entityActionFailedWarning([Ent.COURSE, newCourseId], str(e), i, count)
           return
         except (GAPI.badRequest, GAPI.failedPrecondition, GAPI.backendError, GAPI.internalError,
                 GAPI.permissionDenied, GAPI.forbidden, GAPI.serviceNotAvailable) as e:
           entityModifierItemValueListActionFailedWarning([Ent.COURSE, newCourseId], Act.MODIFIER_FROM,
-                                                         [Ent.COURSE, self.courseId, Ent.COURSE_MATERIAL_ID, courseMaterialId], str(e), j, jcount)
+                                                         [Ent.COURSE, self.courseId, Ent.COURSE_MATERIAL, courseMaterialId], str(e), j, jcount)
     if self.courseWorks:
       jcount = len(self.courseWorks)
       j = 0
       for courseWork in self.courseWorks:
         j += 1
         body = courseWork.copy()
-        courseWorkId = body.pop('id')
-        if not self.checkItemCopyable(courseWork['state'], newCourseId, Ent.COURSE_WORK_ID, courseWorkId,
+        courseWorkId = self.getItemIdTitle(body)
+        if not self.checkItemCopyable(courseWork['state'], newCourseId, Ent.COURSE_WORK, courseWorkId,
                                       body, self.individualStudentAssignments, 'individualstudentassignments', j, jcount):
           continue
         if self.copyMaterialsFiles:
-          self.CopyMaterials(tdrive, newCourseId, body, Ent.COURSE_WORK_ID, courseWorkId, teacherFolderId)
+          self.CopyMaterials(tdrive, newCourseId, body, Ent.COURSE_WORK, courseWorkId, teacherFolderId)
         topicId = body.pop('topicId', None)
         if self.copyTopics:
           if topicId:
@@ -45847,14 +45858,14 @@ class CourseAttributes():
                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                             courseId=newCourseId, body=body, fields='id')
           entityModifierItemValueListActionPerformed([Ent.COURSE, newCourseId, Ent.COURSE_WORK_ID, result['id']], Act.MODIFIER_FROM,
-                                                     [Ent.COURSE, self.courseId, Ent.COURSE_WORK, f'{body.get("title", courseWorkId)}'], j, jcount)
+                                                     [Ent.COURSE, self.courseId, Ent.COURSE_WORK, courseWorkId], j, jcount)
         except GAPI.notFound as e:
           entityActionFailedWarning([Ent.COURSE, newCourseId], str(e), i, count)
           return
         except (GAPI.badRequest, GAPI.failedPrecondition, GAPI.backendError, GAPI.internalError, GAPI.invalidArgument,
                 GAPI.permissionDenied, GAPI.forbidden, GAPI.serviceNotAvailable) as e:
           entityModifierItemValueListActionFailedWarning([Ent.COURSE, newCourseId], Act.MODIFIER_FROM,
-                                                         [Ent.COURSE, self.courseId, Ent.COURSE_WORK, f'{body.get("title", courseWorkId)}'], str(e), j, jcount)
+                                                         [Ent.COURSE, self.courseId, Ent.COURSE_WORK, courseWorkId], str(e), j, jcount)
 
   def CopyFromCourse(self, newCourse, i=0, count=0):
     action = Act.Get()

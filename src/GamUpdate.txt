@@ -2,6 +2,10 @@
 
 Merged GAM-Team version
 
+6.80.04
+
+Cleaned up progress messages in `gam create|update course ... copyfrom`.
+
 6.80.03
 
 Added option `stripcrsfromname` to `gam <UserTypeEntity> print driveactivity` that causes carriage returns,

@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.80.04
+
+Cleaned up progress messages in `gam create|update course ... copyfrom`.
+
 ### 6.80.03
 
 Added option `stripcrsfromname` to `gam <UserTypeEntity> print driveactivity` that causes carriage returns,

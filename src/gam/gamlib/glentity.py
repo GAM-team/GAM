@@ -133,10 +133,12 @@ class GamEntity():
   COPYFROM_GROUP = 'cfgr'
   COURSE = 'cour'
   COURSE_ALIAS = 'coal'
+  COURSE_ANNOUNCEMENT = 'cann'
   COURSE_ANNOUNCEMENT_ID = 'caid'
   COURSE_ANNOUNCEMENT_STATE = 'cast'
   COURSE_MATERIAL_DRIVEFILE = 'comd'
   COURSE_MATERIAL_FORM = 'comf'
+  COURSE_MATERIAL = 'cmtl'
   COURSE_MATERIAL_ID = 'cmid'
   COURSE_MATERIAL_STATE = 'cmst'
   COURSE_NAME = 'cona'
@@ -475,10 +477,12 @@ class GamEntity():
     COPYFROM_GROUP: ['Copy From Groups', 'CopyFrom Group'],
     COURSE: ['Courses', 'Course'],
     COURSE_ALIAS: ['Course Aliases', 'Course Alias'],
+    COURSE_ANNOUNCEMENT: ['Course Announcements', 'Course Announcement'],
     COURSE_ANNOUNCEMENT_ID: ['Course Announcement IDs', 'Course Announcement ID'],
     COURSE_ANNOUNCEMENT_STATE: ['Course Announcement States', 'Course Announcement State'],
     COURSE_MATERIAL_DRIVEFILE: ['Course Material Drive Files', 'Course Material Drive File'],
     COURSE_MATERIAL_FORM: ['Course Material Forms', 'Course Material Form'],
+    COURSE_MATERIAL: ['Course Materials', 'Course Material'],
     COURSE_MATERIAL_ID: ['Course Material IDs', 'Course Material ID'],
     COURSE_MATERIAL_STATE: ['Course Material States', 'Course Material State'],
     COURSE_NAME: ['Course Names', 'Course Name'],
