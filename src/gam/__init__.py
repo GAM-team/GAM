@@ -45378,7 +45378,7 @@ class CourseAttributes():
     self.courseWorks = []
     self.individualStudentAnnouncements = 'copy'
     self.individualStudentMaterials = 'copy'
-    self.individualStudentAssignments = 'copy'
+    self.individualStudentCourseWork = 'copy'
     self.copyTopics = False
     self.topicsById = {}
     self.reversedTopicIdList = []
@@ -45496,8 +45496,11 @@ class CourseAttributes():
         self.individualStudentAnnouncements = getChoice(self.COURSE_INDIVIDUAL_STUDENT_OPTIONS)
       elif myarg == 'individualstudentmaterials':
         self.individualStudentMaterials = getChoice(self.COURSE_INDIVIDUAL_STUDENT_OPTIONS)
+      elif myarg == 'individualstudentcoursework':
+        self.individualStudentCourseWork = getChoice(self.COURSE_INDIVIDUAL_STUDENT_OPTIONS)
       elif myarg == 'individualstudentassignments':
-        self.individualStudentAssignments = getChoice(self.COURSE_INDIVIDUAL_STUDENT_OPTIONS)
+        self.individualStudentAnnouncements = self.individualStudentMaterials = self.individualStudentCourseWork =\
+          getChoice(self.COURSE_INDIVIDUAL_STUDENT_OPTIONS)
       elif myarg == 'members':
         self.members = getChoice(COURSE_MEMBER_ARGUMENTS)
       elif myarg == 'markdraftaspublished':
@@ -45834,7 +45837,7 @@ class CourseAttributes():
         body = courseWork.copy()
         courseWorkId = self.getItemIdTitle(body)
         if not self.checkItemCopyable(courseWork['state'], newCourseId, Ent.COURSE_WORK, courseWorkId,
-                                      body, self.individualStudentAssignments, 'individualstudentassignments', j, jcount):
+                                      body, self.individualStudentCourseWork, 'individualstudentcoursework', j, jcount):
           continue
         if self.copyMaterialsFiles:
           self.CopyMaterials(tdrive, newCourseId, body, Ent.COURSE_WORK, courseWorkId, teacherFolderId)
@@ -45887,9 +45890,10 @@ class CourseAttributes():
 #	    [materialstates <CourseMaterialStateList>]
 #		[individualstudentmaterials copy|delete|maptoall]
 #	    [workstates <CourseWorkStateList>]
-#		[individualstudentassignments copy|delete|maptoall]
+#		[individualstudentcoursework copy|delete|maptoall]
 #		[removeduedate [<Boolean>]]
 #		[mapsharemodestudentcopy edit|none|view]
+#	    [individualstudentassignments copy|delete|maptoall]
 #           [copymaterialsfiles [<Boolean>]]
 #	    [copytopics [<Boolean>]]
 #	    [markpublishedasdraft [<Boolean>]] [markdraftaspublished [<Boolean>]]
@@ -45993,9 +45997,10 @@ def _doUpdateCourses(entityList):
 #	    [materialstates <CourseMaterialStateList>]
 #		[individualstudentmaterials copy|delete|maptoall]
 #	    [workstates <CourseWorkStateList>]
-#		[individualstudentassignments copy|delete|maptoall]
+#		[individualstudentcoursework copy|delete|maptoall]
 #		[removeduedate [<Boolean>]]
 #		[mapsharemodestudentcopy edit|none|view]
+#	    [individualstudentassignments copy|delete|maptoall]
 #           [copymaterialsfiles [<Boolean>]]
 #	    [copytopics [<Boolean>]]
 #	    [markpublishedasdraft [<Boolean>]] [markdraftaspublished [<Boolean>]]
@@ -46011,9 +46016,10 @@ def doUpdateCourses():
 #	    [materialstates <CourseMaterialStateList>]
 #		[individualstudentmaterials copy|delete|maptoall]
 #	    [workstates <CourseWorkStateList>]
-#		[individualstudentassignments copy|delete|maptoall]
+#		[individualstudentcoursework copy|delete|maptoall]
 #		[removeduedate [<Boolean>]]
 #		[mapsharemodestudentcopy edit|none|view]
+#	    [individualstudentassignments copy|delete|maptoall]
 #           [copymaterialsfiles [<Boolean>]]
 #	    [copytopics [<Boolean>]]
 #	    [markpublishedasdraft [<Boolean>]] [markdraftaspublished [<Boolean>]]

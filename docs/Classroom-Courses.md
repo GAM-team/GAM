@@ -278,9 +278,10 @@ gam create|add course [id|alias <CourseAlias>] <CourseAttribute>*
             [materialstates <CourseMaterialStateList>]
                 [individualstudentmaterials copy|delete|maptoall]
             [workstates <CourseWorkStateList>]
-                [individualstudentassignments copy|delete|maptoall]
+                [individualstudentcoursework copy|delete|maptoall]
                 [removeduedate [<Boolean>]]
                 [mapsharemodestudentcopy edit|none|view]
+            [individualstudentassignments copy|delete|maptoall]
             [copymaterialsfiles [<Boolean>]]
             [copytopics [<Boolean>]]
             [markdraftaspublished [<Boolean>]]
@@ -295,9 +296,10 @@ gam update course <CourseID> <CourseAttribute>+
             [materialstates <CourseMaterialStateList>]
                 [individualstudentmaterials copy|delete|maptoall]
             [workstates <CourseWorkStateList>]
-                [individualstudentassignments copy|delete|maptoall]
+                [individualstudentcoursework copy|delete|maptoall]
                 [removeduedate [<Boolean>]]
                 [mapsharemodestudentcopy edit|none|view]
+            [individualstudentassignments copy|delete|maptoall]
             [copymaterialsfiles [<Boolean>]]
             [copytopics [<Boolean>]]
             [markdraftaspublished [<Boolean>]]
@@ -311,9 +313,10 @@ gam update courses <CourseEntity> <CourseAttribute>+
             [materialstates <CourseMaterialStateList>]
                 [individualstudentmaterials copy|delete|maptoall]
             [workstates <CourseWorkStateList>]
-                [individualstudentassignments copy|delete|maptoall]
+                [individualstudentcoursework copy|delete|maptoall]
                 [removeduedate [<Boolean>]]
                 [mapsharemodestudentcopy edit|none|view]
+            [individualstudentassignments copy|delete|maptoall]
             [copymaterialsfiles [<Boolean>]]
             [copytopics [<Boolean>]]
             [markdraftaspublished [<Boolean>]]
@@ -334,11 +337,15 @@ gam update courses <CourseEntity> <CourseAttribute>+
         * `individualstudentmaterials maptoall` - Map individual student materials to all student materials
 * Work - By default, no course work is copied
     * `workstates <CourseWorkStateList>` - Copy class work with the specified states
-        * `individualstudentassignments copy` - Copy individual student assignments; this is the default. You will get an error if the student is not a member of the course
-        * `individualstudentassignments delete` - Delete individual student assignments
-        * `individualstudentassignments maptoall` - Map individual student assignments to all student assignments
+        * `individualstudentcoursework copy` - Copy individual student coursework; this is the default. You will get an error if the student is not a member of the course
+        * `individualstudentcoursework delete` - Delete individual student coursework
+        * `individualstudentcoursework maptoall` - Map individual student coursework to all student coursework
         * `removeduedate false` - Remove due dates before the current time; this is the default
         * `removeduedate|removeduedate true` - Remove all due dates
+* For convenience, setting `individualstudentassignments` sets all the following to the same value:
+    * `individualstudentannouncements`
+    * `individualstudentmaterials`
+    * `individualstudentcoursework`
 * Announcements, Materials and Work Materials files
     * `copymaterialsfiles false` - Copy links to files referenced by materials in the `copyfrom` course; this is the default
     * `copymaterialsfiles|copymaterialsfiles true` - Copy files referenced by materials in the `copyfrom` course
