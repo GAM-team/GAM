@@ -239,8 +239,10 @@ If `tdfileid <DriveFileID>` is not specified, a new file is created.
 * `tdcellwrap clip|overflow|wrap` - The Spreadsheet cell wrapping strategy.
 * `tdcellnumberformat text|number` - The Spreadsheet number format.
 
-## Report action
+## Report action, capture file ID
 * `tdreturnidonly` - If False, a message is written to stdout with the uploaded file URL; if True, only the uploaded file ID is written to stdout
+
+The ID can be captured and used in subsequent commands, `tdfileid <DriveFileID>` that will update the same file.
 
 ## Open browser and send email
 * `tdnobrowser` - If False, a browser is opened to view the file uploaded to Google Drive; if not specified, the `todrive_nobrowser` value from gam.cfg is used. If True, no browser is opened.

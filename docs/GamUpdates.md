@@ -13,7 +13,7 @@ See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads
 ### 6.80.06
 
 Added option `tdreturnidonly [<Boolean>]` to `<ToDriveAttribute>` that when true (the default), causes GAM to display
-only the uploaded file ID to stdout. This can be captured and used in subsequent commands, `tdfileid <DriveFileID>`  that will update the same file.
+only the uploaded file ID to stdout. This can be captured and used in subsequent commands, `tdfileid <DriveFileID>` that will update the same file.
 
 ### 6.80.05
 

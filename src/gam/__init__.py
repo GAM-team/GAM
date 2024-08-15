@@ -8781,7 +8781,7 @@ class CSVPrintFile():
             printKeyValueList([msg_txt])
           else:
             if self.todrive['fileId']:
-              writeStdout(f'{self.todrive['fileId']}\n')
+              writeStdout(f'{self.todrive["fileId"]}\n')
             else:
               writeStdout(f'{spreadsheetId}\n')
           if not self.todrive['subject']:
