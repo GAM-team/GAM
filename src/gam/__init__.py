@@ -29934,7 +29934,8 @@ CHROME_VERSIONHISTORY_TITLES = {
                        'major_version', 'minor_version', 'build', 'patch'],
   Ent.CHROME_RELEASE: ['version', 'channel', 'platform',
                        'major_version', 'minor_version', 'build', 'patch',
-                       'fraction', 'fractionGroup', 'serving.startTime', 'serving.endTime']
+                       'fraction', 'fractionGroup', 'serving.startTime',
+                       'serving.endTime', 'pinnable']
 
   }
 CHROME_VERSIONHISTORY_ITEMS = {
