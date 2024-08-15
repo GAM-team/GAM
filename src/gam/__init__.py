@@ -75792,4 +75792,3 @@ def ProcessGAMCommand(args, processGamCfg=True, inLoop=False, closeSTD=True):
 # Process GAM command
 def CallGAMCommand(args, processGamCfg=True, inLoop=False, closeSTD=False):
   return ProcessGAMCommand(args, processGamCfg=processGamCfg, inLoop=inLoop, closeSTD=closeSTD)
-o
