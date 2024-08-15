@@ -191,6 +191,7 @@ direct the uploaded file to a particular user and location and add a timestamp t
         (tdnotify [<Boolean>])|
         (tdparent (id:<DriveFolderID>)|<DriveFolderName>)|
         (tdretaintitle [<Boolean>])|
+        (tdreturnidonly [<Boolean>])|
         (tdshare <EmailAddress> commenter|reader|writer)*|
         (tdsheet (id:<Number>)|<String>)|
         (tdsheettimestamp [<Boolean>] [tdsheettimeformat <String>])
@@ -237,6 +238,9 @@ If `tdfileid <DriveFileID>` is not specified, a new file is created.
 * `tdtimezone <TimeZone>` - The Spreadsheet settings Timezone value.
 * `tdcellwrap clip|overflow|wrap` - The Spreadsheet cell wrapping strategy.
 * `tdcellnumberformat text|number` - The Spreadsheet number format.
+
+## Report action
+* `tdreturnidonly` - If False, a message is written to stdout with the uploaded file URL; if True, only the uploaded file ID is written to stdout
 
 ## Open browser and send email
 * `tdnobrowser` - If False, a browser is opened to view the file uploaded to Google Drive; if not specified, the `todrive_nobrowser` value from gam.cfg is used. If True, no browser is opened.

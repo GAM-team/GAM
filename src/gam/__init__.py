@@ -7938,7 +7938,7 @@ class CSVPrintFile():
                     'sheetdaysoffset': None, 'sheethoursoffset': None,
                     'fileId': None, 'parentId': None, 'parent': GC.Values[GC.TODRIVE_PARENT], 'retaintitle': False,
                     'localcopy': GC.Values[GC.TODRIVE_LOCALCOPY], 'uploadnodata': GC.Values[GC.TODRIVE_UPLOAD_NODATA],
-                    'nobrowser': GC.Values[GC.TODRIVE_NOBROWSER], 'noemail': GC.Values[GC.TODRIVE_NOEMAIL],
+                    'nobrowser': GC.Values[GC.TODRIVE_NOBROWSER], 'noemail': GC.Values[GC.TODRIVE_NOEMAIL], 'returnidonly': False,
                     'alert': [], 'share': [], 'notify': False, 'subject': None, 'from': None}
     while Cmd.ArgumentsRemaining():
       myarg = getArgument()
@@ -8009,6 +8009,8 @@ class CSVPrintFile():
         self.todrive['nobrowser'] = getBoolean()
       elif myarg == 'tdnoemail':
         self.todrive['noemail'] = getBoolean()
+      elif myarg == 'tdreturnidonly':
+        self.todrive['returnidonly'] = getBoolean()
       elif myarg == 'tdnoescapechar':
         self.todrive['noescapechar'] = getBoolean()
       elif myarg == 'tdalert':
@@ -8775,7 +8777,13 @@ class CSVPrintFile():
           Act.Set(action)
           file_url = result['webViewLink']
           msg_txt = f'{Msg.DATA_UPLOADED_TO_DRIVE_FILE}:\n{file_url}'
-          printKeyValueList([msg_txt])
+          if not self.todrive['returnidonly']:
+            printKeyValueList([msg_txt])
+          else:
+            if self.todrive['fileId']:
+              writeStdout(f'{self.todrive['fileId']}\n')
+            else:
+              writeStdout(f'{spreadsheetId}\n')
           if not self.todrive['subject']:
             subject = title
           else:
@@ -75664,9 +75672,12 @@ def closeSTDFilesIfNotMultiprocessing(closeSTD):
     rdFd = GM.Globals[stdtype].get(GM.REDIRECT_FD)
     rdMultiFd = GM.Globals[stdtype].get(GM.REDIRECT_MULTI_FD)
     if rdFd and rdMultiFd and (rdFd == rdMultiFd) and (rdFd != stdfile):
-      rdFd.flush()
-      if closeSTD:
-        rdFd.close()
+      try:
+        rdFd.flush()
+        if closeSTD:
+          rdFd.close()
+      except BrokenPipeError:
+        pass
 
   closeSTDFile(GM.STDOUT, sys.stdout)
   if GM.Globals[GM.STDERR].get(GM.REDIRECT_NAME) != 'stdout':

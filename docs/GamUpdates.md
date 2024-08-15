@@ -10,10 +10,15 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.80.06
+
+Added option `tdreturnidonly [<Boolean>]` to `<ToDriveAttribute>` that when true (the default), causes GAM to display
+only the uploaded file ID to stdout. This can be captured and used in subsequent commands, `tdfileid <DriveFileID>`  that will update the same file.
+
 ### 6.80.05
 
 Added  option `individualstudentcoursework copy|delete|maptoall` to `gam create|update course ... copyfrom`
-that controls how individual student course work in the `copyfrom` course is processed.
+that controls how individual student coursework in the `copyfrom` course is processed.
 * `individualstudentcoursework copy` - Copy individual student coursework; this is the default. You will get an error if a student is not a member of the course
 * `individualstudentcoursework delete` - Delete individual student coursework
 * `individualstudentcoursework maptoall` - Map individual student coursework to all student coursework
