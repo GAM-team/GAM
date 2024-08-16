@@ -2,10 +2,15 @@
 
 Merged GAM-Team version
 
+6.80.07
+
+Updated `dateheaderformat iso` in `gam <UserTypeEntity> info|print|show messages` to include a colon
+between the hours and minutes in the timezone portion of the string as in all other time strings.
+
 6.80.06
 
 Added option `tdreturnidonly [<Boolean>]` to `<ToDriveAttribute>` that when true (the default), causes GAM to display
-only the uploaded file ID to stdout. This can be captured and used in subsequent commands, `tdfileid <DriveFileID>`  that will update the same file.
+only the uploaded file ID to stdout. This can be captured and used in subsequent commands, `tdfileid <DriveFileID>` that will update the same file.
 
 6.80.05
 

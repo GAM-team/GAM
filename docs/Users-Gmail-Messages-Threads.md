@@ -583,7 +583,7 @@ By default, the Message ID and these SMTP headers are displayed: `Date, Subject,
 Use these options to customize the display.
 
 By default, the `<SMTPDateHeader>` values are displayed in RFC2822 format; the `dateheaderformat iso|rfc2822|<String>` option allows reformatting it:
-* `iso` - Format is `%Y-%m-%dT%H:%M:%S%z`
+* `iso` - Format is `%Y-%m-%dT%H:%M:%S%:z`
 * `rfc2822` - Format is `%a, %d %b %Y %H:%M:%S %z`
 * `<String>` - Format according to: https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
 If the `Date` header value can't be parsed as RFC2822, it is left unchanged.

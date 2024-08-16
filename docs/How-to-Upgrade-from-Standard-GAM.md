@@ -251,9 +251,9 @@ writes the credentials into the file oauth2.txt.
 admin@server:/Users/admin$ rm -f /Users/admin/GAMConfig/oauth2.txt
 admin@server:/Users/admin$ gam version
 WARNING: Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, Item: oauth2_txt, Value: /Users/admin/GAMConfig/oauth2.txt, Not Found
-GAMADV-XTD3 6.80.06 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
+GAMADV-XTD3 6.80.07 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
 Ross Scroggs <ross.scroggs@gmail.com>
-Python 3.12.4 64-bit final
+Python 3.12.5 64-bit final
 MacOS Sonoma 14.5 x86_64
 Path: /Users/admin/bin/gamadv-xtd3
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
@@ -923,9 +923,9 @@ writes the credentials into the file oauth2.txt.
 C:\>del C:\GAMConfig\oauth2.txt
 C:\>gam version
 WARNING: Config File: C:\GAMConfig\gam.cfg, Section: DEFAULT, Item: oauth2_txt, Value: C:\GAMConfig\oauth2.txt, Not Found
-GAMADV-XTD3 6.80.06 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
+GAMADV-XTD3 6.80.07 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
 Ross Scroggs <ross.scroggs@gmail.com>
-Python 3.12.4 64-bit final
+Python 3.12.5 64-bit final
 Windows-10-10.0.17134 AMD64
 Path: C:\GAMADV-XTD3
 Config File: C:\GAMConfig\gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com

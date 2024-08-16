@@ -153,7 +153,7 @@ import googleapiclient.errors
 import googleapiclient.http
 from iso8601 import iso8601
 
-IS08601_TIME_FORMAT = '%Y-%m-%dT%H:%M:%S%z'
+IS08601_TIME_FORMAT = '%Y-%m-%dT%H:%M:%S%:z'
 RFC2822_TIME_FORMAT = '%a, %d %b %Y %H:%M:%S %z'
 
 def ISOformatTimeStamp(timestamp):

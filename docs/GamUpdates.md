@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.80.07
+
+Updated `dateheaderformat iso` in `gam <UserTypeEntity> info|print|show messages` to include a colon
+between the hours and minutes in the timezone portion of the string as in all other time strings.
+
 ### 6.80.06
 
 Added option `tdreturnidonly [<Boolean>]` to `<ToDriveAttribute>` that when true (the default), causes GAM to display
