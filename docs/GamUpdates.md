@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.80.08
+
+Updated `gam print|show oushareddrives` to display the Shared Drive ID, name and orgUnitPath as
+individual, separate entities in the output.
+
 ### 6.80.07
 
 Updated `dateheaderformat iso` in `gam <UserTypeEntity> info|print|show messages` to include a colon
@@ -5065,7 +5070,7 @@ converting `<SMTPDateHeader>` values to the `gam.cfg timezone`.
 
 Updated option `dateheaderformat iso|rfc2822|<String>` to `gam <UserTypeEntity> print|show messages|threads` that allows
 reformatting of the message `Date` header value from RFC2822 format to the the following:
-* `iso` - Format is `%Y-%m-%dT%H:%M:%S%z`
+* `iso` - Format is `%Y-%m-%dT%H:%M:%S%:z`
 * `rfc2822` - Format is `%a, %d %b %Y %H:%M:%S %z`
 * `<String>` - Format according to: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
 

@@ -64133,6 +64133,11 @@ def doPrintShowSharedDrives():
 #	[ou|org|orgunit <OrgUnitPath>]
 #	[formatjson]
 def doPrintShowOrgunitSharedDrives():
+  def _getOrgUnitSharedDriveInfo(shareddrive):
+    shareddrive['driveId'] = shareddrive['name'].rsplit(';')[1]
+    shareddrive['driveName'] = _getSharedDriveNameFromId(drive, shareddrive['driveId'], useDomainAdminAccess=True)
+    shareddrive['orgUnitPath'] = orgUnitPath
+
   def _showOrgUnitSharedDrive(shareddrive, j, jcount, FJQC):
     if FJQC.formatJSON:
       printLine(json.dumps(cleanJSON(shareddrive), ensure_ascii=False, sort_keys=True))
@@ -64142,10 +64147,17 @@ def doPrintShowOrgunitSharedDrives():
     printEntity([Ent.TYPE, shareddrive['type']])
     printEntity([Ent.MEMBER, shareddrive['member']])
     printEntity([Ent.MEMBER_URI, shareddrive['memberUri']])
+    printEntity([Ent.SHAREDDRIVE_ID, shareddrive['driveId']])
+    printEntity([Ent.SHAREDDRIVE_NAME, shareddrive['driveName']])
+    printEntity([Ent.ORGANIZATIONAL_UNIT, shareddrive['orgUnit']])
     Ind.Decrement()
 
   ci = buildGAPIObject(API.CLOUDIDENTITY_ORGUNITS_BETA)
-  csvPF = CSVPrintFile(['name', 'type', 'member', 'memberUri']) if Act.csvFormat() else None
+  cd = buildGAPIObject(API.DIRECTORY)
+  _, drive = buildGAPIServiceObject(API.DRIVE3, _getAdminEmail())
+  if not drive:
+    return
+  csvPF = CSVPrintFile(['name', 'type', 'member', 'memberUri', 'driveId', 'driveName', 'orgUnitPath']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   orgUnitPath = '/'
   while Cmd.ArgumentsRemaining():
@@ -64158,7 +64170,7 @@ def doPrintShowOrgunitSharedDrives():
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if csvPF and FJQC.formatJSON:
     csvPF.SetJSONTitles(['name', 'JSON'])
-  _, orgUnitId = getOrgUnitId(None, orgUnitPath)
+  orgUnitPath, orgUnitId = getOrgUnitId(cd, orgUnitPath)
   printGettingAllEntityItemsForWhom(Ent.SHAREDDRIVE, orgUnitPath, entityType=Ent.ORGANIZATIONAL_UNIT)
   sds = callGAPIpages(ci.orgUnits().memberships(), 'list', 'orgMemberships',
                       pageMessage=getPageMessageForWhom(),
@@ -64177,10 +64189,12 @@ def doPrintShowOrgunitSharedDrives():
       j = 0
       for shareddrive in sds:
         j += 1
+        _getOrgUnitSharedDriveInfo(shareddrive)
         _showOrgUnitSharedDrive(shareddrive, j, jcount, FJQC)
       Ind.Decrement()
     else:
       for shareddrive in sds:
+        _getOrgUnitSharedDriveInfo(shareddrive)
         if FJQC.formatJSON:
           row = {'name': shareddrive['name']}
           row['JSON'] = json.dumps(cleanJSON(shareddrive), ensure_ascii=False, sort_keys=True)

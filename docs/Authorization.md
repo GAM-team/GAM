@@ -232,7 +232,7 @@ perform these steps and then you should be able to authorize and use your projec
 * Under IAM & Admin select IAM
 * Click the down arrow in the box to the right of Google Cloud
 * Click the three dots at the right and select Manage Resources
-* Click the three dots and the end of the line for the GAM project just created
+* Click the three dots at the end of the line for the GAM project just created
 * Click Settings
 * Click Organization Policies in the left column
 * Now you should be at "Policies for Gam Project"
