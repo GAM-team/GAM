@@ -2,6 +2,11 @@
 
 Merged GAM-Team version
 
+6.80.09
+
+Added options `allschemas|(schemas|custom|customschemas <SchemaNameList>)` to `gam print group-members`
+that display any custom schema values for the group members.
+
 6.80.08
 
 Updated `gam print|show oushareddrives` to display the Shared Drive ID, name and orgUnitPath as

@@ -33134,6 +33134,7 @@ GROUPMEMBERS_DEFAULT_FIELDS = ['group', 'type', 'role', 'id', 'status', 'email']
 #	[membernames] [showdeliverysettings]
 #	<MembersFieldName>* [fields <MembersFieldNameList>]
 #	[userfields <UserFieldNameList>]
+#	[allschemas|(schemas|custom|customschemas <SchemaNameList>)]
 #	[(recursive [noduplicates])|includederivedmembership] [nogroupemail]
 #	[peoplelookup|(peoplelookupuser <EmailAddress>)]
 #	[unknownname <String>] [cachememberinfo [Boolean]]
@@ -33169,6 +33170,7 @@ def doPrintGroupMembers():
   showOwnedBy = {}
   cdfieldsList = ['email']
   userFieldsList = []
+  schemaParms = _initSchemaParms('basic')
   rolesSet = set()
   typesSet = set()
   matchPatterns = {}
@@ -33217,6 +33219,12 @@ def doPrintGroupMembers():
           csvPF.AddField(field, USER_FIELDS_CHOICE_MAP, userFieldsList)
         else:
           invalidChoiceExit(field, USER_FIELDS_CHOICE_MAP, True)
+    elif myarg in {'allschemas', 'custom', 'schemas', 'customschemas'}:
+      if myarg == 'allschemas':
+        schemaParms = _initSchemaParms('full')
+      else:
+        _getSchemaNameList(schemaParms)
+      userFieldsList.append('customSchemas')
     elif myarg == 'noduplicates':
       memberOptions[MEMBEROPTION_NODUPLICATES] = True
     elif myarg == 'recursive':
@@ -33318,7 +33326,8 @@ def doPrintGroupMembers():
               mbinfo = callGAPI(cd.users(), 'get',
                                 throwReasons=GAPI.USER_GET_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE, GAPI.FAILED_PRECONDITION],
                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                                userKey=memberId, fields=userFields)
+                                userKey=memberId, projection=schemaParms['projection'], customFieldMask=schemaParms['customFieldMask'],
+                                fields=userFields)
               if memberOptions[MEMBEROPTION_MEMBERNAMES]:
                 row['name'] = mbinfo['name'].pop('fullName')
                 if not mbinfo['name']:
@@ -43296,12 +43305,12 @@ def infoUsers(entityList):
     elif myarg == 'noschemas':
       getSchemas = False
       schemaParms = _initSchemaParms('basic')
-    elif myarg == 'allschemas':
+    elif myarg in {'allschemas', 'custom', 'schemas', 'customschemas'}:
+      if myarg == 'allschemas':
+        schemaParms = _initSchemaParms('full')
+      else:
+        _getSchemaNameList(schemaParms)
       getSchemas = True
-      schemaParms = _initSchemaParms('full')
-    elif myarg in {'custom', 'schemas', 'customschemas'}:
-      getSchemas = True
-      _getSchemaNameList(schemaParms)
     elif myarg in {'products', 'product'}:
       skus = SKU.convertProductListToSKUList(getGoogleProductList())
     elif myarg in {'sku', 'skus'}:

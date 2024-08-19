@@ -47,7 +47,7 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 
 ## Display File Ownership for Old files
 If the above commands fail, you can try to loop through all accounts, however this might take a long time if you are on a large Google Workspace Account.
-
+If any lines are displayed, the file owner is in the `owners.0.emailAddress` column.
 ```
 gam config auto_batch_min 1 multiprocessexit rc=0 redirect csv - multiprocess redirect stderr null multiprocess all users print filelist select id <DriveFileID> fields id,name,owners.emailaddress norecursion showownedby any
 gam config auto_batch_min 1 multiprocessexit rc=0 redirect csv - multiprocess redirect stderr null multiprocess all users print filelist select name <DriveFileName> fields id,name,owners.emailaddress norecursion showownedby any

@@ -597,6 +597,7 @@ gam print group-members [todrive <ToDriveAttribute>*]
         [types <GroupTypeList>]
         [memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
         [userfields <UserFieldNameList>]
+        [allschemas|(schemas|custom|customschemas <SchemaNameList>)]
         [(recursive [noduplicates])|includederivedmembership] [nogroupemail]
         [peoplelookup|(peoplelookupuser <EmailAddress>)]
         [unknownname <String>] [cachememberinfo [Boolean]]
@@ -661,7 +662,10 @@ these options specify which fields to display:
 * `<MembersFieldName>*` - Individual field names
 * `fields <MembersFieldNameList>` - A comma separated list of field names
     * `delivery|deliverysettings` - Specify this field to get delivery information; an additional API call per member is required
-* `userfields <UserFieldNameList>` - For members that are users, display these user fields; an additional API call per member is required
+
+For members that are users, you can specify additional information to display; an additional API call per member is required
+* `userfields <UserFieldNameList>` - Display specific user fields
+* `allschemas|(schemas|custom|customschemas <SchemaNameList>)` - Display all or specific custom schema values
 
 The additional API calls can be reduced with the `cachememberinfo` option; a single API call is made for each user/group
 and the data is cached to eliminate to need to repeat the API call; this consumes more memory but dramatically reduces the number of API calls.

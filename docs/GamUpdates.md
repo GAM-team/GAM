@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.80.09
+
+Added options `allschemas|(schemas|custom|customschemas <SchemaNameList>)` to `gam print group-members`
+that display any custom schema values for the group members.
+
 ### 6.80.08
 
 Updated `gam print|show oushareddrives` to display the Shared Drive ID, name and orgUnitPath as

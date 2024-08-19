@@ -441,6 +441,11 @@ When using the `formatjson` option, double quotes are used extensively in the da
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
+### Get clean, simple output
+```
+gam config csv_output_header_filter "driveId,driveName,orgUnitPath" print oushareddrives [ou <OrgUnitPath>]
+```
+
 ## Manage Shared Drive access
 These commands are used to manage the ACLs on Shared Drives themselves, not the files/folders on the Shared Drives.
 
