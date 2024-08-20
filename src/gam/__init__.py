@@ -53047,7 +53047,7 @@ def _formatFileDriveLabels(showLabels, labels, result, printMode, delimiter):
 #	(orderby <DriveFileOrderByFieldName> [ascending|descending])*
 #	[showdrivename] [showshareddrivepermissions]
 #	[(showlabels details|ids)|(includelabels <DriveLabelIDList>)]
-#	[showparentsidsaslist]
+#	[showparentsidsaslist] [followshortcuts [<Boolean>]]
 #	[stripcrsfromname] [formatjson]
 # gam <UserTypeEntity> show fileinfo <DriveFileEntity>
 #	[returnidonly]
@@ -53056,7 +53056,7 @@ def _formatFileDriveLabels(showLabels, labels, result, printMode, delimiter):
 #	(orderby <DriveFileOrderByFieldName> [ascending|descending])*
 #	[showdrivename] [showshareddrivepermissions]
 #	[(showlabels details|ids)|(includelabels <DriveLabelIDList>)]
-#	[showparentsidsaslist]
+#	[showparentsidsaslist] [followshortcuts [<Boolean>]]
 #	[stripcrsfromname] [formatjson]
 def showFileInfo(users):
   def _setSelectionFields():
@@ -53065,8 +53065,11 @@ def showFileInfo(users):
       _setSkipObjects(skipObjects, FILEPATH_FIELDS_TITLES, DFF.fieldsList)
     if getPermissionsForSharedDrives or DFF.showSharedDriveNames:
       _setSkipObjects(skipObjects, ['driveId'], DFF.fieldsList)
+    if followShortcuts:
+      _setSkipObjects(skipObjects, ['mimeType', 'shortcutDetails'], DFF.fieldsList)
 
-  getPermissionsForSharedDrives = filepath = fullpath = folderPathOnly = returnIdOnly = showParentsIdsAsList = showNoParents = stripCRsFromName = False
+  getPermissionsForSharedDrives = filepath = fullpath = folderPathOnly = followShortcuts = \
+    returnIdOnly = showParentsIdsAsList = showNoParents = stripCRsFromName = False
   pathDelimiter = '/'
   showLabels = None
   simpleLists = []
@@ -53096,6 +53099,8 @@ def showFileInfo(users):
       permissionsFields = f'nextPageToken,permissions({",".join(DRIVEFILE_BASIC_PERMISSION_FIELDS)})'
     elif myarg == 'returnidonly':
       returnIdOnly = True
+    elif myarg == 'followshortcuts':
+      followShortcuts = getBoolean()
     elif DFF.ProcessArgument(myarg):
       pass
     else:
@@ -53104,6 +53109,8 @@ def showFileInfo(users):
     if not getPermissionsForSharedDrives:
       getPermissionsForSharedDrives, permissionsFields = _setGetPermissionsForSharedDrives(DFF.fieldsList)
     _setSelectionFields()
+    if followShortcuts:
+      DFF.fieldsList.extend(['mimeType', 'shortcutDetails'])
     fields = getFieldsFromFieldsList(DFF.fieldsList)
     showNoParents = 'parents' in DFF.fieldsList
   else:
@@ -53152,6 +53159,11 @@ def showFileInfo(users):
         result = callGAPI(drive.files(), 'get',
                           throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                           fileId=fileId, includeLabels=includeLabels, fields=fields, supportsAllDrives=True)
+        if followShortcuts and result['mimeType'] == MIMETYPE_GA_SHORTCUT:
+          fileId = result['shortcutDetails']['targetId']
+          result = callGAPI(drive.files(), 'get',
+                            throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
+                            fileId=fileId, includeLabels=includeLabels, fields=fields, supportsAllDrives=True)
         if stripCRsFromName:
           result['name'] = _stripControlCharsFromName(result['name'])
         driveId = result.get('driveId')
@@ -55363,16 +55375,18 @@ def printShowFileComments(users):
 #	(orderby <DriveFileOrderByFieldName> [ascending|descending])*
 #	[stripcrsfromname] [oneitemperrow]
 #	[fullpath] [folderpathonly [<Boolean>]] [pathdelimiter <Character>]
+#	[followshortcuts [<Boolean>]]
 # gam <UserTypeEntity> show filepaths <DriveFileEntity>
 #	[returnpathonly]
 #	(orderby <DriveFileOrderByFieldName> [ascending|descending])*
 #	[stripcrsfromname]
 #	[fullpath] [folderpathonly [<Boolean>]] [pathdelimiter <Character>]
+#	[followshortcuts [<Boolean>]]
 def printShowFilePaths(users):
   fileNameTitle = 'title' if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES] else 'name'
   csvPF = CSVPrintFile(['Owner', 'id', fileNameTitle, 'paths'], 'sortall', ['paths']) if Act.csvFormat() else None
   fileIdEntity = getDriveFileEntity()
-  fullpath = folderPathOnly = oneItemPerRow = returnPathOnly = stripCRsFromName = False
+  fullpath = folderPathOnly = followShortcuts = oneItemPerRow = returnPathOnly = stripCRsFromName = False
   pathDelimiter = '/'
   OBY = OrderBy(DRIVEFILE_ORDERBY_CHOICE_MAP)
   while Cmd.ArgumentsRemaining():
@@ -55389,6 +55403,8 @@ def printShowFilePaths(users):
       stripCRsFromName = True
     elif csvPF is None and myarg == 'returnpathonly':
       returnPathOnly = True
+    elif myarg == 'followshortcuts':
+      followShortcuts = getBoolean()
     elif csvPF and myarg == 'oneitemperrow':
       oneItemPerRow = True
       csvPF.RemoveTitles('paths')
@@ -55399,7 +55415,10 @@ def printShowFilePaths(users):
       OBY.GetChoice()
     else:
       unknownArgumentExit()
-  pathFields = FILEPATH_FIELDS
+  fieldsList = FILEPATH_FIELDS_TITLES
+  if followShortcuts:
+    fieldsList.append('shortcutDetails')
+  pathFields = ','.join(fieldsList)
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -55425,6 +55444,11 @@ def printShowFilePaths(users):
         result = callGAPI(drive.files(), 'get',
                           throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                           fileId=fileId, fields=pathFields, supportsAllDrives=True)
+        if followShortcuts and result['mimeType'] == MIMETYPE_GA_SHORTCUT:
+          fileId = result['shortcutDetails']['targetId']
+          result = callGAPI(drive.files(), 'get',
+                            throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
+                            fileId=fileId, fields=pathFields, supportsAllDrives=True)
         if returnPathOnly and result['mimeType'] == MIMETYPE_GA_FOLDER and result['name'] == MY_DRIVE and not result.get('parents'):
           writeStdout(f'{MY_DRIVE}\n')
           continue
@@ -59381,11 +59405,15 @@ def moveDriveFile(users):
 DELETE_DRIVEFILE_CHOICE_MAP = {'purge': 'delete', 'trash': 'trash', 'untrash': 'untrash'}
 DELETE_DRIVEFILE_FUNCTION_TO_ACTION_MAP = {'delete': Act.PURGE, 'trash': Act.TRASH, 'untrash': Act.UNTRASH}
 
-# gam <UserTypeEntity> delete drivefile <DriveFileEntity> [purge|trash|untrash]
+# gam <UserTypeEntity> delete drivefile <DriveFileEntity> [purge|trash|untrash] [shortcutandtarget [<Boolean>]]
 def deleteDriveFile(users, function=None):
   fileIdEntity = getDriveFileEntity()
   if not function:
     function = getChoice(DELETE_DRIVEFILE_CHOICE_MAP, defaultChoice='trash', mapChoice=True)
+  if checkArgumentPresent('shortcutandtarget'):
+    shortcutAndTarget = getBoolean()
+  else:
+    shortcutAndTarget = False
   checkForExtraneousArguments()
   Act.Set(DELETE_DRIVEFILE_FUNCTION_TO_ACTION_MAP[function])
   if function != 'delete':
@@ -59401,36 +59429,47 @@ def deleteDriveFile(users, function=None):
     for fileId in fileIdEntity['list']:
       j += 1
       try:
-        if function != 'delete':
-          result = callGAPI(drive.files(), 'update',
-                            throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.FILE_NEVER_WRITABLE],
-                            fileId=fileId, body=trash_body, fields='name', supportsAllDrives=True)
-          if result and 'name' in result:
-            fileName = result['name']
+        fileInfoList = []
+        if shortcutAndTarget:
+          result = callGAPI(drive.files(), 'get',
+                            throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
+                            fileId=fileId, fields='mimeType,shortcutDetails', supportsAllDrives=True)
+          if result['mimeType'] == MIMETYPE_GA_SHORTCUT:
+            fileInfoList.append((fileId, Ent.DRIVE_SHORTCUT, Ent.DRIVE_SHORTCUT_ID))
+            fileId = result['shortcutDetails']['targetId']
+        fileInfoList.append((fileId, Ent.DRIVE_FILE_OR_FOLDER, Ent.DRIVE_FILE_OR_FOLDER_ID))
+        for fileInfo in fileInfoList:
+          fileId = fileInfo[0]
+          if function != 'delete':
+            result = callGAPI(drive.files(), 'update',
+                              throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.FILE_NEVER_WRITABLE],
+                              fileId=fileId, body=trash_body, fields='name', supportsAllDrives=True)
+            if result and 'name' in result:
+              fileName = result['name']
+            else:
+              fileName = fileId
           else:
+            callGAPI(drive.files(), function,
+                     throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.FILE_NEVER_WRITABLE],
+                     fileId=fileId, supportsAllDrives=True)
             fileName = fileId
-        else:
-          callGAPI(drive.files(), function,
-                   throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.FILE_NEVER_WRITABLE],
-                   fileId=fileId, supportsAllDrives=True)
-          fileName = fileId
-        entityActionPerformed([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, fileName], j, jcount)
+          entityActionPerformed([Ent.USER, user, fileInfo[1], fileName], j, jcount)
       except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.fileNeverWritable) as e:
-        entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], str(e), j, jcount)
+        entityActionFailedWarning([Ent.USER, user, fileInfo[2], fileId], str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
         userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
         break
     Ind.Decrement()
 
-# gam <UserTypeEntity> purge drivefile <DriveFileEntity>
+# gam <UserTypeEntity> purge drivefile <DriveFileEntity> [shortcutandtarget [<Boolean>]]
 def purgeDriveFile(users):
   deleteDriveFile(users, 'delete')
 
-# gam <UserTypeEntity> trash drivefile <DriveFileEntity>
+# gam <UserTypeEntity> trash drivefile <DriveFileEntity> [shortcutandtarget [<Boolean>]]
 def trashDriveFile(users):
   deleteDriveFile(users, 'trash')
 
-# gam <UserTypeEntity> untrash drivefile <DriveFileEntity>
+# gam <UserTypeEntity> untrash drivefile <DriveFileEntity> [shortcutandtarget [<Boolean>]]
 def untrashDriveFile(users):
   deleteDriveFile(users, 'untrash')
 

@@ -206,6 +206,7 @@ class GamEntity():
   DRIVE_PATH = 'drvp'
   DRIVE_SETTINGS = 'drvs'
   DRIVE_SHORTCUT = 'drsc'
+  DRIVE_SHORTCUT_ID = 'dsci'
   DRIVE_3PSHORTCUT = 'dr3s'
   DRIVE_TRASH = 'drvt'
   EMAIL = 'emai'
@@ -550,6 +551,7 @@ class GamEntity():
     DRIVE_PATH: ['Drive Paths', 'Drive Path'],
     DRIVE_SETTINGS: ['Drive Settings', 'Drive Settings'],
     DRIVE_SHORTCUT: ['Drive Shortcuts', 'Drive Shortcut'],
+    DRIVE_SHORTCUT_ID: ['Drive Shortcut IDs', 'Drive Shortcut ID'],
     DRIVE_3PSHORTCUT: ['Drive 3rd Party Shortcuts', 'Drive 3rd Party Shortcut'],
     DRIVE_TRASH: ['Drive Trash', 'Drive Trash'],
     EMAIL: ['Email Addresses', 'Email Address'],

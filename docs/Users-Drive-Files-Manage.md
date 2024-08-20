@@ -635,23 +635,32 @@ gam user user@domain.com get drivefile drivefilename UserSheet csvsheet NewUsers
 ## Trash files
 Move a file or folder to the trash. If a folder is moved to the trash, all of its child files and folders are moved to the trash.
 ```
-gam <UserTypeEntity> trash drivefile <DriveFileEntity>
-gam <UserTypeEntity> delete|del drivefile <DriveFileEntity> trash
+gam <UserTypeEntity> trash drivefile <DriveFileEntity> [shortcutandtarget [<Boolean>]]
+gam <UserTypeEntity> delete|del drivefile <DriveFileEntity> trash [shortcutandtarget [<Boolean>]]
 ```
+
+Starting in version 6.80.10, the  option `shortcutandtarget [<Boolean>]` that when true and `<DriveFileEntity` is a shortcut,
+causes GAM to process the shortcut and the target of the shortcut.
 
 ## Untrash files
 Remove a file or folder from the trash. If a folder is removed from the trash, all of its child files and folders are removed from the trash.
 ```
-gam <UserTypeEntity> untrash drivefile <DriveFileEntity>
-gam <UserTypeEntity> delete|del drivefile <DriveFileEntity> untrash
+gam <UserTypeEntity> untrash drivefile <DriveFileEntity> [shortcutandtarget [<Boolean>]]
+gam <UserTypeEntity> delete|del drivefile <DriveFileEntity> untrash [shortcutandtarget [<Boolean>]]
 ```
+
+Starting in version 6.80.10, the  option `shortcutandtarget [<Boolean>]` that when true and `<DriveFileEntity` is a shortcut,
+causes GAM to process the shortcut and the target of the shortcut.
 
 ## Purge files
 Purging a file permanently deletes it; it can not be recovered. If a folder is purged, all of its child files and folders are purged.
 ```
-gam <UserTypeEntity> purge drivefile <DriveFileEntity>
-gam <UserTypeEntity> delete|del drivefile <DriveFileEntity> purge
+gam <UserTypeEntity> purge drivefile <DriveFileEntity> [shortcutandtarget [<Boolean>]]
+gam <UserTypeEntity> delete|del drivefile <DriveFileEntity> purge [shortcutandtarget [<Boolean>]]
 ```
+
+Starting in version 6.80.10, the  option `shortcutandtarget [<Boolean>]` that when true and `<DriveFileEntity` is a shortcut,
+causes GAM to process the shortcut and the target of the shortcut.
 
 ## Download Google Documents as JSON
 ```

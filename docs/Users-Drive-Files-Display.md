@@ -411,7 +411,7 @@ gam <UserTypeEntity> show fileinfo <DriveFileEntity>
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [showdrivename] [showshareddrivepermissions]
         [(showlabels details|ids)|(includelabels <DriveLabelIDList>)]
-        [showparentsidsaslist]
+        [showparentsidsaslist] [followshortcuts [<Boolean>]]
         [stripcrsfromname]
         [formatjson]
 gam <UserTypeEntity> info drivefile <DriveFileEntity>
@@ -421,7 +421,7 @@ gam <UserTypeEntity> info drivefile <DriveFileEntity>
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [showdrivename] [showshareddrivepermissions]
         [(showlabels details|ids)|(includelabels <DriveLabelIDList>)]
-        [showparentsidsaslist]
+        [showparentsidsaslist] [followshortcuts [<Boolean>]]
         [stripcrsfromname]
         [formatjson]
 ```
@@ -485,6 +485,9 @@ gam user user@domain.com show fileinfo <DriveFileEntity> fields id,name,mimetype
 The `stripcrsfromname` option strips nulls, carriage returns and linefeeds from drive file names.
 Use this option if you discover filenames containing these special characters; it is not common.
 
+Starting in version 6.80.10, the option `followshortcuts [<Boolean>]` that when true and `<DriveFileEntity` is a shortcut,
+causes GAM to display information about the target of the shortcut rather than the shortcut itself.
+
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 
@@ -495,10 +498,12 @@ gam <UserTypeEntity> show filepath <DriveFileEntity>
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [stripcrsfromname]
         [folderpathonly [<Boolean>]] [fullpath] [pathdelimiter <Character>]
+        [followshortcuts [<Boolean>]]
 gam <UserTypeEntity> print filepath <DriveFileEntity> [todrive <ToDriveAttribute>*]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [stripcrsfromname] [oneitemperrow]
         [fullpath] [folderpathonly [<Boolean>]] [pathdelimiter <Character>]
+        [followshortcuts [<Boolean>]]
 ```
 Use `returnpathonly` to display just the file path of the files in `<DriveFileEntity>`.
 
@@ -515,6 +520,9 @@ Use this option if you discover filenames containing these special characters; i
 
 By default, when printing file paths, all paths for a file are displayed on the same row; use `oneitemperrow` to
 have each file path displayed on a separate row.
+
+Starting in version 6.80.10, the option `followshortcuts [<Boolean>]` that when true and `<DriveFileEntity` is a shortcut,
+causes GAM to display path information for the target of the shortcut rather than the shortcut itself.
 
 ## Select files for Display file counts, list, tree
 Most GAM commands that deal with files require a `<DriveFileEntity>` to be specified; the command

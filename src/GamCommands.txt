@@ -6513,10 +6513,10 @@ gam <UserTypeEntity> get drivefile <DriveFileEntity> [revision <DriveFileRevisio
         [donotfollowshortcuts [<Boolean>]] [overwrite [<Boolean>]] [showprogress [<Boolean>]]
         [acknowledgeabuse [<Boolean>]]
 
-gam <UserTypeEntity> delete drivefile <DriveFileEntity> [purge|untrash|trash]
-gam <UserTypeEntity> purge drivefile <DriveFileEntity>
-gam <UserTypeEntity> trash drivefile <DriveFileEntity>
-gam <UserTypeEntity> untrash drivefile <DriveFileEntity>
+gam <UserTypeEntity> delete drivefile <DriveFileEntity> [purge|untrash|trash] [shortcutandtarget [<Boolean>]]
+gam <UserTypeEntity> purge drivefile <DriveFileEntity> [shortcutandtarget [<Boolean>]]
+gam <UserTypeEntity> trash drivefile <DriveFileEntity> [shortcutandtarget [<Boolean>]]
+gam <UserTypeEntity> untrash drivefile <DriveFileEntity> [shortcutandtarget [<Boolean>]]
 
 gam <UserTypeEntity> info drivefile <DriveFileEntity>
         [returnidonly]
@@ -6525,7 +6525,7 @@ gam <UserTypeEntity> info drivefile <DriveFileEntity>
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [showdrivename] [showshareddrivepermissions]
         [(showlabels details|ids)|(includelabels <DriveLabelIDList>)]
-        [showparentsidsaslist]
+        [showparentsidsaslist] [followshortcuts [<Boolean>]]
         [stripcrsfromname]
         [formatjson]
 
@@ -7008,7 +7008,7 @@ gam <UserTypeEntity> show fileinfo <DriveFileEntity>
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [showdrivename] [showshareddrivepermissions]
         [(showlabels details|ids)|(includelabels <DriveLabelIDList>)]
-        [showparentsidsaslist]
+        [showparentsidsaslist] [followshortcuts [<Boolean>]]
         [stripcrsfromname]
         [formatjson]
 
@@ -7017,10 +7017,12 @@ gam <UserTypeEntity> show filepath <DriveFileEntity>
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [stripcrsfromname]
         [fullpath] [folderpathonly [<Boolean>]] [pathdelimiter <Character>]
+        [followshortcuts [<Boolean>]]
 gam <UserTypeEntity> print filepath <DriveFileEntity> [todrive <ToDriveAttribute>*]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [stripcrsfromname] [oneitemperrow]
         [fullpath] [folderpathonly [<Boolean>]] [pathdelimiter <Character>]
+        [followshortcuts [<Boolean>]]
 
 gam <UserTypeEntity> print filecounts [todrive <ToDriveAttribute>*]
         [((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>)
