@@ -2,6 +2,12 @@
 
 Merged GAM-Team version
 
+6.80.11
+
+Updated `gam <UserTypeEntity> delete|purge|trash|untrash <DriveFileEntity> shortcutandtarget`
+that when `<DriveFileEntity` is a shortcut, to have GAM validate that the shortcut and target can be
+successfully processed before proceeding.
+
 6.80.10
 
 Added option `followshortcuts [<Boolean>]` to `gam <UserTypeEntity> print|show fileinfo|filepath <DriveFileEntity>`

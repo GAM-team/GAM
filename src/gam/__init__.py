@@ -59404,6 +59404,7 @@ def moveDriveFile(users):
 
 DELETE_DRIVEFILE_CHOICE_MAP = {'purge': 'delete', 'trash': 'trash', 'untrash': 'untrash'}
 DELETE_DRIVEFILE_FUNCTION_TO_ACTION_MAP = {'delete': Act.PURGE, 'trash': Act.TRASH, 'untrash': Act.UNTRASH}
+DELETE_DRIVEFILE_FUNCTION_TO_CAPABILITY_MAP = {'delete': 'canDelete', 'trash': 'canTrash', 'untrash': 'canUntrash'}
 
 # gam <UserTypeEntity> delete drivefile <DriveFileEntity> [purge|trash|untrash] [shortcutandtarget [<Boolean>]]
 def deleteDriveFile(users, function=None):
@@ -59431,12 +59432,26 @@ def deleteDriveFile(users, function=None):
       try:
         fileInfoList = []
         if shortcutAndTarget:
+          capability = DELETE_DRIVEFILE_FUNCTION_TO_CAPABILITY_MAP[function]
+          fileInfo = (fileId, Ent.DRIVE_FILE_OR_FOLDER, Ent.DRIVE_FILE_OR_FOLDER_ID)
           result = callGAPI(drive.files(), 'get',
                             throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
-                            fileId=fileId, fields='mimeType,shortcutDetails', supportsAllDrives=True)
+                            fileId=fileId, fields=f'name,mimeType,shortcutDetails,capabilities({capability})', supportsAllDrives=True)
           if result['mimeType'] == MIMETYPE_GA_SHORTCUT:
+            if not result['capabilities'][capability]:
+              entityActionNotPerformedWarning([Ent.USER, user, Ent.DRIVE_SHORTCUT, result['name']],
+                                              Msg.SHORTCUT_TARGET_CAPABILITY_IS_FALSE.format('Shortcut', capability), j, jcount)
+              continue
             fileInfoList.append((fileId, Ent.DRIVE_SHORTCUT, Ent.DRIVE_SHORTCUT_ID))
             fileId = result['shortcutDetails']['targetId']
+            fileInfo = (fileId, Ent.DRIVE_FILE_OR_FOLDER, Ent.DRIVE_FILE_OR_FOLDER_ID)
+            tresult = callGAPI(drive.files(), 'get',
+                               throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
+                               fileId=fileId, fields=f'name,capabilities({capability})', supportsAllDrives=True)
+            if not tresult['capabilities'][capability]:
+              entityActionNotPerformedWarning([Ent.USER, user, Ent.DRIVE_SHORTCUT, result['name'], Ent.DRIVE_FILE_OR_FOLDER, tresult['name']],
+                                              Msg.SHORTCUT_TARGET_CAPABILITY_IS_FALSE.format('Target', capability), j, jcount)
+              continue
         fileInfoList.append((fileId, Ent.DRIVE_FILE_OR_FOLDER, Ent.DRIVE_FILE_OR_FOLDER_ID))
         for fileInfo in fileInfoList:
           fileId = fileInfo[0]

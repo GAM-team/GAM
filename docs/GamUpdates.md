@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.80.11
+
+Updated `gam <UserTypeEntity> delete|purge|trash|untrash <DriveFileEntity> shortcutandtarget`
+that when `<DriveFileEntity` is a shortcut, to have GAM validate that the shortcut and target can be
+successfully processed before proceeding.
+
 ### 6.80.10
 
 Added option `followshortcuts [<Boolean>]` to `gam <UserTypeEntity> print|show fileinfo|filepath <DriveFileEntity>`
