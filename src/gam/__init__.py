@@ -40898,10 +40898,11 @@ def doPrintVaultCounts():
   groupcounts = response.get('groupsCountResult', {})
   for a_count in [mailcounts, groupcounts]:
     for errored_account in a_count.get('accountCountErrors', []):
-      account = errored_account.get('account')
-      csvPF.WriteRow({'account': account, 'error': errored_account.get('errorType')})
-      if account in query_accounts:
-        query_accounts.remove(account)
+      email = errored_account.get('account', {}).get('email', '')
+      if email:
+        csvPF.WriteRow({'account': email, 'error': errored_account.get('errorType')})
+        if email in query_accounts:
+          query_accounts.remove(account)
     for account in a_count.get('nonQueryableAccounts', []):
       csvPF.WriteRow({'account': account, 'error': 'Not queried because not on hold'})
       if account in query_accounts:

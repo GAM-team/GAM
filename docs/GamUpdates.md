@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.80.12
+
+Updated `gam print vaultcounts` to correctly display accounts with errors.
+
 ### 6.80.11
 
 Updated `gam <UserTypeEntity> delete|purge|trash|untrash <DriveFileEntity> shortcutandtarget`

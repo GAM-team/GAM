@@ -461,6 +461,7 @@ and must have the specified values.
 * `matchfield location <RegularExpression>` - The location must match `<RegularExpression>`
 * `matchfield organizeremail <RegularExpression>` - The organizer email address must match `<RegularExpression>`
 * `matchfield organizername <RegularExpression>` - The orgainzer name must match `<RegularExpression>`
+* `matchfield organizerself <Boolean>` - The user must be/not be the organizer of the event
 * `matchfield status <RegularExpression>` - The summary must match `<RegularExpression>`. The API documented values are:
     * `confirmed`
     * `tentative`

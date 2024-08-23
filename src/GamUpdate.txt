@@ -2,6 +2,10 @@
 
 Merged GAM-Team version
 
+6.80.12
+
+Updated `gam print vaultcounts` to correctly display accounts with errors.
+
 6.80.11
 
 Updated `gam <UserTypeEntity> delete|purge|trash|untrash <DriveFileEntity> shortcutandtarget`
