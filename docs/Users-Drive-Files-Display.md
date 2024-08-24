@@ -549,15 +549,19 @@ See: [Drive File Selection](Drive-File-Selection) for details of `<DriveFileName
         all_shortcuts |
         all_3p_shortcuts |
         all_items |
+        my_docs |
         my_files |
         my_folders |
         my_forms |
         my_google_files |
         my_non_google_files |
+        my_presentations |
+        my_publishable_items |
+        my_sheets |
         my_shortcuts |
+        my_slides |
         my_3p_shortcuts |
         my_items |
-        my_forms |
         my_top_files |
         my_top_folders |
         my_top_items |

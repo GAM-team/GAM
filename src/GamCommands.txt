@@ -1054,12 +1054,17 @@ Specify a collection of items by directly specifying them; the item type is dete
         all_shortcuts |
         all_3p_shortcuts |
         all_items |
+        my_docs |
         my_files |
         my_folders |
         my_forms |
         my_google_files |
         my_non_google_files |
+        my_presentations |
+        my_publishable_items |
+        my_sheets |
         my_shortcuts |
+        my_slides |
         my_3p_shortcuts |
         my_items |
         my_top_files |

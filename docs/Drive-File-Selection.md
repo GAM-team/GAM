@@ -55,12 +55,17 @@
         all_shortcuts |
         all_3p_shortcuts |
         all_items |
+        my_docs |
         my_files |
         my_folders |
         my_forms |
         my_google_files |
         my_non_google_files |
+        my_presentations |
+        my_publishable_items |
+        my_sheets |
         my_shortcuts |
+        my_slides |
         my_3p_shortcuts |
         my_items |
         my_top_files |
@@ -214,7 +219,7 @@ By default, all types of files and folders are displayed; you can specify a list
 <MimeTypeList> ::= "<MimeType>(,<MimeType>)*"
 ```
 This is the mapping from `<MimeTypeShortcut>` to MIME type.
-* `gdoc|gdocument` - 'application/vnd.google-apps.document
+* `gdoc|gdocument` - application/vnd.google-apps.document
 * `gdrawing` - application/vnd.google-apps.drawing
 * `gfile` - application/vnd.google-apps.file
 * `gfolder|gdirectory` - application/vnd.google-apps.folder
@@ -246,30 +251,37 @@ The options combine ownership and broad MIME type selections.
 ```
 <DriveFileQueryShortcut> ::=
         all_files | all_folders | all_google_files | all_non_google_files | all_items |
-        my_files | my_folders | my_google_files | my_non_google_files | my_items |
+        my_docs | my_files | my_folders | my_forms | my_google_files | my_non_google_files | my_items |
+        my_presentations | my_publishable_items | my_sheets | my_slides |
         my_top_files | my_top_folders | my_top_items |
         others_files | others_folders | others_google_files | others_non_google_files | others_items |
         writable_files
 ```
-* all_files - "mimeType != application/vnd.google-apps.folder"
-* all_folders - "mimeType = application/vnd.google-apps.folder"
-* all_google_files - "mimeType != application/vnd.google-apps.folder and mimeType contains 'vnd.google'"
+* all_files - "mimeType != 'application/vnd.google-apps.folder'"
+* all_folders - "mimeType = 'application/vnd.google-apps.folder'"
+* all_google_files - "mimeType != 'application/vnd.google-apps.folder' and mimeType contains 'vnd.google'"
 * all_non_google_files - "not mimeType contains 'vnd.google'"
 * all_items - "" (An empty query specifies all files and folders)
-* my_files - "'me' in owners and mimeType != application/vnd.google-apps.folder"
-* my_folders - "'me' in owners and mimeType = application/vnd.google-apps.folder"
-* my_google_files - "'me' in owners and mimeType != application/vnd.google-apps.folder and mimeType contains 'vnd.google'"
+* my_docs - "'me' in owners and mimeType = 'application/vnd.google-apps.document'"
+* my_files - "'me' in owners and mimeType != 'application/vnd.google-apps.folder'"
+* my_folders - "'me' in owners and mimeType = 'application/vnd.google-apps.folder'"
+* my_forms - "'me' in owners and mimeType = 'application/vnd.google-apps.form'"
+* my_google_files - "'me' in owners and mimeType != 'application/vnd.google-apps.folder' and mimeType contains 'vnd.google'"
 * my_non_google_files - "'me' in owners and not mimeType contains 'vnd.google'"
+* my_presentations - "'me' in owners and mimeType = 'application/vnd.google-apps.presentation'"
+* my_publishable_items - "'me' in owners and (mimeType = 'application/vnd.google-apps.document' or mimeType = 'application/vnd.google-apps.form' or mimeType = 'application/vnd.google-apps.presentation' or mimeType = 'application/vnd.google-apps.spreadsheet')"
+* my_sheets - "'me' in owners and mimeType = 'application/vnd.google-apps.spreadsheet'"
+* my_slides - "'me' in owners and mimeType = 'application/vnd.google-apps.presentation'"
 * my_items - "'me' in owners"
-* my_top_files - "'me' in owners and mimeType != application/vnd.google-apps.folder and 'root' in parents"
-* my_top_folders - "'me' in owners and mimeType = application/vnd.google-apps.folder and 'root' in parents"
+* my_top_files - "'me' in owners and mimeType != 'application/vnd.google-apps.folder' and 'root' in parents"
+* my_top_folders - "'me' in owners and mimeType = 'application/vnd.google-apps.folder' and 'root' in parents"
 * my_top_items - "'me' in owners and 'root' in parents"
-* others_files - "not 'me' in owners and mimeType != application/vnd.google-apps.folder"
-* others_folders - "not 'me' in owners and mimeType = application/vnd.google-apps.folder"
-* others_google_files - "not 'me' in owners and mimeType != application/vnd.google-apps.folder and mimeType contains 'vnd.google'"
+* others_files - "not 'me' in owners and mimeType != 'application/vnd.google-apps.folder'"
+* others_folders - "not 'me' in owners and mimeType = 'application/vnd.google-apps.folder'"
+* others_google_files - "not 'me' in owners and mimeType != 'application/vnd.google-apps.folder' and mimeType contains 'vnd.google'"
 * others_non_google_files - "not 'me' in owners and not mimeType contains 'vnd.google'"
 * others_items - "not 'me' in owners"
-* writable_files - "'me' in writers and mimeType != application/vnd.google-apps.folder"
+* writable_files - "'me' in writers and mimeType != 'application/vnd.google-apps.folder'"
 
 ## Select based on file size
 For these filters, GAM processes then after the list of files is downloaded. You can combine these
@@ -291,7 +303,7 @@ Use [Permission matches](#permission-matches) to limit the display to files with
 ### Examples
 ```
 gam user testuser show fileinfo query "name='Test File'"
-gam user testuser show fileinfo query:"name='Test Folder' and mimeType=application/vnd.google-apps.folder"
+gam user testuser show fileinfo query:"name='Test Folder' and mimeType='application/vnd.google-apps.folder'"
 gam user testuser print filelist my_non_google_files
 ```
 ## Select root folder
@@ -353,9 +365,9 @@ See: [Drive Query](https://developers.google.com/drive/api/v3/search-files)
         all_files | all_folders | all_google_files | all_non_google_files | all_items
 ```
 Keyword to query mappings for `<DriveFileQueryShortcut>`:
-* all_files - "mimeType != application/vnd.google-apps.folder"
-* all_folders - "mimeType = application/vnd.google-apps.folder"
-* all_google_files - "mimeType != application/vnd.google-apps.folder and mimeType contains 'vnd.google'"
+* all_files - "mimeType != 'application/vnd.google-apps.folder'"
+* all_folders - "mimeType = 'application/vnd.google-apps.folder'"
+* all_google_files - "mimeType != 'application/vnd.google-apps.folder' and mimeType contains 'vnd.google'"
 * all_non_google_files - "not mimeType contains 'vnd.google'"
 * all_items - "" (An empty query specifies all files and folders)
 

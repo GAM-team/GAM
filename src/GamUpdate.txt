@@ -2,6 +2,16 @@
 
 Merged GAM-Team version
 
+6.80.13
+
+Added `my_publishable_items` to `<DriveFileQueryShortcut>` that can be used in
+`gam <UserTypeEntity> print filerevisions` to select only those items that can be
+published to the web: documents, forms, presentations(slides), spreadsheets. With row filtering,
+this allows identification of files that have been published outside your domain.
+```
+gam config csv_output_row_filter "revisions.0.publishedOutsideDomain:boolean:true" user user@domain.com print filerevisions my_publishable_items select last 1
+```
+
 6.80.12
 
 Updated `gam print vaultcounts` to correctly display accounts with errors.
