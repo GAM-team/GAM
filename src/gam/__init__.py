@@ -69652,11 +69652,19 @@ def printShowMessagesThreads(users, entityType):
       csvPF.SetTitles(sortTitles)
     else:
       sortTitles = ['User', 'threadId', 'id']
-      csvPF.SetTitles(sortTitles)
       sortTitles.extend(defaultHeaders)
+      if show_size:
+        sortTitles.append('SizeEstimate')
+      if show_labels:
+        sortTitles.extend(['LabelsCount', 'Labels'])
+      if show_snippet:
+        sortTitles.append('Snippet')
+      if show_body:
+        sortTitles.append('Body')
       if addCSVData:
         sortTitles.extend(sorted(addCSVData.keys()))
       _callbacks = {'batch': _callbackPrint, 'process': _printMessage if entityType == Ent.MESSAGE else _printThread}
+    csvPF.SetTitles(sortTitles)
     csvPF.SetSortTitles(sortTitles)
   else:
     if countsOnly:

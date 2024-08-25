@@ -31,6 +31,7 @@
   - [File selection with or without a particular drive label](#file-selection-with-or-without-a-particular-drive-label)
   - [Handle empty file lists](#handle-empty-file-lists)
 - [Display disk usage](#display-disk-usage)
+- [Display files published to the web](#display-files-published-to-the-web)
 
 ## API documentation
 * https://developers.google.com/drive/api/v3/reference/files
@@ -1645,40 +1646,67 @@ Use the `show` option to control the display of data:
 
 ### Examples
 ```
-$ gam redirect csv ./MyDriveUsage.csv user testsimple@domain.com print diskusage mydrive 
-User: testsimple@domain.com, Print 1 Drive Disk Usage
+$ gam redirect csv ./MyDriveUsage.csv user user@domain.com print diskusage mydrive 
+User: user@domain.com, Print 1 Drive Disk Usage
 $ more MyDriveUsage.csv
 User,Owner,id,name,ownedByMe,trashed,explicitlyTrashed,directFileCount,directFileSize,directFolderCount,totalFileCount,totalFileSize,totalFolderCount,depth,path
-testsimple@domain.com,testsimple@domain.com,012YenC8f12ALUk9PVA,My Drive,,False,False,100,138212,24,167,189598,79,-1,My Drive
-testsimple@domain.com,testsimple@domain.com,456YenC8f12ALfndaQ1NHc0RtUG92Y1BIUUl4bjVBRmNkWG5oakNqVVFDcXJWOHNmdFlwZmc,Classroom,True,False,False,0,0,15,9,6840,17,0,My Drive/Classroom
-testsimple@domain.com,testsimple@domain.com,0B3YenC8f12ALfmRuX3I4WFlqaTRnMGhXNkVvWV9UUG1zRDQwY1BwVkJhUGx5WHVIcjJKZUU,TestUpdate,True,False,False,2,3420,0,2,3420,0,1,My Drive/Classroom/TestUpdate
-testsimple@domain.com,testsimple@domain.com,1MT5xJ897oYa0Q2OuzBDfLHvig6k_b0EKaovVA2imGYcnrmqZu5hjlJkEPMH-rHKj4qDyy9_j,TS Course,True,False,False,0,0,0,0,0,0,1,My Drive/Classroom/TS Course
-testsimple@domain.com,testsimple@domain.com,1gsbqsbhhwBx9hCF0sqtE213tpUn6Ebj2klLFhHb4xkzBKIdEFkvvwCVtZpYWPgOA796fIPEN,TS Course 2,True,False,False,0,0,0,0,0,0,1,My Drive/Classroom/TS Course 2
+user@domain.com,user@domain.com,012YenC8f12ALUk9PVA,My Drive,,False,False,100,138212,24,167,189598,79,-1,My Drive
+user@domain.com,user@domain.com,456YenC8f12ALfndaQ1NHc0RtUG92Y1BIUUl4bjVBRmNkWG5oakNqVVFDcXJWOHNmdFlwZmc,Classroom,True,False,False,0,0,15,9,6840,17,0,My Drive/Classroom
+user@domain.com,user@domain.com,0B3YenC8f12ALfmRuX3I4WFlqaTRnMGhXNkVvWV9UUG1zRDQwY1BwVkJhUGx5WHVIcjJKZUU,TestUpdate,True,False,False,2,3420,0,2,3420,0,1,My Drive/Classroom/TestUpdate
+user@domain.com,user@domain.com,1MT5xJ897oYa0Q2OuzBDfLHvig6k_b0EKaovVA2imGYcnrmqZu5hjlJkEPMH-rHKj4qDyy9_j,TS Course,True,False,False,0,0,0,0,0,0,1,My Drive/Classroom/TS Course
+user@domain.com,user@domain.com,1gsbqsbhhwBx9hCF0sqtE213tpUn6Ebj2klLFhHb4xkzBKIdEFkvvwCVtZpYWPgOA796fIPEN,TS Course 2,True,False,False,0,0,0,0,0,0,1,My Drive/Classroom/TS Course 2
 ...
-testsimple@domain.com,testsimple@domain.com,1bHS_Tp77W3KSGRNSs_jP1RhAJhIGRCaI,XferFolder,True,False,False,1,1024,0,1,1024,0,0,My Drive/XferFolder
-testsimple@domain.com,testsimple@domain.com,Trash,Trash,,True,True,0,0,1,3,3072,9,-1,Trash
+user@domain.com,user@domain.com,1bHS_Tp77W3KSGRNSs_jP1RhAJhIGRCaI,XferFolder,True,False,False,1,1024,0,1,1024,0,0,My Drive/XferFolder
+user@domain.com,user@domain.com,Trash,Trash,,True,True,0,0,1,3,3072,9,-1,Trash
 
-$ gam config csv_output_row_filter "depth:count<1" redirect csv ./MyDriveUsage.csv user testsimple@domain.com print diskusage mydrive 
-User: testsimple@domain.com, Print 1 Drive Disk Usage
+$ gam config csv_output_row_filter "depth:count<1" redirect csv ./MyDriveUsage.csv user user@domain.com print diskusage mydrive 
+User: user@domain.com, Print 1 Drive Disk Usage
 $ more MyDriveUsage.csv
 User,Owner,id,name,ownedByMe,trashed,explicitlyTrashed,directFileCount,directFileSize,directFolderCount,totalFileCount,totalFileSize,totalFolderCount,depth,path
-testsimple@domain.com,testsimple@domain.com,012YenC8f12ALUk9PVA,My Drive,,False,False,100,138212,24,167,189598,79,-1,My Drive
-testsimple@domain.com,testsimple@domain.com,456YenC8f12ALfndaQ1NHc0RtUG92Y1BIUUl4bjVBRmNkWG5oakNqVVFDcXJWOHNmdFlwZmc,Classroom,True,False,False,0,0,15,9,6840,17,0,My Drive/Classroom
+user@domain.com,user@domain.com,012YenC8f12ALUk9PVA,My Drive,,False,False,100,138212,24,167,189598,79,-1,My Drive
+user@domain.com,user@domain.com,456YenC8f12ALfndaQ1NHc0RtUG92Y1BIUUl4bjVBRmNkWG5oakNqVVFDcXJWOHNmdFlwZmc,Classroom,True,False,False,0,0,15,9,6840,17,0,My Drive/Classroom
 ...
-testsimple@domain.com,testsimple@domain.com,1bHS_Tp77W3KSGRNSs_jP1RhAJhIGRCaI,XferFolder,True,False,False,1,1024,0,1,1024,0,0,My Drive/XferFolder
-testsimple@domain.com,testsimple@domain.com,Trash,Trash,,True,True,0,0,1,3,3072,9,-1,Trash
+user@domain.com,user@domain.com,1bHS_Tp77W3KSGRNSs_jP1RhAJhIGRCaI,XferFolder,True,False,False,1,1024,0,1,1024,0,0,My Drive/XferFolder
+user@domain.com,user@domain.com,Trash,Trash,,True,True,0,0,1,3,3072,9,-1,Trash
 
-$ gam redirect csv ./MyDriveUsage.csv user testsimple@domain.com print diskusage mydrive show summaryandtrash
-User: testsimple@domain.com, Print 1 Drive Disk Usage
+$ gam redirect csv ./MyDriveUsage.csv user user@domain.com print diskusage mydrive show summaryandtrash
+User: user@domain.com, Print 1 Drive Disk Usage
 $ more MyDriveUsage.csv 
 User,Owner,id,name,ownedByMe,trashed,explicitlyTrashed,directFileCount,directFileSize,directFolderCount,totalFileCount,totalFileSize,totalFolderCount,depth,path
-testsimple@domain.com,testsimple@domain.com,012YenC8f12ALUk9PVA,My Drive,,False,False,100,138212,24,167,189598,79,-1,My Drive
-testsimple@domain.com,testsimple@domain.com,Trash,Trash,,True,True,0,0,1,3,3072,9,-1,Trash
+user@domain.com,user@domain.com,012YenC8f12ALUk9PVA,My Drive,,False,False,100,138212,24,167,189598,79,-1,My Drive
+user@domain.com,user@domain.com,Trash,Trash,,True,True,0,0,1,3,3072,9,-1,Trash
 
-$ gam redirect csv ./MyDriveUsage.csv user testsimple@domain.com print diskusage shareddriveid 0AL5LiIe4dqxZUk9PVA  show summaryandtrash
-User: testsimple@domain.com, Print 1 Drive Disk Usage
+$ gam redirect csv ./MyDriveUsage.csv user user@domain.com print diskusage shareddriveid 0AL5LiIe4dqxZUk9PVA  show summaryandtrash
+User: user@domain.com, Print 1 Drive Disk Usage
 $ more MyDriveUsage.csv 
 User,id,name,trashed,explicitlyTrashed,directFileCount,directFileSize,directFolderCount,totalFileCount,totalFileSize,totalFolderCount,depth,path
-testsimple@domain.com,0125LiIe4dqxZUk9PVA,TS Shared Drive 1,False,False,16,6144,7,42,73799,25,-1,SharedDrives/TS Shared Drive 1
-testsimple@domain.com,Trash,Trash,True,True,1,1024,0,1,1024,0,-1,Trash
+user@domain.com,0125LiIe4dqxZUk9PVA,TS Shared Drive 1,False,False,16,6144,7,42,73799,25,-1,SharedDrives/TS Shared Drive 1
+user@domain.com,Trash,Trash,True,True,1,1024,0,1,1024,0,-1,Trash
+```
+
+## Display files published to the web
+Ths requires version 6.80.13 or later.
+
+You can display files published to the web.
+```
+# Get the published files
+gam config csv_output_header_filter "Owner,id,revisions.0.published,revisions.0.publishedOutsideDomain" csv_output_row_filter "revisions.0.published:boolean:true" auto_batch_min 1 num_threads 20 redirect csv ./PublishedDocs.csv multiprocess redirect stderr - multiprocess <UserTypeEntity> print filerevisions my_publishable_items select last 1
+# Get the files name, MIMEtype and path
+gam redirect csv ./PublishedDocsWithName.csv multiprocess redirect stderr - multiprocess csv ./PublishedDocs.csv gam user "~Owner" print filelist select "~id" fields id,name,mimetype fullpath addcsvdata published "~revisions.0.published" addcsvdata publishedOutsideDomain "~revisions.0.publishedOutsideDomain" 
+```
+
+You can display files published to the web internally for your domain only.
+```
+# Get the internally only published files
+gam config csv_output_header_filter "Owner,id,revisions.0.published,revisions.0.publishedOutsideDomain" csv_output_row_filter "revisions.0.published:boolean:true,revisions.0.publishedOutsideDomain:boolean:false" auto_batch_min 1 num_threads 20 redirect csv ./PublishedDocs.csv multiprocess redirect stderr - multiprocess <UserTypeEntity> print filerevisions my_publishable_items select last 1
+# Get the files name, MIMEtype and path
+gam redirect csv ./PublishedDocsWithName.csv multiprocess redirect stderr - multiprocess csv ./PublishedDocs.csv gam user "~Owner" print filelist select "~id" fields id,name,mimetype fullpath addcsvdata published "~revisions.0.published" addcsvdata publishedOutsideDomain "~revisions.0.publishedOutsideDomain" 
+```
+
+You can display files published to the web externally outside of your domain.
+```
+# Get the externally published files
+gam config csv_output_header_filter "Owner,id,revisions.0.published,revisions.0.publishedOutsideDomain" csv_output_row_filter "revisions.0.published:boolean:true,revisions.0.publishedOutsideDomain:boolean:true" auto_batch_min 1 num_threads 20 redirect csv ./PublishedDocs.csv multiprocess redirect stderr - multiprocess <UserTypeEntity> print filerevisions my_publishable_items select last 1
+# Get the files name, MIMEtype and path
+gam redirect csv ./PublishedDocsWithName.csv multiprocess redirect stderr - multiprocess csv ./PublishedDocs.csv gam user "~Owner" print filelist select "~id" fields id,name,mimetype fullpath addcsvdata published "~revisions.0.published" addcsvdata publishedOutsideDomain "~revisions.0.publishedOutsideDomain" 
 ```
