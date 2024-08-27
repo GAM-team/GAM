@@ -40902,7 +40902,7 @@ def doPrintVaultCounts():
       if email:
         csvPF.WriteRow({'account': email, 'error': errored_account.get('errorType')})
         if email in query_accounts:
-          query_accounts.remove(account)
+          query_accounts.remove(email)
     for account in a_count.get('nonQueryableAccounts', []):
       csvPF.WriteRow({'account': account, 'error': 'Not queried because not on hold'})
       if account in query_accounts:
