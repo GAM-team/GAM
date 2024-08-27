@@ -54490,6 +54490,7 @@ SIZE_FIELD_CHOICE_MAP = {
 
 # gam <UserTypeEntity> print filelist [todrive <ToDriveAttribute>*]
 #	[((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>) (querytime<String> <Time>)*]
+#	[continueoninvalidquery [<Boolean>]]
 #	[choose <DriveFileNameEntity>|<DriveFileEntityShortcut>]
 #	[corpora <CorporaAttribute>]
 #	[select <DriveFileEntity> [selectsubquery <QueryDriveFile>]
@@ -54654,12 +54655,12 @@ def printFileList(users):
               _printFileInfoRow(baserow, fileInfo)
     else:
       if not countsRowFilter:
-        csvPF.UpdateMimeTypeCounts(flattenJSON(fileInfo, flattened=row, skipObjects=skipObjects, timeObjects=timeObjects,
-                                               simpleLists=simpleLists, delimiter=delimiter), mimeTypeInfo)
+        csvPFco.UpdateMimeTypeCounts(flattenJSON(fileInfo, flattened=row, skipObjects=skipObjects, timeObjects=timeObjects,
+                                                 simpleLists=simpleLists, delimiter=delimiter), mimeTypeInfo)
       else:
         mimeTypeInfo.setdefault(fileInfo['mimeType'], {'count': 0, 'size': 0})
-        mimeTypeInfo[fileInfo['mimeType']['count']] += 1
-        mimeTypeInfo[fileInfo['mimeType']['size']] += int(fileInfo.get(sizeField, '0'))
+        mimeTypeInfo[fileInfo['mimeType']]['count'] += 1
+        mimeTypeInfo[fileInfo['mimeType']]['size'] += int(fileInfo.get(sizeField, '0'))
 
   def _printChildDriveFolderContents(drive, fileEntry, user, i, count, depth):
     parentFileEntry = fileTree.get(fileEntry['id'])
@@ -54738,7 +54739,7 @@ def printFileList(users):
 
   csvPF = CSVPrintFile('Owner', indexedTitles=DRIVE_INDEXED_TITLES)
   FJQC = FormatJSONQuoteChar(csvPF)
-  addPathsToJSON = countsRowFilter = buildTree = countsOnly = filepath = fullpath = folderPathOnly = \
+  addPathsToJSON = continueOnInvalidQuery = countsRowFilter = buildTree = countsOnly = filepath = fullpath = folderPathOnly = \
     getPermissionsForSharedDrives = mimeTypeInQuery = noRecursion = oneItemPerRow = stripCRsFromName = \
     showParentsIdsAsList = showDepth = showParent = showSize = showMimeTypeSize = showSource = False
   sizeField = 'quotaBytesUsed'
@@ -54853,6 +54854,8 @@ def printFileList(users):
     elif myarg == 'addcsvdata':
       k = getString(Cmd.OB_STRING)
       addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+    elif myarg == 'continueoninvalidquery':
+      continueOnInvalidQuery = getBoolean()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg)
   if not filepath and not fullpath:
@@ -55034,8 +55037,10 @@ def printFileList(users):
         extendFileTreeParents(drive, fileTree, fields)
         DLP.GetLocationFileIdsFromTree(fileTree, fileIdEntity)
       except (GAPI.invalidQuery, GAPI.invalid, GAPI.badRequest):
-        entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE, None], invalidQuery(DLP.fileIdEntity['query']), i, count)
-        break
+        entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, None], invalidQuery(DLP.fileIdEntity['query']), i, count)
+        if not continueOnInvalidQuery:
+          break
+        continue
       except GAPI.fileNotFound:
         printGotEntityItemsForWhom(0)
         continue
@@ -55577,6 +55582,7 @@ def printFileParentTree(users):
 
 # gam <UserTypeEntity> print filecounts [todrive <ToDriveAttribute>*]
 #	[((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>) (querytime<String> <Time>)*]
+#	[continueoninvalidquery [<Boolean>]]
 #	[corpora <CorporaAttribute>]
 #	[select <SharedDriveEntity>]
 #	[anyowner|(showownedby any|me|others)]
@@ -55589,6 +55595,7 @@ def printFileParentTree(users):
 #	[summary none|only|plus] [summaryuser <String>]
 # gam <UserTypeEntity> show filecounts
 #	[((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>) (querytime<String> <Time>)*]
+#	[continueoninvalidquery [<Boolean>]]
 #	[corpora <CorporaAttribute>]
 #	[select <SharedDriveEntity>]
 #	[anyowner|(showownedby any|me|others)]
@@ -55666,7 +55673,7 @@ def printShowFileCounts(users):
   fieldsList = ['mimeType']
   DLP = DriveListParameters({'allowChoose': False, 'allowCorpora': True, 'allowQuery': True, 'mimeTypeInQuery': True})
   sharedDriveId = sharedDriveName = ''
-  showSize = showMimeTypeSize = False
+  continueOnInvalidQuery = showSize = showMimeTypeSize = False
   sizeField = 'quotaBytesUsed'
   summary = FILECOUNT_SUMMARY_NONE
   summaryUser = FILECOUNT_SUMMARY_USER
@@ -55696,6 +55703,8 @@ def printShowFileCounts(users):
     elif csvPF and myarg == 'addcsvdata':
       k = getString(Cmd.OB_STRING)
       addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+    elif myarg == 'continueoninvalidquery':
+      continueOnInvalidQuery = getBoolean()
     else:
       unknownArgumentExit()
   if not fileIdEntity:
@@ -55776,7 +55785,9 @@ def printShowFileCounts(users):
       showMimeTypeInfo(user, mimeTypeInfo, sharedDriveId, sharedDriveName, i, count)
     except (GAPI.invalidQuery, GAPI.invalid, GAPI.badRequest):
       entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, None], invalidQuery(DLP.fileIdEntity['query']), i, count)
-      break
+      if not continueOnInvalidQuery:
+        break
+      continue
     except GAPI.fileNotFound:
       printGotEntityItemsForWhom(0)
     except (GAPI.notFound, GAPI.teamDriveMembershipRequired) as e:

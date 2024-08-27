@@ -7032,6 +7032,7 @@ gam <UserTypeEntity> print filepath <DriveFileEntity> [todrive <ToDriveAttribute
 gam <UserTypeEntity> print filecounts [todrive <ToDriveAttribute>*]
         [((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>)
             (querytime<String> <Time>)*]
+        [continueoninvalidquery [<Boolean>]]
         [corpora <CorporaAttribute>]
         [select <SharedDriveEntity>]
         [anyowner|(showownedby any|me|others)]
@@ -7045,6 +7046,7 @@ gam <UserTypeEntity> print filecounts [todrive <ToDriveAttribute>*]
 gam <UserTypeEntity> show filecounts
         [((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>)
             (querytime<String> <Time>)*]
+        [continueoninvalidquery [<Boolean>]]
         [corpora <CorporaAttribute>]
         [select <SharedDriveEntity>]
         [anyowner|(showownedby any|me|others)]
@@ -7107,6 +7109,7 @@ gam <UserTypeEntity> print fileparenttree <DriveFileEntity> [todrive <ToDriveAtt
 gam <UserTypeEntity> print filelist [todrive <ToDriveAttribute>*]
         [((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>)
             (querytime<String> <Time>)*]
+        [continueoninvalidquery [<Boolean>]]
         [choose <DriveFileNameEntity>|<DriveFileEntityShortcut>]
         [corpora <CorporaAttribute>]
         [select <DriveFileEntity> [selectsubquery <QueryDriveFile>]

@@ -10,6 +10,17 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.80.15
+
+Fixed bug in `gam <UserTypeEntity> print filelist ... countsrowfilter` that caused a trap.
+
+Added option `continueoninvalidquery [<Boolean>]` to `gam <UserTypeEntity> print filelist|filecounts` that can be used
+in special cases where a query  of the form `query "'labels/mRoha85IbwCRl490E00xGLvBsSbkwIiuZ6PRNNEbwxyz' in labels"
+causes Google to issue an error saying that the query is invalid when, in fact, it is but the user does not have a
+license that suppprts drive file labels. When `continueoninvalidquery` is true, GAM prints an error message and
+proceeds to the next user rather that terminating as it does now. Of course, if the query really is invalid, you will
+get the message for every user.
+
 ### 6.80.14
 
 Updated `gam <UserTypeEntity> print messages|threads` to display all default headers

@@ -684,6 +684,7 @@ Print or show file counts by MIME type and/or file name.
 gam <UserTypeEntity> print filecounts [todrive <ToDriveAttribute>*]
         [((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>)
             (querytime<String> <Time>)*]
+        [continueoninvalidquery [<Boolean>]]
         [corpora <CorporaAttribute>]
         [select <SharedDriveEntity>]
         [anyowner|(showownedby any|me|others)]
@@ -697,6 +698,7 @@ gam <UserTypeEntity> print filecounts [todrive <ToDriveAttribute>*]
 gam <UserTypeEntity> show filecounts
         [((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>)
             (querytime<String> <Time>)*]
+        [continueoninvalidquery [<Boolean>]]
         [corpora <CorporaAttribute>]
         [select <SharedDriveEntity>]
         [anyowner|(showownedby any|me|others)]
@@ -710,6 +712,12 @@ gam <UserTypeEntity> show filecounts
 ```
 
 By default, print filecounts displays counts of all files owned by the specified [`<UserTypeEntity>`](Collections-of-Users).
+
+The option `continueoninvalidquery [<Boolean>] can be used in special cases where a query  of the form
+`query "'labels/mRoha85IbwCRl490E00xGLvBsSbkwIiuZ6PRNNEbwxyz' in labels" causes Google to issue an error
+saying that the query is invalid when, in fact, it is but the user does not have a license that suppprts drive file labels.
+When `continueoninvalidquery` is true, GAM prints an error message and proceeds to the next user rather that terminating
+as it does now. Of course, if the query really is invalid, you will get the message for every user.
 
 The `showsize` option displays the total size (in bytes) of the files counted.
 
@@ -1035,6 +1043,7 @@ Display a list of file/folder details in CSV format.
 gam <UserTypeEntity> print|show filelist [todrive <ToDriveAttribute>*]
         [((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>)
             (querytime<String> <Time>)*]
+        [continueoninvalidquery [<Boolean>]]
         [choose <DriveFileNameEntity>|<DriveFileEntityShortcut>]
         [corpora <CorporaAttribute>]
         [select <DriveFileEntity> [selectsubquery <QueryDriveFile>]
@@ -1060,6 +1069,12 @@ gam <UserTypeEntity> print|show filelist [todrive <ToDriveAttribute>*]
         [formatjson [quotechar <Character>]]
 ```
 By default, `print filelist` displays all files owned by the specified [`<UserTypeEntity>`](https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Users)
+
+The option `continueoninvalidquery [<Boolean>] can be used in special cases where a query  of the form
+`query "'labels/mRoha85IbwCRl490E00xGLvBsSbkwIiuZ6PRNNEbwxyz' in labels" causes Google to issue an error
+saying that the query is invalid when, in fact, it is but the user does not have a license that suppprts drive file labels.
+When `continueoninvalidquery` is true, GAM prints an error message and proceeds to the next user rather that terminating
+as it does now. Of course, if the query really is invalid, you will get the message for every user.
 
 When `allfields` is specified (or no fields are specified), use `showshareddrivepermissions` to display permissions
 when shared drives are queried/selected. In this case, the Drive API returns the permission IDs
