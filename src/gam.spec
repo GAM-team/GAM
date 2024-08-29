@@ -18,7 +18,7 @@ datas += [('datastudio-v1.json', '.')]
 datas += [('serviceaccountlookup-v1.json', '.')]
 datas += [('cacerts.pem', '.')]
 hiddenimports = [
-     'gam.auth.yubikey',
+     'gam.gamlib.yubikey',
      ]
 
 a = Analysis(
@@ -35,7 +35,7 @@ a = Analysis(
     win_private_assemblies=False,
     cipher=None,
     noarchive=False,
-)
+    )
 for d in a.datas:
     if 'pyconfig' in d[0]:
         a.datas.remove(d)
@@ -117,4 +117,3 @@ else:
         upx_exclude=[],
         name=name,
         )
-

@@ -361,12 +361,7 @@ jobs:
           cd "${GITHUB_WORKSPACE}/src"
           git clone https://github.com/python/cpython.git
           cd "${PYTHON_SOURCE_PATH}"
-          # Pin Windows to 3.11.6 for the moment
-          # if [[ "${RUNNER_OS}" == "Windows" ]]; then
-          #   export LATEST_STABLE_TAG="v3.11.6"
-          # else
           export LATEST_STABLE_TAG=$(git tag --list | grep -v a | grep -v rc | grep -v b | sort -Vr | head -n1)
-          # fi
           git checkout "${LATEST_STABLE_TAG}"
           export COMPILED_PYTHON_VERSION=${LATEST_STABLE_TAG:1} # Trim the "v" prefix
           echo "COMPILED_PYTHON_VERSION=${COMPILED_PYTHON_VERSION}" >> $GITHUB_ENV
@@ -504,16 +499,8 @@ jobs:
           git clone https://github.com/pyinstaller/pyinstaller.git
           cd pyinstaller
           export latest_release=$(git tag --list | grep -v dev | grep -v rc | sort -Vr | head -n1)
-          #V6.0.0 causes errors on staticx
-          #if [[ "${staticx}" == "yes" ]]; then
-          #  git checkout "v5.13.2"
-          #elif [[ "${RUNNER_OS}" == "Windows" ]]; then
-          #  git checkout "v5.13.2"
-          #elif [[ "${RUNNER_OS}" == "macOS" ]]; then
-          #  git checkout "v5.13.2"
-          #else
           git checkout "${latest_release}"
-          #fi
+          # git checkout "v6.9.0"
           # remove pre-compiled bootloaders so we fail if bootloader compile fails
           rm -rvf PyInstaller/bootloader/*-*/*
           cd bootloader
