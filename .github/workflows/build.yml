@@ -501,8 +501,8 @@ jobs:
           git clone https://github.com/pyinstaller/pyinstaller.git
           cd pyinstaller
           export latest_release=$(git tag --list | grep -v dev | grep -v rc | sort -Vr | head -n1)
-          git checkout "${latest_release}"
-          # git checkout "v6.9.0"
+          # git checkout "${latest_release}"
+          git checkout "v6.9.0"
           # remove pre-compiled bootloaders so we fail if bootloader compile fails
           rm -rvf PyInstaller/bootloader/*-*/*
           cd bootloader
