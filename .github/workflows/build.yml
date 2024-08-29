@@ -331,7 +331,9 @@ jobs:
             # install_sw saves us ages processing man pages :-)
             $MAKE install_sw
           fi
-          echo "LDFLAGS=-L${OPENSSL_INSTALL_PATH}/lib" >> $GITHUB_ENV
+          if [[ "${RUNNER_OS}" != "Windows" ]];
+            echo "LDFLAGS=-L${OPENSSL_INSTALL_PATH}/lib" >> $GITHUB_ENV
+          fi
           echo "CRYPTOGRAPHY_SUPPRESS_LINK_FLAGS=1" >> $GITHUB_ENV
           case $arch in
             universal2)
