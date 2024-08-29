@@ -16540,11 +16540,12 @@ def doPrintShowAdmins():
         try:
           rolePrivileges[roleId] = callGAPI(cd.roles(), 'get',
                                             throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.FAILED_PRECONDITION,
-                                                          GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND],
+                                                          GAPI.SERVICE_NOT_AVAILABLE, GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND],
+                                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                             customer=GC.Values[GC.CUSTOMER_ID],
                                             roleId=roleId,
                                             fields='rolePrivileges')
-        except (GAPI.notFound, GAPI.forbidden, GAPI.failedPrecondition) as e:
+        except (GAPI.notFound, GAPI.forbidden, GAPI.failedPrecondition, GAPI.serviceNotAvailable) as e:
           entityActionFailedExit([Ent.USER, userKey, Ent.ADMIN_ROLE, admin['roleId']], str(e))
           rolePrivileges[roleId] = None
         except (GAPI.badRequest, GAPI.customerNotFound):
@@ -16616,7 +16617,8 @@ def doPrintShowAdmins():
   try:
     admins = callGAPIpages(cd.roleAssignments(), 'list', 'items',
                            pageMessage=getPageMessage(),
-                           throwReasons=[GAPI.INVALID, GAPI.USER_NOT_FOUND, GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND, GAPI.FORBIDDEN],
+                           throwReasons=[GAPI.INVALID, GAPI.USER_NOT_FOUND, GAPI.BAD_REQUEST,
+                                         GAPI.CUSTOMER_NOT_FOUND, GAPI.FORBIDDEN],
                            customer=GC.Values[GC.CUSTOMER_ID], fields=fields, **kwargs)
   except (GAPI.invalid, GAPI.userNotFound):
     entityUnknownWarning(Ent.ADMINISTRATOR, userKey)

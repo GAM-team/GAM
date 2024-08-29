@@ -21,6 +21,7 @@ gam <UserTypeEntity> signout
 Turn off 2-Step Verification for a user.
 If successful, this call will turn off 2-Step Verification and also remove all registered second steps on the user account.
 This call will fail if **any** of the following is true:
+* the user is suspended
 * the user is not enrolled in 2-Step Verification.
 * the user has 2-Step Verification enforced.
 * the user is enrolled in the Advanced Protection Program.

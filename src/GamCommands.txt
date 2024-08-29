@@ -7458,7 +7458,7 @@ gam <UserTypeEntity> delete messages|threads
 gam <UserTypeEntity> modify messages|threads
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [quick|notquick] [doit] [max_to_modify <Number>])|(ids <MessageIDEntity>)
-        (addlabel <LabelName>)* (removelabel <LabelName>)*
+        ((addlabel <LabelName>)|(removelabel <LabelName>))+
         [csv [todrive <ToDriveAttribute>*]]
 gam <UserTypeEntity> spam messages|threads
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+

@@ -2,6 +2,13 @@
 
 Merged GAM-Team version
 
+6.80.18
+
+Updated `gam print|show admins` to handle the following error:
+```
+ERROR: 503: serviceNotAvailable - The service is currently unavailable.
+```
+
 6.80.17
 
 Updated `gam <UserTypeEntity> modify messages` to improve error handling.
