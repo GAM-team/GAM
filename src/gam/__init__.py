@@ -2409,6 +2409,12 @@ def entityDoesNotExistWarning(entityType, entityName, i=0, count=0):
                                  [Ent.Singular(entityType), entityName, Msg.DOES_NOT_EXIST],
                                  currentCountNL(i, count)))
 
+def entityListDoesNotExistWarning(entityValueList, i=0, count=0):
+  setSysExitRC(ENTITY_DOES_NOT_EXIST_RC)
+  writeStderr(formatKeyValueList(Ind.Spaces(),
+                                 Ent.FormatEntityValueList(entityValueList)+[Msg.DOES_NOT_EXIST],
+                                 currentCountNL(i, count)))
+
 def entityUnknownWarning(entityType, entityName, i=0, count=0):
   domain = getEmailAddressDomain(entityName)
   if (domain.endswith(GC.Values[GC.DOMAIN])) or (domain.endswith('google.com')):
@@ -67502,12 +67508,12 @@ def createLabels(users, labelEntity):
       if not buildPath:
         try:
           callGAPI(gmail.users().labels(), 'create',
-                   throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.DUPLICATE, GAPI.PERMISSION_DENIED],
+                   throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.DUPLICATE, GAPI.INVALID, GAPI.PERMISSION_DENIED],
                    userId='me', body=body, fields='')
           entityActionPerformed([Ent.USER, user, Ent.LABEL, label], l, lcount)
         except GAPI.duplicate:
           entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label], Msg.DUPLICATE, l, lcount)
-        except GAPI.permissionDenied as e:
+        except (GAPI.invalid, GAPI.permissionDenied) as e:
           entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label], str(e), l, lcount)
         except (GAPI.serviceNotAvailable, GAPI.badRequest):
           entityServiceNotApplicableWarning(Ent.USER, user, i, count)
@@ -68036,7 +68042,7 @@ def _initLabelNameMap(userGmailLabels):
       labelNameMap[label['name']] = labelNameMap[label['name'].upper()] = label['id']
   return labelNameMap
 
-def _convertLabelNamesToIds(gmail, bodyLabels, labelNameMap, addLabelIfMissing):
+def _convertLabelNamesToIds(gmail, user, i, count, bodyLabels, labelNameMap, addLabel):
   labelIds = []
   for label in bodyLabels:
     if label in labelNameMap:
@@ -68045,14 +68051,19 @@ def _convertLabelNamesToIds(gmail, bodyLabels, labelNameMap, addLabelIfMissing):
     if label.upper() in labelNameMap:
       labelIds.append(labelNameMap[label.upper()])
       continue
-    if not addLabelIfMissing:
+    if not addLabel:
+      entityListDoesNotExistWarning([Ent.USER, user, Ent.LABEL, label], i, count)
       continue
     try:
       results = callGAPI(gmail.users().labels(), 'create',
                          throwReasons=[GAPI.INVALID],
                          userId='me', body={'labelListVisibility': 'labelShow', 'messageListVisibility': 'show', 'name': label}, fields='id')
     except GAPI.invalid as e:
-      entityActionFailedExit([Ent.LABEL, label], str(e))
+      action = Act.Get()
+      Act.Set(Act.CREATE)
+      entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label], str(e), i, count)
+      Act.Set(action)
+      continue
     labelNameMap[label] = labelNameMap[label.upper()] = results['id']
     labelIds.append(results['id'])
     if label.find('/') != -1:
@@ -68289,7 +68300,7 @@ def _processMessagesThreads(users, entityType):
         idsList += ',...'
       try:
         callGAPI(gmail.users().messages(), function,
-                 throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.INVALID_MESSAGE_ID, GAPI.INVALID,
+                 throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.INVALID_MESSAGE_ID, GAPI.INVALID, GAPI.INVALID_ARGUMENT,
                                                         GAPI.FAILED_PRECONDITION, GAPI.PERMISSION_DENIED],
                  userId='me', body=body)
         for messageId in body['ids']:
@@ -68300,7 +68311,7 @@ def _processMessagesThreads(users, entityType):
             csvPF.WriteRow({'User': user, entityHeader: messageId, 'action': Act.Performed()})
       except (GAPI.serviceNotAvailable, GAPI.badRequest):
         mcount += bcount
-      except (GAPI.invalid, GAPI.permissionDenied) as e:
+      except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
         _processMessageFailed(user, idsList, f'{str(e)} ({mcount+1}-{mcount+bcount}/{jcount})')
         mcount += bcount
       except GAPI.invalidMessageId:
@@ -68369,6 +68380,8 @@ def _processMessagesThreads(users, entityType):
       csvPF.GetTodriveParameters()
     else:
       unknownArgumentExit()
+  if function == 'modify' and not addLabelNames and not removeLabelNames:
+    missingArgumentExit('(addlabel <LabelName>)|(removelabel <LabelName>)')
   _finalizeMessageSelectParameters(parameters, True)
   includeSpamTrash = Act.Get() in [Act.DELETE, Act.MODIFY, Act.UNTRASH]
   if function == 'spam':
@@ -68387,8 +68400,11 @@ def _processMessagesThreads(users, entityType):
       if not userGmailLabels:
         continue
       labelNameMap = _initLabelNameMap(userGmailLabels)
-      addLabelIds = _convertLabelNamesToIds(gmail, addLabelNames, labelNameMap, True)
-      removeLabelIds = _convertLabelNamesToIds(gmail, removeLabelNames, labelNameMap, False)
+      addLabelIds = _convertLabelNamesToIds(gmail, user, i, count, addLabelNames, labelNameMap, True)
+      removeLabelIds = _convertLabelNamesToIds(gmail, user, i, count, removeLabelNames, labelNameMap, False)
+      if not addLabelIds and not removeLabelIds:
+        entityActionNotPerformedWarning([Ent.USER, user], Msg.NO_LABELS_TO_PROCESS, i, count)
+        continue
     try:
       if parameters['messageEntity'] is None:
         printGettingAllEntityItemsForWhom(Ent.MESSAGE, user, i, count)
@@ -69039,7 +69055,7 @@ def _draftImportInsertMessage(users, operation):
           if not userGmailLabels:
             continue
           labelNameMap = _initLabelNameMap(userGmailLabels)
-          body['labelIds'] = _convertLabelNamesToIds(gmail, addLabelNames, labelNameMap, True)
+          body['labelIds'] = _convertLabelNamesToIds(gmail, user, i, count, addLabelNames, labelNameMap, True)
         else:
           body['labelIds'] = ['INBOX']
         result = callGAPI(gmail.users().messages(), function,

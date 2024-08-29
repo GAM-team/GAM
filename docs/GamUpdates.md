@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.80.17
+
+Updated `gam <UserTypeEntity> modify messages` to improve error handling.
+
 ### 6.80.16
 
 Fixed bug in `gam print vaultcounts` that caused a trap.

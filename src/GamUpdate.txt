@@ -2,6 +2,10 @@
 
 Merged GAM-Team version
 
+6.80.17
+
+Updated `gam <UserTypeEntity> modify messages` to improve error handling.
+
 6.80.16
 
 Fixed bug in `gam print vaultcounts` that caused a trap.
