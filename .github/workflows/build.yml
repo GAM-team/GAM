@@ -530,7 +530,8 @@ jobs:
           fi
           mkdir -p -v "${gampath}"
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
-            brew uninstall openssl
+            # brew OpenSSL gets picked up by PyInstaller breaking our self-compiled version
+            brew uninstall --ignore-dependencies openssl
             export gampath=$($PYTHON -c "import os; print(os.path.realpath('$gampath'))")
           elif [[ "${RUNNER_OS}" == "Windows" ]]; then
             # Work around issue where PyInstaller picks up python3.dll from other Python versions
