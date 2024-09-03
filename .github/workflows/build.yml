@@ -530,6 +530,7 @@ jobs:
           fi
           mkdir -p -v "${gampath}"
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
+            brew uninstall openssl
             export gampath=$($PYTHON -c "import os; print(os.path.realpath('$gampath'))")
           elif [[ "${RUNNER_OS}" == "Windows" ]]; then
             # Work around issue where PyInstaller picks up python3.dll from other Python versions
@@ -553,10 +554,10 @@ jobs:
           cat build/gam/EXE-00.toc
           if [ -x "$(command -v realpath)" ]; then
                realpath=realpath
-             else
+          else
                brew install coreutils
                realpath=grealpath
-             fi
+          fi
           export gam=$(realpath "$gam")
           if [[ "${RUNNER_OS}" == "Windows" ]]; then
             export gam=$(cygpath -w "$gam")
