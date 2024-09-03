@@ -449,7 +449,7 @@ jobs:
       - name: Run Python
         run: |
           "${PYTHON}" -V
-          "${PYTHON}" -c "import ssl; print(f'Using OpenSSL {ssl.OPENSSL_VERSION}')"
+          "${PYTHON}" -c "import ssl; print(f'Using {ssl.OPENSSL_VERSION}')"
 
       - name: Upgrade pip, wheel, etc
         run: |
