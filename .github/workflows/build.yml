@@ -545,7 +545,12 @@ jobs:
           export distpath="./dist/gam"
           export gampath="${distpath}"
           "${PYTHON}" -m PyInstaller --clean --noconfirm --distpath="${distpath}" gam.spec
+          echo "WARNINGS FROM build/gam/warn-gam.txt"
           cat build/gam/warn-gam.txt
+          echo "Analysis FROM build/gam/Analysis-00.toc"
+          cat build/gam/Analysis-00.toc
+          echo "EXE data FROM build/gam/EXE-00.toc"
+          cat build/gam/EXE-00.toc
           if [ -x "$(command -v realpath)" ]; then
                realpath=realpath
              else
