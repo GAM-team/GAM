@@ -21,6 +21,7 @@ hiddenimports = [
      'gam.gamlib.yubikey',
      ]
 
+print(f"datas before analysis:\n{datas}")
 a = Analysis(
     ['gam/__main__.py'],
     pathex=[],
@@ -36,10 +37,12 @@ a = Analysis(
     cipher=None,
     noarchive=False,
     )
+print(f"datas from analysis:\n{a.datas}")
 for d in a.datas:
     if 'pyconfig' in d[0]:
         a.datas.remove(d)
         break
+print(f"datas after pyconfig cleanup:\n{a.datas}")
 pyz = PYZ(a.pure,
           a.zipped_data,
           cipher=None)
