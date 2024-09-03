@@ -353,8 +353,7 @@ jobs:
       - name: Run OpenSSL
         if: matrix.goal == 'build'
         run: |
-          "${OPENSSL_INSTALL_PATH}/bin/openssl" version
-          "${OPENSSL_INSTALL_PATH}/bin/openssl" version -f
+          "${OPENSSL_INSTALL_PATH}/bin/openssl" version -a
           file "${OPENSSL_INSTALL_PATH}/bin/openssl"
 
       - name: Get latest stable Python source
