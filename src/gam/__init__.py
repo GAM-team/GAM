@@ -44566,7 +44566,7 @@ def _showInboundSSOProfile(profile, FJQC, i=0, count=0):
   Ind.Decrement()
 
 def _processInboundSSOProfileResult(result, returnNameOnly, kvlist, function):
-  if result['done']:
+  if result.get('done', False):
     if 'error' not in result:
       if 'response' in result:
         if not returnNameOnly:

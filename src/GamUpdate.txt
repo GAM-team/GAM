@@ -2,6 +2,12 @@
 
 Merged GAM-Team version
 
+6.80.19
+
+Fixed bug in `gam create inboundssoprofile` that caused a trap.
+
+Upgraded to OpenSSL 3.3.2 where possible.
+
 6.80.18
 
 Updated `gam print|show admins` to handle the following error:
