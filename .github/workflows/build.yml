@@ -850,12 +850,12 @@ jobs:
           $gam user $gam_user delete shareddrive "${driveid}" nukefromorbit
           echo "printer model count:"
           ssoprofile=$($gam create inboundssoprofile name "El Goog ${newbase}" loginurl https://www.google.com logouturl https://www.google.com changepasswordurl https://www.google.com entityid ElGoog return_name_only)
-	  if [ ${ssoprofile} != 'inProgress' ]; then
+          if [ ${ssoprofile} != 'inProgress' ]; then
             $gam create inboundssocredential profile "id:${ssoprofile}" generate_key
             #$gam create inboundssoassignment profile "id:${ssoprofile}" orgunit "${newou}" mode SAML_SSO
             #$gam delete inboundssoassignment "orgunit:${newou}"
             $gam delete inboundssoprofile "id:${ssoprofile}"
-	  fi
+          fi
           $gam print printermodels | wc -l
           $gam print printers
           printerid=$($gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by $(gam_user)" ou "${newou}" nodetails | awk '{print substr($2, 1, length($2)-1)}')
