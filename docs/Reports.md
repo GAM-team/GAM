@@ -2,6 +2,7 @@
 - [API documentation](#api-documentation)
 - [Collections of Users](Collections-of-Users)
 - [Definitions](#definitions)
+- [Special quoting](#special-quoting)
 - [Activity reports](#activity-reports)
   - [Find Shared Drives with no activity](#find-shared-drives-with-no-activity)
 - [Customer and user reports parameters](#customer-and-user-reports-parameters)
@@ -24,6 +25,17 @@
         never|
         now|today
 ```
+## Special quoting
+If you are going to use `config csv_output_row_filter` when printing reports,
+you'll need special quoting in the filter because of the `:` characters in the parameter names.
+
+See: https://github.com/taers232c/GAMADV-XTD3/wiki/CSV-Output-Filtering#quoting-rules
+
+For example:
+```
+config csv_output_row_filter "'\"accounts:used_quota_in_mb\":count>15000'"
+```
+
 ## Activity reports
 ```
 <ActivityApplicationName> ::=

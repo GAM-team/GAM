@@ -13,6 +13,7 @@
   - [Change Shared Drive visibility](#change-shared-drive-visibility)
 - [Display Shared Drives](#display-shared-drives)
 - [Display List of Shared Drives in an Organizational Unit](#display-list-of-shared-drives-in-an-organizational-unit)
+- [Display all Shared Drives with no organizers](#display-all-shared-drives-with-no-organizers)
 - [Display all Shared Drives with a specific organizer](#display-all-shared-drives-with-a-specific-organizer)
 - [Display all Shared Drives without a specific organizer](#display-all-shared-drives-without-a-specific-organizer)
 - [Manage Shared Drive access](#manage-shared-drive-access)
@@ -389,15 +390,15 @@ Print information about all Shared Drives in the organization.
 gam print teamdrives
 gam user admin@domain.com print teamdrives adminaccess
 ```
-Print information about all Shared Drives in the organization with no organizers.
-```
-gam print teamdrives query "organizerCount = 0"
-gam user admin@domain.com print teamdrives adminaccess teamdriveadminquery "organizerCount = 0"
-```
 Print information about Shared Drives that have admin@domain.com as a member.
 ```
 gam user admin@domain.com print teamdrives
 ```
+## Display all Shared Drives with no organizers
+```
+gam print teamdrives query "organizerCount = 0"
+```
+
 ## Display all Shared Drives with a specific organizer
 Substitute actual email address for `organizer@domain.com`.
 ```

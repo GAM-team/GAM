@@ -10,6 +10,16 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.80.19
+
+Fixed bug in `gam create inboundssoprofile` that caused a trap due to
+an unexpected API result.
+
+Updated `gam create inboundssoprofile ... returnnameonly` to return `inProgress` if the API
+does not return a complete result.
+
+Upgraded to OpenSSL 3.3.2 where possible.
+
 ### 6.80.18
 
 Updated `gam print|show admins` to handle the following error:

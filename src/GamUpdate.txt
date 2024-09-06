@@ -4,7 +4,11 @@ Merged GAM-Team version
 
 6.80.19
 
-Fixed bug in `gam create inboundssoprofile` that caused a trap.
+Fixed bug in `gam create inboundssoprofile` that caused a trap due to
+an unexpected API result.
+
+Updated `gam create inboundssoprofile ... returnnameonly` to return `inProgress` if the API
+does not return a complete result.
 
 Upgraded to OpenSSL 3.3.2 where possible.
 

@@ -391,7 +391,7 @@ given if invalid CrOS deviceIds are specified.
 ### Example: Add ChromeOS devices to a single OU
 Suppose you have a CSV file cros.csv with a single column: deviceId
 ```
-gam update ou /Students/2022 add cros_csvfile cros.csv:deviceId quickcrosmove
+gam update ou /Students/2022 add croscsvfile cros.csv:deviceId quickcrosmove
 ```
 
 ### Example: Add ChromeOS devices to multiple OUs
