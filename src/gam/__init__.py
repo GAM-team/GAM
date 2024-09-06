@@ -44566,6 +44566,8 @@ def _showInboundSSOProfile(profile, FJQC, i=0, count=0):
   Ind.Decrement()
 
 def _processInboundSSOProfileResult(result, returnNameOnly, kvlist, function):
+  if GC.Values[GC.DEBUG_LEVEL] > 0:
+    writeStderr(f'inboundSSOProfileResult: {result}\n')
   if result.get('done', False):
     if 'error' not in result:
       if 'response' in result:
