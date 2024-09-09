@@ -13253,7 +13253,8 @@ def doReportUsage():
         try:
           usage = callGAPIpages(service, 'get', 'usageReports',
                                 pageMessage=pageMessage,
-                                throwReasons=[GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
+                                throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
+                                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                 customerId=customerId, date=useDate,
                                 parameters=parameters, **kwarg)
         except GAPI.badRequest:
@@ -13297,6 +13298,8 @@ def doReportUsage():
     except GAPI.invalid as e:
       stderrWarningMsg(str(e))
       break
+    except GAPI.invalidInput as e:
+      systemErrorExit(GOOGLE_API_ERROR_RC, str(e))
     except GAPI.forbidden:
       accessErrorExit(None)
   if startUseDate:
@@ -13860,6 +13863,7 @@ def doReport():
           usage = callGAPIpages(service, 'get', 'usageReports',
                                 pageMessage=pageMessage,
                                 throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
+                                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                 userKey=user, date=tryDate, customerId=customerId,
                                 orgUnitID=orgUnitId, filters=filters, parameters=parameters,
                                 maxResults=maxResults)

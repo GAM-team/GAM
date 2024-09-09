@@ -848,7 +848,6 @@ jobs:
           $gam user $gam_user show shareddrives asadmin
           $gam user $gam_user update shareddrive "${driveid}" ou "aaaGithub Actions" # so we can delete our OU...
           $gam user $gam_user delete shareddrive "${driveid}" nukefromorbit
-          echo "printer model count:"
           ssoprofile=$($gam config debug_level 1 create inboundssoprofile name "El Goog ${newbase}" loginurl https://www.google.com logouturl https://www.google.com changepasswordurl https://www.google.com entityid ElGoog return_name_only)
           if [ ${ssoprofile} != 'inProgress' ]; then
             $gam create inboundssocredential profile "id:${ssoprofile}" generate_key
@@ -856,6 +855,7 @@ jobs:
             #$gam delete inboundssoassignment "orgunit:${newou}"
             $gam delete inboundssoprofile "id:${ssoprofile}"
           fi
+          echo "printer model count:"
           $gam print printermodels | wc -l
           $gam print printers
           printerid=$($gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by $(gam_user)" ou "${newou}" nodetails | awk '{print substr($2, 1, length($2)-1)}')

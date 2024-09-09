@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.80.20
+
+Updated `gam report usage user` and `gam report users`  to handle the followong error:
+```
+ERROR: 503: serviceNotAvailable - The service is currently unavailable.
+```
+
 ### 6.80.19
 
 Fixed bug in `gam create inboundssoprofile` that caused a trap due to

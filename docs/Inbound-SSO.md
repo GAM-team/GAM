@@ -53,6 +53,8 @@ use the `returnnameonly` option to have GAM display just the profile name of the
 This will be useful in scripts that create|update a profile and then want to perform subsequent GAM commands that
 reference the profile.
 
+If `returnnameonly is specified, `inProgress` is returned if the API does not return a complete result.
+
 ```
 gam delete inboundssoprofile <SSOProfileItem>
 ```

@@ -2,6 +2,13 @@
 
 Merged GAM-Team version
 
+6.80.20
+
+Updated `gam report usage user` and `gam report users`  to handle the followong error:
+```
+ERROR: 503: serviceNotAvailable - The service is currently unavailable.
+```
+
 6.80.19
 
 Fixed bug in `gam create inboundssoprofile` that caused a trap due to
