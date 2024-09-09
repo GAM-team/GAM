@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.80.21
+
+Updated `gam <UserTypeEntity> archive messages` to handle the followong error:
+```
+googleapiclient.errors.MediaUploadSizeError: Media larger than: 26214400
+```
+
 ### 6.80.20
 
 Updated `gam report usage user` and `gam report users`  to handle the followong error:

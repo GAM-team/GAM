@@ -2,9 +2,16 @@
 
 Merged GAM-Team version
 
+6.80.21
+
+Updated `gam <UserTypeEntity> archive messages` to handle the followong error:
+```
+googleapiclient.errors.MediaUploadSizeError: Media larger than: 26214400
+```
+
 6.80.20
 
-Updated `gam report usage user` and `gam report users`  to handle the followong error:
+Updated `gam report usage user` and `gam report users` to handle the followong error:
 ```
 ERROR: 503: serviceNotAvailable - The service is currently unavailable.
 ```

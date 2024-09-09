@@ -1589,7 +1589,7 @@ def getOrgUnitItem(pathOnly=False, absolutePath=True, cd=None):
             return makeOrgUnitPathAbsolute(result['orgUnitPath'])
           return makeOrgUnitPathRelative(result['orgUnitPath'])
         except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError,
-                GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
+                GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.permissionDenied):
           checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, path)
         invalidArgumentExit(Cmd.OB_ORGUNIT_PATH)
       Cmd.Advance()
@@ -1608,7 +1608,7 @@ def getTopLevelOrgId(cd, parentOrgUnitPath):
       return result['orgUnitId']
     except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError):
       return None
-    except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
+    except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.permissionDenied):
       checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, parentOrgUnitPath)
       return None
   try:
@@ -1650,7 +1650,7 @@ def getOrgUnitId(cd=None, orgUnit=None):
     return (result['orgUnitPath'], result['orgUnitId'])
   except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError):
     entityDoesNotExistExit(Ent.ORGANIZATIONAL_UNIT, orgUnit)
-  except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
+  except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.permissionDenied):
     accessErrorExit(cd)
 
 def getAllParentOrgUnitsForUser(cd, user):
@@ -1680,7 +1680,7 @@ def getAllParentOrgUnitsForUser(cd, user):
       parentPath = result['parentOrgUnitId']
     except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError):
       entityDoesNotExistExit(Ent.ORGANIZATIONAL_UNIT, parentPath)
-    except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
+    except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.permissionDenied):
       accessErrorExit(cd)
   return orgUnits
 
@@ -5289,6 +5289,8 @@ def callGAPI(service, function,
       if reason == GAPI.INSUFFICIENT_PERMISSIONS:
         APIAccessDeniedExit()
       systemErrorExit(HTTP_ERROR_RC, formatHTTPError(http_status, reason, message))
+    except googleapiclient.errors.MediaUploadSizeError as e:
+      raise e
     except (httplib2.HttpLib2Error, google.auth.exceptions.TransportError, RuntimeError) as e:
       if n != triesLimit:
         service._http.connections = {}
@@ -5796,7 +5798,8 @@ def convertOrgUnitIDtoPath(cd, orgUnitId):
       orgUnitPath = callGAPI(cd.orgunits(), 'get',
                              throwReasons=GAPI.ORGUNIT_GET_THROW_REASONS,
                              customerId=GC.Values[GC.CUSTOMER_ID], orgUnitPath=orgUnitId, fields='orgUnitPath')['orgUnitPath']
-    except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError, GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
+    except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError,
+            GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.permissionDenied):
       orgUnitPath = orgUnitId
     GM.Globals[GM.MAP_ORGUNIT_ID_TO_NAME][orgUnitId] = orgUnitPath
   return orgUnitPath
@@ -6326,7 +6329,7 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
                         customerId=GC.Values[GC.CUSTOMER_ID],
                         orgUnitPath=ou, fields='orgUnitPath')['orgUnitPath']
         except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError, GAPI.badRequest,
-                GAPI.invalidCustomerId, GAPI.loginRequired):
+                GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.permissionDenied):
           checkEntityDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, ou)
           _incrEntityDoesNotExist(Ent.ORGANIZATIONAL_UNIT)
           continue
@@ -13073,7 +13076,7 @@ def getUserOrgUnits(cd, orgUnit, orgUnitId):
       userOrgUnits[user['primaryEmail']] = user['orgUnitPath']
     return userOrgUnits
   except (GAPI.badRequest, GAPI.invalidInput, GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError,
-          GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.resourceNotFound, GAPI.forbidden):
+          GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.resourceNotFound, GAPI.forbidden, GAPI.permissionDenied):
     checkEntityDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, orgUnit)
 
 # Convert report mb item to gb
@@ -17012,7 +17015,7 @@ def doCreateOrg():
                             customerId=GC.Values[GC.CUSTOMER_ID], orgUnitPath=parent, fields='orgUnitPath')['orgUnitPath']
     except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError):
       pass
-    except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
+    except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.permissionDenied):
       errMsg = accessErrorMessage(cd)
       if errMsg:
         systemErrorExit(INVALID_DOMAIN_RC, errMsg)
@@ -17056,7 +17059,7 @@ def doCreateOrg():
         body['description'] = description
       if not _createOrg(body, body['parentOrgUnitPath'], fullPath):
         return
-    except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
+    except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.permissionDenied):
       checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, fullPath)
 
 def checkOrgUnitPathExists(cd, orgUnitPath, i=0, count=0, showError=False):
@@ -17071,7 +17074,7 @@ def checkOrgUnitPathExists(cd, orgUnitPath, i=0, count=0, showError=False):
     return (True, orgUnit['orgUnitPath'], orgUnit['orgUnitId'])
   except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError):
     pass
-  except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
+  except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.permissionDenied):
     errMsg = accessErrorMessage(cd)
     if errMsg:
       systemErrorExit(INVALID_DOMAIN_RC, errMsg)
@@ -17419,7 +17422,7 @@ def _doInfoOrgs(entityList):
       Ind.Decrement()
     except (GAPI.invalidInput, GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError):
       entityActionFailedWarning([Ent.ORGANIZATIONAL_UNIT, orgUnitPath], Msg.DOES_NOT_EXIST, i, count)
-    except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.resourceNotFound, GAPI.forbidden):
+    except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.resourceNotFound, GAPI.forbidden, GAPI.permissionDenied):
       checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, orgUnitPath)
 
 # gam info orgs|ous <OrgUnitEntity> [nousers|notsuspended|suspended] [children|child]
@@ -17551,7 +17554,7 @@ def _getOrgUnits(cd, orgUnitPath, fieldsList, listType, showParent, batchSubOrgs
                           customerId=GC.Values[GC.CUSTOMER_ID], orgUnitPath=missing_parent, fields=fields)
         orgUnits.append(result)
       except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError,
-              GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
+              GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.permissionDenied):
         pass
   if listType == 'all' and  orgUnitPath == '/':
     printGotAccountEntities(len(orgUnits))
@@ -68281,7 +68284,8 @@ def archiveMessages(users):
         except GAPI.serviceNotAvailable:
           entityServiceNotApplicableWarning(Ent.USER, user, i, count)
           break
-        except (GAPI.badRequest, GAPI.invalid, GAPI.failedPrecondition, GAPI.forbidden) as e:
+        except (GAPI.badRequest, GAPI.invalid, GAPI.failedPrecondition, GAPI.forbidden,
+                googleapiclient.errors.MediaUploadSizeError) as e:
           _processMessageFailed(user, messageId, str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.badRequest):
         entityServiceNotApplicableWarning(Ent.USER, user, i, count)
