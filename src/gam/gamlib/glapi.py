@@ -74,6 +74,7 @@ IAP = 'iap'
 KEEP = 'keep'
 LICENSING = 'licensing'
 LOOKERSTUDIO = 'datastudio'
+MEET = 'meet'
 OAUTH2 = 'oauth2'
 ORGPOLICY = 'orgpolicy'
 PEOPLE = 'people'
@@ -186,6 +187,7 @@ PROJECT_APIS = [
   'iap.googleapis.com',
   'keep.googleapis.com',
   'licensing.googleapis.com',
+  'meet.googleapis.com',
   'people.googleapis.com',
   'pubsub.googleapis.com',
   'reseller.googleapis.com',
@@ -250,6 +252,7 @@ _INFO = {
   KEEP: {'name': 'Keep API', 'version': 'v1', 'v2discovery': True},
   LICENSING: {'name': 'License Manager API', 'version': 'v1', 'v2discovery': True},
   LOOKERSTUDIO: {'name': 'Looker Studio API', 'version': 'v1', 'v2discovery': True, 'localjson': True},
+  MEET: {'name': 'Meet API', 'version': 'v2', 'v2discovery': True},
   OAUTH2: {'name': 'OAuth2 API', 'version': 'v2', 'v2discovery': False},
   ORGPOLICY: {'name': 'Organization Policy API', 'version': 'v2', 'v2discovery': True},
   PEOPLE: {'name': 'People API', 'version': 'v1', 'v2discovery': True},
@@ -652,6 +655,10 @@ _SVCACCT_SCOPES = [
    'api': LOOKERSTUDIO,
    'subscopes': READONLY,
    'scope': 'https://www.googleapis.com/auth/datastudio'},
+  {'name': 'Meet API',
+   'api': MEET,
+   'subscopes': READONLY,
+   'scope': 'https://www.googleapis.com/auth/meetings.space.created'},
   {'name': 'OAuth2 API',
    'api': OAUTH2,
    'subscopes': [],

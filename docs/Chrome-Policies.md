@@ -154,11 +154,12 @@ gam create chromepolicyimage <ChromePolicyImageSchemaName> <FileName>
 ```
 
 ## Update Chrome policy
-You can update a policy for all devices/users within an OU or for a specific printer or application within an OU.
+You can update a policy for all devices/users within an OU, users with a group or for a specific printer or application within an OU.
 ```
 gam update chromepolicy [convertcrnl]
         (<SchemaName> ((<Field> <Value>)+ | <JSONData>))+
-        ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
+        ((ou|orgunit <OrgUnitItem>)|(group <GroupItem>))
+        [(printerid <PrinterID>)|(appid <AppID>)]
 ```
 You update a schema by specifying its name and one or more fields and values or by using
 JSON data to specify the field values. 
@@ -235,31 +236,32 @@ gam update chromepolicy chrome.users.ManagedBookmarksSetting  json file bookmark
 ```
 
 ## Delete Chrome policy
-You can delete a policy for all devices/users within an OU or for a specific printer or application within an OU.
+You can delete a policy for all devices/users within an OU, users with a group  or for a specific printer or application within an OU.
 ```
 gam delete chromepolicy
         (<SchemaName> [<JSONData>])+
-        ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
+        ((ou|orgunit <OrgUnitItem>)|(group <GroupItem>))
+        [(printerid <PrinterID>)|(appid <AppID>)]
 ```
 ## Display Chrome policies
-You can display policies for all devices/users within an OU or for a specific printer or application within an OU.
+You can display policies for all devices/users within an OU, users with a group or for a specific printer or application within an OU.
 
 ### Display as an indented list of keys and values.
 ```
 gam show chromepolicies
-        ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
-        [filter <String>] [namespace <NamespaceList>]
-        [show all|direct|inherited]
+        ((ou|orgunit <OrgUnitItem> [show all|direct|inherited])|(group <GroupItem>))
+        [(printerid <PrinterID>)|(appid <AppID>)]
+        [filter <StringList>] [namespace <NamespaceList>]
         [formatjson]
 ```
-By default, all Chrome policies for the OU are displayed.
+By default, all Chrome policies for the OU or group are displayed.
 * `filter <String>` - Display policies based on fields like its resource name, description and additionalTargetKeyNames.
-* `show all` - Display policies regardless of where set; this is the default
-* `show direct` - Display policies set directly in the OU
-* `show inherited` - Display policies set in a parent OU
+* `show all` - For OUs, display policies regardless of where set; this is the default
+* `show direct` - For OUs, display policies set directly in the OU
+* `show inherited` - For OUs, display policies set in a parent OU
 
 These are the default namespaces; use `namespace <NamespaceList>` to override.
-* `default`
+* `default` - When OU specified
   * chrome.users
   * chrome.users.apps
   * chrome.users.appsconfig
@@ -276,6 +278,12 @@ These are the default namespaces; use `namespace <NamespaceList>` to override.
   * chrome.networks.wifi
   * chrome.printers
   * chrome.printservers
+* `default` - When group specified
+  * chrome.users
+  * chrome.users.apps
+  * chrome.users.appsconfig
+  * chrome.printers
+  * chrome.printservers
 * `appid <AppID>`
   * chrome.users.apps
   * chrome.devices.kiosk.apps
@@ -289,16 +297,16 @@ By default, Gam displays the information as an indented list of keys and values.
 ### Display as a CSV file.
 ```
 gam print chromepolicies [todrive <ToDriveAttribute>*]
-        ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
+        ((ou|orgunit <OrgUnitItem> [show all|direct|inherited])|(group <GroupItem>))
+        [(printerid <PrinterID>)|(appid <AppID>)]
         [filter <String>] [namespace <NamespaceList>]
-        [show all|direct|inherited]
         [[formatjson [quotechar <Character>]]
 ```
-By default, all Chrome policies for the OU are displayed.
+By default, all Chrome policies for the OU or group are displayed.
 * `filter <String>` - Display policies based on fields like its resource name, description and additionalTargetKeyNames.
-* `show all` - Display policies regardless of where set; this is the default
-* `show direct` - Display policies set directly in the OU
-* `show inherited` - Display policies set in a parent OU
+* `show all` - For OUs, display policies regardless of where set; this is the default
+* `show direct` - For OUs, display policies set directly in the OU
+* `show inherited` - For OUs, display policies set in a parent OU
 
 These are the default namespaces; use `namespace <NamespaceList>` to override.
 * `default`
@@ -516,6 +524,11 @@ chrome.devices.ContentProtection: Allow web services to request proof that the d
     true: Ensures ChromeOS devices in your organization will verify their identity to content providers.
     false: Does not ensure ChromeOS devices in your organization will verify their identity to content providers. Some premium content may be unavailable to your users.
 
+chrome.devices.DeviceAllowEnterpriseRemoteAccessConnections: Enterprise remote access connections.
+  deviceAllowEnterpriseRemoteAccessConnections: TYPE_BOOL
+    true: Enable remote access connections from enterprise admins.
+    false: Prevent remote access connections from enterprise admins.
+
 chrome.devices.DeviceAuthenticationUrlAllowlist: Blocked URL exceptions on the sign-in / lock screens.
   deviceAuthenticationUrlAllowlist: TYPE_LIST
     Blocked URL exceptions. Any URL that matches an entry in this exception list will be allowed, even if it matches a line in the blocked URLs. Wildcards ("*") are allowed when appended to a URL, but cannot be entered alone. Maximum of 1000 URLs.
@@ -614,11 +627,6 @@ chrome.devices.DeviceLoginScreenExtensionManifestVTwoAvailability: Manifest v2 e
     ENABLE: Enable manifest V2 extensions on the sign-in screen.
     ENABLE_FOR_FORCED_EXTENSIONS: Enable force-installed manifest V2 extensions on the sign-in screen.
 
-chrome.devices.DeviceLoginScreenGeolocationAccessLevel: Geolocation on the login screen.
-  deviceLoginScreenGeolocationAccessLevel: TYPE_ENUM
-    DISALLOWED: Do not allow geolocation access on log-in screen.
-    ALLOWED: Allow geolocation access on log-in screen.
-
 chrome.devices.DeviceLoginScreenPrivacyScreenEnabled: Privacy screen on sign-in screen.
   deviceLoginScreenPrivacyScreenEnabled: TYPE_ENUM
     UNSET: Allow the user to decide.
@@ -655,6 +663,12 @@ chrome.devices.DevicePciPeripheralDataAccessEnabled: Data access protection for 
     UNSET: Allow the user to decide.
     FALSE: Enable data access protection.
     TRUE: Disable data access protection.
+
+chrome.devices.DevicePostQuantumKeyAgreementEnabled: Post-quantum TLS.
+  devicePostQuantumKeyAgreementEnabled: TYPE_ENUM
+    UNSET: Use the default Chrome setting.
+    FALSE: Do not allow post-quantum key agreement in TLS connections.
+    TRUE: Allow post-quantum key agreement in TLS connections.
 
 chrome.devices.DevicePowerwashAllowed: Powerwash.
   devicePowerwashAllowed: TYPE_BOOL
@@ -1032,6 +1046,12 @@ chrome.devices.kiosk.CursorHighlightEnabled: Kiosk cursor highlight.
     DEFAULT_USER_CHOICE: Allow the user to decide.
     ACCESSIBILITY_DISABLED: Disable cursor highlight.
     ACCESSIBILITY_ENABLED: Enable cursor highlight.
+
+chrome.devices.kiosk.DeviceWeeklyScheduledSuspend: Device sleep mode.
+  hours: TYPE_INT32
+  minutes: TYPE_INT32
+  seconds: TYPE_INT32
+  nanos: TYPE_INT32
 
 chrome.devices.kiosk.DictationEnabled: Kiosk dictation.
   dictationEnabled: TYPE_ENUM
@@ -1415,11 +1435,14 @@ chrome.devices.managedguest.apps.PermissionsAndUrlAccess: Allows setting of allo
   blockedPermissions: TYPE_LIST
     {'value': '', 'description': 'Allow all permissions. If empty string is set, it must be the only value set for the policy.'}
   allowedPermissions: TYPE_LIST
-    {'value': 'alarms', 'description': 'Alarms.'}
+    {'value': 'activeTab', 'description': 'Active tab.'}
   blockedHosts: TYPE_LIST
     Sets extension hosts that should be blocked.
   allowedHosts: TYPE_LIST
     Sets extension hosts that should be allowed. Allowed hosts override blocked hosts.
+
+chrome.devices.managedguest.apps.SkipDocumentScanConfirmation: Allows the app to skip the confirmation dialog when using the Document Scan API.
+  skipDocumentScanConfirmation: TYPE_BOOL
 
 chrome.devices.managedguest.apps.SkipPrintConfirmation: Allows the app to skip the confirmation dialog when sending print jobs via the Chrome Printing API.
   skipPrintConfirmation: TYPE_BOOL
@@ -1564,6 +1587,11 @@ chrome.devices.managedguest.CpuTaskScheduler: CPU task scheduler.
     CONSERVATIVE: Optimize for stability.
     PERFORMANCE: Optimize for performance.
 
+chrome.devices.managedguest.CssCustomStateDeprecatedSyntaxEnabled: CSS custom state deprecated syntax.
+  cssCustomStateDeprecatedSyntaxEnabled: TYPE_BOOL
+    true: Allow deprecated syntax.
+    false: Do not allow deprecated syntax.
+
 chrome.devices.managedguest.CursorHighlightEnabled: Cursor highlight.
   cursorHighlightEnabled: TYPE_ENUM
     UNSET: Allow the user to decide.
@@ -1628,9 +1656,6 @@ chrome.devices.managedguest.DeleteKeyModifier: Control the shortcut used to trig
     NONE: Setting a shortcut for the "Delete" action is disabled.
     ALT: Delete shortcut setting uses the shortcut that contains the alt modifier.
     SEARCH: Delete shortcut setting uses the shortcut that contains the search modifier.
-  deleteKeyModifierSettingGroupPolicyMode: TYPE_ENUM
-    MANDATORY: Do not allow users to override.
-    RECOMMENDED: Allow users to override.
 
 chrome.devices.managedguest.DeletePrintJobHistoryAllowed: Print job history deletion.
   deletePrintJobHistoryAllowed: TYPE_BOOL
@@ -1642,6 +1667,10 @@ chrome.devices.managedguest.DeveloperTools: Developer tools.
     ALWAYS_ALLOW_DEVELOPER_TOOLS: Always allow use of built-in developer tools.
     ALLOW_DEVELOPER_TOOLS_EXCEPT_FORCE_INSTALLED: Allow use of built-in developer tools except for force-installed extensions and component extensions.
     NEVER_ALLOW_DEVELOPER_TOOLS: Never allow use of built-in developer tools.
+  extensionDeveloperModeSettings: TYPE_ENUM
+    UNSET: Use 'developer tools availability' selection.
+    ALLOW: Allow use of developer tools on extensions page.
+    DISALLOW: Do not allow use of developer tools on extensions page.
 
 chrome.devices.managedguest.DeviceAllowMgsToStoreDisplayProperties: Persist display settings.
   deviceAllowMgsToStoreDisplayProperties: TYPE_BOOL
@@ -1728,10 +1757,10 @@ chrome.devices.managedguest.EncryptedClientHelloEnabled: TLS encrypted ClientHel
     true: Enable the TLS Encrypted ClientHello experiment.
     false: Disable the TLS Encrypted ClientHello experiment.
 
-chrome.devices.managedguest.EnhancedNetworkVoicesInSelectToSpeakAllowed: Allow the enhanced network text-to-speech voices in Select-to-speak.
+chrome.devices.managedguest.EnhancedNetworkVoicesInSelectToSpeakAllowed: Select-to-speak.
   enhancedNetworkVoicesInSelectToSpeakAllowed: TYPE_BOOL
-    true: Allow the user to decide.
-    false: Disallow enhanced network text-to-speech voices when using Select-to-Speak.
+    true: Allow sending text to Google servers for enhanced Select-to-speak.
+    false: Do not allow sending text to Google servers for enhanced Select-to-speak.
 
 chrome.devices.managedguest.EnterpriseHardwarePlatformApiEnabled: Enterprise Hardware Platform API.
   enterpriseHardwarePlatformApiEnabled: TYPE_BOOL
@@ -1782,9 +1811,6 @@ chrome.devices.managedguest.FElevenKeyModifier: Control the shortcut used to tri
     ALT: F11 settings use the shortcut that contains the alt modifier.
     SHIFT: F11 settings use the shortcut that contains the shift modifier.
     CTRL_SHIFT: F11 settings use the shortcut that contains the modifiers ctrl and shift.
-  fElevenKeyModifierSettingGroupPolicyMode: TYPE_ENUM
-    MANDATORY: Do not allow users to override.
-    RECOMMENDED: Allow users to override.
 
 chrome.devices.managedguest.FileOrDirectoryPickerWithoutGestureAllowedForOrigins: File/directory picker without user gesture.
   fileOrDirectoryPickerWithoutGestureAllowedForOrigins: TYPE_LIST
@@ -1843,9 +1869,6 @@ chrome.devices.managedguest.FTwelveKeyModifier: Control the shortcut used to tri
     SHIFT: F12 settings use the shortcut that contains the shift modifier.
     CTRL_SHIFT: F12 settings use the shortcut that contains the modifiers ctrl and shift.
     UNSET: Allow the user to decide.
-  fTwelveKeyModifierSettingGroupPolicyMode: TYPE_ENUM
-    MANDATORY: Do not allow users to override.
-    RECOMMENDED: Allow users to override.
 
 chrome.devices.managedguest.FullscreenAllowed: Fullscreen mode.
   fullscreenAllowed: TYPE_BOOL
@@ -1891,9 +1914,6 @@ chrome.devices.managedguest.HomeAndEndKeysModifier: Control the shortcut used to
     NONE: Home/End settings are disabled.
     ALT: Home/End settings use the shortcut that contains the alt modifier.
     SEARCH: Home/End settings use the shortcut that contains the search modifier.
-  homeAndEndKeysModifierSettingGroupPolicyMode: TYPE_ENUM
-    MANDATORY: Do not allow users to override.
-    RECOMMENDED: Allow users to override.
 
 chrome.devices.managedguest.HomeButton: Home button.
   showHomeButton: TYPE_ENUM
@@ -1912,20 +1932,6 @@ chrome.devices.managedguest.Homepage: Homepage.
 chrome.devices.managedguest.HstsPolicyBypassList: HSTS policy bypass list.
   hstsPolicyBypassList: TYPE_LIST
     List of hostnames that will bypass the HSTS policy check . Enter a list of hostnames that will be exempt from the HSTS policy check.
-
-chrome.devices.managedguest.IdleSettings: Idle settings.
-  mgsActionOnDeviceIdle: TYPE_ENUM
-    SLEEP: Sleep.
-    LOGOUT: Logout.
-    SHUTDOWN: Shutdown.
-    DO_NOTHING: Do nothing.
-  mgsIdleTimeoutMinutes: TYPE_STRING
-    Idle time in minutes. Leave empty for system default.
-  mgsActionOnLidClose: TYPE_ENUM
-    SLEEP: Sleep.
-    LOGOUT: Logout.
-    SHUTDOWN: Shutdown.
-    DO_NOTHING: Do nothing.
 
 chrome.devices.managedguest.IdleSettingsExtended: Idle settings.
   lidCloseAction: TYPE_ENUM
@@ -1985,9 +1991,6 @@ chrome.devices.managedguest.InsertKeyModifier: Control the shortcut used to trig
   insertKeyModifier: TYPE_ENUM
     NONE: Setting a shortcut for the "Insert" action is disabled.
     SEARCH: Insert shortcut setting uses the shortcut that contains the search modifier.
-  insertKeyModifierSettingGroupPolicyMode: TYPE_ENUM
-    MANDATORY: Do not allow users to override.
-    RECOMMENDED: Allow users to override.
 
 chrome.devices.managedguest.IntensiveWakeUpThrottlingEnabled: Javascript IntensiveWakeUpThrottling.
   intensiveWakeUpThrottlingEnabled: TYPE_ENUM
@@ -2031,6 +2034,11 @@ chrome.devices.managedguest.KerberosTickets: Kerberos tickets.
     true: Enable kerberos.
     false: Disable kerberos.
 
+chrome.devices.managedguest.KeyboardFocusableScrollersEnabled: Keyboard focusable scrollers.
+  keyboardFocusableScrollersEnabled: TYPE_BOOL
+    true: Allow scrollers to be focusable by default.
+    false: Do not allow scrollers to be focusable by default.
+
 chrome.devices.managedguest.KeyboardFocusHighlightEnabled: Keyboard focus highlighting.
   keyboardFocusHighlightEnabled: TYPE_ENUM
     UNSET: Allow the user to decide.
@@ -2052,6 +2060,14 @@ chrome.devices.managedguest.LensDesktopNtpSearchEnabled: New Tab page Google Len
   lensDesktopNtpSearchEnabled: TYPE_BOOL
     true: Show the Google Lens button in the search box on the New Tab page.
     false: Do not show the Google Lens button in the search box on the New Tab page.
+
+chrome.devices.managedguest.LensOnGalleryEnabled: Lens Gallery App integration.
+  lensOnGalleryEnabled: TYPE_BOOL
+    true: Enable Lens integration.
+    false: Disable Lens integration.
+  lensOnGalleryEnabledSettingGroupPolicyMode: TYPE_ENUM
+    MANDATORY: Do not allow users to override.
+    RECOMMENDED: Allow users to override.
 
 chrome.devices.managedguest.LensRegionSearchEnabled: Google Lens region search.
   lensRegionSearchEnabled: TYPE_BOOL
@@ -2200,9 +2216,6 @@ chrome.devices.managedguest.PageUpAndPageDownKeysModifier: Control the shortcut 
     NONE: PageUp/PageDown settings are disabled.
     ALT: PageUp/PageDown settings use the shortcut that contains the alt modifier.
     SEARCH: PageUp/PageDown settings use the shortcut that contains the search modifier.
-  pageUpAndPageDownKeysModifierSettingGroupPolicyMode: TYPE_ENUM
-    MANDATORY: Do not allow users to override.
-    RECOMMENDED: Allow users to override.
 
 chrome.devices.managedguest.PaymentMethodQueryEnabled: Payment methods.
   paymentMethodQueryEnabled: TYPE_BOOL
@@ -2242,8 +2255,8 @@ chrome.devices.managedguest.Popups: Pop-ups.
 chrome.devices.managedguest.PostQuantumKeyAgreementEnabled: Post-quantum TLS.
   postQuantumKeyAgreementEnabled: TYPE_ENUM
     UNSET: Use the default Chrome setting.
-    FALSE: Do not allow Kyber key agreement for TLS.
-    TRUE: Allow Kyber key agreement for TLS.
+    FALSE: Do not allow post-quantum key agreement in TLS connections.
+    TRUE: Allow post-quantum key agreement in TLS connections.
 
 chrome.devices.managedguest.PpapiSharedImagesForVideoDecoderAllowed: Allow Pepper to use shared images for video decoding.
   ppapiSharedImagesForVideoDecoderAllowed: TYPE_BOOL
@@ -2352,6 +2365,11 @@ chrome.devices.managedguest.PromptForDownloadLocation: Download location prompt.
     UNSET: Allow the user to decide.
     FALSE: Do not ask the user (downloads start immediately).
     TRUE: Ask the user where to save the file before downloading.
+
+chrome.devices.managedguest.QrCodeGeneratorEnabled: QR Code Generator.
+  qrCodeGeneratorEnabled: TYPE_BOOL
+    true: Enable QR Code Generator.
+    false: Disable QR Code Generator.
 
 chrome.devices.managedguest.QuickAnswersEnabled: Quick Answers.
   quickAnswersEnabled: TYPE_BOOL
@@ -2612,6 +2630,7 @@ chrome.devices.managedguest.SimpleProxySettings: Proxy mode.
   simpleProxyMode: TYPE_ENUM
     USER_CONFIGURED: Allow user to configure.
     DIRECT: Never use a proxy.
+    SYSTEM: Use system proxy settings.
     AUTO_DETECT: Always auto detect the proxy.
     FIXED_SERVERS: Always use the proxy specified in 'simpleProxyServerUrl'.
     PAC_SCRIPT: Always use the proxy auto-config specified in 'simpleProxyPacUrl'.
@@ -2659,6 +2678,11 @@ chrome.devices.managedguest.SslVersionMin: Minimum SSL version enabled.
     TL_SV_1_1: TLS 1.1.
     TL_SV_1_2: TLS 1.2.
     SSL_V_3: SSL3.
+
+chrome.devices.managedguest.StandardizedBrowserZoomEnabled: Zoom Behavior.
+  standardizedBrowserZoomEnabled: TYPE_BOOL
+    true: Standard CSS zoom.
+    false: Legacy CSS zoom.
 
 chrome.devices.managedguest.StartupBrowserLaunch: Browser launch on startup.
   startupBrowserWindowLaunchSuppressed: TYPE_BOOL
@@ -2714,6 +2738,12 @@ chrome.devices.managedguest.SystemFeaturesDisableMode: Disabled system features 
   systemFeaturesDisableMode: TYPE_ENUM
     BLOCKED: Show disabled app icons.
     HIDDEN: Hide app icons.
+
+chrome.devices.managedguest.SystemShortcutBehavior: Override system shortcuts.
+  systemShortcutBehavior: TYPE_ENUM
+    DEFAULT: Do not override system shortcuts.
+    SHOULD_IGNORE_COMMON_VDI_SHORTCUTS: Override some system shortcuts.
+    SHOULD_IGNORE_COMMON_VDI_SHORTCUTS_FULLSCREEN_ONLY: Override some system shortcuts while in fullscreen.
 
 chrome.devices.managedguest.TabDiscardingExceptions: Exceptions to tab discarding.
   tabDiscardingExceptions: TYPE_LIST
@@ -3529,11 +3559,14 @@ chrome.users.apps.PermissionsAndUrlAccess: Allows setting of allowed and blocked
   blockedPermissions: TYPE_LIST
     {'value': '', 'description': 'Allow all permissions. If empty string is set, it must be the only value set for the policy.'}
   allowedPermissions: TYPE_LIST
-    {'value': 'alarms', 'description': 'Alarms.'}
+    {'value': 'activeTab', 'description': 'Active tab.'}
   blockedHosts: TYPE_LIST
     Sets extension hosts that should be blocked.
   allowedHosts: TYPE_LIST
     Sets extension hosts that should be allowed. Allowed hosts override blocked hosts.
+
+chrome.users.apps.SkipDocumentScanConfirmation: Allows the app to skip the confirmation dialog when using the Document Scan API.
+  skipDocumentScanConfirmation: TYPE_BOOL
 
 chrome.users.apps.SkipPrintConfirmation: Allows the app to skip the confirmation dialog when sending print jobs via the Chrome Printing API.
   skipPrintConfirmation: TYPE_BOOL
@@ -3565,7 +3598,7 @@ chrome.users.appsconfig.AppExtensionInstallSources: App and extension install so
 
 chrome.users.appsconfig.BlockExtensionsByPermission: Permissions and URLs.
   extensionBlockedPermissions: TYPE_LIST
-    {'value': 'alarms', 'description': 'Alarms.'}
+    {'value': 'activeTab', 'description': 'Active tab.'}
   runtimeBlockedHosts: TYPE_LIST
     Runtime blocked hosts. This is a list of patterns for matching against hostnames. URLs that match one of these patterns cannot be modified by apps and extensions. This includes injecting Javascript, altering and viewing webRequests / webNavigation, viewing and altering cookies, exceptions to the same-origin policy, etc. The format is similar to full URL patterns except no paths may be defined. e.g. "*://*.example.com". Maximum of 100 URLs.
   runtimeAllowedHosts: TYPE_LIST
@@ -4146,6 +4179,11 @@ chrome.users.CrossOriginWebAssemblyModuleSharingEnabled: Allow WebAssembly cross
     true: Allow WebAssembly modules to be sent cross-origin.
     false: Prevent WebAssembly modules to be sent cross-origin.
 
+chrome.users.CssCustomStateDeprecatedSyntaxEnabled: CSS custom state deprecated syntax.
+  cssCustomStateDeprecatedSyntaxEnabled: TYPE_BOOL
+    true: Allow deprecated syntax.
+    false: Do not allow deprecated syntax.
+
 chrome.users.CursorHighlightEnabled: Cursor highlight.
   cursorHighlightEnabled: TYPE_ENUM
     UNSET: Allow the user to decide.
@@ -4219,14 +4257,16 @@ chrome.users.DeleteKeyModifier: Control the shortcut used to trigger the Delete 
     NONE: Setting a shortcut for the "Delete" action is disabled.
     ALT: Delete shortcut setting uses the shortcut that contains the alt modifier.
     SEARCH: Delete shortcut setting uses the shortcut that contains the search modifier.
-  deleteKeyModifierSettingGroupPolicyMode: TYPE_ENUM
-    MANDATORY: Do not allow users to override.
-    RECOMMENDED: Allow users to override.
 
 chrome.users.DeletePrintJobHistoryAllowed: Print job history deletion.
   deletePrintJobHistoryAllowed: TYPE_BOOL
     true: Allow print job history to be deleted.
     false: Do not allow print job history to be deleted.
+
+chrome.users.DeletingUndecryptablePasswordsEnabled: Delete undecryptable passwords.
+  deletingUndecryptablePasswordsEnabled: TYPE_BOOL
+    true: Enable deleting undecryptable passwords.
+    false: Disable deleting undecryptable passwords.
 
 chrome.users.DeskApi: Desk API for third-party ChromeOS desk control.
   deskApiThirdPartyAccessEnabled: TYPE_BOOL
@@ -4245,6 +4285,10 @@ chrome.users.DeveloperTools: Developer tools.
     ALWAYS_ALLOW_DEVELOPER_TOOLS: Always allow use of built-in developer tools.
     ALLOW_DEVELOPER_TOOLS_EXCEPT_FORCE_INSTALLED: Allow use of built-in developer tools except for force-installed extensions and component extensions.
     NEVER_ALLOW_DEVELOPER_TOOLS: Never allow use of built-in developer tools.
+  extensionDeveloperModeSettings: TYPE_ENUM
+    UNSET: Use 'developer tools availability' selection.
+    ALLOW: Allow use of developer tools on extensions page.
+    DISALLOW: Do not allow use of developer tools on extensions page.
 
 chrome.users.DeviceEnrollment: Device enrollment.
   autoDevicePlacementEnabled: TYPE_BOOL
@@ -4341,6 +4385,11 @@ chrome.users.DriveFileSyncAvailable: ChromeOS file sync.
   driveFileSyncAvailable: TYPE_ENUM
     DISABLED: Do not show the ChromeOS file sync feature.
     VISIBLE: Show the ChromeOS file sync feature.
+
+chrome.users.DynamicCodeSettings: Dynamic Code.
+  dynamicCodeSettings: TYPE_ENUM
+    DEFAULT: Use the default Chrome setting.
+    DISABLED_FOR_BROWSER: Do not create dynamic code.
 
 chrome.users.EcheAllowed: App Streaming.
   echeAllowed: TYPE_BOOL
@@ -4443,9 +4492,6 @@ chrome.users.FElevenKeyModifier: Control the shortcut used to trigger F11.
     ALT: F11 settings use the shortcut that contains the alt modifier.
     SHIFT: F11 settings use the shortcut that contains the shift modifier.
     CTRL_SHIFT: F11 settings use the shortcut that contains the modifiers ctrl and shift.
-  fElevenKeyModifierSettingGroupPolicyMode: TYPE_ENUM
-    MANDATORY: Do not allow users to override.
-    RECOMMENDED: Allow users to override.
 
 chrome.users.FetchKeepaliveDurationSecondsOnShutdown: Keepalive duration.
   duration: TYPE_STRING
@@ -4524,9 +4570,6 @@ chrome.users.FTwelveKeyModifier: Control the shortcut used to trigger F12.
     SHIFT: F12 settings use the shortcut that contains the shift modifier.
     CTRL_SHIFT: F12 settings use the shortcut that contains the modifiers ctrl and shift.
     UNSET: Allow the user to decide.
-  fTwelveKeyModifierSettingGroupPolicyMode: TYPE_ENUM
-    MANDATORY: Do not allow users to override.
-    RECOMMENDED: Allow users to override.
 
 chrome.users.FullscreenAlertEnabled: Fullscreen alert.
   fullscreenAlertEnabled: TYPE_BOOL
@@ -4594,8 +4637,8 @@ chrome.users.GssapiLibraryName: GSSAPI library name.
 
 chrome.users.HardwareAccelerationModeEnabled: GPU.
   hardwareAccelerationModeEnabled: TYPE_BOOL
-    true: Enable hardware acceleration.
-    false: Disable hardware acceleration.
+    true: Enable graphics acceleration.
+    false: Disable graphics acceleration.
 
 chrome.users.HelpMeWriteSettings: Help me write.
   helpMeWriteSettings: TYPE_ENUM
@@ -4615,14 +4658,17 @@ chrome.users.HighEfficiencyModeEnabled: High efficiency mode.
     FALSE: Disable high efficiency mode.
     TRUE: Enable high efficiency mode.
 
+chrome.users.HistorySearchSettings: History search settings.
+  historySearchSettings: TYPE_ENUM
+    ALLOWED: Allow using AI-powered history search.
+    ALLOWED_WITHOUT_LOGGING: Allow using AI-powered history search without data collection.
+    DISABLED: Fully disable AI-powered history search.
+
 chrome.users.HomeAndEndKeysModifier: Control the shortcut used to trigger the Home/End "six pack" keys.
   homeAndEndKeysModifier: TYPE_ENUM
     NONE: Home/End settings are disabled.
     ALT: Home/End settings use the shortcut that contains the alt modifier.
     SEARCH: Home/End settings use the shortcut that contains the search modifier.
-  homeAndEndKeysModifierSettingGroupPolicyMode: TYPE_ENUM
-    MANDATORY: Do not allow users to override.
-    RECOMMENDED: Allow users to override.
 
 chrome.users.HomeButton: Home button.
   showHomeButton: TYPE_ENUM
@@ -4656,21 +4702,6 @@ chrome.users.HttpsUpgradesEnabled: Automatic HTTPS upgrades.
   httpsUpgradesEnabled: TYPE_BOOL
     true: Allow HTTPS upgrades.
     false: Do not allow HTTPS upgrades.
-
-chrome.users.IdleSettings: Idle settings.
-  idleTimeoutMinutes: TYPE_STRING
-    Idle time in minutes. Leave empty for system default.
-  actionOnDeviceIdle: TYPE_ENUM
-    SLEEP: Sleep.
-    LOGOUT: Logout.
-    LOCK: Lock Screen.
-  actionOnLidClose: TYPE_ENUM
-    SLEEP: Sleep.
-    LOGOUT: Logout.
-  lockOnSleep: TYPE_ENUM
-    UNSET: Allow the user to decide.
-    FALSE: Don't lock screen.
-    TRUE: Lock screen.
 
 chrome.users.IdleSettingsExtended: Idle settings.
   lidCloseAction: TYPE_ENUM
@@ -4780,9 +4811,6 @@ chrome.users.InsertKeyModifier: Control the shortcut used to trigger the Insert 
   insertKeyModifier: TYPE_ENUM
     NONE: Setting a shortcut for the "Insert" action is disabled.
     SEARCH: Insert shortcut setting uses the shortcut that contains the search modifier.
-  insertKeyModifierSettingGroupPolicyMode: TYPE_ENUM
-    MANDATORY: Do not allow users to override.
-    RECOMMENDED: Allow users to override.
 
 chrome.users.IntegratedWebAuthenticationAllowed: Login credentials for network authentication.
   integratedWebAuthenticationAllowed: TYPE_BOOL
@@ -4881,6 +4909,11 @@ chrome.users.KerberosTickets: Kerberos tickets.
     true: Customize Kerberos configuration.
     false: Use default Kerberos configuration.
 
+chrome.users.KeyboardFocusableScrollersEnabled: Keyboard focusable scrollers.
+  keyboardFocusableScrollersEnabled: TYPE_BOOL
+    true: Allow scrollers to be focusable by default.
+    false: Do not allow scrollers to be focusable by default.
+
 chrome.users.KeyboardFocusHighlightEnabled: Keyboard focus highlighting.
   keyboardFocusHighlightEnabled: TYPE_ENUM
     UNSET: Allow the user to decide.
@@ -4918,6 +4951,14 @@ chrome.users.LensDesktopNtpSearchEnabled: New Tab page Google Lens button.
     true: Show the Google Lens button in the search box on the New Tab page.
     false: Do not show the Google Lens button in the search box on the New Tab page.
 
+chrome.users.LensOnGalleryEnabled: Lens Gallery App integration.
+  lensOnGalleryEnabled: TYPE_BOOL
+    true: Enable Lens integration.
+    false: Disable Lens integration.
+  lensOnGalleryEnabledSettingGroupPolicyMode: TYPE_ENUM
+    MANDATORY: Do not allow users to override.
+    RECOMMENDED: Allow users to override.
+
 chrome.users.LensRegionSearchEnabled: Google Lens region search.
   lensRegionSearchEnabled: TYPE_BOOL
     true: Enable Google Lens region search.
@@ -4942,6 +4983,11 @@ chrome.users.LockScreen: Lock screen.
   allowScreenLock: TYPE_BOOL
     true: Allow locking screen.
     false: Do not allow locking screen.
+
+chrome.users.LockScreenAutoStartOnlineReauth: Lock screen online reauthentication.
+  lockScreenAutoStartOnlineReauth: TYPE_BOOL
+    true: Show users the online reauthentication screen.
+    false: Show users interstitial screens prior to online reauthentication.
 
 chrome.users.LockScreenMediaPlaybackEnabled: Lock screen media playback.
   lockScreenMediaPlaybackEnabled: TYPE_BOOL
@@ -4972,7 +5018,7 @@ chrome.users.ManagedBookmarksSetting: Managed bookmarks.
 
 chrome.users.MaxConnectionsPerProxy: Max connections per proxy.
   maxConnectionsPerProxy: TYPE_INT64
-    Maximium number of concurrent connections to the proxy server. Specifies the maximal number of simultaneous connections to the proxy server. The value of this policy should be lower than 100 and higher than 6 and the default value is 32.
+    Maximum number of concurrent connections to the proxy server. Specifies the maximal number of simultaneous connections to the proxy server. The value of this policy should be lower than 100 and higher than 6 and the default value is 32.
 
 chrome.users.MaxInvalidationFetchDelay: Policy fetch delay.
   duration: TYPE_STRING
@@ -5166,9 +5212,6 @@ chrome.users.PageUpAndPageDownKeysModifier: Control the shortcut used to trigger
     NONE: PageUp/PageDown settings are disabled.
     ALT: PageUp/PageDown settings use the shortcut that contains the alt modifier.
     SEARCH: PageUp/PageDown settings use the shortcut that contains the search modifier.
-  pageUpAndPageDownKeysModifierSettingGroupPolicyMode: TYPE_ENUM
-    MANDATORY: Do not allow users to override.
-    RECOMMENDED: Allow users to override.
 
 chrome.users.ParcelTrackingEnabled: Parcel tracking.
   parcelTrackingEnabled: TYPE_BOOL
@@ -5221,6 +5264,11 @@ chrome.users.PdfUseSkiaRendererEnabled: Renderer for PDF files.
     UNSET: Use the default Chrome setting.
     FALSE: Use AGG renderer for PDF files.
     TRUE: Use Skia renderer for PDF files.
+
+chrome.users.PdfViewerOutOfProcessIframeEnabled: PDF viewer.
+  pdfViewerOutOfProcessIframeEnabled: TYPE_BOOL
+    true: PDF viewer uses out-of-process iframe.
+    false: PDF viewer uses guest view.
 
 chrome.users.PersistentQuotaEnabled: Persistent quota for webkitRequestFileSystem.
   persistentQuotaEnabled: TYPE_BOOL
@@ -5298,8 +5346,8 @@ chrome.users.Popups: Pop-ups.
 chrome.users.PostQuantumKeyAgreementEnabled: Post-quantum TLS.
   postQuantumKeyAgreementEnabled: TYPE_ENUM
     UNSET: Use the default Chrome setting.
-    FALSE: Do not allow Kyber key agreement for TLS.
-    TRUE: Allow Kyber key agreement for TLS.
+    FALSE: Do not allow post-quantum key agreement in TLS connections.
+    TRUE: Allow post-quantum key agreement in TLS connections.
 
 chrome.users.PpapiSharedImagesForVideoDecoderAllowed: Allow Pepper to use shared images for video decoding.
   ppapiSharedImagesForVideoDecoderAllowed: TYPE_BOOL
@@ -5354,6 +5402,11 @@ chrome.users.PrintingBackgroundGraphicsDefault: Background graphics printing def
   printingBackgroundGraphicsDefault: TYPE_ENUM
     DISABLED: Disable background graphics printing mode by default.
     ENABLED: Enable background graphics printing mode by default.
+
+chrome.users.PrintingLpacSandboxEnabled: Printing LPAC Sandbox.
+  printingLpacSandboxEnabled: TYPE_BOOL
+    true: Run printing services in LPAC sandbox when available.
+    false: Run printing services in a less secure sandbox.
 
 chrome.users.PrintingMaxSheetsAllowed: Maximum sheets.
   value: TYPE_INT64
@@ -5468,6 +5521,11 @@ chrome.users.PromptOnMultipleMatchingCertificates: Prompt when multiple certific
   promptOnMultipleMatchingCertificates: TYPE_BOOL
     true: Prompt the user to select the client certificate whenever the auto-selection policy matches multiple certificates.
     false: Only prompt the user when no certificate matches the auto-selection.
+
+chrome.users.QrCodeGeneratorEnabled: QR Code Generator.
+  qrCodeGeneratorEnabled: TYPE_BOOL
+    true: Enable QR Code Generator.
+    false: Disable QR Code Generator.
 
 chrome.users.QuickAnswersEnabled: Quick Answers.
   quickAnswersEnabled: TYPE_BOOL
@@ -5813,7 +5871,7 @@ chrome.users.ShowCastSessionsStartedByOtherDevices: Show media controls for Goog
     FALSE: Do not show media controls for Google Cast sessions started by other devices.
     TRUE: Show media controls for Google Cast sessions started by other devices.
 
-chrome.users.ShowDisplaySizeScreenEnabled: Controls whether display size setting screen is displayed during sign-in.
+chrome.users.ShowDisplaySizeScreenEnabled: Display size setting during sign-in.
   showDisplaySizeScreenEnabled: TYPE_ENUM
     UNSET: Use the default Chrome setting.
     FALSE: Do not display the display size setting screen during sign-in.
@@ -5830,7 +5888,7 @@ chrome.users.ShowLogoutButton: Show sign-out button in tray.
     true: Show sign-out button in tray.
     false: Do not show sign-out button in tray.
 
-chrome.users.ShowTouchpadScrollScreenEnabled: Controls whether touchpad scroll direction screen is displayed during sign-in.
+chrome.users.ShowTouchpadScrollScreenEnabled: Touchpad scroll setting during sign-in.
   showTouchpadScrollScreenEnabled: TYPE_BOOL
     true: Display the touchpad scroll direction screen during sign-in.
     false: Do not display the touchpad scroll direction screen during sign-in.
@@ -5854,6 +5912,7 @@ chrome.users.SimpleProxySettings: Proxy mode.
   simpleProxyMode: TYPE_ENUM
     USER_CONFIGURED: Allow user to configure.
     DIRECT: Never use a proxy.
+    SYSTEM: Use system proxy settings.
     AUTO_DETECT: Always auto detect the proxy.
     FIXED_SERVERS: Always use the proxy specified in 'simpleProxyServerUrl'.
     PAC_SCRIPT: Always use the proxy auto-config specified in 'simpleProxyPacUrl'.
@@ -5945,6 +6004,11 @@ chrome.users.SslVersionMin: Minimum SSL version enabled.
     TL_SV_1_2: TLS 1.2.
     SSL_V_3: SSL3.
 
+chrome.users.StandardizedBrowserZoomEnabled: Zoom Behavior.
+  standardizedBrowserZoomEnabled: TYPE_BOOL
+    true: Standard CSS zoom.
+    false: Legacy CSS zoom.
+
 chrome.users.StartupPages: Pages to load on startup.
   restoreOnStartupUrls: TYPE_LIST
     Startup pages. Example: https://example.com.
@@ -5992,6 +6056,9 @@ chrome.users.SyncSettingsCbcm: Chrome Sync and Roaming Profiles (Chrome Browser 
     {'value': 'browsing_history', 'description': 'Browsing history.'}
   roamingProfileLocationCbcm: TYPE_STRING
     Roaming profile directory. Configures the directory that Google Chrome will use for storing the roaming copy of the profiles.
+  profileReauthPrompt: TYPE_ENUM
+    DO_NOT_PROMPT: Do not prompt for re-authentication after authentication expiration.
+    PROMPT_IN_TAB: Prompt for re-authentication in a tab after authentication expiration.
 
 chrome.users.SyncSettingsCros: Chrome Sync (ChromeOS).
   syncDisabledCros: TYPE_BOOL
@@ -6005,6 +6072,12 @@ chrome.users.SyncSettingsCros: Chrome Sync (ChromeOS).
 chrome.users.SystemFeaturesDisableList: Disabled system features.
   systemFeaturesDisableList: TYPE_LIST
     {'value': 'camera', 'description': 'Camera.'}
+
+chrome.users.SystemShortcutBehavior: Override system shortcuts.
+  systemShortcutBehavior: TYPE_ENUM
+    DEFAULT: Do not override system shortcuts.
+    SHOULD_IGNORE_COMMON_VDI_SHORTCUTS: Override some system shortcuts.
+    SHOULD_IGNORE_COMMON_VDI_SHORTCUTS_FULLSCREEN_ONLY: Override some system shortcuts while in fullscreen.
 
 chrome.users.SystemTerminalSshAllowed: SSH in terminal system app.
   systemTerminalSshAllowed: TYPE_ENUM
@@ -6179,8 +6252,6 @@ chrome.users.UserDownloadDirectory: Download location.
     LOCAL_FOLDER_DEFAULT: Set local Downloads folder as default, but allow user to change.
     GOOGLE_DRIVE_DEFAULT: Set Google Drive as default, but allow user to change.
     GOOGLE_DRIVE_FORCED: Force Google Drive.
-    ONEDRIVE_DEFAULT: Set OneDrive as default, but allow user to change.
-    ONEDRIVE_FORCED: Force OneDrive.
 
 chrome.users.UserEnrollmentNudging: Initial sign-in.
   userEnrollmentNudging: TYPE_ENUM
@@ -6387,4 +6458,5 @@ chrome.users.ZstdContentEncodingEnabled: Zstd compression.
   zstdContentEncodingEnabled: TYPE_BOOL
     true: Allow zstd-compressed web content.
     false: Do not allow zstd-compressed web content.
+
 ```

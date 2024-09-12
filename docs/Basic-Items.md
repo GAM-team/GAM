@@ -391,6 +391,8 @@
 <Marker> ::= <String>
 <MatterItem> ::= <UniqueID>|<String>
 <MatterState> ::= open|closed|deleted
+<MeetConferenceName> ::= conferenceRecords/<String>
+<MeetSpaceName> ::= spaces/<String> | <String>
 <MessageContent> ::=
         (message|textmessage|htmlmessage <String>)|
         (file|textfile|htmlfile <FileName> [charset <Charset>])|

@@ -1589,7 +1589,7 @@ def getOrgUnitItem(pathOnly=False, absolutePath=True, cd=None):
             return makeOrgUnitPathAbsolute(result['orgUnitPath'])
           return makeOrgUnitPathRelative(result['orgUnitPath'])
         except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError,
-                GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.permissionDenied):
+                GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
           checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, path)
         invalidArgumentExit(Cmd.OB_ORGUNIT_PATH)
       Cmd.Advance()
@@ -1608,7 +1608,7 @@ def getTopLevelOrgId(cd, parentOrgUnitPath):
       return result['orgUnitId']
     except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError):
       return None
-    except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.permissionDenied):
+    except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
       checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, parentOrgUnitPath)
       return None
   try:
@@ -1650,7 +1650,7 @@ def getOrgUnitId(cd=None, orgUnit=None):
     return (result['orgUnitPath'], result['orgUnitId'])
   except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError):
     entityDoesNotExistExit(Ent.ORGANIZATIONAL_UNIT, orgUnit)
-  except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.permissionDenied):
+  except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
     accessErrorExit(cd)
 
 def getAllParentOrgUnitsForUser(cd, user):
@@ -1680,7 +1680,7 @@ def getAllParentOrgUnitsForUser(cd, user):
       parentPath = result['parentOrgUnitId']
     except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError):
       entityDoesNotExistExit(Ent.ORGANIZATIONAL_UNIT, parentPath)
-    except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.permissionDenied):
+    except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
       accessErrorExit(cd)
   return orgUnits
 
@@ -5798,8 +5798,7 @@ def convertOrgUnitIDtoPath(cd, orgUnitId):
       orgUnitPath = callGAPI(cd.orgunits(), 'get',
                              throwReasons=GAPI.ORGUNIT_GET_THROW_REASONS,
                              customerId=GC.Values[GC.CUSTOMER_ID], orgUnitPath=orgUnitId, fields='orgUnitPath')['orgUnitPath']
-    except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError,
-            GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.permissionDenied):
+    except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError, GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
       orgUnitPath = orgUnitId
     GM.Globals[GM.MAP_ORGUNIT_ID_TO_NAME][orgUnitId] = orgUnitPath
   return orgUnitPath
@@ -6040,7 +6039,7 @@ def checkGroupExists(cd, ci, ciGroupsAPI, group, i=0, count=0):
       except (GAPI.notFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
               GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
               GAPI.systemError, GAPI.permissionDenied, GAPI.serviceNotAvailable):
-        entityUnknownWarning(Ent.GROUP, group, i, count)
+        entityUnknownWarning(Ent.CLOUD_IDENTITY_GROUP, group, i, count)
         return (ci, None, None)
     else:
       return convertGroupEmailToCloudID(ci, group, i, count)
@@ -6329,7 +6328,7 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
                         customerId=GC.Values[GC.CUSTOMER_ID],
                         orgUnitPath=ou, fields='orgUnitPath')['orgUnitPath']
         except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError, GAPI.badRequest,
-                GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.permissionDenied):
+                GAPI.invalidCustomerId, GAPI.loginRequired):
           checkEntityDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, ou)
           _incrEntityDoesNotExist(Ent.ORGANIZATIONAL_UNIT)
           continue
@@ -13076,7 +13075,7 @@ def getUserOrgUnits(cd, orgUnit, orgUnitId):
       userOrgUnits[user['primaryEmail']] = user['orgUnitPath']
     return userOrgUnits
   except (GAPI.badRequest, GAPI.invalidInput, GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError,
-          GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.resourceNotFound, GAPI.forbidden, GAPI.permissionDenied):
+          GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.resourceNotFound, GAPI.forbidden):
     checkEntityDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, orgUnit)
 
 # Convert report mb item to gb
@@ -17015,7 +17014,7 @@ def doCreateOrg():
                             customerId=GC.Values[GC.CUSTOMER_ID], orgUnitPath=parent, fields='orgUnitPath')['orgUnitPath']
     except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError):
       pass
-    except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.permissionDenied):
+    except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
       errMsg = accessErrorMessage(cd)
       if errMsg:
         systemErrorExit(INVALID_DOMAIN_RC, errMsg)
@@ -17059,7 +17058,7 @@ def doCreateOrg():
         body['description'] = description
       if not _createOrg(body, body['parentOrgUnitPath'], fullPath):
         return
-    except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.permissionDenied):
+    except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
       checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, fullPath)
 
 def checkOrgUnitPathExists(cd, orgUnitPath, i=0, count=0, showError=False):
@@ -17074,7 +17073,7 @@ def checkOrgUnitPathExists(cd, orgUnitPath, i=0, count=0, showError=False):
     return (True, orgUnit['orgUnitPath'], orgUnit['orgUnitId'])
   except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError):
     pass
-  except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.permissionDenied):
+  except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
     errMsg = accessErrorMessage(cd)
     if errMsg:
       systemErrorExit(INVALID_DOMAIN_RC, errMsg)
@@ -17422,7 +17421,7 @@ def _doInfoOrgs(entityList):
       Ind.Decrement()
     except (GAPI.invalidInput, GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError):
       entityActionFailedWarning([Ent.ORGANIZATIONAL_UNIT, orgUnitPath], Msg.DOES_NOT_EXIST, i, count)
-    except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.resourceNotFound, GAPI.forbidden, GAPI.permissionDenied):
+    except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.resourceNotFound, GAPI.forbidden):
       checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, orgUnitPath)
 
 # gam info orgs|ous <OrgUnitEntity> [nousers|notsuspended|suspended] [children|child]
@@ -17554,7 +17553,7 @@ def _getOrgUnits(cd, orgUnitPath, fieldsList, listType, showParent, batchSubOrgs
                           customerId=GC.Values[GC.CUSTOMER_ID], orgUnitPath=missing_parent, fields=fields)
         orgUnits.append(result)
       except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError,
-              GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.permissionDenied):
+              GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
         pass
   if listType == 'all' and  orgUnitPath == '/':
     printGotAccountEntities(len(orgUnits))
@@ -25568,7 +25567,7 @@ def doSetupChat():
   _, chat , _ = buildChatServiceObject()
   writeStdout(Msg.TO_SET_UP_GOOGLE_CHAT.format(setupChatURL(chat)))
 
-def getChatSpace(myarg):
+def getSpaceName(myarg):
   if myarg == 'space':
     chatSpace = getString(Cmd.OB_CHAT_SPACE)
     if chatSpace.startswith('spaces/'):
@@ -25746,7 +25745,7 @@ def updateChatSpace(users):
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
-      name = getChatSpace(myarg)
+      name = getSpaceName(myarg)
     elif getChatSpaceParameters(myarg, body, CHAT_UPDATE_SPACE_TYPE_MAP, updateMask):
       pass
     else:
@@ -25785,7 +25784,7 @@ def deleteChatSpace(users):
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
-      name = getChatSpace(myarg)
+      name = getSpaceName(myarg)
     else:
       unknownArgumentExit()
   if not name:
@@ -25846,7 +25845,7 @@ def infoChatSpace(users, name=None):
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if function == 'get' and (myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/')):
-      name = getChatSpace(myarg)
+      name = getSpaceName(myarg)
     elif getFieldsList(myarg, CHAT_SPACES_FIELDS_CHOICE_MAP, fieldsList, initialField='name', onlyFieldsArg=True):
       pass
     else:
@@ -26086,7 +26085,7 @@ def createChatMember(users):
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
-      parent = getChatSpace(myarg)
+      parent = getSpaceName(myarg)
     elif myarg == 'user':
       normalizeUserMember(cd, getEmailAddress(returnUIDprefix='uid:'), userList)
     elif myarg in {'member', 'members'}:
@@ -26193,7 +26192,7 @@ def deleteUpdateChatMember(users):
         unknownArgumentExit()
     else: # {Act.DELETE, Act.UPDATE}
       if myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
-        parent = getChatSpace(myarg)
+        parent = getSpaceName(myarg)
       elif myarg == 'user':
         normalizeUserMember(cd, getEmailAddress(returnUIDprefix='uid:'), userList)
       elif myarg in {'member', 'members'}:
@@ -26335,7 +26334,7 @@ def syncChatMembers(users):
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
-      parent = getChatSpace(myarg)
+      parent = getSpaceName(myarg)
     elif myarg == 'role':
       role = getChoice(CHAT_MEMBER_ROLE_MAP, mapChoice=True)
     elif myarg == 'type':
@@ -26525,7 +26524,7 @@ def printShowChatMembers(users):
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
-      parentList.append({'name': getChatSpace(myarg), 'displayName': ''})
+      parentList.append({'name': getSpaceName(myarg), 'displayName': ''})
     elif getFieldsList(myarg, CHAT_MEMBERS_FIELDS_CHOICE_MAP, fieldsList, initialField='name', onlyFieldsArg=True):
       pass
     elif myarg == 'showinvited':
@@ -26681,7 +26680,7 @@ def createChatMessage(users):
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
-      parent = getChatSpace(myarg)
+      parent = getSpaceName(myarg)
     elif myarg == 'thread':
       body.setdefault('thread', {})
       body['thread']['name'] = getString(Cmd.OB_CHAT_THREAD)
@@ -26893,7 +26892,7 @@ def printShowChatMessages(users):
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
-      parentList.append({'name': getChatSpace(myarg), 'displayName': ''})
+      parentList.append({'name': getSpaceName(myarg), 'displayName': ''})
     elif getFieldsList(myarg, CHAT_MESSAGES_FIELDS_CHOICE_MAP, fieldsList, initialField='name', onlyFieldsArg=True):
       pass
     elif myarg == 'showdeleted':
@@ -27010,7 +27009,7 @@ def printShowChatEvents(users):
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
-      parentList.append({'name': getChatSpace(myarg), 'displayName': ''})
+      parentList.append({'name': getSpaceName(myarg), 'displayName': ''})
     elif myarg =='filter':
       pfilter = getString(Cmd.OB_STRING)
     else:
@@ -27065,10 +27064,413 @@ def printShowChatEvents(users):
   if csvPF:
     csvPF.writeCSVfile('Chat Events')
 
-def _getOrgunitsOrgUnitIdPath(orgUnit):
+def buildMeetServiceObject(api=API.MEET, user=None, i=0, count=0, entityTypeList=None):
+  user, meet = buildGAPIServiceObject(api, user, i, count)
+  kvList = [Ent.USER, user]
+  if entityTypeList is not None:
+    kvList.extend(entityTypeList)
+  return user, meet, kvList
+
+def _showMeetItem(mitem, FJQC=None, i=0, count=0):
+  if FJQC is not None and FJQC.formatJSON:
+    printLine(json.dumps(cleanJSON(mitem), ensure_ascii=False, sort_keys=True))
+    return
+  printEntity([Ent.MEET_SPACE, mitem['name']], i, count)
+  Ind.Increment()
+  showJSON(None, mitem)
+  Ind.Decrement()
+
+MEET_SPACE_OPTIONS_MAP = {
+  'accesstype': 'accessType',
+  'entrypointaccess': 'entryPointAccess',
+  'moderation': 'moderation',
+  'chatrestriction': 'chatRestriction',
+  'reactionrestriction': 'reactionRestriction',
+  'presentrestriction': 'presentRestriction',
+  'defaultjoinasviewer': 'defaultJoinAsViewerType',
+  'firstjoiner': 'firstJoinerType'
+  }
+
+MEET_SPACE_ACCESSTYPE_CHOICES = {'open', 'trusted', 'restricted'}
+MEET_SPACE_ENTRYPOINTACCESS_CHOICES_MAP = {
+  'all': 'ALL',
+  'creatorapponly': 'CREATOR_APP_ONLY'
+  }
+
+MEET_SPACE_RESTRICTIONS_CHOICES_MAP = {
+  'hostsonly': 'HOSTS_ONLY',
+  'norestriction': 'NO_RESTRICTION'
+  }
+
+MEET_SPACE_FIRSTJOINERTYPE_CHOICES_MAP = {
+  'hostsonly': 'HOSTS_ONLY',
+  'anyone': 'ANYONE'
+  }
+
+#	[accesstype open|trusted|restricted]
+#	[entrypointaccess all|creatorapponly]
+#	[moderation <Boolean>]
+#	[chatrestriction hostsonly|norestriction]
+#	[reactionrestriction hostsonly|norestriction]
+#	[presentrestriction hostsonly|norestriction]
+#	[defaultjoinasviewer <Boolean>]
+#	[firstjoiner hostsonly|anyone]
+def _getMeetSpaceParameters(myarg, body, updateMask):
+  option = MEET_SPACE_OPTIONS_MAP.get(myarg, None)
+  if option is None:
+    return False
+  if option == 'accessType':
+    body['config'][option] = getChoice(MEET_SPACE_ACCESSTYPE_CHOICES).upper()
+  elif option == 'entryPointAccess':
+    body['config'][option] = getChoice(MEET_SPACE_ENTRYPOINTACCESS_CHOICES_MAP, mapChoice=True)
+  elif option == 'moderation':
+    body['config'][option] = 'ON' if getBoolean() else 'OFF'
+  elif option in {'chatrestriction', 'reactionrestriction', 'presentrestriction'}:
+    body['config'].setdefault('moderationRestictions', {})
+    body['config']['moderationRestrictions'][option] = getChoice(MEET_SPACE_RESTRICTIONS_CHOICES_MAP, mapChoice=True)
+    option = f'moderationRestrictions.{option}'
+  elif option == 'defaultJoinAsViewerType':
+    body['config'][option] = 'ON' if getBoolean() else 'OFF'
+  elif option == 'firstJoinerType':
+    body['config'][option] = getChoice(MEET_SPACE_FIRSTJOINERTYPE_CHOICES_MAP, mapChoice=True)
+  updateMask.append(f'config.{option}')
+  return True
+
+# gam <UserTypeEntity> create meetspace
+#	<MeetSpaceOptions>*
+#	[formatjson|returnidonly]
+def createMeetSpace(users):
+  FJQC = FormatJSONQuoteChar()
+  body = {'config': {'accessType': 'TRUSTED',
+                     'entryPointAccess': 'ALL',
+                     'moderation': 'OFF',
+                     'moderationRestrictions': {},
+                     'firstJoinerType': 'ANYONE',
+                     }}
+  returnIdOnly = False
+  updateMask = []
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if _getMeetSpaceParameters(myarg, body, updateMask):
+      pass
+    elif myarg == 'returnidonly':
+      returnIdOnly = True
+    else:
+      FJQC.GetFormatJSON(myarg)
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, meet, kvList = buildMeetServiceObject(API.MEET, user, i, count, [Ent.MEET_SPACE, None])
+    if not meet:
+      continue
+    try:
+      space = callGAPI(meet.spaces(), 'create',
+                       throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                       body=body)
+      if not returnIdOnly:
+        kvList[-1] = space['name']
+        if not FJQC.formatJSON:
+          entityActionPerformed(kvList, i, count)
+        Ind.Increment()
+        _showMeetItem(space, FJQC)
+        Ind.Decrement()
+      else:
+        writeStdout(f'{space["name"]}\n')
+    except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
+      entityActionFailedExit([Ent.MEET_SPACE, None], str(e))
+
+# gam <UserTypeEntity> update meetspace <MeetSpaceName>
+#	<MeetSpaceOptions>*
+#	[formatjson]
+def updateMeetSpace(users):
+  FJQC = FormatJSONQuoteChar()
+  name = None
+  body = {'config': {}}
+  updateMask = []
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if (myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/')):
+      name = getSpaceName(myarg)
+    elif _getMeetSpaceParameters(myarg, body, updateMask):
+      pass
+    else:
+      FJQC.GetFormatJSON(myarg)
+  if not name:
+    missingArgumentExit('space')
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, meet, kvList = buildMeetServiceObject(API.MEET, user, i, count, [Ent.MEET_SPACE, name])
+    if not meet:
+      continue
+    try:
+      space = callGAPI(meet.spaces(), 'patch',
+                       throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                       name=name, updateMask=','.join(updateMask), body=body)
+      if not FJQC.formatJSON:
+        entityActionPerformed(kvList, i, count)
+      Ind.Increment()
+      _showMeetItem(space, FJQC)
+      Ind.Decrement()
+    except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+      entityActionFailedExit([Ent.MEET_SPACE, name], str(e))
+
+# gam <UserTypeEntity> info meetspace <MeetSpaceName>
+#	[formatjson]
+def infoMeetSpace(users):
+  FJQC = FormatJSONQuoteChar()
+  name = None
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if (myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/')):
+      name = getSpaceName(myarg)
+    else:
+      FJQC.GetFormatJSON(myarg)
+  if not name:
+    missingArgumentExit('space')
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, meet, kvList = buildMeetServiceObject(API.MEET, user, i, count, [Ent.MEET_SPACE, name])
+    if not meet:
+      continue
+    try:
+      space = callGAPI(meet.spaces(), 'get',
+                       throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                       name=name)
+      if not FJQC.formatJSON:
+        entityPerformAction(kvList, i, count)
+      Ind.Increment()
+      _showMeetItem(space, FJQC)
+      Ind.Decrement()
+    except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+      entityActionFailedExit(kvList, str(e))
+
+# gam <UserTypeEntity> end meetconference <MeetSpaceName>
+def endMeetConference(users):
+  name = None
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if (myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/')):
+      name = getSpaceName(myarg)
+    else:
+      unknownArgumentExit()
+  if not name:
+    missingArgumentExit('space')
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, meet, kvList = buildMeetServiceObject(API.MEET, user, i, count, [Ent.MEET_SPACE, name, Ent.MEET_CONFERENCE, None])
+    if not meet:
+      continue
+    try:
+      callGAPI(meet.spaces(), 'endActiveConference',
+               throwReasons=[GAPI.FAILED_PRECONDITION, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+               name=name)
+      entityActionPerformed(kvList, i,count)
+    except (GAPI.failedPrecondition, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+      entityActionFailedExit([Ent.MEET_CONFERENCE, name], str(e))
+
+def _getMeetPageMessage(entityType, user, i, count, pfilter):
+  printGettingAllEntityItemsForWhom(entityType, user, i, count, pfilter)
+  return getPageMessageForWhom()
+
+MEET_CONFERENCE_TIME_OBJECTS = {'startTime', 'endTime', 'expireTime', 'earliestStartTime', 'latestEndTime'}
+
+def _showMeetConfItem(citem, entityType, FJQC, i=0, count=0):
+  if FJQC.formatJSON:
+    printLine(json.dumps(cleanJSON(citem, timeObjects=MEET_CONFERENCE_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
+    return
+  printEntity([entityType, citem['name']], i, count)
+  Ind.Increment()
+  showJSON(None, citem, timeObjects=MEET_CONFERENCE_TIME_OBJECTS)
+  Ind.Decrement()
+
+def _printMeetConfItem(user, citem, csvPF, FJQC):
+  baserow = {'User': user}
+  row = flattenJSON(citem, flattened=baserow.copy(), timeObjects=MEET_CONFERENCE_TIME_OBJECTS)
+  if not FJQC.formatJSON:
+    csvPF.WriteRowTitles(row)
+  elif csvPF.CheckRowTitles(row):
+    row = baserow.copy()
+    row.update({'name': citem['name'],
+                'JSON': json.dumps(cleanJSON(citem, timeObjects=MEET_CONFERENCE_TIME_OBJECTS), ensure_ascii=False, sort_keys=True)})
+    csvPF.WriteRowNoFilter(row)
+
+# gam <UserItem> show meetconferences
+#	[space <MeetSpaceName>] [code <String>]
+#	[andquery|orquery <String>] [querytime<String> <Time>]
+#	[formatjson]
+# gam <UserItem> print meetconferences [todrive <ToDriveAttribute>*]
+#	[space <MeetSpaceName>] [code <String>]
+#	[andquery|orquery <String>] [querytime<String> <Time>]
+#	[formatjson [quotechar <Character>]]
+def printShowMeetConferences(users):
+  def _updateQuery(conjunction, clause):
+    if queries[0]:
+      queries[0] += f' {conjunction} '
+    queries[0] += clause
+
+  csvPF = CSVPrintFile(['User', 'space', 'name', 'startTime', 'endTime', 'expireTime']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
+  queries = ['']
+  queryTimes = {}
+  pfilter = ''
+  kwargs = {}
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif (myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/')):
+      _updateQuery('AND', f'space.name = "{getSpaceName(myarg)}"')
+    elif myarg == 'code':
+      _updateQuery('AND', f'space.meeting_code = "{getString(Cmd.OB_STRING)}"')
+    elif  myarg == 'andquery':
+      _updateQuery('AND', getString(Cmd.OB_QUERY))
+    elif  myarg == 'orquery':
+      _updateQuery('OR', getString(Cmd.OB_QUERY))
+    elif myarg.startswith('querytime'):
+      queryTimes[myarg] = getTimeOrDeltaFromNow()
+    else:
+      FJQC.GetFormatJSONQuoteChar(myarg, True)
+  substituteQueryTimes(queries, queryTimes)
+  if queries[0]:
+    pfilter = kwargs['filter'] = queries[0]
+  else:
+    pfilter = None
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, meet, kvList = buildMeetServiceObject(API.MEET, user, i, count, [Ent.MEET_CONFERENCE, None])
+    if not meet:
+      continue
+    try:
+      confRecs = callGAPIpages(meet.conferenceRecords(), 'list', 'conferenceRecords',
+                               pageMessage=_getMeetPageMessage(Ent.MEET_CONFERENCE, user, i, count, pfilter),
+                               throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                               pageSize=100, **kwargs)
+    except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+      entityActionFailedExit(kvList, str(e))
+      continue
+    jcount = len(confRecs)
+    if jcount == 0:
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
+    if not csvPF:
+      if not FJQC.formatJSON:
+        entityPerformActionNumItems(kvList, jcount, Ent.MEET_CONFERENCE, i, count)
+      Ind.Increment()
+      j = 0
+      for confRec in confRecs:
+        j += 1
+        _showMeetConfItem(confRec, Ent.MEET_CONFERENCE, FJQC, j, jcount)
+      Ind.Decrement()
+    else:
+      for confRec in confRecs:
+        _printMeetConfItem(user, confRec, csvPF, FJQC)
+  if csvPF:
+    csvPF.writeCSVfile(Ent.Plural(Ent.MEET_CONFERENCE))
+
+# gam <UserItem> show meetparticipants <MeetConferenceName>
+#	[query <String>] [querytime<String> <Time>]
+#	[formatjson]
+# gam <UserItem> print meetparticipants <MeetConferenceName> [todrive <ToDriveAttribute>*]
+#	[query <String>] [querytime<String> <Time>]
+#	[formatjson [quotechar <Character>]]
+# gam <UserItem> show meetrecordings <MeetConferenceName>
+#	[formatjson]
+# gam <UserItem> print meetrecordings <MeetConferenceName> [todrive <ToDriveAttribute>*]
+#	[formatjson [quotechar <Character>]]
+# gam <UserItem> show meettranscripts <MeetConferenceName>
+#	[formatjson]
+# gam <UserItem> print meettranscripts <MeetConferenceName> [todrive <ToDriveAttribute>*]
+#	[formatjson [quotechar <Character>]]
+def _printShowMeetItems(users, entityType):
+  def _updateQuery(conjunction, clause):
+    if queries[0]:
+      queries[0] += f' {conjunction} '
+    queries[0] += clause
+
+  csvPF = CSVPrintFile(['User', 'name']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
+  queries = ['']
+  queryTimes = {}
+  pfilter = ''
+  kwargs = {}
+  parent = getString(Cmd.OB_MEET_CONFERENCE_NAME)
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif entityType == Ent.MEET_PARTICIPANT and myarg == 'andquery':
+      _updateQuery('AND', getString(Cmd.OB_QUERY))
+    elif entityType == Ent.MEET_PARTICIPANT and myarg == 'orquery':
+      _updateQuery('OR', getString(Cmd.OB_QUERY))
+    elif entityType == Ent.MEET_PARTICIPANT and myarg.startswith('querytime'):
+      queryTimes[myarg] = getTimeOrDeltaFromNow()
+    else:
+      FJQC.GetFormatJSONQuoteChar(myarg, True)
+  substituteQueryTimes(queries, queryTimes)
+  if queries[0]:
+    pfilter = kwargs['filter'] = queries[0]
+  else:
+    pfilter = None
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, meet, kvList = buildMeetServiceObject(API.MEET, user, i, count, [Ent.MEET_CONFERENCE, parent])
+    if not meet:
+      continue
+    if entityType == Ent.MEET_PARTICIPANT:
+      service = meet.conferenceRecords().participants()
+      recType = 'participants'
+      pageSize = 250
+    elif entityType == Ent.MEET_RECORDING:
+      service = meet.conferenceRecords().recordings()
+      recType = 'recordings'
+      pageSize = 100
+    else:
+      service = meet.conferenceRecords().transcripts()
+      recType = 'transcripts'
+      pageSize = 100
+    try:
+      confRecs = callGAPIpages(service, 'list', recType,
+                               pageMessage=_getMeetPageMessage(entityType, user, i, count, pfilter),
+                               throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                               parent=parent, pageSize=pageSize, **kwargs)
+    except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+      entityActionFailedExit(kvList, str(e))
+      continue
+    jcount = len(confRecs)
+    if jcount == 0:
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
+    if not csvPF:
+      if not FJQC.formatJSON:
+        entityPerformActionNumItems(kvList, jcount, entityType, i, count)
+      Ind.Increment()
+      j = 0
+      for confRec in confRecs:
+        j += 1
+        _showMeetConfItem(confRec, entityType, FJQC, j, jcount)
+      Ind.Decrement()
+    else:
+      for confRec in confRecs:
+        _printMeetConfItem(user, confRec, csvPF, FJQC)
+  if csvPF:
+    csvPF.writeCSVfile(Ent.Plural(entityType))
+
+def printShowMeetParticipants(users):
+  _printShowMeetItems(users, Ent.MEET_PARTICIPANT)
+
+def printShowMeetRecordings(users):
+  _printShowMeetItems(users, Ent.MEET_RECORDING)
+
+def printShowMeetTranscripts(users):
+  _printShowMeetItems(users, Ent.MEET_TRANSCRIPT)
+
+def _getOrgunitsOrgUnitIdPath(cd, orgUnit):
   if orgUnit.startswith('orgunits/'):
     orgUnit = f'id:{orgUnit[9:]}'
-  orgUnitPath, orgUnitId = getOrgUnitId(None, orgUnit)
+  orgUnitPath, orgUnitId = getOrgUnitId(cd, orgUnit)
   return (orgUnitPath, f'orgunits/{orgUnitId[3:]}')
 
 def _getChromePolicySchemaName():
@@ -27149,23 +27551,25 @@ def simplifyChromeSchema(schema):
       schema_dict['settings'][setting_name.lower()] = setting_dict
   return(schema_name, schema_dict)
 
-def buildChromeSchemas(cp=None, sfilter=None):
-  if not cp:
-    cp = buildGAPIObject(API.CHROMEPOLICY)
-  parent = _getCustomersCustomerIdWithC()
-  schemas = callGAPIpages(cp.customers().policySchemas(), 'list', 'policySchemas',
-                          retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                          parent=parent, filter=sfilter)
-  schema_objects = {}
-  for schema in schemas:
-    schema_name, schema_dict = simplifyChromeSchema(schema)
-    schema_objects[schema_name.lower()] = schema_dict
-  return schema_objects
+def _getPolicyOrgUnitTarget(cd, cp, myarg, groupEmail):
+  if groupEmail:
+    Cmd.Backup()
+    usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format(myarg, 'group'))
+  targetName, targetResource = _getOrgunitsOrgUnitIdPath(cd, getString(Cmd.OB_ORGUNIT_PATH))
+  return (targetName, targetName, targetResource, Ent.ORGANIZATIONAL_UNIT, cp.customers().policies().orgunits())
 
-def updatePolicyRequests(body, orgUnit, printer_id, app_id):
+def _getPolicyGroupTarget(cd, cp, myarg, orgUnit):
+  if orgUnit:
+    Cmd.Backup()
+    usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format(myarg, 'ou|org|orgunit'))
+  targetName = getEmailAddress(returnUIDprefix='uid:')
+  targetResource = f"groups/{convertEmailAddressToUID(targetName, cd, emailType='group')}"
+  return (targetName, targetName, targetResource, Ent.GROUP, cp.customers().policies().groups())
+
+def updatePolicyRequests(body, targetResource, printer_id, app_id):
   for request in body['requests']:
     request.setdefault('policyTargetKey', {})
-    request['policyTargetKey']['targetResource'] = orgUnit
+    request['policyTargetKey']['targetResource'] = targetResource
     if printer_id:
       request['policyTargetKey']['additionalTargetKeys'] = {'printer_id': printer_id}
     elif app_id:
@@ -27173,17 +27577,23 @@ def updatePolicyRequests(body, orgUnit, printer_id, app_id):
 
 # gam delete chromepolicy
 #	(<SchemaName> [<JSONData>])+
-#	ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
+#	((ou|org|orgunit <OrgUnitItem>)|(group <GroupItem>))
+#	[(printerid <PrinterID>)|(appid <AppID>)]
 def doDeleteChromePolicy():
   cp = buildGAPIObject(API.CHROMEPOLICY)
+  cd = buildGAPIObject(API.DIRECTORY)
   customer = _getCustomersCustomerIdWithC()
-  app_id = orgUnit = printer_id = None
+  app_id = groupEmail = orgUnit = printer_id = targetResource = None
   body = {'requests': []}
   schemaNameList = []
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg in {'ou', 'org', 'orgunit'}:
-      orgUnitPath, orgUnit = _getOrgunitsOrgUnitIdPath(getString(Cmd.OB_ORGUNIT_PATH))
+      orgUnit, targetName, targetResource, entityType, service = _getPolicyOrgUnitTarget(cd, cp, myarg, groupEmail)
+      function = 'batchInherit'
+    elif myarg == 'group':
+      groupEmail, targetName, targetResource, entityType, service = _getPolicyGroupTarget(cd, cp, myarg, orgUnit)
+      function = 'batchDelete'
     elif myarg == 'printerid':
       printer_id = getString(Cmd.OB_PRINTER_ID)
     elif myarg == 'appid':
@@ -27194,22 +27604,22 @@ def doDeleteChromePolicy():
       schemaNameList.append(schemaName)
       body['requests'].append({'policySchema': schemaName})
       if checkArgumentPresent('json'):
-        jsonData = getJSON(['direct', 'name', 'orgUnitPath', 'parentOrgUnitPath'])
+        jsonData = getJSON(['direct', 'name', 'orgUnitPath', 'parentOrgUnitPath', 'group'])
         if 'additionalTargetKeys' in jsonData:
           body['requests'][-1].setdefault('policyTargetKey', {})
           for atk in jsonData['additionalTargetKeys']:
             body['requests'][-1]['policyTargetKey']['additionalTargetKeys'] = {atk['name']: atk['value']}
-  if not orgUnit:
-    missingArgumentExit('orgunit')
+  if not targetResource:
+    missingArgumentExit('ou|org|orgunit|group')
   count = len(body['requests'])
   if count != 1:
-    entityPerformActionNumItems([Ent.ORGANIZATIONAL_UNIT, orgUnitPath], count, Ent.CHROME_POLICY)
+    entityPerformActionNumItems([entityType, targetName], count, Ent.CHROME_POLICY)
     if count == 0:
       return
-  updatePolicyRequests(body, orgUnit, printer_id, app_id)
-  kvList = [Ent.ORGANIZATIONAL_UNIT, orgUnitPath, Ent.CHROME_POLICY, ','.join(schemaNameList)]
+  updatePolicyRequests(body, targetResource, printer_id, app_id)
+  kvList = [entityType, targetName, Ent.CHROME_POLICY, ','.join(schemaNameList)]
   try:
-    callGAPI(cp.customers().policies().orgunits(), 'batchInherit',
+    callGAPI(service, function,
              throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED,
                            GAPI.INVALID_ARGUMENT, GAPI.SERVICE_NOT_AVAILABLE, GAPI.QUOTA_EXCEEDED],
              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
@@ -27285,7 +27695,8 @@ CHROME_TARGET_VERSION_PATTERN = re.compile(r'^(\d{1,4}\.){1,4}$')
 
 # gam update chromepolicy [convertcrnl]
 #	(<SchemaName> ((<Field> <Value>)+ | <JSONData>))+
-#	ou|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
+#	((ou|orgunit <OrgUnitItem>)|(group <GroupItem>))
+#	[(printerid <PrinterID>)|(appid <AppID>)]
 def doUpdateChromePolicy():
   def getSpecialVtypeValue(vtype, value):
     if vtype == 'duration':
@@ -27299,16 +27710,19 @@ def doUpdateChromePolicy():
     return {vtype: {'hours': hours, 'minutes': minutes}}
 
   cp = buildGAPIObject(API.CHROMEPOLICY)
+  cd = buildGAPIObject(API.DIRECTORY)
   cv = None
   customer = _getCustomersCustomerIdWithC()
-  app_id = channelMap = orgUnit = printer_id = None
+  app_id = channelMap = groupEmail = orgUnit = printer_id = targetResource = None
   body = {'requests': []}
   schemaNameList = []
   convertCRsNLs = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg in {'ou', 'org', 'orgunit'}:
-      orgUnitPath, orgUnit = _getOrgunitsOrgUnitIdPath(getString(Cmd.OB_ORGUNIT_PATH))
+      orgUnit, targetName, targetResource, entityType, service = _getPolicyOrgUnitTarget(cd, cp, myarg, groupEmail)
+    elif myarg == 'group':
+      groupEmail, targetName, targetResource, entityType, service = _getPolicyGroupTarget(cd, cp, myarg, orgUnit)
     elif myarg == 'printerid':
       printer_id = getString(Cmd.OB_PRINTER_ID)
     elif myarg == 'appid':
@@ -27326,12 +27740,12 @@ def doUpdateChromePolicy():
           if Cmd.ArgumentsRemaining():
             Cmd.Advance()
           continue
-        if field in {'ou', 'org', 'orgunit', 'printerid', 'appid'} or '.' in field:
+        if field in {'ou', 'org', 'orgunit', 'group', 'printerid', 'appid'} or '.' in field:
           Cmd.Backup()
           break # field is actually a new policy name or orgunit
         # JSON
         if field == 'json':
-          jsonData = getJSON(['direct', 'name', 'orgUnitPath', 'parentOrgUnitPath'])
+          jsonData = getJSON(['direct', 'name', 'orgUnitPath', 'parentOrgUnitPath', 'group'])
           schemaNameAppId = schemaName
           if 'additionalTargetKeys' in jsonData:
             body['requests'][-1].setdefault('policyTargetKey', {})
@@ -27447,19 +27861,19 @@ def doUpdateChromePolicy():
             invalidArgumentExit(Msg.CHROME_TARGET_VERSION_FORMAT)
         body['requests'][-1]['policyValue']['value'][casedField] = value
         body['requests'][-1]['updateMask'] += f'{casedField},'
-  if not orgUnit:
-    missingArgumentExit('orgunit')
+  if not targetResource:
+    missingArgumentExit('ou|org|orgunit|group')
   count = len(body['requests'])
   if count > 0 and not body['requests'][-1]['updateMask']:
     body['requests'].pop()
-  kvList = [Ent.ORGANIZATIONAL_UNIT, orgUnitPath, Ent.CHROME_POLICY, ','.join(schemaNameList)]
+  kvList = [entityType, targetName, Ent.CHROME_POLICY, ','.join(schemaNameList)]
   if count != 1:
     entityPerformActionNumItems(kvList, count, Ent.CHROME_POLICY)
     if count == 0:
       return
-  updatePolicyRequests(body, orgUnit, printer_id, app_id)
+  updatePolicyRequests(body, targetResource, printer_id, app_id)
   try:
-    callGAPI(cp.customers().policies().orgunits(), 'batchModify',
+    callGAPI(service, 'batchModify',
              throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.INVALID_ARGUMENT,
                            GAPI.SERVICE_NOT_AVAILABLE, GAPI.QUOTA_EXCEEDED],
              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
@@ -27468,7 +27882,6 @@ def doUpdateChromePolicy():
   except (GAPI.notFound, GAPI.permissionDenied, GAPI.invalidArgument, GAPI.serviceNotAvailable, GAPI.quotaExceeded) as e:
     entityActionFailedWarning(kvList, str(e))
 
-CHROME_POLICY_SORT_TITLES = ['name', 'orgUnitPath', 'parentOrgUnitPath', 'direct']
 CHROME_POLICY_INDEXED_TITLES = ['fields']
 
 CHROME_POLICY_SHOW_ALL = -1
@@ -27481,13 +27894,15 @@ CHROME_POLICY_SHOW_CHOICE_MAP = {
   }
 
 # gam show chromepolicies
-#	ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
-#	[filter <String>] [namespace <NamespaceList>]
+#	((ou|orgunit <OrgUnitItem>)|(group <GroupItem>))
+#	[(printerid <PrinterID>)|(appid <AppID>)]
+#	(filter <StringList>)* (namespace <NamespaceList>)*
 #	[show all|direct|inherited]
 #	[formatjson]
 # gam print chromepolicies [todrive <ToDriveAttribute>*]
-#	ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
-#	[filter <String>] [namespace <NamespaceList>]
+#	((ou|orgunit <OrgUnitItem>)|(group <GroupItem>))
+#	[(printerid <PrinterID>)|(appid <AppID>)]
+#	(filter <StringList>)* (namespace <NamespaceList>)*
 #	[show all|direct|inherited]
 #	[[formatjson [quotechar <Character>]]
 def doPrintShowChromePolicies():
@@ -27497,11 +27912,21 @@ def doPrintShowChromePolicies():
       norm['printerId'] = printerId
     elif appId:
       norm['appId'] = appId
-    orgUnitId = policy.get('targetKey', {}).get('targetResource')
-    norm['orgUnitPath'] = convertOrgUnitIDtoPath(cd, orgUnitId) if orgUnitId else UNKNOWN
-    parentOrgUnitId = policy.get('sourceKey', {}).get('targetResource')
-    norm['parentOrgUnitPath'] = convertOrgUnitIDtoPath(cd, parentOrgUnitId) if parentOrgUnitId else UNKNOWN
-    norm['direct'] = orgUnitId == parentOrgUnitId
+    if entityType == Ent.ORGANIZATIONAL_UNIT:
+      orgUnitId = policy.get('targetKey', {}).get('targetResource')
+      norm['orgUnitPath'] = convertOrgUnitIDtoPath(cd, orgUnitId) if orgUnitId else UNKNOWN
+      parentOrgUnitId = policy.get('sourceKey', {}).get('targetResource')
+      norm['parentOrgUnitPath'] = convertOrgUnitIDtoPath(cd, parentOrgUnitId) if parentOrgUnitId else UNKNOWN
+      norm['direct'] = orgUnitId == parentOrgUnitId
+    else:
+      groupId = policy.get('targetKey', {}).get('targetResource')
+      if groupId is not None:
+        groupId = groupId.split('/')[1]
+        norm['group'] = getGroupEmailFromID(groupId, cd)
+        if norm['group'] is None:
+          norm['group'] = groupId
+      else:
+        norm['group'] = UNKNOWN
     norm['additionalTargetKeys'] = []
     for setting, value in sorted(policy.get('targetKey', {}).get('additionalTargetKeys', {}).items()):
       norm['additionalTargetKeys'].append({'name': setting, 'value': value})
@@ -27540,7 +27965,7 @@ def doPrintShowChromePolicies():
 
   def _showPolicy(policy, j, jcount):
     policy = normalizedPolicy(policy)
-    if showPolicies in (CHROME_POLICY_SHOW_ALL, policy['direct']):
+    if (entityType == Ent.GROUP) or showPolicies in (CHROME_POLICY_SHOW_ALL, policy['direct']):
       if FJQC.formatJSON:
         printLine(json.dumps(cleanJSON(policy), ensure_ascii=False, sort_keys=True))
         return
@@ -27551,90 +27976,117 @@ def doPrintShowChromePolicies():
 
   def _printPolicy(policy):
     policy = normalizedPolicy(policy)
-    if showPolicies in (CHROME_POLICY_SHOW_ALL, policy['direct']):
+    if (entityType == Ent.GROUP) or showPolicies in (CHROME_POLICY_SHOW_ALL, policy['direct']):
       row = flattenJSON(policy)
       if not FJQC.formatJSON:
         csvPF.WriteRowTitles(row)
       elif (not csvPF.rowFilter and not csvPF.rowDropFilter) or csvPF.CheckRowTitles(row):
-        csvPF.WriteRowNoFilter({'name': policy['name'],
-                                'orgUnitPath': policy['orgUnitPath'],
-                                'parentOrgUnitPath': policy['parentOrgUnitPath'],
-                                'direct': policy['direct'],
-                                'JSON': json.dumps(cleanJSON(policy),
-                                                   ensure_ascii=False, sort_keys=True)})
-
+        if entityType == Ent.ORGANIZATIONAL_UNIT:
+          csvPF.WriteRowNoFilter({'name': policy['name'],
+                                  'orgUnitPath': policy['orgUnitPath'],
+                                  'parentOrgUnitPath': policy['parentOrgUnitPath'],
+                                  'direct': policy['direct'],
+                                  'JSON': json.dumps(cleanJSON(policy),
+                                                     ensure_ascii=False, sort_keys=True)})
+        else:
+          csvPF.WriteRowNoFilter({'name': policy['name'],
+                                  'group': policy['group'],
+                                  'JSON': json.dumps(cleanJSON(policy),
+                                                     ensure_ascii=False, sort_keys=True)})
 
   cp = buildGAPIObject(API.CHROMEPOLICY)
   cd = buildGAPIObject(API.DIRECTORY)
   customer = _getCustomersCustomerIdWithC()
-  csvPF = CSVPrintFile(CHROME_POLICY_SORT_TITLES, indexedTitles=CHROME_POLICY_INDEXED_TITLES) if Act.csvFormat() else None
+  csvPF = CSVPrintFile(['name'], indexedTitles=CHROME_POLICY_INDEXED_TITLES) if Act.csvFormat() else None
   if csvPF:
     csvPF.SetNoEscapeChar(True)
   FJQC = FormatJSONQuoteChar(csvPF)
-  appId = orgUnit = policySchemaFilter = printerId = None
+  appId = groupEmail = orgUnit = printerId = None
   showPolicies = CHROME_POLICY_SHOW_ALL
-  body = {'policyTargetKey': {'targetResource': None}}
-  namespaces = []
+  psFilters = []
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif myarg == 'filter':
-      policySchemaFilter = getString(Cmd.OB_STRING)
     elif myarg in {'ou', 'org', 'orgunit'}:
-      orgUnitPath, orgUnit = _getOrgunitsOrgUnitIdPath(getString(Cmd.OB_ORGUNIT_PATH))
-      body['policyTargetKey']['targetResource'] = orgUnit
+      orgUnit, targetName, targetResource, entityType, _ = _getPolicyOrgUnitTarget(cd, cp, myarg, groupEmail)
+    elif myarg == 'group':
+      groupEmail, targetName, targetResource, entityType, _ = _getPolicyGroupTarget(cd, cp, myarg, orgUnit)
     elif (not printerId and not appId) and myarg == 'printerid':
       printerId = getString(Cmd.OB_PRINTER_ID)
     elif (not printerId and not appId) and myarg == 'appid':
       appId = getString(Cmd.OB_APP_ID)
+    elif myarg == 'filter':
+      for psFilter in getString(Cmd.OB_STRING).replace(',', ' ').split():
+        psFilters.append(psFilter)
     elif myarg == 'namespace':
-      namespaces.extend(getString(Cmd.OB_STRING).replace(',', ' ').split())
+      for psFilter in getString(Cmd.OB_STRING).replace(',', ' ').split():
+        if psFilter.endswith('.*'):
+          psFilters.append(psFilter)
+        else:
+          psFilters.append(f'{psFilter}.*')
     elif myarg == 'show':
       showPolicies = getChoice(CHROME_POLICY_SHOW_CHOICE_MAP, mapChoice=True)
     else:
-      FJQC.GetFormatJSONQuoteChar(myarg, True)
-  if not body['policyTargetKey']['targetResource']:
-    missingArgumentExit('orgunit')
+      FJQC.GetFormatJSONQuoteChar(myarg, False)
+  if not targetResource:
+    missingArgumentExit('ou|org|orgunit|group')
+  body = {'policyTargetKey': {'targetResource': targetResource}}
   if printerId:
     body['policyTargetKey']['additionalTargetKeys'] = {'printer_id': printerId}
-    if not namespaces:
-      namespaces = ['chrome.printers']
+    if not psFilters:
+      psFilters = ['chrome.printers.*']
   elif appId:
     body['policyTargetKey']['additionalTargetKeys'] = {'app_id': appId}
-    if not namespaces:
-      namespaces = ['chrome.users.apps',
-                    'chrome.devices.kiosk.apps',
-                    'chrome.devices.managedguest.apps',
+    if not psFilters:
+      psFilters = ['chrome.users.apps.*',
+                   'chrome.devices.kiosk.apps.*',
+                   'chrome.devices.managedguest.apps.*',
                     ]
-  elif not namespaces:
-    namespaces = ['chrome.users',
-                  'chrome.users.apps',
-                  'chrome.users.appsconfig',
-                  'chrome.devices',
-                  'chrome.devices.kiosk',
-                  'chrome.devices.kiosk.apps',
-                  'chrome.devices.managedguest',
-                  'chrome.devices.managedguest.apps',
-                  'chrome.networks.cellular',
-                  'chrome.networks.certificates',
-                  'chrome.networks.ethernet',
-                  'chrome.networks.globalsettings',
-                  'chrome.networks.vpn',
-                  'chrome.networks.wifi',
-                  'chrome.printers',
-                  'chrome.printservers',
-                 ]
-  if csvPF and not FJQC.formatJSON:
-    if printerId:
-      csvPF.AddSortTitles(['printerId'])
-    elif appId:
-      csvPF.AddSortTitles(['appId'])
+  elif not psFilters:
+    if entityType == Ent.ORGANIZATIONAL_UNIT:
+      psFilters = ['chrome.users.*',
+                   'chrome.users.apps.*',
+                   'chrome.users.appsconfig.*',
+                   'chrome.devices.*',
+                   'chrome.devices.kiosk.*',
+                   'chrome.devices.kiosk.apps.*',
+                   'chrome.devices.managedguest.*',
+                   'chrome.devices.managedguest.apps.*',
+                   'chrome.networks.cellular.*',
+                   'chrome.networks.certificates.*',
+                   'chrome.networks.ethernet.*',
+                   'chrome.networks.globalsettings.*',
+                   'chrome.networks.vpn.*',
+                   'chrome.networks.wifi.*',
+                   'chrome.printers.*',
+                   'chrome.printservers.*',
+                   ]
+    else:
+      psFilters = ['chrome.users.*',
+                   'chrome.users.apps.*',
+                   'chrome.users.appsconfig.*',
+                   'chrome.printers.*',
+                   'chrome.printservers.*',
+                   ]
+  if csvPF:
+    if entityType == Ent.ORGANIZATIONAL_UNIT:
+      csvPF.AddTitles(['orgUnitPath', 'parentOrgUnitPath', 'direct'])
+    else:
+      csvPF.AddTitles(['group'])
+    csvPF.SetSortAllTitles()
+    if not FJQC.formatJSON:
+      if printerId:
+        csvPF.AddSortTitles(['printerId'])
+      elif appId:
+        csvPF.AddSortTitles(['appId'])
+    else:
+      csvPF.SetJSONTitles(csvPF.titlesList+['JSON'])
   policies = []
-  for namespace in namespaces:
-    body['policySchemaFilter'] = f'{namespace}.*' if not policySchemaFilter else policySchemaFilter
+  for psFilter in psFilters:
+    body['policySchemaFilter'] = psFilter
     body['pageToken'] = None
-    printGettingAllEntityItemsForWhom(Ent.CHROME_POLICY, orgUnitPath, query=body['policySchemaFilter'])
+    printGettingAllEntityItemsForWhom(Ent.CHROME_POLICY, targetName, query=body['policySchemaFilter'])
     try:
       policies.extend(callGAPIpages(cp.customers().policies(), 'resolve', 'resolvedPolicies',
                                     pageMessage=getPageMessageForWhom(),
@@ -27642,7 +28094,7 @@ def doPrintShowChromePolicies():
                                                   GAPI.SERVICE_NOT_AVAILABLE, GAPI.QUOTA_EXCEEDED],
                                     customer=customer, body=body, pageArgsInBody=True))
     except (GAPI.notFound, GAPI.permissionDenied, GAPI.quotaExceeded) as e:
-      entityActionFailedWarning([Ent.ORGANIZATIONAL_UNIT, orgUnitPath], str(e))
+      entityActionFailedWarning([entityType, targetName], str(e))
       continue
     except (GAPI.invalidArgument, GAPI.serviceNotAvailable) as e:
       entityActionFailedWarning([Ent.CHROME_POLICY, body['policySchemaFilter']], str(e))
@@ -27654,7 +28106,7 @@ def doPrintShowChromePolicies():
   if not csvPF:
     jcount = len(policies)
     if not FJQC.formatJSON:
-      kvList = [Ent.ORGANIZATIONAL_UNIT, orgUnitPath]
+      kvList = [entityType, targetName]
       if printerId:
         kvList.extend([Ent.PRINTER_ID, printerId])
       elif appId:
@@ -27670,7 +28122,7 @@ def doPrintShowChromePolicies():
     for policy in policies:
       _printPolicy(policy)
   if csvPF:
-    csvPF.writeCSVfile(f'Chrome Policies - {orgUnitPath}')
+    csvPF.writeCSVfile(f'Chrome Policies - {targetName}')
 
 CHROME_IMAGE_SCHEMAS_MAP = {
   'chrome.devices.managedguest.avatar': {'name': 'chrome.devices.managedguest.Avatar', 'field': 'userAvatarImage'},
@@ -27852,7 +28304,14 @@ def doShowChromeSchemasStd():
       sfilter = getString(Cmd.OB_STRING)
     else:
       unknownArgumentExit()
-  schemas = buildChromeSchemas(cp, sfilter)
+  parent = _getCustomersCustomerIdWithC()
+  result = callGAPIpages(cp.customers().policySchemas(), 'list', 'policySchemas',
+                         retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                         parent=parent, filter=sfilter)
+  schemas = {}
+  for schema in result:
+    schema_name, schema_dict = simplifyChromeSchema(schema)
+    schemas[schema_name.lower()] = schema_dict
   for _, value in sorted(iter(schemas.items())):
     printKeyValueList([f'{value.get("name")}', f'{value.get("description")}'])
     Ind.Increment()
@@ -27886,11 +28345,12 @@ def doShowChromeSchemasStd():
 #	<OrgUnitItem> <String> <JSONData>
 def doCreateChromeNetwork():
   cp = buildGAPIObject(API.CHROMEPOLICY)
+  cd = buildGAPIObject(API.DIRECTORY)
   customer = _getCustomersCustomerIdWithC()
   body = {}
-  orgUnitPath, body['targetResource'] = _getOrgunitsOrgUnitIdPath(getString(Cmd.OB_ORGUNIT_PATH))
+  orgUnitPath, body['targetResource'] = _getOrgunitsOrgUnitIdPath(cd, getString(Cmd.OB_ORGUNIT_PATH))
   body['name'] = getString(Cmd.OB_STRING)
-  body.update(getJSON(['direct', 'name', 'orgUnitPath', 'parentOrgUnitPath']))
+  body.update(getJSON(['direct', 'name', 'orgUnitPath', 'parentOrgUnitPath', 'group']))
   checkForExtraneousArguments()
   kvList = [Ent.ORGANIZATIONAL_UNIT, orgUnitPath, Ent.CHROME_NETWORK_NAME, body['name']]
   try:
@@ -27909,9 +28369,10 @@ def doCreateChromeNetwork():
 #	 <OrgUnitItem> <NetworkID>
 def doDeleteChromeNetwork():
   cp = buildGAPIObject(API.CHROMEPOLICY)
+  cd = buildGAPIObject(API.DIRECTORY)
   customer = _getCustomersCustomerIdWithC()
   body = {}
-  orgUnitPath, body['targetResource'] = _getOrgunitsOrgUnitIdPath(getString(Cmd.OB_ORGUNIT_PATH))
+  orgUnitPath, body['targetResource'] = _getOrgunitsOrgUnitIdPath(cd, getString(Cmd.OB_ORGUNIT_PATH))
   body['networkId'] = getString(Cmd.OB_NETWORK_ID)
   checkForExtraneousArguments()
   kvList = [Ent.ORGANIZATIONAL_UNIT, orgUnitPath, Ent.CHROME_NETWORK_ID, body['networkId']]
@@ -45726,8 +46187,8 @@ class CourseAttributes():
     return False
 
   def getItemIdTitle(self, body):
-    id = body.pop('id')
-    return self.trimTitle(body.get('title', id))
+    itemId = body.pop('id')
+    return self.trimTitle(body.get('title', itemId))
 
   def checkItemCopyable(self, state, newCourseId, entityType, entityId, body, individualStudentOption, clarg, j, jcount):
     if state == 'DELETED':
@@ -46542,9 +47003,9 @@ def _getCoursesInfo(croom, courseSelectionParameters, courseShowProperties, getO
 #	[owneremail] [owneremailmatchpattern <RegularExpression>]
 #	[alias|aliases|aliasesincolumns [delimiter <Character>]]
 #	[show none|all|students|teachers] [countsonly]
-#	[fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>] [formatjson [quotechar <Character>]]
+#	[fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>]
 #	[timefilter creationtime|updatetime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
-#	[showitemcountonly]
+#	[showitemcountonly] [formatjson [quotechar <Character>]]
 def doPrintCourses():
   def _saveParticipants(course, participants, role, rtitles):
     jcount = len(participants)
@@ -46706,6 +47167,18 @@ def doPrintCourses():
       csvPF.RearrangeCourseTitles(ttitles, stitles)
   csvPF.writeCSVfile('Courses')
 
+def _printCourseItemCount(course, results, title, applyCourseItemFilter, courseItemFilter, csvPF):
+  if applyCourseItemFilter:
+    numItems = 0
+    for item in results:
+      if _courseItemPassesFilter(item, courseItemFilter):
+        numItems += 1
+  else:
+    numItems = len(results)
+  if csvPF:
+    csvPF.WriteRowTitles({'courseId': course['id'], 'courseName': course['name'], title: numItems})
+  return numItems
+
 COURSE_ANNOUNCEMENTS_FIELDS_CHOICE_MAP = {
   'alternatelink': 'alternateLink',
   'announcementid': 'id',
@@ -46735,8 +47208,9 @@ COURSE_ANNOUNCEMENTS_INDEXED_TITLES = ['materials']
 #	(course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] states <CourseStateList>])
 #	(announcementids <CourseAnnouncementIDEntity>)|((announcementstates <CourseAnnouncementStateList>)*
 #	(orderby <CourseAnnouncementOrderByFieldName> [ascending|descending])*)
-#	[showcreatoremails|creatoremail] [fields <CourseAnnouncementFieldNameList>] [formatjson [quotechar <Character>]]
+#	[showcreatoremails|creatoremail] [fields <CourseAnnouncementFieldNameList>]
 #	[timefilter creationtime|updatetime|scheduledtime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
+#	[countsonly] [formatjson [quotechar <Character>]]
 def doPrintCourseAnnouncements():
   def _printCourseAnnouncement(course, courseAnnouncement, i, count):
     if applyCourseItemFilter and not _courseItemPassesFilter(courseAnnouncement, courseItemFilter):
@@ -46764,7 +47238,8 @@ def doPrintCourseAnnouncements():
   courseAnnouncementStates = []
   OBY = OrderBy(COURSE_ANNOUNCEMENTS_ORDERBY_CHOICE_MAP)
   creatorEmails = {}
-  showCreatorEmail = False
+  countsOnly = showCreatorEmail = False
+  items = 'courseAnnouncements'
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -46783,6 +47258,9 @@ def doPrintCourseAnnouncements():
       showCreatorEmail = True
     elif getFieldsList(myarg, COURSE_ANNOUNCEMENTS_FIELDS_CHOICE_MAP, fieldsList, initialField='id'):
       pass
+    elif myarg == 'countsonly':
+      countsOnly = True
+      csvPF.AddTitles(items)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   coursesInfo = _getCoursesInfo(croom, courseSelectionParameters, courseShowProperties)
@@ -46810,8 +47288,11 @@ def doPrintCourseAnnouncements():
                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                 courseId=courseId, announcementStates=courseAnnouncementStates, orderBy=OBY.orderBy,
                                 fields=fields, pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS])
-        for courseAnnouncement in results:
-          _printCourseAnnouncement(course, courseAnnouncement, i, count)
+        if not countsOnly:
+          for courseAnnouncement in results:
+            _printCourseAnnouncement(course, courseAnnouncement, i, count)
+        else:
+          _printCourseItemCount(course, results, items, applyCourseItemFilter, courseItemFilter, csvPF)
       except (GAPI.notFound, GAPI.insufficientPermissions, GAPI.permissionDenied, GAPI.forbidden, GAPI.invalidArgument, GAPI.serviceNotAvailable) as e:
         entityActionFailedWarning([Ent.COURSE, removeCourseIdScope(courseId)], str(e), i, count)
     else:
@@ -46840,8 +47321,8 @@ COURSE_TOPICS_SORT_TITLES = ['courseId', 'courseName', 'topicId', 'name', 'updat
 # gam print course-topics [todrive <ToDriveAttribute>*]
 #	(course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] states <CourseStateList>])
 #	[topicids <CourseTopicIDEntity>]
-#	[formatjson [quotechar <Character>]]
 #	[timefilter updatetime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
+#	[countsonly] [formatjson [quotechar <Character>]]
 def doPrintCourseTopics():
   def _printCourseTopic(course, courseTopic):
     if applyCourseItemFilter and not _courseItemPassesFilter(courseTopic, courseItemFilter):
@@ -46862,6 +47343,8 @@ def doPrintCourseTopics():
   courseItemFilter = _initCourseItemFilter()
   courseShowProperties = _initCourseShowProperties(['name'])
   courseTopicIds = []
+  countsOnly = False
+  items = 'courseTopics'
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -46872,6 +47355,9 @@ def doPrintCourseTopics():
       pass
     elif myarg in {'topicid', 'topicids'}:
       courseTopicIds = getEntityList(Cmd.OB_COURSE_TOPIC_ID_ENTITY)
+    elif myarg == 'countsonly':
+      countsOnly = True
+      csvPF.AddTitles(items)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   coursesInfo = _getCoursesInfo(croom, courseSelectionParameters, courseShowProperties)
@@ -46896,8 +47382,11 @@ def doPrintCourseTopics():
                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                 courseId=courseId,
                                 fields=fields, pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS])
-        for courseTopic in results:
-          _printCourseTopic(course, courseTopic)
+        if not countsOnly:
+          for courseTopic in results:
+            _printCourseTopic(course, courseTopic)
+        else:
+          _printCourseItemCount(course, results, items, applyCourseItemFilter, courseItemFilter, csvPF)
       except (GAPI.notFound, GAPI.insufficientPermissions, GAPI.permissionDenied, GAPI.forbidden, GAPI.invalidArgument, GAPI.serviceNotAvailable) as e:
         entityActionFailedWarning([Ent.COURSE, removeCourseIdScope(courseId)], str(e), i, count)
     else:
@@ -47065,7 +47554,7 @@ def doPrintCourseWM(entityIDType, entityStateType):
   creatorEmails = {}
   showCreatorEmail = showTopicNames = False
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
-  showStudentsAsList = False
+  countsOnly = showStudentsAsList = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -47090,6 +47579,9 @@ def doPrintCourseWM(entityIDType, entityStateType):
       showStudentsAsList = getBoolean()
     elif myarg == 'delimiter':
       delimiter = getCharacter()
+    elif myarg == 'countsonly':
+      countsOnly = True
+      csvPF.AddTitles(items)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if showCreatorEmail and fieldsList:
@@ -47125,8 +47617,11 @@ def doPrintCourseWM(entityIDType, entityStateType):
                                 throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS,
                                 courseId=courseId, orderBy=OBY.orderBy,
                                 fields=fields, pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS], **kwargs)
-        for courseWM in results:
-          _printCourseWM(course, courseWM, i, count)
+        if not countsOnly:
+          for courseWM in results:
+            _printCourseWM(course, courseWM, i, count)
+        else:
+          _printCourseItemCount(course, results, items, applyCourseItemFilter, courseItemFilter, csvPF)
       except (GAPI.notFound, GAPI.insufficientPermissions, GAPI.permissionDenied, GAPI.forbidden, GAPI.invalidArgument) as e:
         entityActionFailedWarning([Ent.COURSE, removeCourseIdScope(courseId)], str(e), i, count)
     else:
@@ -47152,8 +47647,9 @@ def doPrintCourseWM(entityIDType, entityStateType):
 #	(course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] states <CourseStateList>])
 #	(materialids <CourseMaterialIDEntity>)|((materialstates <CourseMaterialStateList>)*
 #	(orderby <CourseMaterialsOrderByFieldName> [ascending|descending])*)
-#	[showcreatoremails|creatoremail] [showtopicnames] [fields <CourseMaterialFieldNameList>] [formatjson [quotechar <Character>]]
+#	[showcreatoremails|creatoremail] [showtopicnames] [fields <CourseMaterialFieldNameList>]
 #	[timefilter creationtime|updatetime|scheduledtime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
+#	[countsonly] [formatjson [quotechar <Character>]]
 def doPrintCourseMaterials():
   doPrintCourseWM(Ent.COURSE_MATERIAL_ID, Ent.COURSE_MATERIAL_STATE)
 
@@ -47161,9 +47657,10 @@ def doPrintCourseMaterials():
 #	(course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] states <CourseStateList>])
 #	(workids <CourseWorkIDEntity>)|((workstates <CourseWorkStateList>)*
 #	(orderby <CourseWorkOrderByFieldName> [ascending|descending])*)
-#	[showcreatoremails|creatoremail] [showtopicnames] [fields <CourseWorkFieldNameList>] [formatjson [quotechar <Character>]]
+#	[showcreatoremails|creatoremail] [showtopicnames] [fields <CourseWorkFieldNameList>]
 #	[showstudentsaslist [<Boolean>]] [delimiter <Character>]
 #	[timefilter creationtime|updatetime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
+#	[countsonly] [formatjson [quotechar <Character>]]
 def doPrintCourseWork():
   doPrintCourseWM(Ent.COURSE_WORK_ID, Ent.COURSE_WORK_STATE)
 
@@ -47205,8 +47702,9 @@ def _gettingCourseSubmissionQuery(courseSubmissionStates, late, userId):
 #	(workids <CourseWorkIDEntity>)|((workstates <CourseWorkStateList>)*
 #	(orderby <CourseWorkOrderByFieldName> [ascending|descending])*)
 #	(submissionids <CourseSubmissionIDEntity>)|((submissionstates <CourseSubmissionStateList>)*) [late|notlate]
-#	[fields <CourseSubmissionFieldNameList>] [formatjson [quotechar <Character>]] [showuserprofile]
+#	[fields <CourseSubmissionFieldNameList>] [showuserprofile]
 #	[timefilter creationtime|updatetime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
+#	[countsonly] [formatjson [quotechar <Character>]]
 def doPrintCourseSubmissions():
   def _printCourseSubmission(course, courseSubmission):
     if applyCourseItemFilter and not _courseItemPassesFilter(courseSubmission, courseItemFilter):
@@ -47252,7 +47750,8 @@ def doPrintCourseSubmissions():
   OBY = OrderBy(COURSE_WORK_ORDERBY_CHOICE_MAP)
   late = None
   userProfiles = {}
-  showUserProfile = False
+  countsOnly = showUserProfile = False
+  items = 'courseSubmissions'
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -47279,6 +47778,9 @@ def doPrintCourseSubmissions():
       showUserProfile = True
     elif getFieldsList(myarg, COURSE_SUBMISSION_FIELDS_CHOICE_MAP, fieldsList, initialField='id'):
       pass
+    elif myarg == 'countsonly':
+      countsOnly = True
+      csvPF.AddTitles(items)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   coursesInfo = _getCoursesInfo(croom, courseSelectionParameters, courseShowProperties, getOwnerId=True)
@@ -47295,6 +47797,7 @@ def doPrintCourseSubmissions():
     _, tcroom = buildGAPIServiceObject(API.CLASSROOM, f"uid:{course['ownerId']}")
     if tcroom is None:
       continue
+    submissionsCount = 0
     courseId = course['id']
     if courseWorkIdsLists:
       courseWorkIds = courseWorkIdsLists[courseId]
@@ -47333,8 +47836,11 @@ def doPrintCourseSubmissions():
                                   retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                   courseId=courseId, courseWorkId=courseWorkId, states=courseSubmissionStates, late=late, userId=courseSelectionParameters['studentId'],
                                   fields=fields, pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS])
-          for submission in results:
-            _printCourseSubmission(course, submission)
+          if not countsOnly:
+            for submission in results:
+              _printCourseSubmission(course, submission)
+          else:
+            submissionsCount += _printCourseItemCount(course, results, items, applyCourseItemFilter, courseItemFilter, None)
         except GAPI.notFound:
           entityDoesNotHaveItemWarning([Ent.COURSE_NAME, course['name'], Ent.COURSE_WORK_ID, courseWorkId], j, jcount)
         except (GAPI.insufficientPermissions, GAPI.permissionDenied, GAPI.forbidden, GAPI.invalidArgument, GAPI.serviceNotAvailable) as e:
@@ -47363,14 +47869,16 @@ def doPrintCourseSubmissions():
             entityDoesNotHaveItemWarning([Ent.COURSE_NAME, course['name'], Ent.COURSE_WORK_ID, courseWorkId, Ent.COURSE_SUBMISSION_ID, courseSubmissionId], k, kcount)
           except (GAPI.insufficientPermissions, GAPI.permissionDenied, GAPI.forbidden, GAPI.invalidArgument, GAPI.serviceNotAvailable) as e:
             entityActionFailedWarning([Ent.COURSE_NAME, course['name'], Ent.COURSE_WORK_ID, courseWorkId, Ent.COURSE_SUBMISSION_ID, courseSubmissionId], str(e), k, kcount)
+    if countsOnly:
+      csvPF.WriteRowTitles({'courseId': course['id'], 'courseName': course['name'], items: submissionsCount})
   csvPF.writeCSVfile('Course Submissions')
 
 COURSE_PARTICIPANTS_SORT_TITLES = ['courseId', 'courseName', 'userRole', 'userId']
 
 # gam print course-participants [todrive <ToDriveAttribute>*]
 #	(course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
-#	[show all|students|teachers] [formatjson [quotechar <Character>]]
-#	[showitemcountonly]
+#	[show all|students|teachers]
+#	[showitemcountonly] [formatjson [quotechar <Character>]]
 def doPrintCourseParticipants():
   croom = buildGAPIObject(API.CLASSROOM)
   csvPF = CSVPrintFile(['courseId', 'courseName'])
@@ -75100,6 +75608,7 @@ USER_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_LABEL:		createLabel,
   Cmd.ARG_LABELLIST:		createLabelList,
   Cmd.ARG_LICENSE:		createLicense,
+  Cmd.ARG_MEETSPACE:		createMeetSpace,
   Cmd.ARG_NOTE:			createNote,
   Cmd.ARG_NOTEACL:		createNotesACLs,
   Cmd.ARG_OUTOFOFFICE:		createOutOfOffice,
@@ -75258,6 +75767,11 @@ USER_COMMANDS_WITH_OBJECTS = {
      {Cmd.ARG_CSEKEYPAIR:	processCSEKeyPair,
      }
     ),
+  'end':
+    (Act.END,
+     {Cmd.ARG_MEETCONFERENCE:	endMeetConference,
+     }
+    ),
   'export':
     (Act.EXPORT,
      {Cmd.ARG_MESSAGE:		exportMessages,
@@ -75305,6 +75819,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_FILTER:		infoFilters,
       Cmd.ARG_FORWARDINGADDRESS:	infoForwardingAddresses,
       Cmd.ARG_GROUPMEMBERS:	infoGroupMembers,
+      Cmd.ARG_MEETSPACE:	infoMeetSpace,
       Cmd.ARG_NOTE:		deleteInfoNotes,
       Cmd.ARG_PEOPLECONTACT:	infoUserPeopleContacts,
       Cmd.ARG_PEOPLECONTACTGROUP:	infoUserPeopleContactGroups,
@@ -75404,6 +75919,10 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_IMAP:		printShowImap,
       Cmd.ARG_LABEL:		printShowLabels,
       Cmd.ARG_LANGUAGE:		printShowLanguage,
+      Cmd.ARG_MEETCONFERENCE:	printShowMeetConferences,
+      Cmd.ARG_MEETPARTICIPANT:	printShowMeetParticipants,
+      Cmd.ARG_MEETRECORDING:	printShowMeetRecordings,
+      Cmd.ARG_MEETTRANSCRIPT:	printShowMeetTranscripts,
       Cmd.ARG_MESSAGE:		printShowMessages,
       Cmd.ARG_NOTE:		printShowNotes,
       Cmd.ARG_OTHERCONTACT:	printShowUserPeopleOtherContacts,
@@ -75505,6 +76024,10 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_IMAP:		printShowImap,
       Cmd.ARG_LABEL:		printShowLabels,
       Cmd.ARG_LANGUAGE:		printShowLanguage,
+      Cmd.ARG_MEETCONFERENCE:	printShowMeetConferences,
+      Cmd.ARG_MEETPARTICIPANT:	printShowMeetParticipants,
+      Cmd.ARG_MEETRECORDING:	printShowMeetRecordings,
+      Cmd.ARG_MEETTRANSCRIPT:	printShowMeetTranscripts,
       Cmd.ARG_MESSAGE:		printShowMessages,
       Cmd.ARG_NOTE:		printShowNotes,
       Cmd.ARG_OTHERCONTACT:	printShowUserPeopleOtherContacts,
@@ -75614,6 +76137,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_LABELID:		updateLabelSettingsById,
       Cmd.ARG_LABELSETTINGS:	updateLabelSettings,
       Cmd.ARG_LICENSE:		updateLicense,
+      Cmd.ARG_MEETSPACE:	updateMeetSpace,
       Cmd.ARG_OTHERCONTACT:	processUserPeopleOtherContacts,
       Cmd.ARG_PEOPLECONTACT:	updateUserPeopleContacts,
       Cmd.ARG_PEOPLECONTACTGROUP:	updateUserPeopleContactGroup,
@@ -75727,6 +76251,11 @@ USER_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_LICENCE:		Cmd.ARG_LICENSE,
   Cmd.ARG_LICENCES:		Cmd.ARG_LICENSE,
   Cmd.ARG_LICENSES:		Cmd.ARG_LICENSE,
+  Cmd.ARG_MEETCONFERENCES:	Cmd.ARG_MEETCONFERENCE,
+  Cmd.ARG_MEETPARTICIPANTS:	Cmd.ARG_MEETPARTICIPANT,
+  Cmd.ARG_MEETRECORDINGS:	Cmd.ARG_MEETRECORDING,
+  Cmd.ARG_MEETTRANSCRIPTS:	Cmd.ARG_MEETTRANSCRIPT,
+  Cmd.ARG_MEETSPACES:		Cmd.ARG_MEETSPACE,
   Cmd.ARG_MEMBER:		Cmd.ARG_GROUPMEMBERS,
   Cmd.ARG_MEMBERS:		Cmd.ARG_GROUPMEMBERS,
   Cmd.ARG_MESSAGES:		Cmd.ARG_MESSAGE,

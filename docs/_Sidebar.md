@@ -155,6 +155,8 @@ Service Account Access
 * [Users - Group Membership](Users-Group-Membership)
 * [Users - Keep](Users-Keep)
 * [Users - Looker Studio](Users-Looker-Studio)
+* [Users - Meet](Users-Meet)
+* [Users - Classroom - Profile](Users-Classroom-Profile)
 * [Users - People - Contacts & Profiles](Users-People-Contacts-Profiles)
 * [Users - Photo](Users-Photo)
 * [Users - Profile Sharing](Users-Profile-Sharing)

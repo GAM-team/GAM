@@ -1,7 +1,7 @@
 # Users
 - [API documentation](#api-documentation)
-- [Name guidelines](#name-guidelines)
 - [Query documentation](#query-documentation)
+- [Name guidelines](#name-guidelines)
 - [Quoting rules](#quoting-rules)
 - [Python Regular Expressions](Python-Regular-Expressions) Match function and Search function
 - [Definitions](#definitions)
@@ -46,11 +46,11 @@
 * https://developers.google.com/admin-sdk/directory/reference/rest/v1/users
 * https://developers.google.com/admin-sdk/directory/reference/rest/v1/schemas
 
-## Name guidelines
-* https://support.google.com/a/answer/9193374
-
 ## Query documentation
 * https://developers.google.com/admin-sdk/directory/v1/guides/search-users
+
+## Name guidelines
+* https://support.google.com/a/answer/9193374
 
 ## Quoting rules
 Items in a list can be separated by commas or spaces; if an item itself contains a comma, a space or a single quote, special quoting must be used.

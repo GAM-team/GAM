@@ -495,8 +495,9 @@ gam print course-announcements [todrive <ToDriveAttribute>*]
         (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] states <CourseStateList>])
         (courseannouncementids <CourseAnnouncementIDEntity>)|(announcementstates <CourseAnnouncementStateList>)*
         (orderby <CourseAnnouncementOrderByFieldName> [ascending|descending])*)
-        [creatoremail] [fields <CourseAnnouncementFieldNameList>] [formatjson [quotechar <Character>]]
+        [creatoremail] [fields <CourseAnnouncementFieldNameList>]
         [timefilter creationtime|updatetime|scheduledtime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
+        [countsonly] [formatjson [quotechar <Character>]]
 ```
 By default, the `print course-announcements` command displays course announcement information for all courses.
 
@@ -525,6 +526,8 @@ By default, all course announcement fields are displayed; use the following opti
 * `creatoremail` - Display course announcement creator email; requires an additional API call per course announcement.
 * `fields <CourseAnnouncementFieldNameList>` - Select specific fields to display.
 
+Use the `countsonly` option to display the number of announcements in a course but not their details.
+
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.
 
@@ -540,8 +543,9 @@ gam print course-materials [todrive <ToDriveAttribute>*]
         (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] states <CourseStateList>])
         (materialids <CourseMaterialIDEntity>)|(materialstates <CourseMaterialStateList>)*
         (orderby <CourseMaterialOrderByFieldName> [ascending|descending])*)
-        [showcreatoremails|creatoremail] [showtopicnames] [fields <CourseMaterialFieldNameList>] [formatjson [quotechar <Character>]]
+        [showcreatoremails|creatoremail] [showtopicnames] [fields <CourseMaterialFieldNameList>]
         [timefilter creationtime|updatetime|scheduledtime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
+        [countsonly] [formatjson [quotechar <Character>]]
 ```
 By default, the `print course-materials` command displays course materials information for all courses.
 
@@ -571,6 +575,8 @@ By default, all course materials fields are displayed; use the following options
 * `showtopicnames` - Display topic names; requires and additional API call per course.
 * `fields <CourseMaterialsFieldNameList>` - Select specific fields to display.
 
+Use the `countsonly` option to display the number of course materials in a course but not their details.
+
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.
 
@@ -585,8 +591,8 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 gam print course-topics [todrive <ToDriveAttribute>*]
         (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] states <CourseStateList>])
         (coursetopicids <CourseTopicIDEntity>)
-        [formatjson [quotechar <Character>]]
         [timefilter updatetime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
+        [countsonly] [formatjson [quotechar <Character>]]
 ```
 By default, the `print course-topics` command displays course topic information for all courses.
 
@@ -611,6 +617,8 @@ To get information about course topics updated within a particular time frame, u
 * `end|endtime <Date>|<Time>` - specify the end of the time frame; if not specified, the time frame will be open ended at the end
 For the filter to apply, `timefilter` and at least one of `start|starttime` and `end|endtime` must be specified.
 
+Use the `countsonly` option to display the number of topics in a course but not their details.
+
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.
 
@@ -628,8 +636,8 @@ gam print course-work [todrive <ToDriveAttribute>*]
         (orderby <CourseWorkOrderByFieldName> [ascending|descending])*)
         [showcreatoremails] [showtopicnames] [fields <CourseWorkFieldNameList>]
         [showstudentsaslist [<Boolean>]] [delimiter <Character>]
-        [formatjson [quotechar <Character>]]
         [timefilter creationtime|updatetime|scheduledtime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
+        [countsonly] [formatjson [quotechar <Character>]]
 ```
 By default, the `print course-work` command displays course work information for all courses.
 
@@ -662,6 +670,8 @@ By default, all course work fields are displayed; use the following options to m
 By default, when course work is assigned to individual students, the student IDs are displayed in multiple indexed columns.
 Use options `showstudentsaslist [<Boolean>]` and `delimiter <Character>` to display the student IDs is a single column as a delimited list.
 
+Use the `countsonly` option to display the number of course works in a course but not their details.
+
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.
 
@@ -678,8 +688,9 @@ gam print course-submissions [todrive <ToDriveAttribute>*]
         (workids <CourseWorkIDEntity>)|(workstates <CourseWorkStateList>)*
         (orderby <CourseWorkOrderByFieldName> [ascending|descending])*)
         (submissionids <CourseSubmissionIDEntity>)|(submissionstates <CourseSubmissionStateList>)*) [late|notlate]
-        [fields <CourseSubmissionFieldNameList>] [showuserprofile] [formatjson [quotechar <Character>]]
+        [fields <CourseSubmissionFieldNameList>] [showuserprofile]
         [timefilter creationtime|updatetime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
+        [countsonly] [formatjson [quotechar <Character>]]
 ```
 By default, the `print course-submissions` command displays course submission information for all course work for all courses.
 
@@ -704,7 +715,7 @@ By default, all course submissions for a course work is displayed; use the follo
 * `late` - Display course submissions marked late.
 * `notlate` - Display course submissions not marked late.
 
-To get information about course submissionss created/updated within a particular time frame, use the following options.
+To get information about course submissions created/updated within a particular time frame, use the following options.
 * `timefilter creationtime|updatetime` - select which event to filter
 * `start|starttime <Date>|<Time>` - specify the start of the time frame; if not specified, the time frame will be open ended at the start
 * `end|endtime <Date>|<Time>` - specify the end of the time frame; if not specified, the time frame will be open ended at the end
@@ -716,6 +727,8 @@ By default, all course submission fields are displayed; use the following option
 By default, only the numeric userId is displayed; use the `showuserprofile` option to get the user email address and name.
 You can only get profile information if the scope `https://www.googleapis.com/auth/classroom.profile.emails` is enabled
 for service account access; verify with `gam <UserTypeEntity> update serviceaccount`.
+
+Use the `countsonly` option to display the number of submissions in a course but not their details.
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.

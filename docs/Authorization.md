@@ -1088,6 +1088,9 @@ You can limit both client and service account access.
 You can repeat these steps if you want to configure multiple limited users;
 substitute a unique value for `limited` in each of the steps.
 
+In the Admin console, define a new Admin role with the desired privileges,
+assign it to the limited user and indicate whether it is for all Org Units or a specific Org Unit.
+
 On your computer, perform these initial steps:
 
 Make a subdirectory `limited` under the directory specified in `gam.cfg config_dir`

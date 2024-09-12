@@ -2599,19 +2599,21 @@ gam create chromepolicyimage <ChromePolicyImageSchemaName> <FileName>
 
 gam update chromepolicy [convertcrnl]
         (<SchemaName> ((<Field> <Value>)+ | <JSONData>))+
-        ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
+        ((ou|orgunit <OrgUnitItem>)|(cigroup <GroupItem>))
+        [(printerid <PrinterID>)|(appid <AppID>)]
 gam delete chromepolicy
         (<SchemaName> [<JSONData>])+
-        ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
+        ((ou|orgunit <OrgUnitItem>)|(cigroup <GroupItem>))
+        [(printerid <PrinterID>)|(appid <AppID>)]
 gam show chromepolicies
-        ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
-        [filter <String>] [namespace <NamespaceList>]
-        [show all|direct|inherited]
+        ((ou|orgunit <OrgUnitItem> [show all|direct|inherited])|(cigroup <GroupItem>))
+        [(printerid <PrinterID>)|(appid <AppID>)]
+        (filter <StringList>)* (namespace <NamespaceList>)*
         [formatjson]
 gam print chromepolicies [todrive <ToDriveAttribute>*]
-        ou|org|orgunit <OrgUnitItem> [(printerid <PrinterID>)|(appid <AppID>)]
-        [filter <String>] [namespace <NamespaceList>]
-        [show all|direct|inherited]
+        ((ou|orgunit <OrgUnitItem> [show all|direct|inherited])|(cigroup <GroupItem>))
+        [(printerid <PrinterID>)|(appid <AppID>)]
+        (filter <StringList>)* (namespace <NamespaceList>)*
         [[formatjson [quotechar <Character>]]
 
 <ChromePolicySchemaFieldName> ::=
@@ -3144,36 +3146,36 @@ gam print course-announcements [todrive <ToDriveAttribute>*]
         (announcementids <CourseAnnouncementIDEntity>)|((announcementstates <CourseAnnouncementStateList>)*
         (orderby <CourseAnnouncementOrderByFieldName> [ascending|descending])*)
         [showcreatoremails|creatoremail] [fields <CourseAnnouncementFieldNameList>]
-        [formatjson [quotechar <Character>]]
         [timefilter creationtime|updatetime|scheduledtime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
+        [countsonly] [formatjson [quotechar <Character>]]
 gam print course-materials [todrive <ToDriveAttribute>*]
         (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] states <CourseStateList>])
         (materialids <CourseMaterialIDEntity>)|((materialstates <CourseMaterialStateList>)*
         (orderby <CourseMaterialOrderByFieldName> [ascending|descending])*)
         [showcreatoremails|creatoremail] [showtopicnames] [fields <CourseMaterialFieldNameList>]
-        [formatjson [quotechar <Character>]]
         [timefilter creationtime|updatetime|scheduledtime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
+        [countsonly] [formatjson [quotechar <Character>]]
 gam print course-submissions [todrive <ToDriveAttribute>*]
         (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] states <CourseStateList>])
         (workids <CourseWorkIDEntity>)|((workstates <CourseWorkStateList>)*
         (orderby <CourseWorkOrderByFieldName> [ascending|descending])*)
         (submissionids <CourseSubmissionIDEntity>)|((submissionstates <CourseSubmissionStateList>)*) [late|notlate]
         [fields <CourseSubmissionFieldNameList>]
-        [formatjson [quotechar <Character>]] [showuserprofile]
         [timefilter creationtime|updatetime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
+        [countsonly] [formatjson [quotechar <Character>]]
 gam print course-topics [todrive <ToDriveAttribute>*]
         (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] states <CourseStateList>])
         [topicids <CourseTopicIDEntity>]
-        [formatjson [quotechar <Character>]]
         [timefilter updatetime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
+        [countsonly] [formatjson [quotechar <Character>]]
 gam print course-works [todrive <ToDriveAttribute>*]
         (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] states <CourseStateList>])
         (workids <CourseWorkIDEntity>)|((workstates <CourseWorkStateList>)*
         (orderby <CourseWorkOrderByFieldName> [ascending|descending])*)
         [showcreatoremails|creatoremail] [showtopicnames] [fields <CourseWorkFieldNameList>]
         [showstudentsaslist [<Boolean>]] [delimiter <Character>]
-        [formatjson [quotechar <Character>]]
         [timefilter creationtime|updatetime|scheduledtime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
+        [countsonly] [formatjson [quotechar <Character>]]
 
 # Classroom - Invitations
 
@@ -6062,7 +6064,7 @@ gam <UserTypeEntity> print focustime|outofoffice|workinglocation
         [showdayofweek]
         [formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
 
-# Users Chat
+# Users - Chat
 
 <ChatContent> ::=
         ((text <String>)|
@@ -7793,6 +7795,52 @@ gam <UserTypeEntity> show lookerstudiopermissions
          (assetids <LookerStudioAssetIDEntity>)]
         [role editor|owner|viewer]
         [formatjson]
+
+# Users - Meet
+
+<MeetConferenceName> ::= conferenceRecords/<String>
+<MeetSpaceName> ::= spaces/<String> | <String>
+<MeetSpaceOptions> ::=
+        accesstype open|trusted|restricted |
+        entrypointaccess all|creatorapponly
+
+gam <UserTypeEntity> create meetspace
+        <MeetSpaceOptions>*
+        [formatjson]
+
+gam <UserTypeEntity> update meetspace <MeetSpaceName>
+        <MeetSpaceOptions>*
+        [formatjson]
+
+gam <UserTypeEntity> info meetspace <MeetSpaceName>
+        [formatjson]
+
+gam <UserTypeEntity> end meetconference <MeetSpaceName>
+
+gam <UserItem> show meetconferences
+        [space <MeetSpaceName>] [code <String>]
+        [andquery|orquery <String>] [querytime<String> <Time>]
+        [formatjson]
+gam <UserItem> print meetconferences [todrive <ToDriveAttribute>*]
+        [andquery|orquery <String>] [querytime<String> <Time>]
+        [formatjson [quotechar <Character>]]
+
+gam <UserItem> show meetparticipants <MeetConferenceName>
+        [query <String>] [querytime<String> <Time>]
+        [formatjson]
+gam <UserItem> print meetparticipants <MeetConferenceName> [todrive <ToDriveAttribute>*]
+        [query <String>] [querytime<String> <Time>]
+        [formatjson [quotechar <Character>]]
+
+gam <UserItem> show meetrecordings <MeetConferenceName>
+        [formatjson]
+gam <UserItem> print meetrecordings <MeetConferenceName> [todrive <ToDriveAttribute>*]
+        [formatjson [quotechar <Character>]]
+
+gam <UserItem> show meettranscripts <MeetConferenceName>
+        [formatjson]
+gam <UserItem> print meettranscripts <MeetConferenceName> [todrive <ToDriveAttribute>*]
+        [formatjson [quotechar <Character>]]
 
 # Users - Contacts and Profiles
 

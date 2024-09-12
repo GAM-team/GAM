@@ -2,16 +2,34 @@
 
 Merged GAM-Team version
 
+6.81.00
+
+Added support for groups when defining Chrome policies.
+
+Added support for the Meet API.
+
+* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Meet
+
+Added option `countsonly` to the following course commands that displays
+the number of items in a course but not the details of the items.
+```
+gam print course-announcements
+gam print course-materials
+gam print course-submissions
+gam print course-topics
+gam print course-work
+```
+
 6.80.21
 
-Updated `gam <UserTypeEntity> archive messages` to handle the followong error:
+Updated `gam <UserTypeEntity> archive messages` to handle the following error:
 ```
 googleapiclient.errors.MediaUploadSizeError: Media larger than: 26214400
 ```
 
 6.80.20
 
-Updated `gam report usage user` and `gam report users` to handle the followong error:
+Updated `gam report usage user` and `gam report users` to handle the following error:
 ```
 ERROR: 503: serviceNotAvailable - The service is currently unavailable.
 ```

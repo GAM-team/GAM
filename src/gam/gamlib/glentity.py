@@ -260,6 +260,11 @@ class GamEntity():
   LOOKERSTUDIO_ASSET_REPORT = 'lsar'
   LOOKERSTUDIO_PERMISSION = 'lspe'
   MD5HASH = 'md5h'
+  MEET_SPACE = 'mesp'
+  MEET_CONFERENCE = 'msco'
+  MEET_PARTICIPANT = 'msps'
+  MEET_RECORDING = 'msre'
+  MEET_TRANSCRIPT = 'mstr'
   MEMBER = 'memb'
   MEMBER_NOT_ARCHIVED = 'mena'
   MEMBER_ARCHIVED = 'mear'
@@ -605,6 +610,11 @@ class GamEntity():
     LOOKERSTUDIO_ASSET_REPORT: ['Looker Studio REPORT Assets', 'Looker Studio REPORT Asset'],
     LOOKERSTUDIO_PERMISSION: ['Looker Studio Permissions', 'Looker Studio Permission'],
     MD5HASH: ['MD5 hash', 'MD5 Hash'],
+    MEET_SPACE: ['Meet Spaces', 'Meet Space'],
+    MEET_CONFERENCE: ['Meet Conferences', 'Meet Conference'],
+    MEET_PARTICIPANT: ['Meet Participants', 'Meet Participant'],
+    MEET_RECORDING: ['Meet Recordings', 'Meet Recording'],
+    MEET_TRANSCRIPT: ['Meet Transcripts', 'Meet Transcript'],
     MEMBER: ['Members', 'Member'],
     MEMBER_NOT_ARCHIVED: ['Members (Not Archived)', 'Member (Not Archived)'],
     MEMBER_ARCHIVED: ['Members (Archived)', 'Member (Archived)'],

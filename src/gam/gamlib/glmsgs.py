@@ -78,7 +78,7 @@ Please go to:
 
   https://admin.google.com/ac/owl/list?tab=configuredApps
 
-1. Click on: Add app > OAuth App Name Or Client ID.
+1. Click on: Configure new app > OAuth App Name Or Client ID.
 2. Enter the following Client ID value:
 
   {1}

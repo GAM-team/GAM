@@ -17,6 +17,8 @@ To use these commands you must add the 'Looker Studio API' to your project and u
 ```
 gam update project
 gam user user@domain.com check serviceaccount
+...
+[*] 35)  Looker Studio API (supports readonly)
 ```
 ## Definitions
 * [`<UserTypeEntity>`](Collections-of-Users)
