@@ -14,6 +14,8 @@
   - [Display Chrome policies](#display-chrome-policies)
   - [Copy simple policies set directly in one OU to another OU](#copy-simple-policies-set-directly-in-one-ou-to-another-ou)
   - [Copy simple and complex policies set directly in one OU to another OU](#copy-simple-and-complex-policies-set-directly-in-one-ou-to-another-ou)
+  - [Copy simple policies in one Group to another Group](#copy-simple-policies-in-one-group-to-another-group)
+  - [Copy simple and complex policies in one Group to another Group](#copy-simple-and-complex-policies-in-one-group-to-another-group)
   - [Create Chrome network](#create-chrome-network)
   - [Delete Chrome network](#delete-chrome-network)
   - [Chrome Policy Schema Table](#chrome-policy-schema-table)
@@ -343,8 +345,6 @@ gam redirect csv ChromePolicies.csv print chromepolicies ou "/Path/To/OU1"
 gam config csv_input_row_filter "direct:boolean:true" csv ChromePolicies.csv gam update chromepolicy "~name" "~fields.0.name" "~fields.0.value" "~fields.1.name" "~fields.1.value" ou "/Path/To/OU2"
 ```
 ## Copy simple and complex policies set directly in one OU to another OU
-Version `6.21.02` is required.
-
 Display direct policies, update all
 ```
 gam redirect csv ChromePolicies.csv print chromepolicies ou "/Path/To/OU1" show direct formatjson quotechar "'"
@@ -354,6 +354,19 @@ Display all policies, select direct on update
 ```
 gam redirect csv ChromePolicies.csv print chromepolicies ou "/Path/To/OU1" formatjson quotechar "'"
 gam config csv_input_row_filter "direct:boolean:true" csv ChromePolicies.csv quotechar "'" gam update chromepolicy "~name" json "~JSON" ou "/Path/To/OU2"
+```
+
+## Copy simple policies in one Group to another Group
+Display all policies, update all
+```
+gam redirect csv ChromePolicies.csv print chromepolicies group group1@domain.com
+gam csv ChromePolicies.csv gam update chromepolicy "~name" "~fields.0.name" "~fields.0.value" "~fields.1.name" "~fields.1.value" group group2@domain.com
+```
+## Copy simple and complex policies in one Group to another Group
+Display all policies, update all
+```
+gam redirect csv ChromePolicies.csv print chromepolicies group group1@domain.com formatjson quotechar "'"
+gam csv ChromePolicies.csv quotechar "'" gam update chromepolicy "~name" json "~JSON" group group2@domain.com
 ```
 
 ## Create Chrome network
