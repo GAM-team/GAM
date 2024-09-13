@@ -27143,9 +27143,9 @@ def createMeetSpace(users):
   FJQC = FormatJSONQuoteChar()
   body = {'config': {'accessType': 'TRUSTED',
                      'entryPointAccess': 'ALL',
-                     'moderation': 'OFF',
-                     'moderationRestrictions': {},
-                     'firstJoinerType': 'ANYONE',
+#                     'moderation': 'OFF',
+#                     'moderationRestrictions': {},
+#                     'firstJoinerType': 'ANYONE',
                      }}
   returnIdOnly = False
   updateMask = []

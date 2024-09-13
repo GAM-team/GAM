@@ -2,6 +2,11 @@
 
 Merged GAM-Team version
 
+6.81.01
+
+Fixed bug in `gam <UserTypeEntity> create meetspace` that caused errors
+due to Developer Preview options being included.
+
 6.81.00
 
 Added support for groups when defining Chrome policies.

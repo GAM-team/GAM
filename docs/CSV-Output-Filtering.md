@@ -122,7 +122,7 @@ where you get more columns than is desirable.
 * `csv_output_header_filter` - Used to select the column headers to include in the output
 * `csv_output_header_drop_filter` - Used to select the column headers to exclude from the output
 
-Typically, you would use the option that involes typing the fewest column names but both options can be used.
+Typically, you would use the option that involves typing the fewest column names but both options can be used.
 When both options are used, `csv_output_header_drop_filter` is processed first, then `csv_output_header_filter`.
 
 Field names are specified by regular expressions; at its simplest, you specify a complete field name.
