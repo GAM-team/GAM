@@ -31907,7 +31907,7 @@ def doUpdateGroups():
                            throwReasons=GAPI.GROUP_UPDATE_THROW_REASONS, retryReasons=GAPI.GROUP_GET_RETRY_REASONS,
                            groupKey=group, body=body, fields='email')['email']
         except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.backendError, GAPI.badRequest, GAPI.invalid, GAPI.invalidInput,
-                GAPI.systemError, GAPI.permissionDenied, GAPI.failedPrecondition) as e:
+                GAPI.systemError, GAPI.permissionDenied, GAPI.failedPrecondition, GAPI.forbidden) as e:
           entityActionFailedWarning([entityType, group], str(e), i, count)
           continue
       if gs_body and not GroupIsAbuseOrPostmaster(group):

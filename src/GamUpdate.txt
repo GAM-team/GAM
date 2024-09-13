@@ -2,6 +2,10 @@
 
 Merged GAM-Team version
 
+6.81.02
+
+Updated `gam update group postmaster@domain.com` to handle the error that is generated.
+
 6.81.01
 
 Fixed bug in `gam <UserTypeEntity> create meetspace` that caused errors

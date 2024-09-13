@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 6.81.02
+
+Updated `gam update group postmaster@domain.com` to handle the error that is generated.
+
 ### 6.81.01
 
 Fixed bug in `gam <UserTypeEntity> create meetspace` that caused errors
