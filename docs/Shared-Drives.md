@@ -12,6 +12,7 @@
   - [Delete a Shared Drive](#delete-a-shared-drive)
   - [Change Shared Drive visibility](#change-shared-drive-visibility)
 - [Display Shared Drives](#display-shared-drives)
+- [Display List of Shared Drives in an Organizational Unit other than /](#display-list-of-shared-drives-in-an-organizational-unit-other-than-)
 - [Display List of Shared Drives in an Organizational Unit](#display-list-of-shared-drives-in-an-organizational-unit)
 - [Display all Shared Drives with no organizers](#display-all-shared-drives-with-no-organizers)
 - [Display all Shared Drives with a specific organizer](#display-all-shared-drives-with-a-specific-organizer)
@@ -411,40 +412,20 @@ Substitute actual email address for `organizer@domain.com`.
 gam config csv_output_header_filter "id,name" print teamdriveacls pm emailaddress organizer@domain.com role organizer em pma skip pmselect
 ```
 
+## Display List of Shared Drives in an Organizational Unit other than /
+Get the orgUnitID of OU / and use it (without the id:) in the print|show command. Adjust fields as desired.
+```
+gam info ou / nousers
+gam show teamdrives query "orgUnitId!='00gjdgxs2p9cxyz'" fields id,name,orgunit,createdtime
+gam print teamdrives query "orgUnitId!='00gjdgxs2p9cxyz'" fields id,name,orgunit,createdtime
+```
+
 ## Display List of Shared Drives in an Organizational Unit
-To use this command you must add the `Cloud Identity API` to your project and authorize
-the appropriate scope: `Cloud Identity OrgUnits API`.
-
-You'll have to do `gam update project` and `gam oauth create` to enable this command.
-
+Get the orgUnitID of the desired OU and use it (without the id:) in the print|show command. Adjust fields as desired.
 ```
-gam show oushareddrives
-        [ou|org|orgunit <OrgUnitPath>]                                                                                                                                                                                                                                             
-        [formatjson]
-```
-If `ou|org|orgunit <OrgUnitPath>` is not specified, `/` is used.
-
-By default, Gam displays the information as an indented list of keys and values.
-* `formatjson` - Display the fields in JSON format.
-```
-gam print oushareddrives [todrive <ToDriveAttribute>*]
-        [ou|org|orgunit <OrgUnitPath>]
-        [formatjson [quotechar <Character>]]
-```
-If `ou|org|orgunit <OrgUnitPath>` is not specified, `/` is used.
-
-By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
-* `formatjson` - Display the fields in JSON format.
-
-By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
-the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
-When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
-The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
-`quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
-
-### Get clean, simple output
-```
-gam config csv_output_header_filter "driveId,driveName,orgUnitPath" print oushareddrives [ou <OrgUnitPath>]
+gam info ou <OrgUnitPath> nousers
+gam show teamdrives query "orgUnitId='03ph8a2z21rexy'" fields id,name,orgunit,createdtime
+gam print teamdrives query "orgUnitId='03ph8a2z21rexy'" fields id,name,orgunit,createdtime
 ```
 
 ## Manage Shared Drive access
