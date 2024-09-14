@@ -63,11 +63,11 @@ jobs:
             goal: build
             arch: aarch64
             openssl_archs: darwin64-arm64
-          - os: macos-14
-            jid: 7
-            goal: build
-            arch: universal2
-            openssl_archs: darwin64-arm64 darwin64-x86_64
+#          - os: macos-14
+#            jid: 7
+#            goal: build
+#            arch: universal2
+#            openssl_archs: darwin64-arm64 darwin64-x86_64
           - os: windows-2022
             jid: 8
             goal: build
