@@ -14,8 +14,10 @@
   - [Display Chrome policies](#display-chrome-policies)
   - [Copy simple policies set directly in one OU to another OU](#copy-simple-policies-set-directly-in-one-ou-to-another-ou)
   - [Copy simple and complex policies set directly in one OU to another OU](#copy-simple-and-complex-policies-set-directly-in-one-ou-to-another-ou)
+  - [Copy simple and complex policies set directly in one OU to multiple other OUs](#copy-simple-and-complex-policies-set-directly-in-one-ou-to-multiple-other-ous)
   - [Copy simple policies in one Group to another Group](#copy-simple-policies-in-one-group-to-another-group)
   - [Copy simple and complex policies in one Group to another Group](#copy-simple-and-complex-policies-in-one-group-to-another-group)
+  - [Copy simple and complex policies in one Group to multiple other Groups](#copy-simple-and-complex-policies-in-one-group-to-multiple-other-groups)
   - [Create Chrome network](#create-chrome-network)
   - [Delete Chrome network](#delete-chrome-network)
   - [Chrome Policy Schema Table](#chrome-policy-schema-table)
@@ -356,6 +358,22 @@ gam redirect csv ChromePolicies.csv print chromepolicies ou "/Path/To/OU1" forma
 gam config csv_input_row_filter "direct:boolean:true" csv ChromePolicies.csv quotechar "'" gam update chromepolicy "~name" json "~JSON" ou "/Path/To/OU2"
 ```
 
+## Copy simple and complex policies set directly in one OU to multiple other OUs
+Display direct policies, update all
+```
+gam redirect csv ChromePolicies.csv print chromepolicies ou "/Path/To/OU1" show direct formatjson quotechar "'"
+```
+Make a batch file (SetPolicies.bat) with a line for each target OU
+```
+gam csv ChromePolicies.csv quotechar "'" gam update chromepolicy "~name" json "~JSON" ou "/Path/To/OU2"
+gam csv ChromePolicies.csv quotechar "'" gam update chromepolicy "~name" json "~JSON" ou "/Path/To/OU3"
+...
+```
+Execute batch
+```
+gam redirect stdout ./SetPolicies.log multiprocess redirect stderr stdout tbatch SetPolicies.bat
+```
+
 ## Copy simple policies in one Group to another Group
 Display all policies, update all
 ```
@@ -367,6 +385,22 @@ Display all policies, update all
 ```
 gam redirect csv ChromePolicies.csv print chromepolicies group group1@domain.com formatjson quotechar "'"
 gam csv ChromePolicies.csv quotechar "'" gam update chromepolicy "~name" json "~JSON" group group2@domain.com
+```
+
+## Copy simple and complex policies in one Group to multiple other Groups
+Display all policies, update all
+```
+gam redirect csv ChromePolicies.csv print chromepolicies group group1@domain.com formatjson quotechar "'"
+```
+Make a batch file (SetPolicies.bat) with a line for each target group
+```
+gam csv ChromePolicies.csv quotechar "'" gam update chromepolicy "~name" json "~JSON" group group2@domain.com
+gam csv ChromePolicies.csv quotechar "'" gam update chromepolicy "~name" json "~JSON" group group3@domain.com
+...
+```
+Execute batch
+```
+gam redirect stdout ./SetPolicies.log multiprocess redirect stderr stdout tbatch SetPolicies.bat
 ```
 
 ## Create Chrome network

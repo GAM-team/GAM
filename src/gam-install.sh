@@ -16,7 +16,7 @@ OPTIONS:
    -u      Admin user email address to use with GAM. Default is to prompt.
    -r      Regular user email address. Used to test service account access to user data. Default is to prompt.
    -v      Version to install (latest, prerelease, draft, 3.8, etc). Default is latest.
-   -s      Strip gam7 component from extracted files, files will be downloaded directly to $target_dir
+   -s      Strip gam component from extracted files, files will be downloaded directly to $target_dir
 EOF
 }
 
@@ -30,7 +30,7 @@ upgrade_only=false
 gamversion="latest"
 adminuser=""
 regularuser=""
-gam_x86_64_glibc_vers="2.31"
+gam_x86_64_glibc_vers="2.35 2.31"
 gam_arm64_glibc_vers="2.31"
 strip_gam="--strip-components 0"
 
@@ -172,7 +172,9 @@ case $gamos in
     ;;
 esac
 
-if [ "$gamversion" == "latest" -o "$gamversion" == "prerelease" -o "$gamversion" == "draft" ]; then
+if [ "$gamversion" == "latest" ]; then
+  release_url="https://api.github.com/repos/GAM-team/GAM/releases/latest"
+elif [ "$gamversion" == "prerelease" -o "$gamversion" == "draft" ]; then
   release_url="https://api.github.com/repos/GAM-team/GAM/releases"
 else
   release_url="https://api.github.com/repos/GAM-team/GAM/releases/tags/v$gamversion"

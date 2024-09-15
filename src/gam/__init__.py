@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.00'
+__version__ = '7.00.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -66995,14 +66995,14 @@ SPREADSHEET_SHEETS_SUBFIELDS_CHOICE_MAP = {
   }
 
 # gam <UserTypeEntity> info|show sheet <DriveFileEntity>
-#	[fields <SpreadsheetFieldList>]
+#	[fields <SpreadsheetFieldList>] [sheetsfields <SpreadsheetSheetsFieldList>]
 #	(range <SpreadsheetRange>)* (rangelist <SpreadsheetRangeList>)*
-#	[includegriddata [<Boolean>]]
+#	[includegriddata [<Boolean>]] [shownames]
 #	[formatjson]
 # gam <UserTypeEntity> print sheet <DriveFileEntity> [todrive <ToDriveAttribute>*]
-#	[fields <SpreadsheetFieldList>]
+#	[fields <SpreadsheetFieldList>] [sheetsfields <SpreadsheetSheetsFieldList>]
 #	(range <SpreadsheetRange>)* (rangelist <SpreadsheetRangeList>)*
-#	[includegriddata [<Boolean>]]
+#	[includegriddata [<Boolean>]] [shownames]
 #	[formatjson [quotechar <Character>]]
 def infoPrintShowSheets(users):
   csvPF = CSVPrintFile(['User', 'spreadsheetId'], 'sortall') if Act.csvFormat() else None
@@ -67010,7 +67010,7 @@ def infoPrintShowSheets(users):
   spreadsheetIdEntity = getDriveFileEntity()
   fieldsList = []
   ranges = []
-  includeGridData = False
+  includeGridData = showSheetNames = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -67029,8 +67029,16 @@ def infoPrintShowSheets(users):
           fieldsList.append(SPREADSHEET_SHEETS_SUBFIELDS_CHOICE_MAP[field])
         else:
           invalidChoiceExit(field, SPREADSHEET_SHEETS_SUBFIELDS_CHOICE_MAP, True)
+    elif myarg == 'shownames':
+      showSheetNames = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
+  if csvPF and showSheetNames:
+    csvPF.AddTitles('spreadsheetName')
+    csvPF.SetSortAllTitles()
+    if FJQC.formatJSON:
+      csvPF.AddJSONTitles('spreadsheetName')
+      csvPF.MoveJSONTitlesToEnd(['JSON'])
   if includeGridData and fieldsList:
     fieldsList.append(SPREADSHEET_SHEETS_SUBFIELDS_CHOICE_MAP['data'])
   fields = getFieldsFromFieldsList(fieldsList)
@@ -67040,6 +67048,10 @@ def infoPrintShowSheets(users):
     user, sheet, jcount = _validateUserGetSpreadsheetIDs(user, i, count, spreadsheetIdEntity, not FJQC.formatJSON)
     if jcount == 0:
       continue
+    if showSheetNames:
+      _, drive = buildGAPIServiceObject(API.DRIVE3, user, i, count)
+      if not drive:
+        continue
     Ind.Increment()
     j = 0
     for spreadsheetId in spreadsheetIdEntity['list']:
@@ -67051,11 +67063,25 @@ def infoPrintShowSheets(users):
         if not includeGridData and 'sheets' in result:
           for usheet in result['sheets']:
             usheet.pop('data', None)
+        if showSheetNames:
+          try:
+            spreadsheetName = callGAPI(drive.files(), 'get',
+                                       throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
+                                       fileId=spreadsheetId, fields='name', supportsAllDrives=True)['name']
+          except (GAPI.fileNotFound, GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy):
+            spreadsheetName = spreadsheetId
         if not csvPF:
           if FJQC.formatJSON:
-            printLine('{'+f'"User": "{user}", "spreadsheetId": "{spreadsheetId}", "JSON": {json.dumps(result, ensure_ascii=False, sort_keys=False)}'+'}')
+            baserow = {'User': user, 'spreadsheetId': spreadsheetId}
+            if showSheetNames:
+              baserow['spreadsheetName'] = spreadsheetName
+            baserow['JSON'] =  result
+            printLine(json.dumps(baserow, ensure_ascii=False, sort_keys=False)+'\n')
             continue
-          printEntity([Ent.SPREADSHEET, spreadsheetId], j, jcount)
+          if showSheetNames:
+            printEntity([Ent.SPREADSHEET, f'{spreadsheetName}({spreadsheetId})'], j, jcount)
+          else:
+            printEntity([Ent.SPREADSHEET, spreadsheetId], j, jcount)
           Ind.Increment()
           if 'spreadsheetUrl' in result:
             printKeyValueList(['spreadsheetUrl', result['spreadsheetUrl']])
@@ -67074,12 +67100,15 @@ def infoPrintShowSheets(users):
                   Ind.Decrement()
           Ind.Decrement()
         else:
-          row = flattenJSON(result, flattened={'User': user, 'spreadsheetId': spreadsheetId})
+          baserow = {'User': user, 'spreadsheetId': spreadsheetId}
+          if showSheetNames:
+            baserow['spreadsheetName'] = spreadsheetName
+          row = flattenJSON(result, flattened=baserow.copy())
           if not FJQC.formatJSON:
             csvPF.WriteRowTitles(row)
           elif csvPF.CheckRowTitles(row):
-            csvPF.WriteRowNoFilter({'User': user, 'spreadsheetId': spreadsheetId,
-                                    'JSON': json.dumps(result, ensure_ascii=False, sort_keys=False)})
+            baserow['JSON'] = json.dumps(cleanJSON(result), ensure_ascii=False, sort_keys=False)
+            csvPF.WriteRowNoFilter(baserow)
       except (GAPI.notFound, GAPI.forbidden, GAPI.permissionDenied,
               GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.badRequest,
               GAPI.invalid, GAPI.invalidArgument, GAPI.failedPrecondition) as e:

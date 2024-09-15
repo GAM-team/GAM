@@ -231,18 +231,24 @@ gam user testuser@domain.com update sheet <DriveFileItem> json file Sheet.json
 gam <UserTypeEntity> info|show sheet <DriveFileEntity>
         [fields <SpreadsheetFieldList>] [sheetsfields <SpreadsheetSheetsFieldList>]
         (range <SpreadsheetRange>)* (rangelist <SpreadsheetRangeList>)*
-        [includegriddata [<Boolean>]]
+        [includegriddata [<Boolean>]] [shownames]
         [formatjson]
 ```
+By default, the Sheets API does not return the sheet file name, use the `shownames` option to have GAM
+make an additional API call to get and display the sheet file name.
+
 The output is formatted for human readability. Use the following option to produce JSON output for program parsing.
 * `formatjson` - Display output in JSON format.
 ```
 gam <UserTypeEntity> print sheet <DriveFileEntity> [todrive <ToDriveAttribute>*]
         [fields <SpreadsheetFieldList>] [sheetsfields <SpreadsheetSheetsFieldList>]
         (range <SpreadsheetRange>)* (rangelist <SpreadsheetRangeList>)*
-        [includegriddata [<Boolean>]]
+        [includegriddata [<Boolean>]] [shownames]
         [formatjson [quotechar <Character>]]
 ```
+By default, the Sheets API does not return the sheet file name, use the `shownames` option to have GAM
+make an additional API call to get and display the sheet file name.
+
 By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
 the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
 When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.

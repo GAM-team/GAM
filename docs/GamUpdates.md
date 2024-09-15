@@ -10,6 +10,15 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.00.01
+
+Added option `shownames` to `gam <UserTypeEntity> print|show sheet` that causes GAM
+to make an additional API call to get and display the sheet file name that is not supplied by the Sheets API.
+
+### 7.00.00
+
+Merged GAM-Team version
+
 ### 6.81.02
 
 Updated `gam update group postmaster@domain.com` to handle the error that is generated.

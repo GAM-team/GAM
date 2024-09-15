@@ -3541,11 +3541,11 @@ gam [<UserTypeEntity>] show drivelabels
         [formatjson] [adminaccess|asadmin]
 `
 gam [<UserTypeEntity>] create drivelabelpermission <DriveLabelNameEntity>
-        (user <UserItem>) | (group <GroupItem) | (audience <String>)
+        (user <UserItem>) | (group <GroupItem>) | (audience <String>)
         role applier|editor|organizer|reader
         [formatjson] [adminaccess|asadmin]
 gam [<UserTypeEntity>] delete drivelabelpermission <DriveLabelNameEntity>
-        (user <UserItem>) | (group <GroupItem) | (audience <String>)
+        (user <UserItem>) | (group <GroupItem>) | (audience <String>)
         [adminaccess|asadmin]
 gam [<UserTypeEntity>] remove drivelabelpermission <DriveLabelPermissionNameEntity>
         [adminaccess|asadmin]
@@ -7052,7 +7052,7 @@ gam <UserTypeEntity> show filecounts
         [corpora <CorporaAttribute>]
         [select <SharedDriveEntity>]
         [anyowner|(showownedby any|me|others)]
-        [showmimetype [not] <MimeTypeList>] [`<showmimetype category <MimeTypeNameList>]
+        [showmimetype [not] <MimeTypeList>] [showmimetype category <MimeTypeNameList>]
         [sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
         [filenamematchpattern <RegularExpression>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
@@ -8244,12 +8244,12 @@ gam <UserTypeEntity> update sheet <DriveFileEntity>
 gam <UserTypeEntity> info|show sheet <DriveFileEntity>
         [fields <SpreadsheetFieldList>] [sheetsfields <SpreadsheetSheetsFieldList>]
         (range <SpreadsheetRange>)* (rangelist <SpreadsheetRangeList>)*
-        [includegriddata [<Boolean>]]
+        [includegriddata [<Boolean>]] [shownames]
         [formatjson]
 gam <UserTypeEntity> print sheet <DriveFileEntity> [todrive <ToDriveAttribute>*]
         [fields <SpreadsheetFieldList>] [sheetsfields <SpreadsheetSheetsFieldList>]
         (range <SpreadsheetRange>)* (rangelist <SpreadsheetRangeList>)*
-        [includegriddata [<Boolean>]]
+        [includegriddata [<Boolean>]] [shownames]
         [formatjson [quotechar <Character>]]
 
 See: https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values#ValueRange

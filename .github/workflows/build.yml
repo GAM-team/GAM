@@ -31,67 +31,72 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             jid: 1
             goal: build
             arch: x86_64
             openssl_archs: linux-x86_64
-          - os: [self-hosted, linux, arm64]
+          - os: ubuntu-20.04
             jid: 2
+            goal: build
+            arch: x86_64
+            openssl_archs: linux-x86_64
+          - os: [self-hosted, linux, arm64]
+            jid: 3
             goal: build
             arch: aarch64
             openssl_archs: linux-aarch64
           - os: ubuntu-20.04
-            jid: 3
+            jid: 4
             goal: build
             arch: x86_64
             openssl_archs: linux-x86_64
             staticx: yes
           - os: [self-hosted, linux, arm64]
-            jid: 4
+            jid: 5
             goal: build
             arch: aarch64
             openssl_archs: linux-aarch64
             staticx: yes
           - os: macos-12
-            jid: 5
+            jid: 6
             goal: build
             arch: x86_64
             openssl_archs: darwin64-x86_64
           - os: macos-14
-            jid: 6
+            jid: 7
             goal: build
             arch: aarch64
             openssl_archs: darwin64-arm64
 #          - os: macos-14
-#            jid: 7
+#            jid: 8
 #            goal: build
 #            arch: universal2
 #            openssl_archs: darwin64-arm64 darwin64-x86_64
           - os: windows-2022
-            jid: 8
+            jid: 9
             goal: build
             arch: Win64
             openssl_archs: VC-WIN64A
           - os: ubuntu-22.04
             goal: test
             python: "3.8"
-            jid: 9
-            arch: x86_64
-          - os: ubuntu-22.04
-            goal: test
-            python: "3.9"
             jid: 10
             arch: x86_64
           - os: ubuntu-22.04
             goal: test
-            python: "3.10"
+            python: "3.9"
             jid: 11
             arch: x86_64
           - os: ubuntu-22.04
             goal: test
-            python: "3.11"
+            python: "3.10"
             jid: 12
+            arch: x86_64
+          - os: ubuntu-22.04
+            goal: test
+            python: "3.11"
+            jid: 13
             arch: x86_64
 
     steps:
@@ -115,7 +120,7 @@ jobs:
         with:
           path: |
             cache.tar.xz
-          key: gam-${{ matrix.jid }}-20240903
+          key: gam-${{ matrix.jid }}-20240914
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
