@@ -56179,7 +56179,7 @@ def printShowFileCounts(users):
       printEntityKVList(kvList, dataList, i, count)
       Ind.Increment()
       if showLastModification:
-        printKeyValueList(['lastModifiedFile', f'{lastModification['lastModifiedFileName']}({lastModification['lastModifiedFileId']})',
+        printKeyValueList(['lastModifiedFile', f"{lastModification['lastModifiedFileName']}({lastModification['lastModifiedFileId']})",
                            'lastModifyingUser', lastModification['lastModifyingUser'],
                            'lastModifiedTime', formatLocalTime(lastModification['lastModifiedTime'])])
       for mimeType, mtinfo in sorted(iter(mimeTypeInfo.items())):
