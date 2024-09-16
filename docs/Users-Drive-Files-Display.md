@@ -693,7 +693,8 @@ gam <UserTypeEntity> print filecounts [todrive <ToDriveAttribute>*]
         [filenamematchpattern <RegularExpression>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
         [excludetrashed]
-        [showsize] [showmimetypesize] (addcsvdata <FieldName> <String>)*
+        [showsize] [showmimetypesize] [showlastmodification]
+        (addcsvdata <FieldName> <String>)*
         [summary none|only|plus] [summaryuser <String>]
 gam <UserTypeEntity> show filecounts
         [((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>)
@@ -707,13 +708,13 @@ gam <UserTypeEntity> show filecounts
         [filenamematchpattern <RegularExpression>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
         [excludetrashed]
-        [showsize] [showmimetypesize]
+        [showsize] [showmimetypesize] [showlastmodification]
         [summary none|only|plus] [summaryuser <String>]
 ```
 
 By default, print filecounts displays counts of all files owned by the specified [`<UserTypeEntity>`](Collections-of-Users).
 
-The option `continueoninvalidquery [<Boolean>] can be used in special cases where a query  of the form
+The option `continueoninvalidquery [<Boolean>] can be used in special cases where a query of the form
 `query "'labels/mRoha85IbwCRl490E00xGLvBsSbkwIiuZ6PRNNEbwxyz' in labels" causes Google to issue an error
 saying that the query is invalid when, in fact, it is but the user does not have a license that suppprts drive file labels.
 When `continueoninvalidquery` is true, GAM prints an error message and proceeds to the next user rather that terminating
@@ -722,6 +723,10 @@ as it does now. Of course, if the query really is invalid, you will get the mess
 The `showsize` option displays the total size (in bytes) of the files counted.
 
 The showmimetypesize' displays the total size (in bytes) of each MIME type counted.
+
+The option `showlastmodification` displays the following fields:
+`lastModifiedFileId,lastModifiedFileName,lastModifyingUser,lastModifiedTime`;
+these are for the most recently modified file.
 
 For print filecouts, add additional columns of data from the command line to the output:
 * `addcsvdata <FieldName> <String>` - Add additional columns of data from the command line to the output

@@ -1,8 +1,18 @@
+7.00.02
+
+Added option `showlastmodification` to `gam <UserTypeEntity> print|show filecounts` that adds
+the following fields to the output: `lastModifiedFileId,lastModifiedFileName,lastModifyingUser,lastModifiedTime`;
+these are for the most recently modified file.
+
+Added option `keepforever [<Boolean>]` to `gam <UserTypeEntity> update filerevisions` that allows setting
+`Keep forever` in revisions.
+
+Upgraded to Python 3.12.6 where possible.
+
 7.00.01
 
 Added option `shownames` to `gam <UserTypeEntity> print|show sheet` that causes GAM
 to make an additional API call to get and display the sheet file name that is not supplied by the Sheets API.
-
 
 7.00.00
 

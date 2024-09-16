@@ -85,6 +85,8 @@ gam <UserTypeEntity> update filerevisions <DriveFileEntity> select <DriveFileRev
 ```
 When `select <DriveFileRevisionIDEntity>` is omitted, all revisions are updated. 
 
+* `keepforever true` - Keep revision forever, even if it is no longer the head revision
+* `keepforever false` - Do not keep revision forever
 * `published true` - Publish these revision to the web
 * `published false` - Do not publish these revision to the web
 * `publishauto true` - Automaticaly publish subsequent revisions to the web

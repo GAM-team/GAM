@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.01'
+__version__ = '7.00.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -53967,12 +53967,14 @@ def deleteFileRevisions(users):
       Ind.Decrement()
 
 REVISIONS_FIELDS_CHOICE_MAP = {
+  'keepforever': 'keepForever',
   'published': 'published',
   'publishauto': 'publishAuto',
   'publishedoutsidedomain': 'publishedOutsideDomain'
   }
 # gam <UserTypeEntity> update filerevisions <DriveFileEntity> select <DriveFileRevisionIdEntity> [previewupdate]
 #	[published [<Boolean>]] [publishauto [<Boolean>]] [publishedoutsidedomain [<Boolean>]]
+#	[keepforever [<Boolean>]}
 #	[showtitles] [doit] [max_to_update <Number>]
 def updateFileRevisions(users):
   fileIdEntity = getDriveFileEntity()
@@ -56118,7 +56120,8 @@ def printFileParentTree(users):
 #	[filenamematchpattern <RegularExpression>]
 #	<PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
 #	[excludetrashed] (addcsvdata <FieldName> <String>)*
-#	[showsize] [showmimetypesize]
+#	[showsize] [showmimetypesize] [showlastmodification]
+#	(addcsvdata <FieldName> <String>)*
 #	[summary none|only|plus] [summaryuser <String>]
 # gam <UserTypeEntity> show filecounts
 #	[((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>) (querytime<String> <Time>)*]
@@ -56131,7 +56134,7 @@ def printFileParentTree(users):
 #	[filenamematchpattern <RegularExpression>]
 #	<PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
 #	[excludetrashed]
-#	[showsize] [showmimetypesize]
+#	[showsize] [showmimetypesize] [showlastmodification]
 #	[summary none|only|plus] [summaryuser <String>]
 def printShowFileCounts(users):
   def _setSelectionFields():
@@ -56139,6 +56142,8 @@ def printShowFileCounts(users):
       fieldsList.extend(OWNED_BY_ME_FIELDS_TITLES)
     if showSize or (DLP.minimumFileSize is not None) or (DLP.maximumFileSize is not None):
       fieldsList.append(sizeField)
+    if showLastModification:
+      fieldsList.extend(['id,name,modifiedTime,lastModifyingUser(emailAddress)'])
     if DLP.filenameMatchPattern:
       fieldsList.append('name')
     if DLP.excludeTrashed:
@@ -56148,7 +56153,7 @@ def printShowFileCounts(users):
     if DLP.onlySharedDrives or getPermissionsForSharedDrives:
       fieldsList.append('driveId')
 
-  def showMimeTypeInfo(user, mimeTypeInfo, sharedDriveId, sharedDriveName, i, count):
+  def showMimeTypeInfo(user, mimeTypeInfo, sharedDriveId, sharedDriveName, lastModification, i, count):
     if summary != FILECOUNT_SUMMARY_NONE:
       if count != 0:
         for mimeType, mtinfo in iter(mimeTypeInfo.items()):
@@ -56173,6 +56178,10 @@ def printShowFileCounts(users):
         dataList.extend(['Item cap', f"{countTotal/SHARED_DRIVE_MAX_FILES_FOLDERS:.2%}"])
       printEntityKVList(kvList, dataList, i, count)
       Ind.Increment()
+      if showLastModification:
+        printKeyValueList(['lastModifiedFile', f'{lastModification['lastModifiedFileName']}({lastModification['lastModifiedFileId']})',
+                           'lastModifyingUser', lastModification['lastModifyingUser'],
+                           'lastModifiedTime', formatLocalTime(lastModification['lastModifiedTime'])])
       for mimeType, mtinfo in sorted(iter(mimeTypeInfo.items())):
         if not showMimeTypeSize:
           printKeyValueList([mimeType, mtinfo['count']])
@@ -56186,6 +56195,11 @@ def printShowFileCounts(users):
         row = {'User': user, 'Total': countTotal}
       if showSize:
         row['Size'] = sizeTotal
+      if showLastModification:
+        row.update({'lastModifiedFileId': lastModification['lastModifiedFileId'],
+                    'lastModifiedFileName': lastModification['lastModifiedFileName'],
+                    'lastModifyingUser': lastModification['lastModifyingUser'],
+                    'lastModifiedTime': formatLocalTime(lastModification['lastModifiedTime'])})
       if addCSVData:
         row.update(addCSVData)
       for mimeType, mtinfo in sorted(iter(mimeTypeInfo.items())):
@@ -56200,13 +56214,16 @@ def printShowFileCounts(users):
   fieldsList = ['mimeType']
   DLP = DriveListParameters({'allowChoose': False, 'allowCorpora': True, 'allowQuery': True, 'mimeTypeInQuery': True})
   sharedDriveId = sharedDriveName = ''
-  continueOnInvalidQuery = showSize = showMimeTypeSize = False
+  continueOnInvalidQuery = showSize = showLastModification = showMimeTypeSize = False
   sizeField = 'quotaBytesUsed'
   summary = FILECOUNT_SUMMARY_NONE
   summaryUser = FILECOUNT_SUMMARY_USER
   summaryMimeTypeInfo = {}
   fileIdEntity = {}
   addCSVData = {}
+  summaryLastModification = {
+    'lastModifiedFileId': '', 'lastModifiedFileName': '',
+    'lastModifyingUser': '', 'lastModifiedTime': NEVER_TIME}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -56221,6 +56238,8 @@ def printShowFileCounts(users):
       showSize = True
     elif myarg == 'sizefield':
       sizeField = getChoice(SIZE_FIELD_CHOICE_MAP, mapChoice=True)
+    elif myarg == 'showlastmodification':
+      showLastModification = True
     elif myarg == 'showmimetypesize':
       showMimeTypeSize = showSize = True
     elif myarg == 'summary':
@@ -56252,6 +56271,8 @@ def printShowFileCounts(users):
     sortTitles = ['User', 'id', 'name', 'Total', 'Item cap'] if fileIdEntity.get('shareddrive') else ['User', 'Total']
     if showSize:
       sortTitles.insert(sortTitles.index('Total')+1, 'Size')
+    if showLastModification:
+      sortTitles.extend(['lastModifiedFileId', 'lastModifiedFileName', 'lastModifyingUser', 'lastModifiedTime'])
     if addCSVData:
       sortTitles.extend(sorted(addCSVData.keys()))
     csvPF.SetTitles(sortTitles)
@@ -56269,6 +56290,9 @@ def printShowFileCounts(users):
     else:
       sharedDriveName = ''
     mimeTypeInfo = {}
+    userLastModification = {
+      'lastModifiedFileId': '', 'lastModifiedFileName': '',
+      'lastModifyingUser': '', 'lastModifiedTime': NEVER_TIME}
     printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, user, i, count, query=DLP.fileIdEntity['query'])
     try:
       feed = yieldGAPIpages(drive.files(), 'list', 'files',
@@ -56309,7 +56333,15 @@ def printShowFileCounts(users):
           mimeTypeInfo.setdefault(f_file['mimeType'], {'count': 0, 'size': 0})
           mimeTypeInfo[f_file['mimeType']]['count'] += 1
           mimeTypeInfo[f_file['mimeType']]['size'] += int(f_file.get(sizeField, '0'))
-      showMimeTypeInfo(user, mimeTypeInfo, sharedDriveId, sharedDriveName, i, count)
+          if showLastModification:
+            if f_file.get('modifiedTime', NEVER_TIME) > userLastModification['lastModifiedTime'] and 'lastModifyingUser' in f_file:
+              userLastModification['lastModifiedFileId'] = f_file['id']
+              userLastModification['lastModifiedFileName'] = _stripControlCharsFromName(f_file['name'])
+              userLastModification['lastModifiedTime'] = f_file['modifiedTime']
+              userLastModification['lastModifyingUser'] = f_file['lastModifyingUser'].get('emailAddress', UNKNOWN)
+      showMimeTypeInfo(user, mimeTypeInfo, sharedDriveId, sharedDriveName, userLastModification, i, count)
+      if showLastModification and userLastModification['lastModifiedTime'] > summaryLastModification['lastModifiedTime']:
+        summaryLastModification = userLastModification.copy()
     except (GAPI.invalidQuery, GAPI.invalid, GAPI.badRequest):
       entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, None], invalidQuery(DLP.fileIdEntity['query']), i, count)
       if not continueOnInvalidQuery:
@@ -56324,7 +56356,9 @@ def printShowFileCounts(users):
       continue
   if summary != FILECOUNT_SUMMARY_NONE:
     showMimeTypeInfo(summaryUser, summaryMimeTypeInfo,
-                     '' if count > 1 else sharedDriveId, '' if count > 1 else sharedDriveName, 0, 0)
+                     '' if count > 1 else sharedDriveId,
+                     '' if count > 1 else sharedDriveName,
+                     summaryLastModification, 0, 0)
   if csvPF:
     csvPF.writeCSVfile('Drive File Counts')
 
