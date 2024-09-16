@@ -68,11 +68,6 @@ jobs:
             goal: build
             arch: aarch64
             openssl_archs: darwin64-arm64
-#          - os: macos-14
-#            jid: 8
-#            goal: build
-#            arch: universal2
-#            openssl_archs: darwin64-arm64 darwin64-x86_64
           - os: windows-2022
             jid: 9
             goal: build
@@ -96,7 +91,7 @@ jobs:
           - os: ubuntu-22.04
             goal: test
             python: "3.11"
-            jid: 13
+            jid: 8
             arch: x86_64
 
     steps:
