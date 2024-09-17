@@ -727,13 +727,8 @@ jobs:
           done
           driveid=$($gam user $gam_user add shareddrive "${newbase}" returnidonly)
           echo "Created shared drive ${driveid}"
-          # arbitrary sleep because "create ou" needs some time before we can then
-          # create users in that OU. Argh. So gross.
-          echo "sleeping 5m while OU creation bakes..."
-          sleep 300
-          $gam create user $newuser firstname GHA lastname $JID displayname "Github Actions ${JID}" password random ou "${newou}" recoveryphone 12125121110 recoveryemail jay0lee@gmail.com gha.jid $JID languages en+,en-GB-
-          echo "sleeping 5m while new user creation bakes..."
-          sleep 300
+          # 9/17/24 - temp create in root due to Google API issues creating users in new OUs
+          $gam create user $newuser firstname GHA lastname $JID displayname "Github Actions ${JID}" password random recoveryphone 12125121110 recoveryemail jay0lee@gmail.com gha.jid $JID languages en+,en-GB- # ou "${newou}"
           $gam user $newuser update photo https://dummyimage.com/400x600/000/fff
           $gam user $newuser get photo
           $gam user $newuser delete photo
@@ -752,6 +747,7 @@ jobs:
           $gam update group $newgroup add owner $gam_user
           $gam update group $newgroup add member $newuser
           $gam config enable_dasa false save
+          # 9/17/24 temp disable due to Google API sluggishness to see new users for admin commands
           $gam create admin $newuser _GROUPS_EDITOR_ROLE CUSTOMER # condition nonsecuritygroup
           $gam create admin $newgroup _HELP_DESK_ADMIN_ROLE org_unit "${newou}"
           $gam config csv_output_row_filter "assignedToUser:regex:${newuser}" print admins | $gam csv - gam delete admin "~roleAssignmentId"
