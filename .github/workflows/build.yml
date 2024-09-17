@@ -204,7 +204,8 @@ jobs:
       - name: MacOS import developer certificates for signing
         if: runner.os == 'macOS'
         uses: apple-actions/import-codesign-certs@v3
-        with: 
+        with:
+          keychain: signing_temp
           p12-file-base64: ${{ secrets.CERTIFICATES_P12 }}
           p12-password: ${{ secrets.CERTIFICATES_P12_PASSWORD }}
 
@@ -603,14 +604,16 @@ jobs:
               ;;
           esac
           echo "ldlib=${ldlib}"
-          $PYTHON -m staticx -l "${ldlib}" "${gam}" "${gam}-staticx"
-          rm -v "${gam}"
-          mv -v "${gam}-staticx" "${gam}"
+          $PYTHON -m staticx -l "${ldlib}" "$gam" "${gam}-staticx"
+          rm -v "$gam"
+          mv -v "${gam}-staticx" "$gam"
 
       - name: MacOS sign GAM binary
         if: runner.os == 'macOS'
         run: |
-          security find-identity -p basic -v
+          security find-identity -v signing_temp.keychain
+          codesign --force --deep --sign "Jay Lee" --options=runtime --entitlements "${GITHUB_WORKSPACE}/.github/actions/entitlements.xml" --timestamp "$gam"
+          codesign -dv --verbose=4 "$gam"
 
       - name: Basic Tests all jobs
         id: basictests
