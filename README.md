@@ -1,6 +1,6 @@
 GAM is a command line tool for Google Workspace admins to manage domain and user settings quickly and easily.
 
-![Build Status](https://github.com/GAM-team/GAM/workflows/Build%20and%20test%20GAM/badge.svg)
+[![Build StatusM](https://github.com/GAM-team/GAM/actions/workflows/build.yml/badge.svg)](https://github.com/GAM-team/GAM/actions/workflows/build.yml)
 
 # Quick Start
 
