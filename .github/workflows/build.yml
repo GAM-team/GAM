@@ -615,6 +615,14 @@ jobs:
           codesign --force --deep --sign "Jay Lee" --options=runtime --entitlements "${GITHUB_WORKSPACE}/.github/actions/entitlements.plist" --timestamp "$gam"
           codesign -dv --verbose=4 "$gam"
 
+      - name: MacOS send GAM binary for Apple notarization
+        if: runner.os == 'macOS'
+        env:
+          ASP_NOTARIZE: ${{ secrets.ASP_NOTARIZE }}
+        run: |
+          # Apple wants some kind of "package" submitted so just add gam to a .zip
+          zip ./gam.zip "$gam"
+          xcrun altool --notarize-app --primary-bundle-id "com.gam-team.gam" --username="jay0lee@gmail.com" --password "$ASP_NOTARIZE" --file ./gam.zip
       - name: Basic Tests all jobs
         id: basictests
         run: |
