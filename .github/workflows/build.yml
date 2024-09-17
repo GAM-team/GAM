@@ -612,7 +612,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           security find-identity -v signing_temp.keychain
-          codesign --force --deep --sign "Jay Lee" --options=runtime --entitlements "${GITHUB_WORKSPACE}/.github/actions/entitlements.xml" --timestamp "$gam"
+          codesign --force --deep --sign "Jay Lee" --options=runtime --entitlements "${GITHUB_WORKSPACE}/.github/actions/entitlements.plist" --timestamp "$gam"
           codesign -dv --verbose=4 "$gam"
 
       - name: Basic Tests all jobs
