@@ -201,6 +201,13 @@ jobs:
           #brew install swig
           #brew install ncurses
 
+      - name: MacOS import developer certificates for signing
+        if: runner.os == 'macOS'
+        uses: apple-actions/import-codesign-certs@v3
+        with: 
+          p12-file-base64: ${{ secrets.CERTIFICATES_P12 }}
+          p12-password: ${{ secrets.CERTIFICATES_P12_PASSWORD }}
+
       - name: Windows Configure VCode
         uses: ilammy/msvc-dev-cmd@v1
         if: runner.os == 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
@@ -599,6 +606,11 @@ jobs:
           $PYTHON -m staticx -l "${ldlib}" "${gam}" "${gam}-staticx"
           rm -v "${gam}"
           mv -v "${gam}-staticx" "${gam}"
+
+      - name: MacOS sign GAM binary
+        if: runner.os == 'macOS'
+        run: |
+          security find-identity -p basic -v
 
       - name: Basic Tests all jobs
         id: basictests
