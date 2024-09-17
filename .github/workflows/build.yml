@@ -748,7 +748,7 @@ jobs:
           $gam update group $newgroup add member $newuser
           $gam config enable_dasa false save
           # 9/17/24 temp disable due to Google API sluggishness to see new users for admin commands
-          $gam create admin $newuser _GROUPS_EDITOR_ROLE CUSTOMER # condition nonsecuritygroup
+          # $gam create admin $newuser _GROUPS_EDITOR_ROLE CUSTOMER # condition nonsecuritygroup
           $gam create admin $newgroup _HELP_DESK_ADMIN_ROLE org_unit "${newou}"
           $gam config csv_output_row_filter "assignedToUser:regex:${newuser}" print admins | $gam csv - gam delete admin "~roleAssignmentId"
           $gam config csv_output_row_filter "assignedToGroup:regex:${newgroup}" print admins | $gam csv - gam delete admin "~roleAssignmentId"
