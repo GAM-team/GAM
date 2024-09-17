@@ -729,11 +729,11 @@ jobs:
           echo "Created shared drive ${driveid}"
           # arbitrary sleep because "create ou" needs some time before we can then
           # create users in that OU. Argh. So gross.
-          echo "sleeping 3m while OU creation bakes..."
-          sleep 180
+          echo "sleeping 5m while OU creation bakes..."
+          sleep 300
           $gam create user $newuser firstname GHA lastname $JID displayname "Github Actions ${JID}" password random ou "${newou}" recoveryphone 12125121110 recoveryemail jay0lee@gmail.com gha.jid $JID languages en+,en-GB-
-          echo "sleeping 3m while new user creation bakes..."
-          sleep 180
+          echo "sleeping 5m while new user creation bakes..."
+          sleep 300
           $gam user $newuser update photo https://dummyimage.com/400x600/000/fff
           $gam user $newuser get photo
           $gam user $newuser delete photo
