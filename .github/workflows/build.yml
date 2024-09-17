@@ -621,8 +621,10 @@ jobs:
           ASP_NOTARIZE: ${{ secrets.ASP_NOTARIZE }}
         run: |
           # Apple wants some kind of "package" submitted so just add gam to a .zip
-          zip ./gam.zip "$gam"
-          xcrun notarytool submit --apple-id "jay0lee@gmail.com" --password "$ASP_NOTARIZE" --team-id GZ85H2DRLM ./gam.zip
+          # name it something we can track and link in Apple's notarize process
+          zipfilename="./gam-${RUNNER_ARCH}-${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}.zip"
+          zip "$zipfilename" "$gam"
+          xcrun notarytool submit --apple-id "jay0lee@gmail.com" --password "$ASP_NOTARIZE" --team-id GZ85H2DRLM "$zipfilename"
 
       - name: Basic Tests all jobs
         id: basictests
