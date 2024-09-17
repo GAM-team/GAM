@@ -886,7 +886,7 @@ jobs:
           echo "printer model count:"
           $gam print printermodels | wc -l
           $gam print printers
-          printerid=$($gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by $(gam_user)" ou "${newou}" nodetails | awk '{print substr($2, 1, length($2)-1)}')
+          printerid=$($gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by ${gam_user}" ou "${newou}" nodetails | awk '{print substr($2, 1, length($2)-1)}')
           $gam info printer "$printerid"
           $gam delete printer "$printerid"
           $gam delete ou "${newou}"
