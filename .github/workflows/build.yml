@@ -622,7 +622,8 @@ jobs:
         run: |
           # Apple wants some kind of "package" submitted so just add gam to a .zip
           zip ./gam.zip "$gam"
-          xcrun altool --notarize-app --primary-bundle-id "com.gam-team.gam" --username="jay0lee@gmail.com" --password "$ASP_NOTARIZE" --file ./gam.zip
+          xcrun notarytool submit --apple-id "jay0lee@gmail.com" --password "$ASP_NOTARIZE" ./gam.zip
+
       - name: Basic Tests all jobs
         id: basictests
         run: |
