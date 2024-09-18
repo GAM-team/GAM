@@ -9189,7 +9189,8 @@ MACOS_CODENAMES = {
   11: 'Big Sur',
   12: 'Monterey',
   13: 'Ventura',
-  14: 'Sonoma',
+  14: 'Sonoma,
+  15: 'Sequoia',
   }
 
 def getOSPlatform():

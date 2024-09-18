@@ -146,7 +146,7 @@ case $gamos in
         fullversion=$(sw_vers -productVersion)
         osversion=${fullversion:0:2}
         case ${osversion:0:2} in
-          11|12|13|14)
+          11|12|13|14|15)
             gamfile="macos-x86_64.tar.xz";;
           *)
 	    echo_red "Sorry, this version ($fullversion) of MacOS is not supported. Exiting."
