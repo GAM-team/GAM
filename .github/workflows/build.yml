@@ -75,7 +75,7 @@ jobs:
             openssl_archs: VC-WIN64A
           - os: ubuntu-22.04
             goal: test
-            python: "3.8"
+            python: "3.13"
             jid: 10
             arch: x86_64
           - os: ubuntu-22.04
@@ -301,7 +301,8 @@ jobs:
       - name: Rename GNU link on Windows
         if: matrix.goal == 'build' && runner.os == 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         shell: bash
-        run: mv /usr/bin/link /usr/bin/gnulink
+        run: |
+          mv -v /usr/bin/link /usr/bin/gnulink
 
       - name: Make OpenSSL
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
@@ -319,7 +320,7 @@ jobs:
               cd "${GITHUB_WORKSPACE}/src/openssl-${openssl_arch}"
               # install_sw saves us ages processing man pages :-)
               $MAKE install_sw
-              mv "${OPENSSL_INSTALL_PATH}" "${GITHUB_WORKSPACE}/bin/ssl-${openssl_arch}"
+              mv -v "${OPENSSL_INSTALL_PATH}" "${GITHUB_WORKSPACE}/bin/ssl-${openssl_arch}"
             done
             mkdir -vp "${OPENSSL_INSTALL_PATH}/lib"
             mkdir -vp "${OPENSSL_INSTALL_PATH}/bin"
@@ -648,7 +649,9 @@ jobs:
             GAM_ARCHIVE="gam-${GAMVERSION}-linux-$(arch)-${libver}.tar.xz"
           fi
           echo "GAM Archive ${GAM_ARCHIVE}"
-          tar -C dist/ --create --verbose --exclude-from "${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" --file $GAM_ARCHIVE --xz gam
+          mv -v dist/gam dist/gam7
+          tar -C dist/ --create --verbose --exclude-from "${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" --file $GAM_ARCHIVE --xz gam7
+          mv -v dist/gam7 dist/gam
 
       - name: Windows package
         if: runner.os == 'Windows' && matrix.goal != 'test'
