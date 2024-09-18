@@ -21,7 +21,9 @@ hiddenimports = [
      'gam.gamlib.yubikey',
      ]
 
-print(f"datas before analysis:\n{datas}")
+runtime_hooks = []
+if getenv('PYINSTALLER_BUILD_ONEDIR') == 'yes':
+    runtime_hooks.append('add_lib.py')
 a = Analysis(
     ['gam/__main__.py'],
     pathex=[],
@@ -30,7 +32,7 @@ a = Analysis(
     hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
-    runtime_hooks=['add_lib.py'],
+    runtime_hooks=runtime_hooks,
     excludes=[],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
