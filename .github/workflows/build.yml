@@ -58,7 +58,7 @@ jobs:
             arch: aarch64
             openssl_archs: linux-aarch64
             staticx: yes
-          - os: macos-12
+          - os: macos-13
             jid: 6
             goal: build
             arch: x86_64
@@ -75,7 +75,7 @@ jobs:
             openssl_archs: VC-WIN64A
           - os: ubuntu-22.04
             goal: test
-            python: "3.8"
+            python: "3.13"
             jid: 10
             arch: x86_64
           - os: ubuntu-22.04
@@ -115,7 +115,7 @@ jobs:
         with:
           path: |
             cache.tar.xz
-          key: gam-${{ matrix.jid }}-20240916
+          key: gam-${{ matrix.jid }}-20240918
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
@@ -301,7 +301,8 @@ jobs:
       - name: Rename GNU link on Windows
         if: matrix.goal == 'build' && runner.os == 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         shell: bash
-        run: mv /usr/bin/link /usr/bin/gnulink
+        run: |
+          mv -v /usr/bin/link /usr/bin/gnulink
 
       - name: Make OpenSSL
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
@@ -319,7 +320,7 @@ jobs:
               cd "${GITHUB_WORKSPACE}/src/openssl-${openssl_arch}"
               # install_sw saves us ages processing man pages :-)
               $MAKE install_sw
-              mv "${OPENSSL_INSTALL_PATH}" "${GITHUB_WORKSPACE}/bin/ssl-${openssl_arch}"
+              mv -v "${OPENSSL_INSTALL_PATH}" "${GITHUB_WORKSPACE}/bin/ssl-${openssl_arch}"
             done
             mkdir -vp "${OPENSSL_INSTALL_PATH}/lib"
             mkdir -vp "${OPENSSL_INSTALL_PATH}/bin"
@@ -530,8 +531,7 @@ jobs:
         if: matrix.goal != 'test'
         run: |
           export distpath="./dist/gam"
-          export gampath="$distpath"
-          mkdir -p -v "${gampath}"
+          mkdir -p -v "${distpath}"
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
             # Tell our gam.spec to use our code sign certificate
             export codesign_identity="Jay Lee"
@@ -539,38 +539,39 @@ jobs:
             # breaking our self-compiled version
             brew uninstall --ignore-dependencies openssl
             export PYINSTALLER_BUILD_ONEDIR=yes
-            export gampath=$($PYTHON -c "import os; print(os.path.realpath('${gampath}/gam'))")
           elif [[ "${RUNNER_OS}" == "Windows" ]]; then
             # Work around issue where PyInstaller picks up python3.dll from other Python versions
             # https://github.com/pyinstaller/pyinstaller/issues/7102
             export PATH="$(dirname ${PYTHON}):/usr/bin"
             export PYINSTALLER_BUILD_ONEDIR=no
-          else
-            export gampath=$(realpath "${gampath}")
-            export PYINSTALLER_BUILD_ONEDIR=no
+          elif [[ "${staticx}" != "yes" ]]; then
+            export PYINSTALLER_BUILD_ONEDIR=yes
           fi
-          export gam="${gampath}/gam"
-          echo "gampath=${gampath}" >> $GITHUB_ENV
           "${PYTHON}" -m PyInstaller --clean --noconfirm --distpath="${distpath}" gam.spec
-          echo "dist results:"
-          ls -alRF "$distpath"
-          echo "WARNINGS FROM build/gam/warn-gam.txt"
-          cat build/gam/warn-gam.txt
-          echo "Analysis FROM build/gam/Analysis-00.toc"
-          cat build/gam/Analysis-00.toc
-          echo "EXE data FROM build/gam/EXE-00.toc"
-          cat build/gam/EXE-00.toc
-          if [ -x "$(command -v realpath)" ]; then
-            realpath=realpath
+          if [[ "$PYINSTALLER_BUILD_ONEDIR" == "yes" ]]; then
+            mv -v "${distpath}/gam" "${distpath}/gam7"
+            export gampath="${distpath}/gam7"
           else
-            brew install coreutils
-            realpath=grealpath
+            mv -v "$distpath" "${distpath}7"
+            export gampath="${distpath}7"
           fi
-          export gam=$(realpath "$gam")
+          export gampath=$(realpath "$gampath")
+          echo "gampath ${gampath} results:"
+          ls -alRF "$gampath"
+          #echo "WARNINGS FROM build/gam/warn-gam.txt"
+          #cat build/gam/warn-gam.txt
+          #echo "Analysis FROM build/gam/Analysis-00.toc"
+          #cat build/gam/Analysis-00.toc
+          #echo "EXE data FROM build/gam/EXE-00.toc"
+          #cat build/gam/EXE-00.toc
+          export gam="${gampath}/gam"
           if [[ "${RUNNER_OS}" == "Windows" ]]; then
             export gam=$(cygpath -w "$gam")
             echo "GAM on Windows at ${gam}"
+          else
+            export gam=$(realpath "$gam")
           fi
+          echo "gampath=${gampath}" >> $GITHUB_ENV
           echo "gam=${gam}" >> $GITHUB_ENV
           echo -e "GAM: ${gam}\nGAMPATH: ${gampath}"
 
@@ -648,14 +649,14 @@ jobs:
             GAM_ARCHIVE="gam-${GAMVERSION}-linux-$(arch)-${libver}.tar.xz"
           fi
           echo "GAM Archive ${GAM_ARCHIVE}"
-          tar -C dist/ --create --verbose --exclude-from "${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" --file $GAM_ARCHIVE --xz gam
+          tar -C "${gampath}/.." --create --verbose --exclude-from "${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" --file $GAM_ARCHIVE --xz gam7
 
       - name: Windows package
         if: runner.os == 'Windows' && matrix.goal != 'test'
         run: |
-          cd dist/
+          cd "${gampath}/.."
           GAM_ARCHIVE="../gam-${GAMVERSION}-windows-${GAM_ARCHIVE_ARCH}.zip"
-          /c/Program\ Files/7-Zip/7z.exe a -tzip $GAM_ARCHIVE gam "-xr@${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" -bb3
+          /c/Program\ Files/7-Zip/7z.exe a -tzip $GAM_ARCHIVE gam7 "-xr@${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" -bb3
           cd ..
           /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/candle.exe -arch "${WIX_ARCH}" gam.wxs
           /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/WixUIExtension.dll gam.wixobj -o "gam-${GAMVERSION}-windows-${GAM_ARCHIVE_ARCH}.msi" || true;

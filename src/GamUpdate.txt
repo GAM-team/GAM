@@ -8,6 +8,11 @@ where 7.00.02 MacOS builds usually took ~7 seconds to run "gam version", 7.00.03
 MacOS builds are now signed by Jay's Apple Developer ID and notarized (scanned for malware) by Apple. This
 should resolve MacOS security warnings that need to be overridden when running GAM.
 
+Updated `gam delete ou` and `gam print admins` to handle the following error:
+```
+ERROR: 503: serviceNotAvailable - The service is currently unavailable.
+```
+
 7.00.02
 
 Added option `showlastmodification` to `gam <UserTypeEntity> print|show filecounts` that adds
