@@ -23,6 +23,10 @@ hiddenimports = [
 
 runtime_hooks = []
 if getenv('PYINSTALLER_BUILD_ONEDIR') == 'yes':
+    # for onedir, add_lib.py allows moving many
+    # library files into a lib/ directory to make
+    # onedir cleaner. Thanks to:
+    # https://medium.com/@philipp.h/reduce-clutter-when-using-pyinstaller-in-one-directory-mode-b631b9f7f89b
     runtime_hooks.append('add_lib.py')
 a = Analysis(
     ['gam/__main__.py'],
@@ -57,6 +61,7 @@ match platform:
     case "darwin":
         if getenv('arch') == 'universal2':
             target_arch = "universal2"
+
         codesign_identity = getenv('codesign_identity')
         if codesign_identity:
             entitlements_file = '../.github/actions/entitlements.plist'
