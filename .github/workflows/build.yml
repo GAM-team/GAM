@@ -58,7 +58,7 @@ jobs:
             arch: aarch64
             openssl_archs: linux-aarch64
             staticx: yes
-          - os: macos-12
+          - os: macos-13
             jid: 6
             goal: build
             arch: x86_64
@@ -115,7 +115,7 @@ jobs:
         with:
           path: |
             cache.tar.xz
-          key: gam-${{ matrix.jid }}-20240916
+          key: gam-${{ matrix.jid }}-20240918
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
@@ -509,8 +509,8 @@ jobs:
           git clone https://github.com/pyinstaller/pyinstaller.git
           cd pyinstaller
           export latest_release=$(git tag --list | grep -v dev | grep -v rc | sort -Vr | head -n1)
-          # git checkout "${latest_release}"
-          git checkout "v6.9.0"
+          git checkout "${latest_release}"
+          # git checkout "v6.9.0"
           # remove pre-compiled bootloaders so we fail if bootloader compile fails
           rm -rvf PyInstaller/bootloader/*-*/*
           cd bootloader
