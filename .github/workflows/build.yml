@@ -529,13 +529,8 @@ jobs:
       - name: Build GAM with PyInstaller
         if: matrix.goal != 'test'
         run: |
-          if [[ "${staticx}" == "yes" ]]; then
-            export distpath="./dist/gam"
-            export gampath="${distpath}"
-          else
-            export distpath="./dist"
-            export gampath="${distpath}/gam"
-          fi
+          export distpath="./dist/gam"
+          export gampath="$distpath"
           mkdir -p -v "${gampath}"
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
             # Tell our gam.spec to use our code sign certificate
@@ -543,8 +538,8 @@ jobs:
             # brew OpenSSL gets picked up by PyInstaller
             # breaking our self-compiled version
             brew uninstall --ignore-dependencies openssl
-            export gampath=$($PYTHON -c "import os; print(os.path.realpath('$gampath'))")
             export PYINSTALLER_BUILD_ONEDIR=yes
+            export gampath=$($PYTHON -c "import os; print(os.path.realpath('${gampath}/gam'))")
           elif [[ "${RUNNER_OS}" == "Windows" ]]; then
             # Work around issue where PyInstaller picks up python3.dll from other Python versions
             # https://github.com/pyinstaller/pyinstaller/issues/7102
@@ -556,8 +551,6 @@ jobs:
           fi
           export gam="${gampath}/gam"
           echo "gampath=${gampath}" >> $GITHUB_ENV
-          export distpath="./dist/gam"
-          export gampath="${distpath}"
           "${PYTHON}" -m PyInstaller --clean --noconfirm --distpath="${distpath}" gam.spec
           echo "dist results:"
           ls -alRF "$distpath"
