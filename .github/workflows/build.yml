@@ -540,19 +540,25 @@ jobs:
             # breaking our self-compiled version
             brew uninstall --ignore-dependencies openssl
             export PYINSTALLER_BUILD_ONEDIR=yes
-            export gampath=$($PYTHON -c "import os; print(os.path.realpath('${gampath}/gam'))")
+            export gampath=$($PYTHON -c "import os; print(os.path.realpath('${gampath}/gam7'))")
           elif [[ "${RUNNER_OS}" == "Windows" ]]; then
             # Work around issue where PyInstaller picks up python3.dll from other Python versions
             # https://github.com/pyinstaller/pyinstaller/issues/7102
             export PATH="$(dirname ${PYTHON}):/usr/bin"
             export PYINSTALLER_BUILD_ONEDIR=no
           else
-            export gampath=$(realpath "${gampath}")
+            export PYINSTALLER_BUILD_ONEDIR=yes
+            export gampath=$(realpath "${gampath}/gam7")
             export PYINSTALLER_BUILD_ONEDIR=no
           fi
           export gam="${gampath}/gam"
           echo "gampath=${gampath}" >> $GITHUB_ENV
           "${PYTHON}" -m PyInstaller --clean --noconfirm --distpath="${distpath}" gam.spec
+          if [[ "$PYINSTALLER_BUILD_ONEDIR" == "yes" ]]; then
+            mv -v "${distpath}/gam" "${distpath}/gam7"
+          else
+            mv -v "$distpath" "${distpath}7"
+          fi
           echo "dist results:"
           ls -alRF "$distpath"
           echo "WARNINGS FROM build/gam/warn-gam.txt"
