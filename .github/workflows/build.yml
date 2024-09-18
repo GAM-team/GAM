@@ -550,8 +550,6 @@ jobs:
             export PYINSTALLER_BUILD_ONEDIR=yes
             export gampath=$(realpath "${gampath}/gam7")
           fi
-          export gam="${gampath}/gam"
-          echo "gampath=${gampath}" >> $GITHUB_ENV
           "${PYTHON}" -m PyInstaller --clean --noconfirm --distpath="${distpath}" gam.spec
           if [[ "$PYINSTALLER_BUILD_ONEDIR" == "yes" ]]; then
             mv -v "${distpath}/gam" "${distpath}/gam7"
@@ -568,12 +566,14 @@ jobs:
           #cat build/gam/Analysis-00.toc
           #echo "EXE data FROM build/gam/EXE-00.toc"
           #cat build/gam/EXE-00.toc
+          export gam="${gampath}/gam"
           if [[ "${RUNNER_OS}" == "Windows" ]]; then
             export gam=$(cygpath -w "$gam")
             echo "GAM on Windows at ${gam}"
           else
             export gam=$(realpath "$gam")
           fi
+          echo "gampath=${gampath}" >> $GITHUB_ENV
           echo "gam=${gam}" >> $GITHUB_ENV
           echo -e "GAM: ${gam}\nGAMPATH: ${gampath}"
 
