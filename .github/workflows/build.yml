@@ -58,7 +58,7 @@ jobs:
             arch: aarch64
             openssl_archs: linux-aarch64
             staticx: yes
-          - os: macos-12
+          - os: macos-13
             jid: 6
             goal: build
             arch: x86_64
