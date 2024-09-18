@@ -538,7 +538,10 @@ jobs:
           fi
           mkdir -p -v "${gampath}"
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
-            # brew OpenSSL gets picked up by PyInstaller breaking our self-compiled version
+            # Tell our gam.spec to use our code sign certificate
+            export codesign_identity="Jay Lee"
+            # brew OpenSSL gets picked up by PyInstaller
+            # breaking our self-compiled version
             brew uninstall --ignore-dependencies openssl
             export gampath=$($PYTHON -c "import os; print(os.path.realpath('$gampath'))")
           elif [[ "${RUNNER_OS}" == "Windows" ]]; then
