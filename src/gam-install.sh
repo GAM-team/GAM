@@ -21,7 +21,7 @@ EOF
 }
 
 target_dir="$HOME/bin"
-target_gam="gam7/gam"
+target_gam="gam/gam"
 gamarch=$(uname -m)
 gamos=$(uname -s)
 osversion=""
