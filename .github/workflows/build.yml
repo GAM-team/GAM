@@ -531,8 +531,7 @@ jobs:
         if: matrix.goal != 'test'
         run: |
           export distpath="./dist/gam"
-          export gampath="$distpath"
-          mkdir -p -v "${gampath}"
+          mkdir -p -v "${distpath}"
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
             # Tell our gam.spec to use our code sign certificate
             export codesign_identity="Jay Lee"
@@ -540,7 +539,6 @@ jobs:
             # breaking our self-compiled version
             brew uninstall --ignore-dependencies openssl
             export PYINSTALLER_BUILD_ONEDIR=yes
-            export gampath=$($PYTHON -c "import os; print(os.path.realpath('${gampath}/gam7'))")
           elif [[ "${RUNNER_OS}" == "Windows" ]]; then
             # Work around issue where PyInstaller picks up python3.dll from other Python versions
             # https://github.com/pyinstaller/pyinstaller/issues/7102
@@ -548,18 +546,18 @@ jobs:
             export PYINSTALLER_BUILD_ONEDIR=no
           elif [[ "${staticx}" != "yes" ]]; then
             export PYINSTALLER_BUILD_ONEDIR=yes
-            export gampath=$(realpath "${gampath}/gam7")
           fi
           "${PYTHON}" -m PyInstaller --clean --noconfirm --distpath="${distpath}" gam.spec
           if [[ "$PYINSTALLER_BUILD_ONEDIR" == "yes" ]]; then
             mv -v "${distpath}/gam" "${distpath}/gam7"
+            export gampath="${distpath}/gam7"
           else
             mv -v "$distpath" "${distpath}7"
-            export distpath="${distpath}7"
-            export gampath="$distpath"
+            export gampath="${distpath}7"
           fi
-          echo "dist results:"
-          ls -alRF "$distpath"
+          export gampath=$(realpath "$gampath")
+          echo "gampath ${gampath} results:"
+          ls -alRF "$gampath"
           #echo "WARNINGS FROM build/gam/warn-gam.txt"
           #cat build/gam/warn-gam.txt
           #echo "Analysis FROM build/gam/Analysis-00.toc"
