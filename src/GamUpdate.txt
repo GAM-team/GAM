@@ -1,3 +1,13 @@
+7.00.03
+
+MacOS builds now use PyInstaller's "one directory" method which produces a smaller gam executable and a
+lib/ sub-directory with supporting libraries. one directory builds are an ORDER OF MAGNITUDE FASTER to start
+where 7.00.02 MacOS builds usually took ~7 seconds to run "gam version", 7.00.03 runs the command in less than
+0.5 seconds.
+
+MacOS builds are now signed by Jay's Apple Developer ID and notarized (scanned for malware) by Apple. This
+should resolve MacOS security warnings that need to be overridden when running GAM.
+
 7.00.02
 
 Added option `showlastmodification` to `gam <UserTypeEntity> print|show filecounts` that adds
