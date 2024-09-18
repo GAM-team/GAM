@@ -9231,7 +9231,7 @@ def doCheckConnection():
       api_hosts.append(host)
   hosts.extend(sorted(api_hosts))
   host_count = len(hosts)
-  httpObj = getHttpObj(timeout=10)
+  httpObj = getHttpObj(timeout=30)
   httpObj.follow_redirects = False
   headers = {'user-agent': GAM_USER_AGENT}
   okay = createGreenText('OK')
