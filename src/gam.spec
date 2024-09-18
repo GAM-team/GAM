@@ -30,7 +30,7 @@ a = Analysis(
     hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
-    runtime_hooks=[],
+    runtime_hooks=['add_lib.py'],
     excludes=[],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
@@ -48,12 +48,16 @@ pyz = PYZ(a.pure,
           cipher=None)
 # requires Python 3.10+ but no one should be compiling
 # GAM with older versions anyway
+target_arch = None
+codesign_identity = None
+entitlements_file = None
 match platform:
     case "darwin":
         if getenv('arch') == 'universal2':
             target_arch = "universal2"
-        else:
-            target_arch = None
+        codesign_identity = getenv('codesign_identity')
+        if codesign_identity:
+            entitlements_file = '../.github/actions/entitlements.plist'
         strip = True
     case "win32":
         target_arch = None
@@ -68,8 +72,6 @@ upx = False
 console = True
 disable_windowed_traceback = False
 argv_emulation = False
-codesign_identity = None
-entitlements_file = None
 if not getenv('PYINSTALLER_BUILD_ONEDIR') == 'yes':
     # Build one file
     exe = EXE(

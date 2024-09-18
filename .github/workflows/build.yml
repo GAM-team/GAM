@@ -608,12 +608,12 @@ jobs:
           rm -v "$gam"
           mv -v "${gam}-staticx" "$gam"
 
-      - name: MacOS sign GAM binary
-        if: runner.os == 'macOS'
-        run: |
-          security find-identity -v signing_temp.keychain
-          codesign --force --deep --sign "Jay Lee" --options=runtime --entitlements "${GITHUB_WORKSPACE}/.github/actions/entitlements.plist" --timestamp "$gam"
-          codesign -dv --verbose=4 "$gam"
+      #- name: MacOS sign GAM binary
+      #  if: runner.os == 'macOS'
+      #  run: |
+      #    security find-identity -v signing_temp.keychain
+      #    codesign --force --deep --sign "Jay Lee" --options=runtime --entitlements "${GITHUB_WORKSPACE}/.github/actions/entitlements.plist" --timestamp "$gam"
+      #    codesign -dv --verbose=4 "$gam"
 
       - name: MacOS send GAM binary for Apple notarization
         if: runner.os == 'macOS'
