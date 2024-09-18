@@ -581,12 +581,12 @@ jobs:
       - name: Copy extra package files
         if: matrix.goal == 'build'
         run: |
-          cp -v cacerts.pem $gampath
-          cp -v LICENSE $gampath
-          cp -v GamCommands.txt $gampath
-          cp -v GamUpdate.txt $gampath
+          cp -v cacerts.pem "$gampath"
+          cp -v LICENSE "$gampath"
+          cp -v GamCommands.txt "$gampath"
+          cp -v GamUpdate.txt "$gampath"
           if [[ "${RUNNER_OS}" == "Windows" ]]; then
-              cp -v gam-setup.bat $gampath
+              cp -v gam-setup.bat "$gampath"
           fi
 
       - name: Install StaticX
@@ -611,13 +611,6 @@ jobs:
           rm -v "$gam"
           mv -v "${gam}-staticx" "$gam"
 
-      #- name: MacOS sign GAM binary
-      #  if: runner.os == 'macOS'
-      #  run: |
-      #    security find-identity -v signing_temp.keychain
-      #    codesign --force --deep --sign "Jay Lee" --options=runtime --entitlements "${GITHUB_WORKSPACE}/.github/actions/entitlements.plist" --timestamp "$gam"
-      #    codesign -dv --verbose=4 "$gam"
-
       - name: MacOS send GAM binary for Apple notarization
         if: runner.os == 'macOS'
         env:
@@ -626,8 +619,9 @@ jobs:
           # Apple wants some kind of "package" submitted so just add gam to a .zip
           # name it something we can track and link in Apple's notarize process
           zipfilename="./gam-${RUNNER_ARCH}-${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}.zip"
-          zip "$zipfilename" "$gam"
+          zip -r "$zipfilename" "$gampath"
           xcrun notarytool submit --apple-id "jay0lee@gmail.com" --password "$ASP_NOTARIZE" --team-id GZ85H2DRLM "$zipfilename"
+          rm -v "$zipfilename"
 
       - name: Basic Tests all jobs
         id: basictests
