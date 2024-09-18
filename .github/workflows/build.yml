@@ -649,9 +649,9 @@ jobs:
             GAM_ARCHIVE="gam-${GAMVERSION}-linux-$(arch)-${libver}.tar.xz"
           fi
           echo "GAM Archive ${GAM_ARCHIVE}"
-          mv -v gam gam7
+          mv -v dist/gam dist/gam7
           tar -C dist/ --create --verbose --exclude-from "${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" --file $GAM_ARCHIVE --xz gam7
-          mv -v gam7 gam
+          mv -v dist/gam7 dist/gam
 
       - name: Windows package
         if: runner.os == 'Windows' && matrix.goal != 'test'
