@@ -22,12 +22,6 @@ hiddenimports = [
      ]
 
 runtime_hooks = []
-if getenv('PYINSTALLER_BUILD_ONEDIR') == 'yes':
-    # for onedir, add_lib.py allows moving many
-    # library files into a lib/ directory to make
-    # onedir cleaner. Thanks to:
-    # https://medium.com/@philipp.h/reduce-clutter-when-using-pyinstaller-in-one-directory-mode-b631b9f7f89b
-    runtime_hooks.append('add_lib.py')
 a = Analysis(
     ['gam/__main__.py'],
     pathex=[],
@@ -92,6 +86,8 @@ if getenv('PYINSTALLER_BUILD_ONEDIR') == 'yes':
               strip=strip,
               upx=upx,
               console=console,
+              # put most everyting under a lib/ subfolder
+              contents_directory='lib',
               disable_windowed_traceback=disable_windowed_traceback,
               argv_emulation=argv_emulation,
               target_arch=target_arch,
