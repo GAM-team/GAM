@@ -75,7 +75,7 @@ jobs:
             openssl_archs: VC-WIN64A
           - os: ubuntu-22.04
             goal: test
-            python: "3.8"
+            python: "3.13"
             jid: 10
             arch: x86_64
           - os: ubuntu-22.04
