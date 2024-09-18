@@ -558,6 +558,7 @@ jobs:
             mv -v "${distpath}/gam" "${distpath}/gam7"
           else
             mv -v "$distpath" "${distpath}7"
+            export distpath="${distpath}7"
           fi
           echo "dist results:"
           ls -alRF "$distpath"
