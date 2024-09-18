@@ -549,7 +549,6 @@ jobs:
           else
             export PYINSTALLER_BUILD_ONEDIR=yes
             export gampath=$(realpath "${gampath}/gam7")
-            export PYINSTALLER_BUILD_ONEDIR=no
           fi
           export gam="${gampath}/gam"
           echo "gampath=${gampath}" >> $GITHUB_ENV
