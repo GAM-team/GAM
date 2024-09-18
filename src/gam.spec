@@ -79,29 +79,8 @@ upx = False
 console = True
 disable_windowed_traceback = False
 argv_emulation = False
-if not getenv('PYINSTALLER_BUILD_ONEDIR') == 'yes':
-    # Build one file
-    exe = EXE(
-              pyz,
-              a.scripts,
-              a.binaries,
-              a.zipfiles,
-              a.datas,
-              [],
-              name=name,
-              debug=debug,
-              bootloader_ignore_signals=bootloader_ignore_signals,
-              strip=strip,
-              upx=upx,
-              console=console,
-              disable_windowed_traceback=disable_windowed_traceback,
-              argv_emulation=argv_emulation,
-              target_arch=target_arch,
-              codesign_identity=codesign_identity,
-              entitlements_file=entitlements_file,
-              )
-else:
-    # Build one folder
+if getenv('PYINSTALLER_BUILD_ONEDIR') == 'yes':
+    # Build one directory
     exe = EXE(
               pyz,
               a.scripts,
@@ -129,3 +108,25 @@ else:
         upx_exclude=[],
         name=name,
         )
+else:
+    # Build one file
+    exe = EXE(
+              pyz,
+              a.scripts,
+              a.binaries,
+              a.zipfiles,
+              a.datas,
+              [],
+              name=name,
+              debug=debug,
+              bootloader_ignore_signals=bootloader_ignore_signals,
+              strip=strip,
+              upx=upx,
+              console=console,
+              disable_windowed_traceback=disable_windowed_traceback,
+              argv_emulation=argv_emulation,
+              target_arch=target_arch,
+              codesign_identity=codesign_identity,
+              entitlements_file=entitlements_file,
+              )
+
