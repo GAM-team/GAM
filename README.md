@@ -32,7 +32,7 @@ There is a public chat room hosted in Google Chat. [Instructions to join](https:
 
 # Author
 
-GAM is maintained by [Jay Lee](mailto:jay0lee@gmail.com). Please direct "how do I?" questions to [Google Groups].
+GAM is maintained by [Jay (James) Lee](mailto:jay0lee@gmail.com) and [Ross Scroggs](mailto:ross.scroggs@gmail.com). Please direct "how do I?" questions to [Google Groups].
 
 [GAM release]: https://github.com/GAM-team/GAM/releases
 [GitHub Releases]: https://github.com/GAM-team/GAM/releases
