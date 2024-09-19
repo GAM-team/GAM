@@ -144,7 +144,7 @@ case $gamos in
     fullversion=$(sw_vers -productVersion)
     osversion=${fullversion:0:2}
     case $gamarch in
-      x86_64)     
+      x86_64)
         gamfile="macos-x86_64.tar.xz"
 	minimum_version=13
         ;;

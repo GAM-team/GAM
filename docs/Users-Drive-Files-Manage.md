@@ -208,7 +208,7 @@ If `noduplicate` is specfied, GAM will issue a warning and not perform the creat
 exists in the parent folder.
 
 By default, when files are uploaded from local content, they are created with `binary` format, i.e., the data is uploaded
-without any conversion. Standard GAM had an option `convert` that was passed to the Drive API v2 that it used.
+without any conversion. Legacy GAM had an option `convert` that was passed to the Drive API v2 that it used.
 * convert - Whether to convert this file to the corresponding Docs Editors format
 
 Advanced GAM uses Drive API v3 that doesn't support the `convert` option; it uses the `mimetype` argument to cause conversions.

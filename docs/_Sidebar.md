@@ -3,9 +3,9 @@ Update History
 
 Installation
 * [How to Install Advanced GAM](How-to-Install-Advanced-GAM)
+* [How to Update Advanced GAM to GAM7](How-to-Update-Advanced-GAM-to-GAM7)
 * [How to Update Advanced GAM](How-to-Update-Advanced-GAM)
-* [How to Upgrade from Standard GAM](How-to-Upgrade-from-Standard-GAM)
-* [How to Upgrade from GAMADV-X or GAMADV-XTD](How-to-Upgrade-from-GAMADV-X-or-GAMADV-XTD)
+* [How to Upgrade from Legacy GAM](How-to-Upgrade-from-Legacy-GAM)
 * [Install GAM as Python Library](Install-GAM-as-Python-Library)
 * [GAMADV-XTD3 on Chrome OS Devices](GAMADV-XTD3-on-Chrome-OS-Devices)
 * [GAMADV-XTD3 on Android Devices](GAMADV-XTD3-on-Android-Devices)

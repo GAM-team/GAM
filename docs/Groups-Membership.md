@@ -25,6 +25,24 @@
 
 ## Definitions
 See [Collections of Items](Collections-of-Items)
+
+* [Command data from Google Docs/Sheets/Storage](Command-Data-From-Google-Docs-Sheets-Storage)
+```
+<StorageBucketName> ::= <String>
+<StorageObjectName> ::= <String>
+<StorageBucketObjectName> ::=
+        https://storage.cloud.google.com/<StorageBucketName>/<StorageObjectName>|
+        https://storage.googleapis.com/<StorageBucketName>/<StorageObjectName>|
+        gs://<StorageBucketName>/<StorageObjectName>|
+        <StorageBucketName>/<StorageObjectName>
+
+<UserGoogleDoc> ::=
+        <EmailAddress> <DriveFileIDEntity>|<DriveFileNameEntity>|(<SharedDriveEntity> <SharedDriveFileNameEntity>)
+
+<SheetEntity> ::= <String>|id:<Number>
+<UserGoogleSheet> ::=
+        <EmailAddress> <DriveFileIDEntity>|<DriveFileNameEntity>|(<SharedDriveEntity> <SharedDriveFileNameEntity>) <SheetEntity>
+```
 ```
 <DeliverySetting> ::=
         allmail|

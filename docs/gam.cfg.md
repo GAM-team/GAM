@@ -944,11 +944,11 @@ domain = goo.com
 customer_id = my_customer
 config_dir = goo
 ```
-### Existing clients that have been accessed with Standard GAM.
+### Existing clients that have been accessed with Legacy GAM.
 You have two clients: foo and goo.
 Make sub-directories foo and goo in the same folder/directory as gam.cfg.
-For each client, copy the client_secrets.json and oauth2service.json files from their Standard GAM location
-to the appropriate sub-directory. If the Standard Gam files do not have these names,
+For each client, copy the client_secrets.json and oauth2service.json files from their Legacy GAM location
+to the appropriate sub-directory. If the Legacy Gam files do not have these names,
 rename them after copying them to the sub-directory.
 
 Perform the following commands for each client (replace xxx with foo and goo).

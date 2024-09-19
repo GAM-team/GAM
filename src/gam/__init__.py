@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.03'
+__version__ = '7.00.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -13804,7 +13804,8 @@ def doReport():
       Ent.SetGetting(Ent.REPORT)
     elif userKey == 'all':
       if orgUnitId:
-        userOrgUnits = getUserOrgUnits(cd, orgUnit, orgUnitId)
+        if showOrgUnit:
+          userOrgUnits = getUserOrgUnits(cd, orgUnit, orgUnitId)
         forWhom = f'users in orgUnit {orgUnit}'
       else:
         forWhom = 'all users'
@@ -13990,7 +13991,8 @@ def doReport():
       orgUnitId = None
     elif userKey == 'all':
       if orgUnitId:
-        userOrgUnits = getUserOrgUnits(cd, orgUnit, orgUnitId)
+        if showOrgUnit:
+          userOrgUnits = getUserOrgUnits(cd, orgUnit, orgUnitId)
         printGettingEntityItemForWhom(Ent.REPORT, f'users in orgUnit {orgUnit}')
       else:
         printGettingEntityItemForWhom(Ent.REPORT, 'all users')
@@ -37341,6 +37343,7 @@ def doCalendarsPrintShowACLs(calIds):
   if csvPF:
     csvPF.writeCSVfile('Calendar ACLs')
 
+EVENT_TYPE_BIRTHDAY = 'birthday'
 EVENT_TYPE_DEFAULT = 'default'
 EVENT_TYPE_FOCUSTIME = 'focusTime'
 EVENT_TYPE_FROMGMAIL = 'fromGmail'
@@ -37348,26 +37351,13 @@ EVENT_TYPE_OUTOFOFFICE = 'outOfOffice'
 EVENT_TYPE_WORKINGLOCATION = 'workingLocation'
 
 EVENT_TYPES_CHOICE_MAP = {
+  'birthday': EVENT_TYPE_BIRTHDAY,
   'default': EVENT_TYPE_DEFAULT,
   'focustime': EVENT_TYPE_FOCUSTIME,
   'fromgmail': EVENT_TYPE_FROMGMAIL,
   'outofoffice': EVENT_TYPE_OUTOFOFFICE,
   'workinglocation': EVENT_TYPE_WORKINGLOCATION,
   }
-
-#EVENT_TYPE_DEFAULT_PROPERTIES_MAP = {
-#  EVENT_TYPE_DEFAULT: {'eventType': EVENT_TYPE_DEFAULT},
-#  EVENT_TYPE_FOCUSTIME: {'eventType': EVENT_TYPE_FOCUSTIME,
-#                         'focusTimeProperties': {'autoDeclineMode': 'declineNone', 'declineMessage': 'Declined', 'chatStatus': 'doNotDisturb'},
-#                         'transparency':'opaque'},
-#  EVENT_TYPE_FROMGMAIL: {'eventType': EVENT_TYPE_FROMGMAIL},
-#  EVENT_TYPE_OUTOFOFFICE: {'eventType': EVENT_TYPE_OUTOFOFFICE,
-#                           'outOfOfficeProperties': {'autoDeclineMode': 'declineOnlyNewConflictingInvitations', 'declineMessage': 'Declined'},
-#                           'transparency':'opaque'},
-#  EVENT_TYPE_WORKINGLOCATION: {'eventType': EVENT_TYPE_WORKINGLOCATION,
-#                               'workingLocationProperties': {},
-#                               'visibility': 'public', 'transparency':'transparent'},
-#  }
 
 EVENT_TYPE_PROPERTIES_NAME_MAP = {
   EVENT_TYPE_DEFAULT: None,
@@ -37378,6 +37368,7 @@ EVENT_TYPE_PROPERTIES_NAME_MAP = {
   }
 
 EVENT_TYPE_ENTITY_MAP = {
+  EVENT_TYPE_BIRTHDAY: Ent.EVENT_BIRTHDAY,
   EVENT_TYPE_DEFAULT: None,
   EVENT_TYPE_FOCUSTIME: Ent.EVENT_FOCUSTIME,
   EVENT_TYPE_FROMGMAIL: None,
@@ -37611,6 +37602,13 @@ def _getCalendarEventAttribute(myarg, body, parameters, function):
   elif myarg == 'timerange':
     body['start'] = {'dateTime': getTimeOrDeltaFromNow()}
     body['end'] = {'dateTime': getTimeOrDeltaFromNow()}
+  elif myarg == 'birthday':
+    bday = getYYYYMMDD(returnDateTime=True)
+    body['start'] = body['end'] = {'date': bday.strftime(YYYYMMDD_FORMAT)}
+    if bday.month != 2 or bday.day != 29:
+      body['recurrence'] = ['RRULE:FREQ=YEARLY']
+    else:
+      body['recurrence'] = ['RRULE:FREQ=YEARLY;BYMONTH=2;BYMONTHDAY=-1']
   elif myarg == 'attachment':
     body.setdefault('attachments', [])
     body['attachments'].append({'title': getString(Cmd.OB_STRING), 'fileUrl': getString(Cmd.OB_URL)})
@@ -51086,7 +51084,7 @@ def createStatusEvent(users, eventType):
       missingArgumentExit('|'.join(WORKING_LOCATION_CHOICE_MAP))
   elif eventType == EVENT_TYPE_OUTOFOFFICE:
     getOutOfOfficeProperties(body, parameters, dateList)
-  else: # eventType == EVENT_TYPE_FOCUSTIME
+  else: # elif eventType == EVENT_TYPE_FOCUSTIME:
     getFocusTimeProperties(body, parameters, dateList)
   if not dateList:
     missingChoiceExit(STATUS_EVENTS_DATETIME_CHOICES)

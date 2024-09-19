@@ -71,7 +71,7 @@ gam <Command> cros <CrOSEntity> ...
 ```
 The first form allows more powerful selection of devices with `<CrOSTypeEntity>`.
 
-The second form is backwards compatible with Standard GAM and selection with `<CrOSEntity>` is limited.
+The second form is backwards compatible with Legacy GAM and selection with `<CrOSEntity>` is limited.
 
 ## Definitions
 * [`<CrOSTypeEntity>`](Collections-of-ChromeOS-Devices)
@@ -465,7 +465,7 @@ gam getcommand cros <CrOSEntity> commandid <CommandID> [times_to_check_status <I
 ### Action Examples
 Remove user profile data from the device; the device will remain enrolled and connected.
 User data not synced to the Cloud including Downloads, Android app data and Crostini Linux VMs will be permanently lost.
-Commands with issuecommand directly after gam will work with standard GAM & GAMADV-XTD3, whereas commands where the issuecommand is after the cros <CrOSTypeEntity> will work only with GAMADV-XTD3. 
+Commands with issuecommand directly after gam will work with Legacy GAM & GAMADV-XTD3, whereas commands where the issuecommand is after the cros <CrOSTypeEntity> will work only with GAMADV-XTD3. 
 ```
 gam issuecommand cros dd1d659a-0ea4-4e94-905e-4726c7a5f1e9 command wipe_users doit
 ```

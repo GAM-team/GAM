@@ -215,6 +215,7 @@ class GamEntity():
   END_TIME = 'endt'
   ENTITY = 'enti'
   EVENT = 'evnt'
+  EVENT_BIRTHDAY = 'evbd'
   EVENT_FOCUSTIME = 'evft'
   EVENT_OUTOFOFFICE = 'evoo'
   EVENT_WORKINGLOCATION = 'evwl'
@@ -565,6 +566,7 @@ class GamEntity():
     END_TIME: ['End Times', 'End Time'],
     ENTITY: ['Entities', 'Entity'],
     EVENT: ['Events', 'Event'],
+    EVENT_BIRTHDAY: ['Borthday Events', 'Birthday Event'],
     EVENT_FOCUSTIME: ['Focus Time Events', 'Focus Time Event'],
     EVENT_OUTOFOFFICE: ['Out of Office Events', 'Out of Office Event'],
     EVENT_WORKINGLOCATION: ['Working Location Events', 'Working Location Event'],

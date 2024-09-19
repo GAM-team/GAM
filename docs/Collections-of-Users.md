@@ -55,6 +55,8 @@
 
 <UserGoogleDoc> ::=
         <EmailAddress> <DriveFileIDEntity>|<DriveFileNameEntity>|(<SharedDriveEntity> <SharedDriveFileNameEntity>)
+
+<SheetEntity> ::= <String>|id:<Number>
 <UserGoogleSheet> ::=
         <EmailAddress> <DriveFileIDEntity>|<DriveFileNameEntity>|(<SharedDriveEntity> <SharedDriveFileNameEntity>) <SheetEntity>
 ```
@@ -87,8 +89,6 @@
 <SharedDriveEntity> ::=
         <SharedDriveIDEntity> |
         <SharedDriveNameEntity>
-
-<SheetEntity> ::= <String>|id:<Number>
 
 <UserTypeEntity> ::=
         (all users|users_ns|users_susp|users_ns_susp)|

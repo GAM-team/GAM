@@ -4,7 +4,7 @@ Many of the changes are internal to Gam and have no visible effect. Google has m
 A variable, `drive_v3_native_names` (default value is True), has been added to `gam.cfg` to control the field names on output: when True, the v3 native field names are used; when False, the v3 native field names are mapped to the v2 field names.
 
 If you have scripts that process the output from these print commands, you may have to make modifications to your scripts.
-Run your print/show commands with a version of Standard Gam and save the output.
+Run your print/show commands with a version of Legacy Gam and save the output.
 With drive_v3_native_names = False, run your print/show commands with this version of Gam and compare the output to that saved in the previous run;
 modify your scripts that process the output as appropriate.
 

@@ -26,6 +26,7 @@
 * https://developers.google.com/calendar/v3/reference/events
 * https://developers.google.com/calendar/v3/reference/events/import
 * https://developers.google.com/calendar/api/guides/working-hours-and-location
+* https://developers.google.com/calendar/api/guides/event-types#birthday
 
 ## Definitions
 * [`<UserTypeEntity>`](Collections-of-Users)
@@ -241,6 +242,7 @@
 ```
 ```
 <EventType> ::=
+        birthday|
         default|
         focustime|
         fromgmail|
@@ -306,6 +308,7 @@
         (attendee <EmailAddress>)|
         (attendeestatus [<AttendeeAttendance>] [<AttendeeStatus>] <EmailAddress>)|
         available|
+        (birthday <Date>)|
         (color <EventColorName>)|
         (colorindex|colorid <EventColorIndex>)|
         (description <String>)|

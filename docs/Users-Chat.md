@@ -1,7 +1,6 @@
 # Users - Chat
 - [API documentation](#api-documentation)
 - [Introduction](#introduction)
-- [Developer Preview Admin Access](#developer-preview-admin-access)
 - [Set up a Chat Bot](#set-up-a-chat-bot)
 - [Definitions](#definitions)
 - [Manage Chat Spaces](#manage-chat-spaces)
@@ -30,36 +29,11 @@ To use these commands you must update your service account authorization.
 gam user user@domain.com update serviceaccount
 
 [*]  4)  Chat API - Memberships (supports readonly)
+[*]  5)  Chat API - Memberships Admin (supports readonly)
 [*]  6)  Chat API - Messages (supports readonly)
 [*]  7)  Chat API - Spaces (supports readonly)
-[*]  9)  Chat API - Spaces Delete
-
-```
-
-## Developer Preview Admin Access
-The Chat API Developer Preview allows an admin to perform certain actions
-on all Chat Spaces. These commands were added in version 6.77.00.
-
-You must be enrolled in the Developer Preview program for the CHAT API to use these commands.
-
-```
-gam <UserItem> delete chatspace asadmin
-gam <UserItem> update chatspace asadmin
-gam <UserItem> info chatspace asadmin
-gam <UserItem> print|show chatspaces asadmin
-gam <UserItem> create chatmember asadmin
-gam <UserItem> delete|remove chatmember asadmin
-gam <UserItem> update|modify chatmember asadmin
-gam <UserItem> sync chatmembers asadmin
-gam <UserItem> info chatmember asadmin
-gam <UserItem> print|show chatmembers|asadmin
-```
-To use these commands you must update your service account authorization.
-```
-gam user user@domain.com update serviceaccount
-
-[*]  5)  Chat API - Memberships Admin (supports readonly)
 [*]  8)  Chat API - Spaces Admin (supports readonly)
+[*]  9)  Chat API - Spaces Delete
 [*] 10)  Chat API - Spaces Delete Admin
 ```
 
@@ -70,15 +44,6 @@ Added `use_chat_admin_access` Boolean variable to `gam.cfg`.
 * When True, GAM uses admin access for Chat API calls that support admin access; other calls will use user access.
 * Default: False
 ```
-
-If your account is not enrolled in the Chat API Developer Preview, you will see errors like this:
-```
-$ gam user admin@domain.com show chatspaces asadmin
-Getting all Chat Spaces that match query (customer = "customers/my_customer" AND spaceType = "SPACE") for admin@domain.com(asadmin)
-Chat Admin: admin@domain.com(asadmin), Show Failed: Method not found.
-```
-
-To enroll in the Developer Preview program, see: https://developers.google.com/workspace/preview
 
 Google requires that you have a Chat Bot configured in order to use the Chat API; set up a Chat Bot as described in the next section.
 
@@ -397,7 +362,6 @@ the quote character itself, the column delimiter (comma by default) and new-line
 When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
-
 
 ## Manage Chat Members
 ### Add members to a user's chat space

@@ -50,6 +50,8 @@
 
 <UserGoogleDoc> ::=
         <EmailAddress> <DriveFileIDEntity>|<DriveFileNameEntity>|(<SharedDriveEntity> <SharedDriveFileNameEntity>)
+
+<SheetEntity> ::= <String>|id:<Number>
 <UserGoogleSheet> ::=
         <EmailAddress> <DriveFileIDEntity>|<DriveFileNameEntity>|(<SharedDriveEntity> <SharedDriveFileNameEntity>) <SheetEntity>
 

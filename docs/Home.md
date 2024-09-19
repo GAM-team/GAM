@@ -1,8 +1,7 @@
 - [Introduction](#introduction)
 - [Requirements](#requirements)
 - [Installation - First time GAM installation](#installation---first-time-gam-installation)
-- [Installation - Upgrading from a GAM version other than a prior version of GAMADV-X or GAMADV-XTD or GAMADV-XTD3](#installation---upgrading-from-a-gam-version-other-than-a-prior-version-of-gamadv-x-or-gamadv-xtd-or-gamadv-xtd3)
-- [Installation - Upgrading from a prior version of GAMADV-X or GAMADV-XTD or GAMADV-XTD3](#installation---upgrading-from-a-prior-version-of-gamadv-x-or-gamadv-xtd-or-gamadv-xtd3)
+- [Installation - Upgrading from Legacy GAM](#installation---upgrading-from-legacy-gam)
 
 # Introduction
 GAMADV-XTD3 is a free, open source command line tool for Google Workspace Administrators to manage domain and user settings quickly and easily.
@@ -43,20 +42,13 @@ and all necessary authentications.
 * Configuration: [GAM Configuration](gam.cfg)
 * Install: [How to Install Advanced GAM](How-to-Install-Advanced-GAM)
 
-# Installation - Upgrading from a GAM version other than a prior version of GAMADV-X or GAMADV-XTD or GAMADV-XTD3
+# Installation - Upgrading from Legacy GAM
 Use these steps if you have used any version of GAM in your domain. They will update your GAM project
 and all necessary authentications.
 
 * Download: [Downloads-Installs](Downloads-Installs)
 * Configuration: [GAM Configuration](gam.cfg)
-* Upgrade: [How to Upgrade from Standard GAM](How-to-Upgrade-from-Standard-GAM)
-
-# Installation - Upgrading from a prior version of GAMADV-X or GAMADV-XTD or GAMADV-XTD3
-Use these steps if you already use GAMADV-X or GAMADV-XTD or GAMADV-XTD3. The updates may tell you to update your GAM project
-or authentications because new features have been included.
-
-* Updates: [GAM Updates]
-* Download: [Downloads-Installs](Downloads-Installs)
+* Upgrade: [How to Upgrade from Legacy GAM](How-to-Upgrade-from-Legacy-GAM)
 
 You can install multiple versions of GAM and GAMADV-XTD3 in different parallel directories.
 

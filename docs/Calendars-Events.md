@@ -176,6 +176,7 @@ Client access works when accessing Resource calendars.
 <AttendeeStatus> ::= accepted|declined|needsaction|tentative
 
 <EventType> ::=
+        birthday|
         default|
         focustime|
         fromgmail|
@@ -241,6 +242,7 @@ Client access works when accessing Resource calendars.
         (attendee <EmailAddress>)|
         (attendeestatus [<AttendeeAttendance>] [<AttendeeStatus>] <EmailAddress>)|
         available|
+        (birthday <Date>)|
         (color <EventColorName>)|
         (colorindex|colorid <EventColorIndex>)|
         (description <String>)|

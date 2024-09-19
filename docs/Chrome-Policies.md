@@ -7,7 +7,7 @@
   - [Definitions](#definitions)
   - [Display a specific Chrome policy schema](#display-a-specific-chrome-policy-schema)
   - [Display all or filtered Chrome policy schemas](#display-all-or-filtered-chrome-policy-schemas)
-  - [Display Chrome policy schemas in same format as Standard GAM](#display-chrome-policy-schemas-in-same-format-as-standard-gam)
+  - [Display Chrome policy schemas in same format as Legacy GAM](#display-chrome-policy-schemas-in-same-format-as-legacy-gam)
   - [Create a Chrome policy image](#create-a-chrome-policy-image)
   - [Update Chrome policy](#update-chrome-policy)
   - [Delete Chrome policy](#delete-chrome-policy)
@@ -118,7 +118,7 @@ When using the `formatjson` option, double quotes are used extensively in the da
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
-## Display Chrome policy schemas in same format as Standard GAM
+## Display Chrome policy schemas in same format as Legacy GAM
 ```
 gam show chromeschemas std
         [filter <String>]

@@ -1594,6 +1594,7 @@ gam calendar <CalendarEntity> printacl [todrive <ToDriveAttribute>*]
 <AttendeeStatus> ::= accepted|declined|needsaction|tentative
 
 <EventType> ::=
+        birthday|
         default|
         focustime|
         fromgmail|
@@ -5847,6 +5848,7 @@ gam <UserTypeEntity> transfer calendars|seccals <UserItem> [<UserCalendarEntity>
 <AttendeeStatus> ::= accepted|declined|needsaction|tentative
 
 <EventType> ::=
+        birthday|
         default|
         focustime|
         outofoffice|
@@ -5896,13 +5898,15 @@ gam <UserTypeEntity> transfer calendars|seccals <UserItem> [<UserCalendarEntity>
 <AttendeeStatus> ::= accepted|declined|needsaction|tentative
 
 <EventAttribute> ::=
+        (allday <Date>)|
         (anyonecanaddself [<Boolean>])|
         (attachment <String> <URL>)|
         (attendee <EmailAddress>)|
         (attendeestatus [<AttendeeAttendance>] [<AttendeeStatus>] <EmailAddress>)|
         available|
+        (birthday <Date>)|
         (color <EventColorName>)|
-        (colorindex|colorid <EventColorIndex>))|
+        (colorindex|colorid <EventColorIndex>)|
         (description <String>)|
         (end|endtime (allday <Date>)|<Time>)|
         (guestscaninviteothers <Boolean>)|
@@ -5912,14 +5916,16 @@ gam <UserTypeEntity> transfer calendars|seccals <UserItem> [<UserCalendarEntity>
         guestscantseeotherguests|
         hangoutsmeet|
         <JSONData>|
-        (jsonattendees [charset <Charset>] <String>)|(jsonattendees file <FileName> [charset <Charset>])|
+        (jsonattendees [charset <Charset>] <String>)|
+        (jsonattendees file <FileName> [charset <Charset>])|
         (location <String>)|
         (noreminders|(reminder email|popup <Number>))|
         (optionalattendee <EmailAddress>)|
         (originalstart|originalstarttime (allday <Date>)|<Time>)|
         (privateproperty <PropertyKey> <PropertyValue>)|
+        (range <Date> <Date>)|
         (recurrence <RRULE, EXRULE, RDATE and EXDATE line>)|
-        (reminder <Number> email|popup))|
+        (reminder <Number> email|popup)|
         (selectattendees [<AttendeeAttendance>] [<AttendeeStatus>] <UserTypeEntity>)|
         (sequence <Integer>)|
         (sharedproperty <PropertyKey> <PropertyValue>)|
@@ -5928,6 +5934,7 @@ gam <UserTypeEntity> transfer calendars|seccals <UserItem> [<UserCalendarEntity>
         (status confirmed|tentative|cancelled)|
         (summary <String>)|
         tentative|
+        (timerange <Time> <Time>)|
         (timezone <TimeZone>)|
         (transparency opaque|transparent)|
         (visibility default|public|private)
