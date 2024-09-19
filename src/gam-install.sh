@@ -141,25 +141,28 @@ case $gamos in
     ;;
   [Mm]ac[Oo][sS]|[Dd]arwin)
     gamos="macos"
+    fullversion=$(sw_vers -productVersion)
+    osversion=${fullversion:0:2}
     case $gamarch in
-      x86_64)
-        fullversion=$(sw_vers -productVersion)
-        osversion=${fullversion:0:2}
-        case ${osversion:0:2} in
-          11|12|13|14|15)
-            gamfile="macos-x86_64.tar.xz";;
-          *)
-	    echo_red "Sorry, this version ($fullversion) of MacOS is not supported. Exiting."
-	    exit
-            ;;
-        esac
+      x86_64)     
+        gamfile="macos-x86_64.tar.xz"
+	minimum_version=13
         ;;
       arm|arm64|aarch64)
-        gamfile="macos-aarch64.tar.xz";;
+        gamfile="macos-aarch64.tar.xz"
+	minimum_version=14
+        ;;
       *)
         echo_red "ERROR: this installer currently only supports x86_64 and arm64 MacOS. Looks like you're running on $gamarch. Exiting."
         exit
+	;;
     esac
+    if [[ "$osversion" -ge "$minimum_version" ]]; then
+      echo_green "You are running MacOS ${fullversion}, good. Using GAM with ${gamfile}."
+    else
+      echo_red "Sorry, you are running MacOS ${fullversion} but GAM on ${gamarch} requires MacOS ${minimum_version}. Exiting."
+      exit
+    fi
     ;;
   MINGW64_NT*)
     gamos="windows"
