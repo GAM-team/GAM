@@ -43,25 +43,7 @@
         Id="ProductComponents"
         Directory="INSTALLFOLDER"
         Source="dist/gam7">
-      <Component Id="gam_exe" Guid="d046ea24-c9f8-40ca-84db-70b0119933ff">
-        <File Name="gam.exe" KeyPath="yes" />
-        <Environment Id="PATH" Name="PATH" Value="[INSTALLFOLDER]" Permanent="yes" Part="last" Action="set" System="yes" />
-      </Component>
-      <Component Id="license" Guid="c76864c5-d005-44d5-bb7c-a27e5923792d">
-        <File Name="LICENSE" KeyPath="yes" />
-      </Component>
-      <Component Id="gam_setup_bat" Guid="5e6bbacb-d86f-4d80-a10b-89b81ee63fcb">
-        <File Name="gam-setup.bat" KeyPath="yes" />
-      </Component>
-      <Component Id="GamCommands_txt" Guid="a2dca862-b222-469e-a637-95ea2a1c53e7">
-        <File Name="GamCommands.txt" KeyPath="yes" />
-      </Component>
-      <Component Id="GamUpdate_txt" Guid="1b7cdd48-0fff-4943-a219-102fcd14c755">
-        <File Name="GamUpdate.txt" KeyPath="yes" />
-      </Component>
-      <Component Id="cacerts_pem" Guid="61fe2b2d-1646-4bed-b844-193965e97727">
-        <File Name="cacerts.pem" KeyPath="yes" />
-      </Component>
+REPLACE_ME_WITH_FILE_COMPONENTS
     </ComponentGroup>
   </Fragment>
 
