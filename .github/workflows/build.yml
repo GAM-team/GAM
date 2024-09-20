@@ -542,6 +542,7 @@ jobs:
             # Work around issue where PyInstaller picks up python3.dll from other Python versions
             # https://github.com/pyinstaller/pyinstaller/issues/7102
             export PATH="$(dirname ${PYTHON}):/usr/bin"
+          fi
           if [[ "${staticx}" != "yes" ]]; then
             export PYINSTALLER_BUILD_ONEDIR=yes
           fi
