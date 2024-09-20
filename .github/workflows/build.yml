@@ -628,7 +628,7 @@ jobs:
           echo "GAM Version ${GAMVERSION}"
           echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
 
-      - name: Attest Binary Provenance
+      - name: Attest gam executable was generated from this Action
         uses: actions/attest-build-provenance@v1
         if: matrix.goal == 'build'
         with:
@@ -664,6 +664,25 @@ jobs:
           #/c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/candle.exe -arch "${WIX_ARCH}" gam.wxs
           #/c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/WixUIExtension.dll gam.wixobj -o "gam-${GAMVERSION}-windows-${GAM_ARCHIVE_ARCH}.msi" || true;
           #rm -v -f *.wixpdb
+
+      - name: Attest that gam package files were generated from this Action
+        uses: actions/attest-build-provenance@v1
+        if: (github.event_name == 'push' || github.event_name == 'schedule') && matrix.goal == 'build'
+        with:
+          subject-path: |
+            src/gam*.tar.xz
+            src/gam*.zip
+            src/gam*.msi
+
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v4
+        if: (github.event_name == 'push' || github.event_name == 'schedule') && matrix.goal != 'test'
+        with:
+          name: gam-binaries-${{ env.GAMOS }}-${{ env.arch }}-${{ matrix.jid }}
+          path: |
+            src/gam*.tar.xz
+            src/gam*.zip
+            src/gam*.msi
 
       - name: Basic Tests build jobs only
         if: matrix.goal != 'test' && steps.cache-python-ssl.outputs.cache-hit != 'true'
@@ -898,25 +917,6 @@ jobs:
             tar_folders="bin/"
           fi
           tar cJvvf cache.tar.xz $tar_folders
-
-      - name: Attest Build Archive Provenance
-        uses: actions/attest-build-provenance@v1
-        if: (github.event_name == 'push' || github.event_name == 'schedule') && matrix.goal == 'build'
-        with:
-          subject-path: |
-            src/gam*.tar.xz
-            src/gam*.zip
-            src/gam*.msi
-
-      - name: Archive production artifacts
-        uses: actions/upload-artifact@v4
-        if: (github.event_name == 'push' || github.event_name == 'schedule') && matrix.goal != 'test'
-        with:
-          name: gam-binaries-${{ env.GAMOS }}-${{ env.arch }}-${{ matrix.jid }}
-          path: |
-            src/gam*.tar.xz
-            src/gam*.zip
-            src/gam*.msi
 
   merge:
     if: (github.event_name == 'push' || github.event_name == 'schedule')
