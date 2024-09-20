@@ -638,14 +638,13 @@ jobs:
         if: runner.os != 'Windows' && matrix.goal == 'build'
         run: |
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
-            GAM_ARCHIVE="gam-${GAMVERSION}-macos-${arch}.tar.xz"
           elif [[ "${RUNNER_OS}" == "Linux" ]]; then
             if [[ "${staticx}" == "yes" ]]; then
               libver="legacy"
             else
               libver="glibc$(ldd --version | awk '/ldd/{print $NF}')"
             fi
-            GAM_ARCHIVE="gam-${GAMVERSION}-linux-$(arch)-${libver}.tar.xz"
+            GAM_ARCHIVE="${GITHUB_WORKSPACE}/gam-${GAMVERSION}-linux-$(arch)-${libver}.tar.xz"
           fi
           echo "GAM Archive ${GAM_ARCHIVE}"
           tar -C "${gampath}/.." --create --verbose --exclude-from "${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" --file $GAM_ARCHIVE --xz gam7
@@ -654,8 +653,8 @@ jobs:
         if: runner.os == 'Windows' && matrix.goal != 'test'
         run: |
           cd "${gampath}/.."
-          GAM_ARCHIVE="../gam-${GAMVERSION}-windows-${GAM_ARCHIVE_ARCH}.zip"
-          /c/Program\ Files/7-Zip/7z.exe a -tzip $GAM_ARCHIVE gam7 "-xr@${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" -bb3
+          GAM_ARCHIVE="${GITHUB_WORKSPACE}/gam-${GAMVERSION}-windows-${GAM_ARCHIVE_ARCH}.zip"
+          /c/Program\ Files/7-Zip/7z.exe a -tzip "$GAM_ARCHIVE" gam7 "-xr@${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" -bb3
           #cd ../..
           #$PYTHON tools/gen-wix-xml-filelist.py "$gampath" gam.wxs.template gam.wxs
           #echo '-- begin generated gam.wxs --'
@@ -670,9 +669,9 @@ jobs:
         if: (github.event_name == 'push' || github.event_name == 'schedule') && matrix.goal == 'build'
         with:
           subject-path: |
-            src/gam*.tar.xz
-            src/gam*.zip
-            src/gam*.msi
+            gam*.tar.xz
+            gam*.zip
+            gam*.msi
 
       - name: Archive production artifacts
         uses: actions/upload-artifact@v4
@@ -680,9 +679,9 @@ jobs:
         with:
           name: gam-binaries-${{ env.GAMOS }}-${{ env.arch }}-${{ matrix.jid }}
           path: |
-            src/gam*.tar.xz
-            src/gam*.zip
-            src/gam*.msi
+            gam*.tar.xz
+            gam*.zip
+            gam*.msi
 
       - name: Basic Tests build jobs only
         if: matrix.goal != 'test' && steps.cache-python-ssl.outputs.cache-hit != 'true'
