@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.04'
+__version__ = '7.00.05'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -37603,6 +37603,9 @@ def _getCalendarEventAttribute(myarg, body, parameters, function):
     body['start'] = {'dateTime': getTimeOrDeltaFromNow()}
     body['end'] = {'dateTime': getTimeOrDeltaFromNow()}
   elif myarg == 'birthday':
+    body['eventType'] = EVENT_TYPE_BIRTHDAY
+    body['visibility'] = 'private'
+    body['transparency'] = 'transparent'
     bday = getYYYYMMDD(returnDateTime=True)
     body['start'] = body['end'] = {'date': bday.strftime(YYYYMMDD_FORMAT)}
     if bday.month != 2 or bday.day != 29:
@@ -38019,12 +38022,14 @@ def _createCalendarEvents(user, origCal, function, calIds, count, body, paramete
       if function == 'insert':
         event = callGAPI(cal.events(), 'insert',
                          throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.INVALID, GAPI.REQUIRED, GAPI.TIME_RANGE_EMPTY, GAPI.EVENT_DURATION_EXCEEDS_LIMIT,
-                                                                   GAPI.REQUIRED_ACCESS_LEVEL, GAPI.DUPLICATE, GAPI.FORBIDDEN, GAPI.MALFORMED_WORKING_LOCATION_EVENT],
+                                                                   GAPI.REQUIRED_ACCESS_LEVEL, GAPI.DUPLICATE, GAPI.FORBIDDEN,
+                                                                   GAPI.MALFORMED_WORKING_LOCATION_EVENT, GAPI.BAD_REQUEST],
                          calendarId=calId, conferenceDataVersion=1, sendUpdates=parameters['sendUpdates'], supportsAttachments=True, body=body, fields=fields)
       else:
         event = callGAPI(cal.events(), 'import_',
                          throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.INVALID, GAPI.REQUIRED, GAPI.TIME_RANGE_EMPTY, GAPI.EVENT_DURATION_EXCEEDS_LIMIT,
-                                                                   GAPI.REQUIRED_ACCESS_LEVEL, GAPI.DUPLICATE, GAPI.FORBIDDEN, GAPI.MALFORMED_WORKING_LOCATION_EVENT,
+                                                                   GAPI.REQUIRED_ACCESS_LEVEL, GAPI.DUPLICATE, GAPI.FORBIDDEN,
+                                                                   GAPI.MALFORMED_WORKING_LOCATION_EVENT, GAPI.BAD_REQUEST,
                                                                    GAPI.PARTICIPANT_IS_NEITHER_ORGANIZER_NOR_ATTENDEE],
                          calendarId=calId, conferenceDataVersion=1, supportsAttachments=True, body=body, fields=fields)
       if parameters['csvPF'] is None:
@@ -38034,7 +38039,8 @@ def _createCalendarEvents(user, origCal, function, calIds, count, body, paramete
           _getEventDaysOfWeek(event)
         _printCalendarEvent(user, calId, event, parameters['csvPF'], parameters['FJQC'])
     except (GAPI.invalid, GAPI.required, GAPI.timeRangeEmpty, GAPI.eventDurationExceedsLimit,
-            GAPI.requiredAccessLevel, GAPI.participantIsNeitherOrganizerNorAttendee, GAPI.malformedWorkingLocationEvent) as e:
+            GAPI.requiredAccessLevel, GAPI.participantIsNeitherOrganizerNorAttendee,
+            GAPI.malformedWorkingLocationEvent, GAPI.badRequest) as e:
       entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, event['id']], str(e), i, count)
     except GAPI.duplicate as e:
       entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, event['id']], str(e), i, count)

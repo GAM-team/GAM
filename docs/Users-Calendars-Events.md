@@ -329,7 +329,7 @@
         (privateproperty <PropertyKey> <PropertyValue>)|
         (range <Date> <Date>)|
         (recurrence <RRULE, EXRULE, RDATE and EXDATE line>)|
-        (reminder <Number> email|popup))|
+        (reminder <Number> email|popup)|
         (selectattendees [<AttendeeAttendance>] [<AttendeeStatus>] <UserTypeEntity>)|
         (sequence <Integer>)|
         (sharedproperty <PropertyKey> <PropertyValue>)|

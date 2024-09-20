@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.00.05
+
+Fixed bug that caused an error when creating a calendar birthday event.
+
 ### 7.00.04
 
 Improved performance of `gam report users orgunit <OrgUnitPath>` when `showorgunit` is not specified.

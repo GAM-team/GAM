@@ -1,3 +1,7 @@
+7.00.05
+
+Fixed bug that caused an error when creating a calendar birthday event.
+
 7.00.04
 
 Improved performance of `gam report users orgunit <OrgUnitPath>` when `showorgunit` is not specified.
