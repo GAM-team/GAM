@@ -638,6 +638,7 @@ jobs:
         if: runner.os != 'Windows' && matrix.goal == 'build'
         run: |
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
+              GAM_ARCHIVE="${GITHUB_WORKSPACE}/gam-${GAMVERSION}-macos-${arch}.tar.xz"
           elif [[ "${RUNNER_OS}" == "Linux" ]]; then
             if [[ "${staticx}" == "yes" ]]; then
               libver="legacy"
