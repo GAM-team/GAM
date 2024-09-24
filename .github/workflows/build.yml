@@ -661,7 +661,7 @@ jobs:
           # remove unsigned gam.exe and rename signed-gam.exe
           rm -v -f "${gampath}/gam.exe"
           mv -v -f "${gampath}/signed-gam.exe" "${gampath}/gam.exe"
-          "/c/Program Files (x86)/Windows Kits/10/bin/10.0.22621.0/x64/signtool.exe" verify /v "$gam"
+          "/c/Program Files (x86)/Windows Kits/10/bin/10.0.22621.0/x64/signtool.exe" verify /v /pa "$gam"
 
       - name: Attest gam executable was generated from this Action
         uses: actions/attest-build-provenance@v1
