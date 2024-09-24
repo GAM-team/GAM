@@ -628,12 +628,6 @@ jobs:
           echo "GAM Version ${GAMVERSION}"
           echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
 
-      - name: Attest gam executable was generated from this Action
-        uses: actions/attest-build-provenance@v1
-        if: matrix.goal == 'build'
-        with:
-          subject-path: ${{ env.gam }}
-
       - name: Configure service account auth
         id: configserviceaccount
         env:
@@ -664,7 +658,13 @@ jobs:
             sleep 10
           done
           $gam csv "$results_file" gam user gam-win-signer@pdl.jaylee.us print filelist query "'~~id~~' in parents and name = 'gam.exe'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us get drivefile ~id targetfolder "$gampath" targetfile "gam.exe" overwrite true acknowledgeabuse true
-          
+
+      - name: Attest gam executable was generated from this Action
+        uses: actions/attest-build-provenance@v1
+        if: matrix.goal == 'build'
+        with:
+          subject-path: ${{ env.gam }}
+
       - name: Linux/MacOS package
         if: runner.os != 'Windows' && matrix.goal == 'build'
         run: |
