@@ -646,9 +646,6 @@ jobs:
           $gam user gam-win-signer@pdl.jaylee.us add drivefile localfile "$gam" parentid "$folder_id"
           $gam user gam-win-signer@pdl.jaylee.us update drivefile "$folder_id" newfilename "READYTOSIGN ${folder_number}"
           export signed_folder="SIGNED ${folder_number}"
-          # remove unsigned gam.exe so we can overwrite and we fail
-          # if we fail to get the signed gam.exe
-          rm -v -f "${gampath}/gam.exe"
           zero_results="gam-win-signer@pdl.jaylee.us,0"
           while true; do
             result_counts=$($gam user gam-win-signer print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" countsonly)
@@ -660,7 +657,10 @@ jobs:
             echo "no results, sleeping 10..."
             sleep 10
           done
-          $gam user gam-win-signer print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us print filelist query "'~~id~~' in parents and name = 'gam.exe'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us get drivefile ~id targetfolder "$gampath" targetname "gam.exe" overwrite true acknowledgeabuse true
+          $gam user gam-win-signer print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us print filelist query "'~~id~~' in parents and name = 'gam.exe'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us get drivefile ~id targetfolder "$gampath" targetname "signed-gam.exe" overwrite true acknowledgeabuse true
+          # remove unsigned gam.exe and rename signed-gam.exe
+          rm -v -f "${gampath}/gam.exe"
+          mv -v -f "${gampath}/signed-gam.exe" "${gampath}/gam.exe"
           ls -l "/c/Program Files (x86)/"
           ls -l "/c/Program Files (x86)/Windows Kits/"
           ls -l "/c/Program Files (x86)/Windows Kits/10"
