@@ -634,6 +634,19 @@ jobs:
         with:
           subject-path: ${{ env.gam }}
 
+      - name: Configure service account auth
+        id: configserviceaccount
+        run: |
+          $gam create signjwtserviceaccount
+
+      - name: Upload gam.exe Windows for signing
+        if: runner.os == 'Windows' && matrix.goal != 'test'
+        run: |
+          export folder_number=$(date +%s)
+          export folder_id=$($gam user gam-win-signer@pdl.jaylee.us add drivefile drivefilename "UPLOADING_FOR_SIGN ${folder_number}" parentid "1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp" mimetype gfolder returnidonly)
+          $gam user gam-win-signer@pdl.jaylee.us add drivefile localfile "$gam" parentid "$folder_id"
+          $gam user gam-win-signer@pdl.jaylee.us update drivefile "$folder_id" newfilename "READYTOSIGN ${folder_number"
+          
       - name: Linux/MacOS package
         if: runner.os != 'Windows' && matrix.goal == 'build'
         run: |
@@ -661,9 +674,14 @@ jobs:
           #echo '-- begin generated gam.wxs --'
           #cat gam.wxs
           #echo '-- end generated gam.wxs --'
+          export MSI_FILENAME="gam-${GAMVERSION}-windows-${GAM_ARCHIVE_ARCH}.msi"
           /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/candle.exe -arch "${WIX_ARCH}" gam.wxs
-          /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/WixUIExtension.dll gam.wixobj -o "gam-${GAMVERSION}-windows-${GAM_ARCHIVE_ARCH}.msi" || true;
+          /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/WixUIExtension.dll gam.wixobj -o "$MSI_FILENAME" || true;
           rm -v -f *.wixpdb
+          export folder_number=$(date +%s)
+          export folder_id=$($gam user gam-win-signer@pdl.jaylee.us add drivefile drivefilename "UPLOADING_FOR_SIGN ${folder_number}" parentid "1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp" mimetype gfolder returnidonly)
+          $gam user gam-win-signer@pdl.jaylee.us add drivefile localfile "$MSI_FILENAME" parentid "$folder_id"
+          $gam user gam-win-signer@pdl.jaylee.us update drivefile "$folder_id" newfilename "READYTOSIGN ${folder_number"
 
       - name: Attest that gam package files were generated from this Action
         uses: actions/attest-build-provenance@v1
@@ -721,7 +739,6 @@ jobs:
           $gam oauth info
           $gam oauth refresh
           $gam config enable_dasa true save 
-          $gam create signjwtserviceaccount
           $gam checkconn
           $gam user "$gam_user" check serviceaccount
           $gam info domain
