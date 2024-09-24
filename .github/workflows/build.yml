@@ -646,6 +646,9 @@ jobs:
           $gam user gam-win-signer@pdl.jaylee.us add drivefile localfile "$gam" parentid "$folder_id"
           $gam user gam-win-signer@pdl.jaylee.us update drivefile "$folder_id" newfilename "READYTOSIGN ${folder_number}"
           export signed_folder="SIGNED ${folder_number}"
+          # remove unsigned gam.exe so we can overwrite and we fail
+          # if we fail to get the signed gam.exe
+          rm -v -f "$gam"
           zero_results="gam-win-signer@pdl.jaylee.us,0"
           while true; do
             result_counts=$($gam user gam-win-signer print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" countsonly)
@@ -658,7 +661,11 @@ jobs:
             sleep 10
           done
           $gam user gam-win-signer print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us print filelist query "'~~id~~' in parents and name = 'gam.exe'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us get drivefile ~id targetfolder "$gampath" targetname "gam.exe" overwrite true acknowledgeabuse true
-          signtool verify /v "$gam"
+          ls -l "/c/Program Files (x86)/"
+          ls -l "/c/Program Files (x86)/Windows Kits/"
+          ls -l "/c/Program Files (x86)/Windows Kits/10"
+          ls -l "/c/Program Files (x86)/Windows Kits/10/bin"
+          signtool.exe verify /v "$gam"
 
       - name: Attest gam executable was generated from this Action
         uses: actions/attest-build-provenance@v1
