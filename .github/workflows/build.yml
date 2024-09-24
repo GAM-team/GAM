@@ -648,7 +648,7 @@ jobs:
           export signed_folder="SIGNED ${folder_number}"
           export results_file="results-$(date +%s)"
           while true; do
-            $gam user gam-win-signer print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder' id" > "$results_file"
+            $gam user gam-win-signer print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" id > "$results_file"
             export result_lines=$(wc -l < "$results_file")
             if [[ "$result_lines" -gt "1" ]]; then
               echo "We have signed results."
