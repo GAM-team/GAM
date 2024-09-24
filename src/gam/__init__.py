@@ -25630,13 +25630,18 @@ CHAT_SPACE_TYPE_MAP = {
   'directmessage': 'DIRECT_MESSAGE',
   }
 
+CHAT_SPACE_PREDEFINED_PERMS_MAP = {
+  'announcement': 'ANNOUNCEMENT_SPACE',
+  'collaboration': 'COLLABORATION_SPACE',
+  }
+
 CHAT_SPACE_MIN_MAX_MEMBERS = {
   'SPACE': {'min': 0, 'max': 20},
   'GROUP_CHAT': {'min': 2, 'max': 20},
   'DIRECT_MESSAGE': {'min': 1, 'max': 1},
   }
 # gam <UserTypeEntity> create chatspace
-#       [type <ChatSpaceType>]
+#       [type <ChatSpaceType>] [announcement|collaboration]
 #	[restricted|(audience <String>)]
 #	[externalusersallowed <Boolean>]
 #	[members <UserTypeEntity>]
@@ -25647,9 +25652,7 @@ CHAT_SPACE_MIN_MAX_MEMBERS = {
 #	[formatjson|returnidonly]
 def createChatSpace(users):
   FJQC = FormatJSONQuoteChar()
-  body = {'space': {'spaceType': CHAT_SPACE_TYPE_MAP['space'], 'displayName': ''},
-          'requestId': str(uuid.uuid4()),
-          'memberships': []}
+  body = {'space': {'spaceType': CHAT_SPACE_TYPE_MAP['space'], 'displayName': ''}, 'requestId': str(uuid.uuid4())}
   members = []
   tbody = {}
   returnIdOnly = False
@@ -25658,6 +25661,8 @@ def createChatSpace(users):
     myarg = getArgument()
     if getChatSpaceParameters(myarg, body['space'], CHAT_SPACE_TYPE_MAP, updateMask):
       pass
+    elif myarg in CHAT_SPACE_PREDEFINED_PERMS_MAP:
+      body['space']['predefinedPermissionSettings'] = CHAT_SPACE_PREDEFINED_PERMS_MAP[myarg]
     elif myarg == 'externalusersallowed':
       body['space']['externalUserAllowed'] = getBoolean()
     elif myarg == 'members':
@@ -25678,17 +25683,21 @@ def createChatSpace(users):
                                                                     CHAT_SPACE_MIN_MAX_MEMBERS[spaceType]['min'],
                                                                     CHAT_SPACE_MIN_MAX_MEMBERS[spaceType]['max']))
   mtype = CHAT_MEMBER_TYPE_MAP['human']
-  for member in members:
-    name = normalizeEmailAddressOrUID(member)
-    body['memberships'].append({'member': {'name': f'users/{name}', 'type': mtype}})
+  if members:
+    body['memberships'] = []
+    for member in members:
+      name = normalizeEmailAddressOrUID(member)
+      body['memberships'].append({'member': {'name': f'users/{name}', 'type': mtype}})
   if spaceType == 'SPACE':
     if not body['space']['displayName']:
       missingArgumentExit('displayname')
   elif spaceType == 'GROUP_CHAT':
     body['space'].pop('displayName', None)
+    body['space'].pop('predefinedPermissionSettings', None)
   else: # DIRECT_MESSAGE
     body['space'].pop('displayName', None)
     body['space'].pop('spaceDetails', None)
+    body['space'].pop('predefinedPermissionSettings', None)
     body['space']['singleUserBotDm'] = False
   if tbody:
     trimChatMessageIfRequired(tbody)
@@ -25737,12 +25746,34 @@ CHAT_UPDATE_SPACE_TYPE_MAP = {
   'space': 'SPACE',
   }
 
+CHAT_SPACE_ROLE_PERMISSIONS_MAP = {
+  'managers': 'managersAllowed',
+  'members': 'membersAllowed',
+  }
+
+CHAT_UPDATE_SPACE_PERMISSIONS_MAP = {
+  'managemembersandgroups': 'manageMembersAndGroups',
+  'modifyspacedetails': 'modifySpaceDetails',
+  'togglehistory': 'toggleHistory',
+  'useatmentionall': 'useAtMentionAll',
+  'manageapps': 'manageApps',
+  'managewebhooks': 'manageWebhooks',
+  'replymessages': 'replyMessages',
+  }
+ 
 # gam <UserTypeEntity> update chatspace <ChatSpace>
 #	[restricted|(audience <String>)]|
 #	([displayname <String>]
 #	 [type space]
 #	 [description <String>] [guidelines|rules <String>]
 #	 [history <Boolean>])
+#	managemembersandgroups managers|members
+#	modifyspacedetails managers|members
+#	togglehistory managers|members
+#	useatmentionall managers|members
+#	manageapps managers|members
+#	managewebhooks managers|members
+#	replymessages managers|members
 #	[formatjson]
 def updateChatSpace(users):
   FJQC = FormatJSONQuoteChar()
@@ -25756,6 +25787,14 @@ def updateChatSpace(users):
       name = getSpaceName(myarg)
     elif getChatSpaceParameters(myarg, body, CHAT_UPDATE_SPACE_TYPE_MAP, updateMask):
       pass
+    elif myarg in CHAT_UPDATE_SPACE_PERMISSIONS_MAP:
+      body.setdefault('permissionSettings', {})
+      permissionSetting = CHAT_UPDATE_SPACE_PERMISSIONS_MAP[myarg]
+      role = getChoice(CHAT_SPACE_ROLE_PERMISSIONS_MAP, mapChoice=True)
+      body['permissionSettings'][permissionSetting] = {'managersAllowed': True}
+      if role == 'membersAllowed':
+        body['permissionSettings'][permissionSetting].update({'membersAllowed': True})
+      updateMask.add(f'permissionSettings.{permissionSetting}')
     else:
       FJQC.GetFormatJSON(myarg)
   if not name:
@@ -25823,6 +25862,7 @@ CHAT_SPACES_FIELDS_CHOICE_MAP = {
   "lastactivetime": "lastActiveTime",
   "membershipcount": "membershipCount",
   "name": "name",
+  "permissionsettings": "permissionSettings",
   "singleuserbotdm": "singleUserBotDm",
   "spacedetails": "spaceDetails",
   "spacehistorystate": "spaceHistoryState",

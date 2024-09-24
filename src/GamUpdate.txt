@@ -1,3 +1,10 @@
+7.00.06
+
+Updated `gam <UserTypeEntity> create|update chatspace` to support the new permissions settings
+for Chat spaces that are in Developer Preview.
+
+* See: https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces#Space.FIELDS.predefined_permission_settings
+
 7.00.05
 
 Fixed bug that caused an error when creating a calendar birthday event.

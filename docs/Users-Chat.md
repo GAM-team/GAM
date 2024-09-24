@@ -19,7 +19,9 @@
 * https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.messages/list
 * https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.spaceEvents/list
 * https://support.google.com/chat/answer/7655820
+* https://support.google.com/a/answer/13369245
 * https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces/search
+* https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces#Space.FIELDS.predefined_permission_settings
 
 ## Introduction
 These features were added in version 6.60.00.
@@ -104,6 +106,7 @@ Google requires that you have a Chat Bot configured in order to use the Chat API
         lastactivetime|
         membershipcount|
         name|
+        permissionsettings|
         singleuserbotdm|
         spacedetails|
         spacehistorystate|
@@ -157,7 +160,7 @@ Google requires that you have a Chat Bot configured in order to use the Chat API
 ### Create a chat space
 ```
 gam <UserTypeEntity> create chatspace
-        [type <ChatSpaceType>]
+        [type <ChatSpaceType>] [announcement|collaboration]
         [restricted|(audience <String>)]
         [externalusersallowed <Boolean>]
         [members <UserTypeEntity>]
@@ -173,6 +176,7 @@ For `type space`, the following apply:
 * `description <String>` - Optional
 * `guidelines <String>` - Optional
 * `history <Boolean>` - Optional
+* `announcement|collaboration` - Initial permission settings; default is `collaboration`; this is in Developer Preview
 
 For `type groupchat`, the following apply:
 * `members <UserTypeEntity>` - Required, must specify between 2 and 20 users
@@ -194,8 +198,6 @@ By default, Gam displays the information about the created chatspace as an inden
 
 Use the `<ChatContent>` option to send an initial message to the created chatspace.
 
-The `restricted|audience` options are in Developer Preview and will not be generally available.
-
 By default, details about the chatmessage are displayed.
 * `returnidonly` - Display the chatmessage name only
 
@@ -207,12 +209,29 @@ gam <UserTypeEntity> update chatspace <ChatSpace>
          [type space]
          [description <String>] [guidelines|rules <String>]
          [history <Boolean>])
+        [managemembersandgroups managers|members]
+        [modifyspacedetails managers|members]
+        [togglehistory managers|members]
+        [useatmentionall managers|members]
+        [manageapps managers|members]
+        [managewebhooks managers|members]
+        [replymessages managers|members]
         [formatjson]
 ```
 A groupchat space can be upgraded to a space by specifying `type space` and `displayname <String>`.
 
 The `restricted|audience` options can not be combined with options `displayname,type,description,guidelines,history`.
-They are in Developer Preview and will not be generally available.
+
+You can manage permissions for chat spaces with the following options that are available with Developer Preview.
+        [managemembersandgroups managers|members]
+        [modifyspacedetails managers|members]
+        [togglehistory managers|members]
+        [useatmentionall managers|members]
+        [manageapps managers|members]
+        [managewebhooks managers|members]
+        [postmessages managers|members]
+        [replymessages managers|members]
+
 
 By default, Gam displays the information about the created chatspace as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
@@ -230,7 +249,6 @@ gam <UserItem> update chatspace asadmin <ChatSpace>
 A groupchat space can be upgraded to a space by specifying `type space` and `displayname <String>`.
 
 The `restricted|audience` options can not be combined with options `displayname,type,description,guidelines,history`.
-They are in Developer Preview and will not be generally available.
 
 By default, Gam displays the information about the created chatspace as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.

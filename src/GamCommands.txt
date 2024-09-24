@@ -2048,6 +2048,7 @@ gam setup chat
         lastactivetime|
         membershipcount|
         name|
+        permissionsettings|
         singleuserbotdm|
         spacedetails|
         spacehistorystate|
@@ -6093,7 +6094,7 @@ gam <UserTypeEntity> print focustime|outofoffice|workinglocation
         <String> must contain only lowercase letters, numbers, and hyphens up to 56 characters in length.
 
 gam <UserTypeEntity> create chatspace
-        [type <ChatSpaceType>]
+        [type <ChatSpaceType>] [announcement|collaboration]
         [restricted|(audience <String>)]
         [externalusersrallowed <Boolean>]
         [members <UserTypeEntity>]
@@ -6108,6 +6109,13 @@ gam <UserTypeEntity> update chatspace <ChatSpace>
          [type space]
          [description <String>] [guidelines|rules <String>]
          [history <Boolean>])
+        [managemembersandgroups managers|members]
+        [modifyspacedetails managers|members]
+        [togglehistory managers|members]
+        [useatmentionall managers|members]
+        [manageapps managers|members]
+        [managewebhooks managers|members]
+        [replymessages managers|members]
         [formatjson]
 gam <UserTypeEntity> delete chatspace <ChatSpace>
 

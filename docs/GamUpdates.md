@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.00.06
+
+Updated `gam <UserTypeEntity> create|update chatspace` to support the new permissions settings
+for Chat spaces that are in Developer Preview.
+
+* See: https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces#Space.FIELDS.predefined_permission_settings
+
 ### 7.00.05
 
 Fixed bug that caused an error when creating a calendar birthday event.
