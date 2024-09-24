@@ -557,12 +557,12 @@ jobs:
           export gampath=$(realpath "$gampath")
           echo "gampath ${gampath} results:"
           ls -alRF "$gampath"
-          #echo "WARNINGS FROM build/gam/warn-gam.txt"
-          #cat build/gam/warn-gam.txt
-          #echo "Analysis FROM build/gam/Analysis-00.toc"
-          #cat build/gam/Analysis-00.toc
-          #echo "EXE data FROM build/gam/EXE-00.toc"
-          #cat build/gam/EXE-00.toc
+          echo "---- WARNINGS FROM build/gam/warn-gam.txt"
+          cat build/gam/warn-gam.txt
+          echo "---- Analysis FROM build/gam/Analysis-00.toc"
+          cat build/gam/Analysis-00.toc
+          echo "---- EXE data FROM build/gam/EXE-00.toc"
+          cat build/gam/EXE-00.toc
           export gam="${gampath}/gam"
           if [[ "${RUNNER_OS}" == "Windows" ]]; then
             export gam=$(cygpath -w "$gam")
