@@ -657,7 +657,7 @@ jobs:
             echo "no results, sleeping 10..."
             sleep 10
           done
-          $gam user gam-win-signer print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us print filelist query "'~~id~~' in parents and name = 'gam.exe'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us get drivefile ~id targetfolder "$gampath" targetfile "gam.exe" overwrite true acknowledgeabuse true
+          $gam user gam-win-signer print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us print filelist query "'~~id~~' in parents and name = 'gam.exe'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us get drivefile ~id targetfolder "$gampath" targetname "gam.exe" overwrite true acknowledgeabuse true
           signtool verify /v "$gam"
 
       - name: Attest gam executable was generated from this Action
