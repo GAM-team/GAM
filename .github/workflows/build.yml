@@ -648,7 +648,7 @@ jobs:
           export signed_folder="SIGNED ${folder_number}"
           # remove unsigned gam.exe so we can overwrite and we fail
           # if we fail to get the signed gam.exe
-          rm -v -f "$gam"
+          rm -v -f "${gampath}/gam.exe"
           zero_results="gam-win-signer@pdl.jaylee.us,0"
           while true; do
             result_counts=$($gam user gam-win-signer print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" countsonly)
