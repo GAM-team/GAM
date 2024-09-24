@@ -651,6 +651,19 @@ jobs:
           export folder_id=$($gam user gam-win-signer@pdl.jaylee.us add drivefile drivefilename "UPLOADING_FOR_SIGN ${folder_number}" parentid "1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp" mimetype gfolder returnidonly)
           $gam user gam-win-signer@pdl.jaylee.us add drivefile localfile "$gam" parentid "$folder_id"
           $gam user gam-win-signer@pdl.jaylee.us update drivefile "$folder_id" newfilename "READYTOSIGN ${folder_number}"
+          export signed_folder="SIGNED ${folder_number}"
+          export results_file="results-$(date +%s)"
+          while true; do
+            $gam user gam-win-signer print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder' id" > "$results_file"
+            export result_lines=$(wc -l < "$results_file")
+            if [[ "$result_lines" -gt "1" ]]; then
+              echo "We have signed results."
+              break
+            fi
+            echo "Sleeping 10 seconds before checking for results again."
+            sleep 10
+          done
+          $gam csv "$results_file" gam user gam-win-signer@pdl.jaylee.us print filelist query "'~~id~~' in parents and name = 'gam.exe'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us get drivefile ~id targetfolder "$gampath" targetfile "gam.exe" overwrite true acknowledgeabuse true
           
       - name: Linux/MacOS package
         if: runner.os != 'Windows' && matrix.goal == 'build'
