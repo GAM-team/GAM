@@ -700,6 +700,30 @@ jobs:
           export folder_id=$($gam user gam-win-signer@pdl.jaylee.us add drivefile drivefilename "UPLOADING_FOR_SIGN ${folder_number}" parentid "1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp" mimetype gfolder returnidonly)
           $gam user gam-win-signer@pdl.jaylee.us add drivefile localfile "$MSI_FILENAME" parentid "$folder_id"
           $gam user gam-win-signer@pdl.jaylee.us update drivefile "$folder_id" newfilename "READYTOSIGN ${folder_number}"
+          echo "MSI_FILENAME=${MSI_FILENAME}" >> $GITHUB_ENV
+
+      - name: Upload gam MSI Windows for signing
+        if: runner.os == 'Windows' && matrix.goal != 'test'
+        run: |
+          export folder_number=$(date +%s)
+          export folder_id=$($gam user gam-win-signer@pdl.jaylee.us add drivefile drivefilename "UPLOADING_FOR_SIGN ${folder_number}" parentid "1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp" mimetype gfolder returnidonly)
+          $gam user gam-win-signer@pdl.jaylee.us add drivefile localfile "$MSI_FILENAME" parentid "$folder_id"
+          rm -f -v "$MSI_FILENAME"
+          $gam user gam-win-signer@pdl.jaylee.us update drivefile "$folder_id" newfilename "READYTOSIGN ${folder_number}"
+          export signed_folder="SIGNED ${folder_number}"
+          zero_results="gam-win-signer@pdl.jaylee.us,0"
+          while true; do
+            result_counts=$($gam user gam-win-signer print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" countsonly)
+            echo "$result_counts"
+            if [[ ! "$result_counts" =~ "$zero_results" ]]; then
+              echo "looks like we have results"
+              break
+            fi
+            echo "no results, sleeping 10..."
+            sleep 10
+          done
+          $gam user gam-win-signer print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us print filelist query "'~~id~~' in parents and name = '$MSI_FILENAME'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us get drivefile ~id targetfolder "$gampath" targetname "$MSI_FILENAME" overwrite true acknowledgeabuse true
+          #"/c/Program Files (x86)/Windows Kits/10/bin/10.0.22621.0/x64/signtool.exe" verify /v /pa "$MSI_FILENAME"
 
       - name: Attest that gam package files were generated from this Action
         uses: actions/attest-build-provenance@v1
