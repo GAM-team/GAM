@@ -674,7 +674,7 @@ jobs:
           cd "${gampath}/.."
           GAM_ARCHIVE="${GITHUB_WORKSPACE}/gam-${GAMVERSION}-windows-${GAM_ARCHIVE_ARCH}.zip"
           /c/Program\ Files/7-Zip/7z.exe a -tzip "$GAM_ARCHIVE" gam7 "-xr@${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" -bb3
-          cd ../..
+          cd ..
           #$PYTHON tools/gen-wix-xml-filelist.py "$gampath" gam.wxs.template gam.wxs
           #echo '-- begin generated gam.wxs --'
           #cat gam.wxs
