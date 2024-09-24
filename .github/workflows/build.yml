@@ -682,7 +682,7 @@ jobs:
           export folder_number=$(date +%s)
           export folder_id=$($gam user gam-win-signer@pdl.jaylee.us add drivefile drivefilename "UPLOADING_FOR_SIGN ${folder_number}" parentid "1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp" mimetype gfolder returnidonly)
           $gam user gam-win-signer@pdl.jaylee.us add drivefile localfile "$MSI_FILENAME" parentid "$folder_id"
-          $gam user gam-win-signer@pdl.jaylee.us update drivefile "$folder_id" newfilename "READYTOSIGN ${folder_number"
+          $gam user gam-win-signer@pdl.jaylee.us update drivefile "$folder_id" newfilename "READYTOSIGN ${folder_number}"
 
       - name: Attest that gam package files were generated from this Action
         uses: actions/attest-build-provenance@v1
