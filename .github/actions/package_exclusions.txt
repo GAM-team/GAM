@@ -2,6 +2,5 @@ oauth2.txt
 nobrowser.txt
 enabledasa.txt
 lastupdatecheck.txt
-*.json
 *.lck
 *.csv
