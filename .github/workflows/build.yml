@@ -543,7 +543,7 @@ jobs:
             # https://github.com/pyinstaller/pyinstaller/issues/7102
             export PATH="$(dirname ${PYTHON}):/usr/bin"
           fi
-          if [[ "${staticx}" != "yes" ]]; then
+          if ([ "${staticx}" != "yes" ] && [ "$RUNNER_OS" != "Windows" ]); then
             export PYINSTALLER_BUILD_ONEDIR=yes
           fi
           "${PYTHON}" -m PyInstaller --clean --noconfirm --distpath="${distpath}" gam.spec
@@ -675,10 +675,6 @@ jobs:
           GAM_ARCHIVE="${GITHUB_WORKSPACE}/gam-${GAMVERSION}-windows-${GAM_ARCHIVE_ARCH}.zip"
           /c/Program\ Files/7-Zip/7z.exe a -tzip "$GAM_ARCHIVE" gam7 "-xr@${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" -bb3
           cd ..
-          #$PYTHON tools/gen-wix-xml-filelist.py "$gampath" gam.wxs.template gam.wxs
-          #echo '-- begin generated gam.wxs --'
-          #cat gam.wxs
-          #echo '-- end generated gam.wxs --'
           export MSI_FILENAME="gam-${GAMVERSION}-windows-${GAM_ARCHIVE_ARCH}.msi"
           /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/candle.exe -arch "${WIX_ARCH}" gam.wxs
           /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/WixUIExtension.dll gam.wixobj -o "$MSI_FILENAME" || true;
