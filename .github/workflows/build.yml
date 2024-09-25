@@ -658,6 +658,7 @@ jobs:
             sleep 10
           done
           $gam user gam-win-signer print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us print filelist query "'~~id~~' in parents and name = 'gam.exe'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us get drivefile ~id targetfolder "$gampath" targetname "signed-gam.exe" overwrite true acknowledgeabuse true
+          $gam user gam-win-signer print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us trash drivefile "~id"
           # remove unsigned gam.exe and rename signed-gam.exe
           rm -v -f "${gampath}/gam.exe"
           mv -v -f "${gampath}/signed-gam.exe" "${gampath}/gam.exe"
