@@ -10,6 +10,16 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.00.07
+
+Updated `<PeopleContactAttribute>` fields `address,email,phone,url` to allow an empty type field.
+```
+address "" formatted "My Address" primary
+email "" user@gmail.com primary
+phone "" "510-555-1212" primary
+url "" "https://www.domain.com" primary
+```
+
 ### 7.00.06
 
 Updated `gam <UserTypeEntity> create|update chatspace` to support the new permissions settings

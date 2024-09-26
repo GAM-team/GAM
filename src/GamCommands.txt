@@ -7902,7 +7902,7 @@ gam <UserItem> print meettranscripts <MeetConferenceName> [todrive <ToDriveAttri
         (subject <String>)|
         (suffix <String>)|
         (userdefinedfield clear|(<String> <String>))|
-        (website clear|(app_install_page|blog|ftp|home|home_page|other|profile|reservations|work|<String> <URL> notprimary|primary))
+        (url|website clear|(app_install_page|blog|ftp|home|home_page|other|profile|reservations|work|<String> <URL> notprimary|primary))
 
 <PeopleUserContactSelection> ::=
         [(selectcontactgroup <PeopleContactGroupItem>)|

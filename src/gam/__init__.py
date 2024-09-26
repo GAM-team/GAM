@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# GAM
+# GAM7
 #
 # Copyright 2024, All Rights Reserved.
 #
@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.06'
+__version__ = '7.00.07'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -20710,6 +20710,9 @@ class PeopleManager():
       }
     }
 
+# Fields that allow an empty type
+  EMPTY_TYPE_ALLOWED_FIELDS = {PEOPLE_ADDRESSES, PEOPLE_EMAIL_ADDRESSES, PEOPLE_PHONE_NUMBERS, PEOPLE_URLS}
+
 # Fields with just a URL
 #  URL_FIELDS = {
 #    PEOPLE_COVER_PHOTOS,
@@ -20753,14 +20756,14 @@ class PeopleManager():
         person[fieldName].append({})
       return person[fieldName][0]
 
-    def InitArrayFieldEntry(choices):
+    def InitArrayFieldEntry(choices, typeMinLen=1):
       entry = {'metadata': {'primary': False}}
       if choices is not None:
         ftype = getChoice(choices, mapChoice=True, defaultChoice=None)
         if ftype:
           entry['type'] = ftype
         else:
-          entry['type'] = getString(Cmd.OB_STRING)
+          entry['type'] = getString(Cmd.OB_STRING, minLen=typeMinLen)
       return entry
 
     def GetMultiFieldEntry(fieldName):
@@ -20811,7 +20814,7 @@ class PeopleManager():
       if fieldName == PEOPLE_ADDRESSES:
         if CheckClearPersonField(fieldName):
           continue
-        entry = InitArrayFieldEntry(PeopleManager.TYPE_VALUE_PNP_FIELDS[fieldName])
+        entry = InitArrayFieldEntry(PeopleManager.TYPE_VALUE_PNP_FIELDS[fieldName], typeMinLen=0)
         while Cmd.ArgumentsRemaining():
           argument = getArgument()
           if argument in PeopleManager.ADDRESS_ARGUMENT_TO_FIELD_MAP:
@@ -20892,7 +20895,8 @@ class PeopleManager():
       elif fieldName in PeopleManager.TYPE_VALUE_PNP_FIELDS:
         if CheckClearPersonField(fieldName):
           continue
-        entry = InitArrayFieldEntry(PeopleManager.TYPE_VALUE_PNP_FIELDS[fieldName])
+        entry = InitArrayFieldEntry(PeopleManager.TYPE_VALUE_PNP_FIELDS[fieldName],
+                                    typeMinLen=0 if fieldName in PeopleManager.EMPTY_TYPE_ALLOWED_FIELDS else 1)
         if fieldName == PEOPLE_IM_CLIENTS:
           checkBlankField = None
           entry['protocol'] = getChoice(PeopleManager.IM_PROTOCOLS, mapChoice=True)
@@ -71962,14 +71966,16 @@ def _processSendAs(user, i, count, entityType, emailAddress, j, jcount, gmail, f
     result = callGAPI(gmail.users().settings().sendAs(), function,
                       throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.ALREADY_EXISTS, GAPI.DUPLICATE,
                                                              GAPI.CANNOT_DELETE_PRIMARY_SENDAS, GAPI.INVALID_ARGUMENT,
-                                                             GAPI.FAILED_PRECONDITION, GAPI.PERMISSION_DENIED],
+                                                             GAPI.FAILED_PRECONDITION, GAPI.PERMISSION_DENIED,
+                                                             GAPI.INSUFFICIENT_PERMISSIONS],
                       userId='me', **kwargs)
     if function == 'get':
       _showSendAs(result, j, jcount, sigReplyFormat, verifyOnly)
     else:
       entityActionPerformed([Ent.USER, user, entityType, emailAddress], j, jcount)
   except (GAPI.notFound, GAPI.alreadyExists, GAPI.duplicate,
-          GAPI.cannotDeletePrimarySendAs, GAPI.invalidArgument, GAPI.failedPrecondition, GAPI.permissionDenied) as e:
+          GAPI.cannotDeletePrimarySendAs, GAPI.invalidArgument,
+          GAPI.failedPrecondition, GAPI.permissionDenied, GAPI.insufficientPermissions) as e:
     entityActionFailedWarning([Ent.USER, user, entityType, emailAddress], str(e), j, jcount)
   except (GAPI.serviceNotAvailable, GAPI.badRequest):
     entityServiceNotApplicableWarning(Ent.USER, user, i, count)

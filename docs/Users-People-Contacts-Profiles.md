@@ -125,8 +125,15 @@ gam user user@domain.com check serviceaccount
         (subject <String>)|
         (suffix <String>)|
         (userdefinedfield clear|(<String> <String>))|
-        (website clear|(app_install_page|blog|ftp|home|home_page|other|profile|reservations|work|<String> <URL> notprimary|primary))
+        (url|website clear|(app_install_page|blog|ftp|home|home_page|other|profile|reservations|work|<String> <URL> notprimary|primary))
 
+For address, email, phone and url, the type <String> can be empty.
+address "" formatted "My Address" primary
+email "" user@gmail.com primary
+phone "" "510-555-1212" primary
+url "" "https://www.domain.com" primary
+```
+```
 <PeopleFieldName> ::=
         addresses|
         ageranges|

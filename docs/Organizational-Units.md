@@ -16,6 +16,7 @@
 - [Display organizational unit counts](#display-organizational-unit-counts)
 - [Display indented organizational unit tree](#display-indented-organizational-unit-tree)
 - [Check organizational unit for contained items](#check-organizational-unit-for-contained-items)
+- [Delete Empty OUs](#delete-empty-ous)
 - [Special case handling for large number of organizational units](#special-case-handling-for-large-number-of-organizational-units)
 
 ## API documentation
@@ -320,6 +321,17 @@ You can inspect the file and execute it if desired; substitute actual filenames 
 ```
 gam redirect stdout CleanOuLog.txt multiproces redirect stderr stdout batch CleanOuBatch.txt
 ```
+
+### Delete Empty OUs
+```
+# Get list of OUs
+gam redirect csv ./OUs.csv print ous 
+# Check status of each OU
+gam redirect csv ./CheckOUs.csv multiprocess redirect stderr - multiprocess csv OUs.csv gam check ou "~orgUnitId"
+# Delete empty OUs
+gam config csv_input_row_filter "empty:boolean:true" redirect stdout ./DeleteEmptyOUs.txt multiprocess redirect stderr stdout csv CheckOUs.csv gam delete ou "~orgUnitId"
+```
+Repeat the steps until no empty OUs remain.
 
 ## Special case handling for large number of organizational units
 

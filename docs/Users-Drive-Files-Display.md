@@ -722,7 +722,7 @@ as it does now. Of course, if the query really is invalid, you will get the mess
 
 The `showsize` option displays the total size (in bytes) of the files counted.
 
-The showmimetypesize' displays the total size (in bytes) of each MIME type counted.
+The `showmimetypesize` option displays the total size (in bytes) of each MIME type counted.
 
 The option `showlastmodification` displays the following fields:
 `lastModifiedFileId,lastModifiedFileName,lastModifyingUser,lastModifiedTime`;

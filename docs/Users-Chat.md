@@ -3,6 +3,7 @@
 - [Introduction](#introduction)
 - [Set up a Chat Bot](#set-up-a-chat-bot)
 - [Definitions](#definitions)
+- [Chat Space Permissions](#chat-space-permissions)
 - [Manage Chat Spaces](#manage-chat-spaces)
 - [Display Chat Spaces](#display-chat-spaces)
 - [Manage Chat Members](#manage-chat-members)
@@ -155,6 +156,31 @@ Google requires that you have a Chat Bot configured in order to use the Chat API
 <ChatMessageFieldNameList> ::= "<ChatMessageFieldName>(,<ChatMessageFieldName>)*"
 
 ```
+
+## Chat Space Permissions
+### Announcement
+| Keyword | Description | Allowed | Default |
+|---------|-------------|---------|---------|
+| manageapps | Manage apps | managers-immutable | managers |
+| managemembersandgroups | Manage members and groups | managers/members | managers |
+| managewebhooks | Manage web hooks | managers-immutable | managers |
+| modifyspacedetails | Modify space details | managers/members | managers |
+| postmessages | Post messages | managers-immutable | managers |
+| replymessages | Reply messages | members/managers | members |
+| togglehistory | Turn history on and off | managers/members | managers |
+| useatmentionall | Use @all | managers-immutable | managers |
+
+### Collaboration
+| Keyword | Description | Allowed | Default |
+|---------|-------------|---------|---------|
+| manageapps | Manage apps | members-immutable | members |
+| managemembersandgroups | Manage members and groups | managers/members | members |
+| managewebhooks | Manage web hooks | managers/members | members |
+| modifyspacedetails | Modify space details | managers/members | members |
+| postmessages | Post messages | members-immutable | members |
+| replymessages | Reply messages | members-immutable | members |
+| togglehistory | Turn history on and off | managers/members | members |
+| useatmentionall | Use @all | managers/members | members |
 
 ## Manage Chat Spaces
 ### Create a chat space
