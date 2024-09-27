@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.07'
+__version__ = '7.00.08'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -65740,6 +65740,7 @@ def deleteUserFromGroups(users):
   matchPattern = {}
   kwargs = _getUserGroupOptionalDomainCustomerId()
   if not kwargs:
+    kwargs = {'customer': GC.Values[GC.CUSTOMER_ID]}
     deleteGroups = {}
     if Cmd.ArgumentsRemaining():
       if not checkArgumentPresent('emailmatchpattern'):

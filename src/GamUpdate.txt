@@ -1,3 +1,7 @@
+7.00.08
+
+Fixed bug in `gam <UserTypeEntity> delete groups` that caused the command to fail when `enable_dasa = true` in `gam.cfg`.
+
 7.00.07
 
 Updated `<PeopleContactAttribute>` fields `address,email,phone,url` to allow an empty type field.
