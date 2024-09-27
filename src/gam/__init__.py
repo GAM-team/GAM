@@ -65815,6 +65815,7 @@ def updateUserGroups(users):
   baseRole = getChoice(GROUP_ROLES_MAP, defaultChoice=Ent.ROLE_MEMBER, mapChoice=True)
   baseDeliverySettings = getDeliverySettings()
   if not kwargs:
+    kwargs = {'customer': GC.Values[GC.CUSTOMER_ID]}
     if Cmd.ArgumentsRemaining():
       groupKeys = getEntityList(Cmd.OB_GROUP_ENTITY)
       subkeyRoleField = GM.Globals[GM.CSV_SUBKEY_FIELD]
@@ -65875,6 +65876,8 @@ def updateUserGroups(users):
 def syncUserWithGroups(users):
   cd = buildGAPIObject(API.DIRECTORY)
   kwargs = _getUserGroupOptionalDomainCustomerId()
+  if not kwargs:
+    kwargs = {'customer': GC.Values[GC.CUSTOMER_ID]}
   baseRole = getChoice(GROUP_ROLES_MAP, defaultChoice=Ent.ROLE_MEMBER, mapChoice=True)
   baseDeliverySettings = getDeliverySettings()
   groupKeys = getEntityList(Cmd.OB_GROUP_ENTITY)
