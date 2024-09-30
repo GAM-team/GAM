@@ -10,6 +10,15 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.00.10
+
+Handled the following error that occurs when `gam create user` is immediateley followed by `gam update user`.
+```
+ERROR: 412: conditionNotMet - User creation is not complete.
+```
+
+Updated support for `Folders with limited access`; this is a work in progress.
+
 ### 7.00.09
 
 Added initial support for `Folders with limited access`; you must be enrolled in the Beta preview.

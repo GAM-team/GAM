@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.09'
+__version__ = '7.00.10'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -4669,10 +4669,10 @@ def getAPIService(api, httpObj):
                                          discoveryServiceUrl=DISCOVERY_URIS[v2discovery], static_discovery=False)
 
 def getService(api, httpObj):
-  hasLocalJSON = API.hasLocalJSON(api)
 ### Drive v3beta
   if api == API.DRIVE3 and GC.Values[GC.DRIVE_V3_BETA]:
     api = API.DRIVE3B
+  hasLocalJSON = API.hasLocalJSON(api)
   api, version, v2discovery = API.getVersion(api)
   if api in GM.Globals[GM.CURRENT_API_SERVICES] and version in GM.Globals[GM.CURRENT_API_SERVICES][api]:
     service = googleapiclient.discovery.build_from_document(GM.Globals[GM.CURRENT_API_SERVICES][api][version], http=httpObj)
@@ -12445,7 +12445,7 @@ def doProcessSvcAcctKeys(mode=None, iam=None, projectId=None, clientEmail=None, 
   def waitForCompletion(i):
     sleep_time = i*5
     if i > 3:
-      sys.stdout.write(Msg.WAITING_FOR_SERVICE_ACCOUNT_CREATION_TO_COMPLETE_SLEEPING.format(sleep_time))
+      sys.stdout.write(Msg.WAITING_FOR_ITEM_CREATION_TO_COMPLETE_SLEEPING.format(Ent.Singular(Ent.SVCACCT), sleep_time))
     time.sleep(sleep_time)
 
   local_key_size = 2048
@@ -43152,8 +43152,14 @@ def verifyUserPrimaryEmail(cd, user, createIfNotFound, i, count):
 #	[notifyonupdate [<Boolean>]]
 #	[lograndompassword <FileName>] [ignorenullpassword]
 def updateUsers(entityList):
+  def waitingForCreationToComplete(sleep_time):
+    writeStderr(Ind.Spaces()+Msg.WAITING_FOR_ITEM_CREATION_TO_COMPLETE_SLEEPING.format(Ent.Singular(Ent.USER), sleep_time))
+    time.sleep(sleep_time)
+
   cd = buildGAPIObject(API.DIRECTORY)
   ci = None
+  errorRetries = 5
+  updateRetryDelay = 5
   body, notify, tagReplacements, addGroups, addAliases, PwdOpts, \
     updatePrimaryEmail, notFoundBody, groupOrgUnitMap, \
     parameters, resolveConflictAccount = getUserAttributes(cd,
@@ -43228,51 +43234,63 @@ def updateUsers(entityList):
             continue
         if PwdOpts.makeUniqueRandomPassword:
           PwdOpts.AssignPassword(body, notify, notFoundBody, parameters['createIfNotFound'])
-        try:
-          result = callGAPI(cd.users(), 'update',
-                            throwReasons=[GAPI.USER_NOT_FOUND, GAPI.DOMAIN_NOT_FOUND, GAPI.FORBIDDEN, GAPI.BAD_REQUEST,
-                                          GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.INVALID_PARAMETER,
-                                          GAPI.INVALID_ORGUNIT, GAPI.INVALID_SCHEMA_VALUE, GAPI.DUPLICATE,
-                                          GAPI.INSUFFICIENT_ARCHIVED_USER_LICENSES, GAPI.CONFLICT],
-                            userKey=userKey, body=body, fields=fields)
-          entityActionPerformed([Ent.USER, user], i, count)
-          if PwdOpts.filename and PwdOpts.password:
-            writeFile(PwdOpts.filename, f'{userKey},{PwdOpts.password}\n', mode='a', continueOnError=True)
-          if parameters['notifyOnUpdate'] and notify.get('recipients') and notify['password']:
-            sendCreateUpdateUserNotification(result, notify, tagReplacements, i, count, createMessage=False)
-        except GAPI.userNotFound:
-          if parameters['createIfNotFound']:
-            if notFoundBody and (count == 1) and not vfe and ('password' in notFoundBody) and ('name' in body) and ('givenName' in body['name']) and ('familyName' in body['name']):
-              if 'primaryEmail' not in body:
-                body['primaryEmail'] = user
-              body.update(notFoundBody)
-              if parameters['setChangePasswordOnCreate']:
-                body['changePasswordAtNextLogin'] = True
-              Act.Set(Act.CREATE)
-              try:
-                result = callGAPI(cd.users(), 'insert',
-                                  throwReasons=[GAPI.DUPLICATE, GAPI.DOMAIN_NOT_FOUND, GAPI.FORBIDDEN,
-                                                GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.INVALID_PARAMETER,
-                                                GAPI.INVALID_ORGUNIT, GAPI.INVALID_SCHEMA_VALUE, GAPI.CONDITION_NOT_MET],
-                                  body=body,
-                                  fields=fields,
-                                  resolveConflictAccount=resolveConflictAccount)
-                entityActionPerformed([Ent.USER, body['primaryEmail']], i, count)
-                if PwdOpts.filename and PwdOpts.notFoundPassword:
-                  writeFile(PwdOpts.filename, f'{user},{PwdOpts.notFoundPassword}\n', mode='a', continueOnError=True)
-                if addGroups:
-                  createUserAddToGroups(cd, result['primaryEmail'], addGroups, i, count)
-                if addAliases:
-                  createUserAddAliases(cd, result['primaryEmail'], addAliases, i, count)
-                if notify.get('recipients'):
-                  notify['password'] = notify['notFoundPassword']
-                  sendCreateUpdateUserNotification(result, notify, tagReplacements, i, count)
-              except GAPI.duplicate:
-                duplicateAliasGroupUserWarning(cd, [Ent.USER, body['primaryEmail']], i, count)
+        retry = 0
+        while True:
+          try:
+            result = callGAPI(cd.users(), 'update',
+                              throwReasons=[GAPI.CONDITION_NOT_MET, GAPI.USER_NOT_FOUND, GAPI.DOMAIN_NOT_FOUND,
+                                            GAPI.FORBIDDEN, GAPI.BAD_REQUEST,
+                                            GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.INVALID_PARAMETER,
+                                            GAPI.INVALID_ORGUNIT, GAPI.INVALID_SCHEMA_VALUE, GAPI.DUPLICATE,
+                                            GAPI.INSUFFICIENT_ARCHIVED_USER_LICENSES, GAPI.CONFLICT],
+                              userKey=userKey, body=body, fields=fields)
+            entityActionPerformed([Ent.USER, user], i, count)
+            if PwdOpts.filename and PwdOpts.password:
+              writeFile(PwdOpts.filename, f'{userKey},{PwdOpts.password}\n', mode='a', continueOnError=True)
+            if parameters['notifyOnUpdate'] and notify.get('recipients') and notify['password']:
+              sendCreateUpdateUserNotification(result, notify, tagReplacements, i, count, createMessage=False)
+            break
+          except GAPI.conditionNotMet as e:
+            retry += 1
+            if ('User creation is not complete' not in str(e)) or retry > errorRetries:
+              entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+              break
+            waitingForCreationToComplete(updateRetryDelay)
+            continue
+          except GAPI.userNotFound:
+            if parameters['createIfNotFound']:
+              if notFoundBody and (count == 1) and not vfe and ('password' in notFoundBody) and ('name' in body) and ('givenName' in body['name']) and ('familyName' in body['name']):
+                if 'primaryEmail' not in body:
+                  body['primaryEmail'] = user
+                body.update(notFoundBody)
+                if parameters['setChangePasswordOnCreate']:
+                  body['changePasswordAtNextLogin'] = True
+                Act.Set(Act.CREATE)
+                try:
+                  result = callGAPI(cd.users(), 'insert',
+                                    throwReasons=[GAPI.DUPLICATE, GAPI.DOMAIN_NOT_FOUND, GAPI.FORBIDDEN,
+                                                  GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.INVALID_PARAMETER,
+                                                  GAPI.INVALID_ORGUNIT, GAPI.INVALID_SCHEMA_VALUE, GAPI.CONDITION_NOT_MET],
+                                    body=body,
+                                    fields=fields,
+                                    resolveConflictAccount=resolveConflictAccount)
+                  entityActionPerformed([Ent.USER, body['primaryEmail']], i, count)
+                  if PwdOpts.filename and PwdOpts.notFoundPassword:
+                    writeFile(PwdOpts.filename, f'{user},{PwdOpts.notFoundPassword}\n', mode='a', continueOnError=True)
+                  if addGroups:
+                    createUserAddToGroups(cd, result['primaryEmail'], addGroups, i, count)
+                  if addAliases:
+                    createUserAddAliases(cd, result['primaryEmail'], addAliases, i, count)
+                  if notify.get('recipients'):
+                    notify['password'] = notify['notFoundPassword']
+                    sendCreateUpdateUserNotification(result, notify, tagReplacements, i, count)
+                except GAPI.duplicate:
+                  duplicateAliasGroupUserWarning(cd, [Ent.USER, body['primaryEmail']], i, count)
+              else:
+                entityActionFailedWarning([Ent.USER, user], Msg.UNABLE_TO_CREATE_NOT_FOUND_USER, i, count)
             else:
-              entityActionFailedWarning([Ent.USER, user], Msg.UNABLE_TO_CREATE_NOT_FOUND_USER, i, count)
-          else:
-            entityUnknownWarning(Ent.USER, user, i, count)
+              entityUnknownWarning(Ent.USER, user, i, count)
+          break
       else:
         entityActionNotPerformedWarning([Ent.USER, user], Msg.NO_CHANGES, i, count)
     except GAPI.userNotFound:
@@ -64236,7 +64254,7 @@ def _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci, return
 #	[(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*) | returnidonly]
 def createSharedDrive(users, useDomainAdminAccess=False):
   def waitingForCreationToComplete(sleep_time):
-    writeStderr(Ind.Spaces()+Msg.WAITING_FOR_SHARED_DRIVE_CREATION_TO_COMPLETE_SLEEPING.format(sleep_time))
+    writeStderr(Ind.Spaces()+Msg.WAITING_FOR_ITEM_CREATION_TO_COMPLETE_SLEEPING.format(Ent.Singular(Ent.SHARED_DRIVE), sleep_time))
     time.sleep(sleep_time)
 
   requestId = str(uuid.uuid4())
