@@ -1,14 +1,22 @@
-# Update GAMADV-XTD3 to latest version
+# Update GAM7 to latest version
 Automatic update to the latest version on Linux/Mac OS/Google Cloud Shell/Raspberry Pi/ChromeOS:
 - Do not create project or authorizations, default path `$HOME/bin`
-  - `bash <(curl -s -S -L https://raw.githubusercontent.com/taers232c/GAMADV-XTD3/master/src/gam-install.sh) -l`
+  - `bash <(curl -s -S -L https://git.io/gam-install) -l`
 - Do not create project or authorizations, specify a path
-  - `bash <(curl -s -S -L https://raw.githubusercontent.com/taers232c/GAMADV-XTD3/master/src/gam-install.sh) -l -d <Path>`
+  - `bash <(curl -s -S -L https://git.io/gam-install) -l -d <Path>`
 
-By default, a folder, `gamadv-xtd3`, is created in the default or specified path and the files are downloaded into that folder.
-Add the `-s` option to the end of the above commands to suppress creating the `gamadv-xtd3` folder; the files are downloaded directly into the default or specified path.
+By default, a folder, `gam7`, is created in the default or specified path and the files are downloaded into that folder.
+Add the `-s` option to the end of the above commands to suppress creating the `gam7` folder; the files are downloaded directly into the default or specified path.
 
-See [Downloads-Installs](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
+See [Downloads-Installs-GAM7](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
+
+### 7.00.09
+
+Added initial support for `Folders with limited access`; you must be enrolled in the Beta preview.
+
+Updated `api_call_tries_limit` variable to `gam.cfg` that limits the number of tries
+for Google API calls that return an error that indicates a retry should be performed.
+The default value is 10 and the range of allowable values is 3-30.
 
 ### 7.00.08
 

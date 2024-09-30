@@ -750,7 +750,7 @@ When updating a user's name, always update both the `firstname/givenname` and th
 ## Update a user's password
 When updating a user's password, you can send a message with the new password to an email address; this might be the user's secondary email address.
 
-In versions of GAMADV-XTD3 prior to 5.07.00, if you do `gam update users <UserTypeEntity>` or `gam <UserTypeEntity> update users` and
+In versions of GAM7 prior to 5.07.00, if you do `gam update users <UserTypeEntity>` or `gam <UserTypeEntity> update users` and
 specify `password random`, all of the users in `<UserTypeEntity>` are assigned the same random password;
 this is the same behavior as in Legacy GAM. If you would like each of the users in `<UserTypeEntity>` to be
 assigned a unique random password, specify `password uniquerandom`.

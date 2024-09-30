@@ -1,7 +1,7 @@
 # Syntax
 
 ## BNF Syntax
-This Wiki describes the GAM command line syntax in modified BNF.
+This Wiki describes the GAM7 command line syntax in modified BNF.
 * https://en.wikipedia.org/wiki/Backus-Naur_Form
 
 Skip the History section and start reading at Introduction.

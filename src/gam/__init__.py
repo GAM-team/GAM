@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.08'
+__version__ = '7.00.09'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -4662,6 +4662,7 @@ def clearServiceCache(service):
 
 DISCOVERY_URIS = [googleapiclient.discovery.V1_DISCOVERY_URI, googleapiclient.discovery.V2_DISCOVERY_URI]
 
+# Used for API.CLOUDRESOURCEMANAGER, API.SERVICEUSAGE, API.IAM, API.IAP
 def getAPIService(api, httpObj):
   api, version, v2discovery = API.getVersion(api)
   return googleapiclient.discovery.build(api, version, http=httpObj, cache_discovery=False,
@@ -4669,6 +4670,9 @@ def getAPIService(api, httpObj):
 
 def getService(api, httpObj):
   hasLocalJSON = API.hasLocalJSON(api)
+### Drive v3beta
+  if api == API.DRIVE3 and GC.Values[GC.DRIVE_V3_BETA]:
+    api = API.DRIVE3B
   api, version, v2discovery = API.getVersion(api)
   if api in GM.Globals[GM.CURRENT_API_SERVICES] and version in GM.Globals[GM.CURRENT_API_SERVICES][api]:
     service = googleapiclient.discovery.build_from_document(GM.Globals[GM.CURRENT_API_SERVICES][api][version], http=httpObj)
@@ -4728,6 +4732,8 @@ def defaultSvcAcctScopes():
   saScopes[API.DRIVE2] = saScopes[API.DRIVE3]
   saScopes[API.DRIVETD] = saScopes[API.DRIVE3]
   saScopes[API.SHEETSTD] = saScopes[API.SHEETS]
+### Drive v3beta
+  saScopes[API.DRIVE3B] = saScopes[API.DRIVE3]
   return saScopes
 
 def _getSvcAcctData():
@@ -52478,6 +52484,8 @@ def getDriveFileCopyAttribute(myarg, body, parameters):
           else:
             Cmd.Backup()
             usageErrorExit(Msg.REASON_ONLY_VALID_WITH_CONTENTRESTRICTIONS_READONLY_TRUE)
+  elif myarg == 'inheritedpermissionsdisabled':
+    body['inheritedPermissionsDisabled'] = getBoolean()
   elif myarg == 'property':
     driveprop = getDriveFileProperty()
     body.setdefault(driveprop['visibility'], {})
@@ -53294,6 +53302,7 @@ DRIVE_FIELDS_CHOICE_MAP = {
   'iconlink': 'iconLink',
   'id': 'id',
   'imagemediametadata': 'imageMediaMetadata',
+  'inheritedpermissionsdisabled': 'inheritedPermissionsDisabled',
   'isappauthorized': 'isAppAuthorized',
   'labelinfo': 'labelInfo',
   'labels': ['modifiedByMe', 'copyRequiresWriterPermission', 'starred', 'trashed', 'viewedByMe'],
@@ -53376,8 +53385,10 @@ DRIVE_CAPABILITIES_SUBFIELDS_CHOICE_MAP = {
   'candelete': 'canDelete',
   'candeletechildren': 'canDeleteChildren',
   'candeletedrive': 'canDeleteDrive',
+  'candisableinheritedpermissions': 'canDisableInheritedPermissions',
   'candownload': 'canDownload',
   'canedit': 'canEdit',
+  'canenableinheritedpermissions': 'canEnableInheritedPermissions',
   'canlistchildren': 'canListChildren',
   'canmanagemembers': 'canManageMembers',
   'canmodifycontent': 'canModifyContent',
@@ -53452,6 +53463,7 @@ DRIVE_PERMISSIONS_SUBFIELDS_CHOICE_MAP = {
   'expirationdate': 'expirationTime',
   'expirationtime': 'expirationTime',
   'id': 'id',
+  'inheritedpermissionsdisabled': 'inheritedPermissionsDisabled',
   'name': 'displayName',
   'pendingowner': 'pendingOwner',
   'permissiondetails': 'permissionDetails',

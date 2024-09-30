@@ -1,10 +1,10 @@
 # Rclone
 
-GAMADV-XTD3 has the capability to upload and download single files between your local computer and Google Drive;
+GAM7 has the capability to upload and download single files between your local computer and Google Drive;
 it has no capability for uploading and dowloading folders. For this you can use Rclone: https://rclone.org/
 
 ## Authorization
-Rclone uses client and service account access to perform its operations; you can use your existing GAMADV-XTD3
+Rclone uses client and service account access to perform its operations; you can use your existing GAM7
 authorization for Rclone, you don't need to create a new project or service account within your project.
 
 You can use your Client ID and Client Secret from `client_secrets.json` and you can use your `oauth2service.json` file with rclone.

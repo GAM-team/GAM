@@ -2,25 +2,25 @@ Update History
 * [GAM Updates](GamUpdates)
 
 Installation
-* [How to Install Advanced GAM](How-to-Install-Advanced-GAM)
+* [How to Install GAM7](How-to-Install-GAM7)
 * [How to Update Advanced GAM to GAM7](How-to-Update-Advanced-GAM-to-GAM7)
-* [How to Update Advanced GAM](How-to-Update-Advanced-GAM)
+* [How to Update GAM7](How-to-Update-GAM7)
 * [How to Upgrade from Legacy GAM](How-to-Upgrade-from-Legacy-GAM)
 * [Install GAM as Python Library](Install-GAM-as-Python-Library)
-* [GAMADV-XTD3 on Chrome OS Devices](GAMADV-XTD3-on-Chrome-OS-Devices)
-* [GAMADV-XTD3 on Android Devices](GAMADV-XTD3-on-Android-Devices)
+* [GAM7 on Chrome OS Devices](GAM7-on-Chrome-OS-Devices)
+* [GAM7 on Android Devices](GAM7-on-Android-Devices)
 * [Google Network Addresses](Google-Network-Addresses)
 * [HTTPS Proxy](HTTPS-Proxy)
 * [SSL Root CA Certificates](SSL-Root-CA-Certificates)
-* [How to Uninstall Advanced GAM](How-to-Uninstall-Advanced-GAM)
+* [How to Uninstall GAM7](How-to-Uninstall-GAM7)
 
 Configuration
 * [Authorization](Authorization)
 * [GAM Configuration](gam.cfg)
   * [Multiple Customers and Domains](https://github.com/taers232c/GAMADV-XTD3/wiki/gam.cfg#multiple-customers-and-domains)
-* [Running GAMADV-XTD3 securely on a Google Compute Engine](Running-GAMADV-XTD3-securely-on-a-Google-Compute-Engine)
-* [Using GAMADV-XTD3 with a delegated admin service account](Using-GAMADV-XTD3-with-a-delegated-admin-service-account)
-* [Using GAMADV-XTD3 with a YubiKey](Using-GAMADV-XTD3-with-a-YubiKey)
+* [Running GAM7 securely on a Google Compute Engine](Running-GAM7-securely-on-a-Google-Compute-Engine)
+* [Using GAM7 with a delegated admin service account](Using-GAM7-with-a-delegated-admin-service-account)
+* [Using GAM7 with a YubiKey](Using-GAM7-with-a-YubiKey)
 
 Notes and Information
 * [Upgrade Benefits](Upgrade-Benefits)

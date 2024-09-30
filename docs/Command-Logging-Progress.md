@@ -35,7 +35,7 @@ The log file being written to is always `gam.log`. When this log file is filled,
 
 Commands are logged at completion with a timestamp, return code and the command line
 ```
-2021-08-01T19:350:30.777-07:00,0,/Users/admin/bin/gamadv-xtd3/gam info domain
+2021-08-01T19:350:30.777-07:00,0,/Users/admin/bin/gam7/gam info domain
 ```
 
 Commands that generate sub-commands, `gam batch|tbatch|csv|loop`, log the initial command with a return code of `*`,
@@ -44,14 +44,14 @@ the sub-command lines and the initial command with a numeric return code.
 $ gam redirect stdout usernames.csv multiprocess redirect stderr stdout csv users.csv gam info user "~primaryEmail" quick name
 2021-08-01T19:50:38.151-07:00,0/6,Using 6 processes...
 $ more ~/.gam/gam.log
-2021-08-01T19:50:38.120-07:00,*,/Users/admin/bin/gamadv-xtd3/gam redirect stdout usernames.csv multiprocess redirect stderr stdout csv users.csv showcmds false gam info user "~primaryEmail" quick name
+2021-08-01T19:50:38.120-07:00,*,/Users/admin/bin/gam7/gam redirect stdout usernames.csv multiprocess redirect stderr stdout csv users.csv showcmds false gam info user "~primaryEmail" quick name
 2021-08-01T19:50:39.144-07:00,0,gam info user testuser2 quick name
 2021-08-01T19:50:39.358-07:00,0,gam info user testuser3 quick name
 2021-08-01T19:50:39.358-07:00,0,gam info user testuser1 quick name
 2021-08-01T19:50:39.401-07:00,0,gam info user testuser5 quick name
 2021-08-01T19:50:39.459-07:00,56,gam info user testuserx quick name
 2021-08-01T19:50:39.470-07:00,0,gam info user testuser4 quick name
-2021-08-01T19:50:39.483-07:00,0,/Users/admin/bin/gamadv-xtd3/gam redirect stdout usernames.csv multiprocess redirect stderr stdout csv users.csv showcmds false gam info user "~primaryEmail" quick name
+2021-08-01T19:50:39.483-07:00,0,/Users/admin/bin/gam7/gam redirect stdout usernames.csv multiprocess redirect stderr stdout csv users.csv showcmds false gam info user "~primaryEmail" quick name
 ```
 
 ## Command Progress

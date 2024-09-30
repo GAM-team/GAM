@@ -3,8 +3,8 @@
 Print the current version of Gam with details
 ```
 gam version
-GAMADV-XTD3 7.00.08 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
-Ross Scroggs <ross.scroggs@gmail.com>
+GAM 7.00.09 - https://github.com/GAM-team/GAM - pyinstaller
+GAM Team <google-apps-manager@googlegroups.com>
 Python 3.12.5 64-bit final
 MacOS Sonoma 14.5 x86_64
 Path: /Users/Admin/bin/gamadv-xtd3
@@ -15,8 +15,8 @@ Time: 2023-06-02T21:10:00-07:00
 Print the current version of Gam with details and time offset information
 ```
 gam version timeoffset
-GAMADV-XTD3 7.00.08 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
-Ross Scroggs <ross.scroggs@gmail.com>
+GAM 7.00.09 - https://github.com/GAM-team/GAM - pyinstaller
+GAM Team <google-apps-manager@googlegroups.com>
 Python 3.12.5 64-bit final
 MacOS Sonoma 14.5 x86_64
 Path: /Users/Admin/bin/gamadv-xtd3
@@ -27,8 +27,8 @@ Your system time differs from www.googleapis.com by less than 1 second
 Print the current version of Gam with extended details and SSL information
 ```
 gam version extended
-GAMADV-XTD3 7.00.08 - https://github.com/taers232c/GAMADV-XTD3 - pythonsource
-Ross Scroggs <ross.scroggs@gmail.com>
+GAM 7.00.09 - https://github.com/GAM-team/GAM - pyinstaller
+GAM Team <google-apps-manager@googlegroups.com>
 Python 3.12.5 64-bit final
 MacOS Sonoma 14.5 x86_64
 Path: /Users/Admin/bin/gamadv-xtd3
@@ -55,7 +55,7 @@ Print the current and latest versions of Gam and:
 ```
 gam version checkrc
 GAM 5.35.08 - https://github.com/taers232c/GAMADV-XTD3
-Ross Scroggs <ross.scroggs@gmail.com>
+GAM Team <google-apps-manager@googlegroups.com>
 Python 3.8.1 64-bit final
 google-api-python-client 2.77.0
 httplib2 0.16.0
@@ -64,7 +64,7 @@ MacOS High Sierra 10.13.6 x86_64
 Path: /Users/Admin/bin/gamadv-xtd3
 Version Check:
   Current: 5.35.08
-   Latest: 7.00.08
+   Latest: 7.00.09
 echo $?
 1
 ```
@@ -72,7 +72,7 @@ echo $?
 Print the current version number without details
 ```
 gam version simple
-7.00.08
+7.00.09
 ```
 In Linux/MacOS you can do:
 ```
@@ -82,8 +82,8 @@ echo $VER
 Print the current version of Gam and address of this Wiki
 ```
 gam help
-GAM 7.00.08 - https://github.com/taers232c/GAMADV-XTD3
-Ross Scroggs <ross.scroggs@gmail.com>
+GAM 7.00.09 - https://github.com/taers232c/GAMADV-XTD3
+GAM Team <google-apps-manager@googlegroups.com>
 Python 3.12.5 64-bit final
 MacOS Sonoma 14.5 x86_64
 Path: /Users/Admin/bin/gamadv-xtd3

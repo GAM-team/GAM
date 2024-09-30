@@ -7,7 +7,7 @@
 
 ## Introduction
 GAM uses a configuration file, gam.cfg, to store the values of the various environment variables
-and signal files used by Basic GAM. Configuration files client_secrets.json, oauth2.txt, oauth2service.json and extra_args.txt
+and signal files used by Legacy GAM. Configuration files client_secrets.json, oauth2.txt, oauth2service.json and extra_args.txt
 are moved to a version independent location. This should simplify upgrading GAM versions in the future.
 Additionally, if you support multiple clients/domains or have multiple users running GAM,
 gam.cfg lets you easily manage your configuration.
@@ -34,7 +34,7 @@ Every once in a while, you edit gam.cfg to set some desired values and then you 
 gam.cfg must be a plain text file, you can edit it with your favorite text editor (emacs, vi, TextWrangler,
 TextEdit, Notepad, Wordpad) as long as you wind up with a plain text file.
 
-If you are upgrading from Basic GAM, set the environment variable OLDGAMPATH to OldGamPath. This is a one-time setting
+If you are upgrading from Legacy GAM, set the environment variable OLDGAMPATH to OldGamPath. This is a one-time setting
 to allow GAM to find your old signal files and to copy client_secrets.json, oauth2.txt, oauth2service.json, extra_args.txt
 from OldGamPath to GamConfigDir. To generate the initial gam.cfg, execute the command: gam select default verify.
 Once gam.cfg is created, no signal files are read and the only environment variable used is GAMCFGDIR.
@@ -65,7 +65,7 @@ api_calls_tries_limit
         Limit the number of tries for Google API calls that return an error
         that indicates a retry should be performed
         Default: 10
-        Range: 3-10
+        Range: 3-30
 auto_batch_min
         Automatically generate gam batch command if number of users
         specified in gam users xxx command exceeds this number

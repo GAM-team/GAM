@@ -253,6 +253,9 @@ Enter `id:` as the operator. For example, if you are searching for the serial nu
 
 Partial serial number searches are supported, as long as you enter at least three characters in the serial number.
 
+All serial number searches are partial, be careful that you don't enter a partial serial number by mistake
+when actioning/modifying devices as you will affect multiple devices rather than the single desired device.
+
 ### Status
 To view all provisioned or deprovisioned devices, select the status from the left drop-down, and all of the devices that fit this criterion will appear in the view. Alternatively, you can do the following searches from the All devices view:
 
@@ -465,7 +468,7 @@ gam getcommand cros <CrOSEntity> commandid <CommandID> [times_to_check_status <I
 ### Action Examples
 Remove user profile data from the device; the device will remain enrolled and connected.
 User data not synced to the Cloud including Downloads, Android app data and Crostini Linux VMs will be permanently lost.
-Commands with issuecommand directly after gam will work with Legacy GAM & GAMADV-XTD3, whereas commands where the issuecommand is after the cros <CrOSTypeEntity> will work only with GAMADV-XTD3. 
+Commands with issuecommand directly after gam will work with Legacy GAM & GAM7, whereas commands where the issuecommand is after the cros <CrOSTypeEntity> will work only with GAM7. 
 ```
 gam issuecommand cros dd1d659a-0ea4-4e94-905e-4726c7a5f1e9 command wipe_users doit
 ```

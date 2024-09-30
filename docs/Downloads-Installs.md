@@ -1,5 +1,5 @@
 # Downloads-Installs
-You can download and install the current GAMADV-XTD3 release from the [GitHub Releases](https://github.com/taers232c/GAMADV-XTD3/releases) page. Choose one of the following:
+You can download and install the current GAM7 release from the [GitHub Releases](https://github.com/taers232c/GAMADV-XTD3/releases) page. Choose one of the following:
 
 * Executable Archive, Automatic, Linux/Mac OS/Google Cloud Shell/Raspberry Pi/ChromeOS
   - Start a terminal session and execute one of the following commands:

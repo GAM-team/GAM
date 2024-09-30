@@ -1,6 +1,6 @@
 # Other Resources
 
-The following are links to contributions of others in support of GAMADV-XTD3.
+The following are links to contributions of others in support of GAM7.
 
 Thank you.
 
@@ -12,8 +12,8 @@ Thank you.
 * James Seymour - https://sites.google.com/view/gam--commands/
 * Kevin Melillo - https://github.com/KevinMelilloIEEE/gam-script
 * Korey Rideout - https://chatgpt.com/g/g-PTxxnVPMG-gam-assist - A helpful tool to assist with, GAM (+Advance) and GYB commands to assist with syntax for Google Workspace Administrators.
-* Paul Ogier (Taming.Tech) - GAMADV-XTD3 Course on Udemy https://taming.tech/GAMCourse
-* Paul Ogier (Taming.Tech) - GAMADV-XTD3 Tutorials https://www.youtube.com/watch?v=g9LDeyXQNLI&list=PL_dLiK09pJVhKJxZHNk9CHK0q5hkZ856w
+* Paul Ogier (Taming.Tech) - GAM7 Course on Udemy https://taming.tech/GAMCourse
+* Paul Ogier (Taming.Tech) - GAM7 Tutorials https://www.youtube.com/watch?v=g9LDeyXQNLI&list=PL_dLiK09pJVhKJxZHNk9CHK0q5hkZ856w
 * Paul Ogier (Taming.Tech) - https://taming.tech/taming-gam-a-practical-guide-to-gam-and-gamadv-xtd3/
 * Steve Larsen - https://docs.google.com/spreadsheets/d/1MzzA-u-cmoQcJnQOovCnZcEKMjvOyFhfkdFdf10X_GI/edit
 * Workspace Admins YouTube Channel - https://youtube.com/@googleworkspaceadmins

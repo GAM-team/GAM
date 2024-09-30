@@ -1,6 +1,6 @@
 # GAM Return Codes
 
-These are the return codes used by GAMADV-XTD3.
+These are the return codes used by GAM7.
 
 ```
 SUCCESS_RC = 0

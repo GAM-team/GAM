@@ -786,7 +786,7 @@ There are several methods for generating private keys:
 * `localkeysize 1024` - Gam generates a 1024 bit key; this is not recommended
 * `localkeysize 2048` - Gam generates a 2048 bit key; this is the default
 * `localkeysize 4096` - Gam generates a 4096 bit key
-* `yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)]` - [Using GAMADV-XTD3 with a YubiKey](Using-GAMADV-XTD3-with-a-YubiKey)
+* `yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>)]` - [Using GAM7 with a YubiKey](Using-GAM7-with-a-YubiKey)
 
 When `localkeysize` is specified, the optional argument `validityhours <Number>` sets the length of time during which the key will be valid and should be used when the [GCP constraints/iam.serviceAccountKeyExpiryHours organization policy](https://cloud.google.com/resource-manager/docs/organization-policy/restricting-service-accounts#limit_key_expiry) is in use. Note that in order to account for system clock skew, GAM sets the key to be valid two minutes earlier than the current system time and thus it will also expire two minutes earlier.
 

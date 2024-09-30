@@ -469,8 +469,6 @@ gam csv SheetData.csv quotechar "'" gam user "~User" update sheetrange "~spreads
 ```
 
 ## Repair an uneditable sheet within a spreadsheet
-This example requires GAMADV-XTD3 version 6.30.07.
-
 Identify uneditable sheet; there is no `editors` field.
 ```
 $ gam user owner@domain.com info sheet 1234-y9d0nbckO_cnb3xyZhsIh0Hxd9WaqpGPBwxyz fields sheets sheetsfields protectedranges

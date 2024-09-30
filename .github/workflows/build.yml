@@ -648,7 +648,7 @@ jobs:
           export signed_folder="SIGNED ${folder_number}"
           zero_results="gam-win-signer@pdl.jaylee.us,0"
           while true; do
-            result_counts=$($gam user gam-win-signer print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" countsonly)
+            result_counts=$($gam user gam-win-signer@pdl.jaylee.us print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" countsonly)
             echo "$result_counts"
             if [[ ! "$result_counts" =~ "$zero_results" ]]; then
               echo "looks like we have results"
@@ -658,9 +658,9 @@ jobs:
             sleep 10
           done
           # download signed gam.exe
-          $gam user gam-win-signer print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us print filelist query "'~~id~~' in parents and name = 'gam.exe'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us get drivefile ~id targetfolder "$gampath" targetname "signed-gam.exe" overwrite true acknowledgeabuse true
+          $gam user gam-win-signer@pdl.jaylee.us print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us print filelist query "'~~id~~' in parents and name = 'gam.exe'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us get drivefile ~id targetfolder "$gampath" targetname "signed-gam.exe" overwrite true acknowledgeabuse true
           # delete signed folder on drive
-          $gam user gam-win-signer print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us trash drivefile "~id"
+          $gam user gam-win-signer@pdl.jaylee.us print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us trash drivefile "~id"
           # remove unsigned gam.exe and rename signed-gam.exe
           rm -v -f "${gampath}/gam.exe"
           mv -v -f "${gampath}/signed-gam.exe" "${gampath}/gam.exe"
@@ -716,7 +716,7 @@ jobs:
           export signed_folder="SIGNED ${folder_number}"
           zero_results="gam-win-signer@pdl.jaylee.us,0"
           while true; do
-            result_counts=$($gam user gam-win-signer print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" countsonly)
+            result_counts=$($gam user gam-win-signer@pdl.jaylee.us print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" countsonly)
             echo "$result_counts"
             if [[ ! "$result_counts" =~ "$zero_results" ]]; then
               echo "looks like we have results"
@@ -726,10 +726,10 @@ jobs:
             sleep 10
           done
           # download signed package
-          $gam user gam-win-signer print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us print filelist query "'~~id~~' in parents and name = '$MSI_FILENAME'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us get drivefile ~id targetfolder "$GITHUB_WORKSPACE" targetname "$MSI_FILENAME" overwrite true acknowledgeabuse true
+          $gam user gam-win-signer@pdl.jaylee.us print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us print filelist query "'~~id~~' in parents and name = '$MSI_FILENAME'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us get drivefile ~id targetfolder "$GITHUB_WORKSPACE" targetname "$MSI_FILENAME" overwrite true acknowledgeabuse true
           # delete signed folder from drive
           # delete signed folder on drive
-          $gam user gam-win-signer print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us trash drivefile "~id"
+          $gam user gam-win-signer@pdl.jaylee.us print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us trash drivefile "~id"
           #"/c/Program Files (x86)/Windows Kits/10/bin/10.0.22621.0/x64/signtool.exe" verify /v /pa "$MSI_FILENAME"
 
       - name: Attest that gam package files were generated from this Action

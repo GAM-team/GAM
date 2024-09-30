@@ -1,5 +1,5 @@
-# Installation - Upgrading from Legacy GAM
-Use these steps if you have used any version of GAM in your domain. They will update your GAM project
+# Installing GAM7
+Use these steps if you have never used any version of GAM in your domain. They will create your GAM project
 and all necessary authentications.
 
 - [Downloads-Installs](Downloads-Installs)
@@ -82,18 +82,6 @@ to one of these files based on your shell:
 ~/.profile
 ```
 
-If you already have an alias for legacy GAM but are no longer going to run it, delete these lines:
-```
-function gam() { "/Users/admin/bin/gam/gam" "$@" ; }"
-alias gam="/Users/admin/bin/gam/gam"
-```
-
-If you already have an alias for legacy GAM and want to run it and GAM7, give your old alias a different name:
-```
-function gamstd() { "/Users/admin/bin/gam/gam" "$@" ; }"
-alias gamstd="/Users/admin/bin/gam/gam"
-```
-
 Issue the following command replacing `<Filename>` with the name of the file you edited:
 ```
 source <Filename>
@@ -105,26 +93,11 @@ Set a symlink in `/usr/local/bin` (or some other location on $PATH) to point to 
 ln -s "/Users/admin/bin/gam7/gam" /usr/local/bin/gam
 ```
 
-Set environment variable OLDGAMPATH to point to the existing Gam directory; /Users/admin/bin/gam will be used in this example.
-If your existing Gam is in another directory, substitute that value in the directions.
-```
-admin@server:/Users/admin$ export OLDGAMPATH=/Users/admin/bin/gam
-```
-Verify that OLDGAMPATH points to the correct location.
-```
-admin@server:/Users/admin$ ls -l $OLDGAMPATH/*.json
--rw-r-----@ 1 admin  staff   553 Feb 26 10:39 /Users/admin/bin/gam/client_secrets.json
--rw-r-----@ 1 admin  staff  2377 Feb 26 10:39 /Users/admin/bin/gam/oauth2service.json
-admin@server:/Users/admin$ 
-```
 ### Initialize GAM7; this should be the first GAM7 command executed.
 ```
 admin@server:/Users/admin$ gam config drive_dir /Users/admin/GAMWork verify
 Created: /Users/admin/GAMConfig
 Created: /Users/admin/GAMConfig/gamcache
-Copied: /Users/admin/bin/gam/oauth2service.json, To: /Users/admin/GAMConfig/oauth2service.json
-Copied: /Users/admin/bin/gam/oauth2.txt, To: /Users/admin/GAMConfig/oauth2.txt
-Copied: /Users/admin/bin/gam/client_secrets.json, To: /Users/admin/GAMConfig/client_secrets.json
 Config File: /Users/admin/GAMConfig/gam.cfg, Initialized
 Section: DEFAULT
   ...
@@ -141,123 +114,153 @@ admin@server:/Users/admin$
 ```
 admin@server:/Users/admin$ ls -l $GAMCFGDIR
 total 48
--rw-r-----+ 1 admin  staff   553 Mar  3 09:23 client_secrets.json
 -rw-r-----+ 1 admin  staff  1069 Mar  3 09:23 gam.cfg
 drwxr-x---+ 2 admin  staff    68 Mar  3 09:23 gamcache
--rw-r-----+ 1 admin  staff    10 Mar  3 09:23 lastupdatecheck.txt
--rw-r-----+ 1 admin  staff  5104 Mar  3 09:23 oauth2.txt
 -rw-rw-rw-+ 1 admin  staff     0 Mar  3 09:23 oauth2.txt.lock
--rw-r-----+ 1 admin  staff  2377 Mar  3 09:23 oauth2service.json
 admin@server:/Users/admin$ 
 ```
-If the verification looks like this, then you'll have to copy client_secrets.json and oauth2service.json manually.
+### Create your project with local browser
 ```
-admin@server:/Users/admin$ ls -l $GAMCFGDIR
-total 40
--rw-r-----+  1 admin  admin  1427 Nov  1 11:38 gam.cfg
-drwxr-x---+ 16 admin  admin   544 Nov  2 07:25 gamcache
--rw-r--r--+  1 admin  admin    10 Nov  2 15:31 lastupdatecheck.txt
--rw-rw-rw-+  1 admin  admin     0 Sep 19 17:28 oauth2.txt.lock
+admin@server:/Users/admin$ gam create project
+WARNING: Config File: /Users/admin/GAMConfig/gam.cfg, Item: client_secrets_json, Value: /Users/admin/GAMConfig/client_secrets.json, Not Found
+WARNING: Config File: /Users/admin/GAMConfig/gam.cfg, Item: oauth2service_json, Value: /Users/admin/GAMConfig/oauth2service.json, Not Found
 
-admin@server:/Users/admin$ cp -p $OLDGAMPATH/client_secrets.json $GAMCFGDIR/
-admin@server:/Users/admin$ cp -p $OLDGAMPATH/oauth2service.json $GAMCFGDIR/
-admin@server:/Users/admin$ cp -p $OLDGAMPATH/oauth2.txt $GAMCFGDIR/
-admin@server:/Users/admin$ ls -l $GAMCFGDIR
-total 40
--rw-r-----+ 1 admin  staff   553 Mar  3 09:23 client_secrets.json
--rw-r-----+ 1 admin  staff  1069 Mar  3 09:23 gam.cfg
-drwxr-x---+ 2 admin  staff    68 Mar  3 09:23 gamcache
--rw-r-----+ 1 admin  staff    10 Mar  3 09:23 lastupdatecheck.txt
--rw-r-----+ 1 admin  staff  5104 Mar  3 09:23 oauth2.txt
--rw-rw-rw-+ 1 admin  staff     0 Mar  3 09:23 oauth2.txt.lock
--rw-r-----+ 1 admin  staff  2377 Mar  3 09:23 oauth2service.json
-```
-### Update your project with local browser to include the additional APIs that GAM7 uses.
-```
-admin@server:/Users/admin$ gam update project
-
-Enter your Google Workspace admin or GCP project manager email address authorized to manage project(s) gam-project-abc-123-xyz? admin@domain.com
+Enter your Google Workspace admin or GCP project manager email address authorized to manage project(s) admin@domain.com
 
 Your browser has been opened to visit:
 
-    https://accounts.google.com/o/oauth2/v2/auth?redirect_uri=http%3A%2F%2Flocalhost%3A8080%2F&response_type=code&client_id=...
+    https://accounts.google.com/o/oauth2/v2/auth?client_id=CLI...response_type=code
 
 If your browser is on a different machine then press CTRL+C,
 set no_browser = true in gam.cfg and re-run this command.
 
 Authentication successful.
-API: admin.googleapis.com, already enabled...
-API: appsactivity.googleapis.com, already enabled...
-API: calendar-json.googleapis.com, already enabled...
-API: classroom.googleapis.com, already enabled...
-API: contacts.googleapis.com, already enabled...
-API: drive.googleapis.com, already enabled...
-API: gmail.googleapis.com, already enabled...
-API: groupssettings.googleapis.com, already enabled...
-API: licensing.googleapis.com, already enabled...
-API: plus.googleapis.com, already enabled...
-API: reseller.googleapis.com, already enabled...
-API: siteverification.googleapis.com, already enabled...
-API: vault.googleapis.com, already enabled...
-Enable 3 APIs
-  API: audit.googleapis.com, Enabled (1/3)
-  API: groupsmigration.googleapis.com, Enabled (2/3)
-  API: sheets.googleapis.com, Enabled (3/3)
+Creating project "GAM Project"...
+Checking project status...
+Project: gam-project-abc-def-ghi, Enable 23 APIs
+  API: admin.googleapis.com, Enabled (1/23)
+  API: alertcenter.googleapis.com, Enabled (2/23)
+  API: appsactivity.googleapis.com, Enabled (3/23)
+  API: audit.googleapis.com, Enabled (4/23)
+  API: calendar-json.googleapis.com, Enabled (5/23)
+  API: chat.googleapis.com, Enabled (6/23)
+  API: classroom.googleapis.com, Enabled (7/23)
+  API: contacts.googleapis.com, Enabled (8/23)
+  API: drive.googleapis.com, Enabled (9/23)
+  API: driveactivity.googleapis.com, Enabled (10/23)
+  API: gmail.googleapis.com, Enabled (11/23)
+  API: groupsmigration.googleapis.com, Enabled (12/23)
+  API: groupssettings.googleapis.com, Enabled (13/23)
+  API: iam.googleapis.com, Enabled (14/23)
+  API: iap.googleapis.com, Enabled (15/23)
+  API: licensing.googleapis.com, Enabled (16/23)
+  API: people.googleapis.com, Enabled (17/23)
+  API: pubsub.googleapis.com, Enabled (18/23)
+  API: reseller.googleapis.com, Enabled (19/23)
+  API: sheets.googleapis.com, Enabled (20/23)
+  API: siteverification.googleapis.com, Enabled (21/23)
+  API: storage-api.googleapis.com, Enabled (22/23)
+  API: vault.googleapis.com, Enabled (23/23)
+Setting GAM project consent screen...
+Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Enabled
+Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Generating new private key
+Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Extracting public certificate
+Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Done generating private key and public certificate
+Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Service Account Key: SVCACCTKEY, Uploaded
+Service Account OAuth2 File: /Users/admin/GAMConfig/oauth2service.json, Service Account Key: SVCACCTKEY, Updated
+Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Has rights to rotate own private key
+Please go to:
 
-admin@server:/Users/admin$
+https://console.cloud.google.com/apis/credentials/oauthclient?project=gam-project-abc-def-ghi
+
+1. Choose "Desktop App" or "Other" for "Application type".
+2. Enter "GAM" or another desired value for "Name".
+3. Click the blue "Create" button.
+4. Copy your "client ID" value that shows on the next page.
+
+Enter your Client ID: CLIENTID
+
+5. Go back to your browser and copy your "client secret" value.
+Enter your Client Secret: CLIENTSECRET
+6. Go back to your browser and click OK to close the "OAuth client" popup if it's still open.
+That's it! Your GAM Project is created and ready to use.
+
+admin@server:/Users/admin$ 
 ```
-### Update your project without local browser (Google Cloud Shell for instance) to include the additional APIs that GAM7 uses
+### Create your project without local browser (Google Cloud Shell for instance)
 ```
 admin@server:/Users/admin$ gam config no_browser true save
-admin@server:/Users/admin$ gam update project
+admin@server:/Users/admin$ gam create project
+WARNING: Config File: /Users/admin/GAMConfig/gam.cfg, Item: client_secrets_json, Value: /Users/admin/GAMConfig/client_secrets.json, Not Found
+WARNING: Config File: /Users/admin/GAMConfig/gam.cfg, Item: oauth2service_json, Value: /Users/admin/GAMConfig/oauth2service.json, Not Found
 
-Enter your Google Workspace admin or GCP project manager email address authorized to manage project(s) gam-project-abc-123-xyz? admin@domain.com
+Enter your Google Workspace admin or GCP project manager email address authorized to manage project(s) admin@domain.com
 
 Go to the following link in a browser on other computer:
 
-    https://accounts.google.com/o/oauth2/v2/auth?redirect_uri=http%3A%2F%2Flocalhost%3A8080%2F&response_type=code&client_id=...
+    https://accounts.google.com/o/oauth2/v2/auth?re... m&prompt=consent
 
 Enter verification code: abc...xyz
 
 Authentication successful.
-API: admin.googleapis.com, already enabled...
-API: appsactivity.googleapis.com, already enabled...
-API: calendar-json.googleapis.com, already enabled...
-API: classroom.googleapis.com, already enabled...
-API: contacts.googleapis.com, already enabled...
-API: drive.googleapis.com, already enabled...
-API: gmail.googleapis.com, already enabled...
-API: groupssettings.googleapis.com, already enabled...
-API: licensing.googleapis.com, already enabled...
-API: plus.googleapis.com, already enabled...
-API: reseller.googleapis.com, already enabled...
-API: siteverification.googleapis.com, already enabled...
-API: vault.googleapis.com, already enabled...
-Enable 3 APIs
-  API: audit.googleapis.com, Enabled (1/3)
-  API: groupsmigration.googleapis.com, Enabled (2/3)
-  API: sheets.googleapis.com, Enabled (3/3)
+Creating project "GAM Project"...
+Checking project status...
+Project: gam-project-abc-def-ghi, Enable 23 APIs
+  API: admin.googleapis.com, Enabled (1/23)
+  API: alertcenter.googleapis.com, Enabled (2/23)
+  API: appsactivity.googleapis.com, Enabled (3/23)
+  API: audit.googleapis.com, Enabled (4/23)
+  API: calendar-json.googleapis.com, Enabled (5/23)
+  API: chat.googleapis.com, Enabled (6/23)
+  API: classroom.googleapis.com, Enabled (7/23)
+  API: contacts.googleapis.com, Enabled (8/23)
+  API: drive.googleapis.com, Enabled (9/23)
+  API: driveactivity.googleapis.com, Enabled (10/23)
+  API: gmail.googleapis.com, Enabled (11/23)
+  API: groupsmigration.googleapis.com, Enabled (12/23)
+  API: groupssettings.googleapis.com, Enabled (13/23)
+  API: iam.googleapis.com, Enabled (14/23)
+  API: iap.googleapis.com, Enabled (15/23)
+  API: licensing.googleapis.com, Enabled (16/23)
+  API: people.googleapis.com, Enabled (17/23)
+  API: pubsub.googleapis.com, Enabled (18/23)
+  API: reseller.googleapis.com, Enabled (19/23)
+  API: sheets.googleapis.com, Enabled (20/23)
+  API: siteverification.googleapis.com, Enabled (21/23)
+  API: storage-api.googleapis.com, Enabled (22/23)
+  API: vault.googleapis.com, Enabled (23/23)
+Setting GAM project consent screen...
+Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Enabled
+Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Generating new private key
+Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Extracting public certificate
+Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Done generating private key and public certificate
+Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Service Account Key: SVCACCTKEY, Uploaded
+Service Account OAuth2 File: /Users/admin/GAMConfig/oauth2service.json, Service Account Key: SVCACCTKEY, Updated
+Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Has rights to rotate own private key
+Please go to:
 
-admin@server:/Users/admin$
+https://console.cloud.google.com/apis/credentials/oauthclient?project=gam-project-abc-def-ghi
+
+1. Choose "Desktop App" or "Other" for "Application type".
+2. Enter "GAM" or another desired value for "Name".
+3. Click the blue "Create" button.
+4. Copy your "client ID" value that shows on the next page.
+
+Enter your Client ID: CLIENTID
+
+5. Go back to your browser and copy your "client secret" value.
+Enter your Client Secret: CLIENTSECRET
+6. Go back to your browser and click OK to close the "OAuth client" popup if it's still open.
+That's it! Your GAM Project is created and ready to use.
+
+admin@server:/Users/admin$ 
 ```
 ### Enable GAM7 client access
-
-Create oauth2.txt; it must be deleted and recreated because it is in a different format than in basic Gam.
 
 You select a list of scopes, GAM uses a browser to get final authorization from Google for these scopes and
 writes the credentials into the file oauth2.txt.
 
 ```
-admin@server:/Users/admin$ rm -f /Users/admin/GAMConfig/oauth2.txt
-admin@server:/Users/admin$ gam version
-WARNING: Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, Item: oauth2_txt, Value: /Users/admin/GAMConfig/oauth2.txt, Not Found
-GAM 7.00.09 - https://github.com/GAM-team/GAM - pyinstaller
-GAM Team <google-apps-manager@googlegroups.com>
-Python 3.12.6 64-bit final
-MacOS Sonoma 14.5 x86_64
-Path: /Users/admin/bin/gam7
-Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
-
 admin@server:/Users/admin$ gam oauth create
 
 [*]  0)  Calendar API (supports readonly)
@@ -339,8 +342,11 @@ Enter verification code or paste "Unable to connect" URL from other computer (on
 The authentication flow has completed.
 Client OAuth2 File: /Users/admin/GAMConfig/oauth2.txt, Created
 
-admin@server:/Users/admin$
+admin@server:/Users/admin$ 
 ```
+
+If clicking on the link in the instructions does not work (i.e. you get a 404 or 400 error message, instead of something about 'unable to connect') the URL in the link is too long. Most likely, you have selected all scopes. Try again with fewer scopes until it works. (there is no harm in repeatedly trying)
+
 ### Enable GAM7 service account access.
 ```
 admin@server:/Users/admin$ gam user admin@domain.com check serviceaccount
@@ -389,7 +395,7 @@ Domain-wide Delegation authentication:, User: admin@domain.com, Scopes: 34
 Some scopes FAILED!
 To authorize them, please go to:
 
-    https://admin.google.com/ac/owl/domainwidedelegation?clientScopeToAdd=https://mail.google.com/,https://sites.google.com/feeds,https://www.googleapis.com/auth/apps.alerts,https://www.googleapis.com/auth/calendar,https://www.googleapis.com/auth/classroom.announcements,https://www.googleapis.com/auth/classroom.coursework.students,https://www.googleapis.com/auth/classroom.courseworkmaterials,https://www.googleapis.com/auth/classroom.profile.emails,https://www.googleapis.com/auth/classroom.rosters,https://www.googleapis.com/auth/classroom.topics,https://www.googleapis.com/auth/cloud-identity,https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/contacts,https://www.googleapis.com/auth/contacts.other.readonly,https://www.googleapis.com/auth/datastudio,https://www.googleapis.com/auth/directory.readonly,https://www.googleapis.com/auth/documents,https://www.googleapis.com/auth/drive,https://www.googleapis.com/auth/drive.activity,https://www.googleapis.com/auth/gmail.modify,https://www.googleapis.com/auth/gmail.settings.basic,https://www.googleapis.com/auth/gmail.settings.sharing,https://www.googleapis.com/auth/keep,https://www.googleapis.com/auth/spreadsheets,https://www.googleapis.com/auth/tasks,https://www.googleapis.com/auth/userinfo.profile,https://www.googleapis.com/auth/userinfo.email&clientIdToAdd=SVCACCTID&overwriteClientId=true&dn=domain.com&authuser=admin@domain.com
+    https://admin.google.com/ac/owl/domainwidedelegation?clientScopeToAdd=https://mail.go...huser=admin@domain.com
 
 You will be directed to the Google Workspace admin console Security/API Controls/Domain-wide Delegation page
 The "Add a new Client ID" box will open
@@ -452,7 +458,7 @@ All scopes PASSED!
 
 Service Account Client name: SVCACCTID is fully authorized.
 
-admin@server:/Users/admin$
+admin@server:/Users/admin$ 
 ```
 ### Update gam.cfg with some basic values
 * `customer_id` - Having this data keeps Gam from having to make extra API calls
@@ -470,119 +476,13 @@ Default Language: en
 admin@server:/Users/admin$ gam config customer_id C01234567 domain domain.com timezone local save verify
 Config File: /Users/admin/GAMConfig/gam.cfg, Saved
 Section: DEFAULT
-  activity_max_results = 100
-  admin_email = ''
-  api_calls_rate_check = false
-  api_calls_rate_limit = 100
-  api_calls_tries_limit = 10
-  auto_batch_min = 0
-  bail_on_internal_error_tries = 2
-  batch_size = 50
-  cacerts_pem = ''
-  cache_dir = /Users/admin/GAMConfig/gamcache
-  cache_discovery_only = true
-  channel_customer_id = ''
-  charset = utf-8
-  classroom_max_results = 0
-  client_secrets_json = client_secrets.json ; /Users/admin/GAMConfig/client_secrets.json
-  clock_skew_in_seconds = 10
-  cmdlog = ''
-  cmdlog_max_backups = 5
-  cmdlog_max_kilo_bytes = 1000
-  config_dir = /Users/admin/GAMConfig
-  contact_max_results = 100
-  csv_input_column_delimiter = ,
-  csv_input_quote_char = '"'
-  csv_input_row_drop_filter = ''
-  csv_input_row_drop_filter_mode = anymatch
-  csv_input_row_filter = ''
-  csv_input_row_filter_mode = allmatch
-  csv_input_row_limit = 0
-  csv_output_column_delimiter = ,
-  csv_output_convert_cr_nl = false
-  csv_output_field_delimiter = ' '
-  csv_output_header_drop_filter = ''
-  csv_output_header_filter = ''
-  csv_output_header_force = ''
-  csv_output_line_terminator = lf
-  csv_output_quote_char = '"'
-  csv_output_row_drop_filter = ''
-  csv_output_row_drop_filter_mode = anymatch
-  csv_output_row_filter = ''
-  csv_output_row_filter_mode = allmatch
-  csv_output_row_limit = 0
-  csv_output_subfield_delimiter = '.'
-  csv_output_timestamp_column = ''
-  csv_output_users_audit = false
+  ...
   customer_id = C01234567
-  debug_level = 0
-  device_max_results = 200
+  ...
   domain = domain.com
-  drive_dir = /Users/admin/GAMWork
-  drive_max_results = 1000
-  drive_v3_native_names = true
-  email_batch_size = 50
-  event_max_results = 250
-  extra_args = ''
-  inter_batch_wait = 0
-  license_max_results = 100
-  license_skus = ''
-  member_max_results = 200
-  message_batch_size = 50
-  message_max_results = 500
-  never_time = Never
-  no_browser = false
-  no_cache = false
-  no_update_check = true
-  no_verify_ssl = false
-  num_tbatch_threads = 2
-  num_threads = 5
-  oauth2_txt = oauth2.txt ; /Users/admin/GAMConfig/oauth2.txt
-  oauth2service_json = oauth2service.json ; /Users/admin/GAMConfig/oauth2service.json
-  people_max_results = 100
-  print_agu_domains = ''
-  print_cros_ous = ''
-  print_cros_ous_and_children = ''
-  process_wait_limit = 0
-  quick_cros_move = false
-  quick_info_user = False
-  reseller_id = ''
-  retry_api_service_not_available = false
-  section = ''
-  show_api_calls_retry_data = false
-  show_commands = false
-  show_convert_cr_nl = false
-  show_counts_min = 1
-  show_gettings = true
-  show_gettings_got_nl = false
-  show_multiprocess_info = false
-  smtp_fqdn = ''
-  smtp_host = ''
-  smtp_password = ''
-  smtp_username = ''
+  ...
   timezone = local
-  tls_max_version = ''
-  tls_min_version = 'TLSv1_2'
-  todrive_clearfilter = false
-  todrive_clientaccess = false
-  todrive_conversion = true
-  todrive_localcopy = false
-  todrive_locale = ''
-  todrive_nobrowser = false
-  todrive_noemail = true
-  todrive_parent = root
-  todrive_sheet_timeformat = ''
-  todrive_sheet_timestamp = false
-  todrive_timeformat = ''
-  todrive_timestamp = false
-  todrive_timezone = ''
-  todrive_upload_nodata = true
-  todrive_user = ''
-  truncate_client_id = false
-  update_cros_ou_with_id = false
-  use_projectid_as_name = false
-  user_max_results = 500
-  user_service_account_access_only = false
+  ...
 
 admin@server:/Users/admin$
 ```
@@ -623,9 +523,6 @@ Click Advanced system settings
 Click Environment Variables...
 Click Path under System variables
 Click Edit...
-If you have an existing entry referencing legacy GAM:
-  Click that entry
-  Click Delete
 If C:\GAM7 is already on the Path, skip the next three steps
   Click New
   Enter C:\GAM7
@@ -641,149 +538,20 @@ Exit Control Panel
 
 At this point, you should restart Command Prompt so that it has the updated path and environment variables.
 
-Set environment variable OLDGAMPATH to point to the existing Gam directory; C:\GAM will be used in this example.
-If your existing Gam is in another directory, substitute that value in the directions.
-```
-C:\>set OLDGAMPATH=C:\GAM
-```
-### Verify that OLDGAMPATH points to the correct location.
-```
-C:\>dir %OLDGAMPATH%\*.json
- Volume in drive C has no label.
- Volume Serial Number is 663F-DA8B
-
- Directory of C:\GAM
-
-02/26/2017  10:39 AM               553 client_secrets.json
-02/12/2017  09:22 AM            10,133 cloudprint-v2.json
-02/12/2017  09:22 AM             3,448 email-settings-v2.json
-02/26/2017  10:39 AM             2,377 oauth2service.json
-               4 File(s)         16,511 bytes
-               0 Dir(s)  434,214,162,432 bytes free
-```
 ### Initialize GAM7; this should be the first GAM7 command executed.
 ```
 C:\>gam config drive_dir C:\GAMWork verify
 Created: C:\GAMConfig
 Created: C:\GAMConfig\gamcache
-Copied: C:\GAM\oauth2service.json, To: C:\GAMConfig\oauth2service.json
-Copied: C:\GAM\oauth2.txt, To: C:\GAMConfig\oauth2.txt
-Copied: C:\GAM\client_secrets.json, To: C:\GAMConfig\client_secrets.json
 Config File: C:\GAMConfig\gam.cfg, Initialized
 Section: DEFAULT
-  activity_max_results = 100
-  admin_email = ''
-  api_calls_rate_check = false
-  api_calls_rate_limit = 100
-  api_calls_tries_limit = 10
-  auto_batch_min = 0
-  bail_on_internal_error_tries = 2
-  batch_size = 50
-  cacerts_pem = ''
+  ...
   cache_dir = C:\GAMConfig\gamcache
-  cache_discovery_only = true
-  channel_customer_id = ''
-  charset = utf-8
-  classroom_max_results = 0
-  client_secrets_json = client_secrets.json ; C:\GAMConfig\client_secrets.json
-  clock_skew_in_seconds = 10
-  cmdlog = ''
-  cmdlog_max_backups = 5
-  cmdlog_max_kilo_bytes = 1000
+  ...
   config_dir = C:\GAMConfig
-  contact_max_results = 100
-  csv_input_column_delimiter = ,
-  csv_input_quote_char = '"'
-  csv_input_row_drop_filter = ''
-  csv_input_row_drop_filter_mode = anymatch
-  csv_input_row_filter = ''
-  csv_input_row_filter_mode = allmatch
-  csv_input_row_limit = 0
-  csv_output_column_delimiter = ,
-  csv_output_convert_cr_nl = false
-  csv_output_field_delimiter = ' '
-  csv_output_header_drop_filter = ''
-  csv_output_header_filter = ''
-  csv_output_header_force = ''
-  csv_output_line_terminator = lf
-  csv_output_quote_char = '"'
-  csv_output_row_drop_filter = ''
-  csv_output_row_drop_filter_mode = anymatch
-  csv_output_row_filter = ''
-  csv_output_row_filter_mode = allmatch
-  csv_output_row_limit = 0
-  csv_output_subfield_delimiter = '.'
-  csv_output_timestamp_column = ''
-  csv_output_users_audit = false
-  customer_id = my_customer
-  debug_level = 0
-  device_max_results = 200
-  domain = ''
+  ...
   drive_dir = C:\GAMWork
-  drive_max_results = 1000
-  drive_v3_native_names = true
-  email_batch_size = 50
-  event_max_results = 250
-  extra_args = ''
-  inter_batch_wait = 0
-  license_max_results = 100
-  license_skus = ''
-  member_max_results = 200
-  message_batch_size = 50
-  message_max_results = 500
-  never_time = Never
-  no_browser = false
-  no_cache = false
-  no_update_check = true
-  no_verify_ssl = false
-  num_tbatch_threads = 2
-  num_threads = 5
-  oauth2_txt = oauth2.txt ; C:\GAMConfig\oauth2.txt
-  oauth2service_json = oauth2service.json ; C:\GAMConfig\oauth2service.json
-  people_max_results = 100
-  print_agu_domains = ''
-  print_cros_ous = ''
-  print_cros_ous_and_children = ''
-  process_wait_limit = 0
-  quick_cros_move = false
-  quick_info_user = False
-  reseller_id = ''
-  retry_api_service_not_available = false
-  section = ''
-  show_api_calls_retry_data = false
-  show_commands = false
-  show_convert_cr_nl = false
-  show_counts_min = 1
-  show_gettings = true
-  show_gettings_got_nl = false
-  show_multiprocess_info = false
-  smtp_fqdn = ''
-  smtp_host = ''
-  smtp_password = ''
-  smtp_username = ''
-  timezone = utc
-  tls_max_version = ''
-  tls_min_version = 'TLSv1_2'
-  todrive_clearfilter = false
-  todrive_clientaccess = false
-  todrive_conversion = true
-  todrive_localcopy = false
-  todrive_locale = ''
-  todrive_nobrowser = false
-  todrive_noemail = true
-  todrive_parent = root
-  todrive_sheet_timeformat = ''
-  todrive_sheet_timestamp = false
-  todrive_timeformat = ''
-  todrive_timestamp = false
-  todrive_timezone = ''
-  todrive_upload_nodata = true
-  todrive_user = ''
-  truncate_client_id = false
-  update_cros_ou_with_id = false
-  use_projectid_as_name = false
-  user_max_results = 500
-  user_service_account_access_only = false
+  ...
 
 C:\>
 ```
@@ -797,94 +565,90 @@ C:\>dir %GAMCFGDIR%
 
 03/03/2017  10:16 AM    <DIR>          .
 03/03/2017  10:16 AM    <DIR>          ..
-03/03/2017  10:15 AM               553 client_secrets.json
 03/03/2017  10:15 AM             1,125 gam.cfg
 03/03/2017  10:15 AM    <DIR>          gamcache
-03/03/2017  10:16 AM                10 lastupdatecheck.txt
-03/03/2017  10:15 AM            11,704 oauth2.txt
 03/03/2017  10:15 AM                 0 oauth2.txt.lock
-03/03/2017  10:15 AM             2,377 oauth2service.json
-               6 File(s)         15,769 bytes
+               2 File(s)         15,769 bytes
                3 Dir(s)  110,532,562,944 bytes free
 C:\>
 ```
-If the verification looks like this, then you'll have to copy client_secrets.json and oauth2service.json manually.
+
+### Create your project with local browser
 ```
-C:\>dir %GAMCFGDIR%
- Volume in drive C has no label.
- Volume Serial Number is 663F-DA8B
+C:\>gam create project
+WARNING: Config File: C:\GAMConfig\gam.cfg, Item: client_secrets_json, Value: C:\GAMConfig\client_secrets.json, Not Found
+WARNING: Config File: C:\GAMConfig\gam.cfg, Item: oauth2service_json, Value: C:\GAMConfig\oauth2service.json, Not Found
 
- Directory of C:\GAMConfig
-
-03/03/2017  10:19 AM    <DIR>          .
-03/03/2017  10:19 AM    <DIR>          ..
-03/03/2017  10:15 AM             1,125 gam.cfg
-03/03/2017  10:15 AM    <DIR>          gamcache
-03/03/2017  10:16 AM                10 lastupdatecheck.txt
-03/03/2017  10:15 AM                 0 oauth2.txt.lock
-               3 File(s)          1,135 bytes
-               3 Dir(s)  110,532,562,944 bytes free
-
-C:\>copy %OLDGAMPATH%\client_secrets.json %GAMCFGDIR%
-        1 file(s) copied.
-
-C:\>copy %OLDGAMPATH%\oauth2service.json %GAMCFGDIR%
-        1 file(s) copied.
-
-C:\>dir %GAMCFGDIR%
- Volume in drive C has no label.
- Volume Serial Number is 663F-DA8B
-
- Directory of C:\GAMConfig
-
-03/03/2017  10:20 AM    <DIR>          .
-03/03/2017  10:20 AM    <DIR>          ..
-02/26/2017  10:39 AM               553 client_secrets.json
-03/03/2017  10:15 AM             1,125 gam.cfg
-03/03/2017  10:15 AM    <DIR>          gamcache
-03/03/2017  10:16 AM                10 lastupdatecheck.txt
-03/03/2017  10:15 AM                 0 oauth2.txt.lock
-02/26/2017  10:39 AM             2,377 oauth2service.json
-               5 File(s)          4,065 bytes
-               3 Dir(s)  110,532,538,368 bytes free
-```
-### Update your project with local browser to include the additional APIs that GAM7 uses.
-```
-C:\>gam update project
-
-Enter your Google Workspace admin or GCP project manager email address authorized to manage project(s) gam-project-abc-123-xyz? admin@domain.com
+Enter your Google Workspace admin or GCP project manager email address authorized to manage project(s) admin@domain.com
 
 Your browser has been opened to visit:
 
-    https://accounts.google.com/o/oauth2/v2/auth?redirect_uri=http%3A%2F%2Flocalhost%3A8080%2F&response_type=code&client_id=...
+    https://accounts.google.com/o/oaut...pe=code
+
+If your browser is on a different machine then press CTRL+C,
+set no_browser = true in gam.cfg and re-run this command.
 
 Authentication successful.
-API: admin.googleapis.com, already enabled...
-API: appsactivity.googleapis.com, already enabled...
-API: calendar-json.googleapis.com, already enabled...
-API: classroom.googleapis.com, already enabled...
-API: contacts.googleapis.com, already enabled...
-API: drive.googleapis.com, already enabled...
-API: gmail.googleapis.com, already enabled...
-API: groupssettings.googleapis.com, already enabled...
-API: licensing.googleapis.com, already enabled...
-API: plus.googleapis.com, already enabled...
-API: reseller.googleapis.com, already enabled...
-API: siteverification.googleapis.com, already enabled...
-API: vault.googleapis.com, already enabled...
-Enable 3 APIs
-  API: audit.googleapis.com, Enabled (1/3)
-  API: groupsmigration.googleapis.com, Enabled (2/3)
-  API: sheets.googleapis.com, Enabled (3/3)
+Creating project "GAM Project"...
+Checking project status...
+Project: gam-project-abc-def-ghi, Enable 23 APIs
+  API: admin.googleapis.com, Enabled (1/23)
+  API: alertcenter.googleapis.com, Enabled (2/23)
+  API: appsactivity.googleapis.com, Enabled (3/23)
+  API: audit.googleapis.com, Enabled (4/23)
+  API: calendar-json.googleapis.com, Enabled (5/23)
+  API: chat.googleapis.com, Enabled (6/23)
+  API: classroom.googleapis.com, Enabled (7/23)
+  API: contacts.googleapis.com, Enabled (8/23)
+  API: drive.googleapis.com, Enabled (9/23)
+  API: driveactivity.googleapis.com, Enabled (10/23)
+  API: gmail.googleapis.com, Enabled (11/23)
+  API: groupsmigration.googleapis.com, Enabled (12/23)
+  API: groupssettings.googleapis.com, Enabled (13/23)
+  API: iam.googleapis.com, Enabled (14/23)
+  API: iap.googleapis.com, Enabled (15/23)
+  API: licensing.googleapis.com, Enabled (16/23)
+  API: people.googleapis.com, Enabled (17/23)
+  API: pubsub.googleapis.com, Enabled (18/23)
+  API: reseller.googleapis.com, Enabled (19/23)
+  API: sheets.googleapis.com, Enabled (20/23)
+  API: siteverification.googleapis.com, Enabled (21/23)
+  API: storage-api.googleapis.com, Enabled (22/23)
+  API: vault.googleapis.com, Enabled (23/23)
+Setting GAM project consent screen...
+Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Enabled
+Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Generating new private key
+Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Extracting public certificate
+Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Done generating private key and public certificate
+Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Service Account Key: SVCACCTKEY, Uploaded
+Service Account OAuth2 File: C:\GAMConfig\oauth2service.json, Service Account Key: SVCACCTKEY, Updated
+Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Has rights to rotate own private key
+Please go to:
+
+https://console.cloud.google.com/apis/credentials/oauthclient?project=gam-project-abc-def-ghi
+
+1. Choose "Desktop App" or "Other" for "Application type".
+2. Enter "GAM" or another desired value for "Name".
+3. Click the blue "Create" button.
+4. Copy your "client ID" value that shows on the next page.
+
+Enter your Client ID: CLIENTID
+
+5. Go back to your browser and copy your "client secret" value.
+Enter your Client Secret: CLIENTSECRET
+6. Go back to your browser and click OK to close the "OAuth client" popup if it's still open.
+That's it! Your GAM Project is created and ready to use.
 
 C:\>
 ```
-### Update your project without local browser (headless server for instance) to include the additional APIs that GAM7 uses
+### Create your project without local browser (headless server for instance)
 ```
 C:\>gam config no_browser true save
-C:\>gam update project
+C:\>gam create project
+WARNING: Config File: C:\GAMConfig\gam.cfg, Item: client_secrets_json, Value: C:\GAMConfig\client_secrets.json, Not Found
+WARNING: Config File: C:\GAMConfig\gam.cfg, Item: oauth2service_json, Value: C:\GAMConfig\oauth2service.json, Not Found
 
-Enter your Google Workspace admin or GCP project manager email address authorized to manage project(s) gam-project-abc-123-xyz? admin@domain.com
+Enter your Google Workspace admin or GCP project manager email address authorized to manage project(s) admin@domain.com
 
 Go to the following link in a browser on other computer:
 
@@ -893,43 +657,64 @@ Go to the following link in a browser on other computer:
 Enter verification code: abc...xyz
 
 Authentication successful.
-API: admin.googleapis.com, already enabled...
-API: appsactivity.googleapis.com, already enabled...
-API: calendar-json.googleapis.com, already enabled...
-API: classroom.googleapis.com, already enabled...
-API: contacts.googleapis.com, already enabled...
-API: drive.googleapis.com, already enabled...
-API: gmail.googleapis.com, already enabled...
-API: groupssettings.googleapis.com, already enabled...
-API: licensing.googleapis.com, already enabled...
-API: plus.googleapis.com, already enabled...
-API: reseller.googleapis.com, already enabled...
-API: siteverification.googleapis.com, already enabled...
-API: vault.googleapis.com, already enabled...
-Enable 3 APIs
-  API: audit.googleapis.com, Enabled (1/3)
-  API: groupsmigration.googleapis.com, Enabled (2/3)
-  API: sheets.googleapis.com, Enabled (3/3)
+Creating project "GAM Project"...
+Checking project status...
+Project: gam-project-abc-def-ghi, Enable 23 APIs
+  API: admin.googleapis.com, Enabled (1/23)
+  API: alertcenter.googleapis.com, Enabled (2/23)
+  API: appsactivity.googleapis.com, Enabled (3/23)
+  API: audit.googleapis.com, Enabled (4/23)
+  API: calendar-json.googleapis.com, Enabled (5/23)
+  API: chat.googleapis.com, Enabled (6/23)
+  API: classroom.googleapis.com, Enabled (7/23)
+  API: contacts.googleapis.com, Enabled (8/23)
+  API: drive.googleapis.com, Enabled (9/23)
+  API: driveactivity.googleapis.com, Enabled (10/23)
+  API: gmail.googleapis.com, Enabled (11/23)
+  API: groupsmigration.googleapis.com, Enabled (12/23)
+  API: groupssettings.googleapis.com, Enabled (13/23)
+  API: iam.googleapis.com, Enabled (14/23)
+  API: iap.googleapis.com, Enabled (15/23)
+  API: licensing.googleapis.com, Enabled (16/23)
+  API: people.googleapis.com, Enabled (17/23)
+  API: pubsub.googleapis.com, Enabled (18/23)
+  API: reseller.googleapis.com, Enabled (19/23)
+  API: sheets.googleapis.com, Enabled (20/23)
+  API: siteverification.googleapis.com, Enabled (21/23)
+  API: storage-api.googleapis.com, Enabled (22/23)
+  API: vault.googleapis.com, Enabled (23/23)
+Setting GAM project consent screen...
+Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Enabled
+Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Generating new private key
+Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Extracting public certificate
+Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Done generating private key and public certificate
+Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Service Account Key: SVCACCTKEY, Uploaded
+Service Account OAuth2 File: C:\GAMConfig\oauth2service.json, Service Account Key: SVCACCTKEY, Updated
+Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Has rights to rotate own private key
+Please go to:
+
+https://console.cloud.google.com/apis/credentials/oauthclient?project=gam-project-abc-def-ghi
+
+1. Choose "Desktop App" or "Other" for "Application type".
+2. Enter "GAM" or another desired value for "Name".
+3. Click the blue "Create" button.
+4. Copy your "client ID" value that shows on the next page.
+
+Enter your Client ID: CLIENTID
+
+5. Go back to your browser and copy your "client secret" value.
+Enter your Client Secret: CLIENTSECRET
+6. Go back to your browser and click OK to close the "OAuth client" popup if it's still open.
+That's it! Your GAM Project is created and ready to use.
 
 C:\>
 ```
 ### Enable GAM7 client access
 
-Create oauth2.txt; it must be deleted and recreated because it is in a different format than in basic Gam.
-
 You select a list of scopes, GAM uses a browser to get final authorization from Google for these scopes and
 writes the credentials into the file oauth2.txt.
-```
-C:\>del C:\GAMConfig\oauth2.txt
-C:\>gam version
-WARNING: Config File: C:\GAMConfig\gam.cfg, Section: DEFAULT, Item: oauth2_txt, Value: C:\GAMConfig\oauth2.txt, Not Found
-GAM7 7.00.09 - https://github.com/taers232c/GAM7 - pythonsource
-GAM Team <google-apps-manager@googlegroups.com>
-Python 3.12.6 64-bit final
-Windows-10-10.0.17134 AMD64
-Path: C:\GAM7
-Config File: C:\GAMConfig\gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
 
+```
 C:\>gam oauth create
 
 [*]  0)  Calendar API (supports readonly)
@@ -1013,7 +798,6 @@ Client OAuth2 File: C:\GAMConfig\oauth2.txt, Created
 
 C:\>
 ```
-
 ### Enable GAM7 service account access.
 ```
 C:\>gam user admin@domain.com check serviceaccount
@@ -1061,7 +845,7 @@ Domain-wide Delegation authentication:, User: admin@domain.com, Scopes: 34
 Some scopes FAILED!
 To authorize them, please go to:
 
-    https://admin.google.com/ac/owl/domainwidedelegation?clientScopeToAdd=https://mail.google.com/,https://sites.google.com/feeds,https://www.googleapis.com/auth/apps.alerts,https://www.googleapis.com/auth/calendar,https://www.googleapis.com/auth/classroom.announcements,https://www.googleapis.com/auth/classroom.coursework.students,https://www.googleapis.com/auth/classroom.courseworkmaterials,https://www.googleapis.com/auth/classroom.profile.emails,https://www.googleapis.com/auth/classroom.rosters,https://www.googleapis.com/auth/classroom.topics,https://www.googleapis.com/auth/cloud-identity,https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/contacts,https://www.googleapis.com/auth/contacts.other.readonly,https://www.googleapis.com/auth/datastudio,https://www.googleapis.com/auth/directory.readonly,https://www.googleapis.com/auth/documents,https://www.googleapis.com/auth/drive,https://www.googleapis.com/auth/drive.activity,https://www.googleapis.com/auth/gmail.modify,https://www.googleapis.com/auth/gmail.settings.basic,https://www.googleapis.com/auth/gmail.settings.sharing,https://www.googleapis.com/auth/keep,https://www.googleapis.com/auth/spreadsheets,https://www.googleapis.com/auth/tasks,https://www.googleapis.com/auth/userinfo.profile,https://www.googleapis.com/auth/userinfo.email&clientIdToAdd=SVCACCTID&overwriteClientId=true&dn=domain.com&authuser=admin@domain.com
+    https://admin.google.com/ac/owl/domainwide...thuser=admin@domain.com
 
 You will be directed to the Google Workspace admin console Security/API Controls/Domain-wide Delegation page
 The "Add a new Client ID" box will open
@@ -1142,121 +926,13 @@ Default Language: en
 C:\>gam config customer_id C01234567 domain domain.com timezone local save verify
 Config File: C:\GAMConfig\gam.cfg, Saved
 Section: DEFAULT
-  activity_max_results = 100
-  admin_email = ''
-  api_calls_rate_check = false
-  api_calls_rate_limit = 100
-  api_calls_tries_limit = 10
-  auto_batch_min = 0
-  bail_on_internal_error_tries = 2
-  batch_size = 50
-  cacerts_pem = ''
-  cache_dir = C:\GAMConfig\gamcache
-  cache_discovery_only = true
-  channel_customer_id = ''
-  charset = utf-8
-  classroom_max_results = 0
-  client_secrets_json = client_secrets.json ; C:\GAMConfig\client_secrets.json
-  clock_skew_in_seconds = 10
-  cmdlog = ''
-  cmdlog_max_backups = 5
-  cmdlog_max_kilo_bytes = 1000
-  config_dir = C:\GAMConfig
-  contact_max_results = 100
-  csv_input_column_delimiter = ,
-  csv_input_quote_char = '"'
-  csv_input_row_drop_filter = ''
-  csv_input_row_drop_filter_mode = anymatch
-  csv_input_row_filter = ''
-  csv_input_row_filter_mode = allmatch
-  csv_input_row_limit = 0
-  csv_output_column_delimiter = ,
-  csv_output_convert_cr_nl = false
-  csv_output_field_delimiter = ' '
-  csv_output_header_drop_filter = ''
-  csv_output_header_filter = ''
-  csv_output_header_force = ''
-  csv_output_line_terminator = lf
-  csv_output_quote_char = '"'
-  csv_output_row_drop_filter = ''
-  csv_output_row_drop_filter_mode = anymatch
-  csv_output_row_filter = ''
-  csv_output_row_filter_mode = allmatch
-  csv_output_row_limit = 0
-  csv_output_subfield_delimiter = '.'
-  csv_output_timestamp_column = ''
-  csv_output_users_audit = false
+  ...
   customer_id = C01234567
-  debug_level = 0
-  device_max_results = 200
+  ...
   domain = domain.com
-  drive_dir = C:\GAMWork
-  drive_max_results = 1000
-  drive_v3_native_names = true
-  email_batch_size = 50
-  event_max_results = 250
-  extra_args = ''
-  inter_batch_wait = 0
-  license_max_results = 100
-  license_skus = ''
-  member_max_results = 200
-  message_batch_size = 50
-  message_max_results = 500
-  never_time = Never
-  no_browser = false
-  no_cache = false
-  no_update_check = true
-  no_verify_ssl = false
-  num_tbatch_threads = 2
-  num_threads = 5
-  oauth2_txt = oauth2.txt ; C:\GAMConfig\oauth2.txt
-  oauth2service_json = oauth2service.json ; C:\GAMConfig\oauth2service.json
-  output_dateformat = ''
-  output_timeformat = ''
-  people_max_results = 100
-  print_agu_domains = ''
-  print_cros_ous = ''
-  print_cros_ous_and_children = ''
-  process_wait_limit = 0
-  quick_cros_move = false
-  quick_info_user = False
-  reseller_id = ''
-  retry_api_service_not_available = false
-  section = ''
-  show_api_calls_retry_data = false
-  show_commands = false
-  show_convert_cr_nl = false
-  show_counts_min = 1
-  show_gettings = true
-  show_gettings_got_nl = false
-  show_multiprocess_info = false
-  smtp_fqdn = ''
-  smtp_host = ''
-  smtp_password = ''
-  smtp_username = ''
+  ...
   timezone = local
-  tls_max_version = ''
-  tls_min_version = 'TLSv1_2'
-  todrive_clearfilter = false
-  todrive_clientaccess = false
-  todrive_conversion = true
-  todrive_localcopy = false
-  todrive_locale = ''
-  todrive_nobrowser = false
-  todrive_noemail = true
-  todrive_parent = root
-  todrive_sheet_timeformat = ''
-  todrive_sheet_timestamp = false
-  todrive_timeformat = ''
-  todrive_timestamp = false
-  todrive_timezone = ''
-  todrive_upload_nodata = true
-  todrive_user = ''
-  truncate_client_id = false
-  update_cros_ou_with_id = false
-  use_projectid_as_name = false
-  user_max_results = 500
-  user_service_account_access_only = false
+  ...
 
 C:\>
 ```
