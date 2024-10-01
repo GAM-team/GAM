@@ -543,7 +543,8 @@ jobs:
             # https://github.com/pyinstaller/pyinstaller/issues/7102
             export PATH="$(dirname ${PYTHON}):/usr/bin"
           fi
-          if ([ "${staticx}" != "yes" ] && [ "$RUNNER_OS" != "Windows" ]); then
+          #if ([ "${staticx}" != "yes" ] && [ "$RUNNER_OS" != "Windows" ]); then
+          if [[ "$staticx" != "yes" ]]; then
             export PYINSTALLER_BUILD_ONEDIR=yes
           fi
           "${PYTHON}" -m PyInstaller --clean --noconfirm --distpath="${distpath}" gam.spec
@@ -696,9 +697,12 @@ jobs:
           /c/Program\ Files/7-Zip/7z.exe a -tzip "$GAM_ARCHIVE" gam7 "-xr@${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" -bb3
           cd ..
           export MSI_FILENAME="gam-${GAMVERSION}-windows-${GAM_ARCHIVE_ARCH}.msi"
-          /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/candle.exe -arch "${WIX_ARCH}" gam.wxs
-          /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/WixUIExtension.dll gam.wixobj -o "$MSI_FILENAME" || true;
+          # auto-generate a lib.wxs based on the files PyInstaller created for the lib/ directory
+          /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/heat.exe dir "${gampath}/lib" -ke -srd -cg Lib -gg -dr lib -directoryid lib -out lib.wxs
+          /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/candle.exe -arch "${WIX_ARCH}" gam.wxs lib.wxs
+          /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/WixUIExtension.dll gam.wixobj lib.wixobj -o "$MSI_FILENAME" || true;
           rm -v -f *.wixpdb
+          rm -v -f *.wixobj
           export folder_number=$(date +%s)
           export folder_id=$($gam user gam-win-signer@pdl.jaylee.us add drivefile drivefilename "UPLOADING_FOR_SIGN ${folder_number}" parentid "1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp" mimetype gfolder returnidonly)
           $gam user gam-win-signer@pdl.jaylee.us add drivefile localfile "$MSI_FILENAME" parentid "$folder_id"

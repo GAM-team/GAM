@@ -32,8 +32,11 @@
     <SetDirectory Id="WINDOWSVOLUME" Value="[WindowsVolume]"/>
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="WINDOWSVOLUME">
-          <Directory Id="INSTALLFOLDER" Name="GAM7" />
-        </Directory>
+        <Directory Id="INSTALLFOLDER" Name="GAM7">
+          <Directory Id="lib" Name="lib">
+	  </Directory>
+	</Directory>
+      </Directory>
     </Directory>
   </Fragment>
 
@@ -62,6 +65,7 @@
       <Component Id="cacerts_pem" Guid="61fe2b2d-1646-4bed-b844-193965e97727">
         <File Name="cacerts.pem" KeyPath="yes" />
       </Component>
+      <ComponentGroupRef Id="Lib" />
     </ComponentGroup>
   </Fragment>
 
