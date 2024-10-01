@@ -706,7 +706,7 @@ jobs:
           cat lib.wxs
           echo "-- end lib.wxs --"
           /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/candle.exe -arch "${WIX_ARCH}" gam.wxs lib.wxs
-          /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/WixUIExtension.dll gam.wixobj lib.wixobj -o "$MSI_FILENAME" || true;
+          /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/WixUIExtension.dll gam.wixobj lib.wixobj -b "${gampath}/lib" -o "$MSI_FILENAME" || true;
           rm -v -f *.wixpdb
           rm -v -f *.wixobj
           export folder_number=$(date +%s)
