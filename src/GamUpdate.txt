@@ -1,3 +1,12 @@
+7.00.10
+
+Handled the following error that occurs when `gam create user` is immediateley followed by `gam update user`.
+```
+ERROR: 412: conditionNotMet - User creation is not complete.
+```
+
+Updated support for `Folders with limited access`; this is a work in progress.
+
 7.00.09
 
 Added initial support for `Folders with limited access`; you must be enrolled in the Beta preview.

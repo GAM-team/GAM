@@ -14,6 +14,7 @@ datas += [('admin-directory_v1.1beta1.json', '.')]
 datas += [('cbcm-v1.1beta1.json', '.')]
 datas += [('contactdelegation-v1.json', '.')]
 datas += [('datastudio-v1.json', '.')]
+datas += [('drive-v3beta.json', '.')]
 datas += [('serviceaccountlookup-v1.json', '.')]
 datas += [('cacerts.pem', '.')]
 hiddenimports = [
