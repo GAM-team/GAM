@@ -776,6 +776,14 @@
               "deprecated": true,
               "type": "boolean"
             },
+            "canDisableInheritedPermissions": {
+              "description": "Output only. Whether a user can disable inherited permissions.",
+              "type": "boolean"
+            },
+            "canEnableInheritedPermissions": {
+              "description": "Output only. Whether a user can re-enable inherited permissions.",
+              "type": "boolean"
+            },
             "canMoveChildrenOutOfDrive": {
               "description": "Output only. Whether the current user can move children of this folder outside of the shared drive. This is false when the item is not a folder. Only populated for items in shared drives.",
               "type": "boolean"
@@ -1295,6 +1303,10 @@
         },
         "deleted": {
           "description": "Output only. Whether the account associated with this permission has been deleted. This field only pertains to user and group permissions.",
+          "type": "boolean"
+        },
+        "inheritedPermissionsDisabled": {
+          "description": "Output only. When true, only organizers, owners and users with permissions added directly on the item can access it.",
           "type": "boolean"
         },
         "view": {

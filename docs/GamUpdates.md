@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.00.11
+
+Updated to Python 3.12.7 where possible.
+
 ### 7.00.10
 
 Handled the following error that occurs when `gam create user` is immediateley followed by `gam update user`.

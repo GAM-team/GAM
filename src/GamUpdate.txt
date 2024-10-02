@@ -1,3 +1,7 @@
+7.00.11
+
+Updated to Python 3.12.7 where possible.
+
 7.00.10
 
 Handled the following error that occurs when `gam create user` is immediateley followed by `gam update user`.
