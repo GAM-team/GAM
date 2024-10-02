@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.00.12
+
+Updated option `showlastmodification` to `gam <UserTypeEntity> print|show filecounts` to handle
+the case where all users owning files are suspended. In this case the `lastModifyingUser` column
+will show the user's display name as the API doesn't return the user's email address.
+
+Updated support for `Folders with limited access`; this is a work in progress.
+
 ### 7.00.11
 
 Updated to Python 3.12.7 where possible.

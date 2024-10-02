@@ -88,65 +88,67 @@
 ```
 ```
 <DriveCapabilitiesSubfieldName> ::=
-        canacceptownership|
-        canaddchildren|
-        canaddfolderfromanotherdrive|
-        canaddmydriveparent|
-        canchangecopyrequireswriterpermission|
-        canchangecopyrequireswriterpermissionrestriction|
-        canchangedomainusersonlyrestriction|
-        canchangedrivebackground|
-        canchangedrivemembersonlyrestriction|
-        canchangesecurityupdateenabled|
-        canchangesharingfoldersrequiresorganizerpermissionrestriction|
-        canchangeviewerscancopycontent|
-        cancomment|
-        cancopy|
-        candelete|
-        candeletechildren|
-        candeletedrive|
-        candownload|
-        canedit|
-        canlistchildren|
-        canmanagemembers|
-        canmodifycontent|
-        canmodifycontentrestriction|
-        canmodifyeditorcontentrestriction|
-        canmodifylabels|
-        canmodifyownercontentrestriction|
-        canmovechildrenoutofdrive|
-        canmovechildrenoutofteamdrive|
-        canmovechildrenwithindrive|
-        canmovechildrenwithinteamdrive|
-        canmoveitemintodrive|
-        canmoveitemintoteamdrive|
-        canmoveitemoutofdrive|
-        canmoveitemoutofteamdrive|
-        canmoveitemwithindrive|
-        canmoveitemwithinteamdrive|
-        canmoveteamdriveitem|
-        canreaddrive|
-        canreadlabels|
-        canreadrevisions|
-        canreadteamdrive|
-        canremovechildren|
-        canremovecontentrestriction|
-        canremovemydriveparent|
-        canrename|
-        canrenamedrive|
-        canresetdriverestrictions|
-        canshare|
-        cantrash|
-        cantrashchildren|
-        canuntrash
+        capabilities.canacceptownership|
+        capabilities.canaddchildren|
+        capabilities.canaddfolderfromanotherdrive|
+        capabilities.canaddmydriveparent|
+        capabilities.canchangecopyrequireswriterpermission|
+        capabilities.canchangecopyrequireswriterpermissionrestriction|
+        capabilities.canchangedomainusersonlyrestriction|
+        capabilities.canchangedrivebackground|
+        capabilities.canchangedrivemembersonlyrestriction|
+        capabilities.canchangesecurityupdateenabled|
+        capabilities.canchangesharingfoldersrequiresorganizerpermissionrestriction|
+        capabilities.canchangeviewerscancopycontent|
+        capabilities.cancomment|
+        capabilities.cancopy|
+        capabilities.candelete|
+        capabilities.candeletechildren|
+        capabilities.candeletedrive|
+        capabilities.candisableinheritedpermissions|
+        capabilities.candownload|
+        capabilities.canedit|
+        capabilities.canenableinheritedpermissions|
+        capabilities.canlistchildren|
+        capabilities.canmanagemembers|
+        capabilities.canmodifycontent|
+        capabilities.canmodifycontentrestriction|
+        capabilities.canmodifyeditorcontentrestriction|
+        capabilities.canmodifylabels|
+        capabilities.canmodifyownercontentrestriction|
+        capabilities.canmovechildrenoutofdrive|
+        capabilities.canmovechildrenoutofteamdrive|
+        capabilities.canmovechildrenwithindrive|
+        capabilities.canmovechildrenwithinteamdrive|
+        capabilities.canmoveitemintodrive|
+        capabilities.canmoveitemintoteamdrive|
+        capabilities.canmoveitemoutofdrive|
+        capabilities.canmoveitemoutofteamdrive|
+        capabilities.canmoveitemwithindrive|
+        capabilities.canmoveitemwithinteamdrive|
+        capabilities.canmoveteamdriveitem|
+        capabilities.canreaddrive|
+        capabilities.canreadlabels|
+        capabilities.canreadrevisions|
+        capabilities.canreadteamdrive|
+        capabilities.canremovechildren|
+        capabilities.canremovecontentrestriction|
+        capabilities.canremovemydriveparent|
+        capabilities.canrename|
+        capabilities.canrenamedrive|
+        capabilities.canresetdriverestrictions|
+        capabilities.canshare|
+        capabilities.cantrash|
+        capabilities.cantrashchildren|
+        capabilities.canuntrash
 
 <DriveContentRestrictionsSubfieldName> ::=
-        ownerrestricted|
-        readonly|
-        reason|
-        restrictinguser|
-        restrictiontime|
-        type
+        contentrestrictions.ownerrestricted|
+        contentrestrictions.readonly|
+        contentrestrictions.reason|
+        contentrestrictions.restrictinguser|
+        contentrestrictions.restrictiontime|
+        contentrestrictions.type
 
 <DriveLabelInfoSubfieldName> ::=
         labels.id|              # modifiedByMe
@@ -257,6 +259,7 @@
         iconlink|
         id|
         imagemediametadata|
+        inheritedpermissionsdisabled|
         isappauthorized|
         labelinfo|
         <DriveLabelInfoSubfieldName>|
@@ -294,6 +297,8 @@
         <DriveSharingUserSubfieldName>|
         shortcutdetails|
         <DriveShortcutDetailsSubfieldName>|
+        sha1checksum|
+        sha256checksum|
         size|
         spaces|
         starred|

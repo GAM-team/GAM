@@ -58,7 +58,6 @@ DIRECTORY_BETA = 'directory_beta'
 DOCS = 'docs'
 DRIVE2 = 'drive2'
 DRIVE3 = 'drive3'
-DRIVE3B = 'drive3b'
 DRIVETD = 'drivetd'
 DRIVEACTIVITY = 'driveactivity'
 DRIVELABELS = 'drivelabels'
@@ -238,7 +237,6 @@ _INFO = {
   DOCS: {'name': 'Docs API', 'version': 'v1', 'v2discovery': True},
   DRIVE2: {'name': 'Drive API v2', 'version': 'v2', 'v2discovery': False, 'mappedAPI': 'drive'},
   DRIVE3: {'name': 'Drive API v3', 'version': 'v3', 'v2discovery': False, 'mappedAPI': 'drive'},
-  DRIVE3B: {'name': 'Drive API v3beta', 'version': 'v3beta', 'v2discovery': False, 'mappedAPI': 'drive', 'localjson': True},
   DRIVETD: {'name': 'Drive API v3 - todrive', 'version': 'v3', 'v2discovery': False, 'mappedAPI': 'drive'},
   DRIVEACTIVITY: {'name': 'Drive Activity API v2', 'version': 'v2', 'v2discovery': True},
   DRIVELABELS_ADMIN: {'name': 'Drive Labels API v2beta - Admin', 'version': 'v2beta', 'v2discovery': True, 'mappedAPI': DRIVELABELS},

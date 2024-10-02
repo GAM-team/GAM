@@ -117,6 +117,7 @@
         (description <String>)|
         (folderColorRgb <ColorValue>)|
         (indexabletext <String>)|
+        (inheritedpermissionsdisabled [<Boolean>])|
         (keeprevisionforever|pinned)|
         (lastviewedbyme <Time>)|
         (mimetype <MimeType>)|
@@ -127,10 +128,10 @@
         (property <PropertyKey> <PropertyValue> [private|public])|
         (restricted|restrict [<Boolean>])|
         (securityupdate [<Boolean>])|
+        (shortcut <DriveFileID>)|
         (starred|star [<Boolean>])|
         (trashed|trash [<Boolean>])|
         (viewed|view [<Boolean>])|
-        (shortcut <DriveFileID>)|
         (viewerscancopycontent [<Boolean>])|
         (writerscanshare|writerscantshare [<Boolean>])
 
