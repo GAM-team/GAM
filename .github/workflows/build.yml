@@ -820,6 +820,7 @@ jobs:
           echo "Created shared drive ${driveid}"
           # 9/17/24 - temp create in root due to Google API issues creating users in new OUs
           $gam create user $newuser firstname GHA lastname $JID displayname "Github Actions ${JID}" password random recoveryphone 12125121110 recoveryemail jay0lee@gmail.com gha.jid $JID languages en+,en-GB- # ou "${newou}"
+          $gam user $newuser add license workspaceenterpriseplus
           $gam user $newuser update photo https://dummyimage.com/400x600/000/fff
           $gam user $newuser get photo
           $gam user $newuser delete photo
@@ -829,7 +830,6 @@ jobs:
           $gam config enable_dasa false save
           $gam create contact firstname GHA lastname "$JID" email work "${newbase}@example.com" primary
           $gam print contacts
-          $gam user $newuser add license workspaceenterpriseplus
           $gam print privileges
           $gam config enable_dasa true save
           $gam update cigroup $newgroup security memberrestriction 'member.type == 1 || member.customer_id == groupCustomerId()'
