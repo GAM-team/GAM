@@ -68,22 +68,22 @@ jobs:
             goal: build
             arch: Win64
             openssl_archs: VC-WIN64A
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             goal: test
             python: "3.13"
             jid: 8
             arch: x86_64
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             goal: test
             python: "3.9"
             jid: 9
             arch: x86_64
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             goal: test
             python: "3.10"
             jid: 10
             arch: x86_64
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             goal: test
             python: "3.11"
             jid: 11
@@ -731,8 +731,7 @@ jobs:
             sleep 10
           done
           # download signed package
-          $gam user gam-win-signer@pdl.jaylee.us print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us print filelist query "'~~id~~' in parents and name = '$MSI_FILENAME'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us get drivefile ~id targetfolder "$GITHUB_WORKSPACE" targetname "$MSI_FILENAME" overwrite true acknowledgeabuse true
-          # delete signed folder from drive
+          $gam user gam-win-signer@pdl.jaylee.us print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us print filelist query "'~~id~~' in parents and name contains '.msi'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us get drivefile ~id targetfolder "$GITHUB_WORKSPACE" targetname "$MSI_FILENAME" overwrite true acknowledgeabuse true
           # delete signed folder on drive
           $gam user gam-win-signer@pdl.jaylee.us print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us trash drivefile "~id"
           #"/c/Program Files (x86)/Windows Kits/10/bin/10.0.22621.0/x64/signtool.exe" verify /v /pa "$MSI_FILENAME"
