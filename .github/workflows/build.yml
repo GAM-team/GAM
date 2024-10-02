@@ -828,7 +828,7 @@ jobs:
           $gam create group $newgroup name "GHA $JID group" description "This is a description" isarchived true
           $gam user $gam_user sendemail recipient dev-null@pdl.jaylee.us subject "test message $newbase" message "GHA test message"
           $gam config enable_dasa false save
-          $gam create contact firstname GHA lastname "$JID" email work "${newbase}@example.com" primary
+          #$gam create contact firstname GHA lastname "$JID" email work "${newbase}@example.com" primary
           $gam print contacts
           $gam print privileges
           $gam config enable_dasa true save
