@@ -30,8 +30,8 @@ upgrade_only=false
 gamversion="latest"
 adminuser=""
 regularuser=""
-gam_x86_64_glibc_vers="2.35 2.31"
-gam_arm64_glibc_vers="2.31"
+gam_x86_64_glibc_vers="2.35"
+gam_arm64_glibc_vers="2.35"
 strip_gam="--strip-components 0"
 
 while getopts "hd:a:o:b:lp:u:r:v:s" OPTION
