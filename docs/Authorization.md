@@ -808,7 +808,7 @@ The `oauth2service.json` file is updated with the new private key.
 
 Keep a good record of where each Service Account key is used as the keys themselves do not record this information.
 
-The two forms of the command are equivalent; the second form is used by Basic Gam.
+The two forms of the command are equivalent; the second form is used by Legacy GAM.
 ```
 gam create sakey
         (algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
@@ -834,7 +834,7 @@ The `oauth2service.json` file is updated with the new private key. If you had pr
 this `oauth2service.json` file to other users, you must redistribute the updated file as the private key
 in the distributed copies has been revoked.
 
-The two forms of the command are equivalent; the second form is used by Basic Gam.
+The two forms of the command are equivalent; the second form is used by Legacy GAM.
 ```
 gam update sakey
         (algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
@@ -853,7 +853,7 @@ in the distributed copies has been revoked.
 
 This command can be used if your Service Account keys have been compromised; all existing private keys are revoked.
 
-The two forms of the command are equivalent; the second form is used by Basic Gam.
+The two forms of the command are equivalent; the second form is used by Legacy GAM.
 ```
 gam replace sakeys
         (algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|

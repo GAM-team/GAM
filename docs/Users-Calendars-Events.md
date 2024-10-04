@@ -19,7 +19,7 @@
 - [Update calendar event attendees](#update-calendar-event-attendees)
 - [Status events](#status-events)
   - [Focus time events](#focus-time-events)
-  - [Out of officeevents](#out-of-office-events)
+  - [Out of office events](#out-of-office-events)
   - [Working location events](#working-location-events)
 
 ## API documentation

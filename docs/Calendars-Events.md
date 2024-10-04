@@ -596,7 +596,7 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
 ### Old format commands
-These commands are backwards compatible with basic Gam.
+These commands are backwards compatible with Legacy GAM.
 ```
 gam calendar <CalendarEntity> addevent <EventAttribute>+ [<EventNotificationAttribute>]
 gam calendar <CalendarEntity> deleteevent (id|eventid <EventID>)+ [doit] [<EventNotificationAttribute>]

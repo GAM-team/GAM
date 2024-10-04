@@ -10,10 +10,6 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/taers232c/GAMADV-XTD3/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
-### 7.00.13
-
-Version bump in order to confirm MSI installs are operating properly
-
 ### 7.00.12
 
 Updated option `showlastmodification` to `gam <UserTypeEntity> print|show filecounts` to handle
@@ -21,9 +17,6 @@ the case where all users owning files are suspended. In this case the `lastModif
 will show the user's display name as the API doesn't return the user's email address.
 
 Updated support for `Folders with limited access`; this is a work in progress.
-
-Windows builds now use PyInstaller's onedir config for improved performance. You may notice a lib
-folder now exists underneath the GAM install path. GAM commands should start significantly faster.
 
 ### 7.00.11
 

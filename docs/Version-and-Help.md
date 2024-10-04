@@ -54,17 +54,17 @@ Print the current and latest versions of Gam and:
 * set the return code to 1 if the current version is not the latest
 ```
 gam version checkrc
-GAM 5.35.08 - https://github.com/taers232c/GAMADV-XTD3
+GAM 5.35.08 - https://github.com/taers232cGAM7
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.8.1 64-bit final
 google-api-python-client 2.77.0
 httplib2 0.16.0
 oauth2client 4.1.3
 MacOS High Sierra 10.13.6 x86_64
-Path: /Users/Admin/bin/gamadv-xtd3
+Path: /Users/Admin/bin/gam7
 Version Check:
   Current: 5.35.08
-   Latest: 7.00.12
+   Latest: 7.00.13
 echo $?
 1
 ```
