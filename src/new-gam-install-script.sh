@@ -227,7 +227,7 @@ case $gamos in
     gamos="macos"
     fullversion=$(sw_vers -productVersion)
     # override osversion only if it wasn't set by cli arguments
-    osversion=${osversion:=${fullversion:0:2}}
+    osversion=${osversion:-${fullversion:0:2}}
     download_urls=$(echo -e "$download_urls" | grep "\-macos-")
     case $gamarch in
       x86_64)
