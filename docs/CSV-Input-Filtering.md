@@ -16,7 +16,7 @@ There are two values in `gam.cfg` that can be used to filter the input from `gam
 * `csv_input_row_drop_filter` - A list or JSON dictionary used to exclude specific rows based on column values
 
 These filters can be used alone or in conjunction with the `matchfield|skipfield <FieldName> <RegularExpression>` options.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Bulk-Processing#csv-files
+* https://github.com/GAM-team/GAM/wiki/Bulk-Processing#csv-files
 
 ## Definitions
 [Data Selectors](Collections-of-items)

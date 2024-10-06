@@ -1,4 +1,4 @@
-All Google Drive API calls have been converted from v2 to v3, see: https://developers.google.com/drive/v3/web/migration
+!All Google Drive API calls have been converted from v2 to v3, see: https://developers.google.com/drive/v3/web/migration
 Many of the changes are internal to Gam and have no visible effect. Google has modified/renamed many field names and these will affect scripts that parse the output from `gam print/show drivesettings/drivefileacls/fileinfo/filelist/filerevisions`. Additionally, Google has dropped some fields and their values are no longer available. On input, Gam accepts both the old and new field names.
 
 A variable, `drive_v3_native_names` (default value is True), has been added to `gam.cfg` to control the field names on output: when True, the v3 native field names are used; when False, the v3 native field names are mapped to the v2 field names.

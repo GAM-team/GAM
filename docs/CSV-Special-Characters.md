@@ -1,4 +1,4 @@
-# CSV Special Characters
+!# CSV Special Characters
 - [Python CSV documentation](https://docs.python.org/3/library/csv.html#dialects-and-formatting-parameters)
 
 ## Python variables that control CSV file reading/writing:

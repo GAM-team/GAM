@@ -159,7 +159,7 @@ Block emails between specific user groups
 <MessageIDList> ::= "<MessageID>(,<MessageID>)*"
 <MessageIDEntity> ::=
         <MessageIDList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <ThreadID> ::= <String>
 <ThreadIDList> ::= "<ThreadID>(,<ThreadID>)*"
 <ThreadIDEntity> ::= <ThreadIDList>|<FileSelector>|<CSVkmdSelector>|<CSVDataSelector>
@@ -506,7 +506,7 @@ To delete the message for all users:
 gam config auto_batch_min 1 all users delete message query "rfc822msgid:<B1A91373-49E1-4235-8290-3E991E998A76@domain.com>" doit
 ```
 
-If your domain has many users, this process might still take a while. You can target a subset of users, for instance by Org unit or group. Refer to [Collections of Users](https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Users) for all available options. For example, to target all users in the Org unit Sales:
+If your domain has many users, this process might still take a while. You can target a subset of users, for instance by Org unit or group. Refer to [Collections of Users](https://github.com/GAM-team/GAM/wiki/Collections-of-Users) for all available options. For example, to target all users in the Org unit Sales:
 
 ```
 gam config auto_batch_min 1 ou_and_children Sales delete message query "rfc822msgid:<B1A91373-49E1-4235-8290-3E991E998A76@domain.com>" doit

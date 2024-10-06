@@ -89,6 +89,6 @@ MacOS Sonoma 14.5 x86_64
 Path: /Users/Admin/bin/gam7
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
 Time: 2023-06-02T21:10:00-07:00
-Help: Syntax in file /Users/Admin/bin/gamadv-xtd3/GamCommands.txt
-Help: Documentation is at https://github.com/taers232c/GAMADV-XTD3/wiki
+Help: Syntax in file /Users/Admin/bin/gam7/GamCommands.txt
+Help: Documentation is at https://github.com/GAM-team/GAM/wiki
 ```

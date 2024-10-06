@@ -1,4 +1,4 @@
-# Installing GAM7
+!# Installing GAM7
 Use these steps if you have never used any version of GAM in your domain. They will create your GAM project
 and all necessary authentications.
 

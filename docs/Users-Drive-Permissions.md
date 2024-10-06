@@ -124,12 +124,12 @@ specify `basicpermissions` and additional permission fields, e.g., `permissions.
          <DriveFilePermissionList> |
          (json [charset <Charset>] <JSONData>)|(json file <FileName> [charset <Charset>]) |
          <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <DriveFilePermissionIDEntity> ::=
          <DriveFilePermissionIDList> |
          (json [charset <Charset>] <JSONData>)|(json file <FileName> [charset <Charset>]) |
          <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 ```
 ## GUI API permission name mapping
 
@@ -170,7 +170,7 @@ To transfer ownership of a file/folder and place it in a specific folder on the 
 gam <UserTypeEntity> transfer ownership <DriveFileEntity> <UserItem> 
         [<DriveFileParentAttribute>] norecursion
 ```
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Ownership#transfer-ownership-of-files-that-a-source-user-owns-to-a-target-user
+See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Ownership#transfer-ownership-of-files-that-a-source-user-owns-to-a-target-user
 
 The options `withlink|allowfilediscovery|discoverable` are only valid for ACLs to `anyone` or `domain`.
 

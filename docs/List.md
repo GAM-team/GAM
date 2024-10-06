@@ -1,4 +1,4 @@
-# List
+!# List
 
 The list command is used to verify collections of objects.
 

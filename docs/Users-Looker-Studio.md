@@ -33,7 +33,7 @@ gam user user@domain.com check serviceaccount
 <LookerStudioAssetIDList> ::= "<LookerStudioAssetID>(,<LookerStudioAssetID>)*"
 <LookerStudioAssetIDEntity> ::=
         <LookerStudioAssetIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 
 <LookerStudioPermission> ::=
         user:<EmailAddress>|
@@ -43,7 +43,7 @@ gam user user@domain.com check serviceaccount
 <LookerStudioPermissionList> ::= "<LookerStudioPermission>(,<LookerStudioPermission>)*"
 <LookerStudioPermissionEntity> ::=
         <LookerStudioPermissionList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 ```
 
 Looker Studio assets have an ID that is referred to by Google as its `name`; this is the value

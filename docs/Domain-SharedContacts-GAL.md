@@ -55,7 +55,7 @@
 <ContactIDList> ::= "<ContactID>(,<ContactID>)*"
 <ContactEntity> ::=
         <ContactIDList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <ContactSelection> ::=
         [query <QueryContact>]
         [emailmatchpattern <RegularExpression> [emailmatchtype work|home|other|<String>]]
@@ -208,7 +208,7 @@ You specify contacts by ID or by selection qualifiers.
 <ContactIDList> ::= "<ContactID>(,<ContactID>)*"
 <ContactEntity> ::=
         <ContactIDList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <ContactSelection> ::=
         [query <QueryContact>]
         [emailmatchpattern <RegularExpression> [emailmatchtype work|home|other|<String>]]

@@ -40,12 +40,12 @@
 <LabelIDList> ::= "<LabelID>(,<LabelID)*"
 <LabelIDEntity> ::=
         <LabelIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <LabelName> ::= <String>
 <LabelNameList> ::= "'<LabelName>'(,'<LabelName>')*"
 <LabelNameEntity> ::=
         <LabelNameList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 ```
 ## Special quoting
 You specify a single label name with `label <LabelName>` and a list of labels with `labellist <LabelNameList>`.

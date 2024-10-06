@@ -1,4 +1,4 @@
-# Users - Tasks
+!# Users - Tasks
 - [API documentation](#api-documentation)
 - [Notes](#notes)
 - [Definitions](#definitions)
@@ -36,10 +36,10 @@ gam user user@domain.com check serviceaccount
 <TasklistIDTaskIDList> ::= "<TasklistIDTaskID>(,<TasklistIDTaskID>)*"
 <TasklistEntity> ::=
         <TasklistIDList> | <TaskListTitleList> | <FileSelector> | <CSVFileSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <TasklistIDTaskIDEntity> ::=
         <TasklistIDTaskIDList> | <FileSelector> | <CSVFileSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 
 <TaskAttribute> ::=
         (title <String>)|

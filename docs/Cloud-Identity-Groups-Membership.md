@@ -63,7 +63,7 @@ and Cloud Identity Premium accounts. Unfortunately, even if you have the require
 <GroupList> ::= "<GroupItem>(,<GroupItem>)*"
 <GroupEntity> ::=
         <GroupList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <GroupRole> ::= owner|manager|member
 <GroupRoleList> ::= "<GroupRole>(,<GroupRole>)*"
 <CIGroupType> ::= customer|group|other|serviceaccount|user
@@ -227,7 +227,7 @@ If `actioncsv` is specified, a CSV file with columns `group,email,role,action,me
 that shows the actions performed when updating the group.
 
 ### Examples using CSV file and Google sheets:
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Users#examples-using-csv-files-and-google-sheets-to-update-the-membership-of-a-group
+* https://github.com/GAM-team/GAM/wiki/Collections-of-Users#examples-using-csv-files-and-google-sheets-to-update-the-membership-of-a-group
 
 ### Example
 Assume that at your school there is a group for each grade level and the members come from an OU; here is a sample CSV file GradeOU.csv

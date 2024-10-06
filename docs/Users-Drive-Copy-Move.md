@@ -431,7 +431,7 @@ To transfer ownership of a file/folder and place it in a specific folder on the 
 gam <UserTypeEntity> transfer ownership <DriveFileEntity> <UserItem> 
         [<DriveFileParentAttribute>] norecursion
 ```
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Ownership#transfer-ownership-of-files-that-a-source-user-owns-to-a-target-user
+See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Ownership#transfer-ownership-of-files-that-a-source-user-owns-to-a-target-user
 
 ## Complex moves
 You must use this command when moving between My Drive and Shared Drives. When moving folders, the folder structure on the source drive

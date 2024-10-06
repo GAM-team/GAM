@@ -1,4 +1,4 @@
-# HTTPS Proxy
+!# HTTPS Proxy
 
 GAM should be run on a server with direct access to talk to Google servers via the Internet.
 However, if you must push GAM traffic through an HTTPS proxy this can be done by setting the HTTPS_PROXY environment variable.

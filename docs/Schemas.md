@@ -14,7 +14,7 @@
 <SchemaNameList> ::= "<SchemaName>(,<SchemaName>)*"
 <SchemaEntity> ::=
         <SchemaNameList> | <FileSelector> | <CSVkmdSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 
 <SchemaFieldDefinition> ::=
         field <FieldName> [displayname <String>]

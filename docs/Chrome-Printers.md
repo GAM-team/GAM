@@ -1,4 +1,4 @@
-# Chrome Printers
+!# Chrome Printers
 - [API documentation](#api-documentation)
 - [Notes](#notes)
 - [Definitions](#definitions)

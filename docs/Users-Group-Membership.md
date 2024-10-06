@@ -39,7 +39,7 @@
 <GroupList> ::= "<GroupItem>(,<GroupItem>)*"
 <GroupEntity> ::=
         <GroupList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <GroupRole> ::= owner|manager|member
 <GroupRoleList> ::= "<GroupRole>(,<GroupRole>)*"
 ```

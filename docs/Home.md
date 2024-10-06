@@ -56,6 +56,6 @@ You can install multiple versions of GAM and GAM7 in different parallel director
 [GitHub Releases]: https://github.com/GAM-team/GAM/releases
 [GitHub]: https://github.com/GAM-team/GAM/tree/master
 [GitHub Legacy Wiki]: https://github.com/GAM-team/GAM/wiki/
-[GitHub GAM7 Wiki]: https://github.com/taers232c/GAMADV-XTD3/wiki/
+[GitHub GAM7 Wiki]: https://github.com/GAM-team/GAM/wiki/
 [Google Groups]: https://groups.google.com/group/google-apps-manager
-[GAM Updates]: https://github.com/taers232c/GAMADV-XTD3/wiki/GamUpdates
+[GAM Updates]: https://github.com/GAM-team/GAM/wiki/GamUpdates

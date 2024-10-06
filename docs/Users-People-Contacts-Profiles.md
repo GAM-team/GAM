@@ -65,7 +65,7 @@ gam user user@domain.com check serviceaccount
 <PeopleResourceNameList> ::= "<PeopleResourceName>(,<PeopleResourceName>)*"
 <PeopleResourceNameEntity> ::=
         <PeopleResourceNameNameList> | <FileSelector> | <CSVFileSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 
 <PeopleContactGroupName> ::= <String>
 <PeopleContactGroupResourceName> ::= (contactgroup/<String>)|<String>
@@ -73,7 +73,7 @@ gam user user@domain.com check serviceaccount
 <PeopleContactGroupList> ::= "<PeopleContactGroupItem>(,<PeopleContactGroupItem>)*"
 <PeopleContactGroupEntity> ::=
         <PeopleContactGroupList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <PeopleUserContactSelection> ::=
         [(selectcontactgroup <PeopleContactGroupItem>)|
             [query <QueryContact>]]
@@ -186,7 +186,7 @@ url "" "https://www.domain.com" primary
 <OtherContactsResourceNameList> ::= "<OtherContactsResourceName>(,<OtherContactsResourceName>)*"
 <OtherContactsResourceNameEntity> ::=
         <OtherContactsResourceNameList> | <FileSelector> | <CSVFileSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 
 <OtherContactsSelection> ::=
         [query <QueryContact>]

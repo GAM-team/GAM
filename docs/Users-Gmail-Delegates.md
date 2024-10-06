@@ -24,7 +24,7 @@
 <UserList> ::= "<UserItem>(,<UserItem>)*"
 <UserEntity> ::=
         <UserList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Users
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Users
 ```
 ## Aliases
 

@@ -21,14 +21,14 @@
 <DomainNameList> ::= "<DomainName>(,<DomainName>)*"
 <DomainNameEntity> ::=
         <DomainNameList> | <FileSelector> | <CSVkmdSelector> |  <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 
 <SiteName> ::= [a-z,0-9,-]+
 <SiteItem> ::= [<DomainName>/]<SiteName>
 <SiteList> ::= "<SiteItem>(,<SiteItem>)*"
 <SiteEntity> ::=
         <SiteList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 
 <SiteACLRole> ::= editor|owner|reader|writer
 <SiteACLRoleList> ::= "<SiteACLRole>(,<SiteACLRole>)*"
@@ -46,7 +46,7 @@
 <SiteACLScopeList> ::= "<SiteACLScope>(,<SiteACLScope>)*"
 <SiteACLScopeEntity> ::=
         <SiteACLScopeList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 ```
 ## Manage classic sites
 ```

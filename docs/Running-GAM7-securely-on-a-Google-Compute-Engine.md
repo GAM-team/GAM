@@ -49,7 +49,7 @@ GAM7 version 6.50.00 or higher is required.
    * Click `Create`
 
 5. Install GAM7 on the VM
-   * See: https://github.com/taers232c/GAMADV-XTD3/wiki/How-to-Install-GAM7
+   * See: https://github.com/GAM-team/GAM/wiki/How-to-Install-GAM7
 
 6. Logout and log back in to the VM, you should now be able to run GAM7 commands like:
 ```
@@ -70,7 +70,7 @@ gam enable apis
 You are given the option to enable them automatically or manually. Automatic enablement will ask you to authenticate to GAM7. You should authenticate as a user with rights to manage project APIs, probably a project owner. If you are not the project owner you can choose manual enablement and GAM7 will provide two or more URLs which you can send to the project owner. When the owner opens these URLs, they'll be prompted to enable all the APIs GAM7 needs.
 
 9. Perform admin actions (manage users, groups, orgunits, Chrome devices, etc)
-   * [Configure delegated admin service account (DASA)](https://github.com/taers232c/GAMADV-XTD3/wiki/Using-GAMADV-XTD3-with-a-delegated-admin-service-account); start at step 4.
+   * [Configure delegated admin service account (DASA)](https://github.com/GAM-team/GAM/wiki/Using-GAM7-with-a-delegated-admin-service-account); start at step 4.
 
 10. Manage user data
    * Run ```gam user user@domain.com check serviceaccount``` and follow the instructions to perform domain-wide delegation.

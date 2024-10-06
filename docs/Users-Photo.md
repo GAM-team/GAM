@@ -1,4 +1,4 @@
-# Users - Photo
+!# Users - Photo
 - [API documentation](#api-documentation)
 - [Definitions](#definitions)
 - [Upload a user's photo from a default file](#upload-a-users-photo-from-a-default-file)

@@ -22,13 +22,13 @@
 <GuardianItemList> ::= "<GuardianItem>(,<GuardianItem>)*"
 <GuardianEntity> ::=
         <GuardianList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <StudentItem> ::= <EmailAddress>|<UniqueID>|<String>
 <GuardianInvitationID> ::= <String>
 <GuardianInvitationIDList> ::= "<GuardianInvitationId>(,<GuardianInvitationID>)*"
 <GuardianInvitationIDEntity> ::=
         <GuardianInvitationIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <GuardianState> ::= complete|pending
 <GuardianStateList> ::= "<GuardianState>(,<GuardianState>)*"
 ```

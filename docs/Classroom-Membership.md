@@ -25,7 +25,7 @@
 <CourseIDList> ::= "<CourseID>(,<CourseID>)*"
 <CourseEntity> ::=
         <CourseIDList> | <FileSelector> | <CSVFileSelector | <CSVkmdSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <CourseState> ::= active|archived|provisioned|declined|suspended
 <CourseStateList> ::= all|"<CourseState>(,<CourseState>)*"
 ```

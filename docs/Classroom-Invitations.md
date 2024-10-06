@@ -34,13 +34,13 @@ Follow the directions to authorize the Service Account scopes.
 <ClassroomInvitationIDList> ::= "<ClassroomInvitationID>(,<ClassroomInvitationID>)*"
 <ClassroomInvitationIDEntity> ::=
         <ClassroomInvitationIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <CourseAlias> ::= <String>
 <CourseID> ::= <Number>|d:<CourseAlias>
 <CourseIDList> ::= "<CourseID>(,<CourseID>)*"
 <CourseEntity> ::=
         <CourseIDList> | <FileSelector> | <CSVFileSelector | <CSVkmdSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <CourseState> ::= active|archived|provisioned|declined|suspended
 <CourseStateList> ::= all|"<CourseState>(,<CourseState>)*"
 ```

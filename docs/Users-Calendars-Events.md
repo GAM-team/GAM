@@ -97,7 +97,7 @@
 <EmailAddressEntity> ::=
         <EmailAddressList> | <FileSelector> | <CSVFileSelector> | 
         <CSVkmdSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Users
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Users
 <CalendarItem> ::= <EmailAddress>
 <CalendarList> ::= "<CalendarItem>(,<CalendarItem>)*"
 <CourseAlias> ::= <String>
@@ -286,7 +286,7 @@
         (id|eventid <EventId>) |
         (event|events <EventIdList> |
         <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVSubkeySelector> | <CSVDataSelector>)
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <EventSelectEntity> ::=
         (<EventSelectProperty>+ <EventMatchProperty>*)
 

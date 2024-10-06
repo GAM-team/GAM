@@ -21,7 +21,7 @@ Client access works when accessing Resource calendars.
 <CalendarItem> ::= <EmailAddress>
 <CalendarList> ::= "<CalendarItem>(,<CalendarItem>)*"
 <CalendarEntity> ::= <CalendarList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 
 <TimeZone> ::= <String>
         See: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones

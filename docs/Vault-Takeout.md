@@ -42,7 +42,7 @@
 <EmailItemList> ::= "<EmailItem>(,<EmailItem>)*"
 <EmailAddressList> ::= "<EmailAddess>(,<EmailAddress>)*"
 <EmailAddressEntity> ::= <EmailAddressList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <TimeZone> ::= <String>
         See: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 <UniqueID> ::= id:<String>

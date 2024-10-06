@@ -61,7 +61,7 @@ See [Collections of Items](Collections-of-Items)
 <GroupList> ::= "<GroupItem>(,<GroupItem>)*"
 <GroupEntity> ::=
         <GroupList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <GroupRole> ::= owner|manager|member
 <GroupRoleList> ::= "<GroupRole>(,<GroupRole>)*"
 <GroupType> ::= customer|group|user
@@ -323,7 +323,7 @@ For example,
 gam config batch_size 20 inter_batch_wait 1 update group testgroup@domain.com sync members file users.lst
 ```
 ### Examples using CSV file and Google sheets:
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Users#examples-using-csv-files-and-google-sheets-to-update-the-membership-of-a-group
+* https://github.com/GAM-team/GAM/wiki/Collections-of-Users#examples-using-csv-files-and-google-sheets-to-update-the-membership-of-a-group
 
 ### Example
 Assume that at your school there is a group for each grade level and the members come from an OU; here is a sample CSV file GradeOU.csv

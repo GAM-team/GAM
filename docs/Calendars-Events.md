@@ -63,12 +63,12 @@ Client access works when accessing Resource calendars.
 <CalendarItem> ::= <EmailAddress>
 <CalendarList> ::= "<CalendarItem>(,<CalendarItem>)*"
 <CalendarEntity> ::= <CalendarList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <DomainName> ::= <String>(.<String>)+
 <EmailAddress> ::= <String>@<DomainName>
 <EmailAddressList> ::= "<EmailAddess>(,<EmailAddress>)*"
 <EmailAddressEntity> ::= <EmailAddressList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 
 <EventAttachmentsSubfieldName> ::=
         attachments.fileid|
@@ -220,7 +220,7 @@ Client access works when accessing Resource calendars.
         (id|eventid <EventId>) |
         (event|events <EventIdList> |
         <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVSubkeySelector> | <CSVDataSelector>)
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <EventSelectEntity> ::=
         (<EventSelectProperty>+ <EventMatchProperty>*)
 

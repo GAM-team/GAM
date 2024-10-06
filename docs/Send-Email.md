@@ -35,7 +35,7 @@ Added the option `mailbox <EmailAddress>` to `gam sendemail` to allow specifying
 <EmailAddressList> ::= "<EmailAddress>(,<EmailAddress>)*"
 <EmailAddressEntity> ::=
         <EmailAddressList> | <FileSelector> | <CSVkmdSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Users
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Users
 <RecipientEntity> ::= <EmailAddressEntity> | (select <UserTypeEntity>)
 <UserItem> ::= <EmailAddress>|<UniqueID>|<String>
 

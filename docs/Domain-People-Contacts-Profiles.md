@@ -31,7 +31,7 @@ gam user user@domain.com check serviceaccount
 <PeopleResourceNameList> ::= "<PeopleResourceName>(,<PeopleResourceName>)*"
 <PeopleResourceNameEntity> ::=
         <PeopleResourceNameNameList> | <FileSelector> | <CSVFileSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 
 <PeopleSourceName> ::=
         contact|contacts|

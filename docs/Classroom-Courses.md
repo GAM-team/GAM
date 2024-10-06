@@ -48,50 +48,50 @@ gam user user@domain.com check|update serviceaccount
 <CourseAliasList> ::= "<CourseAlias>(,<CourseAlias>)*"
 <CourseAliasEntity> ::=
         <CourseAliasList>|<FileSelector>|<CSVFileSelector>|<CSVkmdSelector>|<CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <CourseAnnouncementID> ::= <Number>
 <CourseAnnouncementIDList> ::= "<CourseAnnouncementID>(,<CourseAnnouncementID>)*"
 <CourseAnnouncementIDEntity> ::=
         <CourseAnnouncementIDList>|<FileSelector>|<CSVFileSelector>|<CSVkmdSelector>|<CSVSubkeySelector>|<CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <CourseAnnouncementState> ::= draft|published|deleted
 <CourseAnnouncementStateList> ::= all|"<CourseAnnouncementState>(,<CourseAnnouncementState>)*"
 <CourseID> ::= <Number>|d:<CourseAlias>
 <CourseIDList> ::= "<CourseID>(,<CourseID>)*"
 <CourseEntity> ::=
         <CourseIDList>|<FileSelector>|<CSVFileSelector>|<CSVkmdSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <CourseMaterialID> ::= <Number>
 <CourseMaterialIDList> ::= "<CourseMaterialID>(,<CourseMaterialID>)*"
 <CourseMaterialState> ::= draft|published|deleted
 <CourseMaterialStateList> ::= all|"<CourseMaterialState>(,<CourseMaterialState>)*"
 <CourseMaterialIDEntity> ::=
         <CourseMaterialIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVSubkeySelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <CourseState> ::= active|archived|provisioned|declined|suspended
 <CourseStateList> ::= all|"<CourseState>(,<CourseState>)*"
 <CourseSubmissionID> ::= <Number>
 <CourseSubmissionIDList> ::= "<CourseSubmissionID>(,<CourseSubmissionID>)*"
 <CourseSubmissionIDEntity> ::=
         <CourseSubmissionIDList>|<FileSelector>|<CSVFileSelector>|<CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <CourseSubmissionState> ::= new|created|turned_in|returned|reclaimed_by_student
 <CourseSubmissionStateList> ::= all|"<CourseSubmissionState>(,<CourseSubmissionState>)*"
 <CourseTopic> ::= <String>
 <CourseTopicList> ::= "<CourseTopic>(,<CourseTopic>)*"
 <CourseTopicEntity> ::=
         <CourseTopicList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <CourseTopicID> ::= <Number>
 <CourseTopicIDList> ::= "<CourseTopicID>(,<CourseTopicID>)*"
 <CourseTopicIDEntity> ::=
         <CourseTopicIDList>|<FileSelector>|<CSVFileSelector>|<CSVkmdSelector>|<CSVSubkeySelector>|<CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <CourseWorkID> ::= <Number>
 <CourseWorkIDList> ::= "<CourseWorkID>(,<CourseWorkID>)*"
 <CourseWorkIDEntity> ::=
         <CourseWorkIDList>|<FileSelector>|<CSVFileSelector>|<CSVkmdSelector>|<CSVSubkeySelector>|<CSVDataSelector>
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <CourseWorkState> ::= draft|published|deleted
 <CourseWorkStateList> ::= all|"<CourseWorkState>(,<CourseWorkState>)*"
 

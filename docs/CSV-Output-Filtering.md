@@ -1,4 +1,4 @@
-# CSV Output Filtering
+!# CSV Output Filtering
 - [Python Regular Expressions](Python-Regular-Expressions) Search function
 - [Definitions](#definitions)
 - [Quoting rules](#quoting-rules)

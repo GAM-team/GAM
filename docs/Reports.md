@@ -29,7 +29,7 @@
 If you are going to use `config csv_output_row_filter` when printing reports,
 you'll need special quoting in the filter because of the `:` characters in the parameter names.
 
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/CSV-Output-Filtering#quoting-rules
+See: https://github.com/GAM-team/GAM/wiki/CSV-Output-Filtering#quoting-rules
 
 For example:
 ```

@@ -1,4 +1,4 @@
-# GAM Return Codes
+!# GAM Return Codes
 
 These are the return codes used by GAM7.
 

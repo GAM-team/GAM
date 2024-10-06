@@ -1078,7 +1078,7 @@ gam <UserTypeEntity> print|show filelist [todrive <ToDriveAttribute>*]
         (addcsvdata <FieldName> <String>)*
         [formatjson [quotechar <Character>]]
 ```
-By default, `print filelist` displays all files owned by the specified [`<UserTypeEntity>`](https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Users)
+By default, `print filelist` displays all files owned by the specified [`<UserTypeEntity>`](https://github.com/GAM-team/GAM/wiki/Collections-of-Users)
 
 The option `continueoninvalidquery [<Boolean>] can be used in special cases where a query  of the form
 `query "'labels/mRoha85IbwCRl490E00xGLvBsSbkwIiuZ6PRNNEbwxyz' in labels" causes Google to issue an error
@@ -1564,7 +1564,7 @@ Command: /Users/admin/bin/gam csv Files.csv gam user "~Owner" show fileinfo >>>~
 
 ERROR: Header "id" not found in CSV headers of "Owner".
 Help: Syntax in file /Users/admin/bin/gam/GamCommands.txt
-Help: Documentation is at https://github.com/taers232c/GAMADV-XTD3/wiki
+Help: Documentation is at https://github.com/GAM-team/GAM/wiki
 ```
 
 Now, the fields you select will be output on the header row and the subsequent command will not fail.

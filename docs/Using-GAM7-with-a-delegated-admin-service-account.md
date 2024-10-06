@@ -1,4 +1,4 @@
-# Using GAM7 with a delegated admin service account
+!# Using GAM7 with a delegated admin service account
 - [Thanks](#thanks)
 - [Introduction](#introduction)
 - [Advantages](#advantages)
@@ -28,7 +28,7 @@ Not all Google Admin APIs work with DASA right now. For example, Google Vault AP
 * GAM7 support for DASA is still experimental and some things may fail. Please report your findings to the [GAM group](https://groups.google.com/g/google-apps-manager).
 
 ## Setup Steps
-1. Upgrade to at least GAM7 6.50.00. Best practice is to always use the [latest version of GAM7](https://github.com/taers232c/GAMADV-XTD3/wiki/How-to-Update-Advanced-GAM).
+1. Upgrade to at least GAM7 6.50.00. Best practice is to always use the [latest version of GAM7](https://github.com/GAM-team/GAM/wiki/How-to-Update-Advanced-GAM).
 
 2. Follow the steps in `gam create project` up to the point where you are presented with a URL to the Cloud console to create a Client ID and secret. You don’t need to enter anything those, just press CTRL+C to quit the project creation.
 

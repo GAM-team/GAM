@@ -1,4 +1,4 @@
-# Users - Classroom - Profile
+!# Users - Classroom - Profile
 - [API documentation](#api-documentation)
 - [Definitions](#definitions)
 - [Display Classroom profile](#display-classroom-profile)

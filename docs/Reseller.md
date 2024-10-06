@@ -1,4 +1,4 @@
-# Reseller
+!# Reseller
 - [API documentation](#api-documentation)
 - [Notes](#notes)
 - [Manage Multiple Domains](#manage-multiple-domains)

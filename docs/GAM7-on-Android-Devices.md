@@ -1,4 +1,4 @@
-# GAM7 on Android Devices
+!# GAM7 on Android Devices
 GAM7 now runs on 64-bit Android devices such as Google's Pixel phones. The installation requires an app that adds the Linux environment to Android such as [UserLAnd](https://play.google.com/store/apps/details?id=tech.ula&hl=en_US).
 
 _Note: Chromebooks / Chrome OS devices should install GAM7 using [these instructions](GAM7-on-Chrome-OS-Devices)._

@@ -1,4 +1,4 @@
-# Updating GAM7
+!# Updating GAM7
 Use these steps to update your version of GAM7.
 
 - [Downloads-Installs](Downloads-Installs)

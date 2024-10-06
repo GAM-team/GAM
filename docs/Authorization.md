@@ -168,7 +168,7 @@ gam oauth update
 <ProjectIDEntity> ::=
         current | gam | <ProjectID> | (filter <String>) |
         (select <ProjectIDList> | <FileSelector> | <CSVFileSelector>)
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <ProjectName> ::= <String>
         Must match this Python Regular Expression: [a-zA-Z0-9 '"!-]{4,30}
 <ServiceAccountName> ::= <String>
