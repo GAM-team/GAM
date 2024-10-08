@@ -70,22 +70,22 @@ jobs:
             openssl_archs: VC-WIN64A
           - os: ubuntu-24.04
             goal: test
-            python: "3.13"
+            python: "3.9"
             jid: 8
             arch: x86_64
           - os: ubuntu-24.04
             goal: test
-            python: "3.9"
+            python: "3.10"
             jid: 9
             arch: x86_64
           - os: ubuntu-24.04
             goal: test
-            python: "3.10"
+            python: "3.11"
             jid: 10
             arch: x86_64
           - os: ubuntu-24.04
             goal: test
-            python: "3.11"
+            python: "3.12"
             jid: 11
             arch: x86_64
 
