@@ -10,6 +10,18 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.00.14
+
+Retry the following unexpected errors in `gam print users`.
+```
+ERROR: 400: failedPrecondition - Precondition check failed.
+ERROR: 500: unknownError - Unknown Error.
+```
+
+### 7.00.13
+
+Version bump in order to confirm MSI installs are operating properly
+
 ### 7.00.12
 
 Updated option `showlastmodification` to `gam <UserTypeEntity> print|show filecounts` to handle

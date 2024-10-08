@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.13'
+__version__ = '7.00.14'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -18536,7 +18536,9 @@ def doPrintAliases():
         entityList = callGAPIpages(cd.users(), 'list', 'users',
                                    pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute='primaryEmail',
                                    throwReasons=[GAPI.INVALID_ORGUNIT, GAPI.INVALID_INPUT, GAPI.DOMAIN_NOT_FOUND,
-                                                 GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN, GAPI.BAD_REQUEST],
+                                                 GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN, GAPI.BAD_REQUEST,
+                                                 GAPI.UNKNOWN_ERROR, GAPI.FAILED_PRECONDITION],
+                                   retryReasons=[GAPI.UNKNOWN_ERROR, GAPI.FAILED_PRECONDITION],
                                    query=query, orderBy='email',
                                    fields=f'nextPageToken,users({",".join(userFields)})',
                                    maxResults=GC.Values[GC.USER_MAX_RESULTS], **kwargs)
@@ -18549,6 +18551,8 @@ def doPrintAliases():
       except GAPI.domainNotFound as e:
         entityActionFailedWarning([Ent.ALIAS, None, Ent.DOMAIN, kwargs['domain']], str(e))
         continue
+      except (GAPI.unknownError, GAPI.failedPrecondition) as e:
+        entityActionFailedExit([Ent.USER, None], str(e))
       except (GAPI.resourceNotFound, GAPI.forbidden, GAPI.badRequest):
         accessErrorExit(cd)
   count = len(users)
@@ -18631,9 +18635,13 @@ def doPrintAddresses():
   try:
     entityList = callGAPIpages(cd.users(), 'list', 'users',
                                pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute='primaryEmail',
-                               throwReasons=[GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN, GAPI.BAD_REQUEST],
+                               throwReasons=[GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN, GAPI.BAD_REQUEST,
+                                             GAPI.UNKNOWN_ERROR, GAPI.FAILED_PRECONDITION],
+                               retryReasons=[GAPI.UNKNOWN_ERROR, GAPI.FAILED_PRECONDITION],
                                orderBy='email', fields=f'nextPageToken,users({",".join(userFields)})',
                                maxResults=GC.Values[GC.USER_MAX_RESULTS], **kwargs)
+  except (GAPI.unknownError, GAPI.failedPrecondition) as e:
+    entityActionFailedExit([Ent.USER, None], str(e))
   except (GAPI.resourceNotFound, GAPI.forbidden, GAPI.badRequest):
     accessErrorExit(cd)
   for user in entityList:
@@ -44598,7 +44606,9 @@ def doPrintUsers(entityList=None):
         feed = yieldGAPIpages(cd.users(), 'list', 'users',
                               pageMessage=pageMessage, messageAttribute='primaryEmail',
                               throwReasons=[GAPI.DOMAIN_NOT_FOUND, GAPI.INVALID_ORGUNIT, GAPI.INVALID_INPUT,
-                                            GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                                            GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN,
+                                            GAPI.UNKNOWN_ERROR, GAPI.FAILED_PRECONDITION],
+                              retryReasons=[GAPI.UNKNOWN_ERROR, GAPI.FAILED_PRECONDITION],
                               query=query, fields=fields,
                               showDeleted=showDeleted, orderBy=orderBy, sortOrder=sortOrder, viewType=viewType,
                               projection=schemaParms['projection'], customFieldMask=schemaParms['customFieldMask'],
@@ -44639,6 +44649,8 @@ def doPrintUsers(entityList=None):
         else:
           entityActionFailedWarning([Ent.USER, None], str(e))
         continue
+      except (GAPI.unknownError, GAPI.failedPrecondition) as e:
+        entityActionFailedExit([Ent.USER, None], str(e))
       except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
         accessErrorExit(cd)
     if showItemCountOnly:
