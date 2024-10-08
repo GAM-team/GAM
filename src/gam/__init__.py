@@ -100,7 +100,11 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 
-sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+# 10/2024 - I don't recall why we did this but PyInstaller
+# 6.10.0+ does not like it. Only run this when we're not
+# Frozen.
+if not getattr(sys, 'frozen', False):
+  sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 
 from dateutil.relativedelta import relativedelta
 
