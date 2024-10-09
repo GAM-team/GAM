@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.14'
+__version__ = '7.00.15'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -52146,6 +52146,8 @@ DFA_SHAREDDRIVE_PARENTQUERY = 'sharedDriveParentQuery'
 DFA_KWARGS = 'kwargs'
 DFA_SEARCHARGS = 'searchargs'
 DFA_USE_CONTENT_AS_INDEXABLE_TEXT = 'useContentAsIndexableText'
+DFA_TIMESTAMP = 'timestamp'
+DFA_TIMEFORMAT = 'timeformat'
 
 def _driveFileParentSpecified(parameters):
   return (parameters[DFA_PARENTID] or parameters[DFA_PARENTQUERY] or
@@ -52420,7 +52422,9 @@ def initDriveFileAttributes():
           DFA_SHAREDDRIVE_PARENTQUERY: None,
           DFA_KWARGS: {},
           DFA_SEARCHARGS: {},
-          DFA_USE_CONTENT_AS_INDEXABLE_TEXT: False}
+          DFA_USE_CONTENT_AS_INDEXABLE_TEXT: False,
+          DFA_TIMESTAMP: False,
+          DFA_TIMEFORMAT: None}
 
 DRIVEFILE_PROPERTY_VISIBILITY_CHOICE_MAP = {
   'private': 'appProperties',
@@ -52604,6 +52608,10 @@ def getDriveFileAttribute(myarg, body, parameters, updateCmd):
     body['contentHints']['indexableText'] = getString(Cmd.OB_STRING)
   elif myarg == 'securityupdate':
     body['linkShareMetadata'] = {'securityUpdateEnabled': getBoolean(), 'securityUpdateEligible': True}
+  elif myarg == 'timestamp':
+    parameters[DFA_TIMESTAMP] = getBoolean()
+  elif myarg == 'timeformat':
+    parameters[DFA_TIMEFORMAT] = getString(Cmd.OB_STRING, minLen=0)
   elif getDriveFileCopyAttribute(myarg, body, parameters):
     pass
   else:
@@ -57125,6 +57133,14 @@ def processFilenameReplacements(name, replacements):
     name = re.sub(replacement[0], replacement[1], name)
   return name
 
+def addTimestampToFilename(parameters, body):
+  tdtime = datetime.datetime.now(GC.Values[GC.TIMEZONE])
+  body['name'] += ' - '
+  if not parameters[DFA_TIMEFORMAT]:
+    body['name'] += ISOformatTimeStamp(tdtime)
+  else:
+    body['name'] += tdtime.strftime(parameters[DFA_TIMEFORMAT])
+
 createReturnItemMap = {
   'returnidonly': 'id',
   'returnlinkonly': 'webViewLink',
@@ -57135,6 +57151,7 @@ createReturnItemMap = {
 #	[(localfile <FileName>|-)|(url <URL>)]
 #	[(drivefilename|newfilename <DriveFileName>) | (replacefilename <RegularExpression> <String>)*]
 #	[stripnameprefix <String>]
+#	[timestamp <Boolean>]] [timeformat <String>]
 #	<DriveFileCreateAttribute>* [noduplicate]
 #	[(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*)) |
 #	 (returnidonly|returnlinkonly|returneditlinkonly|showdetails)]
@@ -57180,6 +57197,8 @@ def createDriveFile(users):
       body['name'] = newName
   else:
     body['name'] = 'Untitled'
+  if parameters[DFA_TIMESTAMP]:
+    addTimestampToFilename(parameters, body)
   if parameters[DFA_LOCALFILEPATH]:
     if parameters[DFA_LOCALFILEPATH] != '-' and parameters[DFA_PRESERVE_FILE_TIMES]:
       setPreservedFileTimes(body, parameters, False)
@@ -57658,6 +57677,7 @@ def checkDriveFileShortcut(users):
 #	[(localfile <FileName>|-)|(url <URL>)]
 #	[retainname | (newfilename <DriveFileName>) | (replacefilename <RegularExpression> <String>)*]
 #	[stripnameprefix <String>]
+#	[timestamp <Boolean>]] [timeformat <String>]
 #	<DriveFileUpdateAttribute>*
 #	[(gsheet|csvsheet <SheetEntity> [clearfilter])|(addsheet <String>)]
 #	[charset <String>] [columndelimiter <Character>]
@@ -57763,6 +57783,8 @@ def updateDriveFile(users):
               body['name'] = processFilenameReplacements(newName, parameters[DFA_REPLACEFILENAME])
             else:
               body['name'] = newName
+            if parameters[DFA_TIMESTAMP]:
+              addTimestampToFilename(parameters, body)
           if addSheetEntity or updateSheetEntity:
             entityValueList = [Ent.USER, user, Ent.DRIVE_FILE_ID, fileId]
             try:
@@ -57891,6 +57913,8 @@ def updateDriveFile(users):
           body['name'] = processFilenameReplacements(newName, parameters[DFA_REPLACEFILENAME])
         else:
           body['name'] = newName
+        if parameters[DFA_TIMESTAMP]:
+          addTimestampToFilename(parameters, body)
       Ind.Increment()
       j = 0
       for fileId in fileIdEntity['list']:

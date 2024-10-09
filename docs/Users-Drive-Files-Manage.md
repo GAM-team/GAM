@@ -1,4 +1,4 @@
-!# Users - Drive Files Manage
+# Users - Drive Files Manage
 - [API documentation](#api-documentation)
 - [Query documentation](Users-Drive-Query)
 - [Python Regular Expressions](Python-Regular-Expressions) Sub function
@@ -170,6 +170,7 @@ gam <UserTypeEntity> create|add drivefile
         [(localfile <FileName>|-)|(url <URL>)]
         [(drivefilename|newfilename <DriveFileName>) | (replacefilename <RegularExpression> <String>)*]
         [stripnameprefix <String>] [noduplicate]
+        [timestamp [<Boolean>]] [timeformat <String>]
         <DriveFileCreateAttribute>*
         [(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*) |
          (returnidonly|returnlinkonly|returneditlinkonly|showdetails)]
@@ -204,6 +205,11 @@ These are the naming rules:
 * `create drivefile drivefilename "GoogleFile.csv" localfile "LocalFile.csv"` - Google Drive file is named "GoogleFile.csv"
 
 If `stripnameprefix <String>` is specified, `<String>` will be stripped from the front of the Google Drive file name if present.
+
+You can add a timestamp to the FileName.
+* `tdtimestamp` - Should a timestamp (of the time the file is uploaded to Google) be added to the title of the uploaded file.
+* `tdtimeformat` - Format of the timestamp added to the title of the uploaded file; if not specified, an ISO format timestamp is added.
+  * See: https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
 
 If `noduplicate` is specfied, GAM will issue a warning and not perform the create if a non-trashed item with the same name (regardless of MIME type)
 exists in the parent folder.
@@ -464,6 +470,7 @@ gam <UserTypeEntity> update drivefile <DriveFileEntity> [copy] [returnidonly|ret
         [(localfile <FileName>|-)|(url <URL>)]
         [retainname | (newfilename <DriveFileName>) | (replacefilename <RegularExpression> <String>)*]
         [stripnameprefix <String>]
+        [timestamp [<Boolean>]] [timeformat <String>]
         <DriveFileUpdateAttribute>*
         [(gsheet|csvsheet <SheetEntity> [clearfilter])|(addsheet <String>)]
         [charset <Charset>] [columndelimiter <Character>]
@@ -512,6 +519,11 @@ For more complex renaming, use `replacefilename <RegularExpression> <String>`:
 * `update drivefile drivefilename "GoogleFile.csv" replacefilename "^(.+)$" "New\1"` - Google Drive file "GoogleFile.csv" is renamed "NewGoogleFile.csv"
 
 If `retainname` is not specified and `stripnameprefix <String>` is specified, `<String>` will be stripped from the front of the Google Drive file name if present.
+
+You can add a timestamp to the FileName.
+* `tdtimestamp` - Should a timestamp (of the time the file is uploaded to Google) be added to the title of the uploaded file.
+* `tdtimeformat` - Format of the timestamp added to the title of the uploaded file; if not specified, an ISO format timestamp is added.
+  * See: https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
 
 You can update a specific sheet within a Google spreadsheet or add a new sheet to the spreadsheet
 * `gsheet|csvsheet <String>` - Specify a sheet by name in a Google Sheets file to be updated

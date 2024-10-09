@@ -1,3 +1,8 @@
+7.00.15
+
+Added options `timestamp [<Boolean>]` and `timeformat <String>` to `gam <UserTypeEntity> create|update drivefile` that allow
+adding a timestamp to a created/updated file name.
+
 7.00.14
 
 Retry the following unexpected errors in `gam print users`.

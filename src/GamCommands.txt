@@ -6414,6 +6414,7 @@ gam <UserTypeEntity> create|add drivefile
         [(localfile <FileName>|-)|(url <URL>)]
         [(drivefilename|newfilename <DriveFileName>) | (replacefilename <RegularExpression> <String>)*]
         [stripnameprefix <String>] [noduplicate]
+        [timestamp [<Boolean>]] [timeformat <String>]
         <DriveFileCreateAttribute>*
         [(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> currenttime|<String>)*) |
          (returnidonly|returnlinkonly|returneditlinkonly|showdetails)]
@@ -6434,6 +6435,7 @@ gam <UserTypeEntity> update drivefile <DriveFileEntity> [copy] [returnidonly|ret
         [(localfile <FileName>|-)|(url <URL>)]
         [retainname | (newfilename <DriveFileName>) | (replacefilename <RegularExpression> <String>)*]
         [stripnameprefix <String>]
+        [timestamp [<Boolean>]] [timeformat <String>]
         <DriveFileUpdateAttribute>*
         [(gsheet|csvsheet <SheetEntity> [clearfilter])|(addsheet <String>)]
         [charset <CharSet>] [columndelimiter <Character>]
