@@ -2770,8 +2770,8 @@ gam print chromesnvalidity [todrive <ToDriveAttribute>*]
         (combiningfunction <CAACombiningFunction>) |
         (condition <CAAConditionAttribute>+ endcondition)
 
-gam create caalevel <String> [description <String>] (basic <CAABasicAttribute>+)|(custom <QueryCEL>)
-gam update caalevel <CAALevelName> [description <String>] (basic <CAABasicAttribute>+)|(custom <QueryCEL>)
+gam create caalevel <String> [description <String>] (basic <CAABasicAttribute>+)|(custom <QueryCEL>)|<JSONData>
+gam update caalevel <CAALevelName> [description <String>] (basic <CAABasicAttribute>+)|(custom <QueryCEL>)|<JSONData>
 gam delete caalevel <CAALevelName>
 gam show caalevels
         [formatjson]

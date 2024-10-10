@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.15'
+__version__ = '7.00.16'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -61687,11 +61687,15 @@ def transferOwnership(users):
             _identifyFilesToTransfer(childEntry)
 
   def _identifyChildrenToTransfer(fileEntry, user, i, count):
+    q = WITH_PARENTS.format(fileEntry['id'])
+    setGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, user, query=q)
+    pageMessage = getPageMessageForWhom(clearLastGotMsgLen=False)
     try:
       children = callGAPIpages(drive.files(), 'list', 'files',
+                               pageMessage=pageMessage, noFinalize=True,
                                throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                                retryReasons=[GAPI.UNKNOWN_ERROR],
-                               orderBy=OBY.orderBy, q=WITH_PARENTS.format(fileEntry['id']),
+                               orderBy=OBY.orderBy, q=q,
                                fields='nextPageToken,files(id,name,parents,mimeType,ownedByMe,trashed)',
                                pageSize=GC.Values[GC.DRIVE_MAX_RESULTS])
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
@@ -61972,11 +61976,15 @@ def claimOwnership(users):
             _identifyFilesToClaim(childEntry)
 
   def _identifyChildrenToClaim(fileEntry, user, i, count):
+    q = WITH_PARENTS.format(fileEntry['id'])
+    setGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, user, query=q)
+    pageMessage = getPageMessageForWhom(clearLastGotMsgLen=False)
     try:
       children = callGAPIpages(drive.files(), 'list', 'files',
+                               pageMessage=pageMessage, noFinalize=True,
                                throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                                retryReasons=[GAPI.UNKNOWN_ERROR],
-                               orderBy=OBY.orderBy, q=WITH_PARENTS.format(fileEntry['id']),
+                               orderBy=OBY.orderBy, q=q,
                                fields='nextPageToken,files(id,name,parents,mimeType,ownedByMe,trashed,owners(emailAddress,permissionId))',
                                pageSize=GC.Values[GC.DRIVE_MAX_RESULTS])
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
@@ -74629,10 +74637,12 @@ def CAABuildLevel(body):
       body['custom'] = {'expr': {'expression': getString(Cmd.OB_STRING), 'title': 'expr'}}
     elif myarg == 'description':
       body['description'] = getString(Cmd.OB_STRING, minLen=0)
+    elif myarg == 'json':
+      body.update(getJSON(['name']))
     else:
       unknownArgumentExit()
 
-# gam create caalevel <String> [description <String>] (basic <CAABasicAttribute>+)|(custom <String>)
+# gam create caalevel <String> [description <String>] (basic <CAABasicAttribute>+)|(custom <String>)|<JSONData>
 def doCreateCAALevel():
   caa = buildCAAServiceObject()
   ap_name = getAccessPolicy(caa)
@@ -74652,7 +74662,7 @@ def doCreateCAALevel():
   except GAPI.permissionDenied:
     CAARoleErrorExit(caa)
 
-# gam update caalevel <CAALevelName> [description <String>] (basic <CAABasicAttribute>+)|(custom <String>)
+# gam update caalevel <CAALevelName> [description <String>] (basic <CAABasicAttribute>+)|(custom <String>)|<JSONData>
 def doUpdateCAALevel():
   caa = buildCAAServiceObject()
   name = normalizeCAALevelName(caa, getString(Cmd.OB_ACCESS_LEVEL_NAME))

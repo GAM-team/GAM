@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.00.16
+
+Updated `gam <UserTypeEntity> claim|transfer ownership` to show `Got N Drive Files/Folders that matched query` messages
+as files/folders are being identified for processing.
+
+Added option `<JSONData>` to `gam create|update caalevel`.
+
 ### 7.00.15
 
 Added options `timestamp [<Boolean>]` and `timeformat <String>` to `gam <UserTypeEntity> create|update drivefile` that allow

@@ -41,6 +41,8 @@ In order for GAM to manage CAA access levels, you need to grant your service acc
 
 ## Definitions
 ```
+<JSONData> ::= (json [charset <Charset>] <String>) | (json file <FileName> [charset <Charset>]) |
+
 <QueryCEL> ::= <String>
         See: https://cloud.google.com/access-context-manager/docs/custom-access-level-spec
 
@@ -144,7 +146,7 @@ basic
 ## Create an Access Level
 Create a new access level. CAA supports basic and custom conditions.
 ```
-gam create caalevel <String> [description <String>] (basic <CAABasicAttribute>+)|(custom <QueryCEL>)
+gam create caalevel <String> [description <String>] (basic <CAABasicAttribute>+)|(custom <QueryCEL>)|<JSONData>
 ```
 
 ## Example
@@ -166,7 +168,7 @@ gam create caalevel CORP_IPS basic condition ipsubnetworks 1.2.3.0/24,4.5.6.0/24
 ## Update an Access Level
 Updates an existing access level. CAA supports basic and custom conditions.
 ```
-gam update caalevel <CAALevelName> [description <String>] (basic <CAABasicAttribute>+)|(custom <QueryCEL>)
+gam update caalevel <CAALevelName> [description <String>] (basic <CAABasicAttribute>+)|(custom <QueryCEL>)|<JSONData>
 ```
 
 ## Examples
