@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.00.17
+
+Update all user calendar commands to disable falling back to client access if service account
+authorization has never been performed.
+
 ### 7.00.16
 
 Updated `gam <UserTypeEntity> claim|transfer ownership` to show `Got N Drive Files/Folders that matched query` messages

@@ -1,3 +1,8 @@
+7.00.17
+
+Update all user calendar commands to disable falling back to client access if service account
+authorization has never been performed.
+
 7.00.16
 
 Updated `gam <UserTypeEntity> claim|transfer ownership` to show `Got N Drive Files/Folders that matched query` messages

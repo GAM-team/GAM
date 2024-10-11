@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.16'
+__version__ = '7.00.17'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -6056,7 +6056,7 @@ def checkGroupExists(cd, ci, ciGroupsAPI, group, i=0, count=0):
 
 # Turn the entity into a list of Users/CrOS devices
 def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isArchived=None,
-                     groupMemberType=Ent.TYPE_USER, noListConversion=False):
+                     groupMemberType=Ent.TYPE_USER, noListConversion=False, recursive=False, noCLArgs=False):
   def _incrEntityDoesNotExist(entityType):
     entityError['entityType'] = entityType
     entityError[ENTITY_ERROR_DNE] += 1
@@ -6227,32 +6227,33 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
       isSuspended = True
     cd = buildGAPIObject(API.DIRECTORY)
     groups = convertEntityToList(entity)
-    includeDerivedMembership = recursive = False
+    includeDerivedMembership = False
     domains = []
     rolesSet = set()
-    while Cmd.ArgumentsRemaining():
-      myarg = getArgument()
-      if myarg in GROUP_ROLES_MAP:
-        rolesSet.add(GROUP_ROLES_MAP[myarg])
-      elif myarg == 'primarydomain':
-        domains.append(GC.Values[GC.DOMAIN])
-      elif myarg == 'domains':
-        domains.extend(getEntityList(Cmd.OB_DOMAIN_NAME_ENTITY))
-      elif myarg == 'recursive':
-        recursive = True
-        includeDerivedMembership = False
-      elif myarg == 'includederivedmembership':
-        includeDerivedMembership = True
-        recursive = False
-      elif entityType == Cmd.ENTITY_GROUP_USERS_SELECT and myarg in SUSPENDED_ARGUMENTS:
-        isSuspended = _getIsSuspended(myarg)
-      elif entityType == Cmd.ENTITY_GROUP_USERS_SELECT and myarg in ARCHIVED_ARGUMENTS:
-        isArchived = _getIsArchived(myarg)
-      elif myarg == 'end':
-        break
-      else:
-        Cmd.Backup()
-        missingArgumentExit('end')
+    if not noCLArgs:
+      while Cmd.ArgumentsRemaining():
+        myarg = getArgument()
+        if myarg in GROUP_ROLES_MAP:
+          rolesSet.add(GROUP_ROLES_MAP[myarg])
+        elif myarg == 'primarydomain':
+          domains.append(GC.Values[GC.DOMAIN])
+        elif myarg == 'domains':
+          domains.extend(getEntityList(Cmd.OB_DOMAIN_NAME_ENTITY))
+        elif myarg == 'recursive':
+          recursive = True
+          includeDerivedMembership = False
+        elif myarg == 'includederivedmembership':
+          includeDerivedMembership = True
+          recursive = False
+        elif entityType == Cmd.ENTITY_GROUP_USERS_SELECT and myarg in SUSPENDED_ARGUMENTS:
+          isSuspended = _getIsSuspended(myarg)
+        elif entityType == Cmd.ENTITY_GROUP_USERS_SELECT and myarg in ARCHIVED_ARGUMENTS:
+          isArchived = _getIsArchived(myarg)
+        elif myarg == 'end':
+          break
+        else:
+          Cmd.Backup()
+          missingArgumentExit('end')
     if rolesSet:
       memberRoles = ','.join(sorted(rolesSet))
     for group in groups:
@@ -6293,19 +6294,19 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
   elif entityType in {Cmd.ENTITY_CIGROUP_USERS}:
     ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
     groups = convertEntityToList(entity)
-    recursive = False
     rolesSet = set()
-    while Cmd.ArgumentsRemaining():
-      myarg = getArgument()
-      if myarg in GROUP_ROLES_MAP:
-        rolesSet.add(GROUP_ROLES_MAP[myarg])
-      elif myarg == 'recursive':
-        recursive = True
-      elif myarg == 'end':
-        break
-      else:
-        Cmd.Backup()
-        missingArgumentExit('end')
+    if not noCLArgs:
+      while Cmd.ArgumentsRemaining():
+        myarg = getArgument()
+        if myarg in GROUP_ROLES_MAP:
+          rolesSet.add(GROUP_ROLES_MAP[myarg])
+        elif myarg == 'recursive':
+          recursive = True
+        elif myarg == 'end':
+          break
+        else:
+          Cmd.Backup()
+          missingArgumentExit('end')
     if rolesSet:
       memberRoles = ','.join(sorted(rolesSet))
     for group in groups:
@@ -37028,11 +37029,13 @@ def checkCalendarExists(cal, calId, showMessage=False):
       entityActionFailedWarning([Ent.CALENDAR, calId], str(e))
     return None
 
-def validateCalendar(calId, i=0, count=0):
+def validateCalendar(calId, i=0, count=0, noClientAccess=False):
   cal = None
   if not calId.endswith('.calendar.google.com'):
-    calId, cal = buildGAPIServiceObject(API.CALENDAR, calId, i, count, displayError=False)
+    calId, cal = buildGAPIServiceObject(API.CALENDAR, calId, i, count, displayError=noClientAccess)
   if not cal:
+    if noClientAccess:
+      return (calId, None)
     cal = buildGAPIObject(API.CALENDAR)
   try:
     callGAPI(cal.calendars(), 'get',
@@ -49759,7 +49762,7 @@ def _validateUserGetCalendarIds(user, i, count, calendarEntity,
     calIds = calendarEntity['dict'][user][:]
   else:
     calIds = calendarEntity['list'][:]
-  user, cal = validateCalendar(user, i, count)
+  user, cal = validateCalendar(user, i, count, noClientAccess=True)
   if not cal:
     return (user, None, None, 0)
   if calendarEntity['resourceIds']:
@@ -50178,7 +50181,7 @@ def printShowCalendars(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, cal = validateCalendar(user, i, count)
+    user, cal = validateCalendar(user, i, count, noClientAccess=True)
     if not cal:
       continue
     if csvPF:
@@ -50278,7 +50281,7 @@ def printShowCalSettings(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, cal = validateCalendar(user, i, count)
+    user, cal = validateCalendar(user, i, count, noClientAccess=True)
     if not cal:
       continue
     try:
@@ -50438,7 +50441,7 @@ def transferCalendars(users):
       _getCalendarAttributes(targetListBody, returnOnUnknownArgument=True)
     else:
       unknownArgumentExit()
-  targetUser, targetCal = validateCalendar(targetUser)
+  targetUser, targetCal = validateCalendar(targetUser, noClientAccess=True)
   if not targetCal:
     return
   colorRgbFormat = 'backgroundColor' in targetListBody or 'foregroundColor' in targetListBody
