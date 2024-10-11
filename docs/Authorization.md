@@ -1,7 +1,6 @@
 # Authorization
 - [Introduction](#introduction)
 - [Headless computers and Cloud Shells](#headless-computers-and-cloud-shells)
-- [Version 5 Update](#version-5-update)
 - [API documentation](#api-documentation)
 - [Python Regular Expressions](Python-Regular-Expressions)
 - [Definitions](#definitions)
@@ -127,25 +126,6 @@ as required by Google for headless computers/cloud shells; this is required as o
 * See: https://developers.googleblog.com/2022/02/making-oauth-flows-safer.html
   * OAuth out-of-band (oob) flow will be deprecated
 
-## Version 5 Update
-GAM version `5.00.00` replaced the deprecated `oauth2client` library with the `google-auth` library.
-This change requires a one-time update of the client access file `oauth2.txt`; GAM will continue
-to use the old version of `oauth2.txt` until you perform the update. There is a small performance
-impact until the update is performed. However, you can't use the updated version of `oauth2.txt`
-in prior versions of GAM; if you want to run GAM `5.00.00` and prior versions of GAM,
-do not perform the update until you no longer need to run the prior versions of GAM.
-
-If you are running any GAM version `4.85.00` or later, perform the following command
-after installing `5.00.00` to perform the update.
-```
-gam oauth refresh
-```
-If you are running any GAM version before `4.85.00`, perform the following command
-after installing `5.00.00` to perform the update.
-```
-gam oauth update
-```
-
 ## API documentation
 * https://cloud.google.com/resource-manager/docs/creating-managing-organization#adding_an_organization_administrator
 * https://cloud.google.com/service-usage/docs/reference/rest
@@ -213,7 +193,7 @@ perform these steps and then retry the create project command.
 
 ## Authorize Service Account Key Uploads
 
-If you try to create a project and get an error saying that Constraint `constraints/iam.disableServiceAccountKeyUpload violated for service account projects/gam-project-xxx`,
+If you try to create a project and get an error saying that Constraint `constraints/iam.disableServiceAccountKeyUpload violated for service account projects/gam-project-xxxxx`,
 perform these steps and then you should be able to authorize and use your project.
 
 * Login as an existing super admin at console.cloud.google.com
@@ -293,7 +273,7 @@ You can skip these steps if you know that untrusted third-party apps are allowed
 
 ### Default values
 * `<AppName>` - "GAM"
-* `<ProjectID>` - "gam-project-abc-def-jki" where "abc-def-ghi" are randomly generated
+* `<ProjectID>` - "gam-project-a1b2c" where "a1b2c" are randomly generated
 * `<ProjectName>` - "GAM Project"
 * `<ServiceAccountName>` - `<ProjectID>`
 * `<ServiceAccountDisplayName>` - `<ProjectName>`

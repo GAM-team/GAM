@@ -10,6 +10,17 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.00.18
+
+Updated `gam create project` to use a default project name of `gam-project-a1b2c` (`a1b2c` is a random string of 5 characters)
+instead of `gam-project-abc-123-xyz` to avoid the following warning:
+```
+Project: gam-project-abc-123-xyz, Service Account: gam-project-abc-123-xyz@gam-project-abc-123-xyz.iam.gserviceaccount.com, Extracting public certificate
+init.py:12382: UserWarning: Attribute's length must be >= 1 and <= 64, but it was 70
+init.py:12383: UserWarning: Attribute's length must be >= 1 and <= 64, but it was 70
+Project: gam-project-abc-123-xyz, Service Account: gam-project-abc-123-xyz@gam-project-abc-123-xyz.iam.gserviceaccount.com, Done generating private key and public certificate
+```
+
 ### 7.00.17
 
 Update all user calendar commands to disable falling back to client access if service account

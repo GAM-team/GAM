@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.17'
+__version__ = '7.00.18'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -11429,10 +11429,7 @@ def _getAppInfo(myarg, appInfo):
   return True
 
 def _generateProjectSvcAcctId(prefix):
-  psaId = prefix
-  for _ in range(3):
-    psaId += f'-{"".join(random.choice(LOWERNUMERIC_CHARS) for _ in range(3))}'
-  return psaId
+  return f'{prefix}-{"".join(random.choice(LOWERNUMERIC_CHARS) for _ in range(5))}'
 
 def _getLoginHintProjectInfo(createCmd):
   login_hint = None
