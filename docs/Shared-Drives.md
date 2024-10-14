@@ -427,6 +427,15 @@ gam info ou <OrgUnitPath> nousers
 gam show teamdrives query "orgUnitId='03ph8a2z21rexy'" fields id,name,orgunit,createdtime
 gam print teamdrives query "orgUnitId='03ph8a2z21rexy'" fields id,name,orgunit,createdtime
 ```
+Alternative method; `<OrgUnitPath>` defaults to `/`.
+```
+gam show oushareddrives
+        [ou|org|orgunit <OrgUnitPath>]
+        [formatjson]
+gam print oushareddrives [todrive <ToDriveAttribute>*]
+        [ou|org|orgunit <OrgUnitPath>]
+        [formatjson [quotechar <Character>]]
+```
 
 ## Manage Shared Drive access
 These commands are used to manage the ACLs on Shared Drives themselves, not the files/folders on the Shared Drives.

@@ -10,6 +10,16 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.00.19
+
+Updated `gam update shareddrive <SharedDriveEntity> ou <OrgUnitItem>` to handle the following error
+that occurs when an invalid `<SharedDriveEntity>` is specified.
+```
+ERROR: 400: invalidArgument - Invalid org membership name 0AJ3b2FTPakToUk9PVAxx.~
+```
+
+Updated `gam print browsers` to properly format the time field `deviceIdentifiersHistory.records.0.firstRecordTime`.
+
 ### 7.00.18
 
 Updated `gam create project` to use a default project name of `gam-project-a1b2c` (`a1b2c` is a random string of 5 characters)

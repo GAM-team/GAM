@@ -8,6 +8,7 @@
 - [Parameters for Basic Levels](#parameters-for-basic-levels)
 - [Create an Access Level](#create-an-access-level)
 - [Update an Access Level](#update-an-access-level)
+- [Update Access Levels with JSON](#update-access-levels-with-json)
 - [Delete an Access Level](#delete-an-access-level)
 - [Display all Access Levels](#display-all-access-levels)
 - [CAA Region Codes](#caa-region-codes)
@@ -175,6 +176,27 @@ gam update caalevel <CAALevelName> [description <String>] (basic <CAABasicAttrib
 This example adds UK to the allowed regions for CORP_COUNTRIES
 ```
 gam update caalevel CORP_COUNTRIES basic condition regions US,CA,UK endcondition
+```
+
+## Update Access Levels with JSON
+Update existing CAA levels via their JSON data; create a CSV file of CAA levels.
+```
+gam redirect csv ./CAAlevels.csv print caalevels formatjson quotechar "'"
+```
+Edit the JSON column for the desired CAA level(s) in CAAlevels.csv.
+Update the desired CAA level by selecting the row by it's title; repeat for each title to update.
+```
+gam config csv_input_row_filter "title:text='Example Title'" csv CAAlevels.csv quotechar "'" gam update caalevel "~name" json "~JSON"
+```
+
+## Example
+Edit CAAlevels.csv and add UK to the allowed regions for CORP_COUNTRIES
+```
+{"regions": ["US", "CA", "UK"]}
+```
+Do the update.
+```
+gam config csv_input_row_filter "title:text='CORP_COUNTRIES'" csv CAAlevels.csv quotechar "'" gam update caalevel "~name" json "~JSON"
 ```
 
 ## Delete an Access Level

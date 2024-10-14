@@ -37,7 +37,7 @@
 - [Print user domain counts](#print-user-domain-counts)
     - [Print domain counts for users in a specific domain and/or selected by a query](#print-domain-counts-for-users-in-a-specific-domain-and-or-selected-by-a-query)
     - [Print domain counts for users specified by `<UserTypeEntity>`](#print-domain-counts-for-users-specified-by-usertypeentity)
-- [Print user counts by OrgUnit](print-user-counts-by-orgunit)
+- [Print user counts by OrgUnit](#print-user-counts-by-orgunit)
 - [Print user list](#print-user-list)
 - [Display user counts](#display-user-counts)
 - [Verify domain membership]($verify-domain-membership)

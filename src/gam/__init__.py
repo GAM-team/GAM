@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.18'
+__version__ = '7.00.19'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -24993,7 +24993,7 @@ def doDeleteBrowsers():
   except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
     checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_BROWSER, deviceId)
 
-BROWSER_TIME_OBJECTS = {'lastActivityTime', 'lastPolicyFetchTime', 'lastRegistrationTime', 'lastStatusReportTime', 'safeBrowsingWarningsResetTime'}
+BROWSER_TIME_OBJECTS = {'firstRecordTime', 'lastActivityTime', 'lastPolicyFetchTime', 'lastRegistrationTime', 'lastStatusReportTime', 'safeBrowsingWarningsResetTime'}
 
 def _showBrowser(browser, FJQC, i=0, count=0):
   if FJQC.formatJSON:
@@ -64285,13 +64285,15 @@ def _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci, return
             'destinationOrgUnit': f'orgUnits/{orgUnitId[3:]}'}
   try:
     callGAPI(ci.orgUnits().memberships(), 'move',
-             throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.ABORTED],
+             throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN,
+                                                         GAPI.INVALID_ARGUMENT, GAPI.ABORTED],
              name=name, body=cibody)
     if not returnIdOnly:
       Act.Set(Act.MOVE)
-      entityModifierNewValueActionPerformed([Ent.SHAREDDRIVE, driveId], Act.MODIFIER_TO, f'{Ent.Singular(Ent.ORGANIZATIONAL_UNIT)}: {orgUnit}', i, count)
+      entityModifierNewValueActionPerformed([Ent.USER, user, Ent.SHAREDDRIVE, driveId], Act.MODIFIER_TO,
+                                            f'{Ent.Singular(Ent.ORGANIZATIONAL_UNIT)}: {orgUnit}', i, count)
   except (GAPI.notFound, GAPI.forbidden, GAPI.aborted, GAPI.badRequest, GAPI.internalError,
-          GAPI.noManageTeamDriveAdministratorPrivilege) as e:
+          GAPI.noManageTeamDriveAdministratorPrivilege, GAPI.invalidArgument) as e:
     entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], str(e), i, count)
   except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
     userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
