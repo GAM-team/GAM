@@ -115,7 +115,7 @@ jobs:
         with:
           path: |
             cache.tar.xz
-          key: gam-${{ matrix.jid }}-20241008
+          key: gam-${{ matrix.jid }}-20241014
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
@@ -186,7 +186,7 @@ jobs:
         run: |
           echo "RUNNING: apt update..."
           sudo apt-get -qq --yes update
-          sudo apt-get -qq --yes install swig libpcsclite-dev libxslt1-dev
+          sudo apt-get -qq --yes install swig libpcsclite-dev libxslt1-dev libsqlite3-dev
 
       - name: MacOS install tools
         if: runner.os == 'macOS'
