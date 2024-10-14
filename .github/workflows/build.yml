@@ -37,61 +37,61 @@ jobs:
             arch: x86_64
             openssl_archs: linux-x86_64
           - os: ubuntu-24.04
-            jid: 12
+            jid: 2
             goal: build
             arch: x86_64
             openssl_archs: linux-x86_64
           - os: [self-hosted, linux, arm64]
-            jid: 2
+            jid: 3
             goal: build
             arch: aarch64
             openssl_archs: linux-aarch64
           - os: ubuntu-22.04
-            jid: 3
+            jid: 4
             goal: build
             arch: x86_64
             openssl_archs: linux-x86_64
             staticx: yes
           - os: [self-hosted, linux, arm64]
-            jid: 4
+            jid: 5
             goal: build
             arch: aarch64
             openssl_archs: linux-aarch64
             staticx: yes
           - os: macos-13
-            jid: 5
+            jid: 6
             goal: build
             arch: x86_64
             openssl_archs: darwin64-x86_64
           - os: macos-14
-            jid: 6
+            jid: 7
             goal: build
             arch: aarch64
             openssl_archs: darwin64-arm64
           - os: windows-2022
-            jid: 7
+            jid: 8
             goal: build
             arch: Win64
             openssl_archs: VC-WIN64A
           - os: ubuntu-24.04
             goal: test
             python: "3.9"
-            jid: 8
-            arch: x86_64
-          - os: ubuntu-24.04
-            goal: test
-            python: "3.10"
             jid: 9
             arch: x86_64
           - os: ubuntu-24.04
             goal: test
-            python: "3.11"
+            python: "3.10"
             jid: 10
             arch: x86_64
           - os: ubuntu-24.04
             goal: test
-            python: "3.12"
+            python: "3.11"
             jid: 11
+            arch: x86_64
+          - os: ubuntu-24.04
+            goal: test
+            python: "3.12"
+            jid: 12
             arch: x86_64
 
     steps:
