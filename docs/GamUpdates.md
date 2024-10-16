@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.00.21
+
+uprev version to test MSI installs
+
 ### 7.00.20
 
 Fix Windows MSI installer issues on version upgrade. If you are having issues upgrading from a version older than 7.00.20 to this version or newer you may need to do a one time uninstall of GAM7 and then reinstall the new version. No configuration files will be lost during the uninstall / reinstall.
