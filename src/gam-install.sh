@@ -30,8 +30,6 @@ upgrade_only=false
 gamversion="latest"
 adminuser=""
 regularuser=""
-gam_x86_64_glibc_vers="2.35"
-gam_arm64_glibc_vers="2.35"
 strip_gam="--strip-components 0"
 
 while getopts "hd:a:o:b:lp:u:r:v:s" OPTION
@@ -90,7 +88,6 @@ version_gt()
 # MacOS < 10.13 doesn't support sort -V
 echo "" | sort -V > /dev/null 2>&1
 vsort_failed=$?
-echo "Check:${2}"
 if [ "${1}" = "${2}" ]; then
   true
 elif (( $vsort_failed != 0 )); then
@@ -99,81 +96,6 @@ else
   test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"
 fi
 }
-
-case $gamos in
-  [lL]inux)
-    gamos="linux"
-    if [ "$osversion" == "" ]; then
-      this_glibc_ver=$(ldd --version | awk '/ldd/{print $NF}')
-    else
-      this_glibc_ver=$osversion
-    fi
-    echo "This Linux distribution uses glibc $this_glibc_ver"
-    case $gamarch in
-      x86_64)
-        useglibc="legacy"
-        for gam_glibc_ver in $gam_x86_64_glibc_vers; do
-          if version_gt $this_glibc_ver $gam_glibc_ver; then
-            useglibc="glibc$gam_glibc_ver"
-            echo_green "Using GAM compiled against $useglibc"
-            break
-          fi
-        done
-        gamfile="linux-x86_64-$useglibc.tar.xz";;
-      arm|arm64|aarch64)
-        useglibc=""
-        for gam_glibc_ver in $gam_arm64_glibc_vers; do
-          if version_gt $this_glibc_ver $gam_glibc_ver; then
-            useglibc="glibc$gam_glibc_ver"
-            echo_green "Using GAM compiled against $useglibc"
-            break
-          fi
-        done
-        if [ "$useglibc" == "" ]; then
-          echo_red "Sorry, you need to be running at least glibc $useglibc to run GAM"
-          exit
-        fi
-        gamfile="linux-aarch64-$useglibc.tar.xz";;
-      *)
-        echo_red "ERROR: this installer currently only supports x86_64 and arm64 Linux. Looks like you're running on $gamarch. Exiting."
-        exit
-    esac
-    ;;
-  [Mm]ac[Oo][sS]|[Dd]arwin)
-    gamos="macos"
-    fullversion=$(sw_vers -productVersion)
-    osversion=${fullversion:0:2}
-    case $gamarch in
-      x86_64)
-        gamfile="macos-x86_64.tar.xz"
-	minimum_version=13
-        ;;
-      arm|arm64|aarch64)
-        gamfile="macos-aarch64.tar.xz"
-	minimum_version=14
-        ;;
-      *)
-        echo_red "ERROR: this installer currently only supports x86_64 and arm64 MacOS. Looks like you're running on $gamarch. Exiting."
-        exit
-	;;
-    esac
-    if [[ "$osversion" -ge "$minimum_version" ]]; then
-      echo_green "You are running MacOS ${fullversion}, good. Using GAM with ${gamfile}."
-    else
-      echo_red "Sorry, you are running MacOS ${fullversion} but GAM on ${gamarch} requires MacOS ${minimum_version}. Exiting."
-      exit
-    fi
-    ;;
-  MINGW64_NT*)
-    gamos="windows"
-    echo "You are running Windows"
-    gamfile="-windows-x86_64.zip"
-    ;;
-  *)
-    echo_red "Sorry, this installer currently only supports Linux and MacOS. Looks like you're running on $gamos. Exiting."
-    exit
-    ;;
-esac
 
 if [ "$gamversion" == "latest" ]; then
   release_url="https://api.github.com/repos/GAM-team/GAM/releases/latest"
@@ -185,13 +107,19 @@ fi
 
 if [ -z ${GHCLIENT+x} ]; then
   check_type="unauthenticated"
-  echo_yellow "Checking GitHub URL $release_url for $gamversion GAM release ($check_type)..."
-  release_json=$(curl -s "$release_url" 2>&1 /dev/null)
+  curl_opts=( )
 else
   check_type="authenticated"
-  echo_yellow "Checking GitHub URL $release_url for $gamversion GAM release ($check_type)..."
-  release_json=$(curl -s "$GHCLIENT" "$release_url" 2>&1 /dev/null)
+  curl_opts=( "$GHCLIENT" )
 fi
+echo_yellow "Checking GitHub URL $release_url for $gamversion GAM release ($check_type)..."
+release_json=$(curl \
+	--silent \
+	"${curl_opts[@]}" \
+	-H "Accept: application/vnd.github+json" \
+	-H "X-GitHub-Api-Version: 2022-11-28" \
+	"$release_url" \
+	2>&1 /dev/null)
 
 echo_yellow "Getting file and download URL..."
 # Python is sadly the nearest to universal way to safely handle JSON with Bash
@@ -215,11 +143,9 @@ if type(release) is list:
     break
 try:
   for asset in release['assets']:
-    if asset[attrib].endswith('$gamfile'):
-      print(asset[attrib])
-      break
-  else:
-    print('ERROR: Attribute: {0} for $gamfile version {1} not found'.format(attrib, gamversion))
+    print(asset[attrib])
+  #else:
+  #  print('ERROR: Attribute: {0} for version {1} not found'.format(attrib, gamversion))
 except KeyError:
   print('ERROR: assets value not found in JSON value of:\n\n%s' % release)"
 
@@ -245,41 +171,119 @@ if (( $rc != 0 )); then
   echo_red "ERROR: No version of python installed."
   exit
 fi
+download_urls=$(echo "$release_json" | $pycmd -c "$pycode" browser_download_url "$gamversion")
+if [[ ${download_urls:0:5} = "ERROR" ]]; then
+  echo_red "${download_urls}"
+  exit
+fi
 
-browser_download_url=$(echo "$release_json" | $pycmd -c "$pycode" browser_download_url "$gamversion")
-if [[ ${browser_download_url:0:5} = "ERROR" ]]; then
-  echo_red "${browser_download_url}"
-  exit
-fi
-name=$(echo "$release_json" | $pycmd -c "$pycode" name "$gamversion")
-if [[ ${name:0:5} = "ERROR" ]]; then
-  echo_red "${name}"
-  exit
-fi
+case $gamos in
+  [lL]inux)
+    gamos="linux"
+    download_urls=$(echo -e "$download_urls" | grep "\-linux-")
+    if [ "$osversion" == "" ]; then
+      this_glibc_ver=$(ldd --version | awk '/ldd/{print $NF}')
+    else
+      this_glibc_ver=$osversion
+    fi
+    echo "This Linux distribution uses glibc $this_glibc_ver"
+    case $gamarch in
+      x86_64)
+	download_urls=$(echo -e "$download_urls" | grep "\-x86_64-")
+	gam_x86_64_glibc_vers=$(echo -e "$download_urls" | \
+		grep --only-matching 'glibc[0-9\.]*\.tar\.xz$' \
+	        | cut -c 6-9 )
+	useglibc="legacy"
+        for gam_glibc_ver in $gam_x86_64_glibc_vers; do
+          if version_gt $this_glibc_ver $gam_glibc_ver; then
+            useglibc="glibc$gam_glibc_ver"
+            echo_green "Using GAM compiled against $useglibc"
+            break
+          fi
+        done
+        download_url=$(echo -e "$download_urls" | grep "$useglibc")
+	;;
+      arm|arm64|aarch64)
+        download_urls=$(echo -e "$download_urls" | grep "\-aarch64-")
+        gam_arm64_glibc_vers=$(echo -e "$download_urls" | \
+                grep --only-matching 'glibc[0-9\.]*\.tar\.xz$' \
+                | cut -c 6-9 )
+        useglibc="legacy"
+        for gam_glibc_ver in $gam_arm64_glibc_vers; do
+          if version_gt $this_glibc_ver $gam_glibc_ver; then
+            useglibc="glibc$gam_glibc_ver"
+            echo_green "Using GAM compiled against $useglibc"
+            break
+          fi
+        done
+        download_url=$(echo -e "$download_urls" | grep "$useglibc")
+	;;
+      *)
+        echo_red "ERROR: this installer currently only supports x86_64 and arm64 Linux. Looks like you're running on $gamarch. Exiting."
+        exit
+    esac
+    ;;
+  [Mm]ac[Oo][sS]|[Dd]arwin)
+    gamos="macos"
+    fullversion=$(sw_vers -productVersion)
+    # override osversion only if it wasn't set by cli arguments
+    osversion=${osversion:-${fullversion:0:2}}
+    download_urls=$(echo -e "$download_urls" | grep "\-macos-")
+    case $gamarch in
+      x86_64)
+        download_url=$(echo -e "$download_urls" | grep "\-x86_64")
+	minimum_version=13
+        ;;
+      arm|arm64|aarch64)
+        download_url=$(echo -e "$download_urls" | grep "\-aarch64")
+	minimum_version=14
+        ;;
+      *)
+        echo_red "ERROR: this installer currently only supports x86_64 and arm64 MacOS. Looks like you're running on ${gamarch}. Exiting."
+        exit
+	;;
+    esac
+    if [[ "$osversion" -ge "$minimum_version" ]]; then
+      echo_green "You are running MacOS ${fullversion}, good. Using GAM with ${download_url}."
+    else
+      echo_red "Sorry, you are running MacOS ${fullversion} but GAM on ${gamarch} requires MacOS ${minimum_version}. Exiting."
+      exit
+    fi
+    ;;
+  MINGW64_NT*)
+    gamos="windows"
+    echo "You are running Windows"
+    download_url=$(echo -e "$download_urls" | grep "\-windows-" | grep ".zip")
+    ;;
+  *)
+    echo_red "Sorry, this installer currently only supports Linux and MacOS. Looks like you're running on ${gamos}. Exiting."
+    exit
+    ;;
+esac
+
 # Temp dir for archive
-#temp_archive_dir=$(mktemp -d)
 temp_archive_dir=$(mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir')
 
 # Clean up after ourselves even if we are killed with CTRL-C
 trap "rm -rf $temp_archive_dir" EXIT
 
-echo_yellow "Downloading file $name from $browser_download_url to $temp_archive_dir ($check_type)..."
+# hack to grab the end of the URL which should be the filename.
+name=$(echo -e "$download_url" | rev | cut -f1 -d "/" | rev)
+
+echo_yellow "Downloading ${download_url} to $temp_archive_dir ($check_type)..."
 # Save archive to temp w/o losing our path
-if [ -z ${GHCLIENT+x} ]; then
-  (cd "$temp_archive_dir" && curl -O -L $browser_download_url)
-else
-  (cd "$temp_archive_dir" && curl -O -L $GHCLIENT $browser_download_url)
-fi
+(cd "$temp_archive_dir" && curl -O -L -s "${curl_opts[@]}" "$download_url")
 
 mkdir -p "$target_dir"
 
 echo_yellow "Extracting archive to $target_dir"
-if [[ "${name}" == *.tar.xz ]]; then
+if [[ "$name" =~ tar.xz|tar.gz|tar ]]; then
   tar $strip_gam -xf "$temp_archive_dir"/"$name" -C "$target_dir"
-elif [[ "${name}" == *.tar ]]; then
-  tar $strip_gam -xf "$temp_archive_dir"/"$name" -C "$target_dir"
+elif [[ "$name" == *.zip ]]; then
+  unzip -o "${temp_archive_dir}/${name}" -d "${target_dir}"
 else
-  unzip "${temp_archive_dir}/${name}" -d "${target_dir}"
+  echo "I don't know what to do with files like ${name}. Giving up."
+  exit 1
 fi
 rc=$?
 if (( $rc != 0 )); then
