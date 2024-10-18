@@ -214,6 +214,12 @@ csv_output_header_force
         A list of <Strings> used to specify the exact column headers
         for inclusion in the CSV file written by a gam print command
         Default: ''
+csv_output_header_order
+        A list of <Strings> used to specify the order of column headers
+        for inclusion in the CSV file written by a gam print command
+        Any headers in the file but not in the list will appear after
+        the headers in the list
+        Default: ''
 csv_output_line_terminator
         Allowed values: cr, lf, crlf
         Designates character(s) used to terminate the lines of a CSV file.
@@ -305,6 +311,9 @@ drive_max_results
         how many should be retrieved in each API call
         Default: 1000
         Range: 1 - 1000
+drive_v3_beta
+        Enable/disable use of Drive API v3 beta for Limited Folder Access testing
+        Default: False
 drive_v3_native_names
         Enable/disable use of Drive API v3 native column names
         in all gam print/show commands related to Google Drive

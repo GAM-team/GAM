@@ -65,6 +65,8 @@ CSV_OUTPUT_HEADER_DROP_FILTER = 'cohd'
 CSV_OUTPUT_HEADER_FILTER = 'cohf'
 # Force output column headers
 CSV_OUTPUT_HEADER_FORCE = 'cofh'
+# Order output column headers
+CSV_OUTPUT_HEADER_ORDER = 'coho'
 # No escape character in CSV output file
 CSV_OUTPUT_NO_ESCAPE_CHAR = 'cone'
 # Quote character in CSV output file
@@ -80,7 +82,7 @@ CSV_OUTPUT_ROW_FILTER_MODE = 'corm'
 # Limit number of output rows
 CSV_OUTPUT_ROW_LIMIT = 'corl'
 # Add timestamp column to CSV output file
-CSV_OUTPUT_TIMESTAMP_COLUMN = 'csv_output_timestamp_column'
+CSV_OUTPUT_TIMESTAMP_COLUMN = 'cotc'
 # Output sort headers
 CSV_OUTPUT_SORT_HEADERS = 'cosh'
 # CSV todrive options
@@ -235,6 +237,7 @@ Globals = {
   CSV_OUTPUT_HEADER_DROP_FILTER: [],
   CSV_OUTPUT_HEADER_FILTER: [],
   CSV_OUTPUT_HEADER_FORCE: [],
+  CSV_OUTPUT_HEADER_ORDER: [],
   CSV_OUTPUT_NO_ESCAPE_CHAR: None,
   CSV_OUTPUT_QUOTE_CHAR: None,
   CSV_OUTPUT_ROW_DROP_FILTER: [],

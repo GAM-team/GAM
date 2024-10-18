@@ -1,4 +1,4 @@
-!# CSV Output Filtering
+# CSV Output Filtering
 - [Python Regular Expressions](Python-Regular-Expressions) Search function
 - [Definitions](#definitions)
 - [Quoting rules](#quoting-rules)
@@ -11,9 +11,11 @@
 - [Column row limiting](#column-row-limiting)
 - [Saving filters in gam.cfg](#saving-filters-in-gamcfg)
 
-There are five values in `gam.cfg` that can be used to filter the output from `gam print` commands.
+There are seven values in `gam.cfg` that can be used to filter the output from `gam print` commands.
 * `csv_output_header_filter` - A list of `<RegularExpressions>` used to select specific column headers to include
 * `csv_output_header_drop_filter` - A list of `<RegularExpressions>` used to select specific column headers to exclude
+* `csv_output_header_force` - A list of <Strings> used to specify the exact column headers to include
+* `csv_output_header_order` - A list of <Strings> used to specify the column header order; any headers in the file but not in the list will appear after the headers in the list.
 * `csv_output_row_filter` - A list or JSON dictionary used to include specific rows based on column values
 * `csv_output_row_drop_filter` - A list or JSON dictionary used to exclude specific rows based on column values
 * `csv_output_row_limit` - A limit on the number of rows written
@@ -334,7 +336,7 @@ gam config csv_output_row_limit 10 auto_batch_min 1 redirect csv ./BigQuotaFiles
 ```
 
 ## Saving filters in gam.cfg
-If you define a value for `csv_output_header_filter`, `csv_output_header_drop_filter`, `csv_output_row_filter`, `csv_output_row_drop_filter` or `csv_output_row_limit` in the `[DEFAULT]` section of `gam.cfg`,
+If you define a value for `csv_output_header_filter`, `csv_output_header_drop_filter`, `csv_output_header_force`, `csv_output_header_order`, `csv_output_row_filter`, `csv_output_row_drop_filter` or `csv_output_row_limit` in the `[DEFAULT]` section of `gam.cfg`,
 it will apply to every `gam print` command which is probably not desirable. You can store them in `gam.cfg` in named sections.
 ```
 [Filter510]

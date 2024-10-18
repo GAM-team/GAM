@@ -1,10 +1,16 @@
 7.00.21
 
-uprev version to test MSI installs
+Added `csv_output_header_order` variable to `gam.cfg` that is a list of `<Strings>`
+that are used to specify the order of column headers in the CSV file written by a gam print command.
+Any headers in the file but not in the list will appear after the headers in the list.
+
+This might be used when the CSV file data is to be processed by another program
+that requires that the headers be in a particular order.
 
 7.00.20
 
-Fix Windows MSI installer issues on version upgrade. If you are having issues upgrading from a version older than 7.00.20 to this version or newer you may need to do a one time uninstall of GAM7 and then reinstall the new version. No configuration files will be lost during the uninstall / reinstall.
+Fix Windows MSI installer issues on version upgrade. If you are having issues upgrading from a version older than 7.00.20 to this version or newer you may need to do a one time uninstall of GAM7 and then reinstall the new version.
+No configuration files will be lost during the uninstall / reinstall.
 
 7.00.19
 

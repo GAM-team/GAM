@@ -811,7 +811,7 @@ User: testuser@domain.com, Drive Files/Folders: 261, Size: 13822521
 ```
 Print file counts for a user.
 ```
-$ gam user testuser@domain,com print filecounts showsize
+$ gam user testuser@domain.com print filecounts showsize
 Getting all Drive Files/Folders that match query ('me' in owners) for testuser@domain.com
 Got 261 Drive Files/Folders that matched query ('me' in owners) for testuser@domain.com...
 User,Total,Size,application/octet-stream,application/pdf,application/vnd.google-apps.document,application/vnd.google-apps.drawing,application/vnd.google-apps.drive-sdk.423565144751,application/vnd.google-apps.folder,application/vnd.google-apps.form,application/vnd.google-apps.jam,application/vnd.google-apps.presentation,application/vnd.google-apps.shortcut,application/vnd.google-apps.site,application/vnd.google-apps.spreadsheet,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.wordprocessingml.template,application/x-gzip,application/zip,image/jpeg,image/vnd.adobe.photoshop,text/csv,text/plain,text/rtf,text/x-sh
@@ -824,6 +824,14 @@ Getting all Drive Files/Folders that match query ('me' in owners) for testuser@d
 Got 261 Drive Files/Folders that matched query ('me' in owners) for testuser@domain.com...
 User,Total,Size,application/octet-stream,application/octet-stream-size,application/pdf,application/pdf-size,application/vnd.google-apps.document,application/vnd.google-apps.document-size,application/vnd.google-apps.drawing,application/vnd.google-apps.drawing-size,application/vnd.google-apps.drive-sdk.423565144751,application/vnd.google-apps.drive-sdk.423565144751-size,application/vnd.google-apps.folder,application/vnd.google-apps.folder-size,application/vnd.google-apps.form,application/vnd.google-apps.form-size,application/vnd.google-apps.jam,application/vnd.google-apps.jam-size,application/vnd.google-apps.presentation,application/vnd.google-apps.presentation-size,application/vnd.google-apps.shortcut,application/vnd.google-apps.shortcut-size,application/vnd.google-apps.site,application/vnd.google-apps.site-size,application/vnd.google-apps.spreadsheet,application/vnd.google-apps.spreadsheet-size,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet-size,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.wordprocessingml.document-size,application/vnd.openxmlformats-officedocument.wordprocessingml.template,application/vnd.openxmlformats-officedocument.wordprocessingml.template-size,application/x-gzip,application/x-gzip-size,application/zip,application/zip-size,image/jpeg,image/jpeg-size,image/vnd.adobe.photoshop,image/vnd.adobe.photoshop-size,text/csv,text/csv-size,text/plain,text/plain-size,text/rtf,text/rtf-size,text/x-sh,text/x-sh-size
 testuser@domain.com,261,13822521,8,17,1,9879,98,52858,2,2048,1,0,68,0,3,0,1,1024,1,0,14,0,1,0,24,11264,1,8157,3,34407,1,25906,4,2768,2,765,8,16498,1,13613198,2,397,13,41461,3,1738,1,136
+```
+Print file counts for a Shared Drive
+```
+$ gam user testuser@domain.com print filecounts select <SharedDriveID> showsize
+Getting all Drive Files/Folders for testuser@domain.com
+Got 261 Drive Files/Folders for testuser@domain.com...
+User,id,name,Total,Size,Item cap,application/octet-stream,application/pdf,application/vnd.google-apps.document,application/vnd.google-apps.drawing,application/vnd.google-apps.drive-sdk.423565144751,application/vnd.google-apps.folder,application/vnd.google-apps.form,application/vnd.google-apps.jam,application/vnd.google-apps.presentation,application/vnd.google-apps.shortcut,application/vnd.google-apps.site,application/vnd.google-apps.spreadsheet,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.wordprocessingml.template,application/x-gzip,application/zip,image/jpeg,image/vnd.adobe.photoshop,text/csv,text/plain,text/rtf,text/x-sh
+testuser@domain.com,0AMzwfhFBpwLHUkWXYZ,Shared Drive Name,261,13822521,3.45%,8,1,98,2,1,68,3,1,1,14,1,24,1,3,1,4,2,8,1,2,13,3,1
 ```
 Get file count summaries by OU; top level selector is ou, sub level selectors are ou_and_children
 ```

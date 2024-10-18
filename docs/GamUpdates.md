@@ -12,7 +12,12 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 
 ### 7.00.21
 
-uprev version to test MSI installs
+Added `csv_output_header_order` variable to `gam.cfg` that is a list of `<Strings>`
+that are used to specify the order of column headers in the CSV file written by a gam print command.
+Any headers in the file but not in the list will appear after the headers in the list.
+
+This might be used when the CSV file data is to be processed by another program
+that requires that the headers be in a particular order.
 
 ### 7.00.20
 

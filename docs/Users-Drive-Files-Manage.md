@@ -2,6 +2,7 @@
 - [API documentation](#api-documentation)
 - [Query documentation](Users-Drive-Query)
 - [Python Regular Expressions](Python-Regular-Expressions) Sub function
+- [Folders with Limited Access Beta](#folders-with-limited-access-beta)
 - [Permission Matches](Permission-Matches)
 - [Definitions](#definitions)
 - [Create files](#create-files)
@@ -30,6 +31,15 @@
 * https://support.google.com/a/answer/7374057
 * https://support.google.com/a/users/answer/7338880
 * https://developers.google.com/docs/api/reference/rest
+
+## Folders with Limited Access Beta
+
+If you are enrolled in the Beta and want to access the `inheritedpermissionsdisabled` field,
+you must turn on Drive API v3 beta.
+
+```
+gam config drive_v3_beta true user user@domain.com update drivefile <FolderID> inheritedpermissionsdisabled true
+```
 
 ## Definitions
 * [`<DriveFileEntity>`](Drive-File-Selection)

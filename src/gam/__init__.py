@@ -4008,7 +4008,7 @@ def SetGlobalVariables():
       GC.Values[itemName] = _getCfgPassword(sectionName, itemName)
     elif varType == GC.TYPE_STRING:
       GC.Values[itemName] = _getCfgString(sectionName, itemName)
-    elif varType in {GC.TYPE_STRINGLIST, GC.TYPE_HEADERFORCE}:
+    elif varType in {GC.TYPE_STRINGLIST, GC.TYPE_HEADERFORCE, GC.TYPE_HEADERORDER}:
       GC.Values[itemName] = _getCfgStringList(sectionName, itemName)
     elif varType == GC.TYPE_FILE:
       GC.Values[itemName] = _getCfgFile(sectionName, itemName)
@@ -4031,6 +4031,7 @@ def SetGlobalVariables():
     else:
       GC.Values[GC.CSV_OUTPUT_HEADER_FILTER] = _getCfgHeaderFilter(outputFilterSectionName, GC.CSV_OUTPUT_HEADER_FILTER)
     GC.Values[GC.CSV_OUTPUT_HEADER_DROP_FILTER] = _getCfgHeaderFilter(outputFilterSectionName, GC.CSV_OUTPUT_HEADER_DROP_FILTER)
+    GC.Values[GC.CSV_OUTPUT_HEADER_ORDER] = _getCfgStringList(outputFilterSectionName, GC.CSV_OUTPUT_HEADER_ORDER)
     GC.Values[GC.CSV_OUTPUT_ROW_FILTER] = _getCfgRowFilter(outputFilterSectionName, GC.CSV_OUTPUT_ROW_FILTER)
     GC.Values[GC.CSV_OUTPUT_ROW_FILTER_MODE] = _getCfgChoice(outputFilterSectionName, GC.CSV_OUTPUT_ROW_FILTER_MODE)
     GC.Values[GC.CSV_OUTPUT_ROW_DROP_FILTER] = _getCfgRowFilter(outputFilterSectionName, GC.CSV_OUTPUT_ROW_DROP_FILTER)
@@ -4151,7 +4152,7 @@ def SetGlobalVariables():
   if GM.Globals[GM.PID] == 0:
     for itemName, itemEntry in sorted(iter(GC.VAR_INFO.items())):
       varType = itemEntry[GC.VAR_TYPE]
-      if varType in {GC.TYPE_HEADERFILTER, GC.TYPE_HEADERFORCE, GC.TYPE_ROWFILTER}:
+      if varType in {GC.TYPE_HEADERFILTER, GC.TYPE_HEADERFORCE, GC.TYPE_HEADERORDER, GC.TYPE_ROWFILTER}:
         GM.Globals[GM.PARSER].set(sectionName, itemName, '')
       elif (varType == GC.TYPE_INTEGER) and itemName in {GC.CSV_INPUT_ROW_LIMIT, GC.CSV_OUTPUT_ROW_LIMIT}:
         GM.Globals[GM.PARSER].set(sectionName, itemName, '0')
@@ -4164,6 +4165,8 @@ def SetGlobalVariables():
       GC.Values[GC.CSV_OUTPUT_HEADER_DROP_FILTER] = GM.Globals[GM.CSV_OUTPUT_HEADER_DROP_FILTER][:]
     if not GC.Values[GC.CSV_OUTPUT_HEADER_FORCE]:
       GC.Values[GC.CSV_OUTPUT_HEADER_FORCE] = GM.Globals[GM.CSV_OUTPUT_HEADER_FORCE][:]
+    if not GC.Values[GC.CSV_OUTPUT_HEADER_ORDER]:
+      GC.Values[GC.CSV_OUTPUT_HEADER_ORDER] = GM.Globals[GM.CSV_OUTPUT_HEADER_ORDER][:]
     if not GC.Values[GC.CSV_OUTPUT_ROW_FILTER]:
       GC.Values[GC.CSV_OUTPUT_ROW_FILTER] = GM.Globals[GM.CSV_OUTPUT_ROW_FILTER][:]
       GC.Values[GC.CSV_OUTPUT_ROW_FILTER_MODE] = GM.Globals[GM.CSV_OUTPUT_ROW_FILTER_MODE]
@@ -7731,6 +7734,7 @@ class CSVPrintFile():
     if not self.headerForce and titles is not None:
       self.SetTitles(titles)
       self.SetJSONTitles(titles)
+    self.SetHeaderOrder(GC.Values[GC.CSV_OUTPUT_HEADER_ORDER])
     if GM.Globals.get(GM.CSV_OUTPUT_COLUMN_DELIMITER) is None:
       GM.Globals[GM.CSV_OUTPUT_COLUMN_DELIMITER] = GC.Values.get(GC.CSV_OUTPUT_COLUMN_DELIMITER, ',')
     self.SetColumnDelimiter(GM.Globals[GM.CSV_OUTPUT_COLUMN_DELIMITER])
@@ -7740,10 +7744,12 @@ class CSVPrintFile():
       GM.Globals[GM.CSV_OUTPUT_NO_ESCAPE_CHAR] = GC.Values.get(GC.CSV_OUTPUT_NO_ESCAPE_CHAR, False)
     self.SetNoEscapeChar(GM.Globals[GM.CSV_OUTPUT_NO_ESCAPE_CHAR])
     self.SetQuoteChar(GM.Globals[GM.CSV_OUTPUT_QUOTE_CHAR])
-    if GM.Globals.get(GM.CSV_OUTPUT_SORT_HEADERS) is None:
+#    if GM.Globals.get(GM.CSV_OUTPUT_SORT_HEADERS) is None:
+    if not GM.Globals.get(GM.CSV_OUTPUT_SORT_HEADERS):
       GM.Globals[GM.CSV_OUTPUT_SORT_HEADERS] = GC.Values.get(GC.CSV_OUTPUT_SORT_HEADERS, [])
     self.SetSortHeaders(GM.Globals[GM.CSV_OUTPUT_SORT_HEADERS])
-    if GM.Globals.get(GM.CSV_OUTPUT_TIMESTAMP_COLUMN) is None:
+#    if GM.Globals.get(GM.CSV_OUTPUT_TIMESTAMP_COLUMN) is None:
+    if not GM.Globals.get(GM.CSV_OUTPUT_TIMESTAMP_COLUMN):
       GM.Globals[GM.CSV_OUTPUT_TIMESTAMP_COLUMN] = GC.Values.get(GC.CSV_OUTPUT_TIMESTAMP_COLUMN, '')
     self.SetTimestampColumn(GM.Globals[GM.CSV_OUTPUT_TIMESTAMP_COLUMN])
     self.SetFormatJSON(False)
@@ -8431,6 +8437,15 @@ class CSVPrintFile():
     self.SetTitles(headerForce)
     self.SetJSONTitles(headerForce)
 
+  def SetHeaderOrder(self, headerOrder):
+    self.headerOrder = headerOrder
+
+  def orderHeaders(self, titlesList):
+    for title in self.headerOrder:
+      if title in titlesList:
+        titlesList.remove(title)
+    return self.headerOrder+titlesList
+
   @staticmethod
   def HeaderFilterMatch(filters, title):
     for filterStr in filters:
@@ -8870,14 +8885,21 @@ class CSVPrintFile():
           self.FixNodataTitles()
         if self.mapDrive3Titles:
           self. MapDrive3TitlesToDrive2()
+      else:
+        self.titlesList = self.headerForce
       if self.timestampColumn:
         self.AddTitle(self.timestampColumn)
+      if self.headerOrder:
+        self.titlesList = self.orderHeaders(self.titlesList)
       titlesList = self.titlesList
     else:
-      if self.fixPaths:
-        self.FixPathsTitles(self.JSONtitlesList)
-      if not self.rows and self.nodataFields is not None:
-        self.FixNodataTitles()
+      if not self.headerForce:
+        if self.fixPaths:
+          self.FixPathsTitles(self.JSONtitlesList)
+        if not self.rows and self.nodataFields is not None:
+          self.FixNodataTitles()
+      else:
+        self.JSONtitlesList = self.headerForce
       if self.timestampColumn:
         for i, v in enumerate(self.JSONtitlesList):
           if v.startswith('JSON'):
@@ -8886,6 +8908,8 @@ class CSVPrintFile():
             break
         else:
           self.AddJSONTitle(self.timestampColumn)
+      if self.headerOrder:
+        self.JSONtitlesList = self.orderHeaders(self.JSONtitlesList)
       titlesList = self.JSONtitlesList
     normalizeSortHeaders()
     if (not self.todrive) or self.todrive['localcopy']:
@@ -9623,7 +9647,7 @@ def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout,
                            csvColumnDelimiter, csvNoEscapeChar, csvQuoteChar,
                            csvSortHeaders, csvTimestampColumn,
                            csvHeaderFilter, csvHeaderDropFilter,
-                           csvHeaderForce,
+                           csvHeaderForce, csvHeaderOrder,
                            csvRowFilter, csvRowFilterMode, csvRowDropFilter, csvRowDropFilterMode,
                            csvRowLimit,
                            showGettings, showGettingsGotNL,
@@ -9647,13 +9671,14 @@ def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout,
     GM.Globals[GM.CSV_OUTPUT_HEADER_DROP_FILTER] = csvHeaderDropFilter[:]
     GM.Globals[GM.CSV_OUTPUT_HEADER_FILTER] = csvHeaderFilter[:]
     GM.Globals[GM.CSV_OUTPUT_HEADER_FORCE] = csvHeaderForce[:]
+    GM.Globals[GM.CSV_OUTPUT_HEADER_ORDER] = csvHeaderOrder[:]
     GM.Globals[GM.CSV_OUTPUT_QUOTE_CHAR] = csvQuoteChar
     GM.Globals[GM.CSV_OUTPUT_ROW_DROP_FILTER] = csvRowDropFilter[:]
     GM.Globals[GM.CSV_OUTPUT_ROW_DROP_FILTER_MODE] = csvRowDropFilterMode
     GM.Globals[GM.CSV_OUTPUT_ROW_FILTER] = csvRowFilter[:]
     GM.Globals[GM.CSV_OUTPUT_ROW_FILTER_MODE] = csvRowFilterMode
     GM.Globals[GM.CSV_OUTPUT_ROW_LIMIT] = csvRowLimit
-    GM.Globals[GM.CSV_OUTPUT_SORT_HEADERS] = csvSortHeaders
+    GM.Globals[GM.CSV_OUTPUT_SORT_HEADERS] = csvSortHeaders[:]
     GM.Globals[GM.CSV_OUTPUT_TIMESTAMP_COLUMN] = csvTimestampColumn
     GM.Globals[GM.CSV_TODRIVE] = todrive.copy()
     GM.Globals[GM.DEBUG_LEVEL] = debugLevel
@@ -9661,9 +9686,9 @@ def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout,
     GM.Globals[GM.OUTPUT_TIMEFORMAT] = output_timeformat
     GM.Globals[GM.NUM_BATCH_ITEMS] = numItems
     GM.Globals[GM.PID] = pid
-    GM.Globals[GM.PRINT_AGU_DOMAINS] = printAguDomains
-    GM.Globals[GM.PRINT_CROS_OUS] = printCrosOUs
-    GM.Globals[GM.PRINT_CROS_OUS_AND_CHILDREN] = printCrosOUsAndChildren
+    GM.Globals[GM.PRINT_AGU_DOMAINS] = printAguDomains[:]
+    GM.Globals[GM.PRINT_CROS_OUS] = printCrosOUs[:]
+    GM.Globals[GM.PRINT_CROS_OUS_AND_CHILDREN] = printCrosOUsAndChildren[:]
     GM.Globals[GM.SAVED_STDOUT] = None
     GM.Globals[GM.SHOW_GETTINGS] = showGettings
     GM.Globals[GM.SHOW_GETTINGS_GOT_NL] = showGettingsGotNL
@@ -9870,6 +9895,7 @@ def MultiprocessGAMCommands(items, showCmds):
                                                   GC.Values[GC.CSV_OUTPUT_HEADER_FILTER],
                                                   GC.Values[GC.CSV_OUTPUT_HEADER_DROP_FILTER],
                                                   GC.Values[GC.CSV_OUTPUT_HEADER_FORCE],
+                                                  GC.Values[GC.CSV_OUTPUT_HEADER_ORDER],
                                                   GC.Values[GC.CSV_OUTPUT_ROW_FILTER],
                                                   GC.Values[GC.CSV_OUTPUT_ROW_FILTER_MODE],
                                                   GC.Values[GC.CSV_OUTPUT_ROW_DROP_FILTER],
@@ -25780,7 +25806,7 @@ CHAT_UPDATE_SPACE_PERMISSIONS_MAP = {
   'managewebhooks': 'manageWebhooks',
   'replymessages': 'replyMessages',
   }
- 
+
 # gam <UserTypeEntity> update chatspace <ChatSpace>
 #	[restricted|(audience <String>)]|
 #	([displayname <String>]
@@ -57236,7 +57262,7 @@ def createDriveFile(users):
           continue
       result = callGAPI(drive.files(), 'create',
                         throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.FORBIDDEN, GAPI.INSUFFICIENT_PERMISSIONS, GAPI.INSUFFICIENT_PARENT_PERMISSIONS,
-                                                                    GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.CANNOT_ADD_PARENT,
+                                                                    GAPI.PERMISSION_DENIED, GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.CANNOT_ADD_PARENT,
                                                                     GAPI.FILE_NOT_FOUND, GAPI.UNKNOWN_ERROR, GAPI.INTERNAL_ERROR,
                                                                     GAPI.STORAGE_QUOTA_EXCEEDED, GAPI.TEAMDRIVES_SHARING_RESTRICTION_NOT_ALLOWED,
                                                                     GAPI.TEAMDRIVE_FILE_LIMIT_EXCEEDED, GAPI.TEAMDRIVE_HIERARCHY_TOO_DEEP,
@@ -57275,7 +57301,7 @@ def createDriveFile(users):
           row.update(addCSVData)
         csvPF.WriteRow(row)
     except (GAPI.forbidden, GAPI.insufficientFilePermissions, GAPI.insufficientParentPermissions,
-            GAPI.invalidQuery, GAPI.invalid, GAPI.badRequest, GAPI.cannotAddParent,
+            GAPI.invalidQuery, GAPI.permissionDenied, GAPI.invalid, GAPI.badRequest, GAPI.cannotAddParent,
             GAPI.fileNotFound, GAPI.unknownError, GAPI.storageQuotaExceeded, GAPI.teamDrivesSharingRestrictionNotAllowed,
             GAPI.teamDriveFileLimitExceeded, GAPI.teamDriveHierarchyTooDeep,
             GAPI.uploadTooLarge, GAPI.teamDrivesShortcutFileNotSupported) as e:
