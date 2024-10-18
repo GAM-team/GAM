@@ -1,3 +1,7 @@
+7.00.22
+
+Fixed bug in `gam create vaultmatter ... showdetails` that caused a trap.
+
 7.00.21
 
 Added `csv_output_header_order` variable to `gam.cfg` that is a list of `<Strings>`

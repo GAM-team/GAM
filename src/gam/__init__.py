@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.21'
+__version__ = '7.00.22'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -41154,7 +41154,7 @@ def doCreateVaultMatter():
         break
     Ind.Decrement()
   if showDetails:
-    _showVaultMatter(None, matter, cd, None)
+    _showVaultMatter(matter, cd, None)
 
 VAULT_MATTER_ACTIONS = {
   'close': Act.CLOSE,
