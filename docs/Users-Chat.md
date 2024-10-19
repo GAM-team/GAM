@@ -434,6 +434,7 @@ gam <UserTypeEntity> remove chatmember members <ChatMemberList>
 ```
 
 ### Add members to a chat space, asadmin
+Creating memberships for users outside the administrator's Google Workspace organization isn't supported using asadmin.
 ```
 gam <UserItem> create chatmember asadmin <ChatSpace>
         [type human|bot] [role member|manager]

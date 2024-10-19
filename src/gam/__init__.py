@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.22'
+__version__ = '7.00.23'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -26115,10 +26115,13 @@ def _getChatMemberEmail(cd, member):
     _, memberUid = member['groupMember']['name'].split('/')
     member['groupMember']['email'], _ = convertUIDtoEmailAddressWithType(f'uid:{memberUid}', cd, None, emailTypes=['group'])
 
-def normalizeUserMember(cd, user, userList):
+def normalizeUserMember(user, userList):
+  userList.append(normalizeEmailAddressOrUID(user))
+
+def getUserMemberID(cd, user, userList):
   userList.append(convertEmailAddressToUID(user, cd, emailType='user'))
 
-def normalizeGroupMember(cd, group, groupList):
+def getGroupMemberID(cd, group, groupList):
   groupList.append(convertEmailAddressToUID(group, cd, emailType='group'))
 
 # gam <UserTypeEntity> create chatmember <ChatSpace>
@@ -26181,16 +26184,16 @@ def createChatMember(users):
     if myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
       parent = getSpaceName(myarg)
     elif myarg == 'user':
-      normalizeUserMember(cd, getEmailAddress(returnUIDprefix='uid:'), userList)
+      normalizeUserMember(getEmailAddress(returnUIDprefix='uid:'), userList)
     elif myarg in {'member', 'members'}:
       _, members = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
       for user in members:
-        normalizeUserMember(cd, user, userList)
+        normalizeUserMember(user, userList)
     elif myarg == 'group':
-      normalizeGroupMember(cd, getEmailAddress(returnUIDprefix='uid:'), groupList)
+      getGroupMemberID(cd, getEmailAddress(returnUIDprefix='uid:'), groupList)
     elif myarg == 'groups':
       for group in getEntityList(Cmd.OB_GROUP_ENTITY):
-        normalizeGroupMember(cd, group, groupList)
+        getGroupMemberID(cd, group, groupList)
     elif myarg == 'role':
       role = getChoice(CHAT_MEMBER_ROLE_MAP, mapChoice=True)
     elif myarg == 'type':
@@ -26288,16 +26291,16 @@ def deleteUpdateChatMember(users):
       if myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
         parent = getSpaceName(myarg)
       elif myarg == 'user':
-        normalizeUserMember(cd, getEmailAddress(returnUIDprefix='uid:'), userList)
+        normalizeUserMember(getEmailAddress(returnUIDprefix='uid:'), userList)
       elif myarg in {'member', 'members'}:
         _, members = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
         for user in members:
-          normalizeUserMember(cd, user, userList)
+          normalizeUserMember(user, userList)
       elif deleteMode and myarg == 'group':
-        normalizeGroupMember(cd, getEmailAddress(returnUIDprefix='uid:'), groupList)
+        getGroupMemberID(cd, getEmailAddress(returnUIDprefix='uid:'), groupList)
       elif deleteMode and myarg == 'groups':
         for group in getEntityList(Cmd.OB_GROUP_ENTITY):
-          normalizeGroupMember(cd, group, groupList)
+          getGroupMemberID(cd, group, groupList)
       else:
         unknownArgumentExit()
   if not deleteMode and 'role' not in body:
@@ -26441,16 +26444,16 @@ def syncChatMembers(users):
       csvPF = CSVPrintFile(CHAT_SYNC_PREVIEW_TITLES)
     elif myarg == 'users':
       for user in getEntityList(Cmd.OB_USER_ENTITY):
-        normalizeUserMember(cd, user, userList)
+        getUserMemberID(cd, user, userList)
       usersSpecified = True
     elif myarg in {'member', 'members'}:
       _, members = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
       for user in members:
-        normalizeUserMember(cd, user, userList)
+        getUserMemberID(cd, user, userList)
       usersSpecified = True
     elif myarg == 'groups':
       for group in getEntityList(Cmd.OB_GROUP_ENTITY):
-        normalizeGroupMember(cd, group, groupList)
+        getGroupMemberID(cd, group, groupList)
       groupsSpecified = True
     else:
       unknownArgumentExit()

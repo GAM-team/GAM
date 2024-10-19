@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.00.23
+
+Updated `gam <UserTypeEntity> create|delete chatmember` to accept external (non-domain) email addresses.
+
 ### 7.00.22
 
 Fixed bug in `gam create vaultmatter ... showdetails` that caused a trap.
