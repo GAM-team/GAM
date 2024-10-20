@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.23'
+__version__ = '7.00.24'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -11851,10 +11851,11 @@ def doPrintShowProjects():
                         resource=project['name'], body=policyBody)
       return policy
     except (GAPI.forbidden, GAPI.permissionDenied) as e:
-      entityActionFailedWarning([Ent.PROJECT, project['projectId'], Ent.IAM_POLICY], str(e), i, count)
+      entityActionFailedWarning([Ent.PROJECT, project['projectId'], Ent.IAM_POLICY, None], str(e), i, count)
     return {}
 
-  crm, _, login_hint, projects = _getLoginHintProjects(printShowCmd=True, readOnly=True)
+  readOnly = not Cmd.ArgumentIsAhead('showiampolicies')
+  crm, _, login_hint, projects = _getLoginHintProjects(printShowCmd=True, readOnly=readOnly)
   csvPF = CSVPrintFile(['User', 'projectId']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   oneMemberPerRow = False

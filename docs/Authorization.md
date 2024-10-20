@@ -362,7 +362,7 @@ gam update project [[admin] <EmailAddress>] [<ProjectIDEntity>]
 * `<EmailAddress>` - A Google Workspace admin/GCP project manager; if omitted, you will be prompted for the address
 
 Use these options to select projects.
-* `current` - The project referenced in `client_secret.json`; this is the default
+* `current` - The project referenced in `client_secrets.json`; this is the default
 * `gam` - Projects accessible by the administrator that were created by Gam, i.e, their project ID begins with `gam-project-`
 * `<ProjectID>` - A Google API project ID
 * `filter <String>` - A filter to select projects accessible by the administrator; see the API documentation
@@ -374,7 +374,7 @@ gam delete project [[admin] <EmailAddress>] [<ProjectIDEntity>]
 * `<EmailAddress>` - A Google Workspace admin/GCP project manager; if omitted, you will be prompted for the address
 
 Use these options to select projects.
-* `current` - The project referenced in `client_secret.json`; this is the default
+* `current` - The project referenced in `client_secrets.json`; this is the default
 * `gam` - Projects accessible by the administrator that were created by Gam, i.e, their project ID begins with `gam-project-`
 * `<ProjectID>` - A Google API project ID
 * `filter <String>` - A filter to select projects accessible by the administrator; see the API documentation
@@ -394,7 +394,7 @@ gam show projects [[admin] <EmailAddress>] [all|<ProjectIDEntity>]
 
 Use these options to select projects.
 * `all` - All projects accessible by the administrator; this is the default
-* `current` - The project referenced in `client_secret.json`
+* `current` - The project referenced in `client_secrets.json`
 * `gam` - Projects accessible by the administrator that were created by Gam, i.e, their project ID begins with `gam-project-`
 * `<ProjectID>` - A Google API project ID
 * `filter <String>` - A filter to select projects accessible by the administrator; see the API documentation
@@ -412,7 +412,7 @@ gam print projects [[admin] <EmailAddress>] [all|<ProjectIDEntity>] [todrive <To
 
 Use these options to select projects.
 * `all` - All projects accessible by the administrator; this is the default
-* `current` - The project referenced in `client_secret.json`
+* `current` - The project referenced in `client_secrets.json`
 * `gam` - Projects accessible by the administrator that were created by Gam, i.e, their project ID begins with `gam-project-`
 * `<ProjectID>` - A Google API project ID
 * `filter <String>` - A filter to select projects accessible by the administrator; see the API documentation
@@ -698,7 +698,7 @@ gam create|add svcacct [[admin] <EmailAddress>] [<ProjectIDEntity>]
 * `<EmailAddress>` - Google Workspace admin/GCP project manager; if omitted, you will be prompted for the address
 
 Use these options to select projects.
-* `current` - The project referenced in `client_secret.json`; this is the default
+* `current` - The project referenced in `client_secrets.json`; this is the default
 * `gam` - Projects accessible by the administrator that were created by Gam, i.e, their project ID begins with `gam-project-`
 * `<ProjectID>` - A Google API project ID
 * `filter <String>` - A filter to select projects accessible by the administrator; see the API documentation
@@ -721,7 +721,7 @@ gam delete svcacct [[admin] <EmailAddress>] [<ProjectIDEntity>]
 * `<EmailAddress>` - Google Workspace admin/GCP project manager; if omitted, you will be prompted for the address
 
 Use these options to select projects.
-* `current` - The project referenced in `client_secret.json`; this is the default
+* `current` - The project referenced in `client_secrets.json`; this is the default
 * `gam` - Projects accessible by the administrator that were created by Gam, i.e, their project ID begins with `gam-project-`
 * `<ProjectID>` - A Google API project ID
 * `filter <String>` - A filter to select projects accessible by the administrator; see the API documentation
@@ -742,7 +742,7 @@ gam print svcaccts [[admin] <EmailAddress>] [all|<ProjectIDEntity>]
 
 Use these options to select projects.
 * `all` - All projects accessible by the administrator; this is the default
-* `current` - The project referenced in `client_secret.json`
+* `current` - The project referenced in `client_secrets.json`
 * `gam` - Projects accessible by the administrator that were created by Gam, i.e, their project ID begins with `gam-project-`
 * `<ProjectID>` - A Google API project ID
 * `filter <String>` - A filter to select projects accessible by the administrator; see the API documentation
