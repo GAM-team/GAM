@@ -695,10 +695,6 @@ _SVCACCT_SCOPES = [
   ]
 
 _SVCACCT_SPECIAL_SCOPES = [
-  {'name': 'Cloud Resource Manager API v3',
-   'api': CLOUDRESOURCEMANAGER,
-   'subscopes': [],
-   'scope': CLOUD_PLATFORM_SCOPE},
   {'name': 'Drive API - todrive',
    'api': DRIVETD,
    'subscopes': [],
