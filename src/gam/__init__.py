@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.27'
+__version__ = '7.00.28'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -35166,7 +35166,7 @@ def doPrintCIPolicies():
     if groupId := policy['policyQuery'].get('group'):
       _, _, policy['policyQuery']['groupEmail'] = convertGroupCloudIDToEmail(groups_ci, groupId)
       # all groups are in the root OU so the orgUnit attribute is useless
-      policy['policyQuery'].pop('orgUnit')
+      policy['policyQuery'].pop('orgUnit', None)
     elif orgId := policy['policyQuery'].get('orgUnit'):
       policy['policyQuery']['orgUnitPath'] = convertOrgUnitIDtoPath(cd, orgId)
   if not csvPF:

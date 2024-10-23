@@ -1,3 +1,7 @@
+7.00.28
+
+Fix issue that cause print/show policies to fail on some group policies.
+
 7.00.27
 
 Updated `gam <UserTypeEntity> collect orphans` and all commands that print file paths to recognize
