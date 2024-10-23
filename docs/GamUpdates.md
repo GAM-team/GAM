@@ -10,6 +10,17 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.00.26
+
+Updated `drive_dir` in `gam.cfg` to allow the value `.` that causes `redirect csv|stdout|stderr <FileName>`
+to write `<FileName>` in the current directory without having to prefix `<FileName>` with `./`.
+
+Upgraded to OpenSSL 3.4.0 where possible.
+
+### 7.00.25
+
+Updated authentication process for `gam print|show projects`.
+
 ### 7.00.24
 
 Updated `gam print|show projects ... showiampolicies 0|1|3` to use non-service account authentication.

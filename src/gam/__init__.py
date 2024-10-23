@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.24'
+__version__ = '7.00.26'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -3671,7 +3671,7 @@ def SetGlobalVariables():
     dirPath = os.path.expanduser(_stripStringQuotes(GM.Globals[GM.PARSER].get(sectionName, itemName)))
     if (not dirPath) and (itemName in {GC.GMAIL_CSE_INCERT_DIR, GC.GMAIL_CSE_INKEY_DIR}):
       return dirPath
-    if (not dirPath) or (not os.path.isabs(dirPath)):
+    if (not dirPath) or (not os.path.isabs(dirPath) and dirPath != '.'):
       if (sectionName != configparser.DEFAULTSECT) and (GM.Globals[GM.PARSER].has_option(sectionName, itemName)):
         dirPath = os.path.join(os.path.expanduser(_stripStringQuotes(GM.Globals[GM.PARSER].get(configparser.DEFAULTSECT, itemName))), dirPath)
       if not os.path.isabs(dirPath):
@@ -11381,19 +11381,21 @@ def _getProjects(crm, pfilter, returnNF=False):
                              query=pfilter)
     if projects:
       return projects
-    if not pfilter:
+    if (not pfilter) or pfilter == GAM_PROJECT_FILTER:
       return []
     if pfilter.startswith('id:'):
       projects = [callGAPI(crm.projects(), 'get',
                            throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                            name=f'projects/{pfilter[3:]}')]
-    if projects or not returnNF:
-      return projects
-    return [{'projectId': pfilter[3:], 'state': 'NF'}]
+      if projects or not returnNF:
+        return projects
+    return []
   except (GAPI.badRequest, GAPI.invalidArgument) as e:
     entityActionFailedExit([Ent.PROJECT, pfilter], str(e))
   except GAPI.permissionDenied:
-    return []
+    if (not pfilter) or (not pfilter.startswith('id:')) or (not returnNF):
+      return []
+  return [{'projectId': pfilter[3:], 'state': 'NF'}]
 
 def _checkProjectFound(project, i, count):
   if project.get('state', '') != 'NF':
@@ -11561,6 +11563,8 @@ def _getLoginHintProjects(createSvcAcctCmd=False, deleteSvcAcctCmd=False, printS
   if login_hint and login_hint.find('@') == -1:
     Cmd.Backup()
     login_hint = None
+  if readOnly and login_hint and login_hint != _getAdminEmail():
+    readOnly = False
   projectIds = None
   pfilter = getString(Cmd.OB_STRING, optional=True)
   if not pfilter:
@@ -11602,15 +11606,9 @@ def _getLoginHintProjects(createSvcAcctCmd=False, deleteSvcAcctCmd=False, printS
   login_hint = _getValidateLoginHint(login_hint, projectId)
   crm = None
   if readOnly:
-    _getSvcAcctData()
-    if (GM.Globals[GM.SVCACCT_SCOPES_DEFINED] and
-        (API.CLOUDRESOURCEMANAGER in GM.Globals[GM.SVCACCT_SCOPES] or
-         API.CLOUDRESOURCEMANAGER_V1 in GM.Globals[GM.SVCACCT_SCOPES])): #Backwards compatibility hack
-# Removed 6.21.05
-#      _, crm = buildGAPIServiceObject(API.CLOUDRESOURCEMANAGER, login_hint)
-      _, crm = buildGAPIServiceObject(API.CLOUDRESOURCEMANAGER, None)
-      if crm:
-        httpObj = crm._http
+    _, crm = buildGAPIServiceObject(API.CLOUDRESOURCEMANAGER, None)
+    if crm:
+      httpObj = crm._http
   if not crm:
     httpObj, crm = getCRMService(login_hint)
   if projectIds is None:
@@ -11620,7 +11618,7 @@ def _getLoginHintProjects(createSvcAcctCmd=False, deleteSvcAcctCmd=False, printS
       else:
         projects = _getProjects(crm, f'id:{projectId}', returnNF=True)
     else:
-      projects = _getProjects(crm, pfilter)
+      projects = _getProjects(crm, pfilter, returnNF=printShowCmd)
   else:
     projects = []
     for projectId in projectIds:

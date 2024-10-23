@@ -50,7 +50,6 @@ CLOUDIDENTITY_ORGUNITS = 'cloudidentityorgunits'
 CLOUDIDENTITY_ORGUNITS_BETA = 'cloudidentityorgunitsbeta'
 CLOUDIDENTITY_USERINVITATIONS = 'cloudidentityuserinvitations'
 CLOUDRESOURCEMANAGER = 'cloudresourcemanager'
-CLOUDRESOURCEMANAGER_V1 = 'cloudresourcemanager1'
 CONTACTS = 'contacts'
 CONTACTDELEGATION = 'contactdelegation'
 DATATRANSFER = 'datatransfer'
@@ -702,10 +701,6 @@ _SVCACCT_SCOPES = [
   ]
 
 _SVCACCT_SPECIAL_SCOPES = [
-  {'name': 'Cloud Resource Manager API v3',
-   'api': CLOUDRESOURCEMANAGER,
-   'subscopes': [],
-   'scope': CLOUD_PLATFORM_SCOPE},
   {'name': 'Drive API - todrive',
    'api': DRIVETD,
    'subscopes': [],
