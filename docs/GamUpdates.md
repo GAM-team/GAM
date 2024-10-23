@@ -12,7 +12,7 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 
 7.00.28
 
-Fix issue that cause print/show policies to fail on some group policies.
+Fixed issue that caused `gam print/show policies` to fail on some group policies.
 
 7.00.27
 

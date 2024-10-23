@@ -82,6 +82,7 @@ Client Access
 * [Cloud Identity Devices](Cloud-Identity-Devices)
 * [Cloud Identity Groups](Cloud-Identity-Groups)
 * [Cloud Identity Groups - Membership](Cloud-Identity-Groups-Membership)
+* [Cloud Identity Policies](Cloud-Identity-Policies)
 * [Cloud Storage](Cloud-Storage)
 * [Context Aware Access Levels](Context-Aware-Access-Levels)
 * [Customer](Customer)
