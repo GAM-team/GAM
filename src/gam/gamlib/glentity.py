@@ -302,6 +302,7 @@ class GamEntity():
   PERMITTEE = 'prmt'
   PERSONAL_DEVICE = 'pedv'
   PHOTO = 'phot'
+  POLICY = 'poli'
   POP_ENABLED = 'popa'
   PRESENTATION = 'pres'
   PRINTER = 'prin'
@@ -653,6 +654,7 @@ class GamEntity():
     PERMITTEE: ['Permittees', 'Permittee'],
     PERSONAL_DEVICE: ['Personal Devices', 'Personal Device'],
     PHOTO: ['Photos', 'Photo'],
+    POLICY: ['Policies', 'Policy'],
     POP_ENABLED: ['POP Enabled', 'POP Enabled'],
     PRESENTATION: ['Presentations', 'Presentation'],
     PRINTER: ['Printers', 'Printer'],

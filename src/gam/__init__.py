@@ -35084,6 +35084,104 @@ def updateFieldsForCIGroupMatchPatterns(matchPatterns, fieldsList, csvPF=None):
       else:
         fieldsList.append(field)
 
+# gam show policies (query <String>) [nowarnings]
+# gam print policies [todrive <ToDriveAttribute>*]
+#   (query <String>) [nowarnings]
+def doPrintCIPolicy():
+
+  def _showPolicy(policy, FJQC, i=0, count=0):
+    if FJQC is not None and FJQC.formatJSON:
+      printLine(json.dumps(policy,
+                           ensure_ascii=False,
+                           sort_keys=True))
+      return
+    printEntity([Ent.POLICY, policy['name']], i, count)
+    Ind.Increment()
+    policy.pop('name')
+    showJSON(None, policy)
+    printBlankLine()
+    Ind.Decrement()
+
+  def _printPolicy(policy):
+    row = flattenJSON(policy)
+    if not FJQC.formatJSON:
+      csvPF.WriteRowTitles(row)
+    elif csvPF.CheckRowTitles(row):
+      csvPF.WriteRowNoFilter({'name': policy['name'],
+                              'JSON': json.dumps(cleanJSON(policy),
+                                                 ensure_ascii=False,
+                                                 sort_keys=True)})
+
+  # Policies where GAM should offer additional guidance and information
+  warnings = {
+          'settings/drive_and_docs.external_sharing': {
+              'warningType': 'SUPERSEDED_POLICY',
+              'warningMessage': 'CAUTION: Drive Sharing settings are superseded by Drive Trust Rules if Trust Rules has been enabled for your domain. Drive Trust Rule settings are not available in the Policy API today so GAM is not able to check if Trust Rules is enabled and if the settings/drive_and_docs.external_sharing policies are actually in effect for your domain. If Drive Trust Rules is enabled for your domain then this settings/drive_and_docs.external_sharing policy does not accurately reflect your current Drive sharing settings.'
+              }
+          }
+  groups_ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
+  ci = buildGAPIObject(API.CLOUDIDENTITY_POLICY)
+  cd = buildGAPIObject(API.DIRECTORY)
+  csvPF = CSVPrintFile(['name']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
+  fields = 'nextPageToken,policies(name,policyQuery(group,orgUnit,sortOrder),type,setting)'
+  ifilter = None
+  add_warnings = True
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif myarg == 'filter':
+      ifilter = getString(Cmd.OB_STRING)
+    elif myarg == 'nowarnings':
+      add_warnings = False
+    else:
+      unknownArgumentExit()
+  printGettingAllAccountEntities(Ent.POLICY, ifilter)
+  pageMessage = getPageMessage()
+  throwReasons = [GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED]
+  try:
+    policies = callGAPIpages(ci.policies(),
+                             'list',
+                             'policies',
+                             throwReasons=throwReasons,
+                             pageMessage=pageMessage,
+                             filter=ifilter,
+                             fields=fields,
+                             pageSize=100)
+  except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+    entityActionFailedWarning([Ent.POLICY, None], str(e))
+    return
+  # Google returns unordered results, sort them by setting type
+  policies = sorted(policies, key=lambda p: p.get('setting', {}).get('type', ''))
+  for policy in policies:
+    # convert any wordlists into spaced strings to reduce output complexity
+    if policy['setting']['type'] == 'settings/detector.word_list':
+      policy['setting']['value']['wordList'] = ' '.join(policy['setting']['value']['wordList']['words'])
+    # add any warnings to applicable policies
+    if add_warnings and policy['setting']['type'] in warnings:
+      policy['warning'] = warnings[policy['setting']['type']]
+    if groupId := policy['policyQuery'].get('group'):
+      _, _, policy['policyQuery']['groupEmail'] = convertGroupCloudIDToEmail(groups_ci, groupId)
+      # all groups are in the root OU so the orgUnit attribute is useless
+      policy['policyQuery'].pop('orgUnit')
+    elif orgId := policy['policyQuery'].get('orgUnit'):
+      policy['policyQuery']['orgUnitPath'] = convertOrgUnitIDtoPath(cd, orgId)
+  if not csvPF:
+    jcount = len(policies)
+    performActionNumItems(jcount, Ent.POLICY)
+    Ind.Increment()
+    j = 0
+    for policy in policies:
+      j += 1
+      _showPolicy(policy, FJQC, j, jcount)
+    Ind.Decrement()
+  else:
+    for policy in policies:
+      _printPolicy(policy)
+  if csvPF:
+    csvPF.writeCSVfile('Policies')
+
 PRINT_CIGROUPS_JSON_TITLES = ['email', 'JSON']
 
 # gam print cigroups [todrive <ToDriveAttribute>*]
@@ -75093,6 +75191,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMEVERSIONS:	doPrintShowChromeVersions,
       Cmd.ARG_CIGROUP:		doPrintCIGroups,
       Cmd.ARG_CIGROUPMEMBERS:	doPrintCIGroupMembers,
+      Cmd.ARG_CIPOLICY: doPrintCIPolicy,
       Cmd.ARG_CLASSROOMINVITATION:	doPrintShowClassroomInvitations,
       Cmd.ARG_CONTACT:		doPrintShowDomainContacts,
       Cmd.ARG_COURSE:		doPrintCourses,
@@ -75132,6 +75231,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_OWNERSHIP:	doPrintShowOwnership,
       Cmd.ARG_PEOPLECONTACT:	doPrintShowDomainPeopleContacts,
       Cmd.ARG_PEOPLEPROFILE:	doPrintShowDomainPeopleProfiles,
+      Cmd.ARG_CIPOLICY: doPrintCIPolicy,
       Cmd.ARG_PRINTER:		doPrintShowPrinters,
       Cmd.ARG_PRINTERMODEL:	doPrintShowPrinterModels,
       Cmd.ARG_PRIVILEGES:	doPrintShowPrivileges,
@@ -75221,6 +75321,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMESCHEMA:	doPrintShowChromeSchemas,
       Cmd.ARG_CHROMEVERSIONS:	doPrintShowChromeVersions,
       Cmd.ARG_CIGROUPMEMBERS:	doShowCIGroupMembers,
+      Cmd.ARG_CIPOLICY: doPrintCIPolicy,
       Cmd.ARG_CLASSROOMINVITATION:	doPrintShowClassroomInvitations,
       Cmd.ARG_CONTACT:		doPrintShowDomainContacts,
       Cmd.ARG_CROSTELEMETRY:	doInfoPrintShowCrOSTelemetry,
