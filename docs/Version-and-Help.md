@@ -3,7 +3,7 @@
 Print the current version of Gam with details
 ```
 gam version
-GAM 7.00.25 - https://github.com/GAM-team/GAM - pyinstaller
+GAM 7.00.26 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.13.0 64-bit final
 MacOS Sonoma 14.5 x86_64
@@ -15,7 +15,7 @@ Time: 2023-06-02T21:10:00-07:00
 Print the current version of Gam with details and time offset information
 ```
 gam version timeoffset
-GAM 7.00.25 - https://github.com/GAM-team/GAM - pyinstaller
+GAM 7.00.26 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.13.0 64-bit final
 MacOS Sonoma 14.5 x86_64
@@ -27,7 +27,7 @@ Your system time differs from www.googleapis.com by less than 1 second
 Print the current version of Gam with extended details and SSL information
 ```
 gam version extended
-GAM 7.00.25 - https://github.com/GAM-team/GAM - pyinstaller
+GAM 7.00.26 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.13.0 64-bit final
 MacOS Sonoma 14.5 x86_64
@@ -35,17 +35,17 @@ Path: /Users/Admin/bin/gam7
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
 Time: 2023-06-02T21:10:00-07:00
 Your system time differs from admin.googleapis.com by less than 1 second
-OpenSSL 3.1.1 30 May 2023
-cryptography 41.0.1
-filelock 3.13.0
-google-api-python-client 2.88.0
-google-auth-httplib2 0.1.0
-google-auth-oauthlib 1.0.0
-google-auth 2.19.1
+OpenSSL 3.4.0 22 Oct Sep 2024
+cryptography 43.0.3
+filelock 3.16.1
+google-api-python-client 2.149.0
+google-auth-httplib2 0.2.0
+google-auth-oauthlib 1.2.1
+google-auth 2.35.0
 httplib2 0.22.0
 passlib 1.7.4
-python-dateutil 2.8.2
-yubikey-manager 5.1.1
+python-dateutil 2.9.0.post0
+yubikey-manager 5.5.1
 admin.googleapis.com connects using TLSv1.3 TLS_AES_256_GCM_SHA384
 ```
 
@@ -64,7 +64,7 @@ MacOS High Sierra 10.13.6 x86_64
 Path: /Users/Admin/bin/gam7
 Version Check:
   Current: 5.35.08
-   Latest: 7.00.25
+   Latest: 7.00.26
 echo $?
 1
 ```
@@ -72,7 +72,7 @@ echo $?
 Print the current version number without details
 ```
 gam version simple
-7.00.25
+7.00.26
 ```
 In Linux/MacOS you can do:
 ```
@@ -82,7 +82,7 @@ echo $VER
 Print the current version of Gam and address of this Wiki
 ```
 gam help
-GAM 7.00.25 - https://github.com/GAM-team/GAM
+GAM 7.00.26 - https://github.com/GAM-team/GAM
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.13.0 64-bit final
 MacOS Sonoma 14.5 x86_64

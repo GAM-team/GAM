@@ -163,12 +163,11 @@ as required by Google for headless computers/cloud shells; this is required as o
 ```
 ## Manage Projects
 In all of the project commands, the Google Workspace admin/GCP project manager `<EmailAddress>` can be omitted; you will be prompted for a value.
-You must enter a full address, i.e., user@domain.com; you will be required to enter the password.
+You must enter a full address, i.e., user@domain.com; you will be required to authenticate.
 
-For `print|show projects`, you can eliminate the password requirement by enabling the following scope in `gam update serviceaccount`;
-GAM will then use Service Account access to display projects.
+For `print|show projects`, you can eliminate the password prompt and authentication requirement by specifying the super admin emailaddress used in `gam oauth create`.
 ```
-[*]  9)  Cloud Resource Manager API v3
+gam print projects admin admin@domain.com
 ```
 
 ## Authorize a super admin to create projects
