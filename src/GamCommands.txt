@@ -4067,6 +4067,14 @@ gam update deviceuserstate <DeviceUserEntity> [clientid <String>]
         [healthscore very_poor|poor|neutral|good|very_good] [scorereason clear|<String>]
         (customvalue (bool|boolean <Boolean>)|(number <Integer>)|(string <String>))*
 
+# Cloud Identity Policies
+
+gam print policies [todrive <ToDriveAttribute>*]
+        (query <String>) [nowarnings]
+        [formatjson [quotechar <Character>]]
+gam show policies (query <String>) [nowarnings]
+        [formatjson]
+
 # Inbound SSO
 
 <SSOProfileDisplayName> ::= <String>

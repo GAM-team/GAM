@@ -45,8 +45,8 @@ CLOUDCHANNEL = 'cloudchannel'
 CLOUDIDENTITY_DEVICES = 'cloudidentitydevices'
 CLOUDIDENTITY_GROUPS = 'cloudidentitygroups'
 CLOUDIDENTITY_INBOUND_SSO = 'cloudidentityinboundsso'
-CLOUDIDENTITY_POLICY = 'cloudidentitypolicy'
 CLOUDIDENTITY_ORGUNITS = 'cloudidentityorgunits'
+CLOUDIDENTITY_POLICY = 'cloudidentitypolicy'
 CLOUDIDENTITY_ORGUNITS_BETA = 'cloudidentityorgunitsbeta'
 CLOUDIDENTITY_USERINVITATIONS = 'cloudidentityuserinvitations'
 CLOUDRESOURCEMANAGER = 'cloudresourcemanager'
@@ -225,9 +225,9 @@ _INFO = {
   CLOUDIDENTITY_DEVICES: {'name': 'Cloud Identity Devices API', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_GROUPS: {'name': 'Cloud Identity Groups API', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_INBOUND_SSO: {'name': 'Cloud Identity Inbound SSO API', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
-  CLOUDIDENTITY_POLICY: {'name': 'Cloud Identity Policy API', 'version': 'v1beta1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_ORGUNITS: {'name': 'Cloud Identity OrgUnits API', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_ORGUNITS_BETA: {'name': 'Cloud Identity OrgUnits API', 'version': 'v1beta1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
+  CLOUDIDENTITY_POLICY: {'name': 'Cloud Identity Policy API', 'version': 'v1beta1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_USERINVITATIONS: {'name': 'Cloud Identity User Invitations API', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDRESOURCEMANAGER: {'name': 'Cloud Resource Manager API v3', 'version': 'v3', 'v2discovery': True},
   CONTACTS: {'name': 'Contacts API', 'version': 'v3', 'v2discovery': False},
@@ -362,15 +362,15 @@ _CLIENT_SCOPES = [
    'api': CLOUDIDENTITY_INBOUND_SSO,
    'subscopes': READONLY,
    'scope': 'https://www.googleapis.com/auth/cloud-identity.inboundsso'},
+  {'name': 'Cloud Identity OrgUnits API',
+   'api': CLOUDIDENTITY_ORGUNITS_BETA,
+   'subscopes': READONLY,
+   'scope': 'https://www.googleapis.com/auth/cloud-identity.orgunits'},
   {'name': 'Cloud Identity - Policy',
    'api': CLOUDIDENTITY_POLICY,
    'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/cloud-identity.policies.readonly'
   },
-  {'name': 'Cloud Identity OrgUnits API',
-   'api': CLOUDIDENTITY_ORGUNITS_BETA,
-   'subscopes': READONLY,
-   'scope': 'https://www.googleapis.com/auth/cloud-identity.orgunits'},
   {'name': 'Cloud Identity User Invitations API',
    'api': CLOUDIDENTITY_USERINVITATIONS,
    'subscopes': READONLY,

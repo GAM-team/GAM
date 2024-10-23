@@ -493,7 +493,7 @@ class GamCLArgs():
   ARG_CIGROUPSMEMBERS = 'cigroupsmembers'
   ARG_CIMEMBER = 'cimember'
   ARG_CIMEMBERS = 'cimembers'
-  ARG_CIPOLICY = 'policies'
+  ARG_CIPOLICIES = 'policies'
   ARG_CLASS = 'class'
   ARG_CLASSES = 'classes'
   ARG_CLASSPARTICIPANTS = 'classparticipants'

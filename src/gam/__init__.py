@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.26'
+__version__ = '7.00.27'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -35082,31 +35082,35 @@ def updateFieldsForCIGroupMatchPatterns(matchPatterns, fieldsList, csvPF=None):
       else:
         fieldsList.append(field)
 
-# gam show policies (query <String>) [nowarnings]
+CIPOLICY_TIME_OBJECTS = {'createTime', 'updateTime'}
+
 # gam print policies [todrive <ToDriveAttribute>*]
-#   (query <String>) [nowarnings]
-def doPrintCIPolicy():
+#	(query <String>) [nowarnings]
+#	[formatjson [quotechar <Character>]]
+# gam show policies (query <String>) [nowarnings]
+#	[formatjson]
+def doPrintCIPolicies():
 
   def _showPolicy(policy, FJQC, i=0, count=0):
     if FJQC is not None and FJQC.formatJSON:
-      printLine(json.dumps(policy,
+      printLine(json.dumps(cleanJSON(policy, timeObjects=CIPOLICY_TIME_OBJECTS),
                            ensure_ascii=False,
                            sort_keys=True))
       return
     printEntity([Ent.POLICY, policy['name']], i, count)
     Ind.Increment()
     policy.pop('name')
-    showJSON(None, policy)
+    showJSON(None, policy, timeObjects=CIPOLICY_TIME_OBJECTS)
     printBlankLine()
     Ind.Decrement()
 
   def _printPolicy(policy):
-    row = flattenJSON(policy)
+    row = flattenJSON(policy, timeObjects=CIPOLICY_TIME_OBJECTS)
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
       csvPF.WriteRowNoFilter({'name': policy['name'],
-                              'JSON': json.dumps(cleanJSON(policy),
+                              'JSON': json.dumps(cleanJSON(policy, timeObjects=CIPOLICY_TIME_OBJECTS),
                                                  ensure_ascii=False,
                                                  sort_keys=True)})
 
@@ -35134,7 +35138,7 @@ def doPrintCIPolicy():
     elif myarg == 'nowarnings':
       add_warnings = False
     else:
-      unknownArgumentExit()
+      FJQC.GetFormatJSONQuoteChar(myarg, True)
   printGettingAllAccountEntities(Ent.POLICY, ifilter)
   pageMessage = getPageMessage()
   throwReasons = [GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED]
@@ -54602,7 +54606,7 @@ def extendFileTree(fileTree, feed, DLP, stripCRsFromName):
         if f_file['mimeType'] == MIMETYPE_GA_FOLDER and f_file['name'] == MY_DRIVE:
           f_file['parents'] = []
         else:
-          f_file['parents'] = [ORPHANS] if f_file.get('ownedByMe', False) else [SHARED_WITHME]
+          f_file['parents'] = [ORPHANS] if f_file.get('ownedByMe', False) and 'sharedWithMeTime' not in f_file else [SHARED_WITHME]
       else:
         f_file['parents'] = [SHARED_DRIVES] if 'sharedWithMeTime' not in f_file else [SHARED_WITHME]
     if fileId not in fileTree:
@@ -54622,11 +54626,11 @@ def extendFileTreeParents(drive, fileTree, fields):
                         fileId=fileId, fields=fields, supportsAllDrives=True)
       if not result.get('parents', []):
         if not result.get('driveId'):
-          result['parents'] = [ORPHANS] if result.get('ownedByMe', False) else [SHARED_WITHME]
+          result['parents'] = [ORPHANS] if result.get('ownedByMe', False) and 'sharedWithMeTime' not in result else [SHARED_WITHME]
         else:
           if result['name'] == TEAM_DRIVE:
             result['name'] = _getSharedDriveNameFromId(drive, result['driveId'])
-          result['parents'] = [SHARED_DRIVES] if 'sharedWithMeTime' not in f_file else [SHARED_WITHME]
+          result['parents'] = [SHARED_DRIVES] if 'sharedWithMeTime' not in result else [SHARED_WITHME]
       fileTree[fileId]['info'] = result
       fileTree[fileId]['info']['noDisplay'] = True
       for parentId in result['parents']:
@@ -60821,7 +60825,8 @@ def collectOrphans(users):
                            pageMessage=getPageMessageForWhom(),
                            throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                            retryReasons=[GAPI.UNKNOWN_ERROR],
-                           q=query, orderBy=OBY.orderBy, fields='nextPageToken,files(id,name,parents,mimeType,capabilities(canMoveItemWithinDrive))',
+                           q=query, orderBy=OBY.orderBy,
+                           fields='nextPageToken,files(id,name,parents,mimeType,sharedWithMeTime,capabilities(canMoveItemWithinDrive))',
                            pageSize=GC.Values[GC.DRIVE_MAX_RESULTS])
       if targetUserFolderPattern:
         trgtUserFolderName = _substituteForUser(targetUserFolderPattern, user, userName)
@@ -60833,7 +60838,7 @@ def collectOrphans(users):
         continue
       orphanDriveFiles = []
       for fileEntry in feed:
-        if not fileEntry.get('parents'):
+        if not fileEntry.get('parents') and 'sharedWithMeTime' not in fileEntry:
           orphanDriveFiles.append(fileEntry)
       jcount = len(orphanDriveFiles)
       entityPerformActionNumItemsModifier([Ent.USER, user], jcount, Ent.DRIVE_ORPHAN_FILE_OR_FOLDER,
@@ -75189,7 +75194,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMEVERSIONS:	doPrintShowChromeVersions,
       Cmd.ARG_CIGROUP:		doPrintCIGroups,
       Cmd.ARG_CIGROUPMEMBERS:	doPrintCIGroupMembers,
-      Cmd.ARG_CIPOLICY: doPrintCIPolicy,
+      Cmd.ARG_CIPOLICIES:	doPrintCIPolicies,
       Cmd.ARG_CLASSROOMINVITATION:	doPrintShowClassroomInvitations,
       Cmd.ARG_CONTACT:		doPrintShowDomainContacts,
       Cmd.ARG_COURSE:		doPrintCourses,
@@ -75229,7 +75234,6 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_OWNERSHIP:	doPrintShowOwnership,
       Cmd.ARG_PEOPLECONTACT:	doPrintShowDomainPeopleContacts,
       Cmd.ARG_PEOPLEPROFILE:	doPrintShowDomainPeopleProfiles,
-      Cmd.ARG_CIPOLICY: doPrintCIPolicy,
       Cmd.ARG_PRINTER:		doPrintShowPrinters,
       Cmd.ARG_PRINTERMODEL:	doPrintShowPrinterModels,
       Cmd.ARG_PRIVILEGES:	doPrintShowPrivileges,
@@ -75319,7 +75323,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMESCHEMA:	doPrintShowChromeSchemas,
       Cmd.ARG_CHROMEVERSIONS:	doPrintShowChromeVersions,
       Cmd.ARG_CIGROUPMEMBERS:	doShowCIGroupMembers,
-      Cmd.ARG_CIPOLICY: doPrintCIPolicy,
+      Cmd.ARG_CIPOLICIES:	doPrintCIPolicies,
       Cmd.ARG_CLASSROOMINVITATION:	doPrintShowClassroomInvitations,
       Cmd.ARG_CONTACT:		doPrintShowDomainContacts,
       Cmd.ARG_CROSTELEMETRY:	doInfoPrintShowCrOSTelemetry,

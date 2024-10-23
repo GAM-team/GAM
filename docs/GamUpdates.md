@@ -10,12 +10,28 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.00.27
+
+Updated `gam <UserTypeEntity> collect orphans` and all commands that print file paths to recognize
+that a file owned by a user that has no parents is not an orphan if `sharedWithMeTime` is set.
+This occurs when user A creates a file in a shared folder owned by user B and user B then removes
+user A's access to the folder.
+
+Added commands to display Cloud Identity policies.
+```
+gam print policies [todrive <ToDriveAttribute>*]
+        (query <String>) [nowarnings]
+        [formatjson [quotechar <Character>]]
+gam show policies (query <String>) [nowarnings]
+        [formatjson]
+```
+
 ### 7.00.26
 
 Updated `drive_dir` in `gam.cfg` to allow the value `.` that causes `redirect csv|stdout|stderr <FileName>`
 to write `<FileName>` in the current directory without having to prefix `<FileName>` with `./`.
 
-Upgraded to OpenSSL 3.4.0 where possible.
+Upgraded to OpenSSL 3.4.0.
 
 ### 7.00.25
 
