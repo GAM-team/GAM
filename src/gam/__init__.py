@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.28'
+__version__ = '7.00.29'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -35090,11 +35090,12 @@ def updateFieldsForCIGroupMatchPatterns(matchPatterns, fieldsList, csvPF=None):
 CIPOLICY_TIME_OBJECTS = {'createTime', 'updateTime'}
 
 # gam print policies [todrive <ToDriveAttribute>*]
-#	(query <String>) [nowarnings]
+#	[(filter <String>)|(name <PolicyName>)]  [nowarnings]
 #	[formatjson [quotechar <Character>]]
-# gam show policies (query <String>) [nowarnings]
+# gam show policies
+#	[(filter <String>)|(name <PolicyName>)]  [nowarnings]
 #	[formatjson]
-def doPrintCIPolicies():
+def doPrintShowCIPolicies():
 
   def _showPolicy(policy, FJQC, i=0, count=0):
     if FJQC is not None and FJQC.formatJSON:
@@ -35106,7 +35107,8 @@ def doPrintCIPolicies():
     Ind.Increment()
     policy.pop('name')
     showJSON(None, policy, timeObjects=CIPOLICY_TIME_OBJECTS)
-    printBlankLine()
+    if not pname:
+      printBlankLine()
     Ind.Decrement()
 
   def _printPolicy(policy):
@@ -35131,8 +35133,7 @@ def doPrintCIPolicies():
   cd = buildGAPIObject(API.DIRECTORY)
   csvPF = CSVPrintFile(['name']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
-  fields = 'nextPageToken,policies(name,policyQuery(group,orgUnit,sortOrder),type,setting)'
-  ifilter = None
+  ifilter = pname = None
   add_warnings = True
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -35140,25 +35141,37 @@ def doPrintCIPolicies():
       csvPF.GetTodriveParameters()
     elif myarg == 'filter':
       ifilter = getString(Cmd.OB_STRING)
+    elif myarg == 'name':
+      pname = getString(Cmd.OB_STRING)
     elif myarg == 'nowarnings':
       add_warnings = False
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
-  printGettingAllAccountEntities(Ent.POLICY, ifilter)
-  pageMessage = getPageMessage()
-  throwReasons = [GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED]
-  try:
-    policies = callGAPIpages(ci.policies(),
-                             'list',
-                             'policies',
-                             throwReasons=throwReasons,
-                             pageMessage=pageMessage,
-                             filter=ifilter,
-                             fields=fields,
-                             pageSize=100)
-  except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
-    entityActionFailedWarning([Ent.POLICY, None], str(e))
-    return
+  if ifilter and pname:
+    usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('filter', 'name'))
+  throwReasons = [GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR]
+  fields = 'name,policyQuery(group,orgUnit,sortOrder),type,setting'
+  if not pname:
+    printGettingAllAccountEntities(Ent.POLICY, ifilter)
+    pageMessage = getPageMessage()
+    try:
+      policies = callGAPIpages(ci.policies(), 'list', 'policies',
+                               throwReasons=throwReasons,
+                               pageMessage=pageMessage,
+                               filter=ifilter,
+                               fields=f'nextPageToken,policies({fields})',
+                               pageSize=100)
+    except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+      entityActionFailedExit([Ent.POLICY, None], str(e))
+  else:
+    try:
+      policies = [callGAPI(ci.policies(), 'get',
+                           bailOnInternalError=True,
+                           throwReasons=throwReasons,
+                           name=pname,
+                           fields=fields)]
+    except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
+      entityActionFailedExit([Ent.POLICY, pname], str(e))
   # Google returns unordered results, sort them by setting type
   policies = sorted(policies, key=lambda p: p.get('setting', {}).get('type', ''))
   for policy in policies:
@@ -75199,7 +75212,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMEVERSIONS:	doPrintShowChromeVersions,
       Cmd.ARG_CIGROUP:		doPrintCIGroups,
       Cmd.ARG_CIGROUPMEMBERS:	doPrintCIGroupMembers,
-      Cmd.ARG_CIPOLICIES:	doPrintCIPolicies,
+      Cmd.ARG_CIPOLICIES:	doPrintShowCIPolicies,
       Cmd.ARG_CLASSROOMINVITATION:	doPrintShowClassroomInvitations,
       Cmd.ARG_CONTACT:		doPrintShowDomainContacts,
       Cmd.ARG_COURSE:		doPrintCourses,
@@ -75328,7 +75341,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMESCHEMA:	doPrintShowChromeSchemas,
       Cmd.ARG_CHROMEVERSIONS:	doPrintShowChromeVersions,
       Cmd.ARG_CIGROUPMEMBERS:	doShowCIGroupMembers,
-      Cmd.ARG_CIPOLICIES:	doPrintCIPolicies,
+      Cmd.ARG_CIPOLICIES:	doPrintShowCIPolicies,
       Cmd.ARG_CLASSROOMINVITATION:	doPrintShowClassroomInvitations,
       Cmd.ARG_CONTACT:		doPrintShowDomainContacts,
       Cmd.ARG_CROSTELEMETRY:	doInfoPrintShowCrOSTelemetry,

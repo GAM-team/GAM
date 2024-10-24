@@ -10,11 +10,16 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
-7.00.28
+### 7.00.29
+
+Added option `name <CIPolicyName>` to `gam print|show policies` that displays
+information about a specific policy.
+
+### 7.00.28
 
 Fixed issue that caused `gam print/show policies` to fail on some group policies.
 
-7.00.27
+### 7.00.27
 
 Updated `gam <UserTypeEntity> collect orphans` and all commands that print file paths to recognize
 that a file owned by a user that has no parents is not an orphan if `sharedWithMeTime` is set.
@@ -24,12 +29,11 @@ user A's access to the folder.
 Added commands to display Cloud Identity policies.
 ```
 gam print policies [todrive <ToDriveAttribute>*]
-        (query <String>) [nowarnings]
+        (filter <String>) [nowarnings]
         [formatjson [quotechar <Character>]]
-gam show policies (query <String>) [nowarnings]
+gam show policies (filter <String>) [nowarnings]
         [formatjson]
 ```
-
 ### 7.00.26
 
 Updated `drive_dir` in `gam.cfg` to allow the value `.` that causes `redirect csv|stdout|stderr <FileName>`

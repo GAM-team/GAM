@@ -1,4 +1,4 @@
-!# Basic Items
+# Basic Items
 - [Primitives](#primitives)
 - [Items built from primitives](#items-built-from-primitives)
 - [Named items](#named-items)
@@ -274,14 +274,15 @@
         <EmailAddress>|user:<EmailAddress>|group:<EmailAddress>|
         domain:<DomainName>|domain|default
 <CalendarItem> ::= <EmailAddress>
-<GIGroupAlias> ::= <EmailAddress>
-<GIGroupItem> ::= <EmailAddress>|<UniqueID>|groups/<String>
-<CIGroupType> ::= customer|group|other|serviceaccount|user
 <ChannelCustomerID> ::= <String>
 <ChatMember> ::= spaces/<String>/members/<String>
 <ChatMessage> ::= spaces/<String>/messages/<String>
 <ChatSpace> ::= spaces/<String> | space <String> | space spaces/<String>
 <ChatThread> ::= spaces/<String>/threads/<String>
+<GIGroupAlias> ::= <EmailAddress>
+<GIGroupItem> ::= <EmailAddress>|<UniqueID>|groups/<String>
+<CIGroupType> ::= customer|group|other|serviceaccount|user
+<CIPolicyName> ::= policies/<String>
 <ClassroomInvitationID> ::= <String>
 <ClientID> ::= <String>
 <CommandID> ::= <String>
@@ -533,6 +534,7 @@
         (tdnotify [<Boolean>])|
         (tdparent (id:<DriveFolderID>)|<DriveFolderName>)|
         (tdretaintitle [<Boolean>])|
+        (tdreturnidonly [<Boolean>])|
         (tdshare <EmailAddress> commenter|reader|writer)*|
         (tdsheet (id:<Number>)|<String>)|
         (tdsheettimestamp [<Boolean>] [tdsheettimeformat <String>])

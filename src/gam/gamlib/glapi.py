@@ -369,8 +369,8 @@ _CLIENT_SCOPES = [
   {'name': 'Cloud Identity - Policy',
    'api': CLOUDIDENTITY_POLICY,
    'subscopes': READONLY,
-   'scope': 'https://www.googleapis.com/auth/cloud-identity.policies',
    'roByDefault': True,
+   'scope': 'https://www.googleapis.com/auth/cloud-identity.policies'
   },
   {'name': 'Cloud Identity User Invitations API',
    'api': CLOUDIDENTITY_USERINVITATIONS,

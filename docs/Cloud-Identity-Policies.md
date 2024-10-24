@@ -1,12 +1,13 @@
 # Cloud Identity Policies
 - [API documentation](#api-documentation)
 - [Notes](#notes)
+- [Definitions](#definitions)
 - [Policies](#policies)
 - [Display Cloud Identity Policies](#display-cloud-identity-policies)
 
 ## API documentation
 * https://cloud.google.com/identity/docs/concepts/overview-policies
-* https://cloud.google.com/identity/docs/reference/rest/v1beta1/policies
+* https://cloud.google.com/identity/docs/reference/rest/v1beta1/policies/list
 
 ## Notes
 To use these commands you must update your client access authentication.
@@ -14,6 +15,11 @@ To use these commands you must update your client access authentication.
 gam oauth create
 ...
 [*] 19)  Cloud Identity - Policy
+```
+
+## Definitions
+```
+<CIPolicyName> ::= policies/<String>
 ```
 
 ## Policies
@@ -300,17 +306,26 @@ workspace_marketplace.apps_allowlist
 ```
 ## Display Cloud Identity Policies
 ```
-gam show policies (query <String>) [nowarnings]
+gam show policies
+        [(filter <String>)|(name <CIPolicyName>)] [nowarnings]
         [formatjson]
 ```
+By default, all policies are displayed.
+* `filter <String>` - Display filtered policies, See https://github.com/taers232c/GAMADV-XTD3/wiki/Cloud-Identity-Policies
+* `name <CIPolicyName>` - Display a specfic policy
+
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 
 ```
 gam print policies [todrive <ToDriveAttribute>*]
-        (query <String>) [nowarnings]
+        [(filter <String>)|(name <CIPolicyName>)] [nowarnings]
         [formatjson [quotechar <Character>]]
 ```
+By default, all policies are displayed:
+* `filter <String>` - Display filtered policies, See https://github.com/taers232c/GAMADV-XTD3/wiki/Cloud-Identity-Policies
+* `name <CIPolicyName>` - Display a specfic policy
+
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.
 

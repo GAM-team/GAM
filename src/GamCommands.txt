@@ -370,14 +370,15 @@ If an item contains spaces, it should be surrounded by ".
         <EmailAddress>|user:<EmailAddress>|group:<EmailAddress>|
         domain:<DomainName>|domain|default
 <CalendarItem> ::= <EmailAddress>
-<GIGroupAlias> ::= <EmailAddress>
-<GIGroupItem> ::= <EmailAddress>|<UniqueID>|groups/<String>
-<CIGroupType> ::= customer|group|other|serviceaccount|user
 <ChannelCustomerID> ::= <String>
 <ChatMember> ::= spaces/<String>/members/<String>
 <ChatMessage> ::= spaces/<String>/messages/<String>
 <ChatSpace> ::= spaces/<String> | space <String> | space spaces/<String>
 <ChatThread> ::= spaces/<String>/threads/<String>
+<GIGroupAlias> ::= <EmailAddress>
+<GIGroupItem> ::= <EmailAddress>|<UniqueID>|groups/<String>
+<CIGroupType> ::= customer|group|other|serviceaccount|user
+<CIPolicyName> ::= policies/<String>
 <ClassroomInvitationID> ::= <String>
 <ClientID> ::= <String>
 <CommandID> ::= <String>
@@ -487,6 +488,8 @@ If an item contains spaces, it should be surrounded by ".
 <Marker> ::= <String>
 <MatterItem> ::= <UniqueID>|<String>
 <MatterState> ::= open|closed|deleted
+<MeetConferenceName> ::= conferenceRecords/<String>
+<MeetSpaceName> ::= spaces/<String> | <String>
 <MessageContent> ::=
         (message|textmessage|htmlmessage <String>)|
         (file|textfile|htmlfile <FileName> [charset <Charset>])|
@@ -4070,9 +4073,10 @@ gam update deviceuserstate <DeviceUserEntity> [clientid <String>]
 # Cloud Identity Policies
 
 gam print policies [todrive <ToDriveAttribute>*]
-        (query <String>) [nowarnings]
+        [(filter <String>)|(name <CIPolicyName>)] [nowarnings]
         [formatjson [quotechar <Character>]]
-gam show policies (query <String>) [nowarnings]
+gam show policies
+        [(filter <String>)|(name <CIPolicyName>)] [nowarnings]
         [formatjson]
 
 # Inbound SSO

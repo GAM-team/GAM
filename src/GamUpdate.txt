@@ -1,3 +1,8 @@
+7.00.29
+
+Added option `name <CIPolicyName>` to `gam print|show policies` that displays
+information about a specific policy.
+
 7.00.28
 
 Fixed issue that caused `gam print/show policies` to fail on some group policies.
@@ -12,9 +17,9 @@ user A's access to the folder.
 Added commands to display Cloud Identity policies.
 ```
 gam print policies [todrive <ToDriveAttribute>*]
-        (query <String>) [nowarnings]
+        (filter <String>) [nowarnings]
         [formatjson [quotechar <Character>]]
-gam show policies (query <String>) [nowarnings]
+gam show policies (filter <String>) [nowarnings]
         [formatjson]
 ```
 
