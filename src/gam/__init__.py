@@ -10556,7 +10556,12 @@ Continue to authorization by entering a 'c'
   else:
     i = 0
     for a_scope in scopesList:
-      selectedScopes[i] = ' ' if a_scope.get('offByDefault', False) else '*'
+      if a_scope.get('offByDefault'):
+        selectedScopes[i] = ' '
+      elif a_scope.get('roByDefault'):
+        selectedScopes[i] = 'R'
+      else:
+        selectedScopes[i] = '*'
       i += 1
   prompt = f'\nPlease enter 0-{numScopes-1}[a|r] or {"|".join(OAUTH2_CMDS)}: '
   while True:
