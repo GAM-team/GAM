@@ -860,7 +860,7 @@ jobs:
           $gam info group $newgroup
           $gam info cigroup $newgroup membertree
           # confirm mailbox is provisoned before continuing
-          $gam user $newuser waitformailbox retries 20
+          $gam user $newuser waitformailbox retries 50
           $gam user $newuser imap on
           $gam user $newuser show imap
           $gam user $newuser show delegates
