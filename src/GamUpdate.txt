@@ -1,3 +1,14 @@
+7.00.30
+
+Added command to display selected Cloud Identity policies.
+```
+gam info policies <CIPolicyNameEntity>
+        [nowarnings]
+        [formatjson]
+```
+
+Removed option `name <CIPolicyName>` from `gam print|show policies`; use `info policies`.
+
 7.00.29
 
 Added option `name <CIPolicyName>` to `gam print|show policies` that displays
@@ -93,6 +104,8 @@ Updated `gam <UserTypeEntity> claim|transfer ownership` to show `Got N Drive Fil
 as files/folders are being identified for processing.
 
 Added option `<JSONData>` to `gam create|update caalevel`.
+
+Updated to Python 3.13.0.
 
 7.00.15
 

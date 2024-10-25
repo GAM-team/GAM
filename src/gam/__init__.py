@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.29'
+__version__ = '7.00.30'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -35089,27 +35089,81 @@ def updateFieldsForCIGroupMatchPatterns(matchPatterns, fieldsList, csvPF=None):
 
 CIPOLICY_TIME_OBJECTS = {'createTime', 'updateTime'}
 
+# Policies where GAM should offer additional guidance and information
+CIPOLICY_ADDITIONAL_WARNINGS = {
+  'settings/drive_and_docs.external_sharing': {
+    'warningType': 'SUPERSEDED_POLICY',
+    'warningMessage': 'CAUTION: Drive Sharing settings are superseded by Drive Trust Rules if Trust Rules has been enabled for your domain. Drive Trust Rule settings are not available in the Policy API today so GAM is not able to check if Trust Rules is enabled and if the settings/drive_and_docs.external_sharing policies are actually in effect for your domain. If Drive Trust Rules is enabled for your domain then this settings/drive_and_docs.external_sharing policy does not accurately reflect your current Drive sharing settings.'
+  }
+}
+
+def _cleanPolicy(policy, add_warnings, cd, groups_ci):
+  # convert any wordlists into spaced strings to reduce output complexity
+  if policy['setting']['type'] == 'settings/detector.word_list':
+    policy['setting']['value']['wordList'] = ' '.join(policy['setting']['value']['wordList']['words'])
+  # add any warnings to applicable policies
+  if add_warnings and policy['setting']['type'] in CIPOLICY_ADDITIONAL_WARNINGS:
+    policy['warning'] = CIPOLICY_ADDITIONAL_WARNINGS[policy['setting']['type']]
+  if groupId := policy['policyQuery'].get('group'):
+    _, _, policy['policyQuery']['groupEmail'] = convertGroupCloudIDToEmail(groups_ci, groupId)
+    # all groups are in the root OU so the orgUnit attribute is useless
+    policy['policyQuery'].pop('orgUnit', None)
+  elif orgId := policy['policyQuery'].get('orgUnit'):
+    policy['policyQuery']['orgUnitPath'] = convertOrgUnitIDtoPath(cd, orgId)
+
+def _showPolicy(policy, FJQC, i=0, count=0):
+  if FJQC is not None and FJQC.formatJSON:
+    printLine(json.dumps(cleanJSON(policy, timeObjects=CIPOLICY_TIME_OBJECTS),
+                         ensure_ascii=False,
+                         sort_keys=True))
+    return
+  printEntity([Ent.POLICY, policy['name']], i, count)
+  Ind.Increment()
+  policy.pop('name')
+  showJSON(None, policy, timeObjects=CIPOLICY_TIME_OBJECTS)
+  printBlankLine()
+  Ind.Decrement()
+
+# gam info policies <CIPolicyNameEntity>
+#	[nowarnings] [formatjson]
+def doInfoCIPolicies():
+  groups_ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
+  ci = buildGAPIObject(API.CLOUDIDENTITY_POLICY)
+  cd = buildGAPIObject(API.DIRECTORY)
+  entityList = getEntityList(Cmd.OB_CIPOLICY_NAME_ENTITY)
+  FJQC = FormatJSONQuoteChar()
+  add_warnings = True
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'nowarnings':
+      add_warnings = False
+    else:
+      FJQC.GetFormatJSON(myarg)
+  i = 0
+  count = len(entityList)
+  for pname in entityList:
+    i += 1
+    if not pname.startswith('policies/'):
+      pname = 'policies/'+pname
+    try:
+      policy  = callGAPI(ci.policies(), 'get',
+                         bailOnInternalError=True,
+                         throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                         name=pname,
+                         fields='name,policyQuery(group,orgUnit,sortOrder),type,setting')
+      _cleanPolicy(policy, add_warnings, cd, groups_ci)
+      _showPolicy(policy, FJQC, i, count)
+    except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
+      entityActionFailedWarning([Ent.POLICY, pname], str(e), i, count)
+      continue
+
 # gam print policies [todrive <ToDriveAttribute>*]
-#	[(filter <String>)|(name <PolicyName>)]  [nowarnings]
+#	[filter <String>]  [nowarnings]
 #	[formatjson [quotechar <Character>]]
 # gam show policies
-#	[(filter <String>)|(name <PolicyName>)]  [nowarnings]
+#	[filter <String>]  [nowarnings]
 #	[formatjson]
 def doPrintShowCIPolicies():
-
-  def _showPolicy(policy, FJQC, i=0, count=0):
-    if FJQC is not None and FJQC.formatJSON:
-      printLine(json.dumps(cleanJSON(policy, timeObjects=CIPOLICY_TIME_OBJECTS),
-                           ensure_ascii=False,
-                           sort_keys=True))
-      return
-    printEntity([Ent.POLICY, policy['name']], i, count)
-    Ind.Increment()
-    policy.pop('name')
-    showJSON(None, policy, timeObjects=CIPOLICY_TIME_OBJECTS)
-    if not pname:
-      printBlankLine()
-    Ind.Decrement()
 
   def _printPolicy(policy):
     row = flattenJSON(policy, timeObjects=CIPOLICY_TIME_OBJECTS)
@@ -35121,19 +35175,12 @@ def doPrintShowCIPolicies():
                                                  ensure_ascii=False,
                                                  sort_keys=True)})
 
-  # Policies where GAM should offer additional guidance and information
-  warnings = {
-          'settings/drive_and_docs.external_sharing': {
-              'warningType': 'SUPERSEDED_POLICY',
-              'warningMessage': 'CAUTION: Drive Sharing settings are superseded by Drive Trust Rules if Trust Rules has been enabled for your domain. Drive Trust Rule settings are not available in the Policy API today so GAM is not able to check if Trust Rules is enabled and if the settings/drive_and_docs.external_sharing policies are actually in effect for your domain. If Drive Trust Rules is enabled for your domain then this settings/drive_and_docs.external_sharing policy does not accurately reflect your current Drive sharing settings.'
-              }
-          }
   groups_ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
   ci = buildGAPIObject(API.CLOUDIDENTITY_POLICY)
   cd = buildGAPIObject(API.DIRECTORY)
   csvPF = CSVPrintFile(['name']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
-  ifilter = pname = None
+  ifilter = None
   add_warnings = True
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -35141,63 +35188,36 @@ def doPrintShowCIPolicies():
       csvPF.GetTodriveParameters()
     elif myarg == 'filter':
       ifilter = getString(Cmd.OB_STRING)
-    elif myarg == 'name':
-      pname = getString(Cmd.OB_STRING)
     elif myarg == 'nowarnings':
       add_warnings = False
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
-  if ifilter and pname:
-    usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('filter', 'name'))
-  throwReasons = [GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR]
-  fields = 'name,policyQuery(group,orgUnit,sortOrder),type,setting'
-  if not pname:
-    printGettingAllAccountEntities(Ent.POLICY, ifilter)
-    pageMessage = getPageMessage()
-    try:
-      policies = callGAPIpages(ci.policies(), 'list', 'policies',
-                               throwReasons=throwReasons,
-                               pageMessage=pageMessage,
-                               filter=ifilter,
-                               fields=f'nextPageToken,policies({fields})',
-                               pageSize=100)
-    except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
-      entityActionFailedExit([Ent.POLICY, None], str(e))
-  else:
-    try:
-      policies = [callGAPI(ci.policies(), 'get',
-                           bailOnInternalError=True,
-                           throwReasons=throwReasons,
-                           name=pname,
-                           fields=fields)]
-    except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
-      entityActionFailedExit([Ent.POLICY, pname], str(e))
+  printGettingAllAccountEntities(Ent.POLICY, ifilter)
+  pageMessage = getPageMessage()
+  try:
+    policies = callGAPIpages(ci.policies(), 'list', 'policies',
+                             pageMessage=pageMessage,
+                             throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                             filter=ifilter,
+                             fields='nextPageToken,policies(name,policyQuery(group,orgUnit,sortOrder),type,setting)',
+                             pageSize=100)
+  except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+    entityActionFailedExit([Ent.POLICY, None], str(e))
   # Google returns unordered results, sort them by setting type
   policies = sorted(policies, key=lambda p: p.get('setting', {}).get('type', ''))
-  for policy in policies:
-    # convert any wordlists into spaced strings to reduce output complexity
-    if policy['setting']['type'] == 'settings/detector.word_list':
-      policy['setting']['value']['wordList'] = ' '.join(policy['setting']['value']['wordList']['words'])
-    # add any warnings to applicable policies
-    if add_warnings and policy['setting']['type'] in warnings:
-      policy['warning'] = warnings[policy['setting']['type']]
-    if groupId := policy['policyQuery'].get('group'):
-      _, _, policy['policyQuery']['groupEmail'] = convertGroupCloudIDToEmail(groups_ci, groupId)
-      # all groups are in the root OU so the orgUnit attribute is useless
-      policy['policyQuery'].pop('orgUnit', None)
-    elif orgId := policy['policyQuery'].get('orgUnit'):
-      policy['policyQuery']['orgUnitPath'] = convertOrgUnitIDtoPath(cd, orgId)
   if not csvPF:
-    jcount = len(policies)
-    performActionNumItems(jcount, Ent.POLICY)
+    count = len(policies)
+    performActionNumItems(count, Ent.POLICY)
     Ind.Increment()
-    j = 0
+    i = 0
     for policy in policies:
-      j += 1
-      _showPolicy(policy, FJQC, j, jcount)
+      i += 1
+      _cleanPolicy(policy, add_warnings, cd, groups_ci)
+      _showPolicy(policy, FJQC, i, count)
     Ind.Decrement()
   else:
     for policy in policies:
+      _cleanPolicy(policy, add_warnings, cd, groups_ci)
       _printPolicy(policy)
   if csvPF:
     csvPF.writeCSVfile('Policies')
@@ -75125,6 +75145,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMESCHEMA:	doInfoChromePolicySchemas,
       Cmd.ARG_CIGROUP:		doInfoCIGroups,
       Cmd.ARG_CIGROUPMEMBERS:	doInfoCIGroupMembers,
+      Cmd.ARG_CIPOLICY:		doInfoCIPolicies,
       Cmd.ARG_CONTACT:		doInfoDomainContacts,
       Cmd.ARG_COURSE:		doInfoCourse,
       Cmd.ARG_COURSES:		doInfoCourses,
@@ -75212,7 +75233,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMEVERSIONS:	doPrintShowChromeVersions,
       Cmd.ARG_CIGROUP:		doPrintCIGroups,
       Cmd.ARG_CIGROUPMEMBERS:	doPrintCIGroupMembers,
-      Cmd.ARG_CIPOLICIES:	doPrintShowCIPolicies,
+      Cmd.ARG_CIPOLICY:		doPrintShowCIPolicies,
       Cmd.ARG_CLASSROOMINVITATION:	doPrintShowClassroomInvitations,
       Cmd.ARG_CONTACT:		doPrintShowDomainContacts,
       Cmd.ARG_COURSE:		doPrintCourses,
@@ -75341,7 +75362,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMESCHEMA:	doPrintShowChromeSchemas,
       Cmd.ARG_CHROMEVERSIONS:	doPrintShowChromeVersions,
       Cmd.ARG_CIGROUPMEMBERS:	doShowCIGroupMembers,
-      Cmd.ARG_CIPOLICIES:	doPrintShowCIPolicies,
+      Cmd.ARG_CIPOLICY:		doPrintShowCIPolicies,
       Cmd.ARG_CLASSROOMINVITATION:	doPrintShowClassroomInvitations,
       Cmd.ARG_CONTACT:		doPrintShowDomainContacts,
       Cmd.ARG_CROSTELEMETRY:	doInfoPrintShowCrOSTelemetry,
@@ -75525,6 +75546,7 @@ MAIN_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_CIGROUPSMEMBERS:	Cmd.ARG_CIGROUPMEMBERS,
   Cmd.ARG_CIMEMBER:		Cmd.ARG_CIGROUPMEMBERS,
   Cmd.ARG_CIMEMBERS:		Cmd.ARG_CIGROUPMEMBERS,
+  Cmd.ARG_CIPOLICIES:		Cmd.ARG_CIPOLICY,
   Cmd.ARG_CLASS:		Cmd.ARG_COURSE,
   Cmd.ARG_CLASSES:		Cmd.ARG_COURSES,
   Cmd.ARG_CLASSPARTICIPANTS:	Cmd.ARG_COURSEPARTICIPANTS,

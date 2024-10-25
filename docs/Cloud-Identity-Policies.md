@@ -14,12 +14,15 @@ To use these commands you must update your client access authentication.
 ```
 gam oauth create
 ...
-[*] 19)  Cloud Identity - Policy
+[R] 19)  Cloud Identity - Policy
 ```
 
 ## Definitions
 ```
 <CIPolicyName> ::= policies/<String>
+<CIPolicyNameList> ::= "<CIPolicyName>(,<CIPolicyName>)*"
+<CIPolicyNameEntity> ::=
+        <CIPolicyNameList> | <FileSelector> | <CSVFileSelector>
 ```
 
 ## Policies
@@ -305,26 +308,41 @@ workspace_marketplace.apps_allowlist
   apps
 ```
 ## Display Cloud Identity Policies
+Display selected policies.
+```
+gam info policies <CIPolicyEntity>
+        [nowarnings]
+        [formatjson]
+```
+
+By default, policy warnings are displayed, use the 'nowarnings` option to suppress their display.
+
+By default, Gam displays the information as an indented list of keys and values.
+* `formatjson` - Display the fields in JSON format.
+
+Display all or filtered policies.
 ```
 gam show policies
-        [(filter <String>)|(name <CIPolicyName>)] [nowarnings]
+        [filter <String>] [nowarnings]
         [formatjson]
 ```
 By default, all policies are displayed.
 * `filter <String>` - Display filtered policies, See https://github.com/taers232c/GAMADV-XTD3/wiki/Cloud-Identity-Policies
-* `name <CIPolicyName>` - Display a specfic policy
+
+By default, policy warnings are displayed, use the 'nowarnings` option to suppress their display.
 
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 
 ```
 gam print policies [todrive <ToDriveAttribute>*]
-        [(filter <String>)|(name <CIPolicyName>)] [nowarnings]
+        [filter <String>] [nowarnings]
         [formatjson [quotechar <Character>]]
 ```
 By default, all policies are displayed:
 * `filter <String>` - Display filtered policies, See https://github.com/taers232c/GAMADV-XTD3/wiki/Cloud-Identity-Policies
-* `name <CIPolicyName>` - Display a specfic policy
+
+By default, policy warnings are displayed, use the 'nowarnings` option to suppress their display.
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.

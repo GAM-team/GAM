@@ -13,6 +13,7 @@
 <ChatSpaceList> ::= "<ChatSpace>(,<ChatSpace>)*"
 <CIGroupAliasList> ::= "<CIGroupAlias>(,<CIGroupAlias>)*"
 <CIGroupTypeList> ::= "<CIGroupType>(,<CIGroupType>)*"
+<CIPolicyNameList> ::= "<CIPolicyName>(,<CIPolicyName>)*"
 <ClassroomInvitationIDList> ::= "<ClassroomInvitationID>(,<ClassroomInvitationID>)*"
 <ContactGroupList> ::= "<ContactGroupItem>(,<ContactGroupItem>)*"
 <ContactIDList> ::= "<ContactID>(,<ContactID>)*"

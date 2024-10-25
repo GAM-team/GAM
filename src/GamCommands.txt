@@ -665,6 +665,7 @@ If an item contains spaces, it should be surrounded by ".
 <ChatSpaceList> ::= "<ChatSpace>(,<ChatSpace>)*"
 <CIGroupAliasList> ::= "<CIGroupAlias>(,<CIGroupAlias>)*"
 <CIGroupTypeList> ::= "<CIGroupType>(,<CIGroupType>)*"
+<CIPolicyNameList> ::= "<CIPolicyName>(,<CIPolicyName>)*"
 <ClassroomInvitationIDList> ::= "<ClassroomInvitationID>(,<ClassroomInvitationID>)*"
 <ContactGroupList> ::= "<ContactGroupItem>(,<ContactGroupItem>)*"
 <ContactIDList> ::= "<ContactID>(,<ContactID>)*"
@@ -1001,6 +1002,8 @@ Specify a collection of items by directly specifying them; the item type is dete
         <CalendarACLScopeList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 <CalendarEntity> ::=
         <CalendarList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+<CIPolicyNameEntity> ::=
+        <CIPolicyNameList> | <FileSelector> | <CSVFileSelector>
 <ClassroomInvitationIDEntity> ::=
         <ClassroomInvitationIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 <ContactEntity> ::=
@@ -4072,11 +4075,15 @@ gam update deviceuserstate <DeviceUserEntity> [clientid <String>]
 
 # Cloud Identity Policies
 
+gam info policies <CIPolicyNameEntity>
+        [nowarnings]
+        [formatjson]
+
 gam print policies [todrive <ToDriveAttribute>*]
-        [(filter <String>)|(name <CIPolicyName>)] [nowarnings]
+        [filter <String>] [nowarnings]
         [formatjson [quotechar <Character>]]
 gam show policies
-        [(filter <String>)|(name <CIPolicyName>)] [nowarnings]
+        [filter <String>] [nowarnings]
         [formatjson]
 
 # Inbound SSO

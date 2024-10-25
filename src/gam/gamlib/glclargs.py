@@ -493,6 +493,7 @@ class GamCLArgs():
   ARG_CIGROUPSMEMBERS = 'cigroupsmembers'
   ARG_CIMEMBER = 'cimember'
   ARG_CIMEMBERS = 'cimembers'
+  ARG_CIPOLICY = 'policy'
   ARG_CIPOLICIES = 'policies'
   ARG_CLASS = 'class'
   ARG_CLASSES = 'classes'
@@ -844,6 +845,7 @@ class GamCLArgs():
   OB_CHROME_VERSION = 'ChromeVersion'
   OB_CIDR_NETMASK = 'CIDRnetmask'
   OB_CIGROUP_ALIAS_LIST = "CIGroupAliasList"
+  OB_CIPOLICY_NAME_ENTITY = 'CIPolicyNameEntity'
   OB_CLASSROOM_INVITATION_ID_ENTITY = 'ClassroomInvitationIDEntity'
   OB_CLIENT_ID = 'ClientID'
   OB_COLLABORATOR_ITEM = 'CollaboratorItem'

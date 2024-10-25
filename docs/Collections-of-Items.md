@@ -1,4 +1,4 @@
-!# Collections of Items
+# Collections of Items
 - [Python Regular Expressions](Python-Regular-Expressions) Match function
 - [Definitions](#definitions)
 - [ListSelector](#listselector)
@@ -144,6 +144,8 @@ Data fields identified in a `csvkmd` argument.
         <CalendarACLScopeList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 <CalendarEntity> ::=
         <CalendarList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+<CIPolicyNameEntity> ::=
+        <CIPolicyNameList> | <FileSelector> | <CSVFileSelector>
 <ClassroomInvitationIDEntity> ::=
         <ClassroomInvitationIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 <ContactEntity> ::=
