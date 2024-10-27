@@ -23,10 +23,10 @@ fi
 gpg --batch \
     --yes \
     --decrypt \
-    --passphrase="${PASSCODE}" \
-    --output "${credsfile}" \
-    "${gpgfile}"
+    --passphrase="$PASSCODE" \
+    --output "$credsfile" \
+    "$gpgfile"
 
-tar xlvvf "${credsfile}" --directory "${credspath}"
-rm -rvf "${gpgfile}"
-rm -rvf "${credsfile}"
+tar xlvvf "$credsfile" --directory "$credspath"
+rm -rvf "$gpgfile"
+rm -rvf "$credsfile"
