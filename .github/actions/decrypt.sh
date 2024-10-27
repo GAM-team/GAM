@@ -27,6 +27,6 @@ gpg --batch \
     --output "${credsfile}" \
     "${gpgfile}"
 
-tar xvvf "${credsfile}" --directory "${credspath}"
+tar xlvvf "${credsfile}" --directory "${credspath}"
 rm -rvf "${gpgfile}"
 rm -rvf "${credsfile}"
