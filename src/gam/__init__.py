@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.31'
+__version__ = '7.00.32'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -9253,6 +9253,7 @@ def doCheckConnection():
   hosts = ['api.github.com',
            'raw.githubusercontent.com',
            'accounts.google.com',
+           'workspace.google.com',
            'oauth2.googleapis.com',
            'www.googleapis.com']
   fix_hosts = {'calendar-json.googleapis.com': 'www.googleapis.com',
@@ -35089,6 +35090,20 @@ def updateFieldsForCIGroupMatchPatterns(matchPatterns, fieldsList, csvPF=None):
 
 CIPOLICY_TIME_OBJECTS = {'createTime', 'updateTime'}
 
+def _filterPolicies(ci, pageMessage, ifilter):
+  try:
+    policies = callGAPIpages(ci.policies(), 'list', 'policies',
+                             pageMessage=pageMessage,
+                             throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                             filter=ifilter,
+                             fields='nextPageToken,policies(name,policyQuery(group,orgUnit,sortOrder),type,setting)',
+                             pageSize=100)
+    # Google returns unordered results, sort them by setting type
+    return sorted(policies, key=lambda p: p.get('setting', {}).get('type', ''))
+  except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+    entityActionFailedWarning([Ent.POLICY, ifilter], str(e))
+    return []
+
 # Policies where GAM should offer additional guidance and information
 CIPOLICY_ADDITIONAL_WARNINGS = {
   'settings/drive_and_docs.external_sharing': {
@@ -35146,6 +35161,17 @@ def _showPolicy(policy, FJQC, i=0, count=0):
   printBlankLine()
   Ind.Decrement()
 
+def _showPolicies(policies, FJQC, add_warnings, no_appnames, cd, groups_ci):
+  count = len(policies)
+  performActionNumItems(count, Ent.POLICY)
+  Ind.Increment()
+  i = 0
+  for policy in policies:
+    i += 1
+    _cleanPolicy(policy, add_warnings, no_appnames, cd, groups_ci)
+    _showPolicy(policy, FJQC, i, count)
+  Ind.Decrement()
+
 # gam info policies <CIPolicyNameEntity>
 #	[nowarnings] [noappnames]
 #	[formatjson]
@@ -35169,20 +35195,24 @@ def doInfoCIPolicies():
   count = len(entityList)
   for pname in entityList:
     i += 1
-    if not pname.startswith('policies/'):
-      pname = 'policies/'+pname
-    try:
-      policy  = callGAPI(ci.policies(), 'get',
-                         bailOnInternalError=True,
-                         throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
-                         name=pname,
-                         fields='name,policyQuery(group,orgUnit,sortOrder),type,setting')
-      _cleanPolicy(policy, add_warnings, no_appnames, cd, groups_ci)
-      _showPolicy(policy, FJQC, i, count)
-    except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
-      entityActionFailedWarning([Ent.POLICY, pname], str(e), i, count)
-      continue
-
+    if pname.startswith('policies/'):
+      try:
+        policies  = [callGAPI(ci.policies(), 'get',
+                              bailOnInternalError=True,
+                              throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                              name=pname,
+                              fields='name,policyQuery(group,orgUnit,sortOrder),type,setting')]
+      except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
+        entityActionFailedWarning([Ent.POLICY, pname], str(e), i, count)
+        continue
+    else:
+      if pname.startswith('settings/'):
+        pname = pname.split('/')[1]
+      ifilter = f"setting.type.matches('{pname}')"
+      printGettingAllAccountEntities(Ent.POLICY, ifilter)
+      policies = _filterPolicies(ci, getPageMessage(), ifilter)
+    _showPolicies(policies, FJQC, add_warnings, no_appnames, cd, groups_ci)
+      
 # gam print policies [todrive <ToDriveAttribute>*]
 #	[filter <String>]  [nowarnings] [noappnames]
 #	[formatjson [quotechar <Character>]]
@@ -35222,28 +35252,9 @@ def doPrintShowCIPolicies():
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   printGettingAllAccountEntities(Ent.POLICY, ifilter)
-  pageMessage = getPageMessage()
-  try:
-    policies = callGAPIpages(ci.policies(), 'list', 'policies',
-                             pageMessage=pageMessage,
-                             throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                             filter=ifilter,
-                             fields='nextPageToken,policies(name,policyQuery(group,orgUnit,sortOrder),type,setting)',
-                             pageSize=100)
-  except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
-    entityActionFailedExit([Ent.POLICY, None], str(e))
-  # Google returns unordered results, sort them by setting type
-  policies = sorted(policies, key=lambda p: p.get('setting', {}).get('type', ''))
+  policies = _filterPolicies(ci, getPageMessage(), ifilter)
   if not csvPF:
-    count = len(policies)
-    performActionNumItems(count, Ent.POLICY)
-    Ind.Increment()
-    i = 0
-    for policy in policies:
-      i += 1
-      _cleanPolicy(policy, add_warnings, no_appnames, cd, groups_ci)
-      _showPolicy(policy, FJQC, i, count)
-    Ind.Decrement()
+    _showPolicies(policies, FJQC, add_warnings, no_appnames, cd, groups_ci)
   else:
     for policy in policies:
       _cleanPolicy(policy, add_warnings, no_appnames, cd, groups_ci)

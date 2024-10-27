@@ -19,7 +19,7 @@ gam oauth create
 
 ## Definitions
 ```
-<CIPolicyName> ::= policies/<String>
+<CIPolicyName> ::= policies/<String>|settings/<String>|<String>
 <CIPolicyNameList> ::= "<CIPolicyName>(,<CIPolicyName>)*"
 <CIPolicyNameEntity> ::=
         <CIPolicyNameList> | <FileSelector> | <CSVFileSelector>
@@ -316,6 +316,11 @@ gam info policies <CIPolicyEntity>
         [nowarnings] [noappnames]
         [formatjson]
 ```
+
+Select policies::
+* `polices/<String>` - A policy name, `policies/ahv4hg7qc24kvaghb7zihwf4riid4`
+* `settings/<String>` - A policy setting type, `settings/workspace_marketplace.apps_allowlist'
+* `<String>` - A policy setting type, `workspace_marketplace.apps_allowlist'
 
 By default, policy warnings are displayed, use the 'nowarnings` option to suppress their display.
 

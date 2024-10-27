@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.00.32
+
+Updated `gam info policies` to accept different policy specifications:
+* `polices/<String>` - A policy name, `policies/ahv4hg7qc24kvaghb7zihwf4riid4`
+* `settings/<String>` - A policy setting type, `settings/workspace_marketplace.apps_allowlist'
+* `<String>` - A policy setting type, `workspace_marketplace.apps_allowlist'
+
 ### 7.00.31
 
 Updated `gam info|print|show policies` to make additional API calls for `settings/workspace_marketplace.apps_allowlist`

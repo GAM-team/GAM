@@ -378,7 +378,7 @@ If an item contains spaces, it should be surrounded by ".
 <GIGroupAlias> ::= <EmailAddress>
 <GIGroupItem> ::= <EmailAddress>|<UniqueID>|groups/<String>
 <CIGroupType> ::= customer|group|other|serviceaccount|user
-<CIPolicyName> ::= policies/<String>
+<CIPolicyName> ::= policies/<String>|settings/<String>|<String>
 <ClassroomInvitationID> ::= <String>
 <ClientID> ::= <String>
 <CommandID> ::= <String>
