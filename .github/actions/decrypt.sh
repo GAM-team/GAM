@@ -27,10 +27,11 @@ gpg --batch \
     --output "$credsfile" \
     "$gpgfile"
 
-if [[ "${RUNNER_OS}" == "macOS" ]]; then
+if [[ "$RUNNER_OS" == "macOS" ]]; then
   tar="gtar"
 else
   tar="tar"
+fi
 
 "$tar" xlvvf "$credsfile" --directory "$credspath"
 rm -rvf "$gpgfile"
