@@ -27,17 +27,19 @@ gam oauth create
 
 ## Policies
 These are the supported policies GAM can show today.
+
+See: https://cloud.google.com/identity/docs/concepts/supported-policy-api-settings
 ```
 user_takeout_status (is takeout enabled for service)
-  blogger
-  books
-  location_history
-  maps
-  pay
-  photos
-  play
-  play_console
-  youtube
+  blogger.user_takeout
+  books.user_takeout
+  location_history.user_takeout
+  maps.user_takeout
+  pay.user_takeout
+  photos.user_takeout
+  play.user_takeout
+  play_console.user_takeout
+  youtube.user_takeout
 service_status (is service enabled)
   ad_manager
   ads
@@ -311,11 +313,14 @@ workspace_marketplace.apps_allowlist
 Display selected policies.
 ```
 gam info policies <CIPolicyEntity>
-        [nowarnings]
+        [nowarnings] [noappnames]
         [formatjson]
 ```
 
 By default, policy warnings are displayed, use the 'nowarnings` option to suppress their display.
+
+By default,  additional API calls are made for `settings/workspace_marketplace.apps_allowlist`
+to get the application name for the application ID. Use option `noappnames` to suppress these calls.
 
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
@@ -323,26 +328,32 @@ By default, Gam displays the information as an indented list of keys and values.
 Display all or filtered policies.
 ```
 gam show policies
-        [filter <String>] [nowarnings]
+        [filter <String>] [nowarnings] [noappnames]
         [formatjson]
 ```
 By default, all policies are displayed.
-* `filter <String>` - Display filtered policies, See https://github.com/taers232c/GAMADV-XTD3/wiki/Cloud-Identity-Policies
+* `filter <String>` - Display filtered policies, See https://cloud.google.com/identity/docs/reference/rest/v1beta1/policies/list
 
 By default, policy warnings are displayed, use the 'nowarnings` option to suppress their display.
+
+By default,  additional API calls are made for `settings/workspace_marketplace.apps_allowlist`
+to get the application name for the application ID. Use option `noappnames` to suppress these calls.
 
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 
 ```
 gam print policies [todrive <ToDriveAttribute>*]
-        [filter <String>] [nowarnings]
+        [filter <String>] [nowarnings] [noappnames]
         [formatjson [quotechar <Character>]]
 ```
 By default, all policies are displayed:
-* `filter <String>` - Display filtered policies, See https://github.com/taers232c/GAMADV-XTD3/wiki/Cloud-Identity-Policies
+* `filter <String>` - Display filtered policies, See https://cloud.google.com/identity/docs/reference/rest/v1beta1/policies/list
 
 By default, policy warnings are displayed, use the 'nowarnings` option to suppress their display.
+
+By default,  additional API calls are made for `settings/workspace_marketplace.apps_allowlist`
+to get the application name for the application ID. Use option `noappnames` to suppress these calls.
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.

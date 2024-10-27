@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.30'
+__version__ = '7.00.31'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -35097,10 +35097,32 @@ CIPOLICY_ADDITIONAL_WARNINGS = {
   }
 }
 
-def _cleanPolicy(policy, add_warnings, cd, groups_ci):
+def _getPolicyAppNameFromId(httpObj, app):
+  app['applicationName'] = UNKNOWN
+  appId = app['applicationId']
+  url = f'https://workspace.google.com/marketplace/app/_/{appId}'
+  try:
+    resp, content = httpObj.request(url, 'GET')
+  except:
+    return
+  if resp.status != 200:
+    return
+  if isinstance(content, bytes):
+    content = content.decode()
+  pattern = f'https://workspace.google.com/marketplace/app/(.+?)/{appId}'
+  a = re.search(pattern, content)
+  if a:
+    app['applicationName'] = a.group(1)
+
+def _cleanPolicy(policy, add_warnings, no_appnames, cd, groups_ci):
   # convert any wordlists into spaced strings to reduce output complexity
   if policy['setting']['type'] == 'settings/detector.word_list':
     policy['setting']['value']['wordList'] = ' '.join(policy['setting']['value']['wordList']['words'])
+  # get application name for application id
+  if policy['setting']['type'] == 'settings/workspace_marketplace.apps_allowlist' and not no_appnames:
+    httpObj = getHttpObj(timeout=10)
+    for app in policy['setting']['value'].get('apps', []):
+      _getPolicyAppNameFromId(httpObj, app)
   # add any warnings to applicable policies
   if add_warnings and policy['setting']['type'] in CIPOLICY_ADDITIONAL_WARNINGS:
     policy['warning'] = CIPOLICY_ADDITIONAL_WARNINGS[policy['setting']['type']]
@@ -35125,7 +35147,8 @@ def _showPolicy(policy, FJQC, i=0, count=0):
   Ind.Decrement()
 
 # gam info policies <CIPolicyNameEntity>
-#	[nowarnings] [formatjson]
+#	[nowarnings] [noappnames]
+#	[formatjson]
 def doInfoCIPolicies():
   groups_ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
   ci = buildGAPIObject(API.CLOUDIDENTITY_POLICY)
@@ -35133,10 +35156,13 @@ def doInfoCIPolicies():
   entityList = getEntityList(Cmd.OB_CIPOLICY_NAME_ENTITY)
   FJQC = FormatJSONQuoteChar()
   add_warnings = True
+  no_appnames = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'nowarnings':
       add_warnings = False
+    elif myarg == 'noappnames':
+      no_appnames=True
     else:
       FJQC.GetFormatJSON(myarg)
   i = 0
@@ -35151,17 +35177,17 @@ def doInfoCIPolicies():
                          throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
                          name=pname,
                          fields='name,policyQuery(group,orgUnit,sortOrder),type,setting')
-      _cleanPolicy(policy, add_warnings, cd, groups_ci)
+      _cleanPolicy(policy, add_warnings, no_appnames, cd, groups_ci)
       _showPolicy(policy, FJQC, i, count)
     except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
       entityActionFailedWarning([Ent.POLICY, pname], str(e), i, count)
       continue
 
 # gam print policies [todrive <ToDriveAttribute>*]
-#	[filter <String>]  [nowarnings]
+#	[filter <String>]  [nowarnings] [noappnames]
 #	[formatjson [quotechar <Character>]]
 # gam show policies
-#	[filter <String>]  [nowarnings]
+#	[filter <String>]  [nowarnings] [noappnames]
 #	[formatjson]
 def doPrintShowCIPolicies():
 
@@ -35182,6 +35208,7 @@ def doPrintShowCIPolicies():
   FJQC = FormatJSONQuoteChar(csvPF)
   ifilter = None
   add_warnings = True
+  no_appnames = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -35190,6 +35217,8 @@ def doPrintShowCIPolicies():
       ifilter = getString(Cmd.OB_STRING)
     elif myarg == 'nowarnings':
       add_warnings = False
+    elif myarg == 'noappnames':
+      no_appnames=True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   printGettingAllAccountEntities(Ent.POLICY, ifilter)
@@ -35212,12 +35241,12 @@ def doPrintShowCIPolicies():
     i = 0
     for policy in policies:
       i += 1
-      _cleanPolicy(policy, add_warnings, cd, groups_ci)
+      _cleanPolicy(policy, add_warnings, no_appnames, cd, groups_ci)
       _showPolicy(policy, FJQC, i, count)
     Ind.Decrement()
   else:
     for policy in policies:
-      _cleanPolicy(policy, add_warnings, cd, groups_ci)
+      _cleanPolicy(policy, add_warnings, no_appnames, cd, groups_ci)
       _printPolicy(policy)
   if csvPF:
     csvPF.writeCSVfile('Policies')

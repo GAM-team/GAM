@@ -4076,14 +4076,13 @@ gam update deviceuserstate <DeviceUserEntity> [clientid <String>]
 # Cloud Identity Policies
 
 gam info policies <CIPolicyNameEntity>
-        [nowarnings]
+        [nowarnings] [noappnames]
         [formatjson]
-
 gam print policies [todrive <ToDriveAttribute>*]
-        [filter <String>] [nowarnings]
+        [filter <String>] [nowarnings] [noappnames]
         [formatjson [quotechar <Character>]]
 gam show policies
-        [filter <String>] [nowarnings]
+        [filter <String>] [nowarnings] [noappnames]
         [formatjson]
 
 # Inbound SSO

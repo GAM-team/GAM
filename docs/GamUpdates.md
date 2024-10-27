@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.00.31
+
+Updated `gam info|print|show policies` to make additional API calls for `settings/workspace_marketplace.apps_allowlist`
+to get the application name for the application ID. Use option `noappnames` to suppress these calls.
+
 ### 7.00.30
 
 Added command to display selected Cloud Identity policies.
