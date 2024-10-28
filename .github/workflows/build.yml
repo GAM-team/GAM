@@ -811,8 +811,6 @@ jobs:
           $gam config csv_output_row_filter "name:regex:gha_test_${JID}_" print features | $gam csv - gam delete feature ~name
           $gam config csv_output_row_filter "name:regex:^gha_test_${JID}_" user $gam_user print shareddrives asadmin | $gam csv - gam user $gam_user delete shareddrive ~id nukefromorbit
           $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail
-          # don't expose policy output
-          $gam show policies > policies.csv
           $gam config csv_output_row_filter "name:regex:^gha_test_${JID}_" print ous fromparent "aaaGithub Actions" | $gam csv - gam delete ou ~orgUnitId
           $gam config csv_output_row_filter "email:regex:^gha_test_${JID}_" print cigroups | $gam csv - gam delete cigroup ~email
           $gam config csv_output_row_filter "resourceId:regex:^gha_test_${JID}_" print resources | $gam csv - gam delete resource ~resourceId
@@ -828,8 +826,7 @@ jobs:
           done
           driveid=$($gam user $gam_user add shareddrive "${newbase}" returnidonly)
           echo "Created shared drive ${driveid}"
-          # 9/17/24 - temp create in root due to Google API issues creating users in new OUs
-          $gam create user $newuser firstname GHA lastname $JID displayname "Github Actions ${JID}" password random recoveryphone 12125121110 recoveryemail jay0lee@gmail.com gha.jid $JID languages en+,en-GB- # ou "${newou}"
+          $gam create user $newuser firstname GHA lastname $JID displayname "Github Actions ${JID}" password random recoveryphone 12125121110 recoveryemail jay0lee@gmail.com gha.jid $JID languages en+,en-GB- ou "${newou}"
           $gam user $newuser add license workspaceenterpriseplus
           $gam user $newuser update photo https://dummyimage.com/400x600/000/fff
           $gam user $newuser get photo
@@ -838,7 +835,9 @@ jobs:
           $gam create group $newgroup name "GHA $JID group" description "This is a description" isarchived true
           $gam user $gam_user sendemail recipient dev-null@pdl.jaylee.us subject "test message $newbase" message "GHA test message"
           $gam config enable_dasa false save
-          #$gam create contact firstname GHA lastname "$JID" email work "${newbase}@example.com" primary
+          # don't expose policy output
+          $gam show policies > policies.csv
+          $gam create contact firstname GHA lastname "$JID" email work "${newbase}@example.com" primary
           $gam print contacts
           $gam print privileges
           $gam config enable_dasa true save
