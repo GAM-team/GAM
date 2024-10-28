@@ -14,8 +14,8 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 
 Updated `gam info policies` to accept different policy specifications:
 * `polices/<String>` - A policy name, `policies/ahv4hg7qc24kvaghb7zihwf4riid4`
-* `settings/<String>` - A policy setting type, `settings/workspace_marketplace.apps_allowlist'
-* `<String>` - A policy setting type, `workspace_marketplace.apps_allowlist'
+* `settings/<String>` - A policy setting type, `settings/workspace_marketplace.apps_allowlist`
+* `<String>` - A policy setting type, `workspace_marketplace.apps_allowlist`
 
 ### 7.00.31
 
