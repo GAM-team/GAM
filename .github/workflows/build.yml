@@ -805,6 +805,9 @@ jobs:
           # cleanup old runs
           $gam config enable_dasa false save
           $gam config csv_output_row_filter "name:regex:gha_test_${JID}_" print vaultholds || if [ $? != 55 ]; then exit $?; fi | $gam csv - gam delete vaulthold "id:~~holdId~~" matter "id:~~matterId~~"
+          $gam config csv_output_row_filter "name:regex:gha_test_${HID}_" print vaultmatters matterstate OPEN | gam csv - gam update vaultmatter "id:~~matterId~~" action close
+          $gam config csv_output_row_filter "name:regex:gha_test_${HID}_" print vaultmatters matterstate CLOSED | gam csv - gam update vaultmatter "id:~~matterId~~" action delete
+          $gam config csv_output_row_filter "name:regex:gha_test_${HID}_" print vaultmatters | $gam csv - gam delete vaultmatter "id:~~matterId~~"
           $gam config enable_dasa true save
           $gam config csv_output_row_filter "name:regex:gha_test_${JID}_" print features | $gam csv - gam delete feature ~name
           $gam config csv_output_row_filter "name:regex:^gha_test_${JID}_" user $gam_user print shareddrives asadmin | $gam csv - gam user $gam_user delete shareddrive ~id nukefromorbit
