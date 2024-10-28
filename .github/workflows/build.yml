@@ -811,6 +811,8 @@ jobs:
           $gam config csv_output_row_filter "name:regex:gha_test_${JID}_" print features | $gam csv - gam delete feature ~name
           $gam config csv_output_row_filter "name:regex:^gha_test_${JID}_" user $gam_user print shareddrives asadmin | $gam csv - gam user $gam_user delete shareddrive ~id nukefromorbit
           $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail
+          # don't expose policy output
+          $gam show policies > policies.csv
           $gam config csv_output_row_filter "name:regex:^gha_test_${JID}_" print ous fromparent "aaaGithub Actions" | $gam csv - gam delete ou ~orgUnitId
           $gam config csv_output_row_filter "email:regex:^gha_test_${JID}_" print cigroups | $gam csv - gam delete cigroup ~email
           $gam config csv_output_row_filter "resourceId:regex:^gha_test_${JID}_" print resources | $gam csv - gam delete resource ~resourceId
