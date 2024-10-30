@@ -306,26 +306,10 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
 ## Display global address list
-```
-gam info gal <ContactEntity>
-        [basic|full]
-        [fields <ContactFieldNameList>] [formatjson]
-gam show gal <ContactSelection>
-        [basic|full] [orderby <ContactOrderByFieldName> [ascending|descending]]
-        [fields <ContactFieldNameList>] [formatjson]
-```
-By default, Gam displays the information as an indented list of keys and values.
-* `formatjson` - Display the fields in JSON format.
-```
-gam print gal [todrive <ToDriveAttribute>*] <ContactSelection>
-        [basic|full] [orderby <ContactOrderByFieldName> [ascending|descending]]
-        [fields <ContactFieldNameList>] [formatjson [quotechar <Character>]]
-```
-By default, Gam displays the information as columns of fields.
-* `formatjson` - Display the fields in JSON format.
+As of mid-October 2024, Google deprecated the API that retrieved the Global Address List.
 
-By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
-the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
-When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
-The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
-`quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
+These commands are a work-around.
+```
+gam config csv_output_row_filter "includeInGlobalAddressList:boolean:true" redirect csv ./UserGAL.csv print users fields name,gal
+gam config csv_output_row_filter "includeInGlobalAddressList:boolean:true" batch_size 25 redirect csv ./GroupGAL.csv print groups fields name,gal
+```

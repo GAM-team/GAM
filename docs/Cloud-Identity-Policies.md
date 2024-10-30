@@ -11,7 +11,10 @@
 
 ## Notes
 To use these commands you must update your client access authentication.
+You'll enter 19R to turn on the Cloud Identity Policy scope; then continue
+with authentication.
 ```
+gam oauth delete
 gam oauth create
 ...
 [R] 19)  Cloud Identity - Policy

@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.32'
+__version__ = '7.00.33'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -33844,7 +33844,7 @@ def doPrintGroupMembers():
   if userFieldsList:
     if not memberOptions[MEMBEROPTION_MEMBERNAMES] and 'name.fullName' in userFieldsList:
       memberOptions[MEMBEROPTION_MEMBERNAMES] = True
-  if memberOptions[MEMBEROPTION_MEMBERNAMES]:
+  if memberOptions[MEMBEROPTION_MEMBERNAMES] or cacheMemberInfo:
     if 'name.fullName' not in userFieldsList:
       userFieldsList.append('name.fullName')
     csvPF.AddTitles('name')
@@ -33906,12 +33906,13 @@ def doPrintGroupMembers():
                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                 userKey=memberId, projection=schemaParms['projection'], customFieldMask=schemaParms['customFieldMask'],
                                 fields=userFields)
+              mname = mbinfo['name'].pop('fullName')
               if memberOptions[MEMBEROPTION_MEMBERNAMES]:
-                row['name'] = mbinfo['name'].pop('fullName')
+                row['name'] = mname
                 if not mbinfo['name']:
                   mbinfo.pop('name')
               if cacheMemberInfo:
-                memberNames[memberId] = row['name']
+                memberNames[memberId] = mname
                 if mbinfo:
                   memberInfo[memberId] = mbinfo
             else:
