@@ -1,3 +1,7 @@
+7.00.34
+
+Fixed bug introduced in 7.00.33 in `gam print group-members` that caused a trap.
+
 7.00.33
 
 Fixed bug in `gam print group-members ... cachememberinfo` that caused a trap.

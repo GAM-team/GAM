@@ -1,4 +1,4 @@
-!# Installation - Upgrading from Legacy GAM
+# Installation - Upgrading from Legacy GAM
 Use these steps if you have used any version of GAM in your domain. They will update your GAM project
 and all necessary authentications.
 
@@ -251,7 +251,7 @@ writes the credentials into the file oauth2.txt.
 admin@server:/Users/admin$ rm -f /Users/admin/GAMConfig/oauth2.txt
 admin@server:/Users/admin$ gam version
 WARNING: Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, Item: oauth2_txt, Value: /Users/admin/GAMConfig/oauth2.txt, Not Found
-GAM 7.00.33 - https://github.com/GAM-team/GAM - pyinstaller
+GAM 7.00.34 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.13.0 64-bit final
 MacOS Sonoma 14.5 x86_64
@@ -923,7 +923,7 @@ writes the credentials into the file oauth2.txt.
 C:\>del C:\GAMConfig\oauth2.txt
 C:\>gam version
 WARNING: Config File: C:\GAMConfig\gam.cfg, Section: DEFAULT, Item: oauth2_txt, Value: C:\GAMConfig\oauth2.txt, Not Found
-GAM7 7.00.33 - https://github.com/GAM-team/GAM - pythonsource
+GAM7 7.00.34 - https://github.com/GAM-team/GAM - pythonsource
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.13.0 64-bit final
 Windows-10-10.0.17134 AMD64

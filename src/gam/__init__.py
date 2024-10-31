@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.33'
+__version__ = '7.00.34'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -33844,7 +33844,7 @@ def doPrintGroupMembers():
   if userFieldsList:
     if not memberOptions[MEMBEROPTION_MEMBERNAMES] and 'name.fullName' in userFieldsList:
       memberOptions[MEMBEROPTION_MEMBERNAMES] = True
-  if memberOptions[MEMBEROPTION_MEMBERNAMES] or cacheMemberInfo:
+  if memberOptions[MEMBEROPTION_MEMBERNAMES]:
     if 'name.fullName' not in userFieldsList:
       userFieldsList.append('name.fullName')
     csvPF.AddTitles('name')
@@ -33900,23 +33900,24 @@ def doPrintGroupMembers():
           row['name'] = unknownName
         if memberType == Ent.TYPE_USER:
           try:
-            if not cacheMemberInfo or memberId not in memberNames:
+            if not cacheMemberInfo or memberId not in memberInfo:
               mbinfo = callGAPI(cd.users(), 'get',
                                 throwReasons=GAPI.USER_GET_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE, GAPI.FAILED_PRECONDITION],
                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                 userKey=memberId, projection=schemaParms['projection'], customFieldMask=schemaParms['customFieldMask'],
                                 fields=userFields)
-              mname = mbinfo['name'].pop('fullName')
               if memberOptions[MEMBEROPTION_MEMBERNAMES]:
+                mname = mbinfo['name'].pop('fullName', unknownName)
                 row['name'] = mname
                 if not mbinfo['name']:
                   mbinfo.pop('name')
+                if cacheMemberInfo:
+                  memberNames[memberId] = mname
               if cacheMemberInfo:
-                memberNames[memberId] = mname
-                if mbinfo:
-                  memberInfo[memberId] = mbinfo
+                memberInfo[memberId] = mbinfo
             else:
-              row['name'] = memberNames[memberId]
+              if memberOptions[MEMBEROPTION_MEMBERNAMES]:
+                row['name'] = memberNames[memberId]
               mbinfo = memberInfo.get(memberId, {})
             if not FJQC.formatJSON:
               csvPF.WriteRowTitles(flattenJSON(mbinfo, flattened=row))
