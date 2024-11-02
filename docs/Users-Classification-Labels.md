@@ -4,10 +4,10 @@
 - [Notes](#notes)
 - [Definitions](#definitions)
 - [Introduction](#introduction)
-- [Display Drive Labels](#display-drive-labels)
-- [Process File Drive Labels](#process-file-drive-labels)
-- [Manage Drive Label Permissions](#manage-drive-label-permissions)
-- [Display Drive Label Permissions](#display-drive-label-permissions)
+- [Display Classification Labels](#display-classification-labels)
+- [Manage Classification Label Permissions](#manage-classification-label-permissions)
+- [Display Classification Label Permissions](#display-classification-label-permissions)
+- [Process Drive File Classification Labels](#process-drive-file-classification-labels)
 
 ## API documentation
 * https://support.google.com/a/answer/9292382
@@ -24,31 +24,39 @@ To use these commands you must add the 'Drive Labels API' to your project and up
 gam update project
 gam user user@domain.com update serviceaccount
 ```
-Supported editions for this feature: Business Standard and Business Plus; Enterprise; Education Standard and Education Plus; G Suite Business; Essentials.
+Supported editions for this feature:
+```
+Frontline Starter and Frontline Standard
+Business Standard and Business Plus
+Enterprise Standard and Enterprise Plus
+Education Standard and Education Plus
+Essentials, Enterprise Essentials, and Enterprise Essentials Plus
+G Suite Business
+```
 
 ## Definitions
 * [`<DriveFileEntity>`](Drive-File-Selection)
 * [`<UserTypeEntity>`](Collections-of-Users)
-* [`<DriveLabelNameEntity>`, `<DriveLabelPermissionNameEntity'](Collections-of-Items)
+* [`<ClassificationLabelNameEntity>`, `<ClassificationLabelPermissionNameEntity`](Collections-of-Items)
 * [`<UserTypeEntity>`](Collections-of-Items)
 
 ```
-<DriveLabelID> ::= <String>
-<DriveLabelIDList> ::= "<DriveLabelID>(,<DriveLabelID)*"
+<ClassificationLabelID> ::= <String>
+<ClassificationLabelIDList> ::= "<ClassificationLabelID>(,<ClassificationLabelID)*"
 
-<DriveLabelName> ::= labels/<DriveLabelID>[@latest|@published|@<Number>]
-<DriveLabelNameList> ::= "<DriveLabelName>(,<DriveLabelName)*"
-<DriveLabelNameEntity> ::=
-        <DriveLabelNameList> | <FileSelector> | <CSVFileSelector> | <CSVDataSelector>
+<ClassificationLabelName> ::= labels/<ClassificationLabelID>[@latest|@published|@<Number>]
+<ClassificationLabelNameList> ::= "<ClassificationLabelName>(,<ClassificationLabelName)*"
+<ClassificationLabelNameEntity> ::=
+        <ClassificationLabelNameList> | <FileSelector> | <CSVFileSelector> | <CSVDataSelector>
 
-<DriveLabelPermissionName> ::= labels/<DriveLabelID>[@latest|@published|@<Number>]/permissions/(audiences|groups|people)/<String>
-<DriveLabelPermissionNameList> ::= "<DriveLabelPermissionName>(,<DriveLabelPermissionName>)*"
-<DriveLabelPermissionNameEntity> ::=
-        <DriveLabelPermissionNameList> | <FileSelector> | <CSVFileSelector> | <CSVDataSelector>
+<ClassificationLabelPermissionName> ::= labels/<ClassificationLabelID>[@latest|@published|@<Number>]/permissions/(audiences|groups|people)/<String>
+<ClassificationLabelPermissionNameList> ::= "<ClassificationLabelPermissionName>(,<ClassificationLabelPermissionName>)*"
+<ClassificationLabelPermissionNameEntity> ::=
+        <ClassificationLabelPermissionNameList> | <FileSelector> | <CSVFileSelector> | <CSVDataSelector>
 
-<DriveLabelFieldID> ::= <String>
-<DriveLabelSelectionID> ::= <String>
-<DriveLabelSelectionIDList> ::= "<DriveLabelSelectionID>(,<DriveLabelSelectionID)*"
+<ClassificationLabelFieldID> ::= <String>
+<ClassificationLabelSelectionID> ::= <String>
+<ClassificationLabelSelectionIDList> ::= "<ClassificationLabelSelectionID>(,<ClassificationLabelSelectionID)*"
 
 <BCP47LanguageCode> ::=
         ar-sa| # Arabic Saudi Arabia
@@ -99,10 +107,10 @@ Three forms of the commands are available:
 * `gam <UserTypeEntity> action ... adminaccess` - The user named in `<UserTypeEntty>` is used, adminaccess indicates that labels of type `SHARED` and `ADMIN`can be processed
 * `gam <UserTypeEntity> action ...` - The user named in `<UserTypeEntty>` is used, access is limited, onlylabels of type `SHARED` can be processed
 
-## Display Drive Labels
+## Display Classification Labels
 
 ```
-gam [<UserTypeEntity>] info drivelabels <DriveLabelNameEntity>
+gam [<UserTypeEntity>] info classificationlabels <ClassificationLabelNameEntity>
         [[basic|full] [languagecode <BCP47LanguageCode>]
         [formatjson] [adminaccess|asadmin]
 ```
@@ -115,7 +123,7 @@ By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 
 ```
-gam [<UserTypeEntity>] show drivelabels
+gam [<UserTypeEntity>] show classificationlabels
         [basic|full] [languagecode <BCP47LanguageCode>]
         [publishedonly [<Boolean>]] [minimumrole applier|editor|organizer|reader]
         [formatjson] [adminaccess|asadmin]
@@ -130,7 +138,7 @@ By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 
 ```
-gam [<UserTypeEntity>] print drivelabels [todrive <ToDriveAttribute>*]
+gam [<UserTypeEntity>] print classificationlabels [todrive <ToDriveAttribute>*]
         [basic|full] [languagecode <BCP47LanguageCode>]
         [publishedonly [<Boolean>]] [minimumrole applier|editor|organizer|reader]
         [formatjson [quotechar <Character>]] [adminaccess|asadmin]
@@ -150,25 +158,10 @@ When using the `formatjson` option, double quotes are used extensively in the da
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
-## Process File Drive Labels
-`<DriveLabelID>`, `<DriveLabelFieldID>` and `<DriveLabelSelectionID>` values are obtained from the commands above.
+## Manage Classification Label Permissions
+Create a permission for a Classification Label by specifying the label name and the principal.
 ```
-gam <UserTypeEntity> process filedrivelabels <DriveFileEntity>
-        (addlabel <DriveLabelIDList>)*
-        (deletelabel <DriveLabelIDList>)*
-        (addlabelfield <DriveLabelID> <DriveLabelFieldID>
-            (text <String>)|selection <DriveLabelSelectionIDList>)|
-            (integer <Number>)|(date <Date>)|(user <EmailAddressList>))*
-        (deletelabelfield <DriveLabelID> <DriveLabelFieldID>)*
-        [nodetails]
-```
-
-By default, details of the process labels are displayed, use `nodetails` to suppress this display.
-
-## Manage Drive Label Permissions
-Create a permission for a Drive Label by specifying the label name and the principal.
-```
-gam [<UserTypeEntity>] create drivelabelpermission <DriveLabelNameEntity>
+gam [<UserTypeEntity>] create classificationlabelpermission <ClassificationLabelNameEntity>
         (user <UserItem>) | (group <GroupItem) | (audience <String>)
         role applier|editor|organizer|reader
         [nodetails|formatjson] [adminaccess|asadmin]
@@ -178,22 +171,22 @@ By default, when a permission is created, GAM outputs details of the permission 
 * `nodetails` - Suppress the details output.
 * `formatjson` - Output the details in JSON format.
 
-Delete a Drive Label permission by specifying the label name and the principal.
+Delete a Classification Label permission by specifying the label name and the principal.
 ```
-gam [<UserTypeEntity>] delete drivelabelpermission <DriveLabelNameEntity>
+gam [<UserTypeEntity>] delete classificationlabelpermission <ClassificationLabelNameEntity>
         (user <UserItem>) | (group <GroupItem) | (audience <String>)
         [adminaccess|asadmin]
 ```
 
-Delete a Drive Label permission by specifying the label permission name.
+Delete a Classification Label permission by specifying the label permission name.
 ```
-gam [<UserTypeEntity>] remove drivelabelpermission <DriveLabelPermissionNameEntity>
+gam [<UserTypeEntity>] remove classificationlabelpermission <ClassificationLabelPermissionNameEntity>
         [adminaccess|asadmin]
 ```
-## Display Drive Label Permissions
-Display permissions for a collection of Drive Label permission names.
+## Display Classification Label Permissions
+Display permissions for a collection of Classification Label permission names.
 ```
-gam [<UserTypeEntity>] show drivelabelpermissions <DriveLabelNameEntity>
+gam [<UserTypeEntity>] show classificationlabelpermissions <ClassificationLabelNameEntity>
         [formatjson] [adminaccess|asadmin]
 ```
 
@@ -201,7 +194,7 @@ By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 
 ```
-gam [<UserTypeEntity>] print drivelabelpermissions <DriveLabelNameEntity> [todrive <ToDriveAttribute>*]
+gam [<UserTypeEntity>] print classificationlabelpermissions <ClassificationLabelNameEntity> [todrive <ToDriveAttribute>*]
         [formatjson [quotechar <Character>]] [adminaccess|asadmin]
 ```
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
@@ -213,3 +206,17 @@ When using the `formatjson` option, double quotes are used extensively in the da
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
+## Process Drive File Classification Labels
+`<ClassificationLabelID>`, `<ClassificationLabelFieldID>` and `<ClassificationLabelSelectionID>` values are obtained from the commands above.
+```
+gam <UserTypeEntity> process filedrivelabels <DriveFileEntity>
+        (addlabel <ClassificationLabelIDList>)*
+        (deletelabel <ClassificationLabelIDList>)*
+        (addlabelfield <ClassificationLabelID> <ClassificationLabelFieldID>
+            (text <String>)|selection <ClassificationLabelSelectionIDList>)|
+            (integer <Number>)|(date <Date>)|(user <EmailAddressList>))*
+        (deletelabelfield <ClassificationLabelID> <ClassificationLabelFieldID>)*
+        [nodetails]
+```
+
+By default, details of the process labels are displayed, use `nodetails` to suppress this display.
