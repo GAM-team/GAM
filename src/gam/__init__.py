@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.34'
+__version__ = '7.00.35'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -35214,7 +35214,7 @@ def doInfoCIPolicies():
       printGettingAllAccountEntities(Ent.POLICY, ifilter)
       policies = _filterPolicies(ci, getPageMessage(), ifilter)
     _showPolicies(policies, FJQC, add_warnings, no_appnames, cd, groups_ci)
-      
+
 # gam print policies [todrive <ToDriveAttribute>*]
 #	[filter <String>]  [nowarnings] [noappnames]
 #	[formatjson [quotechar <Character>]]
@@ -53831,7 +53831,7 @@ class DriveFileFields():
         else:
           _getDriveFieldSubField(field, self.fieldsList, self.parentsSubFields)
     elif myarg == 'includelabels':
-      labelIds = getEntityList(Cmd.OB_DRIVE_LABEL_ID, shlexSplit=True)
+      labelIds = getEntityList(Cmd.OB_CLASSIFICATION_LABEL_ID, shlexSplit=True)
       for labelId in labelIds:
         self.includeLabels.append(normalizeDriveLabelID(labelId))
     elif myarg.find('.') != -1:
@@ -63842,16 +63842,16 @@ def _showDriveLabel(label, j, jcount, FJQC):
   if FJQC.formatJSON:
     printLine(json.dumps(cleanJSON(label, timeObjects=DRIVELABELS_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
     return
-  printEntity([Ent.DRIVE_LABEL_NAME, f'{label["name"]}'], j, jcount)
+  printEntity([Ent.CLASSIFICATION_LABEL_NAME, f'{label["name"]}'], j, jcount)
   Ind.Increment()
   showJSON(None, label, timeObjects=DRIVELABELS_TIME_OBJECTS, dictObjectsKey={'fields': 'id', 'choices': 'id'})
   Ind.Decrement()
 
-# gam [<UserTypeEntity>] info drivelabels <DriveLabelNameEntity>
+# gam [<UserTypeEntity>] info classificationlabels <ClassificationLabelNameEntity>
 #	[[basic|full] [languagecode <BCP47LanguageCode>]
 #	[formatjson] [asadmin]
 def infoDriveLabels(users, useAdminAccess=False):
-  driveLabelNameEntity = getUserObjectEntity(Cmd.OB_DRIVE_LABEL_NAME, Ent.DRIVE_LABEL, shlexSplit=True)
+  driveLabelNameEntity = getUserObjectEntity(Cmd.OB_CLASSIFICATION_LABEL_NAME, Ent.CLASSIFICATION_LABEL, shlexSplit=True)
   FJQC = FormatJSONQuoteChar()
   parameters = {'useAdminAccess': useAdminAccess}
   while Cmd.ArgumentsRemaining():
@@ -63872,7 +63872,7 @@ def infoDriveLabels(users, useAdminAccess=False):
     j = 0
     for name in labelNames:
       j += 1
-      kvList = [Ent.USER, user, Ent.DRIVE_LABEL_NAME, name]
+      kvList = [Ent.USER, user, Ent.CLASSIFICATION_LABEL_NAME, name]
       name = validateDriveLabelName(name, kvList, j, jcount, False)
       if name is None:
         continue
@@ -63896,11 +63896,11 @@ def infoDriveLabels(users, useAdminAccess=False):
 def doInfoDriveLabels():
   infoDriveLabels([_getAdminEmail()], True)
 
-# gam [<UserTypeEntity>] print drivelabels> [todrive <ToDriveAttribute>*]
+# gam [<UserTypeEntity>] print classificationlabels> [todrive <ToDriveAttribute>*]
 #	[basic|full] [languagecode <BCP47LanguageCode>]
 #	[publishedonly [<Boolean>]] [minimumrole applier|editor|organizer|reader]
 #	[formatjson [quotechar <Character>]] [asadmin]
-# gam [<UserTypeEntity>] show drivelabels
+# gam [<UserTypeEntity>] show classificationlabels
 #	[basic|full] [languagecode <BCP47LanguageCode>]
 #	[publishedonly [<Boolean>]] [minimumrole applier|editor|organizer|reader]
 #	[formatjson] [asadmin]
@@ -63926,7 +63926,7 @@ def printShowDriveLabels(users, useAdminAccess=False):
     if not drive:
       continue
     if csvPF:
-      printGettingAllEntityItemsForWhom(Ent.DRIVE_LABEL, user, i, count)
+      printGettingAllEntityItemsForWhom(Ent.CLASSIFICATION_LABEL, user, i, count)
       pageMessage = getPageMessageForWhom()
     else:
       pageMessage = None
@@ -63938,7 +63938,7 @@ def printShowDriveLabels(users, useAdminAccess=False):
       if not csvPF:
         jcount = len(labels)
         if not FJQC.formatJSON:
-          entityPerformActionNumItems([Ent.USER, user], jcount, Ent.DRIVE_LABEL, i, count)
+          entityPerformActionNumItems([Ent.USER, user], jcount, Ent.CLASSIFICATION_LABEL, i, count)
         Ind.Increment()
         j = 0
         for label in labels:
@@ -63956,11 +63956,11 @@ def printShowDriveLabels(users, useAdminAccess=False):
                                      ensure_ascii=False, sort_keys=True)
             csvPF.WriteRowNoFilter(row)
     except GAPI.permissionDenied as e:
-      entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_LABEL, None], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user, Ent.CLASSIFICATION_LABEL, None], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
       userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
   if csvPF:
-    csvPF.writeCSVfile('Drive Labels')
+    csvPF.writeCSVfile('Classification Labels')
 
 def doPrintShowDriveLabels():
   printShowDriveLabels([_getAdminEmail()], True)
@@ -63969,17 +63969,17 @@ def _showDriveLabelPermission(labelperm, j, jcount, FJQC):
   if FJQC.formatJSON:
     printLine(json.dumps(cleanJSON(labelperm), ensure_ascii=False, sort_keys=True))
     return
-  printEntity([Ent.DRIVE_LABEL_PERMISSION_NAME, f'{labelperm["name"]}'], j, jcount)
+  printEntity([Ent.CLASSIFICATION_LABEL_PERMISSION_NAME, f'{labelperm["name"]}'], j, jcount)
   Ind.Increment()
   showJSON(None, labelperm)
   Ind.Decrement()
 
-# gam [<UserTypeEntity>] create drivelabelpermission <DriveLabelNameEntity>
+# gam [<UserTypeEntity>] create classificationlabelpermission <ClassificationLabelNameEntity>
 #	(user <UserItem>) | (group <GroupItem) | (audience <String>)
 #	role applier|editor|organizer|reader
 #	[nodetails|formatjson] [asadmin]
 def createDriveLabelPermissions(users, useAdminAccess=False):
-  driveLabelNameEntity = getUserObjectEntity(Cmd.OB_DRIVE_LABEL_NAME, Ent.DRIVE_LABEL_PERMISSION, shlexSplit=True)
+  driveLabelNameEntity = getUserObjectEntity(Cmd.OB_CLASSIFICATION_LABEL_NAME, Ent.CLASSIFICATION_LABEL_PERMISSION, shlexSplit=True)
   FJQC = FormatJSONQuoteChar()
   parameters = {'useAdminAccess': useAdminAccess}
   body = {}
@@ -64021,7 +64021,7 @@ def createDriveLabelPermissions(users, useAdminAccess=False):
     j = 0
     for name in labelNames:
       j += 1
-      kvList = [Ent.USER, user, Ent.DRIVE_LABEL_NAME, name, Ent.DRIVE_LABEL_PERMISSION, None]
+      kvList = [Ent.USER, user, Ent.CLASSIFICATION_LABEL_NAME, name, Ent.CLASSIFICATION_LABEL_PERMISSION, None]
       name = validateDriveLabelName(name, kvList, j, jcount, False)
       if name is None:
         continue
@@ -64031,7 +64031,7 @@ def createDriveLabelPermissions(users, useAdminAccess=False):
                              throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.PERMISSION_DENIED, GAPI.NOT_FOUND,
                                                                          GAPI.INVALID, GAPI.INTERNAL_ERROR],
                              parent=name, body=body, **parameters)
-        kvList = [Ent.USER, user, Ent.DRIVE_LABEL_PERMISSION, labelperm['name']]
+        kvList = [Ent.USER, user, Ent.CLASSIFICATION_LABEL_PERMISSION, labelperm['name']]
         if not FJQC.formatJSON:
           entityActionPerformed(kvList, j, jcount)
         if showDetails:
@@ -64048,17 +64048,17 @@ def createDriveLabelPermissions(users, useAdminAccess=False):
 def doCreateDriveLabelPermissions():
   createDriveLabelPermissions([_getAdminEmail()], True)
 
-# gam [<UserTypeEntity>] delete drivelabelpermission <DriveLabelNameEntity>
+# gam [<UserTypeEntity>] delete classificationlabelpermission <ClassificationLabelNameEntity>
 #	(user <UserItem>) | (group <GroupItem) | (audience <String>)
 #	[asadmin]
-# gam [<UserTypeEntity>] remove drivelabelpermission <DriveLabelPermissionNameEntity>
+# gam [<UserTypeEntity>] remove classificationlabelpermission <ClassificationLabelPermissionNameEntity>
 #	[asadmin]
 def deleteDriveLabelPermissions(users, useAdminAccess=False):
   doDelete = Act.Get() == Act.DELETE
   if doDelete:
-    driveLabelNameEntity = getUserObjectEntity(Cmd.OB_DRIVE_LABEL_NAME, Ent.DRIVE_LABEL, shlexSplit=True)
+    driveLabelNameEntity = getUserObjectEntity(Cmd.OB_CLASSIFICATION_LABEL_NAME, Ent.CLASSIFICATION_LABEL, shlexSplit=True)
   else:
-    driveLabelNameEntity = getUserObjectEntity(Cmd.OB_DRIVE_LABEL_PERMISSION_NAME, Ent.DRIVE_LABEL_PERMISSION, shlexSplit=True)
+    driveLabelNameEntity = getUserObjectEntity(Cmd.OB_CLASSIFICATION_LABEL_PERMISSION_NAME, Ent.CLASSIFICATION_LABEL_PERMISSION, shlexSplit=True)
   parameters = {'useAdminAccess': useAdminAccess, 'requests': [None]}
   labelperm = ''
   while Cmd.ArgumentsRemaining():
@@ -64088,7 +64088,7 @@ def deleteDriveLabelPermissions(users, useAdminAccess=False):
     j = 0
     for name in labelPermNames:
       j += 1
-      kvList = [Ent.USER, user, Ent.DRIVE_LABEL_PERMISSION_NAME, name]
+      kvList = [Ent.USER, user, Ent.CLASSIFICATION_LABEL_PERMISSION_NAME, name]
       if doDelete:
         parent = validateDriveLabelName(name, kvList, j, jcount, False)
         if parent is None:
@@ -64115,13 +64115,13 @@ def deleteDriveLabelPermissions(users, useAdminAccess=False):
 def doDeleteDriveLabelPermissions():
   deleteDriveLabelPermissions([_getAdminEmail()], True)
 
-# gam [<UserTypeEntity>] print drivelabelpermissions <DriveLabelNameEntity> [todrive <ToDriveAttribute>*]
+# gam [<UserTypeEntity>] print classificationlabelpermissions <ClassificationLabelNameEntity> [todrive <ToDriveAttribute>*]
 #	[formatjson [quotechar <Character>]] [asadmin]
-# gam [<UserTypeEntity>] show drivelabelpermissions <DriveLabelNameEntity>
+# gam [<UserTypeEntity>] show classificationlabelpermissions <ClassificationLabelNameEntity>
 #	[formatjson] [asadmin]
 def printShowDriveLabelPermissions(users, useAdminAccess=False):
   csvPF = CSVPrintFile(['User', 'name', 'email', 'role', 'person', 'group', 'audience'], 'sortall') if Act.csvFormat() else None
-  driveLabelNameEntity = getUserObjectEntity(Cmd.OB_DRIVE_LABEL_NAME, Ent.DRIVE_LABEL_PERMISSION, shlexSplit=True)
+  driveLabelNameEntity = getUserObjectEntity(Cmd.OB_CLASSIFICATION_LABEL_NAME, Ent.CLASSIFICATION_LABEL_PERMISSION, shlexSplit=True)
   FJQC = FormatJSONQuoteChar(csvPF)
   parameters = {'useAdminAccess': useAdminAccess}
   while Cmd.ArgumentsRemaining():
@@ -64146,13 +64146,13 @@ def printShowDriveLabelPermissions(users, useAdminAccess=False):
     j = 0
     for name in labelNames:
       j += 1
-      kvList = [Ent.USER, user, Ent.DRIVE_LABEL_NAME, name, Ent.DRIVE_LABEL_PERMISSION, None]
+      kvList = [Ent.USER, user, Ent.CLASSIFICATION_LABEL_NAME, name, Ent.CLASSIFICATION_LABEL_PERMISSION, None]
       name = validateDriveLabelName(name, kvList, j, jcount, False)
       if name is None:
         continue
-      kvList = [Ent.USER, user, Ent.DRIVE_LABEL_NAME, name]
+      kvList = [Ent.USER, user, Ent.CLASSIFICATION_LABEL_NAME, name]
       if csvPF:
-        printGettingAllEntityItemsForWhom(Ent.DRIVE_LABEL_PERMISSION, name, j, jcount)
+        printGettingAllEntityItemsForWhom(Ent.CLASSIFICATION_LABEL_PERMISSION, name, j, jcount)
         pageMessage = getPageMessageForWhom()
       else:
         pageMessage = None
@@ -64164,7 +64164,7 @@ def printShowDriveLabelPermissions(users, useAdminAccess=False):
         if not csvPF:
           jcount = len(labelperms)
           if not FJQC.formatJSON:
-            entityPerformActionNumItems(kvList, jcount, Ent.DRIVE_LABEL_PERMISSION, i, count)
+            entityPerformActionNumItems(kvList, jcount, Ent.CLASSIFICATION_LABEL_PERMISSION, i, count)
           Ind.Increment()
           j = 0
           for labelperm in labelperms:
@@ -64188,7 +64188,7 @@ def printShowDriveLabelPermissions(users, useAdminAccess=False):
         break
     Ind.Decrement()
   if csvPF:
-    csvPF.writeCSVfile('Drive Label Permissions')
+    csvPF.writeCSVfile('Classification Label Permissions')
 
 def doPrintShowDriveLabelPermissions():
   printShowDriveLabelPermissions([_getAdminEmail()], True)
@@ -64202,12 +64202,12 @@ DRIVELABEL_FIELD_TYPE_MAP = {
   }
 
 # gam <UserTypeEntity> process filedrivelabels <DriveFileEntity>
-#	(addlabel <DriveLabelIDList>)*
-#	(deletelabel <DriveLabelIDList>)*
-#	(addlabelfield <DriveLabelID> <DriveLabelFieldID>
-#	    (text <String>)|selection <DriveLabelSelectionIDList>)|
+#	(addlabel <ClassificationLabelIDList>)*
+#	(deletelabel <ClassificationLabelIDList>)*
+#	(addlabelfield <ClassificationLabelID> <ClassificationLabelFieldID>
+#	    (text <String>)|selection <ClassificationLabelSelectionIDList>)|
 #	    (integer <Number>)|(date <Date>)|(user <EmailAddressList>))*
-#	(deletelabelfield <DriveLabelID> <DriveLabelFieldID>)*
+#	(deletelabelfield <ClassificationLabelID> <ClassificationLabelFieldID>)*
 #	[nodetails]
 def processFileDriveLabels(users):
   fileIdEntity = getDriveFileEntity()
@@ -64221,23 +64221,23 @@ def processFileDriveLabels(users):
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'addlabel':
-      labelIds = getEntityList(Cmd.OB_DRIVE_LABEL_ID, shlexSplit=True)
+      labelIds = getEntityList(Cmd.OB_CLASSIFICATION_LABEL_ID, shlexSplit=True)
       for labelId in labelIds:
         actionList[myarg]['list'].append({'labelModifications': [{'labelId': normalizeDriveLabelID(labelId)}]})
         kcount += 1
     elif myarg == 'deletelabel':
-      labelIds = getEntityList(Cmd.OB_DRIVE_LABEL_ID, shlexSplit=True)
+      labelIds = getEntityList(Cmd.OB_CLASSIFICATION_LABEL_ID, shlexSplit=True)
       for labelId in labelIds:
         actionList[myarg]['list'].append({'labelModifications': [{'labelId': normalizeDriveLabelID(labelId), 'removeLabel': True}]})
         kcount += 1
     elif myarg == 'addlabelfield':
-      labelId = normalizeDriveLabelID(getString(Cmd.OB_DRIVE_LABEL_ID))
-      fieldId = getString(Cmd.OB_DRIVE_LABEL_FIELD_ID)
+      labelId = normalizeDriveLabelID(getString(Cmd.OB_CLASSIFICATION_LABEL_ID))
+      fieldId = getString(Cmd.OB_CLASSIFICATION_LABEL_FIELD_ID)
       fieldType = getChoice(DRIVELABEL_FIELD_TYPE_MAP, mapChoice=True)
       if fieldType == 'setTextValues':
         valueList = [getString(Cmd.OB_STRING, minLen=0)]
       elif fieldType == 'setSelectionValues':
-        valueList = convertEntityToList(getString(Cmd.OB_DRIVE_LABEL_SELECTION_ID_LIST, minLen=0), shlexSplit=True)
+        valueList = convertEntityToList(getString(Cmd.OB_CLASSIFICATION_LABEL_SELECTION_ID_LIST, minLen=0), shlexSplit=True)
       elif fieldType == 'setIntegerValues':
         valueList = [getInteger()]
       elif fieldType == 'setDateValues':
@@ -64248,8 +64248,8 @@ def processFileDriveLabels(users):
                                                                 'fieldModifications': [{'fieldId': fieldId, fieldType: valueList}]}]})
       kcount += 1
     elif myarg == 'deletelabelfield':
-      labelId = normalizeDriveLabelID(getString(Cmd.OB_DRIVE_LABEL_ID))
-      fieldId = getString(Cmd.OB_DRIVE_LABEL_FIELD_ID)
+      labelId = normalizeDriveLabelID(getString(Cmd.OB_CLASSIFICATION_LABEL_ID))
+      fieldId = getString(Cmd.OB_CLASSIFICATION_LABEL_FIELD_ID)
       actionList[myarg]['list'].append({'labelModifications': [{'labelId': labelId,
                                                                 'fieldModifications': [{'fieldId': fieldId, 'unsetValues': True}]}]})
       kcount += 1
@@ -64264,7 +64264,7 @@ def processFileDriveLabels(users):
     if jcount == 0:
       continue
     Act.Set(Act.PROCESS)
-    entityPerformActionSubItemModifierNumItems([Ent.USER, user], Ent.DRIVE_LABEL, Act.MODIFIER_FOR, jcount, Ent.DRIVE_FILE_OR_FOLDER)
+    entityPerformActionSubItemModifierNumItems([Ent.USER, user], Ent.CLASSIFICATION_LABEL, Act.MODIFIER_FOR, jcount, Ent.DRIVE_FILE_OR_FOLDER)
     Ind.Increment()
     j = 0
     userError = False
@@ -64273,16 +64273,16 @@ def processFileDriveLabels(users):
       k = 0
       kvList = [Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId]
       Act.Set(Act.PROCESS)
-      entityPerformActionNumItems(kvList, kcount, Ent.DRIVE_LABEL)
+      entityPerformActionNumItems(kvList, kcount, Ent.CLASSIFICATION_LABEL)
       Ind.Increment()
       for operation in ['deletelabelfield', 'deletelabel', 'addlabel', 'addlabelfield']:
         Act.Set(actionList[operation]['action'])
         for action in actionList[operation]['list']:
           k += 1
           xkvList = kvList.copy()
-          xkvList.extend([Ent.DRIVE_LABEL_ID, action['labelModifications'][0]['labelId']])
+          xkvList.extend([Ent.CLASSIFICATION_LABEL_ID, action['labelModifications'][0]['labelId']])
           if 'fieldModifications' in action['labelModifications'][0]:
-            xkvList.extend([Ent.DRIVE_LABEL_FIELD_ID, action['labelModifications'][0]['fieldModifications'][0]['fieldId']])
+            xkvList.extend([Ent.CLASSIFICATION_LABEL_FIELD_ID, action['labelModifications'][0]['fieldModifications'][0]['fieldId']])
           try:
             label = callGAPI(drive.files(), 'modifyLabels',
                              throwReasons=GAPI.DRIVE3_MODIFY_LABEL_THROW_REASONS,
@@ -75589,6 +75589,10 @@ MAIN_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_CIMEMBER:		Cmd.ARG_CIGROUPMEMBERS,
   Cmd.ARG_CIMEMBERS:		Cmd.ARG_CIGROUPMEMBERS,
   Cmd.ARG_CIPOLICIES:		Cmd.ARG_CIPOLICY,
+  Cmd.ARG_CLASSIFICATIONLABEL:	Cmd.ARG_DRIVELABEL,
+  Cmd.ARG_CLASSIFICATIONLABELS:	Cmd.ARG_DRIVELABEL,
+  Cmd.ARG_CLASSIFICATIONLABELPERMISSION:	Cmd.ARG_DRIVELABELPERMISSION,
+  Cmd.ARG_CLASSIFICATIONLABELPERMISSIONS:	Cmd.ARG_DRIVELABELPERMISSION,
   Cmd.ARG_CLASS:		Cmd.ARG_COURSE,
   Cmd.ARG_CLASSES:		Cmd.ARG_COURSES,
   Cmd.ARG_CLASSPARTICIPANTS:	Cmd.ARG_COURSEPARTICIPANTS,
@@ -76619,6 +76623,10 @@ USER_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_BACKUPCODES:		Cmd.ARG_BACKUPCODE,
   Cmd.ARG_CALENDARS:		Cmd.ARG_CALENDAR,
   Cmd.ARG_CALENDARACLS:		Cmd.ARG_CALENDARACL,
+  Cmd.ARG_CLASSIFICATIONLABEL:	Cmd.ARG_DRIVELABEL,
+  Cmd.ARG_CLASSIFICATIONLABELS:	Cmd.ARG_DRIVELABEL,
+  Cmd.ARG_CLASSIFICATIONLABELPERMISSION:	Cmd.ARG_DRIVELABELPERMISSION,
+  Cmd.ARG_CLASSIFICATIONLABELPERMISSIONS:	Cmd.ARG_DRIVELABELPERMISSION,
   Cmd.ARG_CLASSROOMINVITATIONS:	Cmd.ARG_CLASSROOMINVITATION,
   Cmd.ARG_CHATEVENTS:		Cmd.ARG_CHATEVENT,
   Cmd.ARG_CHATMEMBERS:		Cmd.ARG_CHATMEMBER,

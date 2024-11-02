@@ -1,4 +1,4 @@
-!# Permission Matches
+# Permission Matches
 - [Python Regular Expressions](Python-Regular-Expressions) Match function
 - [Definitions](#definitions)
 - [File Selection](#file-selection)

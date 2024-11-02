@@ -1,4 +1,4 @@
-!# Users - Chat
+# Users - Chat
 - [API documentation](#api-documentation)
 - [Introduction](#introduction)
 - [Set up a Chat Bot](#set-up-a-chat-bot)

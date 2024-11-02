@@ -1,4 +1,4 @@
-!# Users - Tokens
+# Users - Tokens
 - [API documentation](#api-documentation)
 - [Definitions](#definitions)
 - [Delete a user's token](#delete-a-users-token)

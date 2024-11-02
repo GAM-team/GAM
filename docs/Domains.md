@@ -1,4 +1,4 @@
-!# Domains
+# Domains
 - [API documentation](#api-documentation)
 - [Definitions](#definitions)
 - [Create a domain](#create-a-domain)

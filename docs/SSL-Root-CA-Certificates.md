@@ -1,4 +1,4 @@
-!# SSL Root CA Certificates
+# SSL Root CA Certificates
 
 For an overall discussion of SSL, see: https://sites.google.com/site/x509certificateusage/
 

@@ -1,4 +1,4 @@
-!# Using GAM7 with a delegated admin service account
+# Using GAM7 with a delegated admin service account
 - [Thanks](#thanks)
 - [Introduction](#introduction)
 - [Advantages](#advantages)

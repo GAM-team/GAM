@@ -416,7 +416,7 @@ gam <UserTypeEntity> show fileinfo <DriveFileEntity>
         [allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [showdrivename] [showshareddrivepermissions]
-        [(showlabels details|ids)|(includelabels <DriveLabelIDList>)]
+        [(showlabels details|ids)|(includelabels <ClassificationLabelIDList>)]
         [showparentsidsaslist] [followshortcuts [<Boolean>]]
         [stripcrsfromname]
         [formatjson]
@@ -426,7 +426,7 @@ gam <UserTypeEntity> info drivefile <DriveFileEntity>
         [allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [showdrivename] [showshareddrivepermissions]
-        [(showlabels details|ids)|(includelabels <DriveLabelIDList>)]
+        [(showlabels details|ids)|(includelabels <ClassificationLabelIDList>)]
         [showparentsidsaslist] [followshortcuts [<Boolean>]]
         [stripcrsfromname]
         [formatjson]
@@ -471,18 +471,18 @@ an API call per file is required to get the information.
 * `showlabels details`
 ```
   labels:
-    id: <DriveLabelID>
+    id: <ClassificationLabelID>
       revisionId: <Number>
-    id: <DriveLabelID>
+    id: <ClassificationLabelID>
       revisionId: <Number>
 ```
 * `showlabels ids`
 ```
-  labelsIds: <DriveLabelID> <DriveLabelID> ...
+  labelsIds: <ClassificationLabelID> <ClassificationLabelID> ...
 ```
 
 Starting in version 6.27.02, you can get Drive label information without an extra API call
-if you know the `<DriveLabelID>`s. Add `labelinfo` to your `fields` list and use `includelabels <DriveLabelIDList>`
+if you know the `<ClassificationLabelID>`s. Add `labelinfo` to your `fields` list and use `includelabels <ClassificationLabelIDList>`
 to specify the Drive labels.
 ```
 gam user user@domain.com show fileinfo <DriveFileEntity> fields id,name,mimetype,labelinfo includelabels "mRoha85IbwCRl490E00xGLvBsSbkwIiuZ6PRNNEbbFcb"
@@ -1079,7 +1079,7 @@ gam <UserTypeEntity> print|show filelist [todrive <ToDriveAttribute>*]
         [filepath|fullpath [folderpathonly [<Boolean>]] [pathdelimiter <Character>] [addpathstojson] [showdepth]] [buildtree]
         [allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
         [showdrivename] [showshareddrivepermissions]
-        [(showlabels details|ids)|(includelabels <DriveLabelIDList>)]
+        [(showlabels details|ids)|(includelabels <ClassificationLabelIDList>)]
         [showparentsidsaslist] [showpermissionslast]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])* [delimiter <Character>]
         [stripcrsfromname]

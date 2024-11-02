@@ -1,4 +1,4 @@
-!# Users - Drive - Query
+# Users - Drive - Query
 - [API documentation](#api-documentation)
 - [Query documentation](#query-documentation)
 

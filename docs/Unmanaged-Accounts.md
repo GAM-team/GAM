@@ -1,4 +1,4 @@
-!# Unmanaged Accounts
+# Unmanaged Accounts
 - [API documentation](#api-documentation)
 - [Notes](#notes)
 - [Collections of Users](Collections-of-Users)

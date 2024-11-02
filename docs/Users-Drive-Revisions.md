@@ -1,4 +1,4 @@
-!# Users - Drive - Revisions
+# Users - Drive - Revisions
 - [API documentation](#api-documentation)
 - [Query documentation](Users-Drive-Query)
 - [Definitions](#definitions)

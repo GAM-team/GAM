@@ -1,4 +1,4 @@
-!# Google Network Addresses
+# Google Network Addresses
 
 All GAM calls are made on port 443 (HTTPS) to the following addresses:
 ```

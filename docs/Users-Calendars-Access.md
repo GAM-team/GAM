@@ -1,4 +1,4 @@
-!# Users - Calendars - Access
+# Users - Calendars - Access
 - [Notes](#Notes)
 - [API documentation](#api-documentation)
 - [Definitions](#definitions)

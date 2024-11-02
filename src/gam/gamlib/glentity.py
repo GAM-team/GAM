@@ -110,6 +110,12 @@ class GamEntity():
   CHROME_POLICY_SCHEMA = 'cpsc'
   CHROME_RELEASE = 'crel'
   CHROME_VERSION = 'cver'
+  CLASSIFICATION_LABEL = 'dlab'
+  CLASSIFICATION_LABEL_FIELD_ID = 'dlfi'
+  CLASSIFICATION_LABEL_ID = 'dlid'
+  CLASSIFICATION_LABEL_NAME = 'dlna'
+  CLASSIFICATION_LABEL_PERMISSION = 'dlpe'
+  CLASSIFICATION_LABEL_PERMISSION_NAME = 'dlpn'
   CLASSROOM_INVITATION = 'clai'
   CLASSROOM_INVITATION_OWNER = 'clio'
   CLASSROOM_INVITATION_STUDENT = 'clis'
@@ -193,12 +199,6 @@ class GamEntity():
   DRIVE_FOLDER_PATH = 'folp'
   DRIVE_FOLDER_RENAMED = 'forn'
   DRIVE_FOLDER_SHORTCUT = 'fols'
-  DRIVE_LABEL = 'dlab'
-  DRIVE_LABEL_FIELD_ID = 'dlfi'
-  DRIVE_LABEL_ID = 'dlid'
-  DRIVE_LABEL_NAME = 'dlna'
-  DRIVE_LABEL_PERMISSION = 'dlpe'
-  DRIVE_LABEL_PERMISSION_NAME = 'dlpn'
   DRIVE_ORPHAN_FILE_OR_FOLDER = 'orph'
   DRIVE_PARENT_FOLDER = 'fipf'
   DRIVE_PARENT_FOLDER_ID = 'fipi'
@@ -462,6 +462,12 @@ class GamEntity():
     CHROME_POLICY_SCHEMA: ['Chrome Policy Schemas', 'Chrome Policy Schema'],
     CHROME_RELEASE: ['Chrome Releases', 'Chrome Release'],
     CHROME_VERSION: ['Chrome Versions', 'Chrome Version'],
+    CLASSIFICATION_LABEL: ['Classification Labels', 'Classification Label'],
+    CLASSIFICATION_LABEL_FIELD_ID: ['Classification Label Field IDs', 'Classification Label Field ID'],
+    CLASSIFICATION_LABEL_ID: ['Classification Label IDs', 'Classification Label ID'],
+    CLASSIFICATION_LABEL_NAME: ['Classification Label Names', 'Classification Label Name'],
+    CLASSIFICATION_LABEL_PERMISSION: ['Classification Label Permissions', 'Classification Label Permission'],
+    CLASSIFICATION_LABEL_PERMISSION_NAME: ['Classification Label Permission Names', 'Classification Label Permission Name'],
     CLASSROOM_INVITATION: ['Classroom Invitations', 'Classroom Invitation'],
     CLASSROOM_INVITATION_OWNER: ['Classroom Owner Invitations', 'Classroom Owner Invitation'],
     CLASSROOM_INVITATION_STUDENT: ['Classroom Student Invitations', 'Classroom Student Invitation'],
@@ -545,12 +551,6 @@ class GamEntity():
     DRIVE_FOLDER_PATH: ['Drive Folder Paths', 'Drive Folder Path'],
     DRIVE_FOLDER_RENAMED: ['Drive Folders Renamed', 'Drive Folder Renamed'],
     DRIVE_FOLDER_SHORTCUT: ['Drive Folder Shortcuts', 'Drive Folder Shortcut'],
-    DRIVE_LABEL: ['Drive Labels', 'Drive Label'],
-    DRIVE_LABEL_FIELD_ID: ['Drive Label Field IDs', 'Drive Label Field ID'],
-    DRIVE_LABEL_ID: ['Drive Label IDs', 'Drive Label ID'],
-    DRIVE_LABEL_NAME: ['Drive Label Names', 'Drive Label Name'],
-    DRIVE_LABEL_PERMISSION: ['Drive Label Permissions', 'Drive Label Permission'],
-    DRIVE_LABEL_PERMISSION_NAME: ['Drive Label Permission Names', 'Drive Label Permission Name'],
     DRIVE_ORPHAN_FILE_OR_FOLDER: ['Drive Orphan Files/Folders', 'Drive Orphan File/Folder'],
     DRIVE_PARENT_FOLDER: ['Drive Parent Folders', 'Drive Parent Folder'],
     DRIVE_PARENT_FOLDER_ID: ['Drive Parent Folder IDs', 'Drive Parent Folder ID'],

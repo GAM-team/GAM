@@ -1,4 +1,4 @@
-!# Rclone
+# Rclone
 
 GAM7 has the capability to upload and download single files between your local computer and Google Drive;
 it has no capability for uploading and dowloading folders. For this you can use Rclone: https://rclone.org/

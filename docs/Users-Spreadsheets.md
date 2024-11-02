@@ -1,4 +1,4 @@
-!# Users - Spreadsheets
+# Users - Spreadsheets
 - [API documentation](#api-documentation)
 - [Query documentation](#query-documentation)
 - [Definitions](#definitions)

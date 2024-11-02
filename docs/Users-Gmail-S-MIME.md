@@ -1,4 +1,4 @@
-!# Users - Gmail - S/MIME
+# Users - Gmail - S/MIME
 - [API documentation](#api-documentation)
 - [Definitions](#definitions)
 - [Create Gmail S/MIME configuration](#create-gmail-smime-configuration)

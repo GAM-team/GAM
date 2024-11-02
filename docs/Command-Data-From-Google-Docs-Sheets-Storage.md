@@ -1,4 +1,4 @@
-!# Command data from Google Docs, Sheets and Cloud Storage
+# Command data from Google Docs, Sheets and Cloud Storage
 - [Introduction](#introduction)
 - [Definitions](#definitions)
 - [Read data from a Google Doc or Drive File](#read-data-from-a-google-doc-or-drive-file)

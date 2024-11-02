@@ -1,4 +1,4 @@
-!# Users - Gmail - Client Side Encryption
+# Users - Gmail - Client Side Encryption
 - [API documentation](#api-documentation)
 - [Notes](#notes)
 - [Definitions](#definitions)

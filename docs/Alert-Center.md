@@ -1,4 +1,4 @@
-!# Alert Center
+# Alert Center
 - [API documentation](#api-documentation)
 - [Definitions](#definitions)
 - [Introduction](#introduction)

@@ -1,4 +1,4 @@
-!# Email Audit Monitor
+# Email Audit Monitor
 - [API documentation](#api-documentation)
 - [Notes](#notes)
 - [Definitions](#definitions)

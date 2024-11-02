@@ -1,4 +1,4 @@
-!# Users - Deprovision
+# Users - Deprovision
 - [Introduction](#introduction)
 - [Definitions](#definitions)
 - [Deprovision a user](#deprovision-a-user)

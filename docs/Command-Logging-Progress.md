@@ -1,4 +1,4 @@
-!# Command Logging and Progress
+# Command Logging and Progress
 - [Introduction](#introduction)
 - [GAM Configuration](gam.cfg)
 - [Command Logging](#command-logging)

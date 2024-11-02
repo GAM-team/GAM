@@ -1,4 +1,4 @@
-!# Inbound SSO
+# Inbound SSO
 - [Admin Console](#admin-console)
 - [API documentation](#api-documentation)
 - [Definitions](#definitions)

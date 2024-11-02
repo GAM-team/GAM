@@ -18,7 +18,7 @@
 - [Purge files](#purge-files)
 - [Copy/Move Files](Users-Drive-Copy-Move)
 - [Shortcuts](Users-Drive-Shortcuts)
-- [Drive Labels](Users-Drive-Labels)
+- [Classification Labels](Users-Classification-Labels)
 - [Download Google Documents as JSON](#download-google-documents-as-json)
 - [Upload changes to Google Documents](#upload-changes-to-google-documents)
 

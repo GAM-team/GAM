@@ -1,4 +1,4 @@
-!# Upgrade Benefits
+# Upgrade Benefits
 - [Configuration](#Configuration)
 - [Syntax Checking](#syntax-checking)
 - [API error checking](#api-error-checking)

@@ -1,4 +1,4 @@
-!# Organizational Units
+# Organizational Units
 - [API documentation](#api-documentation)
 - [Definitions](#definitions)
 - [Special quoting](#special-quoting)

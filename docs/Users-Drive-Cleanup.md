@@ -1,4 +1,4 @@
-!# Users - Drive - Cleanup
+# Users - Drive - Cleanup
 - [API documentation](#api-documentation)
 - [Definitions](#definitions)
 - [Display empty folders](#display-empty-folders)

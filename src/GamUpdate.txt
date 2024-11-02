@@ -1,3 +1,21 @@
+7.00.35
+
+Classification labels are now available for Gmail in addition to Drive.
+
+* See: https://workspaceupdates.googleblog.com/2024/11/open-beta-data-classification-labels-gmail.html
+
+The following command synonyms are available, there is no change in functionality:
+```
+gam [<UserTypeEntity>] info classificationlabels|drivelabels
+gam [<UserTypeEntity>] print classificationlabels|drivelabels
+gam [<UserTypeEntity>] show classificationlabels|drivelabels
+gam [<UserTypeEntity>] create classificationlabelpermission|drivelabelpermission
+gam [<UserTypeEntity>] delete classificationlabelpermission|drivelabelpermission
+gam [<UserTypeEntity>] remove classificationlabelpermission|drivelabelpermission
+gam [<UserTypeEntity>] print classificationlabelpermissions|drivelabelpermission
+gam [<UserTypeEntity>] show classificationlabelpermissions|drivelabelpermission
+```
+
 7.00.34
 
 Fixed bug introduced in 7.00.33 in `gam print group-members` that caused a trap.

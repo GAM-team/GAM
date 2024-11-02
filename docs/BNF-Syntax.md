@@ -1,4 +1,4 @@
-!# Syntax
+# Syntax
 
 ## BNF Syntax
 This Wiki describes the GAM7 command line syntax in modified BNF.

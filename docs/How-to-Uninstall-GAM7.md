@@ -1,4 +1,4 @@
-!# Uninstalling GAM7
+# Uninstalling GAM7
 
 - [Get Project Info](#get-project-info)
 - [Remove Client API access](#remove-client-api-access)

@@ -146,6 +146,10 @@ Data fields identified in a `csvkmd` argument.
         <CalendarList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 <CIPolicyNameEntity> ::=
         <CIPolicyNameList> | <FileSelector> | <CSVFileSelector>
+<ClassificationLabelNameEntity> ::=
+        <ClassificationLabelNameList> | <FileSelector> | <CSVFileSelector> | <CSVDataSelector>
+<ClassificationLabelPermissionNameEntity> ::=
+        <ClassificationLabelPermissionNameList> | <FileSelector> | <CSVFileSelector> | <CSVDataSelector>
 <ClassroomInvitationIDEntity> ::=
         <ClassroomInvitationIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 <ContactEntity> ::=
@@ -267,10 +271,6 @@ Data fields identified in a `csvkmd` argument.
         (first|last|allexceptfirst|allexceptlast <Number>)|
         (before|after <Time>) | (range <Time> <Time>)|
         <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-<DriveLabelNameEntity> ::=
-        <DriveLabelNameList> | <FileSelector> | <CSVFileSelector> | <CSVDataSelector>
-<DriveLabelPermissionNameEntity> ::=
-        <DriveLabelPermissionNameList> | <FileSelector> | <CSVFileSelector> | <CSVDataSelector>
 <EmailAddressEntity> ::=
         <EmailAddressList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 <FilterIDEntity> ::=

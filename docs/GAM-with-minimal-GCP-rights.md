@@ -1,4 +1,4 @@
-!# GAM setup with minimal GCP permissions.
+# GAM setup with minimal GCP permissions.
 
 - GCP Admin can create a project for the Workspace / GAM admin.
 

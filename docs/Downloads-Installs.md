@@ -1,4 +1,4 @@
-!# Downloads-Installs-GAM7
+# Downloads-Installs-GAM7
 You can download and install the current GAM7 release from the [GitHub Releases](https://github.com/GAM-team/GAM/releases/latest) page.
 Choose one of the following:
 

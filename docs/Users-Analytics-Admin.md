@@ -1,4 +1,4 @@
-!# Users - Analytics Admin
+# Users - Analytics Admin
 - [API documentation](#api-documentation)
 - [Notes](#notes)
 - [Definitions](#definitions)

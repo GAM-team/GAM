@@ -1,4 +1,4 @@
-!# Licenses
+# Licenses
 - [API documentation](#api-documentation)
 - [License Products and SKUs](#license-products-and-skus)
 - [Definitions](#definitions)

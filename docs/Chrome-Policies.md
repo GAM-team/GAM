@@ -1,4 +1,4 @@
-!# Chrome Policies
+# Chrome Policies
 
 - [Chrome Policies](#chrome-policies)
   - [Chrome Version History](Chrome-Version-History)

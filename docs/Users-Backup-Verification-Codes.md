@@ -1,4 +1,4 @@
-!# Users - Backup Verification Codes
+# Users - Backup Verification Codes
 - [API documentation](#api-documentation)
 - [Definitions](#definitions)
 - [Manage backup verification codes](#manage-backup-verification-codes)

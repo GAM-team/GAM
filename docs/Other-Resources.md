@@ -1,4 +1,4 @@
-!# Other Resources
+# Other Resources
 
 The following are links to contributions of others in support of GAM7.
 

@@ -1,4 +1,4 @@
-!# Users - Drive - Labels
+# Users - Classification Labels
 - [API documentation](#api-documentation)
 - [Query documentation](Users-Drive-Query)
 - [Notes](#notes)
@@ -13,8 +13,8 @@
 * https://support.google.com/a/answer/9292382
 * https://developers.google.com/drive/labels/guides/overview
 * https://developers.google.com/drive/labels/guides/authorize
-* https://developers.google.com/drive/labels/reference/rest/v2beta/labels
-* https://developers.google.com/drive/labels/reference/rest/v2beta/labels.permissions
+* https://developers.google.com/drive/labels/reference/rest/v2/labels
+* https://developers.google.com/drive/labels/reference/rest/v2/labels.permissions
 * https://developers.google.com/drive/api/guides/about-labels
 * https://developers.google.com/drive/api/v3/reference/files
 

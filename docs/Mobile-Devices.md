@@ -1,4 +1,4 @@
-!# Mobile Devices
+# Mobile Devices
 - [API documentation](#api-documentation)
 - [Query documentation](#query-documentation)
 - [Definitions](#definitions)

@@ -1,4 +1,4 @@
-!# Chrome Version History
+# Chrome Version History
 
 - [Chrome Version History](#chrome-version-history)
   - [API documentation](#api-documentation)

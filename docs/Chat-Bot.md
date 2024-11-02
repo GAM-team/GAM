@@ -1,4 +1,4 @@
-!# Chat Bot
+# Chat Bot
 
 - [Notes](#notes)
 - [API documentation](#api-documentation)

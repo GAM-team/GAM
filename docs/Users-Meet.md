@@ -1,4 +1,4 @@
-!# Users - Meet
+# Users - Meet
 - [API documentation](#api-documentation)
 - [Query documentation](#query-documentation)
 - [Introduction](#introduction)

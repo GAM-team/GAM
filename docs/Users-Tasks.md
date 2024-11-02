@@ -1,4 +1,4 @@
-!# Users - Tasks
+# Users - Tasks
 - [API documentation](#api-documentation)
 - [Notes](#notes)
 - [Definitions](#definitions)

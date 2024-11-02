@@ -1,4 +1,4 @@
-!# Users - Drive - Comments
+# Users - Drive - Comments
 - [API documentation](#api-documentation)
 - [Query documentation](Users-Drive-Query)
 - [Definitions](#definitions)

@@ -283,6 +283,11 @@
 <GIGroupItem> ::= <EmailAddress>|<UniqueID>|groups/<String>
 <CIGroupType> ::= customer|group|other|serviceaccount|user
 <CIPolicyName> ::= policies/<String>|settings/<String>|<String>
+<ClassificationLabelID> ::= <String>
+<ClassificationLabelFieldID> ::= <String>
+<ClassificationLabelSelectionID> ::= <String>
+<ClassificationLabelName> ::= labels/<ClassificationLabelID>[@latest|@published|@<Number>]
+<ClassificationLabelPermissionName> ::= labels/<ClassificationLabelID>[@latest|@published|@<Number>]/permissions/(audiences|groups|people)/<String>
 <ClassroomInvitationID> ::= <String>
 <ClientID> ::= <String>
 <CommandID> ::= <String>
@@ -352,11 +357,6 @@
 <DriveFilePermissionID> ::= anyone|anyonewithlink|id:<String>
 <DriveFilePermissionIDorEmail> ::= <DriveFilePermissionID>|<EmailAddress>
 <DriveFileRevisionID> ::= <String>
-<DriveLabelID> ::= <String>
-<DriveLabelFieldID> ::= <String>
-<DriveLabelSelectionID> ::= <String>
-<DriveLabelName> ::= labels/<DriveLabelID>[@latest|@published|@<Number>]
-<DriveLabelPermissionName> ::= labels/<DriveLabelID>[@latest|@published|@<Number>]/permissions/(audiences|groups|people)/<String>
 <EmailAddress> ::= <String>@<DomainName>
 <EmailItem> ::= <EmailAddress>|<UniqueID>|<String>
 <EmailReplacement> ::= <String>

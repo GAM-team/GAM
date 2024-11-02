@@ -1,4 +1,4 @@
-!# Meta Commands and File Redirection
+# Meta Commands and File Redirection
 
 - [GAM Configuration](gam.cfg)
 - [Todrive](Todrive)

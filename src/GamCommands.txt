@@ -379,6 +379,11 @@ If an item contains spaces, it should be surrounded by ".
 <GIGroupItem> ::= <EmailAddress>|<UniqueID>|groups/<String>
 <CIGroupType> ::= customer|group|other|serviceaccount|user
 <CIPolicyName> ::= policies/<String>|settings/<String>|<String>
+<ClassificationLabelID> ::= <String>
+<ClassificationLabelFieldID> ::= <String>
+<ClassificationLabelSelectionID> ::= <String>
+<ClassificationLabelName> ::= labels/<ClassificationLabelID>[@latest|@published|@<Number>]
+<ClassificationLabelPermissionName> ::= labels/<ClassificationLabelID>[@latest|@published|@<Number>]/permissions/(audiences|groups|people)/<String>
 <ClassroomInvitationID> ::= <String>
 <ClientID> ::= <String>
 <CommandID> ::= <String>
@@ -448,11 +453,6 @@ If an item contains spaces, it should be surrounded by ".
 <DriveFilePermissionID> ::= anyone|anyonewithlink|id:<String>
 <DriveFilePermissionIDorEmail> ::= <DriveFilePermissionID>|<EmailAddress>
 <DriveFileRevisionID> ::= <String>
-<DriveLabelID> ::= <String>
-<DriveLabelFieldID> ::= <String>
-<DriveLabelSelectionID> ::= <String>
-<DriveLabelName> ::= labels/<DriveLabelID>[@latest|@published|@<Number>]
-<DriveLabelPermissionName> ::= labels/<DriveLabelID>[@latest|@published|@<Number>]/permissions/(audiences|groups|people)/<String>
 <EmailAddress> ::= <String>@<DomainName>
 <EmailItem> ::= <EmailAddress>|<UniqueID>|<String>
 <EmailReplacement> ::= <String>
@@ -694,11 +694,6 @@ If an item contains spaces, it should be surrounded by ".
 <DriveFileRevisionIDList> ::= "<DriveFileRevisionID>(,<DriveFileRevisionID>)*"
 <DriveFolderIDList> ::= "<DriveFolderID>(,<DriveFolderID>)*"
 <DriveFolderNameList> ::= "<DriveFolderName>(,<DriveFolderName>)*"
-<DriveLabelIDList> ::= "<DriveLabelID>(,<DriveLabelID>)*"
-<DriveLabelNameList> ::= "<DriveLabelName>(,<DriveLabelName>)*"
-<DriveLabelPermissionNameList> ::= "<DriveLabelPermissionName>(,<DriveLabelPermissionName>)*"
-<DriveLabelFieldIDList> ::= "<DriveLabelFieldID>(,<DriveLabelFieldID>)*"
-<DriveLabelSelectionIDList> ::= "<DriveLabelSelectionID>(,<DriveLabelSelectionID>)*"
 <EmailAddressList> ::= "<EmailAddress>(,<EmailAddress>)*"
 <EmailItemList> ::= "<EmailItem>(,<EmailItem>)*"
 <EventIDList> ::= "<EventID>(,<EventID>)*"
@@ -1004,6 +999,10 @@ Specify a collection of items by directly specifying them; the item type is dete
         <CalendarList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 <CIPolicyNameEntity> ::=
         <CIPolicyNameList> | <FileSelector> | <CSVFileSelector>
+<ClassificationLabelNameEntity> ::=
+        <ClassificationLabelNameList> | <FileSelector> | <CSVFileSelector> | <CSVDataSelector>
+<ClassificationLabelPermissionNameEntity> ::=
+        <ClassificationLabelPermissionNameList> | <FileSelector> | <CSVFileSelector> | <CSVDataSelector>
 <ClassroomInvitationIDEntity> ::=
         <ClassroomInvitationIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 <ContactEntity> ::=
@@ -1127,10 +1126,6 @@ Specify a collection of items by directly specifying them; the item type is dete
         (first|last|allexceptfirst|allexceptlast <Number>)|
         (before|after <Time>) | (range <Time> <Time>)|
         <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-<DriveLabelNameEntity> ::=
-        <DriveLabelNameList> | <FileSelector> | <CSVFileSelector> | <CSVDataSelector>
-<DriveLabelPermissionNameEntity> ::=
-        <DriveLabelPermissionNameList> | <FileSelector> | <CSVFileSelector> | <CSVDataSelector>
 <EmailAddressEntity> ::=
         <EmailAddressList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 <FilterIDEntity> ::=
@@ -2707,6 +2702,35 @@ gam print chromesnvalidity [todrive <ToDriveAttribute>*]
         cros_sn <SerialNumberEntity> [listlimit <Number>]
         [delimiter <Character>]
 
+# Classification Labels
+
+gam [<UserTypeEntity>] info classificationlabels <ClassificationLabelNameEntity>
+        [[basic|full] [languagecode <LanguageCode>]
+        [formatjson] [adminaccess|asadmin]
+gam [<UserTypeEntity>] print classificationlabels [todrive <ToDriveAttribute>*]
+        [basic|full] [languagecode <LanguageCode>]
+        [publishedonly [<Boolean>]] [minimumrole applier|editor|organizer|reader]
+        [formatjson [quotechar <Character>]] [adminaccess|asadmin]
+gam [<UserTypeEntity>] show classificationlabels
+        [basic|full] [languagecode <LanguageCode>]
+        [publishedonly [<Boolean>]] [minimumrole applier|editor|organizer|reader]
+        [formatjson] [adminaccess|asadmin]
+`
+gam [<UserTypeEntity>] create classificationlabelpermission <ClassificationLabelNameEntity>
+        (user <UserItem>) | (group <GroupItem>) | (audience <String>)
+        role applier|editor|organizer|reader
+        [formatjson] [adminaccess|asadmin]
+gam [<UserTypeEntity>] delete classificationlabelpermission <ClassificationLabelNameEntity>
+        (user <UserItem>) | (group <GroupItem>) | (audience <String>)
+        [adminaccess|asadmin]
+gam [<UserTypeEntity>] remove classificationlabelpermission <ClassificationLabelPermissionNameEntity>
+        [adminaccess|asadmin]
+
+gam [<UserTypeEntity>] print classificationlabelpermissions <ClassificationLabelNameEntity> [todrive <ToDriveAttribute>*]
+        [formatjson [quotechar <Character>]] [adminaccess|asadmin]
+gam [<UserTypeEntity>] show classificationlabelpermissions <ClassificationLabelNameEntity>
+        [formatjson] [adminaccess|asadmin]
+
 # Context Aware Access
 
 <QueryCEL> ::= <String>
@@ -3533,35 +3557,6 @@ gam show people|peopleprofile
         [coountsonly]
         [allfields|(fields <PeopleFieldNameList>)] [showmetadata]
         [formatjson]
-
-# Drive Labels
-
-gam [<UserTypeEntity>] info drivelabels <DriveLabelNameEntity>
-        [[basic|full] [languagecode <LanguageCode>]
-        [formatjson] [adminaccess|asadmin]
-gam [<UserTypeEntity>] print drivelabels [todrive <ToDriveAttribute>*]
-        [basic|full] [languagecode <LanguageCode>]
-        [publishedonly [<Boolean>]] [minimumrole applier|editor|organizer|reader]
-        [formatjson [quotechar <Character>]] [adminaccess|asadmin]
-gam [<UserTypeEntity>] show drivelabels
-        [basic|full] [languagecode <LanguageCode>]
-        [publishedonly [<Boolean>]] [minimumrole applier|editor|organizer|reader]
-        [formatjson] [adminaccess|asadmin]
-`
-gam [<UserTypeEntity>] create drivelabelpermission <DriveLabelNameEntity>
-        (user <UserItem>) | (group <GroupItem>) | (audience <String>)
-        role applier|editor|organizer|reader
-        [formatjson] [adminaccess|asadmin]
-gam [<UserTypeEntity>] delete drivelabelpermission <DriveLabelNameEntity>
-        (user <UserItem>) | (group <GroupItem>) | (audience <String>)
-        [adminaccess|asadmin]
-gam [<UserTypeEntity>] remove drivelabelpermission <DriveLabelPermissionNameEntity>
-        [adminaccess|asadmin]
-
-gam [<UserTypeEntity>] print drivelabelpermissions <DriveLabelNameEntity> [todrive <ToDriveAttribute>*]
-        [formatjson [quotechar <Character>]] [adminaccess|asadmin]
-gam [<UserTypeEntity>] show drivelabelpermissions <DriveLabelNameEntity>
-        [formatjson] [adminaccess|asadmin]
 
 # Email Audit Monitor
 
@@ -6564,7 +6559,7 @@ gam <UserTypeEntity> info drivefile <DriveFileEntity>
         [allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [showdrivename] [showshareddrivepermissions]
-        [(showlabels details|ids)|(includelabels <DriveLabelIDList>)]
+        [(showlabels details|ids)|(includelabels <ClassificationLabelIDList>)]
         [showparentsidsaslist] [followshortcuts [<Boolean>]]
         [stripcrsfromname]
         [formatjson]
@@ -6668,26 +6663,13 @@ gam <UserTypeEntity> create|add permissions <DriveFileEntity> <DriveFilePermissi
 gam <UserTypeEntity> delete permissions <DriveFileEntity> <DriveFilePermissionIDEntity>
         <PermissionMatch>* [<PermissionMatchAction>]
 
-gam [<UserTypeEntity>] info drivelabels <DriveLabelNameEntity>
-        [[basic|full] [languagecode <BCP47LanguageCode>]
-        [formatjson] [adminaccess|asadmin]
-
-gam [<UserTypeEntity>] print <drivelabels> [todrive <ToDriveAttribute>*]
-        [basic|full] [languagecode <BCP47LanguageCode>]
-        [publishedonly [<Boolean>]] [minimumrole applier|editor|organizer|reader]
-        [formatjson [quotechar <Character>]] [adminaccess|asadmin]
-gam [<UserTypeEntity>] show drivelabels
-        [basic|full] [languagecode <BCP47LanguageCode>]
-        [publishedonly [<Boolean>]] [minimumrole applier|editor|organizer|reader]
-        [formatjson] [adminaccess|asadmin]
-
 gam <UserTypeEntity> process filedrivelabels <DriveFileEntity>
-        (addlabel <DriveLabelIDList>)*
-        (deletelabel <DriveLabelIDList>)*
-        (addlabelfield <DriveLabelID> <DriveLabelFieldID>
-            (text <String>)|selection <DriveLabelSelectionIDList>)|
+        (addlabel <ClassificationLabelIDList>)*
+        (deletelabel <ClassificationLabelIDList>)*
+        (addlabelfield <ClassificationLabelID> <ClassificationLabelFieldID>
+            (text <String>)|selection <ClassificationLabelSelectionIDList>)|
             (integer <Number>)|(date <Date>)|(user <EmailAddressList>))*
-        (deletelabelfield <DriveLabelID> <DriveLabelFieldID>)*
+        (deletelabelfield <ClassificationLabelID> <ClassificationLabelFieldID>)*
         [nodetails]
 
 gam show ownership <DriveFileID>|(drivefilename <DriveFileName>)
@@ -6873,12 +6855,12 @@ gam <UserTypeEntity> collect orphans
         contentrestrictions.restrictiontime|
         contentrestrictions.type
 
-<DriveLabelInfoSubfieldName> ::=
+<ClassificationLabelInfoSubfieldName> ::=
         labels.id|              # modifiedByMe
         labels.revisionid|      # copyRequiresWriterPermission
         labels.fields           # viewedByMe
 
-<DriveLabelsSubfieldName> ::=
+<ClassificationLabelsSubfieldName> ::=
         labels.modified|        # modifiedByMe
         labels.restricted|      # copyRequiresWriterPermission
         labels.starred|         # starred
@@ -6984,9 +6966,9 @@ gam <UserTypeEntity> collect orphans
         inheritedpermissionsdisabled|
         isappauthorized|
         labelinfo|
-        <DriveLabelInfoSubfieldName>|
+        <ClassificationLabelInfoSubfieldName>|
         labels|
-        <DriveLabelsSubfieldName>|
+        <ClassificationLabelsSubfieldName>|
         lastmodifyinguser|
         <DriveLastModifyingUserSubfieldName>|
         lastmodifyingusername|
@@ -7050,7 +7032,7 @@ gam <UserTypeEntity> show fileinfo <DriveFileEntity>
         [allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [showdrivename] [showshareddrivepermissions]
-        [(showlabels details|ids)|(includelabels <DriveLabelIDList>)]
+        [(showlabels details|ids)|(includelabels <ClassificationLabelIDList>)]
         [showparentsidsaslist] [followshortcuts [<Boolean>]]
         [stripcrsfromname]
         [formatjson]
@@ -7166,7 +7148,7 @@ gam <UserTypeEntity> print filelist [todrive <ToDriveAttribute>*]
         [filepath|fullpath [folderpathonly [<Boolean>]] [pathdelimiter <Character>] [addpathstojson] [showdepth]] [buildtree]
         [allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
         [showdrivename] [showshareddrivepermissions]
-        [(showlabels details|ids)|(includelabels <DriveLabelIDList>)]
+        [(showlabels details|ids)|(includelabels <ClassificationLabelIDList>)]
         [showparentsidsaslist] [showpermissionslast]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])* [delimiter <Character>]
         [stripcrsfromname]

@@ -1,4 +1,4 @@
-!# Python Regular Expressions
+# Python Regular Expressions
 - [Documentation](#documentation)
 - [Match function](#match-function)
 - [Sub function](#sub-function)

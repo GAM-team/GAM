@@ -973,8 +973,8 @@ gam user user@domain.com update serviceaccount
 [*] 18)  Drive API (supports readonly)
 [*] 19)  Drive API - todrive
 [*] 20)  Drive Activity API v2 - must pair with Drive API
-[*] 21)  Drive Labels API v2beta - Admin (supports readonly)
-[*] 22)  Drive Labels API v2beta - User (supports readonly)
+[*] 21)  Drive Labels API - Admin (supports readonly)
+[*] 22)  Drive Labels API - User (supports readonly)
 [*] 23)  Forms API
 [*] 24)  Gmail API - Basic Settings (Filters,IMAP, Language, POP, Vacation) - read/write, Sharing Settings (Delegates, Forwarding, SendAs) - read
 [*] 25)  Gmail API - Full Access (Labels, Messages)

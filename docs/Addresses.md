@@ -1,4 +1,4 @@
-!# Addresses
+# Addresses
 - [API documentation](#api-documentation)
 - [Display addresses](#display-addresses)
 
