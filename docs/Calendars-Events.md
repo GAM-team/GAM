@@ -66,9 +66,12 @@ Client access works when accessing Resource calendars.
         See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <DomainName> ::= <String>(.<String>)+
 <EmailAddress> ::= <String>@<DomainName>
-<EmailAddressList> ::= "<EmailAddess>(,<EmailAddress>)*"
-<EmailAddressEntity> ::= <EmailAddressList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+<EmailAddressList> ::= "<EmailAddress>(,<EmailAddress>)*"
+<EmailAddressEntity> ::=
+        <EmailAddressList> | <FileSelector> | <CSVFileSelector> |
+        <CSVkmdSelector> | <CSVDataSelector>
         See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
+<iCalUID> ::= <String>
 
 <EventAttachmentsSubfieldName> ::=
         attachments.fileid|

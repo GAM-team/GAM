@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.35'
+__version__ = '7.00.36'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -29839,7 +29839,7 @@ def doPrintShowChromeApps():
       app['orgUnitPath'] = orgUnitPath
     row = flattenJSON(app, simpleLists=['permissions'], delimiter=delimiter)
     if not FJQC.formatJSON:
-      csvPF.WriteRow(row)
+      csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
       csvPF.WriteRowNoFilter({'appId': app['appId'],
                               'JSON': json.dumps(cleanJSON(app), ensure_ascii=False, sort_keys=True)})

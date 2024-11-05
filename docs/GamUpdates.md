@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.00.36
+
+Updated `gam print chromeapps` to correct a trap caused by an API change.
+
 ### 7.00.35
 
 Classification labels are now available for Gmail in addition to Drive.

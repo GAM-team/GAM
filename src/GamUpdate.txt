@@ -1,3 +1,7 @@
+7.00.36
+
+Updated `gam print chromeapps` to correct a trap caused by an API change.
+
 7.00.35
 
 Classification labels are now available for Gmail in addition to Drive.

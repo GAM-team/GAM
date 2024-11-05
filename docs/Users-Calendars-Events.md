@@ -91,20 +91,23 @@
 
 <JSONData> ::= (json [charset <Charset>] <String>) | (json file <FileName> [charset <Charset>]) |
 
+<CalendarItem> ::= <EmailAddress>
+<CalendarList> ::= "<CalendarItem>(,<CalendarItem>)*"
+<CalendarEntity> ::= <CalendarList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <DomainName> ::= <String>(.<String>)+
 <EmailAddress> ::= <String>@<DomainName>
 <EmailAddressList> ::= "<EmailAddress>(,<EmailAddress>)*"
 <EmailAddressEntity> ::=
-        <EmailAddressList> | <FileSelector> | <CSVFileSelector> | 
+        <EmailAddressList> | <FileSelector> | <CSVFileSelector> |
         <CSVkmdSelector> | <CSVDataSelector>
         See: https://github.com/GAM-team/GAM/wiki/Collections-of-Users
-<CalendarItem> ::= <EmailAddress>
-<CalendarList> ::= "<CalendarItem>(,<CalendarItem>)*"
 <CourseAlias> ::= <String>
 <CourseID> ::= <Number>|d:<CourseAlias>
 <CourseIDList> ::= "<CourseID>(,<CourseID>)*"
 <CourseState> ::= active|archived|provisioned|declined
 <CourseStateList> ::= all|"<CourseState>(,<CourseState>)*"
+<iCalUID> ::= <String>
 <ResourceID> ::= <String>
 <ResourceIDList> ::= "<ResourceID>(,<ResourceID>)*"
 <UniqueID> ::= id:<String>
@@ -122,7 +125,7 @@
         allcalendars|
         primary|
         <EmailAddress>|
-        <UniqueUD>|
+        <UniqueID>|
         (courses <CourseIDList>)|
         ((courses_with_teacher <UserItem>)|my_courses_as_teacher
           [coursestates <CourseStateList>])|
