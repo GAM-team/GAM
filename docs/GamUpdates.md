@@ -10,6 +10,16 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.00.37
+
+Added options `group <RegularExpression>` and `ou|org|orgunit <RegularExpression>`
+to `gam print|show policies` that causes GAM to only display policies whose group email address
+or OU path match the `<RegularExpression>`.
+
+Updated `gam get|update|delete contactphotos` to use the People API for domain shared contact photos
+as Google has deprecated the Domain Shared Contacts API for these commands. Unfortunately,
+the People API fails with `gam update|delete contactphotos`.
+
 ### 7.00.36
 
 Updated `gam print chromeapps` to correct a trap caused by an API change.

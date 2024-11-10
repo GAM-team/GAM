@@ -1,6 +1,7 @@
 # Cloud Identity Policies
 - [API documentation](#api-documentation)
 - [Notes](#notes)
+- [Python Regular Expressions](Python-Regular-Expressions) Match function
 - [Definitions](#definitions)
 - [Policies](#policies)
 - [Display Cloud Identity Policies](#display-cloud-identity-policies)
@@ -322,8 +323,8 @@ gam info policies <CIPolicyEntity>
 
 Select policies::
 * `polices/<String>` - A policy name, `policies/ahv4hg7qc24kvaghb7zihwf4riid4`
-* `settings/<String>` - A policy setting type, `settings/workspace_marketplace.apps_allowlist'
-* `<String>` - A policy setting type, `workspace_marketplace.apps_allowlist'
+* `settings/<String>` - A policy setting type, `settings/workspace_marketplace.apps_allowlist`
+* `<String>` - A policy setting type, `workspace_marketplace.apps_allowlist`
 
 By default, policy warnings are displayed, use the 'nowarnings` option to suppress their display.
 
@@ -337,10 +338,13 @@ Display all or filtered policies.
 ```
 gam show policies
         [filter <String>] [nowarnings] [noappnames]
+        [group <RegularExpression>] [ou|org|orgunit <RegularExpression>]
         [formatjson]
 ```
 By default, all policies are displayed.
 * `filter <String>` - Display filtered policies, See https://cloud.google.com/identity/docs/reference/rest/v1beta1/policies/list
+* `group <RegularExpression>` - Only display policies whose group email address matches the `<RegularExpression>`
+* `ou|org|orgunit <RegularExpression> - Only display policies whose OU path matches the `<RegularExpression>`
 
 By default, policy warnings are displayed, use the 'nowarnings` option to suppress their display.
 
@@ -353,10 +357,13 @@ By default, Gam displays the information as an indented list of keys and values.
 ```
 gam print policies [todrive <ToDriveAttribute>*]
         [filter <String>] [nowarnings] [noappnames]
+        [group <RegularExpression>] [ou|org|orgunit <RegularExpression>]
         [formatjson [quotechar <Character>]]
 ```
 By default, all policies are displayed:
 * `filter <String>` - Display filtered policies, See https://cloud.google.com/identity/docs/reference/rest/v1beta1/policies/list
+* `group <RegularExpression>` - Only display policies whose group email address matches the `<RegularExpression>`
+* `ou|org|orgunit <RegularExpression> - Only display policies whose OU path matches the `<RegularExpression>`
 
 By default, policy warnings are displayed, use the 'nowarnings` option to suppress their display.
 
@@ -371,3 +378,9 @@ the quote character itself, the column delimiter (comma by default) and new-line
 When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
+
+### Examples
+Print all service status policies.
+```
+gam redirect csv ./ServiceStatusPolicies.csv print policies filter "setting.type.matches('.*service_status')"
+```

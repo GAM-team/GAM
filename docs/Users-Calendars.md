@@ -6,8 +6,8 @@
 - [Display calendar UI settings](#display-calendar-ui-settings)
 - [Manage calendars](#manage-calendars)
   - [Create and remove calendars](#create-and-remove-calendars)
-  - [Display calendar settings](#display-calendar-settings)
   - [Modify calendar settings](#modify-calendar-settings)
+  - [Display calendar settings](#display-calendar-settings)
 - [Manage calendar lists](#manage-calendar-lists)
 - [Display specific calendars from list](#display-specific-calendars-from-list)
 - [Display calendar lists](#display-calendar-lists)
@@ -23,6 +23,8 @@
 <EmailAddress> ::= <String>@<DomainName>
 <CalendarItem> ::= <EmailAddress>
 <CalendarList> ::= "<CalendarItem>(,<CalendarItem>)*"
+<CalendarEntity> ::= <CalendarList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
 <CourseAlias> ::= <String>
 <CourseID> ::= <Number>|d:<CourseAlias>
 <CourseIDList> ::= "<CourseID>(,<CourseID>)*"
@@ -37,6 +39,21 @@
 
 <CalendarACLRole> ::=
         editor|freebusy|freebusyreader|owner|reader|writer
+
+<CalendarSettings> ::=
+        (description <String>)|
+        (location <String>)|
+        (summary <String>)|
+        (timezone <TimeZone>)
+
+<CalendarSettingsField> ::=
+        conferenceproperties|
+        description|
+        id|
+        location|
+        summary|
+        timezone
+<CalendarSettingsFieldList> ::= "<CalendarSettingsField>(,<CalendarSettingsField>)*"
 
 <CalendarSelectProperty> ::=
         minaccessrole <CalendarACLRole>|
@@ -111,12 +128,6 @@
         (selected <Boolean>)|
         (summary <String>)
 
-<CalendarSettings> ::=
-        (description <String>)|
-        (location <String>)|
-        (summary <String>)|
-        (timezone <TimeZone>)
-
 <CalendarListField> ::=
         accessrole|
         backgroundcolor|
@@ -189,17 +200,29 @@ gam <UserTypeEntity> create calendar <CalendarSettings>
 gam <UserTypeEntity> remove calendars <UserCalendarEntity>
 ```
 
-### Display calendar settings
-```
-gam <UserTypeEntity> info calendars <UserCalendarEntity> [formatjson]
-```
-By default, Gam displays the information as an indented list of keys and values.
-* `formatjson` - Display the fields in JSON format.
-
 ### Modify calendar settings
 ```
 gam <UserTypeEntity> modify calendars <UserCalendarEntity> <CalendarSettings>
 ```
+
+### Display calendar settings
+```
+gam calendar <CalendarEntity> show settings
+        [fields <CalendarSettingsFieldList>]
+        [formatjson]
+```
+By default, Gam displays the information as an indented list of keys and values.
+* `formatjson` - Display the fields in JSON format.
+```
+gam calendar <CalendarEntity> print settings [todrive <ToDriveAttribute>*]
+        [fields <CalendarSettingsFieldList>]
+        [formatjson [quotechar <Character>]]
+```
+By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
+the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
+When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
+The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
+`quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
 ## Manage calendar lists
 These commands manage a user's list of calendars.

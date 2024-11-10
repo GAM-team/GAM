@@ -4075,9 +4075,11 @@ gam info policies <CIPolicyNameEntity>
         [formatjson]
 gam print policies [todrive <ToDriveAttribute>*]
         [filter <String>] [nowarnings] [noappnames]
+        [group <RegularExpression>] [ou|org|orgunit <RegularExpression>]
         [formatjson [quotechar <Character>]]
 gam show policies
         [filter <String>] [nowarnings] [noappnames]
+        [group <RegularExpression>] [ou|org|orgunit <RegularExpression>]
         [formatjson]
 
 # Inbound SSO

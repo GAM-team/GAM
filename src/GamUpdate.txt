@@ -1,3 +1,13 @@
+7.00.37
+
+Added options `group <RegularExpression>` and `ou|org|orgunit <RegularExpression>`
+to `gam print|show policies` that causes GAM to only display policies whose group email address
+or OU path match the `<RegularExpression>`.
+
+Updated `gam get|update|delete contactphotos` to use the People API for domain shared contact photos
+as Google has deprecated the Domain Shared Contacts API for these commands. Unfortunately,
+the People API fails with `gam update|delete contactphotos`.
+
 7.00.36
 
 Updated `gam print chromeapps` to correct a trap caused by an API change.
