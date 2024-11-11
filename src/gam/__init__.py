@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.37'
+__version__ = '7.00.38'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -35047,13 +35047,17 @@ def _cleanPolicy(policy, add_warnings, no_appnames,
     policy['warning'] = CIPOLICY_ADDITIONAL_WARNINGS[policy['setting']['type']]
   if groupId := policy['policyQuery'].get('group'):
     _, _, policy['policyQuery']['groupEmail'] = convertGroupCloudIDToEmail(groups_ci, groupId)
-    if groupEmailPattern is not None and not groupEmailPattern.match(policy['policyQuery']['groupEmail']):
-      return False
     # all groups are in the root OU so the orgUnit attribute is useless
     policy['policyQuery'].pop('orgUnit', None)
+    if groupEmailPattern is not None:
+      return  groupEmailPattern.match(policy['policyQuery']['groupEmail'])
+    if orgUnitPathPattern is not None:
+      return False
   elif orgId := policy['policyQuery'].get('orgUnit'):
     policy['policyQuery']['orgUnitPath'] = convertOrgUnitIDtoPath(cd, orgId)
-    if orgUnitPathPattern is not None and not orgUnitPathPattern.match(policy['policyQuery']['orgUnitPath']):
+    if orgUnitPathPattern is not None:
+      return orgUnitPathPattern.match(policy['policyQuery']['orgUnitPath'])
+    if groupEmailPattern is not None:
       return False
   return True
 
