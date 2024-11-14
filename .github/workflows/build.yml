@@ -68,30 +68,35 @@ jobs:
             goal: build
             arch: aarch64
             openssl_archs: darwin64-arm64
-          - os: windows-2022
+          - os: macos-15
             jid: 8
+            goal: build
+            arch: aarch64
+            openssl_archs: darwin64-arm64
+          - os: windows-2022
+            jid: 9
             goal: build
             arch: Win64
             openssl_archs: VC-WIN64A
           - os: ubuntu-24.04
             goal: test
             python: "3.9"
-            jid: 9
-            arch: x86_64
-          - os: ubuntu-24.04
-            goal: test
-            python: "3.10"
             jid: 10
             arch: x86_64
           - os: ubuntu-24.04
             goal: test
-            python: "3.11"
+            python: "3.10"
             jid: 11
             arch: x86_64
           - os: ubuntu-24.04
             goal: test
-            python: "3.12"
+            python: "3.11"
             jid: 12
+            arch: x86_64
+          - os: ubuntu-24.04
+            goal: test
+            python: "3.12"
+            jid: 13
             arch: x86_64
 
     steps:
@@ -115,7 +120,7 @@ jobs:
         with:
           path: |
             cache.tar.xz
-          key: gam-${{ matrix.jid }}-20241022
+          key: gam-${{ matrix.jid }}-20241114
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
@@ -677,7 +682,7 @@ jobs:
         if: runner.os != 'Windows' && matrix.goal == 'build'
         run: |
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
-              GAM_ARCHIVE="${GITHUB_WORKSPACE}/gam-${GAMVERSION}-macos-${arch}.tar.xz"
+              GAM_ARCHIVE="${GITHUB_WORKSPACE}/gam-${GAMVERSION}-macos${MACOSX_DEPLOYMENT_TARGET}-${arch}.tar.xz"
           elif [[ "${RUNNER_OS}" == "Linux" ]]; then
             if [[ "${staticx}" == "yes" ]]; then
               libver="legacy"
