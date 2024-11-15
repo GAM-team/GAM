@@ -97,6 +97,13 @@ else
 fi
 }
 
+reverse() {
+    for (( i = ${#*}; i > 0; i-- ))
+    {
+        echo ${!i}
+    }
+}
+
 if [ "$gamversion" == "latest" ]; then
   release_url="https://api.github.com/repos/GAM-team/GAM/releases/latest"
 elif [ "$gamversion" == "prerelease" -o "$gamversion" == "draft" ]; then
@@ -171,7 +178,10 @@ if (( $rc != 0 )); then
   echo_red "ERROR: No version of python installed."
   exit
 fi
-download_urls=$(echo "$release_json" | $pycmd -c "$pycode" browser_download_url "$gamversion")
+# also sort the URLs once so we're evaluating newest OS version first
+download_urls=$(echo "$release_json" | \
+	        $pycmd -c "$pycode" browser_download_url "$gamversion" | \
+	        sort --version-sort --reverse)
 if [[ ${download_urls:0:5} = "ERROR" ]]; then
   echo_red "${download_urls}"
   exit
@@ -195,7 +205,7 @@ case $gamos in
 	        | cut -c 6-9 )
 	useglibc="legacy"
         for gam_glibc_ver in $gam_x86_64_glibc_vers; do
-          if version_gt $this_glibc_ver $gam_glibc_ver; then
+	  if version_gt $this_glibc_ver $gam_glibc_ver; then
             useglibc="glibc$gam_glibc_ver"
             echo_green "Using GAM compiled against $useglibc"
             break
@@ -206,8 +216,8 @@ case $gamos in
       arm|arm64|aarch64)
         download_urls=$(echo -e "$download_urls" | grep "\-aarch64-")
         gam_arm64_glibc_vers=$(echo -e "$download_urls" | \
-                grep --only-matching 'glibc[0-9\.]*\.tar\.xz$' \
-                | cut -c 6-9 )
+                grep --only-matching 'glibc[0-9\.]*\.tar\.xz$' | \
+                cut -c 6-9)
         useglibc="legacy"
         for gam_glibc_ver in $gam_arm64_glibc_vers; do
           if version_gt $this_glibc_ver $gam_glibc_ver; then
@@ -225,35 +235,71 @@ case $gamos in
     ;;
   [Mm]ac[Oo][sS]|[Dd]arwin)
     gamos="macos"
-    fullversion=$(sw_vers -productVersion)
+    currentversion=$(sw_vers -productVersion | awk -F '.' '{print $1 "." $2}')
     # override osversion only if it wasn't set by cli arguments
-    osversion=${osversion:-${fullversion:0:2}}
-    download_urls=$(echo -e "$download_urls" | grep "\-macos-")
+    osversion=${osversion:-${currentversion}}
+    # override osversion only if it wasn't set by cli arguments
+    download_urls=$(echo -e "$download_urls" | grep "\-macos")
     case $gamarch in
       x86_64)
-        download_url=$(echo -e "$download_urls" | grep "\-x86_64")
-	minimum_version=13
-        ;;
+        archgrep="\-x86_64"
+	;;
       arm|arm64|aarch64)
-        download_url=$(echo -e "$download_urls" | grep "\-aarch64")
-	minimum_version=14
+        archgrep="\-aarch64"
         ;;
       *)
         echo_red "ERROR: this installer currently only supports x86_64 and arm64 MacOS. Looks like you're running on ${gamarch}. Exiting."
         exit
 	;;
     esac
-    if [[ "$osversion" -ge "$minimum_version" ]]; then
-      echo_green "You are running MacOS ${fullversion}, good. Using GAM with ${download_url}."
+    gam_macos_urls=$(echo -e "$download_urls" | \
+                     grep "$archgrep")
+    versionless_urls=$(echo -e "$gam_macos_urls" | \
+                       grep "\-macos-")
+    if [ "$versionless_urls" == "" ]; then
+        # versions after 7.00.38 include MacOS version info
+        gam_macos_vers=$(echo -e "$gam_macos_urls" | \
+                         grep --only-matching '\-macos[0-9\.]*' | \
+                         cut -c 6-9)
+        for gam_mac_ver in $gam_macos_vers; do
+            echo -e "$gam_mac_ver\n"
+            if version_gt $currentversion $gam_mac_ver; then
+                usemac="$gam_mac_ver"
+                echo_green "Using GAM compiled against $usemac"
+                break
+            fi
+            done
+        download_url=$(echo -e "$gam_macos_urls" | grep "$usemac")
     else
-      echo_red "Sorry, you are running MacOS ${fullversion} but GAM on ${gamarch} requires MacOS ${minimum_version}. Exiting."
-      exit
+        # versions 7.00.38 and older don't include version info
+        case $gamarch in
+            x86_64)
+	        minimum_version=13
+                download_url=$(echo -e "$download_urls" | grep "\-x86_64")
+                ;;
+            arm|arm64|aarch64)
+                download_url=$(echo -e "$download_urls" | grep "\-aarch64")
+	        minimum_version=14
+                ;;
+        esac
+        if version_gt "$osversion" "$minimum_version"; then
+            echo_green "You are running MacOS ${osversion}, good. Downloading GAM from ${download_url}."
+        else
+          echo_red "Sorry, you are running MacOS ${osversion} but GAM on ${gamarch} requires MacOS ${minimum_version}. Exiting."
+          exit
+        fi 
+        if [ -z ${download_url+x} ]; then
+          echo_red "Sorry, you are running MacOS ${currentversion} but GAM on ${gamarch} requires MacOS ${minimum_version}. Exiting."
+          exit
+        fi
     fi
     ;;
   MINGW64_NT*)
     gamos="windows"
     echo "You are running Windows"
-    download_url=$(echo -e "$download_urls" | grep "\-windows-" | grep ".zip")
+    download_url=$(echo -e "$download_urls" | \
+                   grep "\-windows-" | \
+                   grep ".zip")
     ;;
   *)
     echo_red "Sorry, this installer currently only supports Linux and MacOS. Looks like you're running on ${gamos}. Exiting."
@@ -439,3 +485,4 @@ echo_green "GAM installation and setup complete!"
 if [ "$update_profile" = true ]; then
   echo_green "Please restart your terminal shell or to get started right away run:\n\n$alias_line"
 fi
+
