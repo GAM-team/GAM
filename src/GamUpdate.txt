@@ -1,3 +1,7 @@
+7.00.39
+
+Supported MacOS versions are now in the download filename.
+
 7.00.38
 
 Fixed logic flaw in `gam print|show policies` where non-matching policies were displayed.

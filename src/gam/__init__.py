@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.38'
+__version__ = '7.00.39'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -35133,6 +35133,33 @@ def doInfoCIPolicies():
       policies = _filterPolicies(ci, getPageMessage(), ifilter)
     _showPolicies(policies, FJQC, add_warnings, no_appnames,
                   None, None, cd, groups_ci)
+
+# gam create policy
+def doCreateCIPolicy():
+  cip_write = buildGAPIObject(API.CLOUDIDENTITY_POLICY_WRITE)
+  policy = {
+             'policyQuery': {
+               'orgUnit': 'orgUnits/04j35uvn409nb5l',
+           #    'sortOrder': 1,
+               },
+              'setting': {
+                'type': 'settings/detector.word_list',
+                'value': {
+                  'displayName': 'Reindeer',
+                  'wordList': ['Dasher',
+                               'Dancer',
+                               'Prancer',
+                               'Vixen',
+                               'Comet',
+                               'Cupid',
+                               'Donner',
+                               'Blitzen',
+                               'Rudolph'],
+                  }
+                }
+            }
+  result = callGAPI(cip_write.policies(), 'create', body=policy)
+  print(result)
 
 # gam print policies [todrive <ToDriveAttribute>*]
 #	[filter <String>]  [nowarnings] [noappnames]
@@ -74943,6 +74970,7 @@ MAIN_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_INBOUNDSSOPROFILE:	doCreateInboundSSOProfile,
   Cmd.ARG_ORG:			doCreateOrg,
   Cmd.ARG_PERMISSION:		doCreatePermissions,
+  Cmd.ARG_CIPOLICY:       doCreateCIPolicy,
   Cmd.ARG_PRINTER:		doCreatePrinter,
   Cmd.ARG_PROJECT:		doCreateProject,
   Cmd.ARG_RESOLDCUSTOMER:	doCreateResoldCustomer,
