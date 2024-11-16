@@ -2708,11 +2708,6 @@ def actionFailedNumItems(itemCount, itemType, errMessage, i=0, count=0):
                                  [f'{itemCount} {Ent.Choose(itemType, itemCount)} {Act.Failed()}: {errMessage} '],
                                  currentCountNL(i, count)))
 
-def performActionModifierNumItems(modifier, itemCount, itemType, i=0, count=0):
-  writeStdout(formatKeyValueList(Ind.Spaces(),
-                                 [f'{Act.ToPerform()} {modifier} {itemCount} {Ent.Choose(itemType, itemCount)}'],
-                                 currentCountNL(i, count)))
-
 def actionNotPerformedNumItemsWarning(itemCount, itemType, errMessage, i=0, count=0):
   setSysExitRC(ACTION_NOT_PERFORMED_RC)
   writeStderr(formatKeyValueList(Ind.Spaces(),
@@ -25483,7 +25478,7 @@ def _cleanChatSpace(space):
 def _cleanChatMessage(message):
   message.pop('cards', None)
 
-CHAT_TIME_OBJECTS = {'createTime', 'deleteTime', 'eventTime', 'lastUpdateTime'}
+CHAT_TIME_OBJECTS = {'createTime', 'deleteTime', 'eventTime', 'lastActiveTime', 'lastUpdateTime'}
 
 def _showChatItem(citem, entityType, FJQC, i=0, count=0):
   if entityType == Ent.CHAT_SPACE:
@@ -43251,7 +43246,8 @@ def doCreateUser():
                         throwReasons=[GAPI.DUPLICATE, GAPI.DOMAIN_NOT_FOUND,
                                       GAPI.DOMAIN_CANNOT_USE_APIS, GAPI.FORBIDDEN,
                                       GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.INVALID_PARAMETER,
-                                      GAPI.INVALID_ORGUNIT, GAPI.INVALID_SCHEMA_VALUE, GAPI.CONDITION_NOT_MET],
+                                      GAPI.INVALID_ORGUNIT, GAPI.INVALID_SCHEMA_VALUE, GAPI.CONDITION_NOT_MET,
+                                      GAPI.LIMIT_EXCEEDED],
                         body=body,
                         fields=fields,
                         resolveConflictAccount=resolveConflictAccount)
@@ -43270,7 +43266,7 @@ def doCreateUser():
     except GAPI.invalidOrgunit:
       entityActionFailedExit([Ent.USER, user], Msg.INVALID_ORGUNIT)
     except (GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
-            GAPI.invalid, GAPI.invalidInput, GAPI.invalidParameter, GAPI.conditionNotMet) as e:
+            GAPI.invalid, GAPI.invalidInput, GAPI.invalidParameter, GAPI.conditionNotMet, GAPI.limitExceeded) as e:
       entityActionFailedExit([Ent.USER, user], str(e))
   if PwdOpts.filename and PwdOpts.password:
     writeFile(PwdOpts.filename, f'{user},{PwdOpts.password}\n', mode='a', continueOnError=True)
@@ -74970,7 +74966,7 @@ MAIN_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_INBOUNDSSOPROFILE:	doCreateInboundSSOProfile,
   Cmd.ARG_ORG:			doCreateOrg,
   Cmd.ARG_PERMISSION:		doCreatePermissions,
-  Cmd.ARG_CIPOLICY:       doCreateCIPolicy,
+  Cmd.ARG_CIPOLICY:		doCreateCIPolicy,
   Cmd.ARG_PRINTER:		doCreatePrinter,
   Cmd.ARG_PROJECT:		doCreateProject,
   Cmd.ARG_RESOLDCUSTOMER:	doCreateResoldCustomer,

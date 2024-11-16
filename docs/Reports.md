@@ -68,7 +68,7 @@ gam report <ActivityApplicationName> [todrive <ToDriveAttributes>*]
         [(user all|<UserItem>)|(orgunit|org|ou <OrgUnitPath> [showorgunit])|(select <UserTypeEntity>)]
         [([start <Time>] [end <Time>])|(range <Time> <Time>)|
          yesterday|today|thismonth|(previousmonths <Integer>)]
-        [filtertime.* <Time>] [filter|filters <String>]
+        [filtertime<String> <Time>] [filter|filters <String>]
         [event|events <EventNameList>] [ip <String>]
         [groupidfilter <String>]
         [maxactivities <Number>] [maxevents <Number>] [maxresults <Number>]
@@ -96,8 +96,10 @@ Limit the time period.
 Apply API filters.
 * `filter|filters <String>` - `<String>` is a comma separated list of filter expressions.
 
-Use the `filtertime.* <Time>` option to allow times, usually relative, to be substituted into the `filter <String>` option.
-The characters following `filtertime` can be any combination of lowercase letters and numbers.
+Use the `filtertime<String> <Time>` option to allow times, usually relative, to be substituted into the `filters` option.
+The `filtertime<String> <Time>` value replaces the string `#filtertime<String>#` in any filters..
+The characters following `filtertime` can be any combination of lowercase letters and numbers. This is most useful in scripts
+where you can specify a relative date without having to change the script.
 
 You can use `config csv_output_row_filter` to filter the events if the API filter can't produce the results you want.
 
@@ -355,7 +357,7 @@ gam report users|user [todrive <ToDriveAttributes>*]
         [(date <Date>)|(range <Date> <Date>)|
          yesterday|today|thismonth|(previousmonths <Integer>)]
         [(nodatechange | limitdatechanges <Integer>) | (fulldatarequired all|<UserServiceNameList>)]
-        [filtertime.* <Time>] [filter|filters <String>]
+        [filtertime<String> <Time>] [filter|filters <String>]
         [(fields|parameters <String>)|(services <UserServiceNameList>)]
         [aggregatebydate|aggregatebyuser [Boolean]]
         [maxresults <Number>]
@@ -398,8 +400,15 @@ where `date` is the earliest date for which report data was requested.
 Apply filters.
 * `filter|filters <String>` - `<String>` is a comma separated list of filter expressions.
 
-Use the `filtertime.* <Time>` option to allow times, usually relative, to be substituted into the `filter <String>` option.
-The characters following `filtertime` can be any combination of lowercase letters and numbers.
+Use the `filtertime<String> <Time>` option to allow times, usually relative, to be substituted into the `filters` option.
+The `filtertime<String> <Time>` value replaces the string `#filtertime<String>#` in any filters..
+The characters following `filtertime` can be any combination of lowercase letters and numbers. This is most useful in scripts
+where you can specify a relative date without having to change the script.
+
+For example, filter for last logins more that 60 days ago.
+```
+filtertime60d -60d filters "accounts:last_login_time<#filtertime60d#"
+```
 
 Select the fields/parameters to display.
 * `fields|parameters <String>` - A list of parameters separated by commas
@@ -417,11 +426,11 @@ Limit the number of activities downloaded per API call; infrequently used.
 
 Report on the users that haven't logged in in the last 5 years.
 ```
-gam report users parameters accounts:last_login_time filters "accounts:last_login_time<#filtertime#" filtertime -5y
+gam report users parameters accounts:last_login_time filters "accounts:last_login_time<#filtertime5y#" filtertime5y -5y
 ```
 Report on the users that haven't ever logged in.
 ```
-gam report users parameters accounts:last_login_time filters "accounts:last_login_time==#filtertime#" filtertime never
+gam report users parameters accounts:last_login_time filters "accounts:last_login_time==#filtertimenever#" filtertimenever never
 ```
 Report on users Google Drive usage.
 ```
