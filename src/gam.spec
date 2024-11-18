@@ -50,6 +50,7 @@ pyz = PYZ(a.pure,
 target_arch = None
 codesign_identity = None
 entitlements_file = None
+manifest = None
 match platform:
     case "darwin":
         if getenv('arch') == 'universal2':
@@ -62,6 +63,7 @@ match platform:
     case "win32":
         target_arch = None
         strip = False
+        manifest = 'gam.exe.manifest'
     case _:
         target_arch = None
         strip = True
@@ -83,6 +85,7 @@ if getenv('PYINSTALLER_BUILD_ONEDIR') == 'yes':
               debug=debug,
               bootloader_ignore_signals=bootloader_ignore_signals,
               strip=strip,
+              manifest=manifest,
               upx=upx,
               console=console,
               # put most everyting under a lib/ subfolder
@@ -115,6 +118,7 @@ else:
               name=name,
               debug=debug,
               bootloader_ignore_signals=bootloader_ignore_signals,
+              manifest=manifest,
               strip=strip,
               upx=upx,
               console=console,
