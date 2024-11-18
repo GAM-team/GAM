@@ -7,6 +7,21 @@ from PyInstaller.utils.hooks import copy_metadata
 
 from gam.gamlib.glverlibs import GAM_VER_LIBS
 
+
+with open("gam/__init__.py") as f:
+    version_file = f.read()
+version = search(r"^__version__ = ['\"]([^'\"]*)['\"]", version_file, re.M).group(1)
+version_tuple = "(" + version.split("-")[0].replace(".", ", ") + ", 0)"
+
+with open("version_info.txt.in") as f:
+    version_info = f.read()
+version_info = version_info.replace("{VERSION}", version).replace(
+    "{VERSION_TUPLE}", version_tuple
+)
+with open("version_info.txt", "w") as f:
+    f.write(version_info)
+print(version_info)
+
 datas = []
 for pkg in GAM_VER_LIBS:
     datas += copy_metadata(pkg, recursive=True)
@@ -51,6 +66,7 @@ target_arch = None
 codesign_identity = None
 entitlements_file = None
 manifest = None
+version = 'version_info.txt'
 match platform:
     case "darwin":
         if getenv('arch') == 'universal2':
@@ -95,6 +111,7 @@ if getenv('PYINSTALLER_BUILD_ONEDIR') == 'yes':
               target_arch=target_arch,
               codesign_identity=codesign_identity,
               entitlements_file=entitlements_file,
+              version=version,
               )
     coll = COLLECT(
         exe,
@@ -127,5 +144,6 @@ else:
               target_arch=target_arch,
               codesign_identity=codesign_identity,
               entitlements_file=entitlements_file,
+              version=version,
               )
 
