@@ -260,7 +260,7 @@ case $gamos in
         # versions after 7.00.38 include MacOS version info
         gam_macos_vers=$(echo -e "$gam_macos_urls" | \
                          grep --only-matching '\-macos[0-9\.]*' | \
-                         cut -c 6-9)
+                         cut -c 7-10)
         for gam_mac_ver in $gam_macos_vers; do
             echo -e "$gam_mac_ver\n"
             if version_gt $currentversion $gam_mac_ver; then
