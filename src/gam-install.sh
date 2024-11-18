@@ -264,7 +264,7 @@ case $gamos in
         for gam_mac_ver in $gam_macos_vers; do
             if version_gt $currentversion $gam_mac_ver; then
                 download_url=$(echo -e "$gam_macos_urls" | grep "$gam_mac_ver")
-                echo_green "You are running MacOS ${currentversion} Using GAM compiled against ${usemac}"
+                echo_green "You are running MacOS ${currentversion} Using GAM compiled against ${gam_mac_ver}"
                 break
             fi
             done
