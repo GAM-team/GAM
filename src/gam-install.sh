@@ -262,7 +262,6 @@ case $gamos in
                          grep --only-matching '\-macos[0-9\.]*' | \
                          cut -c 7-10)
         for gam_mac_ver in $gam_macos_vers; do
-            echo -e "$gam_mac_ver\n"
             if version_gt $currentversion $gam_mac_ver; then
                 usemac="$gam_mac_ver"
                 echo_green "Using GAM compiled against $usemac"
