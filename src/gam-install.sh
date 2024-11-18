@@ -263,12 +263,15 @@ case $gamos in
                          cut -c 7-10)
         for gam_mac_ver in $gam_macos_vers; do
             if version_gt $currentversion $gam_mac_ver; then
-                usemac="$gam_mac_ver"
-                echo_green "Using GAM compiled against $usemac"
+                download_url=$(echo -e "$gam_macos_urls" | grep "$gam_mac_ver")
+                echo_green "You are running MacOS ${currentversion} Using GAM compiled against ${usemac}"
                 break
             fi
             done
-        download_url=$(echo -e "$gam_macos_urls" | grep "$usemac")
+        if [ -z ${download_url+x} ]; then
+	    echo_red "Sorry, you are running MacOS ${osversion} but GAM on ${gamarch} requires MacOS ${gam_mac_ver} or newer. Exiting."
+            exit
+	fi
     else
         # versions 7.00.38 and older don't include version info
         case $gamarch in
