@@ -1,6 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 from os import getenv
-from re import search
+import re
 from sys import platform
 
 from PyInstaller.utils.hooks import copy_metadata
@@ -10,7 +10,7 @@ from gam.gamlib.glverlibs import GAM_VER_LIBS
 
 with open("gam/__init__.py") as f:
     version_file = f.read()
-version = search(r"^__version__ = ['\"]([^'\"]*)['\"]", version_file, re.M).group(1)
+version = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", version_file, re.M).group(1)
 version_tuple = "(" + version.split("-")[0].replace(".", ", ") + ", 0)"
 
 with open("version_info.txt.in") as f:
