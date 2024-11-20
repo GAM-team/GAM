@@ -1,3 +1,8 @@
+7.00.40
+
+Updated `gam <UserTypeEntity> update serviceaccount` to properly set the readonly scope
+for `[R] 35)  Meet API (supports readonly)` as it is a special case.
+
 7.00.39
 
 Supported MacOS versions are now in the download filename.

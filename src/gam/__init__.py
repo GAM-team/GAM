@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.39'
+__version__ = '7.00.40'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -10550,7 +10550,7 @@ Continue to authorization by entering a 'c'
               selectedScopes[i] = '*'
               break
             if 'readonly' in a_scope['subscopes']:
-              if scope == possibleScope+'.readonly':
+              if (scope == possibleScope+'.readonly') or (scope == a_scope.get('roscope')):
                 selectedScopes[i] = 'R'
                 break
         i += 1
@@ -12140,8 +12140,12 @@ def checkServiceAccount(users):
           checkScopesSet.add(scope['scope'])
         elif selectedScopes[i] == 'R':
           saScopes.setdefault(scope['api'], [])
-          saScopes[scope['api']].append(f'{scope["scope"]}.readonly')
-          checkScopesSet.add(f'{scope["scope"]}.readonly')
+          if 'roscope' not in scope:
+            saScopes[scope['api']].append(f'{scope["scope"]}.readonly')
+            checkScopesSet.add(f'{scope["scope"]}.readonly')
+          else:
+            saScopes[scope['api']].append(scope['roscope'])
+            checkScopesSet.add(scope['roscope'])
         i += 1
     if API.DRIVEACTIVITY in saScopes and API.DRIVE3 in saScopes:
       saScopes[API.DRIVEACTIVITY].append(API.DRIVE_SCOPE)
