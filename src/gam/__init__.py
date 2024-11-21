@@ -25161,6 +25161,10 @@ def doPrintShowChromeProfiles():
                                                  ensure_ascii=False, sort_keys=True)})
 
   cm = buildGAPIObject(API.CHROMEMANAGEMENT)
+  csvPF = CSVPrintFile(['profileId']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
+  sortRows = False
+  sortHeaders = False
   customerId = _getCustomerId()
   parent = f'customers/{customerId}'
   results = yieldGAPIpages(cm.customers().profiles(),
@@ -25170,7 +25174,13 @@ def doPrintShowChromeProfiles():
                            pageSize=200)
   for profiles in results:
     for profile in profiles:
-      print(profile)
+      _printProfile(profile)
+  if csvPF:
+    if sortRows and orderBy:
+      csvPF.SortRows(orderBy, reverse=sortOrder == 'DESCENDING')
+    if sortHeaders:
+      csvPF.SetSortTitles(['profileId'])
+    csvPF.writeCSVfile('Chrome Profiles')
 
 # gam show browsers
 #	([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
