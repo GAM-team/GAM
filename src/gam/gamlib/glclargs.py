@@ -483,6 +483,7 @@ class GamCLArgs():
   ARG_CHROMEPOLICYIMAGE = 'chromepolicyimage'
   ARG_CHROMEPOLICY = 'chromepolicy'
   ARG_CHROMEPOLICIES = 'chromepolicies'
+  ARG_CHROMEPROFILES = 'chromeprofiles'
   ARG_CHROMESCHEMA = 'chromeschema'
   ARG_CHROMESCHEMAS = 'chromeschemas'
   ARG_CHROMESNVALIDITY = 'chromesnvalidity'

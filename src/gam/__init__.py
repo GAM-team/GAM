@@ -25144,6 +25144,34 @@ BROWSER_ORDERBY_CHOICE_MAP = {
   #  'safebrowsingclickthrough': 'safe_browsing_clickthrough',
   }
 
+CHROMEPROFILE_TIME_OBJECTS = {'lastActivityTime',
+                              'lastPolicyFetchTime',
+                              'firstEnrollmentTime'}
+
+# gam show chromeprofiles
+# gam print chromeprofiles
+def doPrintShowChromeProfiles():
+  def _printProfile(profile):
+    row = flattenJSON(profile, timeObjects=CHROMEPROFILE_TIME_OBJECTS)
+    if not FJQC.formatJSON:
+      csvPF.WriteRowTitles(row)
+    elif csvPF.CheckRowTitles(row):
+      csvPF.WriteRowNoFilter({'deviceId': browser['deviceId'],
+                              'JSON': json.dumps(cleanJSON(browser, timeObjects=CHROMEPROFILE_TIME_OBJECTS),
+                                                 ensure_ascii=False, sort_keys=True)})
+
+  cm = buildGAPIObject(API.CHROMEMANAGEMENT)
+  customerId = _getCustomerId()
+  parent = f'customers/{customerId}'
+  results = yieldGAPIpages(cm.customers().profiles(),
+                           'list',
+                           'chromeBrowserProfiles',
+                           parent=parent,
+                           pageSize=200)
+  for profiles in results:
+    for profile in profiles:
+      print(profile)
+
 # gam show browsers
 #	([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
 #	[querytime<String> <Time>]
@@ -75228,6 +75256,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMEHISTORY:	doPrintShowChromeHistory,
       Cmd.ARG_CHROMENEEDSATTN:	doPrintShowChromeNeedsAttn,
       Cmd.ARG_CHROMEPOLICY:	doPrintShowChromePolicies,
+      Cmd.ARG_CHROMEPROFILES: doPrintShowChromeProfiles,
       Cmd.ARG_CHROMESCHEMA:	doPrintShowChromeSchemas,
       Cmd.ARG_CHROMESNVALIDITY:	doPrintChromeSnValidity,
       Cmd.ARG_CHROMEVERSIONS:	doPrintShowChromeVersions,
