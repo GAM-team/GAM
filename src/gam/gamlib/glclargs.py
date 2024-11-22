@@ -483,6 +483,7 @@ class GamCLArgs():
   ARG_CHROMEPOLICYIMAGE = 'chromepolicyimage'
   ARG_CHROMEPOLICY = 'chromepolicy'
   ARG_CHROMEPOLICIES = 'chromepolicies'
+  ARG_CHROMEPROFILE = 'chromeprofile'
   ARG_CHROMEPROFILES = 'chromeprofiles'
   ARG_CHROMESCHEMA = 'chromeschema'
   ARG_CHROMESCHEMAS = 'chromeschemas'
@@ -847,6 +848,7 @@ class GamCLArgs():
   OB_CHAT_MESSAGE_ID = 'ChatMessageID'
   OB_CHAT_SPACE = 'ChatSpace'
   OB_CHAT_THREAD = 'ChatThread'
+  OB_CHROMEPROFILE_ID = 'ChromeProfileId'
   OB_CHROME_VERSION = 'ChromeVersion'
   OB_CIDR_NETMASK = 'CIDRnetmask'
   OB_CIGROUP_ALIAS_LIST = "CIGroupAliasList"

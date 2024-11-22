@@ -1,3 +1,14 @@
+7.01.00
+
+Fixed bug in `gam update chromepolicy` that caused some policy updates to fail.
+
+Added option `showhtml` to `gam <UserTypeEntity> print|show messages` that, when used with `showbody`,
+will display message body content of type HTML.
+
+Added support for manageing/displaying Chrome profiles.
+
+* See: https://github.com/GAM-team/GAM/wiki/Chrome-Profile-Management
+
 7.00.40
 
 Updated `gam <UserTypeEntity> update serviceaccount` to properly set the readonly scope
@@ -6,6 +17,8 @@ for `[R] 35)  Meet API (supports readonly)` as it is a special case.
 7.00.39
 
 Supported MacOS versions are now in the download filename.
+
+Minor code fixes.
 
 7.00.38
 

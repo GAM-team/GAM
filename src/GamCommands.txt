@@ -1894,136 +1894,6 @@ gam calendar|calendars <CalendarEntity> print settings [todrive <ToDriveAttribut
         [formatjson [quotechar <Character>]]
 gam calendar|calendars <CalendarEntity> modify <CalendarSettings>+
 
-# Chrome Browser Cloud Management
-
-<QueryBrowser> ::= <String>
-        See: https://support.google.com/chrome/a/answer/9681204#retrieve_all_chrome_devices_for_an_account
-<QueryBrowserList> ::= "<QueryBrowser>(,<QueryBrowser>)*"
-
-<BrowserEntity> ::=
-        <DeviceIDList> |
-        (query:<QueryBrowser>)|(query:orgunitpath:<OrgUnitPath>)|(query <QueryBrowser>) |
-        (browserou <OrgUnitItem>) | (browserous <OrgUnitList>) |
-        <FileSelector> | <CSVFileSelector>
-
-<BrowserAttribute> ::=
-        (annotatedassetid|asset|assetid <String>)|
-        (annotatedlocation|location <String>)|
-        (annotatednotes|notes <String>)|(updatenotes <String>)|
-        (annotateduser|user <String>
-
-<BrowserFieldName> ::=
-        annotatedassetid|asset|assetid|
-        annotatedlocation|location|
-        annotatednotes|notes|
-        annotateduser|user|
-        browsers|
-        browserversions|
-        deviceid|
-        extensioncount|
-        installedbrowserversion|
-        lastactivitytime|
-        lastdeviceuser|
-        lastdeviceusers|
-        lastpolicyfetchtime|
-        lastregistrationtime|
-        laststatusreporttime|
-        machineextensionpolicies|
-        machinename|
-        machinepolicies|
-        orgunitpath|org|orgunit|
-        osarchitecture|
-        osplatform|
-        osplatformversion|
-        osversion|
-        ou|
-        policycount|
-        safebrowsingclickthroughcount|
-        serialnumber|
-        virtualdeviceid
-<BrowserFieldNameList> ::= "<BrowseFieldName>(,<BrowserFieldName>)*"
-
-<BrowserOrderByFieldName> ::=
-        annotatedassetid|assetassetid|
-        annotatedlocation|location|
-        annotatednotes|notes|
-        annotateduser|user|
-        browserversionchannel|
-        browserversionsortable|
-        deviceid|id|
-        enrollmentdate|
-        extensioncount|
-        lastactivity|
-        lastsignedinuser|
-        lastsync|
-        machinename|
-        orgunit|ou|org|
-        osversion|
-        osversionsortable|
-        platformmajorversion|
-        policycount
-
-gam delete browser <DeviceID>
-gam update browser <BrowserEntity> <BrowserAttibute>+
-gam move browsers ou|org|orgunit <OrgUnitPath>
-        ((ids <DeviceIDList>) |
-         (queries <QueryBrowserList> [querytime<String> <Time>]) |
-         (browserou <OrgUnitItem>) | (browserous <OrgUnitList>) |
-         <FileSelector> | <CSVFileSelector>)
-        [batchsize <Integer>]
-
-gam info browser <DeviceID>
-        [basic|full|annotated] <BrowserFieldName>* [fields <BrowserFieldNameList>]
-        [formatjson]
-gam show browsers
-        ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser>)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
-        [querytime<String> <Time>]
-        [orderby <BrowserOrderByFieldName> [ascending|descending]]
-        [basic|full|allfields|annotated] <BrowserFieldName>* [fields <BrowserFieldNameList>]
-        [formatjson]
-gam print browsers [todrive <ToDriveAttribute>*]
-        ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser>)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
-        [querytime<String> <Time>]
-        [orderby <BrowserOrderByFieldName> [ascending|descending]]
-        [basic|full|allfields|annotated] <BrowserFieldName>* [fields <BrowserFieldNameList>]
-        [sortheaders]
-        [formatjson [quotechar <Character>]]
-
-gam create browsertoken
-        [ou|org|orgunit|browserou <OrgUnitPath>] [expire|expires <Time>]
-        [formatjson]
-gam revoke browsertoken <BrowserTokenPermanentID>
-
-<BrowserTokenFieldName> ::=
-        createtime|
-        creatorid|
-        customerid|
-        expiretime|
-        org|
-        orgunit|
-        orgunitpath|
-        ou|
-        revoketime|
-        revokerid|
-        state|
-        token|
-        tokenpermanentid
-<BrowserTokenFieldNameList> ::= "<BrowserTokenFieldName>(,<BrowserTokenFieldName>)*"
-
-gam show browsertokens
-        ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowserToken>)|(queries <QueryBrowserTokenList>)))
-        [querytime<String> <Time>]
-        [orderby <BrowserTokenFieldName> [ascending|descending]]
-        [allfields] <BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]
-        [formatjson]
-gam print browsertokens [todrive <ToDriveAttribute>*]
-        ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowserToken>)|(queries <QueryBrowserTokenList>)))
-        [querytime<String> <Time>]
-        [orderby <BrowserTokenFieldName> [ascending|descending]]
-        [allfields] <BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]
-        [sortheaders]
-        [formatjson [quotechar <Character>]]
-
 # Chat Bot
 
 <ChatContent> ::=
@@ -2136,6 +2006,136 @@ gam info chatmessage name <ChatMessage>
 gam info chatevent name <ChatEvent>
         [formatjson]
 
+# Chrome Browser Cloud Management
+
+<QueryBrowser> ::= <String>
+        See: https://support.google.com/chrome/a/answer/9681204#retrieve_all_chrome_devices_for_an_account
+<QueryBrowserList> ::= "<QueryBrowser>(,<QueryBrowser>)*"
+
+<BrowserEntity> ::=
+        <DeviceIDList> |
+        (query:<QueryBrowser>)|(query:orgunitpath:<OrgUnitPath>)|(query <QueryBrowser>) |
+        (browserou <OrgUnitItem>) | (browserous <OrgUnitList>) |
+        <FileSelector> | <CSVFileSelector>
+
+<BrowserAttribute> ::=
+        (annotatedassetid|asset|assetid <String>)|
+        (annotatedlocation|location <String>)|
+        (annotatednotes|notes <String>)|(updatenotes <String>)|
+        (annotateduser|user <String>
+
+<BrowserFieldName> ::=
+        annotatedassetid|asset|assetid|
+        annotatedlocation|location|
+        annotatednotes|notes|
+        annotateduser|user|
+        browsers|
+        browserversions|
+        deviceid|
+        extensioncount|
+        installedbrowserversion|
+        lastactivitytime|
+        lastdeviceuser|
+        lastdeviceusers|
+        lastpolicyfetchtime|
+        lastregistrationtime|
+        laststatusreporttime|
+        machineextensionpolicies|
+        machinename|
+        machinepolicies|
+        orgunitpath|org|orgunit|
+        osarchitecture|
+        osplatform|
+        osplatformversion|
+        osversion|
+        ou|
+        policycount|
+        safebrowsingclickthroughcount|
+        serialnumber|
+        virtualdeviceid
+<BrowserFieldNameList> ::= "<BrowserFieldName>(,<BrowserFieldName>)*"
+
+<BrowserOrderByFieldName> ::=
+        annotatedassetid|assetassetid|
+        annotatedlocation|location|
+        annotatednotes|notes|
+        annotateduser|user|
+        browserversionchannel|
+        browserversionsortable|
+        deviceid|id|
+        enrollmentdate|
+        extensioncount|
+        lastactivity|
+        lastsignedinuser|
+        lastsync|
+        machinename|
+        orgunit|ou|org|
+        osversion|
+        osversionsortable|
+        platformmajorversion|
+        policycount
+
+gam delete browser <DeviceID>
+gam update browser <BrowserEntity> <BrowserAttibute>+
+gam move browsers ou|org|orgunit <OrgUnitPath>
+        ((ids <DeviceIDList>) |
+         (queries <QueryBrowserList> [querytime<String> <Time>]) |
+         (browserou <OrgUnitItem>) | (browserous <OrgUnitList>) |
+         <FileSelector> | <CSVFileSelector>)
+        [batchsize <Integer>]
+
+gam info browser <DeviceID>
+        [basic|full|annotated] <BrowserFieldName>* [fields <BrowserFieldNameList>]
+        [formatjson]
+gam show browsers
+        ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser>)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
+        [querytime<String> <Time>]
+        [orderby <BrowserOrderByFieldName> [ascending|descending]]
+        [basic|full|allfields|annotated] <BrowserFieldName>* [fields <BrowserFieldNameList>]
+        [formatjson]
+gam print browsers [todrive <ToDriveAttribute>*]
+        ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser>)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
+        [querytime<String> <Time>]
+        [orderby <BrowserOrderByFieldName> [ascending|descending]]
+        [basic|full|allfields|annotated] <BrowserFieldName>* [fields <BrowserFieldNameList>]
+        [sortheaders]
+        [formatjson [quotechar <Character>]]
+
+gam create browsertoken
+        [ou|org|orgunit|browserou <OrgUnitPath>] [expire|expires <Time>]
+        [formatjson]
+gam revoke browsertoken <BrowserTokenPermanentID>
+
+<BrowserTokenFieldName> ::=
+        createtime|
+        creatorid|
+        customerid|
+        expiretime|
+        org|
+        orgunit|
+        orgunitpath|
+        ou|
+        revoketime|
+        revokerid|
+        state|
+        token|
+        tokenpermanentid
+<BrowserTokenFieldNameList> ::= "<BrowserTokenFieldName>(,<BrowserTokenFieldName>)*"
+
+gam show browsertokens
+        ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowserToken>)|(queries <QueryBrowserTokenList>)))
+        [querytime<String> <Time>]
+        [orderby <BrowserTokenFieldName> [ascending|descending]]
+        [allfields] <BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]
+        [formatjson]
+gam print browsertokens [todrive <ToDriveAttribute>*]
+        ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowserToken>)|(queries <QueryBrowserTokenList>)))
+        [querytime<String> <Time>]
+        [orderby <BrowserTokenFieldName> [ascending|descending]]
+        [allfields] <BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]
+        [sortheaders]
+        [formatjson [quotechar <Character>]]
+
 # Chrome Installed Apps Counts
 
 gam show chromeapps
@@ -2189,6 +2189,68 @@ gam show chromeneedsattn
         [(ou <OrgUnitItem>)|(ou_and_children <OrgUnitItem>)|
          (ous <OrgUnitList>)|(ous_and_children <OrgUnitList>)]
         [formatjson]
+
+# Chrome Profile Management
+
+<ChromeProfileFieldName> ::=
+        affiliationstate|
+        annotatedlocation|
+        annotateduser|
+        attestationcredential|
+        browserchannel|
+        browserversion|
+        deviceinfo|
+        displayname|
+        extensioncount|
+        firstenrollmenttime|
+        identityprovider|
+        lastactivitytime|
+        lastpolicyfetchtime|
+        lastpolicysynctime|
+        laststatusreporttime|
+        name|
+        osplatformtype|
+        osplatformversion|
+        osversion|
+        policycount|
+        profileid|
+        profilepermanentid|
+        reportingdata|
+        useremail|
+        userid
+<ChromeProfileFieldNameList> ::= "<ChromeProfileFieldName>(,<ChromeProfileFieldName>)*"
+
+<ChromeProfileOrderByFieldName> ::=
+        affiliationstate|
+        browserchannel|
+        browserversion|
+        displayname|
+        extensioncount|
+        firstenrollmenttime|
+        identityprovider|
+        lastactivitytime|
+        lastpolicysynctime|
+        laststatusreporttime|
+        osplatformtype|
+        osversion|
+        policycount|
+        profileid|
+        useremail
+
+gam delete chromeprofile <ChromeProfileName>
+
+gam info chromeprofile <ChromeProfileName>
+        <ChromeProfileFieldName>* [fields <ChromeProfileFieldNameList>]
+gam show chromeprofiles
+        [filtertime.* <Time>] [filter <String>]
+        [orderby <ChromeProfileOrderByFieldName> [ascending|descending]]
+        <ChromeProfileFieldName>* [fields <ChromeProfileFieldNameList>]
+        [formatjson]
+gam print chromeprofiles [todrive <ToDriveAttribute>*]
+        [filtertime.* <Time>] [filter <String>]
+        [orderby <ChromeProfileOrderByFieldName> [ascending|descending]]
+        <ChromeProfileFieldName>* [fields <ChromeProfileFieldNameList>]
+        [[formatjson [quotechar <Character>]]
 
 # Chrome Versions Counts
 
@@ -7518,7 +7580,7 @@ gam <UserTypeEntity> show messages|threads
         [labelmatchpattern <RegularExpression>] [sendermatchpattern <RegularExpression>]
         [countsonly|positivecountsonly] [useronly]
         [headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
-        [showlabels] [delimiter <Character>] [showbody] [showdate] [showsize] [showsnippet]
+        [showlabels] [delimiter <Character>] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
         [[attachmentnamepattern <RegularExpression>]
             [showattachments [noshowtextplain]]
             [saveattachments [targetfolder <FilePath>] [overwrite [<Boolean>]]]
@@ -7529,7 +7591,7 @@ gam <UserTypeEntity> print messages|threads [todrive <ToDriveAttribute>*]
         [labelmatchpattern <RegularExpression>] [sendermatchpattern <RegularExpression>]
         [countsonly|positivecountsonly] [useronly]
         [headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String> [dateheaderconverttimezone [<Boolean>]]]
-        [showlabels] [delimiter <Character>] [showbody] [showdate] [showsize] [showsnippet]
+        [showlabels] [delimiter <Character>] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
         [convertcrnl] [delimiter <Character>]
         [[attachmentnamepattern <RegularExpression>]
             [showattachments [noshowtextplain]]]

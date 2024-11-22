@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.00.40'
+__version__ = '7.01.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -25122,6 +25122,192 @@ def doUpdateBrowsers():
     except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
       checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_BROWSER, deviceId, i, count)
 
+def _getChromeProfileName():
+  profileName = getString(Cmd.OB_CHROMEPROFILE_ID)
+  if not profileName.startswith('customers'):
+    customerId = _getCustomerId()
+    profileName = f'customers/{customerId}/profiles/{profileName}'
+  return profileName
+
+# gam delete chromeprofile <ChromeProfileName>
+def doDeleteChromeProfile():
+  cm = buildGAPIObject(API.CHROMEMANAGEMENT)
+  profileName = _getChromeProfileName()
+  checkForExtraneousArguments()
+  try:
+    callGAPI(cm.customers().profiles(), 'delete',
+             throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED],
+             name=profileName)
+    entityActionPerformed([Ent.CHROME_PROFILE, profileName])
+  except (GAPI.invalidArgument, GAPI.notFound, GAPI.permissionDenied) as e:
+    entityActionFailedExit([Ent.CHROME_PROFILE, profileName], str(e))
+
+CHROMEPROFILE_TIME_OBJECTS = {
+  'firstEnrollmentTime',
+  'lastActivityTime',
+  'lastPolicyFetchTime',
+  'lastPolicySyncTime',
+  'lastStatusReportTime',
+  }
+
+def _showChromeProfile(profile, FJQC, i=0, count=0):
+  if FJQC.formatJSON:
+    printLine(json.dumps(cleanJSON(profile, timeObjects=CHROMEPROFILE_TIME_OBJECTS),
+              ensure_ascii=False, sort_keys=True))
+    return
+  printEntity([Ent.CHROME_PROFILE, profile['name']], i, count)
+  Ind.Increment()
+  showJSON(None, profile, timeObjects=CHROMEPROFILE_TIME_OBJECTS)
+  Ind.Decrement()
+
+CHROMEPROFILE_FIELDS_CHOICE_MAP = {
+  'affiliationstate': 'affiliationState',
+  'annotatedlocation': 'annotatedLocation',
+  'annotateduser': 'annotatedUser',
+  'attestationcredential': 'attestationCredential',
+  'browserchannel': 'browserChannel',
+  'browserversion': 'browserVersion',
+  'deviceinfo': 'deviceInfo',
+  'displayname': 'displayName',
+  'extensioncount': 'extensionCount',
+  'firstenrollmenttime': 'firstEnrollmentTime',
+  'identityprovider':'identityProvider',
+  'lastactivitytime': 'lastActivityTime',
+  'lastpolicyfetchtime': 'lastPolicyFetchTime',
+  'lastpolicysynctime': 'lastPolicySyncTime',
+  'laststatusreporttime': 'lastStatusReportTime',
+  'name': 'name',
+  'osplatformtype': 'osPlatformType',
+  'osplatformversion':'osPlatformVersion',
+  'osversion': 'osVersion',
+  'policycount': 'policyCount',
+  'profileid': 'profileId',
+  'profilepermanentid': 'profilePermanentId',
+  'reportingdata': 'reportingData',
+  'useremail': 'userEmail',
+  'userid': 'userId',
+   }
+
+# gam info chromeprofile <ChromeProfileName>
+#	<ChromeProfileFieldName>* [fields <ChromeProfileFieldNameList>]
+#	[formatjson]
+def doInfoChromeProfile():
+  cm = buildGAPIObject(API.CHROMEMANAGEMENT)
+  profileName = _getChromeProfileName()
+  fieldsList = []
+  FJQC = FormatJSONQuoteChar()
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if getFieldsList(myarg, CHROMEPROFILE_FIELDS_CHOICE_MAP, fieldsList, initialField='name'):
+      pass
+    else:
+      FJQC.GetFormatJSON(myarg)
+  fields = ','.join(set(fieldsList))
+  try:
+    profile = callGAPI(cm.customers().profiles(), 'get',
+                       throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED],
+                       name=profileName, fields=fields)
+    _showChromeProfile(profile, FJQC)
+  except (GAPI.invalidArgument, GAPI.notFound, GAPI.permissionDenied) as e:
+    entityActionFailedExit([Ent.CHROME_PROFILE, profileName], str(e))
+
+CHROMEPROFILE_ORDERBY_CHOICE_MAP = {
+  'affiliationstate': 'affiliationState',
+  'browserchannel': 'browserChannel',
+  'browserversion': 'browserVersion',
+  'displayname': 'displayName',
+  'extensioncount': 'extensionCount',
+  'firstenrollmenttime': 'firstEnrollmentTime',
+  'identityprovider': 'identityProvider',
+  'lastactivitytime': 'lastActivityTime',
+  'lastpolicysynctime': 'lastPolicySyncTime',
+  'laststatusreporttime': 'lastStatusReportTime',
+  'osplatformtype': 'osPlatformType',
+  'osversion': 'osVersion',
+  'policycount': 'policyCount',
+  'profileid': 'profileId',
+  'useremail': 'userEmail',
+  }
+
+# gam show chromeprofiles
+#	[filtertime.* <Time>] [filter <String>]
+#	[orderby <ChromeProfileOrderByFieldName> [ascending|descending]]
+#	<ChromeProfileFieldName>* [fields <ChromeProfileFieldNameList>]
+#	[formatjson]
+# gam print chromeprofiles [todrive <ToDriveAttribute>*]
+#	[filtertime.* <Time>] [filter <String>]
+#	[orderby <ChromeProfileOrderByFieldName> [ascending|descending]]
+#	<ChromeProfileFieldName>* [fields <ChromeProfileFieldNameList>]
+#	[[formatjson [quotechar <Character>]]
+def doPrintShowChromeProfiles():
+  def _printProfile(profile):
+    row = flattenJSON(profile, timeObjects=CHROMEPROFILE_TIME_OBJECTS)
+    if not FJQC.formatJSON:
+      csvPF.WriteRowTitles(row)
+    elif csvPF.CheckRowTitles(row):
+      csvPF.WriteRowNoFilter({'name': profile['name'], 'profileId': profile['profileId'],
+                              'JSON': json.dumps(cleanJSON(profile, timeObjects=CHROMEPROFILE_TIME_OBJECTS),
+                                                 ensure_ascii=False, sort_keys=True)})
+
+  cm = buildGAPIObject(API.CHROMEMANAGEMENT)
+  csvPF = CSVPrintFile(['name', 'profileId']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
+  OBY = OrderBy(CHROMEPROFILE_ORDERBY_CHOICE_MAP)
+  sortHeaders = False
+  fieldsList = []
+  cbfilter = None
+  filterTimes = {}
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif getFieldsList(myarg, CHROMEPROFILE_FIELDS_CHOICE_MAP, fieldsList, initialField=['name', 'profileId']):
+      pass
+    elif myarg == 'orderby':
+      OBY.GetChoice()
+    elif myarg.startswith('filtertime'):
+      filterTimes[myarg] = getTimeOrDeltaFromNow()
+    elif myarg in {'filter', 'filters'}:
+      cbfilter = getString(Cmd.OB_STRING)
+    elif myarg == 'sortheaders':
+      sortHeaders = True
+    else:
+      FJQC.GetFormatJSONQuoteChar(myarg, True)
+  if filterTimes and filter is not None:
+    for filterTimeName, filterTimeValue in iter(filterTimes.items()):
+      cbfilter = cbfilter.replace(f'#{filterTimeName}#', filterTimeValue)
+  fields = getItemFieldsFromFieldsList('chromeBrowserProfiles', fieldsList)
+  customerId = _getCustomerId()
+  parent = f'customers/{customerId}'
+  printGettingAllAccountEntities(Ent.CHROME_PROFILE, cbfilter)
+  pageMessage = getPageMessage()
+  try:
+    feed = yieldGAPIpages(cm.customers().profiles(), 'list', 'chromeBrowserProfiles',
+                          pageMessage=pageMessage,
+                          throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                          parent=parent, pageSize=200,
+                          filter=cbfilter, orderBy=OBY.orderBy, fields=fields)
+    for profiles in feed:
+      if not csvPF:
+        jcount = len(profiles)
+        if not FJQC.formatJSON:
+          performActionNumItems(jcount, Ent.CHROME_PROFILE)
+        Ind.Increment()
+        j = 0
+        for profile in profiles:
+          j += 1
+          _showChromeProfile(profile, FJQC, j, jcount)
+        Ind.Decrement()
+      else:
+        for profile in profiles:
+          _printProfile(profile)
+  except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
+    entityActionFailedExit([Ent.CHROME_PROFILE, cbfilter], str(e))
+  if csvPF:
+    if sortHeaders:
+      csvPF.SetSortTitles(['name', 'profileId'])
+    csvPF.writeCSVfile('Chrome Profiles')
+
 BROWSER_ORDERBY_CHOICE_MAP = {
   'annotatedassetid': 'annotated_asset_id', 'asset': 'annotated_asset_id', 'assetid': 'annotated_asset_id',
   'annotatedlocation': 'annotated_location', 'location': 'annotated_location',
@@ -25143,44 +25329,6 @@ BROWSER_ORDERBY_CHOICE_MAP = {
   'policycount': 'policy_count',
   #  'safebrowsingclickthrough': 'safe_browsing_clickthrough',
   }
-
-CHROMEPROFILE_TIME_OBJECTS = {'lastActivityTime',
-                              'lastPolicyFetchTime',
-                              'firstEnrollmentTime'}
-
-# gam show chromeprofiles
-# gam print chromeprofiles
-def doPrintShowChromeProfiles():
-  def _printProfile(profile):
-    row = flattenJSON(profile, timeObjects=CHROMEPROFILE_TIME_OBJECTS)
-    if not FJQC.formatJSON:
-      csvPF.WriteRowTitles(row)
-    elif csvPF.CheckRowTitles(row):
-      csvPF.WriteRowNoFilter({'deviceId': browser['deviceId'],
-                              'JSON': json.dumps(cleanJSON(browser, timeObjects=CHROMEPROFILE_TIME_OBJECTS),
-                                                 ensure_ascii=False, sort_keys=True)})
-
-  cm = buildGAPIObject(API.CHROMEMANAGEMENT)
-  csvPF = CSVPrintFile(['profileId']) if Act.csvFormat() else None
-  FJQC = FormatJSONQuoteChar(csvPF)
-  sortRows = False
-  sortHeaders = False
-  customerId = _getCustomerId()
-  parent = f'customers/{customerId}'
-  results = yieldGAPIpages(cm.customers().profiles(),
-                           'list',
-                           'chromeBrowserProfiles',
-                           parent=parent,
-                           pageSize=200)
-  for profiles in results:
-    for profile in profiles:
-      _printProfile(profile)
-  if csvPF:
-    if sortRows and orderBy:
-      csvPF.SortRows(orderBy, reverse=sortOrder == 'DESCENDING')
-    if sortHeaders:
-      csvPF.SetSortTitles(['profileId'])
-    csvPF.writeCSVfile('Chrome Profiles')
 
 # gam show browsers
 #	([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
@@ -27807,7 +27955,9 @@ def doUpdateChromePolicy():
             elif vtype == 'TYPE_BOOL':
               pass
             elif vtype == 'TYPE_ENUM':
-              value = f"{schema['settings'][lowerField]['enum_prefix']}{value}"
+              prefix = schema['settings'][lowerField]['enum_prefix']
+              if not value.startswith(prefix):
+                value = "{prefix}{value}"
             elif vtype == 'TYPE_LIST':
               value = value.split(',') if value else []
             if myarg == 'chrome.users.chromebrowserupdates' and casedField == 'targetVersionPrefixSetting':
@@ -70057,6 +70207,9 @@ def printShowMessagesThreads(users, entityType):
       if part['mimeType'] == 'text/plain':
         if 'data' in part['body']:
           data += base64.urlsafe_b64decode(str(part['body']['data'])).decode(UTF8)+'\n'
+      elif show_html and part['mimeType'] == 'text/html':
+        if 'data' in part['body']:
+          data += base64.urlsafe_b64decode(str(part['body']['data'])).decode(UTF8)+'\n'
       elif part['mimeType'] == 'text/rfc822-headers':
         if 'data' in part['body']:
           data += _decodeHeader(base64.urlsafe_b64decode(str(part['body']['data'])).decode(UTF8)+'\n')
@@ -70511,7 +70664,7 @@ def printShowMessagesThreads(users, entityType):
   convertCRNL = GC.Values[GC.CSV_OUTPUT_CONVERT_CR_NL]
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   countsOnly = positiveCountsOnly = includeSpamTrash = onlyUser = overwrite = save_attachments = upload_attachments = False
-  show_all_headers = show_attachments = show_body = show_date = show_labels = show_size = show_snippet = False
+  show_all_headers = show_attachments = show_body = show_date = show_html = show_labels = show_size = show_snippet = False
   noshow_text_plain = False
   attachmentNamePattern = None
   targetFolderPattern = GC.Values[GC.DRIVE_DIR]
@@ -70541,6 +70694,8 @@ def printShowMessagesThreads(users, entityType):
       show_date = True
     elif myarg == 'showbody':
       show_body = True
+    elif myarg == 'showhtml':
+      show_html = True
     elif myarg == 'showlabels':
       show_labels = True
     elif myarg == 'showsize':
@@ -70811,7 +70966,7 @@ def printShowMessagesThreads(users, entityType):
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])* [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <MessageIDEntity>)
 #	[labelmatchpattern <RegularExpression>] [sendermatchpattern <RegularExpression>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
-#	[showlabels] [showbody] [showdate] [showsize] [showsnippet]
+#	[showlabels] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
 #	[convertcrnl] [delimiter <Character>]
 #	[countsonly|positivecountsonly] [useronly]
 #	[[attachmentnamepattern <RegularExpression>]
@@ -70821,7 +70976,7 @@ def printShowMessagesThreads(users, entityType):
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])* [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <MessageIDEntity>)
 #	[labelmatchpattern <RegularExpression>] [sendermatchpattern <RegularExpression>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
-#	[showlabels] [showbody] [showdate] [showsize] [showsnippet]
+#	[showlabels] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
 #	[countsonly|positivecountsonly] [useronly]
 #	[[attachmentnamepattern <RegularExpression>]
 #	    [showattachments [noshowtextplain]]
@@ -70834,7 +70989,7 @@ def printShowMessages(users):
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])* [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <ThreadIDEntity>)
 #	[labelmatchpattern <RegularExpression>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
-#	[showlabels] [showbody] [showdate] [showsize] [showsnippet]
+#	[showlabels] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
 #	[convertcrnl] [delimiter <Character>]
 #	[countsonly|positivecountsonly] [useronly]
 #	[[attachmentnamepattern <RegularExpression>]
@@ -70844,7 +70999,7 @@ def printShowMessages(users):
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])* [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <ThreadIDEntity>)
 #	[labelmatchpattern <RegularExpression>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
-#	[showlabels] [showbody] [showdate] [showsize] [showsnippet]
+#	[showlabels] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
 #	[countsonly|positivecountsonly] [useronly]
 #	[[attachmentnamepattern <RegularExpression>]
 #	    [showattachments [noshowtextplain]]
@@ -75100,6 +75255,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHATMESSAGE:	doDeleteChatMessage,
       Cmd.ARG_CHROMENETWORK:	doDeleteChromeNetwork,
       Cmd.ARG_CHROMEPOLICY:	doDeleteChromePolicy,
+      Cmd.ARG_CHROMEPROFILE:	doDeleteChromeProfile,
       Cmd.ARG_CIGROUP:		doDeleteCIGroups,
       Cmd.ARG_CLASSROOMINVITATION:	doDeleteClassroomInvitations,
       Cmd.ARG_CONTACT:		doDeleteDomainContacts,
@@ -75180,6 +75336,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHATMESSAGE:	doInfoChatMessage,
       Cmd.ARG_CHATSPACE:	doInfoChatSpace,
       Cmd.ARG_CHROMEAPP:	doInfoChromeApp,
+      Cmd.ARG_CHROMEPROFILE:	doInfoChromeProfile,
       Cmd.ARG_CHROMESCHEMA:	doInfoChromePolicySchemas,
       Cmd.ARG_CIGROUP:		doInfoCIGroups,
       Cmd.ARG_CIGROUPMEMBERS:	doInfoCIGroupMembers,
@@ -75266,7 +75423,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMEHISTORY:	doPrintShowChromeHistory,
       Cmd.ARG_CHROMENEEDSATTN:	doPrintShowChromeNeedsAttn,
       Cmd.ARG_CHROMEPOLICY:	doPrintShowChromePolicies,
-      Cmd.ARG_CHROMEPROFILES: doPrintShowChromeProfiles,
+      Cmd.ARG_CHROMEPROFILE:	doPrintShowChromeProfiles,
       Cmd.ARG_CHROMESCHEMA:	doPrintShowChromeSchemas,
       Cmd.ARG_CHROMESNVALIDITY:	doPrintChromeSnValidity,
       Cmd.ARG_CHROMEVERSIONS:	doPrintShowChromeVersions,
@@ -75398,6 +75555,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMEHISTORY:	doPrintShowChromeHistory,
       Cmd.ARG_CHROMENEEDSATTN:	doPrintShowChromeNeedsAttn,
       Cmd.ARG_CHROMEPOLICY:	doPrintShowChromePolicies,
+      Cmd.ARG_CHROMEPROFILE:	doPrintShowChromeProfiles,
       Cmd.ARG_CHROMESCHEMA:	doPrintShowChromeSchemas,
       Cmd.ARG_CHROMEVERSIONS:	doPrintShowChromeVersions,
       Cmd.ARG_CIGROUPMEMBERS:	doShowCIGroupMembers,
@@ -75580,6 +75738,7 @@ MAIN_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_CHROMEAPPS:		Cmd.ARG_CHROMEAPP,
   Cmd.ARG_CHROMENETWORKS:	Cmd.ARG_CHROMENETWORK,
   Cmd.ARG_CHROMEPOLICIES:	Cmd.ARG_CHROMEPOLICY,
+  Cmd.ARG_CHROMEPROFILES:	Cmd.ARG_CHROMEPROFILE,
   Cmd.ARG_CHROMESCHEMAS:	Cmd.ARG_CHROMESCHEMA,
   Cmd.ARG_CIGROUPS:		Cmd.ARG_CIGROUP,
   Cmd.ARG_CIGROUPSMEMBERS:	Cmd.ARG_CIGROUPMEMBERS,
