@@ -11,12 +11,15 @@ from gam.gamlib.glverlibs import GAM_VER_LIBS
 with open("gam/__init__.py") as f:
     version_file = f.read()
 version = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", version_file, re.M).group(1)
-version_tuple = "(" + version.split("-")[0].replace(".", ", ") + ", 0)"
-
+version_list = [int(i) for i in version.split('.')]
+while len(version_list) < 4:
+  version_list.append(0)
+version_tuple = tuple(version_list)
+version_str = str(version_tuple)
 with open("version_info.txt.in") as f:
     version_info = f.read()
 version_info = version_info.replace("{VERSION}", version).replace(
-    "{VERSION_TUPLE}", version_tuple
+    "{VERSION_TUPLE}", version_str
 )
 with open("version_info.txt", "w") as f:
     f.write(version_info)
