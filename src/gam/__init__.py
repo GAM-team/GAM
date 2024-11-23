@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.01.00'
+__version__ = '7.01.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -54815,7 +54815,8 @@ def initFileTree(drive, shareddrive, DLP, shareddriveFields, showParent, user, i
   except (GAPI.notFound, GAPI.fileNotFound, GAPI.invalid, GAPI.noListTeamDrivesAdministratorPrivilege) as e:
     entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE, fileId], str(e), i, count)
     return (None, False)
-  except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy):
+  except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
+    userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
     return (None, False)
   return (fileTree, True)
 

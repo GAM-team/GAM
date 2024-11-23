@@ -1,3 +1,8 @@
+7.01.01
+
+Fixed bug in `gam <UserTypeEntity> print|show filetree` where no error message was generated
+if a user had Drive disabled.
+
 7.01.00
 
 Fixed bug in `gam update chromepolicy` that caused some policy updates to fail.
@@ -5,7 +10,7 @@ Fixed bug in `gam update chromepolicy` that caused some policy updates to fail.
 Added option `showhtml` to `gam <UserTypeEntity> print|show messages` that, when used with `showbody`,
 will display message body content of type HTML.
 
-Added support for manageing/displaying Chrome profiles.
+Added support for managing/displaying Chrome profiles.
 
 * See: https://github.com/GAM-team/GAM/wiki/Chrome-Profile-Management
 
