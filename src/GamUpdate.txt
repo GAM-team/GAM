@@ -1,3 +1,19 @@
+7.01.02
+
+Added option `positivecountsonly` to `gam <UserTypeEntity> print|show filecomments` that causes
+GAM to display the number of comments and replies only for files that have comments.
+
+Added `my_commentable_items` to `<DriveFileQueryShortcut>` that can be used with
+`gam <UserTypeEntity> print|show filecomments my_commentable_items` to speed up processing.
+
+Updated code that uses the Domain Shared Contacts API with an HTTPS proxy to avoid a trap:
+```
+Traceback (most recent call last):
+...
+File "atom/http.py", line 250, in _prepare_connection
+AttributeError: module 'ssl' has no attribute 'wrap_socket'
+```
+
 7.01.01
 
 Fixed bug in `gam <UserTypeEntity> print|show filetree` where no error message was generated

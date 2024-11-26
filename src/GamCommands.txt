@@ -1059,6 +1059,7 @@ Specify a collection of items by directly specifying them; the item type is dete
         all_shortcuts |
         all_3p_shortcuts |
         all_items |
+        my_commentable_items |
         my_docs |
         my_files |
         my_folders |
@@ -6779,12 +6780,12 @@ gam print ownership <DriveFileID>|(drivefilename <DriveFileName>) [todrive <ToDr
 gam <UserTypeEntity> show filecomments <DriveFileEntity>
         [showdeleted] [start <Date>|<Time>]
         [fields <CommentsFieldNameList>] [showphotolinks]
-        [countsonly]
+        [countsonly|positivecountsonly]
         [formatjson]
 gam <UserTypeEntity> print filecomments <DriveFileEntity> [todrive <ToDriveAttribute>*]
         [showdeleted] [start <Date>|<Time>]
         [fields <CommentsFieldNameList>] [showphotolinks]
-        [countsonly]
+        [countsonly|positivecountsonly]
         (addcsvdata <FieldName> <String>)*
         [formatjson [quotechar <Character>]]
 
