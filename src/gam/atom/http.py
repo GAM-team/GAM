@@ -247,7 +247,9 @@ class ProxiedHttpClient(HttpClient):
                 # Trivial setup for ssl socket.
                 sslobj = None
                 if ssl_imported:
-                    sslobj = ssl.wrap_socket(p_sock, None, None)
+                    context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+                    context.minimum_version = ssl.TLSVersion.TLSv1_2
+                    sslobj = context.wrap_socket(p_sock, server_hostname=url.host)
                 else:
                     sock_ssl = socket.ssl(p_sock, None, None)
                     sslobj = http.client.FakeSocket(p_sock, sock_ssl)

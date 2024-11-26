@@ -568,7 +568,7 @@ class ProxiedHttpClient(HttpClient):
                 context.minimum_version = ssl.TLSVersion.TLSv1_2
                 sslobj = context.wrap_socket(p_sock, server_hostname=uri.host)
             else:
-                sock_ssl = socket.ssl(p_sock, None, Nonesock_)
+                sock_ssl = socket.ssl(p_sock, None, None)
                 sslobj = http.client.FakeSocket(p_sock, sock_ssl)
             # Initalize httplib and replace with the proxy socket.
             connection = http.client.HTTPConnection(proxy_uri.host)
