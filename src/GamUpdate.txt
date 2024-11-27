@@ -1,3 +1,8 @@
+7.01.03
+
+Fixed bug in `gam update cigroups <GroupEntity> delete|sync|update` where `cbcm-browser` and `chrome-os_device`
+addresses were not properly handled.
+
 7.01.02
 
 Added option `positivecountsonly` to `gam <UserTypeEntity> print|show filecomments` that causes

@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.01.02'
+__version__ = '7.01.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -5729,8 +5729,10 @@ def convertUIDtoEmailAddressWithType(emailAddressOrUID, cd=None, sal=None, email
 # Convert UID to email address
 def convertUIDtoEmailAddress(emailAddressOrUID, cd=None, emailTypes=None,
                              checkForCustomerId=False, ciGroupsAPI=False, aliasAllowed=True):
-  if emailAddressOrUID.startswith('cbcm-browser.'):
-    return emailAddressOrUID
+  if ciGroupsAPI:
+    normalizedEmailAddressOrUID = normalizeEmailAddressOrUID(emailAddressOrUID, ciGroupsAPI=ciGroupsAPI)
+    if normalizedEmailAddressOrUID.startswith('cbcm-browser.') or normalizedEmailAddressOrUID.startswith('chrome-os-device.'):
+      return normalizedEmailAddressOrUID
   email, _ = convertUIDtoEmailAddressWithType(emailAddressOrUID, cd, emailTypes,
                                               checkForCustomerId, ciGroupsAPI, aliasAllowed)
   return email
@@ -34639,7 +34641,7 @@ def doUpdateCIGroups():
             continue
         _batchAddGroupMembers(parent, i, count,
                               [convertUIDtoEmailAddress(member, cd=cd, emailTypes='any',
-                                                        checkForCustomerId=True) for member in addMembers],
+                                                        checkForCustomerId=True, ciGroupsAPI=True) for member in addMembers],
                               role, expireTime)
   elif CL_subCommand in {'delete', 'remove'}:
     baseRole, groupMemberType = _getRoleGroupMemberType()
@@ -34681,11 +34683,12 @@ def doUpdateCIGroups():
         j = 0
         for member in removeMembers:
           j += 1
-          memberEmail = convertUIDtoEmailAddress(member, cd=cd, emailTypes='any', checkForCustomerId=True)
+          memberEmail = convertUIDtoEmailAddress(member, cd=cd, emailTypes='any',
+                                                 checkForCustomerId=True, ciGroupsAPI=True)
           try:
             memberName = callGAPI(ci.groups().memberships(), 'lookup',
                                   throwReasons=GAPI.CIGROUP_GET_THROW_REASONS,
-                                  parent=parent, memberKey_id=member, fields='name').get('name')
+                                  parent=parent, memberKey_id=memberEmail, fields='name').get('name')
             callGAPI(ci.groups().memberships(), 'delete',
                      throwReasons=GAPI.MEMBERS_THROW_REASONS+[GAPI.FAILED_PRECONDITION],
                      name=memberName)
@@ -34714,7 +34717,7 @@ def doUpdateCIGroups():
       syncMembersMaps[baseRole] = {}
       for member in syncMembers:
         syncMembersSets[baseRole].add(_cleanConsumerAddress(convertUIDtoEmailAddress(member, cd=cd, emailTypes='any',
-                                                                                     checkForCustomerId=True), syncMembersMaps[baseRole]))
+                                                                                     checkForCustomerId=True, ciGroupsAPI=True), syncMembersMaps[baseRole]))
     checkForExtraneousArguments()
     i = 0
     count = len(entityList)
@@ -34836,7 +34839,8 @@ def doUpdateCIGroups():
         j = 0
         for member in updateMembers:
           j += 1
-          memberEmail = convertUIDtoEmailAddress(member, cd=cd, emailTypes='any', checkForCustomerId=True)
+          memberEmail = convertUIDtoEmailAddress(member, cd=cd, emailTypes='any',
+                                                 checkForCustomerId=True, ciGroupsAPI=True)
           try:
             memberName = callGAPI(ci.groups().memberships(), 'lookup',
                                   throwReasons=GAPI.CIGROUP_GET_THROW_REASONS,
