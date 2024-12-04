@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.01.03'
+__version__ = '7.01.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -11433,8 +11433,8 @@ def convertGCPFolderNameToID(parent, crm):
     systemErrorExit(MULTIPLE_PROJECT_FOLDERS_FOUND_RC, None)
   return folders[0]['name']
 
-PROJECTID_PATTERN = re.compile(r'^[a-z][a-z0-9-]{4,28}[a-z0-9]$')
-PROJECTID_FORMAT_REQUIRED = '[a-z][a-z0-9-]{4,28}[a-z0-9]'
+PROJECTID_PATTERN = re.compile(r'^[a-z][a-z0-9-]{4,99}[a-z0-9]$')
+PROJECTID_FORMAT_REQUIRED = '[a-z][a-z0-9-]{4,99}[a-z0-9]'
 def _checkProjectId(projectId):
   if not PROJECTID_PATTERN.match(projectId):
     Cmd.Backup()
@@ -11472,6 +11472,7 @@ def _generateProjectSvcAcctId(prefix):
   return f'{prefix}-{"".join(random.choice(LOWERNUMERIC_CHARS) for _ in range(5))}'
 
 def _getLoginHintProjectInfo(createCmd):
+  print('a')
   login_hint = None
   create_key = True
   appInfo = {'applicationTitle': '', 'supportEmail': ''}
@@ -11484,7 +11485,9 @@ def _getLoginHintProjectInfo(createCmd):
     if login_hint and login_hint.find('@') == -1:
       Cmd.Backup()
       login_hint = None
-    projectInfo['projectId'] = getString(Cmd.OB_STRING, optional=True, minLen=6, maxLen=30).strip()
+    print(1)
+    projectInfo['projectId'] = getString(Cmd.OB_STRING, optional=True, minLen=6, maxLen=999999).strip()
+    print(2)
     if projectInfo['projectId']:
       _checkProjectId(projectInfo['projectId'])
     checkForExtraneousArguments()
@@ -11496,7 +11499,7 @@ def _getLoginHintProjectInfo(createCmd):
       elif myarg == 'nokey':
         create_key = False
       elif myarg == 'project':
-        projectInfo['projectId'] = getString(Cmd.OB_STRING, minLen=6, maxLen=30)
+        projectInfo['projectId'] = getString(Cmd.OB_STRING, minLen=6, maxLen=9999)
         _checkProjectId(projectInfo['projectId'])
       elif createCmd and myarg == 'parent':
         projectInfo['parent'] = getString(Cmd.OB_STRING)
@@ -11512,6 +11515,7 @@ def _getLoginHintProjectInfo(createCmd):
         break
       else:
         unknownArgumentExit()
+  print(4)
   if not projectInfo['projectId']:
     if createCmd:
       projectInfo['projectId'] = _generateProjectSvcAcctId('gam-project')
