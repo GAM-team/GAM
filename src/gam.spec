@@ -28,11 +28,10 @@ print(version_info)
 datas = []
 for pkg in GAM_VER_LIBS:
     datas += copy_metadata(pkg, recursive=True)
-datas += [('admin-directory_v1.1beta1.json', '.')]
-datas += [('cbcm-v1.1beta1.json', '.')]
-datas += [('contactdelegation-v1.json', '.')]
-datas += [('datastudio-v1.json', '.')]
-datas += [('serviceaccountlookup-v1.json', '.')]
+datas += [('gam/cbcm-v1.1beta1.json', '.')]
+datas += [('gam/contactdelegation-v1.json', '.')]
+datas += [('gam/datastudio-v1.json', '.')]
+datas += [('gam/serviceaccountlookup-v1.json', '.')]
 datas += [('cacerts.pem', '.')]
 hiddenimports = [
      'gam.gamlib.yubikey',
