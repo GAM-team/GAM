@@ -6,6 +6,26 @@ Remove duplicate local JSON discovery files. #1724
 
 Suppress "UserWarning: Attribute's length must be..." messages on service accounts with long emails. #1725
 
+Added options `internal`, `internaldomains <DomainNameList>` and `external` to these commands
+that expand the options for viewing group members:
+```
+gam info group
+gam print groups
+gam print|show group-members
+gam info cigroup
+gam print cigroups
+gam print|show cigroup-members
+```
+By default, when listing group members, GAM does not take the domain of the member into account.
+* `internal internaldomains <DomainNameList>` - Display members whose domain is in `<DomainNameList>`
+* `external internaldomains <DomainNameList>` - Display members whose domain is not in `<DomainNameList>`
+* `internal external internaldomains <DomainNameList>` - Display all members, indicate their category: internal or external
+* `internaldomains <DomainNameList>` - Defaults to value of `domain` in `gam.cfg`
+
+Members without an email address, e.g. `customer`, `chrome-os-device` and `cbcm-browser` are considered internal.
+
+Updated to Python 3.13.1.
+
 7.01.03
 
 Fixed bug in `gam update cigroups <GroupEntity> delete|sync|update` where `cbcm-browser` and `chrome-os_device`

@@ -109,8 +109,6 @@ if not getattr(sys, 'frozen', False):
 
 from dateutil.relativedelta import relativedelta
 
-from filelock import FileLock
-
 from pathvalidate import sanitize_filename, sanitize_filepath
 
 import google.oauth2.credentials
@@ -125,6 +123,7 @@ import httplib2
 httplib2.RETRIES = 5
 
 from passlib.hash import sha512_crypt
+from filelock import FileLock
 
 if platform.system() == 'Linux':
   import distro
@@ -5664,8 +5663,8 @@ def getServiceAccountEmailFromID(account_id, sal=None):
     cert = x509.load_pem_x509_certificate(raw_cert.encode(), default_backend())
     # suppress crytography warning due to long service account email
     with warnings.catch_warnings():
-        warnings.filterwarnings('ignore', message='.*Attribute\'s length.*')
-        mg = re.match(sa_cn_rx, cert.issuer.rfc4514_string())
+      warnings.filterwarnings('ignore', message='.*Attribute\'s length.*')
+      mg = re.match(sa_cn_rx, cert.issuer.rfc4514_string())
     if mg:
       sa_email = f'{mg.group(1)}@{mg.group(2)}.iam.gserviceaccount.com'
       if sa_email not in sa_emails:
@@ -5905,10 +5904,32 @@ def _checkMemberRole(member, validRoles):
 def _checkMemberRoleIsSuspendedIsArchived(member, validRoles, isSuspended, isArchived):
   return _checkMemberRole(member, validRoles) and _checkMemberIsSuspendedIsArchived(member, isSuspended, isArchived)
 
+def _checkMemberCategory(member, memberDisplayOptions):
+  member_email = member.get('email', member.get('id', ''))
+  if member_email.find('@') > 0:
+    _, domain = member_email.lower().split('@', 1)
+    category = 'internal' if domain in memberDisplayOptions['internalDomains'] else 'external'
+  else:
+    category = 'internal'
+  if memberDisplayOptions[category]:
+    member['category'] = category
+    return True
+  return False
+
 CIGROUP_MEMBER_API = API.CLOUDIDENTITY_GROUPS
 CIGROUP_MEMBERKEY = 'preferredMemberKey'
-#CIGROUP_MEMBER_API = API.CLOUDIDENTITY_GROUPS_BETA
-#CIGROUP_MEMBERKEY = 'memberKey'
+
+def _checkCIMemberCategory(member, memberDisplayOptions):
+  member_email = member.get(CIGROUP_MEMBERKEY,{}).get('id', '')
+  if member_email.find('@') > 0:
+    _, domain = member_email.lower().split('@', 1)
+    category = 'internal' if domain in memberDisplayOptions['internalDomains'] else 'external'
+  else:
+    category = 'internal'
+  if memberDisplayOptions[category]:
+    member['category'] = category
+    return True
+  return False
 
 def getCIGroupMemberRoleFixType(member):
   ''' fixes missing type and returns the highest role of member '''
@@ -11433,8 +11454,8 @@ def convertGCPFolderNameToID(parent, crm):
     systemErrorExit(MULTIPLE_PROJECT_FOLDERS_FOUND_RC, None)
   return folders[0]['name']
 
-PROJECTID_PATTERN = re.compile(r'^[a-z][a-z0-9-]{4,99}[a-z0-9]$')
-PROJECTID_FORMAT_REQUIRED = '[a-z][a-z0-9-]{4,99}[a-z0-9]'
+PROJECTID_PATTERN = re.compile(r'^[a-z][a-z0-9-]{4,28}[a-z0-9]$')
+PROJECTID_FORMAT_REQUIRED = '[a-z][a-z0-9-]{4,28}[a-z0-9]'
 def _checkProjectId(projectId):
   if not PROJECTID_PATTERN.match(projectId):
     Cmd.Backup()
@@ -12427,7 +12448,7 @@ def _generatePrivateKeyAndPublicCert(projectId, clientEmail, name, key_size, b64
     builder = builder.issuer_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME,
                                                                 name,
                                                                 _validate=False)]))
-  # Google seems to enforce the not before date strictly. Set the not before
+  # Gooogle seems to enforce the not before date strictly. Set the not before
   # date to be UTC two minutes ago which should cover any clock skew.
   now = datetime.datetime.utcnow()
   builder = builder.not_valid_before(now - datetime.timedelta(minutes=2))
@@ -25699,7 +25720,10 @@ def _printChatItem(user, citem, parent, entityType, csvPF, FJQC, addCSVData=None
     _cleanChatSpace(citem)
     baserow = {'User': user} if user is not None else {}
   else:
-    baserow = {'User': user, 'space.name': parent['name'], 'space.displayName': parent['displayName']} if user is not None else {'space.name': parent['name'], 'space.displayName': parent['displayName']}
+    if user is not None:
+      baserow = {'User': user, 'space.name': parent['name'], 'space.displayName': parent['displayName']}
+    else:
+      baserow = {'space.name': parent['name'], 'space.displayName': parent['displayName']}
     if entityType == Ent.CHAT_MEMBER:
       if addCSVData:
         baserow.update(addCSVData)
@@ -28157,7 +28181,13 @@ def doPrintShowChromePolicies():
       elif isinstance(value, str) and value.find('_ENUM_') != -1:
         value = value.split('_ENUM_')[-1]
       elif isinstance(value, list):
-        value = ','.join(value)
+        if len(value) > 0:
+          if not isinstance(value[0], dict):
+            value = ','.join(value)
+          else:
+            value = json.dumps(value, ensure_ascii=False)
+        else:
+          value = ''
       norm['fields'].append({'name': setting, 'value': value})
     return norm
 
@@ -32506,20 +32536,20 @@ def getGroupRoles(myarg, rolesSet):
     return False
   return True
 
-GROUP_TYPES_MAP = {
+GROUP_MEMBER_TYPES_MAP = {
   'customer': Ent.TYPE_CUSTOMER,
   'group': Ent.TYPE_GROUP,
   'user': Ent.TYPE_USER,
   }
-ALL_GROUP_TYPES = {Ent.TYPE_CUSTOMER, Ent.TYPE_GROUP, Ent.TYPE_USER}
+ALL_GROUP_MEMBER_TYPES = {Ent.TYPE_CUSTOMER, Ent.TYPE_GROUP, Ent.TYPE_USER}
 
-def getGroupTypes(myarg, typesSet):
+def getGroupMemberTypes(myarg, typesSet):
   if myarg in {'type', 'types'}:
     for gtype in getString(Cmd.OB_GROUP_TYPE_LIST).lower().replace(',', ' ').split():
-      if gtype in GROUP_TYPES_MAP:
-        typesSet.add(GROUP_TYPES_MAP[gtype])
+      if gtype in GROUP_MEMBER_TYPES_MAP:
+        typesSet.add(GROUP_MEMBER_TYPES_MAP[gtype])
       else:
-        invalidChoiceExit(gtype, GROUP_TYPES_MAP, True)
+        invalidChoiceExit(gtype, GROUP_MEMBER_TYPES_MAP, True)
   else:
     return False
   return True
@@ -32562,6 +32592,84 @@ def checkCIMemberMatch(member, memberOptions):
   if memberOptions[MEMBEROPTION_MATCHPATTERN].match(member.get(CIGROUP_MEMBERKEY, {}).get('id', '')):
     return memberOptions[MEMBEROPTION_DISPLAYMATCH]
   return not memberOptions[MEMBEROPTION_DISPLAYMATCH]
+
+def initIPSGMGroupMemberDisplayOptions():
+  return {Ent.ROLE_MEMBER: {'show': False},
+          Ent.ROLE_MANAGER: {'show': False},
+          Ent.ROLE_OWNER: {'show': False},
+          'categories': [],
+          'internal': False, 'external': False, 'showCategory': False,
+          'internalDomains': set([GC.Values[GC.DOMAIN]])}
+
+def getIPSGMGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions):
+  def setMemberDisplayOptionsRole():
+    for role in rolesSet:
+      memberDisplayOptions[role]['show'] = True
+
+  if myarg in {'role', 'roles'}:
+    for role in getString(Cmd.OB_GROUP_ROLE_LIST).lower().replace(',', ' ').split():
+      if role in GROUP_ROLES_MAP:
+        rolesSet.add(GROUP_ROLES_MAP[role])
+      else:
+        invalidChoiceExit(role, GROUP_ROLES_MAP, True)
+    setMemberDisplayOptionsRole()
+  elif myarg in GROUP_ROLES_MAP:
+    rolesSet.add(GROUP_ROLES_MAP[myarg])
+    setMemberDisplayOptionsRole()
+  elif myarg == 'members':
+    role = Ent.ROLE_MEMBER
+    rolesSet.add(role)
+    memberDisplayOptions[role]['show'] = True
+  elif myarg == 'managers':
+    role = Ent.ROLE_MANAGER
+    rolesSet.add(role)
+    memberDisplayOptions[role]['show'] = True
+  elif myarg == 'owners':
+    role = Ent.ROLE_OWNER
+    rolesSet.add(role)
+    memberDisplayOptions[role]['show'] = True
+  elif myarg == 'internal':
+    memberDisplayOptions['internal'] = memberDisplayOptions['showCategory'] = True
+  elif myarg == 'external':
+    memberDisplayOptions['external'] = memberDisplayOptions['showCategory'] = True
+  elif myarg == 'internaldomains':
+    memberDisplayOptions['internalDomains'] = set(getString(Cmd.OB_DOMAIN_NAME_LIST).replace(',', ' ').lower().split())
+  else:
+    return False
+  return True
+
+def initPGGroupMemberDisplayOptions():
+  return {Ent.ROLE_MEMBER: {'show': False, 'countOnly': False},
+          Ent.ROLE_MANAGER: {'show': False, 'countOnly': False},
+          Ent.ROLE_OWNER: {'show': False, 'countOnly': False},
+          'totalCount': False, 'categories': [],
+          'internal': False, 'external': False, 'showCategory': False,
+          'internalDomains': set([GC.Values[GC.DOMAIN]])}
+
+def getPGGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions):
+  if myarg == 'memberscount':
+    role = Ent.ROLE_MEMBER
+    rolesSet.add(role)
+    memberDisplayOptions[role]['show'] = True
+    memberDisplayOptions[role]['countOnly'] = True
+  elif myarg == 'managerscount':
+    role = Ent.ROLE_MANAGER
+    rolesSet.add(role)
+    memberDisplayOptions[role]['show'] = True
+    memberDisplayOptions[role]['countOnly'] = True
+  elif myarg == 'ownerscount':
+    role = Ent.ROLE_OWNER
+    rolesSet.add(role)
+    memberDisplayOptions[role]['show'] = True
+    memberDisplayOptions[role]['countOnly'] = True
+  elif myarg == 'totalcount':
+    memberDisplayOptions['totalCount'] = True
+  elif myarg == 'countsonly':
+    for role in Ent.ROLE_LIST:
+      memberDisplayOptions[role]['countOnly'] = True
+  else:
+    return getIPSGMGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions)
+  return True
 
 GROUP_FIELDS_CHOICE_MAP = {
   'admincreated': 'adminCreated',
@@ -32654,6 +32762,7 @@ def infoGroups(entityList):
   rolesSet = set()
   typesSet = set()
   memberOptions = initMemberOptions()
+  memberDisplayOptions = initIPSGMGroupMemberDisplayOptions()
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'quick':
@@ -32670,9 +32779,9 @@ def infoGroups(entityList):
       getAliases = False
     elif myarg == 'groups':
       getGroups = True
-    elif getGroupRoles(myarg, rolesSet):
+    elif getIPSGMGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions):
       getUsers = True
-    elif getGroupTypes(myarg, typesSet):
+    elif getGroupMemberTypes(myarg, typesSet):
       pass
     elif getMemberMatchOptions(myarg, memberOptions):
       pass
@@ -32727,7 +32836,7 @@ def infoGroups(entityList):
   else:
     entityType = Ent.MEMBER
   if not typesSet:
-    typesSet = ALL_GROUP_TYPES
+    typesSet = ALL_GROUP_MEMBER_TYPES
   cdfields = getFieldsFromFieldsList(groupFieldsLists['cd'])
   memberRoles = ','.join(sorted(rolesSet)) if rolesSet else None
   if groupFieldsLists['gs'] is None:
@@ -32746,6 +32855,7 @@ def infoGroups(entityList):
     ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
   else:
     cifields = None
+  checkCategory = memberDisplayOptions['showCategory']
   i = 0
   count = len(entityList)
   for group in entityList:
@@ -32785,7 +32895,8 @@ def infoGroups(entityList):
         for member in result:
           if ((member['type'] in typesSet) and
               _checkMemberRoleIsSuspendedIsArchived(member, validRoles, isSuspended, isArchived) and
-              checkMemberMatch(member, memberOptions)):
+              checkMemberMatch(member, memberOptions) and
+              (not checkCategory or _checkMemberCategory(member, memberDisplayOptions))):
             members.append(member)
       if FJQC.formatJSON:
         basic_info.update(settings)
@@ -32878,7 +32989,10 @@ def infoGroups(entityList):
         printEntitiesCount(entityType, members)
         Ind.Increment()
         for member in members:
-          printKeyValueList([member.get('role', Ent.ROLE_MEMBER).lower(), f'{member.get("email", member["id"])} ({member["type"].lower()})'])
+          memberDetails = [member.get('role', Ent.ROLE_MEMBER).lower(), f'{member.get("email", member["id"])} ({member["type"].lower()})']
+          if checkCategory:
+            memberDetails[1] += f' ({member["category"]})'
+          printKeyValueList(memberDetails)
         Ind.Decrement()
         printKeyValueList([Msg.TOTAL_ITEMS_IN_ENTITY.format(Ent.Plural(entityType), Ent.Singular(Ent.GROUP)), len(members)])
       Ind.Decrement()
@@ -32894,8 +33008,9 @@ def infoGroups(entityList):
 #	[basic] <GroupFieldName>* [fields <GroupFieldNameList>] [nodeprecated]
 #	[ciallfields|(cifields <CIGroupFieldNameList>)]
 #	[roles <GroupRoleList>] [members] [managers] [owners]
+#	[internal] [internaldomains <DomainList>] [external]
 #	[notsuspended|suspended] [notarchived|archived]
-#	[types <GroupTypeList>]
+#	[types <GroupMemberTypeList>]
 #	[memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
 #	[formatjson]
 def doInfoGroups():
@@ -32981,95 +33096,82 @@ def checkGroupMatchPatterns(groupEmail, group, matchPatterns):
           return False
   return True
 
-def initGroupMemberDisplayOptions():
-  return {'members': False, 'membersCountOnly': False,
-          'managers': False, 'managersCountOnly': False,
-          'owners': False, 'ownersCountOnly': False,
-          'totalCount': False}
-
-def getGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions):
-  def setMemberDisplayOptionsRole():
-    if Ent.ROLE_MEMBER in rolesSet:
-      memberDisplayOptions['members'] = True
-    if Ent.ROLE_MANAGER in rolesSet:
-      memberDisplayOptions['managers'] = True
-    if Ent.ROLE_OWNER in rolesSet:
-      memberDisplayOptions['owners'] = True
-
-  if myarg in {'role', 'roles'}:
-    for role in getString(Cmd.OB_GROUP_ROLE_LIST).lower().replace(',', ' ').split():
-      if role in GROUP_ROLES_MAP:
-        rolesSet.add(GROUP_ROLES_MAP[role])
-      else:
-        invalidChoiceExit(role, GROUP_ROLES_MAP, True)
-    setMemberDisplayOptionsRole()
-  elif myarg in GROUP_ROLES_MAP:
-    rolesSet.add(GROUP_ROLES_MAP[myarg])
-    setMemberDisplayOptionsRole()
-  elif myarg in {'members', 'memberscount'}:
-    rolesSet.add(Ent.ROLE_MEMBER)
-    memberDisplayOptions['members'] = True
-    if myarg == 'memberscount':
-      memberDisplayOptions['membersCountOnly'] = True
-  elif myarg in {'managers', 'managerscount'}:
-    rolesSet.add(Ent.ROLE_MANAGER)
-    memberDisplayOptions['managers'] = True
-    if myarg == 'managerscount':
-      memberDisplayOptions['managersCountOnly'] = True
-  elif myarg in {'owners', 'ownerscount'}:
-    rolesSet.add(Ent.ROLE_OWNER)
-    memberDisplayOptions['owners'] = True
-    if myarg == 'ownerscount':
-      memberDisplayOptions['ownersCountOnly'] = True
-  elif myarg == 'totalcount':
-    memberDisplayOptions['totalCount'] = True
-  elif myarg == 'countsonly':
-    memberDisplayOptions['membersCountOnly'] = memberDisplayOptions['managersCountOnly'] = memberDisplayOptions['ownersCountOnly'] = True
-  else:
-    return False
-  return True
+MEMBERS_TITLES = {
+  'combined': {
+    'total': ['TotalCount', ''],
+    Ent.ROLE_MEMBER: ['MembersCount', 'Members'],
+    Ent.ROLE_MANAGER: ['ManagersCount', 'Managers'],
+    Ent.ROLE_OWNER: ['OwnersCount', 'Owners']
+    },
+  'internal': {
+    'total': ['TotalInternalCount', ''],
+    Ent.ROLE_MEMBER: ['InternalMembersCount', 'InternalMembers'],
+    Ent.ROLE_MANAGER: ['InternalManagersCount', 'InternalManagers'],
+    Ent.ROLE_OWNER: ['InternalOwnersCount', 'InternalOwners']
+    },
+  'external': {
+    'total': ['TotalExternalCount', ''],
+    Ent.ROLE_MEMBER: ['ExternalMembersCount', 'ExternalMembers'],
+    Ent.ROLE_MANAGER: ['ExternalManagersCount', 'ExternalManagers'],
+    Ent.ROLE_OWNER: ['ExternalOwnersCount', 'ExternalOwners']
+    }
+  }
 
 def setMemberDisplayTitles(memberDisplayOptions, csvPF):
   if memberDisplayOptions['totalCount']:
-    csvPF.AddTitles('TotalCount')
-  if memberDisplayOptions['members']:
-    csvPF.AddTitles('MembersCount')
-    if not memberDisplayOptions['membersCountOnly']:
-      csvPF.AddTitles('Members')
-  if memberDisplayOptions['managers']:
-    csvPF.AddTitles('ManagersCount')
-    if not memberDisplayOptions['managersCountOnly']:
-      csvPF.AddTitles('Managers')
-  if memberDisplayOptions['owners']:
-    csvPF.AddTitles('OwnersCount')
-    if not memberDisplayOptions['ownersCountOnly']:
-      csvPF.AddTitles('Owners')
+    csvPF.AddTitles(MEMBERS_TITLES['combined']['total'][0])
+  if not memberDisplayOptions['internal'] and not memberDisplayOptions['external']:
+    memberDisplayOptions['categories'].append('combined')
+  else:
+    if memberDisplayOptions['internal']:
+      memberDisplayOptions['categories'].append('internal')
+    if memberDisplayOptions['external']:
+      memberDisplayOptions['categories'].append('external')
+  for category in memberDisplayOptions['categories']:
+    if memberDisplayOptions['totalCount'] and category != 'combined':
+      csvPF.AddTitles(MEMBERS_TITLES[category]['total'][0])
+    for role in Ent.ROLE_LIST:
+      if memberDisplayOptions[role]['show']:
+        csvPF.AddTitles(MEMBERS_TITLES[category][role][0])
+        if not memberDisplayOptions[role]['countOnly']:
+          csvPF.AddTitles(MEMBERS_TITLES[category][role][1])
 
 def setMemberDisplaySortTitles(memberDisplayOptions, sortTitles):
   if memberDisplayOptions['totalCount']:
-    sortTitles.append('TotalCount')
-  if memberDisplayOptions['members']:
-    sortTitles.append('MembersCount')
-    if not memberDisplayOptions['membersCountOnly']:
-      sortTitles.append('Members')
-  if memberDisplayOptions['managers']:
-    sortTitles.append('ManagersCount')
-    if not memberDisplayOptions['managersCountOnly']:
-      sortTitles.append('Managers')
-  if memberDisplayOptions['owners']:
-    sortTitles.append('OwnersCount')
-    if not memberDisplayOptions['ownersCountOnly']:
-      sortTitles.append('Owners')
+    sortTitles.append(MEMBERS_TITLES['total'][0])
+  for category in memberDisplayOptions['categories']:
+    if memberDisplayOptions['totalCount'] and category != 'combined':
+      sortTitles.append(MEMBERS_TITLES[category]['total'][0])
+    for role in Ent.ROLE_LIST:
+      if memberDisplayOptions[role]['show']:
+        sortTitles.append(MEMBERS_TITLES[category][role][0])
+      if not memberDisplayOptions[role]['countOnly']:
+        sortTitles.append(MEMBERS_TITLES[category][role][1])
 
 def addMemberInfoToRow(row, groupMembers, typesSet, memberOptions, memberDisplayOptions, delimiter,
                        isSuspended, isArchived, ciGroupsAPI):
-  membersCount = managersCount = ownersCount = 0
-  if memberDisplayOptions['members']:
-    membersList = []
-  if memberDisplayOptions['managers']:
-    managersList = []
-  if memberDisplayOptions['owners']:
-    ownersList = []
+  membersInfo = {
+    'combined': {'totalTitle': 'TotalCount',
+                 Ent.ROLE_MEMBER: {'titles': ['MembersCount', 'Members'],
+                                   'count': 0, 'email': []},
+                 Ent.ROLE_MANAGER: {'titles': ['ManagersCount', 'Managers'],
+                                    'count': 0, 'email': []},
+                 Ent.ROLE_OWNER: {'titles': ['OwnersCount', 'Owners'],
+                                  'count': 0, 'email': []}},
+    'internal': {'totalTitle': 'TotalInternalCount',
+                 Ent.ROLE_MEMBER: {'titles': ['InternalMembersCount', 'InternalMembers'],
+                                   'count': 0, 'email': []},
+                 Ent.ROLE_MANAGER: {'titles': ['InternalManagersCount', 'InternalManagers'],
+                                    'count': 0, 'email': []},
+                 Ent.ROLE_OWNER: {'titles': ['InternalOwnersCount', 'InternalOwners'],
+                                  'count': 0, 'email': []}},
+    'external': {'totalTitle': 'TotalExternalCount',
+                 Ent.ROLE_MEMBER: {'titles': ['ExternalMembersCount', 'ExternalMembers'],
+                                   'count': 0, 'email': []},
+                 Ent.ROLE_MANAGER: {'titles': ['ExternalManagersCount', 'ExternalManagers'],
+                                    'count': 0, 'email': []},
+                 Ent.ROLE_OWNER: {'titles': ['ExternalOwnersCount', 'ExternalOwners'],
+                                  'count': 0, 'email': []}}}
   checkMatch = checkMemberMatch if not ciGroupsAPI else checkCIMemberMatch
   for member in groupMembers:
     if not ciGroupsAPI:
@@ -33079,43 +33181,40 @@ def addMemberInfoToRow(row, groupMembers, typesSet, memberOptions, memberDisplay
     if not member_email:
       writeStderr(f' Not sure what to do with: {member}\n')
       continue
+    if not memberDisplayOptions['showCategory']:
+      category = 'combined'
+    else:
+      if member_email.find('@') > 0:
+        _, domain = member_email.lower().split('@', 1)
+        category = 'internal' if domain in memberDisplayOptions['internalDomains'] else 'external'
+      else:
+        category = 'internal'
+      if not memberDisplayOptions[category]:
+        continue
     if ((member['type'] in typesSet) and
         (ciGroupsAPI or _checkMemberIsSuspendedIsArchived(member, isSuspended, isArchived)) and
         checkMatch(member, memberOptions)):
       role = member.get('role', Ent.ROLE_MEMBER)
-      if role == Ent.ROLE_MEMBER:
-        if memberDisplayOptions['members']:
-          membersCount += 1
-          if not memberDisplayOptions['membersCountOnly']:
-            membersList.append(member_email)
-      elif role == Ent.ROLE_MANAGER:
-        if memberDisplayOptions['managers']:
-          managersCount += 1
-          if not memberDisplayOptions['managersCountOnly']:
-            managersList.append(member_email)
-      elif role == Ent.ROLE_OWNER:
-        if memberDisplayOptions['owners']:
-          ownersCount += 1
-          if not memberDisplayOptions['ownersCountOnly']:
-            ownersList.append(member_email)
-      elif memberDisplayOptions['members']:
-        membersCount += 1
-        if not memberDisplayOptions['membersCountOnly']:
-          membersList.append(member_email)
+      if role not in {Ent.ROLE_MEMBER, Ent.ROLE_MANAGER, Ent.ROLE_OWNER}:
+        role = Ent.ROLE_MEMBER
+      if memberDisplayOptions[role]['show']:
+        membersInfo[category][role]['count'] += 1
+        if not memberDisplayOptions[role]['countOnly']:
+          membersInfo[category][role]['email'].append(member_email)
+  totalCount = 0
+  for category in memberDisplayOptions['categories']:
+    categoryCount = 0
+    for role in Ent.ROLE_LIST:
+      if memberDisplayOptions[role]['show']:
+        categoryCount += membersInfo[category][role]['count']
+        row[membersInfo[category][role]['titles'][0]] = membersInfo[category][role]['count']
+        if not memberDisplayOptions[role]['countOnly']:
+          row[membersInfo[category][role]['titles'][1]] = delimiter.join(membersInfo[category][role]['email'])
+    if memberDisplayOptions['totalCount'] and category != 'combined':
+      row[membersInfo[category]['totalTitle']] = categoryCount
+    totalCount += categoryCount
   if memberDisplayOptions['totalCount']:
-    row['TotalCount'] = membersCount+managersCount+ownersCount
-  if memberDisplayOptions['members']:
-    row['MembersCount'] = membersCount
-    if not memberDisplayOptions['membersCountOnly']:
-      row['Members'] = delimiter.join(membersList)
-  if memberDisplayOptions['managers']:
-    row['ManagersCount'] = managersCount
-    if not memberDisplayOptions['managersCountOnly']:
-      row['Managers'] = delimiter.join(managersList)
-  if memberDisplayOptions['owners']:
-    row['OwnersCount'] = ownersCount
-    if not memberDisplayOptions['ownersCountOnly']:
-      row['Owners'] = delimiter.join(ownersList)
+    row['TotalCount'] = totalCount
 
 PRINT_GROUPS_JSON_TITLES = ['email', 'JSON']
 
@@ -33131,9 +33230,10 @@ PRINT_GROUPS_JSON_TITLES = ['email', 'JSON']
 #	[nodeprecated]
 #	[roles <GroupRoleList>]
 #	[members|memberscount] [managers|managerscount] [owners|ownerscount] [totalcount] [countsonly]
+#	[internal] [internaldomains <DomainList>] [external]
 #	[includederivedmembership]
 #	[notsuspended|suspended] [notarchived|archived]
-#	[types <GroupTypeList>]
+#	[types <GroupMemberTypeList>]
 #	[memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
 #	[convertcrnl] [delimiter <Character>] [sortheaders]
 #	[formatjson [quotechar <Character>]]
@@ -33309,7 +33409,7 @@ def doPrintGroups():
   convertCRNL = GC.Values[GC.CSV_OUTPUT_CONVERT_CR_NL]
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   getCloudIdentity = getSettings = showCIgroupKey = sortHeaders = False
-  memberDisplayOptions = initGroupMemberDisplayOptions()
+  memberDisplayOptions = initPGGroupMemberDisplayOptions()
   maxResults = None
   groupFieldsLists = {'cd': ['email'], 'ci': [], 'gs': []}
   csvPF = CSVPrintFile(groupFieldsLists['cd'])
@@ -33396,9 +33496,9 @@ def doPrintGroups():
       for key, value in iter(matchBody.items()):
         matchSettings.setdefault(key, {'notvalues': [], 'values': []})
         matchSettings[key][valueList].append(value)
-    elif getGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions):
+    elif getPGGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions):
       pass
-    elif getGroupTypes(myarg, typesSet):
+    elif getGroupMemberTypes(myarg, typesSet):
       pass
     elif getMemberMatchOptions(myarg, memberOptions):
       pass
@@ -33409,7 +33509,7 @@ def doPrintGroups():
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   if not typesSet:
-    typesSet = ALL_GROUP_TYPES
+    typesSet = ALL_GROUP_MEMBER_TYPES
   updateFieldsForGroupMatchPatterns(matchPatterns, groupFieldsLists['cd'], csvPF)
   if groupFieldsLists['cd']:
     cdfields = ','.join(set(groupFieldsLists['cd']))
@@ -33694,7 +33794,8 @@ def getGroupMembersEntityList(cd, entityList, matchPatterns, fieldsList, kwargsD
     clearUnneededGroupMatchPatterns(matchPatterns)
   return entityList
 
-def getGroupMembers(cd, groupEmail, memberRoles, membersList, membersSet, i, count, memberOptions, level, typesSet):
+def getGroupMembers(cd, groupEmail, memberRoles, membersList, membersSet, i, count,
+                    memberOptions, memberDisplayOptions, level, typesSet):
   def _getMemberDeliverySettings(member):
     if 'delivery_settings' not in member:
       try:
@@ -33720,10 +33821,12 @@ def getGroupMembers(cd, groupEmail, memberRoles, membersList, membersSet, i, cou
   except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden, GAPI.serviceNotAvailable):
     entityUnknownWarning(Ent.GROUP, groupEmail, i, count)
     return
+  checkCategory = memberDisplayOptions['showCategory']
   if not memberOptions[MEMBEROPTION_RECURSIVE]:
     if memberOptions[MEMBEROPTION_NODUPLICATES]:
       for member in groupMembers:
         if (_checkMemberRoleIsSuspendedIsArchived(member, validRoles, memberOptions[MEMBEROPTION_ISSUSPENDED], memberOptions[MEMBEROPTION_ISARCHIVED]) and
+            (not checkCategory or _checkMemberCategory(member, memberDisplayOptions)) and
             member['id'] not in membersSet):
           if memberOptions[MEMBEROPTION_GETDELIVERYSETTINGS]:
             _getMemberDeliverySettings(member)
@@ -33732,7 +33835,8 @@ def getGroupMembers(cd, groupEmail, memberRoles, membersList, membersSet, i, cou
             membersList.append(member)
     else:
       for member in groupMembers:
-        if _checkMemberRoleIsSuspendedIsArchived(member, validRoles, memberOptions[MEMBEROPTION_ISSUSPENDED], memberOptions[MEMBEROPTION_ISARCHIVED]):
+        if (_checkMemberRoleIsSuspendedIsArchived(member, validRoles, memberOptions[MEMBEROPTION_ISSUSPENDED], memberOptions[MEMBEROPTION_ISARCHIVED]) and
+            (not checkCategory or _checkMemberCategory(member, memberDisplayOptions))):
           if memberOptions[MEMBEROPTION_GETDELIVERYSETTINGS]:
             _getMemberDeliverySettings(member)
           if member['type'] in typesSet and checkMemberMatch(member, memberOptions):
@@ -33740,10 +33844,11 @@ def getGroupMembers(cd, groupEmail, memberRoles, membersList, membersSet, i, cou
   elif memberOptions[MEMBEROPTION_NODUPLICATES]:
     groupMemberList = []
     for member in groupMembers:
-      if member['type'] == Ent.TYPE_USER:
+      if member['type'] != Ent.TYPE_GROUP:
         if ((member['type'] in typesSet and
              checkMemberMatch(member, memberOptions) and
              _checkMemberRoleIsSuspendedIsArchived(member, validRoles, memberOptions[MEMBEROPTION_ISSUSPENDED], memberOptions[MEMBEROPTION_ISARCHIVED]) and
+             (not checkCategory or _checkMemberCategory(member, memberDisplayOptions)) and
              member['id'] not in membersSet)):
           if memberOptions[MEMBEROPTION_GETDELIVERYSETTINGS]:
             _getMemberDeliverySettings(member)
@@ -33751,35 +33856,44 @@ def getGroupMembers(cd, groupEmail, memberRoles, membersList, membersSet, i, cou
           member['level'] = level
           member['subgroup'] = groupEmail
           membersList.append(member)
-      elif member['type'] == Ent.TYPE_GROUP:
+      else:
         if member['id'] not in membersSet:
           if memberOptions[MEMBEROPTION_GETDELIVERYSETTINGS]:
             _getMemberDeliverySettings(member)
           membersSet.add(member['id'])
-          if member['type'] in typesSet and checkMemberMatch(member, memberOptions):
+          if (member['type'] in typesSet and
+              checkMemberMatch(member, memberOptions) and
+              (not checkCategory or _checkMemberCategory(member, memberDisplayOptions))):
             member['level'] = level
             member['subgroup'] = groupEmail
             membersList.append(member)
           groupMemberList.append(member['email'])
     for member in groupMemberList:
-      getGroupMembers(cd, member, memberRoles, membersList, membersSet, i, count, memberOptions, level+1, typesSet)
+      getGroupMembers(cd, member, memberRoles, membersList, membersSet, i, count,
+                      memberOptions, memberDisplayOptions, level+1, typesSet)
   else:
     for member in groupMembers:
-      if member['type'] == Ent.TYPE_USER:
+      if member['type'] != Ent.TYPE_GROUP:
         if ((member['type'] in typesSet) and
             checkMemberMatch(member, memberOptions) and
-            _checkMemberRoleIsSuspendedIsArchived(member, validRoles, memberOptions[MEMBEROPTION_ISSUSPENDED], memberOptions[MEMBEROPTION_ISARCHIVED])):
+            _checkMemberRoleIsSuspendedIsArchived(member, validRoles,
+                                                  memberOptions[MEMBEROPTION_ISSUSPENDED],
+                                                  memberOptions[MEMBEROPTION_ISARCHIVED]) and
+            (not checkCategory or _checkMemberCategory(member, memberDisplayOptions))):
           if memberOptions[MEMBEROPTION_GETDELIVERYSETTINGS]:
             _getMemberDeliverySettings(member)
           member['level'] = level
           member['subgroup'] = groupEmail
           membersList.append(member)
-      elif member['type'] == Ent.TYPE_GROUP:
-        if member['type'] in typesSet and checkMemberMatch(member, memberOptions):
+      else:
+        if (member['type'] in typesSet and
+            checkMemberMatch(member, memberOptions) and
+            (not checkCategory or _checkMemberCategory(member, memberDisplayOptions))):
           member['level'] = level
           member['subgroup'] = groupEmail
           membersList.append(member)
-        getGroupMembers(cd, member['email'], memberRoles, membersList, membersSet, i, count, memberOptions, level+1, typesSet)
+        getGroupMembers(cd, member['email'], memberRoles, membersList, membersSet, i, count,
+                        memberOptions, memberDisplayOptions, level+1, typesSet)
 
 GROUPMEMBERS_FIELDS_CHOICE_MAP = {
   'delivery': 'delivery_settings',
@@ -33804,8 +33918,9 @@ GROUPMEMBERS_DEFAULT_FIELDS = ['group', 'type', 'role', 'id', 'status', 'email']
 #	[emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
 #	[descriptionmatchpattern [not] <RegularExpression>]
 #	[roles <GroupRoleList>] [members] [managers] [owners]
+#	[internal] [internaldomains <DomainList>] [external]
 #	[notsuspended|suspended] [notarchived|archived]
-#	[types <GroupTypeList>]
+#	[types <GroupMemberTypeList>]
 #	[memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
 #	[membernames] [showdeliverysettings]
 #	<MembersFieldName>* [fields <MembersFieldNameList>]
@@ -33835,6 +33950,7 @@ def doPrintGroupMembers():
   ci = None
   people = None
   memberOptions = initMemberOptions()
+  memberDisplayOptions = initIPSGMGroupMemberDisplayOptions()
   groupColumn = True
   customerKey = GC.Values[GC.CUSTOMER_ID]
   kwargsDict = initUserGroupDomainQueryFilters()
@@ -33877,9 +33993,9 @@ def doPrintGroupMembers():
       memberOptions[MEMBEROPTION_ISSUSPENDED] = _getIsSuspended(myarg)
     elif myarg in ARCHIVED_ARGUMENTS:
       memberOptions[MEMBEROPTION_ISARCHIVED] = _getIsArchived(myarg)
-    elif getGroupRoles(myarg, rolesSet):
+    elif getIPSGMGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions):
       pass
-    elif getGroupTypes(myarg, typesSet):
+    elif getGroupMemberTypes(myarg, typesSet):
       pass
     elif getMemberMatchOptions(myarg, memberOptions):
       pass
@@ -33924,7 +34040,10 @@ def doPrintGroupMembers():
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   if not typesSet:
-    typesSet = {Ent.TYPE_USER} if memberOptions[MEMBEROPTION_RECURSIVE] else ALL_GROUP_TYPES
+#    typesSet = {Ent.TYPE_USER} if memberOptions[MEMBEROPTION_RECURSIVE] else ALL_GROUP_MEMBER_TYPES
+    typesSet = ALL_GROUP_MEMBER_TYPES.copy()
+    if memberOptions[MEMBEROPTION_RECURSIVE]:
+      typesSet.remove(Ent.TYPE_GROUP)
   entityList = getGroupMembersEntityList(cd, entityList, matchPatterns, cdfieldsList, kwargsDict)
   if not fieldsList:
     for field in GROUPMEMBERS_DEFAULT_FIELDS:
@@ -33939,6 +34058,8 @@ def doPrintGroupMembers():
     fieldsList.remove('group')
   if not groupColumn:
     csvPF.RemoveTitles(['group'])
+  if memberDisplayOptions['showCategory']:
+    csvPF.AddTitles('category')
   if userFieldsList:
     if not memberOptions[MEMBEROPTION_MEMBERNAMES] and 'name.fullName' in userFieldsList:
       memberOptions[MEMBEROPTION_MEMBERNAMES] = True
@@ -33975,7 +34096,8 @@ def doPrintGroupMembers():
       continue
     membersList = []
     membersSet = set()
-    getGroupMembers(cd, groupEmail, getRoles, membersList, membersSet, i, count, memberOptions, level, typesSet)
+    getGroupMembers(cd, groupEmail, getRoles, membersList, membersSet, i, count,
+                    memberOptions, memberDisplayOptions, level, typesSet)
     if showOwnedBy and not checkGroupShowOwnedBy(showOwnedBy, membersList):
       continue
     for member in membersList:
@@ -33992,6 +34114,8 @@ def doPrintGroupMembers():
         row[title] = member.get(title, '')
       if setCustomerMemberEmail and (memberId == customerKey):
         row['email'] = memberId
+      if memberDisplayOptions['showCategory']:
+        row['category'] = member['category']
       memberType = member.get('type')
       if userFieldsList:
         if memberOptions[MEMBEROPTION_MEMBERNAMES]:
@@ -34080,7 +34204,10 @@ def doPrintGroupMembers():
                                    ensure_ascii=False, sort_keys=True)
         csvPF.WriteRowNoFilter(fjrow)
   if not FJQC.formatJSON:
-    csvPF.SetSortTitles(GROUPMEMBERS_DEFAULT_FIELDS)
+    sortTitles = GROUPMEMBERS_DEFAULT_FIELDS
+    if memberDisplayOptions['showCategory']:
+      sortTitles.append('category')
+    csvPF.SetSortTitles(sortTitles)
     csvPF.SortTitles()
     csvPF.SetSortTitles([])
     if memberOptions[MEMBEROPTION_RECURSIVE]:
@@ -34094,8 +34221,9 @@ def doPrintGroupMembers():
 #	[emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
 #	[descriptionmatchpattern [not] <RegularExpression>]
 #	[roles <GroupRoleList>] [members] [managers] [owners] [depth <Number>]
+#	[internal] [internaldomains <DomainList>] [external]
 #	[notsuspended|suspended] [notarchived|archived]
-#	[types <GroupTypeList>]
+#	[types <GroupMemberTypeList>]
 #	[memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
 #	[includederivedmembership]
 def doShowGroupMembers():
@@ -34125,9 +34253,16 @@ def doShowGroupMembers():
     if depth == 0 or Ent.TYPE_GROUP in typesSet:
       Ind.Increment()
     for member in sorted(membersList, key=lambda k: (_roleOrder(k.get('role', Ent.ROLE_MEMBER)), _typeOrder(k['type']), _statusOrder(k.get('status', '')))):
-      if _checkMemberIsSuspendedIsArchived(member, memberOptions[MEMBEROPTION_ISSUSPENDED], memberOptions[MEMBEROPTION_ISARCHIVED]):
-        if member.get('role', Ent.ROLE_MEMBER) in rolesSet and member['type'] in typesSet and checkMemberMatch(member, memberOptions):
-          printKeyValueList([f'{member.get("role", Ent.ROLE_MEMBER)}, {member["type"]}, {member.get("email", member["id"])}, {member.get("status", "")}'])
+      if (_checkMemberIsSuspendedIsArchived(member, memberOptions[MEMBEROPTION_ISSUSPENDED], memberOptions[MEMBEROPTION_ISARCHIVED]) and
+          (not checkCategory or _checkMemberCategory(member, memberDisplayOptions))):
+        if (member.get('role', Ent.ROLE_MEMBER) in rolesSet and
+            member['type'] in typesSet and
+            checkMemberMatch(member, memberOptions)):
+          memberDetails = f'{member.get("role", Ent.ROLE_MEMBER)}, {member["type"]}, {member.get("email", member["id"])}'
+          if checkCategory:
+            memberDetails += f', {member["category"]}'
+          memberDetails += f' , {member.get("status", "")}'
+          printKeyValueList([memberDetails])
         if not includeDerivedMembership and (member['type'] == Ent.TYPE_GROUP) and (maxdepth == -1 or depth < maxdepth):
           _showGroup(member['email'], depth+1)
     if depth == 0 or Ent.TYPE_GROUP in typesSet:
@@ -34142,6 +34277,7 @@ def doShowGroupMembers():
   rolesSet = set()
   typesSet = set()
   memberOptions = initMemberOptions()
+  memberDisplayOptions = initIPSGMGroupMemberDisplayOptions()
   matchPatterns = {}
   maxdepth = -1
   includeDerivedMembership = False
@@ -34163,9 +34299,9 @@ def doShowGroupMembers():
       memberOptions[MEMBEROPTION_ISSUSPENDED] = _getIsSuspended(myarg)
     elif myarg in ARCHIVED_ARGUMENTS:
       memberOptions[MEMBEROPTION_ISARCHIVED] = _getIsArchived(myarg)
-    elif getGroupRoles(myarg, rolesSet):
+    elif getIPSGMGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions):
       pass
-    elif getGroupTypes(myarg, typesSet):
+    elif getGroupMemberTypes(myarg, typesSet):
       pass
     elif getMemberMatchOptions(myarg, memberOptions):
       pass
@@ -34178,7 +34314,8 @@ def doShowGroupMembers():
   if not rolesSet:
     rolesSet = ALL_GROUP_ROLES
   if not typesSet:
-    typesSet = ALL_GROUP_TYPES
+    typesSet = ALL_GROUP_MEMBER_TYPES
+  checkCategory = memberDisplayOptions['showCategory']
   entityList = getGroupMembersEntityList(cd, entityList, matchPatterns, cdfieldsList, kwargsDict)
   i = 0
   count = len(entityList)
@@ -34986,22 +35123,26 @@ def doUpdateCIGroups():
 def doDeleteCIGroups():
   doDeleteGroups(ciGroupsAPI=True)
 
-CIGROUP_TYPES_MAP = {
+CIGROUP_MEMBER_TYPES_MAP = {
+  'cbcmbrowser': Ent.TYPE_CBCM_BROWSER,
+  'chromeosdevice': Ent.TYPE_OTHER,
   'customer': Ent.TYPE_CUSTOMER,
   'group': Ent.TYPE_GROUP,
   'other': Ent.TYPE_OTHER,
   'serviceaccount': Ent.TYPE_SERVICE_ACCOUNT,
   'user': Ent.TYPE_USER,
   }
-ALL_CIGROUP_TYPES = {Ent.TYPE_CUSTOMER, Ent.TYPE_GROUP, Ent.TYPE_OTHER, Ent.TYPE_SERVICE_ACCOUNT, Ent.TYPE_USER}
+ALL_CIGROUP_MEMBER_TYPES = {
+  Ent.TYPE_CBCM_BROWSER, Ent.TYPE_CUSTOMER, Ent.TYPE_GROUP,
+  Ent.TYPE_OTHER, Ent.TYPE_SERVICE_ACCOUNT, Ent.TYPE_USER}
 
-def getCIGroupTypes(myarg, typesSet):
+def getCIGroupMemberTypes(myarg, typesSet):
   if myarg in {'type', 'types'}:
-    for gtype in getString(Cmd.OB_GROUP_TYPE_LIST).lower().replace(',', ' ').split():
-      if gtype in CIGROUP_TYPES_MAP:
-        typesSet.add(CIGROUP_TYPES_MAP[gtype])
+    for gtype in getString(Cmd.OB_GROUP_TYPE_LIST).lower().replace('_', '').replace(',', ' ').split():
+      if gtype in CIGROUP_MEMBER_TYPES_MAP:
+        typesSet.add(CIGROUP_MEMBER_TYPES_MAP[gtype])
       else:
-        invalidChoiceExit(gtype, CIGROUP_TYPES_MAP, True)
+        invalidChoiceExit(gtype, CIGROUP_MEMBER_TYPES_MAP, True)
   else:
     return False
   return True
@@ -35011,7 +35152,8 @@ def getCIGroupTypes(myarg, typesSet):
 #	[nosecurity|nosecuritysettings]
 #	[allfields|<CIGroupFieldName>*|(fields <CIGroupFieldNameList>)]
 #	[roles <GroupRoleList>] [members] [managers] [owners]
-#	[types <CIGroupTypeList>]
+#	[internal] [internaldomains <DomainList>] [external]
+#	[types <CIGroupMemberTypeList>]
 #	[memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
 #	[formatjson]
 def doInfoCIGroups():
@@ -35061,6 +35203,7 @@ def doInfoCIGroups():
   rolesSet = set()
   typesSet = set()
   memberOptions = initMemberOptions()
+  memberDisplayOptions = initIPSGMGroupMemberDisplayOptions()
   cachedGroupMembers = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -35070,9 +35213,9 @@ def doInfoCIGroups():
       getUsers = False
     elif myarg == 'membertree':
       showMemberTree = True
-    elif getGroupRoles(myarg, rolesSet):
+    elif getIPSGMGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions):
       getUsers = True
-    elif getCIGroupTypes(myarg, typesSet):
+    elif getCIGroupMemberTypes(myarg, typesSet):
       pass
     elif getMemberMatchOptions(myarg, memberOptions):
       pass
@@ -35102,7 +35245,7 @@ def doInfoCIGroups():
     else:
       FJQC.GetFormatJSON(myarg)
   if not typesSet:
-    typesSet = ALL_CIGROUP_TYPES
+    typesSet = ALL_CIGROUP_MEMBER_TYPES
   fields = getFieldsFromFieldsList(groupFieldsLists['ci'])
   if not showJoinDate and not showUpdateDate:
     view = 'BASIC'
@@ -35110,6 +35253,7 @@ def doInfoCIGroups():
   else:
     view = 'FULL'
     pageSize = 500
+  checkCategory = memberDisplayOptions['showCategory']
   i = 0
   count = len(entityList)
   for group in entityList:
@@ -35131,7 +35275,10 @@ def doInfoCIGroups():
         members = []
         for member in result:
           getCIGroupMemberRoleFixType(member)
-          if (member['type'] in typesSet and _checkMemberRole(member, rolesSet) and checkCIMemberMatch(member, memberOptions)):
+          if (member['type'] in typesSet and
+              _checkMemberRole(member, rolesSet) and
+              checkCIMemberMatch(member, memberOptions) and
+              (not checkCategory or _checkCIMemberCategory(member, memberDisplayOptions))):
             members.append(member)
       if getSecuritySettings:
         cigInfo['SecuritySettings'] = callGAPI(ci.groups(), 'getSecuritySettings',
@@ -35150,14 +35297,16 @@ def doInfoCIGroups():
         for member in members:
           memberEmail = member.get(CIGROUP_MEMBERKEY, {}).get('id', member['name'])
           getCIGroupMemberRoleFixType(member)
-          kvList = [member['role'].lower(), f'{memberEmail} ({member["type"].lower()})']
+          memberDetails = [member['role'].lower(), f'{memberEmail} ({member["type"].lower()})']
+          if checkCategory:
+            memberDetails[1] += f' ({member["category"]})'
           if showJoinDate:
-            kvList.extend(['joined', formatLocalTime(member['createTime']) if 'createTime' in member else UNKNOWN])
+            memberDetails.extend(['joined', formatLocalTime(member['createTime']) if 'createTime' in member else UNKNOWN])
           if showUpdateDate:
-            kvList.extend(['updated', formatLocalTime(member['updateTime']) if 'updateTime' in member else UNKNOWN])
+            memberDetails.extend(['updated', formatLocalTime(member['updateTime']) if 'updateTime' in member else UNKNOWN])
           if 'expireTime' in member:
-            kvList.extend(['expires', formatLocalTime(member['expireTime'])])
-          printKeyValueList(kvList)
+            memberDetails.extend(['expires', formatLocalTime(member['expireTime'])])
+          printKeyValueList(memberDetails)
         Ind.Decrement()
         printKeyValueList([Msg.TOTAL_ITEMS_IN_ENTITY.format(Ent.Plural(entityType), Ent.Singular(Ent.CLOUD_IDENTITY_GROUP)), len(members)])
         Ind.Decrement()
@@ -35334,33 +35483,6 @@ def doInfoCIPolicies():
     _showPolicies(policies, FJQC, add_warnings, no_appnames,
                   None, None, cd, groups_ci)
 
-# gam create policy
-def doCreateCIPolicy():
-  cip_write = buildGAPIObject(API.CLOUDIDENTITY_POLICY_WRITE)
-  policy = {
-             'policyQuery': {
-               'orgUnit': 'orgUnits/04j35uvn409nb5l',
-           #    'sortOrder': 1,
-               },
-              'setting': {
-                'type': 'settings/detector.word_list',
-                'value': {
-                  'displayName': 'Reindeer',
-                  'wordList': ['Dasher',
-                               'Dancer',
-                               'Prancer',
-                               'Vixen',
-                               'Comet',
-                               'Cupid',
-                               'Donner',
-                               'Blitzen',
-                               'Rudolph'],
-                  }
-                }
-            }
-  result = callGAPI(cip_write.policies(), 'create', body=policy)
-  print(result)
-
 # gam print policies [todrive <ToDriveAttribute>*]
 #	[filter <String>]  [nowarnings] [noappnames]
 #	[group <RegularExpression>] [ou|org|orgunit <RegularExpression>]
@@ -35431,7 +35553,8 @@ PRINT_CIGROUPS_JSON_TITLES = ['email', 'JSON']
 #	[basic|allfields|(<CIGroupFieldName>* [fields <CIGroupFieldNameList>])]
 #	[roles <GroupRoleList>] [memberrestrictions]
 #	[members|memberscount] [managers|managerscount] [owners|ownerscount] [totalcount] [countsonly]
-#	[types <CIGroupTypeList>]
+#	[internal] [internaldomains <DomainList>] [external]
+#	[types <CIGroupMemberTypeList>]
 #	[memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
 #	[convertcrnl] [delimiter <Character>]
 #	[formatjson [quotechar <Character>]]
@@ -35474,7 +35597,7 @@ def doPrintCIGroups():
   setTrueCustomerId()
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   memberRestrictions = sortHeaders = False
-  memberDisplayOptions = initGroupMemberDisplayOptions()
+  memberDisplayOptions = initPGGroupMemberDisplayOptions()
   pageSize = 500
   parent = f'customers/{GC.Values[GC.CUSTOMER_ID]}'
   groupFieldsLists = {'ci': ['groupKey']}
@@ -35528,9 +35651,9 @@ def doPrintCIGroups():
           csvPF.AddField(field, CIGROUP_FIELDS_CHOICE_MAP, groupFieldsLists['ci'])
         else:
           invalidChoiceExit(field, list(CIGROUP_FIELDS_CHOICE_MAP), True)
-    elif getGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions):
+    elif getPGGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions):
       pass
-    elif getCIGroupTypes(myarg, typesSet):
+    elif getCIGroupMemberTypes(myarg, typesSet):
       pass
     elif getMemberMatchOptions(myarg, memberOptions):
       pass
@@ -35541,8 +35664,7 @@ def doPrintCIGroups():
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   if not typesSet:
-    typesSet = ALL_CIGROUP_TYPES
-    csvPF.SetJSONTitles(PRINT_CIGROUPS_JSON_TITLES)
+    typesSet = ALL_CIGROUP_MEMBER_TYPES
   csvPF.MapTitles('name', 'id')
   csvPF.MapTitles('displayName', 'name')
   csvPF.RemoveTitles('labels')
@@ -35744,7 +35866,8 @@ def getCIGroupTransitiveMembers(ci, groupName, membersList, i, count):
     membersList.append(getCIGroupTransitiveMemberRoleFixType(groupName, member))
   return True
 
-def getCIGroupMembers(ci, groupName, memberRoles, membersList, membersSet, i, count, memberOptions, level, typesSet):
+def getCIGroupMembers(ci, groupName, memberRoles, membersList, membersSet, i, count,
+                      memberOptions, memberDisplayOptions, level, typesSet):
   printGettingAllEntityItemsForWhom(memberRoles if memberRoles else Ent.ROLE_MANAGER_MEMBER_OWNER, groupName, i, count)
   validRoles = _getCIRoleVerification(memberRoles)
   if memberOptions[MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP]:
@@ -35767,59 +35890,75 @@ def getCIGroupMembers(ci, groupName, memberRoles, membersList, membersSet, i, co
           GAPI.permissionDenied, GAPI.serviceNotAvailable):
     entityUnknownWarning(Ent.CLOUD_IDENTITY_GROUP, groupName, i, count)
     return
+  checkCategory = memberDisplayOptions['showCategory']
   if not memberOptions[MEMBEROPTION_RECURSIVE]:
     if memberOptions[MEMBEROPTION_NODUPLICATES]:
       for member in groupMembers:
         getCIGroupMemberRoleFixType(member)
-        if _checkMemberRole(member, validRoles) and member['name'] not in membersSet:
-          membersSet.add(member['name'])
+        memberName = member.get(CIGROUP_MEMBERKEY, {}).get('id', '')
+        if (_checkMemberRole(member, validRoles) and
+            (not checkCategory or _checkCIMemberCategory(member, memberDisplayOptions)) and
+            memberName not in membersSet):
+          membersSet.add(memberName)
           if member['type'] in typesSet and checkCIMemberMatch(member, memberOptions):
             membersList.append(member)
     else:
       for member in groupMembers:
         getCIGroupMemberRoleFixType(member)
-        if _checkMemberRole(member, validRoles):
+        if (_checkMemberRole(member, validRoles) and
+            (not checkCategory or _checkCIMemberCategory(member, memberDisplayOptions))):
           if member['type'] in typesSet and checkCIMemberMatch(member, memberOptions):
             membersList.append(member)
   elif memberOptions[MEMBEROPTION_NODUPLICATES]:
     groupMemberList = []
     for member in groupMembers:
       getCIGroupMemberRoleFixType(member)
-      if member['type'] == Ent.TYPE_USER:
-        if (member['type'] in typesSet and checkCIMemberMatch(member, memberOptions) and
+      memberName = member.get(CIGROUP_MEMBERKEY, {}).get('id', '')
+      if member['type'] != Ent.TYPE_GROUP:
+        if (member['type'] in typesSet and
+            checkCIMemberMatch(member, memberOptions) and
             _checkMemberRole(member, validRoles) and
-            member['name'] not in membersSet):
-          membersSet.add(member['name'])
+            (not checkCategory or _checkCIMemberCategory(member, memberDisplayOptions)) and
+            memberName not in membersSet):
+          membersSet.add(memberName)
           member['level'] = level
           member['subgroup'] = groupName
           membersList.append(member)
-      elif member['type'] == Ent.TYPE_GROUP:
-        if member['name'] not in membersSet:
-          membersSet.add(member['name'])
-          if member['type'] in typesSet and checkCIMemberMatch(member, memberOptions):
+      else:
+        if memberName not in membersSet:
+          membersSet.add(memberName)
+          if (member['type'] in typesSet and
+              checkCIMemberMatch(member, memberOptions) and
+              (not checkCategory or _checkCIMemberCategory(member, memberDisplayOptions))):
             member['level'] = level
             member['subgroup'] = groupName
             membersList.append(member)
           _, gname = member['name'].rsplit('/', 1)
           groupMemberList.append(f'groups/{gname}')
     for member in groupMemberList:
-      getCIGroupMembers(ci, member, memberRoles, membersList, membersSet, i, count, memberOptions, level+1, typesSet)
+      getCIGroupMembers(ci, member, memberRoles, membersList, membersSet, i, count,
+                        memberOptions, memberDisplayOptions, level+1, typesSet)
   else:
     for member in groupMembers:
       getCIGroupMemberRoleFixType(member)
-      if member['type'] == Ent.TYPE_USER:
-        if (member['type'] in typesSet and checkCIMemberMatch(member, memberOptions) and
-            _checkMemberRole(member, validRoles)):
+      if member['type'] != Ent.TYPE_GROUP:
+        if (member['type'] in typesSet and
+            checkCIMemberMatch(member, memberOptions) and
+            _checkMemberRole(member, validRoles) and
+            (not checkCategory or _checkCIMemberCategory(member, memberDisplayOptions))):
           member['level'] = level
           member['subgroup'] = groupName
           membersList.append(member)
-      elif member['type'] == Ent.TYPE_GROUP:
-        if member['type'] in typesSet and checkCIMemberMatch(member, memberOptions):
+      else:
+        if (member['type'] in typesSet and
+            checkCIMemberMatch(member, memberOptions) and
+            (not checkCategory or _checkCIMemberCategory(member, memberDisplayOptions))):
           member['level'] = level
           member['subgroup'] = groupName
           membersList.append(member)
         _, gname = member['name'].rsplit('/', 1)
-        getCIGroupMembers(ci, f'groups/{gname}', memberRoles, membersList, membersSet, i, count, memberOptions, level+1, typesSet)
+        getCIGroupMembers(ci, f'groups/{gname}', memberRoles, membersList, membersSet, i, count,
+                          memberOptions, memberDisplayOptions, level+1, typesSet)
 
 CIGROUPMEMBERS_FIELDS_CHOICE_MAP = {
   'createtime': 'createTime',
@@ -35850,7 +35989,7 @@ CIGROUPMEMBERS_TIME_OBJECTS = {'createTime', 'updateTime', 'expireTime'}
 #	[emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
 #	[descriptionmatchpattern [not] <RegularExpression>]
 #	[roles <GroupRoleList>] [members] [managers] [owners]
-#	[types <CIGroupTypeList>]
+#	[types <CIGroupMemberTypeList>]
 #	[memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
 #	<CIGroupMembersFieldName>* [fields <CIGroupMembersFieldNameList>]
 #	[(recursive [noduplicates])|includederivedmembership] [nogroupeemail]
@@ -35859,6 +35998,7 @@ def doPrintCIGroupMembers():
   ci = buildGAPIObject(CIGROUP_MEMBER_API)
   setTrueCustomerId()
   memberOptions = initMemberOptions()
+  memberDisplayOptions = initIPSGMGroupMemberDisplayOptions()
   groupColumn = True
   subTitle = f'{Msg.ALL} {Ent.Plural(Ent.CLOUD_IDENTITY_GROUP)}'
   fieldsList = []
@@ -35891,9 +36031,9 @@ def doPrintCIGroupMembers():
       entityList = getEntityList(Cmd.OB_GROUP_ENTITY)
       subTitle = f'{Msg.SELECTED} {Ent.Plural(Ent.CLOUD_IDENTITY_GROUP)}'
       query = None
-    elif getGroupRoles(myarg, rolesSet):
+    elif getIPSGMGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions):
       pass
-    elif getCIGroupTypes(myarg, typesSet):
+    elif getCIGroupMemberTypes(myarg, typesSet):
       pass
     elif getMemberMatchOptions(myarg, memberOptions):
       pass
@@ -35912,7 +36052,10 @@ def doPrintCIGroupMembers():
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   if not typesSet:
-    typesSet = {Ent.TYPE_USER} if memberOptions[MEMBEROPTION_RECURSIVE] else ALL_CIGROUP_TYPES
+#    typesSet = {Ent.TYPE_USER} if memberOptions[MEMBEROPTION_RECURSIVE] else ALL_CIGROUP_MEMBER_TYPES
+    typesSet = ALL_CIGROUP_MEMBER_TYPES.copy()
+    if memberOptions[MEMBEROPTION_RECURSIVE]:
+      typesSet.remove(Ent.TYPE_GROUP)
   fields = ','.join(set(groupFieldsLists['ci']))
   entityList = getCIGroupMembersEntityList(ci, entityList, query, subTitle, matchPatterns, groupFieldsLists['ci'], csvPF)
   if not fieldsList:
@@ -35920,6 +36063,8 @@ def doPrintCIGroupMembers():
       addFieldToFieldsList(field, CIGROUPMEMBERS_FIELDS_CHOICE_MAP, fieldsList)
   if not groupColumn:
     csvPF.RemoveTitles(['group'])
+  if memberDisplayOptions['showCategory']:
+    csvPF.AddTitles('category')
   if FJQC.formatJSON:
     if groupColumn:
       csvPF.SetJSONTitles(['group', 'JSON'])
@@ -35960,7 +36105,8 @@ def doPrintCIGroupMembers():
       continue
     membersList = []
     membersSet = set()
-    getCIGroupMembers(ci, groupEntity['name'], getRoles, membersList, membersSet, i, count, memberOptions, level, typesSet)
+    getCIGroupMembers(ci, groupEntity['name'], getRoles, membersList, membersSet, i, count,
+                      memberOptions, memberDisplayOptions, level, typesSet)
     if showOwnedBy and not checkCIGroupShowOwnedBy(showOwnedBy, membersList):
       continue
     for member in membersList:
@@ -35976,6 +36122,8 @@ def doPrintCIGroupMembers():
       if memberOptions[MEMBEROPTION_RECURSIVE]:
         row['level'] = member['level']
         row['subgroup'] = member['subgroup']
+      if memberDisplayOptions['showCategory']:
+        row['category'] = member['category']
       mapCIGroupMemberFieldNames(dmember)
       if not FJQC.formatJSON:
         csvPF.WriteRowTitles(flattenJSON(dmember, flattened=row, timeObjects=CIGROUPMEMBERS_TIME_OBJECTS))
@@ -35989,7 +36137,11 @@ def doPrintCIGroupMembers():
         csvPF.WriteRowNoFilter(fjrow)
   if not FJQC.formatJSON:
     sortTitles = ['group'] if groupColumn else []
-    csvPF.SetSortTitles(sortTitles+CIGROUPMEMBERS_SORT_FIELDS)
+    sortTitles.extend(CIGROUPMEMBERS_SORT_FIELDS)
+    if memberDisplayOptions['showCategory']:
+      emailIndex = sortTitles.index('email')
+      sortTitles.insert(emailIndex+1, 'category')
+    csvPF.SetSortTitles(sortTitles)
     csvPF.SortTitles()
     csvPF.SetSortTitles([])
     if memberOptions[MEMBEROPTION_RECURSIVE]:
@@ -36002,7 +36154,8 @@ def doPrintCIGroupMembers():
 #	[emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
 #	[descriptionmatchpattern [not] <RegularExpression>]
 #	[roles <GroupRoleList>] [members] [managers] [owners] [depth <Number>]
-#	[types <CIGroupTypeList>]
+#	[internal] [internaldomains <DomainList>] [external]
+#	[types <CIGroupMemberTypeList>]
 #	[memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
 #	[includederivedmembership]
 def doShowCIGroupMembers():
@@ -36038,15 +36191,21 @@ def doShowCIGroupMembers():
     if depth == 0 or Ent.TYPE_GROUP in typesSet:
       Ind.Increment()
     for member in sorted(membersList, key=lambda k: (_roleOrder(k.get('role', Ent.ROLE_MEMBER)), _typeOrder(k['type']))):
-      if (member['type'] in typesSet and _checkMemberRole(member, rolesSet) and checkCIMemberMatch(member, memberOptions)):
-        memberDetails = f'{member.get("role", Ent.ROLE_MEMBER)}, {member["type"]}, {member[CIGROUP_MEMBERKEY]["id"]}'
-        for field in ['createTime', 'updateTime', 'expireTime']:
-          if field in member:
-            memberDetails += f', {formatLocalTime(member[field])}'
-        printKeyValueList([memberDetails])
-      if not includeDerivedMembership and (member['type'] == Ent.TYPE_GROUP) and (maxdepth == -1 or depth < maxdepth):
-        _, gname = member['name'].rsplit('/', 1)
-        _showGroup(f'groups/{gname}', member[CIGROUP_MEMBERKEY]['id'], depth+1)
+      if (_checkMemberIsSuspendedIsArchived(member, memberOptions[MEMBEROPTION_ISSUSPENDED], memberOptions[MEMBEROPTION_ISARCHIVED]) and
+          (not checkCategory or _checkCIMemberCategory(member, memberDisplayOptions))):
+        if (_checkMemberRole(member, rolesSet) and
+            member['type'] in typesSet and
+            checkCIMemberMatch(member, memberOptions)):
+          memberDetails = f'{member.get("role", Ent.ROLE_MEMBER)}, {member["type"]}, {member[CIGROUP_MEMBERKEY]["id"]}'
+          if checkCategory:
+            memberDetails += f', {member["category"]}'
+          for field in ['createTime', 'updateTime', 'expireTime']:
+            if field in member:
+              memberDetails += f', {formatLocalTime(member[field])}'
+          printKeyValueList([memberDetails])
+        if not includeDerivedMembership and (member['type'] == Ent.TYPE_GROUP) and (maxdepth == -1 or depth < maxdepth):
+          _, gname = member['name'].rsplit('/', 1)
+          _showGroup(f'groups/{gname}', member[CIGROUP_MEMBERKEY]['id'], depth+1)
     if depth == 0 or Ent.TYPE_GROUP in typesSet:
       Ind.Decrement()
 
@@ -36058,6 +36217,7 @@ def doShowCIGroupMembers():
   rolesSet = set()
   typesSet = set()
   memberOptions = initMemberOptions()
+  memberDisplayOptions = initIPSGMGroupMemberDisplayOptions()
   matchPatterns = {}
   maxdepth = -1
   includeDerivedMembership = False
@@ -36081,9 +36241,9 @@ def doShowCIGroupMembers():
       entityList = getEntityList(Cmd.OB_GROUP_ENTITY)
       subTitle = f'{Msg.SELECTED} {Ent.Plural(Ent.CLOUD_IDENTITY_GROUP)}'
       query = None
-    elif getGroupRoles(myarg, rolesSet):
+    elif getIPSGMGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions):
       pass
-    elif getCIGroupTypes(myarg, typesSet):
+    elif getCIGroupMemberTypes(myarg, typesSet):
       pass
     elif getMemberMatchOptions(myarg, memberOptions):
       pass
@@ -36096,7 +36256,8 @@ def doShowCIGroupMembers():
   if not rolesSet:
     rolesSet = ALL_GROUP_ROLES
   if not typesSet:
-    typesSet = ALL_CIGROUP_TYPES
+    typesSet = ALL_CIGROUP_MEMBER_TYPES
+  checkCategory = memberDisplayOptions['showCategory']
   fields = ','.join(set(groupFieldsLists['ci']))
   entityList = getCIGroupMembersEntityList(ci, entityList, query, subTitle, matchPatterns, groupFieldsLists['ci'], None)
   i = 0
@@ -75182,7 +75343,6 @@ MAIN_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_INBOUNDSSOPROFILE:	doCreateInboundSSOProfile,
   Cmd.ARG_ORG:			doCreateOrg,
   Cmd.ARG_PERMISSION:		doCreatePermissions,
-  Cmd.ARG_CIPOLICY:		doCreateCIPolicy,
   Cmd.ARG_PRINTER:		doCreatePrinter,
   Cmd.ARG_PROJECT:		doCreateProject,
   Cmd.ARG_RESOLDCUSTOMER:	doCreateResoldCustomer,
