@@ -89,6 +89,7 @@ from traceback import print_exc
 import types
 from urllib.parse import quote, quote_plus, unquote, urlencode, urlparse, parse_qs
 import uuid
+import warnings
 import webbrowser
 import wsgiref.simple_server
 import wsgiref.util
@@ -5661,7 +5662,10 @@ def getServiceAccountEmailFromID(account_id, sal=None):
   sa_emails = []
   for _, raw_cert in certs.items():
     cert = x509.load_pem_x509_certificate(raw_cert.encode(), default_backend())
-    mg = re.match(sa_cn_rx, cert.issuer.rfc4514_string())
+    # suppress crytography warning due to long service account email
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', message='.*Attribute\'s length.*')
+        mg = re.match(sa_cn_rx, cert.issuer.rfc4514_string())
     if mg:
       sa_email = f'{mg.group(1)}@{mg.group(2)}.iam.gserviceaccount.com'
       if sa_email not in sa_emails:
