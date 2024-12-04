@@ -55,7 +55,6 @@ CONTACTS = 'contacts'
 CONTACTDELEGATION = 'contactdelegation'
 DATATRANSFER = 'datatransfer'
 DIRECTORY = 'directory'
-DIRECTORY_BETA = 'directory_beta'
 DOCS = 'docs'
 DRIVE2 = 'drive2'
 DRIVE3 = 'drive3'
@@ -235,7 +234,6 @@ _INFO = {
   CONTACTDELEGATION: {'name': 'Contact Delegation API', 'version': 'v1', 'v2discovery': True, 'localjson': True},
   DATATRANSFER: {'name': 'Data Transfer API', 'version': 'datatransfer_v1', 'v2discovery': True, 'mappedAPI': 'admin'},
   DIRECTORY: {'name': 'Directory API', 'version': 'directory_v1', 'v2discovery': True, 'mappedAPI': 'admin'},
-  DIRECTORY_BETA: {'name': 'Directory API', 'version': 'directory_v1.1beta1', 'v2discovery': True, 'mappedAPI': 'admin', 'localjson': True},
   DOCS: {'name': 'Docs API', 'version': 'v1', 'v2discovery': True},
   DRIVE2: {'name': 'Drive API v2', 'version': 'v2', 'v2discovery': False, 'mappedAPI': 'drive'},
   DRIVE3: {'name': 'Drive API v3', 'version': 'v3', 'v2discovery': False, 'mappedAPI': 'drive'},

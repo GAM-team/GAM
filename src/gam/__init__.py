@@ -16522,7 +16522,6 @@ def doCreateAdmin():
     myarg = getArgument()
     if myarg == 'condition':
       body['condition'] = getChoice(ADMIN_CONDITION_CHOICE_MAP, mapChoice=True)
-      cd = buildGAPIObject(API.DIRECTORY_BETA)
     else:
       unknownArgumentExit()
   try:
@@ -16656,7 +16655,6 @@ def doPrintShowAdmins():
       fieldsList.append('condition')
       if csvPF:
         csvPF.AddTitle('condition')
-      cd = buildGAPIObject(API.DIRECTORY_BETA)
     elif myarg == 'privileges':
       showPrivileges = True
     elif myarg == 'oneitemperrow':
