@@ -11484,7 +11484,7 @@ def _getLoginHintProjectInfo(createCmd):
     if login_hint and login_hint.find('@') == -1:
       Cmd.Backup()
       login_hint = None
-    projectInfo['projectId'] = getString(Cmd.OB_STRING, optional=True, minLen=6, maxLen=101).strip()
+    projectInfo['projectId'] = getString(Cmd.OB_STRING, optional=True, minLen=6, maxLen=30).strip()
     if projectInfo['projectId']:
       _checkProjectId(projectInfo['projectId'])
     checkForExtraneousArguments()
@@ -11496,7 +11496,7 @@ def _getLoginHintProjectInfo(createCmd):
       elif myarg == 'nokey':
         create_key = False
       elif myarg == 'project':
-        projectInfo['projectId'] = getString(Cmd.OB_STRING, minLen=6, maxLen=101)
+        projectInfo['projectId'] = getString(Cmd.OB_STRING, minLen=6, maxLen=30)
         _checkProjectId(projectInfo['projectId'])
       elif createCmd and myarg == 'parent':
         projectInfo['parent'] = getString(Cmd.OB_STRING)
