@@ -11472,7 +11472,6 @@ def _generateProjectSvcAcctId(prefix):
   return f'{prefix}-{"".join(random.choice(LOWERNUMERIC_CHARS) for _ in range(5))}'
 
 def _getLoginHintProjectInfo(createCmd):
-  print('a')
   login_hint = None
   create_key = True
   appInfo = {'applicationTitle': '', 'supportEmail': ''}
@@ -11485,9 +11484,7 @@ def _getLoginHintProjectInfo(createCmd):
     if login_hint and login_hint.find('@') == -1:
       Cmd.Backup()
       login_hint = None
-    print(1)
-    projectInfo['projectId'] = getString(Cmd.OB_STRING, optional=True, minLen=6, maxLen=999999).strip()
-    print(2)
+    projectInfo['projectId'] = getString(Cmd.OB_STRING, optional=True, minLen=6, maxLen=101).strip()
     if projectInfo['projectId']:
       _checkProjectId(projectInfo['projectId'])
     checkForExtraneousArguments()
@@ -11499,7 +11496,7 @@ def _getLoginHintProjectInfo(createCmd):
       elif myarg == 'nokey':
         create_key = False
       elif myarg == 'project':
-        projectInfo['projectId'] = getString(Cmd.OB_STRING, minLen=6, maxLen=9999)
+        projectInfo['projectId'] = getString(Cmd.OB_STRING, minLen=6, maxLen=101)
         _checkProjectId(projectInfo['projectId'])
       elif createCmd and myarg == 'parent':
         projectInfo['parent'] = getString(Cmd.OB_STRING)
@@ -11515,7 +11512,6 @@ def _getLoginHintProjectInfo(createCmd):
         break
       else:
         unknownArgumentExit()
-  print(4)
   if not projectInfo['projectId']:
     if createCmd:
       projectInfo['projectId'] = _generateProjectSvcAcctId('gam-project')
