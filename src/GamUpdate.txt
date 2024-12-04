@@ -1,3 +1,11 @@
+7.01.04
+
+Admin role assignments are now in the v1 stable API, use that and remove custom local workaround for the beta. #1724
+
+Remove duplicate local JSON discovery files. #1724
+
+Suppress "UserWarning: Attribute's length must be..." messages on service accounts with long emails. #1725
+
 7.01.03
 
 Fixed bug in `gam update cigroups <GroupEntity> delete|sync|update` where `cbcm-browser` and `chrome-os_device`
