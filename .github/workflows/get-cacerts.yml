@@ -20,8 +20,24 @@ jobs:
           persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
           fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
 
-      - name: Check for updates
-        run: curl -o ./cacerts.pem -vvvv https://pki.goog/roots.pem
+      - name: Get Current cacerts.pem hash
+        run: |
+          export CURRENT_HASH=$(sha256sum ./cacerts.pem)
+          echo "Current hash is: ${CURRENT_HASH}"
+          echo "CURRENT_HASH=${CURRENT_HASH}" >> $GITHUB_ENV
+
+      - name: Get latest cacerts.pem file from Google
+        run: |
+          curl -o ./cacerts.pem -vvvv https://pki.goog/roots.pem
+
+      - name: Compare hashes
+        run: |
+          export NEW_HASH=$(sha256sum ./cacerts.pem)
+          if [ "$NEW_HASH" == "$CURRENT_HASH" ]; then
+            echo "Same file."
+          else
+            echo "New file content. Was ${CURRENT_HASH} and now is ${NEW_HASH}"
+          fi
 
       - name: Commit file
         run: |
