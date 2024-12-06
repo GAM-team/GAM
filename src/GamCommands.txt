@@ -377,7 +377,7 @@ If an item contains spaces, it should be surrounded by ".
 <ChatThread> ::= spaces/<String>/threads/<String>
 <GIGroupAlias> ::= <EmailAddress>
 <GIGroupItem> ::= <EmailAddress>|<UniqueID>|groups/<String>
-<CIGroupType> ::= customer|group|other|serviceaccount|user
+<CIGroupMemberType> ::= cbcmbrowser|chromeosdevice|customer|group|other|serviceaccount|user
 <CIPolicyName> ::= policies/<String>|settings/<String>|<String>
 <ClassificationLabelID> ::= <String>
 <ClassificationLabelFieldID> ::= <String>
@@ -468,7 +468,7 @@ If an item contains spaces, it should be surrounded by ".
 <FloorName> ::= <String>
 <GroupItem> ::= <EmailAddress>|<UniqueID>|<String>
 <GroupRole> ::= owner|manager|member
-<GroupType> ::= customer|group|user
+<GroupMemberType> ::= customer|group|user
 <GuardianItem> ::= <EmailAddress>|<UniqueID>|<String>
 <GuardianInvitationID> ::= <String>
 <HoldItem> ::= <UniqueID>|<String>
@@ -664,7 +664,7 @@ If an item contains spaces, it should be surrounded by ".
 <CalendarList> ::= "<CalendarItem>(,<CalendarItem>)*"
 <ChatSpaceList> ::= "<ChatSpace>(,<ChatSpace>)*"
 <CIGroupAliasList> ::= "<CIGroupAlias>(,<CIGroupAlias>)*"
-<CIGroupTypeList> ::= "<CIGroupType>(,<CIGroupType>)*"
+<CIGroupMemberTypeList> ::= "<CIGroupMemberType>(,<CIGroupMemberType>)*"
 <CIPolicyNameList> ::= "<CIPolicyName>(,<CIPolicyName>)*"
 <ClassroomInvitationIDList> ::= "<ClassroomInvitationID>(,<ClassroomInvitationID>)*"
 <ContactGroupList> ::= "<ContactGroupItem>(,<ContactGroupItem>)*"
@@ -707,7 +707,7 @@ If an item contains spaces, it should be surrounded by ".
 <GuardianInvitationIDList> ::= "<GuardianInvitationID>(,<GuardianInvitationID>)*"
 <GroupList> ::= "<GroupItem>(,<GroupItem>)*"
 <GroupRoleList> ::= "<GroupRole>(,<GroupRole>)*"
-<GroupTypeList> ::= "<GroupType>(,<GroupType>)*"
+<GroupMemberTypeList> ::= "<GroupMemberType>(,<GroupMemberType>)*"
 <LabelIDList> ::= "<LabelID>(,<LabelID>)*"
 <LabelNameList> ::= "'<LabelName>'(,'<LabelName>')*"
 <LanguageList> ::= "<Language>(,<Language>)*"
@@ -3829,8 +3829,9 @@ gam info group|groups <GroupEntity>
         [basic] <GroupFieldName>* [fields <GroupFieldNameList>] [nodeprecated]
         [ciallfields|(cifields <CIGroupFieldNameList>)]
         [members] [managers] [owners]
+        [internal] [internaldomains <DomainNameList>] [external]
         [notsuspended|suspended] [notarchived|archived]
-        [types <GroupTypeList>]
+        [types <GroupMemberTypeList>]
         [memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
         [formatjson]
 gam print groups [todrive <ToDriveAttribute>*]
@@ -3845,9 +3846,10 @@ gam print groups [todrive <ToDriveAttribute>*]
         [nodeprecated]
         [roles <GroupRoleList>]
         [members|memberscount] [managers|managerscount] [owners|ownerscount] [totalcount] [countsonly]
+        [internal] [internaldomains <DomainNameList>] [external]
         [includederivedmembership]
         [notsuspended|suspended] [notarchived|archived]
-        [types <GroupTypeList>]
+        [types <GroupMemberTypeList>]
         [memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
         [convertcrnl] [delimiter <Character>] [sortheaders]
         [formatjson [quotechar <Character>]]
@@ -3880,10 +3882,11 @@ gam print group-members [todrive <ToDriveAttribute>*]
         [descriptionmatchpattern [not] <RegularExpression>]
         [admincreatedmatch <Boolean>]
         [roles <GroupRoleList>] [members] [managers] [owners]
+        [internal] [internaldomains <DomainNameList>] [external]
         [membernames] [showdeliverysettings]
         <MembersFieldName>* [fields <MembersFieldNameList>]
         [notsuspended|suspended] [notarchived|archived]
-        [types <GroupTypeList>]
+        [types <GroupMemberTypeList>]
         [memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
         [userfields <UserFieldNameList>]
         [allschemas|(schemas|custom|customschemas <SchemaNameList>)]
@@ -3891,7 +3894,7 @@ gam print group-members [todrive <ToDriveAttribute>*]
         [peoplelookup|(peoplelookupuser <EmailAddress>)]
         [unknownname <String>] [cachememberinfo [Boolean]]
         [formatjson [quotechar <Character>]]
-gam show group-members
+`gam show group-members
         [([domain|domains <DomainNameEntity>] ([member|showownedby <EmailItem>]|[(query <QueryGroup>)|(queries <QueryGroupList>)]))|
          (group|group_ns|group_susp <GroupItem>)|
          (select <GroupEntity>)]
@@ -3899,8 +3902,9 @@ gam show group-members
         [descriptionmatchpattern [not] <RegularExpression>]
         [admincreatedmatch <Boolean>]
         [roles <GroupRoleList>] [members] [managers] [owners] [depth <Number>]
+        [internal] [internaldomains <DomainNameList>] [external]
         [notsuspended|suspended] [notarchived|archived]
-        [types <GroupTypeList>]
+        [types <GroupMemberTypeList>]
         [memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
         [includederivedmembership]
 
@@ -3958,7 +3962,8 @@ gam info cigroups <GroupEntity>
         [nosecurity|nosecuritysettings]
         [allfields|<CIGroupFieldName>*|(fields <CIGroupFieldNameList>)]
         [roles <GroupRoleList>] [members] [managers] [owners]
-        [types <CIGroupTypeList>]
+        [internal] [internaldomains <DomainNameList>] [external]
+        [types <CIGroupMemberTypeList>]
         [memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
         [formatjson]
 gam print cigroups [todrive <ToDriveAttribute>*]
@@ -3969,7 +3974,8 @@ gam print cigroups [todrive <ToDriveAttribute>*]
         [basic|allfields|(<CIGroupFieldName>* [fields <CIGroupFieldNameList>])]
         [roles <GroupRoleList>] [memberrestrictions]
         [members|memberscount] [managers|managerscount] [owners|ownerscount] [totalcount] [countsonly]
-        [types <CIGroupTypeList>]
+        [internal] [internaldomains <DomainNameList>] [external]
+        [types <CIGroupMemberTypeList>]
         [memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
         [convertcrnl] [delimiter <Character>]
         [formatjson [quotechar <Character>]]
@@ -3994,7 +4000,7 @@ gam print cigroup-members [todrive <ToDriveAttribute>*]
         [emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
         [descriptionmatchpattern [not] <RegularExpression>]
         [roles <GroupRoleList>] [members] [managers] [owners]
-        [types <CIGroupTypeList>]
+        [types <CIGroupMemberTypeList>]
         [memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
         <CIGroupMembersFieldName>* [fields <CIGroupMembersFieldNameList>]
         [(recursive [noduplicates])includederivedmembership] [nogroupeemail]
@@ -4005,7 +4011,7 @@ gam show cigroup-members
         [emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
         [descriptionmatchpattern [not] <RegularExpression>]
         [roles <GroupRoleList>] [members] [managers] [owners] [depth <Number>]
-        [types <CIGroupTypeList>]
+        [types <CIGroupMemberTypeList>]
         [memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
 
 # Cloud Identity Devices

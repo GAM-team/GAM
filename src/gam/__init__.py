@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.01.04'
+__version__ = '7.02.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -487,6 +487,11 @@ def executeBatch(dbatch):
   if GC.Values[GC.INTER_BATCH_WAIT] > 0:
     time.sleep(GC.Values[GC.INTER_BATCH_WAIT])
 
+def _stripControlCharsFromName(name):
+  for cc in ['\x00', '\r', '\n']:
+    name = name.replace(cc, '')
+  return name
+
 class LazyLoader(types.ModuleType):
   """Lazily import a module, mainly to avoid pulling in large dependencies.
 
@@ -624,7 +629,7 @@ def formatKeyValueList(prefixStr, kvList, suffixStr):
   return msg
 
 # Something's wrong with CustomerID
-def accessErrorMessage(cd):
+def accessErrorMessage(cd, errMsg=None):
   if cd is None:
     cd = buildGAPIObject(API.DIRECTORY)
   try:
@@ -647,10 +652,13 @@ def accessErrorMessage(cd):
                                                          Ent.DOMAIN, GC.Values[GC.DOMAIN],
                                                          Ent.USER, GM.Globals[GM.ADMIN]])+[Msg.ACCESS_FORBIDDEN],
                               '')
-  return None
+  return formatKeyValueList('',
+                            [Ent.Singular(Ent.CUSTOMER_ID), GC.Values[GC.CUSTOMER_ID],
+                             errMsg],
+                            '')
 
-def accessErrorExit(cd):
-  systemErrorExit(INVALID_DOMAIN_RC, accessErrorMessage(cd or buildGAPIObject(API.DIRECTORY)))
+def accessErrorExit(cd, errMsg=None):
+  systemErrorExit(INVALID_DOMAIN_RC, accessErrorMessage(cd or buildGAPIObject(API.DIRECTORY), errMsg))
 
 def accessErrorExitNonDirectory(api, errMsg):
   systemErrorExit(API_ACCESS_DENIED_RC,
@@ -668,16 +676,19 @@ def ClientAPIAccessDeniedExit():
                                                           ','.join(sorted(missingScopes))))
   systemErrorExit(API_ACCESS_DENIED_RC, None)
 
-def SvcAcctAPIAccessDeniedExit():
+def SvcAcctAPIAccessDenied():
+  _getSvcAcctData()
   if (GM.Globals[GM.CURRENT_SVCACCT_API] == API.GMAIL and
       GM.Globals[GM.CURRENT_SVCACCT_API_SCOPES] and
       GM.Globals[GM.CURRENT_SVCACCT_API_SCOPES][0] == API.GMAIL_SEND_SCOPE):
     systemErrorExit(OAUTH2SERVICE_JSON_REQUIRED_RC, Msg.NO_SVCACCT_ACCESS_ALLOWED)
   stderrErrorMsg(Msg.API_ACCESS_DENIED)
   apiOrScopes = API.getAPIName(GM.Globals[GM.CURRENT_SVCACCT_API]) if GM.Globals[GM.CURRENT_SVCACCT_API] else ','.join(sorted(GM.Globals[GM.CURRENT_SVCACCT_API_SCOPES]))
-  writeStderr(Msg.API_CHECK_SVCACCT_AUTHORIZATION.format(GM.Globals[GM.OAUTH2SERVICE_CLIENT_ID],
+  writeStderr(Msg.API_CHECK_SVCACCT_AUTHORIZATION.format(GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['client_id'],
                                                          apiOrScopes,
                                                          GM.Globals[GM.CURRENT_SVCACCT_USER] or _getAdminEmail()))
+def SvcAcctAPIAccessDeniedExit():
+  SvcAcctAPIAccessDenied()
   systemErrorExit(API_ACCESS_DENIED_RC, None)
 
 def SvcAcctAPIDisabledExit():
@@ -2401,6 +2412,53 @@ def invalidUserSchema(schema):
     return f'{Ent.Singular(Ent.USER_SCHEMA)} ({",".join(schema)}) {Msg.INVALID}'
   return f'{Ent.Singular(Ent.USER_SCHEMA)} {schema}) {Msg.INVALID}'
 
+def userServiceNotEnabledWarning(entityName, service, i=0, count=0):
+  setSysExitRC(SERVICE_NOT_APPLICABLE_RC)
+  writeStderr(formatKeyValueList(Ind.Spaces(),
+                                 [Ent.Singular(Ent.USER), entityName, Msg.SERVICE_NOT_ENABLED.format(service)],
+                                 currentCountNL(i, count)))
+
+def userAlertsServiceNotEnabledWarning(entityName, i=0, count=0):
+  userServiceNotEnabledWarning(entityName, 'Alerts', i, count)
+
+def userAnalyticsServiceNotEnabledWarning(entityName, i=0, count=0):
+  userServiceNotEnabledWarning(entityName, 'Alerts', i, count)
+
+def userCalServiceNotEnabledWarning(entityName, i=0, count=0):
+  userServiceNotEnabledWarning(entityName, 'Calendar', i, count)
+
+def userChatServiceNotEnabledWarning(entityName, i=0, count=0):
+  userServiceNotEnabledWarning(entityName, 'Chat', i, count)
+
+def userContactDelegateServiceNotEnabledWarning(entityName, i=0, count=0):
+  userServiceNotEnabledWarning(entityName, 'Contact Delegate', i, count)
+
+def userDriveServiceNotEnabledWarning(user, errMessage, i=0, count=0):
+#  if errMessage.find('Drive apps') == -1 and errMessage.find('Active session is invalid') == -1:
+#    entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+  if errMessage.find('Drive apps') >= 0 or errMessage.find('Active session is invalid') >= 0:
+    userServiceNotEnabledWarning(user, 'Drive', i, count)
+  else:
+    entityActionNotPerformedWarning([Ent.USER, user], errMessage, i, count)
+
+def userKeepServiceNotEnabledWarning(entityName, i=0, count=0):
+  userServiceNotEnabledWarning(entityName, 'Keep', i, count)
+
+def userGmailServiceNotEnabledWarning(entityName, i=0, count=0):
+  userServiceNotEnabledWarning(entityName, 'Gmail', i, count)
+
+def userLookerStudioServiceNotEnabledWarning(entityName, i=0, count=0):
+  userServiceNotEnabledWarning(entityName, 'Looker Studio', i, count)
+
+def userPeopleServiceNotEnabledWarning(entityName, i=0, count=0):
+  userServiceNotEnabledWarning(entityName, 'People', i, count)
+
+def userTasksServiceNotEnabledWarning(entityName, i=0, count=0):
+  userServiceNotEnabledWarning(entityName, 'Tasks', i, count)
+
+def userYouTubeServiceNotEnabledWarning(entityName, i=0, count=0):
+  userServiceNotEnabledWarning(entityName, 'YouTube', i, count)
+
 def entityServiceNotApplicableWarning(entityType, entityName, i=0, count=0):
   setSysExitRC(SERVICE_NOT_APPLICABLE_RC)
   writeStderr(formatKeyValueList(Ind.Spaces(),
@@ -2535,12 +2593,6 @@ def entityBadRequestWarning(entityValueList, errMessage, i=0, count=0):
   writeStderr(formatKeyValueList(Ind.Spaces(),
                                  Ent.FormatEntityValueList(entityValueList)+[ERROR, errMessage],
                                  currentCountNL(i, count)))
-
-def userSvcNotApplicableOrDriveDisabled(user, errMessage, i=0, count=0):
-  if errMessage.find('Drive apps') == -1 and errMessage.find('Active session is invalid') == -1:
-    entityServiceNotApplicableWarning(Ent.USER, user, i, count)
-  else:
-    entityActionNotPerformedWarning([Ent.USER, user], errMessage, i, count)
 
 # Getting ... utilities
 def printGettingAllAccountEntities(entityType, query='', qualifier='', accountType=Ent.ACCOUNT):
@@ -3043,7 +3095,7 @@ def getGDocData(gformat):
       f.close()
     getGDocSheetDataFailedExit([Ent.USER, user, Ent.DOCUMENT, fileId], str(e))
   except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-    userSvcNotApplicableOrDriveDisabled(user, str(e))
+    userDriveServiceNotEnabledWarning(user, str(e))
     sys.exit(GM.Globals[GM.SYSEXITRC])
 
 HTML_TITLE_PATTERN = re.compile(r'.*<title>(.+)</title>')
@@ -3107,7 +3159,7 @@ def getGSheetData():
       f.close()
     getGDocSheetDataFailedExit([Ent.USER, user, Ent.SPREADSHEET, fileId, sheetEntity['sheetType'], sheetEntity['sheetValue']], str(e))
   except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-    userSvcNotApplicableOrDriveDisabled(user, str(e))
+    userDriveServiceNotEnabledWarning(user, str(e))
     sys.exit(GM.Globals[GM.SYSEXITRC])
 
 
@@ -4405,21 +4457,25 @@ class signjwtSignJwt(google.auth.crypt.Signer):
     signed_jwt = response.get('signedJwt')
     return signed_jwt
 
-def handleOAuthTokenError(e, softErrors):
+def handleOAuthTokenError(e, softErrors, displayError=False, i=0, count=0):
   errMsg = str(e).replace('.', '')
   if ((errMsg in API.OAUTH2_TOKEN_ERRORS) or
       errMsg.startswith('Invalid response') or
       errMsg.startswith('invalid_request: Invalid impersonation &quot;sub&quot; field')):
-    if softErrors:
-      return None
     if not GM.Globals[GM.CURRENT_SVCACCT_USER]:
       ClientAPIAccessDeniedExit()
+    if softErrors:
+      entityDoesNotExistWarning(Ent.USER, GM.Globals[GM.CURRENT_SVCACCT_USER], i, count)
+      return None
     systemErrorExit(SERVICE_NOT_APPLICABLE_RC, Msg.SERVICE_NOT_APPLICABLE_THIS_ADDRESS.format(GM.Globals[GM.CURRENT_SVCACCT_USER]))
   if errMsg in API.OAUTH2_UNAUTHORIZED_ERRORS:
-    if softErrors:
-      return None
     if not GM.Globals[GM.CURRENT_SVCACCT_USER]:
       ClientAPIAccessDeniedExit()
+    if softErrors:
+      if displayError:
+        apiOrScopes = API.getAPIName(GM.Globals[GM.CURRENT_SVCACCT_API]) if GM.Globals[GM.CURRENT_SVCACCT_API] else ','.join(sorted(GM.Globals[GM.CURRENT_SVCACCT_API_SCOPES]))
+        userServiceNotEnabledWarning(GM.Globals[GM.CURRENT_SVCACCT_USER], apiOrScopes, i, count)
+      return None
     SvcAcctAPIAccessDeniedExit()
   if errMsg in API.REFRESH_PERM_ERRORS:
     if softErrors:
@@ -5192,13 +5248,18 @@ def checkGAPIError(e, softErrors=False, retryOnHttpError=False, mapNotFound=True
         error = makeErrorDict(http_status, GAPI.INVALID, message)
     elif http_status == 401:
       if 'active session is invalid' in lmessage and reason == 'authError':
-        message += ' Drive SDK API access disabled'
+#        message += ' Drive SDK API access disabled'
+#        message = Msg.SERVICE_NOT_ENABLED.format('Drive')
         error = makeErrorDict(http_status, GAPI.AUTH_ERROR, message)
       elif status == 'PERMISSION_DENIED':
         error = makeErrorDict(http_status, GAPI.PERMISSION_DENIED, message)
+      elif status == 'UNAUTHENTICATED':
+        error = makeErrorDict(http_status, GAPI.AUTH_ERROR, message)
     elif http_status == 403:
       if 'quota exceeded for quota metric' in lmessage:
         error = makeErrorDict(http_status, GAPI.QUOTA_EXCEEDED, message)
+      elif 'the authenticated user cannot access this service' in lmessage:
+        error = makeErrorDict(http_status, GAPI.SERVICE_NOT_AVAILABLE, message)
       elif status == 'PERMISSION_DENIED' or 'the caller does not have permission' in lmessage or 'permission iam.serviceaccountkeys' in lmessage:
         error = makeErrorDict(http_status, GAPI.PERMISSION_DENIED, message)
     elif http_status == 404:
@@ -5564,9 +5625,7 @@ def buildGAPIServiceObject(api, user, i=0, count=0, displayError=True):
           if lContent.startswith('Error 502 (Server Error)'):
             time.sleep(30)
             continue
-      handleOAuthTokenError(e, True)
-      if displayError:
-        entityServiceNotApplicableWarning(Ent.USER, userEmail, i, count)
+      handleOAuthTokenError(e, True, displayError, i, count)
       return (userEmail, None)
 
 def buildGAPIObjectNoAuthentication(api):
@@ -5597,8 +5656,7 @@ def getGDataUserCredentials(api, user, i, count):
   except google.auth.exceptions.RefreshError as e:
     if isinstance(e.args, tuple):
       e = e.args[0]
-    handleOAuthTokenError(e, True)
-    entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    handleOAuthTokenError(e, True, True, i, count)
     return (userEmail, None)
 
 def getContactsObject(contactFeed):
@@ -8865,7 +8923,7 @@ class CSVPrintFile():
           else:
             entityActionFailedWarning([Ent.DRIVE_FILE, self.todrive['fileId']], str(e))
         except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-          userSvcNotApplicableOrDriveDisabled(user, str(e), 0, 0)
+          userDriveServiceNotEnabledWarning(user, str(e), 0, 0)
       else:
         closeFile(csvFile)
 
@@ -15688,7 +15746,7 @@ def printShowAnalyticItems(users, entityType):
       entityActionFailedWarning([Ent.USER, user, entityType, None], str(e), i, count)
       continue
     except GAPI.serviceNotAvailable:
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+      userAnalyticsServiceNotEnabledWarning(user, i, count)
       continue
     jcount = len(results)
     if not csvPF:
@@ -15794,8 +15852,8 @@ def doCreateDomainAlias():
     entityActionFailedWarning([Ent.DOMAIN, body['parentDomainName'], Ent.DOMAIN_ALIAS, body['domainAliasName']], Msg.DUPLICATE)
   except (GAPI.invalid, GAPI.conflict) as e:
     entityActionFailedWarning([Ent.DOMAIN, body['parentDomainName'], Ent.DOMAIN_ALIAS, body['domainAliasName']], str(e))
-  except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
-    accessErrorExit(cd)
+  except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden) as e:
+    accessErrorExit(cd, str(e))
 
 # gam delete domainalias|aliasdomain <DomainAlias>
 def doDeleteDomainAlias():
@@ -15809,8 +15867,8 @@ def doDeleteDomainAlias():
     entityActionPerformed([Ent.DOMAIN_ALIAS, domainAliasName])
   except GAPI.domainAliasNotFound:
     entityActionFailedWarning([Ent.DOMAIN_ALIAS, domainAliasName], Msg.DOES_NOT_EXIST)
-  except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
-    accessErrorExit(cd)
+  except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden) as e:
+    accessErrorExit(cd, str(e))
 
 DOMAIN_TIME_OBJECTS = {'creationTime'}
 DOMAIN_ALIAS_PRINT_ORDER = ['parentDomainName', 'creationTime', 'verified']
@@ -15844,8 +15902,8 @@ def doInfoDomainAlias():
     _showDomainAlias(result, FJQC, aliasSkipObjects)
   except GAPI.domainAliasNotFound:
     entityActionFailedWarning([Ent.DOMAIN_ALIAS, domainAliasName], Msg.DOES_NOT_EXIST)
-  except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
-    accessErrorExit(cd)
+  except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden) as e:
+    accessErrorExit(cd, str(e))
 
 def _printDomain(domain, csvPF):
   row = {}
@@ -15899,8 +15957,8 @@ def doPrintShowDomainAliases():
         csvPF.WriteRowNoFilter({'domainAliasName': domainAlias['domainAliasName'],
                                 'JSON': json.dumps(cleanJSON(domainAlias, timeObjects=DOMAIN_TIME_OBJECTS),
                                                    ensure_ascii=False, sort_keys=True)})
-  except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
-    accessErrorExit(cd)
+  except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden) as e:
+    accessErrorExit(cd, str(e))
   if csvPF:
     csvPF.writeCSVfile('Domain Aliases')
 
@@ -15911,15 +15969,15 @@ def doCreateDomain():
   checkForExtraneousArguments()
   try:
     callGAPI(cd.domains(), 'insert',
-             throwReasons=[GAPI.DUPLICATE, GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.CONFLICT],
+             throwReasons=[GAPI.DUPLICATE, GAPI.DOMAIN_NOT_FOUND, GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.CONFLICT],
              customer=GC.Values[GC.CUSTOMER_ID], body=body, fields='')
     entityActionPerformed([Ent.DOMAIN, body['domainName']])
   except GAPI.duplicate:
     entityDuplicateWarning([Ent.DOMAIN, body['domainName']])
   except GAPI.conflict as e:
     entityActionFailedWarning([Ent.DOMAIN, body['domainName']], str(e))
-  except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
-    accessErrorExit(cd)
+  except (GAPI.domainNotFound, GAPI.badRequest, GAPI.notFound, GAPI.forbidden) as e:
+    accessErrorExit(cd, str(e))
 
 # gam update domain <DomainName> primary
 def doUpdateDomain():
@@ -15941,8 +15999,8 @@ def doUpdateDomain():
     entityActionPerformedMessage([Ent.DOMAIN, domainName], Msg.NOW_THE_PRIMARY_DOMAIN)
   except GAPI.domainNotVerifiedSecondary:
     entityActionFailedWarning([Ent.DOMAIN, domainName], Msg.DOMAIN_NOT_VERIFIED_SECONDARY)
-  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.invalidInput):
-    accessErrorExit(cd)
+  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.invalidInput) as e:
+    accessErrorExit(cd, str(e))
 
 # gam delete domain <DomainName>
 def doDeleteDomain():
@@ -15954,8 +16012,8 @@ def doDeleteDomain():
              throwReasons=[GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
              customer=GC.Values[GC.CUSTOMER_ID], domainName=domainName)
     entityActionPerformed([Ent.DOMAIN, domainName])
-  except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
-    accessErrorExit(cd)
+  except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden) as e:
+    accessErrorExit(cd, str(e))
 
 CUSTOMER_LICENSE_MAP = {
   'accounts:num_users': 'Total Users',
@@ -16223,7 +16281,7 @@ def doPrintShowDomains():
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   try:
     domains = callGAPIitems(cd.domains(), 'list', 'domains',
-                            throwReasons=[GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
+                            throwReasons=[GAPI.DOMAIN_NOT_FOUND, GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
                             customer=GC.Values[GC.CUSTOMER_ID])
     count = len(domains)
     if showItemCountOnly:
@@ -16246,8 +16304,8 @@ def doPrintShowDomains():
         csvPF.WriteRowNoFilter({'domainName': domain['domainName'],
                                 'JSON': json.dumps(cleanJSON(domain, timeObjects=DOMAIN_TIME_OBJECTS),
                                                    ensure_ascii=False, sort_keys=True)})
-  except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
-    accessErrorExit(cd)
+  except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden, GAPI.domainNotFound) as e:
+    accessErrorExit(cd, str(e))
   if csvPF:
     csvPF.writeCSVfile('Domains')
 
@@ -21247,7 +21305,7 @@ def getPeopleContactGroupsInfo(people, entityType, entityName, i, count):
           contactGroupNames.setdefault(group['name'], [])
           contactGroupNames[group['name']].append(group['resourceName'])
   except GAPI.forbidden:
-    entityServiceNotApplicableWarning(entityType, entityName, i, count)
+    userPeopleServiceNotEnabledWarning(entityName, i, count)
     return (contactGroupIDs, False)
   except GAPI.serviceNotAvailable:
     entityUnknownWarning(entityType, entityName, i, count)
@@ -22745,7 +22803,7 @@ def createUserPeopleContactGroup(users):
           row.update(addCSVData)
         csvPF.WriteRow(row)
     except GAPI.forbidden:
-      entityServiceNotApplicableWarning(entityType, user, i, count)
+      userPeopleServiceNotEnabledWarning(user, i, count)
     except GAPI.serviceNotAvailable:
       entityUnknownWarning(entityType, user, i, count)
   if csvPF:
@@ -22799,7 +22857,7 @@ def updateUserPeopleContactGroup(users):
       except (GAPI.notFound, GAPI.internalError) as e:
         entityActionFailedWarning([entityType, user, Ent.CONTACT_GROUP, contactGroup], str(e), j, jcount)
       except GAPI.forbidden:
-        entityServiceNotApplicableWarning(entityType, user, i, count)
+        userPeopleServiceNotEnabledWarning(user, i, count)
         break
       except GAPI.serviceNotAvailable:
         entityUnknownWarning(entityType, user, i, count)
@@ -22844,7 +22902,7 @@ def deleteUserPeopleContactGroups(users):
       except GAPI.notFound as e:
         entityActionFailedWarning([entityType, user, Ent.CONTACT_GROUP, contactGroup], str(e), j, jcount)
       except GAPI.forbidden:
-        entityServiceNotApplicableWarning(entityType, user, i, count)
+        userPeopleServiceNotEnabledWarning(user, i, count)
         break
       except GAPI.serviceNotAvailable:
         entityUnknownWarning(entityType, user, i, count)
@@ -22945,7 +23003,7 @@ def infoUserPeopleContactGroups(users):
       except GAPI.notFound as e:
         entityActionFailedWarning([entityType, user, Ent.CONTACT_GROUP, contactGroup], str(e), j, jcount)
       except GAPI.forbidden:
-        entityServiceNotApplicableWarning(entityType, user, i, count)
+        userPeopleServiceNotEnabledWarning(user, i, count)
         break
       except GAPI.serviceNotAvailable:
         entityUnknownWarning(entityType, user, i, count)
@@ -23062,7 +23120,7 @@ def processContactDelegates(users):
       except (GAPI.failedPrecondition, GAPI.permissionDenied, GAPI.forbidden, GAPI.invalidArgument) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.CONTACT_DELEGATE, delegateEmail], str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.badRequest):
-        entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+        userContactDelegateServiceNotEnabledWarning(user, i, count)
     Ind.Decrement()
 
 # gam <UserTypeEntity> print contactdelegates [todrive <ToDriveAttribute>*] [shownames]
@@ -23103,7 +23161,7 @@ def printShowContactDelegates(users):
       entityActionFailedWarning([Ent.USER, user, Ent.CONTACT_DELEGATE, None], str(e), i, count)
       continue
     except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+      userContactDelegateServiceNotEnabledWarning(user, i, count)
       continue
     jcount = len(delegates)
     if not csvPF:
@@ -25879,7 +25937,7 @@ def createChatSpace(users):
       continue
     try:
       space = callGAPI(chat.spaces(), 'setup',
-                       throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                       throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                        body=body)
       if not returnIdOnly:
         kvList[-1] = space['name']
@@ -25892,6 +25950,9 @@ def createChatSpace(users):
         writeStdout(f'{space["name"]}\n')
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
+      continue
+    except GAPI.failedPrecondition:
+      userChatServiceNotEnabledWarning(user, i, count)
       continue
     if tbody:
       parent = space['name']
@@ -25982,7 +26043,7 @@ def updateChatSpace(users):
       continue
     try:
       space = callGAPI(chat.spaces(), 'patch',
-                       throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                       throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                        name=name, updateMask=','.join(updateMask), body=body, **kwargsUAA)
       if not FJQC.formatJSON:
         entityActionPerformed(kvList, i, count)
@@ -25991,6 +26052,8 @@ def updateChatSpace(users):
       Ind.Decrement()
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
+    except GAPI.failedPrecondition:
+      userChatServiceNotEnabledWarning(user, i, count)
 
 # gam <UserTypeEntity> delete chatspace <ChatSpace>
 # gam <UserItem> delete chatspace asadmin <ChatSpace>
@@ -26015,11 +26078,13 @@ def deleteChatSpace(users):
       continue
     try:
       callGAPI(chat.spaces(), 'delete',
-               throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+               throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                name=name, **kwargsUAA)
       entityActionPerformed(kvList, i, count)
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
+    except GAPI.failedPrecondition:
+      userChatServiceNotEnabledWarning(user, i, count)
 
 CHAT_SPACES_FIELDS_CHOICE_MAP = {
   "accesssettings": "accessSettings",
@@ -26080,7 +26145,7 @@ def infoChatSpace(users, name=None):
       continue
     try:
       space = callGAPI(chat.spaces(), function,
-                       throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                       throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                        name=name, fields=fields, **kwargsUAA)
       if not FJQC.formatJSON:
         entityPerformAction(kvList, i, count)
@@ -26089,6 +26154,8 @@ def infoChatSpace(users, name=None):
       Ind.Decrement()
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
+    except GAPI.failedPrecondition:
+      userChatServiceNotEnabledWarning(user, i, count)
 
 def doInfoChatSpace():
   infoChatSpace([None])
@@ -26204,9 +26271,11 @@ def printShowChatSpaces(users):
                              throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR,
                                            GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                              fields=fields, pageSize=CHAT_PAGE_SIZE, **kwargsCS)
-    except (GAPI.notFound, GAPI.invalidArgument, GAPI.internalError,
-            GAPI.permissionDenied, GAPI.failedPrecondition) as e:
+    except (GAPI.notFound, GAPI.invalidArgument, GAPI.internalError, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
+      continue
+    except GAPI.failedPrecondition:
+      userChatServiceNotEnabledWarning(user, i, count)
       continue
     jcount = len(spaces)
     if jcount == 0:
@@ -26272,12 +26341,14 @@ def createChatMember(users):
       try:
         member = callGAPI(chat.spaces().members(), 'create',
                           bailOnInternalError=True,
-                          throwReasons=[GAPI.ALREADY_EXISTS, GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                          throwReasons=[GAPI.ALREADY_EXISTS, GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_ARGUMENT,
+                                        GAPI.INTERNAL_ERROR, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                           parent=parent, body=body, **kwargsUAA)
         if role != 'ROLE_MEMBER' and entityType == Ent.CHAT_MANAGER_USER:
           member = callGAPI(chat.spaces().members(), 'patch',
                             bailOnInternalError=True,
-                            throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                            throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR,
+                                          GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                             name=member['name'], updateMask='role', body={'role': role}, **kwargsUAA)
         if not returnIdOnly:
           kvList[-1] = member['name']
@@ -26291,6 +26362,8 @@ def createChatMember(users):
           writeStdout(f'{member["name"]}\n')
       except (GAPI.alreadyExists, GAPI.notFound, GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
         entityActionFailedWarning(kvList, str(e))
+      except GAPI.failedPrecondition:
+        userChatServiceNotEnabledWarning(user, i, count)
   Ind.Decrement()
 
   cd = buildGAPIObject(API.DIRECTORY)
@@ -26462,7 +26535,8 @@ def deleteUpdateChatMember(users):
         try:
           member = callGAPI(chat.spaces().members(), 'patch',
                             bailOnInternalError=True,
-                            throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                            throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR,
+                                          GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                             name=name, updateMask='role', body=body, **kwargsUAA)
           _getChatMemberEmail(cd, member)
           Ind.Increment()
@@ -26472,6 +26546,9 @@ def deleteUpdateChatMember(users):
           entityActionFailedWarning(kvList, str(e), j, jcount)
         except (GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
           exitIfChatNotConfigured(chat, kvList, str(e), i, count)
+        except GAPI.failedPrecondition:
+          userChatServiceNotEnabledWarning(user, i, count)
+          continue
     Ind.Decrement()
 
 CHAT_SYNC_PREVIEW_TITLES = ['space', 'member', 'role', 'action', 'message']
@@ -26610,7 +26687,7 @@ def syncChatMembers(users):
     try:
       members = callGAPIpages(chat.spaces().members(), 'list', 'memberships',
                               pageMessage=_getChatPageMessage(Ent.CHAT_MEMBER, user, i, count, qfilter),
-                              throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                              throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                               parent=parent, showGroups=groupsSpecified, pageSize=CHAT_PAGE_SIZE, **kwargs, **kwargsUAA)
       for member in members:
         if 'member' in member:
@@ -26620,6 +26697,9 @@ def syncChatMembers(users):
           currentGroupsSet.add(member['name'])
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
+      continue
+    except GAPI.failedPrecondition:
+      userChatServiceNotEnabledWarning(user, i, count)
       continue
     if syncOperation != 'addonly':
       Act.Set([Act.REMOVE, Act.REMOVE_PREVIEW][preview])
@@ -26688,7 +26768,8 @@ def infoChatMember(users):
       try:
         member = callGAPI(chat.spaces().members(), 'get',
                           bailOnInternalError=True,
-                          throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                          throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR,
+                                        GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                           name=name, fields=fields, **kwargsUAA)
         _getChatMemberEmail(cd, member)
         Ind.Increment()
@@ -26696,6 +26777,9 @@ def infoChatMember(users):
         Ind.Decrement()
       except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
         exitIfChatNotConfigured(chat, kvList, str(e), i, count)
+      except GAPI.failedPrecondition:
+        userChatServiceNotEnabledWarning(user, i, count)
+        continue
 
 def doInfoChatMember():
   infoChatMember([None])
@@ -26823,9 +26907,11 @@ def printShowChatMembers(users):
 #            if 'membershipCount' in space:
 #              parentList.append({'name': space['name'], 'displayName': space.get('displayName', 'None')})
             parentList.append({'name': space['name'], 'displayName': space.get('displayName', 'None')})
-        except (GAPI.notFound, GAPI.invalidArgument, GAPI.internalError,
-                GAPI.permissionDenied, GAPI.failedPrecondition) as e:
+        except (GAPI.notFound, GAPI.invalidArgument, GAPI.internalError, GAPI.permissionDenied) as e:
           exitIfChatNotConfigured(chat, kvList, str(e), i, count)
+          continue
+        except GAPI.failedPrecondition:
+          userChatServiceNotEnabledWarning(user, i, count)
           continue
     jcount = len(parentList)
     j = 0
@@ -26935,7 +27021,7 @@ def createChatMessage(users):
       continue
     try:
       resp = callGAPI(chat.spaces().messages(), 'create',
-                      throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                      throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                       parent=parent, requestId=str(uuid.uuid4()),
                       messageReplyOption=messageReplyOption, messageId=messageId, body=body)
       if not returnIdOnly:
@@ -26951,6 +27037,8 @@ def createChatMessage(users):
         writeStdout(f'{resp["name"]}\n')
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
+    except GAPI.failedPrecondition:
+      userChatServiceNotEnabledWarning(user, i, count)
 
 def doCreateChatMessage():
   createChatMessage([None])
@@ -26981,12 +27069,14 @@ def updateChatMessage(users):
       continue
     try:
       resp = callGAPI(chat.spaces().messages(), 'patch',
-                      throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                      throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                       name=name, updateMask='text', body=body)
       kvList.extend([Ent.CHAT_THREAD, resp['thread']['name']])
       entityActionPerformed(kvList, i, count)
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
+    except GAPI.failedPrecondition:
+      userChatServiceNotEnabledWarning(user, i, count)
 
 def doUpdateChatMessage():
   updateChatMessage([None])
@@ -27010,11 +27100,13 @@ def deleteChatMessage(users):
       continue
     try:
       callGAPI(chat.spaces().messages(), 'delete',
-               throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+               throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                name=name)
       entityActionPerformed(kvList, i, count)
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
+    except GAPI.failedPrecondition:
+      userChatServiceNotEnabledWarning(user, i, count)
 
 def doDeleteChatMessage():
   deleteChatMessage([None])
@@ -27075,7 +27167,7 @@ def infoChatMessage(users):
       continue
     try:
       message = callGAPI(chat.spaces().messages(), 'get',
-                         throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                         throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                          name=name, fields=fields)
       _getChatSenderEmail(cd, message['sender'])
       if not FJQC.formatJSON:
@@ -27085,6 +27177,8 @@ def infoChatMessage(users):
       Ind.Decrement()
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
+    except GAPI.failedPrecondition:
+      userChatServiceNotEnabledWarning(user, i, count)
 
 def doInfoChatMessage():
   infoChatMessage([None])
@@ -27145,7 +27239,7 @@ def printShowChatMessages(users):
       try:
         if not parent['displayName']:
           space = callGAPI(chatspg.spaces(), 'get',
-                           throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                           throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                            name=parentName, fields='displayName')
           parent['displayName'] = space.get('displayName', 'None')
         messages = callGAPIpages(chat.spaces().messages(), 'list', 'messages',
@@ -27159,6 +27253,9 @@ def printShowChatMessages(users):
       except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
         exitIfChatNotConfigured(chat, kvList, str(e), i, count)
         continue
+      except GAPI.failedPrecondition:
+        userChatServiceNotEnabledWarning(user, i, count)
+        break
       if not csvPF:
         kcount = len(messages)
         if not FJQC.formatJSON:
@@ -27198,7 +27295,7 @@ def infoChatEvent(users):
       continue
     try:
       event = callGAPI(chat.spaces().spaceEvents(), 'get',
-                       throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                       throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                        name=name)
       if not FJQC.formatJSON:
         entityPerformAction(kvList, i, count)
@@ -27207,6 +27304,8 @@ def infoChatEvent(users):
       Ind.Decrement()
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
+    except GAPI.failedPrecondition:
+      userChatServiceNotEnabledWarning(user, i, count)
 
 def doInfoChatEvent():
   infoChatEvent([None])
@@ -27257,7 +27356,7 @@ def printShowChatEvents(users):
       try:
         if not parent['displayName']:
           space = callGAPI(chatspg.spaces(), 'get',
-                           throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                           throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                            name=parentName, fields='displayName')
           parent['displayName'] = space.get('displayName', 'None')
         events = callGAPIpages(chat.spaces().spaceEvents(), 'list', 'spaceEvents',
@@ -27267,6 +27366,9 @@ def printShowChatEvents(users):
       except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
         exitIfChatNotConfigured(chat, kvList, str(e), i, count)
         continue
+      except GAPI.failedPrecondition:
+        userChatServiceNotEnabledWarning(user, i, count)
+        break
       if not csvPF:
         kcount = len(events)
         if not FJQC.formatJSON:
@@ -34040,10 +34142,7 @@ def doPrintGroupMembers():
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   if not typesSet:
-#    typesSet = {Ent.TYPE_USER} if memberOptions[MEMBEROPTION_RECURSIVE] else ALL_GROUP_MEMBER_TYPES
-    typesSet = ALL_GROUP_MEMBER_TYPES.copy()
-    if memberOptions[MEMBEROPTION_RECURSIVE]:
-      typesSet.remove(Ent.TYPE_GROUP)
+    typesSet = {Ent.TYPE_USER} if memberOptions[MEMBEROPTION_RECURSIVE] else ALL_GROUP_MEMBER_TYPES
   entityList = getGroupMembersEntityList(cd, entityList, matchPatterns, cdfieldsList, kwargsDict)
   if not fieldsList:
     for field in GROUPMEMBERS_DEFAULT_FIELDS:
@@ -36052,10 +36151,7 @@ def doPrintCIGroupMembers():
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   if not typesSet:
-#    typesSet = {Ent.TYPE_USER} if memberOptions[MEMBEROPTION_RECURSIVE] else ALL_CIGROUP_MEMBER_TYPES
-    typesSet = ALL_CIGROUP_MEMBER_TYPES.copy()
-    if memberOptions[MEMBEROPTION_RECURSIVE]:
-      typesSet.remove(Ent.TYPE_GROUP)
+    typesSet = {Ent.TYPE_USER} if memberOptions[MEMBEROPTION_RECURSIVE] else ALL_CIGROUP_MEMBER_TYPES
   fields = ','.join(set(groupFieldsLists['ci']))
   entityList = getCIGroupMembersEntityList(ci, entityList, query, subTitle, matchPatterns, groupFieldsLists['ci'], csvPF)
   if not fieldsList:
@@ -36436,8 +36532,8 @@ def doDeleteOrUndeleteAlert():
     entityActionPerformed([Ent.ALERT, alertId])
   except GAPI.notFound as e:
     entityActionFailedWarning([Ent.ALERT_ID, alertId], str(e))
-  except (GAPI.serviceNotAvailable, GAPI.authError):
-    entityServiceNotApplicableWarning(Ent.USER, user)
+  except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.permissionDenied):
+    userAlertsServiceNotEnabledWarning(user)
 
 ALERT_TIME_OBJECTS = {'createTime', 'startTime', 'endTime'}
 
@@ -36474,8 +36570,8 @@ def doInfoAlert():
     _showAlert(alert, FJQC)
   except GAPI.notFound as e:
     entityActionFailedWarning([Ent.ALERT_ID, alertId], str(e))
-  except (GAPI.serviceNotAvailable, GAPI.authError):
-    entityServiceNotApplicableWarning(Ent.USER, user)
+  except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.permissionDenied):
+    userAlertsServiceNotEnabledWarning(user)
 
 ALERT_ORDERBY_CHOICE_MAP = {
   'createdate': 'create_time',
@@ -36513,8 +36609,8 @@ def doPrintShowAlerts():
   except (GAPI.badRequest, GAPI.invalidArgument) as e:
     entityActionFailedWarning([Ent.ALERT, None], str(e))
     return
-  except (GAPI.serviceNotAvailable, GAPI.authError):
-    entityServiceNotApplicableWarning(Ent.USER, user)
+  except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.permissionDenied):
+    userAlertsServiceNotEnabledWarning(user)
     return
   if not csvPF:
     jcount = len(alerts)
@@ -36559,7 +36655,7 @@ def doCreateAlertFeedback():
   except GAPI.notFound as e:
     entityActionFailedWarning([Ent.ALERT_ID, alertId], str(e))
   except (GAPI.serviceNotAvailable, GAPI.authError):
-    entityServiceNotApplicableWarning(Ent.USER, user)
+    userAlertsServiceNotEnabledWarning(user)
 
 def _showAlertFeedback(feedback, FJQC, i=0, count=0):
   if FJQC.formatJSON:
@@ -36614,8 +36710,8 @@ def doPrintShowAlertFeedback():
   except (GAPI.notFound, GAPI.badRequest) as e:
     entityActionFailedWarning([Ent.ALERT_ID, alertId], str(e))
     return
-  except (GAPI.serviceNotAvailable, GAPI.authError):
-    entityServiceNotApplicableWarning(Ent.USER, user)
+  except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.permissionDenied):
+    userAlertsServiceNotEnabledWarning(user)
     return
   for sk in OBY.items:
     if sk.endswith(' desc'):
@@ -37542,16 +37638,20 @@ def normalizeCalendarId(calId, user):
     return convertUIDtoEmailAddress(calId, emailTypes=['user', 'resource'])
   return user
 
-def checkCalendarExists(cal, calId, showMessage=False):
+def checkCalendarExists(cal, calId, i, count, showMessage=False):
   if not cal:
     cal = buildGAPIObject(API.CALENDAR)
   try:
     return callGAPI(cal.calendars(), 'get',
                     throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND],
                     calendarId=calId, fields='id')['id']
-  except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.notACalendarUser, GAPI.notFound) as e:
+  except GAPI.notFound as e:
     if showMessage:
       entityActionFailedWarning([Ent.CALENDAR, calId], str(e))
+    return None
+  except GAPI.notACalendarUser:
+    if showMessage:
+      userCalServiceNotEnabledWarning(calId, i, count)
     return None
 
 def validateCalendar(calId, i=0, count=0, noClientAccess=False):
@@ -37567,10 +37667,10 @@ def validateCalendar(calId, i=0, count=0, noClientAccess=False):
              throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND],
              calendarId=calId, fields='')
     return (calId, cal)
-  except (GAPI.notACalendarUser, GAPI.notFound) as e:
+  except GAPI.notFound as e:
     entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
-  except (GAPI.serviceNotAvailable, GAPI.authError):
-    entityServiceNotApplicableWarning(Ent.CALENDAR, calId, i, count)
+  except GAPI.notACalendarUser:
+    userCalServiceNotEnabledWarning(calId, i, count)
   return (calId, None)
 
 def getNormalizedCalIdCal(cal, calId, user, i=0, count=0):
@@ -37679,7 +37779,7 @@ def _processCalendarACLs(cal, function, entityType, calId, j, jcount, k, kcount,
              calendarId=calId, **kwargs)
     entityActionPerformed([entityType, calId, Ent.CALENDAR_ACL, formatACLScopeRole(ruleId, role)], k, kcount)
   except GAPI.notFound as e:
-    if not checkCalendarExists(cal, calId):
+    if not checkCalendarExists(cal, calId, j, jcount):
       entityUnknownWarning(entityType, calId, j, jcount)
       result = False
     else:
@@ -37785,7 +37885,7 @@ def _infoCalendarACLs(cal, user, entityType, calId, j, jcount, ruleIds, kcount, 
                         calendarId=calId, ruleId=ruleId, fields='id,role,scope')
       _showCalendarACL(user, entityType, calId, result, k, kcount, FJQC)
     except (GAPI.notFound, GAPI.invalid) as e:
-      if not checkCalendarExists(cal, calId):
+      if not checkCalendarExists(cal, calId, j, jcount):
         entityUnknownWarning(entityType, calId, j, jcount)
         break
       entityActionFailedWarning([entityType, calId, Ent.CALENDAR_ACL, formatACLScopeRole(ruleId, None)], str(e), k, kcount)
@@ -38457,11 +38557,11 @@ def _validateCalendarGetEventIDs(origUser, user, origCal, calId, j, jcount, cale
     except GAPI.notFound:
       entityUnknownWarning(Ent.CALENDAR, calId, j, jcount)
       return (calId, cal, None, 0)
-    except (GAPI.notACalendarUser, GAPI.forbidden, GAPI.invalid) as e:
+    except (GAPI.forbidden, GAPI.invalid) as e:
       entityActionFailedWarning([Ent.CALENDAR, calId], str(e), j, jcount)
       return (calId, cal, None, 0)
-    except (GAPI.serviceNotAvailable, GAPI.authError):
-      entityServiceNotApplicableWarning(Ent.CALENDAR, calId, j, jcount)
+    except GAPI.notACalendarUser:
+      userCalServiceNotEnabledWarning(calId, j, jcount)
       return (calId, cal, None, 0)
   else:
     kcount = len(calEventIds)
@@ -38541,14 +38641,14 @@ def _validateCalendarGetEvents(origUser, user, origCal, calId, j, jcount, calend
       setSysExitRC(NO_ENTITIES_FOUND_RC)
     return (calId, cal, eventsList, kcount)
   except (GAPI.notFound, GAPI.deleted) as e:
-    if not checkCalendarExists(cal, calId):
+    if not checkCalendarExists(cal, calId, j, jcount):
       entityUnknownWarning(Ent.CALENDAR, calId, j, jcount)
     else:
       entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
-  except (GAPI.notACalendarUser, GAPI.forbidden, GAPI.invalid) as e:
+  except (GAPI.forbidden, GAPI.invalid) as e:
     entityActionFailedWarning([Ent.CALENDAR, calId], str(e), j, jcount)
-  except (GAPI.serviceNotAvailable, GAPI.authError):
-    entityServiceNotApplicableWarning(Ent.CALENDAR, calId, j, jcount)
+  except GAPI.notACalendarUser:
+    userCalServiceNotEnabledWarning(calId, j, jcount)
   return (calId, cal, [], 0)
 
 def _getCalendarCreateImportUpdateEventOptions(function, entityType):
@@ -38580,11 +38680,11 @@ def _setEventRecurrenceTimeZone(cal, calId, body, parameters, i, count):
         timeZone = callGAPI(cal.calendars(), 'get',
                             throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID],
                             calendarId=calId, fields='timeZone')['timeZone']
-      except (GAPI.notACalendarUser, GAPI.notFound, GAPI.forbidden, GAPI.invalid) as e:
+      except (GAPI.notFound, GAPI.forbidden, GAPI.invalid) as e:
         entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
         return False
-      except (GAPI.serviceNotAvailable, GAPI.authError):
-        entityServiceNotApplicableWarning(Ent.CALENDAR, calId, i, count)
+      except GAPI.notACalendarUser:
+        userCalServiceNotEnabledWarning(calId, i, count)
         return False
     if 'start' in body:
       body['start']['timeZone'] = timeZone
@@ -38634,11 +38734,11 @@ def _createCalendarEvents(user, origCal, function, calIds, count, body, paramete
       entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, event['id']], str(e), i, count)
     except GAPI.duplicate as e:
       entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, event['id']], str(e), i, count)
-    except (GAPI.forbidden, GAPI.notACalendarUser) as e:
+    except GAPI.forbidden as e:
       entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
       break
-    except (GAPI.serviceNotAvailable, GAPI.authError):
-      entityServiceNotApplicableWarning(Ent.CALENDAR, calId, i, count)
+    except GAPI.notACalendarUser:
+      userCalServiceNotEnabledWarning(calId, i, count)
       break
   if parameters['csvPF']:
     parameters['csvPF'].writeCSVfile('Calendar Created Events')
@@ -38728,18 +38828,15 @@ def _updateCalendarEvents(origUser, user, origCal, calIds, count, calendarEventE
             _getEventDaysOfWeek(event)
           _printCalendarEvent(user, calId, event, parameters['csvPF'], parameters['FJQC'])
       except (GAPI.notFound, GAPI.deleted) as e:
-        if not checkCalendarExists(cal, calId):
+        if not checkCalendarExists(cal, calId, j, jcount):
           entityUnknownWarning(Ent.CALENDAR, calId, j, jcount)
           break
         entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
       except (GAPI.forbidden, GAPI.invalid, GAPI.required, GAPI.timeRangeEmpty, GAPI.eventDurationExceedsLimit,
               GAPI.requiredAccessLevel, GAPI.cannotChangeOrganizerOfInstance) as e:
         entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
-      except GAPI.notACalendarUser as e:
-        entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
-        break
-      except (GAPI.serviceNotAvailable, GAPI.authError):
-        entityServiceNotApplicableWarning(Ent.CALENDAR, calId, i, count)
+      except GAPI.notACalendarUser:
+        userCalServiceNotEnabledWarning(calId, i, count)
         break
     Ind.Decrement()
   if parameters['csvPF']:
@@ -38794,17 +38891,14 @@ def _deleteCalendarEvents(origUser, user, origCal, calIds, count, calendarEventE
                  calendarId=calId, eventId=eventId, sendUpdates=parameters['sendUpdates'])
         entityActionPerformed([Ent.CALENDAR, calId, Ent.EVENT, eventId], j, jcount)
       except (GAPI.notFound, GAPI.deleted) as e:
-        if not checkCalendarExists(cal, calId):
-          entityUnknownWarning(Ent.CALENDAR, calId, j, jcount)
+        if not checkCalendarExists(cal, calId, i, count):
+          entityUnknownWarning(Ent.CALENDAR, calId, i, count)
           break
         entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
       except (GAPI.forbidden, GAPI.invalid, GAPI.required, GAPI.requiredAccessLevel) as e:
         entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
-      except GAPI.notACalendarUser as e:
-        entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
-        break
-      except (GAPI.serviceNotAvailable, GAPI.authError):
-        entityServiceNotApplicableWarning(Ent.CALENDAR, calId, i, count)
+      except GAPI.notACalendarUser:
+        userCalServiceNotEnabledWarning(calId, i, count)
         break
     Ind.Decrement()
 
@@ -38858,21 +38952,18 @@ def _moveCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEnt
                  calendarId=calId, eventId=eventId, destination=newCalId, sendUpdates=parameters['sendUpdates'], fields='')
         entityModifierNewValueActionPerformed(kvListEvent, Act.MODIFIER_TO, f'{Ent.Singular(Ent.CALENDAR)}: {newCalId}', j, jcount)
       except GAPI.notFound as e:
-        if not checkCalendarExists(cal, calId):
+        if not checkCalendarExists(cal, calId, i, count):
           entityUnknownWarning(Ent.CALENDAR, calId, i, count)
           break
         entityActionFailedWarning(kvListEventNewCal, Ent.TypeNameMessage(Ent.EVENT, eventId, str(e)), j, jcount)
-      except GAPI.notACalendarUser as e:
-        entityActionFailedWarning(kvList, str(e), i, count)
-        break
       except GAPI.requiredAccessLevel:
 # Correct "You need to have reader access to this calendar." to "Writer access required to both calendars."
         entityActionFailedWarning(kvListEventNewCal, Msg.WRITER_ACCESS_REQUIRED_TO_BOTH_CALENDARS, j, jcount)
       except (GAPI.forbidden, GAPI.invalid, GAPI.badRequest,
               GAPI.cannotChangeOrganizer, GAPI.cannotChangeOrganizerOfInstance) as e:
         entityActionFailedWarning(kvListEventNewCal, str(e), j, jcount)
-      except (GAPI.serviceNotAvailable, GAPI.authError):
-        entityServiceNotApplicableWarning(Ent.CALENDAR, calId, i, count)
+      except GAPI.notACalendarUser:
+        userCalServiceNotEnabledWarning(calId, i, count)
         break
     Ind.Decrement()
 
@@ -38882,7 +38973,7 @@ def doCalendarsMoveEvents(calIds):
   checkArgumentPresent(['to', 'destination'])
   newCalId = convertUIDtoEmailAddress(getString(Cmd.OB_CALENDAR_ITEM))
   parameters, _ = _getCalendarMoveEventsOptions()
-  if not checkCalendarExists(None, newCalId, True):
+  if not checkCalendarExists(None, newCalId, 0, 0, True):
     return
   _moveCalendarEvents(None, None, None, calIds, len(calIds), calendarEventEntity, newCalId, parameters)
 
@@ -38890,7 +38981,7 @@ def doCalendarsMoveEvents(calIds):
 def doCalendarsMoveEventsOld(calIds):
   calendarEventEntity = initCalendarEventEntity()
   parameters, newCalId = _getCalendarMoveEventsOptions(calendarEventEntity)
-  if not checkCalendarExists(None, newCalId, True):
+  if not checkCalendarExists(None, newCalId, 0, 0, True):
     return
   _moveCalendarEvents(None, None, None, calIds, len(calIds), calendarEventEntity, newCalId, parameters)
 
@@ -38926,10 +39017,10 @@ def _purgeCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEn
                calendarId=purgeCalId)
       Act.Set(Act.REMOVE)
       entityActionPerformed(entityValueList)
-    except (GAPI.notFound, GAPI.notACalendarUser, GAPI.forbidden) as e:
+    except (GAPI.notFound, GAPI.forbidden) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.CALENDAR, body['summary']], str(e))
-    except (GAPI.serviceNotAvailable, GAPI.authError):
-      entityServiceNotApplicableWarning(Ent.USER, user)
+    except GAPI.notACalendarUser:
+      userCalServiceNotEnabledWarning(calId, i, count)
 
 # gam calendars <CalendarEntity> purge event <EventEntity> [doit] [<EventNotificationAttribute>]
 def doCalendarsPurgeEvents(calIds):
@@ -38949,10 +39040,10 @@ def _wipeCalendarEvents(user, origCal, calIds, count):
                throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID, GAPI.REQUIRED_ACCESS_LEVEL],
                calendarId=calId)
       entityActionPerformed([Ent.CALENDAR, calId], i, count)
-    except (GAPI.notACalendarUser, GAPI.notFound, GAPI.forbidden, GAPI.invalid, GAPI.requiredAccessLevel) as e:
+    except (GAPI.notFound, GAPI.forbidden, GAPI.invalid, GAPI.requiredAccessLevel) as e:
       entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
-    except (GAPI.serviceNotAvailable, GAPI.authError):
-      entityServiceNotApplicableWarning(Ent.CALENDAR, calId, i, count)
+    except GAPI.notACalendarUser:
+      userCalServiceNotEnabledWarning(calId, i, count)
 
 # gam calendars <CalendarEntity> wipe events
 # gam calendar <CalendarEntity> wipe
@@ -38975,11 +39066,11 @@ def _emptyCalendarTrash(user, origCal, calIds, count):
                              throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN],
                              calendarId=calId, showDeleted=True, fields='nextPageToken,items(id,status,organizer(self),recurringEventId)',
                              maxResults=GC.Values[GC.EVENT_MAX_RESULTS])
-    except (GAPI.notACalendarUser, GAPI.notFound, GAPI.forbidden) as e:
+    except (GAPI.notFound, GAPI.forbidden) as e:
       entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
       continue
-    except (GAPI.serviceNotAvailable, GAPI.authError):
-      entityServiceNotApplicableWarning(Ent.CALENDAR, calId, i, count)
+    except GAPI.notACalendarUser:
+      userCalServiceNotEnabledWarning(calId, i, count)
       continue
     for event in events:
       if event['status'] == 'cancelled' and event.get('organizer', {}).get('self', user is None) and not event.get('recurringEventId', ''):
@@ -39270,15 +39361,15 @@ def _infoCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEnt
             _showCalendarEvent(user, calId, Ent.INSTANCE, instance, l, lcount, FJQC)
           Ind.Decrement()
       except (GAPI.notFound, GAPI.deleted) as e:
-        if not checkCalendarExists(cal, calId):
+        if not checkCalendarExists(cal, calId, i, count):
           entityUnknownWarning(Ent.CALENDAR, calId, i, count)
           break
         entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
-      except (GAPI.notACalendarUser, GAPI.forbidden) as e:
+      except (GAPI.forbidden) as e:
         entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
         break
-      except (GAPI.serviceNotAvailable, GAPI.authError):
-        entityServiceNotApplicableWarning(Ent.CALENDAR, calId, i, count)
+      except GAPI.notACalendarUser:
+        userCalServiceNotEnabledWarning(calId, i, count)
         break
     Ind.Decrement()
 
@@ -39392,10 +39483,10 @@ def doCalendarsModifySettings(calIds):
                throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID],
                calendarId=calId, body=body)
       entityActionPerformed([Ent.CALENDAR, calId], i, count)
-    except (GAPI.notACalendarUser, GAPI.notFound, GAPI.forbidden, GAPI.invalid) as e:
+    except (GAPI.notFound, GAPI.forbidden, GAPI.invalid) as e:
       entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
-    except (GAPI.serviceNotAvailable, GAPI.authError):
-      entityServiceNotApplicableWarning(Ent.CALENDAR, calId, i, count)
+    except GAPI.notACalendarUser:
+      userCalServiceNotEnabledWarning(calId, i, count)
 
 def _showCalendarSettings(calendar, j, jcount):
   printEntity([Ent.CALENDAR, calendar['id']], j, jcount)
@@ -39466,10 +39557,10 @@ def doCalendarsPrintShowSettings(calIds):
           csvPF.WriteRowTitles(row)
         elif csvPF.CheckRowTitles(row):
           csvPF.WriteRowNoFilter({'calendarId': calId, 'JSON': json.dumps(cleanJSON(calendar), ensure_ascii=False, sort_keys=True)})
-    except (GAPI.notACalendarUser, GAPI.notFound, GAPI.forbidden) as e:
+    except (GAPI.notFound, GAPI.forbidden) as e:
       entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
-    except (GAPI.serviceNotAvailable, GAPI.authError):
-      entityServiceNotApplicableWarning(Ent.CALENDAR, calId, i, count)
+    except GAPI.notACalendarUser:
+      userCalServiceNotEnabledWarning(calId, i, count)
   if csvPF:
     csvPF.writeCSVfile('Calendar Settings')
 
@@ -44817,6 +44908,7 @@ USERS_INDEXED_TITLES = ['addresses', 'aliases', 'nonEditableAliases', 'emails', 
 #	[orderby <UserOrderByFieldName> [ascending|descending]]
 #	[userview] [basic|full|allfields | <UserFieldName>* | fields <UserFieldNameList>]
 #	[delimiter <Character>] [sortheaders] [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
+#	[convertcrnl]
 #	[issuspended <Boolean>] [aliasmatchpattern <RegularExpression>]
 # 	[showitemcountonly]
 #	[showvalidcolumn] (addcsvdata <FieldName> <String>)*
@@ -44829,6 +44921,7 @@ USERS_INDEXED_TITLES = ['addresses', 'aliases', 'nonEditableAliases', 'emails', 
 #	[orderby <UserOrderByFieldName> [ascending|descending]]
 #	[userview] [basic|full|allfields | <UserFieldName>* | fields <UserFieldNameList>]
 #	[delimiter <Character>] [sortheaders] [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
+#	[convertcrnl]
 #	[issuspended <Boolean>] [aliasmatchpattern <RegularExpression>]
 # 	[showitemcountonly]
 #	[showvalidcolumn] (addcsvdata <FieldName> <String>)*
@@ -47332,10 +47425,13 @@ def _convertCourseUserIdToEmail(croom, userId, emails, entityValueList, i, count
     emails[userId] = userEmail
   return userEmail
 
-def _getCoursesOwnerInfo(croom, courseIds, useOwnerAccess):
+def _getCoursesOwnerInfo(croom, courseIds, useOwnerAccess, addCIIdScope=True):
   coursesInfo = {}
   for courseId in courseIds:
+    ciCourseId = courseId
     courseId = addCourseIdScope(courseId)
+    if addCIIdScope:
+      ciCourseId = courseId
     if courseId not in coursesInfo:
       try:
         course = callGAPI(croom.courses(), 'get',
@@ -47347,7 +47443,7 @@ def _getCoursesOwnerInfo(croom, courseIds, useOwnerAccess):
         else:
           ocroom = croom
         if ocroom is not None:
-          coursesInfo[courseId] = {'name': course['name'], 'croom': ocroom}
+          coursesInfo[ciCourseId] = {'name': course['name'], 'croom': ocroom}
       except GAPI.notFound:
         entityDoesNotExistWarning(Ent.COURSE, courseId)
       except (GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
@@ -48817,7 +48913,8 @@ def doCourseAddItems(courseIdList, getEntityListArg):
     if makeFirstTeacherOwner and addItems:
       firstTeacher = normalizeEmailAddressOrUID(addItems[0])
   checkForExtraneousArguments()
-  i, count, coursesInfo = _getCoursesOwnerInfo(croom, courseIdList, role == Ent.COURSE_TOPIC)
+  i, count, coursesInfo = _getCoursesOwnerInfo(croom, courseIdList, role == Ent.COURSE_TOPIC,
+                                               addCIIdScope=courseParticipantLists is None)
   for courseId, courseInfo in coursesInfo.items():
     i += 1
     if courseParticipantLists:
@@ -48825,6 +48922,7 @@ def doCourseAddItems(courseIdList, getEntityListArg):
       firstTeacher = None
       if makeFirstTeacherOwner and addItems:
         firstTeacher = normalizeEmailAddressOrUID(addItems[0])
+      courseId = addCourseIdScope(courseId)
     _batchAddItemsToCourse(courseInfo['croom'], courseId, i, count, addItems, role)
     if makeFirstTeacherOwner and firstTeacher:
       _updateCourseOwner(courseInfo['croom'], courseId, firstTeacher, i, count)
@@ -48864,11 +48962,13 @@ def doCourseRemoveItems(courseIdList, getEntityListArg):
       removeItems = getEntityList(Cmd.OB_COURSE_TOPIC_ID_ENTITY, shlexSplit=True)
     courseParticipantLists = removeItems if isinstance(removeItems, dict) else None
   checkForExtraneousArguments()
-  i, count, coursesInfo = _getCoursesOwnerInfo(croom, courseIdList, useOwnerAccess)
+  i, count, coursesInfo = _getCoursesOwnerInfo(croom, courseIdList, useOwnerAccess,
+                                               addCIIdScope=courseParticipantLists is None)
   for courseId, courseInfo in coursesInfo.items():
     i += 1
     if courseParticipantLists:
       removeItems = courseParticipantLists[courseId]
+      courseId = addCourseIdScope(courseId)
     _batchRemoveItemsFromCourse(courseInfo['croom'], courseId, i, count, removeItems, role)
 
 # gam courses <CourseEntity> clear teachers|students
@@ -48910,7 +49010,8 @@ def doCourseSyncParticipants(courseIdList, getEntityListArg):
         syncParticipantsSet.add(normalizeEmailAddressOrUID(user))
       if makeFirstTeacherOwner:
         firstTeacher = normalizeEmailAddressOrUID(syncParticipants[0])
-  i, count, coursesInfo = _getCoursesOwnerInfo(croom, courseIdList, GC.Values[GC.USE_COURSE_OWNER_ACCESS])
+  i, count, coursesInfo = _getCoursesOwnerInfo(croom, courseIdList, GC.Values[GC.USE_COURSE_OWNER_ACCESS],
+                                               addCIIdScope=courseParticipantLists is None)
   for courseId, courseInfo in coursesInfo.items():
     i += 1
     if courseParticipantLists:
@@ -48921,6 +49022,7 @@ def doCourseSyncParticipants(courseIdList, getEntityListArg):
           syncParticipantsSet.add(normalizeEmailAddressOrUID(user))
         if makeFirstTeacherOwner:
           firstTeacher = normalizeEmailAddressOrUID(courseParticipantLists[courseId][0])
+        courseId = addCourseIdScope(courseId)
     currentParticipantsSet = set()
     currentParticipants = getItemsToModify(PARTICIPANT_EN_MAP[role], courseId, noListConversion=True)
     if GM.Globals[GM.CLASSROOM_SERVICE_NOT_AVAILABLE]:
@@ -50325,15 +50427,12 @@ def _validateUserGetCalendarIds(user, i, count, calendarEntity,
       callGAPI(cal.calendars(), 'get',
                throwReasons=GAPI.CALENDAR_THROW_REASONS,
                calendarId='primary', fields='')
-  except GAPI.notACalendarUser as e:
-    entityActionFailedWarning([Ent.USER, user], str(e), i, count)
-    return (user, None, None, 0)
-  except (GAPI.serviceNotAvailable, GAPI.authError):
-    entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+  except GAPI.notACalendarUser:
+    userCalServiceNotEnabledWarning(user, i, count)
     return (user, None, None, 0)
   if newCalId:
     newcal = buildGAPIObject(API.CALENDAR)
-    if not checkCalendarExists(newcal, newCalId):
+    if not checkCalendarExists(newcal, newCalId, i, count):
       entityActionFailedWarning([Ent.USER, user, Ent.CALENDAR, newCalId], Msg.DOES_NOT_EXIST, i, count)
       return (user, None, None, 0)
   jcount = len(calIds)
@@ -50441,16 +50540,18 @@ def _showCalendar(calendar, j, jcount, FJQC, acls=None):
   Ind.Decrement()
 
 # Process CalendarList functions
-def _processCalendarList(user, calId, j, jcount, cal, function, **kwargs):
+def _processCalendarList(user, i, count, calId, j, jcount, cal, function, **kwargs):
   try:
     callGAPI(cal.calendarList(), function,
-             throwReasons=[GAPI.NOT_FOUND, GAPI.DUPLICATE, GAPI.UNKNOWN_ERROR, GAPI.SERVICE_NOT_AVAILABLE,
+             throwReasons=[GAPI.NOT_FOUND, GAPI.DUPLICATE, GAPI.UNKNOWN_ERROR,
                            GAPI.CANNOT_CHANGE_OWN_ACL, GAPI.CANNOT_CHANGE_OWN_PRIMARY_SUBSCRIPTION],
              **kwargs)
     entityActionPerformed([Ent.USER, user, Ent.CALENDAR, calId], j, jcount)
   except (GAPI.notFound, GAPI.duplicate, GAPI.unknownError, GAPI.serviceNotAvailable,
           GAPI.cannotChangeOwnAcl, GAPI.cannotChangeOwnPrimarySubscription) as e:
     entityActionFailedWarning([Ent.USER, user, Ent.CALENDAR, calId], str(e), j, jcount)
+  except GAPI.notACalendarUser:
+    userCalServiceNotEnabledWarning(user, i, count)
 
 # gam <UserTypeEntity> add calendars <UserCalendarAddEntity> <CalendarAttribute>*
 def addCalendars(users):
@@ -50469,7 +50570,7 @@ def addCalendars(users):
     for calId in calIds:
       j += 1
       body['id'] = calId = normalizeCalendarId(calId, user)
-      _processCalendarList(user, calId, j, jcount, cal, 'insert',
+      _processCalendarList(user, i, count, calId, j, jcount, cal, 'insert',
                            body=body, colorRgbFormat=colorRgbFormat, fields='')
     Ind.Decrement()
 
@@ -50485,7 +50586,7 @@ def _updateDeleteCalendars(users, calendarEntity, function, **kwargs):
     for calId in calIds:
       j += 1
       calId = normalizeCalendarId(calId, user)
-      _processCalendarList(user, calId, j, jcount, cal, function,
+      _processCalendarList(user, i, count, calId, j, jcount, cal, function,
                            calendarId=calId, **kwargs)
     Ind.Decrement()
 
@@ -50519,10 +50620,10 @@ def createCalendar(users):
                        throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.FORBIDDEN],
                        body=body, fields='id')['id']
       entityActionPerformed([Ent.USER, user, Ent.CALENDAR, calId], i, count)
-    except (GAPI.notACalendarUser, GAPI.forbidden) as e:
+    except GAPI.forbidden as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
-    except (GAPI.serviceNotAvailable, GAPI.authError):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.notACalendarUser:
+      userCalServiceNotEnabledWarning(user, i, count)
 
 def addCreateCalendars(users):
   if Act.Get() == Act.ADD:
@@ -50550,11 +50651,8 @@ def _modifyRemoveCalendars(users, calendarEntity, function, **kwargs):
         entityActionPerformed([Ent.USER, user, Ent.CALENDAR, calId], j, jcount)
       except (GAPI.notFound, GAPI.cannotDeletePrimaryCalendar, GAPI.forbidden, GAPI.invalid, GAPI.requiredAccessLevel) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.CALENDAR, calId], str(e), j, jcount)
-      except GAPI.notACalendarUser as e:
-        entityActionFailedWarning([Ent.USER, user], str(e), i, count)
-        break
-      except (GAPI.serviceNotAvailable, GAPI.authError):
-        entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+      except GAPI.notACalendarUser:
+        userCalServiceNotEnabledWarning(user, i, count)
         break
     Ind.Decrement()
 
@@ -50576,7 +50674,7 @@ def _getCalendarPermissions(cal, calendar):
       return callGAPIpages(cal.acl(), 'list', 'items',
                            throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND],
                            calendarId=calendar['id'], fields='nextPageToken,items(id,role,scope)')
-    except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.notACalendarUser, GAPI.notFound):
+    except (GAPI.notACalendarUser, GAPI.notFound):
       pass
   return []
 
@@ -50636,13 +50734,16 @@ def infoCalendars(users):
       calId = normalizeCalendarId(calId, user)
       try:
         result = callGAPI(cal.calendarList(), 'get',
-                          throwReasons=[GAPI.NOT_FOUND],
+                          throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND],
                           calendarId=calId, fields=fields)
         if getCalPermissions:
           acls = _getCalendarPermissions(cal, result)
         _showCalendar(result, j, jcount, FJQC, acls)
       except GAPI.notFound as e:
         entityActionFailedWarning([Ent.USER, user, Ent.CALENDAR, calId], str(e), j, jcount)
+      except GAPI.notACalendarUser:
+        userCalServiceNotEnabledWarning(user, i, count)
+        break
     Ind.Decrement()
 
 CALENDAR_SIMPLE_LISTS = {'allowedConferenceSolutionTypes'}
@@ -50716,11 +50817,8 @@ def printShowCalendars(users):
       calendars = callGAPIpages(cal.calendarList(), 'list', 'items',
                                 throwReasons=GAPI.CALENDAR_THROW_REASONS,
                                 fields=fields, **kwargs)
-    except GAPI.notACalendarUser as e:
-      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
-      continue
-    except (GAPI.serviceNotAvailable, GAPI.authError):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.notACalendarUser:
+      userCalServiceNotEnabledWarning(user, i, count)
       continue
     if primaryOnly:
       for calendar in calendars:
@@ -50813,11 +50911,8 @@ def printShowCalSettings(users):
     try:
       feed = callGAPIpages(cal.settings(), 'list', 'items',
                            throwReasons=GAPI.CALENDAR_THROW_REASONS)
-    except GAPI.notACalendarUser as e:
-      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
-      continue
-    except (GAPI.serviceNotAvailable, GAPI.authError):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.notACalendarUser:
+      userCalServiceNotEnabledWarning(user, i, count)
       continue
     settings = {}
     for setting in feed:
@@ -51001,7 +51096,7 @@ def transferCalendars(users):
         continue
       try:
         callGAPI(sourceCal.acl(), 'insert',
-                 throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID, GAPI.FORBIDDEN, GAPI.REQUIRED_ACCESS_LEVEL],
+                 throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID, GAPI.FORBIDDEN, GAPI.REQUIRED_ACCESS_LEVEL],
                  calendarId=calId, body=targetRoleBody, sendNotifications=sendNotifications, fields='')
         entityModifierNewValueItemValueListActionPerformed([Ent.CALENDAR, calId], Act.MODIFIER_TO, None, [Ent.USER, targetUser], j, jcount)
       except (GAPI.forbidden, GAPI.requiredAccessLevel) as e:
@@ -51010,12 +51105,15 @@ def transferCalendars(users):
       except (GAPI.notFound, GAPI.invalid):
         entityUnknownWarning(Ent.CALENDAR, calId, j, jcount)
         continue
+      except GAPI.notACalendarUser:
+        userCalServiceNotEnabledWarning(user, i, count)
+        break
       if updateBody:
         Act.Set(Act.UPDATE)
         try:
           if appendFields:
             body = callGAPI(targetCal.calendars(), 'get',
-                            throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN],
+                            throwReasons=GAPI.CALENDAR_THROW_REASONS+GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN],
                             calendarId=calId, fields=appendFields)
             for field in appendFieldsList:
               if field in updateBody:
@@ -51033,23 +51131,27 @@ def transferCalendars(users):
                    calendarId=calId, body=body)
           if showUpdateMessages:
             entityActionPerformed([Ent.CALENDAR, calId], j, jcount)
-        except (GAPI.notACalendarUser, GAPI.notFound) as e:
+        except (GAPI.notFound) as e:
           entityActionFailedWarning([Ent.CALENDAR, calId], str(e), j, jcount)
-        except (GAPI.serviceNotAvailable, GAPI.authError):
-          entityServiceNotApplicableWarning(Ent.CALENDAR, calId, j, jcount)
+        except GAPI.notACalendarUser:
+          userCalServiceNotEnabledWarning(targetUser, i, count)
+          break
       if addToNewOwner:
         Act.Set(Act.ADD)
         targetListBody['id'] = calId
         try:
           callGAPI(targetCal.calendarList(), 'insert',
-                   throwReasons=[GAPI.NOT_FOUND, GAPI.DUPLICATE, GAPI.UNKNOWN_ERROR, GAPI.SERVICE_NOT_AVAILABLE,
-                                 GAPI.CANNOT_CHANGE_OWN_ACL, GAPI.CANNOT_CHANGE_OWN_PRIMARY_SUBSCRIPTION],
+                   throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.DUPLICATE, GAPI.UNKNOWN_ERROR,
+                                                             GAPI.CANNOT_CHANGE_OWN_ACL, GAPI.CANNOT_CHANGE_OWN_PRIMARY_SUBSCRIPTION],
                    body=targetListBody, colorRgbFormat=colorRgbFormat, fields='')
           if showListMessages:
             entityModifierNewValueItemValueListActionPerformed([Ent.CALENDAR, calId], Act.MODIFIER_TO, None, [Ent.USER, targetUser], j, jcount)
-        except (GAPI.notFound, GAPI.duplicate, GAPI.unknownError, GAPI.serviceNotAvailable,
+        except (GAPI.notFound, GAPI.duplicate, GAPI.unknownError,
                 GAPI.cannotChangeOwnAcl, GAPI.cannotChangeOwnPrimarySubscription) as e:
           entityActionFailedWarning([Ent.CALENDAR, calId], str(e), j, jcount)
+        except GAPI.notACalendarUser:
+          userCalServiceNotEnabledWarning(targetUser, i, count)
+          break
       Act.Set(Act.RETAIN)
       if retainRoleBody['role'] == 'owner':
         if showRetentionMessages:
@@ -51057,33 +51159,40 @@ def transferCalendars(users):
       elif retainRoleBody['role'] != 'none':
         try:
           callGAPI(targetCal.acl(), 'patch',
-                   throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_PARAMETER, GAPI.INVALID_SCOPE_VALUE, GAPI.ILLEGAL_ACCESS_ROLE_FOR_DEFAULT,
-                                 GAPI.CANNOT_CHANGE_OWN_ACL, GAPI.CANNOT_CHANGE_OWNER_ACL, GAPI.FORBIDDEN],
+                   throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_PARAMETER,
+                                                             GAPI.INVALID_SCOPE_VALUE, GAPI.ILLEGAL_ACCESS_ROLE_FOR_DEFAULT,
+                                                             GAPI.CANNOT_CHANGE_OWN_ACL, GAPI.CANNOT_CHANGE_OWNER_ACL, GAPI.FORBIDDEN],
                    calendarId=calId, ruleId=sourceRuleId, body=retainRoleBody, sendNotifications=sendNotifications, fields='')
           if showRetentionMessages:
             entityActionPerformed([Ent.CALENDAR, calId, Ent.CALENDAR_ACL, formatACLScopeRole(sourceRuleId, retainRoleBody['role'])], j, jcount)
         except GAPI.notFound as e:
-          if not checkCalendarExists(targetCal, calId):
+          if not checkCalendarExists(targetCal, calId, i, count):
             entityUnknownWarning(Ent.CALENDAR, calId, j, jcount)
           else:
             entityActionFailedWarning([Ent.CALENDAR, calId, Ent.CALENDAR_ACL, formatACLScopeRole(sourceRuleId, retainRoleBody['role'])], str(e), j, jcount)
         except (GAPI.invalid, GAPI.invalidParameter, GAPI.invalidScopeValue, GAPI.illegalAccessRoleForDefault, GAPI.forbidden, GAPI.cannotChangeOwnAcl, GAPI.cannotChangeOwnerAcl) as e:
           entityActionFailedWarning([Ent.CALENDAR, calId, Ent.CALENDAR_ACL, formatACLScopeRole(sourceRuleId, retainRoleBody['role'])], str(e), j, jcount)
+        except GAPI.notACalendarUser:
+          userCalServiceNotEnabledWarning(targetUser, i, count)
+          break
       else:
         try:
           callGAPI(targetCal.acl(), 'delete',
-                   throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID],
+                   throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID],
                    calendarId=calId, ruleId=sourceRuleId)
           if showRetentionMessages:
             entityActionPerformed([Ent.CALENDAR, calId, Ent.CALENDAR_ACL, formatACLScopeRole(sourceRuleId, retainRoleBody['role'])], j, jcount)
         except (GAPI.notFound, GAPI.invalid):
           entityUnknownWarning(Ent.CALENDAR, calId, j, jcount)
+        except GAPI.notACalendarUser:
+          userCalServiceNotEnabledWarning(targetUser, i, count)
+          break
       if deleteFromOldOwner:
         Act.Set(Act.DELETE)
         try:
           callGAPI(sourceCal.calendarList(), 'delete',
-                   throwReasons=[GAPI.NOT_FOUND, GAPI.DUPLICATE, GAPI.UNKNOWN_ERROR, GAPI.SERVICE_NOT_AVAILABLE,
-                                 GAPI.CANNOT_CHANGE_OWN_ACL, GAPI.CANNOT_CHANGE_OWN_PRIMARY_SUBSCRIPTION],
+                   throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.DUPLICATE, GAPI.UNKNOWN_ERROR,
+                                                             GAPI.CANNOT_CHANGE_OWN_ACL, GAPI.CANNOT_CHANGE_OWN_PRIMARY_SUBSCRIPTION],
                    calendarId=calId)
           entityModifierNewValueItemValueListActionPerformed([Ent.CALENDAR, calId], Act.MODIFIER_FROM, None, [Ent.USER, user], j, jcount)
         except GAPI.notFound as e:
@@ -51092,9 +51201,12 @@ def transferCalendars(users):
               entityModifierNewValueItemValueListActionPerformed([Ent.CALENDAR, calId], Act.MODIFIER_FROM, None, [Ent.USER, user], j, jcount)
           else:
             entityActionFailedWarning([Ent.CALENDAR, calId], str(e), j, jcount)
-        except (GAPI.duplicate, GAPI.unknownError, GAPI.serviceNotAvailable,
+        except (GAPI.duplicate, GAPI.unknownError,
                 GAPI.cannotChangeOwnAcl, GAPI.cannotChangeOwnPrimarySubscription) as e:
           entityActionFailedWarning([Ent.CALENDAR, calId], str(e), j, jcount)
+        except GAPI.notACalendarUser:
+          userCalServiceNotEnabledWarning(user, i, count)
+          break
     Ind.Decrement()
 
 def _createImportCalendarEvent(users, function):
@@ -51193,7 +51305,7 @@ def moveCalendarEvents(users):
   checkArgumentPresent(['to', 'destination'])
   newCalId = convertUIDtoEmailAddress(getString(Cmd.OB_CALENDAR_ITEM))
   parameters, _ = _getCalendarMoveEventsOptions()
-  if not checkCalendarExists(None, newCalId, True):
+  if not checkCalendarExists(None, newCalId, 0, 0, True):
     return
   i, count, users = getEntityArgument(users)
   for user in users:
@@ -51444,16 +51556,16 @@ def updateCalendarAttendees(users):
                          sendUpdates=parameters['sendUpdates'], fields='')
                 entityActionPerformedMessage([Ent.EVENT, eventSummary], removeMessage, j, jcount)
               except GAPI.notFound as e:
-                if not checkCalendarExists(cal, calId):
+                if not checkCalendarExists(cal, calId, i, count):
                   entityUnknownWarning(Ent.CALENDAR, calId, j, jcount)
                   break
                 entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventSummary], str(e), k, kcount)
                 status = False
-              except (GAPI.notACalendarUser, GAPI.forbidden, GAPI.invalid) as e:
+              except (GAPI.forbidden, GAPI.invalid) as e:
                 entityActionFailedWarning([Ent.CALENDAR, calId], str(e), j, jcount)
                 break
-              except (GAPI.serviceNotAvailable, GAPI.authError):
-                entityServiceNotApplicableWarning(Ent.CALENDAR, calId, j, jcount)
+              except GAPI.notACalendarUser:
+                userCalServiceNotEnabledWarning(user, i, count)
                 break
             if status:
               try:
@@ -51463,15 +51575,15 @@ def updateCalendarAttendees(users):
                          sendUpdates=parameters['sendUpdates'], fields='')
                 entityActionPerformedMessage([Ent.EVENT, eventSummary], addMessage, jcount)
               except GAPI.notFound as e:
-                if not checkCalendarExists(cal, calId):
+                if not checkCalendarExists(cal, calId, i, count):
                   entityUnknownWarning(Ent.CALENDAR, calId, j, jcount)
                   break
                 entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventSummary], str(e), k, kcount)
-              except (GAPI.notACalendarUser, GAPI.forbidden, GAPI.invalid) as e:
+              except (GAPI.forbidden, GAPI.invalid) as e:
                 entityActionFailedWarning([Ent.CALENDAR, calId], str(e), j, jcount)
                 break
-              except (GAPI.serviceNotAvailable, GAPI.authError):
-                entityServiceNotApplicableWarning(Ent.CALENDAR, calId, j, jcount)
+              except GAPI.notACalendarUser:
+                userCalServiceNotEnabledWarning(user, i, count)
                 break
           else:
             entityActionNotPerformedWarning([Ent.EVENT, eventSummary], Msg.USE_DOIT_ARGUMENT_TO_PERFORM_ACTION, j, jcount)
@@ -51756,14 +51868,14 @@ def createStatusEvent(users, eventType):
           if wlDate['type'] == 'timerange':
             break
           first += wlDate['udelta']
-        except (GAPI.notACalendarUser, GAPI.forbidden, GAPI.invalid) as e:
+        except (GAPI.forbidden, GAPI.invalid) as e:
           entityActionFailedWarning([Ent.CALENDAR, user], str(e), i, count)
           break
         except (GAPI.badRequest, GAPI.timeRangeEmpty, GAPI.malformedWorkingLocationEvent) as e:
           entityActionFailedWarning(kvList, str(e), j, jcount)
           break
-        except (GAPI.serviceNotAvailable, GAPI.authError):
-          entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+        except GAPI.notACalendarUser:
+          userCalServiceNotEnabledWarning(user, i, count)
           break
     Ind.Decrement()
 
@@ -51821,11 +51933,11 @@ def deleteStatusEvent(users, eventType):
           events = callGAPIpages(cal.events(), 'list', 'items',
                                  throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID, GAPI.BAD_REQUEST],
                                  calendarId=calId, fields=f'nextPageToken,items(id,start,end,{eventProperties})', **kwargs)
-        except (GAPI.notACalendarUser, GAPI.notFound, GAPI.forbidden, GAPI.invalid, GAPI.badRequest) as e:
+        except (GAPI.notFound, GAPI.forbidden, GAPI.invalid, GAPI.badRequest) as e:
           entityActionFailedWarning([Ent.CALENDAR, user], str(e), j, jcount)
           break
-        except (GAPI.serviceNotAvailable, GAPI.authError):
-          entityServiceNotApplicableWarning(Ent.CALENDAR, user, i, count)
+        except GAPI.notACalendarUser:
+          userCalServiceNotEnabledWarning(user, i, count)
           break
         kcount = len(events)
         k = 0
@@ -51854,17 +51966,14 @@ def deleteStatusEvent(users, eventType):
                 kvList.extend([Ent.LOCATION, location])
             entityActionPerformed(kvList, k, kcount)
           except (GAPI.notFound, GAPI.deleted) as e:
-            if not checkCalendarExists(cal, calId):
+            if not checkCalendarExists(cal, calId, i, count):
               entityUnknownWarning(Ent.CALENDAR, calId, k, kcount)
               break
             entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), k, kcount)
           except (GAPI.forbidden, GAPI.invalid, GAPI.required, GAPI.requiredAccessLevel) as e:
             entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), k, kcount)
-          except GAPI.notACalendarUser as e:
-            entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
-            break
-          except (GAPI.serviceNotAvailable, GAPI.authError):
-            entityServiceNotApplicableWarning(Ent.CALENDAR, calId, i, count)
+          except GAPI.notACalendarUser:
+            userCalServiceNotEnabledWarning(user, i, count)
             break
     Ind.Decrement()
 
@@ -51937,11 +52046,11 @@ def printShowStatusEvent(users, eventType):
                                  throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID, GAPI.BAD_REQUEST],
                                  calendarId=calId, fields=f'nextPageToken,items(id,start,end,eventType,{eventProperties},transparency,visibility)',
                                  **kwargs)
-        except (GAPI.notACalendarUser, GAPI.notFound, GAPI.forbidden, GAPI.invalid, GAPI.badRequest) as e:
+        except (GAPI.notFound, GAPI.forbidden, GAPI.invalid, GAPI.badRequest) as e:
           entityActionFailedWarning([Ent.CALENDAR, user], str(e), j, jcount)
           break
-        except (GAPI.serviceNotAvailable, GAPI.authError):
-          entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+        except GAPI.notACalendarUser:
+          userCalServiceNotEnabledWarning(user, i, count)
           break
         if not csvPF:
           kcount = len(events)
@@ -52053,7 +52162,7 @@ def printShowYouTubeChannel(users):
         entityActionFailedWarning([Ent.USER, user], str(e), i, count)
       continue
     except (GAPI.serviceNotAvailable, GAPI.authError):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+      userYouTubeServiceNotEnabledWarning(user, i, count)
       continue
     if not csvPF:
       jcount = len(channels)
@@ -52183,7 +52292,7 @@ def doDriveSearch(drive, user, i, count, query=None, parentQuery=False, emptyQue
   except (GAPI.notFound, GAPI.teamDriveMembershipRequired) as e:
     entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, kwargs['driveId']], str(e), i, count)
   except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-    userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+    userDriveServiceNotEnabledWarning(user, str(e), i, count)
   return None
 
 def doSharedDriveSearch(drive, user, i, count, query, useDomainAdminAccess):
@@ -52205,7 +52314,7 @@ def doSharedDriveSearch(drive, user, i, count, query, useDomainAdminAccess):
   except (GAPI.queryRequiresAdminCredentials, GAPI.noListTeamDrivesAdministratorPrivilege) as e:
     entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE, None], str(e), i, count)
   except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-    userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+    userDriveServiceNotEnabledWarning(user, str(e), i, count)
   return None
 
 def _getFileIdFromURL(fileId):
@@ -52593,7 +52702,7 @@ def _validateUserGetFileIDs(user, i, count, fileIdEntity, drive=None, entityType
         fileIdEntity['list'][j] = rootFolderId
       return True
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       return False
 
   if fileIdEntity['dict']:
@@ -52707,7 +52816,7 @@ def _getDriveFileParentInfo(drive, user, i, count, body, parameters, emptyQueryO
                                       f'parentid: {parameters[DFA_PARENTID]}, {str(e)}', i, count)
       return False
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       return False
   if parameters[DFA_PARENTQUERY]:
     parents = doDriveSearch(drive, user, i, count, query=parameters[DFA_PARENTQUERY], parentQuery=True, emptyQueryOK=emptyQueryOK)
@@ -52746,7 +52855,7 @@ def _getDriveFileParentInfo(drive, user, i, count, body, parameters, emptyQueryO
                                       f'shareddriveparentid: {parameters[DFA_SHAREDDRIVE_PARENTID]}, {str(e)}', i, count)
       return False
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       return False
   if parameters[DFA_SHAREDDRIVE_PARENT]:
     tempIdEntity = {'shareddrivename': parameters[DFA_SHAREDDRIVE_PARENT], 'shareddrive': {}}
@@ -53336,7 +53445,7 @@ def printDriveActivity(users):
         printGotEntityItemsForWhom(0)
         continue
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         continue
     for f_file in fileList:
       fileId = f_file['id']
@@ -53409,7 +53518,7 @@ def printDriveActivity(users):
         entityActionFailedWarning([Ent.USER, user, entityType, fileId], str(e), i, count)
         continue
       except GAPI.serviceNotAvailable:
-        entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         continue
   csvPF.writeCSVfile('Drive Activity')
 
@@ -53603,7 +53712,7 @@ def printShowDriveSettings(users):
             j += 1
         csvPF.WriteRowTitles(row)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
   if csvPF:
     csvPF.writeCSVfile('User Drive Settings')
 
@@ -53624,7 +53733,7 @@ def showSharedDriveThemes(users):
       entityPerformActionNumItems([Ent.USER, user], jcount, Ent.SHAREDDRIVE_THEME, i, count)
       _showSharedDriveThemeSettings(themes)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
 
 def doShowSharedDriveThemes():
   showSharedDriveThemes([_getAdminEmail()])
@@ -54196,11 +54305,6 @@ def _setGetPermissionsForSharedDrives(fieldsList):
     permissionsFields = getItemFieldsFromFieldsList('permissions', permissionsFieldsList, True)
   return (getPermissionsForSharedDrives, permissionsFields)
 
-def _stripControlCharsFromName(name):
-  for cc in ['\x00', '\r', '\n']:
-    name = name.replace(cc, '')
-  return name
-
 SHOWLABELS_CHOICES = {'details', 'ids'}
 
 def _formatFileDriveLabels(showLabels, labels, result, printMode, delimiter):
@@ -54312,7 +54416,7 @@ def showFileInfo(users):
                                                         throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                                                         fileId=ROOT, fields='id')['id']
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         continue
     if filepath:
       filePathInfo = initFilePathInfo(pathDelimiter)
@@ -54408,7 +54512,7 @@ def showFileInfo(users):
               GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.invalid) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
 
@@ -54462,7 +54566,7 @@ def _selectRevisionIds(drive, fileId, origUser, user, i, count, j, jcount, revis
     entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], str(e), j, jcount)
     return []
   except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-    userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+    userDriveServiceNotEnabledWarning(user, str(e), i, count)
     return []
   numRevisions = len(results)
   if numRevisions == 0:
@@ -54598,7 +54702,7 @@ def deleteFileRevisions(users):
           except GAPI.revisionNotFound:
             entityDoesNotHaveItemWarning([Ent.USER, user, entityType, fileName, Ent.DRIVE_FILE_REVISION, revisionId], k, kcount)
           except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-            userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+            userDriveServiceNotEnabledWarning(user, str(e), i, count)
             break
         else:
           entityActionNotPerformedWarning([Ent.USER, user, entityType, fileName, Ent.DRIVE_FILE_REVISION, revisionId], Msg.PREVIEW_ONLY, k, kcount)
@@ -54687,7 +54791,7 @@ def updateFileRevisions(users):
           except GAPI.revisionNotFound:
             entityDoesNotHaveItemWarning([Ent.USER, user, entityType, fileName, Ent.DRIVE_FILE_REVISION, revisionId], k, kcount)
           except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-            userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+            userDriveServiceNotEnabledWarning(user, str(e), i, count)
             break
         else:
           entityActionNotPerformedWarning([Ent.USER, user, entityType, fileName, Ent.DRIVE_FILE_REVISION, revisionId], Msg.PREVIEW_ONLY, k, kcount)
@@ -54885,7 +54989,7 @@ def printShowFileRevisions(users):
         entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], str(e), j, jcount)
         continue
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
       if revisionsEntity:
         results = _selectRevisionResults(results, fileId, origUser, revisionsEntity, previewDelete)
@@ -54991,7 +55095,7 @@ def initFileTree(drive, shareddrive, DLP, shareddriveFields, showParent, user, i
     entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE, fileId], str(e), i, count)
     return (None, False)
   except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-    userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+    userDriveServiceNotEnabledWarning(user, str(e), i, count)
     return (None, False)
   return (fileTree, True)
 
@@ -55881,7 +55985,7 @@ def printFileList(users):
     except (GAPI.invalidQuery, GAPI.invalid, GAPI.badRequest):
       entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE, None], invalidQuery(selectSubQuery), i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
 
   def writeMimeTypeCountsRow(user, sourceId, sourceName, mimeTypeInfo):
     countTotal = sizeTotal = 0
@@ -55906,6 +56010,7 @@ def printFileList(users):
       csvPFco.WriteRowTitles(row)
 
   csvPF = CSVPrintFile('Owner', indexedTitles=DRIVE_INDEXED_TITLES)
+  csvPFco = None
   FJQC = FormatJSONQuoteChar(csvPF)
   addPathsToJSON = continueOnInvalidQuery = countsRowFilter = buildTree = countsOnly = filepath = fullpath = folderPathOnly = \
     getPermissionsForSharedDrives = mimeTypeInQuery = noRecursion = oneItemPerRow = stripCRsFromName = \
@@ -56155,7 +56260,7 @@ def printFileList(users):
         entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, fileIdEntity['shareddrive']['driveId']], str(e), i, count)
         continue
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         continue
     if filepath:
       filePathInfo = initFilePathInfo(pathDelimiter)
@@ -56220,7 +56325,7 @@ def printFileList(users):
         entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, fileIdEntity['shareddrive']['driveId']], str(e), i, count)
         continue
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         continue
     else:
       fileTree = {}
@@ -56257,7 +56362,7 @@ def printFileList(users):
           entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, fileIdEntity['shareddrive']['driveId']], str(e), j, jcount)
           continue
         except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-          userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+          userDriveServiceNotEnabledWarning(user, str(e), i, count)
           break
       if fullpath:
         getFilePaths(drive, fileTree, fileEntryInfo, filePathInfo, addParentsToTree=True,
@@ -56507,7 +56612,7 @@ def printShowFileComments(users):
         entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_ID, fileId], str(e), j, jcount)
         continue
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
       kcount = len(comments)
       if countsOnly:
@@ -56680,7 +56785,7 @@ def printShowFilePaths(users):
       except GAPI.fileNotFound:
         entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], Msg.DOES_NOT_EXIST, j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
   if csvPF:
@@ -56712,7 +56817,7 @@ def printFileParentTree(users):
                               throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                               fileId=ROOT, fields='id')['id']
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       continue
     j = 0
     for fileId in fileIdEntity['list']:
@@ -56745,7 +56850,7 @@ def printFileParentTree(users):
           entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], Msg.DOES_NOT_EXIST, j, jcount)
           break
         except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-          userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+          userDriveServiceNotEnabledWarning(user, str(e), i, count)
           break
       kcount = len(fileList)
       isBase = True
@@ -57000,7 +57105,7 @@ def printShowFileCounts(users):
     except (GAPI.notFound, GAPI.teamDriveMembershipRequired) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, sharedDriveId], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       continue
   if summary != FILECOUNT_SUMMARY_NONE:
     showMimeTypeInfo(summaryUser, summaryMimeTypeInfo,
@@ -57032,7 +57137,7 @@ def printDiskUsage(users):
       entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FOLDER, None], invalidQuery(q), i, count)
       return
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       return
     Ind.Increment()
     if showProgress:
@@ -57191,7 +57296,7 @@ def printDiskUsage(users):
         entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, fileIdEntity['shareddrive']['driveId']], str(e), j, jcount)
         continue
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
       if showResults == 'all':
         for folder in foldersList:
@@ -57336,7 +57441,7 @@ def printShowFileShareCounts(users):
                   userShareCounts[FILESHARECOUNTS_CATEGORIES[ptype][internal]] += 1
       showShareCounts(user, userShareCounts, i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       continue
   if summary != FILECOUNT_SUMMARY_NONE:
     showShareCounts(summaryUser, summaryShareCounts, 0, 0)
@@ -57457,7 +57562,7 @@ def printShowFileTree(users):
       entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE, None], invalidQuery(selectSubQuery), i, count)
       return
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       return
     for childEntryInfo in children:
       if not DLP.CheckExcludeTrashed(childEntryInfo):
@@ -57579,7 +57684,7 @@ def printShowFileTree(users):
         entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, fileIdEntity['shareddrive']['driveId']], str(e), i, count)
         continue
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         continue
     else:
       fileTree = {}
@@ -57611,7 +57716,7 @@ def printShowFileTree(users):
           entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, fileIdEntity['shareddrive']['driveId']], str(e), j, jcount)
           continue
         except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-          userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+          userDriveServiceNotEnabledWarning(user, str(e), i, count)
           break
       _showFileInfo(fileEntryInfo, -1, j, jcount)
       Ind.Increment()
@@ -57816,7 +57921,7 @@ def createDriveFile(users):
             GAPI.uploadTooLarge, GAPI.teamDrivesShortcutFileNotSupported) as e:
       entityActionFailedWarning([Ent.USER, user, entityType, body['name']], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
   if csvPF:
     csvPF.writeCSVfile('Files')
 
@@ -57942,7 +58047,7 @@ def createDriveFolderPath(users):
         errors = True
         break
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         errors = True
         break
       if not returnIdOnly:
@@ -58013,7 +58118,7 @@ def createDriveFileShortcut(users):
                                 throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                                 fileId=ROOT, fields='id')['id']
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         continue
       newParents = [rootFolderId]
       numNewParents = 1
@@ -58031,7 +58136,7 @@ def createDriveFileShortcut(users):
         entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, fileId], str(e), j, jcount)
         continue
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
       targetName = target['name']
       if baseShortcutName:
@@ -58200,7 +58305,7 @@ def checkDriveFileShortcut(users):
         else:
           row['code'] = SHORTCUT_CODE_SHORTCUT_NOT_FOUND
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
       if csvPF:
         csvPF.WriteRow(row)
@@ -58223,7 +58328,7 @@ def updateDriveFile(users):
   assignLocalName = True
   parameters = initDriveFileAttributes()
   media_body = None
-  addSheetEntity = None
+  addSheetBody = addSheetEntity = None
   updateSheetEntity = None
   clearFilter = False
   preserveModifiedTime = False
@@ -58395,7 +58500,7 @@ def updateDriveFile(users):
                     GAPI.invalid, GAPI.invalidArgument, GAPI.failedPrecondition) as e:
               entityActionFailedWarning(entityValueList, str(e), j, jcount)
             except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-              userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+              userDriveServiceNotEnabledWarning(user, str(e), i, count)
               break
           else:
             result = callGAPI(drive.files(), 'update',
@@ -58439,7 +58544,7 @@ def updateDriveFile(users):
                 GAPI.fileOwnerNotMemberOfWriterDomain, GAPI.fileWriterTeamDriveMoveInDisabled) as e:
           entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], str(e), j, jcount)
         except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-          userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+          userDriveServiceNotEnabledWarning(user, str(e), i, count)
           break
       Ind.Decrement()
     else:
@@ -58475,7 +58580,7 @@ def updateDriveFile(users):
           entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE, fileId], str(e), j, jcount)
           break
         except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-          userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+          userDriveServiceNotEnabledWarning(user, str(e), i, count)
           break
       Ind.Decrement()
 
@@ -58835,7 +58940,7 @@ def _copyPermissions(drive, user, i, count, j, jcount,
       entityActionFailedWarning([Ent.USER, user, entityType, fileTitle], str(e), j, jcount)
       _incrStatistic(statistics, stat)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       _incrStatistic(statistics, stat)
     return None
 
@@ -59009,7 +59114,7 @@ def _copyPermissions(drive, user, i, count, j, jcount,
           break
         sendNotificationEmail = True
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         _incrStatistic(statistics, stat)
         Ind.Decrement()
         Act.Set(action)
@@ -59032,7 +59137,7 @@ def _copyPermissions(drive, user, i, count, j, jcount,
             GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded) as e:
       entityActionFailedWarning(kvList, str(e), k, kcount)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       _incrStatistic(statistics, stat)
       Ind.Decrement()
       Act.Set(action)
@@ -59058,7 +59163,7 @@ def _copyPermissions(drive, user, i, count, j, jcount,
             GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded) as e:
       entityActionFailedWarning(kvList, str(e), k, kcount)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       _incrStatistic(statistics, stat)
       Ind.Decrement()
       Act.Set(action)
@@ -59114,7 +59219,7 @@ def _updateSheetProtectedRangesACLchange(sheet, user, i, count, j, jcount, fileI
           GAPI.invalid, GAPI.invalidArgument, GAPI.failedPrecondition) as e:
     entityActionFailedWarning([Ent.USER, user, Ent.SPREADSHEET, fileTitle], str(e), j, jcount)
   except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-    userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+    userDriveServiceNotEnabledWarning(user, str(e), i, count)
 
 def _getSheetProtectedRanges(sheet, user, i, count, j, jcount, fileId, fileTitle,
                              statistics, stat):
@@ -59132,7 +59237,7 @@ def _getSheetProtectedRanges(sheet, user, i, count, j, jcount, fileId, fileTitle
     entityActionFailedWarning([Ent.USER, user, Ent.SPREADSHEET, fileTitle], str(e), j, jcount)
     _incrStatistic(statistics, stat)
   except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-    userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+    userDriveServiceNotEnabledWarning(user, str(e), i, count)
     _incrStatistic(statistics, stat)
   return sheetProtectedRanges
 
@@ -59148,7 +59253,7 @@ def _updateSheetProtectedRanges(sheet, user, i, count, j, jcount, newFileId, new
     entityActionFailedWarning([Ent.USER, user, Ent.SPREADSHEET, newFileTitle], str(e), j, jcount)
     _incrStatistic(statistics, stat)
   except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-    userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+    userDriveServiceNotEnabledWarning(user, str(e), i, count)
     _incrStatistic(statistics, stat)
 
 def _identicalSourceTarget(fileId, targetChildren):
@@ -59217,7 +59322,7 @@ def _getCopyMoveParentInfo(drive, user, i, count, j, jcount, newParentId, statis
           GAPI.unknownError, GAPI.cannotCopyFile, GAPI.badRequest, GAPI.fileNeverWritable) as e:
     entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, newParentId], str(e), j, jcount)
   except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-    userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+    userDriveServiceNotEnabledWarning(user, str(e), i, count)
   _incrStatistic(statistics, STAT_FILE_FAILED)
   return None
 
@@ -59234,7 +59339,7 @@ def _getCopyMoveTargetInfo(drive, user, i, count, j, jcount, source, destFilenam
           GAPI.unknownError, GAPI.cannotCopyFile, GAPI.badRequest, GAPI.fileNeverWritable) as e:
     entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, newParentId], str(e), j, jcount)
   except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-    userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+    userDriveServiceNotEnabledWarning(user, str(e), i, count)
   _incrStatistic(statistics, STAT_FILE_FAILED)
   return None
 
@@ -59442,7 +59547,7 @@ def copyDriveFile(users):
             GAPI.storageQuotaExceeded, GAPI.teamDriveFileLimitExceeded, GAPI.teamDriveHierarchyTooDeep, GAPI.badRequest) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FOLDER, newFolderName], str(e), j, jcount)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
     _incrStatistic(statistics, STAT_FOLDER_FAILED)
     copyMoveOptions['retainSourceFolders'] = True
     return (None, None, False)
@@ -59937,7 +60042,7 @@ def copyDriveFile(users):
         entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], str(e), j, jcount)
         _incrStatistic(statistics, STAT_FILE_FAILED)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         _incrStatistic(statistics, STAT_FILE_FAILED)
         break
     Ind.Decrement()
@@ -59968,7 +60073,7 @@ def _updateMoveFilePermissions(drive, user, i, count,
             GAPI.unknownError, GAPI.invalid):
       pass
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       _incrStatistic(statistics, stat)
     return None
 
@@ -60057,7 +60162,7 @@ def _updateMoveFilePermissions(drive, user, i, count,
               GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded) as e:
         entityActionFailedWarning(kvList, str(e), k, kcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         _incrStatistic(statistics, stat)
         Ind.Decrement()
         Act.Set(action)
@@ -60103,7 +60208,7 @@ def _updateMoveFilePermissions(drive, user, i, count,
             break
           sendNotificationEmail = True
         except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-          userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+          userDriveServiceNotEnabledWarning(user, str(e), i, count)
           _incrStatistic(statistics, stat)
           Ind.Decrement()
           Act.Set(action)
@@ -60245,7 +60350,7 @@ def moveDriveFile(users):
               GAPI.crossDomainMoveRestriction, GAPI.storageQuotaExceeded) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FOLDER, folderName], str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
       _incrStatistic(statistics, STAT_FILE_FAILED)
       copyMoveOptions['retainSourceFolders'] = True
       return (None, None, False)
@@ -60289,7 +60394,7 @@ def moveDriveFile(users):
             GAPI.badRequest, GAPI.targetUserRoleLimitedByLicenseRestriction) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FOLDER, newFolderName], str(e), j, jcount)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
     _incrStatistic(statistics, STAT_FOLDER_FAILED)
     copyMoveOptions['retainSourceFolders'] = True
     return (None, None, False)
@@ -60461,7 +60566,7 @@ def moveDriveFile(users):
               GAPI.fileNeverWritable) as e:
         entityActionFailedWarning(kvList, str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
     Act.Set(Act.MOVE)
     return
 
@@ -60637,7 +60742,7 @@ def moveDriveFile(users):
         entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], str(e), j, jcount)
         _incrStatistic(statistics, STAT_FILE_FAILED)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         _incrStatistic(statistics, STAT_FILE_FAILED)
         break
     Ind.Decrement()
@@ -60714,7 +60819,7 @@ def deleteDriveFile(users, function=None):
       except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.fileNeverWritable) as e:
         entityActionFailedWarning([Ent.USER, user, fileInfo[2], fileId], str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
 
@@ -61054,7 +61159,7 @@ def getDriveFile(users):
               GAPI.invalid, GAPI.invalidArgument, GAPI.failedPrecondition) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.SPREADSHEET, fileId], str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
 
@@ -61132,7 +61237,7 @@ def getGoogleDocument(users):
       except GAPI.fileNotFound:
         entityActionFailedWarning([Ent.USER, user, Ent.DOCUMENT, fileId], Msg.DOES_NOT_EXIST, j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
 
@@ -61181,7 +61286,7 @@ def updateGoogleDocument(users):
               GAPI.invalid, GAPI.invalidArgument, GAPI.failedPrecondition) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.DOCUMENT, documentId], str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
 
@@ -61292,7 +61397,7 @@ def collectOrphans(users):
           except (GAPI.badRequest, GAPI.fileNotFound, GAPI.internalError, GAPI.insufficientParentPermissions,) as e:
             entityActionFailedWarning([Ent.USER, user, fileType, fileName], str(e), j, jcount)
           except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-            userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+            userDriveServiceNotEnabledWarning(user, str(e), i, count)
             break
         else:
           if csvPF:
@@ -61330,11 +61435,11 @@ def collectOrphans(users):
                   GAPI.shortcutTargetInvalid) as e:
             entityActionFailedWarning([Ent.USER, user, fileType, fileName, Ent.DRIVE_FILE_SHORTCUT, body['name']], str(e), j, jcount)
           except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-            userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+            userDriveServiceNotEnabledWarning(user, str(e), i, count)
             break
       Ind.Decrement()
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
   if csvPF:
     csvPF.writeCSVfile('Orphans to Collect')
 
@@ -61406,7 +61511,7 @@ def transferDrive(users):
             GAPI.storageQuotaExceeded, GAPI.teamDriveFileLimitExceeded, GAPI.teamDriveHierarchyTooDeep) as e:
       entityActionFailedWarning([Ent.USER, targetUser, Ent.DRIVE_FOLDER, folderName], f'{op}: {str(e)}')
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(targetUser, str(e))
+      userDriveServiceNotEnabledWarning(targetUser, str(e))
     return None
 
   def _buildTargetUserFolder():
@@ -61588,7 +61693,7 @@ def transferDrive(users):
       except GAPI.invalidSharingRequest as e:
         entityActionFailedWarning([Ent.USER, actionUser, childFileType, childFileName], Ent.TypeNameMessage(Ent.PERMISSION_ID, targetPermissionId, str(e)), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(actionUser, str(e), i, count)
+        userDriveServiceNotEnabledWarning(actionUser, str(e), i, count)
 # Non-owned files
     else:
       Act.Set(Act.PROCESS)
@@ -61639,7 +61744,7 @@ def transferDrive(users):
           entityActionFailedWarning([Ent.USER, ownerUser, childFileType, childFileName], str(e), j, jcount)
           return
         except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-          userSvcNotApplicableOrDriveDisabled(ownerUser, str(e), i, count)
+          userDriveServiceNotEnabledWarning(ownerUser, str(e), i, count)
           return
       if csvPF:
         csvPF.WriteRow({'OldOwner': sourceUser, 'NewOwner': targetUser, 'type': Ent.Singular(childFileType),
@@ -61668,7 +61773,7 @@ def transferDrive(users):
                                       Ent.TypeNameMessage(Ent.PERMISSION_ID, sourcePermissionId, str(e)), j, jcount)
             return
           except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-            userSvcNotApplicableOrDriveDisabled(ownerUser, str(e), i, count)
+            userDriveServiceNotEnabledWarning(ownerUser, str(e), i, count)
             return
         if existingParentIds is not None:
 # We have to make a shortcut to a non-owned non-orphan as we can't change the parents
@@ -61697,7 +61802,7 @@ def transferDrive(users):
             entityActionFailedWarning([Ent.USER, sourceUser, childFileType, childFileName], str(e), j, jcount)
             return
           except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-            userSvcNotApplicableOrDriveDisabled(sourceUser, str(e), i, count)
+            userDriveServiceNotEnabledWarning(sourceUser, str(e), i, count)
             return
 # 5.31.03 - Non-owned files without parents are SharedWithMe, parents can not be changed
 #        else:
@@ -61713,7 +61818,7 @@ def transferDrive(users):
 #            entityActionFailedWarning([Ent.USER, targetUser, childFileType, childFileName], str(e), j, jcount)
 #            return
 #          except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-#            userSvcNotApplicableOrDriveDisabled(targetUser, str(e), i, count)
+#            userDriveServiceNotEnabledWarning(targetUser, str(e), i, count)
 #            return
       entityActionPerformed([Ent.USER, sourceUser, childFileType, childFileName], j, jcount)
 
@@ -61755,7 +61860,7 @@ def transferDrive(users):
       except GAPI.permissionNotFound:
         entityDoesNotHaveItemWarning([Ent.USER, sourceUser, childFileType, childFileName, Ent.PERMISSION_ID, sourcePermissionId], j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(sourceUser, str(e), i, count)
+        userDriveServiceNotEnabledWarning(sourceUser, str(e), i, count)
     else:
       ownerUser, ownerDrive = _getOwnerUser(childEntryInfo)
       if not ownerDrive:
@@ -61807,7 +61912,7 @@ def transferDrive(users):
       except GAPI.permissionNotFound:
         entityDoesNotHaveItemWarning([Ent.USER, ownerUser, childFileType, childFileName, Ent.PERMISSION_ID, sourcePermissionId], j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(ownerUser, str(e), i, count)
+        userDriveServiceNotEnabledWarning(ownerUser, str(e), i, count)
 # Update target permissions
       if resetTargetRole and targetUser != ownerUser:
         try:
@@ -61831,7 +61936,7 @@ def transferDrive(users):
         except GAPI.invalidSharingRequest as e:
           entityActionFailedWarning([Ent.USER, ownerUser, childFileType, childFileName], Ent.TypeNameMessage(Ent.PERMISSION_ID, targetPermissionId, str(e)), j, jcount)
         except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-          userSvcNotApplicableOrDriveDisabled(sourceUser, str(e), i, count)
+          userDriveServiceNotEnabledWarning(sourceUser, str(e), i, count)
       elif showRetentionMessages:
         entityActionPerformed([Ent.USER, targetUser, childFileType, childFileName, Ent.ROLE, childEntryInfo['targetPermission']['role']], j, jcount)
 
@@ -61887,7 +61992,7 @@ def transferDrive(users):
                                fields='nextPageToken,files(id,name,parents,mimeType,ownedByMe,trashed,owners(emailAddress,permissionId),permissions(id,role),shortcutDetails)',
                                pageSize=GC.Values[GC.DRIVE_MAX_RESULTS])
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(sourceUser, str(e), i, count)
+      userDriveServiceNotEnabledWarning(sourceUser, str(e), i, count)
       return
     for childEntry in children:
       if not childEntry['trashed']:
@@ -62064,7 +62169,7 @@ def transferDrive(users):
                                        Msg.DOES_NOT_EXIST],
                                       '\n'))
   except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-    userSvcNotApplicableOrDriveDisabled(targetUser, str(e))
+    userDriveServiceNotEnabledWarning(targetUser, str(e))
     return
   targetWriterPermissionsBody = {'role': 'writer', 'type': 'user', 'emailAddress': targetUser}
   i, count, users = getEntityArgument(users)
@@ -62165,11 +62270,11 @@ def transferDrive(users):
           except GAPI.fileNotFound:
             entityActionFailedWarning([Ent.USER, sourceUser, Ent.DRIVE_FILE_OR_FOLDER, fileId], Msg.NOT_FOUND, j, jcount)
           except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-            userSvcNotApplicableOrDriveDisabled(sourceUser, str(e), i, count)
+            userDriveServiceNotEnabledWarning(sourceUser, str(e), i, count)
             break
       Ind.Decrement()
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(sourceUser, str(e), i, count)
+      userDriveServiceNotEnabledWarning(sourceUser, str(e), i, count)
   if csvPF:
     csvPF.writeCSVfile('Files to Transfer')
 
@@ -62183,7 +62288,7 @@ def validateUserGetPermissionId(user, i=0, count=0, drive=None):
                         fields='user(permissionId)')
       return (drive, result['user']['permissionId'])
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
   return (None, None)
 
 def getPermissionIdForEmail(user, i, count, email):
@@ -62235,7 +62340,7 @@ def transferOwnership(users):
                                fields='nextPageToken,files(id,name,parents,mimeType,ownedByMe,trashed)',
                                pageSize=GC.Values[GC.DRIVE_MAX_RESULTS])
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       return
     for childEntryInfo in children:
       childFileId = childEntryInfo['id']
@@ -62320,7 +62425,7 @@ def transferOwnership(users):
         fileTree = buildFileTree(feed, drive)
         del feed
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         continue
     else:
       fileTree = {}
@@ -62344,7 +62449,7 @@ def transferOwnership(users):
           entityActionFailedWarning(kvList, Msg.NOT_FOUND, j, jcount)
           continue
         except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-          userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+          userDriveServiceNotEnabledWarning(user, str(e), i, count)
           break
         if filepath:
           fileTree[fileId] = {'info': fileEntryInfo}
@@ -62434,7 +62539,7 @@ def transferOwnership(users):
             entityActionFailedWarning(kvList, str(e), k, kcount)
             continue
           except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-            userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+            userDriveServiceNotEnabledWarning(user, str(e), i, count)
             continue
         except GAPI.fileNotFound:
           entityActionFailedWarning(kvList, Msg.DOES_NOT_EXIST, k, kcount)
@@ -62443,7 +62548,7 @@ def transferOwnership(users):
           entityActionFailedWarning(kvList, str(e), k, kcount)
           continue
         except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-          userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+          userDriveServiceNotEnabledWarning(user, str(e), i, count)
           break
         kvList = [Ent.USER, newOwner, entityType, fileDesc]
         try:
@@ -62477,7 +62582,7 @@ def transferOwnership(users):
                 GAPI.invalid, GAPI.badRequest, GAPI.unknownError) as e:
           entityActionFailedWarning(kvList, str(e), k, kcount)
         except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-          userSvcNotApplicableOrDriveDisabled(newOwner, str(e), 0, 0)
+          userDriveServiceNotEnabledWarning(newOwner, str(e), 0, 0)
       Ind.Decrement()
       Ind.Decrement()
     Ind.Decrement()
@@ -62524,7 +62629,7 @@ def claimOwnership(users):
                                fields='nextPageToken,files(id,name,parents,mimeType,ownedByMe,trashed,owners(emailAddress,permissionId))',
                                pageSize=GC.Values[GC.DRIVE_MAX_RESULTS])
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       return
     for childEntryInfo in children:
       childFileId = childEntryInfo['id']
@@ -62563,7 +62668,7 @@ def claimOwnership(users):
     except (GAPI.badRequest, GAPI.insufficientFilePermissions) as e:
       entityActionFailedWarning([Ent.USER, oldOwner, entityType, fileDesc], str(e), l, lcount)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
     Act.Set(Act.CLAIM_OWNERSHIP)
 
   fileIdEntity = getDriveFileEntity()
@@ -62675,7 +62780,7 @@ def claimOwnership(users):
         fileTree = buildFileTree(feed, drive)
         del feed
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         continue
     else:
       fileTree = {}
@@ -62701,7 +62806,7 @@ def claimOwnership(users):
           entityActionFailedWarning(kvList, Msg.NOT_FOUND, j, jcount)
           continue
         except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-          userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+          userDriveServiceNotEnabledWarning(user, str(e), i, count)
           break
         if filepath:
           fileTree[fileId] = {'info': fileEntryInfo}
@@ -62819,7 +62924,7 @@ def claimOwnership(users):
                 entityActionFailedWarning(kvList, str(e), l, lcount)
                 continue
               except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-                userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+                userDriveServiceNotEnabledWarning(user, str(e), i, count)
                 continue
             except GAPI.fileNotFound:
               entityActionFailedWarning(kvList, Msg.DOES_NOT_EXIST, l, lcount)
@@ -62828,7 +62933,7 @@ def claimOwnership(users):
               entityActionFailedWarning(kvList, str(e), l, lcount)
               continue
             except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-              userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+              userDriveServiceNotEnabledWarning(user, str(e), i, count)
               break
             kvList = [Ent.USER, user, entityType, fileDesc]
             try:
@@ -62860,7 +62965,7 @@ def claimOwnership(users):
             except (GAPI.forbidden, GAPI.insufficientFilePermissions, GAPI.insufficientParentPermissions, GAPI.cannotAddParent) as e:
               entityActionFailedWarning(kvList, str(e), l, lcount)
             except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-              userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+              userDriveServiceNotEnabledWarning(user, str(e), i, count)
           Ind.Decrement()
         else:
           entityPerformActionModifierNumItemsModifier([Ent.USER, user], 'Not Performed', kcount, Ent.DRIVE_FILE_OR_FOLDER,
@@ -62904,7 +63009,7 @@ def printEmptyDriveFolders(users):
     except (GAPI.invalidQuery, GAPI.invalid, GAPI.badRequest):
       entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE, None], invalidQuery(query), i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
 
   csvPF = CSVPrintFile(['User', 'id', 'name']) if Act.csvFormat() else None
   fileIdEntity = {}
@@ -62957,7 +63062,7 @@ def printEmptyDriveFolders(users):
     except GAPI.teamDriveMembershipRequired as e:
       entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, fileId], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
   if csvPF:
     csvPF.writeCSVfile('Empty Folders')
 
@@ -62992,7 +63097,7 @@ def deleteEmptyDriveFolders(users):
     except (GAPI.invalidQuery, GAPI.invalid, GAPI.badRequest):
       entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE, None], invalidQuery(query), i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
     return 0
 
   Act.Set(Act.DELETE_EMPTY)
@@ -63047,7 +63152,7 @@ def deleteEmptyDriveFolders(users):
     except GAPI.teamDriveMembershipRequired as e:
       entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, fileId], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
     Ind.Decrement()
 
 # gam <UserTypeEntity> empty drivetrash [<SharedDriveEntity>]
@@ -63078,7 +63183,7 @@ def emptyDriveTrash(users):
     except (GAPI.notFound, GAPI.insufficientFilePermissions) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, kwargs['driveId']], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
 
 def _getDriveFileACLPrintKeysTimeObjects():
   printKeys = ['id', 'type', 'emailAddress', 'domain', 'role', 'permissionDetails',
@@ -63328,7 +63433,7 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
       except GAPI.notFound as e:
         entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE, fileName], str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
   if csvPF:
@@ -63455,7 +63560,7 @@ def updateDriveFileACLs(users, useDomainAdminAccess=False):
       except GAPI.permissionNotFound:
         entityDoesNotHaveItemWarning([Ent.USER, user, entityType, fileName, Ent.PERMISSION_ID, permissionId], j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
   if csvPF:
@@ -63614,7 +63719,7 @@ def createDriveFilePermissions(users, useDomainAdminAccess=False):
                throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                fields='kind')
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       continue
     Ind.Increment()
     svcargs = dict([('fileId', None), ('sendNotificationEmail', sendNotificationEmail), ('emailMessage', emailMessage),
@@ -63722,7 +63827,7 @@ def deleteDriveFileACLs(users, useDomainAdminAccess=False):
       except GAPI.permissionNotFound:
         entityDoesNotHaveItemWarning([Ent.USER, user, entityType, fileName, Ent.PERMISSION_ID, permissionId], j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
 
@@ -63815,7 +63920,7 @@ def deletePermissions(users, useDomainAdminAccess=False):
                throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                fields='kind')
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       continue
     Ind.Increment()
     svcargs = dict([('fileId', None), ('permissionId', None), ('useDomainAdminAccess', useDomainAdminAccess), ('supportsAllDrives', True)]+GM.Globals[GM.EXTRA_ARGS_LIST])
@@ -63907,7 +64012,7 @@ def infoDriveFileACLs(users, useDomainAdminAccess=False):
       except GAPI.permissionNotFound:
         entityDoesNotHaveItemWarning([Ent.USER, user, entityType, fileName, Ent.PERMISSION_ID, permissionId], j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
 
@@ -64052,7 +64157,7 @@ def printShowDriveFileACLs(users, useDomainAdminAccess=False):
         entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE, fileName], str(e), j, jcount)
         continue
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
       if pmselect:
         if not PM.CheckPermissionMatches(permissions):
@@ -64214,7 +64319,7 @@ def infoDriveLabels(users, useAdminAccess=False):
         entityActionFailedWarning(kvList, str(e), j, jcount)
         break
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
 
@@ -64283,7 +64388,7 @@ def printShowDriveLabels(users, useAdminAccess=False):
     except GAPI.permissionDenied as e:
       entityActionFailedWarning([Ent.USER, user, Ent.CLASSIFICATION_LABEL, None], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
   if csvPF:
     csvPF.writeCSVfile('Classification Labels')
 
@@ -64366,7 +64471,7 @@ def createDriveLabelPermissions(users, useAdminAccess=False):
       except (GAPI.permissionDenied, GAPI.notFound, GAPI.invalid, GAPI.internalError)  as e:
         entityActionFailedWarning(kvList, str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
 
@@ -64433,7 +64538,7 @@ def deleteDriveLabelPermissions(users, useAdminAccess=False):
       except (GAPI.permissionDenied, GAPI.invalid, GAPI.notFound) as e:
         entityActionFailedWarning(kvList, str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
 
@@ -64509,7 +64614,7 @@ def printShowDriveLabelPermissions(users, useAdminAccess=False):
       except (GAPI.permissionDenied, GAPI.notFound) as e:
         entityActionFailedWarning(kvList, str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
   if csvPF:
@@ -64627,7 +64732,7 @@ def processFileDriveLabels(users):
                   GAPI.labelMultipleValuesForSingularField) as e:
             entityActionFailedWarning(xkvList, str(e), k, kcount)
           except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-            userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+            userDriveServiceNotEnabledWarning(user, str(e), i, count)
             userError = True
             break
       Ind.Decrement()
@@ -64832,7 +64937,7 @@ def _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci, return
           GAPI.noManageTeamDriveAdministratorPrivilege, GAPI.invalidArgument) as e:
     entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], str(e), i, count)
   except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-    userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+    userDriveServiceNotEnabledWarning(user, str(e), i, count)
   Act.Set(action)
   return ci
 
@@ -64939,7 +65044,7 @@ def createSharedDrive(users, useDomainAdminAccess=False):
         entityActionFailedWarning([Ent.USER, user, Ent.REQUEST_ID, requestId], str(e), i, count)
         break
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     if not (doUpdate or updateBody or hide or orgUnit):
       continue
@@ -64992,7 +65097,7 @@ def createSharedDrive(users, useDomainAdminAccess=False):
     except (GAPI.notFound, GAPI.forbidden, GAPI.badRequest, GAPI.noManageTeamDriveAdministratorPrivilege) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
   if csvPF:
     csvPF.writeCSVfile('SharedDrives')
 
@@ -65068,7 +65173,7 @@ def updateSharedDrive(users, useDomainAdminAccess=False):
                                  Ent.DRIVE_FILE, body.get('backgroundImageFile', {}).get('id', UNKNOWN)],
                                 str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
     Act.Set(Act.UPDATE)
 
 def doUpdateSharedDrive():
@@ -65106,7 +65211,7 @@ def deleteSharedDrive(users):
             GAPI.noManageTeamDriveAdministratorPrivilege) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
 
 # gam delete shareddrive <SharedDriveEntity> [allowitemdeletion]
 def doDeleteSharedDrive():
@@ -65132,7 +65237,7 @@ def hideUnhideSharedDrive(users):
     except (GAPI.notFound, GAPI.forbidden) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
 
 # gam hide/unhide shareddrive <SharedDriveEntity>
 def doHideUnhideSharedDrive():
@@ -65257,7 +65362,7 @@ def infoSharedDrive(users, useDomainAdminAccess=False):
     except GAPI.notFound as e:
       entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
 
 def doInfoSharedDrive():
   infoSharedDrive([_getAdminEmail()], True)
@@ -65391,7 +65496,7 @@ def printShowSharedDrives(users, useDomainAdminAccess=False):
       entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE, None], str(e), i, count)
       continue
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       continue
     matchedFeed = []
     if not useDomainAdminAccess:
@@ -65736,7 +65841,7 @@ def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
         entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE, None], str(e), i, count)
         continue
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         continue
     matchFeed = []
     jcount = len(feed)
@@ -65902,7 +66007,7 @@ def _getLookerStudioAssetByID(ds, user, i, count, assetId):
   except (GAPI.invalidArgument, GAPI.badRequest, GAPI.notFound, GAPI.permissionDenied, GAPI.internalError) as e:
     entityActionFailedWarning([Ent.USER, user], str(e), i, count)
   except GAPI.serviceNotAvailable:
-    entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    userLookerStudioServiceNotEnabledWarning(user, i, count)
   return None
 
 def _getLookerStudioAssets(ds, user, i, count, parameters, assetTypes, fields, orderBy=None):
@@ -65920,7 +66025,7 @@ def _getLookerStudioAssets(ds, user, i, count, parameters, assetTypes, fields, o
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
       return (None, 0)
     except GAPI.serviceNotAvailable:
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+      userLookerStudioServiceNotEnabledWarning(user, i, count)
       return (None, 0)
   return (assets, len(assets))
 
@@ -66144,7 +66249,7 @@ def processLookerStudioPermissions(users):
           entityActionFailedWarning([Ent.USER, user, Ent.LOOKERSTUDIO_ASSET, asset['title']], str(e), j, jcount)
           continue
         except GAPI.serviceNotAvailable:
-          entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+          userLookerStudioServiceNotEnabledWarning(user, i, count)
           break
 
 # gam <UserTypeEntity> print lookerstudiopermissions [todrive <ToDriveAttribute>*]
@@ -66214,7 +66319,7 @@ def printShowLookerStudioPermissions(users):
         entityActionFailedWarning([Ent.USER, user, Ent.LOOKERSTUDIO_ASSET, asset['title']], str(e), j, jcount)
         continue
       except GAPI.serviceNotAvailable:
-        entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+        userLookerStudioServiceNotEnabledWarning(user, i, count)
         break
       if not csvPF:
         Ind.Increment()
@@ -67625,7 +67730,7 @@ def createSheet(users):
             GAPI.invalid, GAPI.invalidArgument) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.SPREADSHEET, ''], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
 
 def _validateUserGetSpreadsheetIDs(user, i, count, fileIdEntity, showEntityType):
   user, _, jcount = _validateUserGetFileIDs(user, i, count, fileIdEntity, entityType=Ent.SPREADSHEET if showEntityType else None)
@@ -67678,7 +67783,7 @@ def updateSheets(users):
               GAPI.invalid, GAPI.invalidArgument, GAPI.failedPrecondition) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.SPREADSHEET, spreadsheetId], str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
 
@@ -67827,7 +67932,7 @@ def infoPrintShowSheets(users):
               GAPI.invalid, GAPI.invalidArgument, GAPI.failedPrecondition) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.SPREADSHEET, spreadsheetId], str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
   if csvPF:
@@ -67953,7 +68058,7 @@ def appendSheetRanges(users):
               GAPI.invalid, GAPI.invalidArgument, GAPI.failedPrecondition) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.SPREADSHEET, spreadsheetId], str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
       Ind.Decrement()
     Ind.Decrement()
@@ -67999,7 +68104,7 @@ def updateSheetRanges(users):
               GAPI.invalid, GAPI.invalidArgument, GAPI.failedPrecondition) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.SPREADSHEET, spreadsheetId], str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
       Ind.Decrement()
     Ind.Decrement()
@@ -68049,7 +68154,7 @@ def clearSheetRanges(users):
               GAPI.invalid, GAPI.invalidArgument, GAPI.failedPrecondition) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.SPREADSHEET, spreadsheetId], str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
       Ind.Decrement()
     Ind.Decrement()
@@ -68142,7 +68247,7 @@ def printShowSheetRanges(users):
               GAPI.invalid, GAPI.invalidArgument, GAPI.failedPrecondition) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.SPREADSHEET, spreadsheetId], str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
   if csvPF:
@@ -68615,8 +68720,8 @@ def printShowGmailProfile(users):
         printEntityKVList([Ent.USER, user], kvList, i, count)
       else:
         csvPF.WriteRowTitles(results)
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
   if csvPF:
     csvPF.writeCSVfile('Gmail Profiles')
 
@@ -68628,8 +68733,8 @@ def _getUserGmailLabels(gmail, user, i, count, fields):
     if not labels:
       labels = {'labels': []}
     return labels
-  except (GAPI.serviceNotAvailable, GAPI.badRequest):
-    entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+  except GAPI.serviceNotAvailable:
+    userGmailServiceNotEnabledWarning(user, i, count)
     return None
 
 def _getLabelId(labels, labelName):
@@ -68724,8 +68829,8 @@ def buildLabelPath(gmail, user, i, count, body, label, labelSet, l=0, lcount=0):
       except GAPI.duplicate:
         entityActionFailedWarning([Ent.USER, user, Ent.LABEL, labelPath], Msg.DUPLICATE, j, jcount)
         break
-      except (GAPI.serviceNotAvailable, GAPI.badRequest):
-        entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+      except GAPI.serviceNotAvailable:
+        userGmailServiceNotEnabledWarning(user, i, count)
         break
   if duplicate:
     entityActionFailedWarning([Ent.USER, user, Ent.LABEL, labelPath], Msg.DUPLICATE, l, lcount)
@@ -68778,8 +68883,8 @@ def createLabels(users, labelEntity):
           entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label], Msg.DUPLICATE, l, lcount)
         except (GAPI.invalid, GAPI.permissionDenied) as e:
           entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label], str(e), l, lcount)
-        except (GAPI.serviceNotAvailable, GAPI.badRequest):
-          entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+        except GAPI.serviceNotAvailable:
+          userGmailServiceNotEnabledWarning(user, i, count)
       else:
         buildLabelPath(gmail, user, i, count, body, label, labelSet, l, lcount)
     Ind.Decrement()
@@ -68833,8 +68938,8 @@ def updateLabelSettings(users):
         entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label_name], Msg.DOES_NOT_EXIST, i, count)
     except (GAPI.notFound, GAPI.invalidArgument) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label_name], str(e), i, count)
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
 
 # gam <UserTypeEntity> update labelid <LabelID> [name <String>]
 #	[messagelistvisibility hide|show] [labellistvisibility hide|show|showifunread]
@@ -68862,8 +68967,8 @@ def updateLabelSettingsById(users):
       entityActionPerformed([Ent.USER, user, Ent.LABEL_ID, labelId, Ent.LABEL, result['name']], i, count)
     except (GAPI.notFound, GAPI.invalidArgument) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.LABEL_ID, labelId], str(e), i, count)
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
 #
 def cleanLabelQuery(labelQuery):
   for ch in '/ (){}':
@@ -68967,7 +69072,7 @@ def updateLabels(users):
                           [Msg.NO_LABELS_MATCH, search],
                           i, count)
     except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
 
 def _validateLabelList(user, i, count, labels, labelList, userOnly):
   validLabels = []
@@ -69053,7 +69158,7 @@ def deleteLabels(users, labelEntity):
         dbatch.execute()
       Ind.Decrement()
     except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
 
 # gam <UserTypeEntity> delete label|labels <LabelName>|regex:<RegularExpression>
 def deleteLabel(users):
@@ -69093,8 +69198,8 @@ def deleteLabelIds(users, labelEntity):
         entityActionPerformed([Ent.USER, user, Ent.LABEL_ID, labelId], l, lcount)
       except (GAPI.notFound, GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.LABEL_ID, labelId], str(e), l, lcount)
-      except (GAPI.serviceNotAvailable, GAPI.badRequest):
-        entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+      except GAPI.serviceNotAvailable:
+        userGmailServiceNotEnabledWarning(user, i, count)
         break
     Ind.Decrement()
 
@@ -69270,8 +69375,8 @@ def printShowLabels(users):
               for a_key in LABEL_COUNTS_FIELDS_LIST:
                 label[a_key] = counts[a_key]
             csvPF.WriteRowTitles(flattenJSON(label, flattened={'User': user}))
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
   if csvPF:
     csvPF.writeCSVfile('Labels')
 
@@ -69496,8 +69601,8 @@ def archiveMessages(users):
     except (GAPI.failedPrecondition, GAPI.permissionDenied, GAPI.invalid, GAPI.invalidArgument) as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
       continue
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
       continue
     jcount = len(messageIds)
     if jcount == 0:
@@ -69532,13 +69637,13 @@ def archiveMessages(users):
           else:
             csvPF.WriteRow({'User': user, entityHeader: messageId, 'action': Act.Performed()})
         except GAPI.serviceNotAvailable:
-          entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+          userGmailServiceNotEnabledWarning(user, i, count)
           break
         except (GAPI.badRequest, GAPI.invalid, GAPI.failedPrecondition, GAPI.forbidden,
                 googleapiclient.errors.MediaUploadSizeError) as e:
           _processMessageFailed(user, messageId, str(e), j, jcount)
-      except (GAPI.serviceNotAvailable, GAPI.badRequest):
-        entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+      except GAPI.serviceNotAvailable:
+        userGmailServiceNotEnabledWarning(user, i, count)
         break
       except (GAPI.notFound, GAPI.invalidMessageId) as e:
         _processMessageFailed(user, messageId, str(e), j, jcount)
@@ -69573,7 +69678,7 @@ def _processMessagesThreads(users, entityType):
             entityActionPerformed([Ent.USER, user, entityType, messageId], mcount, jcount)
           else:
             csvPF.WriteRow({'User': user, entityHeader: messageId, 'action': Act.Performed()})
-      except (GAPI.serviceNotAvailable, GAPI.badRequest):
+      except GAPI.serviceNotAvailable:
         mcount += bcount
       except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
         _processMessageFailed(user, idsList, f'{str(e)} ({mcount+1}-{mcount+bcount}/{jcount})')
@@ -69686,8 +69791,8 @@ def _processMessagesThreads(users, entityType):
     except (GAPI.failedPrecondition, GAPI.permissionDenied, GAPI.invalid, GAPI.invalidArgument) as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
       continue
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
       continue
     jcount = len(messageIds)
     if jcount == 0:
@@ -69797,8 +69902,8 @@ def exportMessagesThreads(users, entityType):
     except (GAPI.failedPrecondition, GAPI.permissionDenied, GAPI.invalid, GAPI.invalidArgument) as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
       continue
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
       continue
     jcount = len(entityIds)
     if jcount == 0:
@@ -69824,8 +69929,8 @@ def exportMessagesThreads(users, entityType):
           entityPerformActionNumItems([Ent.USER, user, Ent.THREAD, entityId], kcount, Ent.MESSAGE, j, jcount)
           Ind.Increment()
           k = 0
-        except (GAPI.serviceNotAvailable, GAPI.badRequest):
-          entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+        except GAPI.serviceNotAvailable:
+          userGmailServiceNotEnabledWarning(user, i, count)
           break
         except (GAPI.notFound, GAPI.invalidArgument) as e:
           entityActionFailedWarning([Ent.USER, user, Ent.THREAD, entityId], str(e), j, jcount)
@@ -69850,8 +69955,8 @@ def exportMessagesThreads(users, entityType):
             entityActionPerformed([Ent.MESSAGE, filename])
           else:
             entityActionFailedWarning([Ent.MESSAGE, filename], str(e))
-        except (GAPI.serviceNotAvailable, GAPI.badRequest):
-          entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+        except GAPI.serviceNotAvailable:
+          userGmailServiceNotEnabledWarning(user, i, count)
           break
         except (GAPI.notFound, GAPI.invalidMessageId) as e:
           entityActionFailedWarning([Ent.USER, user, Ent.MESSAGE, messageId], str(e), k, kcount)
@@ -69932,8 +70037,8 @@ def forwardMessagesThreads(users, entityType):
       except (GAPI.failedPrecondition, GAPI.permissionDenied, GAPI.invalid, GAPI.invalidArgument) as e:
         entityActionFailedWarning([Ent.USER, user], str(e), i, count)
         continue
-      except (GAPI.serviceNotAvailable, GAPI.badRequest):
-        entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+      except GAPI.serviceNotAvailable:
+        userGmailServiceNotEnabledWarning(user, i, count)
         continue
     jcount = len(entityIds)
     if jcount == 0:
@@ -69962,8 +70067,8 @@ def forwardMessagesThreads(users, entityType):
           entityPerformActionNumItems([Ent.USER, user, Ent.THREAD, entityId], kcount, Ent.MESSAGE, j, jcount)
           Ind.Increment()
           k = 0
-        except (GAPI.serviceNotAvailable, GAPI.badRequest):
-          entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+        except GAPI.serviceNotAvailable:
+          userGmailServiceNotEnabledWarning(user, i, count)
           break
         except (GAPI.notFound, GAPI.invalidMessageId) as e:
           entityActionFailedWarning([Ent.USER, user, Ent.THREAD, entityId], str(e), j, jcount)
@@ -70011,8 +70116,8 @@ def forwardMessagesThreads(users, entityType):
           except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy,
                   GAPI.invalid, GAPI.invalidArgument, GAPI.forbidden, GAPI.permissionDenied, UnicodeEncodeError) as e:
             entityActionFailedWarning([Ent.RECIPIENT, msgTo], str(e), k, kcount)
-        except (GAPI.serviceNotAvailable, GAPI.badRequest):
-          entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+        except GAPI.serviceNotAvailable:
+          userGmailServiceNotEnabledWarning(user, i, count)
           break
         except (GAPI.notFound, GAPI.invalidMessageId) as e:
           entityActionFailedWarning([Ent.USER, user, Ent.MESSAGE, messageId], str(e), k, kcount)
@@ -70332,8 +70437,8 @@ def _draftImportInsertMessage(users, operation):
       entityActionPerformed([Ent.USER, user, Ent.MESSAGE, result['id']], i, count)
     except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
 
 # gam <UserTypeEntity> draft message
 #	<MessageContent> (replace <Tag> <UserReplacement>)*
@@ -70484,9 +70589,9 @@ def printShowMessagesThreads(users, entityType):
                         entityModifierItemValueListActionFailedWarning([Ent.DRIVE_FILE, None],
                                                                        Act.MODIFIER_WITH_CONTENT_FROM, [Ent.ATTACHMENT, filename], str(e), j, jcount)
                       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-                        userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+                        userDriveServiceNotEnabledWarning(user, str(e), i, count)
                       Act.Set(action)
-                except (GAPI.serviceNotAvailable, GAPI.badRequest, GAPI.notFound):
+                except (GAPI.serviceNotAvailable, GAPI.notFound):
                   pass
               elif show_attachments:
                 printKeyValueList(['Attachment', attachmentName])
@@ -70782,8 +70887,8 @@ def printShowMessagesThreads(users, entityType):
       entityActionFailedWarning([Ent.USER, ri[RI_ENTITY], entityType, ri[RI_ITEM]], Msg.DOES_NOT_EXIST, int(ri[RI_J]), int(ri[RI_JCOUNT]))
     except GAPI.invalidMessageId:
       entityActionFailedWarning([Ent.USER, ri[RI_ENTITY], entityType, ri[RI_ITEM]], Msg.INVALID_MESSAGE_ID, int(ri[RI_J]), int(ri[RI_JCOUNT]))
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, ri[RI_ENTITY], int(ri[RI_I]), int(ri[RI_COUNT]))
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(ri[RI_ENTITY], int(ri[RI_I]), int(ri[RI_COUNT]))
 
   def _callbackShow(request_id, response, exception):
     ri = request_id.splitlines()
@@ -71016,8 +71121,8 @@ def printShowMessagesThreads(users, entityType):
     except (GAPI.failedPrecondition, GAPI.permissionDenied, GAPI.invalid, GAPI.invalidArgument) as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
       continue
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
       continue
     jcount = len(messageIds)
     if jcount == 0:
@@ -71221,8 +71326,8 @@ def processDelegates(users):
       except (GAPI.alreadyExists, GAPI.failedPrecondition, GAPI.invalid,
               GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.DELEGATE, delegateEmail], str(e), j, jcount)
-      except (GAPI.serviceNotAvailable, GAPI.badRequest):
-        entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+      except GAPI.serviceNotAvailable:
+        userGmailServiceNotEnabledWarning(user, i, count)
     Ind.Decrement()
 
 # gam <UserTypeEntity> delegate to [convertalias] <UserEntity>
@@ -71253,8 +71358,8 @@ def updateDelegates(users):
       except GAPI.permissionDenied as e:
         entityActionFailedWarning([Ent.USER, user, Ent.DELEGATE, None], str(e), i, count)
         continue
-      except (GAPI.serviceNotAvailable, GAPI.badRequest):
-        entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+      except GAPI.serviceNotAvailable:
+        userGmailServiceNotEnabledWarning(user, i, count)
         continue
       delegates = result.get('delegates', []) if result is not None else []
       jcount = len(delegates)
@@ -71279,8 +71384,8 @@ def updateDelegates(users):
           entityActionPerformed([Ent.USER, user, Ent.DELEGATE, delegateEmail], j, jcount)
         except (GAPI.failedPrecondition, GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
           entityActionFailedWarning([Ent.USER, user, Ent.DELEGATE, delegateEmail], str(e), j, jcount)
-        except (GAPI.serviceNotAvailable, GAPI.badRequest):
-          entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+        except GAPI.serviceNotAvailable:
+          userGmailServiceNotEnabledWarning(user, i, count)
     Ind.Decrement()
 
 # gam <UserTypeEntity> print delegates|delegate [todrive <ToDriveAttribute>*] [shownames]
@@ -71364,8 +71469,8 @@ def printShowDelegates(users):
           csvPF.WriteRowNoFilter({'User': user})
     except (GAPI.permissionDenied, GAPI.failedPrecondition) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.DELEGATE, None], str(e), i, count)
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
   if csvPF:
     csvPF.writeCSVfile('Delegates')
 
@@ -71631,8 +71736,8 @@ def createFilter(users):
         entityActionPerformed([Ent.USER, user, Ent.FILTER, result['id']], i, count)
     except (GAPI.invalid, GAPI.invalidArgument, GAPI.failedPrecondition, GAPI.permissionDenied) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.FILTER, ''], str(e), i, count)
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
 
 # gam <UserTypeEntity> delete filter <FilterIDEntity>
 def deleteFilters(users):
@@ -71655,8 +71760,8 @@ def deleteFilters(users):
         entityActionPerformed([Ent.USER, user, Ent.FILTER, filterId], j, jcount)
       except (GAPI.notFound, GAPI.permissionDenied) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.FILTER, filterId], str(e), j, jcount)
-      except (GAPI.serviceNotAvailable, GAPI.badRequest):
-        entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+      except GAPI.serviceNotAvailable:
+        userGmailServiceNotEnabledWarning(user, i, count)
         break
     Ind.Decrement()
 
@@ -71701,8 +71806,8 @@ def infoFilters(users):
         Ind.Decrement()
       except GAPI.notFound as e:
         entityActionFailedWarning([Ent.USER, user, Ent.FILTER, filterId], str(e), j, jcount)
-      except (GAPI.serviceNotAvailable, GAPI.badRequest):
-        entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+      except GAPI.serviceNotAvailable:
+        userGmailServiceNotEnabledWarning(user, i, count)
         break
     Ind.Decrement()
 
@@ -71762,8 +71867,8 @@ def printShowFilters(users):
             csvPF.WriteRowTitles(row)
         elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
           csvPF.WriteRowNoFilter({'User': user})
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
   if csvPF:
     csvPF.SetFormatJSON(False)
     csvPF.SetSortTitles(['User', 'id', 'from', 'to', 'subject', 'query', 'negatedQuery', 'hasAttachment', 'excludeChats', 'size', 'forward',
@@ -71879,7 +71984,7 @@ def createForm(users):
     except GAPI.permissionDenied:
       SvcAcctAPIDisabledExit()
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
   if csvPF:
     csvPF.writeCSVfile('Forms')
 
@@ -72180,8 +72285,8 @@ def setForward(users):
         entityActionFailedWarning([Ent.USER, user, Ent.FORWARDING_ADDRESS, body['emailAddress']], str(e), i, count)
       else:
         entityActionFailedWarning([Ent.USER, user], str(e), i, count)
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
 
 # gam <UserTypeEntity> print forward [enabledonly] [todrive <ToDriveAttribute>*]
 # gam <UserTypeEntity> show forward
@@ -72233,8 +72338,8 @@ def printShowForward(users):
         _printForward(user, result, showDisabled)
     except GAPI.failedPrecondition as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
   if csvPF:
     csvPF.writeCSVfile('Forward')
 
@@ -72255,8 +72360,8 @@ def _processForwardingAddress(user, i, count, emailAddress, j, jcount, gmail, fu
       entityActionPerformed([Ent.USER, user, Ent.FORWARDING_ADDRESS, emailAddress], j, jcount)
   except (GAPI.notFound, GAPI.alreadyExists, GAPI.duplicate, GAPI.invalidArgument, GAPI.failedPrecondition, GAPI.permissionDenied) as e:
     entityActionFailedWarning([Ent.USER, user, Ent.FORWARDING_ADDRESS, emailAddress], str(e), j, jcount)
-  except (GAPI.serviceNotAvailable, GAPI.badRequest):
-    entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+  except GAPI.serviceNotAvailable:
+    userGmailServiceNotEnabledWarning(user, i, count)
     userDefined = False
   return userDefined
 
@@ -72340,8 +72445,8 @@ def printShowForwardingAddresses(users):
           csvPF.WriteRowNoFilter({'User': user})
     except GAPI.failedPrecondition as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
   if csvPF:
     csvPF.writeCSVfile('Forwarding Addresses')
 
@@ -72374,8 +72479,8 @@ def _setImap(user, body, i, count):
       _showImap(user, i, count, result)
     except GAPI.permissionDenied as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
 
 # gam <UserTypeEntity> imap|imap4 <Boolean> [noautoexpunge] [expungebehavior archive|deleteforever|trash] [maxfoldersize 0|1000|2000|5000|10000]
 def setImap(users):
@@ -72414,8 +72519,8 @@ def printShowImap(users):
         _showImap(user, i, count, result)
       else:
         csvPF.WriteRowTitles(flattenJSON(result, flattened={'User': user}))
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
   if csvPF:
     csvPF.writeCSVfile('IMAP')
 
@@ -72446,8 +72551,8 @@ def _setPop(user, body, i, count):
       _showPop(user, i, count, result)
     except GAPI.permissionDenied as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
 
 # gam <UserTypeEntity> pop|pop3 <Boolean> [for allmail|newmail|mailfromnowon|fromnowown] [action keep|leaveininbox|archive|delete|trash|markread]
 def setPop(users):
@@ -72486,8 +72591,8 @@ def printShowPop(users):
         _showPop(user, i, count, result)
       else:
         csvPF.WriteRowTitles(flattenJSON(result, flattened={'User': user, 'enabled': result['accessWindow'] != 'disabled'}))
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
   if csvPF:
     csvPF.writeCSVfile('POP')
 
@@ -72508,8 +72613,8 @@ def setLanguage(users):
       entityActionPerformed([Ent.USER, user, Ent.LANGUAGE, result['displayLanguage']], i, count)
     except GAPI.permissionDenied as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
 
 # gam <UserTypeEntity> print language [todrive <ToDriveAttribute>*]
 # gam <UserTypeEntity> show language
@@ -72530,8 +72635,8 @@ def printShowLanguage(users):
         printEntity([Ent.USER, user, Ent.LANGUAGE, result['displayLanguage']], i, count)
       else:
         csvPF.WriteRowTitles(flattenJSON(result, flattened={'User': user}))
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
   if csvPF:
     csvPF.writeCSVfile('Language')
 
@@ -72607,8 +72712,8 @@ def _processSendAs(user, i, count, entityType, emailAddress, j, jcount, gmail, f
           GAPI.cannotDeletePrimarySendAs, GAPI.invalidArgument,
           GAPI.failedPrecondition, GAPI.permissionDenied, GAPI.insufficientPermissions) as e:
     entityActionFailedWarning([Ent.USER, user, entityType, emailAddress], str(e), j, jcount)
-  except (GAPI.serviceNotAvailable, GAPI.badRequest):
-    entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+  except GAPI.serviceNotAvailable:
+    userGmailServiceNotEnabledWarning(user, i, count)
     userDefined = False
   return userDefined
 
@@ -72796,8 +72901,8 @@ def printShowSendAs(users):
               csvPF.WriteRowTitles(row)
         elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
           csvPF.WriteRowNoFilter({'User': user})
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
   if csvPF:
     csvPF.writeCSVfile('SendAs')
 
@@ -72866,8 +72971,8 @@ def printShowSignature(users):
               if field in sendas[item]:
                 row[f'smtpMsa{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{field}'] = sendas[item][field]
         csvPF.WriteRowTitles(row)
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
   if csvPF:
     csvPF.writeCSVfile('Signature')
 
@@ -72916,8 +73021,8 @@ def createSmime(users):
         entityActionPerformedMessage([Ent.USER, user, Ent.SENDAS_ADDRESS, sendAsEmail, Ent.SMIME_ID, smimeId], Msg.DEFAULT_SMIME, i, count)
     except (GAPI.forbidden, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
 
 def _getSmimeIds(gmail, user, i, count, sendAsEmail, function):
   try:
@@ -72944,8 +73049,8 @@ def _getSmimeIds(gmail, user, i, count, sendAsEmail, function):
       return smimes[0]['id']
   except GAPI.forbidden as e:
     entityActionFailedWarning([Ent.USER, user], str(e), i, count)
-  except (GAPI.serviceNotAvailable, GAPI.badRequest):
-    entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+  except GAPI.serviceNotAvailable:
+    userGmailServiceNotEnabledWarning(user, i, count)
   return None
 
 # gam <UserTypeEntity> update smime default
@@ -72988,8 +73093,8 @@ def updateSmime(users):
       entityActionFailedWarning([Ent.USER, user, Ent.SMIME_ID, smimeId], str(e), i, count)
     except (GAPI.forbidden, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
 
 # gam <UserTypeEntity> delete smime
 #	[id <SmimeID>] [sendas|sendasemail <EmailAddress>]
@@ -73026,8 +73131,8 @@ def deleteSmime(users):
       entityActionFailedWarning([Ent.USER, user, Ent.SMIME_ID, smimeId], str(e), i, count)
     except (GAPI.forbidden, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
 
 # gam <UserTypeEntity> print smimes [todrive <ToDriveAttribute>*]
 #	[primary|default|(sendas|sendasemail <EmailAddress>)]
@@ -73106,8 +73211,8 @@ def printShowSmimes(users):
         csvPF.WriteRowNoFilter({'User': user})
     except (GAPI.forbidden, GAPI.invalidArgument) as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
   if csvPF:
     csvPF.writeCSVfile('S/MIME')
 
@@ -73179,8 +73284,8 @@ def _printShowCSEItems(users, entityType, keyField, timeObjects):
     except GAPI.permissionDenied as e:
       entityActionFailedWarning(kvList, str(e), i, count)
       continue
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
       continue
     jcount = len(results)
     if not csvPF:
@@ -73269,8 +73374,8 @@ def createUpdateCSEIdentity(users):
       _showCSEItem(result, Ent.CSE_IDENTITY, 'emailAddress', CSE_IDENTITY_TIME_OBJECTS, i, count, FJQC)
     except (GAPI.permissionDenied, GAPI.invalidArgument, GAPI.notFound, GAPI.alreadyExists) as e:
       entityActionFailedWarning(kvList, str(e), i, count)
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
 
 # gam <UserTypeEntity> delete cseidentity [kpemail <EmailAddress>]
 # gam <UserTypeEntity> info cseidentity [kpemail <EmailAddress>]
@@ -73303,8 +73408,8 @@ def processCSEIdentity(users):
         _showCSEItem(result, Ent.CSE_IDENTITY, 'emailAddress', CSE_IDENTITY_TIME_OBJECTS, i, count, FJQC)
     except (GAPI.permissionDenied, GAPI.notFound) as e:
       entityActionFailedWarning(kvList, str(e), i, count)
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
 
 # gam <UserTypeEntity> show cseidentities
 #	[formatjson]
@@ -73414,8 +73519,8 @@ def createCSEKeyPair(users):
           writeStdout(f'{keyPairId}-{user}\n')
     except (GAPI.permissionDenied, GAPI.alreadyExists) as e:
       entityActionFailedWarning(kvList, str(e), i, count)
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
 
 CSE_KEYPAIR_ACTION_FUNCTION_MAP = {
   Act.DISABLE: 'disable',
@@ -73463,8 +73568,8 @@ def processCSEKeyPair(users):
         entityActionPerformed(kvList, i, count)
     except (GAPI.permissionDenied, GAPI.invalidArgument, GAPI.notFound, GAPI.failedPrecondition, GAPI.alreadyExists) as e:
       entityActionFailedWarning(kvList, str(e), i, count)
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
 
 # gam <UserTypeEntity> show csekeypairs
 #	[showpem] [showkaclsdata] [formatjson]
@@ -73513,8 +73618,8 @@ def setSignature(users):
             emailAddress = sendas['sendAsEmail']
             _processSendAs(user, i, count, Ent.SIGNATURE, emailAddress, i, count, gmail, 'patch', False, body=body, sendAsEmail=emailAddress, fields='')
             break
-      except (GAPI.serviceNotAvailable, GAPI.badRequest):
-        entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+      except GAPI.serviceNotAvailable:
+        userGmailServiceNotEnabledWarning(user, i, count)
     else:
       _processSendAs(user, i, count, Ent.SIGNATURE, user, i, count, gmail, 'patch', False, body=body, sendAsEmail=user, fields='')
 
@@ -73641,8 +73746,8 @@ def setVacation(users):
       printEntity([Ent.USER, user, Ent.VACATION_ENABLED, result['enableAutoReply']], i, count)
     except (GAPI.invalidArgument, GAPI.failedPrecondition, GAPI.permissionDenied) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.VACATION_ENABLED, oldBody['enableAutoReply']], str(e), i, count)
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
 
 # gam <UserTypeEntity> print vacation [compact] [enabledonly] [todrive <ToDriveAttribute>*]
 # gam <UserTypeEntity> show vacation [compact|format|html] [enabledonly]
@@ -73707,8 +73812,8 @@ def printShowVacation(users):
         _showVacation(user, i, count, result, showDisabled, sigReplyFormat)
       else:
         _printVacation(user, result, showDisabled)
-    except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
   if csvPF:
     csvPF.writeCSVfile('Vacation')
 
@@ -73944,8 +74049,8 @@ def createNote(users):
         entityActionPerformed(entityKVList, i, count)
     except (GAPI.badRequest, GAPI.invalidArgument, GAPI.notFound) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.NOTE, body['title']], str(e), i, count)
-    except GAPI.serviceNotAvailable:
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.authError:
+      userKeepServiceNotEnabledWarning(user, i, count)
 
 NOTES_FIELDS_CHOICE_MAP = {
   'attachments': 'attachments',
@@ -74012,8 +74117,8 @@ def deleteInfoNotes(users):
           entityActionPerformed([Ent.USER, user, Ent.NOTE, name], j, jcount)
       except (GAPI.badRequest, GAPI.invalidArgument, GAPI.notFound) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.NOTE, name], str(e), j, jcount)
-      except GAPI.serviceNotAvailable:
-        entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+      except GAPI.authError:
+        userKeepServiceNotEnabledWarning(user, i, count)
         break
     Ind.Decrement()
 
@@ -74154,8 +74259,8 @@ def printShowNotes(users):
               csvPF.WriteRowNoFilter(row)
     except (GAPI.badRequest, GAPI.invalidArgument, GAPI.notFound) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.NOTE, None], str(e), i, count)
-    except GAPI.serviceNotAvailable:
-      entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+    except GAPI.authError:
+      userKeepServiceNotEnabledWarning(user, i, count)
   if csvPF:
     csvPF.writeCSVfile('Notes')
 
@@ -74271,13 +74376,13 @@ def getNoteAttachments(users):
                     GAPI.teamDriveFileLimitExceeded, GAPI.teamDriveHierarchyTooDeep) as e:
               entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE, body['name']], str(e), k, kcount)
             except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-              userSvcNotApplicableOrDriveDisabled(user, str(e), i, count)
+              userDriveServiceNotEnabledWarning(user, str(e), i, count)
             Act.Set(Act.DOWNLOAD)
         Ind.Decrement()
       except (GAPI.badRequest, GAPI.invalidArgument, GAPI.notFound) as e:
         entityActionFailedWarning([Ent.NOTE, name], str(e), j, jcount)
-      except GAPI.serviceNotAvailable:
-        entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+      except GAPI.authError:
+        userKeepServiceNotEnabledWarning(user, i, count)
         break
     Ind.Decrement()
 
@@ -74335,8 +74440,8 @@ def createNotesACLs(users):
           Ind.Decrement()
       except (GAPI.badRequest, GAPI.invalidArgument, GAPI.notFound) as e:
         entityActionFailedWarning(entityKVList, str(e), i, count)
-      except GAPI.serviceNotAvailable:
-        entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+      except GAPI.authError:
+        userKeepServiceNotEnabledWarning(user, i, count)
         break
 
 # gam <UserTypeEntity> delete noteacl <NotesNameEntity>
@@ -74383,8 +74488,8 @@ def deleteNotesACLs(users):
         except (GAPI.badRequest, GAPI.permissionDenied, GAPI.invalidArgument, GAPI.notFound) as e:
           entityActionFailedWarning([Ent.USER, user, Ent.NOTE, name], str(e), i, count)
           break
-        except GAPI.serviceNotAvailable:
-          entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+        except GAPI.authError:
+          userKeepServiceNotEnabledWarning(user, i, count)
           break
       for k, perm in enumerate(rbody['names']):
         if perm.startswith('notes/'):
@@ -74402,9 +74507,19 @@ def deleteNotesACLs(users):
         entityNumItemsActionPerformed(entityKVList, kcount, Ent.NOTE_ACL, j, jcount)
       except (GAPI.badRequest, GAPI.invalidArgument, GAPI.notFound) as e:
         entityActionFailedWarning(entityKVList, str(e), i, count)
-      except GAPI.serviceNotAvailable:
-        entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+      except GAPI.authError:
+        userKeepServiceNotEnabledWarning(user, i, count)
         break
+
+def verifyTasksServiceEnabled(svc, user, i, count):
+  try:
+    callGAPIpages(svc.tasklists(), 'list', 'items',
+                  throwReasons=GAPI.TASKLIST_THROW_REASONS,
+                  maxItems=1)
+    return True
+  except (GAPI.notFound, GAPI.badRequest, GAPI.invalid):
+    userTasksServiceNotEnabledWarning(user, i, count)
+    return False
 
 def getTaskLists(svc, user, i, count):
   try:
@@ -74412,13 +74527,11 @@ def getTaskLists(svc, user, i, count):
                             pageMessage=getPageMessageForWhom(),
                             throwReasons=GAPI.TASKLIST_THROW_REASONS,
                             maxResults=100)
-  except GAPI.notFound:
-    results = []
   except (GAPI.badRequest, GAPI.invalid) as e:
     entityActionFailedWarning([Ent.USER, user, Ent.TASKLIST, None], str(e), i, count)
     results = None
-  except GAPI.serviceNotAvailable:
-    entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+  except GAPI.notFound:
+    userTasksServiceNotEnabledWarning(user, i, count)
     results = None
   return results
 
@@ -74526,7 +74639,7 @@ def processTasks(users):
     i += 1
     user, svc, tasklistTasks, jcount = _validateUserGetObjectList(user, i, count, tasklistTaskEntity,
                                                                   api=API.TASKS, showAction=FJQC is None or not FJQC.formatJSON)
-    if jcount == 0:
+    if jcount == 0 or not verifyTasksServiceEnabled(svc, user, i, count):
       continue
     userTasklists = None
     Ind.Increment()
@@ -74582,7 +74695,7 @@ def processTasks(users):
         entityActionFailedWarning([Ent.USER, user, Ent.TASKLIST, tasklist, Ent.TASK, task], str(e), j, jcount)
       except GAPI.serviceNotAvailable:
         Ind.Decrement()
-        entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+        userTasksServiceNotEnabledWarning(user, i, count)
         break
     Ind.Decrement()
 
@@ -74766,7 +74879,7 @@ def printShowTasks(users):
       except (GAPI.badRequest, GAPI.invalid, GAPI.notFound) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.TASKLIST, tasklist, Ent.TASK, None], str(e), i, count)
       except GAPI.serviceNotAvailable:
-        entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+        userTasksServiceNotEnabledWarning(user, i, count)
     Ind.Decrement()
     if countsOnly:
       if csvPF:
@@ -74826,7 +74939,7 @@ def processTasklists(users):
     user, svc, tasklists, jcount = _validateUserGetObjectList(user, i, count, tasklistEntity,
                                                               api=API.TASKS,
                                                               showAction=action != Act.CREATE and (FJQC is None or not FJQC.formatJSON))
-    if jcount == 0:
+    if jcount == 0 or not verifyTasksServiceEnabled(svc, user, i, count):
       continue
     Ind.Increment()
     j = 0
@@ -74836,6 +74949,8 @@ def processTasklists(users):
         if tasklist.startswith('tltitle:'):
           tasklistTitle = tasklist[8:]
           userTasklists, tasklist = getTaskListIDfromTitle(svc, userTasklists, tasklistTitle, user, i, count)
+          if userTasklists is None:
+            continue
           if tasklist is None:
             entityActionFailedWarning([Ent.USER, user, Ent.TASKLIST, tasklistTitle], Msg.TASKLIST_TITLE_NOT_FOUND, j, jcount)
             continue
@@ -74876,7 +74991,7 @@ def processTasklists(users):
         entityActionFailedWarning([Ent.USER, user, Ent.TASKLIST, tasklist], str(e), j, jcount)
       except GAPI.serviceNotAvailable:
         Ind.Decrement()
-        entityServiceNotApplicableWarning(Ent.USER, user, i, count)
+        userTasksServiceNotEnabledWarning(user, i, count)
         break
     Ind.Decrement()
 
@@ -74971,6 +75086,8 @@ def importTasklist(users):
     i += 1
     user, svc = buildGAPIServiceObject(API.TASKS, user, i, count)
     if not svc:
+      continue
+    if not verifyTasksServiceEnabled(svc, user, i, count):
       continue
     for tasklist in cleanData['items']:
       body = {'title': tasklist['title']}

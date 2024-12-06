@@ -1,3 +1,10 @@
+7.02.00
+
+Improved the error message displayed for user service account access commands when:
+* The API is not enabled
+* The user does not exist
+* The user exists but is in a OU where the service is disabled
+
 7.01.04
 
 Admin role assignments are now in the v1 stable API, use that and remove custom local workaround for the beta. #1724
@@ -22,13 +29,13 @@ By default, when listing group members, GAM does not take the domain of the memb
 * `internal external internaldomains <DomainNameList>` - Display all members, indicate their category: internal or external
 * `internaldomains <DomainNameList>` - Defaults to value of `domain` in `gam.cfg`
 
-Members without an email address, e.g. `customer`, `chrome-os-device` and `cbcm-browser` are considered internal.
+Members without an email address, e.g. `customer`, `chromeosdevice` and `cbcmbrowser` are considered internal.
 
 Updated to Python 3.13.1.
 
 7.01.03
 
-Fixed bug in `gam update cigroups <GroupEntity> delete|sync|update` where `cbcm-browser` and `chrome-os_device`
+Fixed bug in `gam update cigroups <GroupEntity> delete|sync|update` where `cbcmbrowser` and `chromeosdevice`
 addresses were not properly handled.
 
 7.01.02
