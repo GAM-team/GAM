@@ -126,17 +126,7 @@ release_json=$(curl \
 	-H "Accept: application/vnd.github+json" \
 	-H "X-GitHub-Api-Version: 2022-11-28" \
 	"$release_url" \
-     #   -w "%{http_code}" \
 	2>&1 /dev/null)
-
-#response_status="${release_response: -3}"
-#release_json="${release_response:0:-4}"
-#if [ "$response_status" != "200" ]; then
-#  echo_red "ERROR when retrieving ${release_url}:\n\n${release_json}"
-#  exit
-#else
-#  echo_green "done"
-#fi
 
 echo_yellow "Getting file and download URL..."
 # Python is sadly the nearest to universal way to safely handle JSON with Bash
@@ -497,4 +487,3 @@ echo_green "GAM installation and setup complete!"
 if [ "$update_profile" = true ]; then
   echo_green "Please restart your terminal shell or to get started right away run:\n\n$alias_line"
 fi
-
