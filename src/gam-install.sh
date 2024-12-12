@@ -97,13 +97,6 @@ else
 fi
 }
 
-reverse() {
-    for (( i = ${#*}; i > 0; i-- ))
-    {
-        echo ${!i}
-    }
-}
-
 if [ "$gamversion" == "latest" ]; then
   release_url="https://api.github.com/repos/GAM-team/GAM/releases/latest"
 elif [ "$gamversion" == "prerelease" -o "$gamversion" == "draft" ]; then
@@ -126,9 +119,16 @@ release_json=$(curl \
 	-H "Accept: application/vnd.github+json" \
 	-H "X-GitHub-Api-Version: 2022-11-28" \
 	"$release_url" \
-	2>&1 /dev/null)
+	--fail-with-body)
+curl_exit_code=$?
+if [ $curl_exit_code -ne 0 ]; then
+  echo_red "ERROR retrieving URL: ${release_json}"
+  exit
+else
+  echo_green "done"
+fi
 
-echo_yellow "Getting file and download URL..."
+echo_yellow "Calculating download URL for this device..."
 # Python is sadly the nearest to universal way to safely handle JSON with Bash
 # At least this code should be compatible with just about any Python version ever
 # unlike GAM itself. If some users don't have Python we can try grep / sed / etc
