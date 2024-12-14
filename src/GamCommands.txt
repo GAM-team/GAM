@@ -3929,6 +3929,7 @@ gam update cigroup <GroupEntity> [copyfrom <GroupItem>] <GroupAttribute>
         [security|makesecuritygroup|
          dynamicsecurity|makedynamicsecuritygroup|
          lockedsecurity|makelockedsecuritygroup]
+        [locked|unlocked]
         [dynamic <QueryDynamicGroup>]
         [memberrestrictions <QueryMemberRestrictions>]
 gam update cigroups <GroupEntity> create|add [<GroupRole>]

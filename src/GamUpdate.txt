@@ -1,3 +1,14 @@
+7.02.01
+
+Added options `locked` and `unlocked` to `gam update cigroups` that allow locking/unlocking groups.
+
+* See: https://workspaceupdates.googleblog.com/2024/12/locked-groups-open-beta.html
+
+You'll have to do a `gam oauth create` and enable the following scope to use these options:
+```
+[*] 22)  Cloud Identity Groups API Beta (Enables group locking/unlocking)
+```
+
 7.02.00
 
 Improved the error message displayed for user service account access commands when:

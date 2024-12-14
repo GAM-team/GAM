@@ -45,10 +45,11 @@ CLASSROOM = 'classroom'
 CLOUDCHANNEL = 'cloudchannel'
 CLOUDIDENTITY_DEVICES = 'cloudidentitydevices'
 CLOUDIDENTITY_GROUPS = 'cloudidentitygroups'
+CLOUDIDENTITY_GROUPS_BETA = 'cloudidentitygroupsbeta'
 CLOUDIDENTITY_INBOUND_SSO = 'cloudidentityinboundsso'
 CLOUDIDENTITY_ORGUNITS = 'cloudidentityorgunits'
-CLOUDIDENTITY_POLICY = 'cloudidentitypolicy'
 CLOUDIDENTITY_ORGUNITS_BETA = 'cloudidentityorgunitsbeta'
+CLOUDIDENTITY_POLICY = 'cloudidentitypolicy'
 CLOUDIDENTITY_USERINVITATIONS = 'cloudidentityuserinvitations'
 CLOUDRESOURCEMANAGER = 'cloudresourcemanager'
 CONTACTS = 'contacts'
@@ -224,6 +225,7 @@ _INFO = {
   CLOUDCHANNEL: {'name': 'Channel Channel API', 'version': 'v1', 'v2discovery': True},
   CLOUDIDENTITY_DEVICES: {'name': 'Cloud Identity Devices API', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_GROUPS: {'name': 'Cloud Identity Groups API', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
+  CLOUDIDENTITY_GROUPS_BETA: {'name': 'Cloud Identity Groups API', 'version': 'v1beta1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_INBOUND_SSO: {'name': 'Cloud Identity Inbound SSO API', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_ORGUNITS: {'name': 'Cloud Identity OrgUnits API', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_ORGUNITS_BETA: {'name': 'Cloud Identity OrgUnits API', 'version': 'v1beta1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
@@ -360,6 +362,10 @@ _CLIENT_SCOPES = [
   {'name': 'Cloud Identity Groups API',
    'api': CLOUDIDENTITY_GROUPS,
    'subscopes': READONLY,
+   'scope': 'https://www.googleapis.com/auth/cloud-identity.groups'},
+  {'name': 'Cloud Identity Groups API Beta (Enables group locking/unlocking)',
+   'api': CLOUDIDENTITY_GROUPS_BETA,
+   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/cloud-identity.groups'},
   {'name': 'Cloud Identity - Inbound SSO Settings',
    'api': CLOUDIDENTITY_INBOUND_SSO,
