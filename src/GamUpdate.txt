@@ -1,3 +1,9 @@
+7.02.02
+
+Updated `gam <UserTypeEntity> archive messages <GroupItem>` to retry the following unexpected error
+that occurs after many messages have been successfully archived.
+`ERROR: 404: notFound - Unable to lookup group`
+
 7.02.01
 
 Added options `locked` and `unlocked` to `gam update cigroups` that allow locking/unlocking groups.

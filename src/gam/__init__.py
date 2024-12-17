@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.02.01'
+__version__ = '7.02.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -34857,7 +34857,7 @@ def doUpdateCIGroups():
             entityActionFailedWarning([Ent.CLOUD_IDENTITY_GROUP, group], str(e), i, count)
             continue
           # If a group currently isn't a security group or locked, and we want to add security and locked,
-          # we have to do two commands to avoid a beta bug
+          # we have to do two commands to meet a beta requirement
           ci_body.setdefault('labels', {})
           if ((CIGROUP_SECURITY_LABEL not in cigInfo['labels']) and
               (CIGROUP_LOCKED_LABEL not in cigInfo['labels']) and
@@ -34880,16 +34880,15 @@ def doUpdateCIGroups():
           try:
             if twoUpdates:
               ci_body['labels'].pop(CIGROUP_LOCKED_LABEL)
-            callGAPI(cipl.groups(), 'patch',
-                     throwReasons=GAPI.CIGROUP_UPDATE_THROW_REASONS,
-                     retryReasons=GAPI.CIGROUP_RETRY_REASONS,
-                     name=name, body=ci_body, updateMask=','.join(list(ci_body.keys())))
-            if twoUpdates:
-              ci_body['labels'][CIGROUP_LOCKED_LABEL] = ''
               callGAPI(cipl.groups(), 'patch',
                        throwReasons=GAPI.CIGROUP_UPDATE_THROW_REASONS,
                        retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                        name=name, body=ci_body, updateMask=','.join(list(ci_body.keys())))
+              ci_body['labels'][CIGROUP_LOCKED_LABEL] = ''
+            callGAPI(cipl.groups(), 'patch',
+                     throwReasons=GAPI.CIGROUP_UPDATE_THROW_REASONS,
+                     retryReasons=GAPI.CIGROUP_RETRY_REASONS,
+                     name=name, body=ci_body, updateMask=','.join(list(ci_body.keys())))
           except (GAPI.notFound, GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
                   GAPI.forbidden, GAPI.badRequest, GAPI.invalid, GAPI.invalidInput, GAPI.invalidArgument,
                   GAPI.systemError, GAPI.permissionDenied, GAPI.failedPrecondition, GAPI.serviceNotAvailable) as e:
@@ -35152,7 +35151,7 @@ def doUpdateCIGroups():
           removeRoles = []
           postUpdateRoles = []
           memberRoles = callGAPI(ci.groups().memberships(), 'get',
-                                 name=memberName, fields=f'name,preferredMemberKey,roles,type')
+                                 name=memberName, fields='name,preferredMemberKey,roles,type')
           getCIGroupMemberRoleFixType(memberRoles)
           current_roles = [crole['name'] for crole in memberRoles['roles']]
           # When upgrading role, strip any expiryDetail from member before role changes
@@ -69680,8 +69679,9 @@ def archiveMessages(users):
         stream.write(base64.urlsafe_b64decode(str(message['raw'])))
         try:
           callGAPI(gm.archive(), 'insert',
-                   throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.BAD_REQUEST, GAPI.INVALID,
+                   throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.INVALID,
                                                           GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN],
+                   retryReasons=[GAPI.NOT_FOUND],
                    groupId=group, media_body=googleapiclient.http.MediaIoBaseUpload(stream, mimetype='message/rfc822', resumable=True))
           if not csvPF:
             entityActionPerformed([Ent.USER, user, entityType, messageId], j, jcount)
@@ -69689,6 +69689,9 @@ def archiveMessages(users):
             csvPF.WriteRow({'User': user, entityHeader: messageId, 'action': Act.Performed()})
         except GAPI.serviceNotAvailable:
           userGmailServiceNotEnabledWarning(user, i, count)
+          break
+        except GAPI.notFound as e:
+          _processMessageFailed(user, messageId, str(e), j, jcount)
           break
         except (GAPI.badRequest, GAPI.invalid, GAPI.failedPrecondition, GAPI.forbidden,
                 googleapiclient.errors.MediaUploadSizeError) as e:
