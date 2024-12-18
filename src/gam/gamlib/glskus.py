@@ -182,6 +182,8 @@ _SKUS = {
     'product': 'Google-Chrome-Device-Management', 'aliases': ['chrome', 'cdm', 'googlechromedevicemanagement'], 'displayName': 'Google Chrome Device Management'}
   }
 
+ARCHIVABLE_SKUS = {'1010020020', '1010020025', '1010020026', '1010020027', '1010020028', 'Google-Apps-Unlimited'}
+
 def getProductAndSKU(sku):
   l_sku = sku.lower().replace('-', '').replace(' ', '').replace('"', '').replace("'", '').strip()
   if l_sku.startswith('nv:'):

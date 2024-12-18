@@ -7821,7 +7821,8 @@ gam <UserTypeEntity> delete noteacl <NotesNameEntity>
 # Users - Licenses
 
 gam <UserTypeEntity> create|add license <SKUIDList> [product|productid <ProductID>] [preview] [actioncsv]
-gam <UserTypeEntity> update license <SKUID> [product|productid <ProductID>] [from] <SKUID> [preview] [actioncsv]
+gam <UserTypeEntity> update license <NewSKUID> [product|productid <ProductID>] [from] <OldSKUID>
+        [preview|archive] [actioncsv]
 gam <UserTypeEntity> delete license <SKUIDList> [product|productid <ProductID>] [preview] [actioncsv]
 gam <UserTypeEntity> sync license <SKUIDList> [product|productid <ProductID>] [addonly|removeonly] [allskus|onesku] [preview] [actioncsv]
 

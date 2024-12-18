@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.02.02'
+__version__ = '7.02.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -67173,7 +67173,7 @@ LICENSE_PREVIEW_TITLES = ['user', 'productId', 'skuId', 'action', 'message']
 
 def getLicenseParameters(operation):
   lic = buildGAPIObject(API.LICENSING)
-  parameters = {LICENSE_PRODUCT_SKUIDS: [], 'csvPF': None, 'preview': False, 'syncOperation': 'addremove', 'syncACLsMode': None}
+  parameters = {LICENSE_PRODUCT_SKUIDS: [], 'csvPF': None, 'preview': False, 'syncOperation': 'addremove', 'syncACLsMode': None, 'archive': False}
   skuLocation = Cmd.Location()
   if operation != 'patch':
     parameters[LICENSE_PRODUCT_SKUIDS] = getGoogleSKUList(allowUnknownProduct=True)
@@ -67203,6 +67203,10 @@ def getLicenseParameters(operation):
       if operation == 'patch':
         titles.insert(2, 'oldskuId')
       parameters['csvPF'] = CSVPrintFile(titles)
+    elif operation == 'patch' and myarg == 'archive':
+      if skuId not in SKU.ARCHIVABLE_SKUS:
+        usageErrorExit(Msg.SKU_HAS_NO_MATCHING_ARCHIVED_USER_SKU.format(skuId))
+      parameters['archive'] = True
     else:
       unknownArgumentExit()
   for productSku in parameters[LICENSE_PRODUCT_SKUIDS]:
@@ -67308,13 +67312,17 @@ def createLicense(users):
   if parameters['csvPF']:
     parameters['csvPF'].writeCSVfile('Create Licenses')
 
-# gam <UserTypeEntity> update license <SKUID> [product|productid <ProductID>] [from] <SKUID> [preview] [actioncsv]
+# gam <UserTypeEntity> update license <SKUID> [product|productid <ProductID>] [from] <SKUID>
+#	[preview] [actioncsv] [archive]
 def updateLicense(users):
   lic, parameters = getLicenseParameters('patch')
   j, jcount, users = getEntityArgument(users)
   Act.Set([Act.UPDATE, Act.UPDATE_PREVIEW][parameters['preview']])
+  cd = None
   if parameters['preview']:
     message = Act.PREVIEW
+  elif parameters['archive']:
+    cd = buildGAPIObject(API.DIRECTORY)
   productId, skuId, oldSkuId = parameters[LICENSE_PRODUCT_SKUIDS][0]
   body = {'skuId': skuId}
   entityPerformActionModifierNumItems([Ent.LICENSE, SKU.skuIdToDisplayName(skuId)], Msg.FOR, jcount, Ent.USER)
@@ -67340,6 +67348,22 @@ def updateLicense(users):
     except GAPI.userNotFound as e:
       message = str(e)
       entityUnknownWarning(Ent.USER, user, j, jcount)
+    if parameters['archive'] and message == Act.SUCCESS:
+      Act.Set(Act.ARCHIVE)
+      try:
+        callGAPI(cd.users(), 'update',
+                 throwReasons=[GAPI.USER_NOT_FOUND, GAPI.DOMAIN_NOT_FOUND,
+                               GAPI.FORBIDDEN, GAPI.BAD_REQUEST,
+                               GAPI.INSUFFICIENT_ARCHIVED_USER_LICENSES],
+                 retryReasons=[GAPI.INSUFFICIENT_ARCHIVED_USER_LICENSES],
+                 userKey=user, body={'archived': True})
+        entityActionPerformed([Ent.USER, user], j, jcount)
+      except GAPI.userNotFound:
+        entityUnknownWarning(Ent.USER, user, j, jcount)
+      except (GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden, GAPI.badRequest,
+              GAPI.insufficientArchivedUserLicenses) as e:
+        entityActionFailedWarning([Ent.USER, user], str(e), j, jcount)
+      Act.Set(Act.UPDATE)
     if parameters['csvPF']:
       _writeLicenseAction(productId, skuId, oldSkuId, parameters, user, Act.UPDATE, message)
   Ind.Decrement()

@@ -1,3 +1,20 @@
+7.02.03
+
+Added option `archive` to `gam <UserTypeEntity> update license <NewSKUID> from <OldSKUID>` that causes GAM
+to archive `<UserTypeEntity>` after updating their license to `<NewSKUID>`. This will be used when you want to
+archive a user with a non-archivable license. The `<NewSKUID>` license is assigned to the user and it then converts
+to the equivalent Archived User license when the user is archived.
+
+`<NewSKUID>` must be one of the following SKUs:
+```
+Google-Apps-Unlimited - G Suite Business
+1010020020 - Google Workspace Enterprise Plus
+1010020025 - Google Workspace Business Plus
+1010020026 - Google Workspace Enterprise Standard
+1010020027 - Google Workspace Business Starter
+1010020028 - Google Workspace Business Standard
+```
+
 7.02.02
 
 Updated `gam <UserTypeEntity> archive messages <GroupItem>` to retry the following unexpected error
