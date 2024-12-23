@@ -323,6 +323,8 @@ echo_yellow "Downloading ${download_url} to $temp_archive_dir ($check_type)..."
 (cd "$temp_archive_dir" && curl -O -L -s "${curl_opts[@]}" "$download_url")
 
 mkdir -p "$target_dir"
+echo_yellow "Deleting contents of $target_dir/gam7/lib"
+rm -frv "$target_dir/gam7/lib"
 
 echo_yellow "Extracting archive to $target_dir"
 if [[ "$name" =~ tar.xz|tar.gz|tar ]]; then
