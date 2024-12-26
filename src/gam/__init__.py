@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.02.03'
+__version__ = '7.02.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -628,7 +628,7 @@ def formatKeyValueList(prefixStr, kvList, suffixStr):
   msg += suffixStr
   return msg
 
-# Something's wrong with CustomerID
+# Something's wrong with CustomerID??
 def accessErrorMessage(cd, errMsg=None):
   if cd is None:
     cd = buildGAPIObject(API.DIRECTORY)
@@ -652,10 +652,12 @@ def accessErrorMessage(cd, errMsg=None):
                                                          Ent.DOMAIN, GC.Values[GC.DOMAIN],
                                                          Ent.USER, GM.Globals[GM.ADMIN]])+[Msg.ACCESS_FORBIDDEN],
                               '')
-  return formatKeyValueList('',
-                            [Ent.Singular(Ent.CUSTOMER_ID), GC.Values[GC.CUSTOMER_ID],
-                             errMsg],
-                            '')
+  if errMsg:
+    return formatKeyValueList('',
+                              [Ent.Singular(Ent.CUSTOMER_ID), GC.Values[GC.CUSTOMER_ID],
+                               errMsg],
+                              '')
+  return None
 
 def accessErrorExit(cd, errMsg=None):
   systemErrorExit(INVALID_DOMAIN_RC, accessErrorMessage(cd or buildGAPIObject(API.DIRECTORY), errMsg))

@@ -1,3 +1,7 @@
+7.02.04
+
+Updated code to eliminate trap caused by bug introduced in 7.02.00 that occurs when an invalid domain or OU is specified.
+
 7.02.03
 
 Added option `archive` to `gam <UserTypeEntity> update license <NewSKUID> from <OldSKUID>` that causes GAM
