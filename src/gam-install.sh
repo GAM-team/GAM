@@ -381,7 +381,7 @@ while true; do
       ;;
     [Nn]*)
 #      config_cmd="config no_browser true"
-      touch "$target_dir/gam/nobrowser.txt" > /dev/null 2>&1
+      touch "$target_dir/gam7/nobrowser.txt" > /dev/null 2>&1
       break
       ;;
     *)
