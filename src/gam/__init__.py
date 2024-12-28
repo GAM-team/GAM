@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.02.04'
+__version__ = '7.02.05'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -23171,8 +23171,8 @@ def printShowContactDelegates(users):
       continue
     jcount = len(delegates)
     if not csvPF:
-      entityPerformActionNumItems([Ent.USER, user], jcount, Ent.CONTACT_DELEGATE, i, count)
       if not csvStyle:
+        entityPerformActionNumItems([Ent.USER, user], jcount, Ent.CONTACT_DELEGATE, i, count)
         Ind.Increment()
         j = 0
         for delegate in delegates:
@@ -65568,31 +65568,29 @@ def printShowSharedDrives(users, useDomainAdminAccess=False):
     else:
       matchedFeed = feed
     jcount = len(matchedFeed)
+    if jcount == 0:
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
     if not csvPF:
       if not FJQC.formatJSON:
         entityPerformActionNumItems([Ent.USER, user], jcount, Ent.SHAREDDRIVE, i, count)
-    if jcount == 0:
-      setSysExitRC(NO_ENTITIES_FOUND_RC)
+      Ind.Increment()
+      j = 0
+      for shareddrive in matchedFeed:
+        j += 1
+        shareddrive = stripNonShowFields(shareddrive)
+        _showSharedDrive(user, shareddrive, j, jcount, FJQC)
+      Ind.Decrement()
     else:
-      if not csvPF:
-        Ind.Increment()
-        j = 0
-        for shareddrive in matchedFeed:
-          j += 1
-          shareddrive = stripNonShowFields(shareddrive)
-          _showSharedDrive(user, shareddrive, j, jcount, FJQC)
-        Ind.Decrement()
-      else:
-        for shareddrive in matchedFeed:
-          shareddrive = stripNonShowFields(shareddrive)
-          if FJQC.formatJSON:
-            row = {'User': user, 'id': shareddrive['id'], 'name': shareddrive['name']}
-            if not useDomainAdminAccess:
-              row['role'] = shareddrive['role'] if not guiRoles else SHAREDDRIVE_API_GUI_ROLES_MAP[shareddrive['role']]
-            row['JSON'] = json.dumps(cleanJSON(shareddrive, timeObjects=SHAREDDRIVE_TIME_OBJECTS), ensure_ascii=False, sort_keys=True)
-            csvPF.WriteRow(row)
-          else:
-            csvPF.WriteRowTitles(flattenJSON(shareddrive, flattened={'User': user}, timeObjects=SHAREDDRIVE_TIME_OBJECTS))
+      for shareddrive in matchedFeed:
+        shareddrive = stripNonShowFields(shareddrive)
+        if FJQC.formatJSON:
+          row = {'User': user, 'id': shareddrive['id'], 'name': shareddrive['name']}
+          if not useDomainAdminAccess:
+            row['role'] = shareddrive['role'] if not guiRoles else SHAREDDRIVE_API_GUI_ROLES_MAP[shareddrive['role']]
+          row['JSON'] = json.dumps(cleanJSON(shareddrive, timeObjects=SHAREDDRIVE_TIME_OBJECTS), ensure_ascii=False, sort_keys=True)
+          csvPF.WriteRow(row)
+        else:
+          csvPF.WriteRowTitles(flattenJSON(shareddrive, flattened={'User': user}, timeObjects=SHAREDDRIVE_TIME_OBJECTS))
   if csvPF:
     csvPF.writeCSVfile('SharedDrives')
 
@@ -65651,29 +65649,27 @@ def doPrintShowOrgunitSharedDrives():
                       customer=_getCustomersCustomerIdWithC(),
                       filter="type == 'shared_drive'")
   jcount = len(sds)
+  if jcount == 0:
+    setSysExitRC(NO_ENTITIES_FOUND_RC)
   if not csvPF:
     if not FJQC.formatJSON:
       entityPerformActionNumItems([Ent.ORGANIZATIONAL_UNIT, orgUnitPath], jcount, Ent.SHAREDDRIVE)
-  if jcount == 0:
-    setSysExitRC(NO_ENTITIES_FOUND_RC)
+    Ind.Increment()
+    j = 0
+    for shareddrive in sds:
+      j += 1
+      _getOrgUnitSharedDriveInfo(shareddrive)
+      _showOrgUnitSharedDrive(shareddrive, j, jcount, FJQC)
+    Ind.Decrement()
   else:
-    if not csvPF:
-      Ind.Increment()
-      j = 0
-      for shareddrive in sds:
-        j += 1
-        _getOrgUnitSharedDriveInfo(shareddrive)
-        _showOrgUnitSharedDrive(shareddrive, j, jcount, FJQC)
-      Ind.Decrement()
-    else:
-      for shareddrive in sds:
-        _getOrgUnitSharedDriveInfo(shareddrive)
-        if FJQC.formatJSON:
-          row = {'name': shareddrive['name']}
-          row['JSON'] = json.dumps(cleanJSON(shareddrive), ensure_ascii=False, sort_keys=True)
-          csvPF.WriteRow(row)
-        else:
-          csvPF.WriteRowTitles(flattenJSON(shareddrive))
+    for shareddrive in sds:
+      _getOrgUnitSharedDriveInfo(shareddrive)
+      if FJQC.formatJSON:
+        row = {'name': shareddrive['name']}
+        row['JSON'] = json.dumps(cleanJSON(shareddrive), ensure_ascii=False, sort_keys=True)
+        csvPF.WriteRow(row)
+      else:
+        csvPF.WriteRowTitles(flattenJSON(shareddrive))
   if csvPF:
     csvPF.writeCSVfile('OrgUnit {orgUnitPath} SharedDrives')
 
@@ -65758,7 +65754,7 @@ SHOW_NO_PERMISSIONS_DRIVES_CHOICE_MAP = {
 #	[oneitemperrow] [maxitems <Integer>]
 #	[shownopermissionsdrives false|true|only]
 #	[<DrivePermissionsFieldName>*|(fields <DrivePermissionsFieldNameList>)]
-#	[formatjsn]
+#	[formatjson]
 def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
   def _printPermissionRow(baserow, permission):
     row = baserow.copy()
@@ -65948,7 +65944,8 @@ def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
     if jcount == 0:
       setSysExitRC(NO_ENTITIES_FOUND_RC)
     if not csvPF:
-      entityPerformActionNumItems([Ent.USER, user], jcount, Ent.SHAREDDRIVE, i, count)
+      if not FJQC.formatJSON:
+        entityPerformActionNumItems([Ent.USER, user], jcount, Ent.SHAREDDRIVE, i, count)
       Ind.Increment()
       j = 0
       for shareddrive in matchFeed:
