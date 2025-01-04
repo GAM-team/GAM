@@ -7352,11 +7352,11 @@ gam <UserTypeEntity> print filters [labelidsonly] [todrive <ToDriveAttribute>*]
 # Users - Forms
 
 gam <UserTypeEntity> create form
-        title <String> [description <String>] [isquiz [<Boolean>]
+        title <String> [description <String>] [isquiz [<Boolean>]] [<JSONData>]
         [drivefilename <DriveFileName>] [<DriveFileParentAttribute>]
         [(csv [todrive <ToDriveAttribute>*]) | returnidonly]
 gam <UserTypeEntity> update form <DriveFileEntity>
-        [title <String>] [description <String>] [isquiz [<Boolean>]
+        [title <String>] [description <String>] [isquiz [<Boolean>]] [<JSONData>]
 
 gam <UserTypeEntity> print forms <DriveFileEntity> [todrive <ToDriveAttribute>*]
         (addcsvdata <FieldName> <String>)*

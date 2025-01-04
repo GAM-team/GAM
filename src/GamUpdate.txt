@@ -1,3 +1,10 @@
+7.02.06
+
+Added option `<JSONData>` to `gam <UserTypeEntity> create|update form` that allows for
+creation/modification of all fields in a form. `<JSONData>` is a list of form update requests.
+
+* See: https://developers.google.com/forms/api/reference/rest/v1/forms/batchUpdate
+
 7.02.05
 
 Updated `gam [<UserTypeEntity>] show shareddriveacls ... formatjson` to not display this line

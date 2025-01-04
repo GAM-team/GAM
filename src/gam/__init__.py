@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.02.05'
+__version__ = '7.02.06'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -71984,7 +71984,8 @@ def updateFormRequestUpdateMasks(ubody):
         v['updateMask'] = ','.join(v['updateMask'])
         break
 
-# gam <UserTypeEntity> create form title <String> [description <String>] [isquiz [<Boolean>]]
+# gam <UserTypeEntity> create form
+#	title <String> [description <String>] [isquiz [<Boolean>]] [<JSONData>]
 #	[drivefilename <DriveFileName>] [<DriveFileParentAttribute>]
 #	[(csv [todrive <ToDriveAttribute>*]) | returnidonly]
 def createForm(users):
@@ -72003,6 +72004,9 @@ def createForm(users):
       updateFormInfoRequest(myarg, getString(Cmd.OB_STRING, minLen=0), ubody)
     elif myarg == 'isquiz':
       updateFormSettingsRequest('isQuiz', getBoolean(), ubody)
+    elif myarg == 'json':
+      jsonData = getJSON([])
+      ubody['requests'].extend(jsonData.get('requests', []))
     elif myarg == 'drivefilename':
       body['name'] = getString(Cmd.OB_DRIVE_FILE_NAME)
     elif getDriveFileParentAttribute(myarg, parentParms):
@@ -72065,7 +72069,8 @@ def createForm(users):
   if csvPF:
     csvPF.writeCSVfile('Forms')
 
-# gam <UserTypeEntity> update form <DriveFileEntity> [title <String>] [description <String>] [isquiz [Boolean>]
+# gam <UserTypeEntity> update form <DriveFileEntity>
+#	[title <String>] [description <String>] [isquiz [Boolean>]] [<JSONData>]
 def updateForm(users):
   ubody = {'includeFormInResponse': False, 'requests': []}
   fileIdEntity = getDriveFileEntity()
@@ -72077,6 +72082,9 @@ def updateForm(users):
       updateFormInfoRequest(myarg, getString(Cmd.OB_STRING, minLen=0), ubody)
     elif myarg == 'isquiz':
       updateFormSettingsRequest('isQuiz', getBoolean(), ubody)
+    elif myarg == 'json':
+      jsonData = getJSON([])
+      ubody['requests'].extend(jsonData.get('requests', []))
     else:
       unknownArgumentExit()
   updateFormRequestUpdateMasks(ubody)
