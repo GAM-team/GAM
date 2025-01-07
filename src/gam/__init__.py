@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.02.06'
+__version__ = '7.02.07'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -27894,14 +27894,28 @@ def _getPolicyGroupTarget(cd, cp, myarg, orgUnit):
   targetResource = f"groups/{convertEmailAddressToUID(targetName, cd, emailType='group')}"
   return (targetName, targetName, targetResource, Ent.GROUP, cp.customers().policies().groups())
 
+def checkPolicyArgs(targetResource, printer_id, app_id):
+  if not targetResource:
+    missingArgumentExit('ou|org|orgunit|group')
+  if printer_id and app_id:
+    usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('printerid', 'appid'))
+
+def setPolicyKVList(baseList, printer_id, app_id):
+  kvList = baseList[:]
+  if app_id:
+    kvList.extend([Ent.APP_ID, app_id])
+  elif printer_id:
+    kvList.extend([Ent.PRINTER_ID, printer_id])
+  return kvList
+
 def updatePolicyRequests(body, targetResource, printer_id, app_id):
   for request in body['requests']:
     request.setdefault('policyTargetKey', {})
     request['policyTargetKey']['targetResource'] = targetResource
-    if printer_id:
-      request['policyTargetKey']['additionalTargetKeys'] = {'printer_id': printer_id}
-    elif app_id:
+    if app_id:
       request['policyTargetKey']['additionalTargetKeys'] = {'app_id': app_id}
+    elif printer_id:
+      request['policyTargetKey']['additionalTargetKeys'] = {'printer_id': printer_id}
 
 # gam delete chromepolicy
 #	(<SchemaName> [<JSONData>])+
@@ -27937,15 +27951,14 @@ def doDeleteChromePolicy():
           body['requests'][-1].setdefault('policyTargetKey', {})
           for atk in jsonData['additionalTargetKeys']:
             body['requests'][-1]['policyTargetKey']['additionalTargetKeys'] = {atk['name']: atk['value']}
-  if not targetResource:
-    missingArgumentExit('ou|org|orgunit|group')
+  checkPolicyArgs(targetResource, printer_id, app_id)
   count = len(body['requests'])
   if count != 1:
     entityPerformActionNumItems([entityType, targetName], count, Ent.CHROME_POLICY)
     if count == 0:
       return
+  kvList = setPolicyKVList([entityType, targetName, Ent.CHROME_POLICY, ','.join(schemaNameList)], printer_id, app_id)
   updatePolicyRequests(body, targetResource, printer_id, app_id)
-  kvList = [entityType, targetName, Ent.CHROME_POLICY, ','.join(schemaNameList)]
   try:
     callGAPI(service, function,
              throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED,
@@ -28191,12 +28204,11 @@ def doUpdateChromePolicy():
             invalidArgumentExit(Msg.CHROME_TARGET_VERSION_FORMAT)
         body['requests'][-1]['policyValue']['value'][casedField] = value
         body['requests'][-1]['updateMask'] += f'{casedField},'
-  if not targetResource:
-    missingArgumentExit('ou|org|orgunit|group')
+  checkPolicyArgs(targetResource, printer_id, app_id)
   count = len(body['requests'])
   if count > 0 and not body['requests'][-1]['updateMask']:
     body['requests'].pop()
-  kvList = [entityType, targetName, Ent.CHROME_POLICY, ','.join(schemaNameList)]
+  kvList = setPolicyKVList([entityType, targetName, Ent.CHROME_POLICY, ','.join(schemaNameList)], printer_id, app_id)
   if count != 1:
     entityPerformActionNumItems(kvList, count, Ent.CHROME_POLICY)
     if count == 0:
@@ -28238,10 +28250,10 @@ CHROME_POLICY_SHOW_CHOICE_MAP = {
 def doPrintShowChromePolicies():
   def normalizedPolicy(policy):
     norm = {'name': policy['value']['policySchema']}
-    if printerId:
-      norm['printerId'] = printerId
-    elif appId:
-      norm['appId'] = appId
+    if app_id:
+      norm['appId'] = app_id
+    elif printer_id:
+      norm['printerId'] = printer_id
     if entityType == Ent.ORGANIZATIONAL_UNIT:
       orgUnitId = policy.get('targetKey', {}).get('targetResource')
       norm['orgUnitPath'] = convertOrgUnitIDtoPath(cd, orgUnitId) if orgUnitId else UNKNOWN
@@ -28337,7 +28349,7 @@ def doPrintShowChromePolicies():
   if csvPF:
     csvPF.SetNoEscapeChar(True)
   FJQC = FormatJSONQuoteChar(csvPF)
-  appId = groupEmail = orgUnit = printerId = None
+  app_id = groupEmail = orgUnit = printer_id = None
   showPolicies = CHROME_POLICY_SHOW_ALL
   psFilters = []
   while Cmd.ArgumentsRemaining():
@@ -28348,10 +28360,10 @@ def doPrintShowChromePolicies():
       orgUnit, targetName, targetResource, entityType, _ = _getPolicyOrgUnitTarget(cd, cp, myarg, groupEmail)
     elif myarg == 'group':
       groupEmail, targetName, targetResource, entityType, _ = _getPolicyGroupTarget(cd, cp, myarg, orgUnit)
-    elif (not printerId and not appId) and myarg == 'printerid':
-      printerId = getString(Cmd.OB_PRINTER_ID)
-    elif (not printerId and not appId) and myarg == 'appid':
-      appId = getString(Cmd.OB_APP_ID)
+    elif myarg == 'printerid':
+      printer_id = getString(Cmd.OB_PRINTER_ID)
+    elif myarg == 'appid':
+      app_id = getString(Cmd.OB_APP_ID)
     elif myarg == 'filter':
       for psFilter in getString(Cmd.OB_STRING).replace(',', ' ').split():
         psFilters.append(psFilter)
@@ -28365,20 +28377,19 @@ def doPrintShowChromePolicies():
       showPolicies = getChoice(CHROME_POLICY_SHOW_CHOICE_MAP, mapChoice=True)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
-  if not targetResource:
-    missingArgumentExit('ou|org|orgunit|group')
+  checkPolicyArgs(targetResource, printer_id, app_id)
   body = {'policyTargetKey': {'targetResource': targetResource}}
-  if printerId:
-    body['policyTargetKey']['additionalTargetKeys'] = {'printer_id': printerId}
-    if not psFilters:
-      psFilters = ['chrome.printers.*']
-  elif appId:
-    body['policyTargetKey']['additionalTargetKeys'] = {'app_id': appId}
+  if app_id:
+    body['policyTargetKey']['additionalTargetKeys'] = {'app_id': app_id}
     if not psFilters:
       psFilters = ['chrome.users.apps.*',
                    'chrome.devices.kiosk.apps.*',
                    'chrome.devices.managedguest.apps.*',
                     ]
+  elif printer_id:
+    body['policyTargetKey']['additionalTargetKeys'] = {'printer_id': printer_id}
+    if not psFilters:
+      psFilters = ['chrome.printers.*']
   elif not psFilters:
     if entityType == Ent.ORGANIZATIONAL_UNIT:
       psFilters = ['chrome.users.*',
@@ -28412,10 +28423,10 @@ def doPrintShowChromePolicies():
       csvPF.AddTitles(['group'])
     csvPF.SetSortAllTitles()
     if not FJQC.formatJSON:
-      if printerId:
-        csvPF.AddSortTitles(['printerId'])
-      elif appId:
+      if app_id:
         csvPF.AddSortTitles(['appId'])
+      elif printer_id:
+        csvPF.AddSortTitles(['printerId'])
     else:
       csvPF.SetJSONTitles(csvPF.titlesList+['JSON'])
   policies = []
@@ -28442,11 +28453,7 @@ def doPrintShowChromePolicies():
   if not csvPF:
     jcount = len(policies)
     if not FJQC.formatJSON:
-      kvList = [entityType, targetName]
-      if printerId:
-        kvList.extend([Ent.PRINTER_ID, printerId])
-      elif appId:
-        kvList.extend([Ent.APP_ID, appId])
+      kvList = setPolicyKVList([entityType, targetName], printer_id, app_id)
       entityPerformActionModifierNumItems(kvList, Msg.MAXIMUM_OF, jcount, Ent.CHROME_POLICY)
     Ind.Increment()
     j = 0

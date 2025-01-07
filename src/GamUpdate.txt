@@ -1,3 +1,8 @@
+7.02.07
+
+Updated `gam delete|update chromepolicy` to display the `<AppID>` or `<PrinterID>` (if specified)
+in the command status messages.
+
 7.02.06
 
 Added option `<JSONData>` to `gam <UserTypeEntity> create|update form` that allows for
