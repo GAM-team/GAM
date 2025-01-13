@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.02.07'
+__version__ = '7.02.08'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -28349,7 +28349,7 @@ def doPrintShowChromePolicies():
   if csvPF:
     csvPF.SetNoEscapeChar(True)
   FJQC = FormatJSONQuoteChar(csvPF)
-  app_id = groupEmail = orgUnit = printer_id = None
+  app_id = groupEmail = orgUnit = printer_id = targetResource = None
   showPolicies = CHROME_POLICY_SHOW_ALL
   psFilters = []
   while Cmd.ArgumentsRemaining():

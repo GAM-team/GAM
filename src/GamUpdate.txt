@@ -1,3 +1,8 @@
+7.02.08
+
+Fixed bug in `gam print|show chromepolicies` that caused a trap when neither
+`ou|orgunit <OrgUnitItem>` nor `group <GroupItem>` was specified.
+
 7.02.07
 
 Updated `gam delete|update chromepolicy` to display the `<AppID>` or `<PrinterID>` (if specified)
