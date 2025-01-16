@@ -192,7 +192,7 @@ jobs:
           echo "gampath=${gampath}" >> $GITHUB_ENV
 
       - name: Install necessary Github-hosted Linux packages
-        if: runner.os == 'Linux' && runner.arch == 'X64'
+        if: runner.os == 'Linux'
         run: |
           echo "RUNNING: apt update..."
           sudo apt-get -qq --yes update
