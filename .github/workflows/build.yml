@@ -83,25 +83,29 @@ jobs:
             goal: build
             arch: Win64
             openssl_archs: VC-WIN64A
+          # disable 3.9 test for now since it's oldest and due
+          # for removal in Oct 2025. We only have 13 jid accounts
+          # so we need this one off but can re-enable at some point
+          # if we feel the need.
+          #- os: ubuntu-24.04
+          #  goal: test
+          #  python: "3.9"
+          #  jid: 11
+          #  arch: x86_64
           - os: ubuntu-24.04
             goal: test
-            python: "3.9"
+            python: "3.10"
             jid: 11
             arch: x86_64
           - os: ubuntu-24.04
             goal: test
-            python: "3.10"
+            python: "3.11"
             jid: 12
             arch: x86_64
           - os: ubuntu-24.04
             goal: test
-            python: "3.11"
-            jid: 13
-            arch: x86_64
-          - os: ubuntu-24.04
-            goal: test
             python: "3.12"
-            jid: 14
+            jid: 13
             arch: x86_64
 
     steps:
