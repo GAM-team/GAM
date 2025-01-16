@@ -17,7 +17,7 @@ defaults:
     working-directory: src
 
 env:
-  SCRATCH_COUNTER: 5
+  SCRATCH_COUNTER: 6
   OPENSSL_CONFIG_OPTS: no-fips --api=3.0.0
   OPENSSL_INSTALL_PATH: ${{ github.workspace }}/bin/ssl
   OPENSSL_SOURCE_PATH: ${{ github.workspace }}/src/openssl
