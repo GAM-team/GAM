@@ -1,3 +1,17 @@
+7.02.09
+
+Added option `clearresources` to `<EventUpdateAttribute>` for use in `gam <UserTypeEntity> update events`
+that allows clearing all resources from a user's calendar events. For example, to clear all resources from a user's future events:
+```
+gam user user@domain.com update events primary matchfield attendeespattern @resource.calendar.google.com after now clearresources
+```
+
+Added option `resource <ResourceID>` to `<EventAttribute>` for use in `gam <UserTypeEntity> create|update events`
+that adds a resource to an event.
+
+Added option `removeresource <ResourceID>` to `<EventUpdateAttribute>` for use in `gam <UserTypeEntity> update events`
+that removes a resource from an event.
+
 7.02.08
 
 Fixed bug in `gam print|show chromepolicies` that caused a trap when neither

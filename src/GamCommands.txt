@@ -1677,6 +1677,7 @@ gam calendar <CalendarEntity> printacl [todrive <ToDriveAttribute>*]
         (range <Date> <Date>)|
         (recurrence <RRULE, EXRULE, RDATE and EXDATE line>)|
         (reminder <Number> email|popup))|
+	(resource <ResourceID>)|
         (selectattendees [<AttendeeAttendance>] [<AttendeeStatus>] <UserTypeEntity>)|
         (sequence <Integer>)|
         (sharedproperty <PropertyKey> <PropertyValue>)|
@@ -1707,8 +1708,10 @@ The following attributes are equivalent:
         clearattendees|
         clearhangoutsmeet|
         (clearprivateproperty <PropertyKey>)|
+        clearresources|
         (clearsharedproperty <PropertyKey>)|
         (removeattendee <EmailAddress>)|
+        (removeresource <ResourceID>)|
         (replacedescription <RegularExpression> <String>)|
         (selectremoveattendees <UserTypeEntity>)
 

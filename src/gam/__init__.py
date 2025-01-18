@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.02.08'
+__version__ = '7.02.09'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -38327,6 +38327,7 @@ def _getCalendarEventAttribute(myarg, body, parameters, function):
           for subfield in subfields:
             body.pop(subfield, None)
 
+  cd = None
   if function == 'insert' and myarg in {'id', 'eventid'}:
     body['id'] = getEventID()
   elif function == 'import' and myarg == 'icaluid':
@@ -38407,6 +38408,17 @@ def _getCalendarEventAttribute(myarg, body, parameters, function):
       if responseStatus is not None:
         addAttendee['responseStatus'] = responseStatus
       parameters['attendees'].append(addAttendee)
+  elif function == 'update' and myarg == 'clearresources':
+    parameters['clearResources'] = True
+  elif myarg == 'resource':
+    if cd is None:
+      cd = buildGAPIObject(API.DIRECTORY)
+    parameters['attendees'].append({'email': _validateResourceId(cd, getString(Cmd.OB_RESOURCE_ID), 0, 0, True),
+                                    'responseStatus': 'accepted', 'resource': True})
+  elif myarg == 'removeresource':
+    if cd is None:
+      cd = buildGAPIObject(API.DIRECTORY)
+    parameters['removeAttendees'].add(_validateResourceId(cd, getString(Cmd.OB_RESOURCE_ID), 0, 0, True))
   elif myarg == 'json':
     jsonData = getJSON(EVENT_JSON_CLEAR_FIELDS)
     if function == 'insert':
@@ -38716,7 +38728,7 @@ def _validateCalendarGetEvents(origUser, user, origCal, calId, j, jcount, calend
 
 def _getCalendarCreateImportUpdateEventOptions(function, entityType):
   body = {}
-  parameters = {'clearAttendees': False, 'replaceMode': False,
+  parameters = {'clearAttendees': False, 'replaceMode': False, 'clearResources': False,
                 'attendees': [], 'removeAttendees': set(),
                 'replaceDescription': [], 'sendUpdates': 'none',
                 'csvPF': None, 'FJQC': FormatJSONQuoteChar(None), 'showDayOfWeek': False}
@@ -38827,7 +38839,7 @@ def _updateCalendarEvents(origUser, user, origCal, calIds, count, calendarEventE
   updateFieldList = []
   if parameters['replaceDescription']:
     updateFieldList.append('description')
-  if not parameters['replaceMode'] and (parameters['attendees'] or parameters['removeAttendees']):
+  if not parameters['replaceMode'] and (parameters['attendees'] or parameters['removeAttendees'] or parameters['clearResources']):
     updateFieldList.append('attendees')
   updateFields = ','.join(updateFieldList)
   if 'attendees' not in updateFieldList:
@@ -38878,6 +38890,8 @@ def _updateCalendarEvents(origUser, user, origCal, calIds, count, calendarEventE
               body['attendees'] = []
             if parameters['removeAttendees']:
               body['attendees'] = [attendee for attendee in body['attendees'] if attendee['email'].lower() not in parameters['removeAttendees']]
+            if parameters['clearResources']:
+              body['attendees'] = [attendee for attendee in body['attendees'] if not attendee['email'].lower().endswith('@resource.calendar.google.com')]
         event = callGAPI(cal.events(), 'patch',
                          throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.DELETED, GAPI.FORBIDDEN,
                                                                    GAPI.INVALID, GAPI.REQUIRED, GAPI.TIME_RANGE_EMPTY, GAPI.EVENT_DURATION_EXCEEDS_LIMIT,
@@ -39627,18 +39641,19 @@ def doCalendarsPrintShowSettings(calIds):
   if csvPF:
     csvPF.writeCSVfile('Calendar Settings')
 
-def _validateResourceId(resourceId, i, count):
-  cd = buildGAPIObject(API.DIRECTORY)
+def _validateResourceId(cd, resourceId, i, count, exitOnNotFound):
   try:
     return callGAPI(cd.resources().calendars(), 'get',
                     throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
                     customer=GC.Values[GC.CUSTOMER_ID], calendarResourceId=resourceId, fields='resourceEmail')['resourceEmail']
   except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
+    if exitOnNotFound:
+      entityDoesNotExistExit(Ent.RESOURCE_CALENDAR, resourceId, i, count)
     checkEntityAFDNEorAccessErrorExit(cd, Ent.RESOURCE_CALENDAR, resourceId, i, count)
     return None
 
-def _normalizeResourceIdGetRuleIds(resourceId, i, count, ACLScopeEntity, showAction=True):
-  calId = _validateResourceId(resourceId, i, count)
+def _normalizeResourceIdGetRuleIds(cd, resourceId, i, count, ACLScopeEntity, showAction=True):
+  calId = _validateResourceId(cd, resourceId, i, count, False)
   if not calId:
     return (None, None, 0)
   if ACLScopeEntity['dict']:
@@ -39656,23 +39671,25 @@ def _normalizeResourceIdGetRuleIds(resourceId, i, count, ACLScopeEntity, showAct
 # gam resources <ResourceEntity> create calendaracls <CalendarACLRole> <CalendarACLScopeEntity> [sendnotifications <Boolean>]
 def doResourceCreateCalendarACLs(entityList):
   cal = buildGAPIObject(API.CALENDAR)
+  cd = buildGAPIObject(API.DIRECTORY)
   role, ACLScopeEntity, sendNotifications = getCalendarCreateUpdateACLsOptions(True)
   i = 0
   count = len(entityList)
   for resourceId in entityList:
     i += 1
-    calId, ruleIds, jcount = _normalizeResourceIdGetRuleIds(resourceId, i, count, ACLScopeEntity)
+    calId, ruleIds, jcount = _normalizeResourceIdGetRuleIds(cd, resourceId, i, count, ACLScopeEntity)
     if jcount == 0:
       continue
     _createCalendarACLs(cal, Ent.RESOURCE_CALENDAR, calId, i, count, role, ruleIds, jcount, sendNotifications)
 
 def _resourceUpdateDeleteCalendarACLs(entityList, function, ACLScopeEntity, role, sendNotifications):
   cal = buildGAPIObject(API.CALENDAR)
+  cd = buildGAPIObject(API.DIRECTORY)
   i = 0
   count = len(entityList)
   for resourceId in entityList:
     i += 1
-    calId, ruleIds, jcount = _normalizeResourceIdGetRuleIds(resourceId, i, count, ACLScopeEntity)
+    calId, ruleIds, jcount = _normalizeResourceIdGetRuleIds(cd, resourceId, i, count, ACLScopeEntity)
     if jcount == 0:
       continue
     _updateDeleteCalendarACLs(cal, function, Ent.RESOURCE_CALENDAR, calId, i, count, role, ruleIds, jcount, sendNotifications)
@@ -39695,13 +39712,14 @@ def doResourceDeleteCalendarACLs(entityList):
 #	[formatjson]
 def doResourceInfoCalendarACLs(entityList):
   cal = buildGAPIObject(API.CALENDAR)
+  cd = buildGAPIObject(API.DIRECTORY)
   ACLScopeEntity = getCalendarSiteACLScopeEntity()
   FJQC = _getCalendarInfoACLOptions()
   i = 0
   count = len(entityList)
   for resourceId in entityList:
     i += 1
-    calId, ruleIds, jcount = _normalizeResourceIdGetRuleIds(resourceId, i, count, ACLScopeEntity, showAction=not FJQC.formatJSON)
+    calId, ruleIds, jcount = _normalizeResourceIdGetRuleIds(cd, resourceId, i, count, ACLScopeEntity, showAction=not FJQC.formatJSON)
     if jcount == 0:
       continue
     _infoCalendarACLs(cal, resourceId, Ent.RESOURCE_CALENDAR, calId, i, count, ruleIds, jcount, FJQC)
@@ -39720,12 +39738,13 @@ def doResourceInfoCalendarACLs(entityList):
 #	[formatjson]
 def doResourcePrintShowCalendarACLs(entityList):
   cal = buildGAPIObject(API.CALENDAR)
+  cd = buildGAPIObject(API.DIRECTORY)
   csvPF, FJQC, noSelfOwner, addCSVData = _getCalendarPrintShowACLOptions(['resourceId', 'resourceEmail'])
   i = 0
   count = len(entityList)
   for resourceId in entityList:
     i += 1
-    calId = _validateResourceId(resourceId, i, count)
+    calId = _validateResourceId(cd, resourceId, i, count, False)
     if not calId:
       continue
     _printShowCalendarACLs(cal, resourceId, Ent.RESOURCE_CALENDAR, calId, i, count, csvPF, FJQC, noSelfOwner, addCSVData)
@@ -67554,10 +67573,10 @@ def updatePhoto(users):
     body = {'photoData': base64.urlsafe_b64encode(image_data).decode(UTF8)}
     try:
       callGAPI(cd.users().photos(), 'update',
-               throwReasons=[GAPI.USER_NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID_INPUT],
+               throwReasons=[GAPI.USER_NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID_INPUT, GAPI.CONDITION_NOT_MET],
                userKey=user, body=body, fields='')
       entityActionPerformed([Ent.USER, user, Ent.PHOTO, filename], i, count)
-    except GAPI.invalidInput as e:
+    except (GAPI.invalidInput, GAPI.conditionNotMet) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, filename], str(e), i, count)
     except (GAPI.userNotFound, GAPI.forbidden):
       entityUnknownWarning(Ent.USER, user, i, count)
