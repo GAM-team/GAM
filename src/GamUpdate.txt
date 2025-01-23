@@ -1,3 +1,10 @@
+7.02.10
+
+Added option `bydate` to `gam report <ActivityApplicationName> ... countsonly` that provides an additional display option.
+* `countsonly` - Display a row per user across all dates with all event counts on one row
+* `countsonly bydate` - Display a row per user per date for all dates with any events with all events counts on the row
+* `countsonly summary` - Display a row per event with counts for each event summarized across users and dates
+
 7.02.09
 
 Added option `clearresources` to `<EventUpdateAttribute>` for use in `gam <UserTypeEntity> update events`

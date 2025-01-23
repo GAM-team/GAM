@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.02.09'
+__version__ = '7.02.10'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -13090,13 +13090,13 @@ def _checkDataRequiredServices(result, tryDate, dataRequiredServices, parameterS
 #  0: Backup to earlier date
 #  1: Data available
   oneDay = datetime.timedelta(days=1)
-  warnings = result.get('warnings', [])
+  dataWarnings = result.get('warnings', [])
   usageReports = result.get('usageReports', [])
   # move to day before if we don't have at least one usageReport with parameters
   if not usageReports or not usageReports[0].get('parameters', []):
     tryDateTime = datetime.datetime.strptime(tryDate, YYYYMMDD_FORMAT)-oneDay
     return (0, tryDateTime.strftime(YYYYMMDD_FORMAT), None)
-  for warning in warnings:
+  for warning in dataWarnings:
     if warning['code'] == 'PARTIAL_DATA_AVAILABLE':
       for app in warning['data']:
         if app['key'] == 'application' and app['value'] != 'docs' and app['value'] in dataRequiredServices:
@@ -13521,7 +13521,7 @@ REPORT_ACTIVITIES_TIME_OBJECTS = {'time'}
 #	[event|events <EventNameList>] [ip <String>]
 #	[groupidfilter <String>]
 #	[maxactivities <Number>] [maxevents <Number>] [maxresults <Number>]
-#	[countsonly [summary] [eventrowfilter]]
+#	[countsonly [bydate|summary] [eventrowfilter]]
 #	(addcsvdata <FieldName> <String>)* [shownoactivities]
 # gam report users|user [todrive <ToDriveAttribute>*]
 #	[(user all|<UserItem>)|(orgunit|org|ou <OrgUnitPath> [showorgunit])|(select <UserTypeEntity>)]
@@ -13794,8 +13794,8 @@ def doReport():
   filterTimes = {}
   maxActivities = maxEvents = 0
   maxResults = 1000
-  aggregateByDate = aggregateByUser = convertMbToGb = countsOnly = eventRowFilter = exitUserLoop = \
-    noAuthorizedApps = normalizeUsers = select = summary = userCustomerRange = False
+  aggregateByDate = aggregateByUser = convertMbToGb = countsOnly = countsByDate = countsSummary = \
+    eventRowFilter = exitUserLoop = noAuthorizedApps = normalizeUsers = select = userCustomerRange = False
   limitDateChanges = -1
   allVerifyUser = userKey = 'all'
   cd = orgUnit = orgUnitId = None
@@ -13893,8 +13893,10 @@ def doReport():
       actorIpAddress = getString(Cmd.OB_STRING)
     elif activityReports and myarg == 'countsonly':
       countsOnly = True
+    elif activityReports and myarg == 'bydate':
+      countsByDate = True
     elif activityReports and myarg == 'summary':
-      summary = True
+      countsSummary = True
     elif activityReports and myarg == 'eventrowfilter':
       eventRowFilter = True
     elif activityReports and myarg == 'groupidfilter':
@@ -13928,6 +13930,8 @@ def doReport():
       unknownArgumentExit()
   if aggregateByDate and aggregateByUser:
     usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('aggregateByDate', 'aggregateByUser'))
+  if countsOnly and countsByDate and countsSummary:
+    usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('bydate', 'summary'))
   parameters = ','.join(parameters) if parameters else None
   if usageReports and not includeServices:
     includeServices = set(fullDataServices)
@@ -14144,8 +14148,12 @@ def doReport():
       pageMessage = getPageMessage()
       users = [normalizeEmailAddressOrUID(userKey)]
       orgUnitId = None
+    zeroEventCounts = {}
     if not eventNames:
       eventNames.append(None)
+    else:
+      for eventName in eventNames:
+        zeroEventCounts[eventName] = 0
     i = 0
     count = len(users)
     for user in users:
@@ -14180,6 +14188,17 @@ def doReport():
           actor = activity['actor'].get('email', activity['actor'].get('key', UNKNOWN))
           if showOrgUnit:
             activity['actor']['orgUnitPath'] = userOrgUnits.get(actor, UNKNOWN)
+          if countsOnly and countsByDate:
+            eventTime = activity.get('id', {}).get('time', UNKNOWN)
+            if eventTime != UNKNOWN:
+              try:
+                eventTime, _ = iso8601.parse_date(eventTime)
+              except (iso8601.ParseError, OverflowError):
+                eventTime = UNKNOWN
+            if eventTime != UNKNOWN:
+              eventDate = eventTime.strftime(YYYYMMDD_FORMAT)
+            else:
+              eventDate = UNKNOWN
           if not countsOnly or eventRowFilter:
             activity_row = flattenJSON(activity, timeObjects=REPORT_ACTIVITIES_TIME_OBJECTS)
             purge_parameters = True
@@ -14230,18 +14249,32 @@ def doReport():
                 if numEvents >= maxEvents > 0:
                   break
               elif csvPF.CheckRowTitles(row):
-                if not summary:
+                eventName = event['name']
+                if not countsSummary:
                   eventCounts.setdefault(actor, {})
-                  eventCounts[actor].setdefault(event['name'], 0)
-                  eventCounts[actor][event['name']] += 1
+                  if not countsByDate:
+                    eventCounts[actor].setdefault(eventName, 0)
+                    eventCounts[actor][eventName] += 1
+                  else:
+                    eventCounts[actor].setdefault(eventDate, {})
+                    eventCounts[actor][eventDate].setdefault(eventName, 0)
+                    eventCounts[actor][eventDate][eventName] += 1
                 else:
-                  eventCounts.setdefault(event['name'], 0)
-                  eventCounts[event['name']] += 1
-          elif not summary:
+                  eventCounts.setdefault(eventName, 0)
+                  eventCounts[eventName] += 1
+          elif not countsSummary:
             eventCounts.setdefault(actor, {})
-            for event in events:
-              eventCounts[actor].setdefault(event['name'], 0)
-              eventCounts[actor][event['name']] += 1
+            if not countsByDate:
+              for event in events:
+                eventName = event['name']
+                eventCounts[actor].setdefault(eventName, 0)
+                eventCounts[actor][eventName] += 1
+            else:
+              for event in events:
+                eventName = event['name']
+                eventCounts[actor].setdefault(eventDate, {})
+                eventCounts[actor][eventDate].setdefault(eventName, 0)
+                eventCounts[actor][eventDate][eventName] += 1
           else:
             for event in events:
               eventCounts.setdefault(event['name'], 0)
@@ -14256,31 +14289,46 @@ def doReport():
     else:
       if eventRowFilter:
         csvPF.SetRowFilter([], GC.Values[GC.CSV_OUTPUT_ROW_FILTER_MODE])
-      if not summary:
-        csvPF.SetTitles('emailAddress')
+      if not countsSummary:
+        titles = ['emailAddress']
+        if countsOnly and countsByDate:
+          titles.append('date')
+        csvPF.SetTitles(titles)
+        csvPF.SetSortTitles(titles)
         if addCSVData:
           csvPF.AddTitles(sorted(addCSVData.keys()))
         if eventCounts:
-          for actor, events in iter(eventCounts.items()):
-            row = {'emailAddress': actor}
-            for event, count in iter(events.items()):
-              row[event] = count
-            if addCSVData:
-              row.update(addCSVData)
-            csvPF.WriteRowTitles(row)
+          if not countsByDate:
+            for actor, events in iter(eventCounts.items()):
+              row = {'emailAddress': actor}
+              row.update(zeroEventCounts)
+              for event, count in iter(events.items()):
+                row[event] = count
+              if addCSVData:
+                row.update(addCSVData)
+              csvPF.WriteRowTitles(row)
+          else:
+            for actor, eventDates in iter(eventCounts.items()):
+              for eventDate, events in iter(eventDates.items()):
+                row = {'emailAddress': actor, 'date': eventDate}
+                row.update(zeroEventCounts)
+                for event, count in iter(events.items()):
+                  row[event] = count
+                if addCSVData:
+                  row.update(addCSVData)
+                csvPF.WriteRowTitles(row)
         elif showNoActivities:
           row = {'emailAddress': 'NoActivities'}
           if addCSVData:
             row.update(addCSVData)
             csvPF.WriteRow(row)
-        csvPF.SetSortTitles(['emailAddress'])
       else:
         csvPF.SetTitles(['event', 'count'])
         if addCSVData:
           csvPF.AddTitles(sorted(addCSVData.keys()))
         if eventCounts:
-          for event in sorted(eventCounts):
-            row = {'event': event, 'count': eventCounts[event]}
+          for event, count in sorted(iter(eventCounts.items())):
+            row = {'event': event, 'count': count}
             if addCSVData:
               row.update(addCSVData)
             csvPF.WriteRow(row)
