@@ -1,3 +1,10 @@
+7.02.11
+
+Updated `gam report <ActivityApplicationName>` to display `id:<actor.profileId>` in the `emailAddress` column
+when `actor.email` is empty. This typically occurs when the actor is not in your workspace.
+
+Updated `gam <UserTypeEntity> copy drivefile` to ignore ACLs referencing deleted user/groups.
+
 7.02.10
 
 Added option `bydate` to `gam report <ActivityApplicationName> ... countsonly` that provides an additional display option.

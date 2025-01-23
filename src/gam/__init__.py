@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.02.10'
+__version__ = '7.02.11'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -14185,7 +14185,9 @@ def doReport():
           accessErrorExit(None)
         for activity in feed:
           events = activity.pop('events')
-          actor = activity['actor'].get('email', activity['actor'].get('key', UNKNOWN))
+          actor = activity['actor'].get('email')
+          if not actor:
+            actor = 'id:'+activity['actor'].get('profileId', UNKNOWN)
           if showOrgUnit:
             activity['actor']['orgUnitPath'] = userOrgUnits.get(actor, UNKNOWN)
           if countsOnly and countsByDate:
@@ -59105,8 +59107,8 @@ def _copyPermissions(drive, user, i, count, j, jcount,
       notCopiedMessage = f'domain {domain} excluded'
     elif domain and copyMoveOptions['includePermissionsFromDomains'] and domain not in copyMoveOptions['includePermissionsFromDomains']:
       notCopiedMessage = f'domain {domain} not included'
-    elif permission.pop('deleted', False):
-      notCopiedMessage = f"{permission['type']} {permission['emailAddress']} deleted"
+    elif permission.pop('deleted', False) or (permission['type'] in {'group', 'user'} and not emailAddress):
+      notCopiedMessage = f"{permission['type']} deleted or has blank email address"
     elif ((copyInherited == 'copySheetProtectedRangesInheritedPermissions' and copyMoveOptions[copyInherited]) or
           (copyNonInherited == 'copySheetProtectedRangesNonInheritedPermissions' and
            copyMoveOptions[copyNonInherited] != COPY_NONINHERITED_PERMISSIONS_NEVER)):
