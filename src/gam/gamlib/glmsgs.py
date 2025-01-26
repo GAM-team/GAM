@@ -40,21 +40,43 @@ sign in as {0} and accept the Terms of Service (ToS). As soon as you've accepted
 
 PROJECT_STILL_BEING_CREATED_SLEEPING = 'Project still being created. Sleeping {0} seconds\n'
 FAILED_TO_CREATE_PROJECT = 'Failed to create project: {0}\n'
-SETTING_GAM_PROJECT_CONSENT_SCREEN = 'Setting GAM project consent screen...\n'
-CREATE_PROJECT_INSTRUCTIONS = '''
+SETTING_GAM_PROJECT_CONSENT_SCREEN_CREATING_CLIENT = 'Setting GAM project consent screen, creating client...\n'
+CREATE_CLIENT_INSTRUCTIONS = '''
 Please go to:
 
   {0}
 
-1. Choose "Desktop App" or "Other" for "Application type".
-2. Enter "GAM" or another desired value for "Name".
-3. Click the blue "Create" button.
-4. Copy your "Client ID" value that shows on the next page.
+ 1. If "+ CREATE CLIENT" is on the screen, skip to step 14
+ 2. Click "GET STARTED"
+ 3. Under "App Information", enter {1} or another value in "App name *"
+ 4. Under "App Information", enter {2} in "User support email *"
+ 5. Click "NEXT"
+ 6. Under "Audience", choose INTERNAL
+ 7. Click "NEXT"
+ 8. Under, "Contact Information", enter an email address in "Email addresses *"
+ 9. Click "NEXT"
+10. Under "Finish", click "I agree to the Google API Services: User Data Policy."
+11. Click "CONTINUE"
+12. Click "CREATE"
+13. Click "Clients" in the left-hand column
+14. Click "+ CREATE CLIENT"
+15. Choose "Desktop App" for "Application type"
+16. Enter {1} or another value in "Name *"
+17. Click "Create"
+18. Under "Name", click your client name
+19. Copy the "Client ID" value under "Additional information"
+20. Paste it at the "Enter your Client ID: " prompt in your terminal
+21. Press return/enter in your terminal
+22. Switch back to the browser
+23. Copy the "Client secret" value under "Client Secrets"
+24. Paste it at the "Enter your Client Secret: " prompt in your terminal
+25. Press return/enter in your terminal
+26. Switch back to the browser
+27. Click "CANCEL"
+28. These steps are complete
 '''
 ENTER_YOUR_CLIENT_ID = '\nEnter your Client ID: '
-GO_BACK_TO_YOUR_BROWSER_AND_COPY_YOUR_CLIENT_SECRET_VALUE = '\n5. Go back to your browser and copy your "Client Secret" value.\n'
 ENTER_YOUR_CLIENT_SECRET = '\nEnter your Client Secret: '
-GO_BACK_TO_YOUR_BROWSER_AND_CLICK_OK_TO_CLOSE_THE_OAUTH_CLIENT_POPUP = '\n6. Go back to your browser and click OK to close the "OAuth client" popup if it\'s still open.\n'
 IS_NOT_A_VALID_CLIENT_ID = '''
 
 {0}
@@ -78,12 +100,12 @@ Please go to:
 
   https://admin.google.com/ac/owl/list?tab=configuredApps
 
-1. Click on: Configure new app > OAuth App Name Or Client ID.
-2. Enter the following Client ID value:
+1. Click on: Configure new app
+2. Enter the following Client ID value in Search for app:
 
   {1}
 
-3. Press Search, select the {0} app, press Select, check the box and press Select.
+3. Press Search, select the {0} app, click
 4. Keep the default scope or select a preferred scope that includes your GAM admin.
 5. Press Continue
 6. Select Trusted radio button, press Continue and Finish.

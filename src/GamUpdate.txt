@@ -1,3 +1,13 @@
+7.03.00
+
+Updated `gam create|use project` to discontinue use of the `Identity-Aware Proxy (IAP) OAuth Admin APIs`
+that are being deprecated by Google. You will see a set of instructions detailing how to
+configure the Oauth Consent screen and create the Oauth client.
+
+Added options `copypermissionroles <DriveFileACLRoleList>` and `copypermissiontypes <DriveFileACLTypeList>`
+to `gam <UserTypeEntity> copy drivefile` that provide more control over what permissions are copied
+from the source files/folders to the destination files/folders.
+
 7.02.11
 
 Updated `gam report <ActivityApplicationName>` to display `id:<actor.profileId>` in the `emailAddress` column

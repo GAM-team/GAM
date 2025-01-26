@@ -71,7 +71,6 @@ GROUPSMIGRATION = 'groupsmigration'
 GROUPSSETTINGS = 'groupssettings'
 IAM = 'iam'
 IAM_CREDENTIALS = 'iamcredentials'
-IAP = 'iap'
 KEEP = 'keep'
 LICENSING = 'licensing'
 LOOKERSTUDIO = 'datastudio'
@@ -185,7 +184,6 @@ PROJECT_APIS = [
   'groupsmigration.googleapis.com',
   'groupssettings.googleapis.com',
   'iam.googleapis.com',
-  'iap.googleapis.com',
   'keep.googleapis.com',
   'licensing.googleapis.com',
   'meet.googleapis.com',
@@ -250,7 +248,6 @@ _INFO = {
   GROUPSSETTINGS: {'name': 'Groups Settings API', 'version': 'v1', 'v2discovery': True},
   IAM: {'name': 'Identity and Access Management API', 'version': 'v1', 'v2discovery': True},
   IAM_CREDENTIALS: {'name': 'Identity and Access Management Credentials API', 'version': 'v1', 'v2discovery': True},
-  IAP: {'name': 'Cloud Identity-Aware Proxy API', 'version': 'v1', 'v2discovery': True},
   KEEP: {'name': 'Keep API', 'version': 'v1', 'v2discovery': True},
   LICENSING: {'name': 'License Manager API', 'version': 'v1', 'v2discovery': True},
   LOOKERSTUDIO: {'name': 'Looker Studio API', 'version': 'v1', 'v2discovery': True, 'localjson': True},

@@ -1362,6 +1362,7 @@ gam create project [admin <EmailAddress>] [project <ProjectID>]
          nokey]
 gam use project [<EmailAddress>] [<ProjectID>]
 gam use project [admin <EmailAddress>] [project <ProjectID>]
+        [appname <String>] [supportemail <EmailAddress>]
         [saname <ServiceAccountName>] [sadisplayname <ServiceAccountDisplayName>]
         [sadescription <ServiceAccountDescription>]
         [(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
@@ -6575,6 +6576,8 @@ gam <UserTypeEntity> copy drivefile <DriveFileEntity>
         [copysubfolderpermissions [<Boolean>]]
         [copysubfolderinheritedpermissions [<Boolean>]]
         [copysubfoldernoniheritedpermissions never|always|syncallfolders|syncupdatedfolders]
+        [copypermissionroles <DriveFileACLRoleList>]
+        [copypermissiontypes <DriveFileACLTypeList>]
         [excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
         (mappermissionsdomain <DomainName> <DomainName>)*
         [copysheetprotectedranges [<Boolean>]]

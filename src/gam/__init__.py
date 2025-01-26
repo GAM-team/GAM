@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.02.11'
+__version__ = '7.03.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -4727,7 +4727,7 @@ def clearServiceCache(service):
 
 DISCOVERY_URIS = [googleapiclient.discovery.V1_DISCOVERY_URI, googleapiclient.discovery.V2_DISCOVERY_URI]
 
-# Used for API.CLOUDRESOURCEMANAGER, API.SERVICEUSAGE, API.IAM, API.IAP
+# Used for API.CLOUDRESOURCEMANAGER, API.SERVICEUSAGE, API.IAM
 def getAPIService(api, httpObj):
   api, version, v2discovery = API.getVersion(api)
   return googleapiclient.discovery.build(api, version, http=httpObj, cache_discovery=False,
@@ -11395,21 +11395,10 @@ def _createOauth2serviceJSON(httpObj, projectInfo, svcAcctInfo, create_key=True)
   _grantRotateRights(iam, projectInfo['projectId'], sa_email, sa_email)
   return True
 
-def setGAMProjectConsentScreen(httpObj, projectId, appInfo):
-  sys.stdout.write(Msg.SETTING_GAM_PROJECT_CONSENT_SCREEN)
-  iap = getAPIService(API.IAP, httpObj)
-  try:
-    callGAPI(iap.projects().brands(), 'create',
-             throwReasons=[GAPI.ALREADY_EXISTS, GAPI.INVALID_ARGUMENT],
-             parent=f'projects/{projectId}', body=appInfo)
-  except (GAPI.invalidArgument, GAPI.alreadyExists):
-    pass
-
 def _createClientSecretsOauth2service(httpObj, login_hint, appInfo, projectInfo, svcAcctInfo, create_key=True):
   def _checkClientAndSecret(csHttpObj, client_id, client_secret):
     post_data = {'client_id': client_id, 'client_secret': client_secret,
                  'code': 'ThisIsAnInvalidCodeOnlyBeingUsedToTestIfClientAndSecretAreValid',
-#                 'redirect_uri': 'urn:ietf:wg:oauth:2.0:oob', 'grant_type': 'authorization_code'}
                  'redirect_uri': 'http://127.0.0.1:8080', 'grant_type': 'authorization_code'}
     _, content = csHttpObj.request(API.GOOGLE_OAUTH2_TOKEN_ENDPOINT, 'POST', urlencode(post_data),
                                    headers={'Content-type': 'application/x-www-form-urlencoded'})
@@ -11434,16 +11423,14 @@ def _createClientSecretsOauth2service(httpObj, login_hint, appInfo, projectInfo,
 
   if not enableGAMProjectAPIs(httpObj, projectInfo['projectId'], login_hint, False):
     return
-  if appInfo:
-    setGAMProjectConsentScreen(httpObj, projectInfo['projectId'], appInfo)
-  console_url = f'https://console.cloud.google.com/apis/credentials/oauthclient?project={projectInfo["projectId"]}&authuser={login_hint}'
+  sys.stdout.write(Msg.SETTING_GAM_PROJECT_CONSENT_SCREEN_CREATING_CLIENT)
+  console_url = f'https://console.cloud.google.com/auth/clients?project={projectInfo["projectId"]}&authuser={login_hint}'
   csHttpObj = getHttpObj()
   while True:
-    sys.stdout.write(Msg.CREATE_PROJECT_INSTRUCTIONS.format(console_url))
+    sys.stdout.write(Msg.CREATE_CLIENT_INSTRUCTIONS.format(console_url, appInfo['applicationTitle'], appInfo['supportEmail']))
     client_id = readStdin(Msg.ENTER_YOUR_CLIENT_ID).strip()
     if not client_id:
       client_id = readStdin('').strip()
-    sys.stdout.write(Msg.GO_BACK_TO_YOUR_BROWSER_AND_COPY_YOUR_CLIENT_SECRET_VALUE)
     client_secret = readStdin(Msg.ENTER_YOUR_CLIENT_SECRET).strip()
     if not client_secret:
       client_secret = readStdin('').strip()
@@ -11451,7 +11438,6 @@ def _createClientSecretsOauth2service(httpObj, login_hint, appInfo, projectInfo,
     if client_valid:
       break
     sys.stdout.write('\n')
-# Deleted: "redirect_uris": ["http://localhost", "urn:ietf:wg:oauth:2.0:oob"],
   cs_data = f'''{{
     "installed": {{
         "auth_provider_x509_cert_url": "{API.GOOGLE_AUTH_PROVIDER_X509_CERT_URL}",
@@ -11464,7 +11450,6 @@ def _createClientSecretsOauth2service(httpObj, login_hint, appInfo, projectInfo,
     }}
 }}'''
   writeFile(GC.Values[GC.CLIENT_SECRETS_JSON], cs_data, continueOnError=False)
-  sys.stdout.write(Msg.GO_BACK_TO_YOUR_BROWSER_AND_CLICK_OK_TO_CLOSE_THE_OAUTH_CLIENT_POPUP)
   sys.stdout.write(Msg.TRUST_GAM_CLIENT_ID.format(GAM, client_id))
   readStdin('')
   if not _createOauth2serviceJSON(httpObj, projectInfo, svcAcctInfo, create_key):
@@ -11590,7 +11575,7 @@ def _getLoginHintProjectInfo(createCmd):
         _checkProjectName(projectInfo['name'])
       elif _getSvcAcctInfo(myarg, svcAcctInfo):
         pass
-      elif createCmd and _getAppInfo(myarg, appInfo):
+      elif _getAppInfo(myarg, appInfo):
         pass
       elif myarg in {'algorithm', 'localkeysize', 'validityhours', 'yubikey'}:
         Cmd.Backup()
@@ -11874,14 +11859,15 @@ def doCreateProject():
 
 # gam use project [<EmailAddress>] [<ProjectID>]
 # gam use project [admin <EmailAddress>] [project <ProjectID>]
+#	[appname <String>] [supportemail <EmailAddress>]
 #	[saname <ServiceAccountName>] [sadisplayname <ServiceAccountDisplayName>] [sadescription <ServiceAccountDescription>]
 #	[(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
 #	 (localkeysize 1024|2048|4096 [validityhours <Number>])|
 #	 (yubikey yubikey_pin yubikey_slot AUTHENTICATION yubikey_serialnumber <String>)]
 def doUseProject():
   _checkForExistingProjectFiles([GC.Values[GC.OAUTH2SERVICE_JSON], GC.Values[GC.CLIENT_SECRETS_JSON]])
-  _, httpObj, login_hint, _, projectInfo, svcAcctInfo, create_key = _getLoginHintProjectInfo(False)
-  _createClientSecretsOauth2service(httpObj, login_hint, {}, projectInfo, svcAcctInfo, create_key)
+  _, httpObj, login_hint, appInfo, projectInfo, svcAcctInfo, create_key = _getLoginHintProjectInfo(False)
+  _createClientSecretsOauth2service(httpObj, login_hint, appInfo, projectInfo, svcAcctInfo, create_key)
 
 # gam update project [[admin] <EmailAddress>] [<ProjectIDEntity>]
 def doUpdateProject():
@@ -58882,6 +58868,8 @@ def initCopyMoveOptions(copyCmd):
     'fileMimeTypes': set(),
     'notMimeTypes': False,
     'copySubFilesOwnedBy': None,
+    'copyPermissionRoles': set(DRIVEFILE_ACL_ROLES_MAP.values()),
+    'copyPermissionTypes': set(DRIVEFILE_ACL_PERMISSION_TYPES),
     }
 
 DUPLICATE_FILE_CHOICES = {
@@ -58970,6 +58958,20 @@ def getCopyMoveOptions(myarg, copyMoveOptions):
         copyMoveOptions['copyFileInheritedPermissions'] = getBoolean()
       elif myarg == 'copyfilenoninheritedpermissions':
         copyMoveOptions['copyFileNonInheritedPermissions'] = COPY_NONINHERITED_PERMISSIONS_ALWAYS if getBoolean() else COPY_NONINHERITED_PERMISSIONS_NEVER
+      elif myarg == 'copypermissionroles':
+        copyMoveOptions['copyPermissionRoles'] = set()
+        for prole in getString(Cmd.OB_PERMISSION_ROLE_LIST).lower().replace(',', ' ').split():
+          if prole in DRIVEFILE_ACL_ROLES_MAP:
+            copyMoveOptions['copyPermissionRoles'].add(DRIVEFILE_ACL_ROLES_MAP[prole])
+          else:
+            invalidChoiceExit(prole, DRIVEFILE_ACL_ROLES_MAP, True)
+      elif myarg == 'copypermissiontypes':
+        copyMoveOptions['copyPermissionTypes'] = set()
+        for ptype in getString(Cmd.OB_PERMISSION_TYPE_LIST).lower().replace(',', ' ').split():
+          if ptype in DRIVEFILE_ACL_PERMISSION_TYPES:
+            copyMoveOptions['copyPermissionTypes'].add(ptype)
+          else:
+            invalidChoiceExit(ptype, DRIVEFILE_ACL_PERMISSION_TYPES, True)
       elif myarg == 'copysheetprotectedranges':
         if getBoolean():
           copyMoveOptions['copySheetProtectedRangesInheritedPermissions'] = True
@@ -59083,15 +59085,20 @@ def _copyPermissions(drive, user, i, count, j, jcount,
   def isPermissionCopyable(kvList, permission):
     role = permission['role']
     emailAddress = permission.get('emailAddress', '')
+    permissionType = permission['type']
     domain = ''
     if copyMoveOptions['excludePermissionsFromDomains'] or copyMoveOptions['includePermissionsFromDomains']:
-      if permission['type'] in {'group', 'user'}:
+      if permissionType in {'group', 'user'}:
         atLoc = emailAddress.find('@')
         if atLoc > 0:
           domain = emailAddress[atLoc+1:]
-      elif permission['type'] == 'domain':
+      elif permissionType == 'domain':
         domain = permission.get('domain', '')
-    if permission['inherited'] and not copyMoveOptions[copyInherited]:
+    if role not in copyMoveOptions['copyPermissionRoles']:
+      notCopiedMessage = f'role {role} not selected'
+    elif permissionType not in copyMoveOptions['copyPermissionTypes']:
+      notCopiedMessage = f'type {permissionType} not selected'
+    elif permission['inherited'] and not copyMoveOptions[copyInherited]:
       notCopiedMessage = 'inherited not selected'
     elif not permission['inherited'] and copyMoveOptions[copyNonInherited] == COPY_NONINHERITED_PERMISSIONS_NEVER:
       notCopiedMessage = 'noninherited not selected'
@@ -59107,8 +59114,8 @@ def _copyPermissions(drive, user, i, count, j, jcount,
       notCopiedMessage = f'domain {domain} excluded'
     elif domain and copyMoveOptions['includePermissionsFromDomains'] and domain not in copyMoveOptions['includePermissionsFromDomains']:
       notCopiedMessage = f'domain {domain} not included'
-    elif permission.pop('deleted', False) or (permission['type'] in {'group', 'user'} and not emailAddress):
-      notCopiedMessage = f"{permission['type']} deleted or has blank email address"
+    elif permission.pop('deleted', False) or (permissionType in {'group', 'user'} and not emailAddress):
+      notCopiedMessage = f"{permissionType} deleted or has blank email address"
     elif ((copyInherited == 'copySheetProtectedRangesInheritedPermissions' and copyMoveOptions[copyInherited]) or
           (copyNonInherited == 'copySheetProtectedRangesNonInheritedPermissions' and
            copyMoveOptions[copyNonInherited] != COPY_NONINHERITED_PERMISSIONS_NEVER)):
@@ -59546,6 +59553,8 @@ copyReturnItemMap = {
 #	[copysubfolderpermissions [<Boolean>]]
 #	[copysubfolderinheritedpermissions [<Boolean>]]
 #	[copysubfoldernoniheritedpermissions never|always|syncallfolders|syncupdatedfolders]
+#	[copypermissionroles <DriveFileACLRoleList>]
+#	[copypermissiontypes <DriveFileACLTypeList>]
 #	[excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
 #	(mappermissionsdomain <DomainName> <DomainName>)*
 #	[copysheetprotectedranges [<Boolean>]]
@@ -60360,6 +60369,8 @@ def _updateMoveFilePermissions(drive, user, i, count,
 #	[copysubfolderpermissions [<Boolean>]]
 #	[copysubfolderinheritedpermissions [<Boolean>]]
 #	[copysubfoldernoniheritedpermissions never|always|syncallfolders|syncupdatedfolders]
+#	[copypermissionroles <DriveFileACLRoleList>]
+#	[copypermissiontypes <DriveFileACLTypeList>]
 #	[synctopfoldernoniheritedpermissions [<Boolean>]] [syncsubfoldernoninheritedpermissions [<Boolean>]]
 #	[excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
 #	(mappermissionsdomain <DomainName> <DomainName>)*
