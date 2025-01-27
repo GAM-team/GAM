@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.03.00'
+__version__ = '7.03.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -11361,14 +11361,33 @@ def doEnableAPIs():
       url = f'https://console.cloud.google.com/apis/enableflow?apiid={apiid}&project={projectId}'
       writeStdout(f'    {url}\n\n')
 
+def _waitForSvcAcctCompletion(i):
+  sleep_time = i*5
+  if i > 3:
+    sys.stdout.write(Msg.WAITING_FOR_ITEM_CREATION_TO_COMPLETE_SLEEPING.format(Ent.Singular(Ent.SVCACCT), sleep_time))
+  time.sleep(sleep_time)
+
 def _grantRotateRights(iam, projectId, service_account, email, account_type='serviceAccount'):
-  printEntityMessage([Ent.PROJECT, projectId, Ent.SVCACCT, email],
-                     Msg.HAS_RIGHTS_TO_ROTATE_OWN_PRIVATE_KEY.format(email, service_account))
   body = {'policy': {'bindings': [{'role': 'roles/iam.serviceAccountKeyAdmin',
                                    'members': [f'{account_type}:{email}']}]}}
-  callGAPI(iam.projects().serviceAccounts(), 'setIamPolicy',
-           resource=f'projects/{projectId}/serviceAccounts/{service_account}', body=body)
-
+  maxRetries = 10
+  printEntityMessage([Ent.PROJECT, projectId, Ent.SVCACCT, email],
+                     Msg.HAS_RIGHTS_TO_ROTATE_OWN_PRIVATE_KEY.format(email, service_account))
+  for retry in range(1, maxRetries+1):
+    try:
+      callGAPI(iam.projects().serviceAccounts(), 'setIamPolicy',
+               throwReasons=[GAPI.INVALID_ARGUMENT],
+               resource=f'projects/{projectId}/serviceAccounts/{service_account}', body=body)
+      return True
+    except GAPI.invalidArgument as e:
+      entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, service_account], str(e))
+      if 'does not exist' not in str(e) or retry == maxRetries:
+        return False
+      _waitForSvcAcctCompletion(retry)
+    except Exception as e:
+      entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, service_account], str(e))
+      return False
+    
 def _createOauth2serviceJSON(httpObj, projectInfo, svcAcctInfo, create_key=True):
   iam = getAPIService(API.IAM, httpObj)
   try:
@@ -11392,8 +11411,7 @@ def _createOauth2serviceJSON(httpObj, projectInfo, svcAcctInfo, create_key=True)
                                              clientId=service_account['uniqueId']):
     return False
   sa_email = service_account['name'].rsplit('/', 1)[-1]
-  _grantRotateRights(iam, projectInfo['projectId'], sa_email, sa_email)
-  return True
+  return _grantRotateRights(iam, projectInfo['projectId'], sa_email, sa_email)
 
 def _createClientSecretsOauth2service(httpObj, login_hint, appInfo, projectInfo, svcAcctInfo, create_key=True):
   def _checkClientAndSecret(csHttpObj, client_id, client_secret):
@@ -12563,12 +12581,6 @@ def doProcessSvcAcctKeys(mode=None, iam=None, projectId=None, clientEmail=None, 
       else:
         unknownArgumentExit()
 
-  def waitForCompletion(i):
-    sleep_time = i*5
-    if i > 3:
-      sys.stdout.write(Msg.WAITING_FOR_ITEM_CREATION_TO_COMPLETE_SLEEPING.format(Ent.Singular(Ent.SVCACCT), sleep_time))
-    time.sleep(sleep_time)
-
   local_key_size = 2048
   validityHours = 0
   body = {}
@@ -12638,12 +12650,12 @@ def doProcessSvcAcctKeys(mode=None, iam=None, projectId=None, clientEmail=None, 
         if retry == maxRetries:
           entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], str(e))
           return False
-        waitForCompletion(retry)
+        _waitForSvcAcctCompletion(retry)
       except GAPI.permissionDenied:
         if retry == maxRetries:
           entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], Msg.UPDATE_PROJECT_TO_VIEW_MANAGE_SAKEYS)
           return False
-        waitForCompletion(retry)
+        _waitForSvcAcctCompletion(retry)
       except GAPI.badRequest as e:
         entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], str(e))
         return False
@@ -12656,7 +12668,7 @@ def doProcessSvcAcctKeys(mode=None, iam=None, projectId=None, clientEmail=None, 
           new_data['private_key'] = ''
           newPrivateKeyId = ''
           break
-        waitForCompletion(retry)
+        _waitForSvcAcctCompletion(retry)
     new_data['private_key_id'] = newPrivateKeyId
     oauth2service_data = _formatOAuth2ServiceData(new_data)
   else:
@@ -12673,7 +12685,7 @@ def doProcessSvcAcctKeys(mode=None, iam=None, projectId=None, clientEmail=None, 
         if retry == maxRetries:
           entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], Msg.UPDATE_PROJECT_TO_VIEW_MANAGE_SAKEYS)
           return False
-        waitForCompletion(retry)
+        _waitForSvcAcctCompletion(retry)
       except GAPI.badRequest as e:
         entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], str(e))
         return False
@@ -12714,7 +12726,7 @@ def doProcessSvcAcctKeys(mode=None, iam=None, projectId=None, clientEmail=None, 
           if retry == maxRetries:
             entityActionFailedWarning([Ent.SVCACCT_KEY, keyName], Msg.UPDATE_PROJECT_TO_VIEW_MANAGE_SAKEYS)
             break
-          waitForCompletion(retry)
+          _waitForSvcAcctCompletion(retry)
         except GAPI.badRequest as e:
           entityActionFailedWarning([Ent.SVCACCT_KEY, keyName], str(e), i, count)
           break

@@ -1,3 +1,10 @@
+7.03.01
+
+Updated `gam create project` to retry the following unexpected error:
+```
+ERROR: 400 - invalidArgument - Service account gam-project-a1b2c@gam-project-a1b2c.iam.gserviceaccount.com does not exist.
+```
+
 7.03.00
 
 Updated `gam create|use project` to discontinue use of the `Identity-Aware Proxy (IAP) OAuth Admin APIs`
