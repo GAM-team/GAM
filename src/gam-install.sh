@@ -112,6 +112,12 @@ else
   check_type="authenticated"
   curl_opts=( "$GHCLIENT" )
 fi
+curl_ver=$(curl --version|head -1|cut -d " " -f 2)
+if [[ "${curl_ver:0:4}" < "7.76" ]]; then
+  curl_fail=( )
+else
+  curl_fail=( "--fail-with-body" )
+fi
 echo_yellow "Checking GitHub URL $release_url for $gamversion GAM release ($check_type)..."
 release_json=$(curl \
 	--silent \
@@ -119,7 +125,7 @@ release_json=$(curl \
 	-H "Accept: application/vnd.github+json" \
 	-H "X-GitHub-Api-Version: 2022-11-28" \
 	"$release_url" \
-	--fail-with-body)
+	"${curl_fail[@]}")
 curl_exit_code=$?
 if [ $curl_exit_code -ne 0 ]; then
   echo_red "ERROR retrieving URL: ${release_json}"
