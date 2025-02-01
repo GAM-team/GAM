@@ -11387,7 +11387,7 @@ def _grantRotateRights(iam, projectId, service_account, email, account_type='ser
     except Exception as e:
       entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, service_account], str(e))
       return False
-    
+
 def _createOauth2serviceJSON(httpObj, projectInfo, svcAcctInfo, create_key=True):
   iam = getAPIService(API.IAM, httpObj)
   try:
