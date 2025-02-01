@@ -1,3 +1,8 @@
+7.03.02
+
+Updated `gam <UserTypeEntity> show labels nested` to properly display label nesting
+when labels have embedded `/` characters in their names.
+
 7.03.01
 
 Updated `gam create project` to retry the following unexpected error:

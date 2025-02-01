@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.03.01'
+__version__ = '7.03.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -37443,7 +37443,7 @@ def _doDeleteResourceCalendars(entityList):
                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                customer=GC.Values[GC.CUSTOMER_ID], calendarResourceId=resourceId)
       entityActionPerformed([Ent.RESOURCE_CALENDAR, resourceId], i, count)
-    except GAPI.serviceNotAvailable  as e:
+    except GAPI.serviceNotAvailable as e:
       entityActionFailedWarning([Ent.RESOURCE_CALENDAR, resourceId], str(e), i, count)
     except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
       checkEntityAFDNEorAccessErrorExit(cd, Ent.RESOURCE_CALENDAR, resourceId, i, count)
@@ -39162,10 +39162,12 @@ def _wipeCalendarEvents(user, origCal, calIds, count):
       continue
     try:
       callGAPI(cal.calendars(), 'clear',
-               throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID, GAPI.REQUIRED_ACCESS_LEVEL],
+               throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID,
+                                                         GAPI.REQUIRED_ACCESS_LEVEL, GAPI.SERVICE_NOT_AVAILABLE],
+               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                calendarId=calId)
       entityActionPerformed([Ent.CALENDAR, calId], i, count)
-    except (GAPI.notFound, GAPI.forbidden, GAPI.invalid, GAPI.requiredAccessLevel) as e:
+    except (GAPI.notFound, GAPI.forbidden, GAPI.invalid, GAPI.requiredAccessLevel, GAPI.serviceNotAvailable) as e:
       entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
     except GAPI.notACalendarUser:
       userCalServiceNotEnabledWarning(calId, i, count)
@@ -69399,13 +69401,18 @@ LABEL_COUNTS_FIELDS = ','.join(LABEL_COUNTS_FIELDS_LIST)
 def printShowLabels(users):
   def _buildLabelTree(labels):
     def _checkChildLabel(label):
-      if label.find('/') != -1:
-        (parent, base) = label.rsplit('/', 1)
+      labelItemList = label.split('/')
+      i = len(labelItemList)-1
+      while i > 0:
+        parent = '/'.join(labelItemList[:i])
+        base = '/'.join(labelItemList[i:])
         if parent in labelTree:
           if label in labelTree:
             labelTree[label]['info']['base'] = base
             labelTree[parent]['children'].append(labelTree.pop(label))
           _checkChildLabel(parent)
+          return
+        i -= 1
 
     labelTree = {}
     for label in labels['labels']:
