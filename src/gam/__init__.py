@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.03.02'
+__version__ = '7.03.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -15110,11 +15110,11 @@ def doCreateResoldCustomer():
 def doUpdateResoldCustomer():
   res = buildGAPIObject(API.RESELLER)
   customerId = getString(Cmd.OB_CUSTOMER_ID)
-  customerAuthToken, body = _getResoldCustomerAttr()
+  _, body = _getResoldCustomerAttr()
   try:
     callGAPI(res.customers(), 'patch',
              throwReasons=GAPI.RESELLER_THROW_REASONS,
-             customerId=customerId, body=body, customerAuthToken=customerAuthToken, fields='')
+             customerId=customerId, body=body, fields='')
     entityActionPerformed([Ent.CUSTOMER_ID, customerId])
   except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.invalid) as e:
     entityActionFailedWarning([Ent.CUSTOMER_ID, customerId], str(e))

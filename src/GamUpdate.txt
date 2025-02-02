@@ -1,3 +1,10 @@
+7.03.03
+
+Fixed bug in `gam update resoldcustomer` that caused the following error:
+```
+ERROR: Got an unexpected keyword argument customerAuthToken
+```
+
 7.03.02
 
 Updated `gam <UserTypeEntity> show labels nested` to properly display label nesting
