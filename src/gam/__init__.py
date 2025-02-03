@@ -31731,6 +31731,8 @@ def doCreateGroup(ciGroupsAPI=False):
                                                       'query': getString(Cmd.OB_QUERY)})
     elif ciGroupsAPI and myarg == 'makeowner':
       initialGroupConfig = 'WITH_INITIAL_OWNER'
+    elif ciGroupsAPI and myarg == 'security':
+      body['labels'][CIGROUP_SECURITY_LABEL] = ''
     elif myarg == 'verifynotinvitable':
       verifyNotInvitable = True
     else:
@@ -34609,6 +34611,7 @@ def doPrintShowGroupTree():
 
 # gam create cigroup <EmailAddress> [copyfrom <GroupItem>] <GroupAttribute>
 #	[makeowner] [alias|aliases <CIGroupAliasList>] [dynamic <QueryDynamicGroup>]
+#   [security]
 def doCreateCIGroup():
   doCreateGroup(ciGroupsAPI=True)
 
