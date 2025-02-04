@@ -3927,8 +3927,11 @@ gam print group-members [todrive <ToDriveAttribute>*]
         updatetime
 <CIGroupFieldNameList> ::= "<CIGroupFieldName>(,<CIGroupFieldName>)*"
 
-gam create cigroup <EmailAddress> [copyfrom <GroupItem>] <GroupAttribute>*
-        [makeowner] [alias|aliases <CIGroupAliasList>] [dynamic <QueryDynamicGroup>]
+gam create cigroup <EmailAddress>
+        [copyfrom <GroupItem>] <GroupAttribute>*
+        [makeowner] [alias|aliases <CIGroupAliasList>]
+        [security|makesecuritygroup]
+        [dynamic <QueryDynamicGroup>]
 gam update cigroup <GroupEntity> [copyfrom <GroupItem>] <GroupAttribute>
         [security|makesecuritygroup|
          dynamicsecurity|makedynamicsecuritygroup|
@@ -4515,7 +4518,7 @@ gam report users|user [todrive <ToDriveAttribute>*]
         (country|countrycode <String>)
 
 gam create|add resoldcustomer <CustomerDomain> (customer_auth_token <String>) <ResoldCustomerAttribute>+
-gam update resoldcustomer <CustomerID> [customer_auth_token <String>] <ResoldCustomerAttribues>+
+gam update resoldcustomer <CustomerID> <ResoldCustomerAttribues>+
 gam info resoldcustomer <CustomerID> [formatjson]
 
 gam create|add resoldsubscription <CustomerID> (sku <SKUID>)

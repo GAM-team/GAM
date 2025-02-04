@@ -1,3 +1,10 @@
+7.03.04
+
+Added option `security` to `gam create cigroup` that allows creation of a security group
+in a single command.
+
+Updated to Python 3.13.2 where possible.
+
 7.03.03
 
 Fixed bug in `gam update resoldcustomer` that caused the following error:

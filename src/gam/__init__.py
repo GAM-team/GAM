@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.03.03'
+__version__ = '7.03.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -15106,7 +15106,7 @@ def doCreateResoldCustomer():
   except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.invalid) as e:
     entityActionFailedWarning([Ent.CUSTOMER_DOMAIN, body['customerDomain']], str(e))
 
-# gam update resoldcustomer <CustomerID> [customer_auth_token <String>] <ResoldCustomerAttribute>+
+# gam update resoldcustomer <CustomerID> <ResoldCustomerAttribute>+
 def doUpdateResoldCustomer():
   res = buildGAPIObject(API.RESELLER)
   customerId = getString(Cmd.OB_CUSTOMER_ID)
@@ -15133,6 +15133,7 @@ def doInfoResoldCustomer():
                             customerId=customerId)
     if not FJQC.formatJSON:
       printKeyValueList(['Customer ID', customerInfo['customerId']])
+      printKeyValueList(['Customer Type', customerInfo['customerType']])
       printKeyValueList(['Customer Domain', customerInfo['customerDomain']])
       if 'customerDomainVerified' in customerInfo:
         printKeyValueList(['Customer Domain Verified', customerInfo['customerDomainVerified']])
@@ -31731,7 +31732,7 @@ def doCreateGroup(ciGroupsAPI=False):
                                                       'query': getString(Cmd.OB_QUERY)})
     elif ciGroupsAPI and myarg == 'makeowner':
       initialGroupConfig = 'WITH_INITIAL_OWNER'
-    elif ciGroupsAPI and myarg == 'security':
+    elif ciGroupsAPI and myarg in {'security', 'makesecuritygroup'}:
       body['labels'][CIGROUP_SECURITY_LABEL] = ''
     elif myarg == 'verifynotinvitable':
       verifyNotInvitable = True
@@ -34609,9 +34610,11 @@ def doPrintShowGroupTree():
   if csvPF:
     csvPF.writeCSVfile('Group Tree')
 
-# gam create cigroup <EmailAddress> [copyfrom <GroupItem>] <GroupAttribute>
-#	[makeowner] [alias|aliases <CIGroupAliasList>] [dynamic <QueryDynamicGroup>]
-#   [security]
+# gam create cigroup <EmailAddress>
+#	[copyfrom <GroupItem>] <GroupAttribute>
+#	[makeowner] [alias|aliases <CIGroupAliasList>]
+#	[security|makesecuritygroup]
+#	[dynamic <QueryDynamicGroup>]
 def doCreateCIGroup():
   doCreateGroup(ciGroupsAPI=True)
 
