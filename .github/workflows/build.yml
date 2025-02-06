@@ -508,9 +508,9 @@ jobs:
             "${PYTHON}" -m pip install --force-reinstall --no-deps cryptography*.whl
             echo "after cryptography..."
             "${PYTHON}" -m pip list
-            "${PYTHON}" -m pip install --upgrade --no-binary :all: -r requirements.txt[yubikey]
+            "${PYTHON}" -m pip install --upgrade --no-binary :all: -r requirements.txt
           else
-            "${PYTHON}" -m pip install --upgrade -r requirements.txt[yubikey]
+            "${PYTHON}" -m pip install --upgrade -r requirements.txt
             echo "after requirements..."
             "${PYTHON}" -m pip list
             "${PYTHON}" -m pip install --force-reinstall --no-deps --upgrade cryptography

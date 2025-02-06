@@ -11,4 +11,4 @@ lxml
 passlib>=1.7.2
 pathvalidate
 python-dateutil
-yubikey-manager>=5.0[yubikey]
+yubikey-manager[yubikey]>=5.0
