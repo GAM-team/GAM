@@ -1,11 +1,12 @@
 [project]
-name = "gam7_jay0lee"
+name = "gam7"
 dynamic = [
-  "version"
+    "dependencies",
+    "version",
 ]
 authors = [
-  { name="Jay Lee", email="jay0lee@gmail.com" },
-  { name="Ross Scroggs", email="Ross.Scroggs@gmail.com" },
+    { name="Jay Lee", email="jay0lee@gmail.com" },
+    { name="Ross Scroggs", email="Ross.Scroggs@gmail.com" },
 ]
 description = "CLI tool to manage Google Workspace"
 readme = "README.md"
@@ -27,6 +28,12 @@ path = "src/gam/__init__.py"
 [tool.hatch.build.targets.wheel]
 packages = ["src/gam"]
 
+tool.hatch.metadata.hooks.requirements_txt]
+files = ["src/requirements.txt"]
+
 [build-system]
-requires = ["hatchling"]
+requires = [
+    "hatchling",
+    "hatch-requirements_txt",
+]
 build-backend = "hatchling.build"
