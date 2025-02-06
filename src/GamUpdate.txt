@@ -1,3 +1,7 @@
+7.03.05
+
+Make GAM pip-installable: "pip install gam7"
+
 7.03.04
 
 Added option `security` to `gam create cigroup` that allows creation of a security group
