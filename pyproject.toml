@@ -18,6 +18,9 @@ classifiers = [
 license = {text = "Apache License (2.0)"}
 license-files = ["LICEN[CS]E*"]
 
+[project.scripts]
+gam = "gam.__main__:main"
+
 [project.urls]
 Homepage = "https://github.com/GAM-team/GAM"
 Issues = "https://github.com/GAM-team/GAM/issues"
