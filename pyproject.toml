@@ -24,6 +24,9 @@ Issues = "https://github.com/GAM-team/GAM/issues"
 [tool.hatch.version]
 path = "src/gam/__init__.py"
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/gam"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
