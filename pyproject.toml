@@ -28,7 +28,7 @@ path = "src/gam/__init__.py"
 [tool.hatch.build.targets.wheel]
 packages = ["src/gam"]
 
-tool.hatch.metadata.hooks.requirements_txt]
+[tool.hatch.metadata.hooks.requirements_txt]
 files = ["src/requirements.txt"]
 
 [build-system]
