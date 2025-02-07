@@ -2090,19 +2090,25 @@ gam move browsers ou|org|orgunit <OrgUnitPath>
         [batchsize <Integer>]
 
 gam info browser <DeviceID>
-        [basic|full|annotated] <BrowserFieldName>* [fields <BrowserFieldNameList>]
+        (basic|full|annotated | 
+         (<BrowserFieldName>* [fields <BrowserFieldNameList>]) |
+         (rawfields <BrowserFieldNameList>))
         [formatjson]
 gam show browsers
         ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser>)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
         [querytime<String> <Time>]
         [orderby <BrowserOrderByFieldName> [ascending|descending]]
-        [basic|full|allfields|annotated] <BrowserFieldName>* [fields <BrowserFieldNameList>] [rawfields <BrowserFieldsString>]
+        (basic|full|annotated | 
+         (<BrowserFieldName>* [fields <BrowserFieldNameList>]) |
+         (rawfields <BrowserFieldNameList>))
         [formatjson]
 gam print browsers [todrive <ToDriveAttribute>*]
         ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser>)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
         [querytime<String> <Time>]
         [orderby <BrowserOrderByFieldName> [ascending|descending]]
-        [basic|full|allfields|annotated] <BrowserFieldName>* [fields <BrowserFieldNameList>] [rawfields <BrowserFieldsString>]
+        (basic|full|annotated | 
+         (<BrowserFieldName>* [fields <BrowserFieldNameList>]) |
+         (rawfields <BrowserFieldNameList>))
         [sortheaders]
         [formatjson [quotechar <Character>]]
 

@@ -1,6 +1,7 @@
 7.03.06
 
-gam print browsers rawfields - specify complex values for the fields argument
+Added option `rawfields <BrowserFieldNameList>` to `gam info|print|show browsers` that allows
+specification of complex field lists with selected subfields.
 
 7.03.05
 
@@ -11,7 +12,7 @@ Make GAM pip-installable: "pip install gam7"
 Added option `security` to `gam create cigroup` that allows creation of a security group
 in a single command.
 
-Updated to Python 3.13.2 where possible.
+Updated to Python 3.13.2.
 
 7.03.03
 
