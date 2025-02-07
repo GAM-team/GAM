@@ -1,0 +1,32 @@
+name: build and publish releases to PyPi
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  pypi:
+    name: Upload release to PyPI
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/gam7
+    permissions:
+      id-token: write
+    steps:
+
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Install required packages to publish
+        run: |
+          python3 -m pip install --upgrade build
+
+      - name: Build packages
+        run: |
+          python -m build
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
