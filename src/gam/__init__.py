@@ -7768,6 +7768,9 @@ def RowFilterMatch(row, titlesList, rowFilter, rowFilterModeAll, rowDropFilter, 
       return False
   return True
 
+def getFieldsRaw():
+  return getString(Cmd.OB_FIELDS)
+
 # myarg is command line argument
 # fieldChoiceMap maps myarg to API field names
 #FIELD_CHOICE_MAP = {
@@ -25502,6 +25505,7 @@ def doPrintShowBrowsers():
   csvPF = CSVPrintFile(['deviceId']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   fieldsList = []
+  fields = None
   projection = 'BASIC'
   orderBy = 'id'
   sortOrder = 'ASCENDING'
@@ -25538,13 +25542,18 @@ def doPrintShowBrowsers():
       fieldsList = []
     elif myarg == 'sortheaders':
       sortHeaders = True
+    elif myarg == 'rawfields':
+      projection = 'FULL'
+      fields = getFieldsRaw()
     elif getFieldsList(myarg, BROWSER_FIELDS_CHOICE_MAP, fieldsList, initialField='deviceId'):
       pass
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if projection == 'BASIC' and set(fieldsList).intersection(BROWSER_FULL_ACCESS_FIELDS):
     projection = 'FULL'
-  fields = getItemFieldsFromFieldsList('browsers', fieldsList)
+  if not fields:
+    fields = getItemFieldsFromFieldsList('browsers', fieldsList)
+  print(f'fields: {fields}')
   if FJQC.formatJSON:
     sortHeaders = False
   substituteQueryTimes(queries, queryTimes)
