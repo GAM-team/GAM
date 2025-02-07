@@ -1,3 +1,7 @@
+7.03.06
+
+gam print browsers rawfields - specify complex values for the fields argument
+
 7.03.05
 
 Make GAM pip-installable: "pip install gam7"

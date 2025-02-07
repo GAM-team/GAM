@@ -2096,13 +2096,13 @@ gam show browsers
         ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser>)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
         [querytime<String> <Time>]
         [orderby <BrowserOrderByFieldName> [ascending|descending]]
-        [basic|full|allfields|annotated] <BrowserFieldName>* [fields <BrowserFieldNameList>]
+        [basic|full|allfields|annotated] <BrowserFieldName>* [fields <BrowserFieldNameList>] [rawfields <BrowserFieldsString>]
         [formatjson]
 gam print browsers [todrive <ToDriveAttribute>*]
         ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser>)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
         [querytime<String> <Time>]
         [orderby <BrowserOrderByFieldName> [ascending|descending]]
-        [basic|full|allfields|annotated] <BrowserFieldName>* [fields <BrowserFieldNameList>]
+        [basic|full|allfields|annotated] <BrowserFieldName>* [fields <BrowserFieldNameList>] [rawfields <BrowserFieldsString>]
         [sortheaders]
         [formatjson [quotechar <Character>]]
 
