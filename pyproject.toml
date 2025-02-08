@@ -34,7 +34,6 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Operating System :: OS Independent",
-    "License :: OSI Approved :: Apache License",
 ]
 license = {text = "Apache License (2.0)"}
 license-files = ["LICEN[CS]E*"]
