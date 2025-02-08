@@ -1,22 +1,46 @@
 [project]
 name = "gam7"
 dynamic = [
-    "dependencies",
     "version",
 ]
 authors = [
     { name="Jay Lee", email="jay0lee@gmail.com" },
     { name="Ross Scroggs", email="Ross.Scroggs@gmail.com" },
 ]
+dependencies = [
+    "chardet",
+    "cryptography",
+    "distro; sys_platform=='linux'",
+    "filelock",
+    "google-api-python-client>=2.1",
+    "google-auth-httplib2",
+    "google-auth-oauthlib>=0.4.1",
+    "google-auth>=2.3.2",
+    "httplib2>=0.17.0",
+    "lxml",
+    "passlib>=1.7.2",
+    "pathvalidate",
+    "python-dateutil",
+]
 description = "CLI tool to manage Google Workspace"
 readme = "README.md"
 requires-python = ">=3.9"
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Operating System :: OS Independent",
+    "License :: OSI Approved :: Apache License",
 ]
 license = {text = "Apache License (2.0)"}
 license-files = ["LICEN[CS]E*"]
+
+[project.optional-dependencies]
+yubikey = ["yubikey-manager>=5.0"]
 
 [project.scripts]
 gam = "gam.__main__:main"
@@ -24,6 +48,8 @@ gam = "gam.__main__:main"
 [project.urls]
 Homepage = "https://github.com/GAM-team/GAM"
 Issues = "https://github.com/GAM-team/GAM/issues"
+Discussion = "https://groups.google.com/group/google-apps-manager"
+Chat = "https://git.io/gam-chat"
 
 [tool.hatch.version]
 path = "src/gam/__init__.py"
@@ -31,12 +57,8 @@ path = "src/gam/__init__.py"
 [tool.hatch.build.targets.wheel]
 packages = ["src/gam"]
 
-[tool.hatch.metadata.hooks.requirements_txt]
-files = ["src/requirements.txt"]
-
 [build-system]
 requires = [
     "hatchling",
-    "hatch-requirements_txt",
 ]
 build-backend = "hatchling.build"
