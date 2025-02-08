@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.03.06'
+__version__ = '7.03.07'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -7356,11 +7356,11 @@ def addFieldToFieldsList(fieldName, fieldsChoiceMap, fieldsList):
 def _getFieldsList():
   return getString(Cmd.OB_FIELD_NAME_LIST).lower().replace('_', '').replace(',', ' ').split()
 
-def _getRawFieldsList(requiredField=None):
-  rawFieldsList = getString(Cmd.OB_FIELDS)
-  if requiredField is not None and requiredField not in rawFieldsList:
-    rawFieldsList = f'{requiredField},{rawFieldsList}'
-  return rawFieldsList
+def _getRawFields(requiredField=None):
+  rawFields = getString(Cmd.OB_FIELDS)
+  if requiredField is None or requiredField in rawFields:
+    return rawFields
+  return f'{requiredField},{rawFields}'
 
 def _addInitialField(fieldsList, initialField):
   if isinstance(initialField, list):
@@ -25133,7 +25133,7 @@ def doInfoBrowsers():
   deviceId = getString(Cmd.OB_DEVICE_ID)
   projection = 'BASIC'
   fieldsList = []
-  rawFieldsList = None
+  rawFields = None
   FJQC = FormatJSONQuoteChar()
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -25147,15 +25147,12 @@ def doInfoBrowsers():
       pass
     elif myarg == 'rawfields':
       projection = 'FULL'
-      rawFieldsList = _getRawFieldsList('deviceId')
+      rawFields = _getRawFields('deviceId')
     else:
       FJQC.GetFormatJSON(myarg)
   if projection == 'BASIC' and set(fieldsList).intersection(BROWSER_FULL_ACCESS_FIELDS):
     projection = 'FULL'
-  if not rawFieldsList:
-    fields = getFieldsFromFieldsList(fieldsList)
-  else:
-    fields = rawFieldsList
+  fields = getFieldsFromFieldsList(fieldsList) if not rawFields else rawFields
   try:
     browser = callGAPI(cbcm.chromebrowsers(), 'get',
                        throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.FORBIDDEN],
@@ -25524,7 +25521,7 @@ def doPrintShowBrowsers():
   csvPF = CSVPrintFile(['deviceId']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   fieldsList = []
-  rawFieldsList = None
+  rawFields = None
   projection = 'BASIC'
   orderBy = 'id'
   sortOrder = 'ASCENDING'
@@ -25565,7 +25562,7 @@ def doPrintShowBrowsers():
       pass
     elif myarg == 'rawfields':
       projection = 'FULL'
-      rawFieldsList = _getRawFieldsList('deviceId')
+      rawFields = _getRawFields('deviceId')
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if projection == 'BASIC' and set(fieldsList).intersection(BROWSER_FULL_ACCESS_FIELDS):
@@ -25574,10 +25571,7 @@ def doPrintShowBrowsers():
     sortHeaders = False
   substituteQueryTimes(queries, queryTimes)
   if entityList is None:
-    if not rawFieldsList:
-      fields = getItemFieldsFromFieldsList('browsers', fieldsList)
-    else:
-      fields = f'nextPageToken,browsers({rawFieldsList})'
+    fields = getItemFieldsFromFieldsList('browsers', fieldsList) if not rawFields else f'nextPageToken,browsers({rawFields})'
     for query in queries:
       printGettingAllAccountEntities(Ent.CHROME_BROWSER, query)
       pageMessage = getPageMessage()
@@ -25616,10 +25610,7 @@ def doPrintShowBrowsers():
   else:
     sortRows = True
     jcount = len(entityList)
-    if not rawFieldsList:
-      fields = getFieldsFromFieldsList(fieldsList)
-    else:
-      fields = rawFieldsList
+    fields = getFieldsFromFieldsList(fieldsList) if not rawFields else rawFields
     j = 0
     for deviceId in entityList:
       j += 1
@@ -40464,9 +40455,10 @@ VAULT_SEARCH_METHODS_MAP = {
 VAULT_CORPUS_ARGUMENT_MAP = {
   'calendar': 'CALENDAR',
   'drive': 'DRIVE',
-  'mail': 'MAIL',
+  'gemini': 'GEMINI',
   'groups': 'GROUPS',
   'hangoutschat': 'HANGOUTS_CHAT',
+  'mail': 'MAIL',
   'voice': 'VOICE',
   }
 VAULT_COUNTS_CORPUS_ARGUMENT_MAP = {
@@ -40493,14 +40485,21 @@ VAULT_EXPORT_FORMAT_MAP = {
   'ics': 'ICS',
   'mbox': 'MBOX',
   'pst': 'PST',
+  'xml': 'XML',
   }
 VAULT_CORPUS_EXPORT_FORMATS = {
   'CALENDAR': ['ICS', 'PST'],
   'DRIVE': [],
+  'GEMINI': ['XML'],
   'GROUPS': ['MBOX', 'PST'],
   'HANGOUTS_CHAT': ['MBOX', 'PST'],
   'MAIL': ['MBOX', 'PST'],
   'VOICE' : ['MBOX', 'PST'],
+  }
+VAULT_CSE_OPTION_MAP = {
+  'any': 'CLIENT_SIDE_ENCRYPTED_OPTION_ANY',
+  'encrypted': 'CLIENT_SIDE_ENCRYPTED_OPTION_ENCRYPTED',
+  'unencrypted': 'CLIENT_SIDE_ENCRYPTED_OPTION_UNENCRYPTED',
   }
 VAULT_EXPORT_REGION_MAP = {
   'any': 'ANY',
@@ -40510,16 +40509,18 @@ VAULT_EXPORT_REGION_MAP = {
 VAULT_CORPUS_OPTIONS_MAP = {
   'CALENDAR': 'calendarOptions',
   'DRIVE': 'driveOptions',
-  'MAIL': 'mailOptions',
+  'GEMINI': 'geminiOptions',
   'GROUPS': 'groupsOptions',
   'HANGOUTS_CHAT': 'hangoutsChatOptions',
+  'MAIL': 'mailOptions',
   'VOICE': 'voiceOptions',
   }
 VAULT_CORPUS_QUERY_MAP = {
   'CALENDAR': None,
   'DRIVE': 'driveQuery',
-  'MAIL': 'mailQuery',
+  'GEMINI': None,
   'GROUPS': 'groupsQuery',
+  'MAIL': 'mailQuery',
   'HANGOUTS_CHAT': 'hangoutsChatQuery',
   'VOICE': 'voiceQuery',
   }
@@ -40528,11 +40529,11 @@ VAULT_QUERY_ARGS = [
 # calendar
   'locationquery', 'peoplequery', 'minuswords', 'responsestatuses', 'caldendarversiondate',
 # drive
-  'driveversiondate', 'includeshareddrives', 'includeteamdrives',
+  'driveclientsideencryption', 'driveversiondate', 'includeshareddrives', 'includeteamdrives',
 # hangoutsChat
   'includerooms',
 # mail
-  'excludedrafts',
+  'mailclientsideencryption', 'excludedrafts',
 # voice
   'covereddata',
   ] + list(VAULT_SEARCH_METHODS_MAP.keys())
@@ -40589,12 +40590,16 @@ def _buildVaultQuery(myarg, query, corpusArgumentMap):
     query.setdefault('driveOptions', {})['versionDate'] = getTimeOrDeltaFromNow()
   elif myarg in {'includeshareddrives', 'includeteamdrives'}:
     query.setdefault('driveOptions', {})['includeSharedDrives'] = getBoolean()
+  elif myarg == 'driveclientsideencryption':
+    query.setdefault('driveOptions', {})['clientSideEncryptedOption'] = getChoice(VAULT_CSE_OPTION_MAP, mapChoice=True)
 # hangoutsChat
   elif myarg == 'includerooms':
     query['hangoutsChatOptions'] = {'includeRooms': getBoolean()}
 # mail
   elif myarg == 'excludedrafts':
     query['mailOptions'] = {'excludeDrafts': getBoolean()}
+  elif myarg == 'mailclientsideencryption':
+    query.setdefault('mailOptions', {})['clientSideEncryptedOption'] = getChoice(VAULT_CSE_OPTION_MAP, mapChoice=True)
 # voice
   elif myarg == 'covereddata':
     query['voiceOptions'] = {'coveredData': getChoice(VAULT_VOICE_COVERED_DATA_MAP, mapChoice=True)}
@@ -40609,7 +40614,7 @@ def _validateVaultQuery(body, corpusArgumentMap):
       if body['query']['corpus'] != corpus:
         body['exportOptions'].pop(options, None)
 
-# gam create vaultexport|export matter <MatterItem> [name <String>] corpus calendar|drive|mail|groups|hangouts_chat|voice
+# gam create vaultexport|export matter <MatterItem> [name <String>] corpus calendar|drive|gemini|groups|hangouts_chat|mail|voice
 #	(accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
 #	(shareddrives|teamdrives <TeamDriveIDList>) | (rooms <RoomList>) | (sitesurl <URLList>)
 #	[scope <all_data|held_data|unprocessed_data>]
@@ -40617,10 +40622,12 @@ def _validateVaultQuery(body, corpusArgumentMap):
 #	[locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
 #	[responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*] [calendarversiondate <Date>|<Time>]
 #	[includeshareddrives <Boolean>] [driveversiondate <Date>|<Time>] [includeaccessinfo <Boolean>]
+#	[driveclientsideencryption any|encrypted|unencrypted]
 #	[includerooms <Boolean>]
-#	[excludedrafts <Boolean>] [format mbox|pst]
+#	[excludedrafts <Boolean>] [mailclientsideencryption any|encrypted|unencrypted]
 #	[showconfidentialmodecontent <Boolean>] [usenewexport <Boolean>] [exportlinkeddrivefiles <Boolean>]
 #	[covereddata calllogs|textmessages|voicemails]
+#	[format ics|mbox|pst|xml]
 #	[region any|europe|us] [showdetails|returnidonly]
 def doCreateVaultExport():
   v = buildGAPIObject(API.VAULT)

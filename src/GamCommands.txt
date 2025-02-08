@@ -2092,7 +2092,7 @@ gam move browsers ou|org|orgunit <OrgUnitPath>
 gam info browser <DeviceID>
         (basic|full|annotated | 
          (<BrowserFieldName>* [fields <BrowserFieldNameList>]) |
-         (rawfields <BrowserFieldNameList>))
+         (rawfields "<BrowserFieldNameList>"))
         [formatjson]
 gam show browsers
         ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser>)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
@@ -2100,7 +2100,7 @@ gam show browsers
         [orderby <BrowserOrderByFieldName> [ascending|descending]]
         (basic|full|annotated | 
          (<BrowserFieldName>* [fields <BrowserFieldNameList>]) |
-         (rawfields <BrowserFieldNameList>))
+         (rawfields "<BrowserFieldNameList>"))
         [formatjson]
 gam print browsers [todrive <ToDriveAttribute>*]
         ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser>)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
@@ -2108,7 +2108,7 @@ gam print browsers [todrive <ToDriveAttribute>*]
         [orderby <BrowserOrderByFieldName> [ascending|descending]]
         (basic|full|annotated | 
          (<BrowserFieldName>* [fields <BrowserFieldNameList>]) |
-         (rawfields <BrowserFieldNameList>))
+         (rawfields "<BrowserFieldNameList>"))
         [sortheaders]
         [formatjson [quotechar <Character>]]
 
@@ -5270,7 +5270,7 @@ gam print vaultcounts [todrive <ToDriveAttributes>*]
 gam print vaultcounts [todrive <ToDriveAttributes>*]
         matter <MatterItem> operation <String> [wait <Integer>]
 
-gam create vaultexport|export matter <MatterItem> [name <String>] corpus calendar|drive|mail|groups|hangouts_chat|voice
+gam create vaultexport|export matter <MatterItem> [name <String>] corpus calendar|drive|gemini|groups|hangouts_chat|mail|voice
         (accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
         (shareddrives|teamdrives <SharedDriveIDList>) | (rooms <RoomList>) | (sitesurl <URLList>)
         [scope all_data|held_data|unprocessed_data]
@@ -5278,10 +5278,12 @@ gam create vaultexport|export matter <MatterItem> [name <String>] corpus calenda
         [locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
         [responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*] [calendarversiondate <Date>|<Time>]
         [includeshareddrives <Boolean>] [driveversiondate <Date>|<Time>] [includeaccessinfo <Boolean>]
+        [driveclientsideencryption any|encrypted|unencrypted]
         [includerooms <Boolean>]
-        [excludedrafts <Boolean>] [format mbox|pst]
+        [excludedrafts <Boolean>] [mailclientsideencryption any|encrypted|unencrypted]
         [showconfidentialmodecontent <Boolean>] [usenewexport <Boolean>] [exportlinkeddrivefiles <Boolean>]
         [covereddata calllogs|textmessages|voicemails]
+        [format ics|mbox|pst|xml]
         [region any|europe|us] [showdetails|returnidonly]
 gam delete vaultexport|export <ExportItem> matter <MatterItem>
 gam delete vaultexport|export <MatterItem> <ExportItem>

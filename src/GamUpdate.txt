@@ -1,7 +1,15 @@
+7.03.07
+
+Updated `gam create vaultexport` to include `corpus gemini`.
+
+* See: https://workspaceupdates.googleblog.com/2025/02/google-vault-now-supports-gemini.html
+
 7.03.06
 
-Added option `rawfields <BrowserFieldNameList>` to `gam info|print|show browsers` that allows
+Added option `rawfields "<BrowserFieldNameList>"` to `gam info|print|show browsers` that allows
 specification of complex field lists with selected subfields.
+
+* See: https://github.com/GAM-team/GAM/wiki/Chrome-Browser-Cloud-Management#raw-fields
 
 7.03.05
 
