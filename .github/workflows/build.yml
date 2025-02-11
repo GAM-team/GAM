@@ -757,7 +757,7 @@ jobs:
 
       - name: Attest that gam package files were generated from this Action
         uses: actions/attest-build-provenance@v1
-        if: (github.event_name == 'push' || github.event_name == 'schedule') && matrix.goal == 'build'
+        if: (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && matrix.goal == 'build'
         with:
           subject-path: |
             gam*.tar.xz
@@ -766,7 +766,7 @@ jobs:
 
       - name: Archive production artifacts
         uses: actions/upload-artifact@v4
-        if: (github.event_name == 'push' || github.event_name == 'schedule') && matrix.goal != 'test'
+        if: (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && matrix.goal != 'test'
         with:
           name: gam-binaries-${{ env.GAMOS }}-${{ env.arch }}-${{ matrix.jid }}
           path: |
@@ -794,8 +794,8 @@ jobs:
           fi
           echo "We successfully compiled Python ${this_python} and OpenSSL ${this_openssl}"
 
-      - name: Live API tests push only
-        if: (github.event_name == 'push' || github.event_name == 'schedule')
+      - name: Live API tests
+        if: (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
         run: |
           export gam_user="gam-gha-${JID}@pdl.jaylee.us"
           echo "gam_user=${gam_user}" >> $GITHUB_ENV
@@ -1005,7 +1005,7 @@ jobs:
           tar cJvvf cache.tar.xz $tar_folders
 
   merge:
-    if: (github.event_name == 'push' || github.event_name == 'schedule')
+    if: (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-24.04
     needs: build
     permissions:
@@ -1019,7 +1019,7 @@ jobs:
           pattern: gam-binaries-*
 
   publish:
-    if: github.event_name == 'push'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-24.04
     needs: merge
     permissions:
