@@ -5,6 +5,7 @@ on:
   pull_request:
   schedule:
     - cron: '37 22 * * *'
+  workflow_dispatch:
 
 permissions:
   contents: read
