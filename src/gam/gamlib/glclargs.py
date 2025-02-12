@@ -1150,6 +1150,10 @@ class GamCLArgs():
       return f'Command: {self.QuotedArgumentList(self.argv[:self.argvI])} >>>{self.QuotedArgumentList([self.argv[self.argvI]])}<<< {self.QuotedArgumentList(self.argv[self.argvI+1:])}\n'
     return f'Command: {self.QuotedArgumentList(self.argv)} >>><<<\n'
 
+# Deprecated command
+  def CommandDeprecated(self):
+    return f'{self.QuotedArgumentList(self.argv)}\n'
+
 # Peek to see if next argument is in choices
   def PeekArgumentPresent(self, choices):
     if self.ArgumentsRemaining():

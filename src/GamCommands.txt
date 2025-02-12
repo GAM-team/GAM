@@ -4742,41 +4742,6 @@ gam <UserTypeEntity> sendemail from <EmailAddress>
         [newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
 
-# Sites
-
-<SiteACLRole> ::= editor|owner|reader|writer
-<SiteACLRoleList> ::= "<SiteACLRole>(,<SiteACLRole>)*"
-
-<SiteACLScope> ::=
-        <EmailAddress>|user:<EmailAddress>|group:<EmailAddress>|domain:<DomainName>|domain|default
-<SiteACLScopeList> ::= "<SiteACLScope>(,<SiteACLScope>)*"
-<SiteACLScopeEntity> ::=
-        <SiteACLScopeList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-
-<SiteAttribute> ::=
-        (categories <String>)|
-        (name <String>)|
-        (sourcelink <URI>])|
-        (summary <String>)|
-        (theme <String>)
-
-gam [<UserTypeEntity>] create|add site <SiteItem> <SiteAttribute>*
-gam [<UserTypeEntity>] update sites <SiteEntity> <SiteAttribute>+
-gam [<UserTypeEntity>] info sites <SiteEntity> [withmappings] [role|roles all|<SiteACLRoleList>]
-gam [<UserTypeEntity>] show sites [domain|domains <DomainNameEntity>] [includeallsites]
-        [withmappings] [role|roles all|<SiteACLRoleList>] [startindex <Number>] [maxresults <Number>]
-gam [<UserTypeEntity>] print sites [todrive <ToDriveAttribute>*] [domain|domains <DomainNameEntity>] [includeallsites]
-        [withmappings] [role|roles all|<SiteACLRoleList>] [startindex <Number>] [maxresults <Number>] [convertcrnl] [delimiter <Character>]
-
-gam [<UserTypeEntity>] print siteactivity <SiteEntity> [todrive <ToDriveAttribute>*] [startindex <Number>] [maxresults <Number>] [updated_min <Date>] [updated_max <Date>]
-
-gam [<UserTypeEntity>] create|add siteacls <SiteEntity> <SiteACLRole> <SiteACLScopeEntity>
-gam [<UserTypeEntity>] update siteacls <SiteEntity> <SiteACLRole> <SiteACLScopeEntity>
-gam [<UserTypeEntity>] delete siteacls <SiteEntity> <SiteACLScopeEntity>
-gam [<UserTypeEntity>] info siteacls <SiteEntity> <SiteACLScopeEntity>
-gam [<UserTypeEntity>] show siteacls <SiteEntity>
-gam [<UserTypeEntity>] print siteacls <SiteEntity> [todrive <ToDriveAttribute>*]
-
 # Shared Drives - Administrator
 
 <SharedDriveFieldName> ::=

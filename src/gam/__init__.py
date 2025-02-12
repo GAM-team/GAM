@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.03.09'
+__version__ = '7.04.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -142,14 +142,11 @@ from gamlib import glskus as SKU
 from gamlib import gluprop as UProp
 from gamlib import glverlibs
 
-import atom
 import gdata.apps.service
 import gdata.apps.audit
 import gdata.apps.audit.service
 import gdata.apps.contacts
 import gdata.apps.contacts.service
-import gdata.apps.sites
-import gdata.apps.sites.service
 # Import local library, does not include discovery documents
 import googleapiclient
 import googleapiclient.discovery
@@ -824,6 +821,9 @@ def deprecatedArgument(argument):
 
 def deprecatedArgumentExit(argument):
   usageErrorExit(f'{Cmd.ARGUMENT_ERROR_NAMES[Cmd.ARGUMENT_DEPRECATED][1]}: <{argument}>')
+
+def deprecatedCommandExit():
+  systemErrorExit(USAGE_ERROR_RC, Msg.SITES_COMMAND_DEPRECATED.format(Cmd.CommandDeprecated()))
 
 # Choices is the valid set of choices that was expected
 def formatChoiceList(choices):
@@ -1748,33 +1748,6 @@ def protectedSheetId(spreadsheet, sheetId):
       if protectedRange.get('range', {}).get('sheetId', -1) == sheetId and not protectedRange.get('requestingUserCanEdit', False):
         return True
   return False
-
-SITENAME_PATTERN = re.compile(r'^[a-z0-9\-_]+$')
-SITENAME_FORMAT_REQUIRED = '[a-z,0-9,-_]+'
-
-def validateSplitSiteName(fullSite):
-  siteParts = fullSite.lower().split('/', 1)
-  if (len(siteParts) == 1) or not siteParts[1]:
-    domain = GC.Values[GC.DOMAIN]
-    site = siteParts[0]
-  elif not siteParts[0]:
-    domain = GC.Values[GC.DOMAIN]
-    site = siteParts[1]
-  else:
-    domain = siteParts[0]
-    site = siteParts[1]
-  if SITENAME_PATTERN.match(site):
-    return (domain, site, f'{domain}/{site}')
-  return (domain, site, None)
-
-def getSiteName():
-  if Cmd.ArgumentsRemaining():
-    domain, site, domainSite = validateSplitSiteName(Cmd.Current())
-    if domainSite:
-      Cmd.Advance()
-      return (domain, site, domainSite)
-    invalidArgumentExit(SITENAME_FORMAT_REQUIRED)
-  missingArgumentExit(SITENAME_FORMAT_REQUIRED)
 
 def getString(item, checkBlank=False, optional=False, minLen=1, maxLen=None):
   if Cmd.ArgumentsRemaining():
@@ -5673,21 +5646,6 @@ def getContactsQuery(**kwargs):
 
 def getEmailAuditObject():
   return initGDataObject(gdata.apps.audit.service.AuditService(), API.EMAIL_AUDIT)
-
-def getSitesObject(entityType=Ent.DOMAIN, entityName=None, i=0, count=0):
-  if entityType == Ent.DOMAIN:
-    sitesObject = initGDataObject(gdata.apps.sites.service.SitesService(), API.SITES)
-    return (entityName or GC.Values[GC.DOMAIN], sitesObject)
-  userEmail, credentials = getGDataUserCredentials(API.SITES, entityName, i, count)
-  if not credentials:
-    return (userEmail, None)
-  if GC.Values[GC.NO_VERIFY_SSL]:
-    ssl._create_default_https_context = ssl._create_unverified_context
-  sitesObject = gdata.apps.sites.service.SitesService(source=GAM_USER_AGENT,
-                                                      additional_headers={'Authorization': f'Bearer {credentials.token}'})
-  if GC.Values[GC.DEBUG_LEVEL] > 0:
-    sitesObject.debug = True
-  return (userEmail, sitesObject)
 
 def getUserEmailFromID(uid, cd):
   try:
@@ -42266,776 +42224,26 @@ def doPrintVaultCounts():
     csvPF.WriteRow({'account': account, 'count': 0})
   csvPF.writeCSVfile('Vault Counts')
 
-def checkSiteExists(sitesObject, domain, site):
-  try:
-    callGData(sitesObject, 'GetSite',
-              throwErrors=[GDATA.NOT_FOUND],
-              retryErrors=[GDATA.INTERNAL_SERVER_ERROR],
-              domain=domain, site=site)
-    return True
-  except GDATA.notFound:
-    return None
-
-SITE_ACLS = 'ACLs'
-SITE_CATEGORIES = 'Categories'
-SITE_LINK = 'Link'
-SITE_NAME = 'Name'
-SITE_SITE = 'Site'
-SITE_SOURCELINK = 'SourceLink'
-SITE_SUMMARY = 'Summary'
-SITE_THEME = 'Theme'
-SITE_UPDATED = 'Updated'
-SITE_WEB_ADDRESS_MAPPINGS = 'WebAddressMappings'
-
-SITE_DATA_DOMAIN = 'domain'
-SITE_DATA_SITE = 'site'
-SITE_DATA_DOMAIN_SITE = 'domainSite'
-SITE_DATA_FIELDS = 'fields'
-
-class SitesManager():
-
-  SITE_ARGUMENT_TO_PROPERTY_MAP = {
-    'categories': SITE_CATEGORIES,
-    'name': SITE_NAME,
-    'sourcelink': SITE_SOURCELINK,
-    'summary': SITE_SUMMARY,
-    'theme': SITE_THEME,
-    }
-
-  @staticmethod
-  def AclEntryToFields(acl_entry):
-
-    def GetAclAttr(attrlist):
-      objAttr = acl_entry
-      for attr in attrlist:
-        objAttr = getattr(objAttr, attr)
-        if not objAttr:
-          return None
-      return objAttr
-
-    fields = {}
-    fields['role'] = GetAclAttr(['role', 'value'])
-    if not fields['role']:
-      fields['role'] = GetAclAttr(['withKey', 'role', 'value'])+' (with link)'
-    fields['scope'] = {'type': GetAclAttr(['scope', 'type']),
-                       'value': GetAclAttr(['scope', 'value'])}
-    link = acl_entry.FindInviteLink()
-    if link:
-      fields['inviteLink'] = link
-    return fields
-
-  @staticmethod
-  def FieldsToAclEntry(fields):
-    acl_entry = gdata.apps.sites.AclEntry()
-    acl_entry.role = gdata.apps.sites.AclRole(value=fields['role'])
-    acl_entry.scope = gdata.apps.sites.AclScope(stype=fields['scope']['type'], value=fields['scope'].get('value'))
-    return acl_entry
-
-  @staticmethod
-  def ActivityEntryToFields(activity_entry):
-    fields = {}
-
-    def GetActivityField(fieldName, attrlist):
-      objAttr = activity_entry
-      for attr in attrlist:
-        objAttr = getattr(objAttr, attr)
-        if not objAttr:
-          return
-      fields[fieldName] = objAttr
-
-    def GetActivityFieldData(objAttr, attrlist, default):
-      for attr in attrlist:
-        objAttr = getattr(objAttr, attr)
-        if not objAttr:
-          return default
-      return  objAttr
-
-    def AppendItemToFieldsList(fieldName, fieldValue):
-      fields.setdefault(fieldName, [])
-      fields[fieldName].append(fieldValue)
-
-    GetActivityField('Summary', ['title', 'text'])
-    GetActivityField('Updated', ['updated', 'text'])
-    for author in activity_entry.author:
-      AppendItemToFieldsList('Authors', f'{GetActivityFieldData(author, ["name", "text"], "Unknown Name")}/{GetActivityFieldData(author, ["email", "text"], "Unknown Email")}')
-    fields['Operation'] = activity_entry.Kind()
-    return fields
-
-  @staticmethod
-  def SiteToFields(site_entry):
-    fields = {}
-
-    def GetSiteField(fieldName, attrlist):
-      objAttr = site_entry
-      for attr in attrlist:
-        objAttr = getattr(objAttr, attr)
-        if not objAttr:
-          return
-      fields[fieldName] = objAttr
-
-    def AppendItemToFieldsList(fieldName, fieldValue):
-      fields.setdefault(fieldName, [])
-      fields[fieldName].append(fieldValue)
-
-    GetSiteField(SITE_SITE, ['siteName', 'text'])
-    GetSiteField(SITE_NAME, ['title', 'text'])
-    GetSiteField(SITE_SUMMARY, ['summary', 'text'])
-    GetSiteField(SITE_THEME, ['theme', 'text'])
-    GetSiteField(SITE_UPDATED, ['updated', 'text'])
-    if site_entry.category:
-      for category in site_entry.category:
-        if category.term:
-          AppendItemToFieldsList(SITE_CATEGORIES, category.term)
-    link = site_entry.FindAlternateLink()
-    if link:
-      fields[SITE_LINK] = link
-    link = site_entry.FindSourceLink()
-    if link:
-      fields[SITE_SOURCELINK] = link
-    for link in site_entry.FindWebAddressMappings():
-      AppendItemToFieldsList(SITE_WEB_ADDRESS_MAPPINGS, link)
-    return fields
-
-  @staticmethod
-  def GetSiteFields():
-
-    fields = {}
-    while Cmd.ArgumentsRemaining():
-      myarg = getArgument()
-      if myarg in SitesManager.SITE_ARGUMENT_TO_PROPERTY_MAP:
-        fieldName = SitesManager.SITE_ARGUMENT_TO_PROPERTY_MAP[myarg]
-        if fieldName == SITE_NAME:
-          fields[fieldName] = getString(Cmd.OB_STRING)
-        elif fieldName == SITE_SOURCELINK:
-          fields[fieldName] = getString(Cmd.OB_URI)
-        elif fieldName == SITE_SUMMARY:
-          fields[fieldName] = getStringWithCRsNLs()
-        elif fieldName == SITE_THEME:
-          fields[fieldName] = getString(Cmd.OB_STRING)
-        elif fieldName == SITE_CATEGORIES:
-          fields[fieldName] = getString(Cmd.OB_STRING, minLen=0).split(',')
-      else:
-        unknownArgumentExit()
-    return fields
-
-  @staticmethod
-  def FieldsToSite(fields):
-    def GetField(fieldName):
-      return fields.get(fieldName)
-
-    def GetSiteField(fieldName, fieldClass):
-      value = fields.get(fieldName)
-      if value:
-        return fieldClass(text=value)
-      return None
-
-    site_entry = gdata.apps.sites.SiteEntry(sourceSite=GetField(SITE_SOURCELINK))
-    site_entry.siteName = GetSiteField(SITE_SITE, gdata.apps.sites.SiteName)
-    site_entry.title = GetSiteField(SITE_NAME, atom.Title)
-    site_entry.summary = GetSiteField(SITE_SUMMARY, atom.Summary)
-    site_entry.theme = GetSiteField(SITE_THEME, gdata.apps.sites.Theme)
-    value = GetField(SITE_CATEGORIES)
-    if value:
-      for category in value:
-        site_entry.category.append(atom.Category(term=category, scheme=gdata.apps.sites.TAG_KIND_TERM))
-    return site_entry
-
-def getSiteEntity():
-  siteEntity = {'list': getEntityList(Cmd.OB_SITE_ENTITY), 'dict': None}
-  if isinstance(siteEntity['list'], dict):
-    siteEntity['dict'] = siteEntity['list']
-  return siteEntity
-
-def _validateUserGetSites(entityType, user, i, count, siteEntity, itemType=None, modifier=None):
-  if siteEntity['dict']:
-    sites = siteEntity['dict'][user]
-  else:
-    sites = siteEntity['list']
-  user, sitesObject = getSitesObject(entityType, user, i, count)
-  if not sitesObject:
-    return (user, None, None, 0)
-  jcount = len(sites)
-  if not itemType:
-    entityPerformActionNumItems([entityType, user], jcount, Ent.SITE, i, count)
-  else:
-    entityPerformActionSubItemModifierNumItems([entityType, user], itemType, modifier, jcount, Ent.SITE, i, count)
-  if jcount == 0:
-    setSysExitRC(NO_ENTITIES_FOUND_RC)
-  return (user, sitesObject, sites, jcount)
-
-def _validateSite(fullSite, i, count):
-  domain, site, domainSite = validateSplitSiteName(fullSite)
-  if domainSite:
-    return (domain, site, domainSite)
-  entityActionNotPerformedWarning([Ent.SITE, site], Msg.INVALID_SITE.format(site, SITENAME_FORMAT_REQUIRED), i, count)
-  return (domain, site, None)
-
-def _validateSiteGetRuleIds(origUser, fullSite, j, jcount, ACLScopeEntity, showAction=True):
-  domain, site, domainSite = _validateSite(fullSite, j, jcount)
-  if not domainSite:
-    return (domain, site, None, None, 0)
-  if ACLScopeEntity:
-    if ACLScopeEntity['dict']:
-      if not GM.Globals[GM.CSV_SUBKEY_FIELD]:
-        ruleIds = ACLScopeEntity['dict'][fullSite]
-      else:
-        ruleIds = ACLScopeEntity['dict'][origUser][fullSite]
-    else:
-      ruleIds = ACLScopeEntity['list']
-    kcount = len(ruleIds)
-    if kcount == 0:
-      setSysExitRC(NO_ENTITIES_FOUND_RC)
-  else:
-    ruleIds = []
-    kcount = 0
-  if showAction:
-    entityPerformActionNumItems([Ent.SITE, domainSite], kcount, Ent.SITE_ACL, j, jcount)
-  return (domain, site, domainSite, ruleIds, kcount)
-
-def _createSite(users, entityType):
-  sitesManager = SitesManager()
-  domain, site, domainSite = getSiteName()
-  fields = sitesManager.GetSiteFields()
-  if not fields.get(SITE_NAME):
-    fields[SITE_NAME] = site
-  i, count, users = getEntityArgument(users)
-  for user in users:
-    i += 1
-    user, sitesObject = getSitesObject(entityType, user, i, count)
-    if not sitesObject:
-      continue
-    try:
-      siteEntry = sitesManager.FieldsToSite(fields)
-      callGData(sitesObject, 'CreateSite',
-                throwErrors=[GDATA.NOT_FOUND, GDATA.ENTITY_EXISTS, GDATA.BAD_REQUEST, GDATA.FORBIDDEN],
-                retryErrors=[GDATA.INTERNAL_SERVER_ERROR],
-                siteentry=siteEntry, domain=domain, site=None)
-      entityActionPerformed([Ent.SITE, domainSite])
-    except GDATA.notFound as e:
-      entityActionFailedWarning([Ent.DOMAIN, domain], str(e))
-    except (GDATA.entityExists, GDATA.badRequest, GDATA.forbidden) as e:
-      entityActionFailedWarning([Ent.SITE, domainSite], str(e))
-
 # gam [<UserTypeEntity>] create site <SiteName> <SiteAttribute>*
-def createUserSite(users):
-  _createSite(users, Ent.USER)
-
-def doCreateDomainSite():
-  _createSite([GC.Values[GC.DOMAIN]], Ent.DOMAIN)
-
-def _updateSites(users, entityType):
-  sitesManager = SitesManager()
-  siteEntity = getSiteEntity()
-  updateFields = sitesManager.GetSiteFields()
-  i, count, users = getEntityArgument(users)
-  for user in users:
-    i += 1
-    user, sitesObject, sites, jcount = _validateUserGetSites(entityType, user, i, count, siteEntity)
-    if jcount == 0:
-      continue
-    Ind.Increment()
-    j = 0
-    for site in sites:
-      j += 1
-      domain, site, domainSite = _validateSite(site, j, jcount)
-      if not domainSite:
-        continue
-      try:
-        siteEntry = callGData(sitesObject, 'GetSite',
-                              throwErrors=[GDATA.NOT_FOUND, GDATA.FORBIDDEN],
-                              retryErrors=[GDATA.INTERNAL_SERVER_ERROR],
-                              domain=domain, site=site)
-        fields = sitesManager.SiteToFields(siteEntry)
-        for field, value in iter(updateFields.items()):
-          if field != SITE_SOURCELINK:
-            fields[field] = value
-        newSiteEntry = sitesManager.FieldsToSite(fields)
-        callGData(sitesObject, 'UpdateSite',
-                  throwErrors=[GDATA.NOT_FOUND, GDATA.BAD_REQUEST, GDATA.FORBIDDEN],
-                  retryErrors=[GDATA.INTERNAL_SERVER_ERROR],
-                  siteentry=newSiteEntry, domain=domain, site=site, extra_headers={'If-Match': siteEntry.etag})
-        entityActionPerformed([Ent.SITE, domainSite])
-      except (GDATA.notFound, GDATA.badRequest, GDATA.forbidden) as e:
-        entityActionFailedWarning([Ent.SITE, domainSite], str(e))
-
 # gam [<UserTypeEntity>] update site <SiteEntity> <SiteAttribute>+
-def updateUserSites(users):
-  _updateSites(users, Ent.USER)
-
-def doUpdateDomainSites():
-  _updateSites([GC.Values[GC.DOMAIN]], Ent.DOMAIN)
-
-SITE_FIELD_PRINT_ORDER = [
-  SITE_UPDATED,
-  SITE_NAME,
-  SITE_SUMMARY,
-  SITE_THEME,
-  SITE_SOURCELINK,
-  SITE_CATEGORIES,
-  SITE_LINK,
-  ]
-
-def _showSite(sitesManager, sitesObject, domain, site, roles, j, jcount):
-  fields = sitesManager.SiteToFields(site)
-  domainSite = f'{domain}/{fields[SITE_SITE]}'
-  printKeyValueListWithCount([SITE_SITE, domainSite], j, jcount)
-  Ind.Increment()
-  for field in SITE_FIELD_PRINT_ORDER:
-    if field in fields:
-      if not isinstance(fields[field], list):
-        if field != SITE_SUMMARY:
-          printKeyValueList([field, fields[field]])
-        else:
-          printKeyValueWithCRsNLs(field, fields[field])
-      else:
-        printKeyValueList([field, ','.join(fields[field])])
-  if fields.get(SITE_WEB_ADDRESS_MAPPINGS):
-    printKeyValueList([SITE_WEB_ADDRESS_MAPPINGS, None])
-    Ind.Increment()
-    for link in fields[SITE_WEB_ADDRESS_MAPPINGS]:
-      printKeyValueList([link, None])
-    Ind.Decrement()
-  if roles:
-    try:
-      acls = callGDataPages(sitesObject, 'GetAclFeed',
-                            throwErrors=[GDATA.NOT_FOUND, GDATA.FORBIDDEN],
-                            retryErrors=[GDATA.INTERNAL_SERVER_ERROR],
-                            domain=domain, site=fields[SITE_SITE])
-      printKeyValueList([SITE_ACLS, None])
-      Ind.Increment()
-      for acl in acls:
-        fields = sitesManager.AclEntryToFields(acl)
-        if fields['role'] in roles:
-          printKeyValueList([formatACLRule(fields)])
-      Ind.Decrement()
-    except GDATA.notFound as e:
-      entityActionFailedWarning([Ent.SITE, domainSite], str(e))
-    except GDATA.forbidden:
-      pass
-  Ind.Decrement()
-
-SITE_ACL_ROLES_MAP = {
-  'editor': 'writer',
-  'invite': 'invite',
-  'owner': 'owner',
-  'read': 'reader',
-  'reader': 'reader',
-  'writer': 'writer',
-  }
-
-def _infoSites(users, entityType):
-  siteEntity = getSiteEntity()
-  url_params = {}
-  roles = set()
-  while Cmd.ArgumentsRemaining():
-    myarg = getArgument()
-    if myarg == 'withmappings':
-      url_params['with-mappings'] = 'true'
-    elif myarg in {'role', 'roles'}:
-      roles = getACLRoles(SITE_ACL_ROLES_MAP)
-    else:
-      unknownArgumentExit()
-  sitesManager = SitesManager()
-  i, count, users = getEntityArgument(users)
-  for user in users:
-    i += 1
-    user, sitesObject, sites, jcount = _validateUserGetSites(entityType, user, i, count, siteEntity)
-    if jcount == 0:
-      continue
-    Ind.Increment()
-    j = 0
-    for site in sites:
-      j += 1
-      domain, site, domainSite = _validateSite(site, j, jcount)
-      if not domainSite:
-        continue
-      try:
-        result = callGData(sitesObject, 'GetSite',
-                           throwErrors=[GDATA.NOT_FOUND, GDATA.FORBIDDEN],
-                           retryErrors=[GDATA.INTERNAL_SERVER_ERROR],
-                           domain=domain, site=site, url_params=url_params)
-        if result:
-          _showSite(sitesManager, sitesObject, domain, result, roles, j, jcount)
-      except (GDATA.notFound, GDATA.forbidden) as e:
-        entityActionFailedWarning([Ent.SITE, domainSite], str(e))
-    Ind.Decrement()
-
 # gam [<UserTypeEntity>] info site <SiteEntity> [withmappings] [role|roles all|<SiteACLRoleList>]
-def infoUserSites(users):
-  _infoSites(users, Ent.USER)
-
-def doInfoDomainSites():
-  _infoSites([GC.Values[GC.DOMAIN]], Ent.DOMAIN)
-
-def printShowSites(entityList, entityType):
-  def _getSites(domain, i, count):
-    try:
-      return callGDataPages(sitesObject, 'GetSiteFeed',
-                            pageMessage=getPageMessageForWhom(),
-                            throwErrors=[GDATA.NOT_FOUND, GDATA.FORBIDDEN],
-                            retryErrors=[GDATA.INTERNAL_SERVER_ERROR],
-                            domain=domain, url_params=url_params)
-    except (GDATA.notFound, GDATA.forbidden) as e:
-      entityActionFailedWarning([Ent.DOMAIN, domain], str(e), i, count)
-    return []
-
-  def _printSites(entity, i, count, domain, sites):
-    for site in sites:
-      fields = sitesManager.SiteToFields(site)
-      if fields[SITE_SITE] in sitesSet:
-        continue
-      sitesSet.add(fields[SITE_SITE])
-      domainSite = f'{domain}/{fields[SITE_SITE]}'
-      siteRow = {Ent.Singular(entityType): entity, SITE_SITE: domainSite}
-      for field, value in iter(fields.items()):
-        if field != SITE_SITE:
-          if not isinstance(value, list):
-            if field != SITE_SUMMARY or not convertCRNL:
-              siteRow[field] = value
-            else:
-              siteRow[field] = escapeCRsNLs(value)
-          else:
-            siteRow[field] = delimiter.join(value)
-      rowShown = False
-      if roles:
-        try:
-          acls = callGDataPages(sitesObject, 'GetAclFeed',
-                                throwErrors=[GDATA.NOT_FOUND, GDATA.FORBIDDEN],
-                                retryErrors=[GDATA.INTERNAL_SERVER_ERROR],
-                                domain=domain, site=fields[SITE_SITE])
-          for acl in acls:
-            fields = sitesManager.AclEntryToFields(acl)
-            if fields['role'] in roles:
-              siteACLRow = siteRow.copy()
-              siteACLRow.update(ACLRuleDict(fields))
-              csvPF.WriteRowTitles(siteACLRow)
-              rowShown = True
-        except GDATA.notFound as e:
-          entityActionFailedWarning([Ent.SITE, domainSite], str(e), i, count)
-        except GDATA.forbidden:
-          pass
-      if not rowShown:
-        csvPF.WriteRowTitles(siteRow)
-
-  def _showSites(entity, i, count, domain, sites):
-    jcount = len(sites)
-    if entityType == Ent.USER:
-      entityPerformActionNumItems([entityType, entity, Ent.DOMAIN, domain], jcount, Ent.SITE, i, count)
-    else:
-      entityPerformActionNumItems([entityType, entity], jcount, Ent.SITE, i, count)
-    Ind.Increment()
-    j = 0
-    for site in sites:
-      j += 1
-      _showSite(sitesManager, sitesObject, domain, site, roles, j, jcount)
-    Ind.Decrement()
-
-  domains = []
-  domainLists = []
-  url_params = {}
-  includeAllSites = 'true' if entityType == Ent.DOMAIN else 'false'
-  roles = set()
-  convertCRNL = GC.Values[GC.CSV_OUTPUT_CONVERT_CR_NL]
-  delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
-  csvPF = CSVPrintFile([Ent.Singular(entityType), SITE_SITE, SITE_NAME, SITE_SUMMARY], 'sortall') if Act.csvFormat() else None
-  while Cmd.ArgumentsRemaining():
-    myarg = getArgument()
-    if csvPF and myarg == 'todrive':
-      csvPF.GetTodriveParameters()
-    elif myarg in {'domain', 'domains'}:
-      if entityType == Ent.DOMAIN:
-        entityList = getEntityList(Cmd.OB_DOMAIN_NAME_ENTITY)
-      else:
-        domains = getEntityList(Cmd.OB_DOMAIN_NAME_ENTITY)
-        domainLists = domains if isinstance(domains, dict) else None
-    elif myarg == 'includeallsites':
-      includeAllSites = 'true'
-    elif myarg == 'maxresults':
-      url_params['max-results'] = getInteger(minVal=1)
-    elif myarg == 'startindex':
-      url_params['start-index'] = getInteger(minVal=1)
-    elif myarg == 'withmappings':
-      url_params['with-mappings'] = 'true'
-    elif myarg in {'role', 'roles'}:
-      roles = getACLRoles(SITE_ACL_ROLES_MAP)
-    elif myarg in {'convertcrnl', 'converttextnl', 'convertsummarynl'}:
-      convertCRNL = True
-    elif myarg == 'delimiter':
-      delimiter = getCharacter()
-    else:
-      unknownArgumentExit()
-  sitesManager = SitesManager()
-  sitesSet = set()
-  i, count, entityList = getEntityArgument(entityList)
-  if entityType == Ent.USER:
-    for user in entityList:
-      i += 1
-      if domainLists:
-        domainList = domainLists[user]
-      elif domains:
-        domainList = domains
-      else:
-        _, domain = splitEmailAddress(user)
-        domainList = [domain]
-      user, sitesObject = getSitesObject(entityType, user, i, count)
-      if not sitesObject:
-        continue
-      jcount = len(domainList)
-      j = 0
-      for domain in domainList:
-        j += 1
-        if domain != 'site':
-          url_params['include-all-sites'] = includeAllSites
-        else:
-          url_params.pop('include-all-sites', None)
-        printGettingAllEntityItemsForWhom(Ent.SITE, f'{Ent.Singular(Ent.USER)}: {user}, {Ent.Singular(Ent.DOMAIN)}: {domain}')
-        sites = _getSites(domain, i, count)
-        if not csvPF:
-          _showSites(domain, j, jcount, domain, sites)
-        else:
-          _printSites(user, j, jcount, domain, sites)
-  else:
-    for domain in entityList:
-      i += 1
-      domain, sitesObject = getSitesObject(entityType, domain, i, count)
-      if not sitesObject:
-        continue
-      if domain != 'site':
-        url_params['include-all-sites'] = includeAllSites
-      else:
-        url_params.pop('include-all-sites', None)
-      printGettingAllEntityItemsForWhom(Ent.SITE, f'{Ent.Singular(Ent.DOMAIN)}: {domain}')
-      sites = _getSites(domain, i, count)
-      if not csvPF:
-        _showSites(domain, i, count, domain, sites)
-      else:
-        _printSites(domain, i, count, domain, sites)
-  if csvPF:
-    csvPF.SortTitles()
-    csvPF.SetSortTitles([])
-    if roles:
-      csvPF.MoveTitlesToEnd(['Scope', 'Role'])
-    csvPF.writeCSVfile('Sites')
-
-# gam print sites [todrive <ToDriveAttribute>*] [domain|domains <DomainNameEntity>] [includeallsites]
-#	[withmappings] [role|roles all|<SiteACLRoleList>] [startindex <Number>] [maxresults <Number>] [convertcrnl] [delimiter <Character>]
-# gam show sites [domain|domains <DomainNameEntity>] [includeallsites]
-#	[withmappings] [role|roles all|<SiteACLRoleList>] [startindex <Number>] [maxresults <Number>] [convertcrnl]
-def doPrintShowDomainSites():
-  printShowSites([GC.Values[GC.DOMAIN]], Ent.DOMAIN)
-
 # gam [<UserTypeEntity>] print sites [todrive <ToDriveAttribute>*] [domain|domains <DomainNameEntity>] [includeallsites]
 #	[withmappings] [role|roles all|<SiteACLRoleList>] [startindex <Number>] [maxresults <Number>] [convertcrnl] [delimiter <Character>]
 # gam [<UserTypeEntity>] show sites [domain|domains <DomainNameEntity>] [includeallsites]
 #	[withmappings] [role|roles all|<SiteACLRoleList>] [startindex <Number>] [maxresults <Number>] [convertcrnl]
-def printShowUserSites(users):
-  printShowSites(users, Ent.USER)
-
-SITE_ACTION_TO_MODIFIER_MAP = {
-  Act.ADD: Act.MODIFIER_TO,
-  Act.UPDATE: Act.MODIFIER_IN,
-  Act.DELETE: Act.MODIFIER_FROM,
-  Act.INFO: Act.MODIFIER_FROM,
-  Act.PRINT: Act.MODIFIER_FROM,
-  Act.SHOW: Act.MODIFIER_FROM,
-  }
-
-def _processSiteACLs(users, entityType):
-  action = Act.Get()
-  siteEntity = getSiteEntity()
-  csvPF = None
-  if action in [Act.ADD, Act.UPDATE]:
-    role = getChoice(SITE_ACL_ROLES_MAP, mapChoice=True)
-  elif action == Act.PRINT:
-    csvPF = CSVPrintFile([Ent.Singular(entityType), SITE_SITE, 'Scope', 'Role'])
-  else:
-    role = None
-  actionPrintShow = action in [Act.PRINT, Act.SHOW]
-  ACLScopeEntity = getCalendarSiteACLScopeEntity() if not actionPrintShow else {}
-  getTodriveOnly(csvPF)
-  modifier = SITE_ACTION_TO_MODIFIER_MAP[action]
-  sitesManager = SitesManager()
-  i, count, users = getEntityArgument(users)
-  for user in users:
-    i += 1
-    origUser = user
-    user, sitesObject, sites, jcount = _validateUserGetSites(entityType, user, i, count, siteEntity, Ent.SITE_ACL, modifier)
-    if jcount == 0:
-      continue
-    Ind.Increment()
-    j = 0
-    for site in sites:
-      j += 1
-      domain, site, domainSite, ruleIds, kcount = _validateSiteGetRuleIds(origUser, site, j, jcount, ACLScopeEntity, showAction=not actionPrintShow)
-      if not domainSite:
-        continue
-      if not actionPrintShow:
-        Ind.Increment()
-        k = 0
-        for ruleId in ruleIds:
-          k += 1
-          ruleId = normalizeRuleId(ruleId)
-          try:
-            if action in [Act.CREATE, Act.ADD]:
-              acl = callGData(sitesObject, 'CreateAclEntry',
-                              throwErrors=[GDATA.NOT_FOUND, GDATA.ENTITY_EXISTS, GDATA.BAD_REQUEST, GDATA.FORBIDDEN],
-                              retryErrors=[GDATA.INTERNAL_SERVER_ERROR],
-                              aclentry=sitesManager.FieldsToAclEntry(makeRoleRuleIdBody(role, ruleId)), domain=domain, site=site)
-              fields = sitesManager.AclEntryToFields(acl)
-              if not fields.get('inviteLink'):
-                entityActionPerformed([Ent.SITE, domainSite, Ent.SITE_ACL, formatACLRule(fields)], k, kcount)
-              else:
-                entityActionPerformed([Ent.SITE, domainSite, Ent.SITE_ACL, f'{formatACLRule(fields)} (Link: {fields["inviteLink"]})'], k, kcount)
-            elif action == Act.UPDATE:
-              acl = callGData(sitesObject, 'GetAclEntry',
-                              throwErrors=[GDATA.NOT_FOUND, GDATA.BAD_REQUEST, GDATA.FORBIDDEN],
-                              retryErrors=[GDATA.INTERNAL_SERVER_ERROR],
-                              domain=domain, site=site, ruleId=ruleId)
-              acl.role.value = role
-              acl = callGData(sitesObject, 'UpdateAclEntry',
-                              throwErrors=[GDATA.NOT_FOUND, GDATA.BAD_REQUEST, GDATA.FORBIDDEN],
-                              retryErrors=[GDATA.INTERNAL_SERVER_ERROR],
-                              aclentry=acl, domain=domain, site=site, ruleId=ruleId, extra_headers={'If-Match': acl.etag})
-              fields = sitesManager.AclEntryToFields(acl)
-              entityActionPerformed([Ent.SITE, domainSite, Ent.SITE_ACL, formatACLRule(fields)], k, kcount)
-            elif action == Act.DELETE:
-              acl = callGData(sitesObject, 'GetAclEntry',
-                              throwErrors=[GDATA.NOT_FOUND, GDATA.BAD_REQUEST, GDATA.FORBIDDEN],
-                              retryErrors=[GDATA.INTERNAL_SERVER_ERROR],
-                              domain=domain, site=site, ruleId=ruleId)
-              callGData(sitesObject, 'DeleteAclEntry',
-                        throwErrors=[GDATA.NOT_FOUND, GDATA.BAD_REQUEST, GDATA.FORBIDDEN],
-                        retryErrors=[GDATA.INTERNAL_SERVER_ERROR],
-                        domain=domain, site=site, ruleId=ruleId, extra_headers={'If-Match': acl.etag})
-              entityActionPerformed([Ent.SITE, domainSite, Ent.SITE_ACL, formatACLScopeRole(ruleId, None)], k, kcount)
-            elif action == Act.INFO:
-              acl = callGData(sitesObject, 'GetAclEntry',
-                              throwErrors=[GDATA.NOT_FOUND, GDATA.BAD_REQUEST, GDATA.FORBIDDEN],
-                              retryErrors=[GDATA.INTERNAL_SERVER_ERROR],
-                              domain=domain, site=site, ruleId=ruleId)
-              fields = sitesManager.AclEntryToFields(acl)
-              printEntity([Ent.SITE, domainSite, Ent.SITE_ACL, formatACLRule(fields)], k, kcount)
-          except GDATA.notFound as e:
-            if not checkSiteExists(sitesObject, domain, site):
-              entityUnknownWarning(Ent.SITE, domainSite, j, jcount)
-              break
-            entityActionFailedWarning([Ent.SITE, domainSite, Ent.SITE_ACL, formatACLScopeRole(ruleId, role)], str(e), k, kcount)
-          except (GDATA.entityExists, GDATA.badRequest, GDATA.forbidden) as e:
-            entityActionFailedWarning([Ent.SITE, domainSite, Ent.SITE_ACL, formatACLScopeRole(ruleId, role)], str(e), k, kcount)
-        Ind.Decrement()
-      else:
-        try:
-          acls = callGDataPages(sitesObject, 'GetAclFeed',
-                                throwErrors=[GDATA.NOT_FOUND, GDATA.FORBIDDEN],
-                                retryErrors=[GDATA.INTERNAL_SERVER_ERROR],
-                                domain=domain, site=site)
-          if not csvPF:
-            kcount = len(acls)
-            entityPerformActionNumItems([Ent.SITE, domainSite], kcount, Ent.SITE_ACL, j, jcount)
-            if kcount == 0:
-              continue
-            Ind.Increment()
-            k = 0
-            for acl in acls:
-              k += 1
-              fields = sitesManager.AclEntryToFields(acl)
-              printEntity([Ent.SITE, domainSite, Ent.SITE_ACL, formatACLRule(fields)], k, kcount)
-            Ind.Decrement()
-          else:
-            siteRow = {Ent.Singular(entityType): user, SITE_SITE: domainSite}
-            for acl in acls:
-              fields = sitesManager.AclEntryToFields(acl)
-              siteACLRow = siteRow.copy()
-              siteACLRow.update(ACLRuleDict(fields))
-              csvPF.WriteRowTitles(siteACLRow)
-        except GDATA.notFound:
-          entityUnknownWarning(Ent.SITE, domainSite, j, jcount)
-        except GDATA.forbidden as e:
-          entityActionFailedWarning([Ent.SITE, domainSite], str(e), j, jcount)
-    Ind.Decrement()
-  if csvPF:
-    csvPF.writeCSVfile('Site ACLs')
-
 # gam [<UserTypeEntity>] create siteacls <SiteEntity> <SiteACLRole> <SiteACLScopeEntity>
 # gam [<UserTypeEntity>] update siteacls <SiteEntity> <SiteACLRole> <SiteACLScopeEntity>
 # gam [<UserTypeEntity>] delete siteacls <SiteEntity> <SiteACLScopeEntity>
 # gam [<UserTypeEntity>] info siteacls <SiteEntity> <SiteACLScopeEntity>
 # gam [<UserTypeEntity>] show siteacls <SiteEntity>
 # gam [<UserTypeEntity>] print siteacls <SiteEntity> [todrive <ToDriveAttribute>*]
-def processUserSiteACLs(users):
-  _processSiteACLs(users, Ent.USER)
-
-def doProcessDomainSiteACLs():
-  _processSiteACLs([GC.Values[GC.DOMAIN]], Ent.DOMAIN)
-
-def _printSiteActivity(users, entityType):
-  sitesManager = SitesManager()
-  url_params = {}
-  csvPF = CSVPrintFile([SITE_SITE, SITE_SUMMARY, SITE_UPDATED], 'sortall')
-  sites = getEntityList(Cmd.OB_SITE_ENTITY)
-  siteLists = sites if isinstance(sites, dict) else None
-  while Cmd.ArgumentsRemaining():
-    myarg = getArgument()
-    if myarg == 'todrive':
-      csvPF.GetTodriveParameters()
-    elif myarg == 'maxresults':
-      url_params['max-results'] = getInteger(minVal=1)
-    elif myarg == 'startindex':
-      url_params['start-index'] = getInteger(minVal=1)
-    elif myarg == 'updatedmin':
-      url_params['updated-min'] = getYYYYMMDD()
-    elif myarg == 'updatedmax':
-      url_params['updated-max'] = getYYYYMMDD()
-    else:
-      unknownArgumentExit()
-  i, count, users = getEntityArgument(users)
-  for user in users:
-    i += 1
-    if siteLists:
-      sites = siteLists[user]
-    user, sitesObject = getSitesObject(entityType, user, i, count)
-    if not sitesObject:
-      continue
-    jcount = len(sites)
-    if jcount == 0:
-      setSysExitRC(NO_ENTITIES_FOUND_RC)
-      continue
-    Ind.Increment()
-    j = 0
-    for site in sites:
-      j += 1
-      domain, site, domainSite = _validateSite(site, j, jcount)
-      if not domainSite:
-        continue
-      printGettingAllEntityItemsForWhom(Ent.ACTIVITY, domainSite)
-      try:
-        activities = callGDataPages(sitesObject, 'GetActivityFeed',
-                                    pageMessage=getPageMessageForWhom(),
-                                    throwErrors=[GDATA.NOT_FOUND, GDATA.FORBIDDEN],
-                                    retryErrors=[GDATA.INTERNAL_SERVER_ERROR],
-                                    domain=domain, site=site, url_params=url_params)
-        for activity in activities:
-          fields = sitesManager.ActivityEntryToFields(activity)
-          activityRow = {SITE_SITE: domainSite}
-          for key, value in iter(fields.items()):
-            if not isinstance(value, list):
-              activityRow[key] = value
-            else:
-              activityRow[key] = ','.join(value)
-          csvPF.WriteRowTitles(activityRow)
-      except GDATA.notFound:
-        entityUnknownWarning(Ent.SITE, domainSite, j, jcount)
-      except GDATA.forbidden as e:
-        entityActionFailedWarning([Ent.SITE, domainSite], str(e), j, jcount)
-  csvPF.writeCSVfile('Site Activities')
-
 # gam [<UserTypeEntity>] print siteactivity <SiteEntity> [todrive <ToDriveAttribute>*]
 #	[startindex <Number>] [maxresults <Number>] [updated_min <Date>] [updated_max <Date>]
-def printUserSiteActivity(users):
-  _printSiteActivity(users, Ent.USER)
+def deprecatedUserSites(users):
+  deprecatedCommandExit()
 
-def doPrintDomainSiteActivity():
-  _printSiteActivity([GC.Values[GC.DOMAIN]], Ent.DOMAIN)
+def deprecatedDomainSites():
+  deprecatedCommandExit()
 
 # <CSVFileInput> [keyfield <FieldName>] [datafield <FieldName>]
 def _getGroupOrgUnitMap():
@@ -75733,8 +74941,8 @@ MAIN_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_SAKEY:		doCreateSvcAcctKeys,
   Cmd.ARG_SCHEMA:		doCreateUpdateUserSchemas,
   Cmd.ARG_SHAREDDRIVE:		doCreateSharedDrive,
-  Cmd.ARG_SITE:			doCreateDomainSite,
-  Cmd.ARG_SITEACL:		doProcessDomainSiteACLs,
+  Cmd.ARG_SITE:			deprecatedDomainSites,
+  Cmd.ARG_SITEACL:		deprecatedDomainSites,
   Cmd.ARG_SVCACCT:		doCreateSvcAcct,
   Cmd.ARG_USER:			doCreateUser,
   Cmd.ARG_VAULTEXPORT:		doCreateVaultExport,
@@ -75848,7 +75056,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_SAKEY:		doDeleteSvcAcctKeys,
       Cmd.ARG_SCHEMA:		doDeleteUserSchemas,
       Cmd.ARG_SHAREDDRIVE:	doDeleteSharedDrive,
-      Cmd.ARG_SITEACL:		doProcessDomainSiteACLs,
+      Cmd.ARG_SITEACL:		deprecatedDomainSites,
       Cmd.ARG_SVCACCT:		doDeleteSvcAcct,
       Cmd.ARG_USER:		doDeleteUser,
       Cmd.ARG_USERS:		doDeleteUsers,
@@ -75937,8 +75145,8 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_RESOURCES:	doInfoResourceCalendars,
       Cmd.ARG_SCHEMA:		doInfoUserSchemas,
       Cmd.ARG_SHAREDDRIVE:	doInfoSharedDrive,
-      Cmd.ARG_SITE:		doInfoDomainSites,
-      Cmd.ARG_SITEACL:		doProcessDomainSiteACLs,
+      Cmd.ARG_SITE:		deprecatedDomainSites,
+      Cmd.ARG_SITEACL:		deprecatedDomainSites,
       Cmd.ARG_USER:		doInfoUser,
       Cmd.ARG_USERS:		doInfoUsers,
       Cmd.ARG_USERINVITATION:	doInfoCIUserInvitations,
@@ -76040,9 +75248,9 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_SCHEMA:		doPrintShowUserSchemas,
       Cmd.ARG_SHAREDDRIVE:	doPrintShowSharedDrives,
       Cmd.ARG_SHAREDDRIVEACLS:	doPrintShowSharedDriveACLs,
-      Cmd.ARG_SITE:		doPrintShowDomainSites,
-      Cmd.ARG_SITEACL:		doProcessDomainSiteACLs,
-      Cmd.ARG_SITEACTIVITY:	doPrintDomainSiteActivity,
+      Cmd.ARG_SITE:		deprecatedDomainSites,
+      Cmd.ARG_SITEACL:		deprecatedDomainSites,
+      Cmd.ARG_SITEACTIVITY:	deprecatedDomainSites,
       Cmd.ARG_SVCACCT:		doPrintShowSvcAccts,
       Cmd.ARG_TOKEN:		doPrintShowTokens,
       Cmd.ARG_TRANSFERAPPS:	doShowTransferApps,
@@ -76158,8 +75366,8 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_SHAREDDRIVEACLS:	doPrintShowSharedDriveACLs,
       Cmd.ARG_SHAREDDRIVEINFO:	doInfoSharedDrive,
       Cmd.ARG_SHAREDDRIVETHEMES:	doShowSharedDriveThemes,
-      Cmd.ARG_SITE:		doPrintShowDomainSites,
-      Cmd.ARG_SITEACL:		doProcessDomainSiteACLs,
+      Cmd.ARG_SITE:		deprecatedDomainSites,
+      Cmd.ARG_SITEACL:		deprecatedDomainSites,
       Cmd.ARG_SVCACCT:		doPrintShowSvcAccts,
       Cmd.ARG_TOKEN:		doPrintShowTokens,
       Cmd.ARG_TRANSFERAPPS:	doShowTransferApps,
@@ -76224,8 +75432,8 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_SAKEY:		doUpdateSvcAcctKeys,
       Cmd.ARG_SCHEMA:		doCreateUpdateUserSchemas,
       Cmd.ARG_SHAREDDRIVE:	doUpdateSharedDrive,
-      Cmd.ARG_SITE:		doUpdateDomainSites,
-      Cmd.ARG_SITEACL:		doProcessDomainSiteACLs,
+      Cmd.ARG_SITE:		deprecatedDomainSites,
+      Cmd.ARG_SITEACL:		deprecatedDomainSites,
       Cmd.ARG_SVCACCT:		doCheckUpdateSvcAcct,
       Cmd.ARG_USER:		doUpdateUser,
       Cmd.ARG_USERS:		doUpdateUsers,
@@ -76764,8 +75972,8 @@ USER_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_SENDAS:		createUpdateSendAs,
   Cmd.ARG_SHAREDDRIVE:		createSharedDrive,
   Cmd.ARG_SHEET:		createSheet,
-  Cmd.ARG_SITE:			createUserSite,
-  Cmd.ARG_SITEACL:		processUserSiteACLs,
+  Cmd.ARG_SITE:			deprecatedUserSites,
+  Cmd.ARG_SITEACL:		deprecatedUserSites,
   Cmd.ARG_SMIME:		createSmime,
   Cmd.ARG_TASK:			processTasks,
   Cmd.ARG_TASKLIST:		processTasklists,
@@ -76883,7 +76091,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_SENDAS:		deleteInfoSendAs,
       Cmd.ARG_SMIME:		deleteSmime,
       Cmd.ARG_SHAREDDRIVE:	deleteSharedDrive,
-      Cmd.ARG_SITEACL:		processUserSiteACLs,
+      Cmd.ARG_SITEACL:		deprecatedUserSites,
       Cmd.ARG_TASK:		processTasks,
       Cmd.ARG_TASKLIST:		processTasklists,
       Cmd.ARG_THREAD:		processThreads,
@@ -76972,8 +76180,8 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_SENDAS:		deleteInfoSendAs,
       Cmd.ARG_SHAREDDRIVE:	infoSharedDrive,
       Cmd.ARG_SHEET:		infoPrintShowSheets,
-      Cmd.ARG_SITE:		infoUserSites,
-      Cmd.ARG_SITEACL:		processUserSiteACLs,
+      Cmd.ARG_SITE:		deprecatedUserSites,
+      Cmd.ARG_SITEACL:		deprecatedUserSites,
       Cmd.ARG_TASK:		processTasks,
       Cmd.ARG_TASKLIST:		processTasklists,
       Cmd.ARG_USER:		infoUsers,
@@ -77085,9 +76293,9 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_SHEETRANGE:	printShowSheetRanges,
       Cmd.ARG_SIGNATURE:	printShowSignature,
       Cmd.ARG_SMIME:		printShowSmimes,
-      Cmd.ARG_SITE:		printShowUserSites,
-      Cmd.ARG_SITEACL:		processUserSiteACLs,
-      Cmd.ARG_SITEACTIVITY:	printUserSiteActivity,
+      Cmd.ARG_SITE:		deprecatedUserSites,
+      Cmd.ARG_SITEACL:		deprecatedUserSites,
+      Cmd.ARG_SITEACTIVITY:	deprecatedUserSites,
       Cmd.ARG_TASK:		printShowTasks,
       Cmd.ARG_TASKLIST:		printShowTasklists,
       Cmd.ARG_THREAD:		printShowThreads,
@@ -77191,8 +76399,8 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_SHEET:		infoPrintShowSheets,
       Cmd.ARG_SHEETRANGE:	printShowSheetRanges,
       Cmd.ARG_SIGNATURE:	printShowSignature,
-      Cmd.ARG_SITE:		printShowUserSites,
-      Cmd.ARG_SITEACL:		processUserSiteACLs,
+      Cmd.ARG_SITE:		deprecatedUserSites,
+      Cmd.ARG_SITEACL:		deprecatedUserSites,
       Cmd.ARG_SMIME:		printShowSmimes,
       Cmd.ARG_TASK:		printShowTasks,
       Cmd.ARG_TASKLIST:		printShowTasklists,
@@ -77295,8 +76503,8 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_SHEET:		updateSheets,
       Cmd.ARG_SHEETRANGE:	updateSheetRanges,
       Cmd.ARG_SMIME:		updateSmime,
-      Cmd.ARG_SITE:		updateUserSites,
-      Cmd.ARG_SITEACL:		processUserSiteACLs,
+      Cmd.ARG_SITE:		deprecatedUserSites,
+      Cmd.ARG_SITEACL:		deprecatedUserSites,
       Cmd.ARG_TASK:		processTasks,
       Cmd.ARG_TASKLIST:		processTasklists,
       Cmd.ARG_USER:		updateUsers,

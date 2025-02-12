@@ -342,8 +342,6 @@ class GamEntity():
   SHEET = 'shet'
   SHEET_ID = 'shti'
   SIGNATURE = 'sign'
-  SITE = 'site'
-  SITE_ACL = 'sacl'
   SIZE = 'size'
   SKU = 'sku '
   SMIME_ID = 'smid'
@@ -695,8 +693,6 @@ class GamEntity():
     SHEET: ['Sheets', 'Sheet'],
     SHEET_ID: ['Sheet IDs', 'Sheet ID'],
     SIGNATURE: ['Signatures', 'Signature'],
-    SITE: ['Sites', 'Site'],
-    SITE_ACL: ['Site ACLs', 'Site ACL'],
     SIZE: ['Sizes', 'Size'],
     SKU: ['SKUs', 'SKU'],
     SMIME_ID: ['S/MIME Certificate IDs', 'S/MIME Certificate ID'],
