@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.03.08'
+__version__ = '7.03.09'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -8495,14 +8495,18 @@ class CSVPrintFile():
         self.AddTitle(title)
     return RowFilterMatch(row, self.titlesList, self.rowFilter, self.rowFilterMode, self.rowDropFilter, self.rowDropFilterMode)
 
-  def UpdateMimeTypeCounts(self, row, mimeTypeInfo):
+  def UpdateMimeTypeCounts(self, row, mimeTypeInfo, sizeField):
+    saveList = self.titlesList[:]
+    saveSet = set(self.titlesSet)
     for title in row:
       if title not in self.titlesSet:
         self.AddTitle(title)
     if RowFilterMatch(row, self.titlesList, self.rowFilter, self.rowFilterMode, self.rowDropFilter, self.rowDropFilterMode):
       mimeTypeInfo.setdefault(row['mimeType'], {'count': 0, 'size': 0})
       mimeTypeInfo[row['mimeType']]['count'] += 1
-      mimeTypeInfo[row['mimeType']]['size'] += int(row.get('size', '0'))
+      mimeTypeInfo[row['mimeType']]['size'] += int(row.get(sizeField, '0'))
+    self.titlesList = saveList[:]
+    self.titlesSet = set(saveSet)
 
   def SetZeroBlankMimeTypeCounts(self, zeroBlankMimeTypeCounts):
     self.zeroBlankMimeTypeCounts = zeroBlankMimeTypeCounts
@@ -41661,23 +41665,22 @@ def printShowUserVaultHolds(entityList):
   else:
     printKeyValueList(['Total Holds', totalHolds])
 
-def _cleanVaultQuery(query, cd, drive):
+def _cleanVaultQuery(query, cd):
   if 'query' in query:
     if cd is not None:
       if 'orgUnitInfo' in query['query']:
         query['query']['orgUnitInfo']['orgUnitPath'] = convertOrgUnitIDtoPath(cd, query['query']['orgUnitInfo']['orgUnitId'])
-    if drive is not None:
       if 'sharedDriveInfo' in query['query']:
         query['query']['sharedDriveInfo']['sharedDriveNames'] = []
         for sharedDriveId in query['query']['sharedDriveInfo']['sharedDriveIds']:
-          query['query']['sharedDriveInfo']['sharedDriveNames'].append(_getSharedDriveNameFromId(drive, sharedDriveId, useDomainAdminAccess=True))
+          query['query']['sharedDriveInfo']['sharedDriveNames'].append(_getSharedDriveNameFromId(sharedDriveId))
     query['query'].pop('searchMethod', None)
     query['query'].pop('teamDriveInfo', None)
 
 VAULT_QUERY_TIME_OBJECTS = {'createTime', 'endTime', 'startTime', 'versionDate'}
 
-def _showVaultQuery(matterNameId, query, cd, drive, FJQC, k=0, kcount=0):
-  _cleanVaultQuery(query, cd, drive)
+def _showVaultQuery(matterNameId, query, cd, FJQC, k=0, kcount=0):
+  _cleanVaultQuery(query, cd)
   if FJQC is not None and FJQC.formatJSON:
     printLine(json.dumps(cleanJSON(query, timeObjects=VAULT_QUERY_TIME_OBJECTS), ensure_ascii=False, sort_keys=False))
     return
@@ -41709,7 +41712,7 @@ def doInfoVaultQuery():
     queryId, queryName, queryNameId = convertQueryNameToID(v, getString(Cmd.OB_QUERY_ITEM), matterId, matterNameId)
   else:
     queryName = getString(Cmd.OB_QUERY_ITEM)
-  cd = drive = None
+  cd = None
   fieldsList = []
   FJQC = FormatJSONQuoteChar()
   while Cmd.ArgumentsRemaining():
@@ -41719,8 +41722,8 @@ def doInfoVaultQuery():
       queryId, queryName, queryNameId = convertQueryNameToID(v, queryName, matterId, matterNameId)
     elif myarg == 'shownames':
       cd = buildGAPIObject(API.DIRECTORY)
-      _, drive = buildGAPIServiceObject(API.DRIVE3, _getAdminEmail())
-      if drive is None:
+      _, GM.Globals[GM.ADMIN_DRIVE] = buildGAPIServiceObject(API.DRIVE3, _getAdminEmail())
+      if GM.Globals[GM.ADMIN_DRIVE] is None:
         return
     elif getFieldsList(myarg, VAULT_QUERY_FIELDS_CHOICE_MAP, fieldsList, initialField=['savedQueryId', 'displayName']):
       pass
@@ -41731,7 +41734,7 @@ def doInfoVaultQuery():
     query = callGAPI(v.matters().savedQueries(), 'get',
                     throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
                     matterId=matterId, savedQueryId=queryId, fields=fields)
-    _showVaultQuery(matterNameId, query, cd, drive, FJQC)
+    _showVaultQuery(matterNameId, query, cd, FJQC)
   except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden) as e:
     entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_QUERY, queryNameId], str(e))
 
@@ -41748,7 +41751,7 @@ def doPrintShowVaultQueries():
   csvPF = CSVPrintFile(PRINT_VAULT_QUERIES_TITLES, 'sortall') if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   matters = []
-  cd = drive = None
+  cd = None
   fieldsList = []
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -41758,8 +41761,8 @@ def doPrintShowVaultQueries():
       matters = shlexSplitList(getString(Cmd.OB_MATTER_ITEM_LIST))
     elif myarg == 'shownames':
       cd = buildGAPIObject(API.DIRECTORY)
-      _, drive = buildGAPIServiceObject(API.DRIVE3, _getAdminEmail())
-      if drive is None:
+      _, GM.Globals[GM.ADMIN_DRIVE] = buildGAPIServiceObject(API.DRIVE3, _getAdminEmail())
+      if GM.Globals[GM.ADMIN_DRIVE] is None:
         return
     elif getFieldsList(myarg, VAULT_QUERY_FIELDS_CHOICE_MAP, fieldsList, initialField=['savedQueryId', 'displayName']):
       pass
@@ -41821,11 +41824,11 @@ def doPrintShowVaultQueries():
       k = 0
       for query in queries:
         k += 1
-        _showVaultQuery(matterNameId, query, cd, drive, FJQC, k, kcount)
+        _showVaultQuery(matterNameId, query, cd, FJQC, k, kcount)
       Ind.Decrement()
     else:
       for query in queries:
-        _cleanVaultQuery(query, cd, drive)
+        _cleanVaultQuery(query, cd)
         row = flattenJSON(query, flattened={'matterId': matterId, 'matterName': matterName}, timeObjects=VAULT_QUERY_TIME_OBJECTS)
         if not FJQC.formatJSON:
           csvPF.WriteRowTitles(row)
@@ -52817,15 +52820,20 @@ def _convertSharedDriveNameToId(drive, user, i, count, fileIdEntity, useDomainAd
                                                                  ','.join([td['id'] for td in tdlist])), i, count)
   return False
 
-def _getSharedDriveNameFromId(drive, sharedDriveId, useDomainAdminAccess=False):
+def _getSharedDriveNameFromId(sharedDriveId):
   sharedDriveName = GM.Globals[GM.MAP_SHAREDDRIVE_ID_TO_NAME].get(sharedDriveId)
   if not sharedDriveName:
-    try:
-      sharedDriveName = callGAPI(drive.drives(), 'get',
-                                 throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND],
-                                 useDomainAdminAccess=useDomainAdminAccess,
-                                 driveId=sharedDriveId, fields='name')['name']
-    except (GAPI.notFound, GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy):
+    if not GM.Globals[GM.ADMIN_DRIVE]:
+      _, GM.Globals[GM.ADMIN_DRIVE] = buildGAPIServiceObject(API.DRIVE3, _getAdminEmail())
+    if GM.Globals[GM.ADMIN_DRIVE]:
+      try:
+        sharedDriveName = callGAPI(GM.Globals[GM.ADMIN_DRIVE].drives(), 'get',
+                                   throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND],
+                                   useDomainAdminAccess=True,
+                                   driveId=sharedDriveId, fields='name')['name']
+      except (GAPI.notFound, GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy):
+        sharedDriveName = TEAM_DRIVE
+    else:
       sharedDriveName = TEAM_DRIVE
     GM.Globals[GM.MAP_SHAREDDRIVE_ID_TO_NAME][sharedDriveId] = sharedDriveName
   return sharedDriveName
@@ -52838,7 +52846,7 @@ def _getDriveFileNameFromId(drive, fileId, combineTitleId=True, useDomainAdminAc
     if result:
       fileName = result['name']
       if (result['mimeType'] == MIMETYPE_GA_FOLDER) and result.get('driveId') and (result['name'] == TEAM_DRIVE):
-        fileName = _getSharedDriveNameFromId(drive, result['driveId'])
+        fileName = _getSharedDriveNameFromId(result['driveId'])
       if combineTitleId:
         fileName += '('+fileId+')'
       return (fileName, _getEntityMimeType(result), result['mimeType'])
@@ -53920,7 +53928,7 @@ def getFilePaths(drive, fileTree, initialResult, filePathInfo, addParentsToTree=
                  fullpath=False, showDepth=False, folderPathOnly=False):
   def _getParentName(result):
     if (result['mimeType'] == MIMETYPE_GA_FOLDER) and result.get('driveId') and (result['name'] == TEAM_DRIVE):
-      parentName = _getSharedDriveNameFromId(drive, result['driveId'])
+      parentName = _getSharedDriveNameFromId(result['driveId'])
       if parentName != TEAM_DRIVE:
         return f'{SHARED_DRIVES}{filePathInfo["delimiter"]}{parentName}'
     return result['name']
@@ -54619,9 +54627,9 @@ def showFileInfo(users):
         driveId = result.get('driveId')
         if driveId:
           if result['mimeType'] == MIMETYPE_GA_FOLDER and result['name'] == TEAM_DRIVE:
-            result['name'] = _getSharedDriveNameFromId(drive, driveId)
+            result['name'] = _getSharedDriveNameFromId(driveId)
           if DFF.showSharedDriveNames:
-            result['driveName'] = _getSharedDriveNameFromId(drive, driveId)
+            result['driveName'] = _getSharedDriveNameFromId(driveId)
         if showNoParents:
           result.setdefault('parents', [])
         if getPermissionsForSharedDrives and driveId and 'permissions' not in result:
@@ -55309,7 +55317,7 @@ def extendFileTreeParents(drive, fileTree, fields):
           result['parents'] = [ORPHANS] if result.get('ownedByMe', False) and 'sharedWithMeTime' not in result else [SHARED_WITHME]
         else:
           if result['name'] == TEAM_DRIVE:
-            result['name'] = _getSharedDriveNameFromId(drive, result['driveId'])
+            result['name'] = _getSharedDriveNameFromId(result['driveId'])
           result['parents'] = [SHARED_DRIVES] if 'sharedWithMeTime' not in result else [SHARED_WITHME]
       fileTree[fileId]['info'] = result
       fileTree[fileId]['info']['noDisplay'] = True
@@ -56048,7 +56056,7 @@ def printFileList(users):
     if not pmselect and 'permissions' in fileInfo:
       fileInfo['permissions'] = DLP.GetFileMatchingPermission(fileInfo)
     if DFF.showSharedDriveNames and driveId:
-      fileInfo['driveName'] = _getSharedDriveNameFromId(drive, driveId)
+      fileInfo['driveName'] = _getSharedDriveNameFromId(driveId)
     if filepath:
       if not FJQC.formatJSON or not addPathsToJSON:
         addFilePathsToRow(drive, fileTree, fileInfo, filePathInfo, csvPF, row,
@@ -56103,7 +56111,7 @@ def printFileList(users):
     else:
       if not countsRowFilter:
         csvPFco.UpdateMimeTypeCounts(flattenJSON(fileInfo, flattened=row, skipObjects=skipObjects, timeObjects=timeObjects,
-                                                 simpleLists=simpleLists, delimiter=delimiter), mimeTypeInfo)
+                                                 simpleLists=simpleLists, delimiter=delimiter), mimeTypeInfo, sizeField)
       else:
         mimeTypeInfo.setdefault(fileInfo['mimeType'], {'count': 0, 'size': 0})
         mimeTypeInfo[fileInfo['mimeType']]['count'] += 1
@@ -56924,7 +56932,7 @@ def printShowFilePaths(users):
         driveId = result.get('driveId')
         if driveId:
           if result['mimeType'] == MIMETYPE_GA_FOLDER and result['name'] == TEAM_DRIVE:
-            result['name'] = _getSharedDriveNameFromId(drive, driveId)
+            result['name'] = _getSharedDriveNameFromId(driveId)
             if returnPathOnly:
               if fullpath:
                 writeStdout(f'{SHARED_DRIVES}/{result["name"]}\n')
@@ -57014,7 +57022,7 @@ def printFileParentTree(users):
               driveId = result.get('driveId')
               if driveId:
                 if result['mimeType'] == MIMETYPE_GA_FOLDER and result['name'] == TEAM_DRIVE:
-                  result['name'] = _getSharedDriveNameFromId(drive, driveId)
+                  result['name'] = _getSharedDriveNameFromId(driveId)
                   result['isRoot'] = True
             result['parents'] = ['']
             fileList.append(result)
@@ -57212,10 +57220,7 @@ def printShowFileCounts(users):
     if not drive:
       continue
     sharedDriveId = fileIdEntity.get('shareddrive', {}).get('driveId', '')
-    if sharedDriveId:
-      sharedDriveName = _getSharedDriveNameFromId(drive, sharedDriveId)
-    else:
-      sharedDriveName = ''
+    sharedDriveName = _getSharedDriveNameFromId(sharedDriveId) if sharedDriveId else ''
     mimeTypeInfo = {}
     userLastModification = {
       'lastModifiedFileId': '', 'lastModifiedFileName': '',
@@ -57444,7 +57449,7 @@ def printDiskUsage(users):
           includeOwner = False
           csvPF.RemoveTitles(['Owner', 'ownedByMe'])
           if topFolder['name'] == TEAM_DRIVE and not topFolder.get('parents'):
-            topFolder['name'] = _getSharedDriveNameFromId(drive, driveId)
+            topFolder['name'] = _getSharedDriveNameFromId(driveId)
             topFolder['path'] = f'{SHARED_DRIVES}{pathDelimiter}{topFolder["name"]}'
           else:
             topFolder['path'] = topFolder['name']
@@ -59509,7 +59514,7 @@ def _getCopyMoveParentInfo(drive, user, i, count, j, jcount, newParentId, statis
         result['destParentType'] = DEST_PARENT_MYDRIVE_FOLDER
     else:
       if result['name'] == TEAM_DRIVE and not result.get('parents', []):
-        result['name'] = _getSharedDriveNameFromId(drive, result['driveId'])
+        result['name'] = _getSharedDriveNameFromId(result['driveId'])
         result['destParentType'] = DEST_PARENT_SHAREDDRIVE_ROOT
       else:
         result['destParentType'] = DEST_PARENT_SHAREDDRIVE_FOLDER
@@ -60055,7 +60060,7 @@ def copyDriveFile(users):
 # Source at root of Shared Drive?
         sourceMimeType = source['mimeType']
         if sourceMimeType == MIMETYPE_GA_FOLDER and source.get('driveId') and source['name'] == TEAM_DRIVE and not source.get('parents', []):
-          source['name'] = _getSharedDriveNameFromId(drive, source['driveId'])
+          source['name'] = _getSharedDriveNameFromId(source['driveId'])
         sourceName = source['name']
         sourceNameId = f"{sourceName}({source['id']})"
         copyMoveOptions['sourceDriveId'] = source.get('driveId')
@@ -60823,7 +60828,7 @@ def moveDriveFile(users):
         if sourceMimeType == MIMETYPE_GA_FOLDER and source['name'] in [MY_DRIVE, TEAM_DRIVE] and not source.get('parents', []):
           copyMoveOptions['sourceIsMyDriveSharedDrive'] = True
           if source.get('driveId'):
-            source['name'] = _getSharedDriveNameFromId(drive, source['driveId'])
+            source['name'] = _getSharedDriveNameFromId(source['driveId'])
         sourceName = source['name']
         sourceNameId = f"{sourceName}({source['id']})"
         copyMoveOptions['sourceDriveId'] = source.get('driveId')
@@ -63248,7 +63253,7 @@ def printEmptyDriveFolders(users):
         fileIdEntity['shareddrive'] = {'driveId': sharedDriveId, 'corpora': 'drive', 'includeItemsFromAllDrives': True, 'supportsAllDrives': True}
         csvPF.AddTitles(['driveId'])
         csvPF.MoveTitlesToEnd(['name'])
-        pathList = [f'{SHARED_DRIVES}/{_getSharedDriveNameFromId(drive, sharedDriveId)}']
+        pathList = [f'{SHARED_DRIVES}/{_getSharedDriveNameFromId(sharedDriveId)}']
       else:
         pathList = [fileEntryInfo['name']]
       mimeType = fileEntryInfo['mimeType']
@@ -63338,7 +63343,7 @@ def deleteEmptyDriveFolders(users):
       if 'driveId' in fileEntryInfo:
         sharedDriveId = fileEntryInfo['driveId']
         fileIdEntity['shareddrive'] = {'driveId': sharedDriveId, 'corpora': 'drive', 'includeItemsFromAllDrives': True, 'supportsAllDrives': True}
-        pathList = [f'{SHARED_DRIVES}/{_getSharedDriveNameFromId(drive, sharedDriveId)}']
+        pathList = [f'{SHARED_DRIVES}/{_getSharedDriveNameFromId(sharedDriveId)}']
       else:
         pathList = [fileEntryInfo['name']]
       mimeType = fileEntryInfo['mimeType']
@@ -65754,7 +65759,7 @@ def doPrintShowSharedDrives():
 def doPrintShowOrgunitSharedDrives():
   def _getOrgUnitSharedDriveInfo(shareddrive):
     shareddrive['driveId'] = shareddrive['name'].rsplit(';')[1]
-    shareddrive['driveName'] = _getSharedDriveNameFromId(drive, shareddrive['driveId'], useDomainAdminAccess=True)
+    shareddrive['driveName'] = _getSharedDriveNameFromId(shareddrive['driveId'])
     shareddrive['orgUnitPath'] = orgUnitPath
 
   def _showOrgUnitSharedDrive(shareddrive, j, jcount, FJQC):
@@ -65773,8 +65778,8 @@ def doPrintShowOrgunitSharedDrives():
 
   ci = buildGAPIObject(API.CLOUDIDENTITY_ORGUNITS_BETA)
   cd = buildGAPIObject(API.DIRECTORY)
-  _, drive = buildGAPIServiceObject(API.DRIVE3, _getAdminEmail())
-  if not drive:
+  _, GM.Globals[GM.ADMIN_DRIVE] = buildGAPIServiceObject(API.DRIVE3, _getAdminEmail())
+  if not GM.Globals[GM.ADMIN_DRIVE]:
     return
   csvPF = CSVPrintFile(['name', 'type', 'member', 'memberUri', 'driveId', 'driveName', 'orgUnitPath']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
@@ -65853,13 +65858,13 @@ def copySyncSharedDriveACLs(users, useDomainAdminAccess=False):
     if not drive:
       continue
     if not srcFileIdEntity.get('shareddrivename'):
-      srcFileIdEntity['shareddrivename'] = _getSharedDriveNameFromId(drive, srcFileIdEntity['shareddrive']['driveId'])
+      srcFileIdEntity['shareddrivename'] = _getSharedDriveNameFromId(srcFileIdEntity['shareddrive']['driveId'])
     if tgtFileIdEntity.get('shareddrivename'):
       if not _convertSharedDriveNameToId(drive, user, i, count, tgtFileIdEntity, useDomainAdminAccess):
         continue
       tgtFileIdEntity['shareddrive']['corpora'] = 'drive'
     else:
-      tgtFileIdEntity['shareddrivename'] = _getSharedDriveNameFromId(drive, tgtFileIdEntity['shareddrive']['driveId'])
+      tgtFileIdEntity['shareddrivename'] = _getSharedDriveNameFromId(tgtFileIdEntity['shareddrive']['driveId'])
     statistics = _initStatistics()
     copyMoveOptions['sourceDriveId'] = srcFileIdEntity['shareddrive']['driveId']
     copyMoveOptions['destDriveId'] = tgtFileIdEntity['shareddrive']['driveId']
@@ -69692,7 +69697,7 @@ def _initMessageThreadParameters(entityType, doIt, maxToProcess):
           'query': '', 'queryTimes': {},
           'entityType': entityType, 'messageEntity': None, 'doIt': doIt, 'quick': True,
           'labelMatchPattern': None, 'senderMatchPattern': None,
-          'maxToProcess': maxToProcess, 'maxItems': 0,
+          'maxToProcess': maxToProcess, 'maxItems': 0, 'maxMessagesPerThread': 0,
           'maxToKeywords': [MESSAGES_MAX_TO_KEYWORDS[Act.Get()], 'maxtoprocess'],
           'listType': listType, 'fields': f'nextPageToken,{listType}(id)'}
 
@@ -69734,6 +69739,8 @@ def _getMessageSelectParameters(myarg, parameters):
     parameters['doIt'] = True
   elif myarg in parameters['maxToKeywords']:
     parameters['maxToProcess'] = getInteger(minVal=0)
+  elif myarg == 'maxmessagesperthread':
+    parameters['maxMessagesPerThread'] = getInteger(minVal=0)
   else:
     return False
   return True
@@ -70873,8 +70880,6 @@ def printShowMessagesThreads(users, entityType):
     return None
 
   def _qualifyMessage(user, result):
-    if parameters['maxToProcess'] and parameters['messagesProcessed'] == parameters['maxToProcess']:
-      return (False, None)
     if senderMatchPattern:
       sender = _checkSenderMatchCount(result)
       if not sender:
@@ -70902,7 +70907,9 @@ def printShowMessagesThreads(users, entityType):
     except ValueError:
       return headerValue
 
-  def _showMessage(user, result, j, jcount):
+  def _showMessage(user, result, j, jcount, checkMax=True):
+    if checkMax and parameters['maxToProcess'] and parameters['messagesProcessed'] == parameters['maxToProcess']:
+      return
     status, messageLabels = _qualifyMessage(user, result)
     if not status:
       return
@@ -70938,7 +70945,8 @@ def printShowMessagesThreads(users, entityType):
     if show_attachments or save_attachments or upload_attachments:
       _showSaveAttachments(result['id'], result['payload'], attachmentNamePattern, j, jcount)
     Ind.Decrement()
-    parameters['messagesProcessed'] += 1
+    if checkMax:
+      parameters['messagesProcessed'] += 1
 
   def _getAttachments(messageId, payload, attachmentNamePattern, attachments):
     for part in payload.get('parts', []):
@@ -70960,7 +70968,9 @@ def printShowMessagesThreads(users, entityType):
       else:
         _getAttachments(messageId, part, attachmentNamePattern, attachments)
 
-  def _printMessage(user, result):
+  def _printMessage(user, result, checkMax=True):
+    if checkMax and parameters['maxToProcess'] and parameters['messagesProcessed'] == parameters['maxToProcess']:
+      return
     status, messageLabels = _qualifyMessage(user, result)
     if not status:
       return
@@ -71014,7 +71024,8 @@ def printShowMessagesThreads(users, entityType):
         row[f'Attachments{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{i}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}size'] = attachment[2]
         row[f'Attachments{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{i}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}charset'] = attachment[3]
     csvPF.WriteRowTitles(row)
-    parameters['messagesProcessed'] += 1
+    if checkMax:
+      parameters['messagesProcessed'] += 1
 
   def _countMessageLabels(user, result):
     if senderMatchPattern:
@@ -71044,6 +71055,8 @@ def printShowMessagesThreads(users, entityType):
     messageThreadCounts['size'] += result['sizeEstimate']
 
   def _showThread(user, result, j, jcount):
+    if parameters['maxToProcess'] and parameters['messagesProcessed'] == parameters['maxToProcess']:
+      return
     if senderMatchPattern:
       for message in result['messages']:
         if _checkSenderMatch(message):
@@ -71059,19 +71072,29 @@ def printShowMessagesThreads(users, entityType):
     k = 0
     for message in result['messages']:
       k += 1
-      _showMessage(user, message, k, kcount)
+      _showMessage(user, message, k, kcount, False)
+      if k == parameters['maxMessagesPerThread']:
+        break
     Ind.Decrement()
+    parameters['messagesProcessed'] += 1
 
   def _printThread(user, result):
+    if parameters['maxToProcess'] and parameters['messagesProcessed'] == parameters['maxToProcess']:
+      return
     if senderMatchPattern:
       for message in result['messages']:
         if _checkSenderMatch(message):
           break
       else:
         return
+    k = 0
     for message in result['messages']:
-      _printMessage(user, message)
+      k += 1
+      _printMessage(user, message, False)
+      if k == parameters['maxMessagesPerThread']:
+        break
     messageThreadCounts['threads'] += 1
+    parameters['messagesProcessed'] += 1
 
   def _countThreadLabels(user, result):
     for message in result['messages']:
@@ -71086,8 +71109,12 @@ def printShowMessagesThreads(users, entityType):
       else:
         return
     else:
+      k = 0
       for message in result['messages']:
+        k += 1
         messageThreadCounts['size'] += message['sizeEstimate']
+        if k == parameters['maxMessagesPerThread']:
+          break
     messageThreadCounts['threads'] += 1
 
   _GMAIL_ERROR_REASON_TO_MESSAGE_MAP = {GAPI.NOT_FOUND: Msg.DOES_NOT_EXIST, GAPI.INVALID_MESSAGE_ID: Msg.INVALID_MESSAGE_ID}
@@ -74669,14 +74696,14 @@ def createNotesACLs(users):
         request['parent'] = name
       try:
         permissions = callGAPI(keep.notes().permissions(), 'batchCreate',
-                               throwReasons=GAPI.KEEP_THROW_REASONS,
+                               throwReasons=GAPI.KEEP_THROW_REASONS+[GAPI.FAILED_PRECONDITION],
                                parent=name, body=rbody)
         entityNumItemsActionPerformed(entityKVList, kcount, Ent.NOTE_ACL, j, jcount)
         if showDetails:
           Ind.Increment()
           _showNotePermissions(permissions['permissions'])
           Ind.Decrement()
-      except (GAPI.badRequest, GAPI.invalidArgument, GAPI.notFound) as e:
+      except (GAPI.badRequest, GAPI.invalidArgument, GAPI.notFound, GAPI.failedPrecondition) as e:
         entityActionFailedWarning(entityKVList, str(e), i, count)
       except GAPI.authError:
         userKeepServiceNotEnabledWarning(user, i, count)

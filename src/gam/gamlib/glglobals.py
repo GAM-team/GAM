@@ -23,8 +23,10 @@
 # The following GM_XXX constants are arbitrary but must be unique
 # Most errors print a message and bail out with a return code
 # Some commands want to set a non-zero return code but not bail
-# GAM admin user
-ADMIN = 'admin'
+# GAM admin user from oauth2.txt or oauth2service.json
+ADMIN = 'admn'
+# Drive service for admin; used to look up Shared Drive Names
+ADMIN_DRIVE = 'addr'
 # Number/length of API call retries
 API_CALLS_RETRY_DATA = 'rtry'
 # GAM cache directory. If no_cache is True, this variable will be set to None
@@ -215,6 +217,7 @@ REDIRECT_QUEUE_EOF = 'eof'
 #
 Globals = {
   ADMIN: None,
+  ADMIN_DRIVE: None,
   API_CALLS_RETRY_DATA: {},
   CACHE_DIR: None,
   CACHE_DISCOVERY_ONLY: True,

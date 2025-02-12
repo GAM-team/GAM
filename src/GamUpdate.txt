@@ -1,3 +1,32 @@
+7.03.09
+
+Added option `maxmessagesperthread <Number>` to `gam <UserTypeEntity> print|show threads`
+that limits the number of messages displayed per thread. The default is 0, there is no limit.
+For example, this can be used if you anly want to see the first message of each thread.
+```
+gam user user@domain.com print|show threads maxmessagesperthread 1
+```
+
+Fixed bug in `gam <UserTypeEntity> print filelist countsonly` where extraneous columns
+were displayed.
+
+Fixed bug in `gam <UserTypeEntity> print filelist countsonly showsize` where sizes were
+all shown as 0 unless`sizefield size` was specified.
+
+7.03.08
+
+Improved pip install.
+
+Yubikey as optional should now be working also. So:
+
+pip install --upgrade gam7
+
+skips Yubikey.
+
+To install with yubikey support (assuming you have installed the necessary swig and libpcsclite-dev packages already) run:
+
+pip install --upgrade gam7[yubikey]
+
 7.03.07
 
 Updated `gam create vaultexport` to include `corpus gemini`.
