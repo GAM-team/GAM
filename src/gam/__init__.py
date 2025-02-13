@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.04.00'
+__version__ = '7.04.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -667,8 +667,10 @@ def accessErrorExitNonDirectory(api, errMsg):
                                                                 Ent.API, api])+[errMsg],
                                      ''))
 
-def ClientAPIAccessDeniedExit():
+def ClientAPIAccessDeniedExit(errMsg=None):
   stderrErrorMsg(Msg.API_ACCESS_DENIED)
+  if errMsg:
+    stderrErrorMsg(errMsg)
   missingScopes = API.getClientScopesSet(GM.Globals[GM.CURRENT_CLIENT_API])-GM.Globals[GM.CURRENT_CLIENT_API_SCOPES]
   if missingScopes:
     writeStderr(Msg.API_CHECK_CLIENT_AUTHORIZATION.format(GM.Globals[GM.OAUTH2_CLIENT_ID],
@@ -21225,6 +21227,8 @@ def _getPeopleOtherContacts(people, entityType, user, i=0, count=0):
       resourceName = contact.pop('resourceName')
       otherContacts[resourceName] = contact
     return otherContacts
+  except GAPI.permissionDenied as e:
+    ClientAPIAccessDeniedExit(str(e))
   except (GAPI.serviceNotAvailable, GAPI.forbidden):
     entityUnknownWarning(entityType, user, i, count)
   return None
@@ -21281,6 +21285,8 @@ def queryPeopleContacts(people, contactQuery, fields, sortOrder, entityType, use
       showMessage = pageMessage.replace(TOTAL_ITEMS_MARKER, str(totalItems))
       writeGotMessage(showMessage.replace('{0}', str(Ent.Choose(Ent.PEOPLE_CONTACT, totalItems))))
     return entityList
+  except GAPI.permissionDenied as e:
+    ClientAPIAccessDeniedExit(str(e))
   except (GAPI.serviceNotAvailable, GAPI.forbidden):
     entityUnknownWarning(entityType, user, i, count)
   return None
@@ -21307,6 +21313,8 @@ def queryPeopleOtherContacts(people, contactQuery, fields, entityType, user, i=0
         showMessage = pageMessage.replace(TOTAL_ITEMS_MARKER, str(totalItems))
         writeGotMessage(showMessage.replace('{0}', str(Ent.Choose(Ent.OTHER_CONTACT, totalItems))))
     return entityList
+  except GAPI.permissionDenied as e:
+    ClientAPIAccessDeniedExit(str(e))
   except (GAPI.serviceNotAvailable, GAPI.forbidden):
     entityUnknownWarning(entityType, user, i, count)
   return None
@@ -21327,6 +21335,8 @@ def getPeopleContactGroupsInfo(people, entityType, entityName, i, count):
         if group['formattedName'] != group['name']:
           contactGroupNames.setdefault(group['name'], [])
           contactGroupNames[group['name']].append(group['resourceName'])
+  except GAPI.permissionDenied as e:
+    ClientAPIAccessDeniedExit(str(e))
   except GAPI.forbidden:
     userPeopleServiceNotEnabledWarning(entityName, i, count)
     return (contactGroupIDs, False)
@@ -21425,6 +21435,8 @@ def createUserPeopleContact(users):
         csvPF.WriteRow(row)
     except GAPI.invalidArgument as e:
       entityActionFailedWarning([entityType, user, peopleEntityType, None], str(e), i, count)
+    except GAPI.permissionDenied as e:
+      ClientAPIAccessDeniedExit(str(e))
     except (GAPI.serviceNotAvailable, GAPI.forbidden):
       ClientAPIAccessDeniedExit()
   if csvPF:
@@ -21588,6 +21600,8 @@ def _clearUpdatePeopleContacts(users, updateContacts):
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName], str(e), j, jcount)
       except (GAPI.notFound, GAPI.internalError):
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName], Msg.DOES_NOT_EXIST, j, jcount)
+      except GAPI.permissionDenied as e:
+        ClientAPIAccessDeniedExit(str(e))
       except (GAPI.serviceNotAvailable, GAPI.forbidden):
         ClientAPIAccessDeniedExit()
     Ind.Decrement()
@@ -21736,6 +21750,8 @@ def dedupReplaceDomainUserPeopleContacts(users):
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName], str(e), j, jcount)
       except (GAPI.notFound, GAPI.internalError):
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName], Msg.DOES_NOT_EXIST, j, jcount)
+      except GAPI.permissionDenied as e:
+        ClientAPIAccessDeniedExit(str(e))
       except (GAPI.serviceNotAvailable, GAPI.forbidden):
         ClientAPIAccessDeniedExit()
     Ind.Decrement()
@@ -21789,6 +21805,8 @@ def deleteUserPeopleContacts(users):
         entityActionPerformed([entityType, user, peopleEntityType, resourceName], j, jcount)
       except (GAPI.notFound, GAPI.internalError):
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName], Msg.DOES_NOT_EXIST, j, jcount)
+      except GAPI.permissionDenied as e:
+        ClientAPIAccessDeniedExit(str(e))
       except (GAPI.serviceNotAvailable, GAPI.forbidden):
         ClientAPIAccessDeniedExit()
     Ind.Decrement()
@@ -22067,6 +22085,8 @@ def _infoPeople(users, entityType, source):
       except GAPI.invalidArgument as e:
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName], str(e), j, jcount)
         continue
+      except GAPI.permissionDenied as e:
+        ClientAPIAccessDeniedExit(str(e))
       except (GAPI.serviceNotAvailable, GAPI.forbidden):
         ClientAPIAccessDeniedExit()
       if showContactGroups and contactGroupIDs:
@@ -22245,6 +22265,8 @@ def copyUserPeopleOtherContacts(users):
       except (GAPI.notFound, GAPI.internalError):
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName], Msg.DOES_NOT_EXIST, j, jcount)
         continue
+      except GAPI.permissionDenied as e:
+        ClientAPIAccessDeniedExit(str(e))
       except (GAPI.serviceNotAvailable, GAPI.forbidden):
         ClientAPIAccessDeniedExit()
     Ind.Decrement()
@@ -22359,7 +22381,9 @@ def processUserPeopleOtherContacts(users):
       except (GAPI.notFound, GAPI.internalError):
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName], Msg.DOES_NOT_EXIST, j, jcount)
         continue
-      except (GAPI.serviceNotAvailable, GAPI.forbidden, GAPI.permissionDenied):
+      except GAPI.permissionDenied as e:
+        ClientAPIAccessDeniedExit(str(e))
+      except (GAPI.serviceNotAvailable, GAPI.forbidden):
         ClientAPIAccessDeniedExit()
     Ind.Decrement()
 
@@ -22476,6 +22500,8 @@ def _printShowPeople(source):
                                pageSize=GC.Values[GC.PEOPLE_MAX_RESULTS],
                                sources=sources, mergeSources=mergeSources,
                                readMask=fields, fields='nextPageToken,people', **kwargs)
+  except GAPI.permissionDenied as e:
+    ClientAPIAccessDeniedExit(str(e))
   except (GAPI.serviceNotAvailable, GAPI.forbidden):
     ClientAPIAccessDeniedExit()
   if not countsOnly:
@@ -22596,6 +22622,8 @@ def printShowUserPeopleProfiles(users):
     except GAPI.notFound:
       entityUnknownWarning(Ent.PEOPLE_PROFILE, user, i, count)
       continue
+    except GAPI.permissionDenied as e:
+      ClientAPIAccessDeniedExit(str(e))
     except (GAPI.serviceNotAvailable, GAPI.forbidden):
       ClientAPIAccessDeniedExit()
     if not csvPF:
@@ -22750,6 +22778,8 @@ def _processPeopleContactPhotos(users, function):
         entityDoesNotHaveItemWarning([entityType, user, peopleEntityType, resourceName, Ent.PHOTO, filename], j, jcount)
       except (GAPI.invalidArgument, OSError, IOError) as e:
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName, Ent.PHOTO, filename], str(e), j, jcount)
+      except GAPI.permissionDenied as e:
+        ClientAPIAccessDeniedExit(str(e))
       except (GAPI.serviceNotAvailable, GAPI.forbidden):
         ClientAPIAccessDeniedExit()
         break
@@ -22824,7 +22854,7 @@ def createUserPeopleContactGroup(users):
         if addCSVData:
           row.update(addCSVData)
         csvPF.WriteRow(row)
-    except GAPI.forbidden:
+    except (GAPI.forbidden, GAPI.permissionDenied):
       userPeopleServiceNotEnabledWarning(user, i, count)
     except GAPI.serviceNotAvailable:
       entityUnknownWarning(entityType, user, i, count)
@@ -22878,7 +22908,7 @@ def updateUserPeopleContactGroup(users):
         entityActionPerformed([entityType, user, Ent.CONTACT_GROUP, contactGroup], j, jcount)
       except (GAPI.notFound, GAPI.internalError) as e:
         entityActionFailedWarning([entityType, user, Ent.CONTACT_GROUP, contactGroup], str(e), j, jcount)
-      except GAPI.forbidden:
+      except (GAPI.forbidden, GAPI.permissionDenied):
         userPeopleServiceNotEnabledWarning(user, i, count)
         break
       except GAPI.serviceNotAvailable:
@@ -22923,7 +22953,7 @@ def deleteUserPeopleContactGroups(users):
         entityActionPerformed([entityType, user, Ent.CONTACT_GROUP, contactGroup], j, jcount)
       except GAPI.notFound as e:
         entityActionFailedWarning([entityType, user, Ent.CONTACT_GROUP, contactGroup], str(e), j, jcount)
-      except GAPI.forbidden:
+      except (GAPI.forbidden, GAPI.permissionDenied):
         userPeopleServiceNotEnabledWarning(user, i, count)
         break
       except GAPI.serviceNotAvailable:
@@ -23024,7 +23054,7 @@ def infoUserPeopleContactGroups(users):
         _showContactGroup(entityType, user, Ent.CONTACT_GROUP, group, j, jcount, FJQC)
       except GAPI.notFound as e:
         entityActionFailedWarning([entityType, user, Ent.CONTACT_GROUP, contactGroup], str(e), j, jcount)
-      except GAPI.forbidden:
+      except (GAPI.forbidden, GAPI.permissionDenied):
         userPeopleServiceNotEnabledWarning(user, i, count)
         break
       except GAPI.serviceNotAvailable:
@@ -23073,6 +23103,8 @@ def printShowUserPeopleContactGroups(users):
                                  throwReasons=GAPI.PEOPLE_ACCESS_THROW_REASONS,
                                  pageSize=GC.Values[GC.PEOPLE_MAX_RESULTS],
                                  groupFields=fields, fields='nextPageToken,contactGroups')
+    except GAPI.permissionDenied as e:
+      ClientAPIAccessDeniedExit(str(e))
     except (GAPI.serviceNotAvailable, GAPI.forbidden):
       ClientAPIAccessDeniedExit()
     _printPersonEntityList(Ent.PEOPLE_CONTACT_GROUP, entityList, entityType, user, i, count, csvPF, FJQC, parameters, None)
@@ -24143,7 +24175,8 @@ def substituteQueryTimes(queries, queryTimes):
     for i, query in enumerate(queries):
       if query is not None:
         for queryTimeName, queryTimeValue in iter(queryTimes.items()):
-          queries[i] = query.replace(f'#{queryTimeName}#', queryTimeValue)
+          query = query.replace(f'#{queryTimeName}#', queryTimeValue)
+        queries[i] = query
 
 # Get CrOS devices from gam.cfg print_cros_ous and print_cros_ous_and_children
 def getCfgCrOSEntities():
@@ -34095,7 +34128,7 @@ def doPrintGroupMembers():
           for name in info['names']:
             if name['metadata']['source']['type'] == sourceType:
               return name['displayName']
-    except (GAPI.notFound, GAPI.serviceNotAvailable, GAPI.forbidden):
+    except (GAPI.notFound, GAPI.serviceNotAvailable, GAPI.forbidden, GAPI.permissionDenied):
       pass
     return unknownName
 

@@ -1,3 +1,12 @@
+7.04.01
+
+Fixed bug where multiple `querytime<String>` values in a query were not properly processed;
+only the last `querytime<String>` was processed.
+```
+Command line: query "sync:#querytime1#..#querytime2# status:provisioned" querytime1 -2y querytime2 -40w
+Query: (sync:#querytime1#..2024-05-09T00:00:00 status:provisioned) Invalid
+```
+
 7.04.00
 
 The Classic Sites API no longer functions, the following commands are deprecated:
