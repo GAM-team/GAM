@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.04.01'
+__version__ = '7.04.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -21864,12 +21864,29 @@ def _printPerson(entityTypeName, user, person, csvPF, FJQC, parameters):
                             'JSON': json.dumps(cleanJSON(person),
                                                ensure_ascii=False, sort_keys=True)})
 
+PEOPLE_CONTACT_OBJECT_KEYS = {
+  'addresses': 'type',
+  'calendarUrls': 'type',
+  'emailAddresses': 'type',
+  'events': 'type',
+  'externalIds': 'type',
+  'genders': 'value',
+  'imClients': 'type',
+  'locations': 'type',
+  'miscKeywords': 'type',
+  'nicknames': 'type',
+  'organizations': 'type',
+  'relations': 'type',
+  'urls': 'type',
+  'userDefined': 'key',
+  }
+
 def _showPerson(userEntityType, user, entityType, person, i, count, FJQC, parameters):
   _processPersonMetadata(person, parameters)
   if not FJQC.formatJSON:
     printEntity([userEntityType, user, entityType, person['resourceName']], i, count)
     Ind.Increment()
-    showJSON(None, person)
+    showJSON(None, person, dictObjectsKey=PEOPLE_CONTACT_OBJECT_KEYS)
     Ind.Decrement()
   else:
     printLine(json.dumps(cleanJSON(person), ensure_ascii=False, sort_keys=True))

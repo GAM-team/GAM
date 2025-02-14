@@ -1,3 +1,16 @@
+7.04.02
+
+Improved output formatting for the following commands:
+```
+gam info peoplecontact
+gam show peoplecontacts
+gam info peopleprofile
+gam show peopleprofile
+gam <UserTypeEntity> info contacts
+gam <UserTypeEntity> show contacts
+gam <UserTypeEntity> show peopleprofile
+```
+
 7.04.01
 
 Fixed bug where multiple `querytime<String>` values in a query were not properly processed;
