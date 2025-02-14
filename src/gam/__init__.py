@@ -36121,8 +36121,12 @@ def getCIGroupTransitiveMembers(ci, groupName, membersList, i, count):
   return True
 
 def getCIGroupMembers(ci, groupName, memberRoles, membersList, membersSet, i, count,
-                      memberOptions, memberDisplayOptions, level, typesSet, listView='FULL'):
-  printGettingAllEntityItemsForWhom(memberRoles if memberRoles else Ent.ROLE_MANAGER_MEMBER_OWNER, groupName, i, count)
+                      memberOptions, memberDisplayOptions, level, typesSet, listView='FULL', groupEmail=None):
+  if groupEmail:
+    nameToPrint = groupEmail
+  else:
+    nameToPrint = groupName
+  printGettingAllEntityItemsForWhom(memberRoles if memberRoles else Ent.ROLE_MANAGER_MEMBER_OWNER, nameToPrint, i, count)
   validRoles = _getCIRoleVerification(memberRoles)
   if listView == 'BASIC':
       pageSize = GC.Values[GC.MEMBER_MAX_RESULTS_CI_BASIC]
@@ -36363,7 +36367,7 @@ def doPrintCIGroupMembers():
     membersList = []
     membersSet = set()
     getCIGroupMembers(ci, groupEntity['name'], getRoles, membersList, membersSet, i, count,
-                      memberOptions, memberDisplayOptions, level, typesSet, listView)
+                      memberOptions, memberDisplayOptions, level, typesSet, listView, groupEmail)
     if showOwnedBy and not checkCIGroupShowOwnedBy(showOwnedBy, membersList):
       continue
     for member in membersList:
