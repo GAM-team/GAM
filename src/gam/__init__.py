@@ -36121,9 +36121,13 @@ def getCIGroupTransitiveMembers(ci, groupName, membersList, i, count):
   return True
 
 def getCIGroupMembers(ci, groupName, memberRoles, membersList, membersSet, i, count,
-                      memberOptions, memberDisplayOptions, level, typesSet):
+                      memberOptions, memberDisplayOptions, level, typesSet, listView='FULL'):
   printGettingAllEntityItemsForWhom(memberRoles if memberRoles else Ent.ROLE_MANAGER_MEMBER_OWNER, groupName, i, count)
   validRoles = _getCIRoleVerification(memberRoles)
+  if listView == 'BASIC':
+      pageSize = GC.Values[GC.MEMBER_MAX_RESULTS_CI_BASIC]
+  else:
+      pageSize = GC.Values[GC.MEMBER_MAX_RESULTS_CI_FULL]
   if memberOptions[MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP]:
     groupMembers = []
     if not getCIGroupTransitiveMembers(ci, groupName, groupMembers, i, count):
@@ -36137,8 +36141,8 @@ def getCIGroupMembers(ci, groupName, memberRoles, membersList, membersSet, i, co
     groupMembers = callGAPIpages(ci.groups().memberships(), 'list', 'memberships',
                                  pageMessage=getPageMessageForWhom(),
                                  throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
-                                 parent=groupName, view='FULL',
-                                 fields='nextPageToken,memberships(*)', pageSize=GC.Values[GC.MEMBER_MAX_RESULTS])
+                                 parent=groupName, view=listView,
+                                 fields='nextPageToken,memberships(*)', pageSize=pageSize)
   except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
           GAPI.forbidden, GAPI.badRequest, GAPI.invalid, GAPI.invalidArgument, GAPI.systemError,
           GAPI.permissionDenied, GAPI.serviceNotAvailable):
@@ -36262,6 +36266,7 @@ def doPrintCIGroupMembers():
   rolesSet = set()
   typesSet = set()
   matchPatterns = {}
+  listView = 'FULL'
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -36302,6 +36307,8 @@ def doPrintCIGroupMembers():
       memberOptions[MEMBEROPTION_RECURSIVE] = False
     elif myarg == 'nogroupemail':
       groupColumn = False
+    elif myarg == 'basic':
+      listView = 'BASIC'
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   if not typesSet:
@@ -36356,7 +36363,7 @@ def doPrintCIGroupMembers():
     membersList = []
     membersSet = set()
     getCIGroupMembers(ci, groupEntity['name'], getRoles, membersList, membersSet, i, count,
-                      memberOptions, memberDisplayOptions, level, typesSet)
+                      memberOptions, memberDisplayOptions, level, typesSet, listView)
     if showOwnedBy and not checkCIGroupShowOwnedBy(showOwnedBy, membersList):
       continue
     for member in membersList:

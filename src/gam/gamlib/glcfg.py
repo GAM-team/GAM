@@ -179,6 +179,10 @@ LICENSE_MAX_RESULTS = 'license_max_results'
 LICENSE_SKUS = 'license_skus'
 # When retrieving lists of Google Group members from API, how many should be retrieved in each chunk
 MEMBER_MAX_RESULTS = 'member_max_results'
+# CI API Group members max page size when view=BASIC
+MEMBER_MAX_RESULTS_CI_BASIC = 'member.max_results_ci_basic'
+# CI API Group members max page size when view=FULL
+MEMBER_MAX_RESULTS_CI_FULL = 'member_max_results_ci_full'
 # When deleting or modifying Gmail messages, how many should be processed in each batch
 MESSAGE_BATCH_SIZE = 'message_batch_size'
 # When retrieving lists of Gmail messages from API, how many should be retrieved in each chunk
@@ -385,6 +389,8 @@ Defaults = {
   LICENSE_MAX_RESULTS: '100',
   LICENSE_SKUS: '',
   MEMBER_MAX_RESULTS: '200',
+  MEMBER_MAX_RESULTS_CI_BASIC: '1000',
+  MEMBER_MAX_RESULTS_CI_FULL: '500',
   MESSAGE_BATCH_SIZE: '50',
   MESSAGE_MAX_RESULTS: '500',
   MOBILE_MAX_RESULTS: '100',
@@ -550,6 +556,8 @@ VAR_INFO = {
   LICENSE_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (10, 1000)},
   LICENSE_SKUS: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
   MEMBER_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 200)},
+  MEMBER_MAX_RESULTS_CI_BASIC: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 1000)},
+  MEMBER_MAX_RESULTS_CI_FULL: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 500)},
   MESSAGE_BATCH_SIZE: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 1000)},
   MESSAGE_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 10000)},
   MOBILE_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 100)},
