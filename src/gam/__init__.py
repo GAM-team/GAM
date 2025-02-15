@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.04.02'
+__version__ = '7.04.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -5981,6 +5981,8 @@ def getCIGroupTransitiveMemberRoleFixType(groupName, tmember):
       member['type'] = Ent.TYPE_USER if not tid.endswith('.iam.gserviceaccount.com') else Ent.TYPE_SERVICE_ACCOUNT
     elif ttype == 'groups':
       member['type'] = Ent.TYPE_GROUP
+    elif tid.startswith('cbcm-browser.'):
+      member['type'] = Ent.TYPE_CBCM_BROWSER
     else:
       member['type'] = Ent.TYPE_OTHER
   else:
@@ -33959,6 +33961,8 @@ def infoGroupMembers(entityList, ciGroupsAPI=False):
           printKeyValueList(['type', result['type']])
           for field in ['createTime', 'updateTime']:
             printKeyValueList([field, formatLocalTime(result[field])])
+          if 'deliverySetting' in result:
+            printKeyValueList(['deliverySetting', result['deliverySetting']])
           Ind.Decrement()
         except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden) as e:
           entityActionFailedWarning([entityType, groupKey], str(e), j, jcount)
@@ -36121,17 +36125,10 @@ def getCIGroupTransitiveMembers(ci, groupName, membersList, i, count):
   return True
 
 def getCIGroupMembers(ci, groupName, memberRoles, membersList, membersSet, i, count,
-                      memberOptions, memberDisplayOptions, level, typesSet, listView='FULL', groupEmail=None):
-  if groupEmail:
-    nameToPrint = groupEmail
-  else:
-    nameToPrint = groupName
+                      memberOptions, memberDisplayOptions, level, typesSet, groupEmail, kwargs):
+  nameToPrint = groupEmail if groupEmail else groupName
   printGettingAllEntityItemsForWhom(memberRoles if memberRoles else Ent.ROLE_MANAGER_MEMBER_OWNER, nameToPrint, i, count)
   validRoles = _getCIRoleVerification(memberRoles)
-  if listView == 'BASIC':
-      pageSize = GC.Values[GC.MEMBER_MAX_RESULTS_CI_BASIC]
-  else:
-      pageSize = GC.Values[GC.MEMBER_MAX_RESULTS_CI_FULL]
   if memberOptions[MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP]:
     groupMembers = []
     if not getCIGroupTransitiveMembers(ci, groupName, groupMembers, i, count):
@@ -36145,12 +36142,11 @@ def getCIGroupMembers(ci, groupName, memberRoles, membersList, membersSet, i, co
     groupMembers = callGAPIpages(ci.groups().memberships(), 'list', 'memberships',
                                  pageMessage=getPageMessageForWhom(),
                                  throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
-                                 parent=groupName, view=listView,
-                                 fields='nextPageToken,memberships(*)', pageSize=pageSize)
+                                 parent=groupName, **kwargs)
   except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
           GAPI.forbidden, GAPI.badRequest, GAPI.invalid, GAPI.invalidArgument, GAPI.systemError,
           GAPI.permissionDenied, GAPI.serviceNotAvailable):
-    entityUnknownWarning(Ent.CLOUD_IDENTITY_GROUP, groupName, i, count)
+    entityUnknownWarning(Ent.CLOUD_IDENTITY_GROUP, nameToPrint, i, count)
     return
   checkCategory = memberDisplayOptions['showCategory']
   if not memberOptions[MEMBEROPTION_RECURSIVE]:
@@ -36184,7 +36180,7 @@ def getCIGroupMembers(ci, groupName, memberRoles, membersList, membersSet, i, co
             memberName not in membersSet):
           membersSet.add(memberName)
           member['level'] = level
-          member['subgroup'] = groupName
+          member['subgroup'] = nameToPrint
           membersList.append(member)
       else:
         if memberName not in membersSet:
@@ -36193,37 +36189,40 @@ def getCIGroupMembers(ci, groupName, memberRoles, membersList, membersSet, i, co
               checkCIMemberMatch(member, memberOptions) and
               (not checkCategory or _checkCIMemberCategory(member, memberDisplayOptions))):
             member['level'] = level
-            member['subgroup'] = groupName
+            member['subgroup'] = nameToPrint
             membersList.append(member)
           _, gname = member['name'].rsplit('/', 1)
-          groupMemberList.append(f'groups/{gname}')
+          groupMemberList.append((f'groups/{gname}', memberName))
     for member in groupMemberList:
-      getCIGroupMembers(ci, member, memberRoles, membersList, membersSet, i, count,
-                        memberOptions, memberDisplayOptions, level+1, typesSet)
+      getCIGroupMembers(ci, member[0], memberRoles, membersList, membersSet, i, count,
+                        memberOptions, memberDisplayOptions, level+1, typesSet, member[1], kwargs)
   else:
     for member in groupMembers:
       getCIGroupMemberRoleFixType(member)
+      memberName = member.get('preferredMemberKey', {}).get('id', '')
       if member['type'] != Ent.TYPE_GROUP:
         if (member['type'] in typesSet and
             checkCIMemberMatch(member, memberOptions) and
             _checkMemberRole(member, validRoles) and
             (not checkCategory or _checkCIMemberCategory(member, memberDisplayOptions))):
           member['level'] = level
-          member['subgroup'] = groupName
+          member['subgroup'] = nameToPrint
           membersList.append(member)
       else:
         if (member['type'] in typesSet and
             checkCIMemberMatch(member, memberOptions) and
             (not checkCategory or _checkCIMemberCategory(member, memberDisplayOptions))):
           member['level'] = level
-          member['subgroup'] = groupName
+          member['subgroup'] = nameToPrint
           membersList.append(member)
         _, gname = member['name'].rsplit('/', 1)
         getCIGroupMembers(ci, f'groups/{gname}', memberRoles, membersList, membersSet, i, count,
-                          memberOptions, memberDisplayOptions, level+1, typesSet)
+                          memberOptions, memberDisplayOptions, level+1, typesSet, memberName, kwargs)
 
 CIGROUPMEMBERS_FIELDS_CHOICE_MAP = {
   'createtime': 'createTime',
+  'delivery': 'deliverySetting',
+  'deliverysettings': 'deliverySetting',
   'expiretime': 'expireTime',
   'id': 'name',
   'memberkey': 'preferredMemberKey',
@@ -36244,6 +36243,16 @@ CIGROUPMEMBERS_SORT_FIELDS = [
   ]
 CIGROUPMEMBERS_TIME_OBJECTS = {'createTime', 'updateTime', 'expireTime'}
 
+def _getCIListGroupMembersArgs(listView):
+  if listView == 'full':
+    return  {'view': 'FULL', 'pageSize': GC.Values[GC.MEMBER_MAX_RESULTS_CI_FULL],
+             'fields': 'nextPageToken,memberships(*)'}
+  if listView == 'basic':
+    return  {'view': 'FULL', 'pageSize': GC.Values[GC.MEMBER_MAX_RESULTS_CI_FULL],
+             'fields': 'nextPageToken,memberships(name,preferredMemberKey,roles,type)'}
+  return {'view': 'BASIC', 'pageSize': GC.Values[GC.MEMBER_MAX_RESULTS_CI_BASIC],
+             'fields': 'nextPageToken,memberships(*)'}
+
 # gam print cigroup-members [todrive <ToDriveAttribute>*]
 #	[(cimember|ciowner <UserItem>)|(cigroup <GroupItem>)|(select <GroupEntity>)]
 #	[showownedby <UserItem>]
@@ -36253,6 +36262,7 @@ CIGROUPMEMBERS_TIME_OBJECTS = {'createTime', 'updateTime', 'expireTime'}
 #	[types <CIGroupMemberTypeList>]
 #	[memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
 #	<CIGroupMembersFieldName>* [fields <CIGroupMembersFieldNameList>]
+#	[minimal|basic|full]
 #	[(recursive [noduplicates])|includederivedmembership] [nogroupeemail]
 #	[formatjson [quotechar <Character>]]
 def doPrintCIGroupMembers():
@@ -36270,7 +36280,7 @@ def doPrintCIGroupMembers():
   rolesSet = set()
   typesSet = set()
   matchPatterns = {}
-  listView = 'FULL'
+  listView = 'full'
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -36311,10 +36321,12 @@ def doPrintCIGroupMembers():
       memberOptions[MEMBEROPTION_RECURSIVE] = False
     elif myarg == 'nogroupemail':
       groupColumn = False
-    elif myarg == 'basic':
-      listView = 'BASIC'
+    elif myarg in {'minimal', 'basic', 'full'}:
+      listView = myarg
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
+  if listView == 'minimal' and memberOptions[MEMBEROPTION_RECURSIVE]:
+    usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('minimal', 'recursive'))
   if not typesSet:
     typesSet = {Ent.TYPE_USER} if memberOptions[MEMBEROPTION_RECURSIVE] else ALL_CIGROUP_MEMBER_TYPES
   fields = ','.join(set(groupFieldsLists['ci']))
@@ -36341,6 +36353,7 @@ def doPrintCIGroupMembers():
   if showOwnedBy:
     getRolesSet.add(Ent.ROLE_OWNER)
   getRoles = ','.join(sorted(getRolesSet))
+  kwargs = _getCIListGroupMembersArgs(listView)
   level = 0
   i = 0
   count = len(entityList)
@@ -36367,7 +36380,7 @@ def doPrintCIGroupMembers():
     membersList = []
     membersSet = set()
     getCIGroupMembers(ci, groupEntity['name'], getRoles, membersList, membersSet, i, count,
-                      memberOptions, memberDisplayOptions, level, typesSet, listView, groupEmail)
+                      memberOptions, memberDisplayOptions, level, typesSet, groupEmail, kwargs)
     if showOwnedBy and not checkCIGroupShowOwnedBy(showOwnedBy, membersList):
       continue
     for member in membersList:
@@ -36385,6 +36398,8 @@ def doPrintCIGroupMembers():
         row['subgroup'] = member['subgroup']
       if memberDisplayOptions['showCategory']:
         row['category'] = member['category']
+      if listView == 'minimal':
+        dmember.pop('type', None)
       mapCIGroupMemberFieldNames(dmember)
       if not FJQC.formatJSON:
         csvPF.WriteRowTitles(flattenJSON(dmember, flattened=row, timeObjects=CIGROUPMEMBERS_TIME_OBJECTS))
@@ -36414,17 +36429,19 @@ def doPrintCIGroupMembers():
 #	[showownedby <UserItem>]
 #	[emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
 #	[descriptionmatchpattern [not] <RegularExpression>]
-#	[roles <GroupRoleList>] [members] [managers] [owners] [depth <Number>]
+#	[roles <GroupRoleList>] [members] [managers] [owners]
 #	[internal] [internaldomains <DomainList>] [external]
 #	[types <CIGroupMemberTypeList>]
 #	[memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
-#	[includederivedmembership]
+#	[minimal|basic|full]
+#	[(depth <Number>) | includederivedmembership]
 def doShowCIGroupMembers():
   def _roleOrder(key):
     return {Ent.ROLE_OWNER: 0, Ent.ROLE_MANAGER: 1, Ent.ROLE_MEMBER: 2}.get(key, 3)
 
   def _typeOrder(key):
-    return {Ent.TYPE_CUSTOMER: 0, Ent.TYPE_USER: 1, Ent.TYPE_GROUP: 2, Ent.TYPE_EXTERNAL: 3}.get(key, 4)
+    return {Ent.TYPE_CUSTOMER: 0, Ent.TYPE_USER: 1, Ent.TYPE_GROUP: 2,
+            Ent.TYPE_CBCM_BROWSER: 3, Ent.TYPE_OTHER: 4, Ent.TYPE_EXTERNAL: 5}.get(key, 6)
 
   def _showGroup(groupName, groupEmail, depth):
     if includeDerivedMembership:
@@ -36435,8 +36452,7 @@ def doShowCIGroupMembers():
       try:
         membersList = callGAPIpages(ci.groups().memberships(), 'list', 'memberships',
                                     throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
-                                    parent=groupName, view='FULL',
-                                    fields='nextPageToken,memberships(*)', pageSize=GC.Values[GC.MEMBER_MAX_RESULTS])
+                                    parent=groupName, **kwargs)
         for member in membersList:
           getCIGroupMemberRoleFixType(member)
       except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
@@ -36457,7 +36473,10 @@ def doShowCIGroupMembers():
         if (_checkMemberRole(member, rolesSet) and
             member['type'] in typesSet and
             checkCIMemberMatch(member, memberOptions)):
-          memberDetails = f'{member.get("role", Ent.ROLE_MEMBER)}, {member["type"]}, {member["preferredMemberKey"]["id"]}'
+          if listView != 'minimal':
+            memberDetails = f'{member.get("role", Ent.ROLE_MEMBER)}, {member["type"]}, {member["preferredMemberKey"]["id"]}'
+          else:
+            memberDetails = f'{member.get("role", Ent.ROLE_MEMBER)}, {member["preferredMemberKey"]["id"]}'
           if checkCategory:
             memberDetails += f', {member["category"]}'
           for field in ['createTime', 'updateTime', 'expireTime']:
@@ -36482,6 +36501,7 @@ def doShowCIGroupMembers():
   matchPatterns = {}
   maxdepth = -1
   includeDerivedMembership = False
+  listView = 'full'
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'showownedby':
@@ -36512,6 +36532,8 @@ def doShowCIGroupMembers():
       maxdepth = getInteger(minVal=-1)
     elif myarg == 'includederivedmembership':
       includeDerivedMembership = True
+    elif myarg in {'minimal', 'basic', 'full'}:
+      listView = myarg
     else:
       unknownArgumentExit()
   if not rolesSet:
@@ -36521,6 +36543,7 @@ def doShowCIGroupMembers():
   checkCategory = memberDisplayOptions['showCategory']
   fields = ','.join(set(groupFieldsLists['ci']))
   entityList = getCIGroupMembersEntityList(ci, entityList, query, subTitle, matchPatterns, groupFieldsLists['ci'], None)
+  kwargs = _getCIListGroupMembersArgs(listView)
   i = 0
   count = len(entityList)
   for group in entityList:

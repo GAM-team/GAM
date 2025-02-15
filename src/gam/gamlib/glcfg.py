@@ -180,7 +180,7 @@ LICENSE_SKUS = 'license_skus'
 # When retrieving lists of Google Group members from API, how many should be retrieved in each chunk
 MEMBER_MAX_RESULTS = 'member_max_results'
 # CI API Group members max page size when view=BASIC
-MEMBER_MAX_RESULTS_CI_BASIC = 'member.max_results_ci_basic'
+MEMBER_MAX_RESULTS_CI_BASIC = 'member_max_results_ci_basic'
 # CI API Group members max page size when view=FULL
 MEMBER_MAX_RESULTS_CI_FULL = 'member_max_results_ci_full'
 # When deleting or modifying Gmail messages, how many should be processed in each batch

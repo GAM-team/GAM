@@ -4017,16 +4017,19 @@ gam print cigroup-members [todrive <ToDriveAttribute>*]
         [types <CIGroupMemberTypeList>]
         [memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
         <CIGroupMembersFieldName>* [fields <CIGroupMembersFieldNameList>]
-        [(recursive [noduplicates])includederivedmembership] [nogroupeemail]
+        [minimal|basic|full]
+        [(recursive [noduplicates]) | includederivedmembership] [nogroupemail]
         [formatjson [quotechar <Character>]]
 gam show cigroup-members
         [(cimember|ciowner <UserItem>)|(cigroup <GroupItem>)|(select <GroupEntity>)]
         [showownedby <UserItem>]
         [emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
         [descriptionmatchpattern [not] <RegularExpression>]
-        [roles <GroupRoleList>] [members] [managers] [owners] [depth <Number>]
+        [roles <GroupRoleList>] [members] [managers] [owners]
         [types <CIGroupMemberTypeList>]
         [memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
+        [minimal|basic|full]
+        [(depth <Number>) | includederivedmembership]
 
 # Cloud Identity Devices
 

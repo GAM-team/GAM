@@ -1,3 +1,15 @@
+7.04.03
+
+Added option `minimal|basic|full` to `gam print cigroup-members`:
+* `minimal` - Fields displayed: group, id, role, email
+* `basic` - Fields displayed: group, type, id, role, email
+* `full` - Fields displayed: group, type, id, role, email, createTime, updateTime; this is the default
+
+Added option `minimal|basic|full` to `gam show cigroup-members`:
+* `minimal` - Fields displayed: role, email
+* `basic` - Fields displayed: type, role, email
+* `full` - Fields displayed: type, role, email, createTime, updateTime; this is the default
+
 7.04.02
 
 Improved output formatting for the following commands:
