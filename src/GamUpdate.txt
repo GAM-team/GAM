@@ -1,3 +1,8 @@
+7.04.04
+
+Updated `gam print group-members|cigroup-members` to include the `email` column
+when `fields <MembersFieldNameList>` did not include `email`.
+
 7.04.03
 
 Added option `minimal|basic|full` to `gam print cigroup-members`:
@@ -9,6 +14,8 @@ Added option `minimal|basic|full` to `gam show cigroup-members`:
 * `minimal` - Fields displayed: role, email
 * `basic` - Fields displayed: type, role, email
 * `full` - Fields displayed: type, role, email, createTime, updateTime; this is the default
+
+Upgraded `gam print cigroup-members ... recursive` to display sub-group email addresses rather than IDs.
 
 7.04.02
 

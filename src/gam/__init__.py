@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.04.03'
+__version__ = '7.04.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -7324,12 +7324,6 @@ def _getRawFields(requiredField=None):
     return rawFields
   return f'{requiredField},{rawFields}'
 
-def _addInitialField(fieldsList, initialField):
-  if isinstance(initialField, list):
-    fieldsList.extend(initialField)
-  else:
-    fieldsList.append(initialField)
-
 def CheckInputRowFilterHeaders(titlesList, rowFilter, rowDropFilter):
   status = True
   for filterVal in rowFilter:
@@ -7744,6 +7738,12 @@ def RowFilterMatch(row, titlesList, rowFilter, rowFilterModeAll, rowDropFilter, 
 #  }
 # fieldsList is the list of API fields
 def getFieldsList(myarg, fieldsChoiceMap, fieldsList, initialField=None, fieldsArg='fields', onlyFieldsArg=False):
+  def addInitialField():
+    if isinstance(initialField, list):
+      fieldsList.extend(initialField)
+    else:
+      fieldsList.append(initialField)
+
   def addMappedFields(mappedFields):
     if isinstance(mappedFields, list):
       fieldsList.extend(mappedFields)
@@ -7752,11 +7752,11 @@ def getFieldsList(myarg, fieldsChoiceMap, fieldsList, initialField=None, fieldsA
 
   if not onlyFieldsArg and myarg in fieldsChoiceMap:
     if not fieldsList and initialField is not None:
-      _addInitialField(fieldsList, initialField)
+      addInitialField()
     addMappedFields(fieldsChoiceMap[myarg])
   elif myarg == fieldsArg:
     if not fieldsList and initialField is not None:
-      _addInitialField(fieldsList, initialField)
+      addInitialField()
     for field in _getFieldsList():
       if field in fieldsChoiceMap:
         addMappedFields(fieldsChoiceMap[field])
@@ -7933,14 +7933,21 @@ class CSVPrintFile():
       fieldsList.append(fields)
       self.AddTitles(fields.replace('.', GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]))
 
+  def addInitialField(self, initialField, fieldsChoiceMap, fieldsList):
+    if isinstance(initialField, list):
+      for field in initialField:
+        self.AddField(field, fieldsChoiceMap, fieldsList)
+    else:
+      self.AddField(initialField, fieldsChoiceMap, fieldsList)
+
   def GetFieldsListTitles(self, fieldName, fieldsChoiceMap, fieldsList, initialField=None):
     if fieldName in fieldsChoiceMap:
       if not fieldsList and initialField is not None:
-        _addInitialField(fieldsList, initialField)
+        self.addInitialField(initialField, fieldsChoiceMap, fieldsList)
       self.AddField(fieldName, fieldsChoiceMap, fieldsList)
     elif fieldName == 'fields':
       if not fieldsList and initialField is not None:
-        _addInitialField(fieldsList, initialField)
+        self.addInitialField(initialField, fieldsChoiceMap, fieldsList)
       for field in _getFieldsList():
         if field in fieldsChoiceMap:
           self.AddField(field, fieldsChoiceMap, fieldsList)
@@ -34206,7 +34213,7 @@ def doPrintGroupMembers():
       pass
     elif getMemberMatchOptions(myarg, memberOptions):
       pass
-    elif csvPF.GetFieldsListTitles(myarg, GROUPMEMBERS_FIELDS_CHOICE_MAP, fieldsList):
+    elif csvPF.GetFieldsListTitles(myarg, GROUPMEMBERS_FIELDS_CHOICE_MAP, fieldsList, initialField='email'):
       pass
     elif myarg == 'membernames':
       memberOptions[MEMBEROPTION_MEMBERNAMES] = True
@@ -36223,6 +36230,7 @@ CIGROUPMEMBERS_FIELDS_CHOICE_MAP = {
   'createtime': 'createTime',
   'delivery': 'deliverySetting',
   'deliverysettings': 'deliverySetting',
+  'email': 'preferredMemberKey',
   'expiretime': 'expireTime',
   'id': 'name',
   'memberkey': 'preferredMemberKey',
@@ -36309,7 +36317,7 @@ def doPrintCIGroupMembers():
       pass
     elif getMemberMatchOptions(myarg, memberOptions):
       pass
-    elif getFieldsList(myarg, CIGROUPMEMBERS_FIELDS_CHOICE_MAP, fieldsList):
+    elif getFieldsList(myarg, CIGROUPMEMBERS_FIELDS_CHOICE_MAP, fieldsList, initialField='preferredMemberKey'):
       pass
     elif myarg == 'noduplicates':
       memberOptions[MEMBEROPTION_NODUPLICATES] = True

@@ -3997,13 +3997,14 @@ gam print cigroups [todrive <ToDriveAttribute>*]
 
 <CIGroupMembersFieldName> ::=
         createtime
+        email|useremail|
         expiretime|
         memberkey|
         name|
         role|
         type|
-        updatetime|
-        useremail
+        updatetime
+
 <CIGroupMembersFieldNameList> ::= "<CIGroupMembersFieldName>(,<CIGroupMembersFieldName>)*"
 
 gam <UserTypeEntity> info cimember <GroupEntity>
