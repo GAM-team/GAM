@@ -4428,7 +4428,7 @@ class signjwtSignJwt(google.auth.crypt.Signer):
     except (google.auth.exceptions.DefaultCredentialsError, google.auth.exceptions.RefreshError) as e:
       systemErrorExit(API_ACCESS_DENIED_RC, str(e))
     httpObj = transportAuthorizedHttp(credentials, http=getHttpObj(override_min_tls='TLSv1_2'))
-    iamc, _ = getService(API.IAM_CREDENTIALS, httpObj)
+    iamc = getService(API.IAM_CREDENTIALS, httpObj)
     response = callGAPI(iamc.projects().serviceAccounts(), 'signJwt',
                         name=self.name, body={'payload': json.dumps(message)})
     signed_jwt = response.get('signedJwt')
@@ -4717,7 +4717,7 @@ def getService(api, httpObj):
     service = googleapiclient.discovery.build_from_document(GM.Globals[GM.CURRENT_API_SERVICES][api][version], http=httpObj)
     if GM.Globals[GM.CACHE_DISCOVERY_ONLY]:
       clearServiceCache(service)
-    return (service, api)
+    return service
   if not hasLocalJSON:
     triesLimit = 3
     for n in range(1, triesLimit+1):
@@ -4731,7 +4731,7 @@ def getService(api, httpObj):
           setattr(service, '_baseUrl', getattr(service, '_baseUrl').replace('/v3/', '/v3beta/'))
         if GM.Globals[GM.CACHE_DISCOVERY_ONLY]:
           clearServiceCache(service)
-        return (service, api)
+        return service
       except googleapiclient.errors.UnknownApiNameOrVersion as e:
         systemErrorExit(GOOGLE_API_ERROR_RC, Msg.UNKNOWN_API_OR_VERSION.format(str(e), __author__))
       except (googleapiclient.errors.InvalidJsonError, KeyError, ValueError) as e:
@@ -4758,7 +4758,7 @@ def getService(api, httpObj):
     GM.Globals[GM.CURRENT_API_SERVICES][api][version] = service._rootDesc.copy()
     if GM.Globals[GM.CACHE_DISCOVERY_ONLY]:
       clearServiceCache(service)
-    return (service, api)
+    return service
   except (googleapiclient.errors.InvalidJsonError, KeyError, ValueError) as e:
     invalidDiscoveryJsonExit(disc_file, str(e))
   except IOError as e:
@@ -5541,7 +5541,7 @@ def buildGAPIObject(api, credentials=None):
   if credentials is None:
     credentials = getClientCredentials(api=api, refreshOnly=True)
   httpObj = transportAuthorizedHttp(credentials, http=getHttpObj(cache=GM.Globals[GM.CACHE_DIR]))
-  service, api = getService(api, httpObj)
+  service = getService(api, httpObj)
   if not GC.Values[GC.ENABLE_DASA]:
     try:
       API_Scopes = set(list(service._rootDesc['auth']['oauth2']['scopes']))
@@ -5570,7 +5570,9 @@ def getSaUser(user):
 def buildGAPIServiceObject(api, user, i=0, count=0, displayError=True):
   userEmail = getSaUser(user)
   httpObj = getHttpObj(cache=GM.Globals[GM.CACHE_DIR])
-  service, api = getService(api, httpObj)
+  service = getService(api, httpObj)
+  if api == API.MEET_BETA:
+    api = API.MEET
   credentials = getSvcAcctCredentials(api, userEmail)
   request = transportCreateRequest(httpObj)
   triesLimit = 3
@@ -5607,7 +5609,7 @@ def buildGAPIServiceObject(api, user, i=0, count=0, displayError=True):
 
 def buildGAPIObjectNoAuthentication(api):
   httpObj = getHttpObj(cache=GM.Globals[GM.CACHE_DIR])
-  service, _ = getService(api, httpObj)
+  service = getService(api, httpObj)
   return service
 
 def initGDataObject(gdataObj, api):
