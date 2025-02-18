@@ -7882,7 +7882,16 @@ gam <UserTypeEntity> show lookerstudiopermissions
 <MeetSpaceName> ::= spaces/<String> | <String>
 <MeetSpaceOptions> ::=
         accesstype open|trusted|restricted |
-        entrypointaccess all|creatorapponly
+        entrypointaccess all|creatorapponly |
+        moderation <Boolean> |
+        chatrestriction hostsonly|norestriction |
+        reactionrestriction hostsonly|norestriction |
+        presentrestriction hostsonly|norestriction |
+        defaultjoinasviewer <Boolean> |
+        firstjoiner hostsonly|anyone |
+        recording <Boolean> |
+        transcription <Boolean> |
+        smartnotes <Boolean>
 
 gam <UserTypeEntity> create meetspace
         <MeetSpaceOptions>*

@@ -75,6 +75,7 @@ KEEP = 'keep'
 LICENSING = 'licensing'
 LOOKERSTUDIO = 'datastudio'
 MEET = 'meet'
+MEET_BETA = 'meetbeta'
 OAUTH2 = 'oauth2'
 ORGPOLICY = 'orgpolicy'
 PEOPLE = 'people'
@@ -251,6 +252,7 @@ _INFO = {
   LICENSING: {'name': 'License Manager API', 'version': 'v1', 'v2discovery': True},
   LOOKERSTUDIO: {'name': 'Looker Studio API', 'version': 'v1', 'v2discovery': True, 'localjson': True},
   MEET: {'name': 'Meet API', 'version': 'v2', 'v2discovery': True},
+  MEET_BETA: {'name': 'Meet API', 'version': 'v2beta', 'v2discovery': True, 'localjson': True, 'mappedAPI': MEET},
   OAUTH2: {'name': 'OAuth2 API', 'version': 'v2', 'v2discovery': False},
   ORGPOLICY: {'name': 'Organization Policy API', 'version': 'v2', 'v2discovery': True},
   PEOPLE: {'name': 'People API', 'version': 'v1', 'v2discovery': True},

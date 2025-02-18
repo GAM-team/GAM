@@ -1,3 +1,25 @@
+7.04.05
+
+Added initial support for Meet API v2beta; you must be in the Developer Preview program
+for this to be effective.
+* https://developers.google.com/meet/api/guides/beta/configuration-beta#auto-artifacts
+
+Added `meet_v2_beta` Boolean variable to `gam.cfg`. When this variable is true,
+the following options are added to `<MeetSpaceOptions>` used in `gam <UserTypeEntity> create|update meetspace`.
+```
+        moderation <Boolean> |
+        chatrestriction hostsonly|norestriction |
+        reactionrestriction hostsonly|norestriction |
+        presentrestriction hostsonly|norestriction |
+        defaultjoinasviewer <Boolean> |
+        firstjoiner hostsonly|anyone |
+        recording <Boolean> |
+        transcription <Boolean> |
+        smartnotes <Boolean>
+```
+
+This isn't called beta for nothing, I have found problems and reported them.
+
 7.04.04
 
 Updated `gam print group-members|cigroup-members` to include the `email` column

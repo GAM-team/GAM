@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.04.04'
+__version__ = '7.04.05'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -4428,7 +4428,7 @@ class signjwtSignJwt(google.auth.crypt.Signer):
     except (google.auth.exceptions.DefaultCredentialsError, google.auth.exceptions.RefreshError) as e:
       systemErrorExit(API_ACCESS_DENIED_RC, str(e))
     httpObj = transportAuthorizedHttp(credentials, http=getHttpObj(override_min_tls='TLSv1_2'))
-    iamc = getService(API.IAM_CREDENTIALS, httpObj)
+    iamc, _ = getService(API.IAM_CREDENTIALS, httpObj)
     response = callGAPI(iamc.projects().serviceAccounts(), 'signJwt',
                         name=self.name, body={'payload': json.dumps(message)})
     signed_jwt = response.get('signedJwt')
@@ -4717,7 +4717,7 @@ def getService(api, httpObj):
     service = googleapiclient.discovery.build_from_document(GM.Globals[GM.CURRENT_API_SERVICES][api][version], http=httpObj)
     if GM.Globals[GM.CACHE_DISCOVERY_ONLY]:
       clearServiceCache(service)
-    return service
+    return (service, api)
   if not hasLocalJSON:
     triesLimit = 3
     for n in range(1, triesLimit+1):
@@ -4731,7 +4731,7 @@ def getService(api, httpObj):
           setattr(service, '_baseUrl', getattr(service, '_baseUrl').replace('/v3/', '/v3beta/'))
         if GM.Globals[GM.CACHE_DISCOVERY_ONLY]:
           clearServiceCache(service)
-        return service
+        return (service, api)
       except googleapiclient.errors.UnknownApiNameOrVersion as e:
         systemErrorExit(GOOGLE_API_ERROR_RC, Msg.UNKNOWN_API_OR_VERSION.format(str(e), __author__))
       except (googleapiclient.errors.InvalidJsonError, KeyError, ValueError) as e:
@@ -4758,7 +4758,7 @@ def getService(api, httpObj):
     GM.Globals[GM.CURRENT_API_SERVICES][api][version] = service._rootDesc.copy()
     if GM.Globals[GM.CACHE_DISCOVERY_ONLY]:
       clearServiceCache(service)
-    return service
+    return (service, api)
   except (googleapiclient.errors.InvalidJsonError, KeyError, ValueError) as e:
     invalidDiscoveryJsonExit(disc_file, str(e))
   except IOError as e:
@@ -5541,7 +5541,7 @@ def buildGAPIObject(api, credentials=None):
   if credentials is None:
     credentials = getClientCredentials(api=api, refreshOnly=True)
   httpObj = transportAuthorizedHttp(credentials, http=getHttpObj(cache=GM.Globals[GM.CACHE_DIR]))
-  service = getService(api, httpObj)
+  service, api = getService(api, httpObj)
   if not GC.Values[GC.ENABLE_DASA]:
     try:
       API_Scopes = set(list(service._rootDesc['auth']['oauth2']['scopes']))
@@ -5570,7 +5570,7 @@ def getSaUser(user):
 def buildGAPIServiceObject(api, user, i=0, count=0, displayError=True):
   userEmail = getSaUser(user)
   httpObj = getHttpObj(cache=GM.Globals[GM.CACHE_DIR])
-  service = getService(api, httpObj)
+  service, api = getService(api, httpObj)
   credentials = getSvcAcctCredentials(api, userEmail)
   request = transportCreateRequest(httpObj)
   triesLimit = 3
@@ -5607,7 +5607,7 @@ def buildGAPIServiceObject(api, user, i=0, count=0, displayError=True):
 
 def buildGAPIObjectNoAuthentication(api):
   httpObj = getHttpObj(cache=GM.Globals[GM.CACHE_DIR])
-  service = getService(api, httpObj)
+  service, _ = getService(api, httpObj)
   return service
 
 def initGDataObject(gdataObj, api):
@@ -27488,6 +27488,8 @@ def printShowChatEvents(users):
     csvPF.writeCSVfile('Chat Events')
 
 def buildMeetServiceObject(api=API.MEET, user=None, i=0, count=0, entityTypeList=None):
+  if GC.Values[GC.MEET_V2_BETA]:
+    api = API.MEET_BETA
   user, meet = buildGAPIServiceObject(api, user, i, count)
   kvList = [Ent.USER, user]
   if entityTypeList is not None:
@@ -27511,7 +27513,10 @@ MEET_SPACE_OPTIONS_MAP = {
   'reactionrestriction': 'reactionRestriction',
   'presentrestriction': 'presentRestriction',
   'defaultjoinasviewer': 'defaultJoinAsViewerType',
-  'firstjoiner': 'firstJoinerType'
+  'firstjoiner': 'firstJoinerType',
+  'autorecording': 'recordingConfig',
+  'autosmartnotes': 'smartNotesConfig',
+  'autotranscription': 'transcriptionConfig',
   }
 
 MEET_SPACE_ACCESSTYPE_CHOICES = {'open', 'trusted', 'restricted'}
@@ -27530,6 +27535,12 @@ MEET_SPACE_FIRSTJOINERTYPE_CHOICES_MAP = {
   'anyone': 'ANYONE'
   }
 
+MEET_SPACE_ARTIFACT_SUB_OPTIONS = {
+  'recordingConfig': 'autoRecordingGeneration',
+  'smartNotesConfig': 'autoSmartNotesGeneration',
+  'transcriptionConfig': 'autoTranscriptionGeneration'
+  }
+
 #	[accesstype open|trusted|restricted]
 #	[entrypointaccess all|creatorapponly]
 #	[moderation <Boolean>]
@@ -27538,7 +27549,10 @@ MEET_SPACE_FIRSTJOINERTYPE_CHOICES_MAP = {
 #	[presentrestriction hostsonly|norestriction]
 #	[defaultjoinasviewer <Boolean>]
 #	[firstjoiner hostsonly|anyone]
-def _getMeetSpaceParameters(myarg, body, updateMask):
+#	[autorecording <Boolean>]
+#	[autosmartnotes <Boolean>]
+#	[autotranscription <Boolean>]
+def _getMeetSpaceParameters(myarg, body):
   option = MEET_SPACE_OPTIONS_MAP.get(myarg, None)
   if option is None:
     return False
@@ -27548,15 +27562,17 @@ def _getMeetSpaceParameters(myarg, body, updateMask):
     body['config'][option] = getChoice(MEET_SPACE_ENTRYPOINTACCESS_CHOICES_MAP, mapChoice=True)
   elif option == 'moderation':
     body['config'][option] = 'ON' if getBoolean() else 'OFF'
-  elif option in {'chatrestriction', 'reactionrestriction', 'presentrestriction'}:
-    body['config'].setdefault('moderationRestictions', {})
+  elif option in {'chatRestriction', 'reactionRestriction', 'presentRestriction'}:
+    body['config'].setdefault('moderationRestrictions', {})
     body['config']['moderationRestrictions'][option] = getChoice(MEET_SPACE_RESTRICTIONS_CHOICES_MAP, mapChoice=True)
-    option = f'moderationRestrictions.{option}'
   elif option == 'defaultJoinAsViewerType':
     body['config'][option] = 'ON' if getBoolean() else 'OFF'
   elif option == 'firstJoinerType':
     body['config'][option] = getChoice(MEET_SPACE_FIRSTJOINERTYPE_CHOICES_MAP, mapChoice=True)
-  updateMask.append(f'config.{option}')
+  elif option in {'recordingConfig', 'transcriptionConfig', 'smartNotesConfig'}:
+    body['config'].setdefault('artifactConfig', {})
+    body['config']['artifactConfig'].setdefault(option, {})
+    body['config']['artifactConfig'][option][MEET_SPACE_ARTIFACT_SUB_OPTIONS[option]] = 'ON' if getBoolean() else 'OFF'
   return True
 
 # gam <UserTypeEntity> create meetspace
@@ -27571,10 +27587,9 @@ def createMeetSpace(users):
 #                     'firstJoinerType': 'ANYONE',
                      }}
   returnIdOnly = False
-  updateMask = []
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if _getMeetSpaceParameters(myarg, body, updateMask):
+    if _getMeetSpaceParameters(myarg, body):
       pass
     elif myarg == 'returnidonly':
       returnIdOnly = True
@@ -27609,12 +27624,11 @@ def updateMeetSpace(users):
   FJQC = FormatJSONQuoteChar()
   name = None
   body = {'config': {}}
-  updateMask = []
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if (myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/')):
       name = getSpaceName(myarg)
-    elif _getMeetSpaceParameters(myarg, body, updateMask):
+    elif _getMeetSpaceParameters(myarg, body):
       pass
     else:
       FJQC.GetFormatJSON(myarg)
@@ -27629,7 +27643,7 @@ def updateMeetSpace(users):
     try:
       space = callGAPI(meet.spaces(), 'patch',
                        throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                       name=name, updateMask=','.join(updateMask), body=body)
+                       name=name, updateMask='', body=body)
       if not FJQC.formatJSON:
         entityActionPerformed(kvList, i, count)
       Ind.Increment()

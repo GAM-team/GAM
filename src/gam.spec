@@ -31,6 +31,7 @@ for pkg in GAM_VER_LIBS:
 datas += [('gam/cbcm-v1.1beta1.json', '.')]
 datas += [('gam/contactdelegation-v1.json', '.')]
 datas += [('gam/datastudio-v1.json', '.')]
+datas += [('gam/meet-v2beta.json', '.')]
 datas += [('gam/serviceaccountlookup-v1.json', '.')]
 datas += [('cacerts.pem', '.')]
 hiddenimports = [
