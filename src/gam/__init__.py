@@ -9842,7 +9842,7 @@ def MultiprocessGAMCommands(items, showCmds):
     if GM.Globals[GM.MULTIPROCESS_EXIT_CONDITION] is not None and checkChildProcessRC(result[1]):
       GM.Globals[GM.MULTIPROCESS_EXIT_PROCESSING] = True
 
-  def signal_handler(_, _):
+  def signal_handler(*_):
     nonlocal controlC
     controlC = True
 
