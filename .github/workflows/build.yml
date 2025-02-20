@@ -917,7 +917,7 @@ jobs:
           $gam calendar $gam_user addevent summary "GHA test event" start +1h end +2h attendee $newgroup hangoutsmeet guestscanmodify true sendupdates all
           $gam calendar $gam_user printevents after -0d
           $gam config enable_dasa false save
-          matterid=uid:$($gam create vaultmatter name "GHA matter $newbase" description "test matter" collaborators $newuser returnidonly)
+          matterid=uid:$($gam create vaultmatter name "GHA matter $newbase" description "test matter" returnidonly)
           $gam create vaulthold matter $matterid name "GHA hold $newbase" corpus mail accounts $newuser
           $gam print vaultmatters matterstate open
           $gam print vaultholds matter $matterid
