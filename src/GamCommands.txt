@@ -3846,6 +3846,7 @@ gam info group|groups <GroupEntity>
         [formatjson]
 gam print groups [todrive <ToDriveAttribute>*]
         [([domain|domains <DomainNameEntity>] ([member|showownedby <EmailItem>]|[(query <QueryGroup>)|(queries <QueryGroupList>)]))|
+         (group|group_ns|group_susp <GroupItem>)|
          (select <GroupEntity>)]
         [emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
         [descriptionmatchpattern [not] <RegularExpression>] (matchsetting [not] <GroupAttribute>)*
@@ -4963,6 +4964,7 @@ gam create|add permissions <SharedDriveEntityAdmin> <DriveFilePermissionEntity>
         <PermissionMatch>* [<PermissionMatchAction>]
 gam delete permissions <SharedDriveEntityAdmin> <DriveFilePermissionIDEntity>
         <PermissionMatch>* [<PermissionMatchAction>]
+        [enforceexpansiveaccess [<Boolean>]]
 
 In these commands, you specify an administrator and then indicate that you want domain administrator access with the adminaccess option.
 
@@ -4976,9 +4978,11 @@ gam <UserTypeEntity> create|add drivefileacl <SharedDriveEntityAdmin>
         adminaccess
 gam <UserTypeEntity> update drivefileacl <SharedDriveEntityAdmin> <DriveFilePermissionIDorEmail>
         (role <DriveFileACLRole>) [expires|expiration <Time>] [removeexpiration [<Boolean>]]
+        [enforceexpansiveaccess [<Boolean>]]
         [showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
         adminaccess
 gam <UserTypeEntity> delete drivefileacl <SharedDriveEntityAdmin> <DriveFilePermissionIDorEmail>
+        [enforceexpansiveaccess [<Boolean>]]
         [showtitles] adminaccess
 gam <UserTypeEntity> info drivefileacl <SharedDriveEntityAdmin> <DriveFilePermissionIDorEmail> adminaccess
         [showtitles]
@@ -5004,6 +5008,7 @@ gam <UserTypeEntity> create|add permissions <SharedDriveEntityAdmin> <DriveFileP
         <PermissionMatch>* [<PermissionMatchAction>]
 gam <UserTypeEntity> delete permissions <SharedDriveEntityAdmin> <DriveFilePermissionIDEntity> adminaccess
         <PermissionMatch>* [<PermissionMatchAction>]
+        [enforceexpansiveaccess [<Boolean>]]
 
 In these commands, the Google administrator named in oauth2.txt is used.
 
@@ -6566,6 +6571,7 @@ gam <UserTypeEntity> copy drivefile <DriveFileEntity>
         [sendemailifrequired [<Boolean>]]
         [suppressnotselectedmessages [<Boolean>]]
         [verifyorganizer [<Boolean>]]
+        [enforceexpansiveaccess [<Boolean>]]
 
 gam <UserTypeEntity> move drivefile <DriveFileEntity> [newfilename <DriveFileName>]
         [summary [<Boolean>]] [showpermissionmessages [<Boolean>]]
@@ -6589,6 +6595,7 @@ gam <UserTypeEntity> move drivefile <DriveFileEntity> [newfilename <DriveFileNam
         [retainsourcefolders [<Boolean>]]
         [sendemailifrequired [<Boolean>]]
         [verifyorganizer [<Boolean>]]
+        [enforceexpansiveaccess [<Boolean>]]
 
 gam <UserTypeEntity> get document <DriveFileEntity>
         [viewmode default|suggestions_inline|preview_suggestions_accepted|preview_without_suggestions]
@@ -6694,10 +6701,10 @@ gam <UserTypeEntity> create|add drivefileacl <DriveFileEntity> [adminaccess|asad
         [showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
 gam <UserTypeEntity> update drivefileacl <DriveFileEntity> <DriveFilePermissionIDorEmail>
         (role <DriveFileACLRole>) [expires|expiration <Time>] [removeexpiration [<Boolean>]]
-        [updatesheetprotectedranges [<Boolean>]]
+        [updatesheetprotectedranges [<Boolean>]] [enforceexpansiveaccess [<Boolean>]]
         [showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
 gam <UserTypeEntity> delete drivefileacl <DriveFileEntity> <DriveFilePermissionIDorEmail>
-        [updatesheetprotectedranges [<Boolean>]]
+        [updatesheetprotectedranges [<Boolean>]] [enforceexpansiveaccess [<Boolean>]]
         [showtitles]
 gam <UserTypeEntity> info drivefileacl <DriveFileEntity> <DriveFilePermissionIDorEmail>
         [showtitles]
@@ -6821,6 +6828,7 @@ gam <UserTypeEntity> print filerevisions <DriveFileEntity> [todrive <ToDriveAttr
 
 gam <UserTypeEntity> transfer ownership <DriveFileEntity> <UserItem>
         [<DriveFileParentAttribute>] [includetrashed] [norecursion [<Boolean>]]
+        [enforceexpansiveaccess [<Boolean>]]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [preview] [filepath] [pathdelimiter <Character>] [buildtree]
         [todrive <ToDriveAttribute>*]
@@ -6829,6 +6837,7 @@ gam <UserTypeEntity> claim ownership <DriveFileEntity>
         [skipids <DriveFileEntity>] [onlyusers|skipusers <UserTypeEntity>] [subdomains <DomainNameEntity>]
         [restricted [<Boolean>]] [writerscanshare|writerscantshare [<Boolean>]]
         [keepuser | (retainrole commenter|reader|writer|editor|fileorganizer|none)] [noretentionmessages]
+        [enforceexpansiveaccess [<Boolean>]]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [preview] [filepath] [pathdelimiter <Character>] [buildtree]
         [todrive <ToDriveAttribute>*]
@@ -6836,6 +6845,7 @@ gam <UserTypeEntity> claim ownership <DriveFileEntity>
 gam <UserTypeEntity> transfer drive <UserItem> [select <DriveFileEntity>]
         [(targetfolderid <DriveFolderID>)|(targetfoldername <DriveFolderName>)]
         [targetuserfoldername <DriveFolderName>] [targetuserorphansfoldername <DriveFolderName>]
+        [enforceexpansiveaccess [<Boolean>]]
         [mergewithtarget [<Boolean>]]
         [skipids <DriveFileEntity>]
         [keepuser | (retainrole reader|commenter|writer|editor|fileorganizer|none)] [noretentionmessages]
@@ -7888,7 +7898,6 @@ gam <UserTypeEntity> show lookerstudiopermissions
         reactionrestriction hostsonly|norestriction |
         presentrestriction hostsonly|norestriction |
         defaultjoinasviewer <Boolean> |
-        firstjoiner hostsonly|anyone |
         recording <Boolean> |
         transcription <Boolean> |
         smartnotes <Boolean>

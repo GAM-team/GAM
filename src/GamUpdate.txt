@@ -1,3 +1,31 @@
+7.05.00
+
+Enabled support for Limited Access as described here:
+* https://workspaceupdates.googleblog.com/2025/02/updating-access-experience-in-google-drive.html
+
+Note that the rollout may take 15 days.
+
+Added option `inheritedpermissionsdisabled [<Boolean>]` to `<DriveFileAttribute>`; this
+attribute can be set on folders.
+
+Added `inheritedpermissionsdisabled` to `<DriveFieldName>`.
+
+Added `capabilities.candisableinheritedpermissions` and `capabilities.canenableinheritedpermissions`
+to `<DriveCapabilitiesSubfieldName>`.
+
+Added option `enforceexpansiveaccess [<Boolean>]` to all commands that delete or update
+drive file ACLs/permissions.
+```
+gam <UserTypeEntity> delete permissions
+gam <UserTypeEntity> delete drivefileacl
+gam <UserTypeEntity> update drivefileacl
+gam <UserTypeEntity> copy drivefile
+gam <UserTypeEntity> move drivefile
+gam <UserTypeEntity> transfer ownership
+gam <UserTypeEntity> claim ownership
+gam <UserTypeEntity> transfer drive
+```
+
 7.04.05
 
 Added initial support for Meet API v2beta; you must be in the Developer Preview program
@@ -12,7 +40,6 @@ the following options are added to `<MeetSpaceOptions>` used in `gam <UserTypeEn
         reactionrestriction hostsonly|norestriction |
         presentrestriction hostsonly|norestriction |
         defaultjoinasviewer <Boolean> |
-        firstjoiner hostsonly|anyone |
         recording <Boolean> |
         transcription <Boolean> |
         smartnotes <Boolean>

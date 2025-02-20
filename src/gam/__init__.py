@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.04.05'
+__version__ = '7.05.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -4710,7 +4710,7 @@ def getAPIService(api, httpObj):
 
 def getService(api, httpObj):
 ### Drive v3beta
-  mapDriveURL = api == API.DRIVE3 and GC.Values[GC.DRIVE_V3_BETA]
+#  mapDriveURL = api == API.DRIVE3 and GC.Values[GC.DRIVE_V3_BETA]
   hasLocalJSON = API.hasLocalJSON(api)
   api, version, v2discovery = API.getVersion(api)
   if api in GM.Globals[GM.CURRENT_API_SERVICES] and version in GM.Globals[GM.CURRENT_API_SERVICES][api]:
@@ -4727,8 +4727,8 @@ def getService(api, httpObj):
         GM.Globals[GM.CURRENT_API_SERVICES].setdefault(api, {})
         GM.Globals[GM.CURRENT_API_SERVICES][api][version] = service._rootDesc.copy()
 ### Drive v3beta
-        if mapDriveURL:
-          setattr(service, '_baseUrl', getattr(service, '_baseUrl').replace('/v3/', '/v3beta/'))
+#        if mapDriveURL:
+#          setattr(service, '_baseUrl', getattr(service, '_baseUrl').replace('/v3/', '/v3beta/'))
         if GM.Globals[GM.CACHE_DISCOVERY_ONLY]:
           clearServiceCache(service)
         return service
@@ -9842,7 +9842,7 @@ def MultiprocessGAMCommands(items, showCmds):
     if GM.Globals[GM.MULTIPROCESS_EXIT_CONDITION] is not None and checkChildProcessRC(result[1]):
       GM.Globals[GM.MULTIPROCESS_EXIT_PROCESSING] = True
 
-  def signal_handler(sig, frame):
+  def signal_handler(_, _):
     nonlocal controlC
     controlC = True
 
@@ -17256,7 +17256,7 @@ def checkOrgUnitPathExists(cd, orgUnitPath, i=0, count=0, showError=False):
   return (False, orgUnitPath, orgUnitPath)
 
 def _batchMoveCrOSesToOrgUnit(cd, orgUnitPath, orgUnitId, i, count, items, quickCrOSMove, fromOrgUnitPath=None):
-  def _callbackMoveCrOSesToOrgUnit(request_id, response, exception):
+  def _callbackMoveCrOSesToOrgUnit(request_id, _, exception):
     ri = request_id.splitlines()
     if exception is None:
       if not fromOrgUnitPath:
@@ -17337,7 +17337,7 @@ def _batchMoveCrOSesToOrgUnit(cd, orgUnitPath, orgUnitId, i, count, items, quick
 
 def _batchMoveUsersToOrgUnit(cd, orgUnitPath, i, count, items, fromOrgUnitPath=None):
   _MOVE_USER_REASON_TO_MESSAGE_MAP = {GAPI.USER_NOT_FOUND: Msg.DOES_NOT_EXIST, GAPI.DOMAIN_NOT_FOUND: Msg.SERVICE_NOT_APPLICABLE, GAPI.FORBIDDEN: Msg.SERVICE_NOT_APPLICABLE}
-  def _callbackMoveUsersToOrgUnit(request_id, response, exception):
+  def _callbackMoveUsersToOrgUnit(request_id, _, exception):
     ri = request_id.splitlines()
     if exception is None:
       if not fromOrgUnitPath:
@@ -27532,10 +27532,10 @@ MEET_SPACE_RESTRICTIONS_CHOICES_MAP = {
   'norestriction': 'NO_RESTRICTION'
   }
 
-MEET_SPACE_FIRSTJOINERTYPE_CHOICES_MAP = {
-  'hostsonly': 'HOSTS_ONLY',
-  'anyone': 'ANYONE'
-  }
+#MEET_SPACE_FIRSTJOINERTYPE_CHOICES_MAP = {
+#  'hostsonly': 'HOSTS_ONLY',
+#  'anyone': 'ANYONE'
+#  }
 
 MEET_SPACE_ARTIFACT_SUB_OPTIONS = {
   'recordingConfig': 'autoRecordingGeneration',
@@ -27569,8 +27569,8 @@ def _getMeetSpaceParameters(myarg, body):
     body['config']['moderationRestrictions'][option] = getChoice(MEET_SPACE_RESTRICTIONS_CHOICES_MAP, mapChoice=True)
   elif option == 'defaultJoinAsViewerType':
     body['config'][option] = 'ON' if getBoolean() else 'OFF'
-  elif option == 'firstJoinerType':
-    body['config'][option] = getChoice(MEET_SPACE_FIRSTJOINERTYPE_CHOICES_MAP, mapChoice=True)
+#  elif option == 'firstJoinerType':
+#    body['config'][option] = getChoice(MEET_SPACE_FIRSTJOINERTYPE_CHOICES_MAP, mapChoice=True)
   elif option in {'recordingConfig', 'transcriptionConfig', 'smartNotesConfig'}:
     body['config'].setdefault('artifactConfig', {})
     body['config']['artifactConfig'].setdefault(option, {})
@@ -32023,7 +32023,7 @@ def doUpdateGroups():
                                        GAPI.INVALID_MEMBER: Msg.INVALID_MEMBER,
                                        GAPI.CYCLIC_MEMBERSHIPS_NOT_ALLOWED: Msg.WOULD_MAKE_MEMBERSHIP_CYCLE}
 
-  def _callbackAddGroupMembers(request_id, response, exception):
+  def _callbackAddGroupMembers(request_id, _, exception):
     ri = request_id.splitlines()
     if exception is None:
       _showSuccess(ri[RI_ENTITY], ri[RI_ITEM], ri[RI_ROLE], ri[RI_OPTION], int(ri[RI_J]), int(ri[RI_JCOUNT]))
@@ -32112,7 +32112,7 @@ def doUpdateGroups():
                                           GAPI.CONDITION_NOT_MET: f'{Msg.NOT_A} {Ent.Singular(Ent.MEMBER)}',
                                           GAPI.INVALID_MEMBER: Msg.DOES_NOT_EXIST}
 
-  def _callbackRemoveGroupMembers(request_id, response, exception):
+  def _callbackRemoveGroupMembers(request_id, _, exception):
     ri = request_id.splitlines()
     if exception is None:
       _showSuccess(ri[RI_ENTITY], ri[RI_ITEM], ri[RI_ROLE], DELIVERY_SETTINGS_UNDEFINED, int(ri[RI_J]), int(ri[RI_JCOUNT]))
@@ -32211,7 +32211,7 @@ def doUpdateGroups():
     except (GAPI.invalidMember, GAPI.resourceNotFound, GAPI.serviceNotAvailable) as e:
       _showFailure(group, member, role, str(e), j, jcount)
 
-  def _callbackUpdateGroupMembers(request_id, response, exception):
+  def _callbackUpdateGroupMembers(request_id, _, exception):
     ri = request_id.splitlines()
     if exception is None:
       _showSuccess(ri[RI_ENTITY], ri[RI_ITEM], ri[RI_ROLE], ri[RI_OPTION], int(ri[RI_J]), int(ri[RI_JCOUNT]))
@@ -33448,6 +33448,7 @@ PRINT_GROUPS_JSON_TITLES = ['email', 'JSON']
 
 # gam print groups [todrive <ToDriveAttribute>*]
 #	[([domain|domains <DomainNameEntity>] ([member|showownedby <EmailItem>]|[(query <QueryGroup>)|(queries <QueryUserList>)]))|
+#	 (group|group_ns|group_susp <GroupItem>)|
 #	 (select <GroupEntity>)]
 #	[emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
 #	[descriptionmatchpattern [not] <RegularExpression>] (matchsetting [not] <GroupAttribute>)*
@@ -33660,6 +33661,12 @@ def doPrintGroups():
       pass
     elif getGroupMatchPatterns(myarg, matchPatterns, False):
       pass
+    elif myarg in {'group', 'groupns', 'groupsusp'}:
+      entitySelection = [getString(Cmd.OB_EMAIL_ADDRESS)]
+      if myarg == 'groupns':
+        isSuspended = False
+      elif myarg == 'groupsusp':
+        isSuspended = True
     elif myarg == 'select':
       entitySelection = getEntityList(Cmd.OB_GROUP_ENTITY)
     elif myarg in SUSPENDED_ARGUMENTS:
@@ -42347,7 +42354,7 @@ def doPrintVaultCounts():
 # gam [<UserTypeEntity>] print siteacls <SiteEntity> [todrive <ToDriveAttribute>*]
 # gam [<UserTypeEntity>] print siteactivity <SiteEntity> [todrive <ToDriveAttribute>*]
 #	[startindex <Number>] [maxresults <Number>] [updated_min <Date>] [updated_max <Date>]
-def deprecatedUserSites(users):
+def deprecatedUserSites(_):
   deprecatedCommandExit()
 
 def deprecatedDomainSites():
@@ -43669,7 +43676,7 @@ def waitForMailbox(entityList):
     Ind.Decrement()
 
 def getUserLicenses(lic, user, skus):
-  def _callbackGetLicense(request_id, response, exception):
+  def _callbackGetLicense(_, response, exception):
     if exception is None:
       if response and 'skuId' in response:
         licenses.append(response['skuId'])
@@ -48175,7 +48182,7 @@ def _batchAddItemsToCourse(croom, courseId, i, count, addParticipants, role):
   _ADD_PART_REASON_TO_MESSAGE_MAP = {GAPI.NOT_FOUND: Msg.DOES_NOT_EXIST,
                                      GAPI.ALREADY_EXISTS: Msg.DUPLICATE,
                                      GAPI.FAILED_PRECONDITION: Msg.NOT_ALLOWED}
-  def _callbackAddItemsToCourse(request_id, response, exception):
+  def _callbackAddItemsToCourse(request_id, _, exception):
     ri = request_id.splitlines()
     if exception is None:
       entityActionPerformed([Ent.COURSE, ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM]], int(ri[RI_J]), int(ri[RI_JCOUNT]))
@@ -48255,7 +48262,7 @@ def _batchRemoveItemsFromCourse(croom, courseId, i, count, removeParticipants, r
   _REMOVE_PART_REASON_TO_MESSAGE_MAP = {GAPI.NOT_FOUND: Msg.DOES_NOT_EXIST,
                                         GAPI.FORBIDDEN: Msg.FORBIDDEN,
                                         GAPI.PERMISSION_DENIED: Msg.PERMISSION_DENIED}
-  def _callbackRemoveItemsFromCourse(request_id, response, exception):
+  def _callbackRemoveItemsFromCourse(request_id, _, exception):
     ri = request_id.splitlines()
     if exception is None:
       entityActionPerformed([Ent.COURSE, ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM]], int(ri[RI_J]), int(ri[RI_JCOUNT]))
@@ -48467,7 +48474,7 @@ def doCourseRemoveItems(courseIdList, getEntityListArg):
 
 # gam courses <CourseEntity> clear teachers|students
 # gam course <CourseID> clear teacher|student
-def doCourseClearParticipants(courseIdList, getEntityListArg):
+def doCourseClearParticipants(courseIdList, _):
   croom = buildGAPIObject(API.CLASSROOM)
   role = getChoice(CLEAR_SYNC_PARTICIPANT_TYPES_MAP, mapChoice=True)
   checkForExtraneousArguments()
@@ -48483,7 +48490,7 @@ def doCourseClearParticipants(courseIdList, getEntityListArg):
 # gam course <CourseID> sync students [addonly|removeonly] <UserTypeEntity>
 # gam courses <CourseEntity> sync teachers [addonly|removeonly] [makefirstteacherowner] <UserTypeEntity>
 # gam course <CourseID> sync teachers [addonly|removeonly] [makefirstteacherowner] <UserTypeEntity>
-def doCourseSyncParticipants(courseIdList, getEntityListArg):
+def doCourseSyncParticipants(courseIdList, _):
   croom = buildGAPIObject(API.CLASSROOM)
   role = getChoice(CLEAR_SYNC_PARTICIPANT_TYPES_MAP, mapChoice=True)
   if role == Ent.TEACHER:
@@ -58219,6 +58226,7 @@ def initCopyMoveOptions(copyCmd):
     'showPermissionMessages': False,
     'sendEmailIfRequired': False,
     'useDomainAdminAccess': False,
+    'enforceExpansiveAccess': False,
     'copiedShortcutsPointToCopiedFiles': True,
     'createShortcutsForNonmovableFiles': False,
     'duplicateFiles': DUPLICATE_FILE_OVERWRITE_OLDER,
@@ -58317,6 +58325,8 @@ def getCopyMoveOptions(myarg, copyMoveOptions):
   elif myarg == 'mappermissionsdomain':
     oldDomain = getString(Cmd.OB_DOMAIN_NAME).lower()
     copyMoveOptions['mapPermissionsDomains'][oldDomain] = getString(Cmd.OB_DOMAIN_NAME).lower()
+  elif myarg == 'enforceexpansiveaccess':
+    copyMoveOptions['enforceExpansiveAccess'] = getBoolean()
   else:
 # Move arguments
     if not copyMoveOptions['copyCmd']:
@@ -58588,6 +58598,9 @@ def _copyPermissions(drive, user, i, count, j, jcount,
         updateTargetPerms[permissionId].update(updatePerm)
         updateTargetPerms[permissionId]['updates'] = updatePerm
       copySourcePerms.pop(permissionId)
+  deleteUpdateKwargs = {'useDomainAdminAccess': copyMoveOptions['useDomainAdminAccess']}
+  if entityType != Ent.SHAREDDRIVE:
+    deleteUpdateKwargs['enforceExpansiveAccess'] = copyMoveOptions['enforceExpansiveAccess']
   Ind.Increment()
   action = Act.Get()
   Act.Set(Act.COPY)
@@ -58606,8 +58619,9 @@ def _copyPermissions(drive, user, i, count, j, jcount,
         callGAPI(drive.permissions(), 'create',
                  throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+GAPI.DRIVE3_CREATE_ACL_THROW_REASONS,
 #                 retryReasons=[GAPI.INVALID_SHARING_REQUEST],
+                 useDomainAdminAccess=copyMoveOptions['useDomainAdminAccess'],
                  fileId=newFileId, sendNotificationEmail=sendNotificationEmail, emailMessage=None,
-                 body=permission, fields='', useDomainAdminAccess=copyMoveOptions['useDomainAdminAccess'], supportsAllDrives=True)
+                 body=permission, fields='', supportsAllDrives=True)
         if copyMoveOptions['showPermissionMessages']:
           entityActionPerformed(kvList, k, kcount)
         break
@@ -58645,7 +58659,8 @@ def _copyPermissions(drive, user, i, count, j, jcount,
     try:
       callGAPI(drive.permissions(), 'delete',
                throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+GAPI.DRIVE3_DELETE_ACL_THROW_REASONS+[GAPI.FILE_NEVER_WRITABLE],
-               fileId=newFileId, permissionId=permissionId, useDomainAdminAccess=copyMoveOptions['useDomainAdminAccess'], supportsAllDrives=True)
+               **deleteUpdateKwargs,
+               fileId=newFileId, permissionId=permissionId,  supportsAllDrives=True)
       if copyMoveOptions['showPermissionMessages']:
         entityActionPerformed(kvList, k, kcount)
     except (GAPI.notFound, GAPI.permissionNotFound,
@@ -58670,8 +58685,9 @@ def _copyPermissions(drive, user, i, count, j, jcount,
       callGAPI(drive.permissions(), 'update',
                bailOnInternalError=True,
                throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+GAPI.DRIVE3_UPDATE_ACL_THROW_REASONS+[GAPI.FILE_NEVER_WRITABLE],
-               fileId=newFileId, permissionId=permissionId, removeExpiration=removeExpiration,
-               body=permission['updates'], useDomainAdminAccess=copyMoveOptions['useDomainAdminAccess'], supportsAllDrives=True)
+               removeExpiration=removeExpiration,
+               **deleteUpdateKwargs,
+               fileId=newFileId, permissionId=permissionId, body=permission['updates'], supportsAllDrives=True)
       if copyMoveOptions['showPermissionMessages']:
         entityActionPerformed(kvList, k, kcount)
     except (GAPI.notFound, GAPI.permissionNotFound,
@@ -58945,6 +58961,7 @@ copyReturnItemMap = {
 #	[sendemailifrequired [<Boolean>]]
 #	[suppressnotselectedmessages [<Boolean>]]
 #	[verifyorganizer [<Boolean>]]
+#	[enforceexpansiveaccess [<Boolean>]]
 def copyDriveFile(users):
   def _writeCSVData(user, oldName, oldId, newName, newId, mimeType):
     row = {'User': user, fileNameTitle: oldName, 'id': oldId,
@@ -59672,7 +59689,9 @@ def _updateMoveFilePermissions(drive, user, i, count,
       try:
         callGAPI(drive.permissions(), 'delete',
                  throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+GAPI.DRIVE3_DELETE_ACL_THROW_REASONS+[GAPI.FILE_NEVER_WRITABLE],
-                 fileId=fileId, permissionId=permissionId, useDomainAdminAccess=copyMoveOptions['useDomainAdminAccess'], supportsAllDrives=True)
+                 useDomainAdminAccess=copyMoveOptions['useDomainAdminAccess'],
+                 enforceExpansiveAccess=copyMoveOptions['enforceExpansiveAccess'],
+                 fileId=fileId, permissionId=permissionId,  supportsAllDrives=True)
         if copyMoveOptions['showPermissionMessages']:
           entityActionPerformed(kvList, k, kcount)
       except (GAPI.notFound, GAPI.permissionNotFound,
@@ -59760,6 +59779,7 @@ def _updateMoveFilePermissions(drive, user, i, count,
 #	[retainsourcefolders [<Boolean>]]
 #	[sendemailifrequired [<Boolean>]]
 #	[verifyorganizer [<Boolean>]]
+#	[enforceexpansiveaccess [<Boolean>]]
 def moveDriveFile(users):
   def _cloneFolderMove(drive, user, i, count, j, jcount,
                        source, targetChildren, newFolderName, newParentId, newParentName, mergeParentModifiedTime,
@@ -60103,9 +60123,8 @@ def moveDriveFile(users):
   parentBody = {}
   parentParms = initDriveFileAttributes()
   copyMoveOptions = initCopyMoveOptions(False)
-  newParentsSpecified = False
+  newParentsSpecified = updateFilePermissions = False
   movedFiles = {}
-  updateFilePermissions = False
   verifyOrganizer = True
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -60994,6 +61013,7 @@ TRANSFER_DRIVEFILE_ACL_ROLES_MAP = {
 #	[nonowner_retainrole reader|commenter|writer|editor|fileorganizer|current|none]
 #	[nonowner_targetrole reader|commenter|writer|editor|fileorganizer|current|none|source]
 #	(orderby <DriveFileOrderByFieldName> [ascending|descending])*
+#	[enforceexpansiveaccess [<Boolean>]]
 #	[preview] [todrive <ToDriveAttribute>*]
 def transferDrive(users):
 
@@ -61180,6 +61200,7 @@ def transferDrive(users):
           callGAPI(sourceDrive.permissions(), 'update',
                    throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.BAD_REQUEST, GAPI.INVALID_OWNERSHIP_TRANSFER,
                                                                  GAPI.PERMISSION_NOT_FOUND, GAPI.SHARING_RATE_LIMIT_EXCEEDED],
+                   enforceExpansiveAccess=enforceExpansiveAccess,
                    fileId=childFileId, permissionId=targetPermissionId,
                    transferOwnership=True, body={'role': 'owner'}, fields='')
           if removeSourceParents:
@@ -61368,6 +61389,7 @@ def transferDrive(users):
           if ownerRetainRoleBody['role'] != 'writer':
             callGAPI(targetDrive.permissions(), 'update',
                      throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.PERMISSION_NOT_FOUND, GAPI.BAD_REQUEST, GAPI.SHARING_RATE_LIMIT_EXCEEDED],
+                     enforceExpansiveAccess=enforceExpansiveAccess,
                      fileId=childFileId, permissionId=sourcePermissionId, body=ownerRetainRoleBody, fields='')
         else:
           callGAPI(targetDrive.permissions(), 'delete',
@@ -61417,6 +61439,7 @@ def transferDrive(users):
           if nonOwnerRetainRoleBody['role'] != 'current':
             callGAPI(ownerDrive.permissions(), 'update',
                      throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.PERMISSION_NOT_FOUND, GAPI.BAD_REQUEST, GAPI.SHARING_RATE_LIMIT_EXCEEDED],
+                     enforceExpansiveAccess=enforceExpansiveAccess,
                      fileId=childFileId, permissionId=sourcePermissionId, body=sourceUpdateRole, fields='')
         else:
           try:
@@ -61577,7 +61600,7 @@ def transferDrive(users):
   targetUserFolderPattern = '#user# old files'
   targetUserOrphansFolderPattern = '#user# orphaned files'
   targetIds = [None, None]
-  createShortcutsForNonmovableFiles = False
+  createShortcutsForNonmovableFiles = enforceExpansiveAccess = False
   mergeWithTarget = False
   thirdPartyOwners = {}
   skipFileIdEntity = initDriveFileEntity()
@@ -61595,6 +61618,8 @@ def transferDrive(users):
         nonOwnerRetainRoleBody['role'] = 'current'
     elif myarg == 'nonownertargetrole':
       nonOwnerTargetRoleBody['role'] = getChoice(TRANSFER_DRIVEFILE_ACL_ROLES_MAP, mapChoice=True)
+    elif myarg == 'enforceexpansiveaccess':
+      enforceExpansiveAccess = getBoolean()
     elif myarg == 'noretentionmessages':
       showRetentionMessages = False
     elif myarg == 'orderby':
@@ -61832,6 +61857,7 @@ def getPermissionIdForEmail(user, i, count, email):
 #	[<DriveFileParentAttribute>] [includetrashed] [norecursion [<Boolean>]]
 #	(orderby <DriveFileOrderByFieldName> [ascending|descending])*
 #	[preview] [filepath] [pathdelimiter <Character>] [buildtree]
+#	[enforceexpansiveaccess [<Boolean>]]
 #	[todrive <ToDriveAttribute>*]
 def transferOwnership(users):
   def _identifyFilesToTransfer(fileEntry):
@@ -61880,7 +61906,7 @@ def transferOwnership(users):
   body = {}
   newOwner = getEmailAddress()
   OBY = OrderBy(DRIVEFILE_ORDERBY_CHOICE_MAP)
-  changeParents = filepath = includeTrashed = noRecursion = False
+  changeParents = enforceExpansiveAccess = filepath = includeTrashed = noRecursion = False
   pathDelimiter = '/'
   csvPF = fileTree = None
   addParents = ''
@@ -61907,6 +61933,8 @@ def transferOwnership(users):
       csvPF.GetTodriveParameters()
     elif getDriveFileParentAttribute(myarg, parentParms):
       changeParents = True
+    elif myarg == 'enforceexpansiveaccess':
+      enforceExpansiveAccess = getBoolean()
     else:
       unknownArgumentExit()
   Act.Set(Act.TRANSFER_OWNERSHIP)
@@ -62024,6 +62052,7 @@ def transferOwnership(users):
                 Act.Set(action)
             callGAPI(drive.permissions(), 'update',
                      throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.PERMISSION_NOT_FOUND],
+                     enforceExpansiveAccess=enforceExpansiveAccess,
                      fileId=xferFileId, permissionId=permissionId, transferOwnership=True, body=body, fields='')
             entityModifierNewValueItemValueListActionPerformed(kvList, Act.MODIFIER_TO, None, [Ent.USER, newOwner], k, kcount)
           else:
@@ -62045,6 +62074,7 @@ def transferOwnership(users):
                      fileId=xferFileId, sendNotificationEmail=False, body=bodyAdd, fields='')
             callGAPI(drive.permissions(), 'update',
                      throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.PERMISSION_NOT_FOUND],
+                     enforceExpansiveAccess=enforceExpansiveAccess,
                      fileId=xferFileId, permissionId=permissionId, transferOwnership=True, body=body, fields='')
             entityModifierNewValueItemValueListActionPerformed(kvList, Act.MODIFIER_TO, None, [Ent.USER, newOwner], k, kcount)
           except GAPI.invalidSharingRequest as e:
@@ -62117,6 +62147,7 @@ def transferOwnership(users):
 #	[keepuser | (retainrole reader|commenter|writer|editor|none)] [noretentionmessages]
 #	(orderby <DriveFileOrderByFieldName> [ascending|descending])*
 #	[preview] [filepath] [pathdelimiter <Character>] [buildtree]
+#	[enforceexpansiveaccess [<Boolean>]]
 #	[todrive <ToDriveAttribute>*]
 def claimOwnership(users):
   def _identifyFilesToClaim(fileEntry):
@@ -62177,6 +62208,7 @@ def claimOwnership(users):
         if sourceRetainRoleBody['role'] != 'writer':
           callGAPI(sourceDrive.permissions(), 'update',
                    throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.PERMISSION_NOT_FOUND, GAPI.BAD_REQUEST],
+                   enforceExpansiveAccess=enforceExpansiveAccess,
                    fileId=ofileId, permissionId=oldOwnerPermissionId, body=sourceRetainRoleBody, fields='')
       else:
         callGAPI(sourceDrive.permissions(), 'delete',
@@ -62200,7 +62232,7 @@ def claimOwnership(users):
   onlyOwners = set()
   skipOwners = set()
   subdomains = []
-  filepath = includeTrashed = False
+  enforceExpansiveAccess = filepath = includeTrashed = False
   pathDelimiter = '/'
   addParents = ''
   parentBody = {}
@@ -62235,6 +62267,8 @@ def claimOwnership(users):
       includeTrashed = True
     elif myarg == 'orderby':
       OBY.GetChoice()
+    elif myarg == 'enforceexpansiveaccess':
+      enforceExpansiveAccess = getBoolean()
     elif myarg == 'restricted':
       bodyShare['copyRequiresWriterPermission'] = getBoolean()
     elif myarg == 'writerscanshare':
@@ -62405,6 +62439,7 @@ def claimOwnership(users):
                     Act.Set(action)
                 callGAPI(sourceDrive.permissions(), 'update',
                          throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.PERMISSION_NOT_FOUND],
+                         enforceExpansiveAccess=enforceExpansiveAccess,
                          fileId=xferFileId, permissionId=permissionId, transferOwnership=True, body=body, fields='')
                 kvList = [Ent.USER, user, entityType, fileDesc]
                 entityModifierNewValueItemValueListActionPerformed(kvList, Act.MODIFIER_FROM, None, [Ent.USER, oldOwner], l, lcount)
@@ -62429,6 +62464,7 @@ def claimOwnership(users):
                          fileId=xferFileId, sendNotificationEmail=False, body=bodyAdd, fields='')
                 callGAPI(sourceDrive.permissions(), 'update',
                          throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.PERMISSION_NOT_FOUND],
+                         enforceExpansiveAccess=enforceExpansiveAccess,
                          fileId=xferFileId, permissionId=permissionId, transferOwnership=True, body=body, fields='')
                 entityModifierNewValueItemValueListActionPerformed(kvList, Act.MODIFIER_FROM, None, [Ent.USER, oldOwner], l, lcount)
                 _processRetainedRole(user, i, count, oldOwner, entityType, xferFileId, fileDesc, l, lcount)
@@ -62965,11 +63001,12 @@ def doCreateDriveFileACL():
 
 # gam [<UserTypeEntity>] update drivefileacl <DriveFileEntity> <DriveFilePermissionIDorEmail> [asadmin]
 #	(role <DriveFileACLRole>) [expiration <Time>] [removeexpiration [<Boolean>]]
-#	[updatesheetprotectedranges  [<Boolean>]]
+#	[updatesheetprotectedranges [<Boolean>]] [enforceexpansiveaccess [<Boolean>]]
 #	[showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
 def updateDriveFileACLs(users, useDomainAdminAccess=False):
   fileIdEntity = getDriveFileEntity()
   isEmail, permissionId = getPermissionId()
+  enforceExpansiveAccess = None
   removeExpiration = showTitles = updateSheetProtectedRanges = False
   showDetails = True
   csvPF = None
@@ -62988,6 +63025,8 @@ def updateDriveFileACLs(users, useDomainAdminAccess=False):
       showTitles = True
     elif myarg == 'updatesheetprotectedranges':
       updateSheetProtectedRanges = getBoolean()
+    elif myarg == 'enforceexpansiveaccess':
+      enforceExpansiveAccess = getBoolean()
     elif myarg == 'nodetails':
       showDetails = False
     elif myarg == 'csv':
@@ -63005,6 +63044,9 @@ def updateDriveFileACLs(users, useDomainAdminAccess=False):
   _checkFileIdEntityDomainAccess(fileIdEntity, useDomainAdminAccess)
   if 'role' not in body:
     missingArgumentExit(f'role {formatChoiceList(DRIVEFILE_ACL_ROLES_MAP)}')
+  updateKwargs = {'useDomainAdminAccess': useDomainAdminAccess}
+  if enforceExpansiveAccess is not None:
+    updateKwargs['enforceExpansiveAccess'] = enforceExpansiveAccess
   printKeys, timeObjects = _getDriveFileACLPrintKeysTimeObjects()
   if csvPF and showTitles:
     csvPF.AddTitles(fileNameTitle)
@@ -63042,7 +63084,7 @@ def updateDriveFileACLs(users, useDomainAdminAccess=False):
         permission = callGAPI(drive.permissions(), 'update',
                               bailOnInternalError=True,
                               throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+GAPI.DRIVE3_UPDATE_ACL_THROW_REASONS+[GAPI.FILE_NEVER_WRITABLE],
-                              useDomainAdminAccess=useDomainAdminAccess,
+                              **updateKwargs,
                               fileId=fileId, permissionId=permissionId, removeExpiration=removeExpiration,
                               transferOwnership=body.get('role', '') == 'owner', body=body, fields='*', supportsAllDrives=True)
         if updateSheetProtectedRanges and mimeType == MIMETYPE_GA_SPREADSHEET:
@@ -63138,7 +63180,7 @@ def createDriveFilePermissions(users, useDomainAdminAccess=False):
     except ValueError:
       return None
 
-  def _callbackCreatePermission(request_id, response, exception):
+  def _callbackCreatePermission(request_id, _, exception):
     ri = request_id.splitlines()
     if int(ri[RI_J]) == 1:
       entityPerformActionNumItems([Ent.DRIVE_FILE_OR_FOLDER_ID, ri[RI_ENTITY]], int(ri[RI_JCOUNT]), Ent.PERMITTEE, int(ri[RI_I]), int(ri[RI_COUNT]))
@@ -63286,11 +63328,12 @@ def doCreatePermissions():
   createDriveFilePermissions([_getAdminEmail()], True)
 
 # gam [<UserTypeEntity>] delete drivefileacl <DriveFileEntity> <DriveFilePermissionIDorEmail> [asadmin]
-#	[updatesheetprotectedranges  [<Boolean>]]
+#	[updatesheetprotectedranges  [<Boolean>]] [enforceexpansiveaccess [<Boolean>]]
 #	[showtitles]
 def deleteDriveFileACLs(users, useDomainAdminAccess=False):
   fileIdEntity = getDriveFileEntity()
   isEmail, permissionId = getPermissionId()
+  enforceExpansiveAccess = None
   showTitles = updateSheetProtectedRanges = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -63298,11 +63341,16 @@ def deleteDriveFileACLs(users, useDomainAdminAccess=False):
       showTitles = getBoolean()
     elif myarg == 'updatesheetprotectedranges':
       updateSheetProtectedRanges = getBoolean()
+    elif myarg == 'enforceexpansiveaccess':
+      enforceExpansiveAccess = getBoolean()
     elif myarg in ADMIN_ACCESS_OPTIONS:
       useDomainAdminAccess = True
     else:
       unknownArgumentExit()
   _checkFileIdEntityDomainAccess(fileIdEntity, useDomainAdminAccess)
+  deleteKwargs = {'useDomainAdminAccess': useDomainAdminAccess}
+  if enforceExpansiveAccess is not None:
+    deleteKwargs['enforceExpansiveAccess'] = enforceExpansiveAccess
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -63335,7 +63383,8 @@ def deleteDriveFileACLs(users, useDomainAdminAccess=False):
                 break
         callGAPI(drive.permissions(), 'delete',
                  throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+GAPI.DRIVE3_DELETE_ACL_THROW_REASONS+[GAPI.FILE_NEVER_WRITABLE],
-                 useDomainAdminAccess=useDomainAdminAccess, fileId=fileId, permissionId=permissionId, supportsAllDrives=True)
+                 **deleteKwargs,
+                 fileId=fileId, permissionId=permissionId, supportsAllDrives=True)
         entityActionPerformed([Ent.USER, user, entityType, fileName, Ent.PERMISSION_ID, permissionId], j, jcount)
         if updateSheetProtectedRanges and mimeType == MIMETYPE_GA_SPREADSHEET:
           _updateSheetProtectedRangesACLchange(sheet, user, i, count, j, jcount, fileId, fileName, False, permission)
@@ -63357,6 +63406,7 @@ def doDeleteDriveFileACLs():
 
 # gam [<UserTypeEntity>] delete permissions <DriveFileEntity> <DriveFilePermissionIDEntity> [asadmin]
 #	<PermissionMatch>* [<PermissionMatchAction>]
+#	[enforceexpansiveaccess [<Boolean>]]
 def deletePermissions(users, useDomainAdminAccess=False):
   def convertJSONPermissions(jsonPermissions):
     permissionIds = []
@@ -63366,7 +63416,7 @@ def deletePermissions(users, useDomainAdminAccess=False):
       permissionIds.append(permission['id'])
     return permissionIds
 
-  def _callbackDeletePermissionId(request_id, response, exception):
+  def _callbackDeletePermissionId(request_id, _, exception):
     ri = request_id.splitlines()
     if int(ri[RI_J]) == 1:
       entityPerformActionNumItems([Ent.DRIVE_FILE_OR_FOLDER_ID, ri[RI_ENTITY]], int(ri[RI_JCOUNT]), Ent.PERMISSION_ID, int(ri[RI_I]), int(ri[RI_COUNT]))
@@ -63391,7 +63441,8 @@ def deletePermissions(users, useDomainAdminAccess=False):
         callGAPI(drive.permissions(), 'delete',
                  throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+GAPI.DRIVE3_DELETE_ACL_THROW_REASONS,
                  retryReasons=[GAPI.SERVICE_LIMIT],
-                 useDomainAdminAccess=useDomainAdminAccess, fileId=ri[RI_ENTITY], permissionId=ri[RI_ITEM], supportsAllDrives=True)
+                 useDomainAdminAccess=useDomainAdminAccess, enforceExpansiveAccess=enforceExpansiveAccess,
+                 fileId=ri[RI_ENTITY], permissionId=ri[RI_ITEM], supportsAllDrives=True)
         entityActionPerformed([Ent.DRIVE_FILE_OR_FOLDER_ID, ri[RI_ENTITY], Ent.PERMISSION_ID, ri[RI_ITEM]], int(ri[RI_J]), int(ri[RI_JCOUNT]))
       except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.unknownError,
               GAPI.badRequest, GAPI.cannotRemoveOwner, GAPI.cannotModifyInheritedTeamDrivePermission,
@@ -63411,12 +63462,15 @@ def deletePermissions(users, useDomainAdminAccess=False):
     jsonData = getJSON([])
     PM = PermissionMatch()
     PM.SetDefaultMatch(False, {'role': 'owner'})
+  enforceExpansiveAccess = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg in ADMIN_ACCESS_OPTIONS:
       useDomainAdminAccess = True
     elif PM and PM.ProcessArgument(myarg):
       pass
+    elif myarg == 'enforceexpansiveaccess':
+      enforceExpansiveAccess = getBoolean()
     else:
       unknownArgumentExit()
   _checkFileIdEntityDomainAccess(fileIdEntity, useDomainAdminAccess)
@@ -68647,7 +68701,7 @@ def deleteLabels(users, labelEntity):
     http_status, reason, message = checkGAPIError(exception)
     entityActionFailedWarning([Ent.USER, ri[RI_ENTITY], Ent.LABEL, labelIdToNameMap[ri[RI_ITEM]]], formatHTTPError(http_status, reason, message), int(ri[RI_J]), int(ri[RI_JCOUNT]))
 
-  def _callbackDeleteLabel(request_id, response, exception):
+  def _callbackDeleteLabel(request_id, _, exception):
     ri = request_id.splitlines()
     if exception is None:
       entityActionPerformed([Ent.USER, ri[RI_ENTITY], Ent.LABEL, labelIdToNameMap[ri[RI_ITEM]]], int(ri[RI_J]), int(ri[RI_JCOUNT]))
@@ -69248,7 +69302,7 @@ def _processMessagesThreads(users, entityType):
                                         GAPI.INVALID_MESSAGE_ID: Msg.INVALID_MESSAGE_ID,
                                         GAPI.FAILED_PRECONDITION: Msg.FAILED_PRECONDITION}
 
-  def _callbackProcessMessage(request_id, response, exception):
+  def _callbackProcessMessage(request_id, _, exception):
     ri = request_id.splitlines()
     if exception is None:
       if not csvPF:
