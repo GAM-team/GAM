@@ -1,3 +1,9 @@
+7.05.01
+
+Updated from `v1beta1` to `v1` for `Cloud Identity - Policy`.
+
+* See: https://workspaceupdates.googleblog.com/2025/02/policy-api-general-availability.html
+
 7.05.00
 
 Enabled support for Limited Access as described here:

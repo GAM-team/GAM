@@ -4073,6 +4073,7 @@ gam show cigroup-members
         releaseversion|
         securitypatchtime|
         serialnumber|
+        unifieddeviceid|
         wifimacaddresses
 <DeviceFieldNameList> ::= "<DeviceFieldName>(,<DeviceFieldName>)*"
 

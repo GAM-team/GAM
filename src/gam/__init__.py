@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.05.00'
+__version__ = '7.05.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -29251,6 +29251,7 @@ DEVICE_FIELDS_CHOICE_MAP = {
   'releaseversion': 'releaseVersion',
   'securitypatchtime': 'securityPatchTime',
   'serialnumber': 'serialNumber',
+  'unifieddeviceid': 'unifiedDeviceId',
   'wifimacaddresses': 'wifiMacAddresses'
   }
 
