@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.05.01'
+__version__ = '7.05.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -13109,6 +13109,7 @@ CUSTOMER_REPORT_SERVICES = {
   'app_maker',
   'apps_scripts',
   'calendar',
+  'chat',
   'classroom',
   'cros',
   'device_management',
@@ -13122,6 +13123,7 @@ CUSTOMER_REPORT_SERVICES = {
 
 USER_REPORT_SERVICES = {
   'accounts',
+  'chat',
   'classroom',
   'docs',
   'drive',
