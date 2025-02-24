@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.05.02'
+__version__ = '7.05.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -44792,7 +44792,7 @@ def doPrintUsers(entityList=None):
       return
     sortRows = True
 # If no individual fields were specified (allfields, basic, full) or individual fields other than primaryEmail were specified, look up each user
-    if isSuspended is not None:
+    if isSuspended is not None and fieldsList:
       fieldsList.append('suspended')
     if projectionSet or len(set(fieldsList)) > 1 or showValidColumn:
       jcount = len(entityList)

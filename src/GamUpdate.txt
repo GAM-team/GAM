@@ -1,3 +1,7 @@
+7.05.03
+
+Fixed bug in `gam all users print users issuspended false allfields` that caused a trap.
+
 7.05.02
 
 Chat usage reports are now available. Added `chat` to `<CustomerServiceName>` and `<UserServiceName>`
