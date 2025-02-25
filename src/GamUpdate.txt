@@ -1,3 +1,11 @@
+7.05.04
+
+Updated `gam calendars <CalendarEntity> update events` and `gam <UserTypeEntity> update events`
+to handle the following error:
+```
+ERROR 400: malformedWorkingLocationEvent - A working location event must have a visibility setting of public.
+```
+
 7.05.03
 
 Fixed bug in `gam all users print users issuspended false allfields` that caused a trap.
