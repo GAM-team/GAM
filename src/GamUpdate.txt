@@ -1,3 +1,96 @@
+7.05.04
+
+Updated `gam calendars <CalendarEntity> update events` and `gam <UserTypeEntity> update events`
+to handle the following error:
+```
+ERROR 400: malformedWorkingLocationEvent - A working location event must have a visibility setting of public.
+```
+
+7.05.03
+
+Fixed bug in `gam all users print users issuspended false allfields` that caused a trap.
+
+7.05.02
+
+Chat usage reports are now available. Added `chat` to `<CustomerServiceName>` and `<UserServiceName>`
+for use in `gam report customer|user`.
+
+* https://workspaceupdates.googleblog.com/2025/02/chat-usage-analytics-updates.html
+
+7.05.01
+
+Updated from `v1beta1` to `v1` for `Cloud Identity - Policy`.
+
+* See: https://workspaceupdates.googleblog.com/2025/02/policy-api-general-availability.html
+
+7.05.00
+
+Enabled support for Limited Access as described here:
+* https://workspaceupdates.googleblog.com/2025/02/updating-access-experience-in-google-drive.html
+
+Note that the rollout may take 15 days.
+
+Added option `inheritedpermissionsdisabled [<Boolean>]` to `<DriveFileAttribute>`; this
+attribute can be set on folders.
+
+Added `inheritedpermissionsdisabled` to `<DriveFieldName>`.
+
+Added `capabilities.candisableinheritedpermissions` and `capabilities.canenableinheritedpermissions`
+to `<DriveCapabilitiesSubfieldName>`.
+
+Added option `enforceexpansiveaccess [<Boolean>]` to all commands that delete or update
+drive file ACLs/permissions.
+```
+gam <UserTypeEntity> delete permissions
+gam <UserTypeEntity> delete drivefileacl
+gam <UserTypeEntity> update drivefileacl
+gam <UserTypeEntity> copy drivefile
+gam <UserTypeEntity> move drivefile
+gam <UserTypeEntity> transfer ownership
+gam <UserTypeEntity> claim ownership
+gam <UserTypeEntity> transfer drive
+```
+
+7.04.05
+
+Added initial support for Meet API v2beta; you must be in the Developer Preview program
+for this to be effective.
+* https://developers.google.com/meet/api/guides/beta/configuration-beta#auto-artifacts
+
+Added `meet_v2_beta` Boolean variable to `gam.cfg`. When this variable is true,
+the following options are added to `<MeetSpaceOptions>` used in `gam <UserTypeEntity> create|update meetspace`.
+```
+        moderation <Boolean> |
+        chatrestriction hostsonly|norestriction |
+        reactionrestriction hostsonly|norestriction |
+        presentrestriction hostsonly|norestriction |
+        defaultjoinasviewer <Boolean> |
+        recording <Boolean> |
+        transcription <Boolean> |
+        smartnotes <Boolean>
+```
+
+This isn't called beta for nothing, I have found problems and reported them.
+
+7.04.04
+
+Updated `gam print group-members|cigroup-members` to include the `email` column
+when `fields <MembersFieldNameList>` did not include `email`.
+
+7.04.03
+
+Added option `minimal|basic|full` to `gam print cigroup-members`:
+* `minimal` - Fields displayed: group, id, role, email
+* `basic` - Fields displayed: group, type, id, role, email
+* `full` - Fields displayed: group, type, id, role, email, createTime, updateTime; this is the default
+
+Added option `minimal|basic|full` to `gam show cigroup-members`:
+* `minimal` - Fields displayed: role, email
+* `basic` - Fields displayed: type, role, email
+* `full` - Fields displayed: type, role, email, createTime, updateTime; this is the default
+
+Upgraded `gam print cigroup-members ... recursive` to display sub-group email addresses rather than IDs.
+
 7.04.02
 
 Improved output formatting for the following commands:

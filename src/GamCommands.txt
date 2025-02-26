@@ -3846,6 +3846,7 @@ gam info group|groups <GroupEntity>
         [formatjson]
 gam print groups [todrive <ToDriveAttribute>*]
         [([domain|domains <DomainNameEntity>] ([member|showownedby <EmailItem>]|[(query <QueryGroup>)|(queries <QueryGroupList>)]))|
+         (group|group_ns|group_susp <GroupItem>)|
          (select <GroupEntity>)]
         [emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
         [descriptionmatchpattern [not] <RegularExpression>] (matchsetting [not] <GroupAttribute>)*
@@ -3997,13 +3998,14 @@ gam print cigroups [todrive <ToDriveAttribute>*]
 
 <CIGroupMembersFieldName> ::=
         createtime
+        email|useremail|
         expiretime|
         memberkey|
         name|
         role|
         type|
-        updatetime|
-        useremail
+        updatetime
+
 <CIGroupMembersFieldNameList> ::= "<CIGroupMembersFieldName>(,<CIGroupMembersFieldName>)*"
 
 gam <UserTypeEntity> info cimember <GroupEntity>
@@ -4017,16 +4019,19 @@ gam print cigroup-members [todrive <ToDriveAttribute>*]
         [types <CIGroupMemberTypeList>]
         [memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
         <CIGroupMembersFieldName>* [fields <CIGroupMembersFieldNameList>]
-        [(recursive [noduplicates])includederivedmembership] [nogroupeemail]
+        [minimal|basic|full]
+        [(recursive [noduplicates]) | includederivedmembership] [nogroupemail]
         [formatjson [quotechar <Character>]]
 gam show cigroup-members
         [(cimember|ciowner <UserItem>)|(cigroup <GroupItem>)|(select <GroupEntity>)]
         [showownedby <UserItem>]
         [emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
         [descriptionmatchpattern [not] <RegularExpression>]
-        [roles <GroupRoleList>] [members] [managers] [owners] [depth <Number>]
+        [roles <GroupRoleList>] [members] [managers] [owners]
         [types <CIGroupMemberTypeList>]
         [memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
+        [minimal|basic|full]
+        [(depth <Number>) | includederivedmembership]
 
 # Cloud Identity Devices
 
@@ -4068,6 +4073,7 @@ gam show cigroup-members
         releaseversion|
         securitypatchtime|
         serialnumber|
+        unifieddeviceid|
         wifimacaddresses
 <DeviceFieldNameList> ::= "<DeviceFieldName>(,<DeviceFieldName>)*"
 
@@ -4469,6 +4475,7 @@ gam report <ActivityApplicationName> [todrive <ToDriveAttribute>*]
         app_maker|
         apps_scripts|
         calendar|
+        chat|
         classroom|
         cros|
         device_management|
@@ -4489,6 +4496,7 @@ gam report customers|customer|domain [todrive <ToDriveAttribute>*]
 
 <UserServiceName> ::=
         accounts|
+        chat|
         classroom|
         docs|
         drive|
@@ -4959,6 +4967,7 @@ gam create|add permissions <SharedDriveEntityAdmin> <DriveFilePermissionEntity>
         <PermissionMatch>* [<PermissionMatchAction>]
 gam delete permissions <SharedDriveEntityAdmin> <DriveFilePermissionIDEntity>
         <PermissionMatch>* [<PermissionMatchAction>]
+        [enforceexpansiveaccess [<Boolean>]]
 
 In these commands, you specify an administrator and then indicate that you want domain administrator access with the adminaccess option.
 
@@ -4972,9 +4981,11 @@ gam <UserTypeEntity> create|add drivefileacl <SharedDriveEntityAdmin>
         adminaccess
 gam <UserTypeEntity> update drivefileacl <SharedDriveEntityAdmin> <DriveFilePermissionIDorEmail>
         (role <DriveFileACLRole>) [expires|expiration <Time>] [removeexpiration [<Boolean>]]
+        [enforceexpansiveaccess [<Boolean>]]
         [showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
         adminaccess
 gam <UserTypeEntity> delete drivefileacl <SharedDriveEntityAdmin> <DriveFilePermissionIDorEmail>
+        [enforceexpansiveaccess [<Boolean>]]
         [showtitles] adminaccess
 gam <UserTypeEntity> info drivefileacl <SharedDriveEntityAdmin> <DriveFilePermissionIDorEmail> adminaccess
         [showtitles]
@@ -5000,6 +5011,7 @@ gam <UserTypeEntity> create|add permissions <SharedDriveEntityAdmin> <DriveFileP
         <PermissionMatch>* [<PermissionMatchAction>]
 gam <UserTypeEntity> delete permissions <SharedDriveEntityAdmin> <DriveFilePermissionIDEntity> adminaccess
         <PermissionMatch>* [<PermissionMatchAction>]
+        [enforceexpansiveaccess [<Boolean>]]
 
 In these commands, the Google administrator named in oauth2.txt is used.
 
@@ -6562,6 +6574,7 @@ gam <UserTypeEntity> copy drivefile <DriveFileEntity>
         [sendemailifrequired [<Boolean>]]
         [suppressnotselectedmessages [<Boolean>]]
         [verifyorganizer [<Boolean>]]
+        [enforceexpansiveaccess [<Boolean>]]
 
 gam <UserTypeEntity> move drivefile <DriveFileEntity> [newfilename <DriveFileName>]
         [summary [<Boolean>]] [showpermissionmessages [<Boolean>]]
@@ -6585,6 +6598,7 @@ gam <UserTypeEntity> move drivefile <DriveFileEntity> [newfilename <DriveFileNam
         [retainsourcefolders [<Boolean>]]
         [sendemailifrequired [<Boolean>]]
         [verifyorganizer [<Boolean>]]
+        [enforceexpansiveaccess [<Boolean>]]
 
 gam <UserTypeEntity> get document <DriveFileEntity>
         [viewmode default|suggestions_inline|preview_suggestions_accepted|preview_without_suggestions]
@@ -6690,10 +6704,10 @@ gam <UserTypeEntity> create|add drivefileacl <DriveFileEntity> [adminaccess|asad
         [showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
 gam <UserTypeEntity> update drivefileacl <DriveFileEntity> <DriveFilePermissionIDorEmail>
         (role <DriveFileACLRole>) [expires|expiration <Time>] [removeexpiration [<Boolean>]]
-        [updatesheetprotectedranges [<Boolean>]]
+        [updatesheetprotectedranges [<Boolean>]] [enforceexpansiveaccess [<Boolean>]]
         [showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
 gam <UserTypeEntity> delete drivefileacl <DriveFileEntity> <DriveFilePermissionIDorEmail>
-        [updatesheetprotectedranges [<Boolean>]]
+        [updatesheetprotectedranges [<Boolean>]] [enforceexpansiveaccess [<Boolean>]]
         [showtitles]
 gam <UserTypeEntity> info drivefileacl <DriveFileEntity> <DriveFilePermissionIDorEmail>
         [showtitles]
@@ -6817,6 +6831,7 @@ gam <UserTypeEntity> print filerevisions <DriveFileEntity> [todrive <ToDriveAttr
 
 gam <UserTypeEntity> transfer ownership <DriveFileEntity> <UserItem>
         [<DriveFileParentAttribute>] [includetrashed] [norecursion [<Boolean>]]
+        [enforceexpansiveaccess [<Boolean>]]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [preview] [filepath] [pathdelimiter <Character>] [buildtree]
         [todrive <ToDriveAttribute>*]
@@ -6825,6 +6840,7 @@ gam <UserTypeEntity> claim ownership <DriveFileEntity>
         [skipids <DriveFileEntity>] [onlyusers|skipusers <UserTypeEntity>] [subdomains <DomainNameEntity>]
         [restricted [<Boolean>]] [writerscanshare|writerscantshare [<Boolean>]]
         [keepuser | (retainrole commenter|reader|writer|editor|fileorganizer|none)] [noretentionmessages]
+        [enforceexpansiveaccess [<Boolean>]]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [preview] [filepath] [pathdelimiter <Character>] [buildtree]
         [todrive <ToDriveAttribute>*]
@@ -6832,6 +6848,7 @@ gam <UserTypeEntity> claim ownership <DriveFileEntity>
 gam <UserTypeEntity> transfer drive <UserItem> [select <DriveFileEntity>]
         [(targetfolderid <DriveFolderID>)|(targetfoldername <DriveFolderName>)]
         [targetuserfoldername <DriveFolderName>] [targetuserorphansfoldername <DriveFolderName>]
+        [enforceexpansiveaccess [<Boolean>]]
         [mergewithtarget [<Boolean>]]
         [skipids <DriveFileEntity>]
         [keepuser | (retainrole reader|commenter|writer|editor|fileorganizer|none)] [noretentionmessages]
@@ -7878,7 +7895,15 @@ gam <UserTypeEntity> show lookerstudiopermissions
 <MeetSpaceName> ::= spaces/<String> | <String>
 <MeetSpaceOptions> ::=
         accesstype open|trusted|restricted |
-        entrypointaccess all|creatorapponly
+        entrypointaccess all|creatorapponly |
+        moderation <Boolean> |
+        chatrestriction hostsonly|norestriction |
+        reactionrestriction hostsonly|norestriction |
+        presentrestriction hostsonly|norestriction |
+        defaultjoinasviewer <Boolean> |
+        recording <Boolean> |
+        transcription <Boolean> |
+        smartnotes <Boolean>
 
 gam <UserTypeEntity> create meetspace
         <MeetSpaceOptions>*

@@ -177,10 +177,12 @@ INTER_BATCH_WAIT = 'inter_batch_wait'
 LICENSE_MAX_RESULTS = 'license_max_results'
 # License SKUs to process
 LICENSE_SKUS = 'license_skus'
+# Use Meet V2 beta
+MEET_V2_BETA = 'meet_v2_beta'
 # When retrieving lists of Google Group members from API, how many should be retrieved in each chunk
 MEMBER_MAX_RESULTS = 'member_max_results'
 # CI API Group members max page size when view=BASIC
-MEMBER_MAX_RESULTS_CI_BASIC = 'member.max_results_ci_basic'
+MEMBER_MAX_RESULTS_CI_BASIC = 'member_max_results_ci_basic'
 # CI API Group members max page size when view=FULL
 MEMBER_MAX_RESULTS_CI_FULL = 'member_max_results_ci_full'
 # When deleting or modifying Gmail messages, how many should be processed in each batch
@@ -388,6 +390,7 @@ Defaults = {
   INTER_BATCH_WAIT: '0',
   LICENSE_MAX_RESULTS: '100',
   LICENSE_SKUS: '',
+  MEET_V2_BETA: FALSE,
   MEMBER_MAX_RESULTS: '200',
   MEMBER_MAX_RESULTS_CI_BASIC: '1000',
   MEMBER_MAX_RESULTS_CI_FULL: '500',
@@ -555,6 +558,7 @@ VAR_INFO = {
   INTER_BATCH_WAIT: {VAR_TYPE: TYPE_FLOAT, VAR_LIMITS: (0.0, 60.0)},
   LICENSE_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (10, 1000)},
   LICENSE_SKUS: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
+  MEET_V2_BETA: {VAR_TYPE: TYPE_BOOLEAN},
   MEMBER_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 200)},
   MEMBER_MAX_RESULTS_CI_BASIC: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 1000)},
   MEMBER_MAX_RESULTS_CI_FULL: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 500)},

@@ -75,6 +75,7 @@ KEEP = 'keep'
 LICENSING = 'licensing'
 LOOKERSTUDIO = 'datastudio'
 MEET = 'meet'
+MEET_BETA = 'meetbeta'
 OAUTH2 = 'oauth2'
 ORGPOLICY = 'orgpolicy'
 PEOPLE = 'people'
@@ -226,7 +227,7 @@ _INFO = {
   CLOUDIDENTITY_INBOUND_SSO: {'name': 'Cloud Identity Inbound SSO API', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_ORGUNITS: {'name': 'Cloud Identity OrgUnits API', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_ORGUNITS_BETA: {'name': 'Cloud Identity OrgUnits API', 'version': 'v1beta1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
-  CLOUDIDENTITY_POLICY: {'name': 'Cloud Identity Policy API', 'version': 'v1beta1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
+  CLOUDIDENTITY_POLICY: {'name': 'Cloud Identity Policy API', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_USERINVITATIONS: {'name': 'Cloud Identity User Invitations API', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDRESOURCEMANAGER: {'name': 'Cloud Resource Manager API v3', 'version': 'v3', 'v2discovery': True},
   CONTACTS: {'name': 'Contacts API', 'version': 'v3', 'v2discovery': False},
@@ -251,6 +252,7 @@ _INFO = {
   LICENSING: {'name': 'License Manager API', 'version': 'v1', 'v2discovery': True},
   LOOKERSTUDIO: {'name': 'Looker Studio API', 'version': 'v1', 'v2discovery': True, 'localjson': True},
   MEET: {'name': 'Meet API', 'version': 'v2', 'v2discovery': True},
+  MEET_BETA: {'name': 'Meet API', 'version': 'v2beta', 'v2discovery': True, 'localjson': True, 'mappedAPI': MEET},
   OAUTH2: {'name': 'OAuth2 API', 'version': 'v2', 'v2discovery': False},
   ORGPOLICY: {'name': 'Organization Policy API', 'version': 'v2', 'v2discovery': True},
   PEOPLE: {'name': 'People API', 'version': 'v1', 'v2discovery': True},
