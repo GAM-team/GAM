@@ -5749,14 +5749,18 @@ def convertUIDtoEmailAddressWithType(emailAddressOrUID, cd=None, sal=None, email
       return (uid, 'serviceaccount')
   return (normalizedEmailAddressOrUID, 'unknown')
 
+NON_EMAIL_MEMBER_PREFIXES = (
+                              "cbcm-browser.",
+                              "chrome-os-device.",
+                            )
 # Convert UID to email address
 def convertUIDtoEmailAddress(emailAddressOrUID, cd=None, emailTypes=None,
                              checkForCustomerId=False, ciGroupsAPI=False, aliasAllowed=True):
   if ciGroupsAPI:
-    if emailAddressOrUID.startswith('cbcm-browser.') or emailAddressOrUID.startswith('chrome-os-device.'):
+    if emailAddressOrUID.startswith(NON_EMAIL_MEMBER_PREFIXES):
       return emailAddressOrUID
     normalizedEmailAddressOrUID = normalizeEmailAddressOrUID(emailAddressOrUID, ciGroupsAPI=ciGroupsAPI)
-    if normalizedEmailAddressOrUID.startswith('cbcm-browser.') or normalizedEmailAddressOrUID.startswith('chrome-os-device.'):
+    if normalizedEmailAddressOrUID.startswith(NON_EMAIL_MEMBER_PREFIXES):
       return normalizedEmailAddressOrUID
   email, _ = convertUIDtoEmailAddressWithType(emailAddressOrUID, cd, emailTypes,
                                               checkForCustomerId, ciGroupsAPI, aliasAllowed)
