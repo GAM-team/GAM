@@ -18924,11 +18924,6 @@ CONTACT_USER_DEFINED_FIELDS = 'User Defined Fields'
 CONTACT_WEBSITES = 'Websites'
 #
 class ContactsManager():
-  def __init__(self, feed):
-    if GC.Values[GC.ENABLE_DASA]:
-      systemErrorExit(USAGE_ERROR_RC,
-                      Msg.COMMAND_NOT_COMPATIBLE_WITH_ENABLE_DASA.format(Act.ToPerform().lower(),
-                                                                         Cmd.ARG_CONTACTS if feed else Cmd.ARG_GAL))
 
   CONTACT_ARGUMENT_TO_PROPERTY_MAP = {
     'json': CONTACT_JSON,
@@ -19945,7 +19940,7 @@ def dedupEmailAddressMatches(contactsManager, emailMatchType, fields):
 
 def _createContact():
   entityType = Ent.DOMAIN
-  contactsManager = ContactsManager(True)
+  contactsManager = ContactsManager()
   parameters = {'csvPF': None, 'titles': ['Domain', CONTACT_ID], 'addCSVData': {}, 'returnIdOnly': False}
   fields = contactsManager.GetContactFields(parameters)
   csvPF = parameters['csvPF']
@@ -19986,7 +19981,7 @@ def doCreateDomainContact():
 
 def _clearUpdateContacts(updateContacts):
   entityType = Ent.DOMAIN
-  contactsManager = ContactsManager(True)
+  contactsManager = ContactsManager()
   entityList, contactQuery, queriedContacts = _getContactEntityList(1, False)
   if updateContacts:
     update_fields = contactsManager.GetContactFields()
@@ -20078,7 +20073,7 @@ def doUpdateDomainContacts():
 
 def _dedupContacts():
   entityType = Ent.DOMAIN
-  contactsManager = ContactsManager(True)
+  contactsManager = ContactsManager()
   contactQuery = _initContactQueryAttributes()
   emailMatchType = False
   while Cmd.ArgumentsRemaining():
@@ -20133,7 +20128,7 @@ def doDedupDomainContacts():
 
 def _deleteContacts():
   entityType = Ent.DOMAIN
-  contactsManager = ContactsManager(True)
+  contactsManager = ContactsManager()
   entityList, contactQuery, queriedContacts = _getContactEntityList(-1, False)
   user, contactsObject = getContactsObject(True)
   if queriedContacts:
@@ -20248,7 +20243,7 @@ def _getContactFieldsList(contactsManager, displayFieldsList):
 
 def _infoContacts(contactFeed):
   entityType = Ent.DOMAIN
-  contactsManager = ContactsManager(contactFeed)
+  contactsManager = ContactsManager()
   entityList = getEntityList(Cmd.OB_CONTACT_ENTITY)
   contactQuery = _initContactQueryAttributes()
   FJQC = FormatJSONQuoteChar()
@@ -20304,7 +20299,7 @@ def doInfoGAL():
 def _printShowContacts(contactFeed):
   entityType = Ent.DOMAIN
   entityTypeName = Ent.Singular(entityType)
-  contactsManager = ContactsManager(contactFeed)
+  contactsManager = ContactsManager()
   csvPF = CSVPrintFile([entityTypeName, CONTACT_ID, CONTACT_NAME], 'sortall',
                        contactsManager.CONTACT_ARRAY_PROPERTY_PRINT_ORDER) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
