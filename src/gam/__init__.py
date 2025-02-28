@@ -12855,8 +12855,6 @@ def doCreateGCPServiceAccount():
 
 # Audit command utilities
 def getAuditParameters(emailAddressRequired=True, requestIdRequired=True, destUserRequired=False):
-  if GC.Values[GC.ENABLE_DASA]:
-    systemErrorExit(USAGE_ERROR_RC, Msg.COMMAND_NOT_COMPATIBLE_WITH_ENABLE_DASA.format('audit monitor', Act.ToPerform().lower()))
   auditObject = getEmailAuditObject()
   emailAddress = getEmailAddress(noUid=True, optional=not emailAddressRequired)
   parameters = {}
