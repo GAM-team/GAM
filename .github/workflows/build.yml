@@ -824,6 +824,7 @@ jobs:
           $gam config csv_output_row_filter "name:regex:gha_test_${JID}_" print vaultholds || if [ $? != 55 ]; then exit $?; fi | $gam csv - gam delete vaulthold "id:~~holdId~~" matter "id:~~matterId~~"
           $gam config csv_output_row_filter "name:regex:gha_test_${HID}_" print vaultmatters matterstate OPEN | $gam csv - gam update vaultmatter "id:~~matterId~~" action close
           $gam config csv_output_row_filter "name:regex:gha_test_${HID}_" print vaultmatters matterstate CLOSED | $gam csv - gam update vaultmatter "id:~~matterId~~" action delete
+          $gam config csv_output_row_filter "Emails.1.address:regex:^gha_test-${JID}_" print contacts | $gam csv - gam delete contact ~ContactID
           $gam config enable_dasa true save
           $gam config csv_output_row_filter "name:regex:gha_test_${JID}_" print features | $gam csv - gam delete feature ~name
           $gam config csv_output_row_filter "name:regex:^gha_test_${JID}_" user $gam_user print shareddrives asadmin | $gam csv - gam user $gam_user delete shareddrive ~id nukefromorbit
@@ -832,7 +833,6 @@ jobs:
           $gam config csv_output_row_filter "email:regex:^gha_test_${JID}_" print cigroups | $gam csv - gam delete cigroup ~email
           $gam config csv_output_row_filter "resourceId:regex:^gha_test_${JID}_" print resources | $gam csv - gam delete resource ~resourceId
           $gam config csv_output_row_filter "buildingId:regex:^gha_test_${JID}_" print buildings | $gam csv - gam delete building ~buildingId
-          $gam config csv_output_row_filter "Emails.1.address:regex:^gha_test-${JID}_" print contacts | $gam csv - gam delete contact ~ContactID
 
           echo "Creating OrgUnit ${newou}"
           $gam create ou "${newou}"
@@ -874,6 +874,8 @@ jobs:
           $gam csv sample.csv gam update user ~~email~~ recoveryphone "" recoveryemail ""
           $gam config enable_dasa false save
           $gam csv sample.csv gam user ~email add license workspaceenterpriseplus
+          #$gam user $newuser add contactdelegate "${newbase}-bulkuser-1"
+          #$gam user $newuser print contactdelegates
           $gam config enable_dasa true save
           $gam csv sample.csv gam user $gam_user sendemail recipient ~~email~~@pdl.jaylee.us subject "test message $newbase" message "GHA test message"
           $gam csv sample.csv gam update group $newgroup add member ~email
@@ -884,8 +886,6 @@ jobs:
           $gam user $newuser imap on
           $gam user $newuser show imap
           $gam user $newuser show delegates
-          #$gam user $newuser add contactdelegate "${newbase}-bulkuser-1"
-          #$gam user $newuser print contactdelegates
           export biohazard=$(echo -e '\xe2\x98\xa3')
           $gam user $newuser label "$biohazard unicode biohazard $biohazard"
           $gam user $newuser show labels
@@ -951,9 +951,9 @@ jobs:
           $gam user $newuser show holds || if [ $? != 55 ]; then exit $?; fi # expect a 55 return code
           export sn="$JID$JID$JID$JID-$(openssl rand -base64 32 | sed 's/[^a-zA-Z0-9]//g')"
           $gam create device serialnumber $sn devicetype android
+          $gam delete contacts emailmatchpattern "^${newbase}@example.com$"
           $gam config enable_dasa true save
           $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail  || if [ $? != 50 ]; then exit $?; fi # expect a 50 return code (vault hold on user)
-          $gam delete contacts emailmatchpattern "^${newbase}@example.com$"
           $gam print mobile
           $gam print devices
           $gam print browsers
