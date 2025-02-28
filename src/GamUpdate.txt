@@ -1,3 +1,10 @@
+7.05.05
+
+Added options `password prompt` and `password uniqueprompt` to `gam create user <EmailAddress>`
+and `gam update users <UserTypeEntity>` that prompt you to enter a password from stdin.
+
+See [User Passwords](https://github.com/GAM-team/GAM/wiki/Users#passwords)
+
 7.05.04
 
 Updated `gam calendars <CalendarEntity> update events` and `gam <UserTypeEntity> update events`

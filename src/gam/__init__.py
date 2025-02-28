@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.05.04'
+__version__ = '7.05.05'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -12851,6 +12851,8 @@ def doCreateGCPServiceAccount():
 
 # Audit command utilities
 def getAuditParameters(emailAddressRequired=True, requestIdRequired=True, destUserRequired=False):
+  if GC.Values[GC.ENABLE_DASA]:
+    systemErrorExit(USAGE_ERROR_RC, Msg.COMMAND_NOT_COMPATIBLE_WITH_ENABLE_DASA.format('audit monitor', Act.ToPerform().lower()))
   auditObject = getEmailAuditObject()
   emailAddress = getEmailAddress(noUid=True, optional=not emailAddressRequired)
   parameters = {}
@@ -18918,6 +18920,12 @@ CONTACT_USER_DEFINED_FIELDS = 'User Defined Fields'
 CONTACT_WEBSITES = 'Websites'
 #
 class ContactsManager():
+  def __init__(self, feed):
+    if GC.Values[GC.ENABLE_DASA]:
+      systemErrorExit(USAGE_ERROR_RC,
+                      Msg.COMMAND_NOT_COMPATIBLE_WITH_ENABLE_DASA.format(Act.ToPerform().lower(),
+                                                                         Cmd.ARG_CONTACTS if feed else Cmd.ARG_GAL))
+
   CONTACT_ARGUMENT_TO_PROPERTY_MAP = {
     'json': CONTACT_JSON,
     'name': CONTACT_NAME,
@@ -19933,7 +19941,7 @@ def dedupEmailAddressMatches(contactsManager, emailMatchType, fields):
 
 def _createContact():
   entityType = Ent.DOMAIN
-  contactsManager = ContactsManager()
+  contactsManager = ContactsManager(True)
   parameters = {'csvPF': None, 'titles': ['Domain', CONTACT_ID], 'addCSVData': {}, 'returnIdOnly': False}
   fields = contactsManager.GetContactFields(parameters)
   csvPF = parameters['csvPF']
@@ -19974,7 +19982,7 @@ def doCreateDomainContact():
 
 def _clearUpdateContacts(updateContacts):
   entityType = Ent.DOMAIN
-  contactsManager = ContactsManager()
+  contactsManager = ContactsManager(True)
   entityList, contactQuery, queriedContacts = _getContactEntityList(1, False)
   if updateContacts:
     update_fields = contactsManager.GetContactFields()
@@ -20066,7 +20074,7 @@ def doUpdateDomainContacts():
 
 def _dedupContacts():
   entityType = Ent.DOMAIN
-  contactsManager = ContactsManager()
+  contactsManager = ContactsManager(True)
   contactQuery = _initContactQueryAttributes()
   emailMatchType = False
   while Cmd.ArgumentsRemaining():
@@ -20121,7 +20129,7 @@ def doDedupDomainContacts():
 
 def _deleteContacts():
   entityType = Ent.DOMAIN
-  contactsManager = ContactsManager()
+  contactsManager = ContactsManager(True)
   entityList, contactQuery, queriedContacts = _getContactEntityList(-1, False)
   user, contactsObject = getContactsObject(True)
   if queriedContacts:
@@ -20236,7 +20244,7 @@ def _getContactFieldsList(contactsManager, displayFieldsList):
 
 def _infoContacts(contactFeed):
   entityType = Ent.DOMAIN
-  contactsManager = ContactsManager()
+  contactsManager = ContactsManager(contactFeed)
   entityList = getEntityList(Cmd.OB_CONTACT_ENTITY)
   contactQuery = _initContactQueryAttributes()
   FJQC = FormatJSONQuoteChar()
@@ -20292,7 +20300,7 @@ def doInfoGAL():
 def _printShowContacts(contactFeed):
   entityType = Ent.DOMAIN
   entityTypeName = Ent.Singular(entityType)
-  contactsManager = ContactsManager()
+  contactsManager = ContactsManager(contactFeed)
   csvPF = CSVPrintFile([entityTypeName, CONTACT_ID, CONTACT_NAME], 'sortall',
                        contactsManager.CONTACT_ARRAY_PROPERTY_PRINT_ORDER) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
@@ -21298,7 +21306,7 @@ def queryPeopleContacts(people, contactQuery, fields, sortOrder, entityType, use
       showMessage = pageMessage.replace(TOTAL_ITEMS_MARKER, str(totalItems))
       writeGotMessage(showMessage.replace('{0}', str(Ent.Choose(Ent.PEOPLE_CONTACT, totalItems))))
     return entityList
-  except GAPI.permissionDenied as e:
+  except (GAPI.permissionDenied, GAPI.failedPrecondition) as e:
     ClientAPIAccessDeniedExit(str(e))
   except (GAPI.serviceNotAvailable, GAPI.forbidden):
     entityUnknownWarning(entityType, user, i, count)
@@ -21448,7 +21456,7 @@ def createUserPeopleContact(users):
         csvPF.WriteRow(row)
     except GAPI.invalidArgument as e:
       entityActionFailedWarning([entityType, user, peopleEntityType, None], str(e), i, count)
-    except GAPI.permissionDenied as e:
+    except (GAPI.permissionDenied, GAPI.failedPrecondition) as e:
       ClientAPIAccessDeniedExit(str(e))
     except (GAPI.serviceNotAvailable, GAPI.forbidden):
       ClientAPIAccessDeniedExit()
@@ -21613,7 +21621,7 @@ def _clearUpdatePeopleContacts(users, updateContacts):
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName], str(e), j, jcount)
       except (GAPI.notFound, GAPI.internalError):
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName], Msg.DOES_NOT_EXIST, j, jcount)
-      except GAPI.permissionDenied as e:
+      except (GAPI.permissionDenied, GAPI.failedPrecondition) as e:
         ClientAPIAccessDeniedExit(str(e))
       except (GAPI.serviceNotAvailable, GAPI.forbidden):
         ClientAPIAccessDeniedExit()
@@ -21763,7 +21771,7 @@ def dedupReplaceDomainUserPeopleContacts(users):
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName], str(e), j, jcount)
       except (GAPI.notFound, GAPI.internalError):
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName], Msg.DOES_NOT_EXIST, j, jcount)
-      except GAPI.permissionDenied as e:
+      except (GAPI.permissionDenied, GAPI.failedPrecondition) as e:
         ClientAPIAccessDeniedExit(str(e))
       except (GAPI.serviceNotAvailable, GAPI.forbidden):
         ClientAPIAccessDeniedExit()
@@ -21818,7 +21826,7 @@ def deleteUserPeopleContacts(users):
         entityActionPerformed([entityType, user, peopleEntityType, resourceName], j, jcount)
       except (GAPI.notFound, GAPI.internalError):
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName], Msg.DOES_NOT_EXIST, j, jcount)
-      except GAPI.permissionDenied as e:
+      except (GAPI.permissionDenied, GAPI.failedPrecondition) as e:
         ClientAPIAccessDeniedExit(str(e))
       except (GAPI.serviceNotAvailable, GAPI.forbidden):
         ClientAPIAccessDeniedExit()
@@ -22115,7 +22123,7 @@ def _infoPeople(users, entityType, source):
       except GAPI.invalidArgument as e:
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName], str(e), j, jcount)
         continue
-      except GAPI.permissionDenied as e:
+      except (GAPI.permissionDenied, GAPI.failedPrecondition) as e:
         ClientAPIAccessDeniedExit(str(e))
       except (GAPI.serviceNotAvailable, GAPI.forbidden):
         ClientAPIAccessDeniedExit()
@@ -22530,7 +22538,7 @@ def _printShowPeople(source):
                                pageSize=GC.Values[GC.PEOPLE_MAX_RESULTS],
                                sources=sources, mergeSources=mergeSources,
                                readMask=fields, fields='nextPageToken,people', **kwargs)
-  except GAPI.permissionDenied as e:
+  except (GAPI.permissionDenied, GAPI.failedPrecondition) as e:
     ClientAPIAccessDeniedExit(str(e))
   except (GAPI.serviceNotAvailable, GAPI.forbidden):
     ClientAPIAccessDeniedExit()
@@ -22569,14 +22577,14 @@ def doInfoDomainPeopleContacts():
 #	[countsonly]
 #	[allfields|(fields <PeopleFieldNameList>)] [showmetadata]
 #	[formatjson]
-# gam print peoplecontacts [todrive <ToDriveAttribute>*]
+# gam print domaincontacts|peoplecontacts [todrive <ToDriveAttribute>*]
 #	[sources <PeopleSourceName>]
 #	[query <String>]
 #	[mergesources <PeopleMergeSourceName>]
 #	[countsonly]
 #	[allfields|(fields <PeopleFieldNameList>)] [showmetadata]
 #	[formatjson [quotechar <Character>]]
-# gam show peoplecontacts
+# gam show domaincontacts|peoplecontacts
 #	[sources <PeopleSourceName>]
 #	[query <String>]
 #	[mergesources <PeopleMergeSourceName>]
@@ -22652,7 +22660,7 @@ def printShowUserPeopleProfiles(users):
     except GAPI.notFound:
       entityUnknownWarning(Ent.PEOPLE_PROFILE, user, i, count)
       continue
-    except GAPI.permissionDenied as e:
+    except (GAPI.permissionDenied, GAPI.failedPrecondition) as e:
       ClientAPIAccessDeniedExit(str(e))
     except (GAPI.serviceNotAvailable, GAPI.forbidden):
       ClientAPIAccessDeniedExit()
@@ -22808,7 +22816,7 @@ def _processPeopleContactPhotos(users, function):
         entityDoesNotHaveItemWarning([entityType, user, peopleEntityType, resourceName, Ent.PHOTO, filename], j, jcount)
       except (GAPI.invalidArgument, OSError, IOError) as e:
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName, Ent.PHOTO, filename], str(e), j, jcount)
-      except GAPI.permissionDenied as e:
+      except (GAPI.permissionDenied, GAPI.failedPrecondition) as e:
         ClientAPIAccessDeniedExit(str(e))
       except (GAPI.serviceNotAvailable, GAPI.forbidden):
         ClientAPIAccessDeniedExit()
@@ -34182,7 +34190,7 @@ def doPrintGroupMembers():
           for name in info['names']:
             if name['metadata']['source']['type'] == sourceType:
               return name['displayName']
-    except (GAPI.notFound, GAPI.serviceNotAvailable, GAPI.forbidden, GAPI.permissionDenied):
+    except (GAPI.notFound, GAPI.serviceNotAvailable, GAPI.forbidden, GAPI.permissionDenied, GAPI.failedPrecondition):
       pass
     return unknownName
 
@@ -35729,10 +35737,16 @@ def _showPolicies(policies, FJQC, add_warnings, no_appnames,
       _showPolicy(policy, FJQC, i, count)
   Ind.Decrement()
 
+def _checkPoliciesWithDASA():
+  if GC.Values[GC.ENABLE_DASA]:
+    systemErrorExit(USAGE_ERROR_RC,
+                    Msg.COMMAND_NOT_COMPATIBLE_WITH_ENABLE_DASA.format(Act.ToPerform().lower(), Cmd.ARG_CIPOLICIES))
+
 # gam info policies <CIPolicyNameEntity>
 #	[nowarnings] [noappnames]
 #	[formatjson]
 def doInfoCIPolicies():
+  _checkPoliciesWithDASA()
   groups_ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
   ci = buildGAPIObject(API.CLOUDIDENTITY_POLICY)
   cd = buildGAPIObject(API.DIRECTORY)
@@ -35791,6 +35805,7 @@ def doPrintShowCIPolicies():
                                                  ensure_ascii=False,
                                                  sort_keys=True)})
 
+  _checkPoliciesWithDASA()
   groups_ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
   ci = buildGAPIObject(API.CLOUDIDENTITY_POLICY)
   cd = buildGAPIObject(API.DIRECTORY)
@@ -40379,20 +40394,20 @@ def convertExportNameToID(v, nameOrId, matterId, matterNameId):
   if cg:
     try:
       export = callGAPI(v.matters().exports(), 'get',
-                        throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
+                        throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                         matterId=matterId, exportId=cg.group(1))
       return (export['id'], export['name'], formatVaultNameId(export['id'], export['name']))
     except (GAPI.notFound, GAPI.badRequest):
       entityDoesNotHaveItemExit([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_EXPORT, nameOrId])
-    except GAPI.forbidden:
-      ClientAPIAccessDeniedExit()
+    except (GAPI.forbidden, GAPI.invalidArgument) as e:
+      ClientAPIAccessDeniedExit(str(e))
   nameOrIdlower = nameOrId.lower()
   try:
     exports = callGAPIpages(v.matters().exports(), 'list', 'exports',
-                            throwReasons=[GAPI.FORBIDDEN],
+                            throwReasons=[GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                             matterId=matterId, fields='exports(id,name),nextPageToken')
-  except GAPI.forbidden:
-    ClientAPIAccessDeniedExit()
+  except (GAPI.forbidden, GAPI.invalidArgument) as e:
+    ClientAPIAccessDeniedExit(str(e))
   for export in exports:
     if export['name'].lower() == nameOrIdlower:
       return (export['id'], export['name'], formatVaultNameId(export['id'], export['name']))
@@ -40403,20 +40418,20 @@ def convertHoldNameToID(v, nameOrId, matterId, matterNameId):
   if cg:
     try:
       hold = callGAPI(v.matters().holds(), 'get',
-                      throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
+                      throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                       matterId=matterId, holdId=cg.group(1))
       return (hold['holdId'], hold['name'], formatVaultNameId(hold['holdId'], hold['name']))
     except (GAPI.notFound, GAPI.badRequest):
       entityDoesNotHaveItemExit([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_HOLD, nameOrId])
-    except GAPI.forbidden:
-      ClientAPIAccessDeniedExit()
+    except (GAPI.forbidden, GAPI.invalidArgument) as e:
+      ClientAPIAccessDeniedExit(str(e))
   nameOrIdlower = nameOrId.lower()
   try:
     holds = callGAPIpages(v.matters().holds(), 'list', 'holds',
-                          throwReasons=[GAPI.FORBIDDEN],
+                          throwReasons=[GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                           matterId=matterId, fields='holds(holdId,name),nextPageToken')
-  except GAPI.forbidden:
-    ClientAPIAccessDeniedExit()
+  except (GAPI.forbidden, GAPI.invalidArgument) as e:
+    ClientAPIAccessDeniedExit(str(e))
   for hold in holds:
     if hold['name'].lower() == nameOrIdlower:
       return (hold['holdId'], hold['name'], formatVaultNameId(hold['holdId'], hold['name']))
@@ -40427,17 +40442,17 @@ def convertMatterNameToID(v, nameOrId, state=None):
   if cg:
     try:
       matter = callGAPI(v.matters(), 'get',
-                        throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN],
+                        throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                         matterId=cg.group(1), view='BASIC', fields='matterId,name,state')
       return (matter['matterId'], matter['name'], formatVaultNameId(matter['name'], matter['matterId']), matter['state'])
     except (GAPI.notFound, GAPI.forbidden):
       entityDoesNotExistExit(Ent.VAULT_MATTER, nameOrId)
   try:
     matters = callGAPIpages(v.matters(), 'list', 'matters',
-                            throwReasons=[GAPI.FORBIDDEN],
+                            throwReasons=[GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                             view='BASIC', state=state, fields='matters(matterId,name,state),nextPageToken')
-  except GAPI.forbidden:
-    ClientAPIAccessDeniedExit()
+  except (GAPI.forbidden, GAPI.invalidArgument) as e:
+    ClientAPIAccessDeniedExit(str(e))
   nameOrIdlower = nameOrId.lower()
   ids = []
   states = []
@@ -40458,20 +40473,20 @@ def convertQueryNameToID(v, nameOrId, matterId, matterNameId):
   if cg:
     try:
       query = callGAPI(v.matters().savedQueries(), 'get',
-                       throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
+                       throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                        matterId=matterId, savedQueryId=cg.group(1))
       return (query['savedQueryId'], query['displayName'], formatVaultNameId(query['savedQueryId'], query['displayName']))
     except (GAPI.notFound, GAPI.badRequest):
       entityDoesNotHaveItemExit([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_QUERY, nameOrId])
-    except GAPI.forbidden:
-      ClientAPIAccessDeniedExit()
+    except (GAPI.forbidden, GAPI.invalidArgument) as e:
+      ClientAPIAccessDeniedExit(str(e))
   nameOrIdlower = nameOrId.lower()
   try:
     queries = callGAPIpages(v.matters().savedQueries(), 'list', 'savedQueries',
-                            throwReasons=[GAPI.FORBIDDEN],
+                            throwReasons=[GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                             matterId=matterId, fields='savedQueries(savedQueryId,displayName),nextPageToken')
-  except GAPI.forbidden:
-    ClientAPIAccessDeniedExit()
+  except (GAPI.forbidden, GAPI.invalidArgument) as e:
+    ClientAPIAccessDeniedExit(str(e))
   for query in queries:
     if query['displayName'].lower() == nameOrIdlower:
       return (query['savedQueryId'], query['displayName'], formatVaultNameId(query['savedQueryId'], query['displayName']))
@@ -40485,9 +40500,9 @@ def warnMatterNotOpen(v, matter, matterNameId, j, jcount):
   if v is not None:
     try:
       matter['state'] = callGAPI(v.matters(), 'get',
-                                 throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN],
+                                 throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                                  matterId=matter['matterId'], view='BASIC', fields='state')['state']
-    except (GAPI.notFound, GAPI.forbidden):
+    except (GAPI.notFound, GAPI.forbidden, GAPI.invalidArgument):
       matter['state'] = 'Unknown'
   else:
     setSysExitRC(DATA_NOT_AVALIABLE_RC)
@@ -40803,10 +40818,10 @@ def doDeleteVaultExport():
       unknownArgumentExit()
   try:
     callGAPI(v.matters().exports(), 'delete',
-             throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
+             throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
              matterId=matterId, exportId=exportId)
     entityActionPerformed([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_EXPORT, exportNameId])
-  except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden) as e:
+  except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden, GAPI.invalidArgument) as e:
     entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_EXPORT, exportNameId], str(e))
 
 VAULT_EXPORT_FIELDS_CHOICE_MAP = {
@@ -40857,10 +40872,10 @@ def doInfoVaultExport():
   fields = getFieldsFromFieldsList(fieldsList)
   try:
     export = callGAPI(v.matters().exports(), 'get',
-                      throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
+                      throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                       matterId=matterId, exportId=exportId, fields=fields)
     _showVaultExport(matterNameId, export, cd, FJQC)
-  except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden) as e:
+  except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden, GAPI.invalidArgument) as e:
     entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_EXPORT, exportNameId], str(e))
 
 VAULT_EXPORT_STATUS_MAP = {'completed': 'COMPLETED', 'failed': 'FAILED', 'inprogress': 'IN_PROGRESS'}
@@ -40923,9 +40938,9 @@ def doPrintShowVaultExports():
     try:
       results = callGAPIpages(v.matters(), 'list', 'matters',
                               pageMessage=getPageMessage(),
-                              throwReasons=[GAPI.FORBIDDEN],
+                              throwReasons=[GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                               view='BASIC', state='OPEN', fields='matters(matterId,name,state),nextPageToken')
-    except GAPI.forbidden as e:
+    except (GAPI.forbidden, GAPI.invalidArgument) as e:
       entityActionFailedWarning([Ent.VAULT_EXPORT, None], str(e))
       return
   else:
@@ -40953,12 +40968,12 @@ def doPrintShowVaultExports():
       try:
         exports = callGAPIpages(v.matters().exports(), 'list', 'exports',
                                 pageMessage=pageMessage,
-                                throwReasons=[GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN],
+                                throwReasons=[GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                                 matterId=matterId, fields=fields)
       except GAPI.failedPrecondition:
         warnMatterNotOpen(v, matter, matterNameId, j, jcount)
         continue
-      except GAPI.forbidden as e:
+      except (GAPI.forbidden, GAPI.invalidArgument) as e:
         entityActionFailedWarning([Ent.VAULT_EXPORT, None], str(e))
         break
     else:
@@ -41053,9 +41068,9 @@ def doCopyVaultExport():
   while True:
     try:
       export = callGAPI(v.matters().exports(), 'get',
-                        throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
+                        throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                         matterId=matterId, exportId=exportId)
-    except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden) as e:
+    except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden, GAPI.invalidArgument) as e:
       entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_EXPORT, exportNameId], str(e))
       return
     if export['status'] == 'COMPLETED':
@@ -41153,9 +41168,9 @@ def doDownloadVaultExport():
   while True:
     try:
       export = callGAPI(v.matters().exports(), 'get',
-                        throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
+                        throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                         matterId=matterId, exportId=exportId)
-    except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden) as e:
+    except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden, GAPI.invalidArgument) as e:
       entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_EXPORT, exportNameId], str(e))
       return
     if export['status'] == 'COMPLETED':
@@ -41343,7 +41358,8 @@ def doCreateVaultHold():
       body['accounts'].append({'accountId': convertEmailAddressToUID(account, cd, accountType, accountsLocation)})
   try:
     hold = callGAPI(v.matters().holds(), 'create',
-                    throwReasons=[GAPI.ALREADY_EXISTS, GAPI.BAD_REQUEST, GAPI.BACKEND_ERROR, GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN],
+                    throwReasons=[GAPI.ALREADY_EXISTS, GAPI.BAD_REQUEST, GAPI.BACKEND_ERROR, GAPI.FAILED_PRECONDITION,
+                                  GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                     matterId=matterId, body=body)
     if not returnIdOnly:
       entityActionPerformed([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_HOLD, formatVaultNameId(hold['name'], hold['holdId'])])
@@ -41351,7 +41367,8 @@ def doCreateVaultHold():
         _showVaultHold(None, hold, None, None)
     else:
       writeStdout(f'{hold["holdId"]}\n')
-  except (GAPI.alreadyExists, GAPI.badRequest, GAPI.backendError, GAPI.failedPrecondition, GAPI.forbidden) as e:
+  except (GAPI.alreadyExists, GAPI.badRequest, GAPI.backendError, GAPI.failedPrecondition,
+          GAPI.forbidden, GAPI.invalidArgument) as e:
     entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_HOLD, body.get('name')], str(e))
 
 # gam update vaulthold|hold <HoldItem> matter <MatterItem>
@@ -41396,9 +41413,9 @@ def doUpdateVaultHold():
     missingArgumentExit('matter')
   try:
     old_body = callGAPI(v.matters().holds(), 'get',
-                        throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
+                        throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                         matterId=matterId, holdId=holdId, fields='name,corpus,query,orgUnit')
-  except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden) as e:
+  except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden, GAPI.invalidArgument) as e:
     entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_HOLD, holdNameId], str(e))
     return
   accountType = 'group' if old_body['corpus'] == 'GROUPS' else 'user'
@@ -41424,10 +41441,10 @@ def doUpdateVaultHold():
   if body:
     try:
       hold = callGAPI(v.matters().holds(), 'update',
-                      throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
+                      throwReas=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                       matterId=matterId, holdId=holdId, body=body)
       entityActionPerformed([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_HOLD, holdNameId])
-    except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden) as e:
+    except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden, GAPI.invalidArgument) as e:
       entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_HOLD, holdNameId], str(e))
       return
   jcount = len(addAccountIds)
@@ -41440,12 +41457,12 @@ def doUpdateVaultHold():
       j += 1
       try:
         callGAPI(v.matters().holds().accounts(), 'create',
-                 throwReasons=[GAPI.ALREADY_EXISTS, GAPI.BACKEND_ERROR, GAPI.FORBIDDEN],
+                 throwReasons=[GAPI.ALREADY_EXISTS, GAPI.BACKEND_ERROR, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                  matterId=matterId, holdId=holdId, body={'accountId': account['id']})
         entityActionPerformed([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_HOLD, holdNameId, Ent.ACCOUNT, account['email']], j, jcount)
       except (GAPI.alreadyExists, GAPI.backendError) as e:
         entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_HOLD, holdNameId, Ent.ACCOUNT, account['email']], str(e), j, jcount)
-      except GAPI.forbidden as e:
+      except (GAPI.forbidden, GAPI.invalidArgument) as e:
         entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_HOLD, None], str(e))
         return
     Ind.Decrement()
@@ -41461,12 +41478,12 @@ def doUpdateVaultHold():
       j += 1
       try:
         callGAPI(v.matters().holds().accounts(), 'delete',
-                 throwReasons=[GAPI.NOT_FOUND, GAPI.BACKEND_ERROR, GAPI.FORBIDDEN],
+                 throwReasons=[GAPI.NOT_FOUND, GAPI.BACKEND_ERROR, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                  matterId=matterId, holdId=holdId, accountId=account['id'])
         entityActionPerformed([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_HOLD, holdNameId, Ent.ACCOUNT, account['email']], j, jcount)
       except (GAPI.alreadyExists, GAPI.backendError) as e:
         entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_HOLD, holdNameId, Ent.ACCOUNT, account['email']], str(e), j, jcount)
-      except GAPI.forbidden as e:
+      except (GAPI.forbidden, GAPI.invalidArgument) as e:
         entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_HOLD, None], str(e))
         return
     Ind.Decrement()
@@ -41491,10 +41508,10 @@ def doDeleteVaultHold():
       unknownArgumentExit()
   try:
     callGAPI(v.matters().holds(), 'delete',
-             throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
+             throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
              matterId=matterId, holdId=holdId)
     entityActionPerformed([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_HOLD, holdNameId])
-  except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden) as e:
+  except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden, GAPI.invalidArgument) as e:
     entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_HOLD, holdNameId], str(e))
 
 VAULT_HOLD_FIELDS_CHOICE_MAP = {
@@ -41544,10 +41561,10 @@ def doInfoVaultHold():
   fields = getFieldsFromFieldsList(fieldsList)
   try:
     hold = callGAPI(v.matters().holds(), 'get',
-                    throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
+                    throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                     matterId=matterId, holdId=holdId, fields=fields)
     _showVaultHold(matterNameId, hold, cd, FJQC)
-  except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden) as e:
+  except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden, GAPI.invalidArgument) as e:
     entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_HOLD, holdNameId], str(e))
 
 PRINT_VAULT_HOLDS_TITLES = ['matterId', 'matterName', 'holdId', 'name', 'updateTime']
@@ -41598,9 +41615,9 @@ def doPrintShowVaultHolds():
     try:
       results = callGAPIpages(v.matters(), 'list', 'matters',
                               pageMessage=getPageMessage(),
-                              throwReasons=[GAPI.FORBIDDEN],
+                              throwReasons=[GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                               view='BASIC', state='OPEN', fields='matters(matterId,name,state),nextPageToken')
-    except GAPI.forbidden as e:
+    except (GAPI.forbidden, GAPI.invalidArgument) as e:
       entityActionFailedWarning([Ent.VAULT_HOLD, None], str(e))
       return
   else:
@@ -41627,12 +41644,12 @@ def doPrintShowVaultHolds():
       try:
         holds = callGAPIpages(v.matters().holds(), 'list', 'holds',
                               pageMessage=pageMessage,
-                              throwReasons=[GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN],
+                              throwReasons=[GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                               matterId=matterId, fields=fields)
       except GAPI.failedPrecondition:
         warnMatterNotOpen(v, matter, matterNameId, j, jcount)
         continue
-      except GAPI.forbidden as e:
+      except (GAPI.forbidden, GAPI.invalidArgument) as e:
         entityActionFailedWarning([Ent.VAULT_HOLD, None], str(e))
         break
     else:
@@ -41678,9 +41695,9 @@ def printShowUserVaultHolds(entityList):
   try:
     matters = callGAPIpages(v.matters(), 'list', 'matters',
                             pageMessage=getPageMessage(),
-                            throwReasons=[GAPI.FORBIDDEN],
+                            throwReasons=[GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                             view='BASIC', state='OPEN', fields='matters(matterId,name,state),nextPageToken')
-  except GAPI.forbidden as e:
+  except (GAPI.forbidden, GAPI.invalidArgument) as e:
     entityActionFailedWarning([Ent.VAULT_HOLD, None], str(e))
     return
   jcount = len(matters)
@@ -41694,11 +41711,11 @@ def printShowUserVaultHolds(entityList):
     try:
       matter['holds'] = callGAPIpages(v.matters().holds(), 'list', 'holds',
                                       pageMessage=getPageMessageForWhom(),
-                                      throwReasons=[GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN],
+                                      throwReasons=[GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                                       matterId=matterId, fields='holds(holdId,name,accounts(accountId,email),orgUnit(orgUnitId)),nextPageToken')
     except GAPI.failedPrecondition:
       warnMatterNotOpen(v, matter, matterNameId, j, jcount)
-    except GAPI.forbidden as e:
+    except (GAPI.forbidden, GAPI.invalidArgument) as e:
       entityActionFailedWarning([Ent.VAULT_HOLD, None], str(e), j, jcount)
   totalHolds = 0
   _, _, entityList = getEntityArgument(entityList)
@@ -41809,10 +41826,10 @@ def doInfoVaultQuery():
   fields = getFieldsFromFieldsList(fieldsList)
   try:
     query = callGAPI(v.matters().savedQueries(), 'get',
-                    throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
+                    throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                     matterId=matterId, savedQueryId=queryId, fields=fields)
     _showVaultQuery(matterNameId, query, cd, FJQC)
-  except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden) as e:
+  except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden, GAPI.invalidArgument) as e:
     entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_QUERY, queryNameId], str(e))
 
 PRINT_VAULT_QUERIES_TITLES = ['matterId', 'matterName', 'savedQueryId', 'displayName']
@@ -41853,9 +41870,9 @@ def doPrintShowVaultQueries():
     try:
       results = callGAPIpages(v.matters(), 'list', 'matters',
                               pageMessage=getPageMessage(),
-                              throwReasons=[GAPI.FORBIDDEN],
+                              throwReasons=[GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                               view='BASIC', state='OPEN', fields='matters(matterId,name,state),nextPageToken')
-    except GAPI.forbidden as e:
+    except (GAPI.forbidden, GAPI.invalidArgument) as e:
       entityActionFailedWarning([Ent.VAULT_QUERY, None], str(e))
       return
   else:
@@ -41882,12 +41899,12 @@ def doPrintShowVaultQueries():
       try:
         queries = callGAPIpages(v.matters().savedQueries(), 'list', 'savedQueries',
                                 pageMessage=pageMessage,
-                                throwReasons=[GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN],
+                                throwReasons=[GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                                 matterId=matterId, fields=fields)
       except GAPI.failedPrecondition:
         warnMatterNotOpen(v, matter, matterNameId, j, jcount)
         continue
-      except GAPI.forbidden as e:
+      except (GAPI.forbidden, GAPI.invalidArgument) as e:
         entityActionFailedWarning([Ent.VAULT_QUERY, None], str(e))
         break
     else:
@@ -41974,7 +41991,7 @@ def doCreateVaultMatter():
     body['name'] = f'GAM Matter - {ISOformatTimeStamp(todaysTime())}'
   try:
     matter = callGAPI(v.matters(), 'create',
-                      throwReasons=[GAPI.ALREADY_EXISTS, GAPI.FORBIDDEN],
+                      throwReasons=[GAPI.ALREADY_EXISTS, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                       body=body)
     matterId = matter['matterId']
     matterNameId = formatVaultNameId(matter['name'], matterId)
@@ -41982,7 +41999,7 @@ def doCreateVaultMatter():
       entityActionPerformed([Ent.VAULT_MATTER, matterNameId])
     else:
       writeStdout(f'{matterId}\n')
-  except (GAPI.alreadyExists, GAPI.forbidden) as e:
+  except (GAPI.alreadyExists, GAPI.forbidden, GAPI.invalidArgument) as e:
     entityActionFailedWarning([Ent.VAULT_MATTER, body['name']], str(e))
     return
   jcount = len(collaborators)
@@ -41997,11 +42014,11 @@ def doCreateVaultMatter():
       cbody['matterPermission']['accountId'] = collaborator['id']
       try:
         callGAPI(v.matters(), 'addPermissions',
-                 throwReasons=[GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN],
+                 throwReasons=[GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                  matterId=matterId, body=cbody)
         if not returnIdOnly:
           entityActionPerformed([Ent.VAULT_MATTER, matterNameId, Ent.COLLABORATOR, collaborator['email']], j, jcount)
-      except (GAPI.failedPrecondition, GAPI.forbidden) as e:
+      except (GAPI.failedPrecondition, GAPI.forbidden, GAPI.invalidArgument) as e:
         entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId], str(e))
         break
     Ind.Decrement()
@@ -42025,10 +42042,10 @@ def doActionVaultMatter(action, matterId=None, matterNameId=None, v=None):
   action_kwargs = {} if action == 'delete' else {'body': {}}
   try:
     callGAPI(v.matters(), action,
-             throwReasons=[GAPI.NOT_FOUND, GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN],
+             throwReasons=[GAPI.NOT_FOUND, GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
              matterId=matterId, **action_kwargs)
     entityActionPerformed([Ent.VAULT_MATTER, matterNameId])
-  except (GAPI.notFound, GAPI.failedPrecondition, GAPI.forbidden) as e:
+  except (GAPI.notFound, GAPI.failedPrecondition, GAPI.forbidden, GAPI.invalidArgument) as e:
     entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId], str(e))
 
 # gam close vaultmatter|matter <MatterItem>
@@ -42081,7 +42098,7 @@ def doUpdateVaultMatter():
       if 'name' not in body or 'description' not in body:
         # bah, API requires name/description to be sent on update even when it's not changing
         result = callGAPI(v.matters(), 'get',
-                          throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN],
+                          throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                           matterId=matterId, view='BASIC')
         body.setdefault('name', result['name'])
         body.setdefault('description', result.get('description'))
@@ -42089,7 +42106,7 @@ def doUpdateVaultMatter():
                throwReasons=[GAPI.NOT_FOUND, GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN],
                matterId=matterId, body=body)
       entityActionPerformed([Ent.VAULT_MATTER, matterNameId])
-    except (GAPI.notFound, GAPI.failedPrecondition, GAPI.forbidden) as e:
+    except (GAPI.notFound, GAPI.failedPrecondition, GAPI.forbidden, GAPI.invalidArgument) as e:
       entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId], str(e))
       return
   jcount = len(addCollaborators)
@@ -42102,10 +42119,10 @@ def doUpdateVaultMatter():
       j += 1
       try:
         callGAPI(v.matters(), 'addPermissions',
-                 throwReasons=[GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN],
+                 throwReasons=[GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                  matterId=matterId, body={'matterPermission': {'role': 'COLLABORATOR', 'accountId': collaborator['id']}})
         entityActionPerformed([Ent.VAULT_MATTER, matterNameId, Ent.COLLABORATOR, collaborator['email']], j, jcount)
-      except (GAPI.failedPrecondition, GAPI.forbidden) as e:
+      except (GAPI.failedPrecondition, GAPI.forbidden, GAPI.invalidArgument) as e:
         entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId], str(e))
         break
     Ind.Decrement()
@@ -42119,10 +42136,10 @@ def doUpdateVaultMatter():
       j += 1
       try:
         callGAPI(v.matters(), 'removePermissions',
-                 throwReasons=[GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN],
+                 throwReasons=[GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                  matterId=matterId, body={'accountId': collaborator['id']})
         entityActionPerformed([Ent.VAULT_MATTER, matterNameId, Ent.COLLABORATOR, collaborator['email']], j, jcount)
-      except (GAPI.failedPrecondition, GAPI.forbidden) as e:
+      except (GAPI.failedPrecondition, GAPI.forbidden, GAPI.invalidArgument) as e:
         entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId], str(e))
         break
     Ind.Decrement()
@@ -42155,11 +42172,11 @@ def doInfoVaultMatter():
   fields = getFieldsFromFieldsList(fieldsList)
   try:
     matter = callGAPI(v.matters(), 'get',
-                      throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN],
+                      throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                       matterId=matterId, view=view, fields=fields)
     cd = buildGAPIObject(API.DIRECTORY) if 'matterPermissions' in matter else None
     _showVaultMatter(matter, cd, FJQC)
-  except (GAPI.notFound, GAPI.forbidden) as e:
+  except (GAPI.notFound, GAPI.forbidden, GAPI.invalidArgument) as e:
     entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId], str(e))
 
 VAULT_MATTER_STATE_MAP = {'open': 'OPEN', 'closed': 'CLOSED', 'deleted': 'DELETED'}
@@ -42215,9 +42232,9 @@ def doPrintShowVaultMatters():
   try:
     matters = callGAPIpages(v.matters(), 'list', 'matters',
                             pageMessage=getPageMessage(),
-                            throwReasons=[GAPI.FORBIDDEN],
+                            throwReasons=[GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT, GAPI.INVALID_ARGUMENT],
                             view=view, state=stateParm, fields=fields)
-  except GAPI.forbidden as e:
+  except (GAPI.forbidden, GAPI.invalidArgument, GAPI.invalidArgument) as e:
     entityActionFailedWarning([Ent.VAULT_MATTER, None], str(e))
     return
   jcount = len(matters)
@@ -42408,6 +42425,8 @@ class PasswordOptions():
     self.makeCleanPassword = True
     self.cleanPasswordLen = 25
     self.randomPasswordChars = None
+    self.promptForPassword = False
+    self.promptForUniquePassword = False
     self.notifyPasswordSet = False
     self.updateCmd = updateCmd
     self.filename = ''
@@ -42454,7 +42473,7 @@ class PasswordOptions():
           self.makeCleanPassword = True
           notFoundBody[up] = self.CreateRandomPassword()
           self.notFoundPassword = notFoundBody[up]
-    elif myarg == 'lograndompassword':
+    elif myarg in {'lograndompassword', 'logpassword'}:
       self.filename = getString(Cmd.OB_FILE_NAME)
     else:
       return False
@@ -42475,7 +42494,8 @@ class PasswordOptions():
       password = self.GetPassword()
       if password:
         body[up] = password
-        self.makeRandomPassword = self.makeUniqueRandomPassword = False
+        self.makeRandomPassword = self.makeUniqueRandomPassword =\
+          self.promptForPassword = self.promptForUniquePassword = False
         if password.lower() == 'blocklogin':
           self.makeRandomPassword = True
           self.makeCleanPassword = False
@@ -42488,6 +42508,13 @@ class PasswordOptions():
             self.makeUniqueRandomPassword = self.makeCleanPassword = True
           else:
             self.makeRandomPassword = self.makeCleanPassword = True
+        elif password.lower() == 'prompt':
+          self.promptForPassword = True
+        elif password.lower() == 'uniqueprompt':
+          if self.updateCmd:
+            self.promptForUniquePassword = True
+          else:
+            self.promptForPassword = True
     elif up == 'hashFunction':
       body[up] = self.HASH_FUNCTION_MAP[myarg]
       self.clearPassword = self.hashPassword = False
@@ -42510,10 +42537,16 @@ class PasswordOptions():
       except Exception:
         pass
 
-  def AssignPassword(self, body, notify, notFoundBody, createIfNotFound):
+  def AssignPassword(self, body, notify, notFoundBody, createIfNotFound, user=None):
     up = 'password'
     if self.makeRandomPassword or self.makeUniqueRandomPassword:
       body[up] = self.CreateRandomPassword()
+      self.password = body[up]
+    elif user and (self.promptForPassword or self.promptForUniquePassword):
+      body[up] = readStdin(f'Enter password for {user}: ')
+      self.password = body[up]
+    elif self.promptForPassword:
+      body[up] = readStdin('Enter password: ')
       self.password = body[up]
     if up in body:
       self.FinalizePassword(body, notify, up)
@@ -43148,7 +43181,12 @@ def getUserAttributes(cd, updateCmd, noUid=False):
           body[up][schemaName][fieldName] = None
     else:
       unknownArgumentExit()
-  if not PwdOpts.makeUniqueRandomPassword:
+  if PwdOpts.promptForPassword or PwdOpts.promptForUniquePassword:
+    if not updateCmd:
+      PwdOpts.AssignPassword(body, notify, notFoundBody, parameters['createIfNotFound'], body['primaryEmail'])
+    elif not PwdOpts.promptForUniquePassword:
+      PwdOpts.AssignPassword(body, notify, notFoundBody, parameters['createIfNotFound'])
+  elif not PwdOpts.makeUniqueRandomPassword:
     PwdOpts.AssignPassword(body, notify, notFoundBody, parameters['createIfNotFound'])
   return (body, notify, tagReplacements, addGroups, addAliases, PwdOpts,
           updatePrimaryEmail, notFoundBody, groupOrgUnitMap, parameters,
@@ -43182,7 +43220,7 @@ def createUserAddAliases(cd, user, aliasList, i, count):
 #	    [replyto <EmailAaddress>]
 #	    [<NotifyMessageContent>]
 #	    (replace <Tag> <UserReplacement>)*]
-#	[lograndompassword <FileName>] [ignorenullpassword]
+#	[logpassword <FileName>] [ignorenullpassword]
 #	[verifynotinvitable]
 #	[addnumericsuffixonduplicate <Number>]
 def doCreateUser():
@@ -43287,7 +43325,7 @@ def verifyUserPrimaryEmail(cd, user, createIfNotFound, i, count):
 #	    [<NotifyMessageContent>]
 #	    (replace <Tag> <UserReplacement>)*]
 #	[notifyonupdate [<Boolean>]]
-#	[lograndompassword <FileName>] [ignorenullpassword]
+#	[logpassword <FileName>] [ignorenullpassword]
 def updateUsers(entityList):
   def waitingForCreationToComplete(sleep_time):
     writeStderr(Ind.Spaces()+Msg.WAITING_FOR_ITEM_CREATION_TO_COMPLETE_SLEEPING.format(Ent.Singular(Ent.USER), sleep_time))
@@ -43369,8 +43407,8 @@ def updateUsers(entityList):
           if isInvitableUser:
             entityActionNotPerformedWarning([Ent.USER, body['primaryEmail']], Msg.EMAIL_ADDRESS_IS_UNMANAGED_ACCOUNT, i, count)
             continue
-        if PwdOpts.makeUniqueRandomPassword:
-          PwdOpts.AssignPassword(body, notify, notFoundBody, parameters['createIfNotFound'])
+        if PwdOpts.makeUniqueRandomPassword or PwdOpts.promptForUniquePassword:
+          PwdOpts.AssignPassword(body, notify, notFoundBody, parameters['createIfNotFound'], userKey)
         retry = 0
         while True:
           try:

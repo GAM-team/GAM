@@ -5466,7 +5466,10 @@ gam download storagefile <StorageBucketObjectName>
                                             (file|htmlfile <FileName> [charset <Charset>])|
                                             (gdoc|ghtml <UserGoogleDoc>)))|
         (ou|org|orgunitpath <OrgUnitPath>|<OrgUnitID>)
-        (password (random [<Integer>])|(uniquerandom [<Integer>])|blocklogin|<Password>)|
+        (password (random [<Integer>])|(uniquerandom [<Integer>])|
+                   blocklogin|
+                   prompt|uniqueprompt|
+                   <Password>)|
         (recoveryemail <EmailAddress>)|
         (recoveryphone <string>)|
         (suspend|suspended <Boolean>)|
@@ -5549,7 +5552,7 @@ gam create|add user <EmailAddress> [ignorenullpassword] <UserAttribute>*
             [replyto <EmailAaddress>]
             [<NotifyMessageContent>]
             (replace <Tag> <UserReplacement>)*]
-        [lograndompassword <FileName>]
+        [logpassword <FileName>]
         [addnumericsuffixonduplicate <Number>]
 
 gam <UserTypeEntity> waitformailbox [retries <Number>]
@@ -5574,7 +5577,7 @@ gam update user <UserItem> [ignorenullpassword] <UserAttribute>*
             [<NotifyMessageContent>]
             (replace <Tag> <UserReplacement>)*]
         [notifyonupdate [<Boolean>]] [setchangepasswordoncreate [<Boolean>]]
-        [lograndompassword <FileName>]
+        [logpassword <FileName>]
 gam delete user <UserItem> [noactionifalias]
 gam undelete user <UserItem> [ou|org|orgunit <OrgUnitPath>]
 gam suspend user <UserItem> [noactionifalias]
@@ -5608,7 +5611,7 @@ gam update users <UserTypeEntity> [ignorenullpassword] <UserAttribute>*
             [<NotifyMessageContent>]
             (replace <Tag> <UserReplacement>)*]
         [notifyonupdate [<Boolean>]] [setchangepasswordoncreate [<Boolean>]]
-        [lograndompassword <FileName>]
+        [logpassword <FileName>]
         [verifynotinvitable]
 gam delete users <UserTypeEntity> [noactionifalias]
 gam undelete users <UserEntity> [ou|org|orgunit <OrgUnitPath>]
@@ -5641,7 +5644,7 @@ gam <UserTypeEntity> update users [ignorenullpassword] <UserAttribute>*
             [<NotifyMessageContent>]
             (replace <Tag> <UserReplacement>)*]
         [notifyonupdate [<Boolean>]] [setchangepasswordoncreate [<Boolean>]]
-        [lograndompassword <FileName>]
+        [logpassword <FileName>]
         [verifynotinvitable]
 gam <UserTypeEntity> delete users [noactionifalias]
 gam <UserEntity> undelete users [ou|org|orgunit <OrgUnitPath>]
