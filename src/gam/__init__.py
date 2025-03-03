@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.05.05'
+__version__ = '7.05.06'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -43582,14 +43582,16 @@ def undeleteUsers(entityList):
       callGAPI(cd.users(), 'undelete',
                throwReasons=[GAPI.DELETED_USER_NOT_FOUND, GAPI.INVALID_ORGUNIT,
                              GAPI.DOMAIN_NOT_FOUND, GAPI.DOMAIN_CANNOT_USE_APIS,
-                             GAPI.FORBIDDEN, GAPI.BAD_REQUEST, GAPI.INVALID, GAPI.DUPLICATE],
+                             GAPI.FORBIDDEN, GAPI.BAD_REQUEST, GAPI.INVALID, GAPI.DUPLICATE,
+                             GAPI.LIMIT_EXCEEDED],
                userKey=user_uid, body={'orgUnitPath': makeOrgUnitPathAbsolute(orgUnitPaths[0])})
       entityActionPerformed([Ent.DELETED_USER, user], i, count)
     except GAPI.deletedUserNotFound:
       entityUnknownWarning(Ent.DELETED_USER, user, i, count)
     except GAPI.invalidOrgunit:
       entityActionFailedWarning([Ent.USER, user], Msg.INVALID_ORGUNIT, i, count)
-    except (GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden, GAPI.badRequest, GAPI.invalid, GAPI.duplicate) as e:
+    except (GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden, GAPI.badRequest,
+            GAPI.invalid, GAPI.duplicate, GAPI.limitExceeded) as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
 
 # gam undelete users <UserEntity> [ou|org|orgunit <OrgUnitPath>]

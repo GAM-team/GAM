@@ -1,3 +1,8 @@
+7.05.06
+
+Improve message displayed when a command is issued that requires Google Chat Bot setup;
+display a link to the Wiki `Set up a Chat Bot` instructions.
+
 7.05.05
 
 Added options `password prompt` and `password uniqueprompt` to `gam create user <EmailAddress>`

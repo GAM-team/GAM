@@ -504,7 +504,9 @@ To set up Google Chat for your API project, please go to:
 
     {0}
 
-and complete all fields.
+and follow the instructions at:
+
+    https://github.com/GAM-team/GAM/wiki/Chat-Bot#set-up-a-chat-bot
 """
 TOTAL_ITEMS_IN_ENTITY = 'Total {0} in {1}'
 TRIMMED_MESSAGE_FROM_LENGTH_TO_MAXIMUM = 'Trimmed message of length {0} to maximum length {1}'
