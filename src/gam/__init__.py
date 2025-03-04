@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.05.06'
+__version__ = '7.05.07'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -38938,6 +38938,22 @@ def _setEventRecurrenceTimeZone(cal, calId, body, parameters, i, count):
       body['end']['timeZone'] = timeZone
   return True
 
+def _getEventDaysOfWeek(event):
+  for attr in ['start', 'end']:
+    if attr in event:
+      if 'date' in event[attr]:
+        try:
+          dateTime = datetime.datetime.strptime(event[attr]['date'], YYYYMMDD_FORMAT)
+          event[attr]['dayOfWeek'] = calendarlib.day_abbr[dateTime.weekday()]
+        except ValueError:
+          pass
+      elif 'dateTime' in event[attr]:
+        try:
+          dateTime, _ = iso8601.parse_date(event[attr]['dateTime'])
+          event[attr]['dayOfWeek'] = calendarlib.day_abbr[dateTime.weekday()]
+        except (iso8601.ParseError, OverflowError):
+          pass
+
 def _createCalendarEvents(user, origCal, function, calIds, count, body, parameters):
   if parameters['attendees']:
     body['attendees'] = parameters.pop('attendees')
@@ -39573,6 +39589,8 @@ def _getCalendarInfoEventOptions(calendarEventEntity):
     myarg = getArgument()
     if myarg == 'fields':
       _getEventFields(fieldsList)
+    elif myarg == 'showdayofweek':
+      calendarEventEntity['showDayOfWeek'] = True
     else:
       FJQC.GetFormatJSON(myarg)
   _addEventEntitySelectFields(calendarEventEntity, fieldsList)
@@ -39596,6 +39614,8 @@ def _infoCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEnt
                          throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.DELETED, GAPI.FORBIDDEN],
                          calendarId=calId, eventId=eventId, fields=fields)
         if calendarEventEntity['maxinstances'] == -1 or 'recurrence' not in event:
+          if calendarEventEntity['showDayOfWeek']:
+            _getEventDaysOfWeek(event)
           _showCalendarEvent(user, calId, Ent.EVENT, event, j, jcount, FJQC)
         else:
           instances = callGAPIpages(cal.events(), 'instances', 'items',
@@ -39609,6 +39629,8 @@ def _infoCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEnt
           l = 0
           for instance in instances:
             l += 1
+            if calendarEventEntity['showDayOfWeek']:
+              _getEventDaysOfWeek(instance)
             _showCalendarEvent(user, calId, Ent.INSTANCE, instance, l, lcount, FJQC)
           Ind.Decrement()
       except (GAPI.notFound, GAPI.deleted) as e:
@@ -39661,22 +39683,6 @@ def _getCalendarPrintShowEventOptions(calendarEventEntity, entityType):
       csvPF.AddSortTitles(EVENT_PRINT_ORDER)
   _addEventEntitySelectFields(calendarEventEntity, fieldsList)
   return (csvPF, FJQC, fieldsList)
-
-def _getEventDaysOfWeek(event):
-  for attr in ['start', 'end']:
-    if attr in event:
-      if 'date' in event[attr]:
-        try:
-          dateTime = datetime.datetime.strptime(event[attr]['date'], YYYYMMDD_FORMAT)
-          event[attr]['dayOfWeek'] = calendarlib.day_abbr[dateTime.weekday()]
-        except ValueError:
-          pass
-      elif 'dateTime' in event[attr]:
-        try:
-          dateTime, _ = iso8601.parse_date(event[attr]['dateTime'])
-          event[attr]['dayOfWeek'] = calendarlib.day_abbr[dateTime.weekday()]
-        except (iso8601.ParseError, OverflowError):
-          pass
 
 # gam calendars <CalendarEntity> print events <EventEntity> <EventDisplayProperties>*
 #	[fields <EventFieldNameList>] [showdayofweek]

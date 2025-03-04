@@ -1,3 +1,8 @@
+7.05.07
+
+Fixed bug in `gam calendars <CalendarEntity> info events` and `gam <UserTypeEntity> info events`
+where option `showdayofweek` was not recognized.
+
 7.05.06
 
 Improve message displayed when a command is issued that requires Google Chat Bot setup;
