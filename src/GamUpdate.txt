@@ -1,3 +1,11 @@
+7.05.08
+
+Added error message to `gam report` commands to indicate forbidden access;
+previously, no error message was displayed.
+```
+ERROR: Customer ID: C012abc34, Caller does not have access to the customers reporting data.
+```
+
 7.05.07
 
 Fixed bug in `gam calendars <CalendarEntity> info events` and `gam <UserTypeEntity> info events`

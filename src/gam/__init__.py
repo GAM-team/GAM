@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.05.07'
+__version__ = '7.05.08'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -13429,8 +13429,8 @@ def doReportUsage():
       break
     except GAPI.invalidInput as e:
       systemErrorExit(GOOGLE_API_ERROR_RC, str(e))
-    except GAPI.forbidden:
-      accessErrorExit(None)
+    except GAPI.forbidden as e:
+      accessErrorExit(None, str(e))
   if startUseDate:
     reportName = f'{report.capitalize()} Usage Report - {startUseDate}:{endUseDate}'
   else:
@@ -14027,8 +14027,8 @@ def doReport():
             printErrorMessage(BAD_REQUEST_RC, Msg.BAD_REQUEST)
             exitUserLoop = True
           break
-        except GAPI.forbidden:
-          accessErrorExit(None)
+        except GAPI.forbidden as e:
+          accessErrorExit(None, str(e))
         startDateTime += oneDay
       if exitUserLoop:
         break
@@ -14108,8 +14108,8 @@ def doReport():
         continue
       except GAPI.invalidInput as e:
         systemErrorExit(GOOGLE_API_ERROR_RC, str(e))
-      except GAPI.forbidden:
-        accessErrorExit(None)
+      except GAPI.forbidden as e:
+        accessErrorExit(None, str(e))
       startDateTime += oneDay
     csvPF.writeCSVfile(f'Customer Report - {tryDate}')
   else: # activityReports
