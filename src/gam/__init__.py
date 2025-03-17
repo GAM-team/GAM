@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.05.08'
+__version__ = '7.05.09'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -909,6 +909,8 @@ def getBoolean(defaultValue=True):
       Cmd.Advance()
       return False
     if defaultValue is not None:
+      if not Cmd.Current().strip(): # If current argument is empty, skip over it
+        Cmd.Advance()
       return defaultValue
     invalidChoiceExit(boolean, TRUE_FALSE, False)
   if defaultValue is not None:
@@ -1482,6 +1484,8 @@ def getInteger(minVal=None, maxVal=None, default=None):
         return number
     except ValueError:
       if default is not None:
+        if not Cmd.Current().strip(): # If current argument is empty, skip over it
+          Cmd.Advance()
         return default
     invalidArgumentExit(integerLimits(minVal, maxVal))
   elif default is not None:
@@ -11842,7 +11846,7 @@ def doCreateProject():
 # Try to set policy on project to allow Service Account Key Upload
 #  orgp = getAPIService(API.ORGPOLICY, httpObj)
 #  projectParent = f"projects/{projectInfo['projectId']}"
-#  policyName = f'{projectParent}/policies/iam.disableServiceAccountKeyUpload'
+#  policyName = f'{projectParent}/policies/iam.managed.disableServiceAccountKeyUpload'
 #  try:
 #    result = callGAPI(orgp.projects().policies(), 'get',
 #                      throwReasons=[GAPI.NOT_FOUND, GAPI.FAILED_PRECONDITION, GAPI.PERMISSION_DENIED],
@@ -12646,7 +12650,7 @@ def doProcessSvcAcctKeys(mode=None, iam=None, projectId=None, clientEmail=None, 
         return False
       except GAPI.failedPrecondition as e:
         entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], str(e))
-        if 'iam.disableServiceAccountKeyUpload' not in str(e):
+        if 'iam.disableServiceAccountKeyUpload' not in str(e) and 'iam.managed.disableServiceAccountKeyUpload' not in str(e):
           return False
         if retry == maxRetries or mode != 'upload':
           sys.stdout.write(Msg.ENABLE_SERVICE_ACCOUNT_PRIVATE_KEY_UPLOAD.format(projectId))
@@ -38688,7 +38692,7 @@ def _getEventMatchFields(calendarEventEntity, fieldsList):
     else:
       fieldsList.append('attendees/email')
       if match[0][1] == 'status':
-        fieldsList.extend('attendees/optional', 'attendees/responseStatus')
+        fieldsList.extend(['attendees/optional', 'attendees/responseStatus'])
 
 def _eventMatches(event, match):
   if match[0][0] != 'attendees':
@@ -43027,7 +43031,7 @@ def getUserAttributes(cd, updateCmd, noUid=False):
               if value:
                 entry[argument] = value
             else:
-              entry[argument] = getInteger(minVal=0, maxVal=100000)
+              entry[argument] = getInteger(minVal=0, maxVal=100000, default=0)
           elif primaryNotPrimary(argument, entry):
             break
           else:

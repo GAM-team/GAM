@@ -1,3 +1,8 @@
+7.05.09
+
+Fixed bug in `gam calendars <CalendarEntity> print events matchfield attendeesstatus required accepted resource_calendar@resource.calendar.google.com`
+that caused a trap.
+
 7.05.08
 
 Added error message to `gam report` commands to indicate forbidden access;
