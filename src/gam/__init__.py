@@ -26384,6 +26384,7 @@ def printShowChatSpaces(users):
                              bailOnInternalError=True,
                              throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR,
                                            GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
+                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                              fields=fields, pageSize=CHAT_PAGE_SIZE, **kwargsCS)
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.internalError, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
@@ -26802,6 +26803,7 @@ def syncChatMembers(users):
       members = callGAPIpages(chat.spaces().members(), 'list', 'memberships',
                               pageMessage=_getChatPageMessage(Ent.CHAT_MEMBER, user, i, count, qfilter),
                               throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
+                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                               parent=parent, showGroups=groupsSpecified, pageSize=CHAT_PAGE_SIZE, **kwargs, **kwargsUAA)
       for member in members:
         if 'member' in member:
@@ -26999,6 +27001,7 @@ def printShowChatMembers(users):
                                  bailOnInternalError=True,
                                  throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR,
                                                GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
+                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  fields="nextPageToken,spaces(name,displayName,spaceType,membershipCount)", pageSize=CHAT_PAGE_SIZE,
                                  **kwargsCS)
           for space in spaces:
@@ -27015,6 +27018,7 @@ def printShowChatMembers(users):
                                  bailOnInternalError=True,
                                  throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR,
                                                GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
+                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  fields="nextPageToken,spaces(name,displayName,spaceType,membershipCount)", pageSize=CHAT_PAGE_SIZE,
                                  **kwargsCS)
           for space in spaces:
@@ -27359,6 +27363,7 @@ def printShowChatMessages(users):
         messages = callGAPIpages(chat.spaces().messages(), 'list', 'messages',
                                  pageMessage=_getChatPageMessage(Ent.CHAT_MESSAGE, user, i, count, qfilter),
                                  throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  pageSize=CHAT_PAGE_SIZE, parent=parentName, filter=pfilter, showDeleted=showDeleted,
                                  fields=fields)
         for message in messages:
@@ -27476,6 +27481,7 @@ def printShowChatEvents(users):
         events = callGAPIpages(chat.spaces().spaceEvents(), 'list', 'spaceEvents',
                                pageMessage=_getChatPageMessage(Ent.CHAT_EVENT, user, i, count, qfilter),
                                throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                pageSize=CHAT_PAGE_SIZE, parent=parentName, filter=pfilter)
       except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
         exitIfChatNotConfigured(chat, kvList, str(e), i, count)

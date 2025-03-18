@@ -24,6 +24,7 @@
 _PRODUCTS = {
   '101001': 'Cloud Identity Free',
   '101005': 'Cloud Identity Premium',
+  '101007': 'Google Workspace for Education',
   '101031': 'Google Workspace for Education',
   '101033': 'Google Voice',
   '101034': 'Google Workspace Archived User',
@@ -47,6 +48,10 @@ _SKUS = {
     'product': '101001', 'aliases': ['identity', 'cloudidentity'], 'displayName': 'Cloud Identity'},
   '1010050001': {
     'product': '101005', 'aliases': ['identitypremium', 'cloudidentitypremium'], 'displayName': 'Cloud Identity Premium'},
+  '1010070001': {
+    'product': '101007', 'aliases': ['gwef', 'workspaceeducationfundamentals'], 'displayName': 'Google Workspace for Education Fundamentals'},
+  '1010070004': {
+    'product': '101007', 'aliases': ['gwegmo', 'workspaceeducationgmailonly'], 'displayName': 'Google Workspace for Education Gmail Only'},
   '1010310002': {
     'product': '101031', 'aliases': ['gsefe', 'e4e', 'gsuiteenterpriseeducation'], 'displayName': 'Google Workspace for Education Plus - Legacy'},
   '1010310003': {
@@ -111,6 +116,8 @@ _SKUS = {
     'product': 'Google-Apps', 'aliases': ['standard', 'free'], 'displayName': 'G Suite Legacy'},
   'Google-Apps-For-Business': {
     'product': 'Google-Apps', 'aliases': ['gafb', 'gafw', 'basic', 'gsuitebasic'], 'displayName': 'G Suite Basic'},
+  'Google-Apps-For-Education': {
+    'product': 'Google-Apps', 'aliases': ['gafe', 'gsuiteeducation', 'gsuiteedu'], 'displayName': 'Google Workspace for Education - Fundamentals'},
   'Google-Apps-For-Government': {
     'product': 'Google-Apps', 'aliases': ['gafg', 'gsuitegovernment', 'gsuitegov'], 'displayName': 'Google Workspace Government'},
   'Google-Apps-For-Postini': {
@@ -148,6 +155,8 @@ _SKUS = {
     'product': '101034', 'aliases': ['wsbizstarterarchived', 'workspacebusinessstarterarchived'], 'displayName': 'Google Workspace Business Starter - Archived User'},
   '1010340006': {
     'product': '101034', 'aliases': ['wsbizstanarchived', 'workspacebusinessstanarchived'], 'displayName': 'Google Workspace Business Standard - Archived User'},
+  '1010340007': {
+    'product': '101034', 'aliases': ['gwefau', 'gwefarchived', 'workspaceeducationfundamentalsarchived'], 'displayName': 'Google Workspace for Education Fundamentals - Archived User'},
   '1010060001': {
     'product': '101006', 'aliases': ['gsuiteessentials', 'essentials',
                                      'd4e', 'driveenterprise', 'drive4enterprise',

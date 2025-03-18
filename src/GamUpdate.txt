@@ -1,3 +1,10 @@
+7.05.10
+
+Updated various chat space commands to handle the following error:
+```
+ERROR: 503: serviceNotAvailable - The service is currently unavailable
+```
+
 7.05.09
 
 Fixed bug in `gam calendars <CalendarEntity> print events matchfield attendeesstatus required accepted resource_calendar@resource.calendar.google.com`
