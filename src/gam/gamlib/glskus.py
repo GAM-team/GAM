@@ -24,7 +24,6 @@
 _PRODUCTS = {
   '101001': 'Cloud Identity Free',
   '101005': 'Cloud Identity Premium',
-  '101007': 'Google Workspace for Education',
   '101031': 'Google Workspace for Education',
   '101033': 'Google Voice',
   '101034': 'Google Workspace Archived User',
@@ -49,9 +48,9 @@ _SKUS = {
   '1010050001': {
     'product': '101005', 'aliases': ['identitypremium', 'cloudidentitypremium'], 'displayName': 'Cloud Identity Premium'},
   '1010070001': {
-    'product': '101007', 'aliases': ['gwef', 'workspaceeducationfundamentals'], 'displayName': 'Google Workspace for Education Fundamentals'},
+    'product': 'Google-Apps', 'aliases': ['gwef', 'workspaceeducationfundamentals'], 'displayName': 'Google Workspace for Education Fundamentals'},
   '1010070004': {
-    'product': '101007', 'aliases': ['gwegmo', 'workspaceeducationgmailonly'], 'displayName': 'Google Workspace for Education Gmail Only'},
+    'product': 'Google-Apps', 'aliases': ['gwegmo', 'workspaceeducationgmailonly'], 'displayName': 'Google Workspace for Education Gmail Only'},
   '1010310002': {
     'product': '101031', 'aliases': ['gsefe', 'e4e', 'gsuiteenterpriseeducation'], 'displayName': 'Google Workspace for Education Plus - Legacy'},
   '1010310003': {

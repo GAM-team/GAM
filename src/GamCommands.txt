@@ -281,11 +281,15 @@ If an item contains spaces, it should be surrounded by ".
         gsuitebasic | gafb | gafw | basic | Google-Apps-For-Business |
         gsuitebusiness | gau | gsb | unlimited | Google-Apps-Unlimited |
         gsuitebusinessarchived | gsbau | businessarchived | 1010340002 | Google Workspace Business - Archived User |
+        gsuiteedu | gafe | gsuiteeducation | Google-Apps-For-Education |
         gsuiteenterprisearchived | gseau | enterprisearchived | 1010340001 | Google Workspace Enterprise Plus - Archived User |
         gsuiteenterpriseeducation | gsefe | e4e | 1010310002 | Google Workspace for Education Plus - Legacy |
         gsuiteenterpriseeducationstudent | gsefes | e4es | 1010310003 | Google Workspace for Education Plus - Legacy (Student) |
         gsuitegov | gafg | gsuitegovernment | Google-Apps-For-Government |
         gsuitelite | gal | gsl | lite | Google-Apps-Lite |
+        gwef | workspaceeducationfundamentals | 1010070001 | Google Workspace for Education Fundamentals |
+        gwefau | gwefarchived | workspaceeducationfundamentalsarchived | 1010340007 | Google Workspace for Education Fundamentals - Archived User |
+        gwegmo | workspaceeducationgmailonly | 1010070004 | Google Workspace for Education Gmail Only |
         gwep | workspaceeducationplus | 1010310008 | Google Workspace for Education Plus |
         gwepstaff | workspaceeducationplusstaff | 1010310009 | Google Workspace for Education Plus (Staff) |
         gwepstudent | workspaceeducationplusstudent | 1010310010 | Google Workspace for Education Plus (Extra Student)|

@@ -1,3 +1,13 @@
+7.05.11
+
+Added the following License SKUs:
+```
+ProductId SKUId Display Name
+Google-Apps 1010070001 Google Workspace for Education Fundamentals
+Google-Apps 1010070004 Google Workspace for Education Gmail Only
+101034 1010340007 Google Workspace for Education Fundamentals - Archived User
+```
+
 7.05.10
 
 Updated various chat space commands to handle the following error:
