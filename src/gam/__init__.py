@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.05.11'
+__version__ = '7.05.12'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -28202,6 +28202,7 @@ def doUpdateChromePolicy():
       schemaName, schema = simplifyChromeSchema(_getChromePolicySchema(cp, Cmd.Previous(), '*'))
       body['requests'].append({'policyValue': {'policySchema': schemaName, 'value': {}},
                                'updateMask': ''})
+      schemaNameList.append(schemaName)
       while Cmd.ArgumentsRemaining():
         field = getArgumentEmptyAllowed()
         # Allow an empty field/value pair which makes processing an input CSV file with schemas with different numbers of fields easy
@@ -28210,8 +28211,9 @@ def doUpdateChromePolicy():
             Cmd.Advance()
           continue
         if field in {'ou', 'org', 'orgunit', 'group', 'printerid', 'appid'} or '.' in field:
-          Cmd.Backup()
-          break # field is actually a new policy name or orgunit
+          if field != 'appid' or not schemaName.startswith('chrome.devices.kiosk'):
+            Cmd.Backup()
+            break # field is actually a new policy name or orgunit
         # JSON
         if field == 'json':
           jsonData = getJSON(['direct', 'name', 'orgUnitPath', 'parentOrgUnitPath', 'group'])
@@ -28222,7 +28224,7 @@ def doUpdateChromePolicy():
               body['requests'][-1]['policyTargetKey']['additionalTargetKeys'] = {atk['name']: atk['value']}
               if atk['name'] == 'app_id':
                 schemaNameAppId += f"({atk['value']})"
-          schemaNameList.append(schemaNameAppId)
+          schemaNameList[-1] = schemaNameAppId
           for field in jsonData.get('fields', []):
             casedField = field['name']
             lowerField = casedField.lower()
@@ -28263,7 +28265,6 @@ def doUpdateChromePolicy():
             body['requests'][-1]['policyValue']['value'][casedField] = value
             body['requests'][-1]['updateMask'] += f'{casedField},'
           break
-        schemaNameList.append(schemaName)
         # Handle TYPE_MESSAGE fields with durations, values, counts and timeOfDay as special cases
         tmschema = CHROME_SCHEMA_TYPE_MESSAGE.get(schemaName, {}).get(field)
         if tmschema:
@@ -42476,16 +42477,16 @@ class PasswordOptions():
       up = 'password'
       password = self.GetPassword()
       if password:
-        notFoundBody[up] = password
-        if notFoundBody[up].lower() in {'blocklogin'}:
+        if password.lower() == 'blocklogin':
           self.makeCleanPassword = False
           notFoundBody[up] = self.CreateRandomPassword()
-          self.notFoundPassword = notFoundBody[up]
-        elif notFoundBody[up].lower() in {'random', 'uniquerandom'}:
+        elif password.lower() in {'random', 'uniquerandom'}:
           self.SetCleanPasswordLen()
           self.makeCleanPassword = True
           notFoundBody[up] = self.CreateRandomPassword()
-          self.notFoundPassword = notFoundBody[up]
+        else:
+          notFoundBody[up] = password
+        self.notFoundPassword = notFoundBody[up]
     elif myarg in {'lograndompassword', 'logpassword'}:
       self.filename = getString(Cmd.OB_FILE_NAME)
     else:
@@ -42528,6 +42529,8 @@ class PasswordOptions():
             self.promptForUniquePassword = True
           else:
             self.promptForPassword = True
+        else:
+          self.password = password
     elif up == 'hashFunction':
       body[up] = self.HASH_FUNCTION_MAP[myarg]
       self.clearPassword = self.hashPassword = False
@@ -43240,9 +43243,7 @@ def doCreateUser():
   cd = buildGAPIObject(API.DIRECTORY)
   body, notify, tagReplacements, addGroups, addAliases, PwdOpts, \
     _, _, _, \
-    parameters, resolveConflictAccount = getUserAttributes(cd,
-                                                           False,
-                                                           noUid=True)
+    parameters, resolveConflictAccount = getUserAttributes(cd, False, noUid=True)
   suffix = 0
   originalEmail = body['primaryEmail']
   atLoc = originalEmail.find('@')
@@ -43350,8 +43351,7 @@ def updateUsers(entityList):
   updateRetryDelay = 5
   body, notify, tagReplacements, addGroups, addAliases, PwdOpts, \
     updatePrimaryEmail, notFoundBody, groupOrgUnitMap, \
-    parameters, resolveConflictAccount = getUserAttributes(cd,
-                                                           True)
+    parameters, resolveConflictAccount = getUserAttributes(cd, True)
   vfe = 'primaryEmail' in body and body['primaryEmail'][:4].lower() == 'vfe@'
   if body.get('orgUnitPath', '') and parameters['immutableOUs']:
     ubody = body.copy()

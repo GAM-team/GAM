@@ -1,4 +1,12 @@
-7.05.11
+7.05.12
+
+Fixed bug in `gam update chromepolicy` where `appid` was misinterpreted for `chrome.devices.kiosk` policies
+and an error was generated.
+```
+ERROR: Chrome Policy Schema: customers/C123abc456/policySchemas/<Field>, Does not exist
+```
+
+!7.05.11
 
 Added the following License SKUs:
 ```
