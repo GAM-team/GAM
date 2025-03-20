@@ -118,7 +118,7 @@ Your workspace is configured to disable service account private key uploads.
 
 Please go to:
 
-  https://github.com/taers232c/GAMADV-XTD3/wiki/Authorization#authorize-service-account-key-uploads
+  https://github.com/GAM-team/GAM/wiki/Authorization#authorize-service-account-key-uploads
 
 Follow the steps to allow a service account private key upload for the project ({0}) just created.
 Once those steps are completed, you can continue with your project authentication.
@@ -322,7 +322,7 @@ INVALID_NUMBER_OF_CHAT_SPACE_MEMBERS = '{0} type {1} number of members, {2}, mus
 INVALID_ORGUNIT = 'Invalid Organizational Unit'
 INVALID_PATH = 'Invalid Path'
 INVALID_PERMISSION_ATTRIBUTE_TYPE = 'permission attribute {0} not allowed with type {1}'
-INVALID_REGION = 'See: https://github.com/taers232c/GAMADV-XTD3/wiki/Context-Aware-Access-Levels#caa-region-codes'
+INVALID_REGION = 'See: https://github.com/GAM-team/GAM/wiki/Context-Aware-Access-Levels#caa-region-codes'
 INVALID_QUERY = 'Invalid Query'
 INVALID_RE = 'Invalid RE'
 INVALID_REQUEST = 'Invalid Request'
