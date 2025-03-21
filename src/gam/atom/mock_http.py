@@ -108,7 +108,7 @@ class MockHttpClient(atom.http_interface.GenericHttpClient):
             for recording in self.recordings:
                 if recording[0].operation == operation and recording[0].url == url:
                     return recording[1]
-            raise NoRecordingFound('No recodings found for %s %s' % (
+            raise NoRecordingFound('No recordings found for %s %s' % (
                 operation, url))
         else:
             # There is a real HTTP client, so make the request, and record the
