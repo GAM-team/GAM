@@ -22,7 +22,7 @@
 
 # Products/SKUs
 _PRODUCTS = {
-  '101001': 'Cloud Identity Free',
+  '101001': 'Cloud Identity',
   '101005': 'Cloud Identity Premium',
   '101031': 'Google Workspace for Education',
   '101033': 'Google Voice',
@@ -127,7 +127,7 @@ _SKUS = {
     'product': 'Google-Apps', 'aliases': ['gau', 'gsb', 'unlimited', 'gsuitebusiness'], 'displayName': 'G Suite Business'},
   '1010020020': {
     'product': 'Google-Apps', 'aliases': ['gae', 'gse', 'enterprise', 'gsuiteenterprise',
-                                          'wsentplus', 'workspaceenterpriseplus'], 'displayName': 'Google Workspace Enterprise Plus'},
+                                          'wsentplus', 'workspaceenterpriseplus'], 'displayName': 'Google Workspace Enterprise Plus (formerly G Suite Enterprise)'},
   '1010020025': {
     'product': 'Google-Apps', 'aliases': ['wsbizplus', 'workspacebusinessplus'], 'displayName': 'Google Workspace Business Plus'},
   '1010020026': {
@@ -159,11 +159,11 @@ _SKUS = {
   '1010060001': {
     'product': '101006', 'aliases': ['gsuiteessentials', 'essentials',
                                      'd4e', 'driveenterprise', 'drive4enterprise',
-                                     'wsess', 'workspaceesentials'], 'displayName': 'Google Workspace Essentials'},
+                                     'wsess', 'workspaceesentials'], 'displayName': 'Google Workspace Essentials (formerly G Suite Essentials)'},
   '1010060003': {
     'product': 'Google-Apps', 'aliases': ['wsentess', 'workspaceenterpriseessentials'], 'displayName': 'Google Workspace Enterprise Essentials'},
   '1010060005': {
-    'product': 'Google-Apps', 'aliases': ['wsessplus', 'workspaceessentialsplus'], 'displayName': 'Google Workspace Essentials Plus'},
+    'product': 'Google-Apps', 'aliases': ['wsessplus', 'workspaceessentialsplus'], 'displayName': 'Google Workspace Enterprise Essentials Plus'},
   'Google-Drive-storage-20GB': {
     'product': 'Google-Drive-storage', 'aliases': ['drive20gb', '20gb', 'googledrivestorage20gb'], 'displayName': 'Google Drive Storage 20GB'},
   'Google-Drive-storage-50GB': {
