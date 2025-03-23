@@ -21,7 +21,7 @@ EOF
 }
 
 target_dir="$HOME/bin"
-target_gam="gam7/gam"
+target_folder="$target_dir/gam7"
 gamarch=$(uname -m)
 gamos=$(uname -s)
 osversion=""
@@ -36,7 +36,7 @@ while getopts "hd:a:o:b:lp:u:r:v:s" OPTION
 do
      case $OPTION in
          h) usage; exit;;
-         d) target_dir="$OPTARG";;
+         d) target_dir="${OPTARG%/}"; target_folder="$target_dir/gam7";;
          a) gamarch="$OPTARG";;
          o) gamos="$OPTARG";;
          b) osversion="$OPTARG";;
@@ -45,13 +45,11 @@ do
          u) adminuser="$OPTARG";;
          r) regularuser="$OPTARG";;
          v) gamversion="$OPTARG";;
-         s) strip_gam="--strip-components 1"; target_gam="gam";;
+         s) strip_gam="--strip-components 1"; target_folder="$target_dir";;
          ?) usage; exit;;
      esac
 done
-
-# remove possible / from end of target_dir
-target_dir=${target_dir%/}
+target_gam="$target_folder/gam"
 
 update_profile() {
         [ "$2" -eq 1 ] || [ -f "$1" ] || return 1
@@ -328,9 +326,9 @@ echo_yellow "Downloading ${download_url} to $temp_archive_dir ($check_type)..."
 # Save archive to temp w/o losing our path
 (cd "$temp_archive_dir" && curl -O -L -s "${curl_opts[@]}" "$download_url")
 
-mkdir -p "$target_dir"
-echo_yellow "Deleting contents of $target_dir/gam7/lib"
-rm -frv "$target_dir/gam7/lib"
+mkdir -p "$target_folder"
+echo_yellow "Deleting contents of $target_folder/lib"
+rm -frv "$target_folder/lib"
 
 echo_yellow "Extracting archive to $target_dir"
 if [[ "$name" =~ tar.xz|tar.gz|tar ]]; then
@@ -351,7 +349,7 @@ fi
 
 # Update profile to add gam command
 if [ "$update_profile" = true ]; then
-  alias_line="alias gam=\"${target_dir// /\\ }/$target_gam\""
+  alias_line="alias gam=\"$target_gam\""
   if [ "$gamos" == "linux" ]; then
     update_profile "$HOME/.bash_aliases" 0 || update_profile "$HOME/.bash_profile" 0 || update_profile "$HOME/.bashrc" 0
     update_profile "$HOME/.zshrc" 0
@@ -365,7 +363,7 @@ fi
 
 if [ "$upgrade_only" = true ]; then
   echo_green "Here's information about your GAM upgrade:"
-  "$target_dir/$target_gam" version extended
+  "$target_gam" version extended
   rc=$?
   if (( $rc != 0 )); then
     echo_red "ERROR: Failed running GAM for the first time with return code $rc. Please report this error to GAM mailing list. Exiting."
@@ -387,7 +385,7 @@ while true; do
       ;;
     [Nn]*)
 #      config_cmd="config no_browser true"
-      touch "$target_dir/gam7/nobrowser.txt" > /dev/null 2>&1
+      touch "$target_folder/nobrowser.txt" > /dev/null 2>&1
       break
       ;;
     *)
@@ -405,8 +403,8 @@ while true; do
       if [ "$adminuser" == "" ]; then
         read -p "Please enter your Google Workspace admin email address: " adminuser
       fi
-#      "$target_dir/$target_gam" $config_cmd create project $adminuser
-      "$target_dir/$target_gam" create project $adminuser
+#      "$target_gam" $config_cmd create project $adminuser
+      "$target_gam" create project $adminuser
       rc=$?
       if (( $rc == 0 )); then
         echo_green "Project creation complete."
@@ -431,8 +429,8 @@ while $project_created; do
   read -p "Are you ready to authorize GAM to perform Google Workspace management operations as your admin account? (yes or no) " yn
   case $yn in
     [Yy]*)
-#      "$target_dir/$target_gam" $config_cmd oauth create $adminuser
-      "$target_dir/$target_gam" oauth create $adminuser
+#      "$target_gam" $config_cmd oauth create $adminuser
+      "$target_gam" oauth create $adminuser
       rc=$?
       if (( $rc == 0 )); then
         echo_green "Admin authorization complete."
@@ -461,8 +459,8 @@ while $admin_authorized; do
         read -p "Please enter the email address of a regular Google Workspace user: " regularuser
       fi
       echo_yellow "Great! Checking service account scopes.This will fail the first time. Follow the steps to authorize and retry. It can take a few minutes for scopes to PASS after they've been authorized in the admin console."
-#      "$target_dir/$target_gam" $config_cmd user $regularuser check serviceaccount
-      "$target_dir/$target_gam" user $regularuser check serviceaccount
+#      "$target_gam" $config_cmd user $regularuser check serviceaccount
+      "$target_gam" user $regularuser check serviceaccount
       rc=$?
       if (( $rc == 0 )); then
         echo_green "Service account authorization complete."
@@ -483,8 +481,8 @@ while $admin_authorized; do
 done
 
 echo_green "Here's information about your new GAM installation:"
-#"$target_dir/$target_gam" $config_cmd save version extended
-"$target_dir/$target_gam" version extended
+#"$target_gam" $config_cmd save version extended
+"$target_gam" version extended
 rc=$?
 if (( $rc != 0 )); then
   echo_red "ERROR: Failed running GAM for the first time with $rc. Please report this error to GAM mailing list. Exiting."
