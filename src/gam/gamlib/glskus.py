@@ -87,6 +87,8 @@ _SKUS = {
     'product': '101038', 'aliases': ['appsheetplus', 'appsheetenterpriseplus'], 'displayName': 'AppSheet Enterprise Plus'},
   '1010390001': {
     'product': '101039', 'aliases': ['assuredcontrols'], 'displayName': 'Assured Controls'},
+  '1010390002': {
+    'product': '101039', 'aliases': ['assuredcontrolsplus'], 'displayName': 'Assured Controls Plus'},
   '1010400001': {
     'product': '101040', 'aliases': ['beyondcorp', 'beyondcorpenterprise', 'bce', 'cep', 'chromeenterprisepremium'], 'displayName': 'Chrome Enterprise Premium'},
   '1010430001': {

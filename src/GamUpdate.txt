@@ -1,3 +1,11 @@
+7.05.14
+
+Added the following License SKU:
+```
+ProductId SKUId Display Name
+101039 1010390002 Assured Controls Plus
+```
+
 7.05.13
 
 Updated license product names to match Google.
