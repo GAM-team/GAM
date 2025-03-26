@@ -4447,7 +4447,7 @@ def handleOAuthTokenError(e, softErrors, displayError=False, i=0, count=0):
     if not GM.Globals[GM.CURRENT_SVCACCT_USER]:
       ClientAPIAccessDeniedExit()
     if softErrors:
-      entityDoesNotExistWarning(Ent.USER, GM.Globals[GM.CURRENT_SVCACCT_USER], i, count)
+      entityActionFailedWarning([Ent.USER, GM.Globals[GM.CURRENT_SVCACCT_USER], Ent.USER, None], errMsg, i, count)
       return None
     systemErrorExit(SERVICE_NOT_APPLICABLE_RC, Msg.SERVICE_NOT_APPLICABLE_THIS_ADDRESS.format(GM.Globals[GM.CURRENT_SVCACCT_USER]))
   if errMsg in API.OAUTH2_UNAUTHORIZED_ERRORS:
