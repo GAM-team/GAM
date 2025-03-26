@@ -1,3 +1,15 @@
+7.05.15
+
+Updated `gam <UserTypeEntity> get drivefile` and `gam <UserTypeEntity> create drivefile`
+to allow downloading and uploading of Google App Scripts.
+```
+$ gam user user1@domain.com get drivefile 1ZY-YkS3E0OKipALra_XzfIh9cvxoILSbb8TRdHBFCpyB_mXI_J8FmjHv format json
+User: user1@domain.com, Download 1 Drive File
+  User: user1@domain.com, Drive File: Test Project, Downloaded to: /Users/gamteam/GamWork/Test Project.json, Type: Google Doc
+$ gam user user2@domain.com create drivefile localfile "Test Project.json" mimetype application/vnd.google-apps.script+json drivefilename "Test Project"
+User: user2@domain.com, Drive File: Test Project(1Ok_svw55VTreZ5CzcViJDLfEzVRi-Un8D9eG6I5pIeVyRl2YsmNiy3C_), Created with content from: Test Project.json
+```
+
 7.05.14
 
 Added the following License SKU:

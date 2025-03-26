@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.05.14'
+__version__ = '7.05.15'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -262,6 +262,7 @@ MIMETYPE_GA_JAM = f'{APPLICATION_VND_GOOGLE_APPS}jam'
 MIMETYPE_GA_MAP = f'{APPLICATION_VND_GOOGLE_APPS}map'
 MIMETYPE_GA_PRESENTATION = f'{APPLICATION_VND_GOOGLE_APPS}presentation'
 MIMETYPE_GA_SCRIPT = f'{APPLICATION_VND_GOOGLE_APPS}script'
+MIMETYPE_GA_SCRIPT_JSON = f'{APPLICATION_VND_GOOGLE_APPS}script+json'
 MIMETYPE_GA_SHORTCUT = f'{APPLICATION_VND_GOOGLE_APPS}shortcut'
 MIMETYPE_GA_3P_SHORTCUT = f'{APPLICATION_VND_GOOGLE_APPS}drive-sdk'
 MIMETYPE_GA_SITE = f'{APPLICATION_VND_GOOGLE_APPS}site'
@@ -57402,6 +57403,8 @@ def createDriveFile(users):
   if parameters[DFA_LOCALFILEPATH]:
     if parameters[DFA_LOCALFILEPATH] != '-' and parameters[DFA_PRESERVE_FILE_TIMES]:
       setPreservedFileTimes(body, parameters, False)
+    if body.get('mimeType') == MIMETYPE_GA_SCRIPT_JSON:
+      parameters[DFA_LOCALMIMETYPE] = body['mimeType']
     media_body = getMediaBody(parameters)
   elif parameters[DFA_URL]:
     media_body = getMediaBody(parameters)
@@ -60439,6 +60442,7 @@ GOOGLEDOC_VALID_EXTENSIONS_MAP = {
   MIMETYPE_GA_DOCUMENT: ['.docx', '.epub', '.html', '.odt', '.pdf', '.rtf', '.txt', '.zip'],
   MIMETYPE_GA_JAM: ['.pdf'],
   MIMETYPE_GA_PRESENTATION: ['.pdf', '.pptx', '.odp', '.txt'],
+  MIMETYPE_GA_SCRIPT: ['.json'],
   MIMETYPE_GA_SPREADSHEET: ['.csv', '.ods', '.pdf', '.tsv', '.xlsx', '.zip'],
   }
 
@@ -60474,6 +60478,7 @@ DOCUMENT_FORMATS_MAP = {
   'html': [{'mime': 'text/html', 'ext': '.html'}],
   'jpeg': [{'mime': 'image/jpeg', 'ext': '.jpeg'}],
   'jpg': [{'mime': 'image/jpeg', 'ext': '.jpg'}],
+  'json': [{'mime': MIMETYPE_GA_SCRIPT_JSON, 'ext': '.json'}],
   'mht': [{'mime': 'message/rfc822', 'ext': 'mht'}],
   'odp': [{'mime': 'application/vnd.oasis.opendocument.presentation', 'ext': '.odp'}],
   'ods': [{'mime': 'application/x-vnd.oasis.opendocument.spreadsheet', 'ext': '.ods'},
