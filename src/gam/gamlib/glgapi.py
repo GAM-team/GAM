@@ -37,6 +37,7 @@ CANNOT_CHANGE_OWNER_ACL = 'cannotChangeOwnerAcl'
 CANNOT_CHANGE_OWN_PRIMARY_SUBSCRIPTION = 'cannotChangeOwnPrimarySubscription'
 CANNOT_COPY_FILE = 'cannotCopyFile'
 CANNOT_DELETE_ONLY_REVISION = 'cannotDeleteOnlyRevision'
+CANNOT_DELETE_PERMISSION = 'cannotDeletePermission'
 CANNOT_DELETE_PRIMARY_CALENDAR = 'cannotDeletePrimaryCalendar'
 CANNOT_DELETE_PRIMARY_SENDAS = 'cannotDeletePrimarySendAs'
 CANNOT_DELETE_RESOURCE_WITH_CHILDREN = 'cannotDeleteResourceWithChildren'
@@ -246,7 +247,7 @@ DRIVE3_UPDATE_ACL_THROW_REASONS = [BAD_REQUEST, INVALID_OWNERSHIP_TRANSFER, CANN
 DRIVE3_DELETE_ACL_THROW_REASONS = [BAD_REQUEST, CANNOT_REMOVE_OWNER,
                                    CANNOT_MODIFY_INHERITED_TEAMDRIVE_PERMISSION,
                                    INSUFFICIENT_ADMINISTRATOR_PRIVILEGES, SHARING_RATE_LIMIT_EXCEEDED,
-                                   NOT_FOUND, PERMISSION_NOT_FOUND]
+                                   NOT_FOUND, PERMISSION_NOT_FOUND, CANNOT_DELETE_PERMISSION]
 DRIVE3_MODIFY_LABEL_THROW_REASONS = DRIVE_USER_THROW_REASONS+[FILE_NOT_FOUND, NOT_FOUND, FORBIDDEN, INTERNAL_ERROR,
                                                               FILE_NEVER_WRITABLE, APPLY_LABEL_FORBIDDEN,
                                                               INSUFFICIENT_ADMINISTRATOR_PRIVILEGES, INSUFFICIENT_FILE_PERMISSIONS,
@@ -381,6 +382,8 @@ class cannotChangeOwnPrimarySubscription(Exception):
 class cannotCopyFile(Exception):
   pass
 class cannotDeleteOnlyRevision(Exception):
+  pass
+class cannotDeletePermission(Exception):
   pass
 class cannotDeletePrimaryCalendar(Exception):
   pass
@@ -676,6 +679,7 @@ REASON_EXCEPTION_MAP = {
   CANNOT_CHANGE_OWN_PRIMARY_SUBSCRIPTION: cannotChangeOwnPrimarySubscription,
   CANNOT_COPY_FILE: cannotCopyFile,
   CANNOT_DELETE_ONLY_REVISION: cannotDeleteOnlyRevision,
+  CANNOT_DELETE_PERMISSION: cannotDeletePermission,
   CANNOT_DELETE_PRIMARY_CALENDAR: cannotDeletePrimaryCalendar,
   CANNOT_DELETE_PRIMARY_SENDAS: cannotDeletePrimarySendAs,
   CANNOT_DELETE_RESOURCE_WITH_CHILDREN: cannotDeleteResourceWithChildren,

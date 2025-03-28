@@ -1,3 +1,10 @@
+7.05.17
+
+Updated commands that delete drive ACLs to handle the following error:
+```
+ERROR: 403: cannotDeletePermission - The authenticated user does not have the required access to delete the permission.
+```
+
 7.05.16
 
 Added option `transpose [<Boolean>]` to `redirect csv` that causes
