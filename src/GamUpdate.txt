@@ -1,7 +1,13 @@
+7.05.16
+
+Added option `transpose [<Boolean>]` to `redirect csv` that causes
+GAM to transpose CSV output rows and columns. This will most useful
+when a `countsonly` option is used in a `print` or `report` command.
+
 7.05.15
 
 Updated `gam <UserTypeEntity> get drivefile` and `gam <UserTypeEntity> create drivefile`
-to allow downloading and uploading of Google App Scripts.
+to allow downloading and uploading of Google Apps Scripts.
 ```
 $ gam user user1@domain.com get drivefile 1ZY-YkS3E0OKipALra_XzfIh9cvxoILSbb8TRdHBFCpyB_mXI_J8FmjHv format json
 User: user1@domain.com, Download 1 Drive File

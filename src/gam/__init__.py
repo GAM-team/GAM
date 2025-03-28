@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.05.15'
+__version__ = '7.05.16'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -4113,8 +4113,8 @@ def SetGlobalVariables():
   if checkArgumentPresent(Cmd.MULTIPROCESSEXIT_CMD):
     _setMultiprocessExit()
 # redirect csv <FileName> [multiprocess] [append] [noheader] [charset <CharSet>]
-#	       [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]]
-#	       [sortheaders <StringList>] [timestampcolumn <String>]
+#	       [columndelimiter <Character>] [noescapechar [<Boolean>]] [quotechar <Character>]]
+#	       [sortheaders <StringList>] [timestampcolumn <String>] [transpose [<Boolean>]]
 #	       [todrive <ToDriveAttribute>*]
 # redirect stdout <FileName> [multiprocess] [append]
 # redirect stdout null
@@ -4139,6 +4139,8 @@ def SetGlobalVariables():
         GM.Globals[GM.CSV_OUTPUT_SORT_HEADERS] = GC.Values[GC.CSV_OUTPUT_SORT_HEADERS] = getString(Cmd.OB_STRING_LIST, minLen=0).replace(',', ' ').split()
       if checkArgumentPresent('timestampcolumn'):
         GM.Globals[GM.CSV_OUTPUT_TIMESTAMP_COLUMN] = GC.Values[GC.CSV_OUTPUT_TIMESTAMP_COLUMN] = getString(Cmd.OB_STRING, minLen=0)
+      if checkArgumentPresent('transpose'):
+        GM.Globals[GM.CSV_OUTPUT_TRANSPOSE] = getBoolean()
       _setCSVFile(filename, mode, encoding, writeHeader, multi)
       GM.Globals[GM.CSVFILE][GM.REDIRECT_QUEUE_CSVPF] = CSVPrintFile()
       if checkArgumentPresent('todrive'):
@@ -7794,6 +7796,7 @@ class CSVPrintFile():
   def __init__(self, titles=None, sortTitles=None, indexedTitles=None):
     self.rows = []
     self.rowCount = 0
+    self.outputTranspose = GM.Globals[GM.CSV_OUTPUT_TRANSPOSE]
     self.todrive = GM.Globals[GM.CSV_TODRIVE]
     self.titlesSet = set()
     self.titlesList = []
@@ -8993,6 +8996,22 @@ class CSVPrintFile():
         self.JSONtitlesList = self.orderHeaders(self.JSONtitlesList)
       titlesList = self.JSONtitlesList
     normalizeSortHeaders()
+    if self.outputTranspose:
+      newRows = []
+      pivotKey = titlesList[0]
+      newTitlesList = [pivotKey]
+      newTitlesSet = set(newTitlesList)
+      for title in titlesList[1:]:
+        newRow = {pivotKey: title}
+        for row in self.rows:
+          pivotValue = row[pivotKey]
+          if pivotValue not in newTitlesSet:
+            newTitlesSet.add(pivotValue)
+            newTitlesList.append(pivotValue)
+          newRow[pivotValue] = row.get(title)
+        newRows.append(newRow)
+      titlesList = newTitlesList
+      self.rows = newRows
     if (not self.todrive) or self.todrive['localcopy']:
       if GM.Globals[GM.CSVFILE][GM.REDIRECT_NAME] == '-':
         if GM.Globals[GM.STDOUT][GM.REDIRECT_MULTI_FD]:

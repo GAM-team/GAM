@@ -102,7 +102,7 @@ If an item contains spaces, it should be surrounded by ".
         banana|basil|blueberry|flamingo|graphite|grape|
         lavender|peacock|sage|tangerine|tomato
 <FileFormat> ::=
-        csv|doc|dot|docx|dotx|epub|html|jpeg|jpg|mht|odp|ods|odt|
+        csv|doc|dot|docx|dotx|epub|html|jpeg|jpg|json|mht|odp|ods|odt|
         pdf|png|ppt|pot|potx|pptx|rtf|svg|tsv|txt|xls|xlt|xlsx|xltx|zip|
         ms|microsoft|openoffice|
 <LabelColorHex> ::=
@@ -1276,8 +1276,8 @@ If the pattern {{Section}} appears in <FileName>, it will be replaced with the n
 For redirect csv, the optional arguments must appear in the order shown.
 <Redirect> ::=
         redirect csv <FileName> [multiprocess] [append] [noheader] [charset <Charset>]
-                     [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
-                     [sortheaders <StringList>] [timestampcolumn <String>]
+                     [columndelimiter <Character>] [noescapechar [<Boolean>]] [quotechar <Character>]
+                     [sortheaders <StringList>] [timestampcolumn <String>] [transpose [<Bopolean>]]
                      [todrive <ToDriveAttribute>*] |
         redirect stdout <FileName> [multiprocess] [append] |
         redirect stdout null [multiprocess] |

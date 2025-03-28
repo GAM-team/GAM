@@ -85,6 +85,8 @@ CSV_OUTPUT_ROW_FILTER_MODE = 'corm'
 CSV_OUTPUT_ROW_LIMIT = 'corl'
 # Add timestamp column to CSV output file
 CSV_OUTPUT_TIMESTAMP_COLUMN = 'cotc'
+# Transpose output rows/columns
+CSV_OUTPUT_TRANSPOSE = 'cotr'
 # Output sort headers
 CSV_OUTPUT_SORT_HEADERS = 'cosh'
 # CSV todrive options
@@ -250,6 +252,7 @@ Globals = {
   CSV_OUTPUT_ROW_LIMIT: 0,
   CSV_OUTPUT_SORT_HEADERS: [],
   CSV_OUTPUT_TIMESTAMP_COLUMN: None,
+  CSV_OUTPUT_TRANSPOSE: False,
   CSV_TODRIVE: {},
   CURRENT_API_SERVICES: {},
   CURRENT_CLIENT_API: None,
