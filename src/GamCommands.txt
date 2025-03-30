@@ -1276,7 +1276,7 @@ If the pattern {{Section}} appears in <FileName>, it will be replaced with the n
 For redirect csv, the optional arguments must appear in the order shown.
 <Redirect> ::=
         redirect csv <FileName> [multiprocess] [append] [noheader] [charset <Charset>]
-                     [columndelimiter <Character>] [noescapechar [<Boolean>]] [quotechar <Character>]
+                     [columndelimiter <Character>] [quotechar <Character>] [noescapechar [<Boolean>]]
                      [sortheaders <StringList>] [timestampcolumn <String>] [transpose [<Bopolean>]]
                      [todrive <ToDriveAttribute>*] |
         redirect stdout <FileName> [multiprocess] [append] |
@@ -3926,6 +3926,10 @@ gam print group-members [todrive <ToDriveAttribute>*]
 
 # Cloud Identity Groups
 
+<CBCMBrowser> ::= id:cbcm-browser.<DeviceId>
+<ChromeOSDevice> ::= id:chrome-os-device.<DeviceId>
+<BrowserDeviceList> ::= "(<CBCMBrowser>|<ChromeOSDevice>)(,(<CBCMBrowser>|<ChromeOSDevice>))*"
+
 <CIGroupFieldsName> ::=
         additionalgroupkeys|
         createtime|
@@ -3955,12 +3959,12 @@ gam update cigroups <GroupEntity> create|add [<GroupRole>]
         [usersonly|groupsonly]
         [notsuspended|suspended] [notarchived|archived]
         [expire|expires <Time>] [preview] [actioncsv]
-        <UserTypeEntity>
+        <UserTypeEntity>|<BrowserDeviceList>
 gam update cigroups <GroupEntity> delete|remove [<GroupRole>]
         [usersonly|groupsonly]
         [notsuspended|suspended] [notarchived|archived]
         [preview] [actioncsv]
-        <UserTypeEntity>
+        <UserTypeEntity>|<BrowserDeviceList>
 gam update cigroups <GroupEntity> sync [<GroupRole>|ignorerole]
         [usersonly|groupsonly] [addonly|removeonly]
         [notsuspended|suspended] [notarchived|archived]

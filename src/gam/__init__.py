@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.05.17'
+__version__ = '7.05.18'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -4088,13 +4088,8 @@ def SetGlobalVariables():
       GC.Values[GC.OUTPUT_DATEFORMAT] = GM.Globals[GM.OUTPUT_DATEFORMAT]
     if not GC.Values[GC.OUTPUT_TIMEFORMAT]:
       GC.Values[GC.OUTPUT_TIMEFORMAT] = GM.Globals[GM.OUTPUT_TIMEFORMAT]
-# Create/set mode for oauth2.txt.lock
-  if not GM.Globals[GM.OAUTH2_TXT_LOCK]:
-    fileName = f'{GC.Values[GC.OAUTH2_TXT]}.lock'
-    if not os.path.isfile(fileName):
-      closeFile(openFile(fileName, mode=DEFAULT_FILE_APPEND_MODE))
-      os.chmod(fileName, 0o666)
-    GM.Globals[GM.OAUTH2_TXT_LOCK] = fileName
+# Define lockfile: oauth2.txt.lock
+  GM.Globals[GM.OAUTH2_TXT_LOCK] = f'{GC.Values[GC.OAUTH2_TXT]}.lock'
 # Override httplib2 settings
   httplib2.debuglevel = GC.Values[GC.DEBUG_LEVEL]
 # Reset global variables if required
@@ -4113,7 +4108,7 @@ def SetGlobalVariables():
   if checkArgumentPresent(Cmd.MULTIPROCESSEXIT_CMD):
     _setMultiprocessExit()
 # redirect csv <FileName> [multiprocess] [append] [noheader] [charset <CharSet>]
-#	       [columndelimiter <Character>] [noescapechar [<Boolean>]] [quotechar <Character>]]
+#	       [columndelimiter <Character>] [quotechar <Character>]] [noescapechar [<Boolean>]]
 #	       [sortheaders <StringList>] [timestampcolumn <String>] [transpose [<Boolean>]]
 #	       [todrive <ToDriveAttribute>*]
 # redirect stdout <FileName> [multiprocess] [append]
@@ -39410,7 +39405,10 @@ def _showCalendarEvent(primaryEmail, calId, eventEntityType, event, k, kcount, F
   Ind.Increment()
   for field in EVENT_SHOW_ORDER:
     if field in event:
-      showJSON(field, event[field], skipObjects, EVENT_TIME_OBJECTS)
+      if field != 'description':
+        showJSON(field, event[field], skipObjects, EVENT_TIME_OBJECTS)
+      else:
+        printKeyValueWithCRsNLs(field, event[field])
       skipObjects.add(field)
   showJSON(None, event, skipObjects)
   Ind.Decrement()

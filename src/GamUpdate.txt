@@ -1,3 +1,19 @@
+7.05.18
+
+Updated `gam calendars <CalendarEntity> show events` and `gam <UserTypeEntity> show events`
+to display the event description according to `show_convert_cr_nl` in `gam.cfg`;
+previously, GAM assumed `show_convert_cr_nl = true`.
+```
+show_convert_cr_nl = false
+description:
+  Line 1
+  Line 2
+  Line 3
+
+show_convert_cr_nl = true
+description: Line 1\nLine 2\nLine 3\n
+```
+
 7.05.17
 
 Updated commands that delete drive ACLs to handle the following error:
