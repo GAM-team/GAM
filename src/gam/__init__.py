@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.05.18'
+__version__ = '7.05.19'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -14517,7 +14517,13 @@ def _initTagReplacements():
           'fieldsSet': set(), 'fields': '',
           'schemasSet': set(), 'customFieldMask': None}
 
-def _getTagReplacement(tagReplacements, allowSubs):
+def _getTagReplacement(myarg, tagReplacements, allowSubs):
+  if myarg == 'replace':
+    trregex = None
+  elif myarg == 'replaceregex':
+    trregex = (getREPattern(re.IGNORECASE), getString(Cmd.OB_STRING, minLen=0))
+  else:
+    return False
   matchTag = getString(Cmd.OB_TAG)
   matchReplacement = getString(Cmd.OB_STRING, minLen=0)
   if matchReplacement.startswith('field:'):
@@ -14562,7 +14568,8 @@ def _getTagReplacement(tagReplacements, allowSubs):
     tagReplacements['fieldsSet'].add(field)
     tagReplacements['fields'] = ','.join(tagReplacements['fieldsSet'])
     tagReplacements['tags'][matchTag] = {'field': field, 'subfield': subfield,
-                                         'matchfield': matchfield, 'matchvalue': matchvalue, 'value': ''}
+                                         'matchfield': matchfield, 'matchvalue': matchvalue, 'value': '',
+                                         'trregex': trregex}
     if field == 'locations' and subfield == 'buildingName':
       _makeBuildingIdNameMap()
   elif matchReplacement.startswith('schema:'):
@@ -14580,15 +14587,24 @@ def _getTagReplacement(tagReplacements, allowSubs):
     tagReplacements['fields'] = ','.join(tagReplacements['fieldsSet'])
     tagReplacements['schemasSet'].add(schemaName)
     tagReplacements['customFieldMask'] = ','.join(tagReplacements['schemasSet'])
-    tagReplacements['tags'][matchTag] = {'schema': schemaName, 'schemafield': schemaField, 'value': ''}
+    tagReplacements['tags'][matchTag] = {'schema': schemaName, 'schemafield': schemaField, 'value': '',
+                                         'trregex': trregex}
   elif ((matchReplacement.find('#') >= 0) and
         (matchReplacement.find('#user#') >= 0) or (matchReplacement.find('#email#') >= 0) or (matchReplacement.find('#username#') >= 0)):
     if not allowSubs:
       usageErrorExit(Msg.USER_SUBS_NOT_ALLOWED_TAG_REPLACEMENT)
     tagReplacements['subs'] = True
-    tagReplacements['tags'][matchTag] = {'template': matchReplacement, 'value': ''}
+    tagReplacements['tags'][matchTag] = {'template': matchReplacement, 'value': '',
+                                         'trregex': trregex}
   else:
-    tagReplacements['tags'][matchTag] = {'value': matchReplacement}
+    if trregex is None:
+      tagReplacements['tags'][matchTag] = {'value': matchReplacement}
+    else:
+      try:
+        tagReplacements['tags'][matchTag] = {'value': re.sub(trregex[0], trregex[1], matchReplacement)}
+      except re.error as e:
+        systemErrorExit(ACTION_FAILED_RC, Msg.REGEX_REPLACEMENT_ERROR.format(trregex[1], str(e)))
+  return True
 
 def _getTagReplacementFieldValues(user, i, count, tagReplacements, results=None):
   if results is None:
@@ -14670,6 +14686,12 @@ def _getTagReplacementFieldValues(user, i, count, tagReplacements, results=None)
       tag['value'] = str(results.get('customSchemas', {}).get(tag['schema'], {}).get(tag['schemafield'], ''))
     elif tag.get('template'):
       tag['value'] = _substituteForUser(tag['template'], user, userName)
+    trregex = tag.get('trregex', None)
+    if trregex is not None:
+      try:
+        tag['value'] = re.sub(trregex[0], trregex[1], tag['value'])
+      except re.error as e:
+        systemErrorExit(ACTION_FAILED_RC, Msg.REGEX_REPLACEMENT_ERROR.format(trregex[1], str(e)))
 
 RTL_PATTERN = re.compile(r'(?s){RTL}.*?{/RTL}')
 RT_PATTERN = re.compile(r'(?s){RT}.*?{/RT}')
@@ -14922,7 +14944,9 @@ def getRecipients():
 # gam sendemail [recipient|to] <RecipientEntity> [from <EmailAddress>] [mailbox <EmailAddress>] [replyto <EmailAddress>]
 #	[cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
 #	[subject <String>]
-#	[<MessageContent>] (replace <Tag> <String>)*
+#	[<MessageContent>]
+#	(replace <Tag> <String>)*
+#	(replaceregex <RegularExpression> <String>  <Tag> <String>)*
 #	[html [<Boolean>]] (attach <FileName> [charset <CharSet>])*
 #	(embedimage <FileName> <String>)*
 #	[newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
@@ -14930,7 +14954,9 @@ def getRecipients():
 # gam <UserTypeEntity> sendemail recipient <RecipientEntity> [replyto <EmailAddress>]
 #	[cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
 #	[subject <String>]
-#	[<MessageContent>] (replace <Tag> <String>)*
+#	[<MessageContent>]
+#	(replace <Tag> <String>)*
+#	(replaceregex <RegularExpression> <String>  <Tag> <String>)*
 #	[html [<Boolean>]] (attach <FileName> [charset <CharSet>])*
 #	(embedimage <FileName> <String>)*
 #	[newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
@@ -14938,7 +14964,9 @@ def getRecipients():
 # gam <UserTypeEntity> sendemail from <EmailAddress> [replyto <EmailAddress>]
 #	[cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
 #	[subject <String>]
-#	[<MessageContent>] (replace <Tag> <String>)*
+#	[<MessageContent>]
+#	(replace <Tag> <String>)*
+#	(replaceregex <RegularExpression> <String>  <Tag> <String>)*
 #	[html [<Boolean>]] (attach <FileName> [charset <CharSet>])*
 #	(embedimage <FileName> <String>)*
 #	[newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
@@ -15001,8 +15029,8 @@ def doSendEmail(users=None):
       body['name']['familyName'] = getString(Cmd.OB_STRING, minLen=0, maxLen=60)
     elif myarg in {'password', 'notifypassword'}:
       body['password'] = notify['password'] = getString(Cmd.OB_PASSWORD, maxLen=100)
-    elif myarg == 'replace':
-      _getTagReplacement(tagReplacements, False)
+    elif _getTagReplacement(myarg, tagReplacements, False):
+      pass
     elif myarg == 'attach':
       attachments.append((getFilename(), getCharSet()))
     elif myarg == 'embedimage':
@@ -39081,7 +39109,10 @@ def _updateCalendarEvents(origUser, user, origCal, calIds, count, calendarEventE
           if 'description' in updateFieldList and 'description' in event:
             body['description'] = event['description']
             for replacement in parameters['replaceDescription']:
-              body['description'] = re.sub(replacement[0], replacement[1], body['description'])
+              try:
+                body['description'] = re.sub(replacement[0], replacement[1], body['description'])
+              except re.error as e:
+                systemErrorExit(ACTION_FAILED_RC, Msg.REGEX_REPLACEMENT_ERROR.format(replacement[1], str(e)))
           if 'attendees' in updateFieldList:
             if not parameters['clearAttendees']:
               if 'attendees' in event:
@@ -42835,8 +42866,8 @@ def getUserAttributes(cd, updateCmd, noUid=False):
       notify['mailbox'] = getString(Cmd.OB_EMAIL_ADDRESS)
     elif PwdOpts.ProcessArgument(myarg, notify, notFoundBody):
       pass
-    elif myarg == 'replace':
-      _getTagReplacement(tagReplacements, True)
+    elif _getTagReplacement(myarg, tagReplacements, True):
+      pass
     elif myarg == 'admin':
       value = getBoolean()
       if updateCmd or value:
@@ -43253,9 +43284,9 @@ def createUserAddAliases(cd, user, aliasList, i, count):
 #	    [from <EmailAaddress>]
 #	    [replyto <EmailAaddress>]
 #	    [<NotifyMessageContent>]
-#	    (replace <Tag> <UserReplacement>)*]
+#	    (replace <Tag> <UserReplacement>)*
+#	    (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*]
 #	[logpassword <FileName>] [ignorenullpassword]
-#	[verifynotinvitable]
 #	[addnumericsuffixonduplicate <Number>]
 def doCreateUser():
   cd = buildGAPIObject(API.DIRECTORY)
@@ -43354,8 +43385,9 @@ def verifyUserPrimaryEmail(cd, user, createIfNotFound, i, count):
 #	    [notifypassword <String>]
 #	    [from <EmailAaddress>]
 #	    [replyto <EmailAaddress>]
-#	    [<NotifyMessageContent>]
-#	    (replace <Tag> <UserReplacement>)*]
+#	    [<NotifyMessageContent>
+#	        (replace <Tag> <UserReplacement>)*
+#	        (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*]
 #	[notifyonupdate [<Boolean>]]
 #	[logpassword <FileName>] [ignorenullpassword]
 def updateUsers(entityList):
@@ -57348,7 +57380,10 @@ def writeReturnIdLink(returnIdLink, mimeType, result):
 
 def processFilenameReplacements(name, replacements):
   for replacement in replacements:
-    name = re.sub(replacement[0], replacement[1], name)
+    try:
+      name = re.sub(replacement[0], replacement[1], name)
+    except re.error as e:
+      systemErrorExit(ACTION_FAILED_RC, Msg.REGEX_REPLACEMENT_ERROR.format(replacement[1], str(e)))
   return name
 
 def addTimestampToFilename(parameters, body):
@@ -69991,8 +70026,8 @@ def _draftImportInsertMessage(users, operation):
       internalDateSource = 'dateHeader'
       if checkArgumentPresent('emlutf8'):
         emlEncoding = UTF8
-    elif myarg == 'replace':
-      _getTagReplacement(tagReplacements, True)
+    elif _getTagReplacement(myarg, tagReplacements, True):
+      pass
     elif operation in IMPORT_INSERT and myarg == 'addlabel':
       addLabelNames.append(getString(Cmd.OB_LABEL_NAME, minLen=1))
     elif operation in IMPORT_INSERT and myarg == 'labels':
@@ -70127,7 +70162,9 @@ def _draftImportInsertMessage(users, operation):
       userGmailServiceNotEnabledWarning(user, i, count)
 
 # gam <UserTypeEntity> draft message
-#	<MessageContent> (replace <Tag> <UserReplacement>)*
+#	<MessageContent>
+#	(replace <Tag> <UserReplacement>)*
+#	(replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*
 #	(<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
 #	(attach <FileName> [charset <CharSet>])*
 #	(embedimage <FileName> <String>)*
@@ -70135,7 +70172,9 @@ def draftMessage(users):
   _draftImportInsertMessage(users, 'draft')
 
 # gam <UserTypeEntity> import message
-#	<MessageContent> (replace <Tag> <UserReplacement>)*
+#	<MessageContent>
+#	(replace <Tag> <UserReplacement>)*
+#	(replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*
 #	(<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
 #	(addlabel <LabelName>)* [labels <LabelNameList>]
 #	(attach <FileName> [charset <CharSet>])*
@@ -70145,7 +70184,9 @@ def importMessage(users):
   _draftImportInsertMessage(users, 'import')
 
 # gam <UserTypeEntity> insert message
-#	<MessageContent> (replace <Tag> <UserReplacement>)*
+#	<MessageContent>
+#	(replace <Tag> <UserReplacement>)*
+#	(replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*
 #	(<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
 #	(addlabel <LabelName>)* [labels <LabelNameList>]
 #	(attach <FileName> [charset <CharSet>])*
@@ -72432,8 +72473,8 @@ def _processSendAs(user, i, count, entityType, emailAddress, j, jcount, gmail, f
   return userDefined
 
 def getSendAsAttributes(myarg, body, tagReplacements):
-  if myarg == 'replace':
-    _getTagReplacement(tagReplacements, True)
+  if _getTagReplacement(myarg, tagReplacements, True):
+    pass
   elif myarg == 'name':
     body['displayName'] = getString(Cmd.OB_NAME, minLen=0)
   elif myarg == 'replyto':
@@ -72452,13 +72493,17 @@ SMTPMSA_SECURITY_MODES = ['none', 'ssl', 'starttls']
 SMTPMSA_REQUIRED_FIELDS = ['host', 'port', 'username', 'password']
 
 # gam <UserTypeEntity> [create] sendas <EmailAddress> [name] <String>
-#	[<SendAsContent> (replace <Tag> <UserReplacement>)*]
+#	[<SendAsContent>
+#	    (replace <Tag> <UserReplacement>)*
+#	    (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*]
 #	[html [<Boolean>]] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
 #	[smtpmsa.host <SMTPHostName> smtpmsa.port 25|465|587
 #	 smtpmsa.username <UserName> smtpmsa.password <Password>
 #	 [smtpmsa.securitymode none|ssl|starttls]]
 # gam <UserTypeEntity> update sendas <EmailAddress> [name <String>]
-#	[<SendAsContent> (replace <Tag> <UserReplacement>)*]
+#	[<SendAsContent>
+#	    (replace <Tag> <UserReplacement>)*
+#	    (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*]
 #	[html [<Boolean>]] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
 def createUpdateSendAs(users):
   updateCmd = Act.Get() == Act.UPDATE
@@ -73295,6 +73340,7 @@ def printShowCSEKeyPairs(users):
 # gam <UserTypeEntity> signature|sig
 #	<SignatureContent>
 #	(replace <Tag> <String>)*
+#	(replaceregex <RegularExpression> <String> <Tag> <String>)*
 #	[html [<Boolean>]] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
 #	[name <String>]
 #	[primary]
@@ -73388,7 +73434,9 @@ def _showVacation(user, i, count, result, showDisabled, sigReplyFormat):
   Ind.Decrement()
 
 # gam <UserTypeEntity> vacation [<Boolean>] [subject <String>]
-#	[<VacationMessageContent> (replace <Tag> <UserReplacement>)*]
+#	[<VacationMessageContent>
+#	    (replace <Tag> <UserReplacement>)*
+#	    (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*]
 #	[html [<Boolean>]] [contactsonly [<Boolean>]] [domainonly [<Boolean>]]
 #	[start|startdate <Date>|Started] [end|enddate <Date>|NotSpecified]
 def setVacation(users):
@@ -73406,8 +73454,8 @@ def setVacation(users):
       message, _, html = getStringOrFile(myarg)
       if html:
         responseBodyType = 'responseBodyHtml'
-    elif myarg == 'replace':
-      _getTagReplacement(tagReplacements, True)
+    elif _getTagReplacement(myarg, tagReplacements, True):
+      pass
     elif myarg == 'html':
       if getBoolean():
         responseBodyType = 'responseBodyHtml'

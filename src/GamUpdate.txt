@@ -1,3 +1,41 @@
+7.05.19
+
+Added `replaceregex <RegularExpression> <ReplacementString> <Tag> <String>` to the following commands:
+```
+gam sendemail subject <String> <MessageContent>
+gam <UserTypeEntity> sendemail subject <String> <MessageContent>
+```
+
+The `<RegularExpression>` is used as a match pattern against `<String>` to produce `<ReplacementString>`.
+Instances of `{Tag}` will be replaced by `<ReplacementString>` in the message subject and body.
+
+Added `replaceregex <RegularExpression> <ReplacementString> <Tag> <UserReplacement>` to the following commands:
+```
+gam create user <NotifyMessageContent>
+gam update user <NotifyMessageContent>
+gam update users <NotifyMessageContent>
+gam <UserTypeEntity> update users <NotifyMessageContent>
+gam <UserTypeEntity> draft message <MessageContent>
+gam <UserTypeEntity> import message <MessageContent>
+gam <UserTypeEntity> insert messageo <MessageContent>
+gam <UserTypeEntity> create sendas <SendAsContent>
+gam <UserTypeEntity> update sendas <SendAsContent>
+gam <UserTypeEntity> signature <SignatureContent>
+gam <UserTypeEntity> vacation subject <String> <VacationMessageContent>
+```
+
+The `<RegularExpression>` is used as a match pattern against `<UserReplacement>` to produce `<ReplacementString>`.
+Instances of `{Tag}` will be replaced by `<ReplacementString>` in the indicated items.
+
+For example, when adding a phone number to a signature, an unformatted number can be formatted:
+```
+replaceregex "(\d{3})(\d{3})(\d{4})" "(\1) \2-\3" Phone "9876543210"
+replaces 9876543210 with (987) 654-3210
+
+replaceregex "(\+\d{2})(\d{3})(\d{3})(\d{3})" "\1 \2 \3 \4" Phone "+61987654321"
+replaces +61421221506 with +61 987 654 321
+```
+
 7.05.18
 
 Updated `gam calendars <CalendarEntity> show events` and `gam <UserTypeEntity> show events`

@@ -1908,7 +1908,7 @@ gam calendar|calendars <CalendarEntity> modify <CalendarSettings>+
 
 <ChatContent> ::=
         ((text <String>)|
-         (textfile <FileName> [charset <CharSet>])|
+         (textfile <FileName> [charset <Charset>])|
          (gdoc <UserGoogleDoc>)|
          (gcsdoc <StorageBucketObjectName>))
 
@@ -4735,8 +4735,10 @@ gam sendemail [recipient|to] <RecipientEntity>
         [from <EmailAddress>] [mailbox <EmailAddress>] [replyto <EmailAddress>]
         [cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
         [subject <String>]
-        [<MessageContent>] (replace <Tag> <String>)*
-        [html [<Boolean>]] (attach <FileName> [charset <CharSet>])*
+        [<MessageContent>]
+        (replace <Tag> <String>)*
+        (replaceregex <RegularExpression> <String> <Tag> <String>)*
+        [html [<Boolean>]] (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
         [newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
@@ -4744,8 +4746,10 @@ gam <UserTypeEntity> sendemail recipient|to <RecipientEntity>
         [replyto <EmailAddress>]
         [cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
         [subject <String>]
-        [<MessageContent>] (replace <Tag> <String>)*
-        [html [<Boolean>]] (attach <FileName> [charset <CharSet>])*
+        [<MessageContent>]
+        (replace <Tag> <String>)*
+        (replaceregex <RegularExpression> <String> <Tag> <String>)*
+        [html [<Boolean>]] (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
         [newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
@@ -4753,8 +4757,10 @@ gam <UserTypeEntity> sendemail from <EmailAddress>
         [replyto <EmailAddress>]
         [cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
         [subject <String>]
-        [<MessageContent>] (replace <Tag> <String>)*
-        [html [<Boolean>]] (attach <FileName> [charset <CharSet>])*
+        [<MessageContent>]
+        (replace <Tag> <String>)*
+        (replaceregex <RegularExpression> <String> <Tag> <String>)*
+        [html [<Boolean>]] (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
         [newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
@@ -5560,7 +5566,9 @@ gam create|add user <EmailAddress> [ignorenullpassword] <UserAttribute>*
             [mailbox <EmailAaddress>]
             [replyto <EmailAaddress>]
             [<NotifyMessageContent>]
-            (replace <Tag> <UserReplacement>)*]
+            (replace <Tag> <UserReplacement>)*
+            (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*
+         ]
         [logpassword <FileName>]
         [addnumericsuffixonduplicate <Number>]
 
@@ -5569,7 +5577,7 @@ gam <UserTypeEntity> waitformailbox [retries <Number>]
 gam update user <UserItem> [ignorenullpassword] <UserAttribute>*
         [verifynotinvitable|alwaysevict] [noactionifalias]
         [updateprimaryemail <RegularExpression> <EmailReplacement>]
-        [updateoufromgroup <FileName> [charset <CharSet>]
+        [updateoufromgroup <FileName> [charset <Charset>]
             [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [fields <FieldNameList>] [keyfield <FieldName>] [datafield <FieldName>]]
         [immutableous <OrgUnitEntity>]|
@@ -5581,10 +5589,12 @@ gam update user <UserItem> [ignorenullpassword] <UserAttribute>*
             [subject <String>]
             [notifypassword <String>]
             [from <EmailAaddress>]
-            [mailbox <EmailAaddress>]
-            [replyto <EmailAaddress>]
+            [mailbox <EmailAddress>]
+            [replyto <EmailAddress>]
             [<NotifyMessageContent>]
-            (replace <Tag> <UserReplacement>)*]
+            (replace <Tag> <UserReplacement>)*
+            (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*
+         ]
         [notifyonupdate [<Boolean>]] [setchangepasswordoncreate [<Boolean>]]
         [logpassword <FileName>]
 gam delete user <UserItem> [noactionifalias]
@@ -5603,9 +5613,9 @@ gam info user [<UserItem>]
         [formatjson]
 
 gam update users <UserTypeEntity> [ignorenullpassword] <UserAttribute>*
-        [verifynotinvitable] [noactionifalias]
+        [verifynotinvitable|alwaysevict] [noactionifalias]
         [updateprimaryemail <RegularExpression> <EmailReplacement>]
-        [updateoufromgroup <FileName> [charset <CharSet>]
+        [updateoufromgroup <FileName> [charset <Charset>]
             [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [fields <FieldNameList>] [keyfield <FieldName>] [datafield <FieldName>]]
         [clearschema <SchemaName>|<SchemaNameField>]
@@ -5615,13 +5625,15 @@ gam update users <UserTypeEntity> [ignorenullpassword] <UserAttribute>*
         [notify <EmailAddressList>
             [subject <String>]
             [notifypassword <String>]
-            [from <EmailAaddress>]
-            [mailbox <EmailAaddress>]
+            [from <EmailAddress>]
+            [mailbox <EmailAddress>]
+            [replyto <EmailAaddress>]
             [<NotifyMessageContent>]
-            (replace <Tag> <UserReplacement>)*]
+            (replace <Tag> <UserReplacement>)*
+            (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*
+        ]
         [notifyonupdate [<Boolean>]] [setchangepasswordoncreate [<Boolean>]]
         [logpassword <FileName>]
-        [verifynotinvitable]
 gam delete users <UserTypeEntity> [noactionifalias]
 gam undelete users <UserEntity> [ou|org|orgunit <OrgUnitPath>]
 gam suspend users <UserTypeEntity> [noactionifalias]
@@ -5638,9 +5650,11 @@ gam info users <UserTypeEntity>
         [formatjson]
 
 gam <UserTypeEntity> update users [ignorenullpassword] <UserAttribute>*
-        [verifynotinvitable] [noactionifalias]
+        [verifynotinvitable|alwaysevict] [noactionifalias]
         [updateprimaryemail <RegularExpression> <EmailReplacement>]
-        [updateoufromgroup <CSVFileInput> [keyfield <FieldName>] [datafield <FieldName>]]
+        [updateoufromgroup <FileName> [charset <Charset>]
+            [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
+            [fields <FieldNameList>] [keyfield <FieldName>] [datafield <FieldName>]]
         [clearschema <SchemaName>|<SchemaNameField>]
         [createifnotfound] [notfoundpassword (random [<Integer>])|blocklogin|<Password>]
         (groups [<GroupRole>] [[delivery] <DeliverySetting>] <GroupEntity>)*
@@ -5649,12 +5663,14 @@ gam <UserTypeEntity> update users [ignorenullpassword] <UserAttribute>*
             [subject <String>]
             [notifypassword <String>]
             [from <EmailAaddress>]
-            [mailbox <EmailAaddress>]
+            [mailbox <EmailAddress>]
+            [replyto <EmailAddress>]
             [<NotifyMessageContent>]
-            (replace <Tag> <UserReplacement>)*]
+            (replace <Tag> <UserReplacement>)*
+            (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*
+        ]
         [notifyonupdate [<Boolean>]] [setchangepasswordoncreate [<Boolean>]]
         [logpassword <FileName>]
-        [verifynotinvitable]
 gam <UserTypeEntity> delete users [noactionifalias]
 gam <UserEntity> undelete users [ou|org|orgunit <OrgUnitPath>]
 gam <UserTypeEntity> suspend users [noactionifalias]
@@ -6165,7 +6181,7 @@ gam <UserTypeEntity> print focustime|outofoffice|workinglocation
 
 <ChatContent> ::=
         ((text <String>)|
-         (textfile <FileName> [charset <CharSet>])|
+         (textfile <FileName> [charset <Charset>])|
          (gdoc <UserGoogleDoc>)|
          (gcsdoc <StorageBucketObjectName>))
 
@@ -6527,7 +6543,7 @@ gam <UserTypeEntity> update drivefile <DriveFileEntity> [copy] [returnidonly|ret
         [timestamp [<Boolean>]] [timeformat <String>]
         <DriveFileUpdateAttribute>*
         [(gsheet|csvsheet <SheetEntity> [clearfilter])|(addsheet <String>)]
-        [charset <CharSet>] [columndelimiter <Character>]
+        [charset <Charset>] [columndelimiter <Character>]
 
 <DriveFileCopyAttribute> ::=
         (contentrestrictions (readonly false)|(readonly true [reason <String>]) [ownerrestricted [<Boolean>]])|
@@ -7532,22 +7548,28 @@ gam <UserTypeEntity> print labels|label [todrive <ToDriveAttribute>*]
         (emlfile <FileName> [charset <Charset>])
 
 gam <UserTypeEntity> draft message
-        <MessageContent> (replace <Tag> <UserReplacement>)*
+        <MessageContent>
+        (replace <Tag> <UserReplacement>)*
+        (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
-        (attach <FileName> [charset <CharSet>])*
+        (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
 gam <UserTypeEntity> import message
-        <MessageContent> (replace <Tag> <UserReplacement>)*
+        <MessageContent>
+        (replace <Tag> <UserReplacement>)*
+        (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
         (addlabel <LabelName>)* [labels <LabelNameList>]
-        (attach <FileName> [charset <CharSet>])*
+        (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
         [deleted [<Boolean>]] [checkspam|nevermarkspam [<Boolean>]] [processforcalendar [<Boolean>]]
 gam <UserTypeEntity> insert message
-        <MessageContent> (replace <Tag> <UserReplacement>)*
+        <MessageContent>
+        (replace <Tag> <UserReplacement>)*
+        (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
         (addlabel <LabelName>)* [labels <LabelNameList>]
-        (attach <FileName> [charset <CharSet>])*
+        (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
         [deleted [<Boolean>]]
 
@@ -7626,13 +7648,17 @@ gam <UserTypeEntity> print gmailprofile [todrive <ToDriveAttribute>*]
 # Users - Gmail - Send As/Signature/Vacation
 
 gam <UserTypeEntity> [create|add] sendas <EmailAddress> [name] <String>
-        [<SendAsContent> (replace <Tag> <UserReplacement>)*]
+        [<SendAsContent>
+            (replace <Tag> <UserReplacement>)*
+            (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*]
         [html [<Boolean>]] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
         [smtpmsa.host <SMTPHostName> smtpmsa.port 25|465|587
          smtpmsa.username <UserName> smtpmsa.password <Password>
          [smtpmsa.securitymode none|ssl|starttls]]
 gam <UserTypeEntity> update sendas <EmailAddress> [name <String>]
-        [<SendAsContent> (replace <Tag> <UserReplacement>)*]
+        [<SendAsContent>
+            (replace <Tag> <UserReplacement>)*
+            (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*]
         [html [<Boolean>]] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
 gam <UserTypeEntity> delete sendas <EmailAddressEntity>
 gam <UserTypeEntity> info sendas <EmailAddressEntity> [compact|format|html]
@@ -7642,7 +7668,9 @@ gam <UserTypeEntity> print sendas [compact]
         [primary|default] [verifyonly] [todrive <ToDriveAttribute>*]
 
 gam <UserTypeEntity> signature|sig
-        <SignatureContent> (replace <Tag> <UserReplacement>)*
+        <SignatureContent>
+        (replace <Tag> <UserReplacement>)*
+        (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*
         [html [<Boolean>]] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
         [name <String>]
         [primary]
@@ -7652,7 +7680,9 @@ gam <UserTypeEntity> print signature [compact]
         [primary|default] [verifyonly] [todrive <ToDriveAttribute>*]
 
 gam <UserTypeEntity> vacation [<Boolean>] [subject <String>]
-        [<VacationMessageContent> (replace <Tag> <UserReplacement>)*]
+        [<VacationMessageContent>
+            (replace <Tag> <UserReplacement>)*
+            (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*]
         [html [<Boolean>]] [contactsonly [<Boolean>]] [domainonly [<Boolean>]]
         [start|startdate <Date>|Started] [end|enddate <Date>|NotSpecified]
 gam <UserTypeEntity> show vacation [compact|format|html] [enabledonly]
@@ -7779,7 +7809,7 @@ gam <UserTypeEntity> check isinvitable [todrive <ToDriveAttribute>*]
 
 <NoteContent> ::=
         ((text <String>)|
-         (textfile <FileName> [charset <CharSet>])|
+         (textfile <FileName> [charset <Charset>])|
          (gdoc <UserGoogleDoc>)|
          (gcsdoc <StorageBucketObjectName>)|
          <JSONData>)
