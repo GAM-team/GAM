@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.05.19'
+__version__ = '7.05.20'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -1723,6 +1723,16 @@ def getREPattern(flags=0):
       return validateREPattern(patstr, flags)
   missingArgumentExit(Cmd.OB_RE_PATTERN)
 
+def getREPatternReplacement(flags=0):
+  pattern = getREPattern(flags)
+  replacement = getString(Cmd.OB_STRING, minLen=0)
+  try:
+    re.sub(pattern, replacement, '')
+    return (pattern, replacement)
+  except re.error as e:
+    Cmd.Backup()
+    usageErrorExit(f'{Cmd.OB_RE_REPLACEMENT} {Msg.ERROR}: {e}')
+  
 def getSheetEntity(allowBlankSheet):
   if Cmd.ArgumentsRemaining():
     sheet = Cmd.Current()
@@ -14521,7 +14531,7 @@ def _getTagReplacement(myarg, tagReplacements, allowSubs):
   if myarg == 'replace':
     trregex = None
   elif myarg == 'replaceregex':
-    trregex = (getREPattern(re.IGNORECASE), getString(Cmd.OB_STRING, minLen=0))
+    trregex = getREPatternReplacement(re.IGNORECASE)
   else:
     return False
   matchTag = getString(Cmd.OB_TAG)
@@ -14600,10 +14610,7 @@ def _getTagReplacement(myarg, tagReplacements, allowSubs):
     if trregex is None:
       tagReplacements['tags'][matchTag] = {'value': matchReplacement}
     else:
-      try:
-        tagReplacements['tags'][matchTag] = {'value': re.sub(trregex[0], trregex[1], matchReplacement)}
-      except re.error as e:
-        systemErrorExit(ACTION_FAILED_RC, Msg.REGEX_REPLACEMENT_ERROR.format(trregex[1], str(e)))
+      tagReplacements['tags'][matchTag] = {'value': re.sub(trregex[0], trregex[1], matchReplacement)}
   return True
 
 def _getTagReplacementFieldValues(user, i, count, tagReplacements, results=None):
@@ -14688,10 +14695,7 @@ def _getTagReplacementFieldValues(user, i, count, tagReplacements, results=None)
       tag['value'] = _substituteForUser(tag['template'], user, userName)
     trregex = tag.get('trregex', None)
     if trregex is not None:
-      try:
-        tag['value'] = re.sub(trregex[0], trregex[1], tag['value'])
-      except re.error as e:
-        systemErrorExit(ACTION_FAILED_RC, Msg.REGEX_REPLACEMENT_ERROR.format(trregex[1], str(e)))
+      tag['value'] = re.sub(trregex[0], trregex[1], tag['value'])
 
 RTL_PATTERN = re.compile(r'(?s){RTL}.*?{/RTL}')
 RT_PATTERN = re.compile(r'(?s){RT}.*?{/RT}')
@@ -38560,7 +38564,7 @@ def _getCalendarEventAttribute(myarg, body, parameters, function):
   elif myarg == 'description':
     body['description'] = getStringWithCRsNLs()
   elif function == 'update' and myarg == 'replacedescription':
-    parameters['replaceDescription'].append((getREPattern(re.IGNORECASE), getString(Cmd.OB_STRING, minLen=0)))
+    parameters['replaceDescription'].append(getREPatternReplacement(re.IGNORECASE))
   elif myarg == 'location':
     body['location'] = getString(Cmd.OB_STRING, minLen=0)
   elif myarg == 'source':
@@ -39109,10 +39113,7 @@ def _updateCalendarEvents(origUser, user, origCal, calIds, count, calendarEventE
           if 'description' in updateFieldList and 'description' in event:
             body['description'] = event['description']
             for replacement in parameters['replaceDescription']:
-              try:
-                body['description'] = re.sub(replacement[0], replacement[1], body['description'])
-              except re.error as e:
-                systemErrorExit(ACTION_FAILED_RC, Msg.REGEX_REPLACEMENT_ERROR.format(replacement[1], str(e)))
+              body['description'] = re.sub(replacement[0], replacement[1], body['description'])
           if 'attendees' in updateFieldList:
             if not parameters['clearAttendees']:
               if 'attendees' in event:
@@ -52835,7 +52836,7 @@ def getDriveFileAttribute(myarg, body, parameters, updateCmd):
   elif myarg =='stripnameprefix':
     parameters[DFA_STRIPNAMEPREFIX] = getString(Cmd.OB_STRING, minLen=0)
   elif myarg == 'replacefilename':
-    parameters[DFA_REPLACEFILENAME].append((getREPattern(re.IGNORECASE), getString(Cmd.OB_STRING, minLen=0)))
+    parameters[DFA_REPLACEFILENAME].append(getREPatternReplacement(re.IGNORECASE))
   elif myarg in {'convert', 'ocr'}:
     deprecatedArgument(myarg)
     stderrWarningMsg(Msg.USE_MIMETYPE_TO_SPECIFY_GOOGLE_FORMAT)
@@ -57380,10 +57381,7 @@ def writeReturnIdLink(returnIdLink, mimeType, result):
 
 def processFilenameReplacements(name, replacements):
   for replacement in replacements:
-    try:
-      name = re.sub(replacement[0], replacement[1], name)
-    except re.error as e:
-      systemErrorExit(ACTION_FAILED_RC, Msg.REGEX_REPLACEMENT_ERROR.format(replacement[1], str(e)))
+    name = re.sub(replacement[0], replacement[1], name)
   return name
 
 def addTimestampToFilename(parameters, body):
@@ -58395,7 +58393,7 @@ def getCopyMoveOptions(myarg, copyMoveOptions):
   elif myarg =='stripnameprefix':
     copyMoveOptions['stripNamePrefix'] = getString(Cmd.OB_STRING, minLen=0)
   elif myarg == 'replacefilename':
-    copyMoveOptions['replaceFilename'].append((getREPattern(re.IGNORECASE), getString(Cmd.OB_STRING, minLen=0)))
+    copyMoveOptions['replaceFilename'].append(getREPatternReplacement(re.IGNORECASE))
   elif myarg == 'showpermissionmessages':
     copyMoveOptions['showPermissionMessages'] = getBoolean()
   elif myarg == 'sendemailifrequired':

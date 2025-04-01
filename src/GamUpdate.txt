@@ -1,3 +1,14 @@
+7.05.20
+
+Updated code to validate both `<RegularExpression>` and `<ReplacementString>`
+in the following command line options; this will expose errors when the command
+is being parsed rather than at run-time.
+```
+replaceregex <RegularExpression> <ReplacementString>
+replacedescription <RegularExpression> <ReplacementString>
+replacefilename <RegularExpression> <ReplacementString>
+```
+
 7.05.19
 
 Added `replaceregex <RegularExpression> <ReplacementString> <Tag> <String>` to the following commands:

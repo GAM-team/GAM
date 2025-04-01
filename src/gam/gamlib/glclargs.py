@@ -991,6 +991,7 @@ class GamCLArgs():
   OB_RESOURCE_ENTITY = 'ResourceEntity'
   OB_RESOURCE_ID = 'ResourceID'
   OB_RE_PATTERN = 'REPattern'
+  OB_RE_REPLACEMENT = 'REReplacement'
   OB_ROLE_ASSIGNMENT_ID = 'RoleAssignmentID'
   OB_ROLE_ITEM = 'RoleItem'
   OB_ROLE_LIST = 'RoleList'

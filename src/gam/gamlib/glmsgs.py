@@ -465,7 +465,6 @@ REASON_ONLY_VALID_WITH_CONTENTRESTRICTIONS_READONLY_TRUE = 'reason only valid wi
 REAUTHENTICATION_IS_NEEDED = 'Reauthentication is needed, please run\n\ngam oauth create'
 RECOMMEND_RUNNING_GAM_ROTATE_SAKEY = 'Recommend running "gam rotate sakey" to get a new key\n'
 REFUSING_TO_DEPROVISION_DEVICES = 'Refusing to deprovision {0} devices because acknowledge_device_touch_requirement not specified.\nDeprovisioning a device means the device will have to be physically wiped and re-enrolled to be managed by your domain again.\nThis requires physical access to the device and is very time consuming to perform for each device.\nPlease add "acknowledge_device_touch_requirement" to the GAM command if you understand this and wish to proceed with the deprovision.\nPlease also be aware that deprovisioning can have an effect on your device license count.\nSee https://support.google.com/chrome/a/answer/3523633 for full details.'
-REGEX_REPLACEMENT_ERROR = 'Regular expression replacement string "{0}" error: {1}'
 REPLY_TO_CUSTOM_REQUIRES_EMAIL_ADDRESS = 'replyto REPLY_TO_CUSTOM requires customReplyTo <EmailAddress>'
 REQUEST_COMPLETED_NO_FILES = 'Request completed but no results/files were returned, try requesting again'
 REQUEST_NOT_COMPLETE = 'Request needs to be completed before downloading, current status is: {0}'
