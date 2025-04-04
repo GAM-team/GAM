@@ -1,3 +1,13 @@
+7.05.21
+
+Fixed bug in `gam update chromepolicy` that generated an error like the following
+when JSON data was read from a file.
+```
+ERROR:  JSON: {'error': {'code': 400, 'message': 'Invalid enum value: {prefix}{value} for enum type: chrome.policy.api.v1.devicepolicy.AllowNewUsersEnum', 'status': 'INVALID_ARGUMENT'}}
+```
+
+Fixed bug in `gam create chromepolicyimage` that caused a trap.
+
 7.05.20
 
 Updated code to validate both `<RegularExpression>` and `<ReplacementString>`

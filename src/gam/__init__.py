@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.05.20'
+__version__ = '7.05.21'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -28290,7 +28290,7 @@ def doUpdateChromePolicy():
             elif vtype == 'TYPE_ENUM':
               prefix = schema['settings'][lowerField]['enum_prefix']
               if not value.startswith(prefix):
-                value = "{prefix}{value}"
+                value = f"{prefix}{value}"
             elif vtype == 'TYPE_LIST':
               value = value.split(',') if value else []
             if myarg == 'chrome.users.chromebrowserupdates' and casedField == 'targetVersionPrefixSetting':
@@ -28656,7 +28656,7 @@ def doCreateChromePolicyImage():
   cp = buildGAPIObject(API.CHROMEPOLICY)
   parent = _getCustomersCustomerIdWithC()
   schema = getChoice(CHROME_IMAGE_SCHEMAS_MAP, mapChoice=True)
-  parameters = {}
+  parameters = {DFA_URL: None}
   parameters[DFA_LOCALFILEPATH] = os.path.expanduser(getString(Cmd.OB_FILE_NAME))
   try:
     f = open(parameters[DFA_LOCALFILEPATH], 'rb')
