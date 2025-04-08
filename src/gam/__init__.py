@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.05.21'
+__version__ = '7.05.22'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -1723,16 +1723,19 @@ def getREPattern(flags=0):
       return validateREPattern(patstr, flags)
   missingArgumentExit(Cmd.OB_RE_PATTERN)
 
-def getREPatternReplacement(flags=0):
-  pattern = getREPattern(flags)
-  replacement = getString(Cmd.OB_STRING, minLen=0)
+def validateREPatternSubstitution(pattern, replacement):
   try:
     re.sub(pattern, replacement, '')
     return (pattern, replacement)
   except re.error as e:
     Cmd.Backup()
-    usageErrorExit(f'{Cmd.OB_RE_REPLACEMENT} {Msg.ERROR}: {e}')
-  
+    usageErrorExit(f'{Cmd.OB_RE_SUBSTITUTION} {Msg.ERROR}: {e}')
+
+def getREPatternSubstitution(flags=0):
+  pattern = getREPattern(flags)
+  replacement = getString(Cmd.OB_RE_SUBSTITUTION, minLen=0)
+  return validateREPatternSubstitution(pattern, replacement)
+
 def getSheetEntity(allowBlankSheet):
   if Cmd.ArgumentsRemaining():
     sheet = Cmd.Current()
@@ -6816,9 +6819,9 @@ def getEntitiesFromCSVFile(shlexSplit, returnSet=False):
   return entityList if not returnSet else entitySet
 
 # <CSVFileSelector>
-#	keyfield <FieldName> [keypattern <RegularExpression>] [keyvalue <String>] [delimiter <Character>]
-#	subkeyfield <FieldName> [keypattern <RegularExpression>] [keyvalue <String>] [delimiter <Character>]
-#	(matchfield|skipfield <FieldName> <RegularExpression>)*
+#	keyfield <FieldName> [keypattern <RESearchPattern>] [keyvalue <RESubstitution>] [delimiter <Character>]
+#	subkeyfield <FieldName> [keypattern <RESearchPattern>] [keyvalue <RESubstitution>] [delimiter <Character>]
+#	(matchfield|skipfield <FieldName> <RESearchPattern>)*
 #	[datafield <FieldName>(:<FieldName>)* [delimiter <Character>]]
 def getEntitiesFromCSVbyField():
 
@@ -10339,7 +10342,7 @@ def processSubFields(GAM_argv, row, subFields):
 
 # gam csv <CSVLoopContent> [warnifnodata]
 #	[columndelimiter <Character>] [quotechar <Character>] [fields <FieldNameList>]
-#	(matchfield|skipfield <FieldName> <RegularExpression>)* [showcmds [<Boolean>]]
+#	(matchfield|skipfield <FieldName> <RESearchPattern>)* [showcmds [<Boolean>]]
 #	[skiprows <Integer>] [maxrows <Integer>]
 #	gam <GAM argument list>
 def doCSV(testMode=False):
@@ -10395,7 +10398,7 @@ def doCSVTest():
 
 # gam loop <CSVLoopContent> [warnifnodata]
 #	[columndelimiter <Character>] [quotechar <Character>] [fields <FieldNameList>]
-#	(matchfield|skipfield <FieldName> <RegularExpression>)* [showcmds [<Boolean>]]
+#	(matchfield|skipfield <FieldName> <RESearchPattern>)* [showcmds [<Boolean>]]
 #	[skiprows <Integer>] [maxrows <Integer>]
 #	gam <GAM argument list>
 def doLoop(loopCmd):
@@ -14531,7 +14534,7 @@ def _getTagReplacement(myarg, tagReplacements, allowSubs):
   if myarg == 'replace':
     trregex = None
   elif myarg == 'replaceregex':
-    trregex = getREPatternReplacement(re.IGNORECASE)
+    trregex = getREPatternSubstitution(re.IGNORECASE)
   else:
     return False
   matchTag = getString(Cmd.OB_TAG)
@@ -14950,7 +14953,7 @@ def getRecipients():
 #	[subject <String>]
 #	[<MessageContent>]
 #	(replace <Tag> <String>)*
-#	(replaceregex <RegularExpression> <String>  <Tag> <String>)*
+#	(replaceregex <REMatchPattern> <RESubstitution>  <Tag> <String>)*
 #	[html [<Boolean>]] (attach <FileName> [charset <CharSet>])*
 #	(embedimage <FileName> <String>)*
 #	[newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
@@ -14960,7 +14963,7 @@ def getRecipients():
 #	[subject <String>]
 #	[<MessageContent>]
 #	(replace <Tag> <String>)*
-#	(replaceregex <RegularExpression> <String>  <Tag> <String>)*
+#	(replaceregex <REMatchPattern> <RESubstitution>  <Tag> <String>)*
 #	[html [<Boolean>]] (attach <FileName> [charset <CharSet>])*
 #	(embedimage <FileName> <String>)*
 #	[newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
@@ -14970,7 +14973,7 @@ def getRecipients():
 #	[subject <String>]
 #	[<MessageContent>]
 #	(replace <Tag> <String>)*
-#	(replaceregex <RegularExpression> <String>  <Tag> <String>)*
+#	(replaceregex <REMatchPattern> <RESubstitution>  <Tag> <String>)*
 #	[html [<Boolean>]] (attach <FileName> [charset <CharSet>])*
 #	(embedimage <FileName> <String>)*
 #	[newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
@@ -18644,7 +18647,7 @@ def userFilters(kwargs, query, orgUnitPath, isSuspended):
 #	 [limittoou <OrgUnitItem>])
 #	[user|users <EmailAddressList>] [group|groups <EmailAddressList>]
 #	[select <UserTypeEntity>]
-#	[issuspended <Boolean>] [aliasmatchpattern <RegularExpression>]
+#	[issuspended <Boolean>] [aliasmatchpattern <REMatchPattern>]
 #	[shownoneditable] [nogroups] [nousers]
 #	[onerowpertarget] [delimiter <Character>]
 #	[suppressnoaliasrows]
@@ -20111,7 +20114,7 @@ def _clearUpdateContacts(updateContacts):
   Ind.Decrement()
 
 # gam clear contacts <ContactEntity>|<ContactSelection>
-#	[clearmatchpattern <RegularExpression>] [clearmatchtype work|home|other|<String>]
+#	[clearmatchpattern <REMatchPattern>] [clearmatchtype work|home|other|<String>]
 #	[deleteclearedcontactswithnoemails]
 def doClearDomainContacts():
   _clearUpdateContacts(False)
@@ -21676,7 +21679,7 @@ def _clearUpdatePeopleContacts(users, updateContacts):
     Ind.Decrement()
 
 # gam <UserTypeEntity> clear contacts <PeopleResourceNameEntity>|<PeopleUserContactSelection>
-#	[emailclearpattern <RegularExpression>] [emailcleartype work|home|other|<String>]
+#	[emailclearpattern <REMatchPattern>] [emailcleartype work|home|other|<String>]
 #	[deleteclearedcontactswithnoemails]
 def clearUserPeopleContacts(users):
   _clearUpdatePeopleContacts(users, False)
@@ -31956,7 +31959,7 @@ GROUP_PREVIEW_TITLES = ['group', 'email', 'role', 'action', 'message']
 # gam update groups <GroupEntity> clear [member] [manager] [owner]
 #	[usersonly|groupsonly]
 #	[notsuspended|suspended] [notarchived|archived]
-#	[emailclearpattern|emailretainpattern <RegularExpression>]
+#	[emailclearpattern|emailretainpattern <REMatchPattern>]
 #	[removedomainnostatusmembers]
 #	[preview] [actioncsv]
 def doUpdateGroups():
@@ -33305,7 +33308,7 @@ def infoGroups(entityList):
 #	[internal] [internaldomains <DomainList>] [external]
 #	[notsuspended|suspended] [notarchived|archived]
 #	[types <GroupMemberTypeList>]
-#	[memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
+#	[memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
 #	[formatjson]
 def doInfoGroups():
   infoGroups(getEntityList(Cmd.OB_GROUP_ENTITY))
@@ -33516,8 +33519,8 @@ PRINT_GROUPS_JSON_TITLES = ['email', 'JSON']
 #	[([domain|domains <DomainNameEntity>] ([member|showownedby <EmailItem>]|[(query <QueryGroup>)|(queries <QueryUserList>)]))|
 #	 (group|group_ns|group_susp <GroupItem>)|
 #	 (select <GroupEntity>)]
-#	[emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
-#	[descriptionmatchpattern [not] <RegularExpression>] (matchsetting [not] <GroupAttribute>)*
+#	[emailmatchpattern [not] <REMatchPattern>] [namematchpattern [not] <REMatchPattern>]
+#	[descriptionmatchpattern [not] <REMatchPattern>] (matchsetting [not] <GroupAttribute>)*
 #	[admincreatedmatch <Boolean>]
 #	[maxresults <Number>]
 #	[allfields|([basic] [settings] <GroupFieldName>* [fields <GroupFieldNameList>])]
@@ -33529,7 +33532,7 @@ PRINT_GROUPS_JSON_TITLES = ['email', 'JSON']
 #	[includederivedmembership]
 #	[notsuspended|suspended] [notarchived|archived]
 #	[types <GroupMemberTypeList>]
-#	[memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
+#	[memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
 #	[convertcrnl] [delimiter <Character>] [sortheaders]
 #	[formatjson [quotechar <Character>]]
 # 	[showitemcountonly]
@@ -34218,13 +34221,13 @@ GROUPMEMBERS_DEFAULT_FIELDS = ['group', 'type', 'role', 'id', 'status', 'email']
 #	[([domain|domains <DomainNameEntity>] ([member|showownedby <EmailItem>]|[(query <QueryGroup>)|(queries <QueryUserList>)]))|
 #	 (group|group_ns|group_susp <GroupItem>)|
 #	 (select <GroupEntity>)]
-#	[emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
-#	[descriptionmatchpattern [not] <RegularExpression>]
+#	[emailmatchpattern [not] <REMatchPattern>] [namematchpattern [not] <REMatchPattern>]
+#	[descriptionmatchpattern [not] <REMatchPattern>]
 #	[roles <GroupRoleList>] [members] [managers] [owners]
 #	[internal] [internaldomains <DomainList>] [external]
 #	[notsuspended|suspended] [notarchived|archived]
 #	[types <GroupMemberTypeList>]
-#	[memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
+#	[memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
 #	[membernames] [showdeliverysettings]
 #	<MembersFieldName>* [fields <MembersFieldNameList>]
 #	[userfields <UserFieldNameList>]
@@ -34518,13 +34521,13 @@ def doPrintGroupMembers():
 #	[([domain|domains <DomainNameEntity>] ([member|showownedby <EmailItem>]|[(query <QueryGroup>)|(queries <QueryUserList>)]))|
 #	 (group|group_ns|group_susp <GroupItem>)|
 #	 (select <GroupEntity>)]
-#	[emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
-#	[descriptionmatchpattern [not] <RegularExpression>]
+#	[emailmatchpattern [not] <REMatchPattern>] [namematchpattern [not] <REMatchPattern>]
+#	[descriptionmatchpattern [not] <REMatchPattern>]
 #	[roles <GroupRoleList>] [members] [managers] [owners] [depth <Number>]
 #	[internal] [internaldomains <DomainList>] [external]
 #	[notsuspended|suspended] [notarchived|archived]
 #	[types <GroupMemberTypeList>]
-#	[memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
+#	[memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
 #	[includederivedmembership]
 def doShowGroupMembers():
   def _roleOrder(key):
@@ -34783,7 +34786,7 @@ def doCreateCIGroup():
 #	<UserTypeEntity>
 # gam update cigroups <GroupEntity> clear [member] [manager] [owner]
 #	[usersonly|groupsonly]
-#	[emailclearpattern|emailretainpattern <RegularExpression>]
+#	[emailclearpattern|emailretainpattern <REMatchPattern>]
 #	[preview] [actioncsv]
 def doUpdateCIGroups():
 
@@ -35505,7 +35508,7 @@ def getCIGroupMemberTypes(myarg, typesSet):
 #	[roles <GroupRoleList>] [members] [managers] [owners]
 #	[internal] [internaldomains <DomainList>] [external]
 #	[types <CIGroupMemberTypeList>]
-#	[memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
+#	[memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
 #	[formatjson]
 def doInfoCIGroups():
   def printCIGroupMemberTree(group_id, showRole):
@@ -35842,11 +35845,11 @@ def doInfoCIPolicies():
 
 # gam print policies [todrive <ToDriveAttribute>*]
 #	[filter <String>]  [nowarnings] [noappnames]
-#	[group <RegularExpression>] [ou|org|orgunit <RegularExpression>]
+#	[group <REMatchPattern>] [ou|org|orgunit <REMatchPattern>]
 #	[formatjson [quotechar <Character>]]
 # gam show policies
 #	[filter <String>]  [nowarnings] [noappnames]
-#	[group <RegularExpression>] [ou|org|orgunit <RegularExpression>]
+#	[group <REMatchPattern>] [ou|org|orgunit <REMatchPattern>]
 #	[formatjson]
 def doPrintShowCIPolicies():
 
@@ -35906,14 +35909,14 @@ PRINT_CIGROUPS_JSON_TITLES = ['email', 'JSON']
 # gam print cigroups [todrive <ToDriveAttribute>*]
 #	[(cimember|ciowner <UserItem>)|(select <GroupEntity>)|(query <String>)]
 #	[showownedby <UserItem>]
-#	[emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
-#	[descriptionmatchpattern [not] <RegularExpression>]
+#	[emailmatchpattern [not] <REMatchPattern>] [namematchpattern [not] <REMatchPattern>]
+#	[descriptionmatchpattern [not] <REMatchPattern>]
 #	[basic|allfields|(<CIGroupFieldName>* [fields <CIGroupFieldNameList>])]
 #	[roles <GroupRoleList>] [memberrestrictions]
 #	[members|memberscount] [managers|managerscount] [owners|ownerscount] [totalcount] [countsonly]
 #	[internal] [internaldomains <DomainList>] [external]
 #	[types <CIGroupMemberTypeList>]
-#	[memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
+#	[memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
 #	[convertcrnl] [delimiter <Character>]
 #	[formatjson [quotechar <Character>]]
 # 	[showitemcountonly]
@@ -36360,11 +36363,11 @@ def _getCIListGroupMembersArgs(listView):
 # gam print cigroup-members [todrive <ToDriveAttribute>*]
 #	[(cimember|ciowner <UserItem>)|(cigroup <GroupItem>)|(select <GroupEntity>)]
 #	[showownedby <UserItem>]
-#	[emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
-#	[descriptionmatchpattern [not] <RegularExpression>]
+#	[emailmatchpattern [not] <REMatchPattern>] [namematchpattern [not] <REMatchPattern>]
+#	[descriptionmatchpattern [not] <REMatchPattern>]
 #	[roles <GroupRoleList>] [members] [managers] [owners]
 #	[types <CIGroupMemberTypeList>]
-#	[memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
+#	[memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
 #	<CIGroupMembersFieldName>* [fields <CIGroupMembersFieldNameList>]
 #	[minimal|basic|full]
 #	[(recursive [noduplicates])|includederivedmembership] [nogroupeemail]
@@ -36531,12 +36534,12 @@ def doPrintCIGroupMembers():
 # gam show cigroup-members
 #	[(cimember|ciowner <UserItem>)|(cigroup <GroupItem>)|(select <GroupEntity>)]
 #	[showownedby <UserItem>]
-#	[emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
-#	[descriptionmatchpattern [not] <RegularExpression>]
+#	[emailmatchpattern [not] <REMatchPattern>] [namematchpattern [not] <REMatchPattern>]
+#	[descriptionmatchpattern [not] <REMatchPattern>]
 #	[roles <GroupRoleList>] [members] [managers] [owners]
 #	[internal] [internaldomains <DomainList>] [external]
 #	[types <CIGroupMemberTypeList>]
-#	[memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
+#	[memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
 #	[minimal|basic|full]
 #	[(depth <Number>) | includederivedmembership]
 def doShowCIGroupMembers():
@@ -38564,7 +38567,7 @@ def _getCalendarEventAttribute(myarg, body, parameters, function):
   elif myarg == 'description':
     body['description'] = getStringWithCRsNLs()
   elif function == 'update' and myarg == 'replacedescription':
-    parameters['replaceDescription'].append(getREPatternReplacement(re.IGNORECASE))
+    parameters['replaceDescription'].append(getREPatternSubstitution(re.IGNORECASE))
   elif myarg == 'location':
     body['location'] = getString(Cmd.OB_STRING, minLen=0)
   elif myarg == 'source':
@@ -41089,11 +41092,11 @@ def md5MatchesFile(filename, expected_md5, j=0, jcount=0):
 
 # gam copy vaultexport|export <ExportItem> matter <MatterItem>
 #	[targetbucket <String>] [targetprefix <String>]
-#	[bucketmatchpattern <RegularExpression>] [objectmatchpattern <RegularExpression>]
+#	[bucketmatchpattern <REMatchPattern>] [objectmatchpattern <REMatchPattern>]
 #	[copyattempts <Integer>] [retryinterval <Integer>]
 # gam copy vaultexport|export <MatterItem> <ExportItem>
 #	[targetbucket <String>] [targetprefix <String>]
-#	[bucketmatchpattern <RegularExpression>] [objectmatchpattern <RegularExpression>]
+#	[bucketmatchpattern <REMatchPattern>] [objectmatchpattern <REMatchPattern>]
 #	[copyattempts <Integer>] [retryinterval <Integer>]
 def doCopyVaultExport():
   v = buildGAPIObject(API.VAULT)
@@ -41158,11 +41161,11 @@ ZIP_EXTENSION_PATTERN = re.compile(r'^.*\.zip$', re.IGNORECASE)
 
 # gam download vaultexport|export <ExportItem> matter <MatterItem>
 #	[targetfolder <FilePath>] [targetname <FileName>] [noverify] [noextract] [ziptostdout]
-#	[bucketmatchpattern <RegularExpression>] [objectmatchpattern <RegularExpression>]
+#	[bucketmatchpattern <REMatchPattern>] [objectmatchpattern <REMatchPattern>]
 #	[downloadattempts <Integer>] [retryinterval <Integer>]
 # gam download vaultexport|export <MatterItem> <ExportItem>
 #	[targetfolder <FilePath>] [targetname <FileName>] [noverify] [noextract] [ziptostdout]
-#	[bucketmatchpattern <RegularExpression>] [objectmatchpattern <RegularExpression>]
+#	[bucketmatchpattern <REMatchPattern>] [objectmatchpattern <REMatchPattern>]
 #	[downloadattempts <Integer>] [retryinterval <Integer>]
 def doDownloadVaultExport():
   def extract_nested_zip(zippedFile):
@@ -42904,18 +42907,7 @@ def getUserAttributes(cd, updateCmd, noUid=False):
     elif updateCmd and myarg == 'updateoufromgroup':
       groupOrgUnitMap = _getGroupOrgUnitMap()
     elif updateCmd and myarg == 'updateprimaryemail':
-      search = getString(Cmd.OB_RE_PATTERN)
-      pattern = validateREPattern(search, re.IGNORECASE)
-      replace = getString(Cmd.OB_EMAIL_REPLACEMENT)
-      patternGroups = pattern.groups
-      replSubs = REPLACE_GROUP_PATTERN.findall(replace)
-      for replSub in replSubs:
-        if int(replSub) > patternGroups:
-          Cmd.Backup()
-          usageErrorExit(Msg.MISMATCH_RE_SEARCH_REPLACE_SUBFIELDS.format(pattern.groups, search, int(replSub), replace))
-      updatePrimaryEmail['search'] = search
-      updatePrimaryEmail['pattern'] = pattern
-      updatePrimaryEmail['replace'] = replace
+      updatePrimaryEmail = getREPatternSubstitution(re.IGNORECASE)
     elif myarg == 'json':
       body.update(getJSON(USER_JSON_SKIP_FIELDS))
       if 'name' in body and 'fullName' in body['name']:
@@ -43286,7 +43278,7 @@ def createUserAddAliases(cd, user, aliasList, i, count):
 #	    [replyto <EmailAaddress>]
 #	    [<NotifyMessageContent>]
 #	    (replace <Tag> <UserReplacement>)*
-#	    (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*]
+#	    (replaceregex <REMatchPattern> <RESubstitution> <Tag> <UserReplacement>)*]
 #	[logpassword <FileName>] [ignorenullpassword]
 #	[addnumericsuffixonduplicate <Number>]
 def doCreateUser():
@@ -43374,7 +43366,7 @@ def verifyUserPrimaryEmail(cd, user, createIfNotFound, i, count):
 
 # gam <UserTypeEntity> update user <UserAttribute>*
 #	[verifynotinvitable|alwaysevict] [noactionifalias]
-#	[updateprimaryemail <RegularExpression> <EmailReplacement>]
+#	[updateprimaryemail <RESEarchPattern> <RESubstitution>]
 #	[updateoufromgroup <CSVFileInput> [keyfield <FieldName>] [datafield <FieldName>]]
 #	[immutableous <OrgUnitEntity>]|
 #	[clearschema <SchemaName>|<SchemaNameField>]
@@ -43388,7 +43380,7 @@ def verifyUserPrimaryEmail(cd, user, createIfNotFound, i, count):
 #	    [replyto <EmailAaddress>]
 #	    [<NotifyMessageContent>
 #	        (replace <Tag> <UserReplacement>)*
-#	        (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*]
+#	        (replaceregex <REMatchPattern> <RESubstitution> <Tag> <UserReplacement>)*]
 #	[notifyonupdate [<Boolean>]]
 #	[logpassword <FileName>] [ignorenullpassword]
 def updateUsers(entityList):
@@ -43431,12 +43423,12 @@ def updateUsers(entityList):
                            'customType': 'former_employee',
                            'primary': False, 'address': userPrimary}]
       elif updatePrimaryEmail:
-        if updatePrimaryEmail['pattern'].search(user) is not None:
-          body['primaryEmail'] = updatePrimaryEmail['pattern'].sub(updatePrimaryEmail['replace'], user)
+        if updatePrimaryEmail[0].search(user) is not None:
+          body['primaryEmail'] = re.sub(updatePrimaryEmail[0], updatePrimaryEmail[1], user)
         else:
           body.pop('primaryEmail', None)
           if not body:
-            entityActionNotPerformedWarning([Ent.USER, user], Msg.PRIMARY_EMAIL_DID_NOT_MATCH_PATTERN.format(updatePrimaryEmail['search']), i, count)
+            entityActionNotPerformedWarning([Ent.USER, user], Msg.PRIMARY_EMAIL_DID_NOT_MATCH_PATTERN.format(updatePrimaryEmail[0].pattern), i, count)
       if groupOrgUnitMap:
         try:
           groups = callGAPIpages(cd.groups(), 'list', 'groups',
@@ -44518,7 +44510,7 @@ USERS_INDEXED_TITLES = ['addresses', 'aliases', 'nonEditableAliases', 'emails', 
 #	[userview] [basic|full|allfields | <UserFieldName>* | fields <UserFieldNameList>]
 #	[delimiter <Character>] [sortheaders] [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
 #	[convertcrnl]
-#	[issuspended <Boolean>] [aliasmatchpattern <RegularExpression>]
+#	[issuspended <Boolean>] [aliasmatchpattern <REMatchPattern>]
 # 	[showitemcountonly]
 #	[showvalidcolumn] (addcsvdata <FieldName> <String>)*
 #
@@ -44531,7 +44523,7 @@ USERS_INDEXED_TITLES = ['addresses', 'aliases', 'nonEditableAliases', 'emails', 
 #	[userview] [basic|full|allfields | <UserFieldName>* | fields <UserFieldNameList>]
 #	[delimiter <Character>] [sortheaders] [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
 #	[convertcrnl]
-#	[issuspended <Boolean>] [aliasmatchpattern <RegularExpression>]
+#	[issuspended <Boolean>] [aliasmatchpattern <REMatchPattern>]
 # 	[showitemcountonly]
 #	[showvalidcolumn] (addcsvdata <FieldName> <String>)*
 #
@@ -44539,7 +44531,7 @@ USERS_INDEXED_TITLES = ['addresses', 'aliases', 'nonEditableAliases', 'emails', 
 #	([domain <DomainName>] [(query <QueryUser>)|(queries <QueryUserList>)]
 #	 [limittoou <OrgUnitItem>] [deleted_only|only_deleted])|[select <UserTypeEntity>]
 #	[formatjson [quotechar <Character>]] [countonly]
-#	[issuspended <Boolean>] [aliasmatchpattern <RegularExpression>]
+#	[issuspended <Boolean>] [aliasmatchpattern <REMatchPattern>]
 # 	[showitemcountonly]
 #	[showvalidcolumn] (addcsvdata <FieldName> <String>)*
 #
@@ -47328,7 +47320,7 @@ def _getCoursesInfo(croom, courseSelectionParameters, courseShowProperties, getO
   return coursesInfo
 
 # gam print courses [todrive <ToDriveAttribute>*] (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
-#	[owneremail] [owneremailmatchpattern <RegularExpression>]
+#	[owneremail] [owneremailmatchpattern <REMatchPattern>]
 #	[alias|aliases|aliasesincolumns [delimiter <Character>]]
 #	[show none|all|students|teachers] [countsonly]
 #	[fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>]
@@ -52836,7 +52828,7 @@ def getDriveFileAttribute(myarg, body, parameters, updateCmd):
   elif myarg =='stripnameprefix':
     parameters[DFA_STRIPNAMEPREFIX] = getString(Cmd.OB_STRING, minLen=0)
   elif myarg == 'replacefilename':
-    parameters[DFA_REPLACEFILENAME].append(getREPatternReplacement(re.IGNORECASE))
+    parameters[DFA_REPLACEFILENAME].append(getREPatternSubstitution(re.IGNORECASE))
   elif myarg in {'convert', 'ocr'}:
     deprecatedArgument(myarg)
     stderrWarningMsg(Msg.USE_MIMETYPE_TO_SPECIFY_GOOGLE_FORMAT)
@@ -55354,6 +55346,12 @@ class DriveListParameters():
   def GetFileMatchingPermission(self, fileInfo):
     return self.PM.GetMatchingPermissions(fileInfo.get('permissions', []))
 
+def _getGettingEntity(user, fileIdEntity):
+  driveId = fileIdEntity.get('shareddrive', {}).get('driveId', None)
+  if not driveId:
+    return user
+  return f"{user} on {Ent.Singular(Ent.SHAREDDRIVE_ID)}: {driveId}"
+
 OWNED_BY_ME_FIELDS_TITLES = ['ownedByMe']
 FILELIST_FIELDS_TITLES = ['id', 'name', 'mimeType', 'parents']
 DRIVE_INDEXED_TITLES = ['parents', 'path', 'permissions']
@@ -55384,7 +55382,7 @@ SIZE_FIELD_CHOICE_MAP = {
 #	[anyowner|(showownedby any|me|others)]
 #	[showmimetype [not] <MimeTypeList>] [showmimetype category <MimeTypeNameList>] [mimetypeinquery [<Boolean>]]
 #	[sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
-#	[filenamematchpattern <RegularExpression>]
+#	[filenamematchpattern <REMatchPattern>]
 #	<PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>] [pmfilter] [oneitemperrow]
 #	[excludetrashed]
 #	[maxfiles <Integer>] [nodataheaders <String>]
@@ -55882,7 +55880,8 @@ def printFileList(users):
     mimeTypeInfo = {}
     getSharedDriveACLsCount = 0
     if buildTree:
-      printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, user, i, count, query=DLP.fileIdEntity['query'])
+      gettingEntity = _getGettingEntity(user, fileIdEntity)
+      printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, gettingEntity, i, count, query=DLP.fileIdEntity['query'])
       if not incrementalPrint:
         fileTree, status = initFileTree(drive, fileIdEntity.get('shareddrive'), DLP, shareddriveFields, showParent, user, i, count)
         if not status:
@@ -56483,7 +56482,7 @@ def printFileParentTree(users):
 #	[anyowner|(showownedby any|me|others)]
 #	[showmimetype [not] <MimeTypeList>] [showmimetype category <MimeTypeNameList>]
 #	[sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
-#	[filenamematchpattern <RegularExpression>]
+#	[filenamematchpattern <REMatchPattern>]
 #	<PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
 #	[excludetrashed] (addcsvdata <FieldName> <String>)*
 #	[showsize] [showmimetypesize] [showlastmodification]
@@ -56497,7 +56496,7 @@ def printFileParentTree(users):
 #	[anyowner|(showownedby any|me|others)]
 #	[showmimetype [not] <MimeTypeList>] [showmimetype category <MimeTypeNameList>]
 #	[sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
-#	[filenamematchpattern <RegularExpression>]
+#	[filenamematchpattern <REMatchPattern>]
 #	<PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
 #	[excludetrashed]
 #	[showsize] [showmimetypesize] [showlastmodification]
@@ -56656,7 +56655,8 @@ def printShowFileCounts(users):
     userLastModification = {
       'lastModifiedFileId': '', 'lastModifiedFileName': '',
       'lastModifyingUser': '', 'lastModifiedTime': NEVER_TIME}
-    printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, user, i, count, query=DLP.fileIdEntity['query'])
+    gettingEntity = _getGettingEntity(user, fileIdEntity)
+    printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, gettingEntity, i, count, query=DLP.fileIdEntity['query'])
     try:
       feed = yieldGAPIpages(drive.files(), 'list', 'files',
                             pageMessage=getPageMessageForWhom(),
@@ -57015,7 +57015,8 @@ def printShowFileShareCounts(users):
     if not drive:
       continue
     userShareCounts = FILESHARECOUNTS_ZEROCOUNTS.copy()
-    printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, user, i, count, query=query)
+    gettingEntity = _getGettingEntity(user, fileIdEntity)
+    printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, gettingEntity, i, count, query=query)
     try:
       feed = yieldGAPIpages(drive.files(), 'list', 'files',
                             pageMessage=getPageMessageForWhom(),
@@ -57078,7 +57079,7 @@ FILETREE_FIELDS_PRINT_ORDER = ['id', 'parents', 'owners', 'mimeType', 'size', 'e
 #	[anyowner|(showownedby any|me|others)]
 #	[showmimetype [not] <MimeTypeList>] [showmimetype category <MimeTypeNameList>]
 #	[sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
-#	[filenamematchpattern <RegularExpression>]
+#	[filenamematchpattern <REMatchPattern>]
 #	<PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
 #	[excludetrashed]
 #	[fields <FileTreeFieldNameList>]
@@ -57089,7 +57090,7 @@ FILETREE_FIELDS_PRINT_ORDER = ['id', 'parents', 'owners', 'mimeType', 'size', 'e
 #	[anyowner|(showownedby any|me|others)]
 #	[showmimetype [not] <MimeTypeList>] [showmimetype category <MimeTypeNameList>]
 #	[sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
-#	[filenamematchpattern <RegularExpression>]
+#	[filenamematchpattern <REMatchPattern>]
 #	<PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
 #	[excludetrashed]
 #	[fields <FileTreeFieldNameList>]
@@ -57279,7 +57280,8 @@ def printShowFileTree(users):
       fileTree, status = initFileTree(drive, fileIdEntity.get('shareddrive'), DLP, shareddriveFields, True, user, i, count)
       if not status:
         continue
-      printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, user, i, count, query=DLP.fileIdEntity['query'])
+      gettingEntity = _getGettingEntity(user, fileIdEntity)
+      printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, gettingEntity, i, count, query=DLP.fileIdEntity['query'])
       try:
         feed = yieldGAPIpages(drive.files(), 'list', 'files',
                               pageMessage=getPageMessageForWhom(),
@@ -57316,6 +57318,9 @@ def printShowFileTree(users):
           fileEntryInfo = callGAPI(drive.files(), 'get',
                                    throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                                    fileId=fileId, fields=fields, supportsAllDrives=True)
+          if (fileEntryInfo['mimeType'] == MIMETYPE_GA_FOLDER and fileEntryInfo.get('driveId') and
+              fileEntryInfo['name'] == TEAM_DRIVE and not fileEntryInfo.get('parents', [])):
+            fileEntryInfo['name'] = f"{SHARED_DRIVES}/{_getSharedDriveNameFromId(fileId)}"
           if stripCRsFromName:
             fileEntryInfo['name'] = _stripControlCharsFromName(fileEntryInfo['name'])
           if buildTree:
@@ -57400,7 +57405,7 @@ createReturnItemMap = {
 
 # gam <UserTypeEntity> create drivefile
 #	[(localfile <FileName>|-)|(url <URL>)]
-#	[(drivefilename|newfilename <DriveFileName>) | (replacefilename <RegularExpression> <String>)*]
+#	[(drivefilename|newfilename <DriveFileName>) | (replacefilename <REMatchPattern> <RESubstitution>)*]
 #	[stripnameprefix <String>]
 #	[timestamp <Boolean>]] [timeformat <String>]
 #	<DriveFileCreateAttribute>* [noduplicate]
@@ -57928,7 +57933,7 @@ def checkDriveFileShortcut(users):
 
 # gam <UserTypeEntity> update drivefile <DriveFileEntity> [copy] [returnidonly|returnlinkonly]
 #	[(localfile <FileName>|-)|(url <URL>)]
-#	[retainname | (newfilename <DriveFileName>) | (replacefilename <RegularExpression> <String>)*]
+#	[retainname | (newfilename <DriveFileName>) | (replacefilename <REMatchPattern> <RESubstitution>)*]
 #	[stripnameprefix <String>]
 #	[timestamp <Boolean>]] [timeformat <String>]
 #	<DriveFileUpdateAttribute>*
@@ -58393,7 +58398,7 @@ def getCopyMoveOptions(myarg, copyMoveOptions):
   elif myarg =='stripnameprefix':
     copyMoveOptions['stripNamePrefix'] = getString(Cmd.OB_STRING, minLen=0)
   elif myarg == 'replacefilename':
-    copyMoveOptions['replaceFilename'].append(getREPatternReplacement(re.IGNORECASE))
+    copyMoveOptions['replaceFilename'].append(getREPatternSubstitution(re.IGNORECASE))
   elif myarg == 'showpermissionmessages':
     copyMoveOptions['showPermissionMessages'] = getBoolean()
   elif myarg == 'sendemailifrequired':
@@ -59033,7 +59038,7 @@ copyReturnItemMap = {
   }
 
 # gam <UserTypeEntity> copy drivefile <DriveFileEntity>
-#	[newfilename <DriveFileName>] (replacefilename <RegularExpression> <String>)*
+#	[newfilename <DriveFileName>] (replacefilename <REMatchPattern> <RESubstitution>)*
 #	[stripnameprefix <String>]
 #	[excludetrashed]
 #	[(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*)) |
@@ -59043,9 +59048,9 @@ copyReturnItemMap = {
 #	[mergewithparent [<Boolean>]] [recursive [depth <Number>]]
 #	<DriveFileCopyAttribute>*
 #	[skipids <DriveFileEntity>]
-#	[copysubfiles [<Boolean>]] [filenamematchpattern <RegularExpression>] [filemimetype [not] <MimeTypeList>]
-#	[copysubfolders [<Boolean>]] [foldernamematchpattern <RegularExpression>]
-#	[copysubshortcuts [<Boolean>]] [shortcutnamematchpattern <RegularExpression>]
+#	[copysubfiles [<Boolean>]] [filenamematchpattern <REMatchPattern>] [filemimetype [not] <MimeTypeList>]
+#	[copysubfolders [<Boolean>]] [foldernamematchpattern <REMatchPattern>]
+#	[copysubshortcuts [<Boolean>]] [shortcutnamematchpattern <REMatchPattern>]
 #	[duplicatefiles overwriteolder|overwriteall|duplicatename|uniquename|skip]
 #	[duplicatefolders merge|duplicatename|uniquename|skip]
 #	[copiedshortcutspointtocopiedfiles [<Boolean>]]
@@ -65073,13 +65078,13 @@ SHAREDDRIVE_ACL_ROLES_MAP = {
 
 # gam <UserTypeEntity> print shareddrives [todrive <ToDriveAttribute>*]
 #	[asadmin [shareddriveadminquery|query <QuerySharedDrive>]]
-#	[matchname <RegularExpression>] [orgunit|org|ou <OrgUnitPath>]
+#	[matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
 #	(role|roles <SharedDriveACLRoleList>)*
 #	[fields <SharedDriveFieldNameList>] [noorgunits [<Boolean>]]
 #	[guiroles [<Boolean>]] [formatjson [quotechar <Character>]]
 # gam <UserTypeEntity> show shareddrives
 #	[asadmin [shareddriveadminquery|query <QuerySharedDrive>]]
-#	[matchname <RegularExpression>] [orgunit|org|ou <OrgUnitPath>]
+#	[matchname <REMatchPattrn>] [orgunit|org|ou <OrgUnitPath>]
 #	(role|roles <SharedDriveACLRoleLIst>)*
 #	[fields <SharedDriveFieldNameList>] [noorgunits [<Boolean>]]
 #	[guiroles [<Boolean>]] [formatjson]
@@ -65373,7 +65378,7 @@ SHOW_NO_PERMISSIONS_DRIVES_CHOICE_MAP = {
 
 # gam [<UserTypeEntity>] print shareddriveacls [todrive <ToDriveAttribute>*]
 #	[asadmin] [shareddriveadminquery|query <QuerySharedDrive>]
-#	[matchname <RegularExpression>] [orgunit|org|ou <OrgUnitPath>]
+#	[matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
 #	[user|group <EmailAddress> [checkgroups]] (role|roles <SharedDriveACLRoleList>)*
 #	<PermissionMatch>* [<PermissionMatchAction>] [pmselect]
 #	[oneitemperrow] [maxitems <Integer>]
@@ -65383,7 +65388,7 @@ SHOW_NO_PERMISSIONS_DRIVES_CHOICE_MAP = {
 #	[formatjson [quotechar <Character>]]
 # gam [<UserTypeEntity>] show shareddriveacls
 #	[asadmin] [shareddriveadminquery|query <QuerySharedDrive>]
-#	[matchname <RegularExpression>] [orgunit|org|ou <OrgUnitPath>]
+#	[matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
 #	[user|group <EmailAddress> [checkgroups]] (role|roles <SharedDriveACLRoleList>)*
 #	<PermissionMatch>* [<PermissionMatchAction>] [pmselect]
 #	[oneitemperrow] [maxitems <Integer>]
@@ -66143,7 +66148,7 @@ def checkUserGroupMatchPattern(groupEmail, matchPattern):
 
 # gam <UserTypeEntity> delete group|groups
 #	[(domain <DomainName>)|(customerid <CustomerID>)|
-#	 (emailmatchpattern [not] <RegularExpression>)|<GroupEntity>]
+#	 (emailmatchpattern [not] <REMatchPattern>)|<GroupEntity>]
 def deleteUserFromGroups(users):
   cd = buildGAPIObject(API.DIRECTORY)
   groupKeys = None
@@ -68683,7 +68688,8 @@ def cleanLabelQuery(labelQuery):
     labelQuery = labelQuery.replace(ch, '-')
   return labelQuery.lower()
 
-# gam <UserTypeEntity> update label|labels [search <RegularExpression>] [replace <LabelReplacement>] [merge [keepoldlabel]]
+# gam <UserTypeEntity> update label|labels
+#	[search <REMatchPattern>] [replace <RESubstitution>] [merge [keepoldlabel]]
 #	search defaults to '^Inbox/(.*)$' which will find all labels in the Inbox
 #	replace defaults to '%s'
 def updateLabels(users):
@@ -68698,7 +68704,7 @@ def updateLabels(users):
       pattern = validateREPattern(search, re.IGNORECASE)
     elif myarg == 'replace':
       replaceLocation = Cmd.Location()
-      replace = getString(Cmd.OB_LABEL_REPLACEMENT)
+      replace = getString(Cmd.OB_RE_SUBSTITUTION)
     elif myarg == 'merge':
       merge = True
     elif myarg == 'keepoldlabel':
@@ -68708,12 +68714,8 @@ def updateLabels(users):
 # Validate that number of substitions in replace matches the number of groups in pattern
   useRegexSub = replace.find('%s') == -1
   if useRegexSub:
-    patternGroups = pattern.groups
-    replSubs = REPLACE_GROUP_PATTERN.findall(replace)
-    for replSub in replSubs:
-      if int(replSub) > patternGroups:
-        Cmd.SetLocation(replaceLocation)
-        usageErrorExit(Msg.MISMATCH_RE_SEARCH_REPLACE_SUBFIELDS.format(pattern.groups, search, int(replSub), replace))
+    Cmd.SetLocation(replaceLocation)
+    validateREPatternSubstitution(pattern, replace)
   else:
     if pattern.groups != replace.count('%s'):
       Cmd.SetLocation(replaceLocation)
@@ -68735,7 +68737,10 @@ def updateLabels(users):
         match_result = pattern.match(label['name'])
         if match_result is not None:
           labelMatches += 1
-          newLabelName = pattern.sub(replace, label['name']) if useRegexSub else replace % match_result.groups()
+          if useRegexSub:
+            newLabelName = pattern.sub(replace, label['name'])
+          else:
+            newLabelName = replace % match_result.groups()
           newLabelNameLower = newLabelName.lower()
           try:
             Act.Set(Act.RENAME)
@@ -68868,7 +68873,7 @@ def deleteLabels(users, labelEntity):
     except (GAPI.serviceNotAvailable, GAPI.badRequest):
       userGmailServiceNotEnabledWarning(user, i, count)
 
-# gam <UserTypeEntity> delete label|labels <LabelName>|regex:<RegularExpression>
+# gam <UserTypeEntity> delete label|labels <LabelName>|regex:<REMatchPattern>
 def deleteLabel(users):
   deleteLabels(users, getStringReturnInList(Cmd.OB_LABEL_NAME))
 
@@ -70162,7 +70167,7 @@ def _draftImportInsertMessage(users, operation):
 # gam <UserTypeEntity> draft message
 #	<MessageContent>
 #	(replace <Tag> <UserReplacement>)*
-#	(replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*
+#	(replaceregex <REMatchPattern> <RESubstitution> <Tag> <UserReplacement>)*
 #	(<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
 #	(attach <FileName> [charset <CharSet>])*
 #	(embedimage <FileName> <String>)*
@@ -70172,7 +70177,7 @@ def draftMessage(users):
 # gam <UserTypeEntity> import message
 #	<MessageContent>
 #	(replace <Tag> <UserReplacement>)*
-#	(replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*
+#	(replaceregex <REMatchPattern> <RESubstitution> <Tag> <UserReplacement>)*
 #	(<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
 #	(addlabel <LabelName>)* [labels <LabelNameList>]
 #	(attach <FileName> [charset <CharSet>])*
@@ -70184,7 +70189,7 @@ def importMessage(users):
 # gam <UserTypeEntity> insert message
 #	<MessageContent>
 #	(replace <Tag> <UserReplacement>)*
-#	(replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*
+#	(replaceregex <REMatchPattern> <RESubstitution> <Tag> <UserReplacement>)*
 #	(<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
 #	(addlabel <LabelName>)* [labels <LabelNameList>]
 #	(attach <FileName> [charset <CharSet>])*
@@ -70994,21 +70999,21 @@ def printShowMessagesThreads(users, entityType):
 
 # gam <UserTypeEntity> print message|messages [todrive <ToDriveAttribute>*]
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])* [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <MessageIDEntity>)
-#	[labelmatchpattern <RegularExpression>] [sendermatchpattern <RegularExpression>]
+#	[labelmatchpattern <REMatchPattern>] [sendermatchpattern <REMatchPattern>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
 #	[showlabels] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
 #	[convertcrnl] [delimiter <Character>]
 #	[countsonly|positivecountsonly] [useronly]
-#	[[attachmentnamepattern <RegularExpression>]
+#	[[attachmentnamepattern <REMatchPattern>]
 #	    [showattachments [noshowtextplain]]]
 #	(addcsvdata <FieldName> <String>)*
 # gam <UserTypeEntity> show message|messages
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])* [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <MessageIDEntity>)
-#	[labelmatchpattern <RegularExpression>] [sendermatchpattern <RegularExpression>]
+#	[labelmatchpattern <REMatchPattern>] [sendermatchpattern <REMatchPattern>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
 #	[showlabels] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
 #	[countsonly|positivecountsonly] [useronly]
-#	[[attachmentnamepattern <RegularExpression>]
+#	[[attachmentnamepattern <REMatchPattern>]
 #	    [showattachments [noshowtextplain]]
 #	    [saveattachments [targetfolder <FilePath>] [overwrite [<Boolean>]]]
 #	    [uploadattachments [<DriveFileParentAttribute>]]]
@@ -71017,21 +71022,21 @@ def printShowMessages(users):
 
 # gam <UserTypeEntity> print thread|threads [todrive <ToDriveAttribute>*]
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])* [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <ThreadIDEntity>)
-#	[labelmatchpattern <RegularExpression>]
+#	[labelmatchpattern <REMatchPattern>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
 #	[showlabels] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
 #	[convertcrnl] [delimiter <Character>]
 #	[countsonly|positivecountsonly] [useronly]
-#	[[attachmentnamepattern <RegularExpression>]
+#	[[attachmentnamepattern <REMatchPattern>]
 #	    [showattachments [noshowtextplain]]]
 #	(addcsvdata <FieldName> <String>)*
 # gam <UserTypeEntity> show thread|threads
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])* [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <ThreadIDEntity>)
-#	[labelmatchpattern <RegularExpression>]
+#	[labelmatchpattern <REMatchPattern>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
 #	[showlabels] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
 #	[countsonly|positivecountsonly] [useronly]
-#	[[attachmentnamepattern <RegularExpression>]
+#	[[attachmentnamepattern <REMatchPattern>]
 #	    [showattachments [noshowtextplain]]
 #	    [saveattachments [targetfolder <FilePath>] [overwrite [<Boolean>]]]
 #	    [uploadattachments [<DriveFileParentAttribute>]]]
@@ -72493,7 +72498,7 @@ SMTPMSA_REQUIRED_FIELDS = ['host', 'port', 'username', 'password']
 # gam <UserTypeEntity> [create] sendas <EmailAddress> [name] <String>
 #	[<SendAsContent>
 #	    (replace <Tag> <UserReplacement>)*
-#	    (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*]
+#	    (replaceregex <REMatchPattern> <RESubstitution> <Tag> <UserReplacement>)*]
 #	[html [<Boolean>]] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
 #	[smtpmsa.host <SMTPHostName> smtpmsa.port 25|465|587
 #	 smtpmsa.username <UserName> smtpmsa.password <Password>
@@ -72501,7 +72506,7 @@ SMTPMSA_REQUIRED_FIELDS = ['host', 'port', 'username', 'password']
 # gam <UserTypeEntity> update sendas <EmailAddress> [name <String>]
 #	[<SendAsContent>
 #	    (replace <Tag> <UserReplacement>)*
-#	    (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*]
+#	    (replaceregex <REMatchPattern> <RESubstitution> <Tag> <UserReplacement>)*]
 #	[html [<Boolean>]] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
 def createUpdateSendAs(users):
   updateCmd = Act.Get() == Act.UPDATE
@@ -73338,7 +73343,7 @@ def printShowCSEKeyPairs(users):
 # gam <UserTypeEntity> signature|sig
 #	<SignatureContent>
 #	(replace <Tag> <String>)*
-#	(replaceregex <RegularExpression> <String> <Tag> <String>)*
+#	(replaceregex <REMatchPattern> <RESubstitution> <Tag> <String>)*
 #	[html [<Boolean>]] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
 #	[name <String>]
 #	[primary]
@@ -73434,7 +73439,7 @@ def _showVacation(user, i, count, result, showDisabled, sigReplyFormat):
 # gam <UserTypeEntity> vacation [<Boolean>] [subject <String>]
 #	[<VacationMessageContent>
 #	    (replace <Tag> <UserReplacement>)*
-#	    (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*]
+#	    (replaceregex <REMatchPattern> <RESubstitution> <Tag> <UserReplacement>)*]
 #	[html [<Boolean>]] [contactsonly [<Boolean>]] [domainonly [<Boolean>]]
 #	[start|startdate <Date>|Started] [end|enddate <Date>|NotSpecified]
 def setVacation(users):

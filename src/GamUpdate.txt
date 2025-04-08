@@ -1,3 +1,12 @@
+7.05.22
+
+Updated progress messages for  `gam <UserTypeEntity> print filelist|filecounts|filesharecounts|filetree select shareddriveid <SharedDriveID>`
+to display the ID of the SharedDrive that is being accessed.
+```
+Getting all Drive Files/Folders for user@domain.com on Shared Drive ID: <SharedDriveID
+Got 33 Drive Files/Folders for user@domain.com on Shared Drive ID: <SharedDriveID>...
+```
+
 7.05.21
 
 Fixed bug in `gam update chromepolicy` that generated an error like the following

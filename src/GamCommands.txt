@@ -353,6 +353,9 @@ If an item contains spaces, it should be surrounded by ".
         now|today
 <RegularExpression> ::= <String>
         See: https://docs.python.org/3/library/re.html
+<REMatchPattern> ::= <RegularExpression>
+<RESearchPattern> ::= <RegularExpression>
+<RESubstitution> ::= <String>>
 <ProjectID> ::= <String>
         Must match this Python Regular Expression: [a-z][a-z0-9-]{4,28}[a-z0-9]
 <ServiceAccountName> ::= <String>
@@ -817,7 +820,7 @@ Specify a collection of ChromeOS devices by directly specifying them or by speci
              (gcsdoc(:<FieldName>)+ <StorageBucketObjectName>))
             [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [endcsv|(fields <FieldNameList>)]
-            (matchfield|skipfield <FieldName> <RegularExpression>)*
+            (matchfield|skipfield <FieldName> <RESearchPattern>)*
             [delimiter <Character>])|
         (croscsvfile_sn
             ((<FileName>(:<FieldName>)+ [charset <Charset>] )|
@@ -827,7 +830,7 @@ Specify a collection of ChromeOS devices by directly specifying them or by speci
              (gcsdoc(:<FieldName>)+ <StorageBucketObjectName>))
             [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [endcsv|(fields <FieldNameList>)]
-            (matchfield|skipfield <FieldName> <RegularExpression>)*
+            (matchfield|skipfield <FieldName> <RESearchPattern>)*
             [delimiter <Character>])|
         (datafile
             cros|cros_sn|cros_ous|cros_ous_and_children
@@ -844,7 +847,7 @@ Specify a collection of ChromeOS devices by directly specifying them or by speci
               (gcsdoc(:<FieldName>)+ <StorageBucketObjectName>))
             [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [endcsv|(fields <FieldNameList>)]
-            (matchfield|skipfield <FieldName> <RegularExpression>)*
+            (matchfield|skipfield <FieldName> <REMatchPattern>)*
             [delimiter <Character>])|
         (csvkmd
             cros|cros_sn|cros_ous|cros_ous_and_children
@@ -854,9 +857,9 @@ Specify a collection of ChromeOS devices by directly specifying them or by speci
               (gcscsv <StorageBucketObjectName>)|
               (gcsdoc <StorageBucketObjectName>))
              [charset <Charset>] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>] [fields <FieldNameList>])
-            keyfield <FieldName> [keypattern <RegularExpression>] [keyvalue <String>] [delimiter <Character>]
-            subkeyfield <FieldName> [keypattern <RegularExpression>] [keyvalue <String>] [delimiter <Character>]
-            (matchfield|skipfield <FieldName> <RegularExpression>)*
+            keyfield <FieldName> [keypattern <REMatchPattern>] [keyvalue <String>] [delimiter <Character>]
+            subkeyfield <FieldName> [keypattern <REMatchPattern>] [keyvalue <String>] [delimiter <Character>]
+            (matchfield|skipfield <FieldName> <REMatchPattern>)*
             [datafield <FieldName>(:<FieldName>)* [delimiter <Character>]])
         (croscsvdata <FieldName>(:<FieldName>*))
 
@@ -903,7 +906,7 @@ Specify a collection of Users by directly specifying them or by specifiying item
              (gcsdoc(:<FieldName>)+ <StorageBucketObjectName>))
             [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [endcsv|(fields <FieldNameList>)]
-            (matchfield|skipfield <FieldName> <RegularExpression>)*
+            (matchfield|skipfield <FieldName> <REMatchPattern>)*
             [delimiter <Character>])|
         (datafile
             users|groups|groups_ns|groups_susp|groups_inde|ous|ous_ns|ous_susp|
@@ -924,7 +927,7 @@ Specify a collection of Users by directly specifying them or by specifiying item
               (gcsdoc(:<FieldName>)+ <StorageBucketObjectName>))
             [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [endcsv|(fields <FieldNameList>)]
-            (matchfield|skipfield <FieldName> <RegularExpression>)*
+            (matchfield|skipfield <FieldName> <REMatchPattern>)*
             [delimiter <Character>])|
         (csvkmd
             users|groups|groups_ns|groups_susp|groups_inde|ous|ous_ns|ous_susp|
@@ -936,9 +939,9 @@ Specify a collection of Users by directly specifying them or by specifiying item
               (gcscsv <StorageBucketObjectName>)|
               (gcsdoc <StorageBucketObjectName>))
              [charset <Charset>] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>] [fields <FieldNameList>])
-            keyfield <FieldName> [keypattern <RegularExpression>] [keyvalue <String>] [delimiter <Character>]
-            subkeyfield <FieldName> [keypattern <RegularExpression>] [keyvalue <String>] [delimiter <Character>]
-            (matchfield|skipfield <FieldName> <RegularExpression>)*
+            keyfield <FieldName> [keypattern <REMatchPattern>] [keyvalue <String>] [delimiter <Character>]
+            subkeyfield <FieldName> [keypattern <REMatchPattern>] [keyvalue <String>] [delimiter <Character>]
+            (matchfield|skipfield <FieldName> <REMatchPattern>)*
             [datafield <FieldName>(:<FieldName>)* [delimiter <Character>]])
         (csvdata <FieldName>(:<FieldName>*))
 
@@ -970,7 +973,7 @@ Specify a collection of items by directly specifying them; the item type is dete
              (gcsdoc(:<FieldName>)+ <StorageBucketObjectName>))
             [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [endcsv|(fields <FieldNameList>)]
-            (matchfield|skipfield <FieldName> <RegularExpression>)*
+            (matchfield|skipfield <FieldName> <REMatchPattern>)*
             [delimiter <Character>]
 
 <CSVkmdSelector> ::=
@@ -984,9 +987,9 @@ Specify a collection of items by directly specifying them; the item type is dete
               (gcscsv <StorageBucketObjectName>)|
               (gcsdoc <StorageBucketObjectName>))
              [charset <Charset>] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>] [fields <FieldNameList>])
-            keyfield <FieldName> [keypattern <RegularExpression>] [keyvalue <String>] [delimiter <Character>]
-            subkeyfield <FieldName> [keypattern <RegularExpression>] [keyvalue <String>] [delimiter <Character>]
-            (matchfield|skipfield <FieldName> <RegularExpression>)*
+            keyfield <FieldName> [keypattern <REMatchPattern>] [keyvalue <String>] [delimiter <Character>]
+            subkeyfield <FieldName> [keypattern <REMatchPattern>] [keyvalue <String>] [delimiter <Character>]
+            (matchfield|skipfield <FieldName> <REMatchPattern>)*
             [datafield <FieldName>(:<FieldName>)* [delimiter <Character>]]
 <CSVSubkeySelector> ::= csvsubkey <FieldName>
 <CSVDataSelector> ::= csvdata <FieldName>(:<FieldName>)*
@@ -1324,13 +1327,13 @@ gam tbatch <BatchContent> [showcmds [<Boolean>]]
 
 gam csv <CSVLoopContent> [warnifnodata]
         [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>] [fields <FieldNameList>]
-        (matchfield|skipfield <FieldName> <RegularExpression>)* [showcmds [<Boolean>]]
+        (matchfield|skipfield <FieldName> <REMatchPattern>)* [showcmds [<Boolean>]]
         [skiprows <Integer>] [maxrows <Integer>]
         gam <GAMArgumentList>
 
 gam loop <CSVLoopContent> [warnifnodata]
         [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>] [fields <FieldNameList>]
-        (matchfield|skipfield <FieldName> <RegularExpression>)* [showcmds [<Boolean>]]
+        (matchfield|skipfield <FieldName> <REMatchPattern>)* [showcmds [<Boolean>]]
         [skiprows <Integer>] [maxrows <Integer>]
         gam <GAMArgumentList>
 
@@ -1511,7 +1514,7 @@ gam print alias|aliases [todrive <ToDriveAttribute>*]
          [limittoou <OrgUnitItem>])
         [user|users <EmailAddressList>] [group|groups <EmailAddressList>]
         [select <UserTypeEntity>]
-        [aliasmatchpattern <RegularExpression>]
+        [aliasmatchpattern <REMatchPattern>]
         [shownoneditable] [nogroups] [nousers]
         [onerowpertarget] [delimiter <Character>]
         [suppressnoaliasrows]
@@ -1627,20 +1630,20 @@ gam calendar <CalendarEntity> printacl [todrive <ToDriveAttribute>*]
         (matchfield attendeesonlydomainlist <DomainNameList>)|
         (matchfield attendeesdomainlist <DomainNameList>)|
         (matchfield attendeesnotdomainlist <DomainNameList>)|
-        (matchfield attendeespattern <RegularExpression>)|
+        (matchfield attendeespattern <RESearchPattern>)|
         (matchfield attendeesstatus [<AttendeeAttendance>] [<AttendeeStatus>] <EmailAddressEntity>)|
-        (matchfield creatoremail <RegularExpression>)|
-        (matchfield creatorname <RegularExpression>)|
-        (matchfield description <RegularExpression>)|
-        (matchfield hangoutlink <RegularExpression>)|
-        (matchfield location <RegularExpression>)|
-        (matchfield organizeremail <RegularExpression>)|
-        (matchfield organizername <RegularExpression>)|
+        (matchfield creatoremail <RESearchPattern>)|
+        (matchfield creatorname <RESearchPattern>)|
+        (matchfield description <RESearchPattern>)|
+        (matchfield hangoutlink <RESearchPattern>)|
+        (matchfield location <RESearchPattern>)|
+        (matchfield organizeremail <RESearchPattern>)|
+        (matchfield organizername <RESearchPattern>)|
         (matchfield organizerself <Boolean>)|
-        (matchfield status <RegularExpression>)|
-        (matchfield summary <RegularExpression>)|
-        (matchfield transparency <RegularExpression>)|
-        (matchfield visibility <RegularExpression>)
+        (matchfield status <RESearchPattern>)|
+        (matchfield summary <RESearchPattern>)|
+        (matchfield transparency <RESearchPattern>)|
+        (matchfield visibility <RESearchPattern>)
 
 <EventIDEntity> ::=
         (id|eventid <EventId>) |
@@ -1718,7 +1721,7 @@ The following attributes are equivalent:
         (clearsharedproperty <PropertyKey>)|
         (removeattendee <EmailAddress>)|
         (removeresource <ResourceID>)|
-        (replacedescription <RegularExpression> <String>)|
+        (replacedescription <REMatchPattern> <RESubstitution>)|
         (selectremoveattendees <UserTypeEntity>)
 
 <EventNotificationAttribute> ::=
@@ -3147,7 +3150,7 @@ gam info courses <CourseEntity> [owneraccess]
         [formatjson]
 gam print courses [todrive <ToDriveAttribute>*]
         (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
-        [owneremail] [owneremailmatchpattern <RegularExpression>]
+        [owneremail] [owneremailmatchpattern <REMatchPattern>]
         [alias|aliases|aliasesincolumns [delimiter <Character>]]
         [show all|students|teachers] [countsonly]
         [timefilter creationtime|updatetime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
@@ -3474,14 +3477,14 @@ gam show domainaliases|aliasdomains
 
 <ContactSelection> ::=
         [query <QueryContact>]
-        [emailmatchpattern <RegularExpression> [emailmatchtype work|home|other|<String>]]
+        [emailmatchpattern <REMatchPattern> [emailmatchtype work|home|other|<String>]]
         [updated_min <Date>]
 
 gam create contact <ContactAttribute>+
         [(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*))| returnidonly]
 gam update contacts <ContactEntity>|<ContactSelection> <ContactAttribute>+
 gam clear contacts <ContactEntity>|<ContactSelection>
-        [emailclearpattern <RegularExpression>] [emailcleartype work|home|other|<String>]
+        [emailclearpattern <REMatchPattern>] [emailcleartype work|home|other|<String>]
         [delete_cleared_contacts_with_no_emails]
 gam dedup contacts <ContactEntity>|<ContactSelection> [matchType [<Boolean>]]
 gam delete contacts <ContactEntity>|<ContactSelection>
@@ -3758,7 +3761,7 @@ gam update group|groups <GroupEntity> update [<GroupRole>]
 gam update group|groups <GroupEntity> clear [member] [manager] [owner]
         [usersonly|groupsonly]
         [notsuspended|suspended] [notarchived|archived]
-        [emailclearpattern|emailretainpattern <RegularExpression>]
+        [emailclearpattern|emailretainpattern <REMatchPattern>]
         [removedomainnostatusmembers]
         [preview] [actioncsv]
 gam delete group|groups <GroupEntity> [noactionifalias]
@@ -3847,14 +3850,14 @@ gam info group|groups <GroupEntity>
         [internal] [internaldomains <DomainNameList>] [external]
         [notsuspended|suspended] [notarchived|archived]
         [types <GroupMemberTypeList>]
-        [memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
+        [memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
         [formatjson]
 gam print groups [todrive <ToDriveAttribute>*]
         [([domain|domains <DomainNameEntity>] ([member|showownedby <EmailItem>]|[(query <QueryGroup>)|(queries <QueryGroupList>)]))|
          (group|group_ns|group_susp <GroupItem>)|
          (select <GroupEntity>)]
-        [emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
-        [descriptionmatchpattern [not] <RegularExpression>] (matchsetting [not] <GroupAttribute>)*
+        [emailmatchpattern [not] <REMatchPattern>] [namematchpattern [not] <REMatchPattern>]
+        [descriptionmatchpattern [not] <REMatchPattern>] (matchsetting [not] <GroupAttribute>)*
         [admincreatedmatch <Boolean>]
         [maxresults <Number>]
         [allfields|([basic] [settings] <GroupFieldName>* [fields <GroupFieldNameList>])]
@@ -3866,7 +3869,7 @@ gam print groups [todrive <ToDriveAttribute>*]
         [includederivedmembership]
         [notsuspended|suspended] [notarchived|archived]
         [types <GroupMemberTypeList>]
-        [memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
+        [memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
         [convertcrnl] [delimiter <Character>] [sortheaders]
         [formatjson [quotechar <Character>]]
         [showitemcountonly]
@@ -3894,8 +3897,8 @@ gam print group-members [todrive <ToDriveAttribute>*]
         [([domain|domains <DomainNameEntity>] ([member|showownedby <EmailItem>]|[(query <QueryGroup>)|(queries <QueryGroupList>)]))|
          (group|group_ns|group_susp <GroupItem>)|
          (select <GroupEntity>)]
-        [emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
-        [descriptionmatchpattern [not] <RegularExpression>]
+        [emailmatchpattern [not] <REMatchPattern>] [namematchpattern [not] <REMatchPattern>]
+        [descriptionmatchpattern [not] <REMatchPattern>]
         [admincreatedmatch <Boolean>]
         [roles <GroupRoleList>] [members] [managers] [owners]
         [internal] [internaldomains <DomainNameList>] [external]
@@ -3903,7 +3906,7 @@ gam print group-members [todrive <ToDriveAttribute>*]
         <MembersFieldName>* [fields <MembersFieldNameList>]
         [notsuspended|suspended] [notarchived|archived]
         [types <GroupMemberTypeList>]
-        [memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
+        [memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
         [userfields <UserFieldNameList>]
         [allschemas|(schemas|custom|customschemas <SchemaNameList>)]
         [(recursive [noduplicates])|includederivedmembership] [nogroupemail]
@@ -3914,14 +3917,14 @@ gam print group-members [todrive <ToDriveAttribute>*]
         [([domain|domains <DomainNameEntity>] ([member|showownedby <EmailItem>]|[(query <QueryGroup>)|(queries <QueryGroupList>)]))|
          (group|group_ns|group_susp <GroupItem>)|
          (select <GroupEntity>)]
-        [emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
-        [descriptionmatchpattern [not] <RegularExpression>]
+        [emailmatchpattern [not] <REMatchPattern>] [namematchpattern [not] <REMatchPattern>]
+        [descriptionmatchpattern [not] <REMatchPattern>]
         [admincreatedmatch <Boolean>]
         [roles <GroupRoleList>] [members] [managers] [owners] [depth <Number>]
         [internal] [internaldomains <DomainNameList>] [external]
         [notsuspended|suspended] [notarchived|archived]
         [types <GroupMemberTypeList>]
-        [memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
+        [memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
         [includederivedmembership]
 
 # Cloud Identity Groups
@@ -3977,7 +3980,7 @@ gam update cigroups <GroupEntity> update [<GroupRole>]
         <UserTypeEntity>
 gam update cigroups <GroupEntity> clear [member] [manager] [owner]
         [usersonly|groupsonly]
-        [emailclearpattern|emailretainpattern <RegularExpression>]
+        [emailclearpattern|emailretainpattern <REMatchPattern>]
         [preview] [actioncsv]
 gam delete cigroups <GroupEntity>
 
@@ -3988,19 +3991,19 @@ gam info cigroups <GroupEntity>
         [roles <GroupRoleList>] [members] [managers] [owners]
         [internal] [internaldomains <DomainNameList>] [external]
         [types <CIGroupMemberTypeList>]
-        [memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
+        [memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
         [formatjson]
 gam print cigroups [todrive <ToDriveAttribute>*]
         [(cimember|ciowner <UserItem>)|(select <GroupEntity>)|(query <String>)]
         [showownedby <UserItem>]
-        [emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
-        [descriptionmatchpattern [not] <RegularExpression>]
+        [emailmatchpattern [not] <REMatchPattern>] [namematchpattern [not] <REMatchPattern>]
+        [descriptionmatchpattern [not] <REMatchPattern>]
         [basic|allfields|(<CIGroupFieldName>* [fields <CIGroupFieldNameList>])]
         [roles <GroupRoleList>] [memberrestrictions]
         [members|memberscount] [managers|managerscount] [owners|ownerscount] [totalcount] [countsonly]
         [internal] [internaldomains <DomainNameList>] [external]
         [types <CIGroupMemberTypeList>]
-        [memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
+        [memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
         [convertcrnl] [delimiter <Character>]
         [formatjson [quotechar <Character>]]
         [showitemcountonly]
@@ -4022,11 +4025,11 @@ gam info cimember <UserTypeEntity> <GroupEntity>
 gam print cigroup-members [todrive <ToDriveAttribute>*]
         [(cimember|ciowner <UserItem>)|(cigroup <GroupItem>)|(select <GroupEntity>)]
         [showownedby <UserItem>]
-        [emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
-        [descriptionmatchpattern [not] <RegularExpression>]
+        [emailmatchpattern [not] <REMatchPattern>] [namematchpattern [not] <REMatchPattern>]
+        [descriptionmatchpattern [not] <REMatchPattern>]
         [roles <GroupRoleList>] [members] [managers] [owners]
         [types <CIGroupMemberTypeList>]
-        [memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
+        [memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
         <CIGroupMembersFieldName>* [fields <CIGroupMembersFieldNameList>]
         [minimal|basic|full]
         [(recursive [noduplicates]) | includederivedmembership] [nogroupemail]
@@ -4034,11 +4037,11 @@ gam print cigroup-members [todrive <ToDriveAttribute>*]
 gam show cigroup-members
         [(cimember|ciowner <UserItem>)|(cigroup <GroupItem>)|(select <GroupEntity>)]
         [showownedby <UserItem>]
-        [emailmatchpattern [not] <RegularExpression>] [namematchpattern [not] <RegularExpression>]
-        [descriptionmatchpattern [not] <RegularExpression>]
+        [emailmatchpattern [not] <REMatchPattern>] [namematchpattern [not] <REMatchPattern>]
+        [descriptionmatchpattern [not] <REMatchPattern>]
         [roles <GroupRoleList>] [members] [managers] [owners]
         [types <CIGroupMemberTypeList>]
-        [memberemaildisplaypattern|memberemailskippattern <RegularExpression>]
+        [memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
         [minimal|basic|full]
         [(depth <Number>) | includederivedmembership]
 
@@ -4173,11 +4176,11 @@ gam info policies <CIPolicyNameEntity>
         [formatjson]
 gam print policies [todrive <ToDriveAttribute>*]
         [filter <String>] [nowarnings] [noappnames]
-        [group <RegularExpression>] [ou|org|orgunit <RegularExpression>]
+        [group <REMatchPattern>] [ou|org|orgunit <REMatchPattern>]
         [formatjson [quotechar <Character>]]
 gam show policies
         [filter <String>] [nowarnings] [noappnames]
-        [group <RegularExpression>] [ou|org|orgunit <RegularExpression>]
+        [group <REMatchPattern>] [ou|org|orgunit <REMatchPattern>]
         [formatjson]
 
 # Inbound SSO
@@ -4737,7 +4740,7 @@ gam sendemail [recipient|to] <RecipientEntity>
         [subject <String>]
         [<MessageContent>]
         (replace <Tag> <String>)*
-        (replaceregex <RegularExpression> <String> <Tag> <String>)*
+        (replaceregex <RESearchPattern> <RESubstitution> <Tag> <String>)*
         [html [<Boolean>]] (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
         [newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
@@ -4748,7 +4751,7 @@ gam <UserTypeEntity> sendemail recipient|to <RecipientEntity>
         [subject <String>]
         [<MessageContent>]
         (replace <Tag> <String>)*
-        (replaceregex <RegularExpression> <String> <Tag> <String>)*
+        (replaceregex <RESearchPattern> <RESubstitution> <Tag> <String>)*
         [html [<Boolean>]] (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
         [newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
@@ -4759,7 +4762,7 @@ gam <UserTypeEntity> sendemail from <EmailAddress>
         [subject <String>]
         [<MessageContent>]
         (replace <Tag> <String>)*
-        (replaceregex <RegularExpression> <String> <Tag> <String>)*
+        (replaceregex <RESearchPattern> <RESubstitution> <Tag> <String>)*
         [html [<Boolean>]] (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
         [newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
@@ -4821,12 +4824,12 @@ gam show shareddriveinfo <SharedDriveEntity>
         [formatjson]
 gam print shareddrives [todrive <ToDriveAttribute>*]
         [teamdriveadminquery|query <QueryTeamDrive>]
-        [matchname <RegularExpression>] [orgunit|org|ou <OrgUnitPath>]
+        [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         [fields <SharedDriveFieldNameList>] [noorgunits [<Boolean>]]
         [formatjson [quotechar <Character>]]
 gam show shareddrives
         [teamdriveadminquery|query <QueryTeamDrive>]
-        [matchname <RegularExpression>] [orgunit|org|ou <OrgUnitPath>]
+        [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         [fields <SharedDriveFieldNameList>] [noorgunits [<Boolean>]]
         [formatjson] [noorgunits [<Boolean>]]
 
@@ -4860,13 +4863,13 @@ gam <UserTypeEntity> show shareddriveinfo <SharedDriveEntity>
         [formatjson]
 gam <UserTypeEntity> print shareddrives [todrive <ToDriveAttribute>*]
         adminaccess [teamdriveadminquery|query <QueryTeamDrive>]
-        [matchname <RegularExpression>] [orgunit|org|ou <OrgUnitPath>]
+        [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         (role|roles <SharedDriveACLRoleList>)*
         [fields <SharedDriveFieldNameList>]
         [formatjson [quotechar <Character>]]
 gam <UserTypeEntity> show shareddrives
         adminaccess [teamdriveadminquery|query <QueryTeamDrive>]
-        [matchname <RegularExpression>] [orgunit|org|ou <OrgUnitPath>]
+        [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         (role|roles <SharedDriveACLRoleList>)*
         [fields <SharedDriveFieldNameList>]
         [formatjson]
@@ -4894,13 +4897,13 @@ gam <UserTypeEntity> show shareddriveinfo <SharedDriveEntity>
         [guiroles [<Boolean>]] [formatjson]
 gam <UserTypeEntity> print shareddrives [todrive <ToDriveAttribute>*]
         [teamdriveadminquery|query <QueryTeamDrive>]
-        [matchname <RegularExpression>] [orgunit|org|ou <OrgUnitPath>]
+        [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         (role|roles <SharedDriveACLRoleList>)*
         [fields <SharedDriveFieldNameList>]
         [guiroles [<Boolean>]] [formatjson [quotechar <Character>]]
 gam <UserTypeEntity> show shareddrives
         [teamdriveadminquery|query <QueryTeamDrive>]
-        [matchname <RegularExpression>] [orgunit|org|ou <OrgUnitPath>]
+        [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         (role|roles <SharedDriveACLRoleList>)*
         [fields <SharedDriveFieldNameList>]
         [guiroles [<Boolean>]] [formatjson]
@@ -5043,7 +5046,7 @@ gam sync teamdriveacls <SharedDriveEntity> with <SharedDriveEntity>
 
 gam print teamdriveacls [todrive <ToDriveAttribute>*]
         [teamdriveadminquery|query <QueryTeamDrive>]
-        [matchname <RegularExpression>] [orgunit|org|ou <OrgUnitPath>]
+        [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         [user|group <EmailAddress> [checkgroups]] (role|roles <SharedDriveACLRoleList>)*
         <PermissionMatch>* [<PermissionMatchAction>] [pmselect]
         [oneitemperrow] [<DrivePermissionsFieldName>*|(fields <DrivePermissionsFieldNameList>)]
@@ -5051,7 +5054,7 @@ gam print teamdriveacls [todrive <ToDriveAttribute>*]
         [formatjson [quotechar <Character>]]
 gam show teamdriveacls
         [teamdriveadminquery|query <QueryTeamDrive>]
-        [matchname <RegularExpression>] [orgunit|org|ou <OrgUnitPath>]
+        [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         [user|group <EmailAddress> [checkgroups]] (role|roles <SharedDriveACLRoleList>)*
         <PermissionMatch>* [<PermissionMatchAction>] [pmselect]
         [oneitemperrow] [<DrivePermissionsFieldName>*|(fields <DrivePermissionsFieldNameList>)]
@@ -5072,7 +5075,7 @@ gam <UserTypeEntity> sync teamdriveacls <SharedDriveEntity> with <SharedDriveEnt
 
 gam <UserTypeEntity> print teamdriveacls [todrive <ToDriveAttribute>*]
         [adminaccess|asadmin] [teamdriveadminquery|query <QueryTeamDrive>]
-        [matchname <RegularExpression>] [orgunit|org|ou <OrgUnitPath>]
+        [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         [user|group <EmailAddress> [checkgroups]] (role|roles <SharedDriveACLRoleList>)*
         <PermissionMatch>* [<PermissionMatchAction>] [pmselect]
         [oneitemperrow] [<DrivePermissionsFieldName>*|(fields <DrivePermissionsFieldNameList>)]
@@ -5081,7 +5084,7 @@ gam <UserTypeEntity> print teamdriveacls [todrive <ToDriveAttribute>*]
         [formatjson [quotechar <Character>]]
 gam <UserTypeEntity> show teamdriveacls
         [adminaccess|asadmin] [teamdriveadminquery|query <QueryTeamDrive>]
-        [matchname <RegularExpression>] [orgunit|org|ou <OrgUnitPath>]
+        [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         [user|group <EmailAddress> [checkgroups]] (role|roles <SharedDriveACLRoleList>)*
         <PermissionMatch>* [<PermissionMatchAction>] [pmselect]
         [oneitemperrow] [<DrivePermissionsFieldName>*|(fields <DrivePermissionsFieldNameList>)]
@@ -5281,19 +5284,19 @@ gam delete vaultexport|export <ExportItem> matter <MatterItem>
 gam delete vaultexport|export <MatterItem> <ExportItem>
 gam download vaultexport|export <ExportItem> matter <MatterItem>
         [targetfolder <FilePath>] [targetname <FileName>] [noverify] [noextract] [ziptostdout]
-        [bucketmatchpattern <RegularExpression>] [objectmatchpattern <RegularExpression>]
+        [bucketmatchpattern <REMatchPattern>] [objectmatchpattern <REMatchPattern>]
         [downloadattempts <Integer>] [retryinterval <Integer>]
 gam download vaultexport|export <MatterItem> <ExportItem>
         [targetfolder <FilePath>] [targetname <FileName>] [noverify] [noextract] [ziptostdout]
-        [bucketmatchpattern <RegularExpression>] [objectmatchpattern <RegularExpression>]
+        [bucketmatchpattern <REMatchPattern>] [objectmatchpattern <REMatchPattern>]
         [downloadattempts <Integer>] [retryinterval <Integer>]
 gam copy vaultexport|export <ExportItem> matter <MatterItem>
         [targetbucket <String>] [targetprefix <String>]
-        [bucketmatchpattern <RegularExpression>] [objectmatchpattern <RegularExpression>]
+        [bucketmatchpattern <REMatchPattern>] [objectmatchpattern <REMatchPattern>]
         [copyattempts <Integer>] [retryinterval <Integer>]
 gam copy vaultexport|export <MatterItem> <ExportItem>
         [targetbucket <String>] [targetprefix <String>]
-        [bucketmatchpattern <RegularExpression>] [objectmatchpattern <RegularExpression>]
+        [bucketmatchpattern <REMatchPattern>] [objectmatchpattern <REMatchPattern>]
         [copyattempts <Integer>] [retryinterval <Integer>]
 
 <VaultExportFieldName> ::=
@@ -5567,7 +5570,7 @@ gam create|add user <EmailAddress> [ignorenullpassword] <UserAttribute>*
             [replyto <EmailAaddress>]
             [<NotifyMessageContent>]
             (replace <Tag> <UserReplacement>)*
-            (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*
+            (replaceregex <RESearchPattern> <RESubstitution> <Tag> <UserReplacement>)*
          ]
         [logpassword <FileName>]
         [addnumericsuffixonduplicate <Number>]
@@ -5576,7 +5579,7 @@ gam <UserTypeEntity> waitformailbox [retries <Number>]
 
 gam update user <UserItem> [ignorenullpassword] <UserAttribute>*
         [verifynotinvitable|alwaysevict] [noactionifalias]
-        [updateprimaryemail <RegularExpression> <EmailReplacement>]
+        [updateprimaryemail <RESearchPattern> <RESubstitution>]
         [updateoufromgroup <FileName> [charset <Charset>]
             [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [fields <FieldNameList>] [keyfield <FieldName>] [datafield <FieldName>]]
@@ -5593,7 +5596,7 @@ gam update user <UserItem> [ignorenullpassword] <UserAttribute>*
             [replyto <EmailAddress>]
             [<NotifyMessageContent>]
             (replace <Tag> <UserReplacement>)*
-            (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*
+            (replaceregex <RESearchPattern> <RESubstitution> <Tag> <UserReplacement>)*
          ]
         [notifyonupdate [<Boolean>]] [setchangepasswordoncreate [<Boolean>]]
         [logpassword <FileName>]
@@ -5614,7 +5617,7 @@ gam info user [<UserItem>]
 
 gam update users <UserTypeEntity> [ignorenullpassword] <UserAttribute>*
         [verifynotinvitable|alwaysevict] [noactionifalias]
-        [updateprimaryemail <RegularExpression> <EmailReplacement>]
+        [updateprimaryemail <RESearchPattern> <RESubstitution>]
         [updateoufromgroup <FileName> [charset <Charset>]
             [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [fields <FieldNameList>] [keyfield <FieldName>] [datafield <FieldName>]]
@@ -5630,7 +5633,7 @@ gam update users <UserTypeEntity> [ignorenullpassword] <UserAttribute>*
             [replyto <EmailAaddress>]
             [<NotifyMessageContent>]
             (replace <Tag> <UserReplacement>)*
-            (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*
+            (replaceregex <RESearchPattern> <RESubstitution> <Tag> <UserReplacement>)*
         ]
         [notifyonupdate [<Boolean>]] [setchangepasswordoncreate [<Boolean>]]
         [logpassword <FileName>]
@@ -5651,7 +5654,7 @@ gam info users <UserTypeEntity>
 
 gam <UserTypeEntity> update users [ignorenullpassword] <UserAttribute>*
         [verifynotinvitable|alwaysevict] [noactionifalias]
-        [updateprimaryemail <RegularExpression> <EmailReplacement>]
+        [updateprimaryemail <RESearchPattern> <RESubstitution>]
         [updateoufromgroup <FileName> [charset <Charset>]
             [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [fields <FieldNameList>] [keyfield <FieldName>] [datafield <FieldName>]]
@@ -5667,7 +5670,7 @@ gam <UserTypeEntity> update users [ignorenullpassword] <UserAttribute>*
             [replyto <EmailAddress>]
             [<NotifyMessageContent>]
             (replace <Tag> <UserReplacement>)*
-            (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*
+            (replaceregex <RESearchPattern> <RESubstitution> <Tag> <UserReplacement>)*
         ]
         [notifyonupdate [<Boolean>]] [setchangepasswordoncreate [<Boolean>]]
         [logpassword <FileName>]
@@ -5704,7 +5707,7 @@ gam print users [todrive <ToDriveAttribute>*]
         [userview] [basic|full|allfields|(<UserFieldName>*|fields <UserFieldNameList>)]
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
-        [issuspended <Boolean>] [aliasmatchpattern <RegularExpression>]
+        [issuspended <Boolean>] [aliasmatchpattern <REMatchPattern>]
         [showvalidcolumn] (addcsvdata <FieldName> <String>)*
         [showitemcountonly]
 
@@ -5721,7 +5724,7 @@ gam print users [todrive <ToDriveAttribute>*] select <UserTypeEntity>
         [userview] [basic|full|allfields|(<UserFieldName>*|fields <UserFieldNameList>)]
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
-        [issuspended <Boolean>] [aliasmatchpattern <RegularExpression>]
+        [issuspended <Boolean>] [aliasmatchpattern <REMatchPattern>]
         [showvalidcolumn] (addcsvdata <FieldName> <String>)*
         [showitemcountonly]
 
@@ -5736,7 +5739,7 @@ gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
         [userview] [basic|full|allfields|(<UserFieldName>*|fields <UserFieldNameList>)]
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
-        [issuspended <Boolean>] [aliasmatchpattern <RegularExpression>]
+        [issuspended <Boolean>] [aliasmatchpattern <REMatchPattern>]
         [showvalidcolumn] (addcsvdata <FieldName> <String>)*
         [showitemcountonly]
 
@@ -5975,19 +5978,19 @@ gam <UserTypeEntity> transfer calendars|seccals <UserItem> [<UserCalendarEntity>
 
 <EventMatchProperty> ::=
         (matchfield attendees <EmailAddressEntity>)|
-        (matchfield attendeespattern <RegularExpression>)|
+        (matchfield attendeespattern <RESearchPattern>)|
         (matchfield attendeesstatus [<AttendeeAttendance>] [<AttendeeStatus>] <EmailAddressEntity>)|
-        (matchfield creatoremail <RegularExpression>)|
-        (matchfield creatorname <RegularExpression>)|
-        (matchfield description <RegularExpression>)|
-        (matchfield hangoutlink <RegularExpression>)|
-        (matchfield location <RegularExpression>)|
-        (matchfield organizeremail <RegularExpression>)|
-        (matchfield organizername <RegularExpression>)|
-        (matchfield status <RegularExpression>)|
-        (matchfield summary <RegularExpression>)|
-        (matchfield transparency <RegularExpression>)|
-        (matchfield visibility <RegularExpression>)
+        (matchfield creatoremail <RESearchPattern>)|
+        (matchfield creatorname <RESearchPattern>)|
+        (matchfield description <RESearchPattern>)|
+        (matchfield hangoutlink <RESearchPattern>)|
+        (matchfield location <RESearchPattern>)|
+        (matchfield organizeremail <RESearchPattern>)|
+        (matchfield organizername <RESearchPattern>)|
+        (matchfield status <RESearchPattern>)|
+        (matchfield summary <RESearchPattern>)|
+        (matchfield transparency <RESearchPattern>)|
+        (matchfield visibility <RESearchPattern>)
 
 <EventIDEntity> ::=
         (id|eventid <EventId>) |
@@ -6064,7 +6067,7 @@ The following attributes are equivalent:
         (clearprivateproperty <PropertyKey>)|
         (clearsharedproperty <PropertyKey>)|
         (removeattendee <EmailAddress>)|
-        (replacedescription <RegularExpression> <String>)|
+        (replacedescription <REMatchPattern> <RESubstitution>)|
         (selectremoveattendees <UserTypeEntity>)
 
 <EventNotificationAttribute> ::=
@@ -6517,7 +6520,7 @@ gam <UserTypeEntity> print chatevents [todrive <ToDriveAttribute>*]
 
 gam <UserTypeEntity> create|add drivefile
         [(localfile <FileName>|-)|(url <URL>)]
-        [(drivefilename|newfilename <DriveFileName>) | (replacefilename <RegularExpression> <String>)*]
+        [(drivefilename|newfilename <DriveFileName>) | (replacefilename <REMatchPattern> <RESubstitution>)*]
         [stripnameprefix <String>] [noduplicate]
         [timestamp [<Boolean>]] [timeformat <String>]
         <DriveFileCreateAttribute>*
@@ -6538,7 +6541,7 @@ gam <UserTypeEntity> create|add drivefile
 
 gam <UserTypeEntity> update drivefile <DriveFileEntity> [copy] [returnidonly|returnlinkonly]
         [(localfile <FileName>|-)|(url <URL>)]
-        [retainname | (newfilename <DriveFileName>) | (replacefilename <RegularExpression> <String>)*]
+        [retainname | (newfilename <DriveFileName>) | (replacefilename <REMatchPattern> <RESubstitution>)*]
         [stripnameprefix <String>]
         [timestamp [<Boolean>]] [timeformat <String>]
         <DriveFileUpdateAttribute>*
@@ -6562,7 +6565,7 @@ gam <UserTypeEntity> update drivefile <DriveFileEntity> [copy] [returnidonly|ret
         (writerscanshare|writerscantshare [<Boolean>])
 
 gam <UserTypeEntity> copy drivefile <DriveFileEntity>
-        [newfilename <DriveFileName>] (replacefilename <RegularExpression> <String>)*
+        [newfilename <DriveFileName>] (replacefilename <REMatchPattern> <RESubstitution>)*
         [stripnameprefix <String>]
         [excludetrashed]
         [(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*) |
@@ -6572,11 +6575,11 @@ gam <UserTypeEntity> copy drivefile <DriveFileEntity>
         [mergewithparent [<Boolean>]] [recursive [depth <Number>]]
         <DriveFileCopyAttribute>*
         [skipids <DriveFileEntity>]
-        [copysubfiles [<Boolean>]] [filenamematchpattern <RegularExpression>]
+        [copysubfiles [<Boolean>]] [filenamematchpattern <REMatchPattern>]
              [filemimetype [not] <MimeTypeList>]
         [copysubfilesownedby any|me|others]
-        [copysubfolders [<Boolean>]] [foldernamematchpattern <RegularExpression>]
-        [copysubshortcuts [<Boolean>]] [shortcutnamematchpattern <RegularExpression>]
+        [copysubfolders [<Boolean>]] [foldernamematchpattern <REMatchPattern>]
+        [copysubshortcuts [<Boolean>]] [shortcutnamematchpattern <REMatchPattern>]
         [duplicatefiles overwriteolder|overwriteall|duplicatename|uniquename|skip]
         [duplicatefolders merge|duplicatename|uniquename|skip]
         [copiedshortcutspointtocopiedfiles [<Boolean>]]
@@ -7157,7 +7160,7 @@ gam <UserTypeEntity> print filecounts [todrive <ToDriveAttribute>*]
         [anyowner|(showownedby any|me|others)]
         [showmimetype [not] <MimeTypeList>] [showmimetype category <MimeTypeNameList>]
         [sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
-        [filenamematchpattern <RegularExpression>]
+        [filenamematchpattern <REMatchPattern>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
         [excludetrashed]
         [showsize] [showmimetypesize] [showlastmodification]
@@ -7172,7 +7175,7 @@ gam <UserTypeEntity> show filecounts
         [anyowner|(showownedby any|me|others)]
         [showmimetype [not] <MimeTypeList>] [showmimetype category <MimeTypeNameList>]
         [sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
-        [filenamematchpattern <RegularExpression>]
+        [filenamematchpattern <REMatchPattern>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
         [excludetrashed]
         [showsize] [showmimetypesize] [showlastmodification]
@@ -7204,7 +7207,7 @@ gam <UserTypeEntity> print filetree [todrive <ToDriveAttribute>*]
         [anyowner|(showownedby any|me|others)]
         [showmimetype [not] <MimeTypeList>] [showmimetype category <MimeTypeNameList>]
         [sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
-        [filenamematchpattern <RegularExpression>]
+        [filenamematchpattern <REMatchPattern>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
         [excludetrashed]
         [fields <FileTreeFieldNameList>]
@@ -7216,7 +7219,7 @@ gam <UserTypeEntity> show filetree
         [anyowner|(showownedby any|me|others)]
         [showmimetype [not] <MimeTypeList>] [showmimetype category <MimeTypeNameList>]
         [sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
-        [filenamematchpattern <RegularExpression>]
+        [filenamematchpattern <REMatchPattern>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
         [excludetrashed]
         [fields <FileTreeFieldNameList>]
@@ -7237,7 +7240,7 @@ gam <UserTypeEntity> print filelist [todrive <ToDriveAttribute>*]
         [anyowner|(showownedby any|me|others)]
         [showmimetype [not] <MimeTypeList>] [showmimetype category <MimeTypeNameList>] [mimetypeinquery [<Boolean>]]
         [sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
-        [filenamematchpattern <RegularExpression>]
+        [filenamematchpattern <REMatchPattern>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>] [pmfilter] [oneitemperrow]
         [excludetrashed]
         [maxfiles <Integer>] [nodataheaders <String>]
@@ -7433,8 +7436,8 @@ gam <UserTypeEntity> update labelsettings <LabelName> [name <String>]
         [messagelistvisibility hide|show] [labellistvisibility hide|show|showifunread]
         [backgroundcolor "<LabelColorHex>|<LabelBackgroundColorHex>|custom:<ColorHex>"]
         [textcolor "<LabelColorHex>|<LabelTextColorHex>|custom:<ColorHex>"]
-gam <UserTypeEntity> update label|labels [search <RegularExpression>] [replace <LabelReplacement>] [merge [keepoldlabel]]
-gam <UserTypeEntity> delete label|labels <LabelName>|regex:<RegularExpression>|--ALL_LABELS--
+gam <UserTypeEntity> update label|labels [search <REMatchPattern>] [replace <LabelReplacement>] [merge [keepoldlabel]]
+gam <UserTypeEntity> delete label|labels <LabelName>|regex:<REMatchPattern>|--ALL_LABELS--
 gam <UserTypeEntity> delete labellist <LabelNameEntity>
 gam <UserTypeEntity> delete labelid <LabelID>
 gam <UserTypeEntity> delete labelidlist <LabelIDEntity>
@@ -7550,14 +7553,14 @@ gam <UserTypeEntity> print labels|label [todrive <ToDriveAttribute>*]
 gam <UserTypeEntity> draft message
         <MessageContent>
         (replace <Tag> <UserReplacement>)*
-        (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*
+        (replaceregex <RESearchPattern> <RESubstitution> <Tag> <UserReplacement>)*
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
         (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
 gam <UserTypeEntity> import message
         <MessageContent>
         (replace <Tag> <UserReplacement>)*
-        (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*
+        (replaceregex <RESearchPattern> <RESubstitution> <Tag> <UserReplacement>)*
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
         (addlabel <LabelName>)* [labels <LabelNameList>]
         (attach <FileName> [charset <Charset>])*
@@ -7566,7 +7569,7 @@ gam <UserTypeEntity> import message
 gam <UserTypeEntity> insert message
         <MessageContent>
         (replace <Tag> <UserReplacement>)*
-        (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*
+        (replaceregex <RESearchPattern> <RESubstitution> <Tag> <UserReplacement>)*
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
         (addlabel <LabelName>)* [labels <LabelNameList>]
         (attach <FileName> [charset <Charset>])*
@@ -7618,25 +7621,25 @@ gam <UserTypeEntity> forward thread|thtreads recipient|to <RecipientEntity>
 gam <UserTypeEntity> show messages|threads
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])*
          [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <MessageIDEntity>)
-        [labelmatchpattern <RegularExpression>] [sendermatchpattern <RegularExpression>]
+        [labelmatchpattern <REMatchPattern>] [sendermatchpattern <REMatchPattern>]
         [countsonly|positivecountsonly] [useronly]
         [headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
         [showlabels] [delimiter <Character>] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
         [maxmessagesperthread <Number>]
-        [[attachmentnamepattern <RegularExpression>]
+        [[attachmentnamepattern <REMatchPattern>]
             [showattachments [noshowtextplain]]
             [saveattachments [targetfolder <FilePath>] [overwrite [<Boolean>]]]
             [uploadattachments [<DriveFileParentAttribute>]]]
 gam <UserTypeEntity> print messages|threads [todrive <ToDriveAttribute>*]
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])*
          [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <MessageIDEntity>)
-        [labelmatchpattern <RegularExpression>] [sendermatchpattern <RegularExpression>]
+        [labelmatchpattern <REMatchPattern>] [sendermatchpattern <REMatchPattern>]
         [countsonly|positivecountsonly] [useronly]
         [headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String> [dateheaderconverttimezone [<Boolean>]]]
         [showlabels] [delimiter <Character>] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
         [maxmessagesperthread <Number>]
         [convertcrnl] [delimiter <Character>]
-        [[attachmentnamepattern <RegularExpression>]
+        [[attachmentnamepattern <REMatchPattern>]
             [showattachments [noshowtextplain]]]
         (addcsvdata <FieldName> <String>)*
 
@@ -7650,7 +7653,7 @@ gam <UserTypeEntity> print gmailprofile [todrive <ToDriveAttribute>*]
 gam <UserTypeEntity> [create|add] sendas <EmailAddress> [name] <String>
         [<SendAsContent>
             (replace <Tag> <UserReplacement>)*
-            (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*]
+            (replaceregex <RESearchPattern> <RESubstitution> <Tag> <UserReplacement>)*]
         [html [<Boolean>]] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
         [smtpmsa.host <SMTPHostName> smtpmsa.port 25|465|587
          smtpmsa.username <UserName> smtpmsa.password <Password>
@@ -7658,7 +7661,7 @@ gam <UserTypeEntity> [create|add] sendas <EmailAddress> [name] <String>
 gam <UserTypeEntity> update sendas <EmailAddress> [name <String>]
         [<SendAsContent>
             (replace <Tag> <UserReplacement>)*
-            (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*]
+            (replaceregex <RESearchPattern> <RESubstitution> <Tag> <UserReplacement>)*]
         [html [<Boolean>]] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
 gam <UserTypeEntity> delete sendas <EmailAddressEntity>
 gam <UserTypeEntity> info sendas <EmailAddressEntity> [compact|format|html]
@@ -7670,7 +7673,7 @@ gam <UserTypeEntity> print sendas [compact]
 gam <UserTypeEntity> signature|sig
         <SignatureContent>
         (replace <Tag> <UserReplacement>)*
-        (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*
+        (replaceregex <RESearchPattern> <RESubstitution> <Tag> <UserReplacement>)*
         [html [<Boolean>]] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
         [name <String>]
         [primary]
@@ -7682,7 +7685,7 @@ gam <UserTypeEntity> print signature [compact]
 gam <UserTypeEntity> vacation [<Boolean>] [subject <String>]
         [<VacationMessageContent>
             (replace <Tag> <UserReplacement>)*
-            (replaceregex <RegularExpression> <String> <Tag> <UserReplacement>)*]
+            (replaceregex <RESearchPattern> <RESubstitution> <Tag> <UserReplacement>)*]
         [html [<Boolean>]] [contactsonly [<Boolean>]] [domainonly [<Boolean>]]
         [start|startdate <Date>|Started] [end|enddate <Date>|NotSpecified]
 gam <UserTypeEntity> show vacation [compact|format|html] [enabledonly]
@@ -7761,7 +7764,7 @@ gam <UserTypeEntity> add group|groups
         ([<GroupRole>] [[delivery] <DeliverySetting>] <GroupEntity>)+
 gam <UserTypeEntity> delete group|groups
         [(domain <DomainName>)|(customerid <CustomerID>)|
-         (emailmatchpattern [not] <RegularExpression>)|<GroupEntity>]
+         (emailmatchpattern [not] <REMatchPattern>)|<GroupEntity>]
 gam <UserTypeEntity> update group|groups
         [(domain <DomainName>)|(customerid <CustomerID>)]) [<GroupRole>] [[delivery] <DeliverySetting>]
         ([<GroupRole>] [[delivery] <DeliverySetting>] [<GroupEntity>])*
@@ -8034,7 +8037,7 @@ gam <UserItem> print meettranscripts <MeetConferenceName> [todrive <ToDriveAttri
 <PeopleUserContactSelection> ::=
         [(selectcontactgroup <PeopleContactGroupItem>)|
             [query <QueryContact>]]
-        [emailmatchpattern <RegularExpression> [emailmatchtype work|home|other|<String>]]
+        [emailmatchpattern <REMatchPattern> [emailmatchtype work|home|other|<String>]]
 
 gam <UserTypeEntity> create contact
         [<PeopleContactAttribute>+]
@@ -8049,7 +8052,7 @@ gam <UserTypeEntity> delete contacts
 
 gam <UserTypeEntity> clear contacts
         <PeopleResourceNameEntity>|<PeopleUserContactSelection>
-        [emailclearpattern <RegularExpression>] [emailcleartype work|home|other|<String>]
+        [emailclearpattern <REMatchPattern>] [emailcleartype work|home|other|<String>]
         [delete_cleared_contacts_with_no_emails]
 
 gam <UserTypeEntity> dedup contacts
@@ -8077,7 +8080,7 @@ gam <UserTypeEntity> info contacts
 <PeoplePrintShowUserContactSelection> ::=
         [(selectcontactgroup <PeopleContactGroupItem>)|(filtercontactgroup <PeopleContactGroupItem>)|
             ([query <QueryContact>] [selectmaincontacts|selectothercontacts])]
-        [emailmatchpattern <RegularExpression> [emailmatchtype work|home|other|<String>]]
+        [emailmatchpattern <REMatchPattern> [emailmatchtype work|home|other|<String>]]
 
 gam <UserTypeEntity> show contacts
         <PeoplePrintShowUserContactSelection>
@@ -8100,7 +8103,7 @@ gam <UserTypeEntity> print contacts [todrive <ToDriveAttribute>*]
 
 <OtherContactsSelection> ::=
         [query <QueryContact>]
-        [emailmatchpattern <RegularExpression> [emailmatchtype work|home|other|<String>]]
+        [emailmatchpattern <REMatchPattern> [emailmatchtype work|home|other|<String>]]
 
 gam <UserTypeEntity> copy othercontacts
         <OtherContactsResourceNameEntity>|<OtherContactsSelection>
@@ -8310,13 +8313,13 @@ gam <UserTypeEntity> show shareddriveinfo <SharedDriveEntity> [fields <SharedDri
         [formatjson]
 gam <UserTypeEntity> print shareddrives [todrive <ToDriveAttribute>*]
         [adminaccess|asadmin [teamdriveadminquery|query <QueryTeamDrive>]]
-        [matchname <RegularExpression>] [orgunit|org|ou <OrgUnitPath>]
+        [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         (role|roles <SharedDriveACLRoleList>)*
         [fields <SharedDriveFieldNameList>] [noorgunits [<Boolean>]]
         [formatjson [quotechar <Character>]]
 gam <UserTypeEntity> show shareddrives
         [adminaccess|asadmin [teamdriveadminquery|query <QueryTeamDrive>]]
-        [matchname <RegularExpression>] [orgunit|org|ou <OrgUnitPath>]
+        [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         (role|roles <SharedDriveACLRoleList>)*
         [fields <SharedDriveFieldNameList>] [noorgunits [<Boolean>]]
         [formatjson]
