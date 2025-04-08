@@ -607,9 +607,11 @@ jobs:
           # arm64 needs to build a wheel and needs scons to build
           sudo apt-get -qq --yes install scons
           "${PYTHON}" -m pip install --upgrade patchelf-wrapper
-          "${PYTHON}" -m pip install --upgrade staticx
+          # "${PYTHON}" -m pip install --upgrade staticx
+          # install latest github src for staticx
+          "${PYTHON}" -m pip install --upgrade "git+https://github.com/JonathonReinhart/staticx"
 
-      - name: Make StaticX
+      - name: Make StaticX GAM build
         if: matrix.staticx == 'yes'
         run: |
           case $RUNNER_ARCH in
