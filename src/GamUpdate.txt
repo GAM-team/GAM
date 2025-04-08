@@ -1,3 +1,10 @@
+7.06.00
+
+Upgraded to OpenSSL 3.5.0.
+
+Fixed bug in `gam print cigroups` where `createTime`, `updateTime` and `statusTime`
+were not converted according to `gam.cfg timezone`.
+
 7.05.22
 
 Updated progress messages for  `gam <UserTypeEntity> print filelist|filecounts|filesharecounts|filetree select shareddriveid <SharedDriveID>`

@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.05.22'
+__version__ = '7.06.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -33563,14 +33563,14 @@ def doPrintGroups():
         groupSettings.pop(key)
     if FJQC.formatJSON:
       row['email'] = groupEntity['email']
-      row['JSON'] = json.dumps(groupEntity, ensure_ascii=False, sort_keys=True)
+      row['JSON'] = json.dumps(cleanJSON(groupEntity), ensure_ascii=False, sort_keys=True)
       if rolesSet and groupMembers is not None:
         row['JSON-members'] = json.dumps(groupMembers, ensure_ascii=False, sort_keys=True)
       if isinstance(groupSettings, dict):
-        row['JSON-settings'] = json.dumps(groupSettings, ensure_ascii=False, sort_keys=True)
+        row['JSON-settings'] = json.dumps(cleanJSON(groupSettings), ensure_ascii=False, sort_keys=True)
       groupCloudIdentity = ciGroups.get(row['email'], {})
       if groupCloudIdentity:
-        row['JSON-cloudIdentity'] = json.dumps(groupCloudIdentity, ensure_ascii=False, sort_keys=True)
+        row['JSON-cloudIdentity'] = json.dumps(cleanJSON(groupCloudIdentity, timeObjects=CIGROUP_TIME_OBJECTS), ensure_ascii=False, sort_keys=True)
       csvPF.WriteRowNoFilter(row)
       return
     for field in groupFieldsLists['cd']:
@@ -35935,7 +35935,7 @@ def doPrintCIGroups():
     row = {}
     if FJQC.formatJSON:
       row['email'] = groupEntity['groupKey']['id'].lower()
-      row['JSON'] = json.dumps(groupEntity, ensure_ascii=False, sort_keys=True)
+      row['JSON'] = json.dumps(cleanJSON(groupEntity, timeObjects=CIGROUP_TIME_OBJECTS), ensure_ascii=False, sort_keys=True)
       if rolesSet and groupMembers is not None:
         row['JSON-members'] = json.dumps(groupMembers, ensure_ascii=False, sort_keys=True)
       csvPF.WriteRowNoFilter(row)
