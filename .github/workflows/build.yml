@@ -823,7 +823,7 @@ jobs:
           
           # cleanup old runs
           $gam config enable_dasa false save
-          $gam config csv_output_row_filter "name:regex:gha_test_${JID}_" print vaultholds || if [ $? != 55 ]; then exit $?; fi | $gam csv - gam delete vaulthold "id:~~holdId~~" matter "id:~~matterId~~"
+          $gam config csv_output_row_filter "name:regex:gha_test_${JID}_" print vaultholds | $gam csv - gam delete vaulthold "id:~~holdId~~" matter "id:~~matterId~~" || if [ $? != 55 ]; then exit $?; fi 
           $gam config csv_output_row_filter "name:regex:gha_test_${HID}_" print vaultmatters matterstate OPEN | $gam csv - gam update vaultmatter "id:~~matterId~~" action close
           $gam config csv_output_row_filter "name:regex:gha_test_${HID}_" print vaultmatters matterstate CLOSED | $gam csv - gam update vaultmatter "id:~~matterId~~" action delete
           $gam config csv_output_row_filter "Emails.1.address:regex:^gha_test-${JID}_" print contacts | $gam csv - gam delete contact ~ContactID
