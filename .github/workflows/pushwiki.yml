@@ -35,4 +35,5 @@ jobs:
           git add *.md
           git commit -m "[no ci] Push Wiki changes"
           git status
+          git push
           # git push
