@@ -2,7 +2,11 @@ name: Check for Google Root CA Updates
 
 on:
   push:
+    paths-ignore:
+      - 'wiki/**'
   pull_request:
+    paths-ignore:
+      - 'wiki/**'
   schedule:
     - cron: '23 23 * * *'
 
