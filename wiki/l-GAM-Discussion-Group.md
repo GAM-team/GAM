@@ -1,0 +1,1 @@
+# [GAM Discussion Group](https://groups.google.com/forum/#!forum/google-apps-manager)
