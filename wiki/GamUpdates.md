@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.06.01
+
+Updated `gam <UserTypeEntity> create|update drivefileacl ... expiration <Time>`
+to handle additional API errors.
+
+Updated to Python 3.13.3.
+
 ### 7.06.00
 
 Upgraded to OpenSSL 3.5.0.

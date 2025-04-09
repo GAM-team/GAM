@@ -1161,10 +1161,10 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 Print a CSV file with headers `domain,count` that gives the number of users in each domain
 ### Print domain counts for users in a specific domain and/or selected by a query
 ```
-gam print users [todrive <ToDriveAttribute>*]
+gam print users countonly [todrive <ToDriveAttribute>*]
         ([domain|domains <DomainNameEntity>] [(query <QueryUser>)|(queries <QueryUserList>)]
          [limittoou <OrgUnitItem>] [deleted_only|only_deleted])
-        [formatjson [quotechar <Character>]] [countonly]
+        [formatjson [quotechar <Character>]]
         [issuspended <Boolean>]
 ```
 By default, users in all domains in the account are selected; these options allow selection of subsets of users:
@@ -1177,10 +1177,10 @@ By default, users in all domains in the account are selected; these options allo
 
 ### Print domain counts for users specified by `<UserTypeEntity>`
 ```
-gam print users [todrive <ToDriveAttribute>*] select <UserTypeEntity>
-        [formatjson [quotechar <Character>]] [countonly]
-gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
-        [formatjson [quotechar <Character>]] [countonly]
+gam print users countonly [todrive <ToDriveAttribute>*] select <UserTypeEntity>
+        [formatjson [quotechar <Character>]]
+gam <UserTypeEntity> countonly print users [todrive <ToDriveAttribute>*]
+        [formatjson [quotechar <Character>]]
 ```
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format:
 * `formatjson` - Display the fields in JSON format.
