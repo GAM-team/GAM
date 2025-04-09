@@ -23,14 +23,14 @@ jobs:
           persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
           fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
 
-      - name: Overwrite all wiki files from main git to wiki git
+      - name: Overwrite all Wiki repo files with /wiki from main git
         run: |
           # remove all wiki repo files so deletes work
           rm -fv GAM.wiki/*.md
           # copy all files from main GAM repo wiki folder
           cp -fv GAM/wiki/*.md GAM.wiki/
 
-      - name: Commit wiki changes
+      - name: Commit Wiki changes
         run: |
           cd GAM.wiki
           git config --local user.email "action@github.com"
@@ -38,4 +38,4 @@ jobs:
           git add *.md
           git commit -m "[no ci] Push Wiki changes"
           git status
-          # git push
+          git push
