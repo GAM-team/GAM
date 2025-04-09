@@ -1,6 +1,6 @@
 name: Push wiki
 permissions:
-  contents: read
+  contents: write
 on:
   push:
     paths:
