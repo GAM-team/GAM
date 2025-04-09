@@ -30,6 +30,8 @@ jobs:
       - name: Commit wiki changes
         run: |
           cd GAM.wiki
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
           git add *.md
           git commit -m "[no ci] Push Wiki changes"
           git status
