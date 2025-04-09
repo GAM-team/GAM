@@ -48,6 +48,7 @@ CANNOT_MOVE_TRASHED_ITEM_INTO_TEAMDRIVE = 'cannotMoveTrashedItemIntoTeamDrive'
 CANNOT_MOVE_TRASHED_ITEM_OUT_OF_TEAMDRIVE = 'cannotMoveTrashedItemOutOfTeamDrive'
 CANNOT_REMOVE_OWNER = 'cannotRemoveOwner'
 CANNOT_SET_EXPIRATION = 'cannotSetExpiration'
+CANNOT_SET_EXPIRATION_ON_ANYONE_OR_DOMAIN = 'cannotSetExpirationOnAnyoneOrDomain'
 CANNOT_SHARE_GROUPS_WITHLINK = 'cannotShareGroupsWithLink'
 CANNOT_SHARE_USERS_WITHLINK = 'cannotShareUsersWithLink'
 CANNOT_SHARE_TEAMDRIVE_TOPFOLDER_WITH_ANYONEORDOMAINS = 'cannotShareTeamDriveTopFolderWithAnyoneOrDomains'
@@ -71,6 +72,7 @@ DOMAIN_POLICY = 'domainPolicy'
 DOWNLOAD_QUOTA_EXCEEDED = 'downloadQuotaExceeded'
 DUPLICATE = 'duplicate'
 EVENT_DURATION_EXCEEDS_LIMIT = 'eventDurationExceedsLimit'
+EXPIRATION_DATES_MUST_BE_IN_THE_FUTURE = 'expirationDatesMustBeInTheFuture'
 EXPIRATION_DATE_NOT_ALLOWED_FOR_SHARED_DRIVE_MEMBERS = 'expirationDateNotAllowedForSharedDriveMembers'
 FAILED_PRECONDITION = 'failedPrecondition'
 FIELD_IN_USE = 'fieldInUse'
@@ -211,7 +213,8 @@ DRIVE_COPY_THROW_REASONS = DRIVE_ACCESS_THROW_REASONS+[CANNOT_COPY_FILE, BAD_REQ
                                                        STORAGE_QUOTA_EXCEEDED, TEAMDRIVE_FILE_LIMIT_EXCEEDED, TEAMDRIVE_HIERARCHY_TOO_DEEP]
 DRIVE_GET_THROW_REASONS = DRIVE_USER_THROW_REASONS+[FILE_NOT_FOUND, DOWNLOAD_QUOTA_EXCEEDED]
 DRIVE3_CREATE_ACL_THROW_REASONS = [BAD_REQUEST, INVALID, INVALID_SHARING_REQUEST, OWNERSHIP_CHANGE_ACROSS_DOMAIN_NOT_PERMITTED,
-                                   CANNOT_SET_EXPIRATION, EXPIRATION_DATE_NOT_ALLOWED_FOR_SHARED_DRIVE_MEMBERS,
+                                   CANNOT_SET_EXPIRATION, CANNOT_SET_EXPIRATION_ON_ANYONE_OR_DOMAIN,
+                                   EXPIRATION_DATES_MUST_BE_IN_THE_FUTURE, EXPIRATION_DATE_NOT_ALLOWED_FOR_SHARED_DRIVE_MEMBERS,
                                    NOT_FOUND, TEAMDRIVE_DOMAIN_USERS_ONLY_RESTRICTION, TEAMDRIVE_TEAM_MEMBERS_ONLY_RESTRICTION,
                                    TARGET_USER_ROLE_LIMITED_BY_LICENSE_RESTRICTION, INSUFFICIENT_ADMINISTRATOR_PRIVILEGES, SHARING_RATE_LIMIT_EXCEEDED,
                                    PUBLISH_OUT_NOT_PERMITTED, SHARE_IN_NOT_PERMITTED, SHARE_OUT_NOT_PERMITTED, SHARE_OUT_NOT_PERMITTED_TO_USER,
@@ -228,7 +231,8 @@ DRIVE3_GET_ACL_REASONS = DRIVE_USER_THROW_REASONS+[FILE_NOT_FOUND, FORBIDDEN, IN
                                                    INSUFFICIENT_ADMINISTRATOR_PRIVILEGES, INSUFFICIENT_FILE_PERMISSIONS,
                                                    UNKNOWN_ERROR, INVALID]
 DRIVE3_UPDATE_ACL_THROW_REASONS = [BAD_REQUEST, INVALID_OWNERSHIP_TRANSFER, CANNOT_REMOVE_OWNER,
-                                   CANNOT_SET_EXPIRATION, EXPIRATION_DATE_NOT_ALLOWED_FOR_SHARED_DRIVE_MEMBERS,
+                                   CANNOT_SET_EXPIRATION, CANNOT_SET_EXPIRATION_ON_ANYONE_OR_DOMAIN,
+                                   EXPIRATION_DATES_MUST_BE_IN_THE_FUTURE, EXPIRATION_DATE_NOT_ALLOWED_FOR_SHARED_DRIVE_MEMBERS,
                                    OWNERSHIP_CHANGE_ACROSS_DOMAIN_NOT_PERMITTED,
                                    NOT_FOUND, TEAMDRIVE_DOMAIN_USERS_ONLY_RESTRICTION, TEAMDRIVE_TEAM_MEMBERS_ONLY_RESTRICTION,
                                    TARGET_USER_ROLE_LIMITED_BY_LICENSE_RESTRICTION, INSUFFICIENT_ADMINISTRATOR_PRIVILEGES, SHARING_RATE_LIMIT_EXCEEDED,
@@ -300,6 +304,7 @@ REASON_MESSAGE_MAP = {
     ('userId', USER_NOT_FOUND),
     ('memberKey', INVALID_MEMBER),
     ('A system error has occurred', SYSTEM_ERROR),
+    ('Expiration dates must be in the future', EXPIRATION_DATES_MUST_BE_IN_THE_FUTURE),
     ('Invalid attribute value', INVALID_ATTRIBUTE_VALUE),
     ('Invalid Customer Id', INVALID_CUSTOMER_ID),
     ('Invalid Input: INVALID_OU_ID', INVALID_ORGUNIT),
@@ -405,6 +410,8 @@ class cannotRemoveOwner(Exception):
   pass
 class cannotSetExpiration(Exception):
   pass
+class cannotSetExpirationOnAnyoneOrDomain(Exception):
+  pass
 class cannotShareGroupsWithLink(Exception):
   pass
 class cannotShareUsersWithLink(Exception):
@@ -448,6 +455,8 @@ class downloadQuotaExceeded(Exception):
 class duplicate(Exception):
   pass
 class eventDurationExceedsLimit(Exception):
+  pass
+class expirationDatesMustBeInTheFuture(Exception):
   pass
 class expirationDateNotAllowedForSharedDriveMembers(Exception):
   pass
@@ -690,6 +699,7 @@ REASON_EXCEPTION_MAP = {
   CANNOT_MOVE_TRASHED_ITEM_OUT_OF_TEAMDRIVE: cannotMoveTrashedItemOutOfTeamDrive,
   CANNOT_REMOVE_OWNER: cannotRemoveOwner,
   CANNOT_SET_EXPIRATION: cannotSetExpiration,
+  CANNOT_SET_EXPIRATION_ON_ANYONE_OR_DOMAIN: cannotSetExpirationOnAnyoneOrDomain,
   CANNOT_SHARE_GROUPS_WITHLINK: cannotShareGroupsWithLink,
   CANNOT_SHARE_USERS_WITHLINK: cannotShareUsersWithLink,
   CANNOT_SHARE_TEAMDRIVE_TOPFOLDER_WITH_ANYONEORDOMAINS: cannotShareTeamDriveTopFolderWithAnyoneOrDomains,
@@ -712,6 +722,7 @@ REASON_EXCEPTION_MAP = {
   DOWNLOAD_QUOTA_EXCEEDED: downloadQuotaExceeded,
   DUPLICATE: duplicate,
   EVENT_DURATION_EXCEEDS_LIMIT: eventDurationExceedsLimit,
+  EXPIRATION_DATES_MUST_BE_IN_THE_FUTURE: expirationDatesMustBeInTheFuture,
   EXPIRATION_DATE_NOT_ALLOWED_FOR_SHARED_DRIVE_MEMBERS: expirationDateNotAllowedForSharedDriveMembers,
   FAILED_PRECONDITION: failedPrecondition,
   FIELD_IN_USE: fieldInUse,

@@ -1,3 +1,8 @@
+7.06.01
+
+Updated `gam <UserTypeEntity> create|update drivefileacl ... expiration <Time>`
+to handle additional API errors.
+
 7.06.00
 
 Upgraded to OpenSSL 3.5.0.
