@@ -24,19 +24,12 @@ jobs:
           persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
           fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
 
-      - name: Where am I
-        run: |
-          echo "PWD"
-          pwd
-          echo "LS"
-          ls -al
-
       - name: Overwrite all wiki files from main git to wiki git
         run: |
           # remove all wiki repo files so deletes work
           rm -fv GAM.wiki/*.md
-          # copy all files from git repo wiki folder
-          cp -fv wiki/*.md GAM.wiki/
+          # copy all files from main GAM repo wiki folder
+          cp -fv GAM/wiki/*.md GAM.wiki/
 
       - name: Commit wiki changes
         run: |
