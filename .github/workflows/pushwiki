@@ -1,0 +1,36 @@
+name: Push wiki
+permissions:
+  contents: read
+on:
+  push:
+    paths:
+      - 'wiki/**'
+jobs:
+  pushwiki:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+        with:
+          persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
+          fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
+
+      - name: Clone the wiki repo
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git clone https://github.com/GAM-team/GAM.wiki.git
+
+      - name: Overwrite all wiki files from main git to wiki git
+        run: |
+          # remove all wiki repo files so deletes work
+          rm -fv GAM.wiki/*.md
+          # copy all files from git repo wiki folder
+          cp -fv wiki/*.md GAM.wiki/
+
+      - name: Commit wiki changes
+        run: |
+          cd GAM.wiki
+          git add *.md
+          git commit -m "[no ci] Push Wiki changes"
+          git status
+          # git push
