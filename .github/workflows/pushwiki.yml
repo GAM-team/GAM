@@ -9,13 +9,17 @@ jobs:
   pushwiki:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
+      - name: Checkout GAM source
+        uses: actions/checkout@master
         with:
+          path: GAM
           persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
           fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
 
-      - uses: actions/checkout@master
+      - name: Checkout Wiki source
+        uses: actions/checkout@master
         with:
+          path: GAM.wiki
           repository: GAM-team/GAM.wiki
           persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
           fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
