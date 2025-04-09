@@ -2,7 +2,11 @@ name: Build and test GAM
 
 on:
   push:
+    paths-ignore:
+      - 'wiki/**'
   pull_request:
+    paths-ignore:
+      - 'wiki/**'
   schedule:
     - cron: '37 22 * * *'
   workflow_dispatch:
