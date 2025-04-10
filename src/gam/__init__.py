@@ -28152,10 +28152,18 @@ CHROME_SCHEMA_TYPE_MESSAGE = {
     {'autoupdatecheckperiodminutesnew':
        {'casedField': 'autoUpdateCheckPeriodMinutesNew',
         'type': 'duration', 'minVal': 1, 'maxVal': 720, 'scale': 60}},
+  'chrome.users.AutoUpdateCheckPeriodNewV2':
+    {'autoupdatecheckperiodminutesnew':
+       {'casedField': 'autoUpdateCheckPeriodMinutesNew',
+        'type': 'duration', 'minVal': 1, 'maxVal': 720, 'scale': 60}},
   'chrome.users.BrowserSwitcherDelayDuration':
     {'browserswitcherdelayduration':
        {'casedField': 'browserSwitcherDelayDuration',
         'type': 'duration', 'minVal': 0, 'maxVal': 30, 'scale': 1}},
+  'chrome.users.CloudReportingUploadFrequencyV2':
+    {'cloudreportinguploadfrequency':
+       {'casedField': 'cloudReportingUploadFrequency',
+        'type': 'count', 'minVal': 3, 'maxVal': 24, 'scale': 1}},
   'chrome.users.FetchKeepaliveDurationSecondsOnShutdown':
     {'fetchkeepalivedurationsecondsonshutdown':
        {'casedField': 'fetchKeepaliveDurationSecondsOnShutdown',
@@ -28172,6 +28180,10 @@ CHROME_SCHEMA_TYPE_MESSAGE = {
     {'printjobhistoryexpirationperioddaysnew':
        {'casedField': 'printJobHistoryExpirationPeriodDaysNew',
         'type': 'duration', 'minVal': -1, 'maxVal': None, 'scale': 86400}},
+  'chrome.users.RelaunchNotificationWithDurationV2':
+    {'relaunchnotificationperiodduration':
+       {'casedField': 'relaunchNotificationPeriodDuration',
+        'type': 'duration', 'minVal': -1, 'maxVal': None, 'scale': 3600}},
   'chrome.users.SecurityTokenSessionSettings':
     {'securitytokensessionnotificationseconds':
        {'casedField': 'securityTokenSessionNotificationSeconds',
