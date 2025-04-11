@@ -1,8 +1,6 @@
 # Introduction
 GAM7 is a free, open source command line tool for Google Workspace Administrators to manage domain and user settings quickly and easily.
 
-GAM7 is a rewrite/extension of Jay Lee's Legacy GAM, without his efforts, this version wouldn't exist.
-
 # Requirements
 GAM7 requires paid, or Education/Non-profit, editions of Google Workspace. G Suite Legacy Free Edition has limited API support and not all GAM commands work.
 
