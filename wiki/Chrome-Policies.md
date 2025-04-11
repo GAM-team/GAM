@@ -725,6 +725,13 @@ chrome.devices.DevicePostQuantumKeyAgreementEnabled: Post-quantum TLS.
     FALSE: Do not allow post-quantum key agreement in TLS connections.
     TRUE: Allow post-quantum key agreement in TLS connections.
 
+chrome.devices.DevicePowerBatteryChargingOptimization: Battery charging optimization.
+  devicePowerBatteryChargingOptimization: TYPE_ENUM
+    UNSET: Allow the user to decide.
+    STANDARD: Enforce standard charging.
+    ADAPTIVE: Enforce adaptive charging.
+    LIMITED: Enforce limited charging.
+
 chrome.devices.DevicePowerwashAllowed: Powerwash.
   devicePowerwashAllowed: TYPE_BOOL
     true: Allow powerwash to be triggered.
@@ -1694,6 +1701,11 @@ chrome.devices.managedguest.DataUrlInSvgUseEnabled: Data URL support for SVGUseE
     true: Enable Data URL support in SVGUseElement.
     false: Disable Data URL support in SVGUseElement.
 
+chrome.devices.managedguest.DataUrlWhitespacePreservationEnabled: Data URL whitespace preservation for all media types.
+  dataUrlWhitespacePreservationEnabled: TYPE_BOOL
+    true: Keep whitespace for all mime-types.
+    false: Only keep whitespace for text and xml mime-types.
+
 chrome.devices.managedguest.DefaultInsecureContentSetting: Control use of insecure content exceptions.
   defaultInsecureContentSetting: TYPE_ENUM
     BLOCK_INSECURE_CONTENT: Do not allow any site to load blockable mixed content.
@@ -1995,14 +2007,14 @@ chrome.devices.managedguest.GenAiVcBackgroundSettings: Video conference backgrou
     ALLOWED: Allow Generative AI VC background and improve AI models.
     ALLOWED_WITHOUT_LOGGING: Allow Generative AI VC background without improving AI models.
     DISABLED: Do not allow Generative AI VC background.
-    UNSET: Use the default Chrome behavior.
+    UNSET: Use the value specified in the Generative AI policy defaults setting.
 
 chrome.devices.managedguest.GenAiWallpaperSettings: Wallpaper settings.
   genAiWallpaperSettings: TYPE_ENUM
     ALLOWED: Allow Generative AI wallpaper and improve AI models.
     ALLOWED_WITHOUT_LOGGING: Allow Generative AI wallpaper without improving AI models.
     DISABLED: Do not allow Generative AI wallpaper.
-    UNSET: Use the default Chrome behavior.
+    UNSET: Use the value specified in the Generative AI policy defaults setting.
 
 chrome.devices.managedguest.GloballyScopeHttpAuthCacheEnabled: Globally scoped HTTP authentication cache.
   globallyScopeHttpAuthCacheEnabled: TYPE_BOOL
@@ -2303,6 +2315,10 @@ chrome.devices.managedguest.MonoAudioEnabled: Mono audio.
     UNSET: Allow the user to decide.
     FALSE: Disable mono audio.
     TRUE: Enable mono audio.
+
+chrome.devices.managedguest.MultiScreenCaptureAllowedForUrls: URLs allowed for multi-screen capture .
+  multiScreenCaptureAllowedForUrls: TYPE_LIST
+    URLs allowed for multi-screen capture . The getAllScreensMedia API allows isolated web applications to capture multiple surfaces at once without additional user permission.
 
 chrome.devices.managedguest.MutationEventsEnabled: Mutation Events.
   mutationEventsEnabled: TYPE_BOOL
@@ -2708,6 +2724,9 @@ chrome.devices.managedguest.SearchSuggest: Search suggest.
     UNSET: Allow the user to decide.
     FALSE: Never allow users to use Search Suggest.
     TRUE: Always allow users to use Search Suggest.
+  searchSuggestPolicyMode: TYPE_ENUM
+    MANDATORY: Do not allow users to override.
+    RECOMMENDED: Allow users to override.
 
 chrome.devices.managedguest.SecurityTokenSessionSettings: Security token removal.
   securityTokenSessionBehavior: TYPE_ENUM
@@ -2941,6 +2960,8 @@ chrome.devices.managedguest.SystemShortcutBehavior: Override system shortcuts.
     DEFAULT: Do not override system shortcuts.
     SHOULD_IGNORE_COMMON_VDI_SHORTCUTS: Override some system shortcuts.
     SHOULD_IGNORE_COMMON_VDI_SHORTCUTS_FULLSCREEN_ONLY: Override some system shortcuts while in fullscreen.
+    ALLOW_PASSTHROUGH_OF_SEARCH_BASED_SHORTCUTS: Prioritize active app over OS for Search key shortcuts.
+    ALLOW_PASSTHROUGH_OF_SEARCH_BASED_SHORTCUTS_FULLSCREEN_ONLY: Prioritize active app over OS for Search key shortcuts while in fullscreen.
 
 chrome.devices.managedguest.TabDiscardingExceptions: Exceptions to tab discarding.
   tabDiscardingExceptions: TYPE_LIST
@@ -3001,7 +3022,7 @@ chrome.devices.managedguest.UnthrottledNestedTimeoutEnabled: JavaScript setTimeo
 
 chrome.devices.managedguest.UrlBlocking: URL blocking.
   urlBlocklist: TYPE_LIST
-    Blocked URLs. Any URL in this list will be blocked, unless it also appears in the list of exceptions specified in 'urlAllowlist'. Maximum of 1000 URLs. Note: to block OS and browser settings set the 'chrome.users.SystemFeaturesDisableList' policy instead of blocking 'chrome://' URLs.
+    Blocked URLs. Any URL in this list will be blocked, unless it also appears in the list of exceptions specified in 'urlAllowlist'. Maximum of 1000 URLs.
   urlAllowlist: TYPE_LIST
     Blocked URL exceptions. Any URL that matches an entry in this exception list will be allowed, even if it matches an entry in the blocked URLs. Wildcards ("*") are allowed when appended to a URL, but cannot be entered alone. Maximum of 1000 URLs. .
   chromeInternalUrlsBlocked: TYPE_BOOL
@@ -3920,7 +3941,7 @@ chrome.users.appsconfig.ChromeWebStorePagesAndContent: Pages & content.
     false: Use default Web Store pages and content.
   cwsPagesContentDiscoverPageEnabled: TYPE_BOOL
     true: Show Discover page.
-    false: Hide Discover page (recommended).
+    false: Hide Discover page.
   cwsPagesContentEnabledPreviews: TYPE_LIST
     {'value': 'recommended', 'description': 'Show the recommended extensions preview.'}
   cwsPagesContentCategories: TYPE_LIST
@@ -4492,7 +4513,7 @@ chrome.users.CreateThemesSettings: Create themes with AI.
     ALLOWED: Allow create themes and improve AI models.
     ALLOWED_WITHOUT_LOGGING: Allow create themes without improving AI models.
     DISABLED: Do not allow create themes.
-    UNSET: Use the default Chrome behavior.
+    UNSET: Use the value specified in the Generative AI policy defaults setting.
 
 chrome.users.CredentialProviderPromoEnabled: Credential provider extension promo.
   credentialProviderPromoEnabled: TYPE_BOOL
@@ -4520,6 +4541,9 @@ chrome.users.CursorHighlightEnabled: Cursor highlight.
     FALSE: Disable cursor highlight.
     TRUE: Enable cursor highlight.
 
+chrome.users.CustomTermsOfService: Custom terms of service.
+  downloadUri: TYPE_STRING
+
 chrome.users.DataCompressionProxy: Data compression proxy.
   dataCompressionProxyEnabled: TYPE_ENUM
     UNSET: Allow the user to decide.
@@ -4535,6 +4559,11 @@ chrome.users.DataUrlInSvgUseEnabled: Data URL support for SVGUseElement.
   dataUrlInSvgUseEnabled: TYPE_BOOL
     true: Enable Data URL support in SVGUseElement.
     false: Disable Data URL support in SVGUseElement.
+
+chrome.users.DataUrlWhitespacePreservationEnabled: Data URL whitespace preservation for all media types.
+  dataUrlWhitespacePreservationEnabled: TYPE_BOOL
+    true: Keep whitespace for all mime-types.
+    false: Only keep whitespace for text and xml mime-types.
 
 chrome.users.DefaultBrowserSettingEnabled: Default browser check.
   defaultBrowserSettingEnabled: TYPE_ENUM
@@ -4638,7 +4667,7 @@ chrome.users.DevToolsGenAiSettings: DevTools AI features.
     ALLOWED: Allow DevTools Generative AI features and improve AI models.
     ALLOWED_WITHOUT_LOGGING: Allow DevTools Generative AI features without improving AI models.
     DISABLED: Do not allow DevTools Generative AI features.
-    UNSET: Use the default Chrome behavior.
+    UNSET: Use the value specified in the Generative AI policy defaults setting.
 
 chrome.users.DictationEnabled: Dictation.
   dictationEnabled: TYPE_ENUM
@@ -4981,14 +5010,14 @@ chrome.users.GenAiVcBackgroundSettings: Video conference background settings.
     ALLOWED: Allow Generative AI VC background and improve AI models.
     ALLOWED_WITHOUT_LOGGING: Allow Generative AI VC background without improving AI models.
     DISABLED: Do not allow Generative AI VC background.
-    UNSET: Use the default Chrome behavior.
+    UNSET: Use the value specified in the Generative AI policy defaults setting.
 
 chrome.users.GenAiWallpaperSettings: Wallpaper settings.
   genAiWallpaperSettings: TYPE_ENUM
     ALLOWED: Allow Generative AI wallpaper and improve AI models.
     ALLOWED_WITHOUT_LOGGING: Allow Generative AI wallpaper without improving AI models.
     DISABLED: Do not allow Generative AI wallpaper.
-    UNSET: Use the default Chrome behavior.
+    UNSET: Use the value specified in the Generative AI policy defaults setting.
 
 chrome.users.Geolocation: Geolocation.
   defaultGeolocationSetting: TYPE_ENUM
@@ -5043,14 +5072,14 @@ chrome.users.HelpMeReadSettings: Help me read.
     ALLOWED: Allow help me read and improve AI models.
     ALLOWED_WITHOUT_LOGGING: Allow help me read without improving AI models.
     DISABLED: Do not allow help me read.
-    UNSET: Use the default Chrome behavior.
+    UNSET: Use the value specified in the Generative AI policy defaults setting.
 
 chrome.users.HelpMeWriteSettings: Help me write.
   helpMeWriteSettings: TYPE_ENUM
     ALLOWED: Allow help me write and improve AI models.
     ALLOWED_WITHOUT_LOGGING: Allow help me write without improving AI models.
     DISABLED: Do not allow help me write.
-    UNSET: Use the default Chrome behavior.
+    UNSET: Use the value specified in the Generative AI policy defaults setting.
 
 chrome.users.HighContrastEnabled: High contrast.
   highContrastEnabled: TYPE_ENUM
@@ -5069,7 +5098,7 @@ chrome.users.HistorySearchSettings: History search settings.
     ALLOWED: Allow AI history search and improve AI models.
     ALLOWED_WITHOUT_LOGGING: Allow AI history search without improving AI models.
     DISABLED: Do not allow AI history search.
-    UNSET: Use the default Chrome behavior.
+    UNSET: Use the value specified in the Generative AI policy defaults setting.
 
 chrome.users.HomeAndEndKeysModifier: Control the shortcut used to trigger the Home/End "six pack" keys.
   homeAndEndKeysModifier: TYPE_ENUM
@@ -5434,6 +5463,7 @@ chrome.users.LocalUserFilesAllowed: Local storage configuration.
     GOOGLE_DRIVE: Migrate existing local files to Google Drive.
     MICROSOFT_ONEDRIVE: Migrate existing local files to OneDrive.
     READ_ONLY: Keep existing local files in read-only mode.
+    DELETE: Delete existing local files.
 
 chrome.users.LockIconInAddressBarEnabled: Lock icon in the omnibox for secure connections.
   lockIconInAddressBarEnabled: TYPE_BOOL
@@ -5550,6 +5580,10 @@ chrome.users.MultipleSignInAccess: Multiple sign-in access.
     PRIMARY_ONLY: Managed user must be the primary user (secondary users are allowed).
     UNRESTRICTED: Unrestricted user access (allow any user to be added to any other user's session).
     NOT_ALLOWED: Block multiple sign-in access for users in this organization.
+
+chrome.users.MultiScreenCaptureAllowedForUrls: URLs allowed for multi-screen capture .
+  multiScreenCaptureAllowedForUrls: TYPE_LIST
+    URLs allowed for multi-screen capture . The getAllScreensMedia API allows isolated web applications to capture multiple surfaces at once without additional user permission.
 
 chrome.users.MutationEventsEnabled: Mutation Events.
   mutationEventsEnabled: TYPE_BOOL
@@ -6325,6 +6359,9 @@ chrome.users.SearchSuggest: Search suggest.
     UNSET: Allow the user to decide.
     FALSE: Never allow users to use Search Suggest.
     TRUE: Always allow users to use Search Suggest.
+  searchSuggestPolicyMode: TYPE_ENUM
+    MANDATORY: Do not allow users to override.
+    RECOMMENDED: Allow users to override.
 
 chrome.users.SecondaryGoogleAccountSignin: Sign-in to secondary accounts.
   secondaryGoogleAccountSigninAllowed: TYPE_ENUM
@@ -6683,6 +6720,8 @@ chrome.users.SystemShortcutBehavior: Override system shortcuts.
     DEFAULT: Do not override system shortcuts.
     SHOULD_IGNORE_COMMON_VDI_SHORTCUTS: Override some system shortcuts.
     SHOULD_IGNORE_COMMON_VDI_SHORTCUTS_FULLSCREEN_ONLY: Override some system shortcuts while in fullscreen.
+    ALLOW_PASSTHROUGH_OF_SEARCH_BASED_SHORTCUTS: Prioritize active app over OS for Search key shortcuts.
+    ALLOW_PASSTHROUGH_OF_SEARCH_BASED_SHORTCUTS_FULLSCREEN_ONLY: Prioritize active app over OS for Search key shortcuts while in fullscreen.
 
 chrome.users.SystemTerminalSshAllowed: SSH in terminal system app.
   systemTerminalSshAllowed: TYPE_ENUM
@@ -6695,7 +6734,7 @@ chrome.users.TabCompareSettings: Tab compare.
     ALLOWED: Allow tab compare and improve AI models.
     ALLOWED_WITHOUT_LOGGING: Allow tab compare without improving AI models.
     DISABLED: Do not allow tab compare.
-    UNSET: Use the default Chrome behavior.
+    UNSET: Use the value specified in the Generative AI policy defaults setting.
 
 chrome.users.TabDiscardingExceptions: Exceptions to tab discarding.
   tabDiscardingExceptions: TYPE_LIST
@@ -6706,7 +6745,7 @@ chrome.users.TabOrganizerSettings: Tab organizer.
     ALLOWED: Allow tab organizer and improve AI models.
     ALLOWED_WITHOUT_LOGGING: Allow tab organizer without improving AI models.
     DISABLED: Do not allow tab organizer.
-    UNSET: Use the default Chrome behavior.
+    UNSET: Use the value specified in the Generative AI policy defaults setting.
 
 chrome.users.TargetBlankImpliesNoOpener: Pop-up interactions.
   targetBlankImpliesNoOpener: TYPE_BOOL
@@ -6813,7 +6852,7 @@ chrome.users.UpdatesSuppressed: Suppress auto-update check.
 
 chrome.users.UrlBlocking: URL blocking.
   urlBlocklist: TYPE_LIST
-    Blocked URLs. Any URL in this list will be blocked, unless it also appears in the list of exceptions specified in 'urlAllowlist'. Maximum of 1000 URLs. Note: to block OS and browser settings set the 'chrome.users.SystemFeaturesDisableList' policy instead of blocking 'chrome://' URLs.
+    Blocked URLs. Any URL in this list will be blocked, unless it also appears in the list of exceptions specified in 'urlAllowlist'. Maximum of 1000 URLs.
   urlAllowlist: TYPE_LIST
     Blocked URL exceptions. Any URL that matches an entry in this exception list will be allowed, even if it matches an entry in the blocked URLs. Wildcards ("*") are allowed when appended to a URL, but cannot be entered alone. Maximum of 1000 URLs. .
   chromeInternalUrlsBlocked: TYPE_BOOL
