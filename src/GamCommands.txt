@@ -7163,7 +7163,8 @@ gam <UserTypeEntity> print filecounts [todrive <ToDriveAttribute>*]
         [filenamematchpattern <REMatchPattern>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
         [excludetrashed]
-        [showsize] [showmimetypesize] [showlastmodification]
+        [showsize] [showmimetypesize]
+        [showlastmodification] [pathdelimiter <Character>]
         (addcsvdata <FieldName> <String>)*
         [summary none|only|plus] [summaryuser <String>]
 gam <UserTypeEntity> show filecounts
@@ -7178,7 +7179,8 @@ gam <UserTypeEntity> show filecounts
         [filenamematchpattern <REMatchPattern>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
         [excludetrashed]
-        [showsize] [showmimetypesize] [showlastmodification]
+        [showsize] [showmimetypesize]
+        [showlastmodification] [pathdelimiter <Character>]
         [summary none|only|plus] [summaryuser <String>]
 
 gam <UserTypeEntity> print filesharecounts [todrive <ToDriveAttribute>*]
@@ -7307,6 +7309,14 @@ gam <UserTypeEntity> print driveactivity [todrive <ToDriveAttribute>*]
         usageindrive|
         usageindrivetrash
 <DriveSettingsFieldNameList> ::= "<DriveSettingsFieldName>(,<DriveSettingsFieldName>)*"
+
+gam <UserTypeEntity> print drivelastmodification [todrive <ToDriveAttribute>*]
+        [select <SharedDriveEntity>]
+        [pathdelimiter <Character>]
+        (addcsvdata <FieldName> <String>)*
+gam <UserTypeEntity> show drivelastmodification
+        [select <SharedDriveEntity>]
+        [pathdelimiter <Character>]
 
 gam <UserTypeEntity> print drivesettings [todrive <ToDriveAttribute>*]
         [allfields|<DriveSettingsFieldName>*|(fields <DriveSettingsFieldNameList>)]

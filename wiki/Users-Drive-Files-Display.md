@@ -32,6 +32,7 @@
   - [Handle empty file lists](#handle-empty-file-lists)
 - [Display disk usage](#display-disk-usage)
 - [Display files published to the web](#display-files-published-to-the-web)
+- [Display information about last modified file on a drive](#display-information-about-last-modified-file-on-a-drive)
 
 ## API documentation
 * [Drive API - Files](https://developers.google.com/drive/api/v3/reference/files)
@@ -704,7 +705,8 @@ gam <UserTypeEntity> print filecounts [todrive <ToDriveAttribute>*]
         [filenamematchpattern <REMatchPattern>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
         [excludetrashed]
-        [showsize] [showmimetypesize] [showlastmodification]
+        [showsize] [showmimetypesize]
+        [showlastmodification] [pathdelimiter <Character>]
         (addcsvdata <FieldName> <String>)*
         [summary none|only|plus] [summaryuser <String>]
 gam <UserTypeEntity> show filecounts
@@ -719,7 +721,8 @@ gam <UserTypeEntity> show filecounts
         [filenamematchpattern <REMatchPattern>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
         [excludetrashed]
-        [showsize] [showmimetypesize] [showlastmodification]
+        [showsize] [showmimetypesize]
+        [showlastmodification] [pathdelimiter <Character>]
         [summary none|only|plus] [summaryuser <String>]
 ```
 
@@ -736,7 +739,7 @@ The `showsize` option displays the total size (in bytes) of the files counted.
 The `showmimetypesize` option displays the total size (in bytes) of each MIME type counted.
 
 The option `showlastmodification` displays the following fields:
-`lastModifiedFileId,lastModifiedFileName,lastModifyingUser,lastModifiedTime`;
+`lastModifiedFileId,lastModifiedFileName,lastModifiedFileMimeType,lastModifiedFilePath,lastModifyingUser,lastModifiedTime`;
 these are for the most recently modified file.
 
 For print filecouts, add additional columns of data from the command line to the output:
@@ -1748,3 +1751,24 @@ gam config csv_output_header_filter "Owner,id,revisions.0.published,revisions.0.
 # Get the files name, MIMEtype and path
 gam redirect csv ./PublishedDocsWithName.csv multiprocess redirect stderr - multiprocess csv ./PublishedDocs.csv gam user "~Owner" print filelist select "~id" fields id,name,mimetype fullpath addcsvdata published "~revisions.0.published" addcsvdata publishedOutsideDomain "~revisions.0.publishedOutsideDomain" 
 ```
+
+## Display information about last modified file on a drive
+Use these commands to display information about the most recently modified file on a drive.
+
+By default, a user's My Drive is processed; optionally, a Shared Drive can be processed.
+```
+gam <UserTypeEntity> print drivelastmodification [todrive <ToDriveAttribute>*]
+        [select <SharedDriveEntity>]
+        [pathdelimiter <Character>]
+        (addcsvdata <FieldName> <String>)*
+gam <UserTypeEntity> show drivelastmodification
+        [select <SharedDriveEntity>]
+        [pathdelimiter <Character>]
+```
+In addition to the user and optional Shared Drive information, The following fields are displayed
+`lastModifiedFileId,lastModifiedFileName,lastModifiedFileMimeType,lastModifiedFilePath,lastModifyingUser,lastModifiedTime`
+
+By default, file path components are separated by `/`; use `pathdelimiter <Character>` to use `<Character>` as the separator.
+
+For print drivelastmodification, add additional columns of data from the command line to the output:
+* `addcsvdata <FieldName> <String>` - Add additional columns of data from the command line to the output

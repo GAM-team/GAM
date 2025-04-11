@@ -579,6 +579,8 @@ class GamCLArgs():
   ARG_DRIVELABELS = 'drivelabels'
   ARG_DRIVELABELPERMISSION = 'drivelabelpermission'
   ARG_DRIVELABELPERMISSIONS = 'drivelabelpermissions'
+  ARG_DRIVELASTMODIFICATION = 'drivelastmodification'
+  ARG_DRIVELASTMODIFICATIONS = 'drivelastmodifications'
   ARG_DRIVESETTINGS = 'drivesettings'
   ARG_DRIVETRASH = 'drivetrash'
   ARG_EMPTYDRIVEFOLDERS = 'emptydrivefolders'

@@ -10,6 +10,23 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.06.02
+
+Updated `gam <UserTypeEntity> print|show filecounts ... showlastmodification` to include
+file mimetype and path information for the last modified file.
+
+Added simple commands to get information about the last modified file on a drive.
+By default, a user's My Drive is processed; optionally, a Shared Drive can be processed.
+```
+gam <UserTypeEntity> print drivelastmodification [todrive <ToDriveAttribute>*]
+        [select <SharedDriveEntity>]
+        [pathdelimiter <Character>]
+        (addcsvdata <FieldName> <String>)*
+gam <UserTypeEntity> show drivelastmodification
+        [select <SharedDriveEntity>]
+        [pathdelimiter <Character>]
+```
+
 ### 7.06.01
 
 Updated `gam <UserTypeEntity> create|update drivefileacl ... expiration <Time>`

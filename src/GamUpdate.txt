@@ -1,7 +1,26 @@
+7.06.02
+
+Updated `gam <UserTypeEntity> print|show filecounts ... showlastmodification` to include
+file mimetype and path information for the last modified file.
+
+Added simple commands to get information about the last modified file on a drive.
+By default, a user's My Drive is processed; optionally, a Shared Drive can be processed.
+```
+gam <UserTypeEntity> print drivelastmodification [todrive <ToDriveAttribute>*]
+        [select <SharedDriveEntity>]
+        [pathdelimiter <Character>]
+        (addcsvdata <FieldName> <String>)*
+gam <UserTypeEntity> show drivelastmodification
+        [select <SharedDriveEntity>]
+        [pathdelimiter <Character>]
+```
+
 7.06.01
 
 Updated `gam <UserTypeEntity> create|update drivefileacl ... expiration <Time>`
 to handle additional API errors.
+
+Updated to Python 3.13.3.
 
 7.06.00
 
