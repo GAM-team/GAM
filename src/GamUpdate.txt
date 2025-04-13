@@ -1,3 +1,8 @@
+7.06.03
+
+Fixed bug in `gam <UserTypeEntity> print|show drivelastmodification` that caused a trap
+when an empty drive was specified.
+
 7.06.02
 
 Updated `gam <UserTypeEntity> print|show filecounts ... showlastmodification` to include

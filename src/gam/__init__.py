@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.06.02'
+__version__ = '7.06.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -56489,7 +56489,7 @@ def printFileParentTree(users):
 # Last file modification utilities
 def _initLastModification():
   return {'lastModifiedFileId': '', 'lastModifiedFileName': '',
-          'lastModifiedFileMimeType': '', 'lastModifiedFilaPath': '',
+          'lastModifiedFileMimeType': '', 'lastModifiedFilePath': '',
           'lastModifyingUser': '', 'lastModifiedTime': NEVER_TIME,
           'fileEntryInfo': {}}
 
@@ -56504,9 +56504,10 @@ def _checkUpdateLastModifiction(f_file, userLastModification):
     userLastModification['fileEntryInfo'] = f_file.copy()
 
 def _getLastModificationPath(drive, userLastModification, pathDelimiter):
-  filePathInfo = initFilePathInfo(pathDelimiter)
-  _, paths, _ = getFilePaths(drive, {}, userLastModification['fileEntryInfo'], filePathInfo)
-  userLastModification['lastModifiedFilePath'] = paths[0] if paths else UNKNOWN
+  if userLastModification['fileEntryInfo']:
+    filePathInfo = initFilePathInfo(pathDelimiter)
+    _, paths, _ = getFilePaths(drive, {}, userLastModification['fileEntryInfo'], filePathInfo)
+    userLastModification['lastModifiedFilePath'] = paths[0] if paths else UNKNOWN
 
 def _showLastModification(lastModification):
   printKeyValueList(['lastModifiedFileId', lastModification['lastModifiedFileId']])
