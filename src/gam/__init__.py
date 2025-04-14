@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.06.03'
+__version__ = '7.06.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -14303,8 +14303,8 @@ def doReport():
         row = {'name': 'NoActivities'}
         if addCSVData:
           row.update(addCSVData)
-          csvPF.WriteRowTitles(row)
-      csvPF.SetSortTitles(['name'])
+        csvPF.WriteRowTitles(row)
+        csvPF.SetSortTitles(['name'])
     else:
       if eventRowFilter:
         csvPF.SetRowFilter([], GC.Values[GC.CSV_OUTPUT_ROW_FILTER_MODE])
