@@ -57,10 +57,10 @@ Typically, you will enclose the entire list in double quotes and quote each item
    * ```"item item item"```
 - Items, separated by commas, with spaces, commas or single quotes in the items themselves
    * ```"'it em','it,em',\"it'em\""``` - Linux, MacOS, Windows Command Prompt
-   * ```"'it em','it,em',`"it'em`""``` - Windows Power Shell
+   * ```"'it\ em','it,em',`"it\'em`""``` - Windows Power Shell
 - Items, separated by spaces, with spaces, commas or single quotes in the items themselves
    * ```"'it em' 'it,em' \"it'em\""``` - Linux, MacOS, Windows Command Prompt
-   * ```"'it em' 'it,em' `"it'em`""``` - Windows Power Shell
+   * ```"'it\ em' 'it,em' `"it\'em`""``` - Windows Power Shell
 
 Typical places where these rules apply are lists of OUs and Contact Groups.
 
