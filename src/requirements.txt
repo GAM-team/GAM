@@ -2,13 +2,13 @@ chardet
 cryptography
 distro; sys_platform=='linux'
 filelock
-google-api-python-client>=2.1
+google-api-python-client>=2.166.0
 google-auth-httplib2
-google-auth-oauthlib>=0.4.1
+google-auth-oauthlib>=1.2.1
 google-auth>=2.3.2
 httplib2>=0.17.0
 lxml
 passlib>=1.7.2
 pathvalidate
 python-dateutil
-yubikey-manager[yubikey]>=5.0
+yubikey-manager[yubikey]>=5.2.0
