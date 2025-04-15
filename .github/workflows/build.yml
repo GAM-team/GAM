@@ -268,7 +268,6 @@ jobs:
             echo "GAM_ARCHIVE_ARCH=${GAM_ARCHIVE_ARCH}" >> $GITHUB_ENV
             echo "WIX_ARCH=${WIX_ARCH}" >> $GITHUB_ENV
             if [[ "$arch" == "arm64" ]]; then
-              "%ProgramFiles%\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" arm64
               echo "VSCMD_DEBUG=3" >> $GITHUB_ENV
               echo "PATH=%PATH%;%VCINSTALLDIR%\Tools\Llvm\ARM64\bin" >> $GITHUB_ENV
             fi
