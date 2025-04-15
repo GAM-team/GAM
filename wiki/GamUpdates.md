@@ -12,12 +12,8 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 
 ### 7.06.04
 
-Fixed bug in `gam report <ActivityApplictionName> ... shownoactivities` where an event with no activities
-was not properly displaying the following:
-```
-name
-NoActivities
-```
+Fixed bug in `gam report <ActivityApplictionName>` where a report with no activities
+was not displaying any output.
 
 ### 7.06.03
 

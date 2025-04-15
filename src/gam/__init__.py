@@ -14145,6 +14145,7 @@ def doReport():
       startDateTime += oneDay
     csvPF.writeCSVfile(f'Customer Report - {tryDate}')
   else: # activityReports
+    csvPF.SetTitles('name')
     if addCSVData:
       csvPF.AddTitles(sorted(addCSVData.keys()))
     if select:
@@ -14304,7 +14305,6 @@ def doReport():
         if addCSVData:
           row.update(addCSVData)
         csvPF.WriteRowTitles(row)
-        csvPF.SetSortTitles(['name'])
     else:
       if eventRowFilter:
         csvPF.SetRowFilter([], GC.Values[GC.CSV_OUTPUT_ROW_FILTER_MODE])

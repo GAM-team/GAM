@@ -3,12 +3,12 @@ cryptography
 distro; sys_platform=='linux'
 filelock
 google-api-python-client>=2.166.0
-google-auth-httplib2
+google-auth-httplib2>-0.2.0
 google-auth-oauthlib>=1.2.1
-google-auth>=2.3.2
-httplib2>=0.17.0
+google-auth>=2.38.0
+httplib2>=0.22.0
 lxml
-passlib>=1.7.2
+passlib>=1.7.4
 pathvalidate
 python-dateutil
-yubikey-manager[yubikey]>=5.2.0
+yubikey-manager[yubikey]>=5.6.1
