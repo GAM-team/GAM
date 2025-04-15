@@ -269,7 +269,7 @@ jobs:
             echo "WIX_ARCH=${WIX_ARCH}" >> $GITHUB_ENV
             if [[ "$arch" == "arm64" ]]; then
               echo "VSCMD_DEBUG=3" >> $GITHUB_ENV
-              echo "PATH=%PATH%;%VCINSTALLDIR%\Tools\Llvm\ARM64\bin" >> $GITHUB_ENV
+              echo "PATH=${PATH}:${VCINSTALLDIR}\Tools\Llvm\ARM64\bin" >> $GITHUB_ENV
             fi
           fi
           echo "We'll run make with: ${MAKEOPT}"
