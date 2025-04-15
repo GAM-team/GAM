@@ -88,12 +88,12 @@ jobs:
             goal: build
             arch: Win64
             openssl_archs: VC-WIN64A
-          - os: windows-11-arm
-            jid: 14
-            goal: build
-            arch: arm64
-            openssl_archs: VC-CLANG-WIN64-CLANGASM-ARM
-            continue-on-error: true
+          #- os: windows-11-arm
+          #  jid: 14
+          #  goal: build
+          #  arch: arm64
+          #  openssl_archs: VC-CLANG-WIN64-CLANGASM-ARM
+          #  continue-on-error: true
           - os: ubuntu-24.04
             goal: test
             python: "3.10"
