@@ -461,6 +461,8 @@ jobs:
 
       - name: Install pip requirements
         run: |
+          # rust cargo needs this to compile
+          export OPENSSL_DIR="$OPENSSL_INSTALL_PATH"
           echo "before anything..."
           "${PYTHON}" -m pip list
           "${PYTHON}" -m pip install --upgrade -r requirements.txt
