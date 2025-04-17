@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.06.05
+
+Updated code in `gam delete|update chromepolicy` to handle the `policyTargetKey[additionalTargetKeys]`
+field in a more general manner for future use.
+
 ### 7.06.04
 
 Fixed bug in `gam report <ActivityApplictionName>` where a report with no activities

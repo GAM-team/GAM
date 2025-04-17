@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.06.04'
+__version__ = '7.06.05'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -28090,10 +28090,12 @@ def updatePolicyRequests(body, targetResource, printer_id, app_id):
   for request in body['requests']:
     request.setdefault('policyTargetKey', {})
     request['policyTargetKey']['targetResource'] = targetResource
-    if app_id:
-      request['policyTargetKey']['additionalTargetKeys'] = {'app_id': app_id}
-    elif printer_id:
-      request['policyTargetKey']['additionalTargetKeys'] = {'printer_id': printer_id}
+    if app_id or printer_id:
+      request['policyTargetKey'].setdefault('additionalTargetKeys', {})
+      if app_id:
+        request['policyTargetKey']['additionalTargetKeys']['app_id'] = app_id
+      elif printer_id:
+        request['policyTargetKey']['additionalTargetKeys']['printer_id'] = printer_id
 
 # gam delete chromepolicy
 #	(<SchemaName> [<JSONData>])+
@@ -28126,9 +28128,9 @@ def doDeleteChromePolicy():
       if checkArgumentPresent('json'):
         jsonData = getJSON(['direct', 'name', 'orgUnitPath', 'parentOrgUnitPath', 'group'])
         if 'additionalTargetKeys' in jsonData:
-          body['requests'][-1].setdefault('policyTargetKey', {})
+          body['requests'][-1].setdefault('policyTargetKey', {'additionalTargetKeys': {}})
           for atk in jsonData['additionalTargetKeys']:
-            body['requests'][-1]['policyTargetKey']['additionalTargetKeys'] = {atk['name']: atk['value']}
+            body['requests'][-1]['policyTargetKey']['additionalTargetKeys'][atk['name']] = atk['value']
   checkPolicyArgs(targetResource, printer_id, app_id)
   count = len(body['requests'])
   if count != 1:
@@ -28281,9 +28283,9 @@ def doUpdateChromePolicy():
           jsonData = getJSON(['direct', 'name', 'orgUnitPath', 'parentOrgUnitPath', 'group'])
           schemaNameAppId = schemaName
           if 'additionalTargetKeys' in jsonData:
-            body['requests'][-1].setdefault('policyTargetKey', {})
+            body['requests'][-1].setdefault('policyTargetKey', {'additionalTargetKeys': {}})
             for atk in jsonData['additionalTargetKeys']:
-              body['requests'][-1]['policyTargetKey']['additionalTargetKeys'] = {atk['name']: atk['value']}
+              body['requests'][-1]['policyTargetKey']['additionalTargetKeys'][atk['name']] = atk['value']
               if atk['name'] == 'app_id':
                 schemaNameAppId += f"({atk['value']})"
           schemaNameList[-1] = schemaNameAppId
