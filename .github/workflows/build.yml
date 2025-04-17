@@ -323,17 +323,18 @@ jobs:
         run: |
           cd "${OPENSSL_SOURCE_PATH}"
           # install_sw saves us ages processing man pages :-)
-          $MAKE install_sw
-          if [[ "${RUNNER_OS}" != "Windows" ]]; then
-            echo "LDFLAGS=-L${OPENSSL_INSTALL_PATH}/lib" >> $GITHUB_ENV
-          fi
+          # $MAKE install_sw
+          $MAKE install
+          #if [[ "${RUNNER_OS}" != "Windows" ]]; then
+          echo "LDFLAGS=-L${OPENSSL_INSTALL_PATH}/lib" >> $GITHUB_ENV
+          #fi
           echo "CRYPTOGRAPHY_SUPPRESS_LINK_FLAGS=1" >> $GITHUB_ENV
-          case $arch in
-            x86_64)
+          case $RUNNER_ARCH in
+            X64)
               echo "CFLAGS=-I${OPENSSL_INSTALL_PATH}/include ${CFLAGS}" >> $GITHUB_ENV
               echo "ARCHFLAGS=-arch x86_64" >> $GITHUB_ENV
               ;;
-            aarch64)
+            ARM64)
               echo "CFLAGS=-I${OPENSSL_INSTALL_PATH}/include ${CFLAGS}" >> $GITHUB_ENV
               echo "ARCHFLAGS=-arch arm64" >> $GITHUB_ENV
               ;;
