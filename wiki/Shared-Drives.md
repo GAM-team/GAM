@@ -24,6 +24,7 @@
   - [Display Shared Drive access for specific Shared Drives](#display-shared-drive-access-for-specific-shared-drives)
   - [Display Shared Drive access for selected Shared Drives](#display-shared-drive-access-for-selected-shared-drives)
   - [Display members of all Shared Drives](#display-members-of-all-shared-drives)
+  - [Display external members of all Shared Drives](#display-external-members-of-all-shared-drives)
 - [Display ACLs for Shared Drives with no organizers](#display-acls-for-shared-drives-with-no-organizers)
 - [Display ACLs for Shared Drives with all organizers outside of your domain](#display-acls-for-shared-drives-with-all-organizers-outside-of-your-domain)
 - [Display ACLs for Shared Drives with all ACLs outside of your domain](#display-acls-for-shared-drives-with-all-acls-outside-of-your-domain)
@@ -567,6 +568,12 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 ## Display members of all Shared Drives
 ```
 gam config csv_output_header_drop_filter "User,createdTime,permission.photoLink,permission.permissionDetails" redirect csv ./SharedDriveMembers.csv print shareddriveacls oneitemperrow
+```
+
+## Display external members of all Shared Drives
+Replace `<InternalDomainList>` with your list of internal domains.
+```
+gam config csv_output_header_drop_filter "User,createdTime,permission.photoLink,permission.permissionDetails" redirect csv ./SharedDriveExternalMembers.csv print shareddriveacls pm notdomainlist <InternalDomainList> em oneitemperrow
 ```
 
 ## Display Shared Drive access for selected Shared Drives
