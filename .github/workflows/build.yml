@@ -445,11 +445,6 @@ jobs:
           "${PYTHON}" -V
           "${PYTHON}" -c "import ssl; print(f'Using {ssl.OPENSSL_VERSION}')"
 
-      - name: Windows ARM Install rust and cargo
-        if: matrix.goal == 'build' && runner.os == 'Windows' && runner.arch == 'ARM64' && steps.cache-python-ssl.outputs.cache-hit != 'true'
-        run: |
-          choco install rust
-
       - name: Upgrade pip, wheel, etc
         run: |
           curl $curl_retry -O https://bootstrap.pypa.io/get-pip.py
