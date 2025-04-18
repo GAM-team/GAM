@@ -88,11 +88,11 @@ jobs:
             goal: build
             arch: Win64
             openssl_archs: VC-WIN64A
-         # - os: windows-11-arm
-         #   jid: 14
-         #   goal: build
-         #   arch: arm64
-         #   openssl_archs: VC-WIN64-ARM
+          - os: windows-11-arm
+            jid: 14
+            goal: build
+            arch: arm64
+            openssl_archs: VC-WIN64-ARM
           - os: ubuntu-24.04
             goal: test
             python: "3.10"
@@ -167,7 +167,7 @@ jobs:
           echo "curl_retry=${curl_retry}" >> $GITHUB_ENV
           # GAMCFGDIR should be recreated on every run
           GAMCFGDIR="${RUNNER_TEMP}/.gam"
-          if [ "$arch" == "Win64" ]; then
+          if [ "$RUNNER_OS" == "Windows" ]; then
             GAMCFGDIR=$(cygpath -u "$GAMCFGDIR")
           fi
           echo "GAMCFGDIR=${GAMCFGDIR}" >> $GITHUB_ENV
