@@ -88,12 +88,11 @@ jobs:
             goal: build
             arch: Win64
             openssl_archs: VC-WIN64A
-          #- os: windows-11-arm
-          #  jid: 14
-          #  goal: build
-          #  arch: arm64
-          #  openssl_archs: VC-WIN64-ARM
-          #  continue-on-error: true
+          - os: windows-11-arm
+            jid: 14
+            goal: build
+            arch: arm64
+            openssl_archs: VC-WIN64-ARM
           - os: ubuntu-24.04
             goal: test
             python: "3.10"
@@ -460,16 +459,26 @@ jobs:
           "${PYTHON}" -m pip install --upgrade wheel
           "${PYTHON}" -m pip install --upgrade setuptools
 
+      - name: Custom wheels for Win arm64
+        if: runer.os == 'Windows' && runner.arch == 'ARM64'
+        run: |
+          latest_lxml_whl=$(curl https://api.github.com/repos/GAM-team/lxml-wheel/releases/latest -s | jq -r .assets.[0].browser_download_url)
+          echo "Downloading ${latest_lxml_whl}..."
+          curl -O -L "$latest_lxml_whl"
+          pip install lxml*.whl
+          latest_crypt_whl=$(curl https://api.github.com/repos/jay0lee/cryptography/releases/latest -s | jq -r .assets.[0].browser_download_url)
+          echo "Downloading ${latest_crypt_whl}..."
+          curl -O -L "$latest_crypt_whl"
+          pip install cryptography*.whl
+          
       - name: Install pip requirements
         run: |
-          # rust cargo needs this to compile
-          export OPENSSL_DIR="$OPENSSL_INSTALL_PATH"
           echo "before anything..."
           "${PYTHON}" -m pip list
           "${PYTHON}" -m pip install --upgrade -r requirements.txt
           echo "after requirements..."
           "${PYTHON}" -m pip list
-          "${PYTHON}" -m pip install --force-reinstall --no-deps --upgrade cryptography
+          #"${PYTHON}" -m pip install --force-reinstall --no-deps --upgrade cryptography
           echo "after everything..."
           "${PYTHON}" -m pip list
 
