@@ -39,75 +39,65 @@ jobs:
           - os: ubuntu-22.04
             jid: 1
             goal: build
-            arch: x86_64
             openssl_archs: linux-x86_64
           - os: ubuntu-24.04
             jid: 2
             goal: build
-            arch: x86_64
             openssl_archs: linux-x86_64
           - os: ubuntu-24.04-arm
             jid: 3
             goal: build
-            arch: aarch64
             openssl_archs: linux-aarch64
           - os: ubuntu-22.04-arm
             jid: 4
             goal: build
-            arch: aarch64
             openssl_archs: linux-aarch64
           - os: ubuntu-22.04
             jid: 5
             goal: build
-            arch: x86_64
             openssl_archs: linux-x86_64
             staticx: yes
           - os: ubuntu-22.04-arm
             jid: 6
             goal: build
-            arch: aarch64
             openssl_archs: linux-aarch64
             staticx: yes
           - os: macos-13
             jid: 7
             goal: build
-            arch: x86_64
             openssl_archs: darwin64-x86_64
           - os: macos-14
             jid: 8
             goal: build
-            arch: aarch64
             openssl_archs: darwin64-arm64
           - os: macos-15
             jid: 9
             goal: build
-            arch: aarch64
             openssl_archs: darwin64-arm64
           - os: windows-2022
             jid: 10
             goal: build
-            arch: Win64
             openssl_archs: VC-WIN64A
           - os: windows-11-arm
-            jid: 14
+            jid: 11
             goal: build
-            arch: arm64
             openssl_archs: VC-WIN64-ARM
           - os: ubuntu-24.04
             goal: test
             python: "3.10"
-            jid: 11
-            arch: x86_64
+            jid: 12
           - os: ubuntu-24.04
             goal: test
             python: "3.11"
-            jid: 12
-            arch: x86_64
+            jid: 13
           - os: ubuntu-24.04
             goal: test
             python: "3.12"
-            jid: 13
-            arch: x86_64
+            jid: 14
+          - os: ubuntu-24.04
+            goal: test
+            python: "3.14-dev"
+            jid: 15
 
     steps:
 
@@ -148,12 +138,21 @@ jobs:
 
       - name: common variables for all runs
         env:
-          arch: ${{ matrix.arch }}
           JID: ${{ matrix.jid }}
           ACTIONS_CACHE: ${{ steps.cache-python-ssl.outputs.cache-hit }}
           ACTIONS_GOAL: ${{ matrix.goal }}
         run: |
-          echo "arch=${arch}" >> $GITHUB_ENV
+          case $RUNNER_ARCH in
+            X64)
+              echo "arch=x86_64" >> $GITHUB_ENV
+              ;;
+            ARM64)
+              echo "arch=arm64" >> $GITHUB_ENV
+              ;;
+            *)
+              echo "arch=${RUNNER_ARCH}" >> $GITHUB_ENV
+              ;;
+          esac 
           echo "JID=${JID}" >> $GITHUB_ENV
           echo "ACTIONS_CACHE=${ACTIONS_CACHE}" >> $GITHUB_ENV
           echo "ACTIONS_GOAL=${ACTIONS_GOAL}" >> $GITHUB_ENV
