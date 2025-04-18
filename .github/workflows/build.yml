@@ -39,54 +39,69 @@ jobs:
           - os: ubuntu-22.04
             jid: 1
             goal: build
+            name: Build Intel Ubuntu Jammy
           - os: ubuntu-24.04
             jid: 2
             goal: build
+            name: Build Intel Ubuntu Noble
           - os: ubuntu-24.04-arm
             jid: 3
             goal: build
+            name: Build Arm Ubuntu Noble
           - os: ubuntu-22.04-arm
             jid: 4
             goal: build
+            name: Build Arm Ubuntu Jammy
           - os: ubuntu-22.04
             jid: 5
             goal: build
             staticx: yes
+            name: Build Intel StaticX Legacy
           - os: ubuntu-22.04-arm
             jid: 6
             goal: build
             staticx: yes
+            name: Build Arm StaticX Legacy
           - os: macos-13
             jid: 7
             goal: build
+            name: Build Intel MacOS
           - os: macos-14
             jid: 8
             goal: build
+            name: Build Arm MacOS 14
           - os: macos-15
             jid: 9
             goal: build
+            name: Build Arm MacOS 15
           - os: windows-2022
             jid: 10
             goal: build
+            name: Build Intel Windows
           - os: windows-11-arm
             jid: 11
             goal: build
+            name: Build Arm Windows
           - os: ubuntu-24.04
             goal: test
             python: "3.10"
             jid: 12
+            name: Test Python 3.10
           - os: ubuntu-24.04
             goal: test
             python: "3.11"
             jid: 13
+            name: Test Python 3.11
           - os: ubuntu-24.04
             goal: test
             python: "3.12"
             jid: 14
+            name: Test Python 3.12
           - os: ubuntu-24.04
             goal: test
             python: "3.14-dev"
             jid: 15
+            name: Test Python 3.14-dev
 
     steps:
 
