@@ -598,14 +598,12 @@ jobs:
           echo "GAM Version ${GAMVERSION}"
           echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
 
-      - name: Configure service account auth
+      - name: Configure user and service account auth
         id: configserviceaccount
         env:
-          PASSCODE: ${{ secrets.PASSCODE }}
+          oa2: ${{ secrets.GAM_GHA_${{ matrix.jid }} }}
         run: |
-          source ../.github/actions/decrypt.sh ../.github/actions/creds.tar.xz.gpg creds.tar.xz "${GAMCFGDIR}"
-          mv -v "${GAMCFGDIR}/oauth2.txt-gam-gha-${JID}" "${GAMCFGDIR}/oauth2.txt"
-          rm -v $GAMCFGDIR/oauth2.txt-gam*
+          ../.github/actions/decrypt.sh "${GAMCFGDIR}"
           $gam create signjwtserviceaccount
 
       - name: Upload gam.exe Windows for signing
