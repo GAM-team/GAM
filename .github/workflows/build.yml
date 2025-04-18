@@ -453,10 +453,10 @@ jobs:
       - name: Upgrade pip, wheel, etc
         run: |
           curl $curl_retry -O https://bootstrap.pypa.io/get-pip.py
-          "${PYTHON}" get-pip.py
-          "${PYTHON}" -m pip install --upgrade pip
-          "${PYTHON}" -m pip install --upgrade wheel
-          "${PYTHON}" -m pip install --upgrade setuptools
+          "$PYTHON" get-pip.py
+          "$PYTHON" -m pip install --upgrade pip
+          "$PYTHON" -m pip install --upgrade wheel
+          "$PYTHON" -m pip install --upgrade setuptools
 
       - name: Custom wheels for Win arm64
         if: runner.os == 'Windows' && runner.arch == 'ARM64'
@@ -464,22 +464,22 @@ jobs:
           latest_lxml_whl=$(curl https://api.github.com/repos/GAM-team/lxml-wheel/releases/latest -s | jq -r .assets.[0].browser_download_url)
           echo "Downloading ${latest_lxml_whl}..."
           curl -O -L "$latest_lxml_whl"
-          pip install lxml*.whl
+          "$PYTHON" -m pip install lxml*.whl
           latest_crypt_whl=$(curl https://api.github.com/repos/jay0lee/cryptography/releases/latest -s | jq -r .assets.[0].browser_download_url)
           echo "Downloading ${latest_crypt_whl}..."
           curl -O -L "$latest_crypt_whl"
-          pip install cryptography*.whl
+          "$PYTHON" -m pip install cryptography*.whl
           
       - name: Install pip requirements
         run: |
           echo "before anything..."
-          "${PYTHON}" -m pip list
-          "${PYTHON}" -m pip install --upgrade -r requirements.txt
+          "$PYTHON" -m pip list
+          "$PYTHON" -m pip install --upgrade -r requirements.txt
           echo "after requirements..."
-          "${PYTHON}" -m pip list
-          #"${PYTHON}" -m pip install --force-reinstall --no-deps --upgrade cryptography
+          "$PYTHON" -m pip list
+          #"$PYTHON" -m pip install --force-reinstall --no-deps --upgrade cryptography
           echo "after everything..."
-          "${PYTHON}" -m pip list
+          "$PYTHON" -m pip list
 
       - name: Install PyInstaller
         if: matrix.goal == 'build'
