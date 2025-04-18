@@ -86,22 +86,22 @@ jobs:
             goal: test
             python: "3.10"
             jid: 12
-            name: Test Python ${{ matrix.python }}
+            name: Test Python 3.10
           - os: ubuntu-24.04
             goal: test
             python: "3.11"
             jid: 13
-            name: Test Python ${{ matrix.python }}
+            name: Test Python 3.11
           - os: ubuntu-24.04
             goal: test
             python: "3.12"
             jid: 14
-            name: Test Python ${{ matrix.python }}
+            name: Test Python 3.12
           - os: ubuntu-24.04
             goal: test
             python: "3.14-dev"
             jid: 15
-            name: Test Python ${{ matrix.python }}
+            name: Test Python 3.14-dev
 
     steps:
 
