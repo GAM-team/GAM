@@ -460,7 +460,7 @@ jobs:
           "${PYTHON}" -m pip install --upgrade setuptools
 
       - name: Custom wheels for Win arm64
-        if: runer.os == 'Windows' && runner.arch == 'ARM64'
+        if: runner.os == 'Windows' && runner.arch == 'ARM64'
         run: |
           latest_lxml_whl=$(curl https://api.github.com/repos/GAM-team/lxml-wheel/releases/latest -s | jq -r .assets.[0].browser_download_url)
           echo "Downloading ${latest_lxml_whl}..."
