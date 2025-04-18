@@ -5,7 +5,4 @@ if [ ! -d "$credspath" ]; then
     mkdir -p "$credspath"
 fi
 
-secretvar="GAM_GHA_${JID}"
-secretval="${!secretvar}"
-
-echo -e "$secretval" > "${credspath}/oauth2.txt"
+echo -e "$oa2" > "${credspath}/oauth2.txt"
