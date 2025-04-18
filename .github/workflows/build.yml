@@ -39,65 +39,69 @@ jobs:
           - os: ubuntu-22.04
             jid: 1
             goal: build
-            openssl_archs: linux-x86_64
+            name: Build Intel Ubuntu Jammy
           - os: ubuntu-24.04
             jid: 2
             goal: build
-            openssl_archs: linux-x86_64
+            name: Build Intel Ubuntu Noble
           - os: ubuntu-24.04-arm
             jid: 3
             goal: build
-            openssl_archs: linux-aarch64
+            name: Build Arm Ubuntu Noble
           - os: ubuntu-22.04-arm
             jid: 4
             goal: build
-            openssl_archs: linux-aarch64
+            name: Build Arm Ubuntu Jammy
           - os: ubuntu-22.04
             jid: 5
             goal: build
-            openssl_archs: linux-x86_64
             staticx: yes
+            name: Build Intel StaticX Legacy
           - os: ubuntu-22.04-arm
             jid: 6
             goal: build
-            openssl_archs: linux-aarch64
             staticx: yes
+            name: Build Arm StaticX Legacy
           - os: macos-13
             jid: 7
             goal: build
-            openssl_archs: darwin64-x86_64
+            name: Build Intel MacOS
           - os: macos-14
             jid: 8
             goal: build
-            openssl_archs: darwin64-arm64
+            name: Build Arm MacOS 14
           - os: macos-15
             jid: 9
             goal: build
-            openssl_archs: darwin64-arm64
+            name: Build Arm MacOS 15
           - os: windows-2022
             jid: 10
             goal: build
-            openssl_archs: VC-WIN64A
+            name: Build Intel Windows
           - os: windows-11-arm
             jid: 11
             goal: build
-            openssl_archs: VC-WIN64-ARM
+            name: Build Arm Windows
           - os: ubuntu-24.04
             goal: test
             python: "3.10"
             jid: 12
+            name: Test Python 3.10
           - os: ubuntu-24.04
             goal: test
             python: "3.11"
             jid: 13
+            name: Test Python 3.11
           - os: ubuntu-24.04
             goal: test
             python: "3.12"
             jid: 14
+            name: Test Python 3.12
           - os: ubuntu-24.04
             goal: test
             python: "3.14-dev"
             jid: 15
+            name: Test Python 3.14-dev
 
     steps:
 
@@ -225,7 +229,6 @@ jobs:
       - name: Set Env Variables for build
         if: matrix.goal == 'build'
         env:
-          openssl_archs: ${{ matrix.openssl_archs }}
           staticx: ${{ matrix.staticx }}
         run: |
           echo "We are running on ${RUNNER_OS}"
@@ -270,7 +273,6 @@ jobs:
           echo "MAKEOPT=${MAKEOPT}" >> $GITHUB_ENV
           echo "PERL=${PERL}" >> $GITHUB_ENV
           echo "PYEXTERNALS_PATH=${PYEXTERNALS_PATH}" >> $GITHUB_ENV
-          echo "openssl_archs=${openssl_archs}" >> $GITHUB_ENV
 
       - name: Get latest stable OpenSSL source
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
@@ -298,7 +300,7 @@ jobs:
             export CFLAGS=-DNO_INTERLOCKEDOR64
           fi
           # --libdir=lib is needed so Python can find OpenSSL libraries
-          "${PERL}" ./Configure "${openssl_arch}" --libdir=lib --prefix="${OPENSSL_INSTALL_PATH}" $OPENSSL_CONFIG_OPTS
+          "${PERL}" ./Configure --libdir=lib --prefix="${OPENSSL_INSTALL_PATH}" $OPENSSL_CONFIG_OPTS
 
       - name: Rename GNU link on Windows
         if: matrix.goal == 'build' && runner.os == 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
