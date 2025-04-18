@@ -601,7 +601,7 @@ jobs:
       - name: Configure user and service account auth
         id: configserviceaccount
         env:
-          oa2: ${{ format('.secrets.GAM_GHA_{0}', matrix.jid) }}
+          oa2: ${{ secrets[format('GAM_GHA_{0}', matrix.jid)] }}
         run: |
           ../.github/actions/decrypt.sh "${GAMCFGDIR}"
           $gam create signjwtserviceaccount
