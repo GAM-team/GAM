@@ -147,7 +147,7 @@ The `columndelimiter <Character>` subargument sets the intercolumn delimiter of 
 is the value of `csv_output_column_delimiter` in `gam.cfg` which defaults to comma.
 
 The `quotechar <Character>` subargument sets the character used to quote fields in the CSV file
-that contaim special charactere; the default value is the value of `csv_output_quote_char` in `gam.cfg`
+that contain special charactere; the default value is the value of `csv_output_quote_char` in `gam.cfg`
 which defaults to double quote.
 
 The `noescapechar <Boolean>` subargument controls whether `\` is used as an escape character when writing the CSV file; the default value
