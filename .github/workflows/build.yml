@@ -39,49 +39,38 @@ jobs:
           - os: ubuntu-22.04
             jid: 1
             goal: build
-            openssl_archs: linux-x86_64
           - os: ubuntu-24.04
             jid: 2
             goal: build
-            openssl_archs: linux-x86_64
           - os: ubuntu-24.04-arm
             jid: 3
             goal: build
-            openssl_archs: linux-aarch64
           - os: ubuntu-22.04-arm
             jid: 4
             goal: build
-            openssl_archs: linux-aarch64
           - os: ubuntu-22.04
             jid: 5
             goal: build
-            openssl_archs: linux-x86_64
             staticx: yes
           - os: ubuntu-22.04-arm
             jid: 6
             goal: build
-            openssl_archs: linux-aarch64
             staticx: yes
           - os: macos-13
             jid: 7
             goal: build
-            openssl_archs: darwin64-x86_64
           - os: macos-14
             jid: 8
             goal: build
-            openssl_archs: darwin64-arm64
           - os: macos-15
             jid: 9
             goal: build
-            openssl_archs: darwin64-arm64
           - os: windows-2022
             jid: 10
             goal: build
-            openssl_archs: VC-WIN64A
           - os: windows-11-arm
             jid: 11
             goal: build
-            openssl_archs: VC-WIN64-ARM
           - os: ubuntu-24.04
             goal: test
             python: "3.10"
@@ -225,7 +214,6 @@ jobs:
       - name: Set Env Variables for build
         if: matrix.goal == 'build'
         env:
-          openssl_archs: ${{ matrix.openssl_archs }}
           staticx: ${{ matrix.staticx }}
         run: |
           echo "We are running on ${RUNNER_OS}"
@@ -270,7 +258,6 @@ jobs:
           echo "MAKEOPT=${MAKEOPT}" >> $GITHUB_ENV
           echo "PERL=${PERL}" >> $GITHUB_ENV
           echo "PYEXTERNALS_PATH=${PYEXTERNALS_PATH}" >> $GITHUB_ENV
-          echo "openssl_archs=${openssl_archs}" >> $GITHUB_ENV
 
       - name: Get latest stable OpenSSL source
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
