@@ -194,7 +194,7 @@ fi
 case $gamos in
   [lL]inux)
     gamos="linux"
-    download_urls=$(echo -e "$download_urls" | grep "\-linux-")
+    download_urls=$(echo -e "$download_urls" | grep -e "-linux-")
     if [ "$osversion" == "" ]; then
       this_glibc_ver=$(ldd --version | awk '/ldd/{print $NF}')
     else
@@ -203,7 +203,7 @@ case $gamos in
     echo "This Linux distribution uses glibc $this_glibc_ver"
     case $gamarch in
       x86_64)
-	download_urls=$(echo -e "$download_urls" | grep "\-x86_64-")
+	download_urls=$(echo -e "$download_urls" | grep -e "-x86_64-")
 	gam_x86_64_glibc_vers=$(echo -e "$download_urls" | \
 		grep --only-matching 'glibc[0-9\.]*\.tar\.xz$' \
 	        | cut -c 6-9 )
@@ -218,7 +218,7 @@ case $gamos in
         download_url=$(echo -e "$download_urls" | grep "$useglibc")
 	;;
       arm|arm64|aarch64)
-        download_urls=$(echo -e "$download_urls" | grep "\-aarch64-")
+        download_urls=$(echo -e "$download_urls" | grep -e "-arm64-\|-aarch64-")
         gam_arm64_glibc_vers=$(echo -e "$download_urls" | \
                 grep --only-matching 'glibc[0-9\.]*\.tar\.xz$' | \
                 cut -c 6-9)
@@ -243,13 +243,13 @@ case $gamos in
     # override osversion only if it wasn't set by cli arguments
     osversion=${osversion:-${currentversion}}
     # override osversion only if it wasn't set by cli arguments
-    download_urls=$(echo -e "$download_urls" | grep "\-macos")
+    download_urls=$(echo -e "$download_urls" | grep -e "-macos")
     case $gamarch in
       x86_64)
-        archgrep="\-x86_64"
+        archgrep="-x86_64"
 	;;
       arm|arm64|aarch64)
-        archgrep="\-aarch64"
+        archgrep="-arm64\|-aarch64"
         ;;
       *)
         echo_red "ERROR: this installer currently only supports x86_64 and arm64 MacOS. Looks like you're running on ${gamarch}. Exiting."
@@ -257,13 +257,13 @@ case $gamos in
 	;;
     esac
     gam_macos_urls=$(echo -e "$download_urls" | \
-                     grep "$archgrep")
+                     grep -e $archgrep)
     versionless_urls=$(echo -e "$gam_macos_urls" | \
-                       grep "\-macos-")
+                       grep -e "-macos-")
     if [ "$versionless_urls" == "" ]; then
         # versions after 7.00.38 include MacOS version info
         gam_macos_vers=$(echo -e "$gam_macos_urls" | \
-                         grep --only-matching '\-macos[0-9\.]*' | \
+                         grep --only-matching -e '-macos[0-9\.]*' | \
                          cut -c 7-10)
         for gam_mac_ver in $gam_macos_vers; do
             if version_gt $currentversion $gam_mac_ver; then
@@ -281,13 +281,12 @@ case $gamos in
         case $gamarch in
             x86_64)
 	        minimum_version=13
-                download_url=$(echo -e "$download_urls" | grep "\-x86_64")
                 ;;
             arm|arm64|aarch64)
-                download_url=$(echo -e "$download_urls" | grep "\-aarch64")
 	        minimum_version=14
                 ;;
         esac
+        download_url=$(echo -e "$download_urls" | grep -e $archgrep)
         if version_gt "$osversion" "$minimum_version"; then
             echo_green "You are running MacOS ${osversion}, good. Downloading GAM from ${download_url}."
         else
@@ -304,7 +303,7 @@ case $gamos in
     gamos="windows"
     echo "You are running Windows"
     download_url=$(echo -e "$download_urls" | \
-                   grep "\-windows-" | \
+                   grep -e "-windows-" | \
                    grep ".zip")
     ;;
   *)
