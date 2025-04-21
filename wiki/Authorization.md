@@ -283,7 +283,7 @@ You can skip these steps if you know that untrusted third-party apps are allowed
 * `<ServiceAccountDisplayName>` - `<ProjectName>`
 * `<ServiceAccountDescription>` - `<ServiceAccountDisplayName>`
 
-### Basic
+### Basic Create
 Create a project with default values for the project and service account.
 ```
 gam create project [<EmailAddress>] [<ProjectID>]
@@ -291,7 +291,7 @@ gam create project [<EmailAddress>] [<ProjectID>]
 * `<EmailAddress>` - Google Workspace admin/GCP project manager; if omitted, you will be prompted for the address
 * `<ProjectID>` - A new Google project ID; if omitted, a default value will be used
 
-### Advanced
+### Advanced Create
 Create a project with user-specified values for the project and service account.
 ```
 gam create project [admin <EmailAddress>] [project <ProjectID>]
@@ -326,7 +326,7 @@ Use an existing project to create and download two files: `client_secrets.json` 
 * `<ServiceAccountDisplayName>` - `<ProjectName>`
 * `<ServiceAccountDescription>` - `<ServiceAccountDisplayName>`
 
-### Basic
+### Basic Use
 Use an existing uninitialized/uncredentialed project and configure it to be a GAM project; this typically used when
 the GCP  administrators have created a basic project because project creation is not available for most users.
 
@@ -338,12 +338,13 @@ gam use project [<EmailAddress>] [project <ProjectID>]
 * `<EmailAddress>` - Google Workspace admin/GCP project manager; if omitted, you will be prompted for the address
 * `<ProjectID>` - An existing Google project ID; if omitted, you will be prompted for the ID
 
-### Advanced
+### Advanced Use
 Use an existing project with user-specified values for the service account. If the project is already
 a GAM project you must use `saname <ServiceAccountName>` as the existing service account information
 can not be re-downloaded.
 ```
 gam use project [admin <EmailAddress>] [project <ProjectID>]
+        [appname <String>] [supportemail <EmailAddress>]
         [saname <ServiceAccountName>] [sadisplayname <ServiceAccountDisplayName>]
         [sadescription <ServiceAccountDescription>]
         [(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|
