@@ -657,6 +657,11 @@ jobs:
           echo "GAM Archive ${GAM_ARCHIVE}"
           tar -C "${gampath}/.." --create --verbose --exclude-from "${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" --file $GAM_ARCHIVE --xz gam7
 
+      - name: Install Wix on Win ARM64
+        if: runner.os == 'Windows' && runner.arch == 'ARM64'
+        run: |
+          choco install wixtoolset
+
       - name: Windows package
         if: runner.os == 'Windows' && matrix.goal != 'test'
         run: |
