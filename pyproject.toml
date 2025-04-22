@@ -20,6 +20,7 @@ dependencies = [
     "lxml",
     "passlib>=1.7.2",
     "pathvalidate",
+    "pyscard==2.2.1",
     "python-dateutil",
 ]
 description = "CLI tool to manage Google Workspace"
