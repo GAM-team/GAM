@@ -1,3 +1,7 @@
+7.06.06
+
+Native support for Windows 11 Arm-based devices.
+
 7.06.05
 
 Updated code in `gam delete|update chromepolicy` to handle the `policyTargetKey[additionalTargetKeys]`
