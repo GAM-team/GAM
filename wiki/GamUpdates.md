@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.06.08
+
+Fixed problem where Yubikeys caused a trap.
+
 ### 7.06.07
 
 Updated private key rotation progress messages in `gam create|use|update project`
@@ -24,6 +28,8 @@ Re-run the command specify a new service account name with: saname <ServiceAccou
 ### 7.06.06
 
 Native support for Windows 11 Arm-based devices.
+
+Renamed some MacOS and Linux binary installer files to align on terminology. Everything is "arm64" now, no "aarch64".
 
 ### 7.06.05
 

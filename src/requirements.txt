@@ -10,5 +10,6 @@ httplib2>=0.22.0
 lxml
 passlib>=1.7.4
 pathvalidate
+pyscard==2.2.1
 python-dateutil
 yubikey-manager[yubikey]>=5.6.1
