@@ -8,7 +8,7 @@ GAM installation script.
 OPTIONS:
    -h      show help.
    -d      Directory where gam folder will be installed. Default is \$HOME/bin/
-   -a      Architecture to install (i386, x86_64, x86_64_legacy, arm, arm64). Default is to detect your arch with "uname -m".
+   -a      Architecture to install (x86_64, arm64). Default is to detect your arch with "uname -m".
    -o      OS we are running (linux, macos). Default is to detect your OS with "uname -s".
    -b      OS version. Default is to detect on MacOS and Linux.
    -l      Just upgrade GAM to latest version. Skips project creation and auth.
