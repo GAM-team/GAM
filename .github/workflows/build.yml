@@ -669,7 +669,7 @@ jobs:
           /c/Program\ Files/7-Zip/7z.exe a -tzip "$GAM_ARCHIVE" gam7 "-xr@${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" -bb3
 
       - name: Windows package MSI
-        if: runner.os == "Windows" && matrix.goal != 'test'
+        if: runner.os == 'Windows' && matrix.goal != 'test'
         run: |
           cd ../..
           echo "moved to $(pwd)"
