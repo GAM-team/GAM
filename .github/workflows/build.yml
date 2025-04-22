@@ -652,7 +652,7 @@ jobs:
             else
               libver="glibc$(ldd --version | awk '/ldd/{print $NF}')"
             fi
-            GAM_ARCHIVE="${GITHUB_WORKSPACE}/gam-${GAMVERSION}-linux-$(arch)-${libver}.tar.xz"
+            GAM_ARCHIVE="${GITHUB_WORKSPACE}/gam-${GAMVERSION}-linux-${arch}-${libver}.tar.xz"
           fi
           echo "GAM Archive ${GAM_ARCHIVE}"
           tar -C "${gampath}/.." --create --verbose --exclude-from "${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" --file $GAM_ARCHIVE --xz gam7
