@@ -252,18 +252,15 @@ jobs:
             PERL="c:\strawberry\perl\bin\perl.exe"
             if [[ "$RUNNER_ARCH" == "ARM64" ]]; then
               PYEXTERNALS_PATH="arm64"
-              GAM_ARCHIVE_ARCH="arm64"
               WIX_ARCH="arm64"
               CHOC_OPS=""
             elif [[ "$RUNNER_ARCH" == "X64" ]]; then
               PYEXTERNALS_PATH="amd64"
-              GAM_ARCHIVE_ARCH="x86_64"
               WIX_ARCH="x64"
               CHOC_OPS=""
             fi
             LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_PATH}"
             echo "PYTHON=${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_PATH}/python.exe" >> $GITHUB_ENV
-            echo "GAM_ARCHIVE_ARCH=${GAM_ARCHIVE_ARCH}" >> $GITHUB_ENV
             echo "WIX_ARCH=${WIX_ARCH}" >> $GITHUB_ENV
           fi
           echo "We'll run make with: ${MAKEOPT}"
@@ -662,33 +659,35 @@ jobs:
         run: |
           choco install wixtoolset
 
-      - name: Windows package
+      - name: Windows package zip
         if: runner.os == 'Windows' && matrix.goal != 'test'
         run: |
           echo "started in $(pwd)"
           cd "${gampath}/.."
           echo "moved to $(pwd)"
-          GAM_ARCHIVE="${GITHUB_WORKSPACE}/gam-${GAMVERSION}-windows-${GAM_ARCHIVE_ARCH}.zip"
+          GAM_ARCHIVE="${GITHUB_WORKSPACE}/gam-${GAMVERSION}-windows-${arch}.zip"
           /c/Program\ Files/7-Zip/7z.exe a -tzip "$GAM_ARCHIVE" gam7 "-xr@${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" -bb3
-          if [ "$RUNNER_ARCH" == "X64" ]; then
-            cd ../..
-            echo "moved to $(pwd)"
-            export MSI_FILENAME="${GITHUB_WORKSPACE}/gam-${GAMVERSION}-windows-${GAM_ARCHIVE_ARCH}.msi"
-            # auto-generate a lib.wxs based on the files PyInstaller created for the lib/ directory
-            /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/heat.exe dir "${gampath}/lib" -ke -srd -cg Lib -gg -dr lib -directoryid lib -out lib.wxs
-            $PYTHON tools/gen-wix-xml-filelist.py lib.wxs
-            echo "-- begin lib.wxs --"
-            cat lib.wxs
-            echo "-- end lib.wxs --"
-            /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/candle.exe -arch "${WIX_ARCH}" gam.wxs lib.wxs
-            /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/WixUIExtension.dll gam.wixobj lib.wixobj -b "${gampath}/lib" -o "$MSI_FILENAME" || true;
-            rm -v -f *.wixpdb
-            rm -v -f *.wixobj
-            echo "MSI_FILENAME=${MSI_FILENAME}" >> $GITHUB_ENV
-          fi
+
+      - name: Windows package MSI
+        if: runner.os == "Windows" && matrix.goal != 'test'
+        run: |
+          cd ../..
+          echo "moved to $(pwd)"
+          export MSI_FILENAME="${GITHUB_WORKSPACE}/gam-${GAMVERSION}-windows-${arch}.msi"
+          # auto-generate a lib.wxs based on the files PyInstaller created for the lib/ directory
+          /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/heat.exe dir "${gampath}/lib" -ke -srd -cg Lib -gg -dr lib -directoryid lib -out lib.wxs
+          $PYTHON tools/gen-wix-xml-filelist.py lib.wxs
+          echo "-- begin lib.wxs --"
+          cat lib.wxs
+          echo "-- end lib.wxs --"
+          /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/candle.exe -arch "${WIX_ARCH}" gam.wxs lib.wxs
+          /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/WixUIExtension.dll gam.wixobj lib.wixobj -b "${gampath}/lib" -o "$MSI_FILENAME" || true;
+          rm -v -f *.wixpdb
+          rm -v -f *.wixobj
+          echo "MSI_FILENAME=${MSI_FILENAME}" >> $GITHUB_ENV
 
       - name: Upload gam MSI Windows for signing
-        if: runner.os == 'Windows' && runner.arch == 'X64' && matrix.goal != 'test'
+        if: runner.os == 'Windows' && matrix.goal != 'test'
         run: |
           export folder_number=$(date +%s)
           export folder_id=$($gam user gam-win-signer@pdl.jaylee.us add drivefile drivefilename "UPLOADING_FOR_SIGN ${folder_number}" parentid "1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp" mimetype gfolder returnidonly)
