@@ -10,6 +10,21 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.06.07
+
+Updated private key rotation progress messages in `gam create|use|update project`
+and `gam upload sakey`.
+
+Updated `gam use project` to display the following error message when the specifed project
+already has a service account.
+```
+Re-run the command specify a new service account name with: saname <ServiceAccountName>'
+```
+
+### 7.06.06
+
+Native support for Windows 11 Arm-based devices.
+
 ### 7.06.05
 
 Updated code in `gam delete|update chromepolicy` to handle the `policyTargetKey[additionalTargetKeys]`

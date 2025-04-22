@@ -11384,25 +11384,26 @@ def _waitForSvcAcctCompletion(i):
     sys.stdout.write(Msg.WAITING_FOR_ITEM_CREATION_TO_COMPLETE_SLEEPING.format(Ent.Singular(Ent.SVCACCT), sleep_time))
   time.sleep(sleep_time)
 
-def _grantRotateRights(iam, projectId, service_account, email, account_type='serviceAccount'):
+def _grantRotateRights(iam, projectId, service_account, account_type='serviceAccount'):
   body = {'policy': {'bindings': [{'role': 'roles/iam.serviceAccountKeyAdmin',
-                                   'members': [f'{account_type}:{email}']}]}}
+                                   'members': [f'{account_type}:{service_account}']}]}}
   maxRetries = 10
-  printEntityMessage([Ent.PROJECT, projectId, Ent.SVCACCT, email],
-                     Msg.HAS_RIGHTS_TO_ROTATE_OWN_PRIVATE_KEY.format(email, service_account))
+  kvList = [Ent.PROJECT, projectId, Ent.SVCACCT, service_account]
+  printEntityMessage(kvList, Msg.GRANTING_RIGHTS_TO_ROTATE_ITS_OWN_PRIVATE_KEY.format('Granting'))
   for retry in range(1, maxRetries+1):
     try:
       callGAPI(iam.projects().serviceAccounts(), 'setIamPolicy',
                throwReasons=[GAPI.INVALID_ARGUMENT],
                resource=f'projects/{projectId}/serviceAccounts/{service_account}', body=body)
+      printEntityMessage(kvList, Msg.GRANTING_RIGHTS_TO_ROTATE_ITS_OWN_PRIVATE_KEY.format('Granted'))
       return True
     except GAPI.invalidArgument as e:
-      entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, service_account], str(e))
+      entityActionFailedWarning(kvList, str(e))
       if 'does not exist' not in str(e) or retry == maxRetries:
         return False
       _waitForSvcAcctCompletion(retry)
     except Exception as e:
-      entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, service_account], str(e))
+      entityActionFailedWarning(kvList, str(e))
       return False
 
 def _createOauth2serviceJSON(httpObj, projectInfo, svcAcctInfo, create_key=True):
@@ -11420,6 +11421,7 @@ def _createOauth2serviceJSON(httpObj, projectInfo, svcAcctInfo, create_key=True)
     return False
   except GAPI.alreadyExists as e:
     entityActionFailedWarning([Ent.PROJECT, projectInfo['projectId'], Ent.SVCACCT, svcAcctInfo['name']], str(e))
+    writeStderr(Msg.RERUN_THE_COMMAND_AND_SPECIFY_A_NEW_SANAME)
     return False
   GM.Globals[GM.SVCACCT_SCOPES_DEFINED] = False
   if create_key and not doProcessSvcAcctKeys(mode='retainexisting', iam=iam,
@@ -11428,7 +11430,7 @@ def _createOauth2serviceJSON(httpObj, projectInfo, svcAcctInfo, create_key=True)
                                              clientId=service_account['uniqueId']):
     return False
   sa_email = service_account['name'].rsplit('/', 1)[-1]
-  return _grantRotateRights(iam, projectInfo['projectId'], sa_email, sa_email)
+  return _grantRotateRights(iam, projectInfo['projectId'], sa_email)
 
 def _createClientSecretsOauth2service(httpObj, login_hint, appInfo, projectInfo, svcAcctInfo, create_key=True):
   def _checkClientAndSecret(csHttpObj, client_id, client_secret):
@@ -11921,9 +11923,7 @@ def doUpdateProject():
       continue
     iam = getAPIService(API.IAM, httpObj)
     _getSvcAcctData() # needed to read in GM.OAUTH2SERVICE_JSON_DATA
-    _grantRotateRights(iam, projectId,
-                       GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['client_email'],
-                       GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['client_email'])
+    _grantRotateRights(iam, projectId, GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['client_email'])
   Ind.Decrement()
 
 # gam delete project [[admin] <EmailAddress>] [<ProjectIDEntity>]
@@ -12786,7 +12786,7 @@ def doUploadSvcAcctKeys():
   iam = getAPIService(API.IAM, httpObj)
   if doProcessSvcAcctKeys(mode='upload', iam=iam):
     sa_email = GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['client_email']
-    _grantRotateRights(iam, GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['project_id'], sa_email, sa_email)
+    _grantRotateRights(iam, GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['project_id'], sa_email)
     sys.stdout.write(Msg.YOUR_GAM_PROJECT_IS_CREATED_AND_READY_TO_USE)
 
 # gam delete sakeys <ServiceAccountKeyList>
