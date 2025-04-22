@@ -24,18 +24,19 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
   - Start a terminal session.
 
 * Executable Archive, Manual, Raspberry Pi/ChromeOS ARM devices
-  - `gam-7.wx.yz-linux-aarch64-glibc2.35.tar.xz`
-  - `gam-7.wx.yz-linux-aarch64-legacy.tar.xz`
+  - `gam-7.wx.yz-linux-arm64-glibc2.35.tar.xz`
+  - `gam-7.wx.yz-linux-arm64-glibc2.39.tar.xz`
+  - `gam-7.wx.yz-linux-arm64-legacy.tar.xz`
   - Download the archive, extract the contents into some directory.
   - Start a terminal session.
 
 * Executable Archive, Manual, Mac OS versions Sonoma, Sequoia - M1/M2
-  - `gam-7.wx.yz-macos14.7-aarch64.tar.xz`
+  - `gam-7.wx.yz-macos14.7-arm64.tar.xz`
   - Download the archive, extract the contents into some directory.
   - Start a terminal session.
 
 * Executable Archive, Manual, Mac OS versions Sequoia - M3
-  - `gam-7.wx.yz-macos15.2-aarch64.tar.xz`
+  - `gam-7.wx.yz-macos15.4-arm64.tar.xz`
   - Download the archive, extract the contents into some directory.
   - Start a terminal session.
 
@@ -51,6 +52,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 * Executable Installer, Manual, Windows 64 bit
   - `gam-7.wx.yz-windows-x86_64.msi`
+  - Download the installer and run it.
+  - Start a Command Prompt/PowerShell session.
+
+* Executable Installer, Manual, Windows ARM
+  - `gam-7.wx.yz-windows-arm64.msi`
   - Download the installer and run it.
   - Start a Command Prompt/PowerShell session.
 
