@@ -55,7 +55,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
   - Download the installer and run it.
   - Start a Command Prompt/PowerShell session.
 
-* Executable Installer, Manual, Windows ARM
+* Executable Archive, Manual, Windows 11 ARM
+  - `gam-7.wx.yz-windows-arm64.zip`
+  - Download the archive, extract the contents into some directory.
+  - Start a Command Prompt/PowerShell session.
+
+* Executable Installer, Manual, Windows 11 ARM
   - `gam-7.wx.yz-windows-arm64.msi`
   - Download the installer and run it.
   - Start a Command Prompt/PowerShell session.
