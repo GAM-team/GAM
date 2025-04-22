@@ -671,8 +671,6 @@ jobs:
       - name: Windows package MSI
         if: runner.os == 'Windows' && matrix.goal != 'test'
         run: |
-          cd ../..
-          echo "moved to $(pwd)"
           export MSI_FILENAME="${GITHUB_WORKSPACE}/gam-${GAMVERSION}-windows-${arch}.msi"
           # auto-generate a lib.wxs based on the files PyInstaller created for the lib/ directory
           /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/heat.exe dir "${gampath}/lib" -ke -srd -cg Lib -gg -dr lib -directoryid lib -out lib.wxs
