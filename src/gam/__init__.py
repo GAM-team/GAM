@@ -13491,6 +13491,8 @@ REPORT_CHOICE_MAP = {
   'drive': 'drive',
   'enterprisegroups': 'groups_enterprise',
   'gcp': 'gcp',
+  'gemini': 'gemini_for_workspace',
+  'geminiforworkspace': 'gemini_for_workspace',
   'gplus': 'gplus',
   'google+': 'gplus',
   'group': 'groups',
@@ -13788,6 +13790,20 @@ def doReport():
         csvPF.WriteRow(row)
     return (True, lastDate)
 
+  # dynamically extend our choices with other reports Google dynamically adds
+  rep = buildGAPIObject(API.REPORTS)
+  dyn_choices = rep._rootDesc \
+          .get('resources', {}) \
+          .get('activities', {}) \
+          .get('methods', {}) \
+          .get('list', {}) \
+          .get('parameters', {}) \
+          .get('applicationName', {}) \
+          .get('enum', [])
+  for dyn_choice in dyn_choices:
+    if dyn_choice.replace('_', '') not in REPORT_CHOICE_MAP and \
+       dyn_choice not in REPORT_CHOICE_MAP.values():
+      REPORT_CHOICE_MAP[dyn_choice.replace('_', '')] = dyn_choice
   report = getChoice(REPORT_CHOICE_MAP, mapChoice=True)
   if report == 'usage':
     doReportUsage()
@@ -13795,7 +13811,6 @@ def doReport():
   if report == 'usageparameters':
     doReportUsageParameters()
     return
-  rep = buildGAPIObject(API.REPORTS)
   customerId = GC.Values[GC.CUSTOMER_ID]
   if customerId == GC.MY_CUSTOMER:
     customerId = None
