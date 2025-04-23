@@ -1,3 +1,8 @@
+7.06.09
+
+Added `gemini` and `geminiforworkspace` to `<ActivityApplicationName>` for use in
+`gam report <ActivityApplicationName>`.
+
 7.06.08
 
 Fixed problem where Yubikeys caused a trap.

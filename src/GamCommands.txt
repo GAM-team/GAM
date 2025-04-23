@@ -4458,6 +4458,8 @@ gam report usage customer [todrive <ToDriveAttribute>*]
         domain|
         drive|doc|docs|
         gcp|
+        gemini|
+        geminiforworkspace|
         groups|group|
         groupsenterprise|enterprisegroups|
         jamboard|
