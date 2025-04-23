@@ -110,6 +110,7 @@
 | Google Workspace for Education: Teaching and Learning Upgrade | 1010370001 | gwetlu |
 | Google Workspace Frontline Starter | 1010020030 | wsflw |
 | Google Workspace Frontline Standard | 1010020031 | wsflwstan |
+| Google Workspace Frontline Plus | 1010020034 | wsflwplus |
 | Google Workspace Government | Google-Apps-For-Government | gsuitegov |
 | Google Workspace Labs | 1010470002 | gwlabs | workspacelabs |
 

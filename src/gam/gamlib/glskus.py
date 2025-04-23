@@ -144,6 +144,8 @@ _SKUS = {
     'product': 'Google-Apps', 'aliases': ['wsflw', 'workspacefrontline', 'workspacefrontlineworker'], 'displayName': 'Google Workspace Frontline Starter'},
   '1010020031': {
     'product': 'Google-Apps', 'aliases': ['wsflwstan', 'workspacefrontlinestan', 'workspacefrontlineworkerstan'], 'displayName': 'Google Workspace Frontline Standard'},
+  '1010020034': {
+    'product': 'Google-Apps', 'aliases': ['wsflwplus', 'workspacefrontlineplus', 'workspacefrontlineworkerplus'], 'displayName': 'Google Workspace Frontline Plus'},
   '1010340001': {
     'product': '101034', 'aliases': ['gseau', 'enterprisearchived', 'gsuiteenterprisearchived'], 'displayName': 'Google Workspace Enterprise Plus - Archived User'},
   '1010340002': {

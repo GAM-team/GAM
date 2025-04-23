@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.06.10
+
+Added the following license SKU.
+```
+1010020034 - Google Workspace Frontline Plus
+```
+
 ### 7.06.09
 
 Added `gemini` and `geminiforworkspace` to `<ActivityApplicationName>` for use in

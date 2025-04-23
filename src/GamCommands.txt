@@ -322,7 +322,8 @@ If an item contains spaces, it should be surrounded by ".
         wsess | workspaceesentials | gsuiteessentials | essentials | d4e | driveenterprise | drive4enterprise | 1010060001 | Google Workspace Essentials |
         wsessplus | workspaceessentialsplus | 1010060005 | Google Workspace Essentials Plus |
         wsflw | workspacefrontline | workspacefrontlineworker | 1010020030 | Google Workspace Frontline Starter |
-        wsflwstan | workspacefrontlinestan | workspacefrontlineworkerstan | 1010020031 | Google Workspace Frontline Standard
+        wsflwstan | workspacefrontlinestan | workspacefrontlineworkerstan | 1010020031 | Google Workspace Frontline Standard |
+        wsflwplus | workspacefrontlineplus | workspacefrontlineworkerplus | 1010020034 | Google Workspace Frontline Plus
 
 ## Items built from primitives
 
@@ -782,7 +783,7 @@ Items, separated by spaces, with spaces, commas or single quotes in the items th
 
 ## Collections of ChromeOS Devices
 
-Specify a collection of ChromeOS devices by directly specifying them or by specifiying items that will yield a list of ChromeOS devices.
+Specify a collection of ChromeOS devices by directly specifying them or by specifying items that will yield a list of ChromeOS devices.
 
 <CrOSTypeEntity> ::=
         (all cros)|
@@ -865,7 +866,7 @@ Specify a collection of ChromeOS devices by directly specifying them or by speci
 
 ## Collections of Users
 
-Specify a collection of Users by directly specifying them or by specifiying items that will yield a list of users.
+Specify a collection of Users by directly specifying them or by specifying items that will yield a list of users.
 
 <UserTypeEntity> ::=
         (all users|users_ns|users_susp|users_ns_susp)|
@@ -4458,8 +4459,7 @@ gam report usage customer [todrive <ToDriveAttribute>*]
         domain|
         drive|doc|docs|
         gcp|
-        gemini|
-        geminiforworkspace|
+        gemini|geminiforworkspace|
         groups|group|
         groupsenterprise|enterprisegroups|
         jamboard|

@@ -1,3 +1,10 @@
+7.06.10
+
+Added the following license SKU.
+```
+1010020034 - Google Workspace Frontline Plus
+```
+
 7.06.09
 
 Added `gemini` and `geminiforworkspace` to `<ActivityApplicationName>` for use in
