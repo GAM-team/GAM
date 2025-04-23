@@ -782,7 +782,7 @@ Items, separated by spaces, with spaces, commas or single quotes in the items th
 
 ## Collections of ChromeOS Devices
 
-Specify a collection of ChromeOS devices by directly specifying them or by specifiying items that will yield a list of ChromeOS devices.
+Specify a collection of ChromeOS devices by directly specifying them or by specifying items that will yield a list of ChromeOS devices.
 
 <CrOSTypeEntity> ::=
         (all cros)|
@@ -865,7 +865,7 @@ Specify a collection of ChromeOS devices by directly specifying them or by speci
 
 ## Collections of Users
 
-Specify a collection of Users by directly specifying them or by specifiying items that will yield a list of users.
+Specify a collection of Users by directly specifying them or by specifying items that will yield a list of users.
 
 <UserTypeEntity> ::=
         (all users|users_ns|users_susp|users_ns_susp)|
