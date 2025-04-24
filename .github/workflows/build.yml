@@ -452,6 +452,7 @@ jobs:
           "$PYTHON" -m pip install --upgrade pip
           "$PYTHON" -m pip install --upgrade wheel
           "$PYTHON" -m pip install --upgrade setuptools
+          "$PYTHON" -m pip install --upgrade packaging
 
       - name: Custom wheels for Win arm64
         if: runner.os == 'Windows' && runner.arch == 'ARM64'
