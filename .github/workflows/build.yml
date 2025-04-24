@@ -452,6 +452,8 @@ jobs:
           "$PYTHON" -m pip install --upgrade pip
           "$PYTHON" -m pip install --upgrade wheel
           "$PYTHON" -m pip install --upgrade setuptools
+          "$PYTHON" -m pip install --upgrade importlib-metadata
+          "$PYTHON" -m pip install --upgrade setuptools-scm
           "$PYTHON" -m pip list
 
       - name: Custom wheels for Win arm64
