@@ -162,7 +162,7 @@ PROJECT_APIS = [
   'accesscontextmanager.googleapis.com',
   'admin.googleapis.com',
   'alertcenter.googleapis.com',
-  'analytics.googleapis.com',
+  'analyticsdata.googleapis.com',
   'analyticsadmin.googleapis.com',
 #  'audit.googleapis.com',
   'calendar-json.googleapis.com',
