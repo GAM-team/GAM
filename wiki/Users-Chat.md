@@ -42,12 +42,12 @@ Google requires that you have a Chat Bot configured in order to use the Chat API
 
 ## Set up a Chat Bot
 
-* Run the command `gam setup chat`; it will point you to a URL to configure your Chat Bot; this is required to use the Chat API.
+* Run the command `gam setup chat`; it will point you to a URL to configure your Chat Bot.
 * Enter an App name and Description of your choosing.
 * For the Avatar URL you can use `https://dummyimage.com/384x256/4d4d4d/0011ff.png&text=+GAM` or a public URL to an image of your own choosing.
 * In Functionality, uncheck both "Receive 1:1 messages" and "Join spaces and group conversations"
-* In Connection settings, choose "Cloud Pub/Sub" and enter "no-topic" for the topic name. GAM doesn't yet listen to pub/sub so this option is not used.
-* In Visibility, uncheck "Make this Chat app available to specific people and groups in Domain Workspace".
+* In Connection settings, choose "Cloud Pub/Sub" and enter `projects/<ProjectID>/topics/no-topic` for the topic name. Replace `<ProjectID>` with your GAM project ID. GAM doesn't yet listen to pub/sub so this option is not used.
+* In Visibility, uncheck "Make this Chat app available to specific people and groups in  Domain Workspace".
 * Click Save.
 
 ## API documentation
