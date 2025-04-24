@@ -51,6 +51,7 @@ config csv_output_row_filter "'\"accounts:used_quota_in_mb\":count>15000'"
         domain|
         drive|doc|docs|
         gcp|
+        gemini|geminiforworkspace|
         groups|group|
         groupsenterprise|enterprisegroups|
         jamboard|

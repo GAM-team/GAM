@@ -20,14 +20,19 @@
 
 """
 
-GAM_VER_LIBS = ['cryptography',
-                'filelock',
-                'google-api-python-client',
-                'google-auth-httplib2',
-                'google-auth-oauthlib',
-                'google-auth',
-                'httplib2',
-                'passlib',
-                'python-dateutil',
-                'yubikey-manager',
-                ]
+GAM_VER_LIBS = [
+  'chardet',
+  'cryptography',
+  'filelock',
+  'google-api-python-client',
+  'google-auth-httplib2',
+  'google-auth-oauthlib',
+  'google-auth',
+  'lxml',
+  'httplib2',
+  'passlib',
+  'pathvalidate',
+  'pyscard',
+  'python-dateutil',
+  'yubikey-manager',
+]

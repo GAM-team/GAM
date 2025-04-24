@@ -28,6 +28,8 @@ env:
   OPENSSL_SOURCE_PATH: ${{ github.workspace }}/src/openssl
   PYTHON_INSTALL_PATH: ${{ github.workspace }}/bin/python
   PYTHON_SOURCE_PATH: ${{ github.workspace }}/src/cpython
+  CRYPTOGRAPHY_BUILD_OPENSSL_NO_LEGACY: 1
+  CRYPTOGRAPHY_OPENSSL_NO_LEGACY: 1
 
 jobs:
   build:
@@ -462,7 +464,14 @@ jobs:
           echo "Downloading ${latest_crypt_whl}..."
           curl -O -L "$latest_crypt_whl"
           "$PYTHON" -m pip install cryptography*.whl
-          
+
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Compile cryptography from source (no legacy)
+        if: runner.os != 'Windows' || runner.arch != 'ARM64'
+        run: |
+          pip install --no-binary ":all:" --force cryptography
+
       - name: Install pip requirements
         run: |
           echo "before anything..."
