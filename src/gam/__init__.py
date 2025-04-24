@@ -96,7 +96,7 @@ import wsgiref.util
 import zipfile
 
 # disable legacy stuff we don't use and isn't secure
-os.environ['CRYPTOGRAPHY_OPENSSL_NO_LEGACY'] = 1
+os.environ['CRYPTOGRAPHY_OPENSSL_NO_LEGACY'] = "1"
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
