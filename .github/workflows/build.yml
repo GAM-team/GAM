@@ -465,10 +465,12 @@ jobs:
           curl -O -L "$latest_crypt_whl"
           "$PYTHON" -m pip install cryptography*.whl
 
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+
       - name: Compile cryptography from source (no legacy)
         if: runner.os != 'Windows' || runner.arch != 'ARM64'
         run: |
-          pip install --no-binary cryptography
+          pip install --no-binary ":all:" --force cryptography
 
       - name: Install pip requirements
         run: |
