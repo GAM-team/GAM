@@ -199,7 +199,7 @@ jobs:
         run: |
           echo "RUNNING: apt update..."
           sudo apt-get -qq --yes update
-          sudo apt-get -qq --yes install swig libpcsclite-dev libxslt1-dev libsqlite3-dev
+          sudo apt-get -qq --yes install swig libpcsclite-dev libxslt1-dev libsqlite3-dev libffi-dev pkg-config
 
       - name: MacOS install tools
         if: runner.os == 'macOS'
