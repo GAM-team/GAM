@@ -9360,32 +9360,9 @@ def getOSPlatform():
 
 # gam checkconnection
 def doCheckConnection():
-  hosts = ['api.github.com',
-           'raw.githubusercontent.com',
-           'accounts.google.com',
-           'workspace.google.com',
-           'oauth2.googleapis.com',
-           'www.googleapis.com']
-  fix_hosts = {'calendar-json.googleapis.com': 'www.googleapis.com',
-               'storage-api.googleapis.com': 'storage.googleapis.com'}
-  api_hosts = ['apps-apis.google.com',
-               'sites.google.com',
-               'versionhistory.googleapis.com',
-               'www.google.com']
-  for host in API.PROJECT_APIS:
-    host = fix_hosts.get(host, host)
-    if host not in api_hosts and host not in hosts:
-      api_hosts.append(host)
-  hosts.extend(sorted(api_hosts))
-  host_count = len(hosts)
-  httpObj = getHttpObj(timeout=30)
-  httpObj.follow_redirects = False
-  headers = {'user-agent': GAM_USER_AGENT}
-  okay = createGreenText('OK')
-  not_okay = createRedText('ERROR')
-  try_count = 0
-  success_count = 0
-  for host in hosts:
+
+  def check_host(host):
+    nonlocal try_count, okay, not_okay, success_count
     try_count += 1
     dns_err = None
     ip = 'unknown'
@@ -9395,12 +9372,12 @@ def doCheckConnection():
       dns_err = f'{not_okay}\n   DNS failure: {str(e)}\n'
     except Exception as e:
       dns_err = f'{not_okay}\n   Unknown DNS failure: {str(e)}\n'
-    check_line = f'Checking {host} ({ip}) ({try_count}/{host_count})...'
+    check_line = f'Checking {host} ({ip}) ({try_count})...'
     writeStdout(f'{check_line:<100}')
     flushStdout()
     if dns_err:
       writeStdout(dns_err)
-      continue
+      return 
     gen_firewall = 'You probably have security software or a firewall on your machine or network that is preventing GAM from making Internet connections. Check your network configuration or try running GAM on a hotspot or home network to see if the problem exists only on your organization\'s network.'
     try:
       if host.startswith('http'):
@@ -9429,7 +9406,54 @@ def doCheckConnection():
       writeStdout(f'{not_okay}\n    Timed out trying to connect to host\n')
     except Exception as e:
       writeStdout(f'{not_okay}\n    {str(e)}\n')
-  if success_count == host_count:
+
+  try_count = 0
+  httpObj = getHttpObj(timeout=30)
+  httpObj.follow_redirects = False
+  headers = {'user-agent': GAM_USER_AGENT}
+  okay = createGreenText('OK')
+  not_okay = createRedText('ERROR')
+  success_count = 0
+  initial_hosts = ['api.github.com',
+           'raw.githubusercontent.com',
+           'accounts.google.com',
+           'oauth2.googleapis.com',
+           'www.googleapis.com']
+  for host in initial_hosts:
+    check_host(host)
+  api_hosts = ['apps-apis.google.com',
+               'www.google.com']
+  for host in api_hosts:
+    check_host(host)
+  # For v2 discovery APIs, GAM gets discovery file from <api>.googleapis.com so
+  # add those domains.
+  disc_hosts = []
+  for api, config in API._INFO.items():
+    if config.get('v2discovery') and not config.get('localdiscovery'):
+        if mapped_api := config.get('mappedAPI'):
+          api = mapped_api
+        host = f'{api}.googleapis.com'
+        if host not in disc_hosts:
+          disc_hosts.append(host)
+  for host in disc_hosts:
+    check_host(host)
+  checked_hosts = initial_hosts + api_hosts + disc_hosts
+  # now we need to "build" each API and check it's base URL host
+  # if we haven't already. This may not be any hosts at all but
+  # to ensure we are checking all hosts GAM may use we should
+  # keep this.
+  for api in API._INFO:
+    if api in [API.CONTACTS, API.EMAIL_AUDIT]:
+      continue
+    svc = getService(api, httpObj)
+    base_url = svc._rootDesc.get('baseUrl')
+    parsed_base_url = urlparse(base_url)
+    base_host = parsed_base_url.netloc
+    if base_host not in checked_hosts:
+      print(f'checking {base_host} for {api}')
+      check_host(base_host)
+      checked_hosts.append(base_host)
+  if success_count == try_count:
     writeStdout(createGreenText('All hosts passed!\n'))
   else:
     systemErrorExit(3, createYellowText('Some hosts failed to connect! Please follow the recommendations for those hosts to correct any issues and try again.'))
