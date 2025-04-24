@@ -199,7 +199,7 @@ jobs:
         run: |
           echo "RUNNING: apt update..."
           sudo apt-get -qq --yes update
-          sudo apt-get -qq --yes install swig libpcsclite-dev libxslt1-dev libsqlite3-dev
+          sudo apt-get -qq --yes install swig libpcsclite-dev libxslt1-dev libsqlite3-dev libffi-dev pkg-config
 
       - name: MacOS install tools
         if: runner.os == 'macOS'
@@ -452,6 +452,9 @@ jobs:
           "$PYTHON" -m pip install --upgrade pip
           "$PYTHON" -m pip install --upgrade wheel
           "$PYTHON" -m pip install --upgrade setuptools
+          "$PYTHON" -m pip install --upgrade importlib-metadata
+          "$PYTHON" -m pip install --upgrade setuptools-scm
+          "$PYTHON" -m pip list
 
       - name: Custom wheels for Win arm64
         if: runner.os == 'Windows' && runner.arch == 'ARM64'
@@ -467,10 +470,10 @@ jobs:
 
       - uses: actions-rust-lang/setup-rust-toolchain@v1
 
-      - name: Compile cryptography from source (no legacy)
-        if: runner.os != 'Windows' || runner.arch != 'ARM64'
-        run: |
-          pip install --no-binary ":all:" --force cryptography
+     # - name: Compile cryptography from source (no legacy)
+     #   if: runner.os != 'Windows' || runner.arch != 'ARM64'
+     #   run: |
+     #     pip install --no-binary ":all:" --force cryptography
 
       - name: Install pip requirements
         run: |
