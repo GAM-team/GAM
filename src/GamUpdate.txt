@@ -1,3 +1,10 @@
+7.06.12
+
+Deleted commands to display Analytic UA properties; the API has been deprecated.
+```
+gam <UserTypeEntity> print|show analyticuaproperties
+```
+
 7.06.11
 
 Improved `gam checkconn`.

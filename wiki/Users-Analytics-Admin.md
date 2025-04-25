@@ -6,14 +6,13 @@
 - [Display Analytic Account Summaries](#display-analytic-account-summaries)
 - [Display Analytic Properties](#display-analytic-properties)
 - [Display Analytic Datastreams](#display-analytic-datastreams)
-- [Display Analytic UA Properties](#display-analytic-ua-properties)
 - [Examples](#examples)
 
 ## API documentation
 * [Analytics Admin API](https://developers.google.com/analytics/devguides/config/admin/v1/rest)
 
 ## Notes
-To use these commands you must add 'Analytics API' and 'Analytics Admin API' to your project and update your service account authorization.
+To use these commands you must add 'Analytics Admin API' to your project and update your service account authorization.
 ```
 gam update project
 gam user user@domain.com update serviceaccount
@@ -142,37 +141,6 @@ When using the `formatjson` option, double quotes are used extensively in the da
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
-## Display Analytic UA Properties
-```
-gam <UserTypeEntity> show analyticuaproperties
-        accountid [accounts/]<String>
-        [maxresults <Integer>]
-        [formatjson]
-```
-The required `accountid <String>` can be in the format: 'accounts/123' or '123'.
-
-By default, GAM asks the API for 50 properties per page of results,
-* `maxresults` - Maximum number of results per page; range is 1-200; the default is 50.
-
-By default, Gam displays the information as an indented list of keys and values.
-* `formatjson` - Display the fields in JSON format.
-```
-gam <UserTypeEntity> print analyticuaproperties [todrive <ToDriveAttribute>*]
-        accountid [accounts/]<String>
-        [maxresults <Integer>]
-        [formatjson [quotechar <Character>]]
-```
-The required `accountid <String>` can be in the format: 'accounts/123' or '123'.
-
-By default, GAM asks the API for 50 properties per page of results,
-* `maxresults` - Maximum number of results per page; range is 1-200; the default is 50.
-
-By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
-the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
-When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
-The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
-`quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
-
 
 ## Examples
 Get all analytic accounts
@@ -188,9 +156,4 @@ gam config auto_batch_min 1 redirect stdout - multiprocess redirect stderr stdou
 Get all analytic account properties (GA4)
 ```
 gam redirect stdout - multiprocess redirect stderr stdout redirect csv ./GA4AnalyticAccountProperties.csv multiprocess csv AnalyticAccounts.csv gam user "~User" print analyticproperties filter "parent:~~name~~"
-```
-
-Get all analytic account properties (UA)
-```
-gam redirect stdout - multiprocess redirect stderr stdout redirect csv ./UAAnalyticAccountProperties.csv multiprocess csv AnalyticAccounts.csv gam user "~User" print analyticuaproperties accountid "~~name~~"
 ```

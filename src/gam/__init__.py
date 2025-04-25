@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.06.11'
+__version__ = '7.06.12'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -9377,7 +9377,7 @@ def doCheckConnection():
     flushStdout()
     if dns_err:
       writeStdout(dns_err)
-      return 
+      return
     gen_firewall = 'You probably have security software or a firewall on your machine or network that is preventing GAM from making Internet connections. Check your network configuration or try running GAM on a hotspot or home network to see if the problem exists only on your organization\'s network.'
     try:
       if host.startswith('http'):
@@ -9430,11 +9430,11 @@ def doCheckConnection():
   disc_hosts = []
   for api, config in API._INFO.items():
     if config.get('v2discovery') and not config.get('localdiscovery'):
-        if mapped_api := config.get('mappedAPI'):
-          api = mapped_api
-        host = f'{api}.googleapis.com'
-        if host not in disc_hosts:
-          disc_hosts.append(host)
+      if mapped_api := config.get('mappedAPI'):
+        api = mapped_api
+      host = f'{api}.googleapis.com'
+      if host not in disc_hosts:
+        disc_hosts.append(host)
   for host in disc_hosts:
     check_host(host)
   checked_hosts = initial_hosts + api_hosts + disc_hosts
@@ -9450,7 +9450,7 @@ def doCheckConnection():
     parsed_base_url = urlparse(base_url)
     base_host = parsed_base_url.netloc
     if base_host not in checked_hosts:
-      print(f'checking {base_host} for {api}')
+      writeStdout(f'Checking {base_host} for {api}\n')
       check_host(base_host)
       checked_hosts.append(base_host)
   if success_count == try_count:
@@ -15804,27 +15804,13 @@ ANALYTIC_ENTITY_MAP = {
      'pageSize': 50,
      'maxPageSize': 200,
      },
-  Ent.ANALYTIC_UA_PROPERTY:
-    {'titles': ['User', 'accountId', 'name', 'id', 'created', 'updated'],
-     'JSONtitles': ['User', 'accountId', 'name', 'id', 'JSON'],
-     'timeObjects': ['created', 'updated'],
-     'items': 'items',
-     'pageSize': 50,
-     'maxPageSize': 200,
-     },
   }
 
 def printShowAnalyticItems(users, entityType):
   analyticEntityMap = ANALYTIC_ENTITY_MAP[entityType]
   csvPF = CSVPrintFile(analyticEntityMap['titles'], 'sortall') if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
-  if entityType != Ent.ANALYTIC_UA_PROPERTY:
-    kwargs = {'pageSize': analyticEntityMap['pageSize']}
-    api = API.ANALYTICS_ADMIN
-  else:
-#    kwargs = {'webPropertyId': '~all'}
-    kwargs = {}
-    api = API.ANALYTICS
+  kwargs = {'pageSize': analyticEntityMap['pageSize']}
   if entityType in {Ent.ANALYTIC_ACCOUNT, Ent.ANALYTIC_PROPERTY}:
     kwargs['showDeleted'] = False
   while Cmd.ArgumentsRemaining():
@@ -15837,16 +15823,12 @@ def printShowAnalyticItems(users, entityType):
       kwargs['showDeleted'] = getBoolean()
     elif entityType == Ent.ANALYTIC_PROPERTY and myarg == 'filter':
       kwargs['filter'] = getString(Cmd.OB_STRING)
-    elif entityType == Ent.ANALYTIC_UA_PROPERTY and myarg == 'accountid':
-      kwargs['accountId'] = getString(Cmd.OB_STRING).replace('accounts/', '')
     elif entityType == Ent.ANALYTIC_DATASTREAM and myarg == 'parent':
       kwargs['parent'] = getString(Cmd.OB_STRING)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if entityType == Ent.ANALYTIC_PROPERTY and 'filter' not in kwargs:
     missingArgumentExit('filter')
-  if entityType == Ent.ANALYTIC_UA_PROPERTY and 'accountId' not in kwargs:
-    missingArgumentExit('accountid')
   if entityType == Ent.ANALYTIC_DATASTREAM and 'parent' not in kwargs:
     missingArgumentExit('parent')
   if csvPF and FJQC.formatJSON:
@@ -15854,7 +15836,7 @@ def printShowAnalyticItems(users, entityType):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, analytics = buildGAPIServiceObject(api, user, i, count)
+    user, analytics = buildGAPIServiceObject(API.ANALYTICS_ADMIN, user, i, count)
     if not analytics:
       continue
     if entityType == Ent.ANALYTIC_ACCOUNT:
@@ -15863,11 +15845,8 @@ def printShowAnalyticItems(users, entityType):
       service = analytics.accountSummaries()
     elif entityType == Ent.ANALYTIC_DATASTREAM:
       service = analytics.properties().dataStreams()
-    elif entityType == Ent.ANALYTIC_PROPERTY:
+    else: #  entityType == Ent.ANALYTIC_PROPERTY:
       service = analytics.properties()
-    else: #Ent.ANALYTIC_UA_PROPERTY:
-      service = analytics.management().webproperties()
-#      service = analytics.management().profiles()
     if csvPF:
       printGettingAllEntityItemsForWhom(entityType, user, i, count)
       pageMessage = getPageMessageForWhom()
@@ -15908,10 +15887,7 @@ def printShowAnalyticItems(users, entityType):
         if not FJQC.formatJSON:
           csvPF.WriteRowTitles(row)
         elif csvPF.CheckRowTitles(row):
-          if entityType != Ent.ANALYTIC_UA_PROPERTY:
-            row = {'User': user, 'name': item['name'], 'displayName': item['displayName']}
-          else:
-            row = {'User': user, 'accountId': item['accountId'], 'id': item['id'], 'name': item['name']}
+          row = {'User': user, 'name': item['name'], 'displayName': item['displayName']}
           for field in analyticEntityMap['JSONtitles'][2:-1]:
             row[field] = item[field]
           row['JSON'] = json.dumps(cleanJSON(item, timeObjects=analyticEntityMap['timeObjects']),
@@ -15948,17 +15924,6 @@ def printShowAnalyticAccountSummaries(users):
 #	[formatjson]
 def printShowAnalyticProperties(users):
   printShowAnalyticItems(users, Ent.ANALYTIC_PROPERTY)
-
-# gam <UserTypeEntity> print analyticuaproperties [todrive <ToDriveAttribute>*]
-#	accountid [accounts/]<String>
-#	[maxresults <Integer>]
-#	[formatjson [quotechar <Character>]]
-# gam <UserTypeEntity> show analyticuaproperties
-#	accountid [accounts/]<String>
-#	[maxresults <Integer>]
-#	[formatjson]
-def printShowAnalyticUAProperties(users):
-  printShowAnalyticItems(users, Ent.ANALYTIC_UA_PROPERTY)
 
 # gam <UserTypeEntity> print analyticdatastreams [todrive <ToDriveAttribute>*]
 #	parent <String>
@@ -76716,7 +76681,6 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_ANALYTICACCOUNTSUMMARY:	printShowAnalyticAccountSummaries,
       Cmd.ARG_ANALYTICDATASTREAM:	printShowAnalyticDatastreams,
       Cmd.ARG_ANALYTICPROPERTY:	printShowAnalyticProperties,
-      Cmd.ARG_ANALYTICUAPROPERTY:	printShowAnalyticUAProperties,
       Cmd.ARG_ASP:		printShowASPs,
       Cmd.ARG_BACKUPCODE:	printShowBackupCodes,
       Cmd.ARG_CALENDAR:		printShowCalendars,
@@ -76823,7 +76787,6 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_ANALYTICACCOUNTSUMMARY:	printShowAnalyticAccountSummaries,
       Cmd.ARG_ANALYTICDATASTREAM:	printShowAnalyticDatastreams,
       Cmd.ARG_ANALYTICPROPERTY:	printShowAnalyticProperties,
-      Cmd.ARG_ANALYTICUAPROPERTY:	printShowAnalyticUAProperties,
       Cmd.ARG_ASP:		printShowASPs,
       Cmd.ARG_BACKUPCODE:	printShowBackupCodes,
       Cmd.ARG_CALENDAR:		printShowCalendars,
@@ -77036,7 +76999,6 @@ USER_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_ANALYTICACCOUNTSUMMARIES:	Cmd.ARG_ANALYTICACCOUNTSUMMARY,
   Cmd.ARG_ANALYTICDATASTREAMS:	Cmd.ARG_ANALYTICDATASTREAM,
   Cmd.ARG_ANALYTICPROPERTIES:	Cmd.ARG_ANALYTICPROPERTY,
-  Cmd.ARG_ANALYTICUAPROPERTIES:	Cmd.ARG_ANALYTICUAPROPERTY,
   Cmd.ARG_ASPS:			Cmd.ARG_ASP,
   Cmd.ARG_BACKUPCODES:		Cmd.ARG_BACKUPCODE,
   Cmd.ARG_CALENDARS:		Cmd.ARG_CALENDAR,

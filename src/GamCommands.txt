@@ -1523,17 +1523,6 @@ gam print alias|aliases [todrive <ToDriveAttribute>*]
 
 gam whatis <EmailItem> [noinfo] [noinivitablecheck]
 
-# Analytics UA
-
-gam <UserTypeEntity> print analyticuaproperties [todrive <ToDriveAttribute>*]
-        accountid [accounts/]<String>
-        [maxresults <Integer>]
-        [formatjson [quotechar <Character>]]
-gam <UserTypeEntity> show analyticuaproperties
-        accountid [accounts/]<String>
-        [maxresults <Integer>]
-        [formatjson]
-
 # Analytics Admin
 
 gam <UserTypeEntity> print analyticaccounts [todrive <ToDriveAttribute>*]

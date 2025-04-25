@@ -61,7 +61,6 @@ class GamEntity():
   ANALYTIC_ACCOUNT_SUMMARY = 'anas'
   ANALYTIC_DATASTREAM = 'anad'
   ANALYTIC_PROPERTY = 'anap'
-  ANALYTIC_UA_PROPERTY = 'anau'
   API = 'api '
   APP_ACCESS_SETTINGS = 'apps'
   APP_ID = 'appi'
@@ -412,7 +411,6 @@ class GamEntity():
     ANALYTIC_ACCOUNT_SUMMARY: ['Analytic Account Summaries', 'Analytic Account Summary'],
     ANALYTIC_DATASTREAM: ['Analytic Datastreams', 'Analytic Datastream'],
     ANALYTIC_PROPERTY: ['Analytic GA4 Properties', 'Analytic GA4 Property'],
-    ANALYTIC_UA_PROPERTY: ['Analytic UA Properties', 'Analytic UA Property'],
     API: ['APIs', 'API'],
     APP_ACCESS_SETTINGS: ['Application Access Settings', 'Application Access Settings'],
     APP_ID: ['Application IDs', 'Application ID'],
