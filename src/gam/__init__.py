@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.06.10'
+__version__ = '7.06.11'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -34205,7 +34205,8 @@ def getGroupMembers(cd, groupEmail, memberRoles, membersList, membersSet, i, cou
   elif memberOptions[MEMBEROPTION_NODUPLICATES]:
     groupMemberList = []
     for member in groupMembers:
-      if member['type'] != Ent.TYPE_GROUP:
+      namespace = member['email'].find('@') == -1
+      if member['type'] != Ent.TYPE_GROUP or namespace:
         if ((member['type'] in typesSet and
              checkMemberMatch(member, memberOptions) and
              _checkMemberRoleIsSuspendedIsArchived(member, validRoles, memberOptions[MEMBEROPTION_ISSUSPENDED], memberOptions[MEMBEROPTION_ISARCHIVED]) and
@@ -34234,7 +34235,8 @@ def getGroupMembers(cd, groupEmail, memberRoles, membersList, membersSet, i, cou
                       memberOptions, memberDisplayOptions, level+1, typesSet)
   else:
     for member in groupMembers:
-      if member['type'] != Ent.TYPE_GROUP:
+      namespace = member['email'].find('@') == -1
+      if member['type'] != Ent.TYPE_GROUP or namespace:
         if ((member['type'] in typesSet) and
             checkMemberMatch(member, memberOptions) and
             _checkMemberRoleIsSuspendedIsArchived(member, validRoles,
@@ -36333,7 +36335,8 @@ def getCIGroupMembers(ci, groupName, memberRoles, membersList, membersSet, i, co
     for member in groupMembers:
       getCIGroupMemberRoleFixType(member)
       memberName = member.get('preferredMemberKey', {}).get('id', '')
-      if member['type'] != Ent.TYPE_GROUP:
+      namespace = member.get('preferredMemberKey', {}).get('namespace', '')
+      if member['type'] != Ent.TYPE_GROUP or namespace:
         if (member['type'] in typesSet and
             checkCIMemberMatch(member, memberOptions) and
             _checkMemberRole(member, validRoles) and
@@ -36361,7 +36364,8 @@ def getCIGroupMembers(ci, groupName, memberRoles, membersList, membersSet, i, co
     for member in groupMembers:
       getCIGroupMemberRoleFixType(member)
       memberName = member.get('preferredMemberKey', {}).get('id', '')
-      if member['type'] != Ent.TYPE_GROUP:
+      namespace = member.get('preferredMemberKey', {}).get('namespace', '')
+      if member['type'] != Ent.TYPE_GROUP or namespace:
         if (member['type'] in typesSet and
             checkCIMemberMatch(member, memberOptions) and
             _checkMemberRole(member, validRoles) and

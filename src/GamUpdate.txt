@@ -1,3 +1,11 @@
+7.06.11
+
+Improved `gam checkconn`.
+
+Updated `gam print group-members` and `gam print cigroup-members` to recognize members
+that are groups representing chat spaces. For now, these groups are not expanded when
+`recursive` is specified.
+
 7.06.10
 
 Added the following license SKU.
