@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.06.12'
+__version__ = '7.06.13'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -5981,7 +5981,7 @@ def getCIGroupMemberRoleFixType(member):
     else:
       member['type'] = Ent.TYPE_OTHER
   roles = {}
-  memberRoles = member.get('roles', [{'name': Ent.MEMBER}])
+  memberRoles = member.get('roles', [{'name': Ent.ROLE_MEMBER}])
   for role in memberRoles:
     roles[role['name']] = role
   for a_role in [Ent.ROLE_OWNER, Ent.ROLE_MANAGER, Ent.ROLE_MEMBER]:
@@ -6019,7 +6019,7 @@ def getCIGroupTransitiveMemberRoleFixType(groupName, tmember):
         trole['name'] = Ent.ROLE_MANAGER
       memberRoles.append(trole)
   else:
-    memberRoles = [{'name': Ent.MEMBER}]
+    memberRoles = [{'name': Ent.ROLE_MEMBER}]
   roles = {}
   for role in memberRoles:
     roles[role['name']] = role
@@ -26478,6 +26478,64 @@ def _getChatMemberEmail(cd, member):
     _, memberUid = member['groupMember']['name'].split('/')
     member['groupMember']['email'], _ = convertUIDtoEmailAddressWithType(f'uid:{memberUid}', cd, None, emailTypes=['group'])
 
+def _getChatSpaceMembers(cd, chatSpace, ciGroupName):
+  if chatSpace.startswith('space/'):
+    _, chatSpace = chatSpace.split('/', 1)
+    chatSpace = 'spaces/'+chatSpace
+  kwargsUAA = {'useAdminAccess': True, 'filter': 'member.type != "BOT"'}
+  user, chat, kvList = buildChatServiceObject(API.CHAT_MEMBERSHIPS_ADMIN, _getAdminEmail(), 0, 0, [Ent.CHAT_SPACE, chatSpace], True)
+  memberList = []
+  if not chat:
+    return memberList
+  fields = getItemFieldsFromFieldsList('memberships', [])
+  qfilter = f'{Ent.Singular(Ent.CHAT_SPACE)}: {chatSpace}, {kwargsUAA["filter"]}'
+  try:
+    members = callGAPIpages(chat.spaces().members(), 'list', 'memberships',
+                            pageMessage=_getChatPageMessage(Ent.CHAT_MEMBER, user, 0, 0, qfilter),
+                            throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                            parent=chatSpace, fields=fields, pageSize=CHAT_PAGE_SIZE, **kwargsUAA)
+    for member in members:
+      _getChatMemberEmail(cd, member)
+      gmember = {}
+      if 'member' in member:
+        if member['member']['type'] == 'HUMAN':
+          _, memberUid = member['member']['name'].split('/')
+          gmember['type'] = Ent.TYPE_USER
+          email, _ = convertUIDtoEmailAddressWithType(f'uid:{memberUid}', cd, None, emailTypes=['user'])
+          role = Ent.ROLE_MANAGER if member['role'] == 'ROLE_MANAGER' else Ent.ROLE_MEMBER
+          if not ciGroupName:
+            gmember['id'] = memberUid
+            gmember['email'] = email
+            gmember['role'] = role
+            gmember['status'] = member['state']
+          else:
+            gmember['name'] = f'{ciGroupName}/memberships/{memberUid}'
+            gmember['preferredMemberKey'] = {'id': email}
+            gmember['roles'] = [{'name': role}]
+            gmember['createTime'] = member['createTime']
+          memberList.append(gmember)
+      elif 'groupMember' in member:
+        _, memberUid = member['groupMember']['name'].split('/')
+        gmember['type'] = Ent.TYPE_GROUP
+        role = Ent.ROLE_MANAGER if member['role'] == 'ROLE_MANAGER' else Ent.ROLE_MEMBER
+        email, _ = convertUIDtoEmailAddressWithType(f'uid:{memberUid}', cd, None, emailTypes=['group'])
+        if not ciGroupName:
+          gmember['id'] = memberUid
+          gmember['email'] = email
+          gmember['role'] = role
+          gmember['status'] = member['state']
+        else:
+          gmember['name'] = f'{ciGroupName}/memberships/{memberUid}'
+          gmember['preferredMemberKey'] = {'id': email}
+          gmember['roles'] = [{'name': role}]
+          gmember['createTime'] = member['createTime']
+        memberList.append(gmember)
+    return memberList
+  except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+    exitIfChatNotConfigured(chat, kvList, str(e), 0, 0)
+    return memberList
+
 def normalizeUserMember(user, userList):
   userList.append(normalizeEmailAddressOrUID(user))
 
@@ -34138,15 +34196,18 @@ def getGroupMembers(cd, groupEmail, memberRoles, membersList, membersSet, i, cou
 
   printGettingAllEntityItemsForWhom(memberRoles if memberRoles else Ent.ROLE_MANAGER_MEMBER_OWNER, groupEmail, i, count)
   validRoles, listRoles, listFields = _getRoleVerification(memberRoles, 'nextPageToken,members(email,id,role,status,type,delivery_settings)')
-  try:
-    groupMembers = callGAPIpages(cd.members(), 'list', 'members',
-                                 pageMessage=getPageMessageForWhom(),
-                                 throwReasons=GAPI.MEMBERS_THROW_REASONS, retryReasons=GAPI.MEMBERS_RETRY_REASONS,
-                                 includeDerivedMembership=memberOptions[MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP],
-                                 groupKey=groupEmail, roles=listRoles, fields=listFields, maxResults=GC.Values[GC.MEMBER_MAX_RESULTS])
-  except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden, GAPI.serviceNotAvailable):
-    entityUnknownWarning(Ent.GROUP, groupEmail, i, count)
-    return
+  if not groupEmail.startswith('space/'):
+    try:
+      groupMembers = callGAPIpages(cd.members(), 'list', 'members',
+                                   pageMessage=getPageMessageForWhom(),
+                                   throwReasons=GAPI.MEMBERS_THROW_REASONS, retryReasons=GAPI.MEMBERS_RETRY_REASONS,
+                                   includeDerivedMembership=memberOptions[MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP],
+                                   groupKey=groupEmail, roles=listRoles, fields=listFields, maxResults=GC.Values[GC.MEMBER_MAX_RESULTS])
+    except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden, GAPI.serviceNotAvailable):
+      entityUnknownWarning(Ent.GROUP, groupEmail, i, count)
+      return
+  else:
+    groupMembers =  _getChatSpaceMembers(cd, groupEmail, '')
   checkCategory = memberDisplayOptions['showCategory']
   if not memberOptions[MEMBEROPTION_RECURSIVE]:
     if memberOptions[MEMBEROPTION_NODUPLICATES]:
@@ -34170,8 +34231,7 @@ def getGroupMembers(cd, groupEmail, memberRoles, membersList, membersSet, i, cou
   elif memberOptions[MEMBEROPTION_NODUPLICATES]:
     groupMemberList = []
     for member in groupMembers:
-      namespace = member['email'].find('@') == -1
-      if member['type'] != Ent.TYPE_GROUP or namespace:
+      if member['type'] != Ent.TYPE_GROUP:
         if ((member['type'] in typesSet and
              checkMemberMatch(member, memberOptions) and
              _checkMemberRoleIsSuspendedIsArchived(member, validRoles, memberOptions[MEMBEROPTION_ISSUSPENDED], memberOptions[MEMBEROPTION_ISARCHIVED]) and
@@ -34200,8 +34260,7 @@ def getGroupMembers(cd, groupEmail, memberRoles, membersList, membersSet, i, cou
                       memberOptions, memberDisplayOptions, level+1, typesSet)
   else:
     for member in groupMembers:
-      namespace = member['email'].find('@') == -1
-      if member['type'] != Ent.TYPE_GROUP or namespace:
+      if member['type'] != Ent.TYPE_GROUP:
         if ((member['type'] in typesSet) and
             checkMemberMatch(member, memberOptions) and
             _checkMemberRoleIsSuspendedIsArchived(member, validRoles,
@@ -36253,7 +36312,7 @@ def getCIGroupTransitiveMembers(ci, groupName, membersList, i, count):
   return True
 
 def getCIGroupMembers(ci, groupName, memberRoles, membersList, membersSet, i, count,
-                      memberOptions, memberDisplayOptions, level, typesSet, groupEmail, kwargs):
+                      memberOptions, memberDisplayOptions, level, typesSet, groupEmail, kwargs, cd):
   nameToPrint = groupEmail if groupEmail else groupName
   printGettingAllEntityItemsForWhom(memberRoles if memberRoles else Ent.ROLE_MANAGER_MEMBER_OWNER, nameToPrint, i, count)
   validRoles = _getCIRoleVerification(memberRoles)
@@ -36266,16 +36325,21 @@ def getCIGroupMembers(ci, groupName, memberRoles, membersList, membersSet, i, co
         if member['type'] in typesSet and checkCIMemberMatch(member, memberOptions):
           membersList.append(member)
     return
-  try:
-    groupMembers = callGAPIpages(ci.groups().memberships(), 'list', 'memberships',
-                                 pageMessage=getPageMessageForWhom(),
-                                 throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
-                                 parent=groupName, **kwargs)
-  except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
-          GAPI.forbidden, GAPI.badRequest, GAPI.invalid, GAPI.invalidArgument, GAPI.systemError,
-          GAPI.permissionDenied, GAPI.serviceNotAvailable):
-    entityUnknownWarning(Ent.CLOUD_IDENTITY_GROUP, nameToPrint, i, count)
-    return
+  if not groupEmail.startswith('space/'):
+    try:
+      groupMembers = callGAPIpages(ci.groups().memberships(), 'list', 'memberships',
+                                   pageMessage=getPageMessageForWhom(),
+                                   throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
+                                   parent=groupName, **kwargs)
+    except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
+            GAPI.forbidden, GAPI.badRequest, GAPI.invalid, GAPI.invalidArgument, GAPI.systemError,
+            GAPI.permissionDenied, GAPI.serviceNotAvailable):
+      entityUnknownWarning(Ent.CLOUD_IDENTITY_GROUP, nameToPrint, i, count)
+      return
+  else:
+    if cd is None:
+      cd = buildGAPIObject(API.DIRECTORY)
+    groupMembers = _getChatSpaceMembers(cd, groupEmail, groupName)
   checkCategory = memberDisplayOptions['showCategory']
   if not memberOptions[MEMBEROPTION_RECURSIVE]:
     if memberOptions[MEMBEROPTION_NODUPLICATES]:
@@ -36300,8 +36364,7 @@ def getCIGroupMembers(ci, groupName, memberRoles, membersList, membersSet, i, co
     for member in groupMembers:
       getCIGroupMemberRoleFixType(member)
       memberName = member.get('preferredMemberKey', {}).get('id', '')
-      namespace = member.get('preferredMemberKey', {}).get('namespace', '')
-      if member['type'] != Ent.TYPE_GROUP or namespace:
+      if member['type'] != Ent.TYPE_GROUP:
         if (member['type'] in typesSet and
             checkCIMemberMatch(member, memberOptions) and
             _checkMemberRole(member, validRoles) and
@@ -36324,13 +36387,12 @@ def getCIGroupMembers(ci, groupName, memberRoles, membersList, membersSet, i, co
           groupMemberList.append((f'groups/{gname}', memberName))
     for member in groupMemberList:
       getCIGroupMembers(ci, member[0], memberRoles, membersList, membersSet, i, count,
-                        memberOptions, memberDisplayOptions, level+1, typesSet, member[1], kwargs)
+                        memberOptions, memberDisplayOptions, level+1, typesSet, member[1], kwargs, cd)
   else:
     for member in groupMembers:
       getCIGroupMemberRoleFixType(member)
       memberName = member.get('preferredMemberKey', {}).get('id', '')
-      namespace = member.get('preferredMemberKey', {}).get('namespace', '')
-      if member['type'] != Ent.TYPE_GROUP or namespace:
+      if member['type'] != Ent.TYPE_GROUP:
         if (member['type'] in typesSet and
             checkCIMemberMatch(member, memberOptions) and
             _checkMemberRole(member, validRoles) and
@@ -36347,7 +36409,7 @@ def getCIGroupMembers(ci, groupName, memberRoles, membersList, membersSet, i, co
           membersList.append(member)
         _, gname = member['name'].rsplit('/', 1)
         getCIGroupMembers(ci, f'groups/{gname}', memberRoles, membersList, membersSet, i, count,
-                          memberOptions, memberDisplayOptions, level+1, typesSet, memberName, kwargs)
+                          memberOptions, memberDisplayOptions, level+1, typesSet, memberName, kwargs, cd)
 
 CIGROUPMEMBERS_FIELDS_CHOICE_MAP = {
   'createtime': 'createTime',
@@ -36511,7 +36573,7 @@ def doPrintCIGroupMembers():
     membersList = []
     membersSet = set()
     getCIGroupMembers(ci, groupEntity['name'], getRoles, membersList, membersSet, i, count,
-                      memberOptions, memberDisplayOptions, level, typesSet, groupEmail, kwargs)
+                      memberOptions, memberDisplayOptions, level, typesSet, groupEmail, kwargs, None)
     if showOwnedBy and not checkCIGroupShowOwnedBy(showOwnedBy, membersList):
       continue
     for member in membersList:

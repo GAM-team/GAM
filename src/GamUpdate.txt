@@ -1,3 +1,8 @@
+7.06.13
+
+Updated `gam print group-members ... recursive` and `gam print cigroup-members ... recursive`
+to expand groups representing chat spaces.
+
 7.06.12
 
 Deleted commands to display Analytic UA properties; the API has been deprecated.
