@@ -8,6 +8,7 @@
   - [Copy content of My Drive to a Shared Drive](#copy-content-of-my-drive-to-a-shared-drive)
   - [Copy content of a Shared Drive to another Shared Drive](#copy-content-of-a-shared-drive-to-another-shared-drive)
 - [Move files and folders](#move-files-and-folders)
+  - [Move My Drive folder to Shared Drive](#move-my-drive-folder-to-shared-drive)
   - [Simple moves by changing parents](#simple-moves-by-changing-parents)
   - [Move with ownership change](#move-with-ownership-change)
   - [Complex moves](#complex-moves)
@@ -428,6 +429,16 @@ gam user user@domain.com copy drivefile teamdriveid 0AC_1AB teamdriveparentid 0A
 ```
 
 ## Move files and folders
+## Move My Drive folder to Shared Drive
+There are two methods for moving a folder from a My Drive to a Shared Drive:
+* Drive UI - You can simple drag and drop the folder from the My Drive to the Shared Drive
+  * Google inspects the content of the folder and may not perform the move if files and folders within the selected folder are owned by users outside of your domain
+  * All folder and files IDs are preserved
+* GAM
+  * The Drive API doesn't allow moving a folder from a My Drive to a Shared Drive; GAM has to recreate the folders on the Shared Drive, thus changing their IDs
+  * Files are  simply moved from their existing My Drive folder to the recreated Shared Drive folder; their IDs do not change
+  * Files owmed by users outside of your domain can't be moved
+
 ## Simple moves by changing parents
 Use this command in the following cases:
 * Move a file or folder from one location to another on My Drive
