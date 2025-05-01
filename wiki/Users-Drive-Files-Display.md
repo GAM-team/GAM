@@ -628,10 +628,15 @@ querytime5years -5y query "modifiedTime<'#querytime5years#'"
 
 ## File selection of Shared Drive
 You can limit the selection for files on a specific Shared drive.
-Any query will be applied to the Shared drive.
 ```
 select <SharedDriveEntity>
 ```
+
+To apply a query to that Shared Drive.
+```
+select <SharedDriveEntity> shareddrivequery "xxx"
+```
+
 ## File selection by corpora
 Select files by corpora.
 
