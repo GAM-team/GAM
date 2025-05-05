@@ -38,36 +38,107 @@ gam show privileges
 
 Here is the output from `gam show privileges`; use this to find `<Privilege>`.
 ```
-Show 91 Privileges
-  Privilege: MANAGE_CSE_SETTINGS (1/91)
-    serviceId: 02pta16n4hxgyp2
+Show 111 Privileges
+  Privilege: REPORTS_ACCESS (1/111)
+    serviceId: 01fob9te2rj6rw9
     serviceName: Unknown
     isOuScopable: False
-  Privilege: MANAGE_PLAY_FOR_WORK_STORE (2/91)
+  Privilege: APP_ADMIN (2/111)
+    serviceId: 02et92p02l9sq0n
+    serviceName: Unknown
+    isOuScopable: True
+  Privilege: APP_ADMIN (3/111)
+    serviceId: 00tyjcwt30rsnw6
+    serviceName: Unknown
+    isOuScopable: True
+  Privilege: MANAGE_ENTERPRISE_PRIVATE_APPS (4/111)
     serviceId: 00tyjcwt49hs5nq
     serviceName: play_for_work
     isOuScopable: False
-  Privilege: MANAGE_ENTERPRISE_PRIVATE_APPS (3/91)
+  Privilege: MANAGE_EXTERNALLY_HOSTED_APK_UPLOAD_IN_PLAY (5/111)
     serviceId: 00tyjcwt49hs5nq
     serviceName: play_for_work
     isOuScopable: False
-  Privilege: MANAGE_EXTERNALLY_HOSTED_APK_UPLOAD_IN_PLAY (4/91)
+  Privilege: MANAGE_PLAY_FOR_WORK_STORE (6/111)
     serviceId: 00tyjcwt49hs5nq
     serviceName: play_for_work
     isOuScopable: False
-  Privilege: MANAGE_PLAY_FOR_WORK_STORE (5/91)
-    serviceId: 02w5ecyt3pkeyqi
+  Privilege: APP_ADMIN (7/111)
+    serviceId: 03dy6vkm2sk0pzo
+    serviceName: docs
+    isOuScopable: False
+    childPrivileges: 4
+      Privilege: DOCS_TEMPLATE_ADMIN (1/4)
+        serviceId: 03dy6vkm2sk0pzo
+        serviceName: docs
+        isOuScopable: False
+      Privilege: MANAGE_CLASSIC_GOOGLE_SITES (2/4)
+        serviceId: 03dy6vkm2sk0pzo
+        serviceName: docs
+        isOuScopable: False
+      Privilege: MIGRATE_TO_TEAM_DRIVE (3/4)
+        serviceId: 03dy6vkm2sk0pzo
+        serviceName: docs
+        isOuScopable: False
+      Privilege: VIEW_SITE_DETAILS (4/4)
+        serviceId: 03dy6vkm2sk0pzo
+        serviceName: docs
+        isOuScopable: False
+  Privilege: REVIEW_ALL_SENSITIVE_ACTIONS (8/111)
+    serviceId: 035nkun23a65bz3
     serviceName: Unknown
     isOuScopable: False
-  Privilege: MANAGE_ENTERPRISE_PRIVATE_APPS (6/91)
-    serviceId: 02w5ecyt3pkeyqi
+    childPrivileges: 1
+      Privilege: REVIEW_SECURITY_ACTIONS
+        serviceId: 035nkun23a65bz3
+        serviceName: Unknown
+        isOuScopable: False
+  Privilege: APP_ADMIN (9/111)
+    serviceId: 01ksv4uv2d2noaq
+    serviceName: sites
+    isOuScopable: False
+  Privilege: APP_ADMIN (10/111)
+    serviceId: 044sinio4cntx2o
     serviceName: Unknown
     isOuScopable: False
-  Privilege: MANAGE_EXTERNALLY_HOSTED_APK_UPLOAD_IN_PLAY (7/91)
-    serviceId: 02w5ecyt3pkeyqi
+  Privilege: DATA_REGIONS_SETTINGS (11/111)
+    serviceId: 02jxsxqh0hucks4
     serviceName: Unknown
     isOuScopable: False
-  Privilege: APP_ADMIN (8/91)
+    childPrivileges: 1
+      Privilege: DATA_REGIONS_REPORTING
+        serviceId: 02jxsxqh0hucks4
+        serviceName: Unknown
+        isOuScopable: False
+  Privilege: LOGO_PRIVILEGE_GROUP (12/111)
+    serviceId: 03j2qqm31d4j55e
+    serviceName: Unknown
+    isOuScopable: False
+  Privilege: APP_ADMIN (13/111)
+    serviceId: 04i7ojhp4kgosur
+    serviceName: Unknown
+    isOuScopable: True
+  Privilege: ADMIN_DASHBOARD (14/111)
+    serviceId: 01ci93xb3tmzyin
+    serviceName: admin
+    isOuScopable: True
+  Privilege: ADMIN_DOMAIN_SETTINGS (15/111)
+    serviceId: 01ci93xb3tmzyin
+    serviceName: admin
+    isOuScopable: False
+  Privilege: REPORTS (16/111)
+    serviceId: 01ci93xb3tmzyin
+    serviceName: admin
+    isOuScopable: False
+  Privilege: SERVICES (17/111)
+    serviceId: 01ci93xb3tmzyin
+    serviceName: admin
+    isOuScopable: False
+  Privilege: SECURITY_SETTINGS (18/111)
+    serviceId: 01ci93xb3tmzyin
+    serviceName: admin
+    isOuScopable: False
+  Privilege: APP_ADMIN (19/111)
     serviceId: 01ci93xb43sd8me
     serviceName: Unknown
     isOuScopable: True
@@ -80,142 +151,50 @@ Show 91 Privileges
         serviceId: 01ci93xb43sd8me
         serviceName: Unknown
         isOuScopable: True
-  Privilege: APP_ADMIN (9/91)
-    serviceId: 03cqmetx3hnlpuf
-    serviceName: gplus
-    isOuScopable: False
-  Privilege: GPLUS_SQUARE_BATCH_ADD (10/91)
-    serviceId: 03cqmetx3hnlpuf
-    serviceName: gplus
-    isOuScopable: False
-  Privilege: GPLUS_CONTENT_MANAGER_PRIVILEGE (11/91)
-    serviceId: 03cqmetx3hnlpuf
-    serviceName: gplus
-    isOuScopable: False
-  Privilege: APP_ADMIN (12/91)
-    serviceId: 039kk8xu49mji9t
-    serviceName: gmail
-    isOuScopable: False
-  Privilege: ACCESS_EMAIL_LOG_SEARCH (13/91)
-    serviceId: 039kk8xu49mji9t
-    serviceName: gmail
-    isOuScopable: False
-  Privilege: ACCESS_ADMIN_QUARANTINE (14/91)
-    serviceId: 039kk8xu49mji9t
-    serviceName: gmail
-    isOuScopable: False
-  Privilege: ACCESS_RESTRICTED_QUARANTINE (15/91)
-    serviceId: 039kk8xu49mji9t
-    serviceName: gmail
-    isOuScopable: False
-  Privilege: APP_ADMIN (16/91)
-    serviceId: 01tuee744837sjz
+  Privilege: MANAGE_DYNAMITE_SETTINGS (20/111)
+    serviceId: 03whwml44f3n4vd
     serviceName: Unknown
     isOuScopable: False
-  Privilege: MANAGE_COURSE_SETTINGS (17/91)
-    serviceId: 037m2jsg4g9nirj
-    serviceName: Unknown
-    isOuScopable: True
-  Privilege: MANAGE_LTI_CREDENTIAL_MANAGEMENT_MODE (18/91)
-    serviceId: 037m2jsg4g9nirj
-    serviceName: Unknown
-    isOuScopable: True
-  Privilege: APP_ADMIN (19/91)
-    serviceId: 01baon6m1wv6b0p
+  Privilege: MANAGE_DYNAMITE_SPACES (21/111)
+    serviceId: 03whwml44f3n4vd
     serviceName: Unknown
     isOuScopable: False
-  Privilege: APP_ADMIN (20/91)
-    serviceId: 01yyy98l4k9lq4l
-    serviceName: directory
-    isOuScopable: False
-    childPrivileges: 3
-      Privilege: DIRECTORY_SETTINGS_READONLY (1/3)
-        serviceId: 01yyy98l4k9lq4l
-        serviceName: directory
-        isOuScopable: False
-        childPrivileges: 2
-          Privilege: PROFILE_EDITABILITY_READONLY (1/2)
-            serviceId: 01yyy98l4k9lq4l
-            serviceName: directory
-            isOuScopable: False
-          Privilege: CUSTOM_DIRECTORY_READONLY (2/2)
-            serviceId: 01yyy98l4k9lq4l
-            serviceName: directory
-            isOuScopable: False
-      Privilege: PROFILE_EDITABILITY_READWRITE (2/3)
-        serviceId: 01yyy98l4k9lq4l
-        serviceName: directory
-        isOuScopable: False
-      Privilege: CUSTOM_DIRECTORY_READWRITE (3/3)
-        serviceId: 01yyy98l4k9lq4l
-        serviceName: directory
-        isOuScopable: False
-  Privilege: LDAP_MANAGER (21/91)
-    serviceId: 02lwamvv18la4iw
-    serviceName: ldap
-    isOuScopable: False
-  Privilege: LDAP_PASSWORD_REBIND (22/91)
-    serviceId: 02lwamvv18la4iw
-    serviceName: ldap
-    isOuScopable: True
     childPrivileges: 1
-      Privilege: LDAP_PASSWORD_REBIND_READONLY
-        serviceId: 02lwamvv18la4iw
-        serviceName: ldap
-        isOuScopable: True
-  Privilege: APP_ADMIN (23/91)
-    serviceId: 0319y80a15kueje
+      Privilege: READ_DYNAMITE_SPACES
+        serviceId: 03whwml44f3n4vd
+        serviceName: Unknown
+        isOuScopable: False
+  Privilege: MODERATE_DYNAMITE_REPORT (22/111)
+    serviceId: 03whwml44f3n4vd
     serviceName: Unknown
     isOuScopable: False
-  Privilege: APP_ADMIN (24/91)
-    serviceId: 044sinio4cntx2o
+  Privilege: CLOUD_PRINT_MANAGER (23/111)
+    serviceId: 02bn6wsx379ol8g
+    serviceName: cloud_print
+    isOuScopable: False
+  Privilege: APP_ADMIN (24/111)
+    serviceId: 03as4poj2zjehv7
     serviceName: Unknown
     isOuScopable: False
-  Privilege: APP_ADMIN (25/91)
-    serviceId: 01ksv4uv2d2noaq
-    serviceName: sites
+  Privilege: MANAGE_DIRECTORY_SYNC_SETTINGS (25/111)
+    serviceId: 0147n2zr1ynkkmf
+    serviceName: Unknown
     isOuScopable: False
-  Privilege: ADMIN_DASHBOARD (26/91)
-    serviceId: 01ci93xb3tmzyin
-    serviceName: admin
-    isOuScopable: True
-  Privilege: SERVICES (27/91)
-    serviceId: 01ci93xb3tmzyin
-    serviceName: admin
+    childPrivileges: 1
+      Privilege: READ_DIRECTORY_SYNC_SETTINGS
+        serviceId: 0147n2zr1ynkkmf
+        serviceName: Unknown
+        isOuScopable: False
+  Privilege: SECURITY_SETTINGS (26/111)
+    serviceId: 00vx122734tbite
+    serviceName: Unknown
     isOuScopable: False
-  Privilege: SECURITY_SETTINGS (28/91)
-    serviceId: 01ci93xb3tmzyin
-    serviceName: admin
-    isOuScopable: False
-  Privilege: SUPPORT (29/91)
-    serviceId: 01ci93xb3tmzyin
-    serviceName: admin
-    isOuScopable: False
-  Privilege: ADMIN_DOMAIN_SETTINGS (30/91)
-    serviceId: 01ci93xb3tmzyin
-    serviceName: admin
-    isOuScopable: False
-  Privilege: REPORTS (31/91)
-    serviceId: 01ci93xb3tmzyin
-    serviceName: admin
-    isOuScopable: False
-  Privilege: ADMIN_DASHBOARD (32/91)
-    serviceId: 01ci93xb3tmzyin
-    serviceName: admin
-    isOuScopable: True
-  Privilege: SERVICES (33/91)
-    serviceId: 01ci93xb3tmzyin
-    serviceName: admin
-    isOuScopable: False
-  Privilege: SUPPORT (34/91)
-    serviceId: 01ci93xb3tmzyin
-    serviceName: admin
-    isOuScopable: False
-  Privilege: REPORTS (35/91)
-    serviceId: 01ci93xb3tmzyin
-    serviceName: admin
-    isOuScopable: False
-  Privilege: APP_ADMIN (36/91)
+    childPrivileges: 1
+      Privilege: INBOUND_SSO_SETTINGS
+        serviceId: 00vx122734tbite
+        serviceName: Unknown
+        isOuScopable: False
+  Privilege: APP_ADMIN (27/111)
     serviceId: 03fwokq01e2ht7x
     serviceName: Unknown
     isOuScopable: False
@@ -224,67 +203,104 @@ Show 91 Privileges
         serviceId: 03fwokq01e2ht7x
         serviceName: Unknown
         isOuScopable: True
-  Privilege: ADMIN_MATTER (37/91)
-    serviceId: 03l18frh45c63dw
-    serviceName: vault
+  Privilege: APP_ADMIN (28/111)
+    serviceId: 04f1mdlm0ki64aw
+    serviceName: cros
     isOuScopable: True
-  Privilege: REMOVE_HOLD (38/91)
-    serviceId: 03l18frh45c63dw
-    serviceName: vault
+    childPrivileges: 7
+      Privilege: MANAGE_BROWSERS (1/7)
+        serviceId: 04f1mdlm0ki64aw
+        serviceName: cros
+        isOuScopable: True
+      Privilege: MANAGE_DEVICES (2/7)
+        serviceId: 04f1mdlm0ki64aw
+        serviceName: cros
+        isOuScopable: True
+      Privilege: MANAGE_DEVICE_SETTINGS (3/7)
+        serviceId: 04f1mdlm0ki64aw
+        serviceName: cros
+        isOuScopable: True
+      Privilege: MANAGE_PRINTERS (4/7)
+        serviceId: 04f1mdlm0ki64aw
+        serviceName: cros
+        isOuScopable: True
+      Privilege: MANAGE_USER_SETTINGS (5/7)
+        serviceId: 04f1mdlm0ki64aw
+        serviceName: cros
+        isOuScopable: True
+        childPrivileges: 1
+          Privilege: MANAGE_APPLICATION_SETTINGS
+            serviceId: 04f1mdlm0ki64aw
+            serviceName: cros
+            isOuScopable: True
+      Privilege: VIEW_EXTENSIONS_REPORT (6/7)
+        serviceId: 04f1mdlm0ki64aw
+        serviceName: cros
+        isOuScopable: True
+      Privilege: VIEW_VERSION_REPORT (7/7)
+        serviceId: 04f1mdlm0ki64aw
+        serviceName: cros
+        isOuScopable: True
+  Privilege: ADMIN_OVERSIGHT_MANAGE_CLASSES (29/111)
+    serviceId: 019c6y1840fzfkt
+    serviceName: classroom
     isOuScopable: True
-  Privilege: MANAGE_SEARCHES (39/91)
-    serviceId: 03l18frh45c63dw
-    serviceName: vault
+  Privilege: APP_ADMIN (30/111)
+    serviceId: 019c6y1840fzfkt
+    serviceName: classroom
     isOuScopable: True
-  Privilege: MANAGE_EXPORTS (40/91)
-    serviceId: 03l18frh45c63dw
-    serviceName: vault
+  Privilege: BACKFILL_DRIVE_READWRITE (31/111)
+    serviceId: 019c6y1840fzfkt
+    serviceName: classroom
     isOuScopable: True
-  Privilege: MANAGE_RETENTION_POLICY (41/91)
-    serviceId: 03l18frh45c63dw
-    serviceName: vault
+  Privilege: EDU_ANALYTICS_DATA_ACCESS (32/111)
+    serviceId: 019c6y1840fzfkt
+    serviceName: classroom
+    isOuScopable: True
+  Privilege: MIGRATE_MANAGE_DEPLOYMENT (33/111)
+    serviceId: 03tbugp12newe5s
+    serviceName: Unknown
     isOuScopable: False
     childPrivileges: 1
-      Privilege: VIEW_RETENTION_POLICY
-        serviceId: 03l18frh45c63dw
-        serviceName: vault
+      Privilege: MIGRATE_ACCESS_DEPLOYMENT
+        serviceId: 03tbugp12newe5s
+        serviceName: Unknown
         isOuScopable: False
-  Privilege: AUDIT_SYSTEM (42/91)
-    serviceId: 03l18frh45c63dw
-    serviceName: vault
+  Privilege: MODIFY_DASHER_ANALYTICS_APP_SETTINGS (34/111)
+    serviceId: 00nmf14n2rzq5a5
+    serviceName: Unknown
     isOuScopable: False
-  Privilege: ACCESS_ALL_MATTERS (43/91)
-    serviceId: 03l18frh45c63dw
-    serviceName: vault
+  Privilege: VIEW_DASHER_ANALYTICS_APP_SETTINGS (35/111)
+    serviceId: 00nmf14n2rzq5a5
+    serviceName: Unknown
     isOuScopable: False
-  Privilege: APP_ADMIN (44/91)
-    serviceId: 02afmg282jiquyg
-    serviceName: device_management
+  Privilege: MANAGE_TRUST_RULES (36/111)
+    serviceId: 00nmf14n34b7f81
+    serviceName: Unknown
     isOuScopable: False
-  Privilege: APP_ADMIN (45/91)
+  Privilege: VIEW_TRUST_RULES (37/111)
+    serviceId: 00nmf14n34b7f81
+    serviceName: Unknown
+    isOuScopable: False
+  Privilege: APP_ADMIN (38/111)
+    serviceId: 00nmf14n14wtgcf
+    serviceName: app_maker
+    isOuScopable: False
+  Privilege: VIEW_ALL_PROJECTS (39/111)
+    serviceId: 00nmf14n14wtgcf
+    serviceName: app_maker
+    isOuScopable: False
+  Privilege: APP_ADMIN (40/111)
     serviceId: 037m2jsg3ckz96v
     serviceName: calendar
     isOuScopable: False
     childPrivileges: 2
-      Privilege: CALENDAR_SETTINGS (1/2)
-        serviceId: 037m2jsg3ckz96v
-        serviceName: calendar
-        isOuScopable: False
-        childPrivileges: 1
-          Privilege: CALENDAR_SETTINGS_READ
-            serviceId: 037m2jsg3ckz96v
-            serviceName: calendar
-            isOuScopable: False
-      Privilege: CALENDAR_RESOURCE (2/2)
+      Privilege: CALENDAR_RESOURCE (1/2)
         serviceId: 037m2jsg3ckz96v
         serviceName: calendar
         isOuScopable: False
         childPrivileges: 2
-          Privilege: ROOM_INSIGHTS_DASHBOARD_ACCESS (1/2)
-            serviceId: 037m2jsg3ckz96v
-            serviceName: calendar
-            isOuScopable: False
-          Privilege: CALENDAR_RESOURCE_MANAGE (2/2)
+          Privilege: CALENDAR_RESOURCE_MANAGE (1/2)
             serviceId: 037m2jsg3ckz96v
             serviceName: calendar
             isOuScopable: False
@@ -293,158 +309,795 @@ Show 91 Privileges
                 serviceId: 037m2jsg3ckz96v
                 serviceName: calendar
                 isOuScopable: False
-  Privilege: APP_ADMIN (46/91)
-    serviceId: 03dy6vkm2sk0pzo
-    serviceName: docs
+          Privilege: ROOM_INSIGHTS_DASHBOARD_ACCESS (2/2)
+            serviceId: 037m2jsg3ckz96v
+            serviceName: calendar
+            isOuScopable: False
+      Privilege: CALENDAR_SETTINGS (2/2)
+        serviceId: 037m2jsg3ckz96v
+        serviceName: calendar
+        isOuScopable: False
+        childPrivileges: 1
+          Privilege: CALENDAR_SETTINGS_READ
+            serviceId: 037m2jsg3ckz96v
+            serviceName: calendar
+            isOuScopable: False
+  Privilege: CALENDAR_SUPER_ADMIN (41/111)
+    serviceId: 037m2jsg3ckz96v
+    serviceName: calendar
     isOuScopable: False
-    childPrivileges: 5
-      Privilege: DOCS_TEMPLATE_ADMIN (1/5)
-        serviceId: 03dy6vkm2sk0pzo
-        serviceName: docs
+  Privilege: APP_ADMIN (42/111)
+    serviceId: 037m2jsg46www3g
+    serviceName: Unknown
+    isOuScopable: False
+  Privilege: LDAP_MANAGER (43/111)
+    serviceId: 02lwamvv18la4iw
+    serviceName: ldap
+    isOuScopable: False
+  Privilege: LDAP_PASSWORD_REBIND (44/111)
+    serviceId: 02lwamvv18la4iw
+    serviceName: ldap
+    isOuScopable: True
+    childPrivileges: 1
+      Privilege: LDAP_PASSWORD_REBIND_READONLY
+        serviceId: 02lwamvv18la4iw
+        serviceName: ldap
+        isOuScopable: True
+  Privilege: ACCESS_ALL_LOGS (45/111)
+    serviceId: 03l18frh45c63dw
+    serviceName: vault
+    isOuScopable: False
+    childPrivileges: 1
+      Privilege: AUDIT_SYSTEM
+        serviceId: 03l18frh45c63dw
+        serviceName: vault
         isOuScopable: False
-      Privilege: MIGRATE_TO_TEAM_DRIVE (2/5)
-        serviceId: 03dy6vkm2sk0pzo
-        serviceName: docs
+  Privilege: ACCESS_ALL_MATTERS (46/111)
+    serviceId: 03l18frh45c63dw
+    serviceName: vault
+    isOuScopable: False
+  Privilege: ADMIN_MATTER (47/111)
+    serviceId: 03l18frh45c63dw
+    serviceName: vault
+    isOuScopable: True
+  Privilege: APPROVE_ACCELERATED_DELETION (48/111)
+    serviceId: 03l18frh45c63dw
+    serviceName: vault
+    isOuScopable: True
+    childPrivileges: 1
+      Privilege: CREATE_ACCELERATED_DELETION
+        serviceId: 03l18frh45c63dw
+        serviceName: vault
+        isOuScopable: True
+  Privilege: MANAGE_EXPORTS (49/111)
+    serviceId: 03l18frh45c63dw
+    serviceName: vault
+    isOuScopable: True
+  Privilege: MANAGE_RETENTION_POLICY (50/111)
+    serviceId: 03l18frh45c63dw
+    serviceName: vault
+    isOuScopable: False
+    childPrivileges: 1
+      Privilege: VIEW_RETENTION_POLICY
+        serviceId: 03l18frh45c63dw
+        serviceName: vault
         isOuScopable: False
-      Privilege: WRITE_APPS_METADATA_SCHEMAS (3/5)
-        serviceId: 03dy6vkm2sk0pzo
-        serviceName: docs
+  Privilege: MANAGE_SEARCHES (51/111)
+    serviceId: 03l18frh45c63dw
+    serviceName: vault
+    isOuScopable: True
+  Privilege: REMOVE_HOLD (52/111)
+    serviceId: 03l18frh45c63dw
+    serviceName: vault
+    isOuScopable: True
+  Privilege: APP_ADMIN (53/111)
+    serviceId: 02zbgiuw2wdxo5p
+    serviceName: youtube
+    isOuScopable: False
+  Privilege: ACTIVITY_RULES (54/111)
+    serviceId: 01egqt2p2p8gvae
+    serviceName: security_center
+    isOuScopable: False
+    childPrivileges: 2
+      Privilege: MANAGE_GSC_RULE (1/2)
+        serviceId: 01egqt2p2p8gvae
+        serviceName: security_center
         isOuScopable: False
-      Privilege: VIEW_SITE_DETAILS (4/5)
-        serviceId: 03dy6vkm2sk0pzo
-        serviceName: docs
+      Privilege: VIEW_GSC_RULE (2/2)
+        serviceId: 01egqt2p2p8gvae
+        serviceName: security_center
         isOuScopable: False
-      Privilege: MANAGE_CLASSIC_GOOGLE_SITES (5/5)
-        serviceId: 03dy6vkm2sk0pzo
-        serviceName: docs
+  Privilege: APP_ADMIN (55/111)
+    serviceId: 01egqt2p2p8gvae
+    serviceName: security_center
+    isOuScopable: False
+    childPrivileges: 4
+      Privilege: AUDIT_INVESTIGATION_ACCESS (1/4)
+        serviceId: 01egqt2p2p8gvae
+        serviceName: security_center
         isOuScopable: False
-  Privilege: APP_ACCESS (47/91)
+        childPrivileges: 3
+          Privilege: SIT_MANAGE (1/3)
+            serviceId: 01egqt2p2p8gvae
+            serviceName: security_center
+            isOuScopable: False
+            childPrivileges: 9
+              Privilege: SIT_CHAT_UPDATE_DELETE (1/9)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_CHROME_UPDATE_DELETE (2/9)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_DEVICE_UPDATE_DELETE (3/9)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_DRIVE_UPDATE_DELETE (4/9)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_GMAIL_UPDATE_DELETE (5/9)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_MEET_UPDATE_DELETE (6/9)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_OAUTH_UPDATE_DELETE (7/9)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_RULE_UPDATE_DELETE (8/9)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_USER_UPDATE_DELETE (9/9)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+          Privilege: SIT_VIEW_METADATA (2/3)
+            serviceId: 01egqt2p2p8gvae
+            serviceName: security_center
+            isOuScopable: False
+            childPrivileges: 40
+              Privilege: SIT_ADMIN_VIEW_METADATA (1/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_AUDITOR_VIEW_METADATA (2/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_AXT_VIEW_METADATA (3/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_CAA_VIEW_METADATA (4/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_CALENDAR_VIEW_METADATA (5/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_CHAT_VIEW_METADATA (6/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_CHROME_SYNC_VIEW_METADATA (7/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_CHROME_VIEW_METADATA (8/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_CLASSROOM_VIEW_METADATA (9/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_CLOUD_SEARCH_VIEW_METADATA (10/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_CONTACTS_VIEW_METADATA (11/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_COURSEKIT_VIEW_METADATA (12/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_CURRENTS_VIEW_METADATA (13/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_DATASTUDIO_VIEW_METADATA (14/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_DATA_LOCATION_VIEW_METADATA (15/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_DATA_MIGRATION_VIEW_METADATA (16/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_DEVICE_VIEW_METADATA (17/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_DIRECTORY_SYNC_VIEW_METADATA (18/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_DRIVE_VIEW_METADATA (19/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_GEN_AI_PLATFORM_APP_VIEW_METADATA (20/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_GMAIL_VIEW_METADATA (21/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_GOOGLE_PROFILES_VIEW_METADATA (22/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_GRADUATION_VIEW_METADATA (23/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_GROUPSALT_VIEW_METADATA (24/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_GROUPS_VIEW_METADATA (25/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_HODOR_VIEW_METADATA (26/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_JAMBOARD_VIEW_METADATA (27/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_KEEP_VIEW_METADATA (28/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_LDAP_VIEW_METADATA (29/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_MEET_HARDWARE_VIEW_METADATA (30/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_MEET_VIEW_METADATA (31/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_OAUTH_VIEW_METADATA (32/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_PASSWORD_VAULT_VIEW_METADATA (33/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_RULE_VIEW_METADATA (34/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_SAML_VIEW_METADATA (35/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_SCIM_DS_VIEW_METADATA (36/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_TASKS_VIEW_METADATA (37/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_USER_LEVEL_TAKEOUT_VIEW_METADATA (38/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_USER_VIEW_METADATA (39/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_VOICE_VIEW_METADATA (40/40)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+          Privilege: SIT_VIEW_SENSITIVE_CONTENT (3/3)
+            serviceId: 01egqt2p2p8gvae
+            serviceName: security_center
+            isOuScopable: False
+            childPrivileges: 4
+              Privilege: SIT_CHAT_VIEW_DETAILED_CONTENT (1/4)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_CHROME_VIEW_DETAILED_CONTENT (2/4)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_GMAIL_VIEW_DETAILED_CONTENT (3/4)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+              Privilege: SIT_RULE_VIEW_DETAILED_CONTENT (4/4)
+                serviceId: 01egqt2p2p8gvae
+                serviceName: security_center
+                isOuScopable: False
+      Privilege: DASHBOARD_ACCESS (2/4)
+        serviceId: 01egqt2p2p8gvae
+        serviceName: security_center
+        isOuScopable: False
+      Privilege: GSC_VIEW_VIRUSTOTAL_REPORT (3/4)
+        serviceId: 01egqt2p2p8gvae
+        serviceName: security_center
+        isOuScopable: False
+      Privilege: SECURITY_HEALTH_DASHBOARD_ACCESS (4/4)
+        serviceId: 01egqt2p2p8gvae
+        serviceName: security_center
+        isOuScopable: False
+  Privilege: APP_ADMIN (56/111)
+    serviceId: 00sqyw642iersp7
+    serviceName: search
+    isOuScopable: False
+    childPrivileges: 1
+      Privilege: TOPAZ_INDEXING_ADMIN_PRIVILEGE
+        serviceId: 00sqyw642iersp7
+        serviceName: search
+        isOuScopable: False
+        childPrivileges: 1
+          Privilege: TOPAZ_INDEXING_READONLY_PRIVILEGE
+            serviceId: 00sqyw642iersp7
+            serviceName: search
+            isOuScopable: False
+  Privilege: APP_ACCESS (57/111)
     serviceId: 03cqmetx1vygwki
     serviceName: Unknown
     isOuScopable: False
-  Privilege: ORGANIZATION_UNITS_ALL (48/91)
-    serviceId: 00haapch16h1ysv
-    serviceName: admin_apis
+  Privilege: ACCESS_LEVEL_ENFORCEMENT (58/111)
+    serviceId: 01rvwp1q4axizdr
+    serviceName: Unknown
+    isOuScopable: False
+  Privilege: ACCESS_LEVEL_MANAGEMENT (59/111)
+    serviceId: 01rvwp1q4axizdr
+    serviceName: Unknown
+    isOuScopable: False
+  Privilege: MANAGE_LABELS (60/111)
+    serviceId: 034g0dwd19r1crs
+    serviceName: Unknown
+    isOuScopable: False
+    childPrivileges: 1
+      Privilege: VIEW_LABELS
+        serviceId: 034g0dwd19r1crs
+        serviceName: Unknown
+        isOuScopable: False
+  Privilege: APP_ADMIN (61/111)
+    serviceId: 03hv69ve4bjwe54
+    serviceName: Unknown
     isOuScopable: True
-    childPrivileges: 4
-      Privilege: ORGANIZATION_UNITS_CREATE (1/4)
-        serviceId: 00haapch16h1ysv
-        serviceName: admin_apis
+    childPrivileges: 6
+      Privilege: MANAGE_CHROME_BROWSERS (1/6)
+        serviceId: 03hv69ve4bjwe54
+        serviceName: Unknown
         isOuScopable: True
-      Privilege: ORGANIZATION_UNITS_RETRIEVE (2/4)
-        serviceId: 00haapch16h1ysv
-        serviceName: admin_apis
+        childPrivileges: 1
+          Privilege: MANAGED_CHROME_BROWSERS_READ_ONLY
+            serviceId: 03hv69ve4bjwe54
+            serviceName: Unknown
+            isOuScopable: True
+      Privilege: MANAGE_CHROME_USER_SETTINGS (2/6)
+        serviceId: 03hv69ve4bjwe54
+        serviceName: Unknown
         isOuScopable: True
-      Privilege: ORGANIZATION_UNITS_UPDATE (3/4)
-        serviceId: 00haapch16h1ysv
-        serviceName: admin_apis
+        childPrivileges: 2
+          Privilege: MANAGE_CHROME_APPLICATION_SETTINGS (1/2)
+            serviceId: 03hv69ve4bjwe54
+            serviceName: Unknown
+            isOuScopable: True
+          Privilege: MANAGE_CHROME_WEB_SETTINGS (2/2)
+            serviceId: 03hv69ve4bjwe54
+            serviceName: Unknown
+            isOuScopable: True
+      Privilege: MANAGE_DEVICES (3/6)
+        serviceId: 03hv69ve4bjwe54
+        serviceName: Unknown
         isOuScopable: True
-      Privilege: ORGANIZATION_UNITS_DELETE (4/4)
-        serviceId: 00haapch16h1ysv
-        serviceName: admin_apis
+        childPrivileges: 5
+          Privilege: CHROME_DEVICE_ACTION_LOG_COLLECTION (1/5)
+            serviceId: 03hv69ve4bjwe54
+            serviceName: Unknown
+            isOuScopable: True
+          Privilege: DEVICE_ACTION_CRD (2/5)
+            serviceId: 03hv69ve4bjwe54
+            serviceName: Unknown
+            isOuScopable: True
+          Privilege: DEVICE_ACTION_REBOOT (3/5)
+            serviceId: 03hv69ve4bjwe54
+            serviceName: Unknown
+            isOuScopable: True
+          Privilege: DEVICE_ACTION_SCREENSHOT (4/5)
+            serviceId: 03hv69ve4bjwe54
+            serviceName: Unknown
+            isOuScopable: True
+          Privilege: MANAGE_DEVICES_READ_ONLY (5/5)
+            serviceId: 03hv69ve4bjwe54
+            serviceName: Unknown
+            isOuScopable: True
+            childPrivileges: 1
+              Privilege: TELEMETRY_API
+                serviceId: 03hv69ve4bjwe54
+                serviceName: Unknown
+                isOuScopable: True
+                childPrivileges: 24
+                  Privilege: TELEMETRY_API_APPS_REPORT (1/24)
+                    serviceId: 03hv69ve4bjwe54
+                    serviceName: Unknown
+                    isOuScopable: True
+                  Privilege: TELEMETRY_API_AUDIO_REPORT (2/24)
+                    serviceId: 03hv69ve4bjwe54
+                    serviceName: Unknown
+                    isOuScopable: True
+                  Privilege: TELEMETRY_API_BATTERY_INFO (3/24)
+                    serviceId: 03hv69ve4bjwe54
+                    serviceName: Unknown
+                    isOuScopable: True
+                  Privilege: TELEMETRY_API_BATTERY_REPORT (4/24)
+                    serviceId: 03hv69ve4bjwe54
+                    serviceName: Unknown
+                    isOuScopable: True
+                  Privilege: TELEMETRY_API_BUS_DEVICE_INFO (5/24)
+                    serviceId: 03hv69ve4bjwe54
+                    serviceName: Unknown
+                    isOuScopable: True
+                  Privilege: TELEMETRY_API_CPU_INFO (6/24)
+                    serviceId: 03hv69ve4bjwe54
+                    serviceName: Unknown
+                    isOuScopable: True
+                  Privilege: TELEMETRY_API_CPU_REPORT (7/24)
+                    serviceId: 03hv69ve4bjwe54
+                    serviceName: Unknown
+                    isOuScopable: True
+                  Privilege: TELEMETRY_API_CRASH_REPORT (8/24)
+                    serviceId: 03hv69ve4bjwe54
+                    serviceName: Unknown
+                    isOuScopable: True
+                  Privilege: TELEMETRY_API_DEVICE (9/24)
+                    serviceId: 03hv69ve4bjwe54
+                    serviceName: Unknown
+                    isOuScopable: True
+                  Privilege: TELEMETRY_API_DEVICE_ACTIVITY_REPORT (10/24)
+                    serviceId: 03hv69ve4bjwe54
+                    serviceName: Unknown
+                    isOuScopable: True
+                  Privilege: TELEMETRY_API_GRAPHICS_INFO (11/24)
+                    serviceId: 03hv69ve4bjwe54
+                    serviceName: Unknown
+                    isOuScopable: True
+                  Privilege: TELEMETRY_API_GRAPHICS_REPORT (12/24)
+                    serviceId: 03hv69ve4bjwe54
+                    serviceName: Unknown
+                    isOuScopable: True
+                  Privilege: TELEMETRY_API_KIOSK_VISION_INFO (13/24)
+                    serviceId: 03hv69ve4bjwe54
+                    serviceName: Unknown
+                    isOuScopable: True
+                  Privilege: TELEMETRY_API_KIOSK_VISION_REPORT (14/24)
+                    serviceId: 03hv69ve4bjwe54
+                    serviceName: Unknown
+                    isOuScopable: True
+                  Privilege: TELEMETRY_API_MEMORY_INFO (15/24)
+                    serviceId: 03hv69ve4bjwe54
+                    serviceName: Unknown
+                    isOuScopable: True
+                  Privilege: TELEMETRY_API_MEMORY_REPORT (16/24)
+                    serviceId: 03hv69ve4bjwe54
+                    serviceName: Unknown
+                    isOuScopable: True
+                  Privilege: TELEMETRY_API_NETWORK_INFO (17/24)
+                    serviceId: 03hv69ve4bjwe54
+                    serviceName: Unknown
+                    isOuScopable: True
+                  Privilege: TELEMETRY_API_NETWORK_REPORT (18/24)
+                    serviceId: 03hv69ve4bjwe54
+                    serviceName: Unknown
+                    isOuScopable: True
+                  Privilege: TELEMETRY_API_OS_REPORT (19/24)
+                    serviceId: 03hv69ve4bjwe54
+                    serviceName: Unknown
+                    isOuScopable: True
+                  Privilege: TELEMETRY_API_PERIPHERALS_REPORT (20/24)
+                    serviceId: 03hv69ve4bjwe54
+                    serviceName: Unknown
+                    isOuScopable: True
+                  Privilege: TELEMETRY_API_STORAGE_INFO (21/24)
+                    serviceId: 03hv69ve4bjwe54
+                    serviceName: Unknown
+                    isOuScopable: True
+                  Privilege: TELEMETRY_API_STORAGE_REPORT (22/24)
+                    serviceId: 03hv69ve4bjwe54
+                    serviceName: Unknown
+                    isOuScopable: True
+                  Privilege: TELEMETRY_API_USER (23/24)
+                    serviceId: 03hv69ve4bjwe54
+                    serviceName: Unknown
+                    isOuScopable: True
+                  Privilege: TELEMETRY_API_WEB_REPORT (24/24)
+                    serviceId: 03hv69ve4bjwe54
+                    serviceName: Unknown
+                    isOuScopable: True
+      Privilege: MANAGE_DEVICE_SETTINGS (4/6)
+        serviceId: 03hv69ve4bjwe54
+        serviceName: Unknown
         isOuScopable: True
-  Privilege: USERS_ALL (49/91)
-    serviceId: 00haapch16h1ysv
-    serviceName: admin_apis
-    isOuScopable: True
-    childPrivileges: 5
-      Privilege: USERS_CREATE (1/5)
-        serviceId: 00haapch16h1ysv
-        serviceName: admin_apis
+      Privilege: MANAGE_PRINTERS (5/6)
+        serviceId: 03hv69ve4bjwe54
+        serviceName: Unknown
         isOuScopable: True
-      Privilege: USERS_RETRIEVE (2/5)
-        serviceId: 00haapch16h1ysv
-        serviceName: admin_apis
-        isOuScopable: True
-      Privilege: USERS_UPDATE (3/5)
-        serviceId: 00haapch16h1ysv
-        serviceName: admin_apis
+      Privilege: VIEW_CHROME_REPORTS (6/6)
+        serviceId: 03hv69ve4bjwe54
+        serviceName: Unknown
         isOuScopable: True
         childPrivileges: 6
-          Privilege: USERS_ALIAS (1/6)
-            serviceId: 00haapch16h1ysv
-            serviceName: admin_apis
+          Privilege: VIEW_CHROME_CRASH_REPORTS (1/6)
+            serviceId: 03hv69ve4bjwe54
+            serviceName: Unknown
             isOuScopable: True
-          Privilege: USERS_MOVE (2/6)
-            serviceId: 00haapch16h1ysv
-            serviceName: admin_apis
+          Privilege: VIEW_CHROME_EXTENSIONS_REPORT (2/6)
+            serviceId: 03hv69ve4bjwe54
+            serviceName: Unknown
             isOuScopable: True
-          Privilege: USERS_RESET_PASSWORD (3/6)
-            serviceId: 00haapch16h1ysv
-            serviceName: admin_apis
+          Privilege: VIEW_CHROME_INSIGHTS_REPORT (3/6)
+            serviceId: 03hv69ve4bjwe54
+            serviceName: Unknown
             isOuScopable: True
-          Privilege: USERS_FORCE_PASSWORD_CHANGE (4/6)
-            serviceId: 00haapch16h1ysv
-            serviceName: admin_apis
+          Privilege: VIEW_CHROME_LEGACY_TECH_REPORT (4/6)
+            serviceId: 03hv69ve4bjwe54
+            serviceName: Unknown
             isOuScopable: True
-          Privilege: USERS_ADD_NICKNAME (5/6)
-            serviceId: 00haapch16h1ysv
-            serviceName: admin_apis
+          Privilege: VIEW_CHROME_PRINTERS_REPORT (5/6)
+            serviceId: 03hv69ve4bjwe54
+            serviceName: Unknown
             isOuScopable: True
-          Privilege: USERS_SUSPEND (6/6)
-            serviceId: 00haapch16h1ysv
-            serviceName: admin_apis
+          Privilege: VIEW_CHROME_VERSION_REPORT (6/6)
+            serviceId: 03hv69ve4bjwe54
+            serviceName: Unknown
             isOuScopable: True
-      Privilege: USERS_UPDATE_CUSTOM_ATTRIBUTES_USER_PRIVILEGE_GROUP (4/5)
-        serviceId: 00haapch16h1ysv
-        serviceName: admin_apis
-        isOuScopable: True
-      Privilege: USERS_DELETE (5/5)
-        serviceId: 00haapch16h1ysv
-        serviceName: admin_apis
-        isOuScopable: True
-  Privilege: GROUPS_ALL (50/91)
+  Privilege: SERVICE_DATA_DOWNLOADER (62/111)
+    serviceId: 03hv69ve4bjwe54
+    serviceName: Unknown
+    isOuScopable: False
+  Privilege: MANAGE_CHROME_INSIGHT_SETTINGS (63/111)
+    serviceId: 01x0gk371sq486y
+    serviceName: Unknown
+    isOuScopable: False
+  Privilege: VIEW_AND_MANAGE_CHROME_OCR_SETTING (64/111)
+    serviceId: 01x0gk371sq486y
+    serviceName: Unknown
+    isOuScopable: False
+  Privilege: VIEW_CHROME_INSIGHT_SETTINGS (65/111)
+    serviceId: 01x0gk371sq486y
+    serviceName: Unknown
+    isOuScopable: False
+  Privilege: MANAGE_ENTERPRISE_PRIVATE_APPS (66/111)
+    serviceId: 02w5ecyt3pkeyqi
+    serviceName: Unknown
+    isOuScopable: False
+  Privilege: MANAGE_EXTERNALLY_HOSTED_APK_UPLOAD_IN_PLAY (67/111)
+    serviceId: 02w5ecyt3pkeyqi
+    serviceName: Unknown
+    isOuScopable: False
+  Privilege: MANAGE_PLAY_FOR_WORK_STORE (68/111)
+    serviceId: 02w5ecyt3pkeyqi
+    serviceName: Unknown
+    isOuScopable: False
+  Privilege: ENROLL_MEET_DEVICES (69/111)
+    serviceId: 02w5ecyt3laroi5
+    serviceName: Unknown
+    isOuScopable: False
+  Privilege: MANAGE_HANGOUTS_SERVICE (70/111)
+    serviceId: 02w5ecyt3laroi5
+    serviceName: Unknown
+    isOuScopable: False
+    childPrivileges: 2
+      Privilege: MANAGE_CALENDARS (1/2)
+        serviceId: 02w5ecyt3laroi5
+        serviceName: Unknown
+        isOuScopable: False
+        childPrivileges: 2
+          Privilege: MANAGE_PERSONAL_CALENDARS (1/2)
+            serviceId: 02w5ecyt3laroi5
+            serviceName: Unknown
+            isOuScopable: False
+          Privilege: MANAGE_ROOM_CALENDARS (2/2)
+            serviceId: 02w5ecyt3laroi5
+            serviceName: Unknown
+            isOuScopable: False
+      Privilege: MANAGE_HANGOUTS_SERVICE_WITHOUT_CALENDAR (2/2)
+        serviceId: 02w5ecyt3laroi5
+        serviceName: Unknown
+        isOuScopable: False
+        childPrivileges: 4
+          Privilege: DEPROVISION_MEET_DEVICES (1/4)
+            serviceId: 02w5ecyt3laroi5
+            serviceName: Unknown
+            isOuScopable: False
+          Privilege: MANAGE_MEET_DEVICES (2/4)
+            serviceId: 02w5ecyt3laroi5
+            serviceName: Unknown
+            isOuScopable: False
+            childPrivileges: 1
+              Privilege: READ_MEET_DEVICES
+                serviceId: 02w5ecyt3laroi5
+                serviceName: Unknown
+                isOuScopable: False
+          Privilege: MANAGE_MEET_DEVICE_SETTINGS (3/4)
+            serviceId: 02w5ecyt3laroi5
+            serviceName: Unknown
+            isOuScopable: False
+            childPrivileges: 2
+              Privilege: MANAGE_MEET_DEVICE_SIGNAGE_SETTING (1/2)
+                serviceId: 02w5ecyt3laroi5
+                serviceName: Unknown
+                isOuScopable: False
+              Privilege: READ_MEET_DEVICE_SETTINGS (2/2)
+                serviceId: 02w5ecyt3laroi5
+                serviceName: Unknown
+                isOuScopable: False
+          Privilege: OPERATE_MEET_DEVICES (4/4)
+            serviceId: 02w5ecyt3laroi5
+            serviceName: Unknown
+            isOuScopable: False
+            childPrivileges: 2
+              Privilege: MANAGE_MEET_DEVICE_MEETINGS (1/2)
+                serviceId: 02w5ecyt3laroi5
+                serviceName: Unknown
+                isOuScopable: False
+              Privilege: PERFORM_MEET_DEVICE_COMMANDS (2/2)
+                serviceId: 02w5ecyt3laroi5
+                serviceName: Unknown
+                isOuScopable: False
+  Privilege: APP_ADMIN (71/111)
+    serviceId: 01baon6m1wv6b0p
+    serviceName: Unknown
+    isOuScopable: False
+  Privilege: APP_ADMIN (72/111)
+    serviceId: 02afmg282jiquyg
+    serviceName: device_management
+    isOuScopable: True
+  Privilege: APP_ADMIN (73/111)
+    serviceId: 02afmg283v5nmx6
+    serviceName: Unknown
+    isOuScopable: False
+    childPrivileges: 1
+      Privilege: ADMIN_QUALITY_DASHBOARD_ACCESS
+        serviceId: 02afmg283v5nmx6
+        serviceName: Unknown
+        isOuScopable: False
+  Privilege: ACCESS_ADMIN_QUARANTINE (74/111)
+    serviceId: 039kk8xu49mji9t
+    serviceName: gmail
+    isOuScopable: False
+  Privilege: ACCESS_EMAIL_LOG_SEARCH (75/111)
+    serviceId: 039kk8xu49mji9t
+    serviceName: gmail
+    isOuScopable: False
+  Privilege: ACCESS_RESTRICTED_QUARANTINE (76/111)
+    serviceId: 039kk8xu49mji9t
+    serviceName: gmail
+    isOuScopable: False
+  Privilege: APP_ADMIN (77/111)
+    serviceId: 039kk8xu49mji9t
+    serviceName: gmail
+    isOuScopable: False
+  Privilege: APP_ADMIN (78/111)
+    serviceId: 03mzq4wv1nvgcwf
+    serviceName: Unknown
+    isOuScopable: False
+  Privilege: MANAGE_DLP_RULE (79/111)
+    serviceId: 02250f4o3hg8pg8
+    serviceName: Unknown
+    isOuScopable: False
+  Privilege: VIEW_DLP_RULE (80/111)
+    serviceId: 02250f4o3hg8pg8
+    serviceName: Unknown
+    isOuScopable: False
+  Privilege: ADMIN_REPORTING_ACCESS (81/111)
     serviceId: 00haapch16h1ysv
     serviceName: admin_apis
     isOuScopable: False
-    childPrivileges: 4
-      Privilege: GROUPS_CREATE (1/4)
+    childPrivileges: 1
+      Privilege: REPORTING_AUDIT_ACCESS
         serviceId: 00haapch16h1ysv
         serviceName: admin_apis
         isOuScopable: False
-      Privilege: GROUPS_RETRIEVE (2/4)
+  Privilege: API_APPS_ENTERPRISE_CUSTOMER (82/111)
+    serviceId: 00haapch16h1ysv
+    serviceName: admin_apis
+    isOuScopable: False
+    childPrivileges: 2
+      Privilege: API_APPS_ENTERPRISE_CUSTOMER_READ (1/2)
         serviceId: 00haapch16h1ysv
         serviceName: admin_apis
         isOuScopable: False
-      Privilege: GROUPS_UPDATE (3/4)
+        childPrivileges: 6
+          Privilege: API_APPS_ENTERPRISE_CUSTOMER_READ_BRANDING_SETTINGS (1/6)
+            serviceId: 00haapch16h1ysv
+            serviceName: admin_apis
+            isOuScopable: False
+          Privilege: API_APPS_ENTERPRISE_CUSTOMER_READ_CONTACT_INFO (2/6)
+            serviceId: 00haapch16h1ysv
+            serviceName: admin_apis
+            isOuScopable: False
+          Privilege: API_APPS_ENTERPRISE_CUSTOMER_READ_ONBOARD_SETTINGS (3/6)
+            serviceId: 00haapch16h1ysv
+            serviceName: admin_apis
+            isOuScopable: False
+          Privilege: API_APPS_ENTERPRISE_CUSTOMER_READ_PROFILE_SETTINGS (4/6)
+            serviceId: 00haapch16h1ysv
+            serviceName: admin_apis
+            isOuScopable: False
+          Privilege: API_APPS_ENTERPRISE_CUSTOMER_READ_SUPPORT_SETTINGS (5/6)
+            serviceId: 00haapch16h1ysv
+            serviceName: admin_apis
+            isOuScopable: False
+          Privilege: API_APPS_ENTERPRISE_CUSTOMER_READ_TIME_ZONE_SETTINGS (6/6)
+            serviceId: 00haapch16h1ysv
+            serviceName: admin_apis
+            isOuScopable: False
+      Privilege: API_APPS_ENTERPRISE_CUSTOMER_UPDATE (2/2)
         serviceId: 00haapch16h1ysv
         serviceName: admin_apis
         isOuScopable: False
-      Privilege: GROUPS_DELETE (4/4)
-        serviceId: 00haapch16h1ysv
-        serviceName: admin_apis
-        isOuScopable: False
-  Privilege: USER_SECURITY_ALL (51/91)
+        childPrivileges: 6
+          Privilege: API_APPS_ENTERPRISE_CUSTOMER_UPDATE_BRANDING_SETTINGS (1/6)
+            serviceId: 00haapch16h1ysv
+            serviceName: admin_apis
+            isOuScopable: False
+          Privilege: API_APPS_ENTERPRISE_CUSTOMER_UPDATE_CONTACT_INFO (2/6)
+            serviceId: 00haapch16h1ysv
+            serviceName: admin_apis
+            isOuScopable: False
+          Privilege: API_APPS_ENTERPRISE_CUSTOMER_UPDATE_ONBOARD_SETTINGS (3/6)
+            serviceId: 00haapch16h1ysv
+            serviceName: admin_apis
+            isOuScopable: False
+          Privilege: API_APPS_ENTERPRISE_CUSTOMER_UPDATE_PROFILE_SETTINGS (4/6)
+            serviceId: 00haapch16h1ysv
+            serviceName: admin_apis
+            isOuScopable: False
+          Privilege: API_APPS_ENTERPRISE_CUSTOMER_UPDATE_SUPPORT_SETTINGS (5/6)
+            serviceId: 00haapch16h1ysv
+            serviceName: admin_apis
+            isOuScopable: False
+          Privilege: API_APPS_ENTERPRISE_CUSTOMER_UPDATE_TIME_ZONE_SETTINGS (6/6)
+            serviceId: 00haapch16h1ysv
+            serviceName: admin_apis
+            isOuScopable: False
+  Privilege: USER_SECURITY_ALL (83/111)
     serviceId: 00haapch16h1ysv
     serviceName: admin_apis
     isOuScopable: True
-  Privilege: DATATRANSFER_API_PRIVILEGE_GROUP (52/91)
-    serviceId: 00haapch16h1ysv
-    serviceName: admin_apis
-    isOuScopable: False
-  Privilege: DOMAIN_REGISTRATION_MANAGEMENT (53/91)
-    serviceId: 00haapch16h1ysv
-    serviceName: admin_apis
-    isOuScopable: False
-  Privilege: SCHEMA_MANAGEMENT (54/91)
-    serviceId: 00haapch16h1ysv
-    serviceName: admin_apis
-    isOuScopable: False
-    childPrivileges: 1
-      Privilege: SCHEMA_RETRIEVE
-        serviceId: 00haapch16h1ysv
-        serviceName: admin_apis
-        isOuScopable: False
-  Privilege: LICENSING (55/91)
-    serviceId: 00haapch16h1ysv
-    serviceName: admin_apis
-    isOuScopable: False
-    childPrivileges: 1
-      Privilege: LICENSING_READ
-        serviceId: 00haapch16h1ysv
-        serviceName: admin_apis
-        isOuScopable: False
-  Privilege: BILLING (56/91)
+  Privilege: BILLING (84/111)
     serviceId: 00haapch16h1ysv
     serviceName: admin_apis
     isOuScopable: False
@@ -453,28 +1106,19 @@ Show 91 Privileges
         serviceId: 00haapch16h1ysv
         serviceName: admin_apis
         isOuScopable: False
-  Privilege: SAML2_SERVICE_PROVIDER (57/91)
+  Privilege: DATATRANSFER_API_PRIVILEGE_GROUP (85/111)
     serviceId: 00haapch16h1ysv
     serviceName: admin_apis
     isOuScopable: False
-  Privilege: DOMAIN_MANAGEMENT (58/91)
+  Privilege: DOMAIN_MANAGEMENT (86/111)
     serviceId: 00haapch16h1ysv
     serviceName: admin_apis
     isOuScopable: False
-  Privilege: UPGRADE_CONSUMER_CONVERSION (59/91)
+  Privilege: DOMAIN_REGISTRATION_MANAGEMENT (87/111)
     serviceId: 00haapch16h1ysv
     serviceName: admin_apis
     isOuScopable: False
-  Privilege: TRUSTED_DOMAIN_WHITELIST_WRITE (60/91)
-    serviceId: 00haapch16h1ysv
-    serviceName: admin_apis
-    isOuScopable: False
-    childPrivileges: 1
-      Privilege: TRUSTED_DOMAIN_WHITELIST_READ
-        serviceId: 00haapch16h1ysv
-        serviceName: admin_apis
-        isOuScopable: False
-  Privilege: FULL_MIGRATION_ACCESS (61/91)
+  Privilege: FULL_MIGRATION_ACCESS (88/111)
     serviceId: 00haapch16h1ysv
     serviceName: admin_apis
     isOuScopable: False
@@ -493,28 +1137,226 @@ Show 91 Privileges
                 serviceId: 00haapch16h1ysv
                 serviceName: admin_apis
                 isOuScopable: False
-  Privilege: GROUPS_MANAGE_SECURITY_LABEL (62/91)
+  Privilege: GROUPS_ALL (89/111)
     serviceId: 00haapch16h1ysv
     serviceName: admin_apis
     isOuScopable: False
-  Privilege: GROUPS_MANAGE_LOCKED_LABEL (63/91)
+    childPrivileges: 4
+      Privilege: GROUPS_CREATE (1/4)
+        serviceId: 00haapch16h1ysv
+        serviceName: admin_apis
+        isOuScopable: False
+      Privilege: GROUPS_DELETE (2/4)
+        serviceId: 00haapch16h1ysv
+        serviceName: admin_apis
+        isOuScopable: False
+      Privilege: GROUPS_RETRIEVE (3/4)
+        serviceId: 00haapch16h1ysv
+        serviceName: admin_apis
+        isOuScopable: False
+      Privilege: GROUPS_UPDATE (4/4)
+        serviceId: 00haapch16h1ysv
+        serviceName: admin_apis
+        isOuScopable: False
+  Privilege: GROUPS_MANAGE_LOCKED_LABEL (90/111)
     serviceId: 00haapch16h1ysv
     serviceName: admin_apis
     isOuScopable: False
-  Privilege: ADMIN_REPORTING_ACCESS (64/91)
+  Privilege: GROUPS_MANAGE_SECURITY_LABEL (91/111)
+    serviceId: 00haapch16h1ysv
+    serviceName: admin_apis
+    isOuScopable: False
+  Privilege: LICENSING (92/111)
     serviceId: 00haapch16h1ysv
     serviceName: admin_apis
     isOuScopable: False
     childPrivileges: 1
-      Privilege: REPORTING_AUDIT_ACCESS
+      Privilege: LICENSING_READ
         serviceId: 00haapch16h1ysv
         serviceName: admin_apis
         isOuScopable: False
-  Privilege: SUPPORT_PRIVILEGE_GROUP (65/91)
+  Privilege: ORGANIZATION_UNITS_ALL (93/111)
+    serviceId: 00haapch16h1ysv
+    serviceName: admin_apis
+    isOuScopable: True
+    childPrivileges: 4
+      Privilege: ORGANIZATION_UNITS_CREATE (1/4)
+        serviceId: 00haapch16h1ysv
+        serviceName: admin_apis
+        isOuScopable: True
+      Privilege: ORGANIZATION_UNITS_DELETE (2/4)
+        serviceId: 00haapch16h1ysv
+        serviceName: admin_apis
+        isOuScopable: True
+      Privilege: ORGANIZATION_UNITS_RETRIEVE (3/4)
+        serviceId: 00haapch16h1ysv
+        serviceName: admin_apis
+        isOuScopable: True
+      Privilege: ORGANIZATION_UNITS_UPDATE (4/4)
+        serviceId: 00haapch16h1ysv
+        serviceName: admin_apis
+        isOuScopable: True
+  Privilege: SAML2_SERVICE_PROVIDER (94/111)
     serviceId: 00haapch16h1ysv
     serviceName: admin_apis
     isOuScopable: False
-  Privilege: APPS_INCIDENTS_FULL_ACCESS (66/91)
+  Privilege: SCHEMA_MANAGEMENT (95/111)
+    serviceId: 00haapch16h1ysv
+    serviceName: admin_apis
+    isOuScopable: False
+    childPrivileges: 1
+      Privilege: SCHEMA_RETRIEVE
+        serviceId: 00haapch16h1ysv
+        serviceName: admin_apis
+        isOuScopable: False
+  Privilege: SUPPORT_PRIVILEGE_GROUP (96/111)
+    serviceId: 00haapch16h1ysv
+    serviceName: admin_apis
+    isOuScopable: False
+  Privilege: TRUSTED_DOMAIN_WHITELIST_WRITE (97/111)
+    serviceId: 00haapch16h1ysv
+    serviceName: admin_apis
+    isOuScopable: False
+    childPrivileges: 1
+      Privilege: TRUSTED_DOMAIN_WHITELIST_READ
+        serviceId: 00haapch16h1ysv
+        serviceName: admin_apis
+        isOuScopable: False
+  Privilege: UPGRADE_CONSUMER_CONVERSION (98/111)
+    serviceId: 00haapch16h1ysv
+    serviceName: admin_apis
+    isOuScopable: False
+  Privilege: USERS_ALL (99/111)
+    serviceId: 00haapch16h1ysv
+    serviceName: admin_apis
+    isOuScopable: True
+    childPrivileges: 5
+      Privilege: USERS_CREATE (1/5)
+        serviceId: 00haapch16h1ysv
+        serviceName: admin_apis
+        isOuScopable: True
+      Privilege: USERS_DELETE (2/5)
+        serviceId: 00haapch16h1ysv
+        serviceName: admin_apis
+        isOuScopable: True
+      Privilege: USERS_RETRIEVE (3/5)
+        serviceId: 00haapch16h1ysv
+        serviceName: admin_apis
+        isOuScopable: True
+      Privilege: USERS_UPDATE_CUSTOM_ATTRIBUTES_USER_PRIVILEGE_GROUP (4/5)
+        serviceId: 00haapch16h1ysv
+        serviceName: admin_apis
+        isOuScopable: True
+      Privilege: USERS_UPDATE (5/5)
+        serviceId: 00haapch16h1ysv
+        serviceName: admin_apis
+        isOuScopable: True
+        childPrivileges: 6
+          Privilege: USERS_ADD_NICKNAME (1/6)
+            serviceId: 00haapch16h1ysv
+            serviceName: admin_apis
+            isOuScopable: True
+          Privilege: USERS_FORCE_PASSWORD_CHANGE (2/6)
+            serviceId: 00haapch16h1ysv
+            serviceName: admin_apis
+            isOuScopable: True
+          Privilege: USERS_MOVE (3/6)
+            serviceId: 00haapch16h1ysv
+            serviceName: admin_apis
+            isOuScopable: True
+          Privilege: USERS_ALIAS (4/6)
+            serviceId: 00haapch16h1ysv
+            serviceName: admin_apis
+            isOuScopable: True
+          Privilege: USERS_RESET_PASSWORD (5/6)
+            serviceId: 00haapch16h1ysv
+            serviceName: admin_apis
+            isOuScopable: True
+          Privilege: USERS_SUSPEND (6/6)
+            serviceId: 00haapch16h1ysv
+            serviceName: admin_apis
+            isOuScopable: True
+  Privilege: APP_ADMIN (100/111)
+    serviceId: 0319y80a15kueje
+    serviceName: Unknown
+    isOuScopable: False
+  Privilege: APP_ADMIN (101/111)
+    serviceId: 00upglbi0qz687j
+    serviceName: takeout
+    isOuScopable: False
+  Privilege: APP_ADMIN (102/111)
+    serviceId: 01tuee744837sjz
+    serviceName: Unknown
+    isOuScopable: False
+  Privilege: APP_ADMIN (103/111)
+    serviceId: 02szc72q20usrb6
+    serviceName: Unknown
+    isOuScopable: True
+  Privilege: APP_ADMIN (104/111)
+    serviceId: 0279ka651l5iy5q
+    serviceName: Unknown
+    isOuScopable: False
+    childPrivileges: 1
+      Privilege: ADMIN_QUALITY_DASHBOARD_ACCESS
+        serviceId: 0279ka651l5iy5q
+        serviceName: Unknown
+        isOuScopable: False
+  Privilege: ACCESS_ALL_STATS (105/111)
+    serviceId: 0279ka6513ygm10
+    serviceName: Unknown
+    isOuScopable: False
+    childPrivileges: 3
+      Privilege: ACCESS_GROUP_STATS (1/3)
+        serviceId: 0279ka6513ygm10
+        serviceName: Unknown
+        isOuScopable: False
+      Privilege: ACCESS_OU_STATS (2/3)
+        serviceId: 0279ka6513ygm10
+        serviceName: Unknown
+        isOuScopable: True
+      Privilege: ACCESS_TEAM_STATS (3/3)
+        serviceId: 0279ka6513ygm10
+        serviceName: Unknown
+        isOuScopable: False
+  Privilege: EDIT_WORK_INSIGHTS_SETTINGS (106/111)
+    serviceId: 0279ka6513ygm10
+    serviceName: Unknown
+    isOuScopable: False
+  Privilege: APP_ADMIN (107/111)
+    serviceId: 01yyy98l4k9lq4l
+    serviceName: directory
+    isOuScopable: False
+    childPrivileges: 4
+      Privilege: CUSTOM_DIRECTORY_READWRITE (1/4)
+        serviceId: 01yyy98l4k9lq4l
+        serviceName: directory
+        isOuScopable: False
+      Privilege: DIRECTORY_SETTINGS_READONLY (2/4)
+        serviceId: 01yyy98l4k9lq4l
+        serviceName: directory
+        isOuScopable: False
+        childPrivileges: 2
+          Privilege: CUSTOM_DIRECTORY_READONLY (1/2)
+            serviceId: 01yyy98l4k9lq4l
+            serviceName: directory
+            isOuScopable: False
+          Privilege: PROFILE_EDITABILITY_READONLY (2/2)
+            serviceId: 01yyy98l4k9lq4l
+            serviceName: directory
+            isOuScopable: False
+      Privilege: PROFILE_EDITABILITY_READWRITE (3/4)
+        serviceId: 01yyy98l4k9lq4l
+        serviceName: directory
+        isOuScopable: False
+      Privilege: SHARED_CONTACTS_READWRITE (4/4)
+        serviceId: 01yyy98l4k9lq4l
+        serviceName: directory
+        isOuScopable: False
+  Privilege: MANAGE_SERVICE_ON_OFF (108/111)
+    serviceId: 04iylrwe1ih2v48
+    serviceName: Unknown
+    isOuScopable: False
+  Privilege: APPS_INCIDENTS_FULL_ACCESS (109/111)
     serviceId: 02pta16n3efhw69
     serviceName: Unknown
     isOuScopable: False
@@ -527,312 +1369,14 @@ Show 91 Privileges
         serviceId: 02pta16n3efhw69
         serviceName: Unknown
         isOuScopable: False
-  Privilege: APP_ADMIN (67/91)
-    serviceId: 019c6y1840fzfkt
-    serviceName: classroom
-    isOuScopable: True
-  Privilege: ADMIN_OVERSIGHT_MANAGE_CLASSES (68/91)
-    serviceId: 019c6y1840fzfkt
-    serviceName: classroom
-    isOuScopable: True
-  Privilege: EDU_ANALYTICS_DATA_ACCESS (69/91)
-    serviceId: 019c6y1840fzfkt
-    serviceName: classroom
-    isOuScopable: True
-  Privilege: APP_ADMIN (70/91)
-    serviceId: 037m2jsg46www3g
+  Privilege: MANAGE_CSE_SETTINGS (110/111)
+    serviceId: 02pta16n4hxgyp2
     serviceName: Unknown
     isOuScopable: False
-  Privilege: MANAGE_DYNAMITE_SETTINGS (71/91)
-    serviceId: 03whwml44f3n4vd
+  Privilege: APP_ADMIN (111/111)
+    serviceId: 03oy7u290lj7dci
     serviceName: Unknown
     isOuScopable: False
-  Privilege: MODERATE_DYNAMITE_REPORT (72/91)
-    serviceId: 03whwml44f3n4vd
-    serviceName: Unknown
-    isOuScopable: False
-  Privilege: MANAGE_DYNAMITE_SPACES (73/91)
-    serviceId: 03whwml44f3n4vd
-    serviceName: Unknown
-    isOuScopable: False
-  Privilege: APP_ADMIN (74/91)
-    serviceId: 03hv69ve4bjwe54
-    serviceName: Unknown
-    isOuScopable: True
-    childPrivileges: 6
-      Privilege: MANAGE_CHROME_USER_SETTINGS (1/6)
-        serviceId: 03hv69ve4bjwe54
-        serviceName: Unknown
-        isOuScopable: True
-        childPrivileges: 2
-          Privilege: MANAGE_CHROME_APPLICATION_SETTINGS (1/2)
-            serviceId: 03hv69ve4bjwe54
-            serviceName: Unknown
-            isOuScopable: True
-          Privilege: MANAGE_CHROME_WEB_SETTINGS (2/2)
-            serviceId: 03hv69ve4bjwe54
-            serviceName: Unknown
-            isOuScopable: True
-      Privilege: MANAGE_CHROME_BROWSERS (2/6)
-        serviceId: 03hv69ve4bjwe54
-        serviceName: Unknown
-        isOuScopable: True
-        childPrivileges: 1
-          Privilege: MANAGED_CHROME_BROWSERS_READ_ONLY
-            serviceId: 03hv69ve4bjwe54
-            serviceName: Unknown
-            isOuScopable: True
-      Privilege: VIEW_CHROME_REPORTS (3/6)
-        serviceId: 03hv69ve4bjwe54
-        serviceName: Unknown
-        isOuScopable: True
-        childPrivileges: 4
-          Privilege: VIEW_CHROME_EXTENSIONS_REPORT (1/4)
-            serviceId: 03hv69ve4bjwe54
-            serviceName: Unknown
-            isOuScopable: True
-          Privilege: VIEW_CHROME_VERSION_REPORT (2/4)
-            serviceId: 03hv69ve4bjwe54
-            serviceName: Unknown
-            isOuScopable: True
-          Privilege: VIEW_CHROME_INSIGHTS_REPORT (3/4)
-            serviceId: 03hv69ve4bjwe54
-            serviceName: Unknown
-            isOuScopable: True
-          Privilege: VIEW_CHROME_PRINTERS_REPORT (4/4)
-            serviceId: 03hv69ve4bjwe54
-            serviceName: Unknown
-            isOuScopable: True
-      Privilege: MANAGE_PRINTERS (4/6)
-        serviceId: 03hv69ve4bjwe54
-        serviceName: Unknown
-        isOuScopable: True
-      Privilege: MANAGE_DEVICES (5/6)
-        serviceId: 03hv69ve4bjwe54
-        serviceName: Unknown
-        isOuScopable: True
-        childPrivileges: 2
-          Privilege: MANAGE_DEVICES_READ_ONLY (1/2)
-            serviceId: 03hv69ve4bjwe54
-            serviceName: Unknown
-            isOuScopable: True
-            childPrivileges: 1
-              Privilege: TELEMETRY_API
-                serviceId: 03hv69ve4bjwe54
-                serviceName: Unknown
-                isOuScopable: True
-                childPrivileges: 19
-                  Privilege: TELEMETRY_API_DEVICE (1/19)
-                    serviceId: 03hv69ve4bjwe54
-                    serviceName: Unknown
-                    isOuScopable: True
-                  Privilege: TELEMETRY_API_USER (2/19)
-                    serviceId: 03hv69ve4bjwe54
-                    serviceName: Unknown
-                    isOuScopable: True
-                  Privilege: TELEMETRY_API_AUDIO_REPORT (3/19)
-                    serviceId: 03hv69ve4bjwe54
-                    serviceName: Unknown
-                    isOuScopable: True
-                  Privilege: TELEMETRY_API_BUS_DEVICE_INFO (4/19)
-                    serviceId: 03hv69ve4bjwe54
-                    serviceName: Unknown
-                    isOuScopable: True
-                  Privilege: TELEMETRY_API_OS_REPORT (5/19)
-                    serviceId: 03hv69ve4bjwe54
-                    serviceName: Unknown
-                    isOuScopable: True
-                  Privilege: TELEMETRY_API_CPU_INFO (6/19)
-                    serviceId: 03hv69ve4bjwe54
-                    serviceName: Unknown
-                    isOuScopable: True
-                  Privilege: TELEMETRY_API_CPU_REPORT (7/19)
-                    serviceId: 03hv69ve4bjwe54
-                    serviceName: Unknown
-                    isOuScopable: True
-                  Privilege: TELEMETRY_API_MEMORY_INFO (8/19)
-                    serviceId: 03hv69ve4bjwe54
-                    serviceName: Unknown
-                    isOuScopable: True
-                  Privilege: TELEMETRY_API_MEMORY_REPORT (9/19)
-                    serviceId: 03hv69ve4bjwe54
-                    serviceName: Unknown
-                    isOuScopable: True
-                  Privilege: TELEMETRY_API_GRAPHICS_INFO (10/19)
-                    serviceId: 03hv69ve4bjwe54
-                    serviceName: Unknown
-                    isOuScopable: True
-                  Privilege: TELEMETRY_API_GRAPHICS_REPORT (11/19)
-                    serviceId: 03hv69ve4bjwe54
-                    serviceName: Unknown
-                    isOuScopable: True
-                  Privilege: TELEMETRY_API_BATTERY_INFO (12/19)
-                    serviceId: 03hv69ve4bjwe54
-                    serviceName: Unknown
-                    isOuScopable: True
-                  Privilege: TELEMETRY_API_BATTERY_REPORT (13/19)
-                    serviceId: 03hv69ve4bjwe54
-                    serviceName: Unknown
-                    isOuScopable: True
-                  Privilege: TELEMETRY_API_STORAGE_INFO (14/19)
-                    serviceId: 03hv69ve4bjwe54
-                    serviceName: Unknown
-                    isOuScopable: True
-                  Privilege: TELEMETRY_API_STORAGE_REPORT (15/19)
-                    serviceId: 03hv69ve4bjwe54
-                    serviceName: Unknown
-                    isOuScopable: True
-                  Privilege: TELEMETRY_API_NETWORK_INFO (16/19)
-                    serviceId: 03hv69ve4bjwe54
-                    serviceName: Unknown
-                    isOuScopable: True
-                  Privilege: TELEMETRY_API_NETWORK_REPORT (17/19)
-                    serviceId: 03hv69ve4bjwe54
-                    serviceName: Unknown
-                    isOuScopable: True
-                  Privilege: TELEMETRY_API_DEVICE_ACTIVITY_REPORT (18/19)
-                    serviceId: 03hv69ve4bjwe54
-                    serviceName: Unknown
-                    isOuScopable: True
-                  Privilege: TELEMETRY_API_PERIPHERALS_REPORT (19/19)
-                    serviceId: 03hv69ve4bjwe54
-                    serviceName: Unknown
-                    isOuScopable: True
-          Privilege: DEVICE_ACTION_CRD (2/2)
-            serviceId: 03hv69ve4bjwe54
-            serviceName: Unknown
-            isOuScopable: True
-      Privilege: MANAGE_DEVICE_SETTINGS (6/6)
-        serviceId: 03hv69ve4bjwe54
-        serviceName: Unknown
-        isOuScopable: True
-  Privilege: SERVICE_DATA_DOWNLOADER (75/91)
-    serviceId: 03hv69ve4bjwe54
-    serviceName: Unknown
-    isOuScopable: False
-  Privilege: MANAGE_DIRECTORY_SYNC_SETTINGS (76/91)
-    serviceId: 0147n2zr1ynkkmf
-    serviceName: Unknown
-    isOuScopable: False
-    childPrivileges: 1
-      Privilege: READ_DIRECTORY_SYNC_SETTINGS
-        serviceId: 0147n2zr1ynkkmf
-        serviceName: Unknown
-        isOuScopable: False
-  Privilege: APP_ADMIN (77/91)
-    serviceId: 0279ka651l5iy5q
-    serviceName: Unknown
-    isOuScopable: False
-    childPrivileges: 1
-      Privilege: ADMIN_QUALITY_DASHBOARD_ACCESS
-        serviceId: 0279ka651l5iy5q
-        serviceName: Unknown
-        isOuScopable: False
-  Privilege: SECURITY_SETTINGS (78/91)
-    serviceId: 00vx122734tbite
-    serviceName: Unknown
-    isOuScopable: False
-    childPrivileges: 1
-      Privilege: INBOUND_SSO_SETTINGS
-        serviceId: 00vx122734tbite
-        serviceName: Unknown
-        isOuScopable: False
-  Privilege: VIEW_DLP_RULE (79/91)
-    serviceId: 02250f4o3hg8pg8
-    serviceName: Unknown
-    isOuScopable: False
-  Privilege: MANAGE_DLP_RULE (80/91)
-    serviceId: 02250f4o3hg8pg8
-    serviceName: Unknown
-    isOuScopable: False
-  Privilege: APP_ADMIN (81/91)
-    serviceId: 00nmf14n14wtgcf
-    serviceName: app_maker
-    isOuScopable: False
-  Privilege: VIEW_ALL_PROJECTS (82/91)
-    serviceId: 00nmf14n14wtgcf
-    serviceName: app_maker
-    isOuScopable: False
-  Privilege: APP_ADMIN (83/91)
-    serviceId: 02zbgiuw2wdxo5p
-    serviceName: youtube
-    isOuScopable: False
-  Privilege: APP_ADMIN (84/91)
-    serviceId: 03as4poj2zjehv7
-    serviceName: Unknown
-    isOuScopable: False
-  Privilege: APP_ADMIN (85/91)
-    serviceId: 02afmg283v5nmx6
-    serviceName: Unknown
-    isOuScopable: False
-    childPrivileges: 1
-      Privilege: ADMIN_QUALITY_DASHBOARD_ACCESS
-        serviceId: 02afmg283v5nmx6
-        serviceName: Unknown
-        isOuScopable: False
-  Privilege: APP_ADMIN (86/91)
-    serviceId: 00upglbi0qz687j
-    serviceName: takeout
-    isOuScopable: False
-  Privilege: CLOUD_PRINT_MANAGER (87/91)
-    serviceId: 02bn6wsx379ol8g
-    serviceName: cloud_print
-    isOuScopable: False
-  Privilege: MANAGE_AGE_BASED_ACCESS_SETTINGS_AGE_LABEL (88/91)
-    serviceId: 046r0co22dnadsi
-    serviceName: Unknown
-    isOuScopable: True
-    childPrivileges: 1
-      Privilege: AGE_BASED_ACCESS_SETTINGS_AGE_LABEL_READ
-        serviceId: 046r0co22dnadsi
-        serviceName: Unknown
-        isOuScopable: True
-  Privilege: LOGO_PRIVILEGE_GROUP (89/91)
-    serviceId: 03j2qqm31d4j55e
-    serviceName: Unknown
-    isOuScopable: False
-  Privilege: APP_ADMIN (90/91)
-    serviceId: 04f1mdlm0ki64aw
-    serviceName: cros
-    isOuScopable: True
-    childPrivileges: 7
-      Privilege: MANAGE_DEVICES (1/7)
-        serviceId: 04f1mdlm0ki64aw
-        serviceName: cros
-        isOuScopable: True
-      Privilege: MANAGE_USER_SETTINGS (2/7)
-        serviceId: 04f1mdlm0ki64aw
-        serviceName: cros
-        isOuScopable: True
-        childPrivileges: 1
-          Privilege: MANAGE_APPLICATION_SETTINGS
-            serviceId: 04f1mdlm0ki64aw
-            serviceName: cros
-            isOuScopable: True
-      Privilege: MANAGE_DEVICE_SETTINGS (3/7)
-        serviceId: 04f1mdlm0ki64aw
-        serviceName: cros
-        isOuScopable: True
-      Privilege: MANAGE_BROWSERS (4/7)
-        serviceId: 04f1mdlm0ki64aw
-        serviceName: cros
-        isOuScopable: True
-      Privilege: VIEW_EXTENSIONS_REPORT (5/7)
-        serviceId: 04f1mdlm0ki64aw
-        serviceName: cros
-        isOuScopable: True
-      Privilege: VIEW_VERSION_REPORT (6/7)
-        serviceId: 04f1mdlm0ki64aw
-        serviceName: cros
-        isOuScopable: True
-      Privilege: MANAGE_PRINTERS (7/7)
-        serviceId: 04f1mdlm0ki64aw
-        serviceName: cros
-        isOuScopable: True
-  Privilege: APP_ADMIN (91/91)
-    serviceId: 02et92p02l9sq0n
-    serviceName: Unknown
-    isOuScopable: True
 ```
 
 ## Manage administrative roles
