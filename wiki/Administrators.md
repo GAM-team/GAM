@@ -1404,7 +1404,7 @@ gam print adminroles|roles [todrive <ToDriveAttribute>*]
 gam show adminroles|roles
         [role <RoleItem>] [privileges]
 ```
-By default, all roles are displayed, use `role <RoleItem>` to sisplay a specific role.
+By default, all roles are displayed, use `role <RoleItem>` to display a specific role.
 
 * `privileges` - Display privileges associated with each role
 
@@ -1452,9 +1452,11 @@ When `oneitemperrow` is specified, each role privilege is output on a separate r
 Get privileges for existing role; replace Role Name with actual role name
 ```
 gam redirect csv ./RolePrivileges.csv print adminrole role 'Role Name' privileges oneitemperrow
-
-# Create a new role with those privileges
+```
+Create a new role with those privileges
+```
 gam create adminrole "New Role Name" privileges select csvfile RolePrivileges.csv:privilegeName
+```
 
 ## Copy roles from one administrator to another
 Get roles for current admin.
