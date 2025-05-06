@@ -1461,16 +1461,21 @@ gam <UserTypeEntity> update serviceaccount (scope|scopes <APIScopeURLList>)*
 gam print privileges [todrive <ToDriveAttribute>*]
 gam show privileges
 
+<Privilege> ::= <String>
+<PrivilegeList> ::= "<Privilege>(,<Privilege)*"
 <RoleAssignmentID> ::= <String>
 <RoleItem> ::= id:<String>|uid:<string>|<String>
 
-gam create adminrole <String> privileges all|all_ou|<PrivilegesList> [description <String>]
-gam update adminrole <RoleItem> [name <String>] [privileges all|all_ou|<PrivilegesList>] [description <String>]
+gam create adminrole <String> [description <String>]
+        privileges all|all_ou|<PrivilegesList>|(select <FileSelector>|<CSVFileSelector>)
+gam update adminrole <RoleItem> [name <String>] [description <String>]
+         [privileges all|all_ou|<PrivilegesList>|(select <FileSelector>|<CSVFileSelector>)]
 gam delete adminrole <RoleItem>
 gam info adminrole <RoleItem> [privileges]
 gam print adminroles|roles [todrive <ToDriveAttribute>*]
-        [privileges] [oneitemperrow]
-gam show adminroles|roles [privileges]
+        [role <RoleItem>] [privileges] [oneitemperrow]
+gam show adminroles|roles
+        [role <RoleItem>] [privileges]
 
 gam create|add admin <EmailAddress>|<UniqueID> <RoleItem> customer|(org_unit <OrgUnitItem>)
         [condition securitygroup|nonsecuritygroup]

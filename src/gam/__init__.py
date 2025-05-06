@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.06.13'
+__version__ = '7.06.14'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -16497,8 +16497,10 @@ def getRoleId():
       invalidChoiceExit(role, GM.Globals[GM.MAP_ROLE_NAME_TO_ID], True)
   return (role, roleId)
 
-# gam create adminrole <String> privileges all|all_ou|<PrivilegesList> [description <String>]
-# gam update adminrole <RoleItem> [name <String>] [privileges all|all_ou|<PrivilegesList>] [description <String>]
+# gam create adminrole <String> [description <String>]
+#	privileges all|all_ou|<PrivilegesList>|(select <FileSelector>|<CSVFileSelector>)
+# gam update adminrole <RoleItem> [name <String>] [description <String>]
+#	[privileges all|all_ou|<PrivilegesList>|(select <FileSelector>|<CSVFileSelector>)]
 def doCreateUpdateAdminRoles():
   def expandChildPrivileges(privilege):
     for childPrivilege in privilege.get('childPrivileges', []):
@@ -16529,8 +16531,12 @@ def doCreateUpdateAdminRoles():
       elif privs == 'ALL_OU':
         body['rolePrivileges'] = [{'privilegeName': p, 'serviceId': v} for p, v in ouPrivileges.items()]
       else:
+        if privs == 'SELECT':
+          privsList = [p.upper() for p in getEntityList(Cmd.OB_PRIVILEGE_LIST)]
+        else:
+          privsList = privs.replace(',', ' ').split()
         body.setdefault('rolePrivileges', [])
-        for p in privs.split(','):
+        for p in privsList:
           if p in allPrivileges:
             body['rolePrivileges'].append({'privilegeName': p, 'serviceId': allPrivileges[p]})
           elif p in ouPrivileges:
@@ -16540,6 +16546,8 @@ def doCreateUpdateAdminRoles():
           elif ':' in p:
             priv, serv = p.split(':')
             body['rolePrivileges'].append({'privilegeName': priv, 'serviceId': serv.lower()})
+          elif p == 'SUPPORT':
+            pass
           else:
             invalidChoiceExit(p, list(allPrivileges.keys())+list(ouPrivileges.keys())+list(childPrivileges.keys()), True)
     elif myarg == 'description':
@@ -16557,12 +16565,12 @@ def doCreateUpdateAdminRoles():
                         customer=GC.Values[GC.CUSTOMER_ID], body=body, fields='roleId,roleName')
     else:
       result = callGAPI(cd.roles(), 'patch',
-                        throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND, GAPI.FORBIDDEN]+[GAPI.NOT_FOUND, GAPI.FAILED_PRECONDITION],
+                        throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND, GAPI.FORBIDDEN]+[GAPI.NOT_FOUND, GAPI.FAILED_PRECONDITION, GAPI.CONFLICT],
                         customer=GC.Values[GC.CUSTOMER_ID], roleId=roleId, body=body, fields='roleId,roleName')
     entityActionPerformed([Ent.ADMIN_ROLE, f"{result['roleName']}({result['roleId']})"])
   except GAPI.duplicate as e:
     entityActionFailedWarning([Ent.ADMIN_ROLE, f"{body['roleName']}"], str(e))
-  except (GAPI.notFound, GAPI.forbidden, GAPI.failedPrecondition) as e:
+  except (GAPI.notFound, GAPI.forbidden, GAPI.failedPrecondition, GAPI.conflict) as e:
     entityActionFailedWarning([Ent.ADMIN_ROLE, roleId], str(e))
   except (GAPI.badRequest, GAPI.customerNotFound):
     accessErrorExit(cd)
@@ -16605,61 +16613,53 @@ def _showAdminRole(role, i=0, count=0):
   Ind.Decrement()
 
 # gam info adminrole <RoleItem> [privileges]
-def doInfoAdminRole():
-  cd = buildGAPIObject(API.DIRECTORY)
-  fieldsList = PRINT_ADMIN_ROLES_FIELDS[:]
-  _, roleId = getRoleId()
-  while Cmd.ArgumentsRemaining():
-    myarg = getArgument()
-    if myarg == 'privileges':
-      fieldsList.append('rolePrivileges')
-    else:
-      unknownArgumentExit()
-  fields = getFieldsFromFieldsList(fieldsList)
-  try:
-    role = callGAPI(cd.roles(), 'get',
-                    throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.FAILED_PRECONDITION,
-                                  GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND],
-                    customer=GC.Values[GC.CUSTOMER_ID], roleId=roleId, fields=fields)
-    role.setdefault('isSuperAdminRole', False)
-    role.setdefault('isSystemRole', False)
-    _showAdminRole(role)
-  except (GAPI.notFound, GAPI.forbidden, GAPI.failedPrecondition) as e:
-    entityActionFailedWarning([Ent.ADMIN_ROLE, roleId], str(e))
-  except (GAPI.badRequest, GAPI.customerNotFound):
-    accessErrorExit(cd)
-
 # gam print adminroles|roles [todrive <ToDriveAttribute>*]
-#	[privileges] [oneitemperrow]
-# gam show adminroles|roles [privileges]
-def doPrintShowAdminRoles():
+#	[role <RoleItem>] [privileges] [oneitemperrow]
+# gam show adminroles|roles
+#	[role <RoleItem>] [privileges]
+def doInfoPrintShowAdminRoles():
   cd = buildGAPIObject(API.DIRECTORY)
   fieldsList = PRINT_ADMIN_ROLES_FIELDS[:]
   csvPF = CSVPrintFile(fieldsList, PRINT_ADMIN_ROLES_FIELDS) if Act.csvFormat() else None
   oneItemPerRow = False
+  if Act.Get() != Act.INFO:
+    roleId = None
+  else:
+    _, roleId = getRoleId()
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
+    elif roleId is None and myarg == 'role':
+      _, roleId = getRoleId()
     elif myarg == 'privileges':
       fieldsList.append('rolePrivileges')
     elif myarg == 'oneitemperrow':
       oneItemPerRow = True
     else:
       unknownArgumentExit()
-  if csvPF:
+  if csvPF and 'rolePrivileges' in fieldsList:
     if not oneItemPerRow:
       csvPF.AddTitles(['rolePrivileges'])
     else:
       csvPF.AddTitles(['privilegeName', 'serviceId'])
-  fields = getItemFieldsFromFieldsList('items', fieldsList)
-  printGettingAllAccountEntities(Ent.ADMIN_ROLE)
   try:
-    roles = callGAPIpages(cd.roles(), 'list', 'items',
-                          pageMessage=getPageMessage(),
-                          throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND, GAPI.FORBIDDEN],
-                          customer=GC.Values[GC.CUSTOMER_ID], fields=fields)
-  except (GAPI.badRequest, GAPI.customerNotFound, GAPI.forbidden):
+    if roleId is None:
+      fields = getItemFieldsFromFieldsList('items', fieldsList)
+      printGettingAllAccountEntities(Ent.ADMIN_ROLE)
+      roles = callGAPIpages(cd.roles(), 'list', 'items',
+                            pageMessage=getPageMessage(),
+                            throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND, GAPI.FORBIDDEN],
+                            customer=GC.Values[GC.CUSTOMER_ID], fields=fields)
+    else:
+      fields = getFieldsFromFieldsList(fieldsList)
+      roles = [callGAPI(cd.roles(), 'get',
+                        throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.FAILED_PRECONDITION,
+                                      GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND],
+                        customer=GC.Values[GC.CUSTOMER_ID], roleId=roleId, fields=fields)]
+  except (GAPI.notFound, GAPI.forbidden, GAPI.failedPrecondition) as e:
+    entityActionFailedWarning([Ent.ADMIN_ROLE, roleId], str(e))
+  except (GAPI.badRequest, GAPI.customerNotFound):
     accessErrorExit(cd)
   for role in roles:
     role.setdefault('isSuperAdminRole', False)
@@ -75613,7 +75613,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
     ),
   'info':
     (Act.INFO,
-     {Cmd.ARG_ADMINROLE:	doInfoAdminRole,
+     {Cmd.ARG_ADMINROLE:	doInfoPrintShowAdminRoles,
       Cmd.ARG_ALERT:		doInfoAlert,
       Cmd.ARG_ALIAS:		doInfoAliases,
       Cmd.ARG_BUILDING:		doInfoBuilding,
@@ -75688,7 +75688,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
   'print':
     (Act.PRINT,
      {Cmd.ARG_ADDRESSES:	doPrintAddresses,
-      Cmd.ARG_ADMINROLE:	doPrintShowAdminRoles,
+      Cmd.ARG_ADMINROLE:	doInfoPrintShowAdminRoles,
       Cmd.ARG_ADMIN:		doPrintShowAdmins,
       Cmd.ARG_ALERT:		doPrintShowAlerts,
       Cmd.ARG_ALERTFEEDBACK:	doPrintShowAlertFeedback,
@@ -75821,7 +75821,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
     ),
   'show':
     (Act.SHOW,
-     {Cmd.ARG_ADMINROLE:	doPrintShowAdminRoles,
+     {Cmd.ARG_ADMINROLE:	doInfoPrintShowAdminRoles,
       Cmd.ARG_ADMIN:		doPrintShowAdmins,
       Cmd.ARG_ALERT:		doPrintShowAlerts,
       Cmd.ARG_ALERTFEEDBACK:	doPrintShowAlertFeedback,
