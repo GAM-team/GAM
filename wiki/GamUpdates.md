@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.06.14
+
+Updated `create|update adminrole` to allow specifying a collection of privileges
+with `privileges select <FileSelector>|<CSVFileSelector>` which makes copying roles much simpler.
+
+Added option `role <RoleItem>` to `gam print|show adminroles` to allow display of information
+for a specific role.
+
 ### 7.06.13
 
 Updated `gam print group-members ... recursive` and `gam print cigroup-members ... recursive`

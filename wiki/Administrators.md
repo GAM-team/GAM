@@ -7,13 +7,14 @@
 - [Create an administrator](#create-an-administrator)
 - [Delete an administrator](#delete-an-administrator)
 - [Display administrators](#display-administrators)
+- [Copy privileges from one role to a new role](#copy-privileges-from-one-role-to-a-new-role)
 - [Copy roles from one administrator to another](#copy-roles-from-one-administrator-to-another)
 
 ## API documentation
 * [About Administrator roles](https://support.google.com/a/answer/33325?ref_topic=4514341)
 * [Directory API - Privileges](https://developers.google.com/admin-sdk/directory/reference/rest/v1/privileges)
 * [Directory API - Roles](https://developers.google.com/admin-sdk/directory/reference/rest/v1/roles)
-* [Directory API - Role SAssignments](https://developers.google.com/admin-sdk/directory/reference/rest/v1/roleAssignments)
+* [Directory API - Role Assignments](https://developers.google.com/admin-sdk/directory/reference/rest/v1/roleAssignments)
 
 ## Definitions
 ```
@@ -36,7 +37,7 @@ gam print privileges [todrive <ToDriveAttribute>*]
 gam show privileges
 ```
 
-Here is the output from `gam show privileges`; use this to find `<Privilege>`.
+Here is the output from `gam show privileges`; use this to find a specific `<Privilege>`.
 ```
 Show 111 Privileges
   Privilege: REPORTS_ACCESS (1/111)
@@ -1381,24 +1382,33 @@ Show 111 Privileges
 
 ## Manage administrative roles
 ```
-gam create adminrole <String> privileges all|all_ou|<PrivilegeList> [description <String>]
-gam update adminrole <RoleItem> [name <String>] [privileges all|all_ou|<PrivilegeList>] [description <String>]
+gam create adminrole <String> [description <String>]
+        privileges all|all_ou|<PrivilegeList>|(select <FileSelector>|<CSVFileSelector>>)
+gam update adminrole <RoleItem> [name <String>] [description <String>]
+        [privileges all|all_ou|<PrivilegeList>|(select <FileSelector>|<CSVFileSelector>>)] 
 gam delete adminrole <RoleItem>
 ```
 * `privileges all` - All defined privileges
 * `privileges all_ou` - All defined privileges than can be scoped to an OU
 * `privileges <PrivilegeList>` - A specific list of privileges
+* `privileges select <FileSelector>|<CSVFileSelector>>` - A collection of privileges from a flat or CSV file
 
 ## Display administrative roles
 ```
 gam info adminrole <RoleItem> [privileges]
-gam print adminroles|roles [todrive <ToDriveAttribute>*]
-        [privileges] [oneitemperrow]
-gam show adminroles|roles [todrive <ToDriveAttribute>*] [privileges]
 ```
+* `privileges` - Display privileges associated with role
+```
+gam print adminroles|roles [todrive <ToDriveAttribute>*]
+        [role <RoleItem>] [privileges] [oneitemperrow]
+gam show adminroles|roles
+        [role <RoleItem>] [privileges]
+```
+By default, all roles are displayed, use `role <RoleItem>` to sisplay a specific role.
+
 * `privileges` - Display privileges associated with each role
 
-By default, all privileges for a role are shown on one row as a repeating item.
+By default, with `print`, all privileges for a role are shown on one row as a repeating item.
 When `oneitemperrow` is specified, each privilege is output on a separate row/line with the other role fields.
 
 ## Create an administrator
@@ -1437,6 +1447,14 @@ options to limit the display:
 
 By default, all role privileges for an admin are shown on one row as a repeating item.
 When `oneitemperrow` is specified, each role privilege is output on a separate row/line with the other admin fields.
+
+## Copy privileges from one role to a new role
+Get privileges for existing role; replace Role Name with actual role name
+```
+gam redirect csv ./RolePrivileges.csv print adminrole role 'Role Name' privileges oneitemperrow
+
+# Create a new role with those privileges
+gam create adminrole "New Role Name" privileges select csvfile RolePrivileges.csv:privilegeName
 
 ## Copy roles from one administrator to another
 Get roles for current admin.
