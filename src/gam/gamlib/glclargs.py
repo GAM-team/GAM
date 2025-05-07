@@ -616,7 +616,6 @@ class GamCLArgs():
   ARG_FORWARDS = 'forwards'
   ARG_FORWARDINGADDRESS = 'forwardingaddress'
   ARG_FORWARDINGADDRESSES = 'forwardingaddresses'
-  ARG_GAL = 'gal'
   ARG_GCPFOLDER = 'gcpfolder'
   ARG_GCPSERVICEACCOUNT = 'gcpserviceaccount'
   ARG_GMAIL = 'gmail'

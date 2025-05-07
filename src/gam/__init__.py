@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.06.14'
+__version__ = '7.07.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -5655,8 +5655,8 @@ def getGDataUserCredentials(api, user, i, count):
     handleOAuthTokenError(e, True, True, i, count)
     return (userEmail, None)
 
-def getContactsObject(contactFeed):
-  contactsObject = initGDataObject(gdata.apps.contacts.service.ContactsService(contactFeed=contactFeed),
+def getContactsObject():
+  contactsObject = initGDataObject(gdata.apps.contacts.service.ContactsService(contactFeed=True),
                                    API.CONTACTS)
   return (GC.Values[GC.DOMAIN], contactsObject)
 
@@ -19996,7 +19996,9 @@ def dedupEmailAddressMatches(contactsManager, emailMatchType, fields):
     fields[CONTACT_EMAILS] = savedAddresses
   return updateRequired
 
-def _createContact():
+# gam create contact <ContactAttribute>+
+#	[(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*))| returnidonly]
+def doCreateDomainContact():
   entityType = Ent.DOMAIN
   contactsManager = ContactsManager()
   parameters = {'csvPF': None, 'titles': ['Domain', CONTACT_ID], 'addCSVData': {}, 'returnIdOnly': False}
@@ -20007,7 +20009,7 @@ def _createContact():
     csvPF.AddTitles(sorted(addCSVData.keys()))
   returnIdOnly = parameters['returnIdOnly']
   contactEntry = contactsManager.FieldsToContact(fields)
-  user, contactsObject = getContactsObject(True)
+  user, contactsObject = getContactsObject()
   try:
     contact = callGData(contactsObject, 'CreateContact',
                         throwErrors=[GDATA.BAD_REQUEST, GDATA.SERVICE_NOT_APPLICABLE, GDATA.FORBIDDEN],
@@ -20032,11 +20034,6 @@ def _createContact():
   if csvPF:
     csvPF.writeCSVfile('Contacts')
 
-# gam create contact <ContactAttribute>+
-#	[(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*))| returnidonly]
-def doCreateDomainContact():
-  _createContact()
-
 def _clearUpdateContacts(updateContacts):
   entityType = Ent.DOMAIN
   contactsManager = ContactsManager()
@@ -20058,7 +20055,7 @@ def _clearUpdateContacts(updateContacts):
         unknownArgumentExit()
     if not contactClear['emailClearPattern']:
       missingArgumentExit('emailclearpattern')
-  user, contactsObject = getContactsObject(True)
+  user, contactsObject = getContactsObject()
   if queriedContacts:
     entityList = queryContacts(contactsObject, contactQuery)
     if entityList is None:
@@ -20129,7 +20126,8 @@ def doClearDomainContacts():
 def doUpdateDomainContacts():
   _clearUpdateContacts(True)
 
-def _dedupContacts():
+# gam dedup contacts <ContactEntity>|<ContactSelection> [matchType [<Boolean>]]
+def doDedupDomainContacts():
   entityType = Ent.DOMAIN
   contactsManager = ContactsManager()
   contactQuery = _initContactQueryAttributes()
@@ -20140,7 +20138,7 @@ def _dedupContacts():
       emailMatchType = getBoolean()
     else:
       _getContactQueryAttributes(contactQuery, myarg, -1, False)
-  user, contactsObject = getContactsObject(True)
+  user, contactsObject = getContactsObject()
   contacts = queryContacts(contactsObject, contactQuery)
   if contacts is None:
     return
@@ -20180,15 +20178,12 @@ def _dedupContacts():
       break
   Ind.Decrement()
 
-# gam dedup contacts <ContactEntity>|<ContactSelection> [matchType [<Boolean>]]
-def doDedupDomainContacts():
-  _dedupContacts()
-
-def _deleteContacts():
+# gam delete contacts <ContactEntity>|<ContactSelection>
+def doDeleteDomainContacts():
   entityType = Ent.DOMAIN
   contactsManager = ContactsManager()
   entityList, contactQuery, queriedContacts = _getContactEntityList(-1, False)
-  user, contactsObject = getContactsObject(True)
+  user, contactsObject = getContactsObject()
   if queriedContacts:
     entityList = queryContacts(contactsObject, contactQuery)
     if entityList is None:
@@ -20227,10 +20222,6 @@ def _deleteContacts():
       entityUnknownWarning(entityType, user)
       break
   Ind.Decrement()
-
-# gam delete contacts <ContactEntity>|<ContactSelection>
-def doDeleteDomainContacts():
-  _deleteContacts()
 
 CONTACT_TIME_OBJECTS = {CONTACT_UPDATED}
 CONTACT_FIELDS_WITH_CRS_NLS = {CONTACT_NOTES, CONTACT_BILLING_INFORMATION}
@@ -20299,7 +20290,10 @@ def _getContactFieldsList(contactsManager, displayFieldsList):
     else:
       invalidChoiceExit(field, contactsManager.CONTACT_ARGUMENT_TO_PROPERTY_MAP, True)
 
-def _infoContacts(contactFeed):
+# gam info contacts <ContactEntity>
+#	[basic|full]
+#	[fields <ContactFieldNameList>] [formatjson]
+def doInfoDomainContacts():
   entityType = Ent.DOMAIN
   contactsManager = ContactsManager()
   entityList = getEntityList(Cmd.OB_CONTACT_ENTITY)
@@ -20314,7 +20308,7 @@ def _infoContacts(contactFeed):
       _getContactFieldsList(contactsManager, displayFieldsList)
     else:
       FJQC.GetFormatJSON(myarg)
-  user, contactsObject = getContactsObject(contactFeed)
+  user, contactsObject = getContactsObject()
   j = 0
   jcount = len(entityList)
   if not FJQC.formatJSON:
@@ -20342,19 +20336,13 @@ def _infoContacts(contactFeed):
       break
   Ind.Decrement()
 
-# gam info contacts <ContactEntity>
-#	[basic|full]
+# gam print contacts [todrive <ToDriveAttribute>*] <ContactSelection>
+#	[basic|full|countsonly] [showdeleted] [orderby <ContactOrderByFieldName> [ascending|descending]]
+#	[fields <ContactFieldNameList>] [formatjson [quotechar <Character>]]
+# gam show contacts <ContactSelection>
+#	[basic|full|countsonly] [showdeleted] [orderby <ContactOrderByFieldName> [ascending|descending]]
 #	[fields <ContactFieldNameList>] [formatjson]
-def doInfoDomainContacts():
-  _infoContacts(True)
-
-# gam info gal <ContactEntity>
-#	[basic|full]
-#	[fields <ContactFieldNameList>] [formatjson]
-def doInfoGAL():
-  _infoContacts(False)
-
-def _printShowContacts(contactFeed):
+def doPrintShowDomainContacts():
   entityType = Ent.DOMAIN
   entityTypeName = Ent.Singular(entityType)
   contactsManager = ContactsManager()
@@ -20380,7 +20368,7 @@ def _printShowContacts(contactFeed):
       pass
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
-  user, contactsObject = getContactsObject(contactFeed)
+  user, contactsObject = getContactsObject()
   contacts = queryContacts(contactsObject, contactQuery)
   if countsOnly:
     jcount = countLocalContactSelects(contactsManager, contacts, contactQuery)
@@ -20465,24 +20453,6 @@ def _printShowContacts(contactFeed):
                                                      ensure_ascii=False, sort_keys=True)})
   if csvPF:
     csvPF.writeCSVfile(CSVTitle)
-
-# gam print contacts [todrive <ToDriveAttribute>*] <ContactSelection>
-#	[basic|full|countsonly] [showdeleted] [orderby <ContactOrderByFieldName> [ascending|descending]]
-#	[fields <ContactFieldNameList>] [formatjson [quotechar <Character>]]
-# gam show contacts <ContactSelection>
-#	[basic|full|countsonly] [showdeleted] [orderby <ContactOrderByFieldName> [ascending|descending]]
-#	[fields <ContactFieldNameList>] [formatjson]
-def doPrintShowDomainContacts():
-  _printShowContacts(True)
-
-# gam print gal [todrive <ToDriveAttribute>*] <ContactSelection>
-#	[basic|full] [orderby <ContactOrderByFieldName> [ascending|descending]]
-#	[fields <ContactFieldNameList>] [formatjson [quotechar <Character>]]
-# gam show gal <ContactSelection>
-#	[basic|full|countsonly] [orderby <ContactOrderByFieldName> [ascending|descending]]
-#	[fields <ContactFieldNameList>] [formatjson]
-def doPrintShowGAL():
-  _printShowContacts(False)
 
 # Prople commands utilities
 #
@@ -75645,7 +75615,6 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_DRIVEFILEACL:	doInfoDriveFileACLs,
       Cmd.ARG_DRIVELABEL:	doInfoDriveLabels,
       Cmd.ARG_INSTANCE:		doInfoInstance,
-      Cmd.ARG_GAL:		doInfoGAL,
       Cmd.ARG_GROUP:		doInfoGroups,
       Cmd.ARG_GROUPMEMBERS:	doInfoGroupMembers,
       Cmd.ARG_INBOUNDSSOASSIGNMENT:	doInfoInboundSSOAssignment,
@@ -75740,7 +75709,6 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_DRIVELABEL:	doPrintShowDriveLabels,
       Cmd.ARG_DRIVELABELPERMISSION:	doPrintShowDriveLabelPermissions,
       Cmd.ARG_FEATURE:		doPrintShowFeatures,
-      Cmd.ARG_GAL:		doPrintShowGAL,
       Cmd.ARG_GROUP:		doPrintGroups,
       Cmd.ARG_GROUPMEMBERS:	doPrintGroupMembers,
       Cmd.ARG_GROUPTREE:	doPrintShowGroupTree,
@@ -75858,7 +75826,6 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_DRIVELABEL:	doPrintShowDriveLabels,
       Cmd.ARG_DRIVELABELPERMISSION:	doPrintShowDriveLabelPermissions,
       Cmd.ARG_FEATURE:		doPrintShowFeatures,
-      Cmd.ARG_GAL:		doPrintShowGAL,
       Cmd.ARG_GROUPMEMBERS:	doShowGroupMembers,
       Cmd.ARG_GROUPTREE:	doPrintShowGroupTree,
       Cmd.ARG_GUARDIAN:		doPrintShowGuardians,

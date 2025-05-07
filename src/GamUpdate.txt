@@ -1,9 +1,25 @@
+7.07.00
+As of mid-October 2024, Google deprecated the API that retrieved the Global Address List.
+
+The following commands have been eliminated.
+```
+gam info gal
+gam print gal
+gam show gal
+```
+
+These commands are a work-around for `gam print gal`.
+```
+gam config csv_output_row_filter "includeInGlobalAddressList:boolean:true" redirect csv ./UserGAL.csv print users fields name,gal
+gam config csv_output_row_filter "includeInGlobalAddressList:boolean:true" batch_size 25 redirect csv ./GroupGAL.csv print groups fields name,gal
+```
+
 7.06.14
 
 Updated `gam create|update adminrole` to allow specifying a collection of privileges
 with `privileges select <FileSelector>|<CSVFileSelector>` which makes copying roles much simpler.
 
-Updated option `role <RoleItem>` to `gam print|show adminroles` to allow display of information
+Added option `role <RoleItem>` to `gam print|show adminroles` to allow display of information
 for a specific role.
 
 7.06.13

@@ -3545,19 +3545,6 @@ gam print contacts [todrive <ToDriveAttribute>*] <ContactSelection>
         [fields <ContactFieldNameList>]
         [formatjson [quotechar <Character>]]
 
-vgam info gal <ContactEntity>
-        [basic|full]
-        [fields <ContactFieldNameList>]
-        [formatjson]
-gam show gal <ContactSelection>
-        [basic|full] [orderby <ContactOrderByFieldName> [ascending|descending]]
-        [fields <ContactFieldNameList>]
-        [formatjson]
-gam print gal [todrive <ToDriveAttribute>*] <ContactSelection>
-        [basic|full] [orderby <ContactOrderByFieldName> [ascending|descending]]
-        [fields <ContactFieldNameList>]
-        [formatjson [quotechar <Character>]]
-
 # Domain - People Contacts and Profiles
 
 <PeopleSourceName> ::=
