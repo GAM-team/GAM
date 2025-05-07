@@ -10,6 +10,23 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.07.00
+
+As of mid-October 2024, Google deprecated the API that retrieved the Global Address List.
+
+The following commands have been eliminated.
+```
+gam info gal
+gam print gal
+gam show gal
+```
+
+These commands are a work-around for `gam print gal`.
+```
+gam config csv_output_row_filter "includeInGlobalAddressList:boolean:true" redirect csv ./UserGAL.csv print users fields name,gal
+gam config csv_output_row_filter "includeInGlobalAddressList:boolean:true" batch_size 25 redirect csv ./GroupGAL.csv print groups fields name,gal
+```
+
 ### 7.06.14
 
 Updated `create|update adminrole` to allow specifying a collection of privileges

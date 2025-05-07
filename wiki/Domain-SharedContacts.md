@@ -1,4 +1,4 @@
-# Domain Shared Contacts - Global Address List
+# Domain Shared Contacts
 - [API documentation](#api-documentation)
 - [Python Regular Expressions](Python-Regular-Expressions) Match function
 - [Definitions](#definitions)

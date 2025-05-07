@@ -94,7 +94,7 @@ Client Access
 * [Domains](Domains)
 * [Domains - Verification](Domains-Verification)
 * [Domain People - Contacts & Profiles](Domain-People-Contacts-Profiles)
-* [Domain Shared Contacts - Global Address List](Domain-SharedContacts-GAL)
+* [Domain Shared Contacts](Domain-SharedContacts)
 * [Email Audit Monitor](Email-Audit-Monitor)
 * [Find File Owner](Find-File-Owner)
 * [Google Data Transfers](Google-Data-Transfers)
