@@ -1,4 +1,9 @@
+7.07.01
+
+Fixed bug in `gam print|show chromepolicies` that caused a trap.
+
 7.07.00
+
 As of mid-October 2024, Google deprecated the API that retrieved the Global Address List.
 
 The following commands have been eliminated.

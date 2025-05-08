@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.07.00'
+__version__ = '7.07.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -28188,15 +28188,15 @@ CHROME_SCHEMA_TYPE_MESSAGE = {
     {'autoupdatecheckperiodminutesnew':
        {'casedField': 'autoUpdateCheckPeriodMinutesNew',
         'type': 'duration', 'minVal': 1, 'maxVal': 720, 'scale': 60}},
-  'chrome.users.AutoUpdateCheckPeriodNewV2':
-    {'autoupdatecheckperiodminutesnew':
-       {'casedField': 'autoUpdateCheckPeriodMinutesNew',
-        'type': 'duration', 'minVal': 1, 'maxVal': 720, 'scale': 60}},
   'chrome.users.BrowserSwitcherDelayDuration':
     {'browserswitcherdelayduration':
        {'casedField': 'browserSwitcherDelayDuration',
         'type': 'duration', 'minVal': 0, 'maxVal': 30, 'scale': 1}},
-  'chrome.users.CloudReportingUploadFrequencyV2':
+  'chrome.users.BrowsingDataLifetime':
+    {'browsingdatalifetime':
+       {'casedField': 'browserSwitcherDelayDuration',
+        'type': 'duration', 'minVal': 1, 'maxVal': 30, 'scale': 1}},
+  'chrome.users.CloudReportingUploadFrequency':
     {'cloudreportinguploadfrequency':
        {'casedField': 'cloudReportingUploadFrequency',
         'type': 'count', 'minVal': 3, 'maxVal': 24, 'scale': 1}},
@@ -28216,7 +28216,7 @@ CHROME_SCHEMA_TYPE_MESSAGE = {
     {'printjobhistoryexpirationperioddaysnew':
        {'casedField': 'printJobHistoryExpirationPeriodDaysNew',
         'type': 'duration', 'minVal': -1, 'maxVal': None, 'scale': 86400}},
-  'chrome.users.RelaunchNotificationWithDurationV2':
+  'chrome.users.RelaunchNotificationWithDuration':
     {'relaunchnotificationperiodduration':
        {'casedField': 'relaunchNotificationPeriodDuration',
         'type': 'duration', 'minVal': -1, 'maxVal': None, 'scale': 3600}},
