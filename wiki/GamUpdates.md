@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.07.01
+
+Fixed bug in `gam print|show chromepolicies` that caused a trap. Made additional
+updates to handle changes in the Chrome Policy API.
+
 ### 7.07.00
 
 As of mid-October 2024, Google deprecated the API that retrieved the Global Address List.
