@@ -1,6 +1,7 @@
 7.07.01
 
-Fixed bug in `gam print|show chromepolicies` that caused a trap.
+Fixed bug in `gam print|show chromepolicies` that caused a trap. Made additional
+updates to handle changes in the Chrome Policy API.
 
 7.07.00
 

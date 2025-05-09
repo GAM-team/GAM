@@ -28183,75 +28183,171 @@ def doDeleteChromePolicy():
   except (GAPI.notFound, GAPI.permissionDenied, GAPI.invalidArgument, GAPI.serviceNotAvailable, GAPI.quotaExceeded) as e:
     entityActionFailedWarning(kvList, str(e))
 
-CHROME_SCHEMA_TYPE_MESSAGE = {
-  'chrome.users.AutoUpdateCheckPeriodNew':
+CHROME_SCHEMA_SPECIAL_CASES = {
+  'chrome.users.AutoUpdateCheckPeriodNewV2':
     {'autoupdatecheckperiodminutesnew':
        {'casedField': 'autoUpdateCheckPeriodMinutesNew',
-        'type': 'duration', 'minVal': 1, 'maxVal': 720, 'scale': 60}},
-  'chrome.users.BrowserSwitcherDelayDuration':
-    {'browserswitcherdelayduration':
-       {'casedField': 'browserSwitcherDelayDuration',
-        'type': 'duration', 'minVal': 0, 'maxVal': 30, 'scale': 1}},
-  'chrome.users.BrowsingDataLifetime':
-    {'browsingdatalifetime':
-       {'casedField': 'browserSwitcherDelayDuration',
-        'type': 'duration', 'minVal': 1, 'maxVal': 30, 'scale': 1}},
-  'chrome.users.CloudReportingUploadFrequency':
-    {'cloudreportinguploadfrequency':
-       {'casedField': 'cloudReportingUploadFrequency',
-        'type': 'count', 'minVal': 3, 'maxVal': 24, 'scale': 1}},
-  'chrome.users.FetchKeepaliveDurationSecondsOnShutdown':
-    {'fetchkeepalivedurationsecondsonshutdown':
-       {'casedField': 'fetchKeepaliveDurationSecondsOnShutdown',
-        'type': 'duration', 'minVal': 0, 'maxVal': 5, 'scale': 1}},
-  'chrome.users.MaxInvalidationFetchDelay':
-    {'maxinvalidationfetchdelay':
-       {'casedField': 'maxInvalidationFetchDelay',
-        'type': 'duration', 'minVal': 1, 'maxVal': 30, 'scale': 1, 'default': 10}},
-  'chrome.users.PrintingMaxSheetsAllowed':
-    {'printingmaxsheetsallowednullable':
-       {'casedField': 'printingMaxSheetsAllowedNullable',
-        'type': 'value', 'minVal': 1, 'maxVal': None, 'scale': 1}},
-  'chrome.users.PrintJobHistoryExpirationPeriodNew':
-    {'printjobhistoryexpirationperioddaysnew':
-       {'casedField': 'printJobHistoryExpirationPeriodDaysNew',
-        'type': 'duration', 'minVal': -1, 'maxVal': None, 'scale': 86400}},
-  'chrome.users.RelaunchNotificationWithDuration':
-    {'relaunchnotificationperiodduration':
-       {'casedField': 'relaunchNotificationPeriodDuration',
-        'type': 'duration', 'minVal': -1, 'maxVal': None, 'scale': 3600}},
-  'chrome.users.SecurityTokenSessionSettings':
-    {'securitytokensessionnotificationseconds':
-       {'casedField': 'securityTokenSessionNotificationSeconds',
-        'type': 'duration', 'minVal': 0, 'maxVal': 9999, 'scale': 1}},
-  'chrome.users.SessionLength':
-    {'sessiondurationlimit':
-       {'casedField': 'sessionDurationLimit',
-        'type': 'duration', 'minVal': 1, 'maxVal': 1440, 'scale': 60}},
-  'chrome.users.UpdatesSuppressed':
-    {'updatessuppresseddurationmin':
-       {'casedField': 'updatesSuppressedDurationMin',
-        'type': 'count', 'minVal': 1, 'maxVal': 1440, 'scale': 1},
-     'updatessuppressedstarttime':
-       {'casedField': 'updatesSuppressedStartTime',
-        'type': 'timeOfDay'}},
-  'chrome.devices.managedguest.Avatar':
-    {'useravatarimage':
-       {'casedField': 'userAvatarImage',
-        'type': 'downloadUri'}},
-  'chrome.devices.managedguest.Wallpaper':
-    {'wallpaperimage':
-       {'casedField': 'wallpaperImage',
-        'type': 'downloadUri'}},
-  'chrome.devices.SignInWallpaperImage':
-    {'devicewallpaperimage':
-       {'casedField': 'deviceWallpaperImage',
-        'type': 'downloadUri'}},
+        'type': 'duration', 'minVal': 1, 'maxVal': 720}},
   'chrome.users.Avatar':
     {'useravatarimage':
        {'casedField': 'userAvatarImage',
         'type': 'downloadUri'}},
+  'chrome.users.BrowserSwitcherDelayDurationV2':
+    {'browserswitcherdelayduration':
+       {'casedField': 'browserSwitcherDelayDuration',
+        'type': 'duration', 'minVal': 0, 'maxVal': 30}},
+  'chrome.users.BrowsingDataLifetimeV2':
+    {'browsinghistoryttl':
+       {'casedField': 'browsingHistoryTtl',
+        'type': 'duration', 'minVal': 1, 'maxVal': None},
+     'downloadhistoryttl':
+       {'casedField': 'downloadHistoryTtl',
+        'type': 'duration', 'minVal': 1, 'maxVal': None},
+     'cookiesandothersitedatattl':
+       {'casedField': 'cookiesAndOtherSiteDataTtl',
+        'type': 'duration', 'minVal': 1, 'maxVal': None},
+     'cachedimagesandfilesttl':
+       {'casedField': 'cachedImagesAndFilesTtl',
+        'type': 'duration', 'minVal': 1, 'maxVal': None},
+     'passwordsigninttl':
+       {'casedField': 'passwordSigninTtl',
+        'type': 'duration', 'minVal': 1, 'maxVal': None},
+     'autofillttl':
+       {'casedField': 'autofillTtl',
+        'type': 'duration', 'minVal': 1, 'maxVal': None},
+     'sitesettingsttl':
+       {'casedField': 'siteSettingsTtl',
+        'type': 'duration', 'minVal': 1, 'maxVal': None},
+     'hostedappdatattl':
+       {'casedField': 'hostedAppDataTtl',
+        'type': 'duration', 'minVal': 1, 'maxVal': None}},
+  'chrome.users.CloudReportingUploadFrequencyV2':
+    {'cloudreportinguploadfrequency':
+       {'casedField': 'cloudReportingUploadFrequency',
+        'type': 'duration', 'minVal': 3, 'maxVal': 24}},
+  'chrome.users.FetchKeepaliveDurationSecondsOnShutdownV2':
+    {'fetchkeepalivedurationsecondsonshutdown':
+       {'casedField': 'fetchKeepaliveDurationSecondsOnShutdown',
+        'type': 'duration', 'minVal': 0, 'maxVal': 5}},
+  'chrome.users.MaxInvalidationFetchDelayV2':
+    {'maxinvalidationfetchdelay':
+       {'casedField': 'maxInvalidationFetchDelay',
+        'type': 'duration', 'minVal': 1, 'maxVal': 30, 'default': 10}},
+  'chrome.users.PrintingMaxSheetsAllowed':
+    {'printingmaxsheetsallowednullable':
+       {'casedField': 'printingMaxSheetsAllowedNullable',
+        'type': 'value', 'minVal': 1, 'maxVal': None}},
+  'chrome.users.PrintJobHistoryExpirationPeriodNewV2':
+    {'printjobhistoryexpirationperioddaysnew':
+       {'casedField': 'printJobHistoryExpirationPeriodDaysNew',
+        'type': 'duration', 'minVal': -1, 'maxVal': None}},
+  'chrome.users.RelaunchNotificationWithDurationV2':
+    {'relaunchnotificationperiodduration':
+       {'casedField': 'relaunchNotificationPeriodDuration',
+        'type': 'duration', 'minVal': -1, 'maxVal': None}},
+  'chrome.users.SecurityTokenSessionSettingsV2':
+    {'securitytokensessionnotificationseconds':
+       {'casedField': 'securityTokenSessionNotificationSeconds',
+        'type': 'duration', 'minVal': 0, 'maxVal': 9999}},
+  'chrome.users.SessionLengthV2':
+    {'sessiondurationlimit':
+       {'casedField': 'sessionDurationLimit',
+        'type': 'duration', 'minVal': 1, 'maxVal': 1440}},
+  'chrome.users.UpdatesSuppressed':
+    {'updatessuppresseddurationmin':
+       {'casedField': 'updatesSuppressedDurationMin',
+        'type': 'count', 'minVal': 1, 'maxVal': 1440},
+     'updatessuppressedstarttime':
+       {'casedField': 'updatesSuppressedStartTime',
+        'type': 'timeOfDay'}},
   'chrome.users.Wallpaper':
+    {'wallpaperimage':
+       {'casedField': 'wallpaperImage',
+        'type': 'downloadUri'}},
+  'chrome.devices.EnableReportUploadFrequencyV2':
+    {'reportdeviceuploadfrequency':
+       {'casedField': 'reportDeviceUploadFrequency',
+        'type': 'duration', 'minVal': 60, 'maxVal': 25379}},
+  'chrome.devices.ScheduledRebootDurationV2':
+    {'uptimelimitduration':
+       {'casedField': 'uptimeLimitDuration',
+        'type': 'duration', 'minVal': 1, 'maxVal': 365}},
+  'chrome.devices.SignInWallpaperImage':
+    {'devicewallpaperimage':
+       {'casedField': 'deviceWallpaperImage',
+        'type': 'downloadUri'}},
+  'chrome.devices.kiosk.AcPowerSettingsV2':
+    {'acidletimeout':
+       {'casedField': 'acIdleTimeout',
+        'type': 'duration', 'minVal': 1, 'maxVal': 35000},
+     'acwarningtimeout':
+       {'casedField': 'acWarningTimeout',
+        'type': 'duration', 'minVal': 0, 'maxVal': 35000},
+     'acdimtimeout':
+       {'casedField': 'acDimTimeout',
+        'type': 'duration', 'minVal': 0, 'maxVal': 35000},
+     'acscreenofftimeout':
+       {'casedField': 'acScreenOffTimeout',
+        'type': 'duration', 'minVal': 0, 'maxVal': 35000}},
+  'chrome.devices.kiosk.BatteryPowerSettingsV2':
+    {'batteryidletimeout':
+       {'casedField': 'batteryIdleTimeout',
+        'type': 'duration', 'minVal': 1, 'maxVal': 35000},
+     'batterywarningtimeout':
+       {'casedField': 'batteryWarningTimeout',
+        'type': 'duration', 'minVal': 0, 'maxVal': 35000},
+     'batterydimtimeout':
+       {'casedField': 'batteryDimTimeout',
+        'type': 'duration', 'minVal': 0, 'maxVal': 35000},
+     'batteryscreenofftimeout':
+       {'casedField': 'batteryScreenOffTimeout',
+        'type': 'duration', 'minVal': 0, 'maxVal': 35000}},
+  'chrome.devices.managedguest.Avatar':
+    {'useravatarimage':
+       {'casedField': 'userAvatarImage',
+        'type': 'downloadUri'}},
+  'chrome.devices.managedguest.BrowsingDataLifetimeV2':
+    {'browsinghistoryttl':
+       {'casedField': 'browsingHistoryTtl',
+        'type': 'duration', 'minVal': 1, 'maxVal': None},
+     'downloadhistoryttl':
+       {'casedField': 'downloadHistoryTtl',
+        'type': 'duration', 'minVal': 1, 'maxVal': None},
+     'cookiesandothersitedatattl':
+       {'casedField': 'cookiesAndOtherSiteDataTtl',
+        'type': 'duration', 'minVal': 1, 'maxVal': None},
+     'cachedimagesandfilesttl':
+       {'casedField': 'cachedImagesAndFilesTtl',
+        'type': 'duration', 'minVal': 1, 'maxVal': None},
+     'passwordsigninttl':
+       {'casedField': 'passwordSigninTtl',
+        'type': 'duration', 'minVal': 1, 'maxVal': None},
+     'autofillttl':
+       {'casedField': 'autofillTtl',
+        'type': 'duration', 'minVal': 1, 'maxVal': None},
+     'sitesettingsttl':
+       {'casedField': 'siteSettingsTtl',
+        'type': 'duration', 'minVal': 1, 'maxVal': None},
+     'hostedappdatattl':
+       {'casedField': 'hostedAppDataTtl',
+        'type': 'duration', 'minVal': 1, 'maxVal': None}},
+  'chrome.devices.managedguest.MaxInvalidationFetchDelayV2':
+    {'maxinvalidationfetchdelay':
+       {'casedField': 'maxInvalidationFetchDelay',
+        'type': 'duration', 'minVal': 1, 'maxVal': 30, 'default': 10}},
+  'chrome.devices.managedguest.PrintJobHistoryExpirationPeriodNewV2':
+    {'printjobhistoryexpirationperioddaysnew':
+       {'casedField': 'printJobHistoryExpirationPeriodDaysNew',
+        'type': 'duration', 'minVal': -1, 'maxVal': None}},
+  'chrome.devices.managedguest.SecurityTokenSessionSettingsV2':
+    {'securitytokensessionnotificationseconds':
+       {'casedField': 'securityTokenSessionNotificationSeconds',
+        'type': 'duration', 'minVal': 0, 'maxVal': 9999}},
+  'chrome.devices.managedguest.SessionLengthV2':
+    {'sessiondurationlimit':
+       {'casedField': 'sessionDurationLimit',
+        'type': 'duration', 'minVal': 1, 'maxVal': 1440}},
+  'chrome.devices.managedguest.Wallpaper':
     {'wallpaperimage':
        {'casedField': 'wallpaperImage',
         'type': 'downloadUri'}},
@@ -28266,9 +28362,7 @@ CHROME_TARGET_VERSION_PATTERN = re.compile(r'^(\d{1,4}\.){1,4}$')
 #	[(printerid <PrinterID>)|(appid <AppID>)]
 def doUpdateChromePolicy():
   def getSpecialVtypeValue(vtype, value):
-    if vtype == 'duration':
-      return {vtype: f'{value}s'}
-    if vtype in {'value', 'downloadUri'}:
+    if vtype in {'duration', 'value', 'downloadUri'}:
       return {vtype: value}
     if vtype == 'count':
       return value
@@ -28326,8 +28420,8 @@ def doUpdateChromePolicy():
           for field in jsonData.get('fields', []):
             casedField = field['name']
             lowerField = casedField.lower()
-            # Handle TYPE_MESSAGE fields with durations, values, counts and timeOfDay as special cases
-            tmschema = CHROME_SCHEMA_TYPE_MESSAGE.get(schemaName, {}).get(lowerField)
+            # Handle fields with durations, values, counts and timeOfDay as special cases
+            tmschema = CHROME_SCHEMA_SPECIAL_CASES.get(schemaName, {}).get(lowerField)
             if tmschema:
               body['requests'][-1]['policyValue']['value'][casedField] = getSpecialVtypeValue(tmschema['type'], field['value'])
               body['requests'][-1]['updateMask'] += f'{casedField},'
@@ -28363,8 +28457,8 @@ def doUpdateChromePolicy():
             body['requests'][-1]['policyValue']['value'][casedField] = value
             body['requests'][-1]['updateMask'] += f'{casedField},'
           break
-        # Handle TYPE_MESSAGE fields with durations, values, counts and timeOfDay as special cases
-        tmschema = CHROME_SCHEMA_TYPE_MESSAGE.get(schemaName, {}).get(field)
+        # Handle fields with durations, values, counts and timeOfDay as special cases
+        tmschema = CHROME_SCHEMA_SPECIAL_CASES.get(schemaName, {}).get(field)
         if tmschema:
           casedField = tmschema['casedField']
           vtype = tmschema['type']
@@ -28372,9 +28466,9 @@ def doUpdateChromePolicy():
             value = getString(Cmd.OB_STRING)
           elif vtype != 'timeOfDay':
             if 'default' not in tmschema:
-              value = getInteger(minVal=tmschema['minVal'], maxVal=tmschema['maxVal'])*tmschema['scale']
+              value = getInteger(minVal=tmschema['minVal'], maxVal=tmschema['maxVal'])
             else:
-              value = getIntegerEmptyAllowed(minVal=tmschema['minVal'], maxVal=tmschema['maxVal'], default=tmschema['default'])*tmschema['scale']
+              value = getIntegerEmptyAllowed(minVal=tmschema['minVal'], maxVal=tmschema['maxVal'], default=tmschema['default'])
           else:
             value = getHHMM()
           body['requests'][-1]['policyValue']['value'][casedField] = getSpecialVtypeValue(vtype, value)
@@ -28507,20 +28601,14 @@ def doPrintShowChromePolicies():
                 'chrome.users.apps.ManagedConfiguration'} and 'managedConfiguration' in values:
       values['managedConfiguration'] = json.dumps(values['managedConfiguration'], ensure_ascii=False).replace('\\n', '').replace('\\"', '"')[1:-1]
     for setting, value in values.items():
-      # Handle TYPE_MESSAGE fields with durations, values, counts and timeOfDay as special cases
-      schema = CHROME_SCHEMA_TYPE_MESSAGE.get(name, {}).get(setting.lower())
+      # Handle fields with durations, values, counts and timeOfDay as special cases
+      schema = CHROME_SCHEMA_SPECIAL_CASES.get(name, {}).get(setting.lower())
       if schema and setting == schema['casedField']:
         vtype = schema['type']
-        if vtype in {'duration', 'value'}:
+        if vtype in {'duration', 'value', 'downloadUri'}:
           value = value.get(vtype, '')
-          if value:
-            if value.endswith('s'):
-              value = value[:-1]
-            value = int(value) // schema['scale']
         elif vtype == 'count':
           pass
-        elif vtype == 'downloadUri':
-          value = value.get(vtype, '')
         else: #timeOfDay
           hours = value.get(vtype, {}).get('hours', 0)
           minutes = value.get(vtype, {}).get('minutes', 0)
