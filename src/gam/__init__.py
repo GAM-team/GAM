@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.07.01'
+__version__ = '7.07.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -8585,13 +8585,16 @@ class CSVPrintFile():
 
     def writeCSVData(writer):
       try:
-        if GM.Globals[GM.CSVFILE][GM.REDIRECT_WRITE_HEADER]:
-          writer.writerow(dict((item, item) for item in writer.fieldnames))
-        if not self.sortHeaders:
-          writer.writerows(self.rows)
+        if not self.outputTranspose:
+          if GM.Globals[GM.CSVFILE][GM.REDIRECT_WRITE_HEADER]:
+            writer.writerow(dict((item, item) for item in writer.fieldnames))
+          if not self.sortHeaders:
+            writer.writerows(self.rows)
+          else:
+            for row in sorted(self.rows, key=itemgetter(*self.sortHeaders)):
+              writer.writerow(row)
         else:
-          for row in sorted(self.rows, key=itemgetter(*self.sortHeaders)):
-            writer.writerow(row)
+          writer.writerows(self.rows)
         return True
       except IOError as e:
         stderrErrorMsg(e)
@@ -9008,17 +9011,13 @@ class CSVPrintFile():
     normalizeSortHeaders()
     if self.outputTranspose:
       newRows = []
-      pivotKey = titlesList[0]
-      newTitlesList = [pivotKey]
-      newTitlesSet = set(newTitlesList)
-      for title in titlesList[1:]:
-        newRow = {pivotKey: title}
+      newTitlesList = [i for i in range(len(self.rows)+1)]
+      for title in titlesList:
+        i = 0
+        newRow = {i: title}
         for row in self.rows:
-          pivotValue = row[pivotKey]
-          if pivotValue not in newTitlesSet:
-            newTitlesSet.add(pivotValue)
-            newTitlesList.append(pivotValue)
-          newRow[pivotValue] = row.get(title)
+          i += 1
+          newRow[i] = row.get(title)
         newRows.append(newRow)
       titlesList = newTitlesList
       self.rows = newRows

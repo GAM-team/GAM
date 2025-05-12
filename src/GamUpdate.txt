@@ -1,3 +1,7 @@
+7.07.02
+
+Fixed bug in `redirect csv ... transpose` where a CSV file with multiple rows was not properly transposed.
+
 7.07.01
 
 Fixed bug in `gam print|show chromepolicies` that caused a trap. Made additional
