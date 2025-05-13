@@ -179,7 +179,7 @@ This table and other suggestions came from:
         x400-trace
 <SMTPHeaderList> ::= "<SMTPDateHeader|SMTPHeader>(,<SMTPDateHeader|SMTPHeader>)*"
 
-<MessageID> ::= <String>
+<MessageID> ::= <String>  # This is the Google internal message ID, not the RFC822 message ID
 <MessageIDList> ::= "<MessageID>(,<MessageID>)*"
 <MessageIDEntity> ::=
         <MessageIDList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
