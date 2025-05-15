@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.07.02'
+__version__ = '7.07.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -40845,6 +40845,12 @@ VAULT_QUERY_ARGS = [
   ] + list(VAULT_SEARCH_METHODS_MAP.keys())
 
 def _buildVaultQuery(myarg, query, corpusArgumentMap):
+  def _getQueryList(obNameList):
+    itemList = getString(obNameList)
+    if itemList != 'select':
+      return itemList.replace(',', ' ').split()
+    return getEntityList(obNameList)
+
   if not query:
     query['dataScope'] = 'ALL_DATA'
   if myarg == 'corpus':
@@ -40860,11 +40866,11 @@ def _buildVaultQuery(myarg, query, corpusArgumentMap):
     elif searchMethod == 'ORG_UNIT':
       query['orgUnitInfo'] = {'orgUnitId': getOrgUnitId()[1]}
     elif searchMethod == 'SHARED_DRIVE':
-      query['sharedDriveInfo'] = {'sharedDriveIds': getString(Cmd.OB_SHAREDDRIVE_ID_LIST).replace(',', ' ').split()}
+      query['sharedDriveInfo'] = {'sharedDriveIds': _getQueryList(Cmd.OB_SHAREDDRIVE_ID_LIST)}
     elif searchMethod == 'ROOM':
-      query['hangoutsChatInfo'] = {'roomId': getString(Cmd.OB_ROOM_LIST).replace(',', ' ').split()}
+      query['hangoutsChatInfo'] = {'roomId': _getQueryList(Cmd.OB_CHAT_SPACE_LIST)}
     elif searchMethod == 'SITES_URL':
-      query['sitesUrlInfo'] = {'urls': getString(Cmd.OB_URL_LIST).replace(',', ' ').split()}
+      query['sitesUrlInfo'] = {'urls': _getQueryList(Cmd.OB_URL_LIST)}
   elif myarg == 'scope':
     query['dataScope'] = getChoice(VAULT_EXPORT_DATASCOPE_MAP, mapChoice=True)
   elif myarg == 'terms':
@@ -40922,7 +40928,9 @@ def _validateVaultQuery(body, corpusArgumentMap):
 
 # gam create vaultexport|export matter <MatterItem> [name <String>] corpus calendar|drive|gemini|groups|hangouts_chat|mail|voice
 #	(accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
-#	(shareddrives|teamdrives <TeamDriveIDList>) | (rooms <RoomList>) | (sitesurl <URLList>)
+#	(shareddrives|teamdrives (<SharedDriveIDList>|(select <FileSelector>|<CSVFileSelector>))) |
+#	    (rooms (<ChatSpaceList>|(select <FileSelector>|<CSVFileSelector>))) |
+#	    (sitesurl (<URLList>||(select <FileSelector>|<CSVFileSelector>)))
 #	[scope <all_data|held_data|unprocessed_data>]
 #	[terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
 #	[locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
@@ -42480,6 +42488,9 @@ PRINT_VAULT_COUNTS_TITLES = ['account', 'count', 'error']
 # gam print vaultcounts [todrive <ToDriveAttributes>*]
 #	matter <MatterItem> corpus mail|groups
 #	(accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
+#	(shareddrives|teamdrives (<SharedDriveIDList>|(select <FileSelector>|<CSVFileSelector>))) |
+#	    (rooms (<ChatSpaceList>|(select <FileSelector>|<CSVFileSelector>))) |
+#	    (sitesurl (<URLList>||(select <FileSelector>|<CSVFileSelector>)))
 #	[scope <all_data|held_data|unprocessed_data>]
 #	[terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
 #	[excludedrafts <Boolean>]

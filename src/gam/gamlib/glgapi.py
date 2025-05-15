@@ -156,6 +156,7 @@ SERVICE_NOT_AVAILABLE = 'serviceNotAvailable'
 SHARE_IN_NOT_PERMITTED = 'shareInNotPermitted'
 SHARE_OUT_NOT_PERMITTED = 'shareOutNotPermitted'
 SHARE_OUT_NOT_PERMITTED_TO_USER = 'shareOutNotPermittedToUser'
+SHARE_OUT_WARNING = 'shareOutWarning'
 SHARING_RATE_LIMIT_EXCEEDED = 'sharingRateLimitExceeded'
 SHORTCUT_TARGET_INVALID = 'shortcutTargetInvalid'
 STORAGE_QUOTA_EXCEEDED = 'storageQuotaExceeded'
@@ -618,6 +619,8 @@ class shareOutNotPermitted(Exception):
   pass
 class shareOutNotPermittedToUser(Exception):
   pass
+class shareOutWarning(Exception):
+  pass
 class sharingRateLimitExceeded(Exception):
   pass
 class shortcutTargetInvalid(Exception):
@@ -803,6 +806,7 @@ REASON_EXCEPTION_MAP = {
   SHARE_IN_NOT_PERMITTED: shareInNotPermitted,
   SHARE_OUT_NOT_PERMITTED: shareOutNotPermitted,
   SHARE_OUT_NOT_PERMITTED_TO_USER: shareOutNotPermittedToUser,
+  SHARE_OUT_WARNING: shareOutWarning,
   SHARING_RATE_LIMIT_EXCEEDED: sharingRateLimitExceeded,
   SHORTCUT_TARGET_INVALID: shortcutTargetInvalid,
   STORAGE_QUOTA_EXCEEDED: storageQuotaExceeded,

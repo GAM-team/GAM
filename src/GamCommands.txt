@@ -5240,7 +5240,10 @@ gam show vaultmatters|matters [matterstate <MatterStateList>]
 
 gam print vaultcounts [todrive <ToDriveAttributes>*]
         matter <MatterItem> corpus mail|groups
-        (accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
+        [(accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone]
+        [(shareddrives|teamdrives (<SharedDriveIDList>|(select <FileSelector>|<CSVFileSelector>))) |
+            (rooms (<ChatSpaceList>|(select <FileSelector>|<CSVFileSelector>))) |
+            (sitesurl (<URLList>||(select <FileSelector>|<CSVFileSelector>)))]
         [scope [all_data|held_data|unprocessed_data]]
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
         [excludedrafts <Boolean>]
@@ -5250,7 +5253,9 @@ gam print vaultcounts [todrive <ToDriveAttributes>*]
 
 gam create vaultexport|export matter <MatterItem> [name <String>] corpus calendar|drive|gemini|groups|hangouts_chat|mail|voice
         (accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
-        (shareddrives|teamdrives <SharedDriveIDList>) | (rooms <RoomList>) | (sitesurl <URLList>)
+        (shareddrives|teamdrives (<SharedDriveIDList>|(select <FileSelector>|<CSVFileSelector>))) |
+            (rooms (<ChatSpaceList>|(select <FileSelector>|<CSVFileSelector>))) |
+            (sitesurl (<URLList>||(select <FileSelector>|<CSVFileSelector>)))
         [scope all_data|held_data|unprocessed_data]
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
         [locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
