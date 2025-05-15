@@ -1,3 +1,9 @@
+7.07.04
+
+Updated `gam create vaultexport ... rooms <ChatSpaceList>` to strip `spaces/` from the Chat Space IDs.
+
+Updated `gam <UserTypeEntity> copy drivefile` to recognize the API error: `ERROR: 400: shareOutWarning`.
+
 7.07.03
 
 Updated `gam create vaultexport` to allow allow specifying a list of items in a search method

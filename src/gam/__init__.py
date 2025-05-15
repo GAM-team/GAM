@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.07.03'
+__version__ = '7.07.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -40745,6 +40745,8 @@ def _showVaultExport(matterNameId, export, cd, FJQC, k=0, kcount=0):
 VAULT_SEARCH_METHODS_MAP = {
   'account': 'ACCOUNT',
   'accounts': 'ACCOUNT',
+  'chatspace': 'ROOM',
+  'chatspaces': 'ROOM',
   'entireorg': 'ENTIRE_ORG',
   'everyone': 'ENTIRE_ORG',
   'org': 'ORG_UNIT',
@@ -40868,7 +40870,11 @@ def _buildVaultQuery(myarg, query, corpusArgumentMap):
     elif searchMethod == 'SHARED_DRIVE':
       query['sharedDriveInfo'] = {'sharedDriveIds': _getQueryList(Cmd.OB_SHAREDDRIVE_ID_LIST)}
     elif searchMethod == 'ROOM':
-      query['hangoutsChatInfo'] = {'roomId': _getQueryList(Cmd.OB_CHAT_SPACE_LIST)}
+      roomIds = _getQueryList(Cmd.OB_CHAT_SPACE_LIST)
+      for i, roomId in enumerate(roomIds):
+        if roomId.startswith('spaces/') or roomId.startswith('space/'):
+          _, roomIds[i] = roomId.split('/', 1)
+      query['hangoutsChatInfo'] = {'roomId': roomIds}
     elif searchMethod == 'SITES_URL':
       query['sitesUrlInfo'] = {'urls': _getQueryList(Cmd.OB_URL_LIST)}
   elif myarg == 'scope':
@@ -59522,7 +59528,8 @@ def copyDriveFile(users):
                         throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.FORBIDDEN, GAPI.INSUFFICIENT_PERMISSIONS, GAPI.INSUFFICIENT_PARENT_PERMISSIONS,
                                                                     GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.FILE_NOT_FOUND, GAPI.UNKNOWN_ERROR,
                                                                     GAPI.STORAGE_QUOTA_EXCEEDED, GAPI.TEAMDRIVES_SHARING_RESTRICTION_NOT_ALLOWED,
-                                                                    GAPI.TEAMDRIVE_FILE_LIMIT_EXCEEDED, GAPI.TEAMDRIVE_HIERARCHY_TOO_DEEP, GAPI.SHORTCUT_TARGET_INVALID],
+                                                                    GAPI.TEAMDRIVE_FILE_LIMIT_EXCEEDED, GAPI.TEAMDRIVE_HIERARCHY_TOO_DEEP,
+                                                                    GAPI.SHORTCUT_TARGET_INVALID, GAPI.SHARE_OUT_WARNING],
                         body=body, fields='id', supportsAllDrives=True)
       Act.Set(Act.CREATE_SHORTCUT)
       entityModifierItemValueListActionPerformed(kvList, Act.MODIFIER_IN,
@@ -59533,7 +59540,8 @@ def copyDriveFile(users):
     except (GAPI.forbidden, GAPI.insufficientFilePermissions, GAPI.insufficientParentPermissions,
             GAPI.invalid, GAPI.badRequest, GAPI.fileNotFound, GAPI.unknownError,
             GAPI.storageQuotaExceeded, GAPI.teamDrivesSharingRestrictionNotAllowed,
-            GAPI.teamDriveFileLimitExceeded, GAPI.teamDriveHierarchyTooDeep, GAPI.shortcutTargetInvalid) as e:
+            GAPI.teamDriveFileLimitExceeded, GAPI.teamDriveHierarchyTooDeep,
+            GAPI.shortcutTargetInvalid, GAPI.shareOutWarning) as e:
       entityActionFailedWarning(kvList+[Ent.DRIVE_FILE_SHORTCUT, childName], str(e), k, kcount)
       _incrStatistic(statistics, STAT_FILE_FAILED)
 
@@ -59666,7 +59674,7 @@ def copyDriveFile(users):
             result = callGAPI(drive.files(), 'copy',
                               bailOnInternalError=True,
                               throwReasons=GAPI.DRIVE_COPY_THROW_REASONS+[GAPI.INTERNAL_ERROR, GAPI.INSUFFICIENT_PARENT_PERMISSIONS,
-                                                                          GAPI.TEAMDRIVES_SHORTCUT_FILE_NOT_SUPPORTED],
+                                                                          GAPI.TEAMDRIVES_SHORTCUT_FILE_NOT_SUPPORTED, GAPI.SHARE_OUT_WARNING],
                               fileId=childId, body=child, fields='id,name', supportsAllDrives=True)
             if not csvPF:
               entityModifierItemValueListActionPerformed(kvList, Act.MODIFIER_TO,
@@ -59703,7 +59711,7 @@ def copyDriveFile(users):
                   GAPI.insufficientParentPermissions, GAPI.unknownError,
                   GAPI.invalid, GAPI.cannotCopyFile, GAPI.badRequest, GAPI.responsePreparationFailure, GAPI.fileNeverWritable, GAPI.fieldNotWritable,
                   GAPI.teamDrivesSharingRestrictionNotAllowed, GAPI.rateLimitExceeded, GAPI.userRateLimitExceeded,
-                  GAPI.internalError, GAPI.teamDrivesShortcutFileNotSupported) as e:
+                  GAPI.internalError, GAPI.teamDrivesShortcutFileNotSupported, GAPI.shareOutWarning) as e:
             entityActionFailedWarning(kvList, str(e), k, kcount)
             _incrStatistic(statistics, STAT_FILE_FAILED)
           except (GAPI.storageQuotaExceeded, GAPI.teamDriveFileLimitExceeded, GAPI.teamDriveHierarchyTooDeep) as e:
