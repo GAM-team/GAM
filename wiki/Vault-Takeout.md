@@ -36,6 +36,7 @@
 * https://support.google.com/vault/answer/2474474
 
 ## Definitions
+[Collections of Items](Collections-of-Items)
 ```
 <AttendeeStatus> ::= accepted|declined|needsaction|tentative
 <EmailItem> ::= <EmailAddress>|<UniqueID>|<String>
@@ -53,6 +54,8 @@
 <RESearchPattern> ::= <RegularExpression>
 <RESubstitution> ::= <String>>
 
+<ChatSpace> ::= spaces/<String>
+<ChatSpaceList> ::= "<ChatSpace>(,<ChatSpace>)*"
 <ExportItem> ::= <UniqueID>|<String>
 <ExportStatus> ::= completed|failed|inprogrsss
 <ExportStatusList> ::= "<ExportStatus>(,<ExportStatus>)*"
@@ -60,6 +63,9 @@
 <MatterItem> ::= <UniqueID>|<String>
 <MatterState> ::= open|closed|deleted
 <MatterStateList> ::= "<MatterState>(,<MatterState>)*"
+<SharedDriveID> ::= <String>
+<SharedDriveIDList> ::= "<SharedDriveID>(,<SharedDriveID>)*"
+<URL> ::= <String>
 <URLList> ::= "<URL>(,<URL>)*"
 
 <QueryVaultCorpus> ::= <String>
@@ -199,11 +205,25 @@ This command can be useful for discovering legacy former employee accounts which
 gam print vaultcounts [todrive <ToDriveAttributes>*]
         matter <MatterItem> corpus mail|groups
         (accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
+        [(shareddrives|teamdrives (<TeamDriveIDList>|(select <FileSelector>|<CSVFileSelector>))) |
+            (rooms (<ChatSpaceList>|(select <FileSelector>|<CSVFileSelector>))) |
+            (sitesurl (<URLList>||(select <FileSelector>|<CSVFileSelector>)))]
         [scope <all_data|held_data|unprocessed_data>]
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
         [excludedrafts <Boolean>]
         [wait <Integer>]
 ```
+Specify the search method, this is optional:
+* `accounts <EmailAddressEntity>` - Search all accounts specified in `<EmailAddressEntity>`
+* `orgunit|org|ou <OrgUnitPath>` - Search all accounts in the OU `<OrgUnitPath>`
+* `everyone` - Search for all accounts in the organization
+* `shareddrives|teamdrives <SharedDriveIDList>` - Search for all accounts in the Shared Drives specified in `<SharedDriveIDList>`
+* `shareddrives|teamdrives select <FileSelector>|<CSVFileSelector>` - Search for all accounts in the Shared Drives specified in `<FileSelector>|<CSVFileSelector>`
+* `rooms <ChatSpaceList>` - Search in the Room specified in the chat rooms specified in `<ChatSpaceList>`
+* `rooms <ChatSpaceList>` - Search in the Room specified in the chat rooms specified in `<FileSelector>|<CSVFileSelector>`
+* `sitesurl <URLList>` - Search the published site URLs of new Google Sites in `<URLList>`
+* `sitesurl <URLList>` - Search the published site URLs of new Google Sites specified in `<FileSelector>|<CSVFileSelector>`
+
 Check the status of a previous count operation with the name from a previous command.
 ```
 gam print vaultcounts [todrive <ToDriveAttributes>*]
@@ -216,7 +236,9 @@ Create a Google Vault export request.
 ```
 gam create vaultexport|export matter <MatterItem> [name <String>] corpus calendar|drive|gemini|groups|hangouts_chat|mail|voice
         (accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
-        (shareddrives|teamdrives <SharedDriveIDList>) | (rooms <RoomList>) | (sitesurl <URLList>)
+        (shareddrives|teamdrives (<TeamDriveIDList>|(select <FileSelector>|<CSVFileSelector>))) |
+            (rooms (<ChatSpaceList>|(select <FileSelector>|<CSVFileSelector>))) |
+            (sitesurl (<URLList>||(select <FileSelector>|<CSVFileSelector>)))
         [scope all_data|held_data|unprocessed_data]
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
         [locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
@@ -250,8 +272,11 @@ Specify the search method, this option is required:
 * `orgunit|org|ou <OrgUnitPath>` - Search all accounts in the OU `<OrgUnitPath>`
 * `everyone` - Search for all accounts in the organization
 * `shareddrives|teamdrives <SharedDriveIDList>` - Search for all accounts in the Shared Drives specified in `<SharedDriveIDList>`
-* `rooms <RoomList>` - Search in the Room specified in the chat rooms specified in `<RoomList>`
-* `sitesurl <URLList>` - Search the published site URLs of new Google Sites
+* `shareddrives|teamdrives select <FileSelector>|<CSVFileSelector>` - Search for all accounts in the Shared Drives specified in `<FileSelector>|<CSVFileSelector>`
+* `rooms <ChatSpaceList>` - Search in the Room specified in the chat rooms specified in `<ChatSpaceList>`
+* `rooms <ChatSpaceList>` - Search in the Room specified in the chat rooms specified in `<FileSelector>|<CSVFileSelector>`
+* `sitesurl <URLList>` - Search the published site URLs of new Google Sites in `<URLList>`
+* `sitesurl <URLList>` - Search the published site URLs of new Google Sites specified in `<FileSelector>|<CSVFileSelector>`
 
 Specify the scope of data to include in the export:
 * `all_data` - All available data; this is the default
