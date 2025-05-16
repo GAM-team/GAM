@@ -255,11 +255,6 @@ jobs:
             if [[ "$RUNNER_ARCH" == "ARM64" ]]; then
               PYEXTERNALS_PATH="arm64"
               WIX_ARCH="arm64"
-              # upgrade to VS 2022 17.14 to fix arm64 bug
-              # https://github.com/openssl/openssl/issues/26239
-              # this can go away once a new win arm64 runner
-              # upgrades to this version already
-              choco install visualstudio2022enterprise
             elif [[ "$RUNNER_ARCH" == "X64" ]]; then
               PYEXTERNALS_PATH="amd64"
               WIX_ARCH="x64"
@@ -297,10 +292,13 @@ jobs:
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
           cd "${OPENSSL_SOURCE_PATH}"
-          # TODO: remove this once https://github.com/openssl/openssl/issues/26239 is fixed.
-          #if ([ "$RUNNER_OS" == "Windows" ] && [ "$RUNNER_ARCH" == "ARM64" ]); then
-          #  export CFLAGS=-DNO_INTERLOCKEDOR64
-          #fi
+          if ([ "$RUNNER_OS" == "Windows" ] && [ "$RUNNER_ARCH" == "ARM64" ]); then
+            # upgrade to VS 2022 17.14 to fix arm64 bug
+            # https://github.com/openssl/openssl/issues/26239
+            # this can go away once a new win arm64 runner
+            # upgrades to this version already
+            choco install visualstudio2022enterprise
+          fi
           # --libdir=lib is needed so Python can find OpenSSL libraries
           "${PERL}" ./Configure --libdir=lib --prefix="${OPENSSL_INSTALL_PATH}" $OPENSSL_CONFIG_OPTS
 
