@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.07.05
+
+Updated `gam <UserTypeEntity> move drivefile` to recognize the API error: `ERROR: 400: shareOutWarning`.
+
 ### 7.07.04
 
 Updated `gam create vaultexport ... rooms <ChatSpaceList>` to strip `spaces/` from the Chat Space IDs.
