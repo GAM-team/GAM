@@ -297,7 +297,7 @@ jobs:
             # https://github.com/openssl/openssl/issues/26239
             # this can go away once a new win arm64 runner
             # upgrades to this version already
-            choco install visualstudio2022enterprise --execution-timeout=0
+            choco install visualstudio2022enterprise --execution-timeout=0 --ignore-package-exit-codes
           fi
           # --libdir=lib is needed so Python can find OpenSSL libraries
           "${PERL}" ./Configure --libdir=lib --prefix="${OPENSSL_INSTALL_PATH}" $OPENSSL_CONFIG_OPTS
