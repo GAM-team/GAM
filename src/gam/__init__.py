@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.07.04'
+__version__ = '7.07.05'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -60383,7 +60383,7 @@ def moveDriveFile(users):
                                                                     GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.FILE_NOT_FOUND, GAPI.UNKNOWN_ERROR,
                                                                     GAPI.STORAGE_QUOTA_EXCEEDED, GAPI.TEAMDRIVES_SHARING_RESTRICTION_NOT_ALLOWED,
                                                                     GAPI.TEAMDRIVE_FILE_LIMIT_EXCEEDED, GAPI.TEAMDRIVE_HIERARCHY_TOO_DEEP, GAPI.SHORTCUT_TARGET_INVALID,
-                                                                    GAPI.TARGET_USER_ROLE_LIMITED_BY_LICENSE_RESTRICTION],
+                                                                    GAPI.TARGET_USER_ROLE_LIMITED_BY_LICENSE_RESTRICTION, GAPI.SHARE_OUT_WARNING],
                         body=body, fields='id', supportsAllDrives=True)
       Act.Set(Act.CREATE_SHORTCUT)
       entityModifierItemValueListActionPerformed(kvList, Act.MODIFIER_IN,
@@ -60395,7 +60395,7 @@ def moveDriveFile(users):
             GAPI.invalid, GAPI.badRequest, GAPI.fileNotFound, GAPI.unknownError,
             GAPI.storageQuotaExceeded, GAPI.teamDrivesSharingRestrictionNotAllowed,
             GAPI.teamDriveFileLimitExceeded, GAPI.teamDriveHierarchyTooDeep, GAPI.shortcutTargetInvalid,
-            GAPI.targetUserRoleLimitedByLicenseRestriction) as e:
+            GAPI.targetUserRoleLimitedByLicenseRestriction, GAPI.shareOutWarning) as e:
       entityActionFailedWarning(kvList+[Ent.DRIVE_FILE_SHORTCUT, childName], str(e), k, kcount)
       _incrStatistic(statistics, STAT_FILE_FAILED)
 
