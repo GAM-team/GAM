@@ -54,7 +54,7 @@
 <RESearchPattern> ::= <RegularExpression>
 <RESubstitution> ::= <String>>
 
-<ChatSpace> ::= spaces/<String>
+<ChatSpace> ::= spaces/<String> | space/<String> | <String>
 <ChatSpaceList> ::= "<ChatSpace>(,<ChatSpace>)*"
 <ExportItem> ::= <UniqueID>|<String>
 <ExportStatus> ::= completed|failed|inprogrsss
