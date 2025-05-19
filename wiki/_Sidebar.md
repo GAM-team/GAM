@@ -84,6 +84,7 @@ Client Access
 * [Classroom - Invitations](Classroom-Invitations)
 * [Classroom - Membership](Classroom-Membership)
 * [Cloud Channel](Cloud-Channel)
+* [Cloud Identity Devices](Cloud-Identity-Devices)
 * [Cloud Identity Groups](Cloud-Identity-Groups)
 * [Cloud Identity Groups - Membership](Cloud-Identity-Groups-Membership)
 * [Cloud Identity Policies](Cloud-Identity-Policies)
@@ -129,7 +130,6 @@ Special Service Account Access
 * [Chat Bot](Chat-Bot)
 
 Service Account Access
-* [Cloud Identity Devices](Cloud-Identity-Devices)
 * [Users - Analytics Admin](Users-Analytics-Admin)
 * [Users - Calendars](Users-Calendars)
 * [Users - Calendars - Access](Users-Calendars-Access)
