@@ -1,4 +1,5 @@
 # Cloud Identity Devices
+- [Notes](#notes)
 - [API documentation](#api-documentation)
 - [Query documentation](#query-documentation)
 - [Definitions](#definitions)
@@ -19,6 +20,15 @@
 - [Print device users](#print-device-users)
 - [Display device user client state](#display-device-user-client-state)
 - [Update device user client state](#update-device-user-client-state)
+
+## Notes
+These commands use service account access with `admin_email` (if defined) from `gam.cfg` or
+the admin from `oauth2.txt` (specified in `gam oauth create`).
+
+Use `gam user user@domain.com update serviceaccount` and make sure that the following is specified:
+```
+[*] 17)  Cloud Identity Devices API (supports readonly)
+```
 
 ## API documentation
 * [Cloud Identity API - Devices](https://cloud.google.com/identity/docs/reference/rest/v1/devices)
