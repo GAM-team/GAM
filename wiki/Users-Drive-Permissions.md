@@ -13,6 +13,7 @@
 ## API documentation
 * [Drive API - Permissions](https://developers.google.com/drive/api/v3/reference/permissions)
 * [Shortcuts](https://developers.google.com/drive/api/guides/shortcuts)
+* [Limited and Expansive Access](https://developers.google.com/workspace/drive/api/guides/limited-expansive-access)
 
 ## Definitions
 * [`<DriveFileEntity>`](Drive-File-Selection)
@@ -196,7 +197,7 @@ By default, when an ACL is created, GAM outputs details of the ACL as indented k
 ```
 gam <UserTypeEntity> update drivefileacl <DriveFileEntity> <DriveFilePermissionIDorEmail>
         (role <DriveFileACLRole>) [expiration <Time>] [removeexpiration [<Boolean>]]
-        [updatesheetprotectedranges [<Boolean>]]
+        [updatesheetprotectedranges [<Boolean>]] [enforceexpansiveaccess [<Boolean>]]
         [showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
 ```
 There is no change of parents when a new user is updated to be a file's owner.
@@ -222,7 +223,7 @@ By default, when an ACL is updated, GAM outputs details of the ACL as indented k
 ### Delete
 ```
 gam <UserTypeEntity> delete|del drivefileacl <DriveFileEntity> <DriveFilePermissionIDorEmail>
-        [updatesheetprotectedranges [<Boolean>]]
+        [updatesheetprotectedranges [<Boolean>]] [enforceexpansiveaccess [<Boolean>]]
         [showtitles]
 ```
 The option `updatesheetprotectedranges` only applies to items in `<DriveFileEntity>` that are Google Sheets.
@@ -262,6 +263,7 @@ When adding permissions from JSON data, permissions with `deleted` true are neve
 ```
 gam <UserTypeEntity> delete permissions <DriveFileEntity> <DriveFilePermissionIDEntity>
         <PermissionMatch>* [<PermissionMatchAction>]
+        [enforceexpansiveaccess [<Boolean>]]
 ```
 When deleting permissions from JSON data, permissions with role `owner` true are never processed.
 

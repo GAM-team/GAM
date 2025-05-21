@@ -9,6 +9,7 @@
 * [Drive API - Files](https://developers.google.com/drive/api/v3/reference/files)
 * [Shortcuts](https://developers.google.com/drive/api/guides/shortcuts)
 * [Prepare account for transfer](https://support.google.com/a/answer/1247799)
+* [Limited and Expansive Access](https://developers.google.com/workspace/drive/api/guides/limited-expansive-access)
 
 ## Definitions
 * [`<DriveFileEntity>`](Drive-File-Selection)
@@ -47,6 +48,7 @@ gam <UserTypeEntity> transfer drive <UserItem> [select <DriveFileEntity>]
         [noretentionmessages]
         [nonowner_retainrole reader|commenter|writer|editor|contentmanager|fileorganizer|current|none]
         [nonowner_targetrole reader|commenter|writer|editor|contentmanager|fileorganizer|current|none|source]
+        [enforceexpansiveaccess [<Boolean>]]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [preview] [todrive <ToDriveAttribute>*]
 ```
