@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.07.05'
+__version__ = '7.07.06'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -38592,7 +38592,8 @@ def _getCalendarListEventsDisplayProperty(myarg, calendarEventEntity):
 
 def initCalendarEventEntity():
   return {'list': [], 'queries': [], 'kwargs': {}, 'dict': None,
-          'matches': [], 'maxinstances': -1, 'countsOnly': False, 'showDayOfWeek': False}
+          'matches': [], 'maxinstances': -1, 'showDayOfWeek': False,
+          'countsOnly': False, 'eventRowFilter': False, 'countsOnlyTitles': []}
 
 def getCalendarEventEntity():
   calendarEventEntity = initCalendarEventEntity()
@@ -39637,11 +39638,25 @@ def _printShowCalendarEvents(origUser, user, origCal, calIds, count, calendarEve
         elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT] and user:
           csvPF.WriteRowNoFilter({'calendarId': calId, 'primaryEmail': user, 'id': ''})
       else:
+        if calendarEventEntity['eventRowFilter']:
+          jcount = 0
+          for event in events:
+            if calendarEventEntity['showDayOfWeek']:
+              _getEventDaysOfWeek(event)
+            row = {'calendarId': calId, 'id': event['id']}
+            if user:
+              row['primaryEmail'] = user
+            flattenJSON(event, flattened=row, timeObjects=EVENT_TIME_OBJECTS)
+            if csvPF.CheckRowTitles(row):
+              jcount += 1
         row = {'calendarId': calId}
         if user:
           row['primaryEmail'] = user
         row['events'] = jcount
-        csvPF.WriteRow(row)
+        if not calendarEventEntity['eventRowFilter']:
+          csvPF.WriteRow(row)
+        else:
+          csvPF.WriteRowNoFilter(row)
 
 EVENT_FIELDS_CHOICE_MAP = {
   'anyonecanaddself': 'anyoneCanAddSelf',
@@ -39879,13 +39894,17 @@ def _getCalendarPrintShowEventOptions(calendarEventEntity, entityType):
       calendarEventEntity['countsOnly'] = True
     elif myarg == 'showdayofweek':
       calendarEventEntity['showDayOfWeek'] = True
+    elif myarg == 'eventrowfilter':
+      calendarEventEntity['eventRowFilter'] = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
-  if calendarEventEntity['countsOnly']:
+  if calendarEventEntity['countsOnly'] and not calendarEventEntity['eventRowFilter']:
     fieldsList = ['id']
   if csvPF:
     if calendarEventEntity['countsOnly']:
+      csvPF.RemoveTitles(['id'])
       csvPF.AddTitles(['events'])
+      calendarEventEntity['countsOnlyTitles'] = csvPF.titlesList[:]
     elif not FJQC.formatJSON and not fieldsList:
       csvPF.AddSortTitles(EVENT_PRINT_ORDER)
   _addEventEntitySelectFields(calendarEventEntity, fieldsList)
@@ -39893,16 +39912,21 @@ def _getCalendarPrintShowEventOptions(calendarEventEntity, entityType):
 
 # gam calendars <CalendarEntity> print events <EventEntity> <EventDisplayProperties>*
 #	[fields <EventFieldNameList>] [showdayofweek]
-#	[countsonly] [formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
+#	[countsonly [eventrowfilter]]
+#	[formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
 # gam calendars <CalendarEntity> show events <EventEntity> <EventDisplayProperties>*
 #	[fields <EventFieldNameList>] [showdayofweek]
-#	[countsonly] [formatjson]
+#	[countsonly]
+#	[formatjson]
 def doCalendarsPrintShowEvents(calIds):
   calendarEventEntity = getCalendarEventEntity()
   csvPF, FJQC, fieldsList = _getCalendarPrintShowEventOptions(calendarEventEntity, Ent.CALENDAR)
   _printShowCalendarEvents(None, None, None, calIds, len(calIds), calendarEventEntity,
                            csvPF, FJQC, fieldsList)
   if csvPF:
+    if calendarEventEntity['countsOnly'] and calendarEventEntity['eventRowFilter']:
+      csvPF.SetRowFilter([], GC.Values[GC.CSV_OUTPUT_ROW_FILTER_MODE])
+      csvPF.SetTitles(calendarEventEntity['countsOnlyTitles'])
     csvPF.writeCSVfile('Calendar Events')
 
 # <CalendarSettings> ::==
@@ -51371,10 +51395,12 @@ def infoCalendarEvents(users):
 
 # gam <UserTypeEntity> print events <UserCalendarEntity> <EventEntity> <EventDisplayProperties>*
 #	[fields <EventFieldNameList>] [showdayofweek]
-#	[countsonly] [formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
+#	[countsonly [eventrowfilter]]
+#	[formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
 # gam <UserTypeEntity> show events <UserCalendarEntity> <EventEntity> <EventDisplayProperties>*
 #	[fields <EventFieldNameList>] [showdayofweek]
-#	[countsonly] [formatjson]
+#	[countsonly]]
+#	[formatjson]
 def printShowCalendarEvents(users):
   calendarEntity = getUserCalendarEntity()
   calendarEventEntity = getCalendarEventEntity()
@@ -51392,6 +51418,9 @@ def printShowCalendarEvents(users):
                              csvPF, FJQC, fieldsList)
     Ind.Decrement()
   if csvPF:
+    if calendarEventEntity['countsOnly'] and calendarEventEntity['eventRowFilter']:
+      csvPF.SetRowFilter([], GC.Values[GC.CSV_OUTPUT_ROW_FILTER_MODE])
+      csvPF.SetTitles(calendarEventEntity['countsOnlyTitles'])
     csvPF.writeCSVfile('Calendar Events')
 
 def getStatusEventDateTime(dateType, dateList):

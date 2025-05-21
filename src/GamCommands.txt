@@ -1862,7 +1862,7 @@ gam calendar|calendars <CalendarEntity> show events [<EventEntity>] <EventDispla
         [formatjson]
 gam calendar|calendars <CalendarEntity> print events [<EventEntity>] <EventDisplayProperty>*
         [fields <EventFieldNameList>] [showdayofweek]
-        [countsonly]
+        [countsonly [eventrowfilter]]
         [formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
 
 gam calendar <CalendarEntity> addevent <EventAttribute>+ [<EventNotificationAttribute>]
@@ -6099,7 +6099,7 @@ gam <UserTypeEntity> show events <UserCalendarEntity> [<EventEntity>] <EventDisp
         [formatjson]
 gam <UserTypeEntity> print events <UserCalendarEntity> [<EventEntity>] <EventDisplayProperty>*
         [fields <EventFieldNameList>] [showdayofweek]
-        [countsonly]
+        [countsonly [eventrowfilter]]
         [formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
 
 gam <UserTypeEntity> update calattendees <UserCalendarEntity> <EventEntity> [anyorganizer]
