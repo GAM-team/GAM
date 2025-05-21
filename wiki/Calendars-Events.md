@@ -567,7 +567,7 @@ By default, Gam displays the information as an indented list of keys and values.
 ```
 gam calendar <CalendarEntity> show events [<EventEntity>] <EventDisplayProperty>*
         [fields <EventFieldNameList>] [showdayofweek]
-        [countsonly] [formatjson]
+        [countsly] [formatjson]
 ```
 In `<EventEntity>`, any `<EventSelectProperty>` options must precede all other options.
 
@@ -585,8 +585,9 @@ By default, Gam displays event details, use `countsonly` to display only the num
 
 ```
 gam calendar <CalendarEntity> print events [<EventEntity>] <EventDisplayProperty>*
-         [fields <EventFieldNameList>] [showdayofweek]
-         [countsonly] [formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
+        [fields <EventFieldNameList>] [showdayofweek]
+        [countsonly [eventrowfilter]]
+        [formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
 ```
 In `<EventEntity>`, any `<EventSelectProperty>` options must precede all other options.
 
@@ -601,6 +602,11 @@ By default, Gam displays the information as columns of fields; the following opt
 * `formatjson` - Display the fields in JSON format.
 
 By default, Gam displays event details, use `countsonly` to display only the number of events. `formatjson` does not apply in this case.
+
+When `countsonly` is specified, the `eventrowfilter` option causes
+GAM to apply `config csv_output_row_filter` to the event details rather than the event counts.
+This will be useful when `<EventSelectProperty>` and `<EventMatchProperty>` do not have the
+capabilty to select the events of interest; e.g., you want to filter based on the event `created` property.
 
 By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
 the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.

@@ -30,7 +30,7 @@
 * [Shared Drive Limits](https://support.google.com/a/users/answer/7338880)
 * [My Drive Shared Drive API differences](https://developers.google.com/drive/api/v3/shared-drives-diffs)
 * [Google Docs API](https://developers.google.com/docs/api/reference/rest)
-* [Limited Access](https://workspaceupdates.googleblog.com/2025/02/updating-access-experience-in-google-drive.html)
+* [Limited and Expansive Access](https://developers.google.com/workspace/drive/api/guides/limited-expansive-access)
 
 ## Definitions
 * [`<DriveFileEntity>`](Drive-File-Selection)

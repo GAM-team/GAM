@@ -10,6 +10,17 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.07.06
+
+Added option `eventrowfilter` to `gam calendars <CalendarEntity> print events ... countsonly`
+and `gam <UserTypeEntity> print events <UserCalendarEntity> ... countsonly` that causes
+GAM to apply `config csv_output_row_filter` to the event details rather than the event counts.
+This will be useful when `<EventSelectProperty>` and `<EventMatchProperty>` do not have the
+capabilty to select the events of interest; e.g., you want to filter based on the event `created` property.
+
+Dropped the extraneous `id` column for `gam calendars <CalendarEntity> print events ... countsonly`
+and `gam <UserTypeEntity> print events <UserCalendarEntity> ... countsonly`.
+
 ### 7.07.05
 
 Updated `gam <UserTypeEntity> move drivefile` to recognize the API error: `ERROR: 400: shareOutWarning`.
