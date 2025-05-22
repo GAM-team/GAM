@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.07.06'
+__version__ = '7.07.07'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -14405,7 +14405,7 @@ def doReport():
           if addCSVData:
             row.update(addCSVData)
           csvPF.WriteRow(row)
-    csvPF.writeCSVfile(f'{report.capitalize()} Activity Report')
+    csvPF.writeCSVfile(f'{report.capitalize()} Activity Report', eventRowFilter)
 
 # Substitute for #user#, #email#, #usernamne#
 def _substituteForUser(field, user, userName):
