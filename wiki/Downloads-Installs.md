@@ -19,7 +19,8 @@ By default, a folder, `gam7`, is created in the default or specified path and th
 Add the `-s` option to the end of the above commands to suppress creating the `gam7` folder; the files are downloaded directly into the default or specified path.
 
 If, when executing one of the above commands, you get an error message stating that Python is not installed,
-go here [Python](https://www.python.org/downloads/) and download/install Python.
+go here [Python](https://www.python.org/downloads/) and download/install Python. When the installation is complete,
+start a new terminal session and reissue the command from above.
 
 ## Executable, Manual
 
