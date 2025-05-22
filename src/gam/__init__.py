@@ -8565,7 +8565,7 @@ class CSVPrintFile():
     if not self.JSONtitlesSet:
       systemErrorExit(USAGE_ERROR_RC, Msg.NO_COLUMNS_SELECTED_WITH_CSV_OUTPUT_HEADER_FILTER.format(GC.CSV_OUTPUT_HEADER_FILTER, GC.CSV_OUTPUT_HEADER_DROP_FILTER))
 
-  def writeCSVfile(self, list_type):
+  def writeCSVfile(self, list_type, clearRowFilters=False):
 
     def todriveCSVErrorExit(entityValueList, errMsg):
       systemErrorExit(ACTION_FAILED_RC, formatKeyValueList(Ind.Spaces(),
@@ -8956,6 +8956,8 @@ class CSVPrintFile():
                                                       self.oneItemPerRow,
                                                       self.showPermissionsLast,
                                                       self.zeroBlankMimeTypeCounts)))
+      if clearRowFilters:
+        GM.Globals[GM.CSVFILE][GM.REDIRECT_QUEUE].put((GM.REDIRECT_QUEUE_CLEAR_ROW_FILTERS, clearRowFilters))
       GM.Globals[GM.CSVFILE][GM.REDIRECT_QUEUE].put((GM.REDIRECT_QUEUE_DATA, self.rows))
       return
     if self.zeroBlankMimeTypeCounts:
@@ -9582,6 +9584,7 @@ def CSVFileQueueHandler(mpQueue, mpQueueStdout, mpQueueStderr, csvPF, datetimeNo
   GM.Globals[GM.DATETIME_NOW] = datetimeNow
   GC.Values[GC.TIMEZONE] = tzinfo
   GC.Values[GC.OUTPUT_TIMEFORMAT] = output_timeformat
+  clearRowFilters = False
 #  if sys.platform.startswith('win'):
 #    signal.signal(signal.SIGINT, signal.SIG_IGN)
   if multiprocessing.get_start_method() == 'spawn':
@@ -9639,9 +9642,15 @@ def CSVFileQueueHandler(mpQueue, mpQueueStdout, mpQueueStderr, csvPF, datetimeNo
       csvPF.SetTimestampColumn(GC.Values[GC.CSV_OUTPUT_TIMESTAMP_COLUMN])
       csvPF.SetHeaderFilter(GC.Values[GC.CSV_OUTPUT_HEADER_FILTER])
       csvPF.SetHeaderDropFilter(GC.Values[GC.CSV_OUTPUT_HEADER_DROP_FILTER])
-      csvPF.SetRowFilter(GC.Values[GC.CSV_OUTPUT_ROW_FILTER], GC.Values[GC.CSV_OUTPUT_ROW_FILTER_MODE])
-      csvPF.SetRowDropFilter(GC.Values[GC.CSV_OUTPUT_ROW_DROP_FILTER], GC.Values[GC.CSV_OUTPUT_ROW_DROP_FILTER_MODE])
+      if not clearRowFilters:
+        csvPF.SetRowFilter(GC.Values[GC.CSV_OUTPUT_ROW_FILTER], GC.Values[GC.CSV_OUTPUT_ROW_FILTER_MODE])
+        csvPF.SetRowDropFilter(GC.Values[GC.CSV_OUTPUT_ROW_DROP_FILTER], GC.Values[GC.CSV_OUTPUT_ROW_DROP_FILTER_MODE])
+      else:
+        csvPF.SetRowFilter([], GC.Values[GC.CSV_OUTPUT_ROW_FILTER_MODE])
+        csvPF.SetRowDropFilter([], GC.Values[GC.CSV_OUTPUT_ROW_DROP_FILTER_MODE])
       csvPF.SetRowLimit(GC.Values[GC.CSV_OUTPUT_ROW_LIMIT])
+    elif dataType == GM.REDIRECT_QUEUE_CLEAR_ROW_FILTERS:
+      clearRowFilters = dataItem
     else: #GM.REDIRECT_QUEUE_EOF
       break
   csvPF.writeCSVfile(list_type)
@@ -39927,7 +39936,9 @@ def doCalendarsPrintShowEvents(calIds):
     if calendarEventEntity['countsOnly'] and calendarEventEntity['eventRowFilter']:
       csvPF.SetRowFilter([], GC.Values[GC.CSV_OUTPUT_ROW_FILTER_MODE])
       csvPF.SetTitles(calendarEventEntity['countsOnlyTitles'])
-    csvPF.writeCSVfile('Calendar Events')
+      csvPF.writeCSVfile('Calendar Events', True)
+    else:
+      csvPF.writeCSVfile('Calendar Events')
 
 # <CalendarSettings> ::==
 #	[description <String>] [location <String>] [summary <String>] [timezone <TimeZone>]
@@ -51421,7 +51432,9 @@ def printShowCalendarEvents(users):
     if calendarEventEntity['countsOnly'] and calendarEventEntity['eventRowFilter']:
       csvPF.SetRowFilter([], GC.Values[GC.CSV_OUTPUT_ROW_FILTER_MODE])
       csvPF.SetTitles(calendarEventEntity['countsOnlyTitles'])
-    csvPF.writeCSVfile('Calendar Events')
+      csvPF.writeCSVfile('Calendar Events', True)
+    else:
+      csvPF.writeCSVfile('Calendar Events')
 
 def getStatusEventDateTime(dateType, dateList):
   if dateType == 'timerange':
