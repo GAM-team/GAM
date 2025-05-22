@@ -633,6 +633,8 @@ gam calendar <CalendarEntity> deleteevent (id|eventid <EventID>)+ [doit] [<Event
 gam calendar <CalendarEntity> moveevent (id|eventid <EventID>)+ destination <CalendarItem> [<EventNotificationAttribute>]
 gam calendar <CalendarEntity> updateevent <EventID> <EventAttribute>+ [<EventNotificationAttribute>]
 gam calendar <CalendarEntity> wipe
-gam calendar <CalendarEntity> printevents <EventSelectProperty>* <EventDisplayProperty>* [fields <EventFieldNameList>]
-         [formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
+gam calendar <CalendarEntity> printevents <EventSelectProperty>* <EventDisplayProperty>*
+        [fields <EventFieldNameList>]
+        [countsonly [eventrowfilter]]
+        [formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
 ```

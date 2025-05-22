@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.07.08
+
+Fixed bug in `gam <UserTypeEntity> print filelist ... countsonly` that issued an
+incorrect warning message like the following when `redirect csv <FileName> multiprocess` was specified.
+```
+WARNING: csv_output_row_filter column "^name$" does not match any output columns
+```
+
 ### 7.07.07
 
 Fixed bug in `gam report <ActivityApplictionName> ... countsonly eventrowfilter` that issued an
