@@ -1,3 +1,11 @@
+7.07.08
+
+Fixed bug in `gam <UserTypeEntity> print filelist ... countsonly` that issued an
+incorrect warning message like the following when `redirect csv <FileName> multiprocess` was specified.
+```
+WARNING: csv_output_row_filter column "^name$" does not match any output columns
+```
+
 7.07.07
 
 Fixed bug in `gam report <ActivityApplictionName> ... countsonly eventrowfilter` that issued an

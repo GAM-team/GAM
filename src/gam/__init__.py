@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.07.07'
+__version__ = '7.07.08'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -56231,9 +56231,9 @@ def printFileList(users):
     if not countsRowFilter:
       csvPFco.SetRowFilter([], GC.Values[GC.CSV_OUTPUT_ROW_FILTER_MODE])
     if GM.Globals[GM.CSVFILE][GM.REDIRECT_QUEUE] is None:
-      csvPFco.writeCSVfile(f'{Cmd.Argument(GM.Globals[GM.ENTITY_CL_START])} {Cmd.Argument(GM.Globals[GM.ENTITY_CL_START]+1)} Drive File Counts')
+      csvPFco.writeCSVfile(f'{Cmd.Argument(GM.Globals[GM.ENTITY_CL_START])} {Cmd.Argument(GM.Globals[GM.ENTITY_CL_START]+1)} Drive File Counts', not countsRowFilter)
     else:
-      csvPFco.writeCSVfile('Drive File Counts')
+      csvPFco.writeCSVfile('Drive File Counts', not countsRowFilter)
 
 FILECOMMENTS_FIELDS_CHOICE_MAP = {
   'action': 'action',

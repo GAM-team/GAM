@@ -1876,7 +1876,7 @@ gam calendar <CalendarEntity> moveevent (id|eventid <EventID>)+ destination <Cal
 gam calendar <CalendarEntity> wipe
 gam calendar <CalendarEntity> printevents <EventSelectProperty>* <EventDisplayProperty>*
         [fields <EventFieldNameList>] [showdayofweek]
-        [countsonly]
+        [countsonly [eventrowfilter]]
         [formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
 
 <CalendarSettingsField> ::=
