@@ -1,3 +1,11 @@
+7.07.10
+
+Updated `gam calendars <CalendarEntity> update events` and `gam <UserTypeEntity> update events <UserCalendarEntity>`
+to handle the following error:
+```
+ERROR: 400: eventTypeRestriction - Attendees cannot be added to 'fromGmail' event with this visibility setting.
+```
+
 7.07.09
 
 Updated `gam calendars <CalendarEntity> update events` and `gam <UserTypeEntity> update events <UserCalendarEntity>`

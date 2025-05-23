@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2024 Ross Scroggs All Rights Reserved.
+# Copyright (C) 2025 Ross Scroggs All Rights Reserved.
 #
 # All Rights Reserved.
 #
@@ -72,6 +72,7 @@ DOMAIN_POLICY = 'domainPolicy'
 DOWNLOAD_QUOTA_EXCEEDED = 'downloadQuotaExceeded'
 DUPLICATE = 'duplicate'
 EVENT_DURATION_EXCEEDS_LIMIT = 'eventDurationExceedsLimit'
+EVENT_TYPE_RESTRICTION = 'eventTypeRestriction'
 EXPIRATION_DATES_MUST_BE_IN_THE_FUTURE = 'expirationDatesMustBeInTheFuture'
 EXPIRATION_DATE_NOT_ALLOWED_FOR_SHARED_DRIVE_MEMBERS = 'expirationDateNotAllowedForSharedDriveMembers'
 FAILED_PRECONDITION = 'failedPrecondition'
@@ -457,6 +458,8 @@ class duplicate(Exception):
   pass
 class eventDurationExceedsLimit(Exception):
   pass
+class eventTypeRestriction(Exception):
+  pass
 class expirationDatesMustBeInTheFuture(Exception):
   pass
 class expirationDateNotAllowedForSharedDriveMembers(Exception):
@@ -725,6 +728,7 @@ REASON_EXCEPTION_MAP = {
   DOWNLOAD_QUOTA_EXCEEDED: downloadQuotaExceeded,
   DUPLICATE: duplicate,
   EVENT_DURATION_EXCEEDS_LIMIT: eventDurationExceedsLimit,
+  EVENT_TYPE_RESTRICTION: eventTypeRestriction,
   EXPIRATION_DATES_MUST_BE_IN_THE_FUTURE: expirationDatesMustBeInTheFuture,
   EXPIRATION_DATE_NOT_ALLOWED_FOR_SHARED_DRIVE_MEMBERS: expirationDateNotAllowedForSharedDriveMembers,
   FAILED_PRECONDITION: failedPrecondition,
