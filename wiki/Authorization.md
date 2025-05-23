@@ -64,6 +64,7 @@ Verify the following steps:
 * If groups are used to authenticate access, make sure the super admin is in one of the groups
 * Collapse "Service status"
 * Expand "Cloud Resource Manager API settings"
+* Select the OU in the left that contains the super admin you'll be using
 * Make sure that "Allow users to create projects" is checked
 
 Verify that all scopes are available:
