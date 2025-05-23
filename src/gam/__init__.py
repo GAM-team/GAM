@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.07.08'
+__version__ = '7.07.09'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -8962,7 +8962,7 @@ class CSVPrintFile():
       return
     if self.zeroBlankMimeTypeCounts:
       self.ZeroBlankMimeTypeCounts()
-    if self.rowFilter or self.rowDropFilter:
+    if not clearRowFilters and (self.rowFilter or self.rowDropFilter):
       self.CheckOutputRowFilterHeaders()
     if self.headerFilter or self.headerDropFilter:
       if not self.formatJSON:
@@ -14357,6 +14357,7 @@ def doReport():
     else:
       if eventRowFilter:
         csvPF.SetRowFilter([], GC.Values[GC.CSV_OUTPUT_ROW_FILTER_MODE])
+        csvPF.SetRowDropFilter([], GC.Values[GC.CSV_OUTPUT_ROW_DROP_FILTER_MODE])
       if not countsSummary:
         titles = ['emailAddress']
         if countsOnly and countsByDate:
@@ -39264,7 +39265,8 @@ def _updateCalendarEvents(origUser, user, origCal, calIds, count, calendarEventE
       try:
         if updateFieldList:
           event = callGAPI(cal.events(), 'get',
-                           throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.DELETED, GAPI.FORBIDDEN],
+                           throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.DELETED, GAPI.FORBIDDEN, GAPI.BACKEND_ERROR],
+                           retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS+[GAPI.BACKEND_ERROR],
                            calendarId=calId, eventId=eventId, fields=updateFields)
           if 'description' in updateFieldList and 'description' in event:
             body['description'] = event['description']
@@ -39294,10 +39296,11 @@ def _updateCalendarEvents(origUser, user, origCal, calIds, count, calendarEventE
             if parameters['clearResources']:
               body['attendees'] = [attendee for attendee in body['attendees'] if not attendee['email'].lower().endswith('@resource.calendar.google.com')]
         event = callGAPI(cal.events(), 'patch',
-                         throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.DELETED, GAPI.FORBIDDEN,
+                         throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.DELETED, GAPI.FORBIDDEN, GAPI.BACKEND_ERROR,
                                                                    GAPI.INVALID, GAPI.REQUIRED, GAPI.TIME_RANGE_EMPTY, GAPI.EVENT_DURATION_EXCEEDS_LIMIT,
                                                                    GAPI.REQUIRED_ACCESS_LEVEL, GAPI.CANNOT_CHANGE_ORGANIZER_OF_INSTANCE,
                                                                    GAPI.MALFORMED_WORKING_LOCATION_EVENT],
+                         retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS+[GAPI.BACKEND_ERROR],
                          calendarId=calId, eventId=eventId, conferenceDataVersion=1, sendUpdates=parameters['sendUpdates'], supportsAttachments=True,
                          body=body, fields=pfields)
         if parameters['csvPF'] is None:
@@ -39311,7 +39314,7 @@ def _updateCalendarEvents(origUser, user, origCal, calIds, count, calendarEventE
           entityUnknownWarning(Ent.CALENDAR, calId, j, jcount)
           break
         entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
-      except (GAPI.forbidden, GAPI.invalid, GAPI.required, GAPI.timeRangeEmpty, GAPI.eventDurationExceedsLimit,
+      except (GAPI.forbidden, GAPI.backendError, GAPI.invalid, GAPI.required, GAPI.timeRangeEmpty, GAPI.eventDurationExceedsLimit,
               GAPI.requiredAccessLevel, GAPI.cannotChangeOrganizerOfInstance, GAPI.malformedWorkingLocationEvent) as e:
         entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
       except GAPI.notACalendarUser:
@@ -39934,7 +39937,6 @@ def doCalendarsPrintShowEvents(calIds):
                            csvPF, FJQC, fieldsList)
   if csvPF:
     if calendarEventEntity['countsOnly'] and calendarEventEntity['eventRowFilter']:
-      csvPF.SetRowFilter([], GC.Values[GC.CSV_OUTPUT_ROW_FILTER_MODE])
       csvPF.SetTitles(calendarEventEntity['countsOnlyTitles'])
       csvPF.writeCSVfile('Calendar Events', True)
     else:
@@ -51430,7 +51432,6 @@ def printShowCalendarEvents(users):
     Ind.Decrement()
   if csvPF:
     if calendarEventEntity['countsOnly'] and calendarEventEntity['eventRowFilter']:
-      csvPF.SetRowFilter([], GC.Values[GC.CSV_OUTPUT_ROW_FILTER_MODE])
       csvPF.SetTitles(calendarEventEntity['countsOnlyTitles'])
       csvPF.writeCSVfile('Calendar Events', True)
     else:
@@ -56210,6 +56211,7 @@ def printFileList(users):
             summaryMimeTypeInfo[mimeType]['size'] += mtinfo['size']
         if summary != FILECOUNT_SUMMARY_ONLY:
           writeMimeTypeCountsRow(user, 'Various', 'Various', mimeTypeInfo)
+  titlePrefix = f'{Cmd.Argument(GM.Globals[GM.ENTITY_CL_START])} {Cmd.Argument(GM.Globals[GM.ENTITY_CL_START]+1)} ' if GM.Globals[GM.CSVFILE][GM.REDIRECT_QUEUE] is None else ''
   if not countsOnly:
     if not csvPF.rows:
       setSysExitRC(NO_ENTITIES_FOUND_RC)
@@ -56218,22 +56220,14 @@ def printFileList(users):
     else:
       if 'JSON' in csvPF.JSONtitlesList:
         csvPF.MoveJSONTitlesToEnd(['JSON'])
-    if GM.Globals[GM.CSVFILE][GM.REDIRECT_QUEUE] is None:
-      csvPF.writeCSVfile(f'{Cmd.Argument(GM.Globals[GM.ENTITY_CL_START])} {Cmd.Argument(GM.Globals[GM.ENTITY_CL_START]+1)} Drive Files')
-    else:
-      csvPF.writeCSVfile('Drive Files')
+    csvPF.writeCSVfile(f'{titlePrefix}Drive Files')
   else:
     if not csvPFco.rows:
       setSysExitRC(NO_ENTITIES_FOUND_RC)
     if summary != FILECOUNT_SUMMARY_NONE:
       writeMimeTypeCountsRow(summaryUser, 'Various', 'Various', summaryMimeTypeInfo)
     csvPFco.todrive = csvPF.todrive
-    if not countsRowFilter:
-      csvPFco.SetRowFilter([], GC.Values[GC.CSV_OUTPUT_ROW_FILTER_MODE])
-    if GM.Globals[GM.CSVFILE][GM.REDIRECT_QUEUE] is None:
-      csvPFco.writeCSVfile(f'{Cmd.Argument(GM.Globals[GM.ENTITY_CL_START])} {Cmd.Argument(GM.Globals[GM.ENTITY_CL_START]+1)} Drive File Counts', not countsRowFilter)
-    else:
-      csvPFco.writeCSVfile('Drive File Counts', not countsRowFilter)
+    csvPFco.writeCSVfile(f'{titlePrefix}Drive File Counts', not countsRowFilter)
 
 FILECOMMENTS_FIELDS_CHOICE_MAP = {
   'action': 'action',
