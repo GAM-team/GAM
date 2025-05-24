@@ -1,3 +1,16 @@
+7.07.11
+
+Updated `gam calendars <CalendarEntity> update events` and `gam <UserTypeEntity> update events <UserCalendarEntity>`
+to handle the following error:
+```
+ERROR: 400: badRequest - Bad Request
+```
+
+Updated `gam <UserTypeEntity> move drivefile` to handle the following error:
+```
+ERROR: 400: shareOutNotPermitted
+```
+
 7.07.10
 
 Updated `gam calendars <CalendarEntity> update events` and `gam <UserTypeEntity> update events <UserCalendarEntity>`

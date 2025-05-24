@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.07.10'
+__version__ = '7.07.11'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -39299,7 +39299,7 @@ def _updateCalendarEvents(origUser, user, origCal, calIds, count, calendarEventE
                          throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.DELETED, GAPI.FORBIDDEN, GAPI.BACKEND_ERROR,
                                                                    GAPI.INVALID, GAPI.REQUIRED, GAPI.TIME_RANGE_EMPTY, GAPI.EVENT_DURATION_EXCEEDS_LIMIT,
                                                                    GAPI.REQUIRED_ACCESS_LEVEL, GAPI.CANNOT_CHANGE_ORGANIZER_OF_INSTANCE,
-                                                                   GAPI.MALFORMED_WORKING_LOCATION_EVENT, GAPI.EVENT_TYPE_RESTRICTION],
+                                                                   GAPI.MALFORMED_WORKING_LOCATION_EVENT, GAPI.EVENT_TYPE_RESTRICTION, GAPI.BAD_REQUEST],
                          retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS+[GAPI.BACKEND_ERROR],
                          calendarId=calId, eventId=eventId, conferenceDataVersion=1, sendUpdates=parameters['sendUpdates'], supportsAttachments=True,
                          body=body, fields=pfields)
@@ -39316,7 +39316,7 @@ def _updateCalendarEvents(origUser, user, origCal, calIds, count, calendarEventE
         entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
       except (GAPI.forbidden, GAPI.backendError, GAPI.invalid, GAPI.required, GAPI.timeRangeEmpty, GAPI.eventDurationExceedsLimit,
               GAPI.requiredAccessLevel, GAPI.cannotChangeOrganizerOfInstance, GAPI.malformedWorkingLocationEvent,
-              GAPI.eventTypeRestriction) as e:
+              GAPI.eventTypeRestriction, GAPI.badRequest) as e:
         entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
       except GAPI.notACalendarUser:
         userCalServiceNotEnabledWarning(calId, i, count)
@@ -60450,6 +60450,7 @@ def moveDriveFile(users):
                                                              GAPI.FILE_OWNER_NOT_MEMBER_OF_TEAMDRIVE,
                                                              GAPI.FILE_OWNER_NOT_MEMBER_OF_WRITER_DOMAIN,
                                                              GAPI.FILE_WRITER_TEAMDRIVE_MOVE_IN_DISABLED,
+                                                             GAPI.SHARE_OUT_NOT_PERMITTED,
                                                              GAPI.TARGET_USER_ROLE_LIMITED_BY_LICENSE_RESTRICTION,
                                                              GAPI.CANNOT_MOVE_TRASHED_ITEM_INTO_TEAMDRIVE,
                                                              GAPI.CANNOT_MOVE_TRASHED_ITEM_OUT_OF_TEAMDRIVE,
@@ -60464,7 +60465,7 @@ def moveDriveFile(users):
       _incrStatistic(statistics, STAT_FILE_COPIED_MOVED)
       return
     except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.unknownError, GAPI.badRequest,
-            GAPI.targetUserRoleLimitedByLicenseRestriction,
+            GAPI.shareOutNotPermitted, GAPI.targetUserRoleLimitedByLicenseRestriction,
             GAPI.cannotMoveTrashedItemIntoTeamDrive, GAPI.cannotMoveTrashedItemOutOfTeamDrive,
             GAPI.teamDrivesShortcutFileNotSupported, GAPI.storageQuotaExceeded) as e:
       entityActionFailedWarning(kvList, str(e), k, kcount)
