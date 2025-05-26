@@ -335,6 +335,11 @@ gam update group group@domain.com whoCanViewMembership ALL_MEMBERS_CAN_VIEW whoC
 Group: group@domain.com, Updated
 ```
 
+If you are entering a valid combination but an error message is returned, do the following and then re-issue your command.
+```
+gam update group group@domain.com whoCanViewMembership ALL_IN_DOMAIN_CAN_VIEW whoCanDiscoverGroup ALL_IN_DOMAIN_CAN_DISCOVER
+```
+
 ## Manage groups
 
 These commands allow you to create, update and delete groups.
