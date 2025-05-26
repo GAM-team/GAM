@@ -287,7 +287,7 @@ csv_output_users_audit
         Default: False
 customer_id
         Google Customer ID
-        Default: Blank
+        Default: my_customer
         Environment variable: CUSTOMER_ID
 debug_level
         If debug_level > 0, turn on API debugging output.
@@ -321,7 +321,7 @@ drive_v3_native_names
 email_batch_size
         When archiving, printing, showing, trashing, untrashing, marking as spam Gmail messages.
         how many should be processed in each batch
-        Default: 100
+        Default: 50
         Range: 1 - 100
 enable_dasa
         Enable/disable Delegated Admin Service Account API Access
@@ -384,7 +384,7 @@ message_batch_size
 message_max_results
         When retrieving lists of Gmail messages from API,
         how many should be retrieved in each API call
-        Default: 1000
+        Default: 500
         Range: 1 - 10000
 mobile_max_results
         When retrieving lists of Mobile devices from API,
@@ -416,8 +416,10 @@ no_short_urls
         the shortened URL redirects to the long URL.
         When True, the long scopes URLs in `gam oauth create` and
         `gam <UserTypeEntity> check|update serviceaccount` will be used as is.
+        Default: True
 no_verify_ssl
         Disable SSL certificate validation
+        Default: False
 num_tbatch_threads
         Number of threads for gam tbatch
         Default: 2
