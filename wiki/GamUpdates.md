@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.07.12
+
+Fixed bug in `gam print|show oushareddrives` that caused a trap.
+
+Improved getting Shared Drive names from IDs when accessing Shared Drives in external workspaces.
+
 ### 7.07.11
 
 Updated `gam calendars <CalendarEntity> update events` and `gam <UserTypeEntity> update events <UserCalendarEntity>`
