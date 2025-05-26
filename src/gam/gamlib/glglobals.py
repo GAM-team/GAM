@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2023 Ross Scroggs All Rights Reserved.
+# Copyright (C) 2025 Ross Scroggs All Rights Reserved.
 #
 # All Rights Reserved.
 #
@@ -25,8 +25,6 @@
 # Some commands want to set a non-zero return code but not bail
 # GAM admin user from oauth2.txt or oauth2service.json
 ADMIN = 'admn'
-# Drive service for admin; used to look up Shared Drive Names
-ADMIN_DRIVE = 'addr'
 # Number/length of API call retries
 API_CALLS_RETRY_DATA = 'rtry'
 # GAM cache directory. If no_cache is True, this variable will be set to None
@@ -220,7 +218,6 @@ REDIRECT_QUEUE_EOF = 'eof'
 #
 Globals = {
   ADMIN: None,
-  ADMIN_DRIVE: None,
   API_CALLS_RETRY_DATA: {},
   CACHE_DIR: None,
   CACHE_DISCOVERY_ONLY: True,

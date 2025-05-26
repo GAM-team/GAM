@@ -1,3 +1,9 @@
+7.07.12
+
+Fixed bug in `gam print|show oushareddrives` that caused a trap.
+
+Improved getting Shared Drive names from IDs when accessing Shared Drives in external workspaces.
+
 7.07.11
 
 Updated `gam calendars <CalendarEntity> update events` and `gam <UserTypeEntity> update events <UserCalendarEntity>`

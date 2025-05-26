@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2024 Ross Scroggs All Rights Reserved.
+# Copyright (C) 2025 Ross Scroggs All Rights Reserved.
 #
 # All Rights Reserved.
 #
@@ -260,12 +260,12 @@ SMTP_HOST = 'smtp_host'
 SMTP_USERNAME = 'smtp_username'
 # SMTP password
 SMTP_PASSWORD = 'smtp_password'
+# Time Zone
+TIMEZONE = 'timezone'
 ## Minimum TLS Version required for HTTPS connections
 TLS_MIN_VERSION = 'tls_min_version'
 ## Maximum TLS Version used for HTTPS connections
 TLS_MAX_VERSION = 'tls_max_version'
-# Time Zone
-TIMEZONE = 'timezone'
 # Clear basic filter when updating an existing sheet
 TODRIVE_CLEARFILTER = 'todrive_clearfilter'
 # Use client access for todrive
@@ -431,9 +431,9 @@ Defaults = {
   SMTP_HOST: '',
   SMTP_USERNAME: '',
   SMTP_PASSWORD: '',
+  TIMEZONE: 'utc',
   TLS_MIN_VERSION: 'TLSv1_3',
   TLS_MAX_VERSION: '',
-  TIMEZONE: 'utc',
   TODRIVE_CLEARFILTER: FALSE,
   TODRIVE_CLIENTACCESS: FALSE,
   TODRIVE_CONVERSION: TRUE,
@@ -599,9 +599,9 @@ VAR_INFO = {
   SMTP_HOST: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
   SMTP_USERNAME: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
   SMTP_PASSWORD: {VAR_TYPE: TYPE_PASSWORD, VAR_LIMITS: (0, None)},
+  TIMEZONE: {VAR_TYPE: TYPE_TIMEZONE},
   TLS_MIN_VERSION: {VAR_TYPE: TYPE_CHOICE, VAR_ENVVAR: 'GAM_TLS_MIN_VERSION', VAR_CHOICES: TLS_CHOICE_MAP},
   TLS_MAX_VERSION: {VAR_TYPE: TYPE_CHOICE, VAR_ENVVAR: 'GAM_TLS_MAX_VERSION', VAR_CHOICES: TLS_CHOICE_MAP},
-  TIMEZONE: {VAR_TYPE: TYPE_TIMEZONE},
   TODRIVE_CLEARFILTER: {VAR_TYPE: TYPE_BOOLEAN},
   TODRIVE_CLIENTACCESS: {VAR_TYPE: TYPE_BOOLEAN},
   TODRIVE_CONVERSION: {VAR_TYPE: TYPE_BOOLEAN},
