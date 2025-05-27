@@ -11,6 +11,7 @@
   - [Delete a Shared Drive](#delete-a-shared-drive)
   - [Change Shared Drive visibility](#change-shared-drive-visibility)
 - [Display Shared Drives](#display-shared-drives)
+- [Display Shared Drive Counts](#display-shared-drive-counts)
 - [Manage Shared Drive access](#manage-shared-drive-access)
 - [Display Shared Drive access](#display-shared-drive-access)
   - [Display Shared Drive access for specific Shared Drives](#display-shared-drive-access-for-specific-shared-drives)
@@ -356,6 +357,35 @@ When using the `formatjson` option, double quotes are used extensively in the da
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
+## Display Shared Drive Counts
+Display the number of Shared Drives.
+```
+gam <UserTypeEntity> show|print shareddrives
+        [teamdriveadminquery|query <QueryTeamDrive>]
+        [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
+        showitemcountonly
+```
+By default, all Shared Drives are counted; use the following options to select a subset of Shared Drives:
+* `teamdriveadminquery|query <QueryTeamDrive>` - Use a query to select Shared Drives
+* `matchname <REMatchPattern>` - Retrieve Shared Drives with names that match a pattern.
+* `orgunit|org|ou <OrgUnitPath>` - Only Shared Drives in the specified Org Unit are selected
+
+Example
+```
+$ gam user user@domain.com print shareddrives showitemcountonly                 
+Getting all Shared Drives for user@domain.com 
+Got 4 Shared Drives for user@domain.com ...
+4
+```
+The `Getting` and `Got` messages are written to stderr, the count is writtem to stdout.
+
+To retrieve the count with `showitemcountonly`:
+```
+Linux/MacOS
+count=$(gam user user@domain.com print shareddrives showitemcountonly)
+Windows PowerShell
+count = & gam user user@domain.com print shareddrives showitemcountonly
+```
 ## Manage Shared Drive access
 These commands must be issued by a user with Shared Drive permission role organizer.
 ### Process single ACLs.

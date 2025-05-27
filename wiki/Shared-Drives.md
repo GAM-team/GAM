@@ -12,8 +12,9 @@
   - [Delete a Shared Drive](#delete-a-shared-drive)
   - [Change Shared Drive visibility](#change-shared-drive-visibility)
 - [Display Shared Drives](#display-shared-drives)
-- [Display List of Shared Drives in an Organizational Unit other than /](#display-list-of-shared-drives-in-an-organizational-unit-other-than-)
+- [Display Shared Drive Counts](#display-shared-drive-counts)
 - [Display List of Shared Drives in an Organizational Unit](#display-list-of-shared-drives-in-an-organizational-unit)
+- [Display Count of Shared Drives in an Organizational Unit](#display-count-of-shared-drives-in-an-organizational-unit)
 - [Display all Shared Drives with no members](#display-all-shared-drives-with-no-members)
 - [Display all Shared Drives with no organizers](#display-all-shared-drives-with-no-organizers)
 - [Display all Shared Drives with a specific organizer](#display-all-shared-drives-with-a-specific-organizer)
@@ -416,6 +417,36 @@ gam print teamdrives query "memberCount = 0"
 gam print teamdrives query "organizerCount = 0"
 ```
 
+## Display Shared Drive Counts
+Display the number of Shared Drives.
+```
+gam [<UserTypeEntity>] show|print shareddrives
+        [adminaccess|asadmin] [teamdriveadminquery|query <QueryTeamDrive>]
+        [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
+        showitemcountonly
+```
+By default, all Shared Drives are counted; use the following options to select a subset of Shared Drives:
+* `teamdriveadminquery|query <QueryTeamDrive>` - Use a query to select Shared Drives
+* `matchname <REMatchPattern>` - Retrieve Shared Drives with names that match a pattern.
+* `orgunit|org|ou <OrgUnitPath>` - Only Shared Drives in the specified Org Unit are selected
+
+Example
+```
+$ gam print shareddrives showitemcountonly                 
+Getting all Shared Drives, may take some time on a large Google Workspace Account...
+Got 12 Shared Drives...
+12
+```
+The `Getting` and `Got` messages are written to stderr, the count is writtem to stdout.
+
+To retrieve the count with `showitemcountonly`:
+```
+Linux/MacOS
+count=$(gam print shareddrives showitemcountonly)
+Windows PowerShell
+count = & gam print shareddrives showitemcountonly
+```
+
 ## Display all Shared Drives with a specific organizer
 Substitute actual email address for `organizer@domain.com`.
 ```
@@ -428,18 +459,9 @@ Substitute actual email address for `organizer@domain.com`.
 gam config csv_output_header_filter "id,name" print teamdriveacls pm emailaddress organizer@domain.com role organizer em pma skip pmselect
 ```
 
-## Display List of Shared Drives in an Organizational Unit other than /
-Get the orgUnitID of OU / and use it (without the id:) in the print|show command. Adjust fields as desired.
-```
-gam info ou / nousers
-gam show teamdrives query "orgUnitId!='00gjdgxs2p9cxyz'" fields id,name,orgunit,createdtime
-gam print teamdrives query "orgUnitId!='00gjdgxs2p9cxyz'" fields id,name,orgunit,createdtime
-```
-
 ## Display List of Shared Drives in an Organizational Unit
 Get the orgUnitID of the desired OU and use it (without the id:) in the print|show command. Adjust fields as desired.
 ```
-gam info ou <OrgUnitPath> nousers
 gam show teamdrives query "orgUnitId='03ph8a2z21rexy'" fields id,name,orgunit,createdtime
 gam print teamdrives query "orgUnitId='03ph8a2z21rexy'" fields id,name,orgunit,createdtime
 ```
@@ -451,6 +473,31 @@ gam show oushareddrives
 gam print oushareddrives [todrive <ToDriveAttribute>*]
         [ou|org|orgunit <OrgUnitPath>]
         [formatjson [quotechar <Character>]]
+```
+
+## Display Count of Shared Drives in an Organizational Unit
+```
+gam print|show oushareddrives
+        [ou|org|orgunit <OrgUnitPath>]
+        showitemcountonly
+```
+`<OrgUnitPath>` defaults to `"/"`.
+
+Example
+```
+$ gam print oushareddrives showitemcountonly                 
+Getting all Shared Drives for /, may take some time on a large Organizational Unit...
+Got 9 Shared Drives for /...
+9
+```
+The `Getting` and `Got` messages are written to stderr, the count is writtem to stdout.
+
+To retrieve the count with `showitemcountonly`:
+```
+Linux/MacOS
+count=$(gam print oushareddrives showitemcountonly)
+Windows PowerShell
+count = & gam print oushareddrives showitemcountonly
 ```
 
 ## Manage Shared Drive access

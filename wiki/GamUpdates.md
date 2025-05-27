@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.07.13
+
+Added option `showitemcountonly` to `gam [<UserTypeEntity>] print|show shareddrives` that causes GAM to display the
+number of Shared Drives on stdout; no CSV file is written.
+
 ### 7.07.12
 
 Fixed bug in `gam print|show oushareddrives` that caused a trap.
