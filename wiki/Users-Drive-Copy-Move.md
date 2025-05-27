@@ -662,7 +662,7 @@ When moving a folder you can use the `retainsourcefolders` option to cause GAM t
 Moving a Drive folder to a Shared Drive is not directly supported by the API; GAM has to make a copy of the folder on the Shared Drive and
 recursively adjust the files/folders within it to point to the new parent folder. Once the original folder is emptied, it is deleted unless `retainsourcefolders` is specified.
 
-### Move content of a Shared Drive to another Shared Drive
+## Move content of a Shared Drive to another Shared Drive
 Suppose you have a source Shared Drive with ID 0AC_1AB with multiple files and folders, and want to move all of its content to the target Shared Drive with ID 0AE_9ZX.
 
 The following command will change the parents of the top level files and folders from 0AC_1AB to 0AE_9ZX; the sub files and folders will move along with their top level folder.
@@ -676,3 +676,19 @@ If you want the source Shared Drive with ID 0AC_1AB to be contained in a top lev
 ```
 gam user user@domain.com move drivefile teamdriveid 0AC_1AB teamdriveparentid 0AE_9ZX
 ```
+
+### Inter-workspace moves
+Due to a restructuring, you want to move data from Shared Drive A in domaina.com to Shared Drive B in domainb.com.
+* The Shared Drive A in domaina.com has the following unchecked: `Allow people outside of Domain A to access files`
+* The Shared Drive B in domainb.com has the following   checked: `Allow people outside of Domain B to access files`
+* user@domaina.com is a manager of both Shared Drives.
+
+```
+$ gam user user@domaina move drivefile teamdriveid <SharedDriveAID> teamdriveparentid <SharedDriveBID> mergewithparent
+User: user@domaina.com, Move 1 Drive File/Folder
+  User: user@domaina.com, Drive Folder: Shared Drive A(<SharedDriveAID>), Move(Merge) contents with Drive Folder: Shared Drive B(<SharedDriveBID>)
+    User: user@domaina.com, Drive File: Filename(<FileID>), Move Failed: Bad Request. User message: "shareOutNotPermitted"
+...
+  User: user@domaina.com, Drive Folder: Shared Drive A(<SharedDriveAID>), Retained
+```
+To get this to work, yoo must check `Allow people outside of Domain A to access files` on Shared Drive A in domaina.com
