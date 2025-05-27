@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.07.12'
+__version__ = '7.07.13'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -59838,6 +59838,7 @@ def copyDriveFile(users):
 # Source at root of Shared Drive?
         sourceMimeType = source['mimeType']
         if sourceMimeType == MIMETYPE_GA_FOLDER and source.get('driveId') and source['name'] == TEAM_DRIVE and not source.get('parents', []):
+          copyMoveOptions['sourceIsMyDriveSharedDrive'] = True
           source['name'] = _getSharedDriveNameFromId(drive, source['driveId'])
         sourceName = source['name']
         sourceNameId = f"{sourceName}({source['id']})"
@@ -65416,12 +65417,14 @@ SHAREDDRIVE_ACL_ROLES_MAP = {
 #	(role|roles <SharedDriveACLRoleList>)*
 #	[fields <SharedDriveFieldNameList>] [noorgunits [<Boolean>]]
 #	[guiroles [<Boolean>]] [formatjson [quotechar <Character>]]
+# 	[showitemcountonly]
 # gam <UserTypeEntity> show shareddrives
 #	[asadmin [shareddriveadminquery|query <QuerySharedDrive>]]
 #	[matchname <REMatchPattrn>] [orgunit|org|ou <OrgUnitPath>]
 #	(role|roles <SharedDriveACLRoleLIst>)*
 #	[fields <SharedDriveFieldNameList>] [noorgunits [<Boolean>]]
 #	[guiroles [<Boolean>]] [formatjson]
+# 	[showitemcountonly]
 def printShowSharedDrives(users, useDomainAdminAccess=False):
   def stripNonShowFields(shareddrive):
     if orgUnitIdToPathMap:
@@ -65445,7 +65448,7 @@ def printShowSharedDrives(users, useDomainAdminAccess=False):
   SHAREDDRIVE_FIELDS_CHOICE_MAP.update(SHAREDDRIVE_LIST_FIELDS_CHOICE_MAP)
   showOrgUnitPaths = True
   orgUnitIdToPathMap = None
-  guiRoles = False
+  guiRoles = showItemCountOnly = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -65475,6 +65478,9 @@ def printShowSharedDrives(users, useDomainAdminAccess=False):
       showOrgUnitPaths = not getBoolean()
     elif myarg == 'guiroles':
       guiRoles = getBoolean()
+    elif myarg == 'showitemcountonly':
+      showItemCountOnly = True
+      showOrgUnitPaths = False
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if query and not useDomainAdminAccess:
@@ -65544,6 +65550,9 @@ def printShowSharedDrives(users, useDomainAdminAccess=False):
     jcount = len(matchedFeed)
     if jcount == 0:
       setSysExitRC(NO_ENTITIES_FOUND_RC)
+    if showItemCountOnly:
+      writeStdout(f'{jcount}\n')
+      return
     if not csvPF:
       if not FJQC.formatJSON:
         entityPerformActionNumItems([Ent.USER, user], jcount, Ent.SHAREDDRIVE, i, count)
@@ -65574,9 +65583,11 @@ def doPrintShowSharedDrives():
 # gam print oushareddrives [todrive <ToDriveAttribute>*]
 #	[ou|org|orgunit <OrgUnitPath>]
 #	[formatjson [quotechar <Character>]]
+# 	[showitemcountonly]
 # gam show oushareddrives
 #	[ou|org|orgunit <OrgUnitPath>]
 #	[formatjson]
+# 	[showitemcountonly]
 def doPrintShowOrgunitSharedDrives():
   def _getOrgUnitSharedDriveInfo(shareddrive):
     shareddrive['driveId'] = shareddrive['name'].rsplit(';')[1]
@@ -65605,12 +65616,15 @@ def doPrintShowOrgunitSharedDrives():
   csvPF = CSVPrintFile(['name', 'type', 'member', 'memberUri', 'driveId', 'driveName', 'orgUnitPath']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   orgUnitPath = '/'
+  showItemCountOnly = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg in {'ou', 'org', 'orgunit'}:
       orgUnitPath = getString(Cmd.OB_ORGUNIT_ITEM)
+    elif myarg == 'showitemcountonly':
+      showItemCountOnly = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if csvPF and FJQC.formatJSON:
@@ -65625,6 +65639,9 @@ def doPrintShowOrgunitSharedDrives():
   jcount = len(sds)
   if jcount == 0:
     setSysExitRC(NO_ENTITIES_FOUND_RC)
+  if showItemCountOnly:
+    writeStdout(f'{jcount}\n')
+    return
   if not csvPF:
     if not FJQC.formatJSON:
       entityPerformActionNumItems([Ent.ORGANIZATIONAL_UNIT, orgUnitPath], jcount, Ent.SHAREDDRIVE)
