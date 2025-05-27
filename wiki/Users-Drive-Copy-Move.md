@@ -681,7 +681,7 @@ gam user user@domain.com move drivefile teamdriveid 0AC_1AB teamdriveparentid 0A
 Due to a restructuring, you want to move data from Shared Drive A in domaina.com to Shared Drive B in domainb.com.
 * Shared Drive A in domaina.com has the following unchecked: `Allow people outside of Domain A to access files`
 * Shared Drive B in domainb.com has the following checked: `Allow people outside of Domain B to access files`
-* user@domaina.com is a manager of both Shared Drives.
+* `user@domaina.com` is a manager of both Shared Drives.
 
 ```
 $ gam user user@domaina move drivefile teamdriveid <SharedDriveAID> teamdriveparentid <SharedDriveBID> mergewithparent
@@ -691,4 +691,4 @@ User: user@domaina.com, Move 1 Drive File/Folder
 ...
   User: user@domaina.com, Drive Folder: Shared Drive A(<SharedDriveAID>), Retained
 ```
-To get this to work, yoo must check `Allow people outside of Domain A to access files` on Shared Drive A in domaina.com
+To get this to work, you must check `Allow people outside of Domain A to access files` on Shared Drive A in domaina.com
