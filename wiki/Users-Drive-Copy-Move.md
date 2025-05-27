@@ -679,8 +679,8 @@ gam user user@domain.com move drivefile teamdriveid 0AC_1AB teamdriveparentid 0A
 
 ### Inter-workspace moves
 Due to a restructuring, you want to move data from Shared Drive A in domaina.com to Shared Drive B in domainb.com.
-* The Shared Drive A in domaina.com has the following unchecked: `Allow people outside of Domain A to access files`
-* The Shared Drive B in domainb.com has the following   checked: `Allow people outside of Domain B to access files`
+* Shared Drive A in domaina.com has the following unchecked: `Allow people outside of Domain A to access files`
+* Shared Drive B in domainb.com has the following checked: `Allow people outside of Domain B to access files`
 * user@domaina.com is a manager of both Shared Drives.
 
 ```
