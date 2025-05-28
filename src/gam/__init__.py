@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.07.13'
+__version__ = '7.07.14'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -25949,7 +25949,7 @@ def _printChatItem(user, citem, parent, entityType, csvPF, FJQC, addCSVData=None
 def doSetupChat():
   checkForExtraneousArguments()
   _, chat , _ = buildChatServiceObject()
-  writeStdout(Msg.TO_SET_UP_GOOGLE_CHAT.format(setupChatURL(chat)))
+  writeStdout(Msg.TO_SET_UP_GOOGLE_CHAT.format(setupChatURL(chat), GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['project_id']))
 
 def getSpaceName(myarg):
   if myarg == 'space':

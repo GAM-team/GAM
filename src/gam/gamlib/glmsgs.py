@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2024 Ross Scroggs All Rights Reserved.
+# Copyright (C) 2025 Ross Scroggs All Rights Reserved.
 #
 # All Rights Reserved.
 #
@@ -504,13 +504,15 @@ TO = 'To'
 TO_LC = 'to'
 TO_MAXIMUM_OF = 'to maximum of'
 TO_SET_UP_GOOGLE_CHAT = """
-To set up Google Chat for your API project, please go to:
+To set up Google Chat for your current project, please go to:
 
     {0}
 
 and follow the instructions at:
 
     https://github.com/GAM-team/GAM/wiki/Chat-Bot#set-up-a-chat-bot
+
+    You'll use projects/{1}/topics/no-topic in Connection settings Cloud Pub/Sub Topic Name
 """
 TOTAL_ITEMS_IN_ENTITY = 'Total {0} in {1}'
 TRIMMED_MESSAGE_FROM_LENGTH_TO_MAXIMUM = 'Trimmed message of length {0} to maximum length {1}'

@@ -1,3 +1,10 @@
+7.07.14
+
+Update `gam setup chat` output to include the following that shows the actual Cloud Pub/Sub Topic Name.
+```
+You'll use projects/<ProjectID>/topics/no-topic in Connection settings Cloud Pub/Sub Topic Name
+```
+
 7.07.13
 
 Added option `showitemcountonly` to `gam [<UserTypeEntity>] print|show shareddrives` that causes GAM to display the
