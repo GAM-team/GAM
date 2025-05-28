@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.07.15
+
+Added option `shareddrivesoption included|included_if_account_is_not_a_member|not_included` to `gam create vaultexport`.
+
+The previous option `includeshareddrives <Boolean>` is mapped as follows:
+* `includeshareddrives false` - `shareddrivesoption included_if_account_is_not_a_member`
+* `includeshareddrives true` - `shareddrivesoption included`
+
 ### 7.07.14
 
 Update `gam setup chat` output to include the following that shows the actual Cloud Pub/Sub Topic Name.

@@ -243,7 +243,8 @@ gam create vaultexport|export matter <MatterItem> [name <String>] corpus calenda
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
         [locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
         [responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*] [calendarversiondate <Date>|<Time>]
-        [includeshareddrives <Boolean>] [driveversiondate <Date>|<Time>] [includeaccessinfo <Boolean>]
+        [(includeshareddrives <Boolean>)|(shareddrivesoption included|included_if_account_is_not_a_member|not_included)]
+        [driveversiondate <Date>|<Time>] [includeaccessinfo <Boolean>]
         [driveclientsideencryption any|encrypted|unencrypted]
         [includerooms <Boolean>]
         [excludedrafts <Boolean>] [mailclientsideencryption any|encrypted|unencrypted]
@@ -315,8 +316,11 @@ For `corpus calendar`, you can specify the format of the exported data:
 
 For `corpus drive`, you can specify advanced search options:
 * `driveversiondate <Date>|<Time>` - Search the versions of the Drive file as of the reference date. These timestamps are in GMT and rounded down to the given date.
-* `includeshareddrives False` - Do not include Shared Drives in the search, this is the default.
-* `includeshareddrives True` - Include Shared Drives in the search.
+* `includeshareddrives False` - Resources in shared drives where account is not a member are included in the search, this is the default
+* `includeshareddrives True` - Resources in shared drives are included in the search
+* `sharedrivesoption included` - Resources in shared drives are included in the search
+* `sharedrivesoption included_if_account_is_not_a_member` - Resources in shared drives where account is not a member are included in the search, this is the default
+* `sharedrivesoption not_included` - Resources in shared drives are not included in the search
 * `driveclientsideencryption any` - Include both client-side encrypted and unencrypted content in search, this is the default.
 * `driveclientsideencryption encrypted` - Include client-side encrypted content only in search.
 * `driveclientsideencryption unencrypted` - Include client-side unencrypted content only in search.
@@ -599,7 +603,7 @@ gam create vaulthold|hold matter <MatterItem> [name <String>] corpus calendar|dr
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
         [includerooms <Boolean>]
         [covereddata calllogs|textmessages|voicemails]
-        [includeshareddrives|includeteamdrives <Boolean>]
+        [includeshareddrives <Boolean>]
         [showdetails|returnidonly]
 ```
 Specify the name of the hold:
@@ -621,8 +625,8 @@ Specify the search method, this option is required:
 The `query <QueryVaultCorpus>` option can still be used but it is much simpler to use the following options.
 
 For `corpus drive`, you can specify advanced search options:
-* `includeshareddrives False` - Do not include Shared Drives in the search, this is the default.
-* `includeshareddrives True` - Include Shared Drives in the search.
+* `includeshareddrives False` - Files in shared drives are not included in the hold, this is the default
+* `includeshareddrives True` - Files in shared drives are included in the hold
 
 For `corpus mail`, you can specify search terms to limit the search.
 * `terms <String>` - [Vault search](https://support.google.com/vault/answer/2474474)
@@ -652,12 +656,12 @@ gam update vaulthold|hold <HoldItem> matter <MatterItem>
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
         [includerooms <Boolean>]
         [covereddata calllogs|textmessages|voicemails]
-        [includeshareddrives|includeteamdrives <Boolean>]
+        [includeshareddrives <Boolean>]
         [showdetails]
 ```
 For a hold with `corpus drive`, you can specify advanced search options:
-* `includeshareddrives False` - Do not include Shared Drives in the search, this is the default.
-* `includeshareddrives True` - Include Shared Drives in the search.
+* `includeshareddrives False` - Files in shared drives are not included in the hold, this is the default
+* `includeshareddrives True` - Files in shared drives are included in the hold
 
 For a hold with `corpus mail`, you can specify search terms to limit the search.
 * `terms <String>` - [Vault search](https://support.google.com/vault/answer/2474474)
