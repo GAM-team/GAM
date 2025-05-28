@@ -7,6 +7,7 @@
 - [Manage file permissions/sharing](#manage-file-permissionssharing)
 - [Display file permissions/sharing](#display-file-permissionssharing)
 - [Delete all ACLs except owner from a file](#delete-all-acls-except-owner-from-a-file)
+= [Delete all ACLs except owner from a user's My Drive](#delete-all-acls-except-owner-from-a-users-my-drive)
 - [Change shares to User1 to shares to User2](#change-shares-to-user1-to-shares-to-user2)
 - [Map All ACLs from an old domain to a new domain](#map-all-acls-from-an-old-domain-to-a-new-domain)
 
@@ -318,11 +319,21 @@ gam redirect csv ./TeamDriveACLs.csv multiprocess csv ./TeamDrives.csv gam print
 ## Delete all ACLs except owner from a file
 Get the current ACLs.
 ```
-gam redirect csv ./Permissions.csv user <UserItem> print drivefileacls <DriveFileID> oneitemperrow
+gam redirect csv ./Permissions.csv user user@domain.com print drivefileacls <DriveFileID> oneitemperrow
 ```
 Inspect Permissions.csv, verify that you want to proceed.
 ```
 gam config csv_input_row_drop_filter "permission.role:regex:(owner)|(organizer)" csv ./Permissions.csv gam user "~Owner" delete drivefileacl "~id" "id:~~permission.id~~"
+```
+
+## Delete all ACLs except owner from a user's My Drive
+Get the current ACLs.
+```
+gam redirect csv ./Permissions.csv user user@domain.com print filelist fields id,name,mimetype,basicpermissions pm not role owner em pmfilter oneitemperrow
+```
+Inspect Permissions.csv, verify that you want to proceed.
+```
+gam redirect stdout ./DeletePermissions.txt multiprocess redirect stderr stdout csv Permissions.csv.csv gam user "~Owner" delete drivefileacls "~id" "id:~~permission.id~~"
 ```
 
 ## Change shares to User1 to shares to User2
