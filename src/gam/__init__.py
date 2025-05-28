@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.07.14'
+__version__ = '7.07.15'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -40817,6 +40817,11 @@ VAULT_RESPONSE_STATUS_MAP = {
   'needsaction': 'ATTENDEE_RESPONSE_NEEDS_ACTION',
   'tentative': 'ATTENDEE_RESPONSE_TENTATIVE',
   }
+VAULT_SHARED_DRIVES_OPTION_MAP = {
+  'included': 'INCLUDED',
+  'includedifaccountisnotamember': 'INCLUDED_IF_ACCOUNT_IS_NOT_A_MEMBER',
+  'notincluded': 'NOT_INCLUDED',
+  }
 VAULT_VOICE_COVERED_DATA_MAP = {
   'calllogs': 'CALL_LOGS',
   'textmessages': 'TEXT_MESSAGES',
@@ -40875,7 +40880,7 @@ VAULT_QUERY_ARGS = [
 # calendar
   'locationquery', 'peoplequery', 'minuswords', 'responsestatuses', 'caldendarversiondate',
 # drive
-  'driveclientsideencryption', 'driveversiondate', 'includeshareddrives', 'includeteamdrives',
+  'driveclientsideencryption', 'driveversiondate', 'includeshareddrives', 'includeteamdrives', 'shareddrivesoption',
 # hangoutsChat
   'includerooms',
 # mail
@@ -40945,7 +40950,9 @@ def _buildVaultQuery(myarg, query, corpusArgumentMap):
   elif myarg == 'driveversiondate':
     query.setdefault('driveOptions', {})['versionDate'] = getTimeOrDeltaFromNow()
   elif myarg in {'includeshareddrives', 'includeteamdrives'}:
-    query.setdefault('driveOptions', {})['includeSharedDrives'] = getBoolean()
+    query.setdefault('driveOptions', {})['sharedDrivesOption'] = 'INCLUDED' if getBoolean() else 'INCLUDED_IF_ACCOUNT_IS_NOT_A_MEMBER'
+  elif myarg == 'shareddrivesoption':
+    query.setdefault('driveOptions', {})['sharedDrivesOption'] = getChoice(VAULT_SHARED_DRIVES_OPTION_MAP, mapChoice=True)
   elif myarg == 'driveclientsideencryption':
     query.setdefault('driveOptions', {})['clientSideEncryptedOption'] = getChoice(VAULT_CSE_OPTION_MAP, mapChoice=True)
 # hangoutsChat
@@ -40979,7 +40986,8 @@ def _validateVaultQuery(body, corpusArgumentMap):
 #	[terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
 #	[locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
 #	[responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*] [calendarversiondate <Date>|<Time>]
-#	[includeshareddrives <Boolean>] [driveversiondate <Date>|<Time>] [includeaccessinfo <Boolean>]
+#	[(includeshareddrives <Boolean>)|(shareddrivesoption included|included_if_account_is_not_a_member|not_included)]
+#	[driveversiondate <Date>|<Time>] [includeaccessinfo <Boolean>]
 #	[driveclientsideencryption any|encrypted|unencrypted]
 #	[includerooms <Boolean>]
 #	[excludedrafts <Boolean>] [mailclientsideencryption any|encrypted|unencrypted]
@@ -41050,7 +41058,7 @@ def doCreateVaultExport():
   try:
     export = callGAPI(v.matters().exports(), 'create',
                       throwReasons=[GAPI.ALREADY_EXISTS, GAPI.BAD_REQUEST, GAPI.BACKEND_ERROR, GAPI.INVALID_ARGUMENT,
-                                    GAPI.INVALID, GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN, GAPI.QUOTA_EXCEEDED],
+                                    GAPI.INVALID, GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN, GAPI.QUOTA_EXCEEDED, GAPI.NOT_FOUND],
                       matterId=matterId, body=body)
     if not returnIdOnly:
       entityActionPerformed([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_EXPORT, formatVaultNameId(export['name'], export['id'])])
@@ -41059,7 +41067,7 @@ def doCreateVaultExport():
     else:
       writeStdout(f'{export["id"]}\n')
   except (GAPI.alreadyExists, GAPI.badRequest, GAPI.backendError, GAPI.invalidArgument,
-          GAPI.invalid, GAPI.failedPrecondition, GAPI.forbidden, GAPI.quotaExceeded) as e:
+          GAPI.invalid, GAPI.failedPrecondition, GAPI.forbidden, GAPI.quotaExceeded, GAPI.notFound) as e:
     entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_EXPORT, body.get('name')], str(e))
 
 # gam delete vaultexport|export <ExportItem> matter <MatterItem>
@@ -41573,7 +41581,7 @@ def _setHoldQuery(body, queryParameters):
 #	[terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
 #	[includerooms <Boolean>]
 #	[covereddata calllogs|textmessages|voicemails]
-#	[includeshareddrives|includeteamdrives <Boolean>]
+#	[includeshareddrives <Boolean>]
 #	[showdetails|returnidonly]
 def doCreateVaultHold():
   v = buildGAPIObject(API.VAULT)
@@ -41639,7 +41647,7 @@ def doCreateVaultHold():
 #	[terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
 #	[includerooms <Boolean>]
 #	[covereddata calllogs|textmessages|voicemails]
-#	[includeshareddrives|includeteamdrives <Boolean>]
+#	[includeshareddrives <Boolean>]
 #	[showdetails]
 def doUpdateVaultHold():
   v = buildGAPIObject(API.VAULT)
