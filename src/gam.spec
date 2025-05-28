@@ -38,6 +38,10 @@ hiddenimports = [
      'gam.gamlib.yubikey',
      ]
 
+excludes = [
+    'pkg_resources',
+]
+
 runtime_hooks = []
 a = Analysis(
     ['gam/__main__.py'],
@@ -48,7 +52,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=runtime_hooks,
-    excludes=[],
+    excludes=excludes,
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=None,
