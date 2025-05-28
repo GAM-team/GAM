@@ -7,7 +7,7 @@
 - [Manage file permissions/sharing](#manage-file-permissionssharing)
 - [Display file permissions/sharing](#display-file-permissionssharing)
 - [Delete all ACLs except owner from a file](#delete-all-acls-except-owner-from-a-file)
-= [Delete all ACLs except owner from a user's My Drive](#delete-all-acls-except-owner-from-a-users-my-drive)
+- [Delete all ACLs except owner from a user's My Drive](#delete-all-acls-except-owner-from-a-users-my-drive)
 - [Change shares to User1 to shares to User2](#change-shares-to-user1-to-shares-to-user2)
 - [Map All ACLs from an old domain to a new domain](#map-all-acls-from-an-old-domain-to-a-new-domain)
 
