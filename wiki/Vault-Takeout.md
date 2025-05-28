@@ -316,8 +316,8 @@ For `corpus calendar`, you can specify the format of the exported data:
 
 For `corpus drive`, you can specify advanced search options:
 * `driveversiondate <Date>|<Time>` - Search the versions of the Drive file as of the reference date. These timestamps are in GMT and rounded down to the given date.
-* `includeshareddrives False` - Resources in shared drives where account is not a member are included in the search, this is the default
-* `includeshareddrives True` - Resources in shared drives are included in the search
+* `includeshareddrives False` - Mapped to `sharedrivesoption included_if_account_is_not_a_member`
+* `includeshareddrives True` - Mapped to `sharedrivesoption included`
 * `sharedrivesoption included` - Resources in shared drives are included in the search
 * `sharedrivesoption included_if_account_is_not_a_member` - Resources in shared drives where account is not a member are included in the search, this is the default
 * `sharedrivesoption not_included` - Resources in shared drives are not included in the search
