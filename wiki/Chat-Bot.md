@@ -103,7 +103,9 @@
 ```
 
 ## Set up a Chat Bot
-Since GAM 6.04.00, GAM is capable of acting as a Chat Bot and sending messages to Chat Rooms or direct messages to users. You first need to configure your Chat Bot.
+GAM is capable of acting as a Chat Bot and sending messages to Chat Rooms or direct messages to users.
+
+Even if you're not going to use GAM as a Chat Bot, you have to configure a Chat Bot as it is required by the Chat API in [Users - Chat](Users-Chat).
 
 * Run the command `gam setup chat`; it will point you to a URL to configure your Chat Bot.
 * Enter an App name and Description of your choosing.
