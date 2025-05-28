@@ -1,14 +1,51 @@
 # Chat Bot
-
+- [Introduction](#introduction)
+- [Set up a Chat Bot](#set-up-a-chat-bot)
 - [API documentation](#api-documentation)
 - [Definitions](#definitions)
-- [Set up a Chat Bot](#set-up-a-chat-bot)
 - [Display Rooms and Chats to which your Bot belongs](#display-rooms-and-chats-to-which-your-bot-belongs)
 - [Display Members of a Room or Chat](#display-members-of-a-room-or-chat)
 - [Create a Chat Message](#create-a-chat-message)
 - [Update a Chat Message](#update-a-chat-message)
 - [Delete a Chat Message](#delete-a-chat-message)
 - [Display a Chat Message](#display-a-chat-message)
+
+## Introduction
+To use these commands you must update your service account authorization.
+```
+gam user user@domain.com update serviceaccount
+
+[*]  4)  Chat API - Memberships (supports readonly)
+[*]  5)  Chat API - Memberships Admin (supports readonly)
+[*]  6)  Chat API - Messages (supports readonly)
+[*]  7)  Chat API - Spaces (supports readonly)
+[*]  8)  Chat API - Spaces Admin (supports readonly)
+[*]  9)  Chat API - Spaces Delete
+[*] 10)  Chat API - Spaces Delete Admin
+```
+
+Added `use_chat_admin_access` Boolean variable to `gam.cfg`. 
+```
+* When False, GAM uses user access when making all Chat API calls. For calls that support admin access,
+    this can be overridden with the asadmin command line option.
+* When True, GAM uses admin access for Chat API calls that support admin access; other calls will use user access.
+* Default: False
+```
+
+Google requires that you have a Chat Bot configured in order to use the Chat API; set up a Chat Bot as described in the next section.
+
+## Set up a Chat Bot
+GAM is capable of acting as a Chat Bot and sending messages to Chat Rooms or direct messages to users.
+
+Even if you're not going to use GAM as a Chat Bot, you have to configure a Chat Bot as it is required by the Chat API in [Users - Chat](Users-Chat).
+
+* Run the command `gam setup chat`; it will point you to a URL to configure your Chat Bot.
+* Enter an App name and Description of your choosing.
+* For the Avatar URL you can use `https://dummyimage.com/384x256/4d4d4d/0011ff.png&text=+GAM` or a public URL to an image of your own choosing.
+* In Functionality, uncheck both "Receive 1:1 messages" and "Join spaces and group conversations"
+* In Connection settings, choose "Cloud Pub/Sub" and enter `projects/<ProjectID>/topics/no-topic` for the Topic Name. Replace `<ProjectID>` with your GAM project ID. GAM doesn't yet listen to pub/sub so this option is not used.
+* In Visibility, uncheck "Make this Chat app available to specific people and groups in Domain Workspace".
+* Click Save.
 
 ## API documentation
 * https://developers.google.com/chat/concepts
@@ -101,21 +138,6 @@
         threadreply
 <ChatMessageFieldNameList> ::= "<ChatMessageFieldName>(,<ChatMessageFieldName>)*"
 ```
-
-## Set up a Chat Bot
-GAM is capable of acting as a Chat Bot and sending messages to Chat Rooms or direct messages to users.
-
-Even if you're not going to use GAM as a Chat Bot, you have to configure a Chat Bot as it is required by the Chat API in [Users - Chat](Users-Chat).
-
-* Run the command `gam setup chat`; it will point you to a URL to configure your Chat Bot.
-* Enter an App name and Description of your choosing.
-* For the Avatar URL you can use `https://dummyimage.com/384x256/4d4d4d/0011ff.png&text=+GAM` or a public URL to an image of your own choosing.
-* In Functionality, uncheck both "Receive 1:1 messages" and "Join spaces and group conversations"
-* In Connection settings, choose "Cloud Pub/Sub" and enter `projects/<ProjectID>/topics/no-topic` for the Topic Name. Replace `<ProjectID>` with your GAM project ID. GAM doesn't yet listen to pub/sub so this option is not used.
-* In Visibility, uncheck "Make this Chat app available to specific people and groups in Domain Workspace".
-* Click Save.
-
-----
 
 ## Display Rooms and Chats to which your Bot belongs
 Display the spaces to which your Chat Bot can send messages.
