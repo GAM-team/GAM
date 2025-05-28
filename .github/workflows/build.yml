@@ -449,7 +449,7 @@ jobs:
           "$PYTHON" get-pip.py
           "$PYTHON" -m pip install --upgrade pip
           "$PYTHON" -m pip install --upgrade wheel
-          "$PYTHON" -m pip install setuptools==80.8.0
+          "$PYTHON" -m pip install setuptools
           "$PYTHON" -m pip install --upgrade importlib-metadata
           "$PYTHON" -m pip install --upgrade setuptools-scm
           "$PYTHON" -m pip list
