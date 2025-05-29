@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.07.15'
+__version__ = '7.07.16'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -23759,12 +23759,14 @@ CROS_FIELDS_CHOICE_MAP = {
   'autoupdatethrough': 'autoUpdateThrough',
   'backlightinfo': 'backlightInfo',
   'bootmode': 'bootMode',
+  'chromeostype': 'chromeOsType',
   'cpuinfo': 'cpuInfo',
   'cpustatusreports': 'cpuStatusReports',
   'deprovisionreason': 'deprovisionReason',
   'devicefiles': ['deviceFiles.type', 'deviceFiles.createTime'],
   'deviceid': 'deviceId',
   'devicelicensetype': 'deviceLicenseType',
+  'diskspaceusage': 'diskSpaceUsage',
   'diskvolumereports': 'diskVolumeReports',
   'dockmacaddress': 'dockMacAddress',
   'ethernetmacaddress': 'ethernetMacAddress',
@@ -23772,6 +23774,7 @@ CROS_FIELDS_CHOICE_MAP = {
   'extendedsupporteligible': 'extendedSupportEligible',
   'extendedsupportstart': 'extendedSupportStart',
   'extendedsupportenabled': 'extendedSupportEnabled',
+  'faninfo': 'fanInfo',
   'firmwareversion': 'firmwareVersion',
   'firstenrollmenttime': 'firstEnrollmentTime',
   'lastdeprovisiontimestamp': 'lastDeprovisionTimestamp',

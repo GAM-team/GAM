@@ -2396,12 +2396,14 @@ gam <CrOSTypeEntity> update <CrOSAttribute>+ [quickcrosmove [<Boolean>]] [nobatc
         autoupdatethrough|
         backlightinfo|
         bootmode|
+        chromeostype|
         cpuinfo|
         cpustatusreports|
         deprovisionreason|
         devicefiles|
         deviceid|
         devicelicensetype|
+        diskspaceusage|
         diskvolumereports|
         dockmacaddress|
         ethernetmacaddress|
@@ -2409,6 +2411,7 @@ gam <CrOSTypeEntity> update <CrOSAttribute>+ [quickcrosmove [<Boolean>]] [nobatc
         extendedsupporteligible|
         extendedsupportstart|
         extendedsupportenabled|
+        faninfo|
         firmwareversion|
         firstenrollmenttime|
         lastdeprovisiontimestamp|
