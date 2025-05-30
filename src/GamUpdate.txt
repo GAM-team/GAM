@@ -1,3 +1,8 @@
+7.07.17
+
+Added option `oneuserperrow` to `gam print devices` to have each of a
+device's users displayed on a separate row with all of the other device fields.
+
 7.07.16
 
 Added `chromeostype`, `diskspaceusage` and `faninfo` to `<CrOSFieldName>` for use in `gam info|print cros`.

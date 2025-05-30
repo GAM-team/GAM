@@ -4119,7 +4119,7 @@ gam print devices [todrive <ToDriveAttribute>*]
         <DeviceFieldName>* [fields <DeviceFieldNameList>] [userfields <DeviceUserFieldNameList>]
         [orderby <DeviceOrderByFieldName> [ascending|descending]]
         [all|company|personal|nocompanydevices|nopersonaldevices]
-        [nodeviceusers]
+        [nodeviceusers|oneuserperrow]
         [formatjson [quotechar <Character>]]
         [showitemcountonly]
 

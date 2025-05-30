@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.07.16'
+__version__ = '7.07.17'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -29587,7 +29587,7 @@ DEVICE_ORDERBY_CHOICE_MAP = {
 #	<DeviceFieldName>* [fields <DeviceFieldNameList>] [userfields <DeviceUserFieldNameList>]
 #	[orderby <DeviceOrderByFieldName> [ascending|descending]]
 #	[all|company|personal|nocompanydevices|nopersonaldevices]
-#	[nodeviceusers]
+#	[nodeviceusers|oneuserperrow]
 #	[formatjson [quotechar <Character>]]
 # 	[showitemcountonly]
 def doPrintCIDevices():
@@ -29603,7 +29603,7 @@ def doPrintCIDevices():
   queries = [None]
   view, entityType = DEVICE_VIEW_CHOICE_MAP['all']
   getDeviceUsers = True
-  showItemCountOnly = False
+  oneUserPerRow = showItemCountOnly = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -29618,6 +29618,8 @@ def doPrintCIDevices():
       view, entityType = DEVICE_VIEW_CHOICE_MAP[myarg]
     elif myarg == 'nodeviceusers':
       getDeviceUsers = False
+    elif myarg in {'oneuserperrow', 'oneitemperrow'}:
+      getDeviceUsers = oneUserPerRow = True
     elif getFieldsList(myarg, DEVICE_FIELDS_CHOICE_MAP, fieldsList, initialField='name'):
       pass
     elif getFieldsList(myarg, DEVICEUSER_FIELDS_CHOICE_MAP, userFieldsList, initialField='name', fieldsArg='userfields'):
@@ -29631,6 +29633,8 @@ def doPrintCIDevices():
   fields = getItemFieldsFromFieldsList('devices', fieldsList)
   userFields = getItemFieldsFromFieldsList('deviceUsers', userFieldsList)
   substituteQueryTimes(queries, queryTimes)
+  if FJQC.formatJSON and oneUserPerRow:
+    csvPF.SetJSONTitles(['name', 'user.name', 'JSON'])
   itemCount = 0
   for query in queries:
     printGettingAllAccountEntities(entityType, query)
@@ -29672,13 +29676,26 @@ def doPrintCIDevices():
       except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
         entityActionFailedWarning([entityType, None], str(e))
     for device in devices:
-      row = flattenJSON(device, timeObjects=DEVICE_TIME_OBJECTS)
-      if not FJQC.formatJSON:
-        csvPF.WriteRowTitles(row)
-      elif csvPF.CheckRowTitles(row):
-        csvPF.WriteRowNoFilter({'name': device['name'],
-                                'JSON': json.dumps(cleanJSON(device, timeObjects=DEVICE_TIME_OBJECTS),
-                                                   ensure_ascii=False, sort_keys=True)})
+      if not oneUserPerRow or 'users' not in device:
+        row = flattenJSON(device, timeObjects=DEVICE_TIME_OBJECTS)
+        if not FJQC.formatJSON:
+          csvPF.WriteRowTitles(row)
+        elif csvPF.CheckRowTitles(row):
+          csvPF.WriteRowNoFilter({'name': device['name'],
+                                  'JSON': json.dumps(cleanJSON(device, timeObjects=DEVICE_TIME_OBJECTS),
+                                                     ensure_ascii=False, sort_keys=True)})
+      else:
+        deviceUsers = device.pop('users')
+        baserow = flattenJSON(device, timeObjects=DEVICE_TIME_OBJECTS)
+        for deviceUser in deviceUsers:
+          row = flattenJSON({'user': deviceUser}, flattened=baserow.copy(), timeObjects=DEVICE_TIME_OBJECTS)
+          if not FJQC.formatJSON:
+            csvPF.WriteRowTitles(row)
+          elif csvPF.CheckRowTitles(row):
+            device['user'] = deviceUser
+            csvPF.WriteRowNoFilter({'name': device['name'], 'user.name': deviceUser['name'],
+                                    'JSON': json.dumps(cleanJSON(device, timeObjects=DEVICE_TIME_OBJECTS),
+                                                       ensure_ascii=False, sort_keys=True)})
   if showItemCountOnly:
     writeStdout(f'{itemCount}\n')
     return
