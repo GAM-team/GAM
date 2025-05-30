@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.07.17
+
+Added option `oneuserperrow` to `gam print devices` to have each of a
+device's users displayed on a separate row with all of the other device fields.
+
 ### 7.07.16
 
 Added `chromeostype`, `diskspaceusage` and `faninfo` to `<CrOSFieldName>` for use in `gam info|print cros`.

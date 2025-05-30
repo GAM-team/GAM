@@ -210,7 +210,7 @@ gam print devices [todrive <ToDriveAttribute>*]
         <DeviceFieldName>* [fields <DeviceFieldNameList>] [userfields <DeviceUserFieldNameList>]
         [orderby <DeviceOrderByFieldName> [ascending|descending]]
         [all|company|personal|nocompanydevices|nopersonaldevices]
-        [nodeviceusers]
+        [nodeviceusers|oneuserperrow]
         [formatjson [quotechar <Character>]]
 ```
 By default, all devices are displayed; use the query options to limit the display.
@@ -230,6 +230,9 @@ Select the view of devices to display:
 
 By default, Gam makes additional API calls to display the device users for the devices;
 use `nodeviceuser` to suppress making the additional calls.
+
+By default, when device users are displayed, they are all displayed on one row;
+use `oneuserperrow` to have each of a device's users displayed on a separate row with all of the other device fields.
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.
