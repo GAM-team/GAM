@@ -24370,8 +24370,10 @@ def doPrintCrOSDevices(entityList=None):
       return
     row = {}
     for attrib in cros:
-      if attrib not in {'kind', 'etag', 'diskSpaceUsage', 'osUpdateStatus', 'tpmVersionInfo', 'activeTimeRanges', 'recentUsers',
-                        'deviceFiles', 'cpuStatusReports', 'diskVolumeReports', 'lastKnownNetwork', 'screenshotFiles', 'systemRamFreeReports'}:
+      if attrib in {'cpuInfo', 'backlightInfo', 'fanInfo'}:
+        flattenJSON({attrib: cros[attrib]}, flattened=row)
+      elif attrib not in {'kind', 'etag', 'diskSpaceUsage', 'osUpdateStatus', 'tpmVersionInfo', 'activeTimeRanges', 'recentUsers',
+                          'deviceFiles', 'cpuStatusReports', 'diskVolumeReports', 'lastKnownNetwork', 'screenshotFiles', 'systemRamFreeReports'}:
         if attrib not in CROS_TIME_OBJECTS:
           row[attrib] = cros[attrib]
         else:
@@ -24382,8 +24384,6 @@ def doPrintCrOSDevices(entityList=None):
                    not cpuStatusReports and not diskVolumeReports and not lastKnownNetworks and not screenshotFiles and not systemRamFreeReports):
       csvPF.WriteRowTitles(row)
       return
-    if 'cpuInfo' in cros:
-      flattenJSON({'cpuInfo': cros['cpuInfo']}, flattened=row)
     lenATR = len(activeTimeRanges)
     lenRU = len(recentUsers)
     lenDF = len(deviceFiles)
