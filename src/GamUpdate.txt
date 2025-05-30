@@ -2,6 +2,8 @@
 
 Added `chromeostype`, `diskspaceusage` and `faninfo` to `<CrOSFieldName>` for use in `gam info|print cros`.
 
+Fixed bugs/cleaned output in  `gam info|print cros`.
+
 7.07.15
 
 Added option `shareddrivesoption included|included_if_account_is_not_a_member|not_included` to `gam create vaultexport`.

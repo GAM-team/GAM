@@ -23822,6 +23822,7 @@ CROS_SCALAR_PROPERTY_PRINT_ORDER = [
   'notes',
   'serialNumber',
   'status',
+  'chromeOsType',
   'deviceLicenseType',
   'model',
   'firmwareVersion',
@@ -23842,6 +23843,7 @@ CROS_SCALAR_PROPERTY_PRINT_ORDER = [
   'manufactureDate',
   'supportEndDate',
   'autoUpdateExpiration',
+  'autoUpdateThrough',
   'willAutoRenew',
   ]
 
@@ -23866,8 +23868,11 @@ CROS_TIME_OBJECTS = {
   'lastDeprovisionTimestamp',
   'lastEnrollmentTime',
   'lastSync',
+  'rebootTime',
   'reportTime',
   'supportEndDate',
+  'updateTime',
+  'updateCheckTime',
   }
 CROS_FIELDS_WITH_CRS_NLS = {'notes'}
 CROS_START_ARGUMENTS = ['start', 'startdate', 'oldestdate']
@@ -23984,13 +23989,13 @@ def infoCrOSDevices(entityList):
             printKeyValueWithCRsNLs(up, cros[up])
         else:
           printKeyValueList([up, formatLocalTime(cros[up])])
-    up = 'tpmVersionInfo'
-    if up in cros:
-      printKeyValueList([up, ''])
-      Ind.Increment()
-      for key, value in sorted(iter(cros[up].items())):
-        printKeyValueList([key, value])
-      Ind.Decrement()
+    for up in ['diskSpaceUsage', 'osUpdateStatus', 'tpmVersionInfo']:
+      if up in cros:
+        printKeyValueList([up, ''])
+        Ind.Increment()
+        for key, value in sorted(iter(cros[up].items())):
+          printKeyValueList([key, value])
+        Ind.Decrement()
     if not noLists:
       activeTimeRanges = _filterActiveTimeRanges(cros, True, listLimit, startDate, endDate, activeTimeRangesOrder)
       if activeTimeRanges:
@@ -24044,6 +24049,9 @@ def infoCrOSDevices(entityList):
         entityActionNotPerformedWarning([Ent.CROS_DEVICE, deviceId, Ent.DEVICE_FILE, downloadfile],
                                         Msg.NO_ENTITIES_FOUND.format(Ent.Plural(Ent.DEVICE_FILE)), i, count)
         Act.Set(Act.INFO)
+      cpuInfo = _filterBasicList(cros, 'cpuInfo', True, listLimit)
+      if cpuInfo:
+        showJSON('cpuInfo', cpuInfo, dictObjectsKey={'cpuInfo': 'model'})
       cpuStatusReports = _filterCPUStatusReports(cros, True, listLimit, startTime, endTime)
       if cpuStatusReports:
         printKeyValueList(['cpuStatusReports'])
@@ -24061,6 +24069,12 @@ def infoCrOSDevices(entityList):
             printKeyValueList(['cpuUtilizationPercentageInfo', cpuStatusReport['cpuUtilizationPercentageInfo']])
           Ind.Decrement()
         Ind.Decrement()
+      backlightInfo = _filterBasicList(cros, 'backLightInfo', True, listLimit)
+      if backlightInfo:
+        showJSON('backlightInfo', backlightInfo, dictObjectsKey={'backlightInfo': 'path'})
+      fanInfo = _filterBasicList(cros, 'fanInfo', True, listLimit)
+      if fanInfo:
+        showJSON('fanInfo', fanInfo)
       diskVolumeReports = _filterBasicList(cros, 'diskVolumeReports', True, listLimit)
       if diskVolumeReports:
         printKeyValueList(['diskVolumeReports'])
@@ -24287,7 +24301,7 @@ CROS_ENTITIES_MAP = {
   }
 
 CROS_INDEXED_TITLES = ['activeTimeRanges', 'recentUsers', 'deviceFiles',
-                       'cpuStatusReports', 'diskVolumeReports', 'lastKnownNetwork', 'screenshotFiles', 'systemRamFreeReports']
+                       'cpuStatusReports', 'cpuInfo', 'backlightInfo', 'fanInfo', 'diskVolumeReports', 'lastKnownNetwork', 'screenshotFiles', 'systemRamFreeReports']
 
 # gam print cros [todrive <ToDriveAttribute>*]
 #	[(query <QueryCrOS>)|(queries <QueryCrOSList>) [querytime<String> <Time>]
@@ -24334,12 +24348,15 @@ def doPrintCrOSDevices(entityList=None):
     if not noLists and not selectedLists:
       csvPF.WriteRowTitles(flattenJSON(cros, listLimit=listLimit, timeObjects=CROS_TIME_OBJECTS))
       return
-    attrib = 'tpmVersionInfo'
-    if attrib in cros:
-      for key, value in sorted(iter(cros[attrib].items())):
-        attribKey = f'{attrib}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{key}'
-        cros[attribKey] = value
-      cros.pop(attrib)
+    for attrib in ['diskSpaceUsage', 'osUpdateStatus', 'tpmVersionInfo']:
+      if attrib in cros:
+        for key, value in sorted(iter(cros[attrib].items())):
+          attribKey = f'{attrib}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{key}'
+          if key not in CROS_TIME_OBJECTS:
+            cros[attribKey] = value
+          else:
+            cros[attribKey] = formatLocalTime(value)
+        cros.pop(attrib)
     activeTimeRanges = _filterActiveTimeRanges(cros, selectedLists.get('activeTimeRanges', False), listLimit, startDate, endDate, activeTimeRangesOrder)
     recentUsers = _filterRecentUsers(cros, selectedLists.get('recentUsers', False), listLimit)
     deviceFiles = _filterDeviceFiles(cros, selectedLists.get('deviceFiles', False), listLimit, startTime, endTime)
@@ -24353,7 +24370,7 @@ def doPrintCrOSDevices(entityList=None):
       return
     row = {}
     for attrib in cros:
-      if attrib not in {'kind', 'etag', 'tpmVersionInfo', 'recentUsers', 'activeTimeRanges',
+      if attrib not in {'kind', 'etag', 'diskSpaceUsage', 'osUpdateStatus', 'tpmVersionInfo', 'activeTimeRanges', 'recentUsers',
                         'deviceFiles', 'cpuStatusReports', 'diskVolumeReports', 'lastKnownNetwork', 'screenshotFiles', 'systemRamFreeReports'}:
         if attrib not in CROS_TIME_OBJECTS:
           row[attrib] = cros[attrib]
@@ -24365,6 +24382,8 @@ def doPrintCrOSDevices(entityList=None):
                    not cpuStatusReports and not diskVolumeReports and not lastKnownNetworks and not screenshotFiles and not systemRamFreeReports):
       csvPF.WriteRowTitles(row)
       return
+    if 'cpuInfo' in cros:
+      flattenJSON({'cpuInfo': cros['cpuInfo']}, flattened=row)
     lenATR = len(activeTimeRanges)
     lenRU = len(recentUsers)
     lenDF = len(deviceFiles)
