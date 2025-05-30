@@ -106,12 +106,14 @@ The second form is backwards compatible with Legacy GAM and selection with `<CrO
         autoupdatethrough|
         backlightinfo|
         bootmode|
+        chromeostype|
         cpuinfo|
         cpustatusreports|
         deprovisionreason|
         devicefiles|
         deviceid|
         devicelicensetype|
+        diskspaceusage|
         diskvolumereports|
         dockmacaddress|
         ethernetmacaddress|
@@ -119,6 +121,7 @@ The second form is backwards compatible with Legacy GAM and selection with `<CrO
         extendedsupporteligible|
         extendedsupportstart|
         extendedsupportenabled|
+        faninfo|
         firmwareversion|
         firstenrollmenttime|
         lastdeprovisiontimestamp|
