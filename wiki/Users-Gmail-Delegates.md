@@ -1,4 +1,5 @@
 # Users - Gmail - Delegates
+- [Notes](#notes)
 - [API documentation](#api-documentation)
 - [Definitions](#definitions)
 - [Aliases](#aliases)
@@ -7,6 +8,11 @@
 - [Update Gmail delegates](#update-gmail-delegates)
 - [Display Gmail delegates](#display-gmail-delegates)
 - [Delete all delegates for a user](#delete-all-delegates-for-a-user)
+
+## Notes
+
+To use Gmail delegation, the delegator and delagatee must be in org units where
+mail delegation is enabled. In the admin console, go to Apps/Google Workspace/Gmail/User Settings.
 
 ## API documentation
 * [Gmail API - Delegates](https://developers.google.com/gmail/api/v1/reference/users.settings.delegates)
