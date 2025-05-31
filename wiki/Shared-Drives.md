@@ -15,6 +15,7 @@
 - [Display Shared Drive Counts](#display-shared-drive-counts)
 - [Display List of Shared Drives in an Organizational Unit](#display-list-of-shared-drives-in-an-organizational-unit)
 - [Display Count of Shared Drives in an Organizational Unit](#display-count-of-shared-drives-in-an-organizational-unit)
+- [Display Shared Drive Organizers](#display-shared-drive-organizers)
 - [Display all Shared Drives with no members](#display-all-shared-drives-with-no-members)
 - [Display all Shared Drives with no organizers](#display-all-shared-drives-with-no-organizers)
 - [Display all Shared Drives with a specific organizer](#display-all-shared-drives-with-a-specific-organizer)
@@ -152,6 +153,9 @@
         type|
         withlink
 <DrivePermissionsFieldNameList> ::= "<DrivePermissionsFieldName>(,<DrivePermissionsFieldName>)*"
+
+<OrganizerType> ::= user|group
+<OrganizerTypeList> ::= "<OrganizerType>(,<OrganizerType>)*"
 
 <QueryTeamDrive> ::= <String> See: https://developers.google.com/drive/api/v3/search-parameters
 <SharedDriveACLRole> ::=
@@ -406,6 +410,36 @@ gam user admin@domain.com print teamdrives adminaccess
 Print information about Shared Drives that have admin@domain.com as a member.
 ```
 gam user admin@domain.com print teamdrives
+```
+
+## - Display Shared Drive Organizers
+The following command can be used instead of the `GetTeamDriveOrganizers.py` script.
+
+```
+gam [<UserTypeEntity>] print shareddriveorganizers [todrive <ToDriveAttribute>*]
+        [adminaccessasadmin] [shareddriveadminquery|query <QuerySharedDrive>]
+        [orgunit|org|ou <OrgUnitPath>]
+        [matchname <REMatchPattern>]
+        [domainlist <DomainList>]
+        [includetypes <OrganizerTypeList>]
+        [oneorganizer [<Boolean>]]
+        [shownorganizerdrives [false|true|only]]
+        [includefileorganizers [<Boolean>]]
+        [delimiter <Character>]
+```
+For multiple organizers:
+* `delimiter <Character>` - Separate `organizers` entries with `<Character>`; the default value is `csv_output_field_delimiter` from `gam.cfg`.
+
+The command defaults match the script defaults:
+* `domainlist` - All domains
+* `includetypes` - user,groups
+* `oneorganizer` - False
+* `shownoorganizerdrives` - True
+* `includefileorganizers` - False
+
+For example, to get a single organizer from your domain for all Shared Drives including no organizer drives:
+```
+gam redirect csv ./TeamDriveOrganizers.csv print shareddriveorganizers domainlist mydomain.com includetypes user oneorganizer shownoorganizerdrives
 ```
 
 ## Display all Shared Drives with no members
@@ -795,26 +829,8 @@ gam redirect stdout ./DeleteSharedDrives.txt multiprocess redirect stderr stdout
 
 ## Delete old empty Shared Drives
 ```
-# Get a list of Shared Drives created before one year ago; alter date<-1y as required
-gam config csv_output_row_filter "createdTime:date<-1y" redirect csv ./TeamDrives.csv print teamdrives fields id,name,createdtime
-
-# You'll need a list of Shared Drive IDs and organizers; get ACLs for Shared Drives from above
-gam redirect csv ./TeamDriveACLs.csv multiprocess csv ./TeamDrives.csv gam print drivefileacls "~id" fields id,emailaddress,role,type,deleted
-
-# Customize script: https://github.com/taers232c/GAM-Scripts3/blob/master/GetTeamDriveOrganizers.py
-DOMAIN_LIST = ['yourdomain.org']
-
-INCLUDE_TYPES = {
-  'user': True,
-  'group': False,
-  }
-
-ONE_ORGANIZER = True
-SHOW_NO_ORGANIZER_DRIVES = True
-INCLUDE_FILE_ORGANIZERS = False
-
-# Run script
-python GetTeamDriveOrganizers.py TeamDriveACLs.csv TeamDrives.csv TeamDriveOrganizers.csv
+# Get a list of Shared Drives organizers for Shared Drives created before one year ago; alter date<-1y as required.
+gam config csv_output_row_filter "createdTime:date<-1y" redirect csv ./TeamDriveOrganizers.csv print shareddriveorganizers domainlist mydomain.com includetypes user oneorganizer shownoorganizerdrives
 
 # Inspect TeamDriveOrganizers.csv, you'll have to deal with Shared Drives with no organizer/manager
 

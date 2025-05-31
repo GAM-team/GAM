@@ -10,6 +10,33 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.08.00
+
+Added the following command that can be used instead of the `GetTeamDriveOrganizers.py` script.
+
+gam [<UserTypeEntity>] print shareddriveorganizers [todrive <ToDriveAttribute>*]
+        [adminaccessasadmin] [shareddriveadminquery|query <QuerySharedDrive>]
+        [orgunit|org|ou <OrgUnitPath>]
+        [matchname <REMatchPattern>]
+        [domainlist <DomainList>]
+        [includetypes <OrganizerTypeList>]
+        [oneorganizer [<Boolean>]]
+        [shownorganizerdrives [false|true|only]]
+        [includefileorganizers [<Boolean>]]
+        [delimiter <Character>]
+```
+The command defaults match the script defaults:
+* `domainlist` - All domains
+* `includetypes` - user,groups
+* `oneorganizer` - False
+* `shownoorganizerdrives` - True
+* `includefileorganizers` - False
+
+For example, to get a single organizer from your domain for all Shared Drives including no organizer drives:
+```
+gam redirect csv ./TeamDriveOrganizers.csv print shareddriveorganizers domainlist mydomain.com includetypes user oneorganizer shownoorganizerdrives
+```
+
 ### 7.07.17
 
 Added option `oneuserperrow` to `gam print devices` to have each of a

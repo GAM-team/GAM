@@ -12,6 +12,7 @@
   - [Change Shared Drive visibility](#change-shared-drive-visibility)
 - [Display Shared Drives](#display-shared-drives)
 - [Display Shared Drive Counts](#display-shared-drive-counts)
+- [Display Shared Drive Organizers](#display-shared-drive-organizers)
 - [Manage Shared Drive access](#manage-shared-drive-access)
 - [Display Shared Drive access](#display-shared-drive-access)
   - [Display Shared Drive access for specific Shared Drives](#display-shared-drive-access-for-specific-shared-drives)
@@ -386,6 +387,36 @@ count=$(gam user user@domain.com print shareddrives showitemcountonly)
 Windows PowerShell
 count = & gam user user@domain.com print shareddrives showitemcountonly
 ```
+## - Display Shared Drive Organizers
+The following command can be used instead of the `GetTeamDriveOrganizers.py` script.
+
+```
+gam <UserTypeEntity> print shareddriveorganizers [todrive <ToDriveAttribute>*]
+        [adminaccessasadmin] [shareddriveadminquery|query <QuerySharedDrive>]
+        [orgunit|org|ou <OrgUnitPath>]
+        [matchname <REMatchPattern>]
+        [domainlist <DomainList>]
+        [includetypes <OrganizerTypeList>]
+        [oneorganizer [<Boolean>]]
+        [shownorganizerdrives [false|true|only]]
+        [includefileorganizers [<Boolean>]]
+        [delimiter <Character>]
+```
+For multiple organizers:
+* `delimiter <Character>` - Separate `organizers` entries with `<Character>`; the default value is `csv_output_field_delimiter` from `gam.cfg`.
+
+The command defaults match the script defaults:
+* `domainlist` - All domains
+* `includetypes` - user,groups
+* `oneorganizer` - False
+* `shownoorganizerdrives` - True
+* `includefileorganizers` - False
+
+For example, to get a single organizer from your domain for all Shared Drives including no organizer drives:
+```
+gam redirect csv ./TeamDriveOrganizers.csv print shareddriveorganizers domainlist mydomain.com includetypes user oneorganizer shownoorganizerdrives
+```
+
 ## Manage Shared Drive access
 These commands must be issued by a user with Shared Drive permission role organizer.
 ### Process single ACLs.
