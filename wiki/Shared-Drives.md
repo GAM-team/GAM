@@ -30,6 +30,7 @@
 - [Display ACLs for Shared Drives with all organizers outside of your domain](#display-acls-for-shared-drives-with-all-organizers-outside-of-your-domain)
 - [Display ACLs for Shared Drives with all ACLs outside of your domain](#display-acls-for-shared-drives-with-all-acls-outside-of-your-domain)
 - [Clean up scammed Shared Drives](#clean-up-scammed-shared-drives)
+- [Delete old empty Shared Drives](#delete-old-empty-shared-drives)
 
 ## API documentation
 * [Drive API - Drives](https://developers.google.com/drive/api/reference/rest/v3/drives)
@@ -790,4 +791,38 @@ The `allowitemdeletion` option allows deletion of non-empty Shared Drives. This 
 This is not reversible, proceed with caution.
 ```
 gam redirect stdout ./DeleteSharedDrives.txt multiprocess redirect stderr stdout csv ./SharedDriveACLsAllExternal.csv gam delete teamdrive "~id" allowitemdeletion
+```
+
+## Delete old empty Shared Drives
+```
+# Get a list of Shared Drives created before one year ago; alter date<-1y as required
+gam config csv_output_row_filter "createdTime:date<-1y" redirect csv ./TeamDrives.csv print teamdrives fields id,name,createdtime
+
+# You'll need a list of Shared Drive IDs and organizers; get ACLs for Shared Drives from above
+gam redirect csv ./TeamDriveACLs.csv multiprocess csv ./TeamDrives.csv gam print drivefileacls "~id" fields id,emailaddress,role,type,deleted
+
+# Customize script: https://github.com/taers232c/GAM-Scripts3/blob/master/GetTeamDriveOrganizers.py
+DOMAIN_LIST = ['yourdomain.org']
+
+INCLUDE_TYPES = {
+  'user': True,
+  'group': False,
+  }
+
+ONE_ORGANIZER = True
+SHOW_NO_ORGANIZER_DRIVES = True
+INCLUDE_FILE_ORGANIZERS = False
+
+# Run script
+python GetTeamDriveOrganizers.py TeamDriveACLs.csv TeamDrives.csv TeamDriveOrganizers.csv
+
+# Inspect TeamDriveOrganizers.csv, you'll have to deal with Shared Drives with no organizer/manager
+
+# Get old empty Shared Drives
+gam config num_threads 10 csv_input_row_filter "organizers:regex:^.+$" csv_output_row_filter "Total:count=0" redirect csv ./OldEmptySharedDrives.csv multiprocess redirect stderr - multiprocess csv ./TeamDriveOrganizers.csv gam user "~organizers" print filecounts select teamdriveid "~id" showsize
+
+# Inspect OldEmptySharedDrives.csv, if you're confident of the results, proceed
+
+# Delete old empty Shared Drives
+gam redirect stdout ./DeleteOldEmptySharedDrives.txt multiprocess redirect stderr stdout csv ./OldEmptySharedDrives.csv gam user "~User" delete shareddrive "~id"
 ```
