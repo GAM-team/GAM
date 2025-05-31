@@ -1,3 +1,31 @@
+7.08.00
+
+Added the following command that can be used instead of the `GetTeamDriveOrganizers.py` script.
+
+```
+gam [<UserTypeEntity>] print shareddriveorganizers [todrive <ToDriveAttribute>*]
+        [adminaccess|asadmin] [shareddriveadminquery|query <QuerySharedDrive>]
+        [orgunit|org|ou <OrgUnitPath>]
+        [matchname <REMatchPattern>]
+        [domainlist <DomainList>]
+        [includetypes <OrganizerTypeList>]
+        [oneorganizer [<Boolean>]]
+        [shownorganizerdrives [false|true|only]]
+        [includefileorganizers [<Boolean>]]
+        [delimiter <Character>]
+```
+The command defaults match the script defaults:
+* `domainlist` - All domains
+* `includetypes` - user,groups
+* `oneorganizer` - False
+* `shownoorganizerdrives` - True
+* `includefileorganizers` - False
+
+For example, to get a single organizer from your domain for all Shared Drives including no organizer drives:
+```
+gam redirect csv ./TeamDriveOrganizers.csv print shareddriveorganizers domainlist mydomain.com includetypes user oneorganizer shownoorganizerdrives
+```
+
 7.07.17
 
 Added option `oneuserperrow` to `gam print devices` to have each of a

@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.07.17'
+__version__ = '7.08.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -17102,11 +17102,11 @@ DATA_TRANSFER_SORT_TITLES = ['id', 'requestTime', 'oldOwnerUserEmail', 'newOwner
 
 # gam print datatransfers|transfers [todrive <ToDriveAttribute>*]
 #	[olduser|oldowner <UserItem>] [newuser|newowner <UserItem>]
-#	[status <String>] [delimiter <Character>]]
+#	[status <String>] [delimiter <Character>]
 #	(addcsvdata <FieldName> <String>)*
 # gam show datatransfers|transfers
 #	[olduser|oldowner <UserItem>] [newuser|newowner <UserItem>]
-#	[status <String>] [delimiter <Character>]]
+#	[status <String>] [delimiter <Character>]
 def doPrintShowDataTransfers():
   dt = buildGAPIObject(API.DATATRANSFER)
   apps = getTransferApplications(dt)
@@ -66050,6 +66050,159 @@ def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
 def doPrintShowSharedDriveACLs():
   printShowSharedDriveACLs([_getAdminEmail()], True)
 
+PRINT_ORGANIZER_TYPES = {'group', 'user'}
+
+# gam [<UserTypeEntity>] print shareddriveorganizers [todrive <ToDriveAttribute>*]
+#	[adminaccess|asadmin] [shareddriveadminquery|query <QuerySharedDrive>]
+#	[matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
+#	[domainlist <DomainList>]
+#	[includetypes user|group]
+#	[oneorganizer [<Boolean>]]
+#	[shownorganizerdrives false|true|only]
+#	[includefileorganizers [<Boolean>]]
+#	[delimiter <Character>]
+def printSharedDriveOrganizers(users, useDomainAdminAccess=False):
+  csvPF = CSVPrintFile(['id', 'name', 'organizers', 'createdTime'], 'sortall')
+  delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
+  roles = set(['organizer'])
+  includeTypes = set()
+  showNoOrganizerDrives = SHOW_NO_PERMISSIONS_DRIVES_CHOICE_MAP['false']
+  fieldsList = ['role', 'type', 'emailAddress']
+  cd = orgUnitId = query = matchPattern = None
+  domainList = []
+  oneOrganizer = False
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif myarg == 'delimiter':
+      delimiter = getCharacter()
+    elif myarg in {'teamdriveadminquery', 'shareddriveadminquery', 'query'}:
+      queryLocation = Cmd.Location()
+      query = getString(Cmd.OB_QUERY, minLen=0) or None
+      if query:
+        query = mapQueryRelativeTimes(query, ['createdTime'])
+    elif myarg == 'matchname':
+      matchPattern = getREPattern(re.IGNORECASE)
+    elif myarg in {'ou', 'org', 'orgunit'}:
+      orgLocation = Cmd.Location()
+      if cd is None:
+        cd = buildGAPIObject(API.DIRECTORY)
+      orgUnitPath, orgUnitId = getOrgUnitId(cd)
+      orgUnitId = orgUnitId[3:]
+      orgUnitInfo = {'orgUnit': orgUnitPath, 'orgUnitId': orgUnitId}
+    elif myarg in ADMIN_ACCESS_OPTIONS:
+      useDomainAdminAccess = True
+    elif myarg == 'domainlist':
+      domainList = set(getString(Cmd.OB_DOMAIN_NAME_LIST).replace(',', ' ').lower().split())
+    elif myarg == 'includetypes':
+      for itype in getString(Cmd.OB_ORGANIZER_TYPE_LIST).lower().replace(',', ' ').split():
+        if itype in PRINT_ORGANIZER_TYPES:
+          includeTypes.add(itype)
+        else:
+          invalidChoiceExit(itype, PRINT_ORGANIZER_TYPES, True)
+    elif myarg == 'oneorganizer':
+      oneOrganizer = getBoolean()
+    elif myarg == 'shownoorganizerdrives':
+      showNoOrganizerDrives = getChoice(SHOW_NO_PERMISSIONS_DRIVES_CHOICE_MAP, defaultChoice=1, mapChoice=True)
+    elif myarg in {'includefileorganizers', 'includecontentmanagers'}:
+      if getBoolean():
+        roles.add('fileOrganizer')
+    else:
+      unknownArgumentExit()
+  if query and not useDomainAdminAccess:
+    Cmd.SetLocation(queryLocation-1)
+    usageErrorExit(Msg.ONLY_ADMINISTRATORS_CAN_PERFORM_SHARED_DRIVE_QUERIES)
+  if orgUnitId is not None:
+    if not useDomainAdminAccess:
+      Cmd.SetLocation(orgLocation-1)
+      usageErrorExit(Msg.ONLY_ADMINISTRATORS_CAN_SPECIFY_SHARED_DRIVE_ORGUNIT)
+    csvPF.AddTitles(['orgUnit', 'orgUnitId'])
+  if not includeTypes:
+    includeTypes = PRINT_ORGANIZER_TYPES
+  fields = getItemFieldsFromFieldsList('permissions', fieldsList, True)
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, drive = buildGAPIServiceObject(API.DRIVE3, user, i, count)
+    if not drive:
+      continue
+    if useDomainAdminAccess:
+      printGettingAllAccountEntities(Ent.SHAREDDRIVE, query)
+      pageMessage = getPageMessage()
+    else:
+      printGettingAllEntityItemsForWhom(Ent.SHAREDDRIVE, user, i, count, query)
+      pageMessage = getPageMessageForWhom()
+    try:
+      feed = callGAPIpages(drive.drives(), 'list', 'drives',
+                           pageMessage=pageMessage,
+                           throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID_QUERY, GAPI.INVALID,
+                                                                       GAPI.QUERY_REQUIRES_ADMIN_CREDENTIALS,
+                                                                       GAPI.NO_LIST_TEAMDRIVES_ADMINISTRATOR_PRIVILEGE,
+                                                                       GAPI.FILE_NOT_FOUND],
+                           q=query, useDomainAdminAccess=useDomainAdminAccess,
+                           fields='nextPageToken,drives(id,name,createdTime,orgUnitId)', pageSize=100)
+    except (GAPI.invalidQuery, GAPI.invalid, GAPI.queryRequiresAdminCredentials,
+            GAPI.noListTeamDrivesAdministratorPrivilege, GAPI.fileNotFound) as e:
+      entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE, None], str(e), i, count)
+      continue
+    except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
+      continue
+    matchFeed = []
+    jcount = len(feed)
+    j = 0
+    for shareddrive in feed:
+      j += 1
+      if ((matchPattern is not None and matchPattern.match(shareddrive['name']) is None) or
+          (orgUnitId is not None and orgUnitId != shareddrive.get('orgUnitId'))):
+        continue
+      printGettingAllEntityItemsForWhom(Ent.PERMISSION, shareddrive['name'], j, jcount)
+      shareddrive['createdTime'] = formatLocalTime(shareddrive['createdTime'])
+      shareddrive['organizers'] = []
+      try:
+        permissions = callGAPIpages(drive.permissions(), 'list', 'permissions',
+                                    pageMessage=getPageMessageForWhom(),
+                                    throwReasons=GAPI.DRIVE3_GET_ACL_REASONS,
+                                    retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                                    useDomainAdminAccess=useDomainAdminAccess,
+                                    fileId=shareddrive['id'], fields=fields, supportsAllDrives=True)
+        for permission in permissions:
+          if permission['type'] in includeTypes and permission['role'] in roles:
+            if domainList:
+              _, domain = permission['emailAddress'].lower().split('@', 1)
+              if domain not in domainList:
+                continue
+            shareddrive['organizers'].append(permission['emailAddress'])
+            if oneOrganizer:
+              break
+        if not shareddrive['organizers']:
+          if showNoOrganizerDrives == 0: # no organizers and showNoOrganizerDrives False - ignore
+            continue
+          matchFeed.append(shareddrive) # no organizers and showNoOrganizerDrives Only/True - keep
+          continue
+        if showNoOrganizerDrives < 0: # organizers and showNoOrganizerDrives Only/True - ignore
+          continue
+        matchFeed.append(shareddrive)
+      except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
+              GAPI.insufficientAdministratorPrivileges, GAPI.insufficientFilePermissions,
+              GAPI.unknownError, GAPI.invalid):
+        pass
+    if len(matchFeed) == 0:
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
+    for shareddrive in matchFeed:
+      row = {'id': shareddrive['id'], 'name': shareddrive['name'],
+             'organizers': delimiter.join(shareddrive['organizers']),
+             'createdTime': shareddrive['createdTime']}
+      if orgUnitId:
+        row.update(orgUnitInfo)
+      csvPF.WriteRowTitles(row)
+  if csvPF:
+    csvPF.writeCSVfile('SharedDrive Organizers')
+
+def doPrintSharedDriveOrganizers():
+  printSharedDriveOrganizers([_getAdminEmail()], True)
+
 LOOKERSTUDIO_ASSETTYPE_CHOICE_MAP = {
   'report': ['REPORT'],
   'datasource': ['DATA_SOURCE'],
@@ -75936,6 +76089,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_SCHEMA:		doPrintShowUserSchemas,
       Cmd.ARG_SHAREDDRIVE:	doPrintShowSharedDrives,
       Cmd.ARG_SHAREDDRIVEACLS:	doPrintShowSharedDriveACLs,
+      Cmd.ARG_SHAREDDRIVEORGANIZERS:	doPrintSharedDriveOrganizers,
       Cmd.ARG_SITE:		deprecatedDomainSites,
       Cmd.ARG_SITEACL:		deprecatedDomainSites,
       Cmd.ARG_SITEACTIVITY:	deprecatedDomainSites,
@@ -76284,6 +76438,7 @@ MAIN_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_TEAMDRIVES:		Cmd.ARG_SHAREDDRIVE,
   Cmd.ARG_TEAMDRIVEACLS:	Cmd.ARG_SHAREDDRIVEACLS,
   Cmd.ARG_TEAMDRIVEINFO:	Cmd.ARG_SHAREDDRIVEINFO,
+  Cmd.ARG_TEAMDRIVEORGANIZERS:	Cmd.ARG_SHAREDDRIVEORGANIZERS,
   Cmd.ARG_TEAMDRIVETHEMES:	Cmd.ARG_SHAREDDRIVETHEMES,
   Cmd.ARG_TOKENS:		Cmd.ARG_TOKEN,
   Cmd.ARG_TRANSFER:		Cmd.ARG_DATATRANSFER,
@@ -76976,6 +77131,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_SENDAS:		printShowSendAs,
       Cmd.ARG_SHAREDDRIVE:	printShowSharedDrives,
       Cmd.ARG_SHAREDDRIVEACLS:	printShowSharedDriveACLs,
+      Cmd.ARG_SHAREDDRIVEORGANIZERS:	printSharedDriveOrganizers,
       Cmd.ARG_SHEET:		infoPrintShowSheets,
       Cmd.ARG_SHEETRANGE:	printShowSheetRanges,
       Cmd.ARG_SIGNATURE:	printShowSignature,
@@ -77333,6 +77489,7 @@ USER_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_TEAMDRIVES:		Cmd.ARG_SHAREDDRIVE,
   Cmd.ARG_TEAMDRIVEACLS:	Cmd.ARG_SHAREDDRIVEACLS,
   Cmd.ARG_TEAMDRIVEINFO:	Cmd.ARG_SHAREDDRIVEINFO,
+  Cmd.ARG_TEAMDRIVEORGANIZERS:	Cmd.ARG_SHAREDDRIVEORGANIZERS,
   Cmd.ARG_TEAMDRIVETHEMES:	Cmd.ARG_SHAREDDRIVETHEMES,
   Cmd.ARG_THREADS:		Cmd.ARG_THREAD,
   Cmd.ARG_TOKENS:		Cmd.ARG_TOKEN,

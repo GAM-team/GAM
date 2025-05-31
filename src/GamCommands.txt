@@ -1383,7 +1383,7 @@ gam show projects [[admin] <EmailAddress>] [all|<ProjectIDEntity>]
         [states all|active|deleterequested] [showiampolicies 0|1|3]
 gam print projects [[admin] <EmailAddress>] [all|<ProjectIDEntity>] [todrive <ToDriveAttribute>*]
         [states all|active|deleterequested] [showiampolicies 0|1|3 [onememberperrow]]
-        [delimiter <Character>]] [[formatjson [quotechar <Character>]]
+        [delimiter <Character>] [[formatjson [quotechar <Character>]]
 gam info currentprojectid
 
 gam create|add svcacct [[admin] <EmailAddress>] [<ProjectIDEntity>]
@@ -4819,6 +4819,16 @@ gam show shareddrives
         [fields <SharedDriveFieldNameList>] [noorgunits [<Boolean>]]
         [formatjson] [noorgunits [<Boolean>]]
 
+gam print shareddriveorganizers [todrive <ToDriveAttribute>*]
+        [shareddriveadminquery|query <QuerySharedDrive>]
+        [orgunit|org|ou <OrgUnitPath>]
+        [matchname <REMatchPattern>]
+        [domainlist <DomainList>]
+        [includetypes <OrganizerTypeList>]
+        [oneorganizer [<Boolean>]]
+        [shownorganizerdrives [false|true|only]]
+        [includefileorganizers [<Boolean>]]
+        [delimiter <Character>]
 gam print oushareddrives [todrive <ToDriveAttribute>*]
         [ou|org|orgunit <OrgUnitPath>]
         [formatjson [quotechar <Character>]]
@@ -8326,6 +8336,17 @@ gam <UserTypeEntity> show shareddrives
         [fields <SharedDriveFieldNameList>] [noorgunits [<Boolean>]]
         [formatjson]
 
+gam <UserTypeEntity> print shareddriveorganizers [todrive <ToDriveAttribute>*]
+        [adminaccess|asadmin] [shareddriveadminquery|query <QuerySharedDrive>]
+        [orgunit|org|ou <OrgUnitPath>]
+        [matchname <REMatchPattern>]
+        [domainlist <DomainList>]
+        [includetypes <OrganizerTypeList>]
+        [oneorganizer [<Boolean>]]
+        [shownorganizerdrives [false|true|only]]
+        [includefileorganizers [<Boolean>]]
+        [delimiter <Character>]
+	
 # Users - Force Signout and Turn Off 2-Step Verification
 
 gam <UserTypeEntity> signout

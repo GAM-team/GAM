@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2024 Ross Scroggs All Rights Reserved.
+# Copyright (C) 2025 Ross Scroggs All Rights Reserved.
 #
 # All Rights Reserved.
 #
@@ -755,6 +755,7 @@ class GamCLArgs():
   ARG_SHAREDDRIVES = 'shareddrives'
   ARG_SHAREDDRIVEACLS = 'shareddriveacls'
   ARG_SHAREDDRIVEINFO = 'shareddriveinfo'
+  ARG_SHAREDDRIVEORGANIZERS = 'shareddriveorganizers'
   ARG_SHAREDDRIVETHEMES = 'shareddrivethemes'
   ARG_SHEET = 'sheet'
   ARG_SHEETS = 'sheets'
@@ -784,6 +785,7 @@ class GamCLArgs():
   ARG_TEAMDRIVES = 'teamdrives'
   ARG_TEAMDRIVEACLS = 'teamdriveacls'
   ARG_TEAMDRIVEINFO = 'teamdriveinfo'
+  ARG_TEAMDRIVEORGANIZERS = 'teamdriveorganizers'
   ARG_TEAMDRIVETHEMES = 'teamdrivethemes'
   ARG_THREAD = 'thread'
   ARG_THREADS = 'threads'
@@ -964,6 +966,7 @@ class GamCLArgs():
   OB_MOBILE_ENTITY = 'MobileEntity'
   OB_NETWORK_ID = 'networkID'
   OB_NAME = 'Name'
+  OB_ORGANIZER_TYPE_LIST = 'OrganizerTypeList'
   OB_ORGUNIT_ENTITY = 'OrgUnitEntity'
   OB_ORGUNIT_ITEM = 'OrgUnitItem'
   OB_ORGUNIT_PATH = 'OrgUnitPath'
