@@ -79,6 +79,9 @@
 ```
 <JSONData> ::= (json [charset <Charset>] <String>) | (json file <FileName> [charset <Charset>]) |
 
+<OrganizerType> ::= user|group
+<OrganizerTypeList> ::= "<OrganizerType>(,<OrganizerType>)*"
+
 <OrgUnitID> ::= id:<String>
 <OrgUnitPath> ::= /|(/<String>)+
 <OrgUnitItem> ::= <OrgUnitID>|<OrgUnitPath>
@@ -153,9 +156,6 @@
         type|
         withlink
 <DrivePermissionsFieldNameList> ::= "<DrivePermissionsFieldName>(,<DrivePermissionsFieldName>)*"
-
-<OrganizerType> ::= user|group
-<OrganizerTypeList> ::= "<OrganizerType>(,<OrganizerType>)*"
 
 <QueryTeamDrive> ::= <String> See: https://developers.google.com/drive/api/v3/search-parameters
 <SharedDriveACLRole> ::=
@@ -432,12 +432,12 @@ For multiple organizers:
 
 The command defaults match the script defaults:
 * `domainlist` - All domains
-* `includetypes` - user,groups
+* `includetypes` - user,group
 * `oneorganizer` - False
 * `shownoorganizerdrives` - True
 * `includefileorganizers` - False
 
-For example, to get a single organizer from your domain for all Shared Drives including no organizer drives:
+For example, to get a single user organizer from your domain for all Shared Drives including no organizer drives:
 ```
 gam redirect csv ./TeamDriveOrganizers.csv print shareddriveorganizers domainlist mydomain.com includetypes user oneorganizer shownoorganizerdrives
 ```

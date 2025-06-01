@@ -27,12 +27,12 @@ gam [<UserTypeEntity>] print shareddriveorganizers [todrive <ToDriveAttribute>*]
 ```
 The command defaults match the script defaults:
 * `domainlist` - All domains
-* `includetypes` - user,groups
+* `includetypes` - user,group
 * `oneorganizer` - False
 * `shownoorganizerdrives` - True
 * `includefileorganizers` - False
 
-For example, to get a single organizer from your domain for all Shared Drives including no organizer drives:
+For example, to get a single user organizer from your domain for all Shared Drives including no organizer drives:
 ```
 gam redirect csv ./TeamDriveOrganizers.csv print shareddriveorganizers domainlist mydomain.com includetypes user oneorganizer shownoorganizerdrives
 ```
