@@ -15,6 +15,8 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 Added option `shareddrives (<SharedDriveIDList>|(select <FileSelector>|<CSVFileSelector>))` to
 `gam print shareddriveorganizers` that displays organizers for a specific list of Shared Drive IDs.
 
+See: https://github.com/GAM-team/GAM/wiki/Shared-Drives#display-shared-drive-organizers
+
 ### 7.08.00
 
 Added the following command that can be used instead of the `GetTeamDriveOrganizers.py` script.
@@ -30,6 +32,8 @@ gam [<UserTypeEntity>] print shareddriveorganizers [todrive <ToDriveAttribute>*]
         [includefileorganizers [<Boolean>]]
         [delimiter <Character>]
 ```
+See: https://github.com/GAM-team/GAM/wiki/Shared-Drives#display-shared-drive-organizers
+
 The command defaults match the script defaults:
 * `domainlist` - All domains
 * `includetypes` - user,group
