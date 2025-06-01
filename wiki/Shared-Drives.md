@@ -417,7 +417,9 @@ The following command can be used instead of the `GetTeamDriveOrganizers.py` scr
 
 ```
 gam [<UserTypeEntity>] print shareddriveorganizers [todrive <ToDriveAttribute>*]
-        [adminaccessasadmin] [shareddriveadminquery|query <QuerySharedDrive>]
+        [adminaccess|asadmin]
+        [(shareddriveadminquery|query <QuerySharedDrive>) |
+         (shareddrives|teamdrives (<SharedDriveIDList>|(select <FileSelector>|<CSVFileSelector>)))]
         [orgunit|org|ou <OrgUnitPath>]
         [matchname <REMatchPattern>]
         [domainlist <DomainList>]
@@ -427,10 +429,14 @@ gam [<UserTypeEntity>] print shareddriveorganizers [todrive <ToDriveAttribute>*]
         [includefileorganizers [<Boolean>]]
         [delimiter <Character>]
 ```
-By default, all Shared Drives are displayed; use the following options to select a subset of Shared Drives:
+Options `shareddriveadminquery|query` and `shareddrives|teamdrives` are mutually exclusive.
+
+Options `shareddriveadminquery|query` and `orgunit|org|ou` require `adminaccess|asadmin`.
+
+By default, organizers for all Shared Drives are displayed; use the following options to select a subset of Shared Drives:
 * `teamdriveadminquery|query <QueryTeamDrive>` - Use a query to select Shared Drives
-* `matchname <REMatchPattern>` - Retrieve Shared Drives with names that match a pattern.
 * `orgunit|org|ou <OrgUnitPath>` - Only Shared Drives in the specified Org Unit are selected
+* `matchname <REMatchPattern>` - Retrieve Shared Drives with names that match a pattern.
 
 For multiple organizers:
 * `delimiter <Character>` - Separate `organizers` entries with `<Character>`; the default value is `csv_output_field_delimiter` from `gam.cfg`.
