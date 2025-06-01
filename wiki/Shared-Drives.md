@@ -232,14 +232,14 @@ Three forms of the commands are available:
 
 ## Display Shared Drive themes
 ```
-gam show teamdrivethemes
+gam show shareddrivethemes
 ```
 ## Manage Shared Drives
 
 ## Create a Shared Drive
 The user that creates a Shared Drive is given the permission role organizer for the Shared Drive,
 ```
-gam [<UserTypeEntity>] create teamdrive <Name>
+gam [<UserTypeEntity>] create shareddrive <Name>
         [(theme|themeid <String>)|
          ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
         (<SharedDriveRestrictionsSubfieldName> <Boolean>)*
@@ -248,7 +248,7 @@ gam [<UserTypeEntity>] create teamdrive <Name>
         [(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*) | returnidonly]
         [adminaccess|asadmin]
 ```
-* `themeid` - a Shared Drive themeId obtained from `show teamdrivethemes`
+* `themeid` - a Shared Drive themeId obtained from `show shareddrivethemes`
 * `customtheme` - set the backgroundImageFile property described here:  https://developers.google.com/drive/v3/reference/teamdrives
   * `<Float>` - X coordinate, typically 0.0
   * `<Float>` - Y coordinate, typically 0.0
@@ -281,9 +281,9 @@ When either of these options is chosen, no infomation about Shared Drive restric
 To retrieve the Shared Drive ID with `returnidonly`:
 ```
 Linux/MacOS
-teamDriveId=$(gam create teamdrive ... returnidonly)
+teamDriveId=$(gam create shareddrive ... returnidonly)
 Windows PowerShell
-$teamDriveId = & gam create teamdrive ... returnidonly
+$teamDriveId = & gam create shareddrive ... returnidonly
 ```
 
 ## Bulk Create Shared Drives
@@ -293,7 +293,7 @@ As a newly created Drive can't be updated for 30+ seconds; split the operation i
 
 Make a CSV file SharedDriveNames.csv with at least one column, name.
 ```
-gam redirect csv ./SharedDrivesCreated.csv multiprocess csv SharedDriveNames.csv gam create teamdrive "~name" csv
+gam redirect csv ./SharedDrivesCreated.csv multiprocess csv SharedDriveNames.csv gam create shareddrive "~name" csv
 ```
 This will create a three column CSV file SharedDrivesCreated.csv with columns: User,name,id
 * There will be a row for each Shared Drive.
@@ -324,14 +324,14 @@ gam redirect stdout ./StudentSharedDrivesAccess.txt multiprocess redirect stderr
 
 These commands are used to set basic Shared Drive settings.
 ```
-gam [<UserTypeEntity>] update teamdrive <SharedDriveEntity> [name <Name>]
+gam [<UserTypeEntity>] update shareddrive <SharedDriveEntity> [name <Name>]
         [adminaccess|asadmin]
         [(theme|themeid <String>)|
          ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
         (<SharedDriveRestrictionsSubfieldName> <Boolean>)*
         [hide|hidden <Boolean>] [ou|org|orgunit <OrgUnitItem>]
 ```
-* `themeid` - a Shared Drive themeId obtained from `show teamdrivethemes`
+* `themeid` - a Shared Drive themeId obtained from `show shareddrivethemes`
 * `customtheme` - set the backgroundImageFile property described here:  https://developers.google.com/drive/v3/reference/teamdrives
 * `color` - set the Shared Drive color
 * `<SharedDriveRestrictionsSubfieldName> <Boolean>` - Set Shared Drive Restrictions
@@ -343,7 +343,7 @@ This option is only available when the command is run as an administrator.
 
 ## Delete a Shared Drive
 ```
-gam [<UserTypeEntity>] delete teamdrive <SharedDriveEntity>
+gam [<UserTypeEntity>] delete shareddrive <SharedDriveEntity>
         [adminaccess|asadmin] [allowitemdeletion]
 ```
 By default, deleting a Shared Drive that contains any files/folders will fail.
@@ -352,24 +352,24 @@ This is not reversible, proceed with caution.
 
 ## Change Shared Drive visibility
 ```
-gam [<UserTypeEntity>] hide teamdrive <SharedDriveEntity>
-gam [<UserTypeEntity>] unhide teamdrive <SharedDriveEntity>
+gam [<UserTypeEntity>] hide shareddrive <SharedDriveEntity>
+gam [<UserTypeEntity>] unhide shareddrive <SharedDriveEntity>
 ```
 
 ## Display Shared Drives
 These commands are used to get information about Shared Drives themselves, not the files/folders on the Shared Drives.
 ```
-gam [<UserTypeEntity>] info teamdrive <SharedDriveEntity>
+gam [<UserTypeEntity>] info shareddrive <SharedDriveEntity>
         [adminaccess|asadmin]
         [fields <SharedDriveFieldNameList>] [formatjson]
-gam [<UserTypeEntity>] show teamdriveinfo <SharedDriveEntity>
+gam [<UserTypeEntity>] show shareddriveinfo <SharedDriveEntity>
         [adminaccess|asadmin]
         [fields <SharedDriveFieldNameList>] [formatjson]
 ```
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 ```
-gam [<UserTypeEntity>] show teamdrives
+gam [<UserTypeEntity>] show shareddrives
         [adminaccess|asadmin] [teamdriveadminquery|query <QueryTeamDrive>]
         [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         [fields <SharedDriveFieldNameList>] [formatjson]
@@ -382,7 +382,7 @@ By default, all Shared Drives are displayed; use the following options to select
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 ```
-gam [<UserTypeEntity>] print teamdrives [todrive <ToDriveAttribute>*]
+gam [<UserTypeEntity>] print shareddrives [todrive <ToDriveAttribute>*]
         [adminaccess|asadmin] [teamdriveadminquery|query <QueryTeamDrive>]
         [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         [fields <SharedDriveFieldNameList>] [formatjson [quotechar <Character>]]
@@ -404,12 +404,12 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 ### Examples
 Print information about all Shared Drives in the organization.
 ```
-gam print teamdrives
-gam user admin@domain.com print teamdrives adminaccess
+gam print shareddrives
+gam user admin@domain.com print shareddrives adminaccess
 ```
 Print information about Shared Drives that have admin@domain.com as a member.
 ```
-gam user admin@domain.com print teamdrives
+gam user admin@domain.com print shareddrives
 ```
 
 ## Display Shared Drive Organizers
@@ -427,6 +427,11 @@ gam [<UserTypeEntity>] print shareddriveorganizers [todrive <ToDriveAttribute>*]
         [includefileorganizers [<Boolean>]]
         [delimiter <Character>]
 ```
+By default, all Shared Drives are displayed; use the following options to select a subset of Shared Drives:
+* `teamdriveadminquery|query <QueryTeamDrive>` - Use a query to select Shared Drives
+* `matchname <REMatchPattern>` - Retrieve Shared Drives with names that match a pattern.
+* `orgunit|org|ou <OrgUnitPath>` - Only Shared Drives in the specified Org Unit are selected
+
 For multiple organizers:
 * `delimiter <Character>` - Separate `organizers` entries with `<Character>`; the default value is `csv_output_field_delimiter` from `gam.cfg`.
 
@@ -444,12 +449,12 @@ gam redirect csv ./TeamDriveOrganizers.csv print shareddriveorganizers domainlis
 
 ## Display all Shared Drives with no members
 ```
-gam print teamdrives query "memberCount = 0"
+gam print shareddrives query "memberCount = 0"
 ```
 
 ## Display all Shared Drives with no organizers
 ```
-gam print teamdrives query "organizerCount = 0"
+gam print shareddrives query "organizerCount = 0"
 ```
 
 ## Display Shared Drive Counts
@@ -485,20 +490,20 @@ count = & gam print shareddrives showitemcountonly
 ## Display all Shared Drives with a specific organizer
 Substitute actual email address for `organizer@domain.com`.
 ```
-gam config csv_output_header_filter "id,name" print teamdriveacls pm emailaddress organizer@domain.com role organizer em pma process pmselect
+gam config csv_output_header_filter "id,name" print shareddriveacls pm emailaddress organizer@domain.com role organizer em pma process pmselect
 ```
 
 ## Display all Shared Drives without a specific organizer
 Substitute actual email address for `organizer@domain.com`.
 ```
-gam config csv_output_header_filter "id,name" print teamdriveacls pm emailaddress organizer@domain.com role organizer em pma skip pmselect
+gam config csv_output_header_filter "id,name" print shareddriveacls pm emailaddress organizer@domain.com role organizer em pma skip pmselect
 ```
 
 ## Display List of Shared Drives in an Organizational Unit
 Get the orgUnitID of the desired OU and use it (without the id:) in the print|show command. Adjust fields as desired.
 ```
-gam show teamdrives query "orgUnitId='03ph8a2z21rexy'" fields id,name,orgunit,createdtime
-gam print teamdrives query "orgUnitId='03ph8a2z21rexy'" fields id,name,orgunit,createdtime
+gam show shareddrives query "orgUnitId='03ph8a2z21rexy'" fields id,name,orgunit,createdtime
+gam print shareddrives query "orgUnitId='03ph8a2z21rexy'" fields id,name,orgunit,createdtime
 ```
 Alternative method; `<OrgUnitPath>` defaults to `/`.
 ```
@@ -586,12 +591,12 @@ These commands are used to transfer ACLs from one Shared Drive to another.
 * `copy` - Copy all ACLs from the source Shared Drive to the target Shared Drive. The role of an existing ACL in the target Shared Drive will never be reduced.
 * `sync` - Add/delete/update ACLs in the target Shared Drive to match those in the source Shared Drive.
 ```
-gam [<UserTypeEntity>] copy teamdriveacls <SharedDriveEntity> to <SharedDriveEntity>
+gam [<UserTypeEntity>] copy shareddriveacls <SharedDriveEntity> to <SharedDriveEntity>
         [showpermissionsmessages [<Boolean>]]
         [excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
         (mappermissionsdomain <DomainName> <DomainName>)*
         [adminaccess|asadmin]
-gam [<UserTypeEntity>] sync teamdriveacls <SharedDriveEntity> with <SharedDriveEntity>
+gam [<UserTypeEntity>] sync shareddriveacls <SharedDriveEntity> with <SharedDriveEntity>
         [showpermissionsmessages [<Boolean>]]
         [excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
         (mappermissionsdomain <DomainName> <DomainName>)*
@@ -629,7 +634,7 @@ gam [<UserTypeEntity>] print drivefileacls <SharedDriveEntityAdmin> [todrive <To
 ### Examples:
 Find all the organizers and file organizers on the Golgafrincham shared drive in CSV form.
 ```
- gam print drivefileacls teamdrive "Golgafrincham" pm role organizer em pm role fileorganizer em oneitemperrow
+ gam print drivefileacls shareddrive "Golgafrincham" pm role organizer em pm role fileorganizer em oneitemperrow
 ```
 
 By default, all Shared Drives specified are displayed; use the following option to select a subset of those Shared Drives.
@@ -660,7 +665,7 @@ gam config csv_output_header_drop_filter "User,createdTime,permission.photoLink,
 
 ## Display Shared Drive access for selected Shared Drives
 ```
-gam [<UserTypeEntity>] show teamdriveacls
+gam [<UserTypeEntity>] show shareddriveacls
         [adminaccess|asadmin] [teamdriveadminquery|query <QueryTeamDrive>]
         [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         [user|group <EmailAddress> [checkgroups]] (role|roles <SharedDriveACLRoleList>)*
@@ -669,7 +674,7 @@ gam [<UserTypeEntity>] show teamdriveacls
         [shownopermissionsdrives false|true|only]
         [formatjson]
 
-gam [<UserTypeEntity>] print teamdriveacls [todrive <ToDriveAttribute>*]
+gam [<UserTypeEntity>] print shareddriveacls [todrive <ToDriveAttribute>*]
         [adminaccess|asadmin] [teamdriveadminquery|query <QueryTeamDrive>]
         [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         [user|group <EmailAddress> [checkgroups]] (role|roles <SharedDriveACLRoleList>)*
@@ -696,7 +701,7 @@ By default, all ACLS are displayed; use the following options to select a subset
 * `role|roles <SharedDriveACLRoleList>` - Display ACLs for the specified roles only.
 * `<PermissionMatch>* [<PermissionMatchAction>]` - Use permission matching to display a subset of the ACLs for each Shared Drive; this only applies when `pmselect` is not specified
 
-With `print teamdriveacls` or `show teamdrivecls formatjson`, the ACLs selected for display are all output on one row/line as a repeating item with the matching Shared Drive id.
+With `print shareddriveacls` or `show shareddrivecls formatjson`, the ACLs selected for display are all output on one row/line as a repeating item with the matching Shared Drive id.
 When `oneitemperrow` is specified, each ACL is output on a separate row/line with the matching Shared Drive id and name. This simplifies processing the CSV file with subsequent Gam commands.
 
 By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
@@ -708,35 +713,35 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 ### Examples
 Find all organizers and viewers on the shared drive Heart of Gold in CSV form.
 ```
- gam print teamdriveacls matchname "Heart of Gold" role organizer,reader oneitemperrow
+ gam print shareddriveacls matchname "Heart of Gold" role organizer,reader oneitemperrow
 ```
 
 Print ACLs for all Shared Drives in the organization created after November 1, 2017.
 ```
-gam print teamdriveacls teamdriveadminquery "createdTime > '2017-11-01T00:00:00'"
+gam print shareddriveacls shareddriveadminquery "createdTime > '2017-11-01T00:00:00'"
 ```
 
 Print ACLs for all Shared Drives in the organization with foo@bar.com as an organizer.
 ```
-gam print teamdriveacls user foo@bar.com role organizer
+gam print shareddriveacls user foo@bar.com role organizer
 ```
 
 Print ACLs for all Shared Drives in the organization with foo@bar.com or groups that contain foo@bar.com as a reader.
 ```
-gam print teamdriveacls user foo@bar.com role reader checkgroups
+gam print shareddriveacls user foo@bar.com role reader checkgroups
 ```
 
 ## Display ACLs for Shared Drives with no organizers
 ### For all Shared Drives
 ```
 One row per Shared Drive, all ACLs on the same row
-gam redirect csv ./SharedDriveACLsNoOrganizers.csv print teamdriveacls fields id,domain,emailaddress,role,type,deleted query "organizerCount = 0"
+gam redirect csv ./SharedDriveACLsNoOrganizers.csv print shareddriveacls fields id,domain,emailaddress,role,type,deleted query "organizerCount = 0"
 
 A row per Shared Drive/ACL combination
-gam redirect csv ./SharedDriveACLsNoOrganizers.csv print teamdriveacls fields id,domain,emailaddress,role,type,deleted query "organizerCount = 0" oneitemperrow
+gam redirect csv ./SharedDriveACLsNoOrganizers.csv print shareddriveacls fields id,domain,emailaddress,role,type,deleted query "organizerCount = 0" oneitemperrow
 ```
 ### For selected Shared Drives
-Create a CSV file TeamDrives.csv with at least two columns (id, name) for the selected Shared Drives.
+Create a CSV file shareddrives.csv with at least two columns (id, name) for the selected Shared Drives.
 ```
 One row per Shared Drive, all ACLs on the same row
 gam redirect csv ./SharedDriveACLsNoOrganizers.csv multiprocess csv ./SharedDrives.csv gam print drivefileacls "~id" addtitle "~name" fields id,domain,emailaddress,role,type,deleted pm role organizer em pma skip pmselect
@@ -749,13 +754,13 @@ gam redirect csv ./SharedDriveACLsNoOrganizersOIPR.csv multiprocess csv ./Shared
 ### For all Shared Drives
 ```
 One row per Shared Drive, all ACLs on the same row
-gam redirect csv ./SharedDriveACLsAllExternalOrganizers.csv print teamdriveacls fields id,domain,emailaddress,role,type,deleted role organizer pm role organizer domainlist domain.com,... em pma skip pmselect
+gam redirect csv ./SharedDriveACLsAllExternalOrganizers.csv print shareddriveacls fields id,domain,emailaddress,role,type,deleted role organizer pm role organizer domainlist domain.com,... em pma skip pmselect
 
 A row per Shared Drive/ACL combination
-gam redirect csv ./SharedDriveACLsAllExternalOrganizers.csv print teamdriveacls fields id,domain,emailaddress,role,type,deleted role organizer pm role organizer domainlist domain.com,... em pma skip pmselect
+gam redirect csv ./SharedDriveACLsAllExternalOrganizers.csv print shareddriveacls fields id,domain,emailaddress,role,type,deleted role organizer pm role organizer domainlist domain.com,... em pma skip pmselect
 ```
 ### For selected Shared Drives
-Create a CSV file TeamDrives.csv with at least two columns (id, name) for the selected Shared Drives.
+Create a CSV file shareddrives.csv with at least two columns (id, name) for the selected Shared Drives.
 ```
 One row per Shared Drive, all ACLs on the same row
 gam redirect csv ./SharedDriveACLsAllExternalOrganizers.csv multiprocess csv ./SharedDrives.csv gam print drivefileacls "~id" addtitle "~name" fields id,domain,emailaddress,role,type,deleted pm role organizer domainlist domain.com,... em pma skip pmselect
@@ -769,13 +774,13 @@ gam redirect csv ./SharedDriveACLsAllExternalOrganizersOIPR.csv multiprocess csv
 Include a permission match `pm domainlist domain.com,... em` that lists your internal domain(s).
 ```
 One row per Shared Drive, all ACLs on the same row
-gam redirect csv ./SharedDriveACLsAllExternal.csv print teamdriveacls fields id,domain,emailaddress,role,type,deleted pm domainlist domain.com,... em pma skip pmselect
+gam redirect csv ./SharedDriveACLsAllExternal.csv print shareddriveacls fields id,domain,emailaddress,role,type,deleted pm domainlist domain.com,... em pma skip pmselect
 
 A row per Shared Drive/ACL combination
-gam redirect csv ./SharedDriveACLsAllExternalOIPR.csv print teamdriveacls fields id,domain,emailaddress,role,type,deleted pm domainlist domain.com,... em pma skip pmselect oneitemperrow
+gam redirect csv ./SharedDriveACLsAllExternalOIPR.csv print shareddriveacls fields id,domain,emailaddress,role,type,deleted pm domainlist domain.com,... em pma skip pmselect oneitemperrow
 ```
 ### For selected Shared Drives
-Create a CSV file TeamDrives.csv with at least two columns (id, name) for the selected Shared Drives.
+Create a CSV file shareddrives.csv with at least two columns (id, name) for the selected Shared Drives.
 
 Include a permission match `pm domainlist domain.com,... em` that lists your internal domain(s).
 ```
@@ -798,16 +803,16 @@ to get the Shared Drive ACLs for the scammed Shared Drives.
 
 ```
 One row per Shared Drive, all ACLs on the same row
-gam redirect csv ./SharedDriveACLsAllExternal.csv print teamdriveacls fields id,domain,emailaddress,role,type,deleted pm domainlist domain.com,... em pma skip pmselect
+gam redirect csv ./SharedDriveACLsAllExternal.csv print shareddriveacls fields id,domain,emailaddress,role,type,deleted pm domainlist domain.com,... em pma skip pmselect
 
 A row per Shared Drive/ACL combination
-gam redirect csv ./SharedDriveACLsAllExternalOIPR.csv print teamdriveacls fields id,domain,emailaddress,role,type,deleted pm domainlist domain.com,... em pma skip pmselect oneitemperrow
+gam redirect csv ./SharedDriveACLsAllExternalOIPR.csv print shareddriveacls fields id,domain,emailaddress,role,type,deleted pm domainlist domain.com,... em pma skip pmselect oneitemperrow
 ```
 
 ### Add an organizer from your domain
 Sustitute an appropriate value for `admin@domain.com`.
 ```
-gam redirect stdout ./AddOrganizer.txt multiprocess redirect stderr stdout csv ./SharedDriveACLsAllExternal.csv gam add drivefileacl teamdriveid "~id" user admin@domain.com role organizer
+gam redirect stdout ./AddOrganizer.txt multiprocess redirect stderr stdout csv ./SharedDriveACLsAllExternal.csv gam add drivefileacl shareddriveid "~id" user admin@domain.com role organizer
 ```
 
 ### Delete non domain ACLs
@@ -816,7 +821,7 @@ you must delete all rows in `SharedDriveACLsAllExternalOIPR.csv` that have the s
 
 This will disable all non-domain users access to the Shared Drive.
 ```
-gam redirect stdout ./DeleteExternalACLs.txt multiprocess redirect stderr stdout csv ./SharedDriveACLsAllExternalOIPR.csv gam delete drivefileacl teamdriveid "~id" "id:~~permission.id~~"
+gam redirect stdout ./DeleteExternalACLs.txt multiprocess redirect stderr stdout csv ./SharedDriveACLsAllExternalOIPR.csv gam delete drivefileacl shareddriveid "~id" "id:~~permission.id~~"
 ```
 
 ### Delete the Shared Drives
@@ -824,7 +829,7 @@ The `allowitemdeletion` option allows deletion of non-empty Shared Drives. This 
 
 This is not reversible, proceed with caution.
 ```
-gam redirect stdout ./DeleteSharedDrives.txt multiprocess redirect stderr stdout csv ./SharedDriveACLsAllExternal.csv gam delete teamdrive "~id" allowitemdeletion
+gam redirect stdout ./DeleteSharedDrives.txt multiprocess redirect stderr stdout csv ./SharedDriveACLsAllExternal.csv gam delete shareddrive "~id" allowitemdeletion
 ```
 
 ## Delete old empty Shared Drives
@@ -832,10 +837,10 @@ gam redirect stdout ./DeleteSharedDrives.txt multiprocess redirect stderr stdout
 # Get a list of Shared Drives organizers for Shared Drives created before one year ago; alter date<-1y as required.
 gam config csv_output_row_filter "createdTime:date<-1y" redirect csv ./TeamDriveOrganizers.csv print shareddriveorganizers domainlist mydomain.com includetypes user oneorganizer shownoorganizerdrives
 
-# Inspect TeamDriveOrganizers.csv, you'll have to deal with Shared Drives with no organizer/manager
+# Inspect shareddriveOrganizers.csv, you'll have to deal with Shared Drives with no organizer/manager
 
 # Get old empty Shared Drives
-gam config num_threads 10 csv_input_row_filter "organizers:regex:^.+$" csv_output_row_filter "Total:count=0" redirect csv ./OldEmptySharedDrives.csv multiprocess redirect stderr - multiprocess csv ./TeamDriveOrganizers.csv gam user "~organizers" print filecounts select teamdriveid "~id" showsize
+gam config num_threads 10 csv_input_row_filter "organizers:regex:^.+$" csv_output_row_filter "Total:count=0" redirect csv ./OldEmptySharedDrives.csv multiprocess redirect stderr - multiprocess csv ./TeamDriveOrganizers.csv gam user "~organizers" print filecounts select shareddriveid "~id" showsize
 
 # Inspect OldEmptySharedDrives.csv, if you're confident of the results, proceed
 
