@@ -412,7 +412,7 @@ Print information about Shared Drives that have admin@domain.com as a member.
 gam user admin@domain.com print teamdrives
 ```
 
-## - Display Shared Drive Organizers
+## Display Shared Drive Organizers
 The following command can be used instead of the `GetTeamDriveOrganizers.py` script.
 
 ```

@@ -387,7 +387,7 @@ count=$(gam user user@domain.com print shareddrives showitemcountonly)
 Windows PowerShell
 count = & gam user user@domain.com print shareddrives showitemcountonly
 ```
-## - Display Shared Drive Organizers
+## Display Shared Drive Organizers
 The following command can be used instead of the `GetTeamDriveOrganizers.py` script.
 
 ```
