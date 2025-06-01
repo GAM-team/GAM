@@ -413,6 +413,8 @@ Options `shareddriveadminquery|query` and `orgunit|org|ou` require `adminaccess|
 
 By default, organizers for all Shared Drives are displayed; use the following options to select a subset of Shared Drives:
 * `teamdriveadminquery|query <QueryTeamDrive>` - Use a query to select Shared Drives
+* `shareddrives|teamdrives <SharedDriveIDList>` - Select the Shared Drive IDs specified in `<SharedDriveIDList>`
+* `shareddrives|teamdrives select <FileSelector>|<CSVFileSelector>` - Select the Shared Drive IDs specified in `<FileSelector>|<CSVFileSelector>`
 * `orgunit|org|ou <OrgUnitPath>` - Only Shared Drives in the specified Org Unit are selected
 * `matchname <REMatchPattern>` - Retrieve Shared Drives with names that match a pattern.
 
