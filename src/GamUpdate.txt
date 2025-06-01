@@ -1,3 +1,8 @@
+7.08.01
+
+Added option `shareddrives (<SharedDriveIDList>|(select <FileSelector>|<CSVFileSelector>))` to
+`gam print shareddriveorganizers` that displays organizers for a specific list of Shared Drive IDs.
+
 7.08.00
 
 Added the following command that can be used instead of the `GetTeamDriveOrganizers.py` script.
@@ -16,7 +21,7 @@ gam [<UserTypeEntity>] print shareddriveorganizers [todrive <ToDriveAttribute>*]
 ```
 The command defaults match the script defaults:
 * `domainlist` - All domains
-* `includetypes` - user,groups
+* `includetypes` - user,group
 * `oneorganizer` - False
 * `shownoorganizerdrives` - True
 * `includefileorganizers` - False

@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.08.00'
+__version__ = '7.08.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -66053,7 +66053,9 @@ def doPrintShowSharedDriveACLs():
 PRINT_ORGANIZER_TYPES = {'group', 'user'}
 
 # gam [<UserTypeEntity>] print shareddriveorganizers [todrive <ToDriveAttribute>*]
-#	[adminaccess|asadmin] [shareddriveadminquery|query <QuerySharedDrive>]
+#	[adminaccess|asadmin]
+#	[(shareddriveadminquery|query <QuerySharedDrive>) |
+#	 (shareddrives|teamdrives (<SharedDriveIDList>|(select <FileSelector>|<CSVFileSelector>)))]
 #	[matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
 #	[domainlist <DomainList>]
 #	[includetypes user|group]
@@ -66068,7 +66070,7 @@ def printSharedDriveOrganizers(users, useDomainAdminAccess=False):
   includeTypes = set()
   showNoOrganizerDrives = SHOW_NO_PERMISSIONS_DRIVES_CHOICE_MAP['false']
   fieldsList = ['role', 'type', 'emailAddress']
-  cd = orgUnitId = query = matchPattern = None
+  cd = entityList = orgUnitId = query = matchPattern = None
   domainList = []
   oneOrganizer = False
   while Cmd.ArgumentsRemaining():
@@ -66077,7 +66079,15 @@ def printSharedDriveOrganizers(users, useDomainAdminAccess=False):
       csvPF.GetTodriveParameters()
     elif myarg == 'delimiter':
       delimiter = getCharacter()
+    elif myarg in {'shareddrive', 'shareddrives', 'teamdrive', 'teamdrives'}:
+      sharedDriveArg = myarg
+      itemList = getString(Cmd.OB_SHAREDDRIVE_ID_LIST)
+      if itemList != 'select':
+        entityList =  itemList.replace(',', ' ').split()
+      else:
+        entityList = getEntityList(Cmd.OB_SHAREDDRIVE_ID_LIST)
     elif myarg in {'teamdriveadminquery', 'shareddriveadminquery', 'query'}:
+      queryArg = myarg
       queryLocation = Cmd.Location()
       query = getString(Cmd.OB_QUERY, minLen=0) or None
       if query:
@@ -66110,9 +66120,13 @@ def printSharedDriveOrganizers(users, useDomainAdminAccess=False):
         roles.add('fileOrganizer')
     else:
       unknownArgumentExit()
-  if query and not useDomainAdminAccess:
-    Cmd.SetLocation(queryLocation-1)
-    usageErrorExit(Msg.ONLY_ADMINISTRATORS_CAN_PERFORM_SHARED_DRIVE_QUERIES)
+  if query:
+    if not useDomainAdminAccess:
+      Cmd.SetLocation(queryLocation-1)
+      usageErrorExit(Msg.ONLY_ADMINISTRATORS_CAN_PERFORM_SHARED_DRIVE_QUERIES)
+    if entityList:
+      Cmd.SetLocation(queryLocation-1)
+      usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format(queryArg, sharedDriveArg))
   if orgUnitId is not None:
     if not useDomainAdminAccess:
       Cmd.SetLocation(orgLocation-1)
@@ -66127,28 +66141,46 @@ def printSharedDriveOrganizers(users, useDomainAdminAccess=False):
     user, drive = buildGAPIServiceObject(API.DRIVE3, user, i, count)
     if not drive:
       continue
-    if useDomainAdminAccess:
-      printGettingAllAccountEntities(Ent.SHAREDDRIVE, query)
-      pageMessage = getPageMessage()
+    if entityList is None:
+      if useDomainAdminAccess:
+        printGettingAllAccountEntities(Ent.SHAREDDRIVE, query)
+        pageMessage = getPageMessage()
+      else:
+        printGettingAllEntityItemsForWhom(Ent.SHAREDDRIVE, user, i, count, query)
+        pageMessage = getPageMessageForWhom()
+      try:
+        feed = callGAPIpages(drive.drives(), 'list', 'drives',
+                             pageMessage=pageMessage,
+                             throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID_QUERY, GAPI.INVALID,
+                                                                         GAPI.QUERY_REQUIRES_ADMIN_CREDENTIALS,
+                                                                         GAPI.NO_LIST_TEAMDRIVES_ADMINISTRATOR_PRIVILEGE,
+                                                                         GAPI.FILE_NOT_FOUND],
+                             q=query, useDomainAdminAccess=useDomainAdminAccess,
+                             fields='nextPageToken,drives(id,name,createdTime,orgUnitId)', pageSize=100)
+      except (GAPI.invalidQuery, GAPI.invalid, GAPI.queryRequiresAdminCredentials,
+              GAPI.noListTeamDrivesAdministratorPrivilege, GAPI.fileNotFound) as e:
+        entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE, None], str(e), i, count)
+        continue
+      except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
+        continue
     else:
-      printGettingAllEntityItemsForWhom(Ent.SHAREDDRIVE, user, i, count, query)
-      pageMessage = getPageMessageForWhom()
-    try:
-      feed = callGAPIpages(drive.drives(), 'list', 'drives',
-                           pageMessage=pageMessage,
-                           throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID_QUERY, GAPI.INVALID,
-                                                                       GAPI.QUERY_REQUIRES_ADMIN_CREDENTIALS,
-                                                                       GAPI.NO_LIST_TEAMDRIVES_ADMINISTRATOR_PRIVILEGE,
-                                                                       GAPI.FILE_NOT_FOUND],
-                           q=query, useDomainAdminAccess=useDomainAdminAccess,
-                           fields='nextPageToken,drives(id,name,createdTime,orgUnitId)', pageSize=100)
-    except (GAPI.invalidQuery, GAPI.invalid, GAPI.queryRequiresAdminCredentials,
-            GAPI.noListTeamDrivesAdministratorPrivilege, GAPI.fileNotFound) as e:
-      entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE, None], str(e), i, count)
-      continue
-    except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      userDriveServiceNotEnabledWarning(user, str(e), i, count)
-      continue
+      feed = []
+      jcount = len(entityList)
+      j = 0
+      for driveId in entityList:
+        j +=1
+        try:
+          feed.append(callGAPI(drive.drives(), 'get',
+                               throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND],
+                               useDomainAdminAccess=useDomainAdminAccess,
+                               driveId=driveId, fields='id,name,createdTime,orgUnitId'))
+        except (GAPI.fileNotFound, GAPI.notFound) as e:
+          entityActionNotPerformedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], str(e), j, jcount)
+          continue
+        except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
+          userDriveServiceNotEnabledWarning(user, str(e), i, count)
+          break
     matchFeed = []
     jcount = len(feed)
     j = 0

@@ -4820,7 +4820,8 @@ gam show shareddrives
         [formatjson] [noorgunits [<Boolean>]]
 
 gam print shareddriveorganizers [todrive <ToDriveAttribute>*]
-        [shareddriveadminquery|query <QuerySharedDrive>]
+        [(shareddriveadminquery|query <QuerySharedDrive>) |
+         (shareddrives|teamdrives (<SharedDriveIDList>|(select <FileSelector>|<CSVFileSelector>)))]
         [orgunit|org|ou <OrgUnitPath>]
         [matchname <REMatchPattern>]
         [domainlist <DomainList>]
@@ -8337,7 +8338,9 @@ gam <UserTypeEntity> show shareddrives
         [formatjson]
 
 gam <UserTypeEntity> print shareddriveorganizers [todrive <ToDriveAttribute>*]
-        [adminaccess|asadmin] [shareddriveadminquery|query <QuerySharedDrive>]
+        [adminaccess|asadmin]
+        [(shareddriveadminquery|query <QuerySharedDrive>) |
+         (shareddrives|teamdrives (<SharedDriveIDList>|(select <FileSelector>|<CSVFileSelector>)))]
         [orgunit|org|ou <OrgUnitPath>]
         [matchname <REMatchPattern>]
         [domainlist <DomainList>]
