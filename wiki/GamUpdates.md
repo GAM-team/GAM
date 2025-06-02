@@ -10,6 +10,24 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.08.02
+
+Updated the defaults in `gam print shareddriveorganizers` to match the most common use case, not the script.
+
+* `domainlist` - The workspace primary domain
+* `includetypes` - user
+* `oneorganizer` - True
+* `shownoorganizerdrives` - True
+* `includefileorganizers` - False
+
+To select organizers from any domain, use: `domainlist ""`
+
+These commands produce the same result.
+```
+gam redirect csv ./TeamDriveOrganizers.csv print shareddriveorganizers domainlist mydomain.com includetypes user oneorganizer shownoorganizerdrives
+gam redirect csv ./TeamDriveOrganizers.csv print shareddriveorganizers
+```
+
 ### 7.08.01
 
 Added option `shareddrives (<SharedDriveIDList>|(select <FileSelector>|<CSVFileSelector>))` to

@@ -443,16 +443,18 @@ By default, organizers for all Shared Drives are displayed; use the following op
 For multiple organizers:
 * `delimiter <Character>` - Separate `organizers` entries with `<Character>`; the default value is `csv_output_field_delimiter` from `gam.cfg`.
 
-The command defaults match the script defaults:
-* `domainlist` - All domains
-* `includetypes` - user,group
-* `oneorganizer` - False
+The command defaults do not match the script defaults, they are set for the most common use case:
+* `domainlist` - The workspace primary domain
+* `includetypes` - user
+* `oneorganizer` - True
 * `shownoorganizerdrives` - True
 * `includefileorganizers` - False
 
+To select organizers from any domain, use: `domainlist ""`
+
 For example, to get a single user organizer from your domain for all Shared Drives including no organizer drives:
 ```
-gam redirect csv ./TeamDriveOrganizers.csv print shareddriveorganizers domainlist mydomain.com includetypes user oneorganizer shownoorganizerdrives
+gam redirect csv ./TeamDriveOrganizers.csv print shareddriveorganizers
 ```
 
 ## Display all Shared Drives with no members
