@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2024 Ross Scroggs All Rights Reserved.
+# Copyright (C) 2025 Ross Scroggs All Rights Reserved.
 #
 # All Rights Reserved.
 #
@@ -649,7 +649,7 @@ _SVCACCT_SCOPES = [
    'api': IAM,
    'offByDefault': True,
    'subscopes': [],
-   'scope': 'https://www.googleapis.com/auth/iam'},
+   'scope': IAM_SCOPE},
   {'name': 'Keep API',
    'api': KEEP,
    'subscopes': READONLY,

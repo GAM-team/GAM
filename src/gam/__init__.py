@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.08.01'
+__version__ = '7.08.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -12338,7 +12338,7 @@ def checkServiceAccount(users):
     invalidOauth2serviceJsonExit(f'Authentication{auth_error}')
   _getSvcAcctData() # needed to read in GM.OAUTH2SERVICE_JSON_DATA
   if GM.Globals[GM.SVCACCT_SCOPES_DEFINED] and API.IAM not in GM.Globals[GM.SVCACCT_SCOPES]:
-    GM.Globals[GM.SVCACCT_SCOPES][API.IAM] = [API.CLOUD_PLATFORM_SCOPE]
+    GM.Globals[GM.SVCACCT_SCOPES][API.IAM] = [API.IAM_SCOPE]
   key_type = GM.Globals[GM.OAUTH2SERVICE_JSON_DATA].get('key_type', 'default')
   if key_type == 'default':
     printMessage(Msg.SERVICE_ACCOUNT_CHECK_PRIVATE_KEY_AGE)
@@ -66071,8 +66071,8 @@ def printSharedDriveOrganizers(users, useDomainAdminAccess=False):
   showNoOrganizerDrives = SHOW_NO_PERMISSIONS_DRIVES_CHOICE_MAP['false']
   fieldsList = ['role', 'type', 'emailAddress']
   cd = entityList = orgUnitId = query = matchPattern = None
-  domainList = []
-  oneOrganizer = False
+  domainList = [GC.Values[GC.DOMAIN]]
+  oneOrganizer = True
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -66104,7 +66104,7 @@ def printSharedDriveOrganizers(users, useDomainAdminAccess=False):
     elif myarg in ADMIN_ACCESS_OPTIONS:
       useDomainAdminAccess = True
     elif myarg == 'domainlist':
-      domainList = set(getString(Cmd.OB_DOMAIN_NAME_LIST).replace(',', ' ').lower().split())
+      domainList = set(getString(Cmd.OB_DOMAIN_NAME_LIST, minLen=0).replace(',', ' ').lower().split())
     elif myarg == 'includetypes':
       for itype in getString(Cmd.OB_ORGANIZER_TYPE_LIST).lower().replace(',', ' ').split():
         if itype in PRINT_ORGANIZER_TYPES:
@@ -66133,7 +66133,7 @@ def printSharedDriveOrganizers(users, useDomainAdminAccess=False):
       usageErrorExit(Msg.ONLY_ADMINISTRATORS_CAN_SPECIFY_SHARED_DRIVE_ORGUNIT)
     csvPF.AddTitles(['orgUnit', 'orgUnitId'])
   if not includeTypes:
-    includeTypes = PRINT_ORGANIZER_TYPES
+    includeTypes = set(['user'])
   fields = getItemFieldsFromFieldsList('permissions', fieldsList, True)
   i, count, users = getEntityArgument(users)
   for user in users:
