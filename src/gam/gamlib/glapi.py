@@ -596,7 +596,7 @@ _SVCACCT_SCOPES = [
   {'name': 'Cloud Identity Devices API',
    'api': CLOUDIDENTITY_DEVICES,
    'subscopes': READONLY,
-   'scope': 'https://www.googleapis.com/auth/cloud-identity'},
+   'scope': 'https://www.googleapis.com/auth/cloud-identity.devices'},
 #  {'name': 'Cloud Identity User Invitations API',
 #   'api': CLOUDIDENTITY_USERINVITATIONS,
 #   'subscopes': READONLY,
