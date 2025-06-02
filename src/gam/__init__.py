@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.08.02'
+__version__ = '7.08.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -4785,8 +4785,9 @@ def defaultSvcAcctScopes():
   scopesList = API.getSvcAcctScopesList(GC.Values[GC.USER_SERVICE_ACCOUNT_ACCESS_ONLY], False)
   saScopes = {}
   for scope in scopesList:
-    saScopes.setdefault(scope['api'], [])
-    saScopes[scope['api']].append(scope['scope'])
+    if not scope.get('offByDefault'):
+      saScopes.setdefault(scope['api'], [])
+      saScopes[scope['api']].append(scope['scope'])
   saScopes[API.DRIVEACTIVITY].append(API.DRIVE_SCOPE)
   saScopes[API.DRIVE2] = saScopes[API.DRIVE3]
   saScopes[API.DRIVETD] = saScopes[API.DRIVE3]
@@ -12275,7 +12276,7 @@ def checkServiceAccount(users):
   else:
     if not checkScopesSet:
       scopesList = API.getSvcAcctScopesList(GC.Values[GC.USER_SERVICE_ACCOUNT_ACCESS_ONLY], True)
-      selectedScopes = getScopesFromUser(scopesList, False, GM.Globals[GM.SVCACCT_SCOPES])
+      selectedScopes = getScopesFromUser(scopesList, False, GM.Globals[GM.SVCACCT_SCOPES] if GM.Globals[GM.SVCACCT_SCOPES_DEFINED] else None)
       if selectedScopes is None:
         return False
       i = 0
@@ -12337,7 +12338,7 @@ def checkServiceAccount(users):
   if saTokenStatus == testFail:
     invalidOauth2serviceJsonExit(f'Authentication{auth_error}')
   _getSvcAcctData() # needed to read in GM.OAUTH2SERVICE_JSON_DATA
-  if GM.Globals[GM.SVCACCT_SCOPES_DEFINED] and API.IAM not in GM.Globals[GM.SVCACCT_SCOPES]:
+  if API.IAM not in GM.Globals[GM.SVCACCT_SCOPES]:
     GM.Globals[GM.SVCACCT_SCOPES][API.IAM] = [API.IAM_SCOPE]
   key_type = GM.Globals[GM.OAUTH2SERVICE_JSON_DATA].get('key_type', 'default')
   if key_type == 'default':
