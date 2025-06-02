@@ -10,6 +10,15 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.08.03
+
+Fixed bug in `gam <UserTypeEntity> check|update serviceaccount` where the first use of
+the command after project creation enabled the following scopes that should be off by default.
+```
+Identity and Access Management API
+Youtube API - read only
+```
+
 ### 7.08.02
 
 Updated the defaults in `gam print shareddriveorganizers` to match the most common use case, not the script.
