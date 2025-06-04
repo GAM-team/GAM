@@ -10632,6 +10632,7 @@ def getOAuthClientIDAndSecret():
     invalidClientSecretsJsonExit(str(e))
 
 def getScopesFromUser(scopesList, clientAccess, currentScopes=None):
+  forceOffScopes = []
   OAUTH2_CMDS = ['s', 'u', 'e', 'c']
   oauth2_menu = ''
   numScopes = len(scopesList)
@@ -10682,6 +10683,9 @@ Continue to authorization by entering a 'c'
               break
         i += 1
     else:
+      for api in currentScopes:
+        if api in API.FORCE_OFF_SA_SCOPES:
+          forceOffScopes.extend(currentScopes[api])
       i = 0
       for a_scope in scopesList:
         selectedScopes[i] = ' '
@@ -10750,12 +10754,12 @@ Continue to authorization by entering a 'c'
             for i in range(numScopes):
               selectedScopes[i] = ' '
           elif selection == 'e':
-            return None
+            return (None, None)
           break
         sys.stdout.write(f'{ERROR_PREFIX}Invalid input "{choice}"\n')
     if selection == 'c':
       break
-  return selectedScopes
+  return (selectedScopes, forceOffScopes)
 
 def _localhost_to_ip():
   '''returns IPv4 or IPv6 loopback address which localhost resolves to.
@@ -11102,7 +11106,7 @@ def doOAuthRequest(currentScopes, login_hint, verifyScopes=False):
   client_id, client_secret = getOAuthClientIDAndSecret()
   scopesList = API.getClientScopesList(GC.Values[GC.TODRIVE_CLIENTACCESS])
   if not currentScopes or verifyScopes:
-    selectedScopes = getScopesFromUser(scopesList, True, currentScopes)
+    selectedScopes, _ = getScopesFromUser(scopesList, True, currentScopes)
     if selectedScopes is None:
       return False
     scopes = set(API.REQUIRED_SCOPES)
@@ -12246,6 +12250,7 @@ def checkServiceAccount(users):
   checkScopesSet = set()
   saScopes = {}
   useColor = False
+  forceOffScopes = []
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg in {'scope', 'scopes'}:
@@ -12271,12 +12276,16 @@ def checkServiceAccount(users):
     testWarn = 'WARN'
   if Act.Get() == Act.CHECK:
     if not checkScopesSet:
-      for scope in iter(GM.Globals[GM.SVCACCT_SCOPES].values()):
-        checkScopesSet.update(scope)
+      currentScopes = GM.Globals[GM.SVCACCT_SCOPES]
+      for api in currentScopes:
+        if api in API.FORCE_OFF_SA_SCOPES:
+          forceOffScopes.extend(currentScopes[api])
+        else:
+          checkScopesSet.update(currentScopes[api])
   else:
     if not checkScopesSet:
       scopesList = API.getSvcAcctScopesList(GC.Values[GC.USER_SERVICE_ACCOUNT_ACCESS_ONLY], True)
-      selectedScopes = getScopesFromUser(scopesList, False, GM.Globals[GM.SVCACCT_SCOPES] if GM.Globals[GM.SVCACCT_SCOPES_DEFINED] else None)
+      selectedScopes, forceOffScopes = getScopesFromUser(scopesList, False, GM.Globals[GM.SVCACCT_SCOPES] if GM.Globals[GM.SVCACCT_SCOPES_DEFINED] else None)
       if selectedScopes is None:
         return False
       i = 0
@@ -12399,6 +12408,17 @@ def checkServiceAccount(users):
         scopeStatus = testFail
         allScopesPass = False
       printPassFail(scope, f'{scopeStatus}{currentCount(j, jcount)}')
+    if forceOffScopes:
+      allScopesPass = False
+      if useColor:
+        scopeStatus = createRedText('DISABLE')
+      else:
+        scopeStatus = 'DISABLE'
+      jcount = len(forceOffScopes)
+      j = 0
+      for scope in forceOffScopes:
+        j +=1
+        printPassFail(scope, f'{scopeStatus}{currentCount(j, jcount)}')
     Ind.Decrement()
     service_account = GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['client_id']
     if allScopesPass:

@@ -145,7 +145,7 @@ SCOPE_AUTHORIZATION_PASSED = '''All scopes PASSED!
 Service Account Client name: {0} is fully authorized.
 '''
 SCOPE_AUTHORIZATION_UPDATE_PASSED = '''All scopes PASSED!
-To authorize them (in case some scopes were unselected), please go to the following link in your browser:
+To update authorization (in case some scopes were unselected), please go to the following link in your browser:
 {0}
     {1}
 
@@ -156,8 +156,8 @@ Click AUTHORIZE
 When the box closes you're done
 After authorizing it may take some time for this test to pass so wait a few moments and then try this command again.
 '''
-SCOPE_AUTHORIZATION_FAILED = '''Some scopes FAILED!
-To authorize them, please go to the following link in your browser:
+SCOPE_AUTHORIZATION_FAILED = '''Some scopes FAILED or should be DISABLED!
+To update authorization, please go to the following link in your browser:
 {0}
     {1}
 

@@ -118,6 +118,7 @@ JWT_APIS = {
   ACCESSCONTEXTMANAGER: [CLOUD_PLATFORM_SCOPE],
   CHAT: ['https://www.googleapis.com/auth/chat.bot'],
   CLOUDRESOURCEMANAGER: [CLOUD_PLATFORM_SCOPE],
+  IAM: [IAM_SCOPE],
   ORGPOLICY: [CLOUD_PLATFORM_SCOPE],
   }
 #
@@ -130,6 +131,8 @@ SCOPELESS_APIS = {
 APIS_NEEDING_ACCESS_TOKEN = {
   CBCM: ['https://www.googleapis.com/auth/admin.directory.device.chromebrowsers']
   }
+#
+FORCE_OFF_SA_SCOPES = {IAM}
 #
 REFRESH_PERM_ERRORS = [
   'invalid_grant: reauth related error (rapt_required)', # no way to reauth today
@@ -645,11 +648,11 @@ _SVCACCT_SCOPES = [
    'api': GMAIL,
    'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/gmail.settings.sharing'},
-  {'name': 'Identity and Access Management API',
-   'api': IAM,
-   'offByDefault': True,
-   'subscopes': [],
-   'scope': IAM_SCOPE},
+#  {'name': 'Identity and Access Management API',
+#   'api': IAM,
+#   'offByDefault': True,
+#   'subscopes': [],
+#   'scope': IAM_SCOPE},
   {'name': 'Keep API',
    'api': KEEP,
    'subscopes': READONLY,
