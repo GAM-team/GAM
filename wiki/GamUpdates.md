@@ -12,12 +12,13 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 
 ### 7.08.03
 
-Fixed bug in `gam <UserTypeEntity> check|update serviceaccount` where the first use of
-the command after project creation enabled the following scopes that should be off by default.
-```
-Identity and Access Management API
-Youtube API - read only
-```
+Removed the overly broad service account `IAM and Access Management API` scope `https://www.googleapis.com/auth/cloud-platform`
+from DWD. The `gam <UserTypeEntity> check|Update serviceaccount` commands issue an error message if this scope
+is enabled promptig you to update your service account authorization so that the scope can be removed.
+
+GAM commands that need IAM access now use the more limited scope `https://www.googleapis.com/auth/iam` in a non-DWD manner.
+
+Updated to Python 3.13.4
 
 ### 7.08.02
 

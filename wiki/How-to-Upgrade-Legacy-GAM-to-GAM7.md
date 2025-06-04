@@ -253,7 +253,7 @@ admin@server:/Users/admin$ gam version
 WARNING: Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, Item: oauth2_txt, Value: /Users/admin/GAMConfig/oauth2.txt, Not Found
 GAM 7.08.03 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
-Python 3.13.3 64-bit final
+Python 3.13.4 64-bit final
 MacOS Sequoia 15.5 x86_64
 Path: /Users/admin/bin/gam7
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
@@ -991,7 +991,7 @@ C:\>gam version
 WARNING: Config File: C:\GAMConfig\gam.cfg, Section: DEFAULT, Item: oauth2_txt, Value: C:\GAMConfig\oauth2.txt, Not Found
 GAM 7.08.03 - https://github.com/GAM-team/GAM - pythonsource
 GAM Team <google-apps-manager@googlegroups.com>
-Python 3.13.3 64-bit final
+Python 3.13.4 64-bit final
 Windows-10-10.0.17134 AMD64
 Path: C:\GAM7
 Config File: C:\GAMConfig\gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
