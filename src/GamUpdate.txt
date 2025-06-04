@@ -6,6 +6,8 @@ is enabled promptig you to update your service account authorization so that the
 
 GAM commands that need IAM access now use the more limited scope `https://www.googleapis.com/auth/iam` in a non-DWD manner.
 
+Updated to Python 3.13.4
+
 7.08.02
 
 Updated the defaults in `gam print shareddriveorganizers` to match the most common use case, not the script.
