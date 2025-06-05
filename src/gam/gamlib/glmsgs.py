@@ -140,6 +140,7 @@ SERVICE_ACCOUNT_PRIVATE_KEY_AGE = 'Service Account Private Key age: {0} days'
 SERVICE_ACCOUNT_SKIPPING_KEY_AGE_CHECK = 'Skipping Private Key age check: {0} rotation not necessary'
 UPDATE_PROJECT_TO_VIEW_MANAGE_SAKEYS = 'Please run "gam update project" to view/manage service account keys'
 DOMAIN_WIDE_DELEGATION_AUTHENTICATION = 'Domain-wide Delegation authentication'
+DEPRECATED_SCOPES = 'Deprecated scopes that GAM should NEVER have DwD access to'
 SCOPE_AUTHORIZATION_PASSED = '''All scopes PASSED!
 
 Service Account Client name: {0} is fully authorized.

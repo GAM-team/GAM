@@ -132,9 +132,10 @@ APIS_NEEDING_ACCESS_TOKEN = {
   CBCM: ['https://www.googleapis.com/auth/admin.directory.device.chromebrowsers']
   }
 #
-FORCE_OFF_SA_SCOPES = {
+DEPRECATED_SCOPES = {
   'https://www.googleapis.com/auth/cloud-identity',
   'https://www.googleapis.com/auth/cloud-platform',
+  'https://www.googleapis.com/auth/iam',
   }
 #
 REFRESH_PERM_ERRORS = [

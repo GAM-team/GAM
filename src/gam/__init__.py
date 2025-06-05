@@ -12233,7 +12233,7 @@ def checkServiceAccount(users):
 
   def authorizeScopes(message):
     long_url = ('https://admin.google.com/ac/owl/domainwidedelegation'
-                f'?clientScopeToAdd={",".join(sorted(checkScopesSet-API.FORCE_OFF_SA_SCOPES))}'
+                f'?clientScopeToAdd={",".join(sorted(checkScopes))}'
                 f'&clientIdToAdd={service_account}&overwriteClientId=true')
     if GC.Values[GC.DOMAIN]:
       long_url += f'&dn={GC.Values[GC.DOMAIN]}'
@@ -12245,12 +12245,12 @@ def checkServiceAccount(users):
   allScopes = API.getSvcAcctScopes(GC.Values[GC.USER_SERVICE_ACCOUNT_ACCESS_ONLY], Act.Get() == Act.UPDATE)
   checkScopesSet = set()
   saScopes = {}
-  addForceOffScopes = True
+  checkDeprecatedScopes = True
   useColor = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg in {'scope', 'scopes'}:
-      addForceOffScopes = False
+      checkDeprecatedScopes = False
       for scope in getString(Cmd.OB_API_SCOPE_URL_LIST).lower().replace(',', ' ').split():
         api = API.getSvcAcctScopeAPI(scope)
         if api is not None:
@@ -12267,14 +12267,12 @@ def checkServiceAccount(users):
     testPass = createGreenText('PASS')
     testFail = createRedText('FAIL')
     testWarn = createYellowText('WARN')
-    testDisable = createRedText('DISABLE')
-    testSkip = createGreenText('SKIP')
+    testDeprecated = createRedText('DEPRECATED')
   else:
     testPass = 'PASS'
     testFail = 'FAIL'
     testWarn = 'WARN'
-    testDisable = 'DISABLE'
-    testSkip = 'SKIP'
+    testDeprecated = 'DEPRECATED'
   if Act.Get() == Act.CHECK:
     if not checkScopesSet:
       for scope in iter(GM.Globals[GM.SVCACCT_SCOPES].values()):
@@ -12309,8 +12307,6 @@ def checkServiceAccount(users):
               json.dumps(GM.Globals[GM.OAUTH2SERVICE_JSON_DATA], ensure_ascii=False, sort_keys=True, indent=2),
               continueOnError=False)
   checkScopes = sorted(checkScopesSet)
-  if addForceOffScopes:
-    checkScopes.extend(sorted(API.FORCE_OFF_SA_SCOPES))
   jcount = len(checkScopes)
   printMessage(Msg.SYSTEM_TIME_STATUS)
   offsetSeconds, offsetFormatted = getLocalGoogleTimeOffset()
@@ -12399,25 +12395,47 @@ def checkServiceAccount(users):
       if credentials.token:
         token_info = callGAPI(oa2, 'tokeninfo', access_token=credentials.token)
         if scope in token_info.get('scope', '').split(' ') and user == token_info.get('email', user).lower():
-          if scope not in API.FORCE_OFF_SA_SCOPES:
-            scopeStatus = testPass
-          else:
-            scopeStatus = testDisable
-            allScopesPass = False
+          scopeStatus = testPass
         else:
-          if scope not in API.FORCE_OFF_SA_SCOPES:
-            scopeStatus = testFail
-            allScopesPass = False
-          else:
-            scopeStatus = testSkip
-      else:
-        if scope not in API.FORCE_OFF_SA_SCOPES:
           scopeStatus = testFail
           allScopesPass = False
-        else:
-          scopeStatus = testSkip
+      else:
+        scopeStatus = testFail
+        allScopesPass = False
       printPassFail(scope, f'{scopeStatus}{currentCount(j, jcount)}')
     Ind.Decrement()
+    if checkDeprecatedScopes:
+      deprecatedScopes = sorted(API.DEPRECATED_SCOPES)
+      jcount = len(deprecatedScopes)
+      printKeyValueListWithCount([Msg.DEPRECATED_SCOPES, '',
+                                  Ent.Singular(Ent.USER), user,
+                                  Ent.Choose(Ent.SCOPE, jcount), jcount],
+                                 i, count)
+      Ind.Increment()
+      j = 0
+      for scope in deprecatedScopes:
+        j += 1
+        # try with and without email scope
+        for scopes in [[scope, API.USERINFO_EMAIL_SCOPE], [scope]]:
+          try:
+            credentials = getSvcAcctCredentials(scopes, user)
+            credentials.refresh(request)
+            break
+          except (httplib2.HttpLib2Error, google.auth.exceptions.TransportError, RuntimeError) as e:
+            handleServerError(e)
+          except google.auth.exceptions.RefreshError:
+            continue
+        if credentials.token:
+          token_info = callGAPI(oa2, 'tokeninfo', access_token=credentials.token)
+          if scope in token_info.get('scope', '').split(' ') and user == token_info.get('email', user).lower():
+            scopeStatus = testDeprecated
+            allScopesPass = False
+          else:
+            scopeStatus = testPass
+        else:
+          scopeStatus = testPass
+        printPassFail(scope, f'{scopeStatus}{currentCount(j, jcount)}')
+      Ind.Decrement()
     service_account = GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['client_id']
     if allScopesPass:
       if Act.Get() == Act.CHECK:
