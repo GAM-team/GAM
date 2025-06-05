@@ -63563,9 +63563,6 @@ def updateDriveFileACLs(users, useDomainAdminAccess=False):
   _checkFileIdEntityDomainAccess(fileIdEntity, useDomainAdminAccess)
   if 'role' not in body:
     missingArgumentExit(f'role {formatChoiceList(DRIVEFILE_ACL_ROLES_MAP)}')
-  updateKwargs = {'useDomainAdminAccess': useDomainAdminAccess}
-  if enforceExpansiveAccess is not None:
-    updateKwargs['enforceExpansiveAccess'] = enforceExpansiveAccess
   printKeys, timeObjects = _getDriveFileACLPrintKeysTimeObjects()
   if csvPF and showTitles:
     csvPF.AddTitles(fileNameTitle)
@@ -63603,7 +63600,7 @@ def updateDriveFileACLs(users, useDomainAdminAccess=False):
         permission = callGAPI(drive.permissions(), 'update',
                               bailOnInternalError=True,
                               throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+GAPI.DRIVE3_UPDATE_ACL_THROW_REASONS+[GAPI.FILE_NEVER_WRITABLE],
-                              **updateKwargs,
+                              useDomainAdminAccess=useDomainAdminAccess, enforceExpansiveAccess=enforceExpansiveAccess,
                               fileId=fileId, permissionId=permissionId, removeExpiration=removeExpiration,
                               transferOwnership=body.get('role', '') == 'owner', body=body, fields='*', supportsAllDrives=True)
         if updateSheetProtectedRanges and mimeType == MIMETYPE_GA_SPREADSHEET:
@@ -63869,9 +63866,6 @@ def deleteDriveFileACLs(users, useDomainAdminAccess=False):
     else:
       unknownArgumentExit()
   _checkFileIdEntityDomainAccess(fileIdEntity, useDomainAdminAccess)
-  deleteKwargs = {'useDomainAdminAccess': useDomainAdminAccess}
-  if enforceExpansiveAccess is not None:
-    deleteKwargs['enforceExpansiveAccess'] = enforceExpansiveAccess
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -63904,7 +63898,7 @@ def deleteDriveFileACLs(users, useDomainAdminAccess=False):
                 break
         callGAPI(drive.permissions(), 'delete',
                  throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+GAPI.DRIVE3_DELETE_ACL_THROW_REASONS+[GAPI.FILE_NEVER_WRITABLE],
-                 **deleteKwargs,
+                 useDomainAdminAccess=useDomainAdminAccess, enforceExpansiveAccess=enforceExpansiveAccess,
                  fileId=fileId, permissionId=permissionId, supportsAllDrives=True)
         entityActionPerformed([Ent.USER, user, entityType, fileName, Ent.PERMISSION_ID, permissionId], j, jcount)
         if updateSheetProtectedRanges and mimeType == MIMETYPE_GA_SPREADSHEET:
@@ -66222,7 +66216,7 @@ def printSharedDriveOrganizers(users, useDomainAdminAccess=False):
                                     useDomainAdminAccess=useDomainAdminAccess,
                                     fileId=shareddrive['id'], fields=fields, supportsAllDrives=True)
         for permission in permissions:
-          if permission['type'] in includeTypes and permission['role'] in roles:
+          if permission['type'] in includeTypes and permission['role'] in roles and permission.get('emailAddress', ''):
             if domainList:
               _, domain = permission['emailAddress'].lower().split('@', 1)
               if domain not in domainList:
