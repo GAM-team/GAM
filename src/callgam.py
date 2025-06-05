@@ -11,7 +11,7 @@ if __name__ == '__main__':
 # One time initialization
   if platform.system() != 'Linux':
     multiprocessing.freeze_support()
-    multiprocessing.set_start_method('spawn')
+    multiprocessing.set_start_method('spawn', force=True)
   initializeLogging()
 #
   CallGAMCommand(['gam', 'version'])

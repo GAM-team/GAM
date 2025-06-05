@@ -132,7 +132,10 @@ APIS_NEEDING_ACCESS_TOKEN = {
   CBCM: ['https://www.googleapis.com/auth/admin.directory.device.chromebrowsers']
   }
 #
-FORCE_OFF_SA_SCOPES = {IAM}
+FORCE_OFF_SA_SCOPES = {
+  'https://www.googleapis.com/auth/cloud-identity',
+  'https://www.googleapis.com/auth/cloud-platform',
+  }
 #
 REFRESH_PERM_ERRORS = [
   'invalid_grant: reauth related error (rapt_required)', # no way to reauth today
@@ -652,7 +655,7 @@ _SVCACCT_SCOPES = [
 #   'api': IAM,
 #   'offByDefault': True,
 #   'subscopes': [],
-#   'scope': IAM_SCOPE},
+#   'scope': CLOUD_PLATFORM_SCOPE},
   {'name': 'Keep API',
    'api': KEEP,
    'subscopes': READONLY,

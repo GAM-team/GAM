@@ -11,5 +11,5 @@ from gam.__main__ import main
 if __name__ == '__main__':
   if platform.system() != 'Linux':
     multiprocessing.freeze_support()
-    multiprocessing.set_start_method('spawn')
+    multiprocessing.set_start_method('spawn', force=True)
   main()

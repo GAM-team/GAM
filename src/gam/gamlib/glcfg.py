@@ -163,6 +163,8 @@ EMAIL_BATCH_SIZE = 'email_batch_size'
 ENABLE_DASA = 'enable_dasa'
 # Enable Cloud Session Reauthentication by borrowing a RAPT token from gcloud command
 ENABLE_GCLOUD_REAUTH = 'enable_gcloud_reauth'
+# Value for enforceExpansiveAccess for commands that delete or update drive file ACLs/permissions.
+ENFORCE_EXPANSIVE_ACCESS = 'enforce_expansive_access'
 # When retrieving lists of calendar events from API, how many should be retrieved in each chunk
 EVENT_MAX_RESULTS = 'event_max_results'
 # Path to extra_args.txt
@@ -377,6 +379,7 @@ Defaults = {
   DEVICE_MAX_RESULTS: '200',
   DOMAIN: '',
   DRIVE_DIR: '',
+  ENFORCE_EXPANSIVE_ACCESS: FALSE,
   DRIVE_MAX_RESULTS: '1000',
   DRIVE_V3_BETA: FALSE,
   DRIVE_V3_NATIVE_NAMES: TRUE,
@@ -545,6 +548,7 @@ VAR_INFO = {
   DEVICE_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 200)},
   DOMAIN: {VAR_TYPE: TYPE_STRING, VAR_ENVVAR: 'GA_DOMAIN', VAR_LIMITS: (0, None)},
   DRIVE_DIR: {VAR_TYPE: TYPE_DIRECTORY, VAR_ENVVAR: 'GAMDRIVEDIR'},
+  ENFORCE_EXPANSIVE_ACCESS: {VAR_TYPE: TYPE_BOOLEAN},
   DRIVE_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 1000)},
   DRIVE_V3_BETA: {VAR_TYPE: TYPE_BOOLEAN},
   DRIVE_V3_NATIVE_NAMES: {VAR_TYPE: TYPE_BOOLEAN},

@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.08.03'
+__version__ = '7.09.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -10632,7 +10632,6 @@ def getOAuthClientIDAndSecret():
     invalidClientSecretsJsonExit(str(e))
 
 def getScopesFromUser(scopesList, clientAccess, currentScopes=None):
-  forceOffScopes = []
   OAUTH2_CMDS = ['s', 'u', 'e', 'c']
   oauth2_menu = ''
   numScopes = len(scopesList)
@@ -10683,9 +10682,6 @@ Continue to authorization by entering a 'c'
               break
         i += 1
     else:
-      for api in currentScopes:
-        if api in API.FORCE_OFF_SA_SCOPES:
-          forceOffScopes.extend(currentScopes[api])
       i = 0
       for a_scope in scopesList:
         selectedScopes[i] = ' '
@@ -10754,12 +10750,12 @@ Continue to authorization by entering a 'c'
             for i in range(numScopes):
               selectedScopes[i] = ' '
           elif selection == 'e':
-            return (None, None)
+            return None
           break
         sys.stdout.write(f'{ERROR_PREFIX}Invalid input "{choice}"\n')
     if selection == 'c':
       break
-  return (selectedScopes, forceOffScopes)
+  return selectedScopes
 
 def _localhost_to_ip():
   '''returns IPv4 or IPv6 loopback address which localhost resolves to.
@@ -11106,7 +11102,7 @@ def doOAuthRequest(currentScopes, login_hint, verifyScopes=False):
   client_id, client_secret = getOAuthClientIDAndSecret()
   scopesList = API.getClientScopesList(GC.Values[GC.TODRIVE_CLIENTACCESS])
   if not currentScopes or verifyScopes:
-    selectedScopes, _ = getScopesFromUser(scopesList, True, currentScopes)
+    selectedScopes = getScopesFromUser(scopesList, True, currentScopes)
     if selectedScopes is None:
       return False
     scopes = set(API.REQUIRED_SCOPES)
@@ -12237,7 +12233,7 @@ def checkServiceAccount(users):
 
   def authorizeScopes(message):
     long_url = ('https://admin.google.com/ac/owl/domainwidedelegation'
-                f'?clientScopeToAdd={",".join(checkScopes)}'
+                f'?clientScopeToAdd={",".join(sorted(checkScopesSet-API.FORCE_OFF_SA_SCOPES))}'
                 f'&clientIdToAdd={service_account}&overwriteClientId=true')
     if GC.Values[GC.DOMAIN]:
       long_url += f'&dn={GC.Values[GC.DOMAIN]}'
@@ -12249,11 +12245,12 @@ def checkServiceAccount(users):
   allScopes = API.getSvcAcctScopes(GC.Values[GC.USER_SERVICE_ACCOUNT_ACCESS_ONLY], Act.Get() == Act.UPDATE)
   checkScopesSet = set()
   saScopes = {}
+  addForceOffScopes = True
   useColor = False
-  forceOffScopes = []
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg in {'scope', 'scopes'}:
+      addForceOffScopes = False
       for scope in getString(Cmd.OB_API_SCOPE_URL_LIST).lower().replace(',', ' ').split():
         api = API.getSvcAcctScopeAPI(scope)
         if api is not None:
@@ -12270,22 +12267,22 @@ def checkServiceAccount(users):
     testPass = createGreenText('PASS')
     testFail = createRedText('FAIL')
     testWarn = createYellowText('WARN')
+    testDisable = createRedText('DISABLE')
+    testSkip = createGreenText('SKIP')
   else:
     testPass = 'PASS'
     testFail = 'FAIL'
     testWarn = 'WARN'
+    testDisable = 'DISABLE'
+    testSkip = 'SKIP'
   if Act.Get() == Act.CHECK:
     if not checkScopesSet:
-      currentScopes = GM.Globals[GM.SVCACCT_SCOPES]
-      for api in currentScopes:
-        if api in API.FORCE_OFF_SA_SCOPES:
-          forceOffScopes.extend(currentScopes[api])
-        else:
-          checkScopesSet.update(currentScopes[api])
+      for scope in iter(GM.Globals[GM.SVCACCT_SCOPES].values()):
+        checkScopesSet.update(scope)
   else:
     if not checkScopesSet:
       scopesList = API.getSvcAcctScopesList(GC.Values[GC.USER_SERVICE_ACCOUNT_ACCESS_ONLY], True)
-      selectedScopes, forceOffScopes = getScopesFromUser(scopesList, False, GM.Globals[GM.SVCACCT_SCOPES] if GM.Globals[GM.SVCACCT_SCOPES_DEFINED] else None)
+      selectedScopes = getScopesFromUser(scopesList, False, GM.Globals[GM.SVCACCT_SCOPES] if GM.Globals[GM.SVCACCT_SCOPES_DEFINED] else None)
       if selectedScopes is None:
         return False
       i = 0
@@ -12312,6 +12309,8 @@ def checkServiceAccount(users):
               json.dumps(GM.Globals[GM.OAUTH2SERVICE_JSON_DATA], ensure_ascii=False, sort_keys=True, indent=2),
               continueOnError=False)
   checkScopes = sorted(checkScopesSet)
+  if addForceOffScopes:
+    checkScopes.extend(sorted(API.FORCE_OFF_SA_SCOPES))
   jcount = len(checkScopes)
   printMessage(Msg.SYSTEM_TIME_STATUS)
   offsetSeconds, offsetFormatted = getLocalGoogleTimeOffset()
@@ -12400,25 +12399,24 @@ def checkServiceAccount(users):
       if credentials.token:
         token_info = callGAPI(oa2, 'tokeninfo', access_token=credentials.token)
         if scope in token_info.get('scope', '').split(' ') and user == token_info.get('email', user).lower():
-          scopeStatus = testPass
+          if scope not in API.FORCE_OFF_SA_SCOPES:
+            scopeStatus = testPass
+          else:
+            scopeStatus = testDisable
+            allScopesPass = False
         else:
+          if scope not in API.FORCE_OFF_SA_SCOPES:
+            scopeStatus = testFail
+            allScopesPass = False
+          else:
+            scopeStatus = testSkip
+      else:
+        if scope not in API.FORCE_OFF_SA_SCOPES:
           scopeStatus = testFail
           allScopesPass = False
-      else:
-        scopeStatus = testFail
-        allScopesPass = False
+        else:
+          scopeStatus = testSkip
       printPassFail(scope, f'{scopeStatus}{currentCount(j, jcount)}')
-    if forceOffScopes:
-      allScopesPass = False
-      if useColor:
-        scopeStatus = createRedText('DISABLE')
-      else:
-        scopeStatus = 'DISABLE'
-      jcount = len(forceOffScopes)
-      j = 0
-      for scope in forceOffScopes:
-        j +=1
-        printPassFail(scope, f'{scopeStatus}{currentCount(j, jcount)}')
     Ind.Decrement()
     service_account = GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['client_id']
     if allScopesPass:
@@ -58737,7 +58735,7 @@ def initCopyMoveOptions(copyCmd):
     'showPermissionMessages': False,
     'sendEmailIfRequired': False,
     'useDomainAdminAccess': False,
-    'enforceExpansiveAccess': False,
+    'enforceExpansiveAccess': GC.Values[GC.ENFORCE_EXPANSIVE_ACCESS],
     'copiedShortcutsPointToCopiedFiles': True,
     'createShortcutsForNonmovableFiles': False,
     'duplicateFiles': DUPLICATE_FILE_OVERWRITE_OLDER,
@@ -62117,7 +62115,8 @@ def transferDrive(users):
   targetUserFolderPattern = '#user# old files'
   targetUserOrphansFolderPattern = '#user# orphaned files'
   targetIds = [None, None]
-  createShortcutsForNonmovableFiles = enforceExpansiveAccess = False
+  createShortcutsForNonmovableFiles = False
+  enforceExpansiveAccess = GC.Values[GC.ENFORCE_EXPANSIVE_ACCESS]
   mergeWithTarget = False
   thirdPartyOwners = {}
   skipFileIdEntity = initDriveFileEntity()
@@ -62423,7 +62422,8 @@ def transferOwnership(users):
   body = {}
   newOwner = getEmailAddress()
   OBY = OrderBy(DRIVEFILE_ORDERBY_CHOICE_MAP)
-  changeParents = enforceExpansiveAccess = filepath = includeTrashed = noRecursion = False
+  changeParents = filepath = includeTrashed = noRecursion = False
+  enforceExpansiveAccess = GC.Values[GC.ENFORCE_EXPANSIVE_ACCESS]
   pathDelimiter = '/'
   csvPF = fileTree = None
   addParents = ''
@@ -62749,7 +62749,8 @@ def claimOwnership(users):
   onlyOwners = set()
   skipOwners = set()
   subdomains = []
-  enforceExpansiveAccess = filepath = includeTrashed = False
+  filepath = includeTrashed = False
+  enforceExpansiveAccess = GC.Values[GC.ENFORCE_EXPANSIVE_ACCESS]
   pathDelimiter = '/'
   addParents = ''
   parentBody = {}
@@ -63524,7 +63525,7 @@ def doCreateDriveFileACL():
 def updateDriveFileACLs(users, useDomainAdminAccess=False):
   fileIdEntity = getDriveFileEntity()
   isEmail, permissionId = getPermissionId()
-  enforceExpansiveAccess = None
+  enforceExpansiveAccess = GC.Values[GC.ENFORCE_EXPANSIVE_ACCESS]
   removeExpiration = showTitles = updateSheetProtectedRanges = False
   showDetails = True
   csvPF = None
@@ -63853,7 +63854,7 @@ def doCreatePermissions():
 def deleteDriveFileACLs(users, useDomainAdminAccess=False):
   fileIdEntity = getDriveFileEntity()
   isEmail, permissionId = getPermissionId()
-  enforceExpansiveAccess = None
+  enforceExpansiveAccess = GC.Values[GC.ENFORCE_EXPANSIVE_ACCESS]
   showTitles = updateSheetProtectedRanges = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -63982,7 +63983,7 @@ def deletePermissions(users, useDomainAdminAccess=False):
     jsonData = getJSON([])
     PM = PermissionMatch()
     PM.SetDefaultMatch(False, {'role': 'owner'})
-  enforceExpansiveAccess = False
+  enforceExpansiveAccess = GC.Values[GC.ENFORCE_EXPANSIVE_ACCESS]
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg in ADMIN_ACCESS_OPTIONS:
