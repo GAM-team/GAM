@@ -10,13 +10,26 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
-### 7.08.03
+### 7.09.00
 
 Removed the overly broad service account `IAM and Access Management API` scope `https://www.googleapis.com/auth/cloud-platform`
 from DWD. The `gam <UserTypeEntity> check|Update serviceaccount` commands issue an error message if this scope
 is enabled promptig you to update your service account authorization so that the scope can be removed.
 
 GAM commands that need IAM access now use the more limited scope `https://www.googleapis.com/auth/iam` in a non-DWD manner.
+
+Added `enforce_expansive_access` Boolean variable to `gam.cfg` that provides the default value
+for option `enforceexpansiveaccess` in all commands that delete or update drive file ACLs/permissions.
+```
+gam <UserTypeEntity> delete permissions
+gam <UserTypeEntity> delete drivefileacl
+gam <UserTypeEntity> update drivefileacl
+gam <UserTypeEntity> copy drivefile
+gam <UserTypeEntity> move drivefile
+gam <UserTypeEntity> transfer ownership
+gam <UserTypeEntity> claim ownership
+gam <UserTypeEntity> transfer drive
+```
 
 Updated to Python 3.13.4
 

@@ -328,6 +328,16 @@ enable_dasa
         admin_email, customer_id and domain must be set when enable_dasa is True,
         customer_id may not be set to my_customer
         Signal file: OldGamPath/enabledasa.txt
+enforce_expansive_access
+        The default value for option `enforceexpansiveaccess` in all commands that delete or update drive file ACLs/permissions.
+        gam <UserTypeEntity> delete permissions
+        gam <UserTypeEntity> delete drivefileacl
+        gam <UserTypeEntity> update drivefileacl
+        gam <UserTypeEntity> copy drivefile
+        gam <UserTypeEntity> move drivefile
+        gam <UserTypeEntity> transfer ownership
+        gam <UserTypeEntity> claim ownership
+        Default: False
 event_max_results
         When retrieving lists of Calendar events from API,
         how many should be retrieved in each API call
