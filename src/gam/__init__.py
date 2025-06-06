@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.09.00'
+__version__ = '7.09.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -28118,6 +28118,7 @@ def simplifyChromeSchema(schema):
                  'settings': {}
                 }
   fieldDescriptions = schema['fieldDescriptions']
+  savedSettingName = ''
   for mtype in schema['definition']['messageType']:
     for setting in mtype['field']:
       setting_name = setting['name']
@@ -28126,6 +28127,9 @@ def simplifyChromeSchema(schema):
                       'descriptions':  [],
                       'type': setting['type'],
                      }
+      if setting_dict['type'] == 'TYPE_INT64' and savedSettingName:
+        setting_dict['name'] = savedSettingName
+      savedSettingName = ''
       if setting_dict['type'] == 'TYPE_STRING' and setting.get('label') == 'LABEL_REPEATED':
         setting_dict['type'] = 'TYPE_LIST'
       if setting_dict['type'] == 'TYPE_ENUM':
@@ -28147,6 +28151,7 @@ def simplifyChromeSchema(schema):
                   break
             break
       elif setting_dict['type'] == 'TYPE_MESSAGE':
+        savedSettingName = setting_name
         continue
       else:
         setting_dict['enums'] = None
@@ -28252,14 +28257,11 @@ def doDeleteChromePolicy():
     entityActionFailedWarning(kvList, str(e))
 
 CHROME_SCHEMA_SPECIAL_CASES = {
+# duration
   'chrome.users.AutoUpdateCheckPeriodNewV2':
     {'autoupdatecheckperiodminutesnew':
        {'casedField': 'autoUpdateCheckPeriodMinutesNew',
         'type': 'duration', 'minVal': 1, 'maxVal': 720}},
-  'chrome.users.Avatar':
-    {'useravatarimage':
-       {'casedField': 'userAvatarImage',
-        'type': 'downloadUri'}},
   'chrome.users.BrowserSwitcherDelayDurationV2':
     {'browserswitcherdelayduration':
        {'casedField': 'browserSwitcherDelayDuration',
@@ -28301,10 +28303,6 @@ CHROME_SCHEMA_SPECIAL_CASES = {
     {'maxinvalidationfetchdelay':
        {'casedField': 'maxInvalidationFetchDelay',
         'type': 'duration', 'minVal': 1, 'maxVal': 30, 'default': 10}},
-  'chrome.users.PrintingMaxSheetsAllowed':
-    {'printingmaxsheetsallowednullable':
-       {'casedField': 'printingMaxSheetsAllowedNullable',
-        'type': 'value', 'minVal': 1, 'maxVal': None}},
   'chrome.users.PrintJobHistoryExpirationPeriodNewV2':
     {'printjobhistoryexpirationperioddaysnew':
        {'casedField': 'printJobHistoryExpirationPeriodDaysNew',
@@ -28328,10 +28326,6 @@ CHROME_SCHEMA_SPECIAL_CASES = {
      'updatessuppressedstarttime':
        {'casedField': 'updatesSuppressedStartTime',
         'type': 'timeOfDay'}},
-  'chrome.users.Wallpaper':
-    {'wallpaperimage':
-       {'casedField': 'wallpaperImage',
-        'type': 'downloadUri'}},
   'chrome.devices.EnableReportUploadFrequencyV2':
     {'reportdeviceuploadfrequency':
        {'casedField': 'reportDeviceUploadFrequency',
@@ -28340,10 +28334,6 @@ CHROME_SCHEMA_SPECIAL_CASES = {
     {'uptimelimitduration':
        {'casedField': 'uptimeLimitDuration',
         'type': 'duration', 'minVal': 1, 'maxVal': 365}},
-  'chrome.devices.SignInWallpaperImage':
-    {'devicewallpaperimage':
-       {'casedField': 'deviceWallpaperImage',
-        'type': 'downloadUri'}},
   'chrome.devices.kiosk.AcPowerSettingsV2':
     {'acidletimeout':
        {'casedField': 'acIdleTimeout',
@@ -28370,10 +28360,6 @@ CHROME_SCHEMA_SPECIAL_CASES = {
      'batteryscreenofftimeout':
        {'casedField': 'batteryScreenOffTimeout',
         'type': 'duration', 'minVal': 0, 'maxVal': 35000}},
-  'chrome.devices.managedguest.Avatar':
-    {'useravatarimage':
-       {'casedField': 'userAvatarImage',
-        'type': 'downloadUri'}},
   'chrome.devices.managedguest.BrowsingDataLifetimeV2':
     {'browsinghistoryttl':
        {'casedField': 'browsingHistoryTtl',
@@ -28415,6 +28401,56 @@ CHROME_SCHEMA_SPECIAL_CASES = {
     {'sessiondurationlimit':
        {'casedField': 'sessionDurationLimit',
         'type': 'duration', 'minVal': 1, 'maxVal': 1440}},
+# value
+  'chrome.users.GaiaLockScreenOfflineSigninTimeLimitDays':
+    {'gaialockscreenofflinesignintimelimitdays':
+       {'casedField': 'gaiaLockScreenOfflineSigninTimeLimitDays',
+        'type': 'value', 'minVal': 0, 'maxVal': 365}},
+  'chrome.users.GaiaOfflineSigninTimeLimitDays':
+    {'gaiaofflinesignintimelimitdays':
+       {'casedField': 'gaiaOfflineSigninTimeLimitDays',
+        'type': 'value', 'minVal': 0, 'maxVal': 365}},
+  'chrome.users.PrintingMaxSheetsAllowed':
+    {'printingmaxsheetsallowednullable':
+       {'casedField': 'printingMaxSheetsAllowedNullable',
+        'type': 'value', 'minVal': 1, 'maxVal': None}},
+  'chrome.users.RemoteAccessHostClipboardSizeBytes':
+    {'remoteaccesshostclipboardsizebytes':
+       {'casedField': 'remoteAccessHostClipboardSizeBytes',
+        'type': 'value', 'minVal': 0, 'maxVal': 2147483647}},
+  'chrome.users.SamlLockScreenOfflineSigninTimeLimitDays':
+    {'samllockscreenofflinesignintimelimitdays':
+       {'casedField': 'samlLockScreenOfflineSigninTimeLimitDays',
+        'type': 'value', 'minVal': 0, 'maxVal': 365}},
+  'chrome.devices.ExtensionCacheSize':
+    {'extensioncachesize':
+       {'casedField': 'extensionCacheSize',
+        'type': 'value', 'minVal': 1048576, 'maxVal': None, 'default': 268435456}},
+  'chrome.devices.managedguest.PrintingMaxSheetsAllowed':
+    {'printingmaxsheetsallowednullable':
+       {'casedField': 'printingMaxSheetsAllowedNullable',
+        'type': 'value', 'minVal': 1, 'maxVal': None}},
+  'chrome.devices.managedguest.RemoteAccessHostClipboardSizeBytes':
+    {'remoteaccesshostclipboardsizebytes':
+       {'casedField': 'remoteAccessHostClipboardSizeBytes',
+        'type': 'value', 'minVal': 0, 'maxVal': 2147483647}},
+# downloadUri
+  'chrome.users.Avatar':
+    {'useravatarimage':
+       {'casedField': 'userAvatarImage',
+        'type': 'downloadUri'}},
+  'chrome.users.Wallpaper':
+    {'wallpaperimage':
+       {'casedField': 'wallpaperImage',
+        'type': 'downloadUri'}},
+  'chrome.devices.SignInWallpaperImage':
+    {'devicewallpaperimage':
+       {'casedField': 'deviceWallpaperImage',
+        'type': 'downloadUri'}},
+  'chrome.devices.managedguest.Avatar':
+    {'useravatarimage':
+       {'casedField': 'userAvatarImage',
+        'type': 'downloadUri'}},
   'chrome.devices.managedguest.Wallpaper':
     {'wallpaperimage':
        {'casedField': 'wallpaperImage',
@@ -57296,6 +57332,7 @@ def printDiskUsage(users):
             topFolder['path'] = f'{SHARED_DRIVES}{pathDelimiter}{topFolder["name"]}'
           else:
             topFolder['path'] = topFolder['name']
+          topFolder.pop('ownedByMe', None)
         elif topFolder['name'] == MY_DRIVE and not topFolder.get('parents'):
           topFolder['path'] = MY_DRIVE
         else:
@@ -57306,7 +57343,6 @@ def printDiskUsage(users):
           if owners:
             topFolder['Owner'] = owners[0].get('emailAddress', 'Unknown')
             trashFolder['Owner'] = topFolder['Owner']
-        topFolder.pop('ownedByMe', None)
         topFolder.pop('parents', None)
         topFolder.update(zeroFolderInfo)
         topFolder.pop(sizeField, None)
