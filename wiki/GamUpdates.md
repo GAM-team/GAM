@@ -10,6 +10,17 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.09.01
+
+Fixed bug in `gam <UserTypeEntity> print diskusage` where the `ownedByMe` column was
+blank for the top folder.
+
+Fixed bug in `gam update chromepolicy` where the following error was generated
+when updating policies with simple numerical values.
+```
+ERROR: Missing argument: Expected <value>"
+```
+
 ### 7.09.00
 
 Removed the overly broad service account `IAM and Access Management API` scope `https://www.googleapis.com/auth/cloud-platform`
