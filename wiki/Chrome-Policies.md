@@ -117,6 +117,10 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 
 ## Display Chrome policy schemas in same format as Legacy GAM
 ```
+gam info chromeschema std <SchemaName>
+```
+Chrome policy schema `<SchemaName>` is displayed.
+```
 gam show chromeschemas std
         [filter <String>]
 ```

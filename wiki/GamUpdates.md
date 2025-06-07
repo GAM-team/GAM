@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.09.02
+
+Added command `gam info chromeschema std <SchemaName>` to display a Chrome policy schema in the same format as Legacy GAM.
+
+Improved output of `gam show chromeschemas [std]` and `gam info chromeschema [std]` to more accurately display the schemas.
+
 ### 7.09.01
 
 Fixed bug in `gam <UserTypeEntity> print diskusage` where the `ownedByMe` column was
