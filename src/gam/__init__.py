@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.09.01'
+__version__ = '7.09.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -25947,7 +25947,7 @@ def exitIfChatNotConfigured(chat, kvList, errMsg, i, count):
   if (('No bot associated with this project.' in errMsg) or
       ('Invalid project number.' in errMsg) or
       ('Google Chat app not found.' in errMsg)):
-    systemErrorExit(API_ACCESS_DENIED_RC, Msg.TO_SET_UP_GOOGLE_CHAT.format(setupChatURL(chat)))
+    systemErrorExit(API_ACCESS_DENIED_RC, Msg.TO_SET_UP_GOOGLE_CHAT.format(setupChatURL(chat), GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['project_id']))
   entityActionFailedWarning(kvList, errMsg, i, count)
 
 def _getChatAdminAccess(adminAPI, userAPI):
@@ -28119,7 +28119,9 @@ def simplifyChromeSchema(schema):
                 }
   fieldDescriptions = schema['fieldDescriptions']
   savedSettingName = ''
+  savedTypeName = ''
   for mtype in schema['definition']['messageType']:
+    numSettings = len(mtype['field'])
     for setting in mtype['field']:
       setting_name = setting['name']
       setting_dict = {'name': setting_name,
@@ -28127,9 +28129,9 @@ def simplifyChromeSchema(schema):
                       'descriptions':  [],
                       'type': setting['type'],
                      }
-      if setting_dict['type'] == 'TYPE_INT64' and savedSettingName:
+      if mtype['name'] == savedTypeName and numSettings == 1:
         setting_dict['name'] = savedSettingName
-      savedSettingName = ''
+        savedTypeName = ''
       if setting_dict['type'] == 'TYPE_STRING' and setting.get('label') == 'LABEL_REPEATED':
         setting_dict['type'] = 'TYPE_LIST'
       if setting_dict['type'] == 'TYPE_ENUM':
@@ -28152,6 +28154,7 @@ def simplifyChromeSchema(schema):
             break
       elif setting_dict['type'] == 'TYPE_MESSAGE':
         savedSettingName = setting_name
+        savedTypeName = setting['typeName']
         continue
       else:
         setting_dict['enums'] = None
@@ -28928,7 +28931,7 @@ def _showChromePolicySchema(schema, FJQC, i=0, count=0):
     return
   printEntity([Ent.CHROME_POLICY_SCHEMA, schema['name']], i, count)
   Ind.Increment()
-  showJSON(None, schema)
+  showJSON(None, schema, dictObjectsKey={'messageType': 'name', 'field': 'name'})
   Ind.Decrement()
 
 CHROME_POLICY_SCHEMA_FIELDS_CHOICE_MAP = {
@@ -28951,6 +28954,9 @@ CHROME_POLICY_SCHEMA_FIELDS_CHOICE_MAP = {
 #	[formatjson]
 def doInfoChromePolicySchemas():
   cp = buildGAPIObject(API.CHROMEPOLICY)
+  if checkArgumentPresent('std'):
+    doInfoChromePolicySchemasStd(cp)
+    return
   FJQC = FormatJSONQuoteChar()
   fieldsList = []
   name = _getChromePolicySchemaName()
@@ -28979,7 +28985,7 @@ def doInfoChromePolicySchemas():
 #	[filter <String>]
 #	<ChromePolicySchemaFieldName>* [fields <ChromePolicySchemaFieldNameList>]
 #	[[formatjson [quotechar <Character>]]
-def doPrintShowChromeSchemas():
+def doPrintShowChromePolicySchemas():
   def _printChromePolicySchema(schema):
     row = flattenJSON(schema)
     if not FJQC.formatJSON:
@@ -28993,10 +28999,12 @@ def doPrintShowChromeSchemas():
       row['JSON'] = json.dumps(cleanJSON(schema), ensure_ascii=False, sort_keys=True)
       csvPF.WriteRowNoFilter(row)
 
-  if checkArgumentPresent('std'):
-    doShowChromeSchemasStd()
-    return
   cp = buildGAPIObject(API.CHROMEPOLICY)
+  if checkArgumentPresent('std'):
+    if not Act.csvFormat():
+      doShowChromePolicySchemasStd(cp)
+      return
+    unknownArgumentExit()
   parent = _getCustomersCustomerIdWithC()
   csvPF = CSVPrintFile(['name', 'schemaName', 'policyDescription',
                         'policyApiLifecycle.policyApiLifecycleStage',
@@ -29056,9 +29064,51 @@ def doPrintShowChromeSchemas():
   if csvPF:
     csvPF.writeCSVfile('Chrome Policy Schemas')
 
+def _showChromePolicySchemaStd(schema):
+  printKeyValueList([f'{schema.get("name")}', f'{schema.get("description")}'])
+  Ind.Increment()
+  for val in schema['settings'].values():
+    vtype = val.get('type')
+    printKeyValueList([f'{val.get("name")}', f'{vtype}'])
+    Ind.Increment()
+    if vtype == 'TYPE_ENUM':
+      enums = val.get('enums', [])
+      descriptions = val.get('descriptions', [])
+      for i in range(len(val.get('enums', []))):
+        printKeyValueList([f'{enums[i]}', f'{descriptions[i]}'])
+    elif vtype == 'TYPE_BOOL':
+      pvs = val.get('descriptions')
+      for pvi in pvs:
+        if isinstance(pvi, dict):
+          pvalue = pvi.get('value')
+          pdescription = pvi.get('description')
+          printKeyValueList([f'{pvalue}', f'{pdescription}'])
+        elif isinstance(pvi, list):
+          printKeyValueList([f'{pvi[0]}'])
+    else:
+      description = val.get('descriptions')
+      if len(description) > 0:
+        printKeyValueList([f'{description[0]}'])
+    Ind.Decrement()
+  Ind.Decrement()
+
+# gam info chromeschema std <SchemaName>
+def doInfoChromePolicySchemasStd(cp):
+  name = _getChromePolicySchemaName()
+  checkForExtraneousArguments()
+  try:
+    schema = callGAPI(cp.customers().policySchemas(), 'get',
+                      throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
+                      name=name)
+    _, schema_dict = simplifyChromeSchema(schema)
+    _showChromePolicySchemaStd(schema_dict)
+  except GAPI.notFound:
+    entityUnknownWarning(Ent.CHROME_POLICY_SCHEMA, name)
+  except (GAPI.badRequest, GAPI.forbidden):
+    accessErrorExit(None)
+
 # gam show chromeschemas std [filter <String>]
-def doShowChromeSchemasStd():
-  cp = buildGAPIObject(API.CHROMEPOLICY)
+def doShowChromePolicySchemasStd(cp):
   sfilter = None
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -29074,33 +29124,8 @@ def doShowChromeSchemasStd():
   for schema in result:
     schema_name, schema_dict = simplifyChromeSchema(schema)
     schemas[schema_name.lower()] = schema_dict
-  for _, value in sorted(iter(schemas.items())):
-    printKeyValueList([f'{value.get("name")}', f'{value.get("description")}'])
-    Ind.Increment()
-    for val in value['settings'].values():
-      vtype = val.get('type')
-      printKeyValueList([f'{val.get("name")}', f'{vtype}'])
-      Ind.Increment()
-      if vtype == 'TYPE_ENUM':
-        enums = val.get('enums', [])
-        descriptions = val.get('descriptions', [])
-        for i in range(len(val.get('enums', []))):
-          printKeyValueList([f'{enums[i]}', f'{descriptions[i]}'])
-      elif vtype == 'TYPE_BOOL':
-        pvs = val.get('descriptions')
-        for pvi in pvs:
-          if isinstance(pvi, dict):
-            pvalue = pvi.get('value')
-            pdescription = pvi.get('description')
-            printKeyValueList([f'{pvalue}', f'{pdescription}'])
-          elif isinstance(pvi, list):
-            printKeyValueList([f'{pvi[0]}'])
-      else:
-        description = val.get('descriptions')
-        if len(description) > 0:
-          printKeyValueList([f'{description[0]}'])
-      Ind.Decrement()
-    Ind.Decrement()
+  for _, schema in sorted(iter(schemas.items())):
+    _showChromePolicySchemaStd(schema)
     printBlankLine()
 
 # gam create chromenetwork
@@ -76137,7 +76162,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMENEEDSATTN:	doPrintShowChromeNeedsAttn,
       Cmd.ARG_CHROMEPOLICY:	doPrintShowChromePolicies,
       Cmd.ARG_CHROMEPROFILE:	doPrintShowChromeProfiles,
-      Cmd.ARG_CHROMESCHEMA:	doPrintShowChromeSchemas,
+      Cmd.ARG_CHROMESCHEMA:	doPrintShowChromePolicySchemas,
       Cmd.ARG_CHROMESNVALIDITY:	doPrintChromeSnValidity,
       Cmd.ARG_CHROMEVERSIONS:	doPrintShowChromeVersions,
       Cmd.ARG_CIGROUP:		doPrintCIGroups,
@@ -76269,7 +76294,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMENEEDSATTN:	doPrintShowChromeNeedsAttn,
       Cmd.ARG_CHROMEPOLICY:	doPrintShowChromePolicies,
       Cmd.ARG_CHROMEPROFILE:	doPrintShowChromeProfiles,
-      Cmd.ARG_CHROMESCHEMA:	doPrintShowChromeSchemas,
+      Cmd.ARG_CHROMESCHEMA:	doPrintShowChromePolicySchemas,
       Cmd.ARG_CHROMEVERSIONS:	doPrintShowChromeVersions,
       Cmd.ARG_CIGROUPMEMBERS:	doShowCIGroupMembers,
       Cmd.ARG_CIPOLICY:		doPrintShowCIPolicies,

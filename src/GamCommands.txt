@@ -2725,6 +2725,7 @@ gam print chromschemas [todrive <ToDriveAttribute>*]
         <ChromePolicySchemaFieldName>* [fields <ChromePolicySchemaFieldNameList>]
         [[formatjson [quotechar <Character>]]
 
+gam info chromeschema std <SchemaName>
 gam show chromeschemas std
         [filter <String>]
 
