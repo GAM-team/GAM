@@ -152,7 +152,7 @@ gam update group|groups <GroupEntity> create|add [<GroupRole>]
         [preview] [actioncsv]
         <UserItem>|<UserTypeEntity>
 ```
-To add a group as a memmber of another group, just specify its email address.
+To add a group as a member of another group, just specify its email address.
 ```
 gam update group group1@domain.com add member group2@domain.com
 ```
@@ -208,7 +208,7 @@ gam update group|groups <GroupEntity> delete|remove [<GroupRole>]
 ```
 `<GroupRole>` is ignored, deletions take place regardless of role.
 
-To remove a group as a memmber of another group, just specify its email address.
+To remove a group as a member of another group, just specify its email address.
 ```
 gam update group group1@domain.com remove group2@domain.com
 ```
