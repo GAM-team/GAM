@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.09.02'
+__version__ = '7.09.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -28313,7 +28313,16 @@ CHROME_SCHEMA_SPECIAL_CASES = {
   'chrome.users.RelaunchNotificationWithDurationV2':
     {'relaunchnotificationperiodduration':
        {'casedField': 'relaunchNotificationPeriodDuration',
-        'type': 'duration', 'minVal': -1, 'maxVal': None}},
+        'type': 'duration', 'minVal': 1, 'maxVal': 168},
+     'relaunchinitialquietperiodduration':
+       {'casedField': 'relaunchInitialQuietPeriodDuration',
+        'type': 'duration', 'minVal': 0, 'maxVal': None},
+     'relaunchwindowstarttime':
+       {'casedField': 'relaunchWindowStartTime',
+        'type': 'timeOfDay'},
+     'relaunchwindowdurationmin':
+       {'casedField': 'relaunchWindowDurationMin',
+        'type': 'duration', 'minVal': 1, 'maxVal': 1440}},
   'chrome.users.SecurityTokenSessionSettingsV2':
     {'securitytokensessionnotificationseconds':
        {'casedField': 'securityTokenSessionNotificationSeconds',
@@ -28475,7 +28484,7 @@ def doUpdateChromePolicy():
       return value
     #if vtype == timeOfDay:
     hours, minutes = value.split(':')
-    return {vtype: {'hours': hours, 'minutes': minutes}}
+    return {vtype: {'hours': int(hours), 'minutes': int(minutes)}}
 
   cp = buildGAPIObject(API.CHROMEPOLICY)
   cd = buildGAPIObject(API.DIRECTORY)
@@ -28931,7 +28940,7 @@ def _showChromePolicySchema(schema, FJQC, i=0, count=0):
     return
   printEntity([Ent.CHROME_POLICY_SCHEMA, schema['name']], i, count)
   Ind.Increment()
-  showJSON(None, schema, dictObjectsKey={'messageType': 'name', 'field': 'name'})
+  showJSON(None, schema, dictObjectsKey={'messageType': 'name', 'field': 'name', 'fieldDescriptions': 'field'})
   Ind.Decrement()
 
 CHROME_POLICY_SCHEMA_FIELDS_CHOICE_MAP = {
@@ -51586,6 +51595,9 @@ def getStatusEventDateTime(dateType, dateList):
   if dateType == 'timerange':
     startTime = getTimeOrDeltaFromNow(returnDateTime=True)[0]
     endTime = getTimeOrDeltaFromNow(returnDateTime=True)[0]
+    if startTime >= endTime:
+      Cmd.Backup()
+      usageErrorExit(Msg.INVALID_EVENT_TIMERANGE.format(dateType, startTime, endTime))
     recurrence = []
     while checkArgumentPresent(['recurrence']):
       recurrence.append(getString(Cmd.OB_RECURRENCE))
