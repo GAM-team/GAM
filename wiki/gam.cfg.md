@@ -337,7 +337,7 @@ enforce_expansive_access
         gam <UserTypeEntity> move drivefile
         gam <UserTypeEntity> transfer ownership
         gam <UserTypeEntity> claim ownership
-        Default: False
+        Default: True
 event_max_results
         When retrieving lists of Calendar events from API,
         how many should be retrieved in each API call
