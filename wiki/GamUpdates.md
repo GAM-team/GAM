@@ -10,6 +10,15 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.09.03
+
+Updated `gam <UserTypeEntity> create focustime|outofoffice ... timerange <Time> <Time>` to check
+that the first `<Time>` is less than the second `Time`; previously the event was not created.
+
+For new installs the `enforce_expansive_access` Boolean variable in `gam.cfg` now defaults to True.
+For existing installations, if `enforce_expansive_access` has not been added to `gam.cfg`,
+a default value of True will be used.
+
 ### 7.09.02
 
 Added command `gam info chromeschema std <SchemaName>` to display a Chrome policy schema in the same format as Legacy GAM.
