@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.09.03'
+__version__ = '7.09.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -13138,7 +13138,7 @@ def doWhatIs():
     entityUnknownWarning(Ent.EMAIL, email)
     setSysExitRC(ENTITY_IS_UKNOWN_RC)
     return
-  if not invitableCheck or not getSvcAcctCredentials(API.CLOUDIDENTITY_USERINVITATIONS, _getAdminEmail(), softErrors=True):
+  if not invitableCheck:
     isInvitableUser = False
   else:
     isInvitableUser, ci = _getIsInvitableUser(None, email)
