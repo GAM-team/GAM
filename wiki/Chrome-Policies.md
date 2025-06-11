@@ -471,11 +471,14 @@ gam delete chromenetwork
 ```
 chrome.devices.AdvancedBatteryChargeMode: Advanced Charge battery mode.
   advancedBatteryChargeModeEnabled: TYPE_BOOL
-    true: None
-    false: None
-  key: TYPE_STRING
-  startTime: TYPE_INT32
-  endTime: TYPE_INT32
+    true
+    false
+  advancedBatteryChargeTimesOfDay
+    dailyChargePeriods
+      key: TYPE_STRING
+      value
+        startTime: TYPE_INT32
+        endTime: TYPE_INT32
 
 chrome.devices.AllowedBluetoothServices: Bluetooth services allowed.
   deviceAllowedBluetoothServices: TYPE_LIST
@@ -508,8 +511,63 @@ chrome.devices.AutoUpdateSettings: Auto-update settings.
   deviceRollbackToTargetVersion: TYPE_ENUM
     ROLLBACK_DISABLED: Do not roll back OS.
     ROLLBACK_AND_RESTORE_IF_POSSIBLE: Roll back OS.
+  autoUpdateRolloutPlan
+    plan: TYPE_ENUM
+      DEFAULT_UPDATES:
+      SCATTER_UPDATES:
+      SCHEDULE_UPDATES:
+    stages
+      days: TYPE_INT32
+      percentage: TYPE_INT32
+    scatter: TYPE_ENUM
+      NO_SCATTER_FACTOR:
+      ONE_DAY:
+      TWO_DAYS:
+      THREE_DAYS:
+      FOUR_DAYS:
+      FIVE_DAYS:
+      SIX_DAYS:
+      SEVEN_DAYS:
+      EIGHT_DAYS:
+      NINE_DAYS:
+      TEN_DAYS:
+      ELEVEN_DAYS:
+      TWELVE_DAYS:
+      THIRTEEN_DAYS:
+      FOURTEEN_DAYS:
+  autoUpdateTimeRestrictions
+    timeRestriction
+      start
+        dayOfWeek: TYPE_ENUM
+          MONDAY:
+          TUESDAY:
+          WEDNESDAY:
+          THURSDAY:
+          FRIDAY:
+          SATURDAY:
+          SUNDAY:
+        hours: TYPE_INT32
+        minutes: TYPE_INT32
+      end
+        dayOfWeek: TYPE_ENUM
+          MONDAY:
+          TUESDAY:
+          WEDNESDAY:
+          THURSDAY:
+          FRIDAY:
+          SATURDAY:
+          SUNDAY:
+        hours: TYPE_INT32
+        minutes: TYPE_INT32
+  autoUpdateTargetVersionLts
+    selectedVersion
+      displayName: TYPE_STRING
   deviceMinimumVersionAueMessage: TYPE_STRING
     Final automatic update alert message. When a device reaches its last automatic update(https://support.google.com/chrome/a/answer/6220366)automatic , an alert is sent to the user. This text overrides the default message that will be shown on the device.
+  deviceMinimumVersion
+    chromeosVersion: TYPE_STRING
+    aueWarningPeriodDays: TYPE_INT64
+    warningPeriodDays: TYPE_INT64
   autoUpdateHttpDownloadsEnabled: TYPE_BOOL
     true: Use HTTP for update downloads.
     false: Use HTTPS for update downloads.
@@ -523,42 +581,6 @@ chrome.devices.AutoUpdateSettings: Auto-update settings.
   deviceAutoUpdatePeerToPeerEnabled: TYPE_BOOL
     true: Allow peer to peer auto update downloads.
     false: Do not allow peer to peer auto update downloads.
-  plan: TYPE_ENUM
-    DEFAULT_UPDATES:
-    SCATTER_UPDATES:
-    SCHEDULE_UPDATES:
-  scatter: TYPE_ENUM
-    NO_SCATTER_FACTOR:
-    ONE_DAY:
-    TWO_DAYS:
-    THREE_DAYS:
-    FOUR_DAYS:
-    FIVE_DAYS:
-    SIX_DAYS:
-    SEVEN_DAYS:
-    EIGHT_DAYS:
-    NINE_DAYS:
-    TEN_DAYS:
-    ELEVEN_DAYS:
-    TWELVE_DAYS:
-    THIRTEEN_DAYS:
-    FOURTEEN_DAYS:
-  days: TYPE_INT32
-  percentage: TYPE_INT32
-  dayOfWeek: TYPE_ENUM
-    MONDAY:
-    TUESDAY:
-    WEDNESDAY:
-    THURSDAY:
-    FRIDAY:
-    SATURDAY:
-    SUNDAY:
-  hours: TYPE_INT32
-  minutes: TYPE_INT32
-  selectedVersion: TYPE_STRING
-  chromeosVersion: TYPE_STRING
-  aueWarningPeriodDays: TYPE_INT64
-  warningPeriodDays: TYPE_INT64
 
 chrome.devices.Bluetooth: Bluetooth.
   allowBluetooth: TYPE_BOOL
@@ -581,7 +603,8 @@ chrome.devices.DeviceAllowEnterpriseRemoteAccessConnections: Enterprise remote a
     false: Prevent remote access connections from enterprise admins.
 
 chrome.devices.DeviceAuthenticationFlowAutoReloadInterval: Automatic online sign-in / lock screen refresh.
-  deviceAuthenticationFlowAutoReloadInterval: TYPE_INT64
+  deviceAuthenticationFlowAutoReloadInterval
+    duration: TYPE_INT64
 
 chrome.devices.DeviceAuthenticationUrlAllowlist: Blocked URL exceptions on the sign-in / lock screens.
   deviceAuthenticationUrlAllowlist: TYPE_LIST
@@ -620,7 +643,7 @@ chrome.devices.DeviceDebugPacketCaptureAllowed: Debug network packet captures.
 
 chrome.devices.DeviceDlcPredownloadList: Preload peripheral drivers.
   deviceDlcPredownloadList: TYPE_LIST
-    {'value': 'scanner_drivers', 'description': 'Scanners.'}
+    scanner_drivers: Scanners.
 
 chrome.devices.DeviceExtendedAutoUpdateEnabled: Extended auto-updates.
   deviceExtendedAutoUpdateEnabled: TYPE_BOOL
@@ -699,12 +722,16 @@ chrome.devices.DeviceLoginScreenSystemInfoEnforced: System info on sign-in scree
     TRUE: Always display system information on the sign-in screen.
 
 chrome.devices.DeviceLoginScreenWebHidAllowDevicesForUrls: WebHID API allowed devices on sign-in screen.
-  url: TYPE_STRING
-  device: TYPE_LIST
+  deviceLoginScreenWebHidAllowDevicesForUrls
+    webOrigin
+      url: TYPE_STRING
+      device: TYPE_LIST
 
 chrome.devices.DeviceLoginScreenWebUsbAllowDevicesForUrls: WebUSB API allowed devices on sign-in screen.
-  url: TYPE_STRING
-  devices: TYPE_LIST
+  deviceLoginScreenWebUsbAllowDevicesForUrls
+    webApplications
+      url: TYPE_STRING
+      devices: TYPE_LIST
 
 chrome.devices.DeviceLowBatterySoundEnabled: Low Battery Sound.
   deviceLowBatterySoundEnabled: TYPE_ENUM
@@ -763,21 +790,41 @@ chrome.devices.DeviceRestrictedManagedGuestSessionEnabled: Shared kiosk mode.
     false: Disable shared kiosk mode.
 
 chrome.devices.DeviceRestrictionSchedule: Device restriction schedule.
-  dayOfWeek: TYPE_ENUM
-    MONDAY:
-    TUESDAY:
-    WEDNESDAY:
-    THURSDAY:
-    FRIDAY:
-    SATURDAY:
-    SUNDAY:
-  hours: TYPE_INT32
-  minutes: TYPE_INT32
+  deviceRestrictionSchedule
+    timeWindows
+      start
+        dayOfWeek: TYPE_ENUM
+          MONDAY:
+          TUESDAY:
+          WEDNESDAY:
+          THURSDAY:
+          FRIDAY:
+          SATURDAY:
+          SUNDAY:
+        hours: TYPE_INT32
+        minutes: TYPE_INT32
+      end
+        dayOfWeek: TYPE_ENUM
+          MONDAY:
+          TUESDAY:
+          WEDNESDAY:
+          THURSDAY:
+          FRIDAY:
+          SATURDAY:
+          SUNDAY:
+        hours: TYPE_INT32
+        minutes: TYPE_INT32
 
 chrome.devices.DeviceScheduledReboot: Scheduled reboot.
   deviceScheduledRebootEnabled: TYPE_BOOL
     true: Enable scheduled reboots.
     false: Disable scheduled reboots.
+  deviceScheduledRebootTimeOfDay
+    timeOfDay
+      hours: TYPE_INT32
+      minutes: TYPE_INT32
+      seconds: TYPE_INT32
+      nanos: TYPE_INT32
   deviceScheduledRebootFrequency: TYPE_ENUM
     DAILY: Reboot daily.
     WEEKLY: Reboot weekly.
@@ -792,10 +839,6 @@ chrome.devices.DeviceScheduledReboot: Scheduled reboot.
     SUNDAY: Reboot on Sundays.
   deviceScheduledRebootDayOfMonth: TYPE_INT64
     Sets a day of the month for device scheduled reboots to occur.
-  hours: TYPE_INT32
-  minutes: TYPE_INT32
-  seconds: TYPE_INT32
-  nanos: TYPE_INT32
 
 chrome.devices.DeviceScreensaverLoginScreenEnabled: Screen saver.
   deviceScreensaverLoginScreenEnabled: TYPE_BOOL
@@ -803,7 +846,10 @@ chrome.devices.DeviceScreensaverLoginScreenEnabled: Screen saver.
     false: Don't display screen saver when idle.
   deviceScreensaverLoginScreenImages: TYPE_LIST
     Screen saver image URLs. Enter one URL per line. Images must be in JPG format(.jpg or .jpeg files.
-  deviceScreensaverLoginScreenImageDisplayIntervalSeconds: TYPE_INT64
+  deviceScreensaverLoginScreenIdleTimeoutSeconds
+    duration: TYPE_INT64
+  deviceScreensaverLoginScreenImageDisplayIntervalSeconds
+    duration: TYPE_INT64
 
 chrome.devices.DeviceScreenSettings: Screen settings.
   allowUserDisplayChanges: TYPE_BOOL
@@ -908,10 +954,12 @@ chrome.devices.DeviceWilcoDtc: Dell SupportAssist.
     true: Enable Dell SupportAssist.
     false: Disable Dell SupportAssist.
   ackNoticeForDeviceWilcoDtcAllowedSetToTrue: TYPE_BOOL
+    This field must be set to true to acknowledge the notice message associated with the field 'device_wilco_dtc_allowed' set to value 'true'. Please sse the notices listed with this policy for more information.
+  deviceWilcoDtcConfiguration
+    downloadUri: TYPE_STRING
   installSupportAssistApp: TYPE_BOOL
     true: Force-install the Dell SupportAssist app for Dell devices.
     false: Do not automatically install the Dell SupportAssist app.
-  deviceWilcoDtcConfiguration: TYPE_STRING
 
 chrome.devices.DisabledDeviceReturnInstructions: Disabled device return instructions.
   deviceDisabledMessage: TYPE_STRING
@@ -929,7 +977,9 @@ chrome.devices.EnableGranularDeviceHardwareReporting: Report device hardware inf
     REPORTING_ENABLE_ALL: Enable all hardware information reporting.
     REPORTING_CUSTOM_WITH_ALLOWLIST: Customize.
   reportHardwareInfoCustomAllowlist: TYPE_LIST
-    {'value': 'report_vpd_info', 'description': 'Device vital product data info.'}
+    report_vpd_info: Device vital product data info.
+    report_system_info: Device system information.
+    report_timezone_info: Device timezone status.
 
 chrome.devices.EnableGranularDeviceOsReporting: Report device OS information.
   reportingOsInfoBehavior: TYPE_ENUM
@@ -937,7 +987,9 @@ chrome.devices.EnableGranularDeviceOsReporting: Report device OS information.
     REPORTING_ENABLE_ALL: Enable all OS reporting.
     REPORTING_CUSTOM_WITH_ALLOWLIST: Customize.
   reportOsInfoCustomAllowlist: TYPE_LIST
-    {'value': 'report_version_info', 'description': 'OS version info.'}
+    report_version_info: OS version info.
+    report_boot_mode: OS boot mode.
+    report_os_update_status: OS update status.
 
 chrome.devices.EnableGranularDeviceTelemetryReporting: Report device telemetry.
   reportingTelemetryBehavior: TYPE_ENUM
@@ -945,7 +997,29 @@ chrome.devices.EnableGranularDeviceTelemetryReporting: Report device telemetry.
     REPORTING_ENABLE_ALL: Enable all telemetry reporting.
     REPORTING_CUSTOM_WITH_ALLOWLIST: Customize.
   reportTelemetryCustomAllowlist: TYPE_LIST
-    {'value': 'report_hardware_status', 'description': 'Hardware status (deprecated).'}
+    report_hardware_status: Hardware status (deprecated).
+    report_network_interfaces: Network interface (deprecated).
+    report_network_configuration: Network configuration.
+    report_network_status: Network status.
+    report_network_events: Network events.
+    report_activity_times: Device activity status.
+    report_power_status: Power status.
+    report_storage_status: Storage status.
+    report_board_status: Board status.
+    report_cpu_info: CPU status.
+    report_graphics_status: Graphics status.
+    report_audio_status: Audio status.
+    report_crash_report_info: Crash information.
+    report_memory_info: Memory status.
+    report_backlight_info: Backlight status.
+    report_bluetooth_info: Bluetooth status.
+    report_fan_info: Fan status.
+    report_login_logout: Login/Logout status.
+    report_crd_sessions: CRD sessions.
+    report_security_status: Security status.
+    report_peripherals: USB Peripherals Status.
+    device_activity_heartbeat_enabled: Device activity heartbeat.
+    report_runtime_counters: Device runtime counter.
 
 chrome.devices.EnableReportDeviceKioskSession: Report kiosk session status.
   reportDeviceSessionStatus: TYPE_BOOL
@@ -968,13 +1042,16 @@ chrome.devices.EnableReportDeviceUsers: Report device user tracking.
     false: Disable tracking recent users.
 
 chrome.devices.EnableReportUploadFrequency: Device status report upload frequency.
-  reportDeviceUploadFrequency: TYPE_STRING
+  reportDeviceUploadFrequency
+    duration: TYPE_STRING
 
 chrome.devices.EnableReportUploadFrequencyV2: Device status report upload frequency.
-  reportDeviceUploadFrequency: TYPE_INT64
+  reportDeviceUploadFrequency
+    duration: TYPE_INT64
 
 chrome.devices.ExtensionCacheSize: Apps and extensions cache size.
-  extensionCacheSize: TYPE_INT64
+  extensionCacheSize
+    value: TYPE_INT64
 
 chrome.devices.ForcedReenrollment: Forced re-enrollment.
   reenrollmentMode: TYPE_ENUM
@@ -996,13 +1073,15 @@ chrome.devices.Imprivata: Imprivata login screen integration.
     true: Use the Imprivata extension on the login screen.
     false: Do not use the Imprivata extension on the login screen.
   ackNoticeForImprivataIntegrationEnabledSetToTrue: TYPE_BOOL
+    This field must be set to true to acknowledge the notice message associated with the field 'imprivata_integration_enabled' set to value 'true'. Please sse the notices listed with this policy for more information.
+  imprivataExtensionConfiguration
+    downloadUri: TYPE_STRING
   imprivataVersion: TYPE_ENUM
     IMPRIVATA_EXTENSION_VERSION_STABLE_OS: Bundled with ChromeOS (recommended).
     IMPRIVATA_EXTENSION_VERSION_M81: Pinned to v1 (Compatible with Chrome 81+).
     IMPRIVATA_EXTENSION_VERSION_M86: Pinned to v2 (Compatible with Chrome 86+).
     IMPRIVATA_EXTENSION_VERSION_3: Pinned to v3 (Compatible with Chrome 97+).
     IMPRIVATA_EXTENSION_VERSION_4: Pinned to v4 (Compatible with Chrome 118+).
-  imprivataExtensionConfiguration: TYPE_STRING
 
 chrome.devices.InactiveDeviceNotifications: Inactive device notifications.
   notificationEnabled: TYPE_BOOL
@@ -1022,24 +1101,39 @@ chrome.devices.kiosk.AccessibilityShortcutsEnabled: Kiosk accessibility shortcut
     ACCESSIBILITY_ENABLED: Enable accessibility shortcuts.
 
 chrome.devices.kiosk.AcPowerSettings: AC Kiosk power settings.
+  acIdleTimeout
+    duration: TYPE_STRING
+  acWarningTimeout
+    duration: TYPE_STRING
   acIdleAction: TYPE_ENUM
     IDLE_ACTION_SUSPEND: Sleep.
     IDLE_ACTION_LOGOUT: Logout.
     IDLE_ACTION_SHUTDOWN: Shutdown.
     IDLE_ACTION_DO_NOTHING: Do nothing.
-  acScreenOffTimeout: TYPE_STRING
+  acDimTimeout
+    duration: TYPE_STRING
+  acScreenOffTimeout
+    duration: TYPE_STRING
 
 chrome.devices.kiosk.AcPowerSettingsV2: AC Kiosk power settings.
+  acIdleTimeout
+    duration: TYPE_INT64
+  acWarningTimeout
+    duration: TYPE_INT64
   acIdleAction: TYPE_ENUM
     IDLE_ACTION_SUSPEND: Sleep.
     IDLE_ACTION_LOGOUT: Logout.
     IDLE_ACTION_SHUTDOWN: Shutdown.
     IDLE_ACTION_DO_NOTHING: Do nothing.
-  acScreenOffTimeout: TYPE_INT64
+  acDimTimeout
+    duration: TYPE_INT64
+  acScreenOffTimeout
+    duration: TYPE_INT64
 
 chrome.devices.kiosk.Alerting: Kiosk device status alerting delivery.
   deviceStatusAlertDeliveryModes: TYPE_LIST
-    {'value': 'EMAIL', 'description': 'Receive alerts via email.'}
+    EMAIL: Receive alerts via email.
+    SMS: Receive alerts via SMS.
 
 chrome.devices.kiosk.AlertingContactInfo: Kiosk device status alerting contact info.
   alertingEmail: TYPE_LIST
@@ -1048,10 +1142,11 @@ chrome.devices.kiosk.AlertingContactInfo: Kiosk device status alerting contact i
     Alerting mobile phones. Phone numbers (e.g. +1XXXYYYZZZZ, +1AAABBBCCCC).
 
 chrome.devices.kiosk.apps.ChromeExtensionsForWebApps: Allows setting of chrome extensions for web apps.
-  appId: TYPE_STRING
-  configJson: TYPE_STRING
-  url: TYPE_STRING
-  allowedEnterpriseChallenge: TYPE_BOOL
+  chromeExtensionsForWebApps
+    appId: TYPE_STRING
+    configJson: TYPE_STRING
+    url: TYPE_STRING
+    allowedEnterpriseChallenge: TYPE_BOOL
 
 chrome.devices.kiosk.apps.ForceInstall: Force installs the app. Note: It's required in order to add an App or Extension to the set of managed apps & extensions of an Organizational Unit.
   forceInstall: TYPE_BOOL
@@ -1060,6 +1155,7 @@ chrome.devices.kiosk.apps.ForceInstall: Force installs the app. Note: It's requi
 
 chrome.devices.kiosk.apps.FunctionKeys: Allows setting Function Keys.
   allowFunctionKeys: TYPE_BOOL
+    Sets the top row of the keyboard as Function keys.
 
 chrome.devices.kiosk.apps.InstallationUrlV2: Specifies the url from which to install a self hosted Chrome Extension.
   installationUrl: TYPE_STRING
@@ -1071,6 +1167,7 @@ chrome.devices.kiosk.apps.KioskBrowserPermissionsAllowedForOrigins: Allows setti
 
 chrome.devices.kiosk.apps.KioskWebAppOfflineEnabled: Allow setting whether the web app can run offline.
   kioskWebAppOfflineEnabled: TYPE_BOOL
+    Controls whether a kiosk web app is offline enabled or not.
 
 chrome.devices.kiosk.apps.ManagedConfiguration: Allows setting of the managed configuration.
   managedConfiguration: TYPE_STRING
@@ -1078,20 +1175,25 @@ chrome.devices.kiosk.apps.ManagedConfiguration: Allows setting of the managed co
 
 chrome.devices.kiosk.apps.Plugins: Allows setting Plugins.
   allowPlugins: TYPE_BOOL
+    Controls whether a Kiosk app is allowed to use Plug-ins.
 
 chrome.devices.kiosk.apps.PowerManagement: Allows setting Power Management.
   allowPowerManagement: TYPE_BOOL
+    Controls whether a Kiosk app is allowed to manage power.
 
 chrome.devices.kiosk.apps.UnifiedDesktop: Allows setting Unified Desktop.
   enableUnifiedDesktop: TYPE_BOOL
+    Controls whether a Kiosk app is allowed to use Unified Desktop.
 
 chrome.devices.kiosk.apps.VirtualKeyboard: Allows setting Virtual Keyboard.
   allowVirtualKeyboard: TYPE_BOOL
+    Controls whether a Kiosk app is allowed to use Virtual Keyboard.
 
 chrome.devices.kiosk.appsconfig.AutoLaunchApp: Allows setting of the auto-launch app.
   appId: TYPE_STRING
     Id of the app prefixed with one of either "chrome:" or "web:", depending on the app type. For Chrome apps, the app id can be found on the Chrome Web Store, example: "chrome:aapbdbdomjkkjkaonfhkkikfgjllcleb". For Web apps, the app id is simply the URL, example: "web:https://translate.google.com".
   enableHealthMonitoring: TYPE_BOOL
+    Enables health monitoring of the auto launch app, which will alert you if it crashes.
   screenRotation: TYPE_ENUM
     ROTATE_0: Rotate by 0 degrees.
     ROTATE_90: Rotate by 90 degrees.
@@ -1102,8 +1204,11 @@ chrome.devices.kiosk.appsconfig.AutoLaunchApp: Allows setting of the auto-launch
     true: Enables system log upload of the auto launch app.
     false: Disables system log upload of the auto launch app.
   ackNoticeForEnableSystemLogUploadSetToTrue: TYPE_BOOL
+    This field must be set to true to acknowledge the notice message associated with the field 'enable_system_log_upload' set to value 'true'. Please sse the notices listed with this policy for more information.
   enableAutoLoginBailout: TYPE_BOOL
+    Enables auto login bailout for the auto launch app.
   promptForNetworkWhenOffline: TYPE_BOOL
+    Enables prompting for network if auto launch app is offline.
 
 chrome.devices.kiosk.AutoclickEnabled: Kiosk auto-click enabled.
   autoclickEnabled: TYPE_ENUM
@@ -1112,20 +1217,34 @@ chrome.devices.kiosk.AutoclickEnabled: Kiosk auto-click enabled.
     ACCESSIBILITY_ENABLED: Enable auto-click.
 
 chrome.devices.kiosk.BatteryPowerSettings: Battery Kiosk power settings.
+  batteryIdleTimeout
+    duration: TYPE_STRING
+  batteryWarningTimeout
+    duration: TYPE_STRING
   batteryIdleAction: TYPE_ENUM
     IDLE_ACTION_SUSPEND: Sleep.
     IDLE_ACTION_LOGOUT: Logout.
     IDLE_ACTION_SHUTDOWN: Shutdown.
     IDLE_ACTION_DO_NOTHING: Do nothing.
-  batteryScreenOffTimeout: TYPE_STRING
+  batteryDimTimeout
+    duration: TYPE_STRING
+  batteryScreenOffTimeout
+    duration: TYPE_STRING
 
 chrome.devices.kiosk.BatteryPowerSettingsV2: Battery Kiosk power settings.
+  batteryIdleTimeout
+    duration: TYPE_INT64
+  batteryWarningTimeout
+    duration: TYPE_INT64
   batteryIdleAction: TYPE_ENUM
     IDLE_ACTION_SUSPEND: Sleep.
     IDLE_ACTION_LOGOUT: Logout.
     IDLE_ACTION_SHUTDOWN: Shutdown.
     IDLE_ACTION_DO_NOTHING: Do nothing.
-  batteryScreenOffTimeout: TYPE_INT64
+  batteryDimTimeout
+    duration: TYPE_INT64
+  batteryScreenOffTimeout
+    duration: TYPE_INT64
 
 chrome.devices.kiosk.CaretHighlightEnabled: Kiosk caret highlight.
   caretHighlightEnabled: TYPE_ENUM
@@ -1140,10 +1259,20 @@ chrome.devices.kiosk.CursorHighlightEnabled: Kiosk cursor highlight.
     ACCESSIBILITY_ENABLED: Enable cursor highlight.
 
 chrome.devices.kiosk.DeviceWeeklyScheduledSuspend: Device sleep mode.
-  hours: TYPE_INT32
-  minutes: TYPE_INT32
-  seconds: TYPE_INT32
-  nanos: TYPE_INT32
+  weeklySchedules
+    weeklySchedule
+      start
+        timeOfDay
+          hours: TYPE_INT32
+          minutes: TYPE_INT32
+          seconds: TYPE_INT32
+          nanos: TYPE_INT32
+      end
+        timeOfDay
+          hours: TYPE_INT32
+          minutes: TYPE_INT32
+          seconds: TYPE_INT32
+          nanos: TYPE_INT32
 
 chrome.devices.kiosk.DictationEnabled: Kiosk dictation.
   dictationEnabled: TYPE_ENUM
@@ -1170,7 +1299,149 @@ chrome.devices.kiosk.KeyboardFocusHighlightEnabled: Kiosk keyboard focus highlig
 
 chrome.devices.kiosk.KioskAllowedInputMethods: Kiosk allowed input methods.
   allowedInputMethods: TYPE_LIST
-    {'value': 'xkb:jp::jpn', 'description': 'Alphanumeric with Japanese keyboard.'}
+    xkb:jp::jpn: Alphanumeric with Japanese keyboard.
+    am-t-i0-und: Amharic Transliteration.
+    vkd_ar: Arabic.
+    ar-t-i0-und: Arabic Transliteration.
+    xkb:am:phonetic:arm: Armenian.
+    vkd_bn_phone: Bangla Phonetic.
+    bn-t-i0-und: Bangla Transliteration.
+    xkb:by::bel: Belarusian.
+    _comp_ime_jddehjeebkoimngcbdkaahpobgicbffpbraille: Braille Keyboard.
+    xkb:bg::bul: Bulgarian.
+    xkb:bg:phonetic:bul: Bulgarian with Phonetic keyboard.
+    vkd_my: Burmese/Myanmar.
+    vkd_my_myansan: Burmese/Myanmar with Myansan keyboard.
+    yue-hant-t-i0-und: Cantonese.
+    xkb:es:cat:cat: Catalan.
+    zh-hant-t-i0-pinyin: Chinese (Traditional) Pinyin.
+    zh-hant-t-i0-array-1992: Chinese Array.
+    zh-hant-t-i0-cangjie-1987: Chinese Cangjie.
+    zh-hant-t-i0-dayi-1988: Chinese Dayi.
+    zh-t-i0-pinyin: Chinese Pinyin.
+    zh-hant-t-i0-cangjie-1987-x-m0-simplified: Chinese Quick.
+    zh-t-i0-wubi-1986: Chinese Wubi.
+    zh-hant-t-i0-und: Chinese Zhuyin.
+    xkb:hr::scr: Croatian.
+    xkb:cz::cze: Czech.
+    xkb:cz:qwerty:cze: Czech with Qwerty keyboard.
+    xkb:dk::dan: Danish.
+    vkd_deva_phone: Devanagari keyboard (Phonetic).
+    xkb:be::nld: Dutch (Belgium).
+    xkb:us:intl:nld: Dutch (Netherlands).
+    xkb:us:intl_pc:nld: Dutch (Netherlands) with US International PC keyboard.
+    xkb:ca:eng:eng: English (Canada).
+    xkb:in::eng: English (India).
+    xkb:pk::eng: English (Pakistan).
+    xkb:za:gb:eng: English (South Africa).
+    xkb:gb:extd:eng: English (UK).
+    xkb:gb:dvorak:eng: English (UK) with Dvorak keyboard.
+    xkb:us::eng: English (US).
+    xkb:us:colemak:eng: English (US) with Colemak keyboard.
+    xkb:us:dvorak:eng: English (US) with Dvorak keyboard.
+    xkb:us:altgr-intl:eng: English (US) with Extended keyboard.
+    xkb:us:intl_pc:eng: English (US) with International PC keyboard.
+    xkb:us:intl:eng: English (US) with International keyboard.
+    xkb:us:dvp:eng: English (US) with Programmer Dvorak keyboard.
+    xkb:us:workman-intl:eng: English (US) with Workman International keyboard.
+    xkb:us:workman:eng: English (US) with Workman keyboard.
+    xkb:ee::est: Estonian.
+    vkd_ethi: Ethiopic keyboard.
+    xkb:fo::fao: Faroese.
+    xkb:us::fil: Filipino.
+    xkb:fi::fin: Finnish.
+    xkb:be::fra: French (Belgium).
+    xkb:ca::fra: French (Canada).
+    xkb:ca:multix:fra: French (Canada) with Multilingual keyboard.
+    xkb:fr::fra: French (France).
+    xkb:fr:bepo:fra: French (France) with Bépo keyboard.
+    xkb:ch:fr:fra: French (Switzerland).
+    xkb:ge::geo: Georgian.
+    xkb:be::ger: German (Belgium).
+    xkb:de::ger: German (Germany).
+    xkb:de:neo:ger: German (Germany) with Neo 2 keyboard.
+    xkb:ch::ger: German (Switzerland).
+    xkb:gr::gre: Greek.
+    el-t-i0-und: Greek Transliteration.
+    vkd_gu_phone: Gujarati Phonetic.
+    gu-t-i0-und: Gujarati Transliteration.
+    xkb:il::heb: Hebrew.
+    he-t-i0-und: Hebrew Transliteration.
+    hi-t-i0-und: Hindi.
+    vkd_hi_inscript: Hindi with InScript keyboard.
+    xkb:hu::hun: Hungarian.
+    xkb:hu:qwerty:hun: Hungarian with Qwerty keyboard.
+    xkb:is::ice: Icelandic.
+    xkb:us::ind: Indonesian.
+    xkb:ie::ga: Irish.
+    xkb:it::ita: Italian.
+    nacl_mozc_jp: Japanese.
+    nacl_mozc_us: Japanese with US keyboard.
+    vkd_kn_phone: Kannada Phonetic.
+    kn-t-i0-und: Kannada Transliteration.
+    xkb:kz::kaz: Kazakh.
+    vkd_km: Khmer.
+    ko-t-i0-und: Korean.
+    vkd_lo: Lao.
+    xkb:lv:apostrophe:lav: Latvian.
+    xkb:lt::lit: Lithuanian.
+    xkb:mk::mkd: Macedonian.
+    xkb:us::msa: Malay.
+    vkd_ml_phone: Malayalam Phonetic.
+    ml-t-i0-und: Malayalam Transliteration.
+    xkb:mt::mlt: Maltese.
+    mr-t-i0-und: Marathi.
+    xkb:mn::mon: Mongolian.
+    ne-t-i0-und: Nepali Transliteration.
+    vkd_ne_inscript: Nepali with InScript keyboard.
+    vkd_ne_phone: Nepali with Phonetic keyboard.
+    xkb:no::nob: Norwegian.
+    or-t-i0-und: Odia.
+    vkd_fa: Persian.
+    fa-t-i0-und: Persian Transliteration.
+    xkb:pl::pol: Polish.
+    xkb:br::por: Portuguese (Brazil).
+    xkb:pt::por: Portuguese (Portugal).
+    xkb:us:intl_pc:por: Portuguese with US International PC keyboard.
+    xkb:us:intl:por: Portuguese with US International keyboard.
+    pa-t-i0-und: Punjabi.
+    xkb:ro::rum: Romanian.
+    xkb:ro:std:rum: Romanian with Standard keyboard.
+    xkb:ru::rus: Russian.
+    vkd_ru_phone_aatseel: Russian with Phonetic AATSEEL keyboard.
+    vkd_ru_phone_yazhert: Russian with Phonetic YaZHert keyboard.
+    xkb:ru:phonetic:rus: Russian with Phonetic keyboard.
+    sa-t-i0-und: Sanskrit.
+    xkb:rs::srp: Serbian.
+    sr-t-i0-und: Serbian Transliteration.
+    vkd_si: Sinhala.
+    xkb:sk::slo: Slovak.
+    xkb:si::slv: Slovenian.
+    vkd_ckb_ar: Sorani Kurdish with Arabic-based keyboard.
+    vkd_ckb_en: Sorani Kurdish with English-based keyboard.
+    xkb:latam::spa: Spanish (Latin America).
+    xkb:es::spa: Spanish (Spain).
+    xkb:se::swe: Swedish.
+    vkd_ta_itrans: Tamil ITRANS.
+    vkd_ta_phone: Tamil Phonetic.
+    ta-t-i0-und: Tamil Transliteration.
+    vkd_ta_inscript: Tamil with InScript keyboard.
+    vkd_ta_tamil99: Tamil with Tamil99 keyboard.
+    vkd_ta_typewriter: Tamil with Typewriter keyboard.
+    vkd_te_phone: Telugu Phonetic.
+    te-t-i0-und: Telugu Transliteration.
+    vkd_th: Thai with Kedmanee keyboard.
+    vkd_th_pattajoti: Thai with Pattachote keyboard.
+    vkd_th_tis: Thai with TIS 820-2531 keyboard.
+    ti-t-i0-und: Tigrinya.
+    xkb:tr::tur: Turkish.
+    xkb:tr:f:tur: Turkish with F-keyboard.
+    xkb:ua::ukr: Ukrainian.
+    ur-t-i0-und: Urdu.
+    vkd_vi_telex: Vietnamese Telex.
+    vkd_vi_viqr: Vietnamese VIQR.
+    vkd_vi_vni: Vietnamese VNI.
+    vkd_vi_tcvn: Vietnamese with TCVN keyboard.
 
 chrome.devices.kiosk.KioskTroubleshootingToolsEnabled: Kiosk troubleshooting tools.
   kioskTroubleshootingToolsEnabled: TYPE_BOOL
@@ -1179,7 +1450,9 @@ chrome.devices.kiosk.KioskTroubleshootingToolsEnabled: Kiosk troubleshooting too
 
 chrome.devices.kiosk.KioskVirtualKeyboardFeatures: Kiosk virtual keyboard features (websites only).
   virtualKeyboardFeatures: TYPE_LIST
-    {'value': 'AUTO_SUGGEST', 'description': 'Auto suggest.'}
+    AUTO_SUGGEST: Auto suggest.
+    HANDWRITING: Handwriting recognition.
+    VOICE_INPUT: Voice input.
 
 chrome.devices.kiosk.LargeCursorEnabled: Kiosk large cursor.
   largeCursorEnabled: TYPE_ENUM
@@ -1224,8 +1497,10 @@ chrome.devices.kiosk.SelectToSpeakEnabled: Kiosk select to speak.
     ACCESSIBILITY_ENABLED: Enable select to speak.
 
 chrome.devices.kiosk.SerialAllowUsbDevicesForUrls: Web Serial API allowed devices.
-  url: TYPE_STRING
-  device: TYPE_LIST
+  serialAllowUsbDevicesForUrls
+    webOrigin
+      url: TYPE_STRING
+      device: TYPE_LIST
 
 chrome.devices.kiosk.ShowAccessibilityMenu: Kiosk floating accessibility menu.
   showAccessibilityMenu: TYPE_BOOL
@@ -1262,8 +1537,10 @@ chrome.devices.kiosk.VirtualKeyboardEnabled: Kiosk on-screen keyboard.
     ACCESSIBILITY_ENABLED: Enable on-screen keyboard.
 
 chrome.devices.kiosk.WebUsbAllowDevicesForUrls: WebUSB API allowed devices.
-  url: TYPE_STRING
-  devices: TYPE_LIST
+  webUsbAllowDevicesForUrls
+    webApplications
+      url: TYPE_STRING
+      devices: TYPE_LIST
 
 chrome.devices.KioskAppControlChromeVersion: Kiosk-controlled updates.
   allowKioskAppControlChromeVersion: TYPE_BOOL
@@ -1416,14 +1693,214 @@ chrome.devices.managedguest.AllowDinosaurEasterEgg: Dinosaur game.
 
 chrome.devices.managedguest.AllowedInputMethods: Allowed input methods.
   allowedInputMethods: TYPE_LIST
-    {'value': 'xkb:jp::jpn', 'description': 'Alphanumeric with Japanese keyboard.'}
+    xkb:jp::jpn: Alphanumeric with Japanese keyboard.
+    am-t-i0-und: Amharic Transliteration.
+    vkd_ar: Arabic.
+    ar-t-i0-und: Arabic Transliteration.
+    xkb:am:phonetic:arm: Armenian.
+    vkd_bn_phone: Bangla Phonetic.
+    bn-t-i0-und: Bangla Transliteration.
+    xkb:by::bel: Belarusian.
+    _comp_ime_jddehjeebkoimngcbdkaahpobgicbffpbraille: Braille Keyboard.
+    xkb:bg::bul: Bulgarian.
+    xkb:bg:phonetic:bul: Bulgarian with Phonetic keyboard.
+    vkd_my: Burmese/Myanmar.
+    vkd_my_myansan: Burmese/Myanmar with Myansan keyboard.
+    yue-hant-t-i0-und: Cantonese.
+    xkb:es:cat:cat: Catalan.
+    zh-hant-t-i0-pinyin: Chinese (Traditional) Pinyin.
+    zh-hant-t-i0-array-1992: Chinese Array.
+    zh-hant-t-i0-cangjie-1987: Chinese Cangjie.
+    zh-hant-t-i0-dayi-1988: Chinese Dayi.
+    zh-t-i0-pinyin: Chinese Pinyin.
+    zh-hant-t-i0-cangjie-1987-x-m0-simplified: Chinese Quick.
+    zh-t-i0-wubi-1986: Chinese Wubi.
+    zh-hant-t-i0-und: Chinese Zhuyin.
+    xkb:hr::scr: Croatian.
+    xkb:cz::cze: Czech.
+    xkb:cz:qwerty:cze: Czech with Qwerty keyboard.
+    xkb:dk::dan: Danish.
+    vkd_deva_phone: Devanagari keyboard (Phonetic).
+    xkb:be::nld: Dutch (Belgium).
+    xkb:us:intl:nld: Dutch (Netherlands).
+    xkb:us:intl_pc:nld: Dutch (Netherlands) with US International PC keyboard.
+    xkb:ca:eng:eng: English (Canada).
+    xkb:in::eng: English (India).
+    xkb:pk::eng: English (Pakistan).
+    xkb:za:gb:eng: English (South Africa).
+    xkb:gb:extd:eng: English (UK).
+    xkb:gb:dvorak:eng: English (UK) with Dvorak keyboard.
+    xkb:us::eng: English (US).
+    xkb:us:colemak:eng: English (US) with Colemak keyboard.
+    xkb:us:dvorak:eng: English (US) with Dvorak keyboard.
+    xkb:us:altgr-intl:eng: English (US) with Extended keyboard.
+    xkb:us:intl_pc:eng: English (US) with International PC keyboard.
+    xkb:us:intl:eng: English (US) with International keyboard.
+    xkb:us:dvp:eng: English (US) with Programmer Dvorak keyboard.
+    xkb:us:workman-intl:eng: English (US) with Workman International keyboard.
+    xkb:us:workman:eng: English (US) with Workman keyboard.
+    xkb:ee::est: Estonian.
+    vkd_ethi: Ethiopic keyboard.
+    xkb:fo::fao: Faroese.
+    xkb:us::fil: Filipino.
+    xkb:fi::fin: Finnish.
+    xkb:be::fra: French (Belgium).
+    xkb:ca::fra: French (Canada).
+    xkb:ca:multix:fra: French (Canada) with Multilingual keyboard.
+    xkb:fr::fra: French (France).
+    xkb:fr:bepo:fra: French (France) with Bépo keyboard.
+    xkb:ch:fr:fra: French (Switzerland).
+    xkb:ge::geo: Georgian.
+    xkb:be::ger: German (Belgium).
+    xkb:de::ger: German (Germany).
+    xkb:de:neo:ger: German (Germany) with Neo 2 keyboard.
+    xkb:ch::ger: German (Switzerland).
+    xkb:gr::gre: Greek.
+    el-t-i0-und: Greek Transliteration.
+    vkd_gu_phone: Gujarati Phonetic.
+    gu-t-i0-und: Gujarati Transliteration.
+    xkb:il::heb: Hebrew.
+    he-t-i0-und: Hebrew Transliteration.
+    hi-t-i0-und: Hindi.
+    vkd_hi_inscript: Hindi with InScript keyboard.
+    xkb:hu::hun: Hungarian.
+    xkb:hu:qwerty:hun: Hungarian with Qwerty keyboard.
+    xkb:is::ice: Icelandic.
+    xkb:us::ind: Indonesian.
+    xkb:ie::ga: Irish.
+    xkb:it::ita: Italian.
+    nacl_mozc_jp: Japanese.
+    nacl_mozc_us: Japanese with US keyboard.
+    vkd_kn_phone: Kannada Phonetic.
+    kn-t-i0-und: Kannada Transliteration.
+    xkb:kz::kaz: Kazakh.
+    vkd_km: Khmer.
+    ko-t-i0-und: Korean.
+    vkd_lo: Lao.
+    xkb:lv:apostrophe:lav: Latvian.
+    xkb:lt::lit: Lithuanian.
+    xkb:mk::mkd: Macedonian.
+    xkb:us::msa: Malay.
+    vkd_ml_phone: Malayalam Phonetic.
+    ml-t-i0-und: Malayalam Transliteration.
+    xkb:mt::mlt: Maltese.
+    mr-t-i0-und: Marathi.
+    xkb:mn::mon: Mongolian.
+    ne-t-i0-und: Nepali Transliteration.
+    vkd_ne_inscript: Nepali with InScript keyboard.
+    vkd_ne_phone: Nepali with Phonetic keyboard.
+    xkb:no::nob: Norwegian.
+    or-t-i0-und: Odia.
+    vkd_fa: Persian.
+    fa-t-i0-und: Persian Transliteration.
+    xkb:pl::pol: Polish.
+    xkb:br::por: Portuguese (Brazil).
+    xkb:pt::por: Portuguese (Portugal).
+    xkb:us:intl_pc:por: Portuguese with US International PC keyboard.
+    xkb:us:intl:por: Portuguese with US International keyboard.
+    pa-t-i0-und: Punjabi.
+    xkb:ro::rum: Romanian.
+    xkb:ro:std:rum: Romanian with Standard keyboard.
+    xkb:ru::rus: Russian.
+    vkd_ru_phone_aatseel: Russian with Phonetic AATSEEL keyboard.
+    vkd_ru_phone_yazhert: Russian with Phonetic YaZHert keyboard.
+    xkb:ru:phonetic:rus: Russian with Phonetic keyboard.
+    sa-t-i0-und: Sanskrit.
+    xkb:rs::srp: Serbian.
+    sr-t-i0-und: Serbian Transliteration.
+    vkd_si: Sinhala.
+    xkb:sk::slo: Slovak.
+    xkb:si::slv: Slovenian.
+    vkd_ckb_ar: Sorani Kurdish with Arabic-based keyboard.
+    vkd_ckb_en: Sorani Kurdish with English-based keyboard.
+    xkb:latam::spa: Spanish (Latin America).
+    xkb:es::spa: Spanish (Spain).
+    xkb:se::swe: Swedish.
+    vkd_ta_itrans: Tamil ITRANS.
+    vkd_ta_phone: Tamil Phonetic.
+    ta-t-i0-und: Tamil Transliteration.
+    vkd_ta_inscript: Tamil with InScript keyboard.
+    vkd_ta_tamil99: Tamil with Tamil99 keyboard.
+    vkd_ta_typewriter: Tamil with Typewriter keyboard.
+    vkd_te_phone: Telugu Phonetic.
+    te-t-i0-und: Telugu Transliteration.
+    vkd_th: Thai with Kedmanee keyboard.
+    vkd_th_pattajoti: Thai with Pattachote keyboard.
+    vkd_th_tis: Thai with TIS 820-2531 keyboard.
+    ti-t-i0-und: Tigrinya.
+    xkb:tr::tur: Turkish.
+    xkb:tr:f:tur: Turkish with F-keyboard.
+    xkb:ua::ukr: Ukrainian.
+    ur-t-i0-und: Urdu.
+    vkd_vi_telex: Vietnamese Telex.
+    vkd_vi_viqr: Vietnamese VIQR.
+    vkd_vi_vni: Vietnamese VNI.
+    vkd_vi_tcvn: Vietnamese with TCVN keyboard.
   allowedInputMethodsForceEnabled: TYPE_BOOL
     true: Automatically install selected keyboard languages.
     false: Do not automatically install any keyboard languages.
 
 chrome.devices.managedguest.AllowedLanguages: Allowed ChromeOS languages.
   allowedLanguages: TYPE_LIST
-    {'value': 'ar', 'description': 'Arabic - \u202bالعربية\u202c.'}
+    ar: Arabic - ‫العربية‬.
+    bn: Bangla - ‪বাংলা‬.
+    bg: Bulgarian - ‪български‬.
+    ca: Catalan - ‪català‬.
+    zh-CN: Chinese (Simplified) - ‪简体中文‬.
+    zh-TW: Chinese (Traditional) - ‪繁體中文‬.
+    hr: Croatian - ‪Hrvatski‬.
+    cs: Czech - ‪Čeština‬.
+    da: Danish - ‪Dansk‬.
+    nl: Dutch - ‪Nederlands‬.
+    en-AU: English (Australia).
+    en-CA: English (Canada).
+    en-NZ: English (New Zealand).
+    en-GB: English (United Kingdom).
+    en-US: English (United States).
+    et: Estonian - ‪eesti‬.
+    fil: Filipino.
+    fi: Finnish - ‪Suomi‬.
+    fr-CA: French (Canada) - ‪Français (Canada)‬.
+    fr: French (France) - ‪Français (France)‬.
+    fr-CH: French (Switzerland) - ‪Français (Suisse)‬.
+    de: German (Germany) - ‪Deutsch (Deutschland)‬.
+    de-CH: German (Switzerland) - ‪Deutsch (Schweiz)‬.
+    el: Greek - ‪Ελληνικά‬.
+    gu: Gujarati - ‪ગુજરાતી‬.
+    iw: Hebrew - ‫עברית‬.
+    hi: Hindi - ‪हिन्दी‬.
+    hu: Hungarian - ‪magyar‬.
+    is: Icelandic - ‪íslenska‬.
+    id: Indonesian - ‪Indonesia‬.
+    it: Italian - ‪Italiano‬.
+    ja: Japanese - ‪日本語‬.
+    kn: Kannada - ‪ಕನ್ನಡ‬.
+    ko: Korean - ‪한국어‬.
+    lv: Latvian - ‪latviešu‬.
+    lt: Lithuanian - ‪lietuvių‬.
+    ms: Malay - ‪Melayu‬.
+    ml: Malayalam - ‪മലയാളം‬.
+    mr: Marathi - ‪मराठी‬.
+    no: Norwegian - ‪norsk‬.
+    fa: Persian - ‫فارسی‬.
+    pl: Polish - ‪polski‬.
+    pt-BR: Portuguese (Brazil) - ‪Português (Brasil)‬.
+    pt-PT: Portuguese (Portugal) - ‪Português (Portugal)‬.
+    ro: Romanian - ‪română‬.
+    ru: Russian - ‪Русский‬.
+    sr: Serbian - ‪српски‬.
+    sk: Slovak - ‪Slovenčina‬.
+    sl: Slovenian - ‪slovenščina‬.
+    es-419: Spanish (Latin America) - ‪Español (Latinoamérica)‬.
+    es: Spanish (Spain) - ‪Español (España)‬.
+    sv: Swedish - ‪Svenska‬.
+    ta: Tamil - ‪தமிழ்‬.
+    te: Telugu - ‪తెలుగు‬.
+    th: Thai - ‪ไทย‬.
+    tr: Turkish - ‪Türkçe‬.
+    uk: Ukrainian - ‪Українська‬.
+    vi: Vietnamese - ‪Tiếng Việt‬.
+    cy: Welsh - ‪Cymraeg‬.
 
 chrome.devices.managedguest.AllowExcludeDisplayInMirrorMode: Exclude display in mirror mode.
   allowExcludeDisplayInMirrorMode: TYPE_BOOL
@@ -1471,6 +1948,7 @@ chrome.devices.managedguest.AppRecommendationZeroStateEnabled: Previously instal
 
 chrome.devices.managedguest.apps.AccessToKeys: Allows setting of whether the app can access client keys.
   allowAccessToKeys: TYPE_BOOL
+    Controls whether the app can access client keys.
 
 chrome.devices.managedguest.apps.AppInstallationUrl: Specifies the url from which to install a self hosted Chrome Extension.
   installationUrl: TYPE_STRING
@@ -1478,7 +1956,9 @@ chrome.devices.managedguest.apps.AppInstallationUrl: Specifies the url from whic
 
 chrome.devices.managedguest.apps.CertificateManagement: Allows setting of certificate management related permissions.
   allowAccessToKeys: TYPE_BOOL
+    Controls whether the app can access client keys.
   allowEnterpriseChallenge: TYPE_BOOL
+    Controls whether the app can challenge enterprise keys.
 
 chrome.devices.managedguest.apps.DefaultLaunchContainer: Allows setting of the default launch container for web apps.
   defaultLaunchContainer: TYPE_ENUM
@@ -1487,15 +1967,19 @@ chrome.devices.managedguest.apps.DefaultLaunchContainer: Allows setting of the d
 
 chrome.devices.managedguest.apps.EnterpriseChallenge: Allows setting of whether the app can challenge enterprise keys.
   allowEnterpriseChallenge: TYPE_BOOL
+    Controls whether the app can challenge enterprise keys.
 
 chrome.devices.managedguest.apps.IncludeInChromeWebStoreCollection: Specifies whether the Chrome Application should appear in the Chrome Web Store collection.
   includeInCollection: TYPE_BOOL
+    Controls whether a Chrome Application should appear in the Chrome Web Store collection.
   spotlightRecommended: TYPE_BOOL
+    Controls whether a Chrome Application should be spotlighted in the Chrome Web Store collection.
 
 chrome.devices.managedguest.apps.InstallationUrl: Specifies the url from which to install a self hosted Chrome Extension.
   installationUrl: TYPE_STRING
     The url from which to install a self hosted Chrome Extension.
   overrideInstallationUrl: TYPE_BOOL
+    Override the URL provided in the extension manifest with the provided installation url.
 
 chrome.devices.managedguest.apps.InstallType: Specifies the manner in which the app is to be installed. Note: It's required in order to add an App or Extension to the set of managed apps & extensions of an Organizational Unit.
   appInstallType: TYPE_ENUM
@@ -1514,9 +1998,395 @@ chrome.devices.managedguest.apps.OverrideInstallationUrl: Allows overriding of t
 
 chrome.devices.managedguest.apps.PermissionsAndUrlAccess: Allows setting of allowed and blocked hosts.
   blockedPermissions: TYPE_LIST
-    {'value': '', 'description': 'Allow all permissions. If empty string is set, it must be the only value set for the policy.'}
+    : Allow all permissions. If empty string is set, it must be the only value set for the policy.
+    activeTab: Active tab.
+    app.window.alwaysOnTop: Always on top.
+    alarms: Alarms.
+    audioCapture: Audio capture.
+    certificateProvider: Certificate provider.
+    clipboardRead: Clipboard read.
+    clipboardWrite: Clipboard write.
+    contextMenus: Context menus.
+    cookies: Cookies.
+    desktopCapture: Desktop capture.
+    documentScan: Document scan.
+    enterprise.deviceAttributes: Enterprise device attributes.
+    experimental: Experimental APIs.
+    app.window.fullscreen: Fullscreen apps.
+    fileBrowserHandler: File browser handler.
+    fileSystem: File system.
+    fileSystemProvider: File system provider.
+    hid: HID.
+    app.window.fullscreen.overrideEsc: Override fullscreen escape.
+    idle: Detect idle.
+    identity: Identity.
+    gcm: Google Cloud Messaging.
+    geolocation: Geo location.
+    mediaGalleries: Media galleries.
+    nativeMessaging: Native messaging.
+    networking.config: Captive portal authenticator.
+    power: Power.
+    notifications: Notifications.
+    printerProvider: Printers.
+    serial: Serial.
+    proxy: Set proxy.
+    platformKeys: Platform keys.
+    storage: Storage.
+    syncFileSystem: Sync file system.
+    system.cpu: CPU metadata.
+    system.memory: Memory metadata.
+    system.network: Network metadata.
+    system.display: Display metadata.
+    system.storage: Storage metadata.
+    tts: Text to speech.
+    unlimitedStorage: Unlimited storage.
+    usb: USB.
+    videoCapture: Video capture.
+    vpnProvider: VPN provider.
+    webRequest: Web requests.
+    webRequestBlocking: Block web requests.
+    app.window.alpha: Alpha.
+    app.window.alwaysOnTop: Always on top.
+    appview: App view.
+    audio: Audio.
+    bluetoothPrivate: Bluetooth private.
+    cecPrivate: Cec private.
+    clipboard: Clipboard.
+    declarativeNetRequest: Declarative net request.
+    declarativeNetRequestWithHostAccess: Declarative net request with host access.
+    declarativeNetRequestFeedback: Declarative net request feedback.
+    declarativeWebRequest: Declarative web request.
+    diagnostics: Diagnostics.
+    dns: Dns.
+    externally_connectable.all_urls: All URLs externally connectable.
+    feedbackPrivate: Feedback private.
+    fileSystem.directory: File system directory.
+    fileSystem.retainEntries: File system retain entries.
+    fileSystem.write: File system write.
+    fileSystem.requestFileSystem: File system request file system.
+    app.window.ime: Ime.
+    lockScreen: Lock screen.
+    mediaPerceptionPrivate: Media perception private.
+    metricsPrivate: Metrics private.
+    networking.onc: Networking open network configuration.
+    networkingPrivate: Networking private.
+    odfsConfigPrivate: ODFS config private.
+    offscreen: Offscreen.
+    runtime: Runtime.
+    socket: Socket.
+    app.window.shape: Shape.
+    usbDevices: USB Devices.
+    u2fDevices: U2F devices.
+    userScripts: User scripts.
+    virtualKeyboard: Virtual keyboard.
+    virtualKeyboardPrivate: Virtual keyboard private.
+    webview: Web view.
+    webRequestAuthProvider: Auth provider web requests.
+    arcAppsPrivate: Arc apps private.
+    browser: Browser.
+    enterprise.remoteApps: Enterprise remote apps.
+    firstRunPrivate: First run private.
+    mediaGalleries.allAutoDetected: All autodetected media galleries.
+    mediaGalleries.scan: Scan media galleries.
+    mediaGalleries.read: Read media galleries.
+    mediaGalleries.copyTo: Copy to media galleries.
+    mediaGalleries.delete: Delete media galleries.
+    pointerLock: Pointer lock.
+    os.attached_device_info: OS attached device info.
+    os.bluetooth_peripherals_info: OS bluetooth peripherals info.
+    os.diagnostics: OS diagnostics.
+    os.diagnostics.network_info_mlab: OS network info MLAB diagnostics.
+    os.events: OS events.
+    os.management.audio: OS management audio.
+    os.telemetry: OS telemetry.
+    os.telemetry.serial_number: OS serial number telemetry.
+    os.telemetry.network_info: OS network info telemetry.
+    accessibilityFeatures.modify: Accessibility features modify.
+    accessibilityFeatures.read: Accessibility features read.
+    accessibilityPrivate: Accessibility private.
+    accessibilityServicePrivate: Accessibility service private.
+    activityLogPrivate: Activity log private.
+    autofillPrivate: Autofill private.
+    autotestPrivate: Autotest private.
+    background: Background.
+    bookmarks: Bookmarks.
+    brailleDisplayPrivate: Braille display private.
+    browsingData: Browsing data.
+    chromePrivate: Chrome private.
+    chromeosInfoPrivate: ChromeOS info private.
+    commandLinePrivate: Command line private.
+    commands.accessibility: Commands accessibility.
+    contentSettings: Content settings.
+    crashReportPrivate: Crash report private.
+    devtools: Devtools.
+    debugger: Debugger.
+    developerPrivate: Developer private.
+    declarativeContent: Declarative content.
+    downloads: Downloads.
+    downloads.open: Downloads open.
+    downloads.shelf: Downloads shelf.
+    downloads.ui: Downloads UI.
+    enterprise.networkingAttributes: Enterprise networking attributes.
+    enterprise.hardwarePlatform: Enterprise hardware platform.
+    enterprise.kioskInput: Enterprise kiosk input.
+    enterprise.platformKeys: Enterprise platform keys.
+    enterprise.platformKeysPrivate: Enterprise platform keys private.
+    enterprise.reportingPrivate: Enterprise reporting private.
+    experimentalAiData: Experimental AI data.
+    favicon: Favicon.
+    fileManagerPrivate: File manager private.
+    fontSettings: Font settings.
+    sharedStoragePrivate: Shared storage private.
+    history: History.
+    identity.email: Identity email.
+    idltest: IDL test.
+    input: Input.
+    imageLoaderPrivate: Image loader private.
+    inputMethodPrivate: Input method private.
+    languageSettingsPrivate: Language settings private.
+    lockWindowFullscreenPrivate: Lock window fullscreen private.
+    login: Login.
+    loginScreenStorage: Login screen storage.
+    loginScreenUi: Login screen UI.
+    loginState: Login state.
+    webcamPrivate: Webcam private.
+    management: Management.
+    mediaPlayerPrivate: Media player private.
+    mdns: Multicast domain name system.
+    echoPrivate: Echo private.
+    pageCapture: Page capture.
+    passwordsPrivate: Passwords private.
+    pdfViewerPrivate: PDF viewer private.
+    plugin: Plugin.
+    printing: Printing.
+    printingMetrics: Printing metrics.
+    privacy: Privacy.
+    processes: Processes.
+    imageWriterPrivate: Image writer private.
+    readingList: Reading list.
+    resourcesPrivate: Resources private.
+    rtcPrivate: RTC private.
+    safeBrowsingPrivate: Safe browsing private.
+    scripting: Scripting.
+    search: Search.
+    sessions: Sessions.
+    settingsPrivate: Settings private.
+    sidePanel: Side panel.
+    smartCardProviderPrivate: Smart card provider private.
+    speechRecognitionPrivate: Speech recognition private.
+    systemLog: System log.
+    systemPrivate: System private.
+    tabGroups: Tab groups.
+    tabs: Tabs.
+    tabCapture: Tab capture.
+    terminalPrivate: Terminal private.
+    topSites: Top sites.
+    transientBackground: Transient background.
+    ttsEngine: Text to speech engine.
+    usersPrivate: Users private.
+    wallpaper: Wallpaper.
+    webAuthenticationProxy: Web authentication proxy.
+    webNavigation: Web navigation.
+    webrtcAudioPrivate: WebRTC audio private.
+    webrtcDesktopCapturePrivate: WebRTC desktop capture private.
+    webrtcLoggingPrivate: WebRTC logging private.
+    webrtcLoggingPrivate.audioDebug: WebRTC audio debug logging private.
+    webstorePrivate: Webstore private.
+    wmDesksPrivate: WM desks private.
   allowedPermissions: TYPE_LIST
-    {'value': 'activeTab', 'description': 'Active tab.'}
+    activeTab: Active tab.
+    app.window.alwaysOnTop: Always on top.
+    alarms: Alarms.
+    audioCapture: Audio capture.
+    certificateProvider: Certificate provider.
+    clipboardRead: Clipboard read.
+    clipboardWrite: Clipboard write.
+    contextMenus: Context menus.
+    desktopCapture: Desktop capture.
+    documentScan: Document scan.
+    enterprise.deviceAttributes: Enterprise device attributes.
+    experimental: Experimental APIs.
+    app.window.fullscreen: Fullscreen apps.
+    fileBrowserHandler: File browser handler.
+    fileSystem: File system.
+    fileSystemProvider: File system provider.
+    hid: HID.
+    app.window.fullscreen.overrideEsc: Override fullscreen escape.
+    idle: Detect idle.
+    identity: Identity.
+    gcm: Google Cloud Messaging.
+    geolocation: Geo location.
+    mediaGalleries: Media galleries.
+    nativeMessaging: Native messaging.
+    networking.config: Captive portal authenticator.
+    power: Power.
+    notifications: Notifications.
+    printerProvider: Printers.
+    serial: Serial.
+    proxy: Set proxy.
+    platformKeys: Platform keys.
+    storage: Storage.
+    syncFileSystem: Sync file system.
+    system.cpu: CPU metadata.
+    system.memory: Memory metadata.
+    system.network: Network metadata.
+    system.display: Display metadata.
+    system.storage: Storage metadata.
+    tts: Text to speech.
+    unlimitedStorage: Unlimited storage.
+    usb: USB.
+    videoCapture: Video capture.
+    vpnProvider: VPN provider.
+    webRequest: Web requests.
+    webRequestBlocking: Block web requests.
+    app.window.alpha: Alpha.
+    app.window.alwaysOnTop: Always on top.
+    appview: App view.
+    audio: Audio.
+    bluetoothPrivate: Bluetooth private.
+    cecPrivate: Cec private.
+    clipboard: Clipboard.
+    declarativeNetRequest: Declarative net request.
+    declarativeNetRequestWithHostAccess: Declarative net request with host access.
+    declarativeNetRequestFeedback: Declarative net request feedback.
+    declarativeWebRequest: Declarative web request.
+    diagnostics: Diagnostics.
+    dns: Dns.
+    externally_connectable.all_urls: All URLs externally connectable.
+    feedbackPrivate: Feedback private.
+    fileSystem.directory: File system directory.
+    fileSystem.retainEntries: File system retain entries.
+    fileSystem.write: File system write.
+    fileSystem.requestFileSystem: File system request file system.
+    app.window.ime: Ime.
+    lockScreen: Lock screen.
+    mediaPerceptionPrivate: Media perception private.
+    metricsPrivate: Metrics private.
+    networking.onc: Networking open network configuration.
+    networkingPrivate: Networking private.
+    odfsConfigPrivate: ODFS config private.
+    offscreen: Offscreen.
+    runtime: Runtime.
+    socket: Socket.
+    app.window.shape: Shape.
+    usbDevices: USB Devices.
+    u2fDevices: U2F devices.
+    userScripts: User scripts.
+    virtualKeyboard: Virtual keyboard.
+    virtualKeyboardPrivate: Virtual keyboard private.
+    webview: Web view.
+    webRequestAuthProvider: Auth provider web requests.
+    arcAppsPrivate: Arc apps private.
+    browser: Browser.
+    enterprise.remoteApps: Enterprise remote apps.
+    firstRunPrivate: First run private.
+    mediaGalleries.allAutoDetected: All autodetected media galleries.
+    mediaGalleries.scan: Scan media galleries.
+    mediaGalleries.read: Read media galleries.
+    mediaGalleries.copyTo: Copy to media galleries.
+    mediaGalleries.delete: Delete media galleries.
+    pointerLock: Pointer lock.
+    os.attached_device_info: OS attached device info.
+    os.bluetooth_peripherals_info: OS bluetooth peripherals info.
+    os.diagnostics: OS diagnostics.
+    os.diagnostics.network_info_mlab: OS network info MLAB diagnostics.
+    os.events: OS events.
+    os.management.audio: OS management audio.
+    os.telemetry: OS telemetry.
+    os.telemetry.serial_number: OS serial number telemetry.
+    os.telemetry.network_info: OS network info telemetry.
+    accessibilityFeatures.modify: Accessibility features modify.
+    accessibilityFeatures.read: Accessibility features read.
+    accessibilityPrivate: Accessibility private.
+    accessibilityServicePrivate: Accessibility service private.
+    activityLogPrivate: Activity log private.
+    autofillPrivate: Autofill private.
+    autotestPrivate: Autotest private.
+    background: Background.
+    bookmarks: Bookmarks.
+    brailleDisplayPrivate: Braille display private.
+    browsingData: Browsing data.
+    chromePrivate: Chrome private.
+    chromeosInfoPrivate: ChromeOS info private.
+    commandLinePrivate: Command line private.
+    commands.accessibility: Commands accessibility.
+    contentSettings: Content settings.
+    crashReportPrivate: Crash report private.
+    devtools: Devtools.
+    debugger: Debugger.
+    developerPrivate: Developer private.
+    declarativeContent: Declarative content.
+    downloads: Downloads.
+    downloads.open: Downloads open.
+    downloads.shelf: Downloads shelf.
+    downloads.ui: Downloads UI.
+    enterprise.networkingAttributes: Enterprise networking attributes.
+    enterprise.hardwarePlatform: Enterprise hardware platform.
+    enterprise.kioskInput: Enterprise kiosk input.
+    enterprise.platformKeys: Enterprise platform keys.
+    enterprise.platformKeysPrivate: Enterprise platform keys private.
+    enterprise.reportingPrivate: Enterprise reporting private.
+    experimentalAiData: Experimental AI data.
+    favicon: Favicon.
+    fileManagerPrivate: File manager private.
+    fontSettings: Font settings.
+    sharedStoragePrivate: Shared storage private.
+    history: History.
+    identity.email: Identity email.
+    idltest: IDL test.
+    input: Input.
+    imageLoaderPrivate: Image loader private.
+    inputMethodPrivate: Input method private.
+    languageSettingsPrivate: Language settings private.
+    lockWindowFullscreenPrivate: Lock window fullscreen private.
+    login: Login.
+    loginScreenStorage: Login screen storage.
+    loginScreenUi: Login screen UI.
+    loginState: Login state.
+    webcamPrivate: Webcam private.
+    management: Management.
+    mediaPlayerPrivate: Media player private.
+    mdns: Multicast domain name system.
+    echoPrivate: Echo private.
+    pageCapture: Page capture.
+    passwordsPrivate: Passwords private.
+    pdfViewerPrivate: PDF viewer private.
+    plugin: Plugin.
+    printing: Printing.
+    printingMetrics: Printing metrics.
+    privacy: Privacy.
+    processes: Processes.
+    imageWriterPrivate: Image writer private.
+    readingList: Reading list.
+    resourcesPrivate: Resources private.
+    rtcPrivate: RTC private.
+    safeBrowsingPrivate: Safe browsing private.
+    scripting: Scripting.
+    search: Search.
+    sessions: Sessions.
+    settingsPrivate: Settings private.
+    sidePanel: Side panel.
+    smartCardProviderPrivate: Smart card provider private.
+    speechRecognitionPrivate: Speech recognition private.
+    systemLog: System log.
+    systemPrivate: System private.
+    tabGroups: Tab groups.
+    tabs: Tabs.
+    tabCapture: Tab capture.
+    terminalPrivate: Terminal private.
+    topSites: Top sites.
+    transientBackground: Transient background.
+    ttsEngine: Text to speech engine.
+    usersPrivate: Users private.
+    wallpaper: Wallpaper.
+    webAuthenticationProxy: Web authentication proxy.
+    webNavigation: Web navigation.
+    webrtcAudioPrivate: WebRTC audio private.
+    webrtcDesktopCapturePrivate: WebRTC desktop capture private.
+    webrtcLoggingPrivate: WebRTC logging private.
+    webrtcLoggingPrivate.audioDebug: WebRTC audio debug logging private.
+    webstorePrivate: Webstore private.
+    wmDesksPrivate: WM desks private.
   blockedHosts: TYPE_LIST
     Sets extension hosts that should be blocked.
   allowedHosts: TYPE_LIST
@@ -1524,9 +2394,11 @@ chrome.devices.managedguest.apps.PermissionsAndUrlAccess: Allows setting of allo
 
 chrome.devices.managedguest.apps.SkipDocumentScanConfirmation: Allows the app to skip the confirmation dialog when using the Document Scan API.
   skipDocumentScanConfirmation: TYPE_BOOL
+    Controls whether a Chrome Application can skip the confirmation dialog when using the Document Scan API.
 
 chrome.devices.managedguest.apps.SkipPrintConfirmation: Allows the app to skip the confirmation dialog when sending print jobs via the Chrome Printing API.
   skipPrintConfirmation: TYPE_BOOL
+    Controls whether a Chrome Application can skip the confirmation dialog when sending print jobs via the Chrome Printing API.
 
 chrome.devices.managedguest.AssistantWebEnabled: Allow using Google Assistant on the web.
   assistantWebEnabled: TYPE_ENUM
@@ -1585,7 +2457,8 @@ chrome.devices.managedguest.AutoplayAllowlist: Autoplay video.
     Allowed URLs. URL patterns allowed to autoplay. Prefix domain with [*.] to include all subdomains. Use * to allow all domains.
 
 chrome.devices.managedguest.Avatar: Custom avatar.
-  userAvatarImage: TYPE_STRING
+  userAvatarImage
+    downloadUri: TYPE_STRING
 
 chrome.devices.managedguest.BeforeunloadEventCancelByPreventDefaultEnabled: Behavior of event.preventDefault() for beforeunload event.
   beforeunloadEventCancelByPreventDefaultEnabled: TYPE_ENUM
@@ -1608,10 +2481,40 @@ chrome.devices.managedguest.BrowserHistory: Browser history.
     false: Always save browser history.
 
 chrome.devices.managedguest.BrowsingDataLifetime: Browsing Data Lifetime.
-  hostedAppDataTtl: TYPE_STRING
+  browsingHistoryTtl
+    duration: TYPE_STRING
+  downloadHistoryTtl
+    duration: TYPE_STRING
+  cookiesAndOtherSiteDataTtl
+    duration: TYPE_STRING
+  cachedImagesAndFilesTtl
+    duration: TYPE_STRING
+  passwordSigninTtl
+    duration: TYPE_STRING
+  autofillTtl
+    duration: TYPE_STRING
+  siteSettingsTtl
+    duration: TYPE_STRING
+  hostedAppDataTtl
+    duration: TYPE_STRING
 
 chrome.devices.managedguest.BrowsingDataLifetimeV2: Browsing Data Lifetime.
-  hostedAppDataTtl: TYPE_INT64
+  browsingHistoryTtl
+    duration: TYPE_INT64
+  downloadHistoryTtl
+    duration: TYPE_INT64
+  cookiesAndOtherSiteDataTtl
+    duration: TYPE_INT64
+  cachedImagesAndFilesTtl
+    duration: TYPE_INT64
+  passwordSigninTtl
+    duration: TYPE_INT64
+  autofillTtl
+    duration: TYPE_INT64
+  siteSettingsTtl
+    duration: TYPE_INT64
+  hostedAppDataTtl
+    duration: TYPE_INT64
 
 chrome.devices.managedguest.BuiltInDnsClientEnabled: Built-in DNS client.
   builtInDnsClientEnabled: TYPE_ENUM
@@ -1694,7 +2597,8 @@ chrome.devices.managedguest.CursorHighlightEnabled: Cursor highlight.
     TRUE: Enable cursor highlight.
 
 chrome.devices.managedguest.CustomTermsOfService: Custom terms of service.
-  termsOfServiceUrl: TYPE_STRING
+  termsOfServiceUrl
+    downloadUri: TYPE_STRING
 
 chrome.devices.managedguest.DataLeakPreventionReportingEnabled: Data controls reporting.
   dataLeakPreventionReportingEnabled: TYPE_BOOL
@@ -1887,7 +2791,11 @@ chrome.devices.managedguest.EventPathEnabled: Re-enable the Event.path API until
 
 chrome.devices.managedguest.ExplicitlyAllowedNetworkPorts: Allowed network ports.
   explicitlyAllowedNetworkPorts: TYPE_LIST
-    {'value': '554', 'description': 'port 554 (expires 2021/10/15).'}
+    554: port 554 (expires 2021/10/15).
+    989: port 989 (expires 2022/02/01).
+    990: port 990 (expires 2022/02/01).
+    6566: port 6566 (expires 2021/10/15).
+    10080: port 10080 (expires 2022/04/01).
 
 chrome.devices.managedguest.ExtensionExtendedBackgroundLifetimeForPortConnectionsToUrls: Extended background lifetime.
   extensionExtendedBackgroundLifetimeForPortConnectionsToUrls: TYPE_LIST
@@ -2101,21 +3009,40 @@ chrome.devices.managedguest.IdleSettingsExtended: Idle settings.
     LOGOUT: Logout.
     SHUTDOWN: Shutdown.
     DO_NOTHING: Do nothing.
+  idleDelayAc
+    duration: TYPE_INT64
+  idleWarningDelayAc
+    duration: TYPE_INT64
   idleActionAc: TYPE_ENUM
     SLEEP: Sleep.
     LOGOUT: Logout.
     SHUTDOWN: Shut down.
     DO_NOTHING: Do nothing.
+  screenDimDelayAc
+    duration: TYPE_INT64
+  screenOffDelayAc
+    duration: TYPE_INT64
+  screenLockDelayAc
+    duration: TYPE_INT64
+  idleDelayBattery
+    duration: TYPE_INT64
+  idleWarningDelayBattery
+    duration: TYPE_INT64
   idleActionBattery: TYPE_ENUM
     SLEEP: Sleep.
     LOGOUT: Logout.
     SHUTDOWN: Shut down.
     DO_NOTHING: Do nothing.
+  screenDimDelayBattery
+    duration: TYPE_INT64
+  screenOffDelayBattery
+    duration: TYPE_INT64
+  screenLockDelayBattery
+    duration: TYPE_INT64
   lockOnSleepOrLidClose: TYPE_ENUM
     UNSET: Allow user to configure.
     FALSE: Don't lock screen.
     TRUE: Lock screen.
-  screenLockDelayBattery: TYPE_INT64
 
 chrome.devices.managedguest.IncognitoMode: Incognito mode.
   incognitoModeAvailability: TYPE_ENUM
@@ -2259,9 +3186,15 @@ chrome.devices.managedguest.LookalikeWarningAllowlistDomains: Suppress lookalike
     Allowlisted Domains. Enter list of domains where Chrome should prevent the display of lookalike URL warnings.
 
 chrome.devices.managedguest.ManagedBookmarksSetting: Managed bookmarks.
-  toplevelName: TYPE_STRING
-  name: TYPE_STRING
-  url: TYPE_STRING
+  managedBookmarks
+    bookmarks
+      folder
+        name: TYPE_STRING
+        entries
+      link
+        name: TYPE_STRING
+        url: TYPE_STRING
+    toplevelName: TYPE_STRING
 
 chrome.devices.managedguest.ManagedGuestSession: Managed guest session.
   userDisplayName: TYPE_STRING
@@ -2305,10 +3238,12 @@ chrome.devices.managedguest.ManagedGuestSessionV2: Managed guest session.
     ROTATE_270: 270 degrees.
 
 chrome.devices.managedguest.MaxInvalidationFetchDelay: Policy fetch delay.
-  maxInvalidationFetchDelay: TYPE_STRING
+  maxInvalidationFetchDelay
+    duration: TYPE_STRING
 
 chrome.devices.managedguest.MaxInvalidationFetchDelayV2: Policy fetch delay.
-  maxInvalidationFetchDelay: TYPE_INT64
+  maxInvalidationFetchDelay
+    duration: TYPE_INT64
 
 chrome.devices.managedguest.MemorySaverModeSavings: Memory saver.
   memorySaverModeSavings: TYPE_ENUM
@@ -2347,10 +3282,12 @@ chrome.devices.managedguest.NetworkFileShares: Network file shares.
   ntlmShareAuthenticationEnabled: TYPE_BOOL
     true: Use NTLM authentication.
     false: Do not use NTLM authentication.
-  mode: TYPE_ENUM
-    DROP_DOWN:
-    PRE_MOUNT:
-  shareUrl: TYPE_STRING
+  networkFileSharesPreconfiguredShares
+    preconfiguredFiles
+      mode: TYPE_ENUM
+        DROP_DOWN:
+        PRE_MOUNT:
+      shareUrl: TYPE_STRING
 
 chrome.devices.managedguest.NewBaseUrlInheritanceBehaviorAllowed: Enable the feature NewBaseUrlInheritanceBehavior.
   newBaseUrlInheritanceBehaviorAllowed: TYPE_BOOL
@@ -2481,7 +3418,11 @@ chrome.devices.managedguest.PrimaryMouseButtonSwitch: Primary mouse button.
 
 chrome.devices.managedguest.PrinterTypeDenyList: Blocked printer types.
   printerTypeDenyList: TYPE_LIST
-    {'value': 'privet', 'description': 'Privet zeroconf-based protocol (deprecated).'}
+    privet: Privet zeroconf-based protocol (deprecated).
+    extension: Extension-based.
+    pdf: Save as PDF.
+    local: Local printer.
+    cloud: Google Cloud Print (deprecated).
 
 chrome.devices.managedguest.PrintHeaderFooter: Print headers and footers.
   printHeaderFooter: TYPE_ENUM
@@ -2510,7 +3451,8 @@ chrome.devices.managedguest.PrintingBackgroundGraphicsDefault: Background graphi
     ENABLED: Enable background graphics printing mode by default.
 
 chrome.devices.managedguest.PrintingMaxSheetsAllowed: Maximum sheets.
-  printingMaxSheetsAllowedNullable: TYPE_INT64
+  printingMaxSheetsAllowedNullable
+    value: TYPE_INT64
 
 chrome.devices.managedguest.PrintingPaperSizeDefault: Default printing page size.
   printingPaperSizeEnum: TYPE_ENUM
@@ -2532,19 +3474,22 @@ chrome.devices.managedguest.PrintingPinDefault: Default PIN printing mode.
     DEFAULT_TO_NOT_PIN_PRINTING: Without PIN.
 
 chrome.devices.managedguest.PrintJobHistoryExpirationPeriodNew: Print job history retention period.
-  printJobHistoryExpirationPeriodDaysNew: TYPE_STRING
+  printJobHistoryExpirationPeriodDaysNew
+    duration: TYPE_STRING
 
 chrome.devices.managedguest.PrintJobHistoryExpirationPeriodNewV2: Print job history retention period.
-  printJobHistoryExpirationPeriodDaysNew: TYPE_INT64
+  printJobHistoryExpirationPeriodDaysNew
+    duration: TYPE_INT64
 
 chrome.devices.managedguest.PrintPdfAsImage: Print PDF as image.
   printPdfAsImageAvailability: TYPE_BOOL
     true: Allow users to print PDF documents as images.
     false: Do not allow users to print PDF documents as images.
+  printRasterizePdfDpi
+    value: TYPE_INT64
   printPdfAsImageDefault: TYPE_BOOL
     true: Default to printing PDFs as images when available.
     false: Default to printing PDFs without being rasterized.
-  printRasterizePdfDpi: TYPE_INT64
 
 chrome.devices.managedguest.PrivacyScreenEnabled: Privacy screen.
   privacyScreenEnabled: TYPE_ENUM
@@ -2602,7 +3547,8 @@ chrome.devices.managedguest.RemoteAccessHostClientDomainList: Remote access clie
     Remote access client domain. Configure the required domain names for remote access clients.
 
 chrome.devices.managedguest.RemoteAccessHostClipboardSizeBytes: Clipboard sync max size.
-  remoteAccessHostClipboardSizeBytes: TYPE_INT64
+  remoteAccessHostClipboardSizeBytes
+    value: TYPE_INT64
 
 chrome.devices.managedguest.RemoteAccessHostDomainList: Remote access hosts.
   remoteAccessHostDomainList: TYPE_LIST
@@ -2712,9 +3658,12 @@ chrome.devices.managedguest.ScreensaverLockScreenEnabled: Screen saver.
   screensaverLockScreenEnabled: TYPE_BOOL
     true: Display screen saver on lock screen when idle.
     false: Don't display screen saver on lock screen when idle.
+  screensaverLockScreenIdleTimeoutSeconds
+    duration: TYPE_INT64
+  screensaverLockScreenImageDisplayIntervalSeconds
+    duration: TYPE_INT64
   screensaverLockScreenImages: TYPE_LIST
     Screen saver image URLs. Enter one URL per line. Images must be in JPG format(.jpg or .jpeg files.
-  screensaverLockScreenImageDisplayIntervalSeconds: TYPE_INT64
 
 chrome.devices.managedguest.Screenshot: Screenshot.
   disableScreenshots: TYPE_BOOL
@@ -2740,14 +3689,16 @@ chrome.devices.managedguest.SecurityTokenSessionSettings: Security token removal
     IGNORE: Nothing.
     LOGOUT: Log the user out.
     LOCK: Lock the current session.
-  securityTokenSessionNotificationSeconds: TYPE_STRING
+  securityTokenSessionNotificationSeconds
+    duration: TYPE_STRING
 
 chrome.devices.managedguest.SecurityTokenSessionSettingsV2: Security token removal.
   securityTokenSessionBehavior: TYPE_ENUM
     IGNORE: Nothing.
     LOGOUT: Log the user out.
     LOCK: Lock the current session.
-  securityTokenSessionNotificationSeconds: TYPE_INT64
+  securityTokenSessionNotificationSeconds
+    duration: TYPE_INT64
 
 chrome.devices.managedguest.SelectToSpeakEnabled: Select to speak.
   selectToSpeakEnabled: TYPE_ENUM
@@ -2761,8 +3712,10 @@ chrome.devices.managedguest.SendMouseEventsDisabledFormControlsEnabled: Disabled
     false: Do not dispatch MouseEvents from disabled control elements.
 
 chrome.devices.managedguest.SerialAllowUsbDevicesForUrls: Web Serial API allowed devices.
-  url: TYPE_STRING
-  device: TYPE_LIST
+  serialAllowUsbDevicesForUrls
+    webOrigin
+      url: TYPE_STRING
+      device: TYPE_LIST
 
 chrome.devices.managedguest.ServiceWorkerToControlSrcdocIframeEnabled: Service worker control of srcdoc iframes.
   serviceWorkerToControlSrcdocIframeEnabled: TYPE_BOOL
@@ -2770,14 +3723,74 @@ chrome.devices.managedguest.ServiceWorkerToControlSrcdocIframeEnabled: Service w
     false: Block service workers from controlling srcdoc iframes.
 
 chrome.devices.managedguest.SessionLength: Maximum user session length.
-  sessionDurationLimit: TYPE_STRING
+  sessionDurationLimit
+    duration: TYPE_STRING
 
 chrome.devices.managedguest.SessionLengthV2: Maximum user session length.
-  sessionDurationLimit: TYPE_INT64
+  sessionDurationLimit
+    duration: TYPE_INT64
 
 chrome.devices.managedguest.SessionLocale: Session locale.
   sessionLocalesRepeatedString: TYPE_LIST
-    {'value': 'ar', 'description': 'Arabic - \u202bالعربية\u202c.'}
+    ar: Arabic - ‫العربية‬.
+    bn: Bangla - ‪বাংলা‬.
+    bg: Bulgarian - ‪български‬.
+    ca: Catalan - ‪català‬.
+    zh-CN: Chinese (Simplified) - ‪简体中文‬.
+    zh-TW: Chinese (Traditional) - ‪繁體中文‬.
+    hr: Croatian - ‪Hrvatski‬.
+    cs: Czech - ‪Čeština‬.
+    da: Danish - ‪Dansk‬.
+    nl: Dutch - ‪Nederlands‬.
+    en-AU: English (Australia).
+    en-CA: English (Canada).
+    en-NZ: English (New Zealand).
+    en-GB: English (United Kingdom).
+    en-US: English (United States).
+    et: Estonian - ‪eesti‬.
+    fil: Filipino.
+    fi: Finnish - ‪Suomi‬.
+    fr-CA: French (Canada) - ‪Français (Canada)‬.
+    fr: French (France) - ‪Français (France)‬.
+    fr-CH: French (Switzerland) - ‪Français (Suisse)‬.
+    de: German (Germany) - ‪Deutsch (Deutschland)‬.
+    de-CH: German (Switzerland) - ‪Deutsch (Schweiz)‬.
+    el: Greek - ‪Ελληνικά‬.
+    gu: Gujarati - ‪ગુજરાતી‬.
+    iw: Hebrew - ‫עברית‬.
+    hi: Hindi - ‪हिन्दी‬.
+    hu: Hungarian - ‪magyar‬.
+    is: Icelandic - ‪íslenska‬.
+    id: Indonesian - ‪Indonesia‬.
+    it: Italian - ‪Italiano‬.
+    ja: Japanese - ‪日本語‬.
+    kn: Kannada - ‪ಕನ್ನಡ‬.
+    ko: Korean - ‪한국어‬.
+    lv: Latvian - ‪latviešu‬.
+    lt: Lithuanian - ‪lietuvių‬.
+    ms: Malay - ‪Melayu‬.
+    ml: Malayalam - ‪മലയാളം‬.
+    mr: Marathi - ‪मराठी‬.
+    no: Norwegian - ‪norsk‬.
+    fa: Persian - ‫فارسی‬.
+    pl: Polish - ‪polski‬.
+    pt-BR: Portuguese (Brazil) - ‪Português (Brasil)‬.
+    pt-PT: Portuguese (Portugal) - ‪Português (Portugal)‬.
+    ro: Romanian - ‪română‬.
+    ru: Russian - ‪Русский‬.
+    sr: Serbian - ‪српски‬.
+    sk: Slovak - ‪Slovenčina‬.
+    sl: Slovenian - ‪slovenščina‬.
+    es-419: Spanish (Latin America) - ‪Español (Latinoamérica)‬.
+    es: Spanish (Spain) - ‪Español (España)‬.
+    sv: Swedish - ‪Svenska‬.
+    ta: Tamil - ‪தமிழ்‬.
+    te: Telugu - ‪తెలుగు‬.
+    th: Thai - ‪ไทย‬.
+    tr: Turkish - ‪Türkçe‬.
+    uk: Ukrainian - ‪Українська‬.
+    vi: Vietnamese - ‪Tiếng Việt‬.
+    cy: Welsh - ‪Cymraeg‬.
 
 chrome.devices.managedguest.SetTimeoutWithoutOneMsClampEnabled: Javascript setTimeout() minimum.
   setTimeoutWithoutOneMsClampEnabled: TYPE_ENUM
@@ -2867,9 +3880,115 @@ chrome.devices.managedguest.SpellcheckEnabled: Spell check.
     FALSE: Disable spell check.
     TRUE: Enable spell check.
   spellcheckLanguage: TYPE_LIST
-    {'value': 'af', 'description': 'Afrikaans.'}
+    af: Afrikaans.
+    sq: Albanian - ‪shqip‬.
+    hy: Armenian - ‪հայերեն‬.
+    bg: Bulgarian - ‪български‬.
+    ca: Catalan - ‪català‬.
+    hr: Croatian - ‪Hrvatski‬.
+    cs: Czech - ‪Čeština‬.
+    da: Danish - ‪Dansk‬.
+    nl: Dutch - ‪Nederlands‬.
+    en-AU: English (Australia).
+    en-CA: English (Canada).
+    en-GB: English (United Kingdom).
+    en-US: English (United States).
+    et: Estonian - ‪eesti‬.
+    fo: Faroese - ‪føroyskt‬.
+    fr: French - ‪Français‬.
+    fr-FR: French (France) - ‪Français (France)‬.
+    de: German - ‪Deutsch‬.
+    de-DE: German (Germany) - ‪Deutsch (Deutschland)‬.
+    el: Greek - ‪Ελληνικά‬.
+    he: Hebrew - ‫עברית‬.
+    hi: Hindi - ‪हिन्दी‬.
+    hu: Hungarian - ‪magyar‬.
+    id: Indonesian - ‪Indonesia‬.
+    it: Italian - ‪Italiano‬.
+    it-IT: Italian (Italy) - ‪Italiano (Italia)‬.
+    ko: Korean - ‪한국어‬.
+    lv: Latvian - ‪latviešu‬.
+    lt: Lithuanian - ‪lietuvių‬.
+    nb: Norwegian Bokmål - ‪norsk bokmål‬.
+    fa: Persian - ‫فارسی‬.
+    pl: Polish - ‪polski‬.
+    pt: Portuguese - ‪Português‬.
+    pt-BR: Portuguese (Brazil) - ‪Português (Brasil)‬.
+    pt-PT: Portuguese (Portugal) - ‪Português (Portugal)‬.
+    ro: Romanian - ‪română‬.
+    ru: Russian - ‪Русский‬.
+    sr: Serbian - ‪српски‬.
+    sh: Serbo-Croatian - ‪srpskohrvatski‬.
+    sk: Slovak - ‪Slovenčina‬.
+    sl: Slovenian - ‪slovenščina‬.
+    es: Spanish - ‪Español‬.
+    es-AR: Spanish (Argentina) - ‪Español (Argentina)‬.
+    es-419: Spanish (Latin America) - ‪Español (Latinoamérica)‬.
+    es-MX: Spanish (Mexico) - ‪Español (México)‬.
+    es-ES: Spanish (Spain) - ‪Español (España)‬.
+    es-US: Spanish (United States) - ‪Español (Estados Unidos)‬.
+    sv: Swedish - ‪Svenska‬.
+    tg: Tajik - ‪тоҷикӣ‬.
+    ta: Tamil - ‪தமிழ்‬.
+    tr: Turkish - ‪Türkçe‬.
+    uk: Ukrainian - ‪Українська‬.
+    vi: Vietnamese - ‪Tiếng Việt‬.
+    cy: Welsh - ‪Cymraeg‬.
   spellcheckLanguageBlocklist: TYPE_LIST
-    {'value': 'af', 'description': 'Afrikaans.'}
+    af: Afrikaans.
+    sq: Albanian - ‪shqip‬.
+    hy: Armenian - ‪հայերեն‬.
+    bg: Bulgarian - ‪български‬.
+    ca: Catalan - ‪català‬.
+    hr: Croatian - ‪Hrvatski‬.
+    cs: Czech - ‪Čeština‬.
+    da: Danish - ‪Dansk‬.
+    nl: Dutch - ‪Nederlands‬.
+    en-AU: English (Australia).
+    en-CA: English (Canada).
+    en-GB: English (United Kingdom).
+    en-US: English (United States).
+    et: Estonian - ‪eesti‬.
+    fo: Faroese - ‪føroyskt‬.
+    fr: French - ‪Français‬.
+    fr-FR: French (France) - ‪Français (France)‬.
+    de: German - ‪Deutsch‬.
+    de-DE: German (Germany) - ‪Deutsch (Deutschland)‬.
+    el: Greek - ‪Ελληνικά‬.
+    he: Hebrew - ‫עברית‬.
+    hi: Hindi - ‪हिन्दी‬.
+    hu: Hungarian - ‪magyar‬.
+    id: Indonesian - ‪Indonesia‬.
+    it: Italian - ‪Italiano‬.
+    it-IT: Italian (Italy) - ‪Italiano (Italia)‬.
+    ko: Korean - ‪한국어‬.
+    lv: Latvian - ‪latviešu‬.
+    lt: Lithuanian - ‪lietuvių‬.
+    nb: Norwegian Bokmål - ‪norsk bokmål‬.
+    fa: Persian - ‫فارسی‬.
+    pl: Polish - ‪polski‬.
+    pt: Portuguese - ‪Português‬.
+    pt-BR: Portuguese (Brazil) - ‪Português (Brasil)‬.
+    pt-PT: Portuguese (Portugal) - ‪Português (Portugal)‬.
+    ro: Romanian - ‪română‬.
+    ru: Russian - ‪Русский‬.
+    sr: Serbian - ‪српски‬.
+    sh: Serbo-Croatian - ‪srpskohrvatski‬.
+    sk: Slovak - ‪Slovenčina‬.
+    sl: Slovenian - ‪slovenščina‬.
+    es: Spanish - ‪Español‬.
+    es-AR: Spanish (Argentina) - ‪Español (Argentina)‬.
+    es-419: Spanish (Latin America) - ‪Español (Latinoamérica)‬.
+    es-MX: Spanish (Mexico) - ‪Español (México)‬.
+    es-ES: Spanish (Spain) - ‪Español (España)‬.
+    es-US: Spanish (United States) - ‪Español (Estados Unidos)‬.
+    sv: Swedish - ‪Svenska‬.
+    tg: Tajik - ‪тоҷикӣ‬.
+    ta: Tamil - ‪தமிழ்‬.
+    tr: Turkish - ‪Türkçe‬.
+    uk: Ukrainian - ‪Українська‬.
+    vi: Vietnamese - ‪Tiếng Việt‬.
+    cy: Welsh - ‪Cymraeg‬.
 
 chrome.devices.managedguest.SpellCheckService: Spell check service.
   spellCheckServiceEnabled: TYPE_ENUM
@@ -2955,7 +4074,19 @@ chrome.devices.managedguest.SuppressUnsupportedOsWarning: Unsupported system war
 
 chrome.devices.managedguest.SystemFeaturesDisableList: Disabled system features.
   systemFeaturesDisableList: TYPE_LIST
-    {'value': 'camera', 'description': 'Camera.'}
+    camera: Camera.
+    os_settings: OS settings.
+    browser_settings: Browser settings.
+    scanning: Scanning.
+    web_store: Web Store.
+    canvas: Canvas.
+    crosh: Crosh.
+    explore: Explore.
+    gallery: Gallery.
+    terminal: Terminal.
+    recorder: Recorder.
+    print_jobs: Print Jobs.
+    key_shortcuts: Key Shortcuts.
 
 chrome.devices.managedguest.SystemFeaturesDisableMode: Disabled system features visibility.
   systemFeaturesDisableMode: TYPE_ENUM
@@ -3103,7 +4234,8 @@ chrome.devices.managedguest.WaitForInitialUserActivity: Wait for initial user ac
     false: Start power management delays and session length limits at session start.
 
 chrome.devices.managedguest.Wallpaper: Custom wallpaper.
-  wallpaperImage: TYPE_STRING
+  wallpaperImage
+    downloadUri: TYPE_STRING
 
 chrome.devices.managedguest.WebBluetoothAccess: Web Bluetooth API.
   defaultWebBluetoothGuardSetting: TYPE_ENUM
@@ -3112,8 +4244,10 @@ chrome.devices.managedguest.WebBluetoothAccess: Web Bluetooth API.
     ASK_WEB_BLUETOOTH: Allow sites to request access to Bluetooth devices via the Web Bluetooth API.
 
 chrome.devices.managedguest.WebHidAllowDevicesForUrls: WebHID API allowed devices.
-  url: TYPE_STRING
-  device: TYPE_LIST
+  webHidAllowDevicesForUrls
+    webOrigin
+      url: TYPE_STRING
+      device: TYPE_LIST
 
 chrome.devices.managedguest.WebRtcAllowLegacyTlsProtocols: Legacy TLS/DTLS downgrade in WebRTC.
   webRtcAllowLegacyTlsProtocols: TYPE_BOOL
@@ -3158,8 +4292,10 @@ chrome.devices.managedguest.WebSqlNonSecureContextEnabled: WebSQL in non-secure 
     false: Disable WebSQL in non-secure contexts unless enabled by Chrome flag.
 
 chrome.devices.managedguest.WebUsbAllowDevicesForUrls: WebUSB API allowed devices.
-  url: TYPE_STRING
-  devices: TYPE_LIST
+  webUsbAllowDevicesForUrls
+    webApplications
+      url: TYPE_STRING
+      devices: TYPE_LIST
 
 chrome.devices.managedguest.WebUsbPortAccess: Controls which websites can ask for USB access.
   defaultWebUsbGuardSetting: TYPE_ENUM
@@ -3198,14 +4334,17 @@ chrome.devices.PowerManagement: Power management.
 
 chrome.devices.PowerPeakShift: Peak shift power management.
   powerPeakShiftEnabled: TYPE_BOOL
-    true: None
-    false: None
+    true
+    false
   powerPeakShiftBatteryThreshold: TYPE_INT64
     Sets the battery threshold for power peak shift.
-  key: TYPE_STRING
-  startTime: TYPE_INT32
-  endTime: TYPE_INT32
-  chargeTime: TYPE_INT32
+  powerPeakShiftTimesOfDay
+    dailyPeakShifts
+      key: TYPE_STRING
+      value
+        startTime: TYPE_INT32
+        endTime: TYPE_INT32
+        chargeTime: TYPE_INT32
 
 chrome.devices.QuirksDownloadEnabled: Hardware profiles.
   deviceQuirksDownloadEnabled: TYPE_BOOL
@@ -3222,10 +4361,12 @@ chrome.devices.RestrictedManagedGuestSessionExtensionCleanupExemptList: Shared a
     Extension IDs. Enter a list of extension IDs. Each extension ID must be exactly 32 characters.
 
 chrome.devices.ScheduledRebootDuration: Reboot after uptime limit.
-  uptimeLimitDuration: TYPE_STRING
+  uptimeLimitDuration
+    duration: TYPE_STRING
 
 chrome.devices.ScheduledRebootDurationV2: Reboot after uptime limit.
-  uptimeLimitDuration: TYPE_INT64
+  uptimeLimitDuration
+    duration: TYPE_INT64
 
 chrome.devices.ShowLowDiskSpaceNotification: Low disk space notification.
   showLowDiskSpaceNotification: TYPE_BOOL
@@ -3233,11 +4374,72 @@ chrome.devices.ShowLowDiskSpaceNotification: Low disk space notification.
     false: Do not show notification when disk space is low.
 
 chrome.devices.SignInKeyboard: Login screen keyboard.
-  selections: TYPE_LIST
+  loginScreenKeyboardSelections
+    selections
+      keyboardIds: TYPE_LIST
 
 chrome.devices.SignInLanguage: Sign-in language.
   signInLanguageString: TYPE_STRING
-    {'value': 'ar', 'description': 'Arabic - \u202bالعربية\u202c.'}
+    ar: Arabic - ‫العربية‬.
+    bn: Bangla - ‪বাংলা‬.
+    bg: Bulgarian - ‪български‬.
+    ca: Catalan - ‪català‬.
+    zh-CN: Chinese (Simplified) - ‪简体中文‬.
+    zh-TW: Chinese (Traditional) - ‪繁體中文‬.
+    hr: Croatian - ‪Hrvatski‬.
+    cs: Czech - ‪Čeština‬.
+    da: Danish - ‪Dansk‬.
+    nl: Dutch - ‪Nederlands‬.
+    en-AU: English (Australia).
+    en-CA: English (Canada).
+    en-NZ: English (New Zealand).
+    en-GB: English (United Kingdom).
+    en-US: English (United States).
+    et: Estonian - ‪eesti‬.
+    fil: Filipino.
+    fi: Finnish - ‪Suomi‬.
+    fr-CA: French (Canada) - ‪Français (Canada)‬.
+    fr: French (France) - ‪Français (France)‬.
+    fr-CH: French (Switzerland) - ‪Français (Suisse)‬.
+    de: German (Germany) - ‪Deutsch (Deutschland)‬.
+    de-CH: German (Switzerland) - ‪Deutsch (Schweiz)‬.
+    el: Greek - ‪Ελληνικά‬.
+    gu: Gujarati - ‪ગુજરાતી‬.
+    iw: Hebrew - ‫עברית‬.
+    hi: Hindi - ‪हिन्दी‬.
+    hu: Hungarian - ‪magyar‬.
+    is: Icelandic - ‪íslenska‬.
+    id: Indonesian - ‪Indonesia‬.
+    it: Italian - ‪Italiano‬.
+    ja: Japanese - ‪日本語‬.
+    kn: Kannada - ‪ಕನ್ನಡ‬.
+    ko: Korean - ‪한국어‬.
+    lv: Latvian - ‪latviešu‬.
+    lt: Lithuanian - ‪lietuvių‬.
+    ms: Malay - ‪Melayu‬.
+    ml: Malayalam - ‪മലയാളം‬.
+    mr: Marathi - ‪मराठी‬.
+    no: Norwegian - ‪norsk‬.
+    fa: Persian - ‫فارسی‬.
+    pl: Polish - ‪polski‬.
+    pt-BR: Portuguese (Brazil) - ‪Português (Brasil)‬.
+    pt-PT: Portuguese (Portugal) - ‪Português (Portugal)‬.
+    ro: Romanian - ‪română‬.
+    ru: Russian - ‪Русский‬.
+    sr: Serbian - ‪српски‬.
+    sk: Slovak - ‪Slovenčina‬.
+    sl: Slovenian - ‪slovenščina‬.
+    es-419: Spanish (Latin America) - ‪Español (Latinoamérica)‬.
+    es: Spanish (Spain) - ‪Español (España)‬.
+    sv: Swedish - ‪Svenska‬.
+    ta: Tamil - ‪தமிழ்‬.
+    te: Telugu - ‪తెలుగు‬.
+    th: Thai - ‪ไทย‬.
+    tr: Turkish - ‪Türkçe‬.
+    uk: Ukrainian - ‪Українська‬.
+    vi: Vietnamese - ‪Tiếng Việt‬.
+    cy: Welsh - ‪Cymraeg‬.
+    : Use the language of the last user session.
 
 chrome.devices.SignInRestriction: Sign-in restriction.
   deviceAllowNewUsers: TYPE_ENUM
@@ -3248,20 +4450,35 @@ chrome.devices.SignInRestriction: Sign-in restriction.
     Allowed users. Enter a list of usernames who can sign in to the device. You can also allow all email addresses in a domain with the wildcard symbol (e.g. *@example.com).
 
 chrome.devices.SignInRestrictionsOffHours: Device off hours.
-  timezone: TYPE_STRING
-  dayOfWeek: TYPE_ENUM
-    MONDAY:
-    TUESDAY:
-    WEDNESDAY:
-    THURSDAY:
-    FRIDAY:
-    SATURDAY:
-    SUNDAY:
-  hours: TYPE_INT32
-  minutes: TYPE_INT32
+  deviceOffHours
+    timezone: TYPE_STRING
+    timeWindows
+      start
+        dayOfWeek: TYPE_ENUM
+          MONDAY:
+          TUESDAY:
+          WEDNESDAY:
+          THURSDAY:
+          FRIDAY:
+          SATURDAY:
+          SUNDAY:
+        hours: TYPE_INT32
+        minutes: TYPE_INT32
+      end
+        dayOfWeek: TYPE_ENUM
+          MONDAY:
+          TUESDAY:
+          WEDNESDAY:
+          THURSDAY:
+          FRIDAY:
+          SATURDAY:
+          SUNDAY:
+        hours: TYPE_INT32
+        minutes: TYPE_INT32
 
 chrome.devices.SignInWallpaperImage: Device wallpaper image.
-  deviceWallpaperImage: TYPE_STRING
+  deviceWallpaperImage
+    downloadUri: TYPE_STRING
 
 chrome.devices.SsoCameraPermissions: Single sign-on camera permissions.
   loginVideoCaptureAllowedUrls: TYPE_LIST
@@ -3302,13 +4519,14 @@ chrome.devices.ThrottleDeviceBandwidth: Throttle device bandwidth.
     Upload rate (kbits). Sets the maximum upload rate if network bandwidth throttling is enabled on a ChromeOS device.
 
 chrome.devices.Timezone: Timezone.
+  systemTimezone
+    value: TYPE_STRING
   timezoneDetectionType: TYPE_ENUM
     USERS_DECIDE: Let users decide.
     DISABLED: Never auto-detect timezone.
     IP_ONLY: Always use coarse timezone detection.
     SEND_WIFI_ACCESS_POINTS: Always send wifi access points to server while resolving timezone.
     SEND_ALL_LOCATION_INFO: Send all location information.
-  systemTimezone: TYPE_STRING
 
 chrome.devices.TpmFirmwareUpdate: TPM firmware update.
   tpmFirmwareUpdateEnabled: TYPE_BOOL
@@ -3356,10 +4574,105 @@ chrome.devices.VirtualMachinesAllowedUnaffiliatedUser: Linux virtual machines fo
 
 chrome.devices.WilcoScheduledUpdate: Scheduled updates.
   wilcoScheduledUpdateEnabled: TYPE_BOOL
-    true: None
-    false: None
+    true
+    false
   wilcoScheduledUpdateTimeOfDay: TYPE_INT64
-    {'value': '0', 'description': '12:00\u202fAM.'}
+    0: 12:00 AM.
+    15: 12:15 AM.
+    30: 12:30 AM.
+    45: 12:45 AM.
+    60: 1:00 AM.
+    75: 1:15 AM.
+    90: 1:30 AM.
+    105: 1:45 AM.
+    120: 2:00 AM.
+    135: 2:15 AM.
+    150: 2:30 AM.
+    165: 2:45 AM.
+    180: 3:00 AM.
+    195: 3:15 AM.
+    210: 3:30 AM.
+    225: 3:45 AM.
+    240: 4:00 AM.
+    255: 4:15 AM.
+    270: 4:30 AM.
+    285: 4:45 AM.
+    300: 5:00 AM.
+    315: 5:15 AM.
+    330: 5:30 AM.
+    345: 5:45 AM.
+    360: 6:00 AM.
+    375: 6:15 AM.
+    390: 6:30 AM.
+    405: 6:45 AM.
+    420: 7:00 AM.
+    435: 7:15 AM.
+    450: 7:30 AM.
+    465: 7:45 AM.
+    480: 8:00 AM.
+    495: 8:15 AM.
+    510: 8:30 AM.
+    525: 8:45 AM.
+    540: 9:00 AM.
+    555: 9:15 AM.
+    570: 9:30 AM.
+    585: 9:45 AM.
+    600: 10:00 AM.
+    615: 10:15 AM.
+    630: 10:30 AM.
+    645: 10:45 AM.
+    660: 11:00 AM.
+    675: 11:15 AM.
+    690: 11:30 AM.
+    705: 11:45 AM.
+    720: 12:00 PM.
+    735: 12:15 PM.
+    750: 12:30 PM.
+    765: 12:45 PM.
+    780: 1:00 PM.
+    795: 1:15 PM.
+    810: 1:30 PM.
+    825: 1:45 PM.
+    840: 2:00 PM.
+    855: 2:15 PM.
+    870: 2:30 PM.
+    885: 2:45 PM.
+    900: 3:00 PM.
+    915: 3:15 PM.
+    930: 3:30 PM.
+    945: 3:45 PM.
+    960: 4:00 PM.
+    975: 4:15 PM.
+    990: 4:30 PM.
+    1005: 4:45 PM.
+    1020: 5:00 PM.
+    1035: 5:15 PM.
+    1050: 5:30 PM.
+    1065: 5:45 PM.
+    1080: 6:00 PM.
+    1095: 6:15 PM.
+    1110: 6:30 PM.
+    1125: 6:45 PM.
+    1140: 7:00 PM.
+    1155: 7:15 PM.
+    1170: 7:30 PM.
+    1185: 7:45 PM.
+    1200: 8:00 PM.
+    1215: 8:15 PM.
+    1230: 8:30 PM.
+    1245: 8:45 PM.
+    1260: 9:00 PM.
+    1275: 9:15 PM.
+    1290: 9:30 PM.
+    1305: 9:45 PM.
+    1320: 10:00 PM.
+    1335: 10:15 PM.
+    1350: 10:30 PM.
+    1365: 10:45 PM.
+    1380: 11:00 PM.
+    1395: 11:15 PM.
+    1410: 11:30 PM.
+    1425: 11:45 PM.
   wilcoScheduledUpdateFrequency: TYPE_ENUM
     DAILY:
     WEEKLY:
@@ -3373,7 +4686,37 @@ chrome.devices.WilcoScheduledUpdate: Scheduled updates.
     SATURDAY:
     SUNDAY:
   wilcoScheduledUpdateDayOfMonth: TYPE_INT64
-    {'value': '1', 'description': 'The 1st day of the month.'}
+    1: The 1st day of the month.
+    2: The 2nd day of the month.
+    3: The 3rd day of the month.
+    4: The 4th day of the month.
+    5: The 5th day of the month.
+    6: The 6th day of the month.
+    7: The 7th day of the month.
+    8: The 8th day of the month.
+    9: The 9th day of the month.
+    10: The 10th day of the month.
+    11: The 11th day of the month.
+    12: The 12th day of the month.
+    13: The 13th day of the month.
+    14: The 14th day of the month.
+    15: The 15th day of the month.
+    16: The 16th day of the month.
+    17: The 17th day of the month.
+    18: The 18th day of the month.
+    19: The 19th day of the month.
+    20: The 20th day of the month.
+    21: The 21st day of the month.
+    22: The 22nd day of the month.
+    23: The 23rd day of the month.
+    24: The 24th day of the month.
+    25: The 25th day of the month.
+    26: The 26th day of the month.
+    27: The 27th day of the month.
+    28: The 28th day of the month.
+    29: The 29th day of the month.
+    30: The 30th day of the month.
+    31: The 31st day of the month.
 
 chrome.devices.WipeUserData: Allows admins to make managed ChromeOS devices wipe user data after sign-out.
   ephemeralUsersEnabled: TYPE_BOOL
@@ -3386,14 +4729,16 @@ chrome.networks.cellular.AllowForChromeDevices: Allow chrome devices to use this
     false: Do not allow chrome devices to use this network.
 
 chrome.networks.cellular.Details: Cellular network configuration details.
-  name: TYPE_STRING
-  smdpAddress: TYPE_STRING
-  smdsAddress: TYPE_STRING
+  details
+    name: TYPE_STRING
+    smdpAddress: TYPE_STRING
+    smdsAddress: TYPE_STRING
 
 chrome.networks.cellular.DetailsV2: Cellular network configuration details.
-  name: TYPE_STRING
-  smdpAddress: TYPE_STRING
-  smdsAddress: TYPE_STRING
+  details
+    name: TYPE_STRING
+    smdpAddress: TYPE_STRING
+    smdsAddress: TYPE_STRING
 
 chrome.networks.certificates.AllowForChromeDevices: Allow chrome users to use this certificate.
   allowForChromeDevices: TYPE_BOOL
@@ -3416,47 +4761,70 @@ chrome.networks.ethernet.AllowForChromeUsers: Allow this network to be used by c
     false: Do not allow chrome users to use this network.
 
 chrome.networks.ethernet.Details: Ethernet network configuration details.
-  name: TYPE_STRING
-  authentication: TYPE_STRING
-  allowIpConfiguration: TYPE_BOOL
-  allowNameServersConfiguration: TYPE_BOOL
-  nameServerSelection: TYPE_ENUM
-    AUTOMATIC:
-    GOOGLE:
-    CUSTOM:
-  customNameServers: TYPE_LIST
-  outerProtocol: TYPE_STRING
-  innerProtocol: TYPE_STRING
-  useSystemCas: TYPE_BOOL
-  serverCaRef: TYPE_STRING
-  identity: TYPE_STRING
-  password: TYPE_STRING
-  anonymousIdentity: TYPE_STRING
-  tlsVersionMax: TYPE_STRING
-  domainSuffixMatch: TYPE_LIST
-  enrollmentUrls: TYPE_LIST
-  commonName: TYPE_STRING
-  locality: TYPE_STRING
-  organization: TYPE_STRING
-  organizationalUnit: TYPE_STRING
-  type: TYPE_STRING
-  excludeDomains: TYPE_LIST
-  automaticProxyConfigurationUrl: TYPE_STRING
-  host: TYPE_STRING
-  port: TYPE_INT32
+  details
+    name: TYPE_STRING
+    authentication: TYPE_STRING
+    eap
+      outerProtocol: TYPE_STRING
+      innerProtocol: TYPE_STRING
+      useSystemCas: TYPE_BOOL
+      serverCaRef: TYPE_STRING
+      clientCertPattern
+        enrollmentUrls: TYPE_LIST
+        issuer
+          commonName: TYPE_STRING
+          locality: TYPE_STRING
+          organization: TYPE_STRING
+          organizationalUnit: TYPE_STRING
+        subject
+          commonName: TYPE_STRING
+          locality: TYPE_STRING
+          organization: TYPE_STRING
+          organizationalUnit: TYPE_STRING
+      identity: TYPE_STRING
+      password: TYPE_STRING
+      anonymousIdentity: TYPE_STRING
+      tlsVersionMax: TYPE_STRING
+      domainSuffixMatch: TYPE_LIST
+    proxySettings
+      type: TYPE_STRING
+      manualConfiguration
+        httpProxy
+          host: TYPE_STRING
+          port: TYPE_INT32
+        secureHttpProxy
+          host: TYPE_STRING
+          port: TYPE_INT32
+        ftpProxy
+          host: TYPE_STRING
+          port: TYPE_INT32
+        socks
+          host: TYPE_STRING
+          port: TYPE_INT32
+      excludeDomains: TYPE_LIST
+      automaticProxyConfigurationUrl: TYPE_STRING
+    allowIpConfiguration: TYPE_BOOL
+    allowNameServersConfiguration: TYPE_BOOL
+    nameServerSelection: TYPE_ENUM
+      AUTOMATIC:
+      GOOGLE:
+      CUSTOM:
+    customNameServers: TYPE_LIST
 
 chrome.networks.globalsettings.AllowedNetworkInterfaces: Allow users to connect to network interfaces by type.
-  wifi: TYPE_BOOL
-  ethernet: TYPE_BOOL
-  cellular: TYPE_BOOL
-  wimax: TYPE_BOOL
-  vpn: TYPE_BOOL
+  allowedNetworkInterfaces
+    wifi: TYPE_BOOL
+    ethernet: TYPE_BOOL
+    cellular: TYPE_BOOL
+    wimax: TYPE_BOOL
+    vpn: TYPE_BOOL
 
 chrome.networks.globalsettings.AllowedNetworkInterfacesV2: Allow users to connect to network interfaces by type.
-  wifi: TYPE_BOOL
-  ethernet: TYPE_BOOL
-  cellular: TYPE_BOOL
-  vpn: TYPE_BOOL
+  allowedNetworkInterfaces
+    wifi: TYPE_BOOL
+    ethernet: TYPE_BOOL
+    cellular: TYPE_BOOL
+    vpn: TYPE_BOOL
 
 chrome.networks.globalsettings.AutoConnect: Restrict users to only auto-connect to managed networks.
   autoConnectRestricted: TYPE_BOOL
@@ -3494,39 +4862,64 @@ chrome.networks.vpn.AllowForChromeUsers: Allow this network to be used by chrome
     false: Do not allow chrome users to use this network.
 
 chrome.networks.vpn.Details: Vpn network configuration details.
-  name: TYPE_STRING
-  remoteHost: TYPE_STRING
-  automaticallyConnect: TYPE_BOOL
-  vpnType: TYPE_STRING
-  psk: TYPE_STRING
-  allowIpConfiguration: TYPE_BOOL
-  allowNameServersConfiguration: TYPE_BOOL
-  nameServerSelection: TYPE_ENUM
-    AUTOMATIC:
-    GOOGLE:
-    CUSTOM:
-  customNameServers: TYPE_LIST
-  username: TYPE_STRING
-  password: TYPE_STRING
-  saveCredentials: TYPE_BOOL
-  remoteHostPort: TYPE_INT32
-  protocol: TYPE_STRING
-  authenticationAlgorithm: TYPE_STRING
-  encryptionAlgorithm: TYPE_STRING
-  compressionAlgorithm: TYPE_STRING
-  tlsAuthenticationKey: TYPE_STRING
-  keyDirection: TYPE_STRING
-  serverVpnAuthority: TYPE_STRING
-  enrollmentUrls: TYPE_LIST
-  commonName: TYPE_STRING
-  locality: TYPE_STRING
-  organization: TYPE_STRING
-  organizationalUnit: TYPE_STRING
-  type: TYPE_STRING
-  excludeDomains: TYPE_LIST
-  automaticProxyConfigurationUrl: TYPE_STRING
-  host: TYPE_STRING
-  port: TYPE_INT32
+  details
+    name: TYPE_STRING
+    remoteHost: TYPE_STRING
+    automaticallyConnect: TYPE_BOOL
+    vpnType: TYPE_STRING
+    layerTwoTunnelingProtocol
+      username: TYPE_STRING
+      password: TYPE_STRING
+      saveCredentials: TYPE_BOOL
+    psk: TYPE_STRING
+    openVpn
+      remoteHostPort: TYPE_INT32
+      protocol: TYPE_STRING
+      authenticationAlgorithm: TYPE_STRING
+      encryptionAlgorithm: TYPE_STRING
+      compressionAlgorithm: TYPE_STRING
+      tlsAuthenticationKey: TYPE_STRING
+      keyDirection: TYPE_STRING
+      serverVpnAuthority: TYPE_STRING
+      clientCertPattern
+        enrollmentUrls: TYPE_LIST
+        issuer
+          commonName: TYPE_STRING
+          locality: TYPE_STRING
+          organization: TYPE_STRING
+          organizationalUnit: TYPE_STRING
+        subject
+          commonName: TYPE_STRING
+          locality: TYPE_STRING
+          organization: TYPE_STRING
+          organizationalUnit: TYPE_STRING
+      username: TYPE_STRING
+      password: TYPE_STRING
+      saveCredentials: TYPE_BOOL
+    proxySettings
+      type: TYPE_STRING
+      manualConfiguration
+        httpProxy
+          host: TYPE_STRING
+          port: TYPE_INT32
+        secureHttpProxy
+          host: TYPE_STRING
+          port: TYPE_INT32
+        ftpProxy
+          host: TYPE_STRING
+          port: TYPE_INT32
+        socks
+          host: TYPE_STRING
+          port: TYPE_INT32
+      excludeDomains: TYPE_LIST
+      automaticProxyConfigurationUrl: TYPE_STRING
+    allowIpConfiguration: TYPE_BOOL
+    allowNameServersConfiguration: TYPE_BOOL
+    nameServerSelection: TYPE_ENUM
+      AUTOMATIC:
+      GOOGLE:
+      CUSTOM:
+    customNameServers: TYPE_LIST
 
 chrome.networks.wifi.AllowForChromeDevices: Allow managed devices to use this network.
   allowForChromeDevices: TYPE_BOOL
@@ -3539,57 +4932,84 @@ chrome.networks.wifi.AllowForChromeUsers: Allow this network to be used by chrom
     false: Do not allow chrome users to use this network.
 
 chrome.networks.wifi.Details: Wifi network configuration details.
-  name: TYPE_STRING
-  ssid: TYPE_STRING
-  hiddenSsid: TYPE_BOOL
-  automaticallyConnect: TYPE_BOOL
-  security: TYPE_STRING
-  passphrase: TYPE_STRING
-  allowIpConfiguration: TYPE_BOOL
-  allowNameServersConfiguration: TYPE_BOOL
-  nameServerSelection: TYPE_ENUM
-    AUTOMATIC:
-    GOOGLE:
-    CUSTOM:
-  customNameServers: TYPE_LIST
-  outerProtocol: TYPE_STRING
-  innerProtocol: TYPE_STRING
-  useSystemCas: TYPE_BOOL
-  serverCaRef: TYPE_STRING
-  clientCertRef: TYPE_STRING
-  identity: TYPE_STRING
-  password: TYPE_STRING
-  anonymousIdentity: TYPE_STRING
-  tlsVersionMax: TYPE_STRING
-  domainSuffixMatch: TYPE_LIST
-  enrollmentUrls: TYPE_LIST
-  commonName: TYPE_STRING
-  locality: TYPE_STRING
-  organization: TYPE_STRING
-  organizationalUnit: TYPE_STRING
-  type: TYPE_STRING
-  excludeDomains: TYPE_LIST
-  automaticProxyConfigurationUrl: TYPE_STRING
-  host: TYPE_STRING
-  port: TYPE_INT32
+  details
+    name: TYPE_STRING
+    ssid: TYPE_STRING
+    hiddenSsid: TYPE_BOOL
+    automaticallyConnect: TYPE_BOOL
+    security: TYPE_STRING
+    passphrase: TYPE_STRING
+    eap
+      outerProtocol: TYPE_STRING
+      innerProtocol: TYPE_STRING
+      useSystemCas: TYPE_BOOL
+      serverCaRef: TYPE_STRING
+      clientCertRef: TYPE_STRING
+      clientCertPattern
+        enrollmentUrls: TYPE_LIST
+        issuer
+          commonName: TYPE_STRING
+          locality: TYPE_STRING
+          organization: TYPE_STRING
+          organizationalUnit: TYPE_STRING
+        subject
+          commonName: TYPE_STRING
+          locality: TYPE_STRING
+          organization: TYPE_STRING
+          organizationalUnit: TYPE_STRING
+      identity: TYPE_STRING
+      password: TYPE_STRING
+      anonymousIdentity: TYPE_STRING
+      tlsVersionMax: TYPE_STRING
+      domainSuffixMatch: TYPE_LIST
+    proxySettings
+      type: TYPE_STRING
+      manualConfiguration
+        httpProxy
+          host: TYPE_STRING
+          port: TYPE_INT32
+        secureHttpProxy
+          host: TYPE_STRING
+          port: TYPE_INT32
+        ftpProxy
+          host: TYPE_STRING
+          port: TYPE_INT32
+        socks
+          host: TYPE_STRING
+          port: TYPE_INT32
+      excludeDomains: TYPE_LIST
+      automaticProxyConfigurationUrl: TYPE_STRING
+    allowIpConfiguration: TYPE_BOOL
+    allowNameServersConfiguration: TYPE_BOOL
+    nameServerSelection: TYPE_ENUM
+      AUTOMATIC:
+      GOOGLE:
+      CUSTOM:
+    customNameServers: TYPE_LIST
 
 chrome.printers.AllowForDevices: Allows a printer for devices in a given organization.
   allowForDevices: TYPE_BOOL
+    Controls whether a printer is allowed for devices in a given organization.
 
 chrome.printers.AllowForManagedGuest: Allows a printer for Managed Guest in a given organization.
   allowForManagedGuest: TYPE_BOOL
+    Controls whether a printer is allowed for Managed Guest in a given organization.
 
 chrome.printers.AllowForUsers: Allows a printer for users in a given organization.
   allowForUsers: TYPE_BOOL
+    Controls whether a printer is allowed for users in a given organization.
 
 chrome.printservers.AllowForDevices: Allows a print server for devices in a given organization.
   allowForDevices: TYPE_BOOL
+    Controls whether a print server is allowed for devices in a given organization.
 
 chrome.printservers.AllowForManagedGuest: Allows a print server for Managed Guest in a given organization.
   allowForManagedGuest: TYPE_BOOL
+    Controls whether a print server is allowed for Managed Guest in a given organization.
 
 chrome.printservers.AllowForUsers: Allows a print server for users in a given organization.
   allowForUsers: TYPE_BOOL
+    Controls whether a print server is allowed for users in a given organization.
 
 chrome.users.AbusiveExperienceInterventionEnforce: Abusive Experience Intervention.
   abusiveExperienceInterventionEnforce: TYPE_BOOL
@@ -3662,14 +5082,214 @@ chrome.users.AllowDinosaurEasterEgg: Dinosaur game.
 
 chrome.users.AllowedInputMethods: Allowed input methods.
   allowedInputMethods: TYPE_LIST
-    {'value': 'xkb:jp::jpn', 'description': 'Alphanumeric with Japanese keyboard.'}
+    xkb:jp::jpn: Alphanumeric with Japanese keyboard.
+    am-t-i0-und: Amharic Transliteration.
+    vkd_ar: Arabic.
+    ar-t-i0-und: Arabic Transliteration.
+    xkb:am:phonetic:arm: Armenian.
+    vkd_bn_phone: Bangla Phonetic.
+    bn-t-i0-und: Bangla Transliteration.
+    xkb:by::bel: Belarusian.
+    _comp_ime_jddehjeebkoimngcbdkaahpobgicbffpbraille: Braille Keyboard.
+    xkb:bg::bul: Bulgarian.
+    xkb:bg:phonetic:bul: Bulgarian with Phonetic keyboard.
+    vkd_my: Burmese/Myanmar.
+    vkd_my_myansan: Burmese/Myanmar with Myansan keyboard.
+    yue-hant-t-i0-und: Cantonese.
+    xkb:es:cat:cat: Catalan.
+    zh-hant-t-i0-pinyin: Chinese (Traditional) Pinyin.
+    zh-hant-t-i0-array-1992: Chinese Array.
+    zh-hant-t-i0-cangjie-1987: Chinese Cangjie.
+    zh-hant-t-i0-dayi-1988: Chinese Dayi.
+    zh-t-i0-pinyin: Chinese Pinyin.
+    zh-hant-t-i0-cangjie-1987-x-m0-simplified: Chinese Quick.
+    zh-t-i0-wubi-1986: Chinese Wubi.
+    zh-hant-t-i0-und: Chinese Zhuyin.
+    xkb:hr::scr: Croatian.
+    xkb:cz::cze: Czech.
+    xkb:cz:qwerty:cze: Czech with Qwerty keyboard.
+    xkb:dk::dan: Danish.
+    vkd_deva_phone: Devanagari keyboard (Phonetic).
+    xkb:be::nld: Dutch (Belgium).
+    xkb:us:intl:nld: Dutch (Netherlands).
+    xkb:us:intl_pc:nld: Dutch (Netherlands) with US International PC keyboard.
+    xkb:ca:eng:eng: English (Canada).
+    xkb:in::eng: English (India).
+    xkb:pk::eng: English (Pakistan).
+    xkb:za:gb:eng: English (South Africa).
+    xkb:gb:extd:eng: English (UK).
+    xkb:gb:dvorak:eng: English (UK) with Dvorak keyboard.
+    xkb:us::eng: English (US).
+    xkb:us:colemak:eng: English (US) with Colemak keyboard.
+    xkb:us:dvorak:eng: English (US) with Dvorak keyboard.
+    xkb:us:altgr-intl:eng: English (US) with Extended keyboard.
+    xkb:us:intl_pc:eng: English (US) with International PC keyboard.
+    xkb:us:intl:eng: English (US) with International keyboard.
+    xkb:us:dvp:eng: English (US) with Programmer Dvorak keyboard.
+    xkb:us:workman-intl:eng: English (US) with Workman International keyboard.
+    xkb:us:workman:eng: English (US) with Workman keyboard.
+    xkb:ee::est: Estonian.
+    vkd_ethi: Ethiopic keyboard.
+    xkb:fo::fao: Faroese.
+    xkb:us::fil: Filipino.
+    xkb:fi::fin: Finnish.
+    xkb:be::fra: French (Belgium).
+    xkb:ca::fra: French (Canada).
+    xkb:ca:multix:fra: French (Canada) with Multilingual keyboard.
+    xkb:fr::fra: French (France).
+    xkb:fr:bepo:fra: French (France) with Bépo keyboard.
+    xkb:ch:fr:fra: French (Switzerland).
+    xkb:ge::geo: Georgian.
+    xkb:be::ger: German (Belgium).
+    xkb:de::ger: German (Germany).
+    xkb:de:neo:ger: German (Germany) with Neo 2 keyboard.
+    xkb:ch::ger: German (Switzerland).
+    xkb:gr::gre: Greek.
+    el-t-i0-und: Greek Transliteration.
+    vkd_gu_phone: Gujarati Phonetic.
+    gu-t-i0-und: Gujarati Transliteration.
+    xkb:il::heb: Hebrew.
+    he-t-i0-und: Hebrew Transliteration.
+    hi-t-i0-und: Hindi.
+    vkd_hi_inscript: Hindi with InScript keyboard.
+    xkb:hu::hun: Hungarian.
+    xkb:hu:qwerty:hun: Hungarian with Qwerty keyboard.
+    xkb:is::ice: Icelandic.
+    xkb:us::ind: Indonesian.
+    xkb:ie::ga: Irish.
+    xkb:it::ita: Italian.
+    nacl_mozc_jp: Japanese.
+    nacl_mozc_us: Japanese with US keyboard.
+    vkd_kn_phone: Kannada Phonetic.
+    kn-t-i0-und: Kannada Transliteration.
+    xkb:kz::kaz: Kazakh.
+    vkd_km: Khmer.
+    ko-t-i0-und: Korean.
+    vkd_lo: Lao.
+    xkb:lv:apostrophe:lav: Latvian.
+    xkb:lt::lit: Lithuanian.
+    xkb:mk::mkd: Macedonian.
+    xkb:us::msa: Malay.
+    vkd_ml_phone: Malayalam Phonetic.
+    ml-t-i0-und: Malayalam Transliteration.
+    xkb:mt::mlt: Maltese.
+    mr-t-i0-und: Marathi.
+    xkb:mn::mon: Mongolian.
+    ne-t-i0-und: Nepali Transliteration.
+    vkd_ne_inscript: Nepali with InScript keyboard.
+    vkd_ne_phone: Nepali with Phonetic keyboard.
+    xkb:no::nob: Norwegian.
+    or-t-i0-und: Odia.
+    vkd_fa: Persian.
+    fa-t-i0-und: Persian Transliteration.
+    xkb:pl::pol: Polish.
+    xkb:br::por: Portuguese (Brazil).
+    xkb:pt::por: Portuguese (Portugal).
+    xkb:us:intl_pc:por: Portuguese with US International PC keyboard.
+    xkb:us:intl:por: Portuguese with US International keyboard.
+    pa-t-i0-und: Punjabi.
+    xkb:ro::rum: Romanian.
+    xkb:ro:std:rum: Romanian with Standard keyboard.
+    xkb:ru::rus: Russian.
+    vkd_ru_phone_aatseel: Russian with Phonetic AATSEEL keyboard.
+    vkd_ru_phone_yazhert: Russian with Phonetic YaZHert keyboard.
+    xkb:ru:phonetic:rus: Russian with Phonetic keyboard.
+    sa-t-i0-und: Sanskrit.
+    xkb:rs::srp: Serbian.
+    sr-t-i0-und: Serbian Transliteration.
+    vkd_si: Sinhala.
+    xkb:sk::slo: Slovak.
+    xkb:si::slv: Slovenian.
+    vkd_ckb_ar: Sorani Kurdish with Arabic-based keyboard.
+    vkd_ckb_en: Sorani Kurdish with English-based keyboard.
+    xkb:latam::spa: Spanish (Latin America).
+    xkb:es::spa: Spanish (Spain).
+    xkb:se::swe: Swedish.
+    vkd_ta_itrans: Tamil ITRANS.
+    vkd_ta_phone: Tamil Phonetic.
+    ta-t-i0-und: Tamil Transliteration.
+    vkd_ta_inscript: Tamil with InScript keyboard.
+    vkd_ta_tamil99: Tamil with Tamil99 keyboard.
+    vkd_ta_typewriter: Tamil with Typewriter keyboard.
+    vkd_te_phone: Telugu Phonetic.
+    te-t-i0-und: Telugu Transliteration.
+    vkd_th: Thai with Kedmanee keyboard.
+    vkd_th_pattajoti: Thai with Pattachote keyboard.
+    vkd_th_tis: Thai with TIS 820-2531 keyboard.
+    ti-t-i0-und: Tigrinya.
+    xkb:tr::tur: Turkish.
+    xkb:tr:f:tur: Turkish with F-keyboard.
+    xkb:ua::ukr: Ukrainian.
+    ur-t-i0-und: Urdu.
+    vkd_vi_telex: Vietnamese Telex.
+    vkd_vi_viqr: Vietnamese VIQR.
+    vkd_vi_vni: Vietnamese VNI.
+    vkd_vi_tcvn: Vietnamese with TCVN keyboard.
   allowedInputMethodsForceEnabled: TYPE_BOOL
     true: Automatically install selected keyboard languages.
     false: Do not automatically install any keyboard languages.
 
 chrome.users.AllowedLanguages: Allowed ChromeOS languages.
   allowedLanguages: TYPE_LIST
-    {'value': 'ar', 'description': 'Arabic - \u202bالعربية\u202c.'}
+    ar: Arabic - ‫العربية‬.
+    bn: Bangla - ‪বাংলা‬.
+    bg: Bulgarian - ‪български‬.
+    ca: Catalan - ‪català‬.
+    zh-CN: Chinese (Simplified) - ‪简体中文‬.
+    zh-TW: Chinese (Traditional) - ‪繁體中文‬.
+    hr: Croatian - ‪Hrvatski‬.
+    cs: Czech - ‪Čeština‬.
+    da: Danish - ‪Dansk‬.
+    nl: Dutch - ‪Nederlands‬.
+    en-AU: English (Australia).
+    en-CA: English (Canada).
+    en-NZ: English (New Zealand).
+    en-GB: English (United Kingdom).
+    en-US: English (United States).
+    et: Estonian - ‪eesti‬.
+    fil: Filipino.
+    fi: Finnish - ‪Suomi‬.
+    fr-CA: French (Canada) - ‪Français (Canada)‬.
+    fr: French (France) - ‪Français (France)‬.
+    fr-CH: French (Switzerland) - ‪Français (Suisse)‬.
+    de: German (Germany) - ‪Deutsch (Deutschland)‬.
+    de-CH: German (Switzerland) - ‪Deutsch (Schweiz)‬.
+    el: Greek - ‪Ελληνικά‬.
+    gu: Gujarati - ‪ગુજરાતી‬.
+    iw: Hebrew - ‫עברית‬.
+    hi: Hindi - ‪हिन्दी‬.
+    hu: Hungarian - ‪magyar‬.
+    is: Icelandic - ‪íslenska‬.
+    id: Indonesian - ‪Indonesia‬.
+    it: Italian - ‪Italiano‬.
+    ja: Japanese - ‪日本語‬.
+    kn: Kannada - ‪ಕನ್ನಡ‬.
+    ko: Korean - ‪한국어‬.
+    lv: Latvian - ‪latviešu‬.
+    lt: Lithuanian - ‪lietuvių‬.
+    ms: Malay - ‪Melayu‬.
+    ml: Malayalam - ‪മലയാളം‬.
+    mr: Marathi - ‪मराठी‬.
+    no: Norwegian - ‪norsk‬.
+    fa: Persian - ‫فارسی‬.
+    pl: Polish - ‪polski‬.
+    pt-BR: Portuguese (Brazil) - ‪Português (Brasil)‬.
+    pt-PT: Portuguese (Portugal) - ‪Português (Portugal)‬.
+    ro: Romanian - ‪română‬.
+    ru: Russian - ‪Русский‬.
+    sr: Serbian - ‪српски‬.
+    sk: Slovak - ‪Slovenčina‬.
+    sl: Slovenian - ‪slovenščina‬.
+    es-419: Spanish (Latin America) - ‪Español (Latinoamérica)‬.
+    es: Spanish (Spain) - ‪Español (España)‬.
+    sv: Swedish - ‪Svenska‬.
+    ta: Tamil - ‪தமிழ்‬.
+    te: Telugu - ‪తెలుగు‬.
+    th: Thai - ‪ไทย‬.
+    tr: Turkish - ‪Türkçe‬.
+    uk: Ukrainian - ‪Українська‬.
+    vi: Vietnamese - ‪Tiếng Việt‬.
+    cy: Welsh - ‪Cymraeg‬.
 
 chrome.users.AllowExcludeDisplayInMirrorMode: Exclude display in mirror mode.
   allowExcludeDisplayInMirrorMode: TYPE_BOOL
@@ -3772,7 +5392,169 @@ chrome.users.ApplicationBoundEncryptionEnabled: Application bound encryption.
 
 chrome.users.ApplicationLocaleValue: Browser locale.
   applicationLocaleValue: TYPE_STRING
-    {'value': '', 'description': 'Use the language specified by user or system.'}
+    : Use the language specified by user or system.
+    af: Afrikaans.
+    sq: Albanian - ‪shqip‬.
+    am: Amharic - ‪አማርኛ‬.
+    ar: Arabic - ‫العربية‬.
+    an: Aragonese.
+    hy: Armenian - ‪հայերեն‬.
+    as: Assamese - ‪অসমীয়া‬.
+    ast: Asturian - ‪asturianu‬.
+    az: Azerbaijani - ‪azərbaycan‬.
+    bn: Bangla - ‪বাংলা‬.
+    eu: Basque - ‪euskara‬.
+    be: Belarusian - ‪беларуская‬.
+    bs: Bosnian - ‪bosanski‬.
+    br: Breton - ‪brezhoneg‬.
+    bg: Bulgarian - ‪български‬.
+    my: Burmese - ‪မြန်မာ‬.
+    ca: Catalan - ‪català‬.
+    ceb: Cebuano.
+    ckb: Central Kurdish - ‫کوردیی ناوەندی‬.
+    chr: Cherokee - ‪ᏣᎳᎩ‬.
+    zh: Chinese - ‪中文‬.
+    zh-HK: Chinese (Hong Kong) - ‪中文（香港）‬.
+    zh-CN: Chinese (Simplified) - ‪简体中文‬.
+    zh-TW: Chinese (Traditional) - ‪繁體中文‬.
+    co: Corsican.
+    hr: Croatian - ‪Hrvatski‬.
+    cs: Czech - ‪Čeština‬.
+    da: Danish - ‪Dansk‬.
+    nl: Dutch - ‪Nederlands‬.
+    en: English.
+    en-AU: English (Australia).
+    en-CA: English (Canada).
+    en-IN: English (India).
+    en-NZ: English (New Zealand).
+    en-ZA: English (South Africa).
+    en-GB: English (United Kingdom).
+    en-US: English (United States).
+    eo: Esperanto.
+    et: Estonian - ‪eesti‬.
+    fo: Faroese - ‪føroyskt‬.
+    fil: Filipino.
+    fi: Finnish - ‪Suomi‬.
+    fr: French - ‪Français‬.
+    fr-CA: French (Canada) - ‪Français (Canada)‬.
+    fr-FR: French (France) - ‪Français (France)‬.
+    fr-CH: French (Switzerland) - ‪Français (Suisse)‬.
+    gl: Galician - ‪galego‬.
+    ka: Georgian - ‪ქართული‬.
+    de: German - ‪Deutsch‬.
+    de-AT: German (Austria) - ‪Deutsch (Österreich)‬.
+    de-DE: German (Germany) - ‪Deutsch (Deutschland)‬.
+    de-LI: German (Liechtenstein) - ‪Deutsch (Liechtenstein)‬.
+    de-CH: German (Switzerland) - ‪Deutsch (Schweiz)‬.
+    el: Greek - ‪Ελληνικά‬.
+    gn: Guarani.
+    gu: Gujarati - ‪ગુજરાતી‬.
+    ht: Haitian Creole - ‪Créole haïtien‬.
+    ha: Hausa.
+    haw: Hawaiian - ‪ʻŌlelo Hawaiʻi‬.
+    iw: Hebrew - ‫עברית‬.
+    hi: Hindi - ‪हिन्दी‬.
+    hmn: Hmong.
+    hu: Hungarian - ‪magyar‬.
+    is: Icelandic - ‪íslenska‬.
+    ig: Igbo.
+    id: Indonesian - ‪Indonesia‬.
+    ia: Interlingua - ‪interlingua‬.
+    ga: Irish - ‪Gaeilge‬.
+    it: Italian - ‪Italiano‬.
+    it-IT: Italian (Italy) - ‪Italiano (Italia)‬.
+    it-CH: Italian (Switzerland) - ‪Italiano (Svizzera)‬.
+    ja: Japanese - ‪日本語‬.
+    jv: Javanese - ‪Jawa‬.
+    kn: Kannada - ‪ಕನ್ನಡ‬.
+    kk: Kazakh - ‪қазақ тілі‬.
+    km: Khmer - ‪ខ្មែរ‬.
+    rw: Kinyarwanda - ‪Ikinyarwanda‬.
+    kok: Konkani - ‪कोंकणी‬.
+    ko: Korean - ‪한국어‬.
+    ku: Kurdish - ‪kurdî [kurmancî]‬.
+    ky: Kyrgyz - ‪кыргызча‬.
+    lo: Lao - ‪ລາວ‬.
+    la: Latin.
+    lv: Latvian - ‪latviešu‬.
+    ln: Lingala - ‪lingála‬.
+    lt: Lithuanian - ‪lietuvių‬.
+    lb: Luxembourgish - ‪Lëtzebuergesch‬.
+    mk: Macedonian - ‪македонски‬.
+    mg: Malagasy.
+    ms: Malay - ‪Melayu‬.
+    ml: Malayalam - ‪മലയാളം‬.
+    mt: Maltese - ‪Malti‬.
+    mi: Māori.
+    mr: Marathi - ‪मराठी‬.
+    mn: Mongolian - ‪монгол‬.
+    ne: Nepali - ‪नेपाली‬.
+    no: Norwegian - ‪norsk‬.
+    nn: Norwegian Nynorsk - ‪norsk nynorsk‬.
+    ny: Nyanja.
+    oc: Occitan - ‪occitan‬.
+    or: Odia - ‪ଓଡ଼ିଆ‬.
+    om: Oromo - ‪Oromoo‬.
+    ps: Pashto - ‫پښتو‬.
+    fa: Persian - ‫فارسی‬.
+    pl: Polish - ‪polski‬.
+    pt: Portuguese - ‪Português‬.
+    pt-BR: Portuguese (Brazil) - ‪Português (Brasil)‬.
+    pt-PT: Portuguese (Portugal) - ‪Português (Portugal)‬.
+    pa: Punjabi - ‪ਪੰਜਾਬੀ‬.
+    qu: Quechua - ‪Runasimi‬.
+    ro: Romanian - ‪română‬.
+    rm: Romansh - ‪rumantsch‬.
+    ru: Russian - ‪Русский‬.
+    sm: Samoan.
+    gd: Scottish Gaelic - ‪Gàidhlig‬.
+    sr: Serbian - ‪српски‬.
+    sn: Shona - ‪chiShona‬.
+    sd: Sindhi - ‫سنڌي‬.
+    si: Sinhala - ‪සිංහල‬.
+    sk: Slovak - ‪Slovenčina‬.
+    sl: Slovenian - ‪slovenščina‬.
+    so: Somali - ‪Soomaali‬.
+    st: Southern Sotho - ‪Sesotho‬.
+    es: Spanish - ‪Español‬.
+    es-AR: Spanish (Argentina) - ‪Español (Argentina)‬.
+    es-CL: Spanish (Chile) - ‪Español (Chile)‬.
+    es-CO: Spanish (Colombia) - ‪Español (Colombia)‬.
+    es-CR: Spanish (Costa Rica) - ‪Español (Costa Rica)‬.
+    es-HN: Spanish (Honduras) - ‪Español (Honduras)‬.
+    es-419: Spanish (Latin America) - ‪Español (Latinoamérica)‬.
+    es-MX: Spanish (Mexico) - ‪Español (México)‬.
+    es-PE: Spanish (Peru) - ‪Español (Perú)‬.
+    es-ES: Spanish (Spain) - ‪Español (España)‬.
+    es-US: Spanish (United States) - ‪Español (Estados Unidos)‬.
+    es-UY: Spanish (Uruguay) - ‪Español (Uruguay)‬.
+    es-VE: Spanish (Venezuela) - ‪Español (Venezuela)‬.
+    su: Sundanese - ‪Basa Sunda‬.
+    sw: Swahili - ‪Kiswahili‬.
+    sv: Swedish - ‪Svenska‬.
+    tg: Tajik - ‪тоҷикӣ‬.
+    ta: Tamil - ‪தமிழ்‬.
+    tt: Tatar - ‪татар‬.
+    te: Telugu - ‪తెలుగు‬.
+    th: Thai - ‪ไทย‬.
+    ti: Tigrinya - ‪ትግርኛ‬.
+    to: Tongan - ‪lea fakatonga‬.
+    tn: Tswana - ‪Setswana‬.
+    tr: Turkish - ‪Türkçe‬.
+    tk: Turkmen - ‪türkmen dili‬.
+    uk: Ukrainian - ‪Українська‬.
+    ur: Urdu - ‫اردو‬.
+    ug: Uyghur - ‫ئۇيغۇرچە‬.
+    uz: Uzbek - ‪o‘zbek‬.
+    vi: Vietnamese - ‪Tiếng Việt‬.
+    wa: Walloon.
+    cy: Welsh - ‪Cymraeg‬.
+    fy: Western Frisian - ‪Frysk‬.
+    wo: Wolof.
+    xh: Xhosa - ‪IsiXhosa‬.
+    yi: Yiddish - ‫ייִדיש‬.
+    yo: Yoruba - ‪Èdè Yorùbá‬.
+    zu: Zulu - ‪isiZulu‬.
   applicationLocaleValueSettingGroupPolicyMode: TYPE_ENUM
     MANDATORY: Do not allow users to override.
     RECOMMENDED: Allow users to override.
@@ -3784,6 +5566,7 @@ chrome.users.AppRecommendationZeroStateEnabled: Previously installed app recomme
 
 chrome.users.apps.AccessToKeys: Allows setting of whether the app can access client keys.
   allowAccessToKeys: TYPE_BOOL
+    Controls whether the app can access client keys.
 
 chrome.users.apps.AppInstallationUrl: Specifies the url from which to install a self hosted Chrome Extension.
   installationUrl: TYPE_STRING
@@ -3791,7 +5574,9 @@ chrome.users.apps.AppInstallationUrl: Specifies the url from which to install a 
 
 chrome.users.apps.CertificateManagement: Allows setting of certificate management related permissions.
   allowAccessToKeys: TYPE_BOOL
+    Controls whether the app can access client keys.
   allowEnterpriseChallenge: TYPE_BOOL
+    Controls whether the app can challenge enterprise keys.
 
 chrome.users.apps.DefaultLaunchContainer: Allows setting of the default launch container for web apps.
   defaultLaunchContainer: TYPE_ENUM
@@ -3800,15 +5585,19 @@ chrome.users.apps.DefaultLaunchContainer: Allows setting of the default launch c
 
 chrome.users.apps.EnterpriseChallenge: Allows setting of whether the app can challenge enterprise keys.
   allowEnterpriseChallenge: TYPE_BOOL
+    Controls whether the app can challenge enterprise keys.
 
 chrome.users.apps.IncludeInChromeWebStoreCollection: Specifies whether the Chrome Application should appear in the Chrome Web Store collection.
   includeInCollection: TYPE_BOOL
+    Controls whether a Chrome Application should appear in the Chrome Web Store collection.
   spotlightRecommended: TYPE_BOOL
+    Controls whether a Chrome Application should be spotlighted in the Chrome Web Store collection.
 
 chrome.users.apps.InstallationUrl: Specifies the url from which to install a self hosted Chrome Extension.
   installationUrl: TYPE_STRING
     The url from which to install a self hosted Chrome Extension.
   overrideInstallationUrl: TYPE_BOOL
+    Override the URL provided in the extension manifest with the provided installation url.
 
 chrome.users.apps.InstallType: Specifies the manner in which the app is to be installed. Note: It's required in order to add an App or Extension to the set of managed apps & extensions of an Organizational Unit.
   appInstallType: TYPE_ENUM
@@ -3836,9 +5625,395 @@ chrome.users.apps.OverrideInstallationUrl: Allows overriding of the url from whi
 
 chrome.users.apps.PermissionsAndUrlAccess: Allows setting of allowed and blocked hosts.
   blockedPermissions: TYPE_LIST
-    {'value': '', 'description': 'Allow all permissions. If empty string is set, it must be the only value set for the policy.'}
+    : Allow all permissions. If empty string is set, it must be the only value set for the policy.
+    activeTab: Active tab.
+    app.window.alwaysOnTop: Always on top.
+    alarms: Alarms.
+    audioCapture: Audio capture.
+    certificateProvider: Certificate provider.
+    clipboardRead: Clipboard read.
+    clipboardWrite: Clipboard write.
+    contextMenus: Context menus.
+    cookies: Cookies.
+    desktopCapture: Desktop capture.
+    documentScan: Document scan.
+    enterprise.deviceAttributes: Enterprise device attributes.
+    experimental: Experimental APIs.
+    app.window.fullscreen: Fullscreen apps.
+    fileBrowserHandler: File browser handler.
+    fileSystem: File system.
+    fileSystemProvider: File system provider.
+    hid: HID.
+    app.window.fullscreen.overrideEsc: Override fullscreen escape.
+    idle: Detect idle.
+    identity: Identity.
+    gcm: Google Cloud Messaging.
+    geolocation: Geo location.
+    mediaGalleries: Media galleries.
+    nativeMessaging: Native messaging.
+    networking.config: Captive portal authenticator.
+    power: Power.
+    notifications: Notifications.
+    printerProvider: Printers.
+    serial: Serial.
+    proxy: Set proxy.
+    platformKeys: Platform keys.
+    storage: Storage.
+    syncFileSystem: Sync file system.
+    system.cpu: CPU metadata.
+    system.memory: Memory metadata.
+    system.network: Network metadata.
+    system.display: Display metadata.
+    system.storage: Storage metadata.
+    tts: Text to speech.
+    unlimitedStorage: Unlimited storage.
+    usb: USB.
+    videoCapture: Video capture.
+    vpnProvider: VPN provider.
+    webRequest: Web requests.
+    webRequestBlocking: Block web requests.
+    app.window.alpha: Alpha.
+    app.window.alwaysOnTop: Always on top.
+    appview: App view.
+    audio: Audio.
+    bluetoothPrivate: Bluetooth private.
+    cecPrivate: Cec private.
+    clipboard: Clipboard.
+    declarativeNetRequest: Declarative net request.
+    declarativeNetRequestWithHostAccess: Declarative net request with host access.
+    declarativeNetRequestFeedback: Declarative net request feedback.
+    declarativeWebRequest: Declarative web request.
+    diagnostics: Diagnostics.
+    dns: Dns.
+    externally_connectable.all_urls: All URLs externally connectable.
+    feedbackPrivate: Feedback private.
+    fileSystem.directory: File system directory.
+    fileSystem.retainEntries: File system retain entries.
+    fileSystem.write: File system write.
+    fileSystem.requestFileSystem: File system request file system.
+    app.window.ime: Ime.
+    lockScreen: Lock screen.
+    mediaPerceptionPrivate: Media perception private.
+    metricsPrivate: Metrics private.
+    networking.onc: Networking open network configuration.
+    networkingPrivate: Networking private.
+    odfsConfigPrivate: ODFS config private.
+    offscreen: Offscreen.
+    runtime: Runtime.
+    socket: Socket.
+    app.window.shape: Shape.
+    usbDevices: USB Devices.
+    u2fDevices: U2F devices.
+    userScripts: User scripts.
+    virtualKeyboard: Virtual keyboard.
+    virtualKeyboardPrivate: Virtual keyboard private.
+    webview: Web view.
+    webRequestAuthProvider: Auth provider web requests.
+    arcAppsPrivate: Arc apps private.
+    browser: Browser.
+    enterprise.remoteApps: Enterprise remote apps.
+    firstRunPrivate: First run private.
+    mediaGalleries.allAutoDetected: All autodetected media galleries.
+    mediaGalleries.scan: Scan media galleries.
+    mediaGalleries.read: Read media galleries.
+    mediaGalleries.copyTo: Copy to media galleries.
+    mediaGalleries.delete: Delete media galleries.
+    pointerLock: Pointer lock.
+    os.attached_device_info: OS attached device info.
+    os.bluetooth_peripherals_info: OS bluetooth peripherals info.
+    os.diagnostics: OS diagnostics.
+    os.diagnostics.network_info_mlab: OS network info MLAB diagnostics.
+    os.events: OS events.
+    os.management.audio: OS management audio.
+    os.telemetry: OS telemetry.
+    os.telemetry.serial_number: OS serial number telemetry.
+    os.telemetry.network_info: OS network info telemetry.
+    accessibilityFeatures.modify: Accessibility features modify.
+    accessibilityFeatures.read: Accessibility features read.
+    accessibilityPrivate: Accessibility private.
+    accessibilityServicePrivate: Accessibility service private.
+    activityLogPrivate: Activity log private.
+    autofillPrivate: Autofill private.
+    autotestPrivate: Autotest private.
+    background: Background.
+    bookmarks: Bookmarks.
+    brailleDisplayPrivate: Braille display private.
+    browsingData: Browsing data.
+    chromePrivate: Chrome private.
+    chromeosInfoPrivate: ChromeOS info private.
+    commandLinePrivate: Command line private.
+    commands.accessibility: Commands accessibility.
+    contentSettings: Content settings.
+    crashReportPrivate: Crash report private.
+    devtools: Devtools.
+    debugger: Debugger.
+    developerPrivate: Developer private.
+    declarativeContent: Declarative content.
+    downloads: Downloads.
+    downloads.open: Downloads open.
+    downloads.shelf: Downloads shelf.
+    downloads.ui: Downloads UI.
+    enterprise.networkingAttributes: Enterprise networking attributes.
+    enterprise.hardwarePlatform: Enterprise hardware platform.
+    enterprise.kioskInput: Enterprise kiosk input.
+    enterprise.platformKeys: Enterprise platform keys.
+    enterprise.platformKeysPrivate: Enterprise platform keys private.
+    enterprise.reportingPrivate: Enterprise reporting private.
+    experimentalAiData: Experimental AI data.
+    favicon: Favicon.
+    fileManagerPrivate: File manager private.
+    fontSettings: Font settings.
+    sharedStoragePrivate: Shared storage private.
+    history: History.
+    identity.email: Identity email.
+    idltest: IDL test.
+    input: Input.
+    imageLoaderPrivate: Image loader private.
+    inputMethodPrivate: Input method private.
+    languageSettingsPrivate: Language settings private.
+    lockWindowFullscreenPrivate: Lock window fullscreen private.
+    login: Login.
+    loginScreenStorage: Login screen storage.
+    loginScreenUi: Login screen UI.
+    loginState: Login state.
+    webcamPrivate: Webcam private.
+    management: Management.
+    mediaPlayerPrivate: Media player private.
+    mdns: Multicast domain name system.
+    echoPrivate: Echo private.
+    pageCapture: Page capture.
+    passwordsPrivate: Passwords private.
+    pdfViewerPrivate: PDF viewer private.
+    plugin: Plugin.
+    printing: Printing.
+    printingMetrics: Printing metrics.
+    privacy: Privacy.
+    processes: Processes.
+    imageWriterPrivate: Image writer private.
+    readingList: Reading list.
+    resourcesPrivate: Resources private.
+    rtcPrivate: RTC private.
+    safeBrowsingPrivate: Safe browsing private.
+    scripting: Scripting.
+    search: Search.
+    sessions: Sessions.
+    settingsPrivate: Settings private.
+    sidePanel: Side panel.
+    smartCardProviderPrivate: Smart card provider private.
+    speechRecognitionPrivate: Speech recognition private.
+    systemLog: System log.
+    systemPrivate: System private.
+    tabGroups: Tab groups.
+    tabs: Tabs.
+    tabCapture: Tab capture.
+    terminalPrivate: Terminal private.
+    topSites: Top sites.
+    transientBackground: Transient background.
+    ttsEngine: Text to speech engine.
+    usersPrivate: Users private.
+    wallpaper: Wallpaper.
+    webAuthenticationProxy: Web authentication proxy.
+    webNavigation: Web navigation.
+    webrtcAudioPrivate: WebRTC audio private.
+    webrtcDesktopCapturePrivate: WebRTC desktop capture private.
+    webrtcLoggingPrivate: WebRTC logging private.
+    webrtcLoggingPrivate.audioDebug: WebRTC audio debug logging private.
+    webstorePrivate: Webstore private.
+    wmDesksPrivate: WM desks private.
   allowedPermissions: TYPE_LIST
-    {'value': 'activeTab', 'description': 'Active tab.'}
+    activeTab: Active tab.
+    app.window.alwaysOnTop: Always on top.
+    alarms: Alarms.
+    audioCapture: Audio capture.
+    certificateProvider: Certificate provider.
+    clipboardRead: Clipboard read.
+    clipboardWrite: Clipboard write.
+    contextMenus: Context menus.
+    desktopCapture: Desktop capture.
+    documentScan: Document scan.
+    enterprise.deviceAttributes: Enterprise device attributes.
+    experimental: Experimental APIs.
+    app.window.fullscreen: Fullscreen apps.
+    fileBrowserHandler: File browser handler.
+    fileSystem: File system.
+    fileSystemProvider: File system provider.
+    hid: HID.
+    app.window.fullscreen.overrideEsc: Override fullscreen escape.
+    idle: Detect idle.
+    identity: Identity.
+    gcm: Google Cloud Messaging.
+    geolocation: Geo location.
+    mediaGalleries: Media galleries.
+    nativeMessaging: Native messaging.
+    networking.config: Captive portal authenticator.
+    power: Power.
+    notifications: Notifications.
+    printerProvider: Printers.
+    serial: Serial.
+    proxy: Set proxy.
+    platformKeys: Platform keys.
+    storage: Storage.
+    syncFileSystem: Sync file system.
+    system.cpu: CPU metadata.
+    system.memory: Memory metadata.
+    system.network: Network metadata.
+    system.display: Display metadata.
+    system.storage: Storage metadata.
+    tts: Text to speech.
+    unlimitedStorage: Unlimited storage.
+    usb: USB.
+    videoCapture: Video capture.
+    vpnProvider: VPN provider.
+    webRequest: Web requests.
+    webRequestBlocking: Block web requests.
+    app.window.alpha: Alpha.
+    app.window.alwaysOnTop: Always on top.
+    appview: App view.
+    audio: Audio.
+    bluetoothPrivate: Bluetooth private.
+    cecPrivate: Cec private.
+    clipboard: Clipboard.
+    declarativeNetRequest: Declarative net request.
+    declarativeNetRequestWithHostAccess: Declarative net request with host access.
+    declarativeNetRequestFeedback: Declarative net request feedback.
+    declarativeWebRequest: Declarative web request.
+    diagnostics: Diagnostics.
+    dns: Dns.
+    externally_connectable.all_urls: All URLs externally connectable.
+    feedbackPrivate: Feedback private.
+    fileSystem.directory: File system directory.
+    fileSystem.retainEntries: File system retain entries.
+    fileSystem.write: File system write.
+    fileSystem.requestFileSystem: File system request file system.
+    app.window.ime: Ime.
+    lockScreen: Lock screen.
+    mediaPerceptionPrivate: Media perception private.
+    metricsPrivate: Metrics private.
+    networking.onc: Networking open network configuration.
+    networkingPrivate: Networking private.
+    odfsConfigPrivate: ODFS config private.
+    offscreen: Offscreen.
+    runtime: Runtime.
+    socket: Socket.
+    app.window.shape: Shape.
+    usbDevices: USB Devices.
+    u2fDevices: U2F devices.
+    userScripts: User scripts.
+    virtualKeyboard: Virtual keyboard.
+    virtualKeyboardPrivate: Virtual keyboard private.
+    webview: Web view.
+    webRequestAuthProvider: Auth provider web requests.
+    arcAppsPrivate: Arc apps private.
+    browser: Browser.
+    enterprise.remoteApps: Enterprise remote apps.
+    firstRunPrivate: First run private.
+    mediaGalleries.allAutoDetected: All autodetected media galleries.
+    mediaGalleries.scan: Scan media galleries.
+    mediaGalleries.read: Read media galleries.
+    mediaGalleries.copyTo: Copy to media galleries.
+    mediaGalleries.delete: Delete media galleries.
+    pointerLock: Pointer lock.
+    os.attached_device_info: OS attached device info.
+    os.bluetooth_peripherals_info: OS bluetooth peripherals info.
+    os.diagnostics: OS diagnostics.
+    os.diagnostics.network_info_mlab: OS network info MLAB diagnostics.
+    os.events: OS events.
+    os.management.audio: OS management audio.
+    os.telemetry: OS telemetry.
+    os.telemetry.serial_number: OS serial number telemetry.
+    os.telemetry.network_info: OS network info telemetry.
+    accessibilityFeatures.modify: Accessibility features modify.
+    accessibilityFeatures.read: Accessibility features read.
+    accessibilityPrivate: Accessibility private.
+    accessibilityServicePrivate: Accessibility service private.
+    activityLogPrivate: Activity log private.
+    autofillPrivate: Autofill private.
+    autotestPrivate: Autotest private.
+    background: Background.
+    bookmarks: Bookmarks.
+    brailleDisplayPrivate: Braille display private.
+    browsingData: Browsing data.
+    chromePrivate: Chrome private.
+    chromeosInfoPrivate: ChromeOS info private.
+    commandLinePrivate: Command line private.
+    commands.accessibility: Commands accessibility.
+    contentSettings: Content settings.
+    crashReportPrivate: Crash report private.
+    devtools: Devtools.
+    debugger: Debugger.
+    developerPrivate: Developer private.
+    declarativeContent: Declarative content.
+    downloads: Downloads.
+    downloads.open: Downloads open.
+    downloads.shelf: Downloads shelf.
+    downloads.ui: Downloads UI.
+    enterprise.networkingAttributes: Enterprise networking attributes.
+    enterprise.hardwarePlatform: Enterprise hardware platform.
+    enterprise.kioskInput: Enterprise kiosk input.
+    enterprise.platformKeys: Enterprise platform keys.
+    enterprise.platformKeysPrivate: Enterprise platform keys private.
+    enterprise.reportingPrivate: Enterprise reporting private.
+    experimentalAiData: Experimental AI data.
+    favicon: Favicon.
+    fileManagerPrivate: File manager private.
+    fontSettings: Font settings.
+    sharedStoragePrivate: Shared storage private.
+    history: History.
+    identity.email: Identity email.
+    idltest: IDL test.
+    input: Input.
+    imageLoaderPrivate: Image loader private.
+    inputMethodPrivate: Input method private.
+    languageSettingsPrivate: Language settings private.
+    lockWindowFullscreenPrivate: Lock window fullscreen private.
+    login: Login.
+    loginScreenStorage: Login screen storage.
+    loginScreenUi: Login screen UI.
+    loginState: Login state.
+    webcamPrivate: Webcam private.
+    management: Management.
+    mediaPlayerPrivate: Media player private.
+    mdns: Multicast domain name system.
+    echoPrivate: Echo private.
+    pageCapture: Page capture.
+    passwordsPrivate: Passwords private.
+    pdfViewerPrivate: PDF viewer private.
+    plugin: Plugin.
+    printing: Printing.
+    printingMetrics: Printing metrics.
+    privacy: Privacy.
+    processes: Processes.
+    imageWriterPrivate: Image writer private.
+    readingList: Reading list.
+    resourcesPrivate: Resources private.
+    rtcPrivate: RTC private.
+    safeBrowsingPrivate: Safe browsing private.
+    scripting: Scripting.
+    search: Search.
+    sessions: Sessions.
+    settingsPrivate: Settings private.
+    sidePanel: Side panel.
+    smartCardProviderPrivate: Smart card provider private.
+    speechRecognitionPrivate: Speech recognition private.
+    systemLog: System log.
+    systemPrivate: System private.
+    tabGroups: Tab groups.
+    tabs: Tabs.
+    tabCapture: Tab capture.
+    terminalPrivate: Terminal private.
+    topSites: Top sites.
+    transientBackground: Transient background.
+    ttsEngine: Text to speech engine.
+    usersPrivate: Users private.
+    wallpaper: Wallpaper.
+    webAuthenticationProxy: Web authentication proxy.
+    webNavigation: Web navigation.
+    webrtcAudioPrivate: WebRTC audio private.
+    webrtcDesktopCapturePrivate: WebRTC desktop capture private.
+    webrtcLoggingPrivate: WebRTC logging private.
+    webrtcLoggingPrivate.audioDebug: WebRTC logging private.
+    webstorePrivate: Webstore private.
+    wmDesksPrivate: WM desks private.
   blockedHosts: TYPE_LIST
     Sets extension hosts that should be blocked.
   allowedHosts: TYPE_LIST
@@ -3846,9 +6021,11 @@ chrome.users.apps.PermissionsAndUrlAccess: Allows setting of allowed and blocked
 
 chrome.users.apps.SkipDocumentScanConfirmation: Allows the app to skip the confirmation dialog when using the Document Scan API.
   skipDocumentScanConfirmation: TYPE_BOOL
+    Controls whether a Chrome Application can skip the confirmation dialog when using the Document Scan API.
 
 chrome.users.apps.SkipPrintConfirmation: Allows the app to skip the confirmation dialog when sending print jobs via the Chrome Printing API.
   skipPrintConfirmation: TYPE_BOOL
+    Controls whether a Chrome Application can skip the confirmation dialog when sending print jobs via the Chrome Printing API.
 
 chrome.users.appsconfig.AdHocCodeSigningForPwasEnabled: Ad hoc code signing for PWA shims.
   adHocCodeSigningForPwasEnabled: TYPE_ENUM
@@ -3858,7 +6035,12 @@ chrome.users.appsconfig.AdHocCodeSigningForPwasEnabled: Ad hoc code signing for 
 
 chrome.users.appsconfig.AllowedAppTypes: Allowed types of apps and extensions.
   extensionAllowedTypes: TYPE_LIST
-    {'value': 'extension', 'description': 'Extension.'}
+    extension: Extension.
+    theme: Theme.
+    user_script: Google Apps Script.
+    hosted_app: Hosted app.
+    legacy_packaged_app: Legacy packaged app.
+    platform_app: Chrome packaged app.
 
 chrome.users.appsconfig.AllowedInstallSources: Allows setting of the allowed install sources for apps. Note these must be set together.
   chromeWebStoreInstallSources: TYPE_ENUM
@@ -3876,6 +6058,7 @@ chrome.users.appsconfig.AndroidAppsEnabled: Android apps on Chrome devices.
     true: Allow users to install Android apps on ChromeOS devices.
     false: Do not allow users to install Android apps on a ChromeOS devices.
   ackNoticeForArcEnabledSetToTrue: TYPE_BOOL
+    This field must be set to true to acknowledge the notice message associated with the field 'arc_enabled' set to value 'true'. Please sse the notices listed with this policy for more information.
 
 chrome.users.appsconfig.AppExtensionInstallSources: App and extension install sources.
   extensionInstallSources: TYPE_LIST
@@ -3883,7 +6066,199 @@ chrome.users.appsconfig.AppExtensionInstallSources: App and extension install so
 
 chrome.users.appsconfig.BlockExtensionsByPermission: Permissions and URLs.
   extensionBlockedPermissions: TYPE_LIST
-    {'value': 'accessibilityPrivate', 'description': 'Accessibility private.'}
+    accessibilityPrivate: Accessibility private.
+    accessibilityServicePrivate: Accessibility service private.
+    accessibilityFeatures.modify: Modify accessibility features.
+    accessibilityFeatures.read: Read accessibility features.
+    activityLogPrivate: Activity log private.
+    activeTab: Active tab.
+    app.window.alpha: Alpha.
+    app.window.alwaysOnTop: Always on top.
+    alarms: Alarms.
+    appview: App view.
+    arcAppsPrivate: Arc apps private.
+    audio: Audio.
+    audioCapture: Audio capture.
+    autofillPrivate: Autofill private.
+    autotestPrivate: Autotest private.
+    background: Background.
+    bluetoothPrivate: Bluetooth private.
+    bookmarks: Bookmarks.
+    brailleDisplayPrivate: Braille display private.
+    browser: Browser.
+    browsingData: Browsing data.
+    cecPrivate: CEC private.
+    certificateProvider: Certificate provider.
+    chromePrivate: Chrome private.
+    chromeosInfoPrivate: ChromeOS info private.
+    clipboard: Clipboard.
+    clipboardRead: Clipboard read.
+    clipboardWrite: Clipboard write.
+    commandLinePrivate: Command line private.
+    commands.accessibility: Commands accessibility.
+    contentSettings: Content settings.
+    contextMenus: Context menus.
+    cookies: Cookies.
+    crashReportPrivate: Crash report private.
+    debugger: Debugger.
+    declarativeContent: Declarative content.
+    declarativeNetRequest: Declarative net request.
+    declarativeNetRequestWithHostAccess: Declarative net request with host access.
+    declarativeNetRequestFeedback: Declarative net request feedback.
+    declarativeWebRequest: Declarative web request.
+    desktopCapture: Desktop capture.
+    developerPrivate: Developer private.
+    devtools: Devtools.
+    diagnostics: Diagnostics.
+    dns: Domain name system.
+    documentScan: Document scan.
+    downloads: Downloads.
+    downloads.open: Downloads open.
+    downloads.shelf: Downloads shelf.
+    downloads.ui: Downloads UI.
+    echoPrivate: Echo private.
+    enterprise.deviceAttributes: Enterprise device attributes.
+    enterprise.hardwarePlatform: Enterprise hardware platform.
+    enterprise.kioskInput: Enterprise kiosk input.
+    enterprise.networkingAttributes: Enterprise networking attributes.
+    enterprise.platformKeys: Enterprise platform keys.
+    enterprise.platformKeysPrivate: Enterprise platform keys private.
+    enterprise.remoteApps: Enterprise remote apps.
+    enterprise.reportingPrivate: Enterprise reporting private.
+    experimentalAiData: Experimental AI data.
+    experimental: Experimental APIs.
+    externally_connectable.all_urls: All URLs externally connectable.
+    favicon: Favicon.
+    feedbackPrivate: Feedback private.
+    fileManagerPrivate: File manager private.
+    fileSystem.directory: File system directory.
+    fileSystem.retainEntries: File system retain entries.
+    fileSystem.write: File system write.
+    fileSystem.requestFileSystem: File system request file system.
+    firstRunPrivate: First run private.
+    app.window.ime: IME.
+    fontSettings: Font settings.
+    app.window.fullscreen: Fullscreen apps.
+    fileBrowserHandler: File browser handler.
+    fileSystem: File system.
+    fileSystemProvider: File system provider.
+    hid: HID.
+    history: History.
+    idle: Detect idle.
+    identity: Identity.
+    identity.email: Identity email.
+    idltest: IDL test.
+    imageLoaderPrivate: Image loader private.
+    imageWriterPrivate: Image writer private.
+    input: Input.
+    inputMethodPrivate: Input method private.
+    app.window.fullscreen.overrideEsc: Override fullscreen escape.
+    gcm: Google Cloud Messaging.
+    geolocation: Geo location.
+    languageSettingsPrivate: Language settings private.
+    lockScreen: Lock screen.
+    lockWindowFullscreenPrivate: Lock window fullscreen private.
+    login: Login.
+    loginScreenStorage: Login screen storage.
+    loginScreenUi: Login screen UI.
+    loginState: Login state.
+    management: Management.
+    mdns: Multicast domain name system.
+    mediaPerceptionPrivate: Media perception private.
+    mediaPlayerPrivate: Media player private.
+    metricsPrivate: Metrics private.
+    mediaGalleries: Media galleries.
+    mediaGalleries.allAutodetected: All autodetected media galleries.
+    mediaGalleries.copyTo: Copy to media galleries.
+    mediaGalleries.delete: Delete media galleries.
+    mediaGalleries.read: Read media galleries.
+    mediaGalleries.scan: Scan media galleries.
+    nativeMessaging: Native messaging.
+    networking.config: Captive portal authenticator.
+    notifications: Notifications.
+    os.attached_device_info: OS attached device info.
+    os.bluetooth_peripherals_info: OS bluetooth peripherals info.
+    os.diagnostics: OS diagnostics.
+    os.diagnostics.network_info_mlab: OS network info MLAB diagnostics.
+    os.events: OS events.
+    os.management.audio: OS management audio.
+    os.telemetry: OS telemetry.
+    os.telemetry.serial_number: OS serial number telemetry.
+    os.telemetry.network_info: OS network info telemetry.
+    pageCapture: Page capture.
+    passwordsPrivate: Passwords private.
+    pdfViewerPrivate: PDF viewer private.
+    platformKeys: Platform keys.
+    plugin: Plugin.
+    pointerLock: Pointer lock.
+    power: Power.
+    printerProvider: Printers.
+    printing: Printing.
+    printingMetrics: Printing metrics.
+    privacy: Privacy.
+    processes: Processes.
+    readingList: Reading list.
+    resourcesPrivate: Resources private.
+    rtcPrivate: RTC private.
+    safeBrowsingPrivate: Safe browsing private.
+    scripting: Scripting.
+    search: Search.
+    serial: Serial.
+    sessions: Sessions.
+    proxy: Set proxy.
+    settingsPrivate: Settings private.
+    sidePanel: Side panel.
+    smartCardProviderPrivate: Smart card provider private.
+    speechRecognitionPrivate: Speech recognition private.
+    storage: Storage.
+    syncFileSystem: Sync file system.
+    systemLog: System log.
+    systemPrivate: System private.
+    system.cpu: CPU metadata.
+    system.memory: Memory metadata.
+    system.network: Network metadata.
+    networking.onc: Networking open network configuration.
+    networkingPrivate: Networking private.
+    odfsConfigPrivate: ODFS config private.
+    offscreen: Offscreen.
+    system.display: Display metadata.
+    runtime: Runtime.
+    sharedStoragePrivate: Shared storage private.
+    socket: Socket.
+    app.window.shape: Shape.
+    system.storage: Storage metadata.
+    tabCapture: Tab capture.
+    tabGroups: Tab groups.
+    tabs: Tabs.
+    terminalPrivate: Terminal private.
+    tts: Text to speech.
+    ttsEngine: Text to speech engine.
+    topSites: Top sites.
+    transientBackground: Transient background.
+    unlimitedStorage: Unlimited storage.
+    usb: USB.
+    usbDevices: USB devices.
+    u2fDevices: U2F devices.
+    userScripts: User scripts.
+    usersPrivate: Users private.
+    videoCapture: Video capture.
+    vpnProvider: VPN provider.
+    virtualKeyboard: Virtual keyboard.
+    virtualKeyboardPrivate: Virtual keyboard private.
+    wallpaper: Wallpaper.
+    webAuthenticationProxy: Web authentication proxy.
+    webcamPrivate: Webcam private.
+    webNavigation: Web navigation.
+    webview: Web view.
+    webRequest: Web requests.
+    webRequestBlocking: Block web requests.
+    webRequestAuthProvider: Auth provider web requests.
+    webrtcAudioPrivate: WebRTC audio private.
+    webrtcDesktopCapturePrivate: WebRTC desktop capture private.
+    webrtcLoggingPrivate: WebRTC logging private.
+    webrtcLoggingPrivate.audioDebug: WebRTC audio debug logging private.
+    webstorePrivate: Webstore private.
+    wmDesksPrivate: WM desks private.
   runtimeBlockedHosts: TYPE_LIST
     Runtime blocked hosts. This is a list of patterns for matching against hostnames. URLs that match one of these patterns cannot be modified by apps and extensions. This includes injecting Javascript, altering and viewing webRequests / webNavigation, viewing and altering cookies, exceptions to the same-origin policy, etc. The format is similar to full URL patterns except no paths may be defined. e.g. "*://*.example.com". Maximum of 100 URLs.
   runtimeAllowedHosts: TYPE_LIST
@@ -3916,7 +6291,8 @@ chrome.users.appsconfig.ChromeWebStoreBranding: Org name & logo.
     false: Don't customize org name and logo.
   cwsBrandingOrgName: TYPE_STRING
     Organization name displayed. Name to be displayed on your users' custom Web Store.
-  cwsBrandingOrgLogo: TYPE_STRING
+  cwsBrandingOrgLogo
+    downloadUri: TYPE_STRING
 
 chrome.users.appsconfig.ChromeWebStoreHomepage: Chrome Web Store homepage.
   cwsHomePage: TYPE_ENUM
@@ -3936,6 +6312,8 @@ chrome.users.appsconfig.ChromeWebStoreHomepageBanner: Homepage banner.
     USE_DEFAULT: Use the default homepage banner.
     USE_CUSTOM: Customize homepage banner.
     USE_NONE: Show no banner on the Web Store.
+  cwsExtensionHomepageBannerImage
+    downloadUri: TYPE_STRING
   cwsExtensionHomepageBannerBackgroundColor: TYPE_STRING
     Banner background color. Enter a valid hex color, for instance #FFFFFF.
   cwsExtensionHomepageBannerTextColor: TYPE_STRING
@@ -3944,7 +6322,6 @@ chrome.users.appsconfig.ChromeWebStoreHomepageBanner: Homepage banner.
     Headline text. The headline text to display on the banner.
   cwsExtensionHomepageBannerDescriptionText: TYPE_STRING
     Description text. The description text to display on the banner.
-  cwsExtensionHomepageBannerImage: TYPE_STRING
 
 chrome.users.appsconfig.ChromeWebStorePagesAndContent: Pages & content.
   cwsPagesContentCustomizationEnabled: TYPE_BOOL
@@ -3954,9 +6331,27 @@ chrome.users.appsconfig.ChromeWebStorePagesAndContent: Pages & content.
     true: Show Discover page.
     false: Hide Discover page.
   cwsPagesContentEnabledPreviews: TYPE_LIST
-    {'value': 'recommended', 'description': 'Show the recommended extensions preview.'}
+    recommended: Show the recommended extensions preview.
+    private: Show the private extensions preview.
   cwsPagesContentCategories: TYPE_LIST
-    {'value': 'COMMUNICATION', 'description': 'Communication.'}
+    COMMUNICATION: Communication.
+    DEVELOPER_TOOLS: Developer Tools.
+    EDUCATION: Education.
+    TOOLS: Tools.
+    WORKFLOW_AND_PLANNING: Workflow & Planning.
+    EXTENSIONS_ART_AND_DESIGN: Art & Design.
+    EXTENSIONS_ENTERTAINMENT: Entertainment.
+    GAMES: Games.
+    HOUSEHOLD: Household.
+    JUST_FOR_FUN: Just for Fun.
+    NEWS_AND_WEATHER: News & Weather.
+    SHOPPING: Shopping.
+    SOCIAL_NETWORKING: Social Networking.
+    TRAVEL: Travel.
+    WELL_BEING: Well-being.
+    ACCESSIBILITY: Accessibility.
+    FUNCTIONALITY_AND_UI: Functionality & UI.
+    PRIVACY_AND_SECURITY: Privacy & Security.
 
 chrome.users.appsconfig.ChromeWebStorePermissions: Chrome Web Store permissions.
   allowWebstorePublish: TYPE_BOOL
@@ -3968,7 +6363,7 @@ chrome.users.appsconfig.ChromeWebStorePermissions: Chrome Web Store permissions.
 
 chrome.users.appsconfig.ExtensionInstallTypeBlocklist: Blocklist for install types of extensions.
   extensionInstallTypeBlocklist: TYPE_LIST
-    {'value': 'command_line', 'description': 'Command line.'}
+    command_line: Command line.
 
 chrome.users.appsconfig.ExtensionUnpublishedAvailability: Chrome Web Store unpublished extensions.
   extensionUnpublishedAvailability: TYPE_ENUM
@@ -3996,7 +6391,11 @@ chrome.users.appsconfig.HideWebStoreIcon: Chrome Web Store app icon.
 
 chrome.users.appsconfig.PinCreateApps: Pin Create apps.
   pinCreateApps: TYPE_LIST
-    {'value': 'canvas', 'description': 'Canvas.'}
+    canvas: Canvas.
+    cursive: Cursive.
+    projector: Screencast.
+    media: Gallery.
+    camera: Camera.
 
 chrome.users.appsconfig.ReportAndroidStatus: Android reporting for users and devices.
   reportArcStatusEnabled: TYPE_BOOL
@@ -4074,7 +6473,10 @@ chrome.users.AuthenticationServerDelegationAllowlist: Kerberos delegation server
 
 chrome.users.AuthSchemes: Supported authentication schemes.
   authSchemes: TYPE_LIST
-    {'value': 'basic', 'description': 'Basic.'}
+    basic: Basic.
+    digest: Digest.
+    ntlm: NTLM.
+    negotiate: Negotiate.
 
 chrome.users.AutoclickEnabled: Auto-click enabled.
   autoclickEnabled: TYPE_ENUM
@@ -4116,13 +6518,16 @@ chrome.users.AutoplayAllowlist: Autoplay video.
     Allowed URLs. URL patterns allowed to autoplay. Prefix domain with [*.] to include all subdomains. Use * to allow all domains.
 
 chrome.users.AutoUpdateCheckPeriodNew: Auto-update check period.
-  autoUpdateCheckPeriodMinutesNew: TYPE_STRING
+  autoUpdateCheckPeriodMinutesNew
+    duration: TYPE_STRING
 
 chrome.users.AutoUpdateCheckPeriodNewV2: Auto-update check period.
-  autoUpdateCheckPeriodMinutesNew: TYPE_INT64
+  autoUpdateCheckPeriodMinutesNew
+    duration: TYPE_INT64
 
 chrome.users.Avatar: Custom avatar.
-  userAvatarImage: TYPE_STRING
+  userAvatarImage
+    downloadUri: TYPE_STRING
 
 chrome.users.BackForwardCacheEnabled: Back-forward cache.
   backForwardCacheEnabled: TYPE_BOOL
@@ -4203,9 +6608,20 @@ chrome.users.BrowserHistory: Browser history.
     false: Always save browser history.
 
 chrome.users.BrowserIdleTimeout: Browser idle timeout.
+  idleTimeout
+    duration: TYPE_INT64
   idleTimeoutActions: TYPE_LIST
-    {'value': 'close_browsers', 'description': 'Close Browsers.'}
-  idleTimeout: TYPE_INT64
+    close_browsers: Close Browsers.
+    show_profile_picker: Show Profile Picker.
+    clear_browsing_history: Clear Browsing History.
+    clear_download_history: Clear Download History.
+    clear_cookies_and_other_site_data: Clear Cookies and Other Site Data.
+    clear_cached_images_and_files: Clear Cached Images and Files.
+    clear_password_signin: Clear Password Signin.
+    clear_autofill: Clear Autofill.
+    clear_site_settings: Clear Site Settings.
+    clear_hosted_app_data: Clear Hosted App Data.
+    reload_pages: Reload Pages.
 
 chrome.users.BrowserLabsEnabled: Browser experiments icon in toolbar.
   browserLabsEnabled: TYPE_BOOL
@@ -4242,10 +6658,12 @@ chrome.users.BrowserSwitcherChromePath: Chrome path.
     Path to the Chrome executable. Windows-only. Path to the Chrome executable to launch when switching from the alternative browser to Chrome. If unset, the alternative browser will auto-detect the path to Chrome.
 
 chrome.users.BrowserSwitcherDelayDuration: Delay before launching alternative browser.
-  browserSwitcherDelayDuration: TYPE_STRING
+  browserSwitcherDelayDuration
+    duration: TYPE_STRING
 
 chrome.users.BrowserSwitcherDelayDurationV2: Delay before launching alternative browser.
-  browserSwitcherDelayDuration: TYPE_INT64
+  browserSwitcherDelayDuration
+    duration: TYPE_INT64
 
 chrome.users.BrowserSwitcherExternalGreylistUrl: URL to list of websites to open in either browser.
   browserSwitcherExternalGreylistUrl: TYPE_STRING
@@ -4283,10 +6701,40 @@ chrome.users.BrowserThemeColor: Custom theme color.
     Hex color. Enter a valid hex color, for instance #FFFFFF.
 
 chrome.users.BrowsingDataLifetime: Browsing Data Lifetime.
-  hostedAppDataTtl: TYPE_STRING
+  browsingHistoryTtl
+    duration: TYPE_STRING
+  downloadHistoryTtl
+    duration: TYPE_STRING
+  cookiesAndOtherSiteDataTtl
+    duration: TYPE_STRING
+  cachedImagesAndFilesTtl
+    duration: TYPE_STRING
+  passwordSigninTtl
+    duration: TYPE_STRING
+  autofillTtl
+    duration: TYPE_STRING
+  siteSettingsTtl
+    duration: TYPE_STRING
+  hostedAppDataTtl
+    duration: TYPE_STRING
 
 chrome.users.BrowsingDataLifetimeV2: Browsing Data Lifetime.
-  hostedAppDataTtl: TYPE_INT64
+  browsingHistoryTtl
+    duration: TYPE_INT64
+  downloadHistoryTtl
+    duration: TYPE_INT64
+  cookiesAndOtherSiteDataTtl
+    duration: TYPE_INT64
+  cachedImagesAndFilesTtl
+    duration: TYPE_INT64
+  passwordSigninTtl
+    duration: TYPE_INT64
+  autofillTtl
+    duration: TYPE_INT64
+  siteSettingsTtl
+    duration: TYPE_INT64
+  hostedAppDataTtl
+    duration: TYPE_INT64
 
 chrome.users.BuiltInDnsClientEnabled: Built-in DNS client.
   builtInDnsClientEnabled: TYPE_ENUM
@@ -4442,10 +6890,12 @@ chrome.users.CloudReporting: Managed browser reporting.
     false: Disable managed browser cloud reporting.
 
 chrome.users.CloudReportingUploadFrequency: Managed browser reporting upload frequency.
-  cloudReportingUploadFrequency: TYPE_STRING
+  cloudReportingUploadFrequency
+    duration: TYPE_STRING
 
 chrome.users.CloudReportingUploadFrequencyV2: Managed browser reporting upload frequency.
-  cloudReportingUploadFrequency: TYPE_INT64
+  cloudReportingUploadFrequency
+    duration: TYPE_INT64
 
 chrome.users.CloudUserPolicyMerge: User cloud policy merge.
   cloudUserPolicyMerge: TYPE_BOOL
@@ -4491,7 +6941,9 @@ chrome.users.ContextualGoogleIntegrationsEnabled: Contextual integrations of Goo
     true: Allow integrations.
     false: Disable integrations.
   contextualGoogleIntegrationsConfiguration: TYPE_LIST
-    {'value': 'GoogleCalendar', 'description': 'Google Calendar.'}
+    GoogleCalendar: Google Calendar.
+    GoogleClassroom: Google Classroom.
+    GoogleTasks: Google Tasks.
 
 chrome.users.ContextualSearchEnabled: Touch to search.
   contextualSearchEnabled: TYPE_BOOL
@@ -4565,7 +7017,8 @@ chrome.users.CursorHighlightEnabled: Cursor highlight.
     TRUE: Enable cursor highlight.
 
 chrome.users.CustomTermsOfService: Custom terms of service.
-  termsOfServiceUrl: TYPE_STRING
+  termsOfServiceUrl
+    downloadUri: TYPE_STRING
 
 chrome.users.DataCompressionProxy: Data compression proxy.
   dataCompressionProxyEnabled: TYPE_ENUM
@@ -4864,11 +7317,16 @@ chrome.users.EventPathEnabled: Re-enable the Event.path API until Chrome 115.
 
 chrome.users.ExplicitlyAllowedNetworkPorts: Allowed network ports.
   explicitlyAllowedNetworkPorts: TYPE_LIST
-    {'value': '554', 'description': 'port 554 (expires 2021/10/15).'}
+    554: port 554 (expires 2021/10/15).
+    989: port 989 (expires 2022/02/01).
+    990: port 990 (expires 2022/02/01).
+    6566: port 6566 (expires 2021/10/15).
+    10080: port 10080 (expires 2022/04/01).
 
 chrome.users.ExtensibleEnterpriseSsoBlocklist: Extensible Enterprise SSO blocking.
   extensibleEnterpriseSsoBlocklist: TYPE_LIST
-    {'value': 'all', 'description': 'All identity providers.'}
+    all: All identity providers.
+    microsoft: Microsoft cloud identity provider.
 
 chrome.users.ExtensionExtendedBackgroundLifetimeForPortConnectionsToUrls: Extended background lifetime.
   extensionExtendedBackgroundLifetimeForPortConnectionsToUrls: TYPE_LIST
@@ -4916,10 +7374,12 @@ chrome.users.FElevenKeyModifier: Control the shortcut used to trigger F11.
     RECOMMENDED: Allow users to override.
 
 chrome.users.FetchKeepaliveDurationSecondsOnShutdown: Keepalive duration.
-  fetchKeepaliveDurationSecondsOnShutdown: TYPE_STRING
+  fetchKeepaliveDurationSecondsOnShutdown
+    duration: TYPE_STRING
 
 chrome.users.FetchKeepaliveDurationSecondsOnShutdownV2: Keepalive duration.
-  fetchKeepaliveDurationSecondsOnShutdown: TYPE_INT64
+  fetchKeepaliveDurationSecondsOnShutdown
+    duration: TYPE_INT64
 
 chrome.users.FileOrDirectoryPickerWithoutGestureAllowedForOrigins: File/directory picker without user gesture.
   fileOrDirectoryPickerWithoutGestureAllowedForOrigins: TYPE_LIST
@@ -4968,7 +7428,168 @@ chrome.users.FocusModeSoundsEnabled: Sounds in Focus Mode.
 
 chrome.users.ForcedLanguages: Preferred languages.
   forcedLanguages: TYPE_LIST
-    {'value': 'af', 'description': 'Afrikaans.'}
+    af: Afrikaans.
+    sq: Albanian - ‪shqip‬.
+    am: Amharic - ‪አማርኛ‬.
+    ar: Arabic - ‫العربية‬.
+    an: Aragonese.
+    hy: Armenian - ‪հայերեն‬.
+    as: Assamese - ‪অসমীয়া‬.
+    ast: Asturian - ‪asturianu‬.
+    az: Azerbaijani - ‪azərbaycan‬.
+    bn: Bangla - ‪বাংলা‬.
+    eu: Basque - ‪euskara‬.
+    be: Belarusian - ‪беларуская‬.
+    bs: Bosnian - ‪bosanski‬.
+    br: Breton - ‪brezhoneg‬.
+    bg: Bulgarian - ‪български‬.
+    my: Burmese - ‪မြန်မာ‬.
+    ca: Catalan - ‪català‬.
+    ceb: Cebuano.
+    ckb: Central Kurdish - ‫کوردیی ناوەندی‬.
+    chr: Cherokee - ‪ᏣᎳᎩ‬.
+    zh: Chinese - ‪中文‬.
+    zh-HK: Chinese (Hong Kong) - ‪中文（香港）‬.
+    zh-CN: Chinese (Simplified) - ‪简体中文‬.
+    zh-TW: Chinese (Traditional) - ‪繁體中文‬.
+    co: Corsican.
+    hr: Croatian - ‪Hrvatski‬.
+    cs: Czech - ‪Čeština‬.
+    da: Danish - ‪Dansk‬.
+    nl: Dutch - ‪Nederlands‬.
+    en: English.
+    en-AU: English (Australia).
+    en-CA: English (Canada).
+    en-IN: English (India).
+    en-NZ: English (New Zealand).
+    en-ZA: English (South Africa).
+    en-GB: English (United Kingdom).
+    en-US: English (United States).
+    eo: Esperanto.
+    et: Estonian - ‪eesti‬.
+    fo: Faroese - ‪føroyskt‬.
+    fil: Filipino.
+    fi: Finnish - ‪Suomi‬.
+    fr: French - ‪Français‬.
+    fr-CA: French (Canada) - ‪Français (Canada)‬.
+    fr-FR: French (France) - ‪Français (France)‬.
+    fr-CH: French (Switzerland) - ‪Français (Suisse)‬.
+    gl: Galician - ‪galego‬.
+    ka: Georgian - ‪ქართული‬.
+    de: German - ‪Deutsch‬.
+    de-AT: German (Austria) - ‪Deutsch (Österreich)‬.
+    de-DE: German (Germany) - ‪Deutsch (Deutschland)‬.
+    de-LI: German (Liechtenstein) - ‪Deutsch (Liechtenstein)‬.
+    de-CH: German (Switzerland) - ‪Deutsch (Schweiz)‬.
+    el: Greek - ‪Ελληνικά‬.
+    gn: Guarani.
+    gu: Gujarati - ‪ગુજરાતી‬.
+    ht: Haitian Creole - ‪Créole haïtien‬.
+    ha: Hausa.
+    haw: Hawaiian - ‪ʻŌlelo Hawaiʻi‬.
+    iw: Hebrew - ‫עברית‬.
+    hi: Hindi - ‪हिन्दी‬.
+    hmn: Hmong.
+    hu: Hungarian - ‪magyar‬.
+    is: Icelandic - ‪íslenska‬.
+    ig: Igbo.
+    id: Indonesian - ‪Indonesia‬.
+    ia: Interlingua - ‪interlingua‬.
+    ga: Irish - ‪Gaeilge‬.
+    it: Italian - ‪Italiano‬.
+    it-IT: Italian (Italy) - ‪Italiano (Italia)‬.
+    it-CH: Italian (Switzerland) - ‪Italiano (Svizzera)‬.
+    ja: Japanese - ‪日本語‬.
+    jv: Javanese - ‪Jawa‬.
+    kn: Kannada - ‪ಕನ್ನಡ‬.
+    kk: Kazakh - ‪қазақ тілі‬.
+    km: Khmer - ‪ខ្មែរ‬.
+    rw: Kinyarwanda - ‪Ikinyarwanda‬.
+    kok: Konkani - ‪कोंकणी‬.
+    ko: Korean - ‪한국어‬.
+    ku: Kurdish - ‪kurdî [kurmancî]‬.
+    ky: Kyrgyz - ‪кыргызча‬.
+    lo: Lao - ‪ລາວ‬.
+    la: Latin.
+    lv: Latvian - ‪latviešu‬.
+    ln: Lingala - ‪lingála‬.
+    lt: Lithuanian - ‪lietuvių‬.
+    lb: Luxembourgish - ‪Lëtzebuergesch‬.
+    mk: Macedonian - ‪македонски‬.
+    mg: Malagasy.
+    ms: Malay - ‪Melayu‬.
+    ml: Malayalam - ‪മലയാളം‬.
+    mt: Maltese - ‪Malti‬.
+    mi: Māori.
+    mr: Marathi - ‪मराठी‬.
+    mn: Mongolian - ‪монгол‬.
+    ne: Nepali - ‪नेपाली‬.
+    no: Norwegian - ‪norsk‬.
+    nn: Norwegian Nynorsk - ‪norsk nynorsk‬.
+    ny: Nyanja.
+    oc: Occitan - ‪occitan‬.
+    or: Odia - ‪ଓଡ଼ିଆ‬.
+    om: Oromo - ‪Oromoo‬.
+    ps: Pashto - ‫پښتو‬.
+    fa: Persian - ‫فارسی‬.
+    pl: Polish - ‪polski‬.
+    pt: Portuguese - ‪Português‬.
+    pt-BR: Portuguese (Brazil) - ‪Português (Brasil)‬.
+    pt-PT: Portuguese (Portugal) - ‪Português (Portugal)‬.
+    pa: Punjabi - ‪ਪੰਜਾਬੀ‬.
+    qu: Quechua - ‪Runasimi‬.
+    ro: Romanian - ‪română‬.
+    rm: Romansh - ‪rumantsch‬.
+    ru: Russian - ‪Русский‬.
+    sm: Samoan.
+    gd: Scottish Gaelic - ‪Gàidhlig‬.
+    sr: Serbian - ‪српски‬.
+    sn: Shona - ‪chiShona‬.
+    sd: Sindhi - ‫سنڌي‬.
+    si: Sinhala - ‪සිංහල‬.
+    sk: Slovak - ‪Slovenčina‬.
+    sl: Slovenian - ‪slovenščina‬.
+    so: Somali - ‪Soomaali‬.
+    st: Southern Sotho - ‪Sesotho‬.
+    es: Spanish - ‪Español‬.
+    es-AR: Spanish (Argentina) - ‪Español (Argentina)‬.
+    es-CL: Spanish (Chile) - ‪Español (Chile)‬.
+    es-CO: Spanish (Colombia) - ‪Español (Colombia)‬.
+    es-CR: Spanish (Costa Rica) - ‪Español (Costa Rica)‬.
+    es-HN: Spanish (Honduras) - ‪Español (Honduras)‬.
+    es-419: Spanish (Latin America) - ‪Español (Latinoamérica)‬.
+    es-MX: Spanish (Mexico) - ‪Español (México)‬.
+    es-PE: Spanish (Peru) - ‪Español (Perú)‬.
+    es-ES: Spanish (Spain) - ‪Español (España)‬.
+    es-US: Spanish (United States) - ‪Español (Estados Unidos)‬.
+    es-UY: Spanish (Uruguay) - ‪Español (Uruguay)‬.
+    es-VE: Spanish (Venezuela) - ‪Español (Venezuela)‬.
+    su: Sundanese - ‪Basa Sunda‬.
+    sw: Swahili - ‪Kiswahili‬.
+    sv: Swedish - ‪Svenska‬.
+    tg: Tajik - ‪тоҷикӣ‬.
+    ta: Tamil - ‪தமிழ்‬.
+    tt: Tatar - ‪татар‬.
+    te: Telugu - ‪తెలుగు‬.
+    th: Thai - ‪ไทย‬.
+    ti: Tigrinya - ‪ትግርኛ‬.
+    to: Tongan - ‪lea fakatonga‬.
+    tn: Tswana - ‪Setswana‬.
+    tr: Turkish - ‪Türkçe‬.
+    tk: Turkmen - ‪türkmen dili‬.
+    uk: Ukrainian - ‪Українська‬.
+    ur: Urdu - ‫اردو‬.
+    ug: Uyghur - ‫ئۇيغۇرچە‬.
+    uz: Uzbek - ‪o‘zbek‬.
+    vi: Vietnamese - ‪Tiếng Việt‬.
+    wa: Walloon.
+    cy: Welsh - ‪Cymraeg‬.
+    fy: Western Frisian - ‪Frysk‬.
+    wo: Wolof.
+    xh: Xhosa - ‪IsiXhosa‬.
+    yi: Yiddish - ‫ייִדיש‬.
+    yo: Yoruba - ‪Èdè Yorùbá‬.
+    zu: Zulu - ‪isiZulu‬.
 
 chrome.users.ForceEnablePepperVideoDecoderDevApi: PPB_VideoDecoder(Dev) API support.
   forceEnablePepperVideoDecoderDevApi: TYPE_BOOL
@@ -5018,10 +7639,12 @@ chrome.users.FullscreenAllowed: Fullscreen mode.
     false: Do not allow fullscreen mode.
 
 chrome.users.GaiaLockScreenOfflineSigninTimeLimitDays: Google online unlock frequency.
-  gaiaLockScreenOfflineSigninTimeLimitDays: TYPE_INT64
+  gaiaLockScreenOfflineSigninTimeLimitDays
+    value: TYPE_INT64
 
 chrome.users.GaiaOfflineSigninTimeLimitDays: Google online login frequency.
-  gaiaOfflineSigninTimeLimitDays: TYPE_INT64
+  gaiaOfflineSigninTimeLimitDays
+    value: TYPE_INT64
 
 chrome.users.GeminiSettings: Gemini integration.
   geminiSettings: TYPE_ENUM
@@ -5189,21 +7812,40 @@ chrome.users.IdleSettingsExtended: Idle settings.
     LOGOUT: Logout.
     SHUTDOWN: Shutdown.
     DO_NOTHING: Do nothing.
+  idleDelayAc
+    duration: TYPE_INT64
+  idleWarningDelayAc
+    duration: TYPE_INT64
   idleActionAc: TYPE_ENUM
     SLEEP: Sleep.
     LOGOUT: Logout.
     SHUTDOWN: Shut down.
     DO_NOTHING: Do nothing.
+  screenDimDelayAc
+    duration: TYPE_INT64
+  screenOffDelayAc
+    duration: TYPE_INT64
+  screenLockDelayAc
+    duration: TYPE_INT64
+  idleDelayBattery
+    duration: TYPE_INT64
+  idleWarningDelayBattery
+    duration: TYPE_INT64
   idleActionBattery: TYPE_ENUM
     SLEEP: Sleep.
     LOGOUT: Logout.
     SHUTDOWN: Shut down.
     DO_NOTHING: Do nothing.
+  screenDimDelayBattery
+    duration: TYPE_INT64
+  screenOffDelayBattery
+    duration: TYPE_INT64
+  screenLockDelayBattery
+    duration: TYPE_INT64
   lockOnSleepOrLidClose: TYPE_ENUM
     UNSET: Allow user to configure.
     FALSE: Don't lock screen.
     TRUE: Lock screen.
-  screenLockDelayBattery: TYPE_INT64
 
 chrome.users.Images: Images.
   defaultImagesSettings: TYPE_ENUM
@@ -5542,19 +8184,27 @@ chrome.users.ManagedAccountsSigninRestriction: Separate profile for managed Goog
     PRIMARY_ACCOUNT_STRICT_KEEP_EXISTING_DATA: Let users choose to have a separate profile but forbid secondary managed accounts.
 
 chrome.users.ManagedBookmarksSetting: Managed bookmarks.
-  toplevelName: TYPE_STRING
-  name: TYPE_STRING
-  url: TYPE_STRING
+  managedBookmarks
+    bookmarks
+      folder
+        name: TYPE_STRING
+        entries
+      link
+        name: TYPE_STRING
+        url: TYPE_STRING
+    toplevelName: TYPE_STRING
 
 chrome.users.MaxConnectionsPerProxy: Max connections per proxy.
   maxConnectionsPerProxy: TYPE_INT64
     Maximum number of concurrent connections to the proxy server. Specifies the maximal number of simultaneous connections to the proxy server. The value of this policy should be lower than 100 and higher than 6 and the default value is 32.
 
 chrome.users.MaxInvalidationFetchDelay: Policy fetch delay.
-  maxInvalidationFetchDelay: TYPE_STRING
+  maxInvalidationFetchDelay
+    duration: TYPE_STRING
 
 chrome.users.MaxInvalidationFetchDelayV2: Policy fetch delay.
-  maxInvalidationFetchDelay: TYPE_INT64
+  maxInvalidationFetchDelay
+    duration: TYPE_INT64
 
 chrome.users.MediaRecommendationsEnabled: Media Recommendations.
   mediaRecommendationsEnabled: TYPE_BOOL
@@ -5668,10 +8318,12 @@ chrome.users.NetworkFileShares: Network file shares.
   ntlmShareAuthenticationEnabled: TYPE_BOOL
     true: Use NTLM authentication.
     false: Do not use NTLM authentication.
-  mode: TYPE_ENUM
-    DROP_DOWN:
-    PRE_MOUNT:
-  shareUrl: TYPE_STRING
+  networkFileSharesPreconfiguredShares
+    preconfiguredFiles
+      mode: TYPE_ENUM
+        DROP_DOWN:
+        PRE_MOUNT:
+      shareUrl: TYPE_STRING
 
 chrome.users.NetworkPrediction: Network prediction.
   networkPredictionOptions: TYPE_ENUM
@@ -5905,6 +8557,7 @@ chrome.users.PluginVmAllowed: Parallels Desktop.
     true: Allow users to use Parallels Desktop.
     false: Do not allow users to use Parallels Desktop.
   ackNoticeForPluginVmAllowedSetToTrue: TYPE_BOOL
+    This field must be set to true to acknowledge the notice message associated with the field 'plugin_vm_allowed' set to value 'true'. Please sse the notices listed with this policy for more information.
 
 chrome.users.PluginVmDataCollection: Diagnostic information.
   pluginVmDataCollectionAllowed: TYPE_BOOL
@@ -5987,7 +8640,11 @@ chrome.users.PrimaryMouseButtonSwitch: Primary mouse button.
 
 chrome.users.PrinterTypeDenyList: Blocked printer types.
   printerTypeDenyList: TYPE_LIST
-    {'value': 'privet', 'description': 'Privet zeroconf-based protocol (deprecated).'}
+    privet: Privet zeroconf-based protocol (deprecated).
+    extension: Extension-based.
+    pdf: Save as PDF.
+    local: Local printer.
+    cloud: Google Cloud Print (deprecated).
 
 chrome.users.PrintHeaderFooter: Print headers and footers.
   printHeaderFooter: TYPE_ENUM
@@ -6021,7 +8678,8 @@ chrome.users.PrintingLpacSandboxEnabled: Printing LPAC Sandbox.
     false: Run printing services in a less secure sandbox.
 
 chrome.users.PrintingMaxSheetsAllowed: Maximum sheets.
-  printingMaxSheetsAllowedNullable: TYPE_INT64
+  printingMaxSheetsAllowedNullable
+    value: TYPE_INT64
 
 chrome.users.PrintingPaperSizeDefault: Default printing page size.
   printingPaperSizeEnum: TYPE_ENUM
@@ -6048,19 +8706,22 @@ chrome.users.PrintingSendUsernameAndFilenameEnabled: CUPS Print job information.
     false: Do not include user account and filename in print job.
 
 chrome.users.PrintJobHistoryExpirationPeriodNew: Print job history retention period.
-  printJobHistoryExpirationPeriodDaysNew: TYPE_STRING
+  printJobHistoryExpirationPeriodDaysNew
+    duration: TYPE_STRING
 
 chrome.users.PrintJobHistoryExpirationPeriodNewV2: Print job history retention period.
-  printJobHistoryExpirationPeriodDaysNew: TYPE_INT64
+  printJobHistoryExpirationPeriodDaysNew
+    duration: TYPE_INT64
 
 chrome.users.PrintPdfAsImage: Print PDF as image.
   printPdfAsImageAvailability: TYPE_BOOL
     true: Allow users to print PDF documents as images.
     false: Do not allow users to print PDF documents as images.
+  printRasterizePdfDpi
+    value: TYPE_INT64
   printPdfAsImageDefault: TYPE_BOOL
     true: Default to printing PDFs as images when available.
     false: Default to printing PDFs without being rasterized.
-  printRasterizePdfDpi: TYPE_INT64
 
 chrome.users.PrintPostScriptMode: PostScript printer mode.
   printPostScriptMode: TYPE_ENUM
@@ -6174,7 +8835,8 @@ chrome.users.QuickAnswersEnabled: Quick Answers.
 
 chrome.users.QuickUnlockModeAllowlist: Quick unlock.
   quickUnlockModeAllowlist: TYPE_LIST
-    {'value': 'PIN', 'description': 'PIN.'}
+    PIN: PIN.
+    FINGERPRINT: Fingerprint.
 
 chrome.users.QuicProtocol: QUIC protocol.
   quicAllowed: TYPE_BOOL
@@ -6189,30 +8851,46 @@ chrome.users.RecoveryFactorBehavior: Account recovery.
     DEACTIVATE_ACCOUNT_RECOVERY: Deactivate account recovery.
 
 chrome.users.RegisteredProtocolHandlersSetting: Custom Protocol Handlers.
-  scheme: TYPE_STRING
-  handler: TYPE_STRING
+  registeredProtocolHandlers
+    protocols
+      scheme: TYPE_STRING
+      handler: TYPE_STRING
 
 chrome.users.RelaunchNotificationWithDuration: Relaunch notification.
   relaunchNotificationEnum: TYPE_ENUM
     NO_NOTIFICATION: No relaunch notification.
     RECOMMENDED: Show notification recommending relaunch.
     REQUIRED: Force relaunch after a period.
-  relaunchWindowDurationMin: TYPE_STRING
-  hours: TYPE_INT32
-  minutes: TYPE_INT32
-  seconds: TYPE_INT32
-  nanos: TYPE_INT32
+  relaunchNotificationPeriodDuration
+    duration: TYPE_STRING
+  relaunchInitialQuietPeriodDuration
+    duration: TYPE_STRING
+  relaunchWindowStartTime
+    timeOfDay
+      hours: TYPE_INT32
+      minutes: TYPE_INT32
+      seconds: TYPE_INT32
+      nanos: TYPE_INT32
+  relaunchWindowDurationMin
+    duration: TYPE_STRING
 
 chrome.users.RelaunchNotificationWithDurationV2: Relaunch notification.
   relaunchNotificationEnum: TYPE_ENUM
     NO_NOTIFICATION: No relaunch notification.
     RECOMMENDED: Show notification recommending relaunch.
     REQUIRED: Force relaunch after a period.
-  relaunchWindowDurationMin: TYPE_INT64
-  hours: TYPE_INT32
-  minutes: TYPE_INT32
-  seconds: TYPE_INT32
-  nanos: TYPE_INT32
+  relaunchNotificationPeriodDuration
+    duration: TYPE_INT64
+  relaunchInitialQuietPeriodDuration
+    duration: TYPE_INT64
+  relaunchWindowStartTime
+    timeOfDay
+      hours: TYPE_INT32
+      minutes: TYPE_INT32
+      seconds: TYPE_INT32
+      nanos: TYPE_INT32
+  relaunchWindowDurationMin
+    duration: TYPE_INT64
 
 chrome.users.RemoteAccessHostAllowEnterpriseRemoteSupportConnections: Enterprise remote support connections.
   remoteAccessHostAllowEnterpriseRemoteSupportConnections: TYPE_BOOL
@@ -6229,7 +8907,8 @@ chrome.users.RemoteAccessHostClientDomainList: Remote access clients.
     Remote access client domain. Configure the required domain names for remote access clients.
 
 chrome.users.RemoteAccessHostClipboardSizeBytes: Clipboard sync max size.
-  remoteAccessHostClipboardSizeBytes: TYPE_INT64
+  remoteAccessHostClipboardSizeBytes
+    value: TYPE_INT64
 
 chrome.users.RemoteAccessHostDomainList: Remote access hosts.
   remoteAccessHostDomainList: TYPE_LIST
@@ -6262,7 +8941,13 @@ chrome.users.RendererCodeIntegrityEnabled: Enable renderer code integrity.
 
 chrome.users.ReportAppUsage: App usage reporting.
   reportAppUsage: TYPE_LIST
-    {'value': 'chrome_apps_and_extensions', 'description': 'Chrome apps and extensions.'}
+    chrome_apps_and_extensions: Chrome apps and extensions.
+    progressive_web_apps: Progressive Web Apps.
+    android_apps: Android apps.
+    linux_apps: Linux apps.
+    system_apps: System apps.
+    games: Linux games.
+    browser: Chrome Browser.
 
 chrome.users.RequireOnlineRevocationChecksForLocalAnchors: Require online OCSP/CRL checks for local trust anchors.
   requireOnlineRevocationChecksForLocalAnchors: TYPE_BOOL
@@ -6348,7 +9033,8 @@ chrome.users.SafeSitesFilterBehavior: SafeSites URL filter.
     SAFE_SITES_FILTER_ENABLED: Filter sites for adult content.
 
 chrome.users.SamlLockScreenOfflineSigninTimeLimitDays: SAML single sign-on unlock frequency.
-  samlLockScreenOfflineSigninTimeLimitDays: TYPE_INT64
+  samlLockScreenOfflineSigninTimeLimitDays
+    value: TYPE_INT64
 
 chrome.users.SamlLockScreenReauthenticationEnabled: SAML single sign-on password synchronization flows.
   samlLockScreenReauthenticationEnabled: TYPE_BOOL
@@ -6429,14 +9115,16 @@ chrome.users.SecurityTokenSessionSettings: Security token removal.
     IGNORE: Nothing.
     LOGOUT: Log the user out.
     LOCK: Lock the current session.
-  securityTokenSessionNotificationSeconds: TYPE_STRING
+  securityTokenSessionNotificationSeconds
+    duration: TYPE_STRING
 
 chrome.users.SecurityTokenSessionSettingsV2: Security token removal.
   securityTokenSessionBehavior: TYPE_ENUM
     IGNORE: Nothing.
     LOGOUT: Log the user out.
     LOCK: Lock the current session.
-  securityTokenSessionNotificationSeconds: TYPE_INT64
+  securityTokenSessionNotificationSeconds
+    duration: TYPE_INT64
 
 chrome.users.SelectToSpeakEnabled: Select to speak.
   selectToSpeakEnabled: TYPE_ENUM
@@ -6450,8 +9138,10 @@ chrome.users.SendMouseEventsDisabledFormControlsEnabled: Disabled element MouseE
     false: Do not dispatch MouseEvents from disabled control elements.
 
 chrome.users.SerialAllowUsbDevicesForUrls: Web Serial API allowed devices.
-  url: TYPE_STRING
-  device: TYPE_LIST
+  serialAllowUsbDevicesForUrls
+    webOrigin
+      url: TYPE_STRING
+      device: TYPE_LIST
 
 chrome.users.ServiceWorkerToControlSrcdocIframeEnabled: Service worker control of srcdoc iframes.
   serviceWorkerToControlSrcdocIframeEnabled: TYPE_BOOL
@@ -6459,10 +9149,12 @@ chrome.users.ServiceWorkerToControlSrcdocIframeEnabled: Service worker control o
     false: Block service workers from controlling srcdoc iframes.
 
 chrome.users.SessionLength: Maximum user session length.
-  sessionDurationLimit: TYPE_STRING
+  sessionDurationLimit
+    duration: TYPE_STRING
 
 chrome.users.SessionLengthV2: Maximum user session length.
-  sessionDurationLimit: TYPE_INT64
+  sessionDurationLimit
+    duration: TYPE_INT64
 
 chrome.users.SetTimeoutWithoutOneMsClampEnabled: Javascript setTimeout() minimum.
   setTimeoutWithoutOneMsClampEnabled: TYPE_ENUM
@@ -6632,10 +9324,12 @@ chrome.users.SiteIsolationBrowser: Site isolation.
     false: Turn off site isolation for all websites, except those set in 'isolateOrigins'.
 
 chrome.users.SiteSearchSettings: Site search.
-  featured: TYPE_BOOL
-  name: TYPE_STRING
-  shortcut: TYPE_STRING
-  url: TYPE_STRING
+  siteSearchSettings
+    siteSearchEngines
+      featured: TYPE_BOOL
+      name: TYPE_STRING
+      shortcut: TYPE_STRING
+      url: TYPE_STRING
 
 chrome.users.SmartLockAllowed: Smart Lock.
   smartLockAllowed: TYPE_BOOL
@@ -6657,9 +9351,115 @@ chrome.users.SpellcheckEnabled: Spell check.
     FALSE: Disable spell check.
     TRUE: Enable spell check.
   spellcheckLanguage: TYPE_LIST
-    {'value': 'af', 'description': 'Afrikaans.'}
+    af: Afrikaans.
+    sq: Albanian - ‪shqip‬.
+    hy: Armenian - ‪հայերեն‬.
+    bg: Bulgarian - ‪български‬.
+    ca: Catalan - ‪català‬.
+    hr: Croatian - ‪Hrvatski‬.
+    cs: Czech - ‪Čeština‬.
+    da: Danish - ‪Dansk‬.
+    nl: Dutch - ‪Nederlands‬.
+    en-AU: English (Australia).
+    en-CA: English (Canada).
+    en-GB: English (United Kingdom).
+    en-US: English (United States).
+    et: Estonian - ‪eesti‬.
+    fo: Faroese - ‪føroyskt‬.
+    fr: French - ‪Français‬.
+    fr-FR: French (France) - ‪Français (France)‬.
+    de: German - ‪Deutsch‬.
+    de-DE: German (Germany) - ‪Deutsch (Deutschland)‬.
+    el: Greek - ‪Ελληνικά‬.
+    he: Hebrew - ‫עברית‬.
+    hi: Hindi - ‪हिन्दी‬.
+    hu: Hungarian - ‪magyar‬.
+    id: Indonesian - ‪Indonesia‬.
+    it: Italian - ‪Italiano‬.
+    it-IT: Italian (Italy) - ‪Italiano (Italia)‬.
+    ko: Korean - ‪한국어‬.
+    lv: Latvian - ‪latviešu‬.
+    lt: Lithuanian - ‪lietuvių‬.
+    nb: Norwegian Bokmål - ‪norsk bokmål‬.
+    fa: Persian - ‫فارسی‬.
+    pl: Polish - ‪polski‬.
+    pt: Portuguese - ‪Português‬.
+    pt-BR: Portuguese (Brazil) - ‪Português (Brasil)‬.
+    pt-PT: Portuguese (Portugal) - ‪Português (Portugal)‬.
+    ro: Romanian - ‪română‬.
+    ru: Russian - ‪Русский‬.
+    sr: Serbian - ‪српски‬.
+    sh: Serbo-Croatian - ‪srpskohrvatski‬.
+    sk: Slovak - ‪Slovenčina‬.
+    sl: Slovenian - ‪slovenščina‬.
+    es: Spanish - ‪Español‬.
+    es-AR: Spanish (Argentina) - ‪Español (Argentina)‬.
+    es-419: Spanish (Latin America) - ‪Español (Latinoamérica)‬.
+    es-MX: Spanish (Mexico) - ‪Español (México)‬.
+    es-ES: Spanish (Spain) - ‪Español (España)‬.
+    es-US: Spanish (United States) - ‪Español (Estados Unidos)‬.
+    sv: Swedish - ‪Svenska‬.
+    tg: Tajik - ‪тоҷикӣ‬.
+    ta: Tamil - ‪தமிழ்‬.
+    tr: Turkish - ‪Türkçe‬.
+    uk: Ukrainian - ‪Українська‬.
+    vi: Vietnamese - ‪Tiếng Việt‬.
+    cy: Welsh - ‪Cymraeg‬.
   spellcheckLanguageBlocklist: TYPE_LIST
-    {'value': 'af', 'description': 'Afrikaans.'}
+    af: Afrikaans.
+    sq: Albanian - ‪shqip‬.
+    hy: Armenian - ‪հայերեն‬.
+    bg: Bulgarian - ‪български‬.
+    ca: Catalan - ‪català‬.
+    hr: Croatian - ‪Hrvatski‬.
+    cs: Czech - ‪Čeština‬.
+    da: Danish - ‪Dansk‬.
+    nl: Dutch - ‪Nederlands‬.
+    en-AU: English (Australia).
+    en-CA: English (Canada).
+    en-GB: English (United Kingdom).
+    en-US: English (United States).
+    et: Estonian - ‪eesti‬.
+    fo: Faroese - ‪føroyskt‬.
+    fr: French - ‪Français‬.
+    fr-FR: French (France) - ‪Français (France)‬.
+    de: German - ‪Deutsch‬.
+    de-DE: German (Germany) - ‪Deutsch (Deutschland)‬.
+    el: Greek - ‪Ελληνικά‬.
+    he: Hebrew - ‫עברית‬.
+    hi: Hindi - ‪हिन्दी‬.
+    hu: Hungarian - ‪magyar‬.
+    id: Indonesian - ‪Indonesia‬.
+    it: Italian - ‪Italiano‬.
+    it-IT: Italian (Italy) - ‪Italiano (Italia)‬.
+    ko: Korean - ‪한국어‬.
+    lv: Latvian - ‪latviešu‬.
+    lt: Lithuanian - ‪lietuvių‬.
+    nb: Norwegian Bokmål - ‪norsk bokmål‬.
+    fa: Persian - ‫فارسی‬.
+    pl: Polish - ‪polski‬.
+    pt: Portuguese - ‪Português‬.
+    pt-BR: Portuguese (Brazil) - ‪Português (Brasil)‬.
+    pt-PT: Portuguese (Portugal) - ‪Português (Portugal)‬.
+    ro: Romanian - ‪română‬.
+    ru: Russian - ‪Русский‬.
+    sr: Serbian - ‪српски‬.
+    sh: Serbo-Croatian - ‪srpskohrvatski‬.
+    sk: Slovak - ‪Slovenčina‬.
+    sl: Slovenian - ‪slovenščina‬.
+    es: Spanish - ‪Español‬.
+    es-AR: Spanish (Argentina) - ‪Español (Argentina)‬.
+    es-419: Spanish (Latin America) - ‪Español (Latinoamérica)‬.
+    es-MX: Spanish (Mexico) - ‪Español (México)‬.
+    es-ES: Spanish (Spain) - ‪Español (España)‬.
+    es-US: Spanish (United States) - ‪Español (Estados Unidos)‬.
+    sv: Swedish - ‪Svenska‬.
+    tg: Tajik - ‪тоҷикӣ‬.
+    ta: Tamil - ‪தமிழ்‬.
+    tr: Turkish - ‪Türkçe‬.
+    uk: Ukrainian - ‪Українська‬.
+    vi: Vietnamese - ‪Tiếng Việt‬.
+    cy: Welsh - ‪Cymraeg‬.
 
 chrome.users.SpellCheckService: Spell check service.
   spellCheckServiceEnabled: TYPE_ENUM
@@ -6739,9 +9539,26 @@ chrome.users.SyncSettingsCbcm: Chrome Sync and Roaming Profiles (Chrome Browser 
     SYNC_ROAMING_PROFILES: Allow Roaming Profiles.
     SYNC_DISABLED: Disallow Sync.
   syncTypesListDisabledCbcm: TYPE_LIST
-    {'value': 'apps', 'description': 'Apps.'}
+    apps: Apps.
+    autofill: Autofill.
+    bookmarks: Bookmarks.
+    extensions: Extensions.
+    typedUrls: History.
+    passwords: Passwords.
+    readingList: Reading list.
+    preferences: Settings.
+    themes: Themes & Wallpapers.
+    tabs: Open tabs.
+    wifiConfiguration: WiFi configurations.
   clearBrowsingDataOnExitListCbcm: TYPE_LIST
-    {'value': 'browsing_history', 'description': 'Browsing history.'}
+    browsing_history: Browsing history.
+    download_history: Download history.
+    cookies_and_other_site_data: Cookies and other site data.
+    cached_images_and_files: Cached images and files.
+    password_signin: Passwords.
+    autofill: Autofill.
+    site_settings: Site settings.
+    hosted_app_data: Hosted app data.
   roamingProfileLocationCbcm: TYPE_STRING
     Roaming profile directory. Configures the directory that Google Chrome will use for storing the roaming copy of the profiles.
   profileReauthPrompt: TYPE_ENUM
@@ -6753,16 +9570,38 @@ chrome.users.SyncSettingsCros: Chrome Sync (ChromeOS).
     true: Disable Chrome Sync.
     false: Allow Chrome Sync.
   syncTypesListDisabledCros: TYPE_LIST
-    {'value': 'apps', 'description': 'Apps.'}
+    apps: Apps.
+    autofill: Autofill.
+    bookmarks: Bookmarks.
+    extensions: Extensions.
+    typedUrls: History.
+    passwords: Passwords.
+    readingList: Reading list.
+    preferences: Settings.
+    themes: Themes & Wallpapers.
+    tabs: Open tabs.
+    wifiConfiguration: WiFi configurations.
   clearBrowsingDataOnExitListCros: TYPE_LIST
-    {'value': 'browsing_history', 'description': 'Browsing history.'}
+    browsing_history: Browsing history.
+    download_history: Download history.
+    cookies_and_other_site_data: Cookies and other site data.
+    cached_images_and_files: Cached images and files.
+    password_signin: Passwords.
+    autofill: Autofill.
+    site_settings: Site settings.
+    hosted_app_data: Hosted app data.
   passwordSharingEnabled: TYPE_BOOL
     true: Allow sharing user credentials with family members.
     false: Do not allow sharing user credentials with family members.
 
 chrome.users.SystemFeaturesDisableList: Disabled system features.
   systemFeaturesDisableList: TYPE_LIST
-    {'value': 'camera', 'description': 'Camera.'}
+    camera: Camera.
+    os_settings: OS settings.
+    browser_settings: Browser settings.
+    scanning: Scanning.
+    crosh: Crosh.
+    recorder: Recorder.
 
 chrome.users.SystemShortcutBehavior: Override system shortcuts.
   systemShortcutBehavior: TYPE_ENUM
@@ -6899,10 +9738,12 @@ chrome.users.UnthrottledNestedTimeoutEnabled: JavaScript setTimeout() clamping.
 chrome.users.UpdatesSuppressed: Suppress auto-update check.
   updatesSuppressedDurationMin: TYPE_INT64
     Duration (minutes). Auto-update checks will begin to be suppressed at the start time specified in 'updatesSuppressedStartTime', for the duration specified here, in minutes. This duration does not take into account daylight savings time.
-  hours: TYPE_INT32
-  minutes: TYPE_INT32
-  seconds: TYPE_INT32
-  nanos: TYPE_INT32
+  updatesSuppressedStartTime
+    timeOfDay
+      hours: TYPE_INT32
+      minutes: TYPE_INT32
+      seconds: TYPE_INT32
+      nanos: TYPE_INT32
 
 chrome.users.UrlBlocking: URL blocking.
   urlBlocklist: TYPE_LIST
@@ -7058,7 +9899,8 @@ chrome.users.WaitForInitialUserActivity: Wait for initial user activity.
     false: Start power management delays and session length limits at session start.
 
 chrome.users.Wallpaper: Custom wallpaper.
-  wallpaperImage: TYPE_STRING
+  wallpaperImage
+    downloadUri: TYPE_STRING
 
 chrome.users.WallpaperGooglePhotosIntegrationEnabled: Wallpaper selection from Google Photos.
   wallpaperGooglePhotosIntegrationEnabled: TYPE_BOOL
@@ -7080,7 +9922,8 @@ chrome.users.WebAudioOutputBufferingEnabled: Adaptive buffering for Web Audio.
 
 chrome.users.WebAuthnFactors: WebAuthn.
   webAuthnFactors: TYPE_LIST
-    {'value': 'PIN', 'description': 'PIN.'}
+    PIN: PIN.
+    FINGERPRINT: Fingerprint.
 
 chrome.users.WebBluetoothAccess: Web Bluetooth API.
   defaultWebBluetoothGuardSetting: TYPE_ENUM
@@ -7089,8 +9932,10 @@ chrome.users.WebBluetoothAccess: Web Bluetooth API.
     ASK_WEB_BLUETOOTH: Allow sites to request access to Bluetooth devices via the Web Bluetooth API.
 
 chrome.users.WebHidAllowDevicesForUrls: WebHID API allowed devices.
-  url: TYPE_STRING
-  device: TYPE_LIST
+  webHidAllowDevicesForUrls
+    webOrigin
+      url: TYPE_STRING
+      device: TYPE_LIST
 
 chrome.users.WebRtcAllowLegacyTlsProtocols: Legacy TLS/DTLS downgrade in WebRTC.
   webRtcAllowLegacyTlsProtocols: TYPE_BOOL
@@ -7153,8 +9998,10 @@ chrome.users.WebSqlNonSecureContextEnabled: WebSQL in non-secure contexts.
     false: Disable WebSQL in non-secure contexts unless enabled by Chrome flag.
 
 chrome.users.WebUsbAllowDevicesForUrls: WebUSB API allowed devices.
-  url: TYPE_STRING
-  devices: TYPE_LIST
+  webUsbAllowDevicesForUrls
+    webApplications
+      url: TYPE_STRING
+      devices: TYPE_LIST
 
 chrome.users.WebUsbPortAccess: Controls which websites can ask for USB access.
   defaultWebUsbGuardSetting: TYPE_ENUM
