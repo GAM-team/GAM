@@ -2,6 +2,8 @@
 
 Fixed bug in `gam whatis <EmailItem>` where the check for an invitable user always failed.
 
+Fixed bug in `gam print shareddriveorganizers` where no organizers were displayed when `domain` in `gam.cfg` was blank.
+
 7.09.03
 
 Updated `gam <UserTypeEntity> create focustime|outofoffice ... timerange <Time> <Time>` to check

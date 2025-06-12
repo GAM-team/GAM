@@ -66178,7 +66178,11 @@ def printSharedDriveOrganizers(users, useDomainAdminAccess=False):
   showNoOrganizerDrives = SHOW_NO_PERMISSIONS_DRIVES_CHOICE_MAP['false']
   fieldsList = ['role', 'type', 'emailAddress']
   cd = entityList = orgUnitId = query = matchPattern = None
-  domainList = [GC.Values[GC.DOMAIN]]
+  domainList = set()
+  if GC.Values[GC.DOMAIN]:
+    domainList.add(GC.Values[GC.DOMAIN])
+  else:
+    domainList.add(GM.Globals[GM.DECODED_ID_TOKEN].get('hd', 'UNKNOWN').lower())
   oneOrganizer = True
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
