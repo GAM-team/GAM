@@ -603,8 +603,7 @@ chrome.devices.DeviceAllowEnterpriseRemoteAccessConnections: Enterprise remote a
     false: Prevent remote access connections from enterprise admins.
 
 chrome.devices.DeviceAuthenticationFlowAutoReloadInterval: Automatic online sign-in / lock screen refresh.
-  deviceAuthenticationFlowAutoReloadInterval
-    duration: TYPE_INT64
+  deviceAuthenticationFlowAutoReloadInterval: TYPE_INT64
 
 chrome.devices.DeviceAuthenticationUrlAllowlist: Blocked URL exceptions on the sign-in / lock screens.
   deviceAuthenticationUrlAllowlist: TYPE_LIST
@@ -846,10 +845,8 @@ chrome.devices.DeviceScreensaverLoginScreenEnabled: Screen saver.
     false: Don't display screen saver when idle.
   deviceScreensaverLoginScreenImages: TYPE_LIST
     Screen saver image URLs. Enter one URL per line. Images must be in JPG format(.jpg or .jpeg files.
-  deviceScreensaverLoginScreenIdleTimeoutSeconds
-    duration: TYPE_INT64
-  deviceScreensaverLoginScreenImageDisplayIntervalSeconds
-    duration: TYPE_INT64
+  deviceScreensaverLoginScreenIdleTimeoutSeconds: TYPE_INT64
+  deviceScreensaverLoginScreenImageDisplayIntervalSeconds: TYPE_INT64
 
 chrome.devices.DeviceScreenSettings: Screen settings.
   allowUserDisplayChanges: TYPE_BOOL
@@ -1042,16 +1039,13 @@ chrome.devices.EnableReportDeviceUsers: Report device user tracking.
     false: Disable tracking recent users.
 
 chrome.devices.EnableReportUploadFrequency: Device status report upload frequency.
-  reportDeviceUploadFrequency
-    duration: TYPE_STRING
+  reportDeviceUploadFrequency: TYPE_INT64
 
 chrome.devices.EnableReportUploadFrequencyV2: Device status report upload frequency.
-  reportDeviceUploadFrequency
-    duration: TYPE_INT64
+  reportDeviceUploadFrequency: TYPE_INT64
 
 chrome.devices.ExtensionCacheSize: Apps and extensions cache size.
-  extensionCacheSize
-    value: TYPE_INT64
+  extensionCacheSize: TYPE_INT64
 
 chrome.devices.ForcedReenrollment: Forced re-enrollment.
   reenrollmentMode: TYPE_ENUM
@@ -1101,34 +1095,26 @@ chrome.devices.kiosk.AccessibilityShortcutsEnabled: Kiosk accessibility shortcut
     ACCESSIBILITY_ENABLED: Enable accessibility shortcuts.
 
 chrome.devices.kiosk.AcPowerSettings: AC Kiosk power settings.
-  acIdleTimeout
-    duration: TYPE_STRING
-  acWarningTimeout
-    duration: TYPE_STRING
+  acIdleTimeout: TYPE_INT64
+  acWarningTimeout: TYPE_INT64
   acIdleAction: TYPE_ENUM
     IDLE_ACTION_SUSPEND: Sleep.
     IDLE_ACTION_LOGOUT: Logout.
     IDLE_ACTION_SHUTDOWN: Shutdown.
     IDLE_ACTION_DO_NOTHING: Do nothing.
-  acDimTimeout
-    duration: TYPE_STRING
-  acScreenOffTimeout
-    duration: TYPE_STRING
+  acDimTimeout: TYPE_INT64
+  acScreenOffTimeout: TYPE_INT64
 
 chrome.devices.kiosk.AcPowerSettingsV2: AC Kiosk power settings.
-  acIdleTimeout
-    duration: TYPE_INT64
-  acWarningTimeout
-    duration: TYPE_INT64
+  acIdleTimeout: TYPE_INT64
+  acWarningTimeout: TYPE_INT64
   acIdleAction: TYPE_ENUM
     IDLE_ACTION_SUSPEND: Sleep.
     IDLE_ACTION_LOGOUT: Logout.
     IDLE_ACTION_SHUTDOWN: Shutdown.
     IDLE_ACTION_DO_NOTHING: Do nothing.
-  acDimTimeout
-    duration: TYPE_INT64
-  acScreenOffTimeout
-    duration: TYPE_INT64
+  acDimTimeout: TYPE_INT64
+  acScreenOffTimeout: TYPE_INT64
 
 chrome.devices.kiosk.Alerting: Kiosk device status alerting delivery.
   deviceStatusAlertDeliveryModes: TYPE_LIST
@@ -1217,34 +1203,26 @@ chrome.devices.kiosk.AutoclickEnabled: Kiosk auto-click enabled.
     ACCESSIBILITY_ENABLED: Enable auto-click.
 
 chrome.devices.kiosk.BatteryPowerSettings: Battery Kiosk power settings.
-  batteryIdleTimeout
-    duration: TYPE_STRING
-  batteryWarningTimeout
-    duration: TYPE_STRING
+  batteryIdleTimeout: TYPE_INT64
+  batteryWarningTimeout: TYPE_INT64
   batteryIdleAction: TYPE_ENUM
     IDLE_ACTION_SUSPEND: Sleep.
     IDLE_ACTION_LOGOUT: Logout.
     IDLE_ACTION_SHUTDOWN: Shutdown.
     IDLE_ACTION_DO_NOTHING: Do nothing.
-  batteryDimTimeout
-    duration: TYPE_STRING
-  batteryScreenOffTimeout
-    duration: TYPE_STRING
+  batteryDimTimeout: TYPE_INT64
+  batteryScreenOffTimeout: TYPE_INT64
 
 chrome.devices.kiosk.BatteryPowerSettingsV2: Battery Kiosk power settings.
-  batteryIdleTimeout
-    duration: TYPE_INT64
-  batteryWarningTimeout
-    duration: TYPE_INT64
+  batteryIdleTimeout: TYPE_INT64
+  batteryWarningTimeout: TYPE_INT64
   batteryIdleAction: TYPE_ENUM
     IDLE_ACTION_SUSPEND: Sleep.
     IDLE_ACTION_LOGOUT: Logout.
     IDLE_ACTION_SHUTDOWN: Shutdown.
     IDLE_ACTION_DO_NOTHING: Do nothing.
-  batteryDimTimeout
-    duration: TYPE_INT64
-  batteryScreenOffTimeout
-    duration: TYPE_INT64
+  batteryDimTimeout: TYPE_INT64
+  batteryScreenOffTimeout: TYPE_INT64
 
 chrome.devices.kiosk.CaretHighlightEnabled: Kiosk caret highlight.
   caretHighlightEnabled: TYPE_ENUM
@@ -2481,40 +2459,24 @@ chrome.devices.managedguest.BrowserHistory: Browser history.
     false: Always save browser history.
 
 chrome.devices.managedguest.BrowsingDataLifetime: Browsing Data Lifetime.
-  browsingHistoryTtl
-    duration: TYPE_STRING
-  downloadHistoryTtl
-    duration: TYPE_STRING
-  cookiesAndOtherSiteDataTtl
-    duration: TYPE_STRING
-  cachedImagesAndFilesTtl
-    duration: TYPE_STRING
-  passwordSigninTtl
-    duration: TYPE_STRING
-  autofillTtl
-    duration: TYPE_STRING
-  siteSettingsTtl
-    duration: TYPE_STRING
-  hostedAppDataTtl
-    duration: TYPE_STRING
+  browsingHistoryTtl: TYPE_INT64
+  downloadHistoryTtl: TYPE_INT64
+  cookiesAndOtherSiteDataTtl: TYPE_INT64
+  cachedImagesAndFilesTtl: TYPE_INT64
+  passwordSigninTtl: TYPE_INT64
+  autofillTtl: TYPE_INT64
+  siteSettingsTtl: TYPE_INT64
+  hostedAppDataTtl: TYPE_INT64
 
 chrome.devices.managedguest.BrowsingDataLifetimeV2: Browsing Data Lifetime.
-  browsingHistoryTtl
-    duration: TYPE_INT64
-  downloadHistoryTtl
-    duration: TYPE_INT64
-  cookiesAndOtherSiteDataTtl
-    duration: TYPE_INT64
-  cachedImagesAndFilesTtl
-    duration: TYPE_INT64
-  passwordSigninTtl
-    duration: TYPE_INT64
-  autofillTtl
-    duration: TYPE_INT64
-  siteSettingsTtl
-    duration: TYPE_INT64
-  hostedAppDataTtl
-    duration: TYPE_INT64
+  browsingHistoryTtl: TYPE_INT64
+  downloadHistoryTtl: TYPE_INT64
+  cookiesAndOtherSiteDataTtl: TYPE_INT64
+  cachedImagesAndFilesTtl: TYPE_INT64
+  passwordSigninTtl: TYPE_INT64
+  autofillTtl: TYPE_INT64
+  siteSettingsTtl: TYPE_INT64
+  hostedAppDataTtl: TYPE_INT64
 
 chrome.devices.managedguest.BuiltInDnsClientEnabled: Built-in DNS client.
   builtInDnsClientEnabled: TYPE_ENUM
@@ -3009,36 +2971,26 @@ chrome.devices.managedguest.IdleSettingsExtended: Idle settings.
     LOGOUT: Logout.
     SHUTDOWN: Shutdown.
     DO_NOTHING: Do nothing.
-  idleDelayAc
-    duration: TYPE_INT64
-  idleWarningDelayAc
-    duration: TYPE_INT64
+  idleDelayAc: TYPE_INT64
+  idleWarningDelayAc: TYPE_INT64
   idleActionAc: TYPE_ENUM
     SLEEP: Sleep.
     LOGOUT: Logout.
     SHUTDOWN: Shut down.
     DO_NOTHING: Do nothing.
-  screenDimDelayAc
-    duration: TYPE_INT64
-  screenOffDelayAc
-    duration: TYPE_INT64
-  screenLockDelayAc
-    duration: TYPE_INT64
-  idleDelayBattery
-    duration: TYPE_INT64
-  idleWarningDelayBattery
-    duration: TYPE_INT64
+  screenDimDelayAc: TYPE_INT64
+  screenOffDelayAc: TYPE_INT64
+  screenLockDelayAc: TYPE_INT64
+  idleDelayBattery: TYPE_INT64
+  idleWarningDelayBattery: TYPE_INT64
   idleActionBattery: TYPE_ENUM
     SLEEP: Sleep.
     LOGOUT: Logout.
     SHUTDOWN: Shut down.
     DO_NOTHING: Do nothing.
-  screenDimDelayBattery
-    duration: TYPE_INT64
-  screenOffDelayBattery
-    duration: TYPE_INT64
-  screenLockDelayBattery
-    duration: TYPE_INT64
+  screenDimDelayBattery: TYPE_INT64
+  screenOffDelayBattery: TYPE_INT64
+  screenLockDelayBattery: TYPE_INT64
   lockOnSleepOrLidClose: TYPE_ENUM
     UNSET: Allow user to configure.
     FALSE: Don't lock screen.
@@ -3238,12 +3190,10 @@ chrome.devices.managedguest.ManagedGuestSessionV2: Managed guest session.
     ROTATE_270: 270 degrees.
 
 chrome.devices.managedguest.MaxInvalidationFetchDelay: Policy fetch delay.
-  maxInvalidationFetchDelay
-    duration: TYPE_STRING
+  maxInvalidationFetchDelay: TYPE_INT64
 
 chrome.devices.managedguest.MaxInvalidationFetchDelayV2: Policy fetch delay.
-  maxInvalidationFetchDelay
-    duration: TYPE_INT64
+  maxInvalidationFetchDelay: TYPE_INT64
 
 chrome.devices.managedguest.MemorySaverModeSavings: Memory saver.
   memorySaverModeSavings: TYPE_ENUM
@@ -3451,8 +3401,7 @@ chrome.devices.managedguest.PrintingBackgroundGraphicsDefault: Background graphi
     ENABLED: Enable background graphics printing mode by default.
 
 chrome.devices.managedguest.PrintingMaxSheetsAllowed: Maximum sheets.
-  printingMaxSheetsAllowedNullable
-    value: TYPE_INT64
+  printingMaxSheetsAllowedNullable: TYPE_INT64
 
 chrome.devices.managedguest.PrintingPaperSizeDefault: Default printing page size.
   printingPaperSizeEnum: TYPE_ENUM
@@ -3474,19 +3423,16 @@ chrome.devices.managedguest.PrintingPinDefault: Default PIN printing mode.
     DEFAULT_TO_NOT_PIN_PRINTING: Without PIN.
 
 chrome.devices.managedguest.PrintJobHistoryExpirationPeriodNew: Print job history retention period.
-  printJobHistoryExpirationPeriodDaysNew
-    duration: TYPE_STRING
+  printJobHistoryExpirationPeriodDaysNew: TYPE_INT64
 
 chrome.devices.managedguest.PrintJobHistoryExpirationPeriodNewV2: Print job history retention period.
-  printJobHistoryExpirationPeriodDaysNew
-    duration: TYPE_INT64
+  printJobHistoryExpirationPeriodDaysNew: TYPE_INT64
 
 chrome.devices.managedguest.PrintPdfAsImage: Print PDF as image.
   printPdfAsImageAvailability: TYPE_BOOL
     true: Allow users to print PDF documents as images.
     false: Do not allow users to print PDF documents as images.
-  printRasterizePdfDpi
-    value: TYPE_INT64
+  printRasterizePdfDpi: TYPE_INT64
   printPdfAsImageDefault: TYPE_BOOL
     true: Default to printing PDFs as images when available.
     false: Default to printing PDFs without being rasterized.
@@ -3547,8 +3493,7 @@ chrome.devices.managedguest.RemoteAccessHostClientDomainList: Remote access clie
     Remote access client domain. Configure the required domain names for remote access clients.
 
 chrome.devices.managedguest.RemoteAccessHostClipboardSizeBytes: Clipboard sync max size.
-  remoteAccessHostClipboardSizeBytes
-    value: TYPE_INT64
+  remoteAccessHostClipboardSizeBytes: TYPE_INT64
 
 chrome.devices.managedguest.RemoteAccessHostDomainList: Remote access hosts.
   remoteAccessHostDomainList: TYPE_LIST
@@ -3658,10 +3603,8 @@ chrome.devices.managedguest.ScreensaverLockScreenEnabled: Screen saver.
   screensaverLockScreenEnabled: TYPE_BOOL
     true: Display screen saver on lock screen when idle.
     false: Don't display screen saver on lock screen when idle.
-  screensaverLockScreenIdleTimeoutSeconds
-    duration: TYPE_INT64
-  screensaverLockScreenImageDisplayIntervalSeconds
-    duration: TYPE_INT64
+  screensaverLockScreenIdleTimeoutSeconds: TYPE_INT64
+  screensaverLockScreenImageDisplayIntervalSeconds: TYPE_INT64
   screensaverLockScreenImages: TYPE_LIST
     Screen saver image URLs. Enter one URL per line. Images must be in JPG format(.jpg or .jpeg files.
 
@@ -3689,16 +3632,14 @@ chrome.devices.managedguest.SecurityTokenSessionSettings: Security token removal
     IGNORE: Nothing.
     LOGOUT: Log the user out.
     LOCK: Lock the current session.
-  securityTokenSessionNotificationSeconds
-    duration: TYPE_STRING
+  securityTokenSessionNotificationSeconds: TYPE_INT64
 
 chrome.devices.managedguest.SecurityTokenSessionSettingsV2: Security token removal.
   securityTokenSessionBehavior: TYPE_ENUM
     IGNORE: Nothing.
     LOGOUT: Log the user out.
     LOCK: Lock the current session.
-  securityTokenSessionNotificationSeconds
-    duration: TYPE_INT64
+  securityTokenSessionNotificationSeconds: TYPE_INT64
 
 chrome.devices.managedguest.SelectToSpeakEnabled: Select to speak.
   selectToSpeakEnabled: TYPE_ENUM
@@ -3723,12 +3664,10 @@ chrome.devices.managedguest.ServiceWorkerToControlSrcdocIframeEnabled: Service w
     false: Block service workers from controlling srcdoc iframes.
 
 chrome.devices.managedguest.SessionLength: Maximum user session length.
-  sessionDurationLimit
-    duration: TYPE_STRING
+  sessionDurationLimit: TYPE_INT64
 
 chrome.devices.managedguest.SessionLengthV2: Maximum user session length.
-  sessionDurationLimit
-    duration: TYPE_INT64
+  sessionDurationLimit: TYPE_INT64
 
 chrome.devices.managedguest.SessionLocale: Session locale.
   sessionLocalesRepeatedString: TYPE_LIST
@@ -4361,12 +4300,10 @@ chrome.devices.RestrictedManagedGuestSessionExtensionCleanupExemptList: Shared a
     Extension IDs. Enter a list of extension IDs. Each extension ID must be exactly 32 characters.
 
 chrome.devices.ScheduledRebootDuration: Reboot after uptime limit.
-  uptimeLimitDuration
-    duration: TYPE_STRING
+  uptimeLimitDuration: TYPE_INT64
 
 chrome.devices.ScheduledRebootDurationV2: Reboot after uptime limit.
-  uptimeLimitDuration
-    duration: TYPE_INT64
+  uptimeLimitDuration: TYPE_INT64
 
 chrome.devices.ShowLowDiskSpaceNotification: Low disk space notification.
   showLowDiskSpaceNotification: TYPE_BOOL
@@ -4519,8 +4456,7 @@ chrome.devices.ThrottleDeviceBandwidth: Throttle device bandwidth.
     Upload rate (kbits). Sets the maximum upload rate if network bandwidth throttling is enabled on a ChromeOS device.
 
 chrome.devices.Timezone: Timezone.
-  systemTimezone
-    value: TYPE_STRING
+  systemTimezone: TYPE_STRING
   timezoneDetectionType: TYPE_ENUM
     USERS_DECIDE: Let users decide.
     DISABLED: Never auto-detect timezone.
@@ -6518,12 +6454,10 @@ chrome.users.AutoplayAllowlist: Autoplay video.
     Allowed URLs. URL patterns allowed to autoplay. Prefix domain with [*.] to include all subdomains. Use * to allow all domains.
 
 chrome.users.AutoUpdateCheckPeriodNew: Auto-update check period.
-  autoUpdateCheckPeriodMinutesNew
-    duration: TYPE_STRING
+  autoUpdateCheckPeriodMinutesNew: TYPE_INT64
 
 chrome.users.AutoUpdateCheckPeriodNewV2: Auto-update check period.
-  autoUpdateCheckPeriodMinutesNew
-    duration: TYPE_INT64
+  autoUpdateCheckPeriodMinutesNew: TYPE_INT64
 
 chrome.users.Avatar: Custom avatar.
   userAvatarImage
@@ -6608,8 +6542,7 @@ chrome.users.BrowserHistory: Browser history.
     false: Always save browser history.
 
 chrome.users.BrowserIdleTimeout: Browser idle timeout.
-  idleTimeout
-    duration: TYPE_INT64
+  idleTimeout: TYPE_INT64
   idleTimeoutActions: TYPE_LIST
     close_browsers: Close Browsers.
     show_profile_picker: Show Profile Picker.
@@ -6658,12 +6591,10 @@ chrome.users.BrowserSwitcherChromePath: Chrome path.
     Path to the Chrome executable. Windows-only. Path to the Chrome executable to launch when switching from the alternative browser to Chrome. If unset, the alternative browser will auto-detect the path to Chrome.
 
 chrome.users.BrowserSwitcherDelayDuration: Delay before launching alternative browser.
-  browserSwitcherDelayDuration
-    duration: TYPE_STRING
+  browserSwitcherDelayDuration: TYPE_INT64
 
 chrome.users.BrowserSwitcherDelayDurationV2: Delay before launching alternative browser.
-  browserSwitcherDelayDuration
-    duration: TYPE_INT64
+  browserSwitcherDelayDuration: TYPE_INT64
 
 chrome.users.BrowserSwitcherExternalGreylistUrl: URL to list of websites to open in either browser.
   browserSwitcherExternalGreylistUrl: TYPE_STRING
@@ -6701,40 +6632,24 @@ chrome.users.BrowserThemeColor: Custom theme color.
     Hex color. Enter a valid hex color, for instance #FFFFFF.
 
 chrome.users.BrowsingDataLifetime: Browsing Data Lifetime.
-  browsingHistoryTtl
-    duration: TYPE_STRING
-  downloadHistoryTtl
-    duration: TYPE_STRING
-  cookiesAndOtherSiteDataTtl
-    duration: TYPE_STRING
-  cachedImagesAndFilesTtl
-    duration: TYPE_STRING
-  passwordSigninTtl
-    duration: TYPE_STRING
-  autofillTtl
-    duration: TYPE_STRING
-  siteSettingsTtl
-    duration: TYPE_STRING
-  hostedAppDataTtl
-    duration: TYPE_STRING
+  browsingHistoryTtl: TYPE_INT64
+  downloadHistoryTtl: TYPE_INT64
+  cookiesAndOtherSiteDataTtl: TYPE_INT64
+  cachedImagesAndFilesTtl: TYPE_INT64
+  passwordSigninTtl: TYPE_INT64
+  autofillTtl: TYPE_INT64
+  siteSettingsTtl: TYPE_INT64
+  hostedAppDataTtl: TYPE_INT64
 
 chrome.users.BrowsingDataLifetimeV2: Browsing Data Lifetime.
-  browsingHistoryTtl
-    duration: TYPE_INT64
-  downloadHistoryTtl
-    duration: TYPE_INT64
-  cookiesAndOtherSiteDataTtl
-    duration: TYPE_INT64
-  cachedImagesAndFilesTtl
-    duration: TYPE_INT64
-  passwordSigninTtl
-    duration: TYPE_INT64
-  autofillTtl
-    duration: TYPE_INT64
-  siteSettingsTtl
-    duration: TYPE_INT64
-  hostedAppDataTtl
-    duration: TYPE_INT64
+  browsingHistoryTtl: TYPE_INT64
+  downloadHistoryTtl: TYPE_INT64
+  cookiesAndOtherSiteDataTtl: TYPE_INT64
+  cachedImagesAndFilesTtl: TYPE_INT64
+  passwordSigninTtl: TYPE_INT64
+  autofillTtl: TYPE_INT64
+  siteSettingsTtl: TYPE_INT64
+  hostedAppDataTtl: TYPE_INT64
 
 chrome.users.BuiltInDnsClientEnabled: Built-in DNS client.
   builtInDnsClientEnabled: TYPE_ENUM
@@ -6890,12 +6805,10 @@ chrome.users.CloudReporting: Managed browser reporting.
     false: Disable managed browser cloud reporting.
 
 chrome.users.CloudReportingUploadFrequency: Managed browser reporting upload frequency.
-  cloudReportingUploadFrequency
-    duration: TYPE_STRING
+  cloudReportingUploadFrequency: TYPE_INT64
 
 chrome.users.CloudReportingUploadFrequencyV2: Managed browser reporting upload frequency.
-  cloudReportingUploadFrequency
-    duration: TYPE_INT64
+  cloudReportingUploadFrequency: TYPE_INT64
 
 chrome.users.CloudUserPolicyMerge: User cloud policy merge.
   cloudUserPolicyMerge: TYPE_BOOL
@@ -7374,12 +7287,10 @@ chrome.users.FElevenKeyModifier: Control the shortcut used to trigger F11.
     RECOMMENDED: Allow users to override.
 
 chrome.users.FetchKeepaliveDurationSecondsOnShutdown: Keepalive duration.
-  fetchKeepaliveDurationSecondsOnShutdown
-    duration: TYPE_STRING
+  fetchKeepaliveDurationSecondsOnShutdown: TYPE_INT64
 
 chrome.users.FetchKeepaliveDurationSecondsOnShutdownV2: Keepalive duration.
-  fetchKeepaliveDurationSecondsOnShutdown
-    duration: TYPE_INT64
+  fetchKeepaliveDurationSecondsOnShutdown: TYPE_INT64
 
 chrome.users.FileOrDirectoryPickerWithoutGestureAllowedForOrigins: File/directory picker without user gesture.
   fileOrDirectoryPickerWithoutGestureAllowedForOrigins: TYPE_LIST
@@ -7639,12 +7550,10 @@ chrome.users.FullscreenAllowed: Fullscreen mode.
     false: Do not allow fullscreen mode.
 
 chrome.users.GaiaLockScreenOfflineSigninTimeLimitDays: Google online unlock frequency.
-  gaiaLockScreenOfflineSigninTimeLimitDays
-    value: TYPE_INT64
+  gaiaLockScreenOfflineSigninTimeLimitDays: TYPE_INT64
 
 chrome.users.GaiaOfflineSigninTimeLimitDays: Google online login frequency.
-  gaiaOfflineSigninTimeLimitDays
-    value: TYPE_INT64
+  gaiaOfflineSigninTimeLimitDays: TYPE_INT64
 
 chrome.users.GeminiSettings: Gemini integration.
   geminiSettings: TYPE_ENUM
@@ -7812,36 +7721,26 @@ chrome.users.IdleSettingsExtended: Idle settings.
     LOGOUT: Logout.
     SHUTDOWN: Shutdown.
     DO_NOTHING: Do nothing.
-  idleDelayAc
-    duration: TYPE_INT64
-  idleWarningDelayAc
-    duration: TYPE_INT64
+  idleDelayAc: TYPE_INT64
+  idleWarningDelayAc: TYPE_INT64
   idleActionAc: TYPE_ENUM
     SLEEP: Sleep.
     LOGOUT: Logout.
     SHUTDOWN: Shut down.
     DO_NOTHING: Do nothing.
-  screenDimDelayAc
-    duration: TYPE_INT64
-  screenOffDelayAc
-    duration: TYPE_INT64
-  screenLockDelayAc
-    duration: TYPE_INT64
-  idleDelayBattery
-    duration: TYPE_INT64
-  idleWarningDelayBattery
-    duration: TYPE_INT64
+  screenDimDelayAc: TYPE_INT64
+  screenOffDelayAc: TYPE_INT64
+  screenLockDelayAc: TYPE_INT64
+  idleDelayBattery: TYPE_INT64
+  idleWarningDelayBattery: TYPE_INT64
   idleActionBattery: TYPE_ENUM
     SLEEP: Sleep.
     LOGOUT: Logout.
     SHUTDOWN: Shut down.
     DO_NOTHING: Do nothing.
-  screenDimDelayBattery
-    duration: TYPE_INT64
-  screenOffDelayBattery
-    duration: TYPE_INT64
-  screenLockDelayBattery
-    duration: TYPE_INT64
+  screenDimDelayBattery: TYPE_INT64
+  screenOffDelayBattery: TYPE_INT64
+  screenLockDelayBattery: TYPE_INT64
   lockOnSleepOrLidClose: TYPE_ENUM
     UNSET: Allow user to configure.
     FALSE: Don't lock screen.
@@ -8199,12 +8098,10 @@ chrome.users.MaxConnectionsPerProxy: Max connections per proxy.
     Maximum number of concurrent connections to the proxy server. Specifies the maximal number of simultaneous connections to the proxy server. The value of this policy should be lower than 100 and higher than 6 and the default value is 32.
 
 chrome.users.MaxInvalidationFetchDelay: Policy fetch delay.
-  maxInvalidationFetchDelay
-    duration: TYPE_STRING
+  maxInvalidationFetchDelay: TYPE_INT64
 
 chrome.users.MaxInvalidationFetchDelayV2: Policy fetch delay.
-  maxInvalidationFetchDelay
-    duration: TYPE_INT64
+  maxInvalidationFetchDelay: TYPE_INT64
 
 chrome.users.MediaRecommendationsEnabled: Media Recommendations.
   mediaRecommendationsEnabled: TYPE_BOOL
@@ -8678,8 +8575,7 @@ chrome.users.PrintingLpacSandboxEnabled: Printing LPAC Sandbox.
     false: Run printing services in a less secure sandbox.
 
 chrome.users.PrintingMaxSheetsAllowed: Maximum sheets.
-  printingMaxSheetsAllowedNullable
-    value: TYPE_INT64
+  printingMaxSheetsAllowedNullable: TYPE_INT64
 
 chrome.users.PrintingPaperSizeDefault: Default printing page size.
   printingPaperSizeEnum: TYPE_ENUM
@@ -8706,19 +8602,16 @@ chrome.users.PrintingSendUsernameAndFilenameEnabled: CUPS Print job information.
     false: Do not include user account and filename in print job.
 
 chrome.users.PrintJobHistoryExpirationPeriodNew: Print job history retention period.
-  printJobHistoryExpirationPeriodDaysNew
-    duration: TYPE_STRING
+  printJobHistoryExpirationPeriodDaysNew: TYPE_INT64
 
 chrome.users.PrintJobHistoryExpirationPeriodNewV2: Print job history retention period.
-  printJobHistoryExpirationPeriodDaysNew
-    duration: TYPE_INT64
+  printJobHistoryExpirationPeriodDaysNew: TYPE_INT64
 
 chrome.users.PrintPdfAsImage: Print PDF as image.
   printPdfAsImageAvailability: TYPE_BOOL
     true: Allow users to print PDF documents as images.
     false: Do not allow users to print PDF documents as images.
-  printRasterizePdfDpi
-    value: TYPE_INT64
+  printRasterizePdfDpi: TYPE_INT64
   printPdfAsImageDefault: TYPE_BOOL
     true: Default to printing PDFs as images when available.
     false: Default to printing PDFs without being rasterized.
@@ -8861,36 +8754,30 @@ chrome.users.RelaunchNotificationWithDuration: Relaunch notification.
     NO_NOTIFICATION: No relaunch notification.
     RECOMMENDED: Show notification recommending relaunch.
     REQUIRED: Force relaunch after a period.
-  relaunchNotificationPeriodDuration
-    duration: TYPE_STRING
-  relaunchInitialQuietPeriodDuration
-    duration: TYPE_STRING
+  relaunchNotificationPeriodDuration: TYPE_INT64
+  relaunchInitialQuietPeriodDuration: TYPE_INT64
   relaunchWindowStartTime
     timeOfDay
       hours: TYPE_INT32
       minutes: TYPE_INT32
       seconds: TYPE_INT32
       nanos: TYPE_INT32
-  relaunchWindowDurationMin
-    duration: TYPE_STRING
+  relaunchWindowDurationMin: TYPE_INT64
 
 chrome.users.RelaunchNotificationWithDurationV2: Relaunch notification.
   relaunchNotificationEnum: TYPE_ENUM
     NO_NOTIFICATION: No relaunch notification.
     RECOMMENDED: Show notification recommending relaunch.
     REQUIRED: Force relaunch after a period.
-  relaunchNotificationPeriodDuration
-    duration: TYPE_INT64
-  relaunchInitialQuietPeriodDuration
-    duration: TYPE_INT64
+  relaunchNotificationPeriodDuration: TYPE_INT64
+  relaunchInitialQuietPeriodDuration: TYPE_INT64
   relaunchWindowStartTime
     timeOfDay
       hours: TYPE_INT32
       minutes: TYPE_INT32
       seconds: TYPE_INT32
       nanos: TYPE_INT32
-  relaunchWindowDurationMin
-    duration: TYPE_INT64
+  relaunchWindowDurationMin: TYPE_INT64
 
 chrome.users.RemoteAccessHostAllowEnterpriseRemoteSupportConnections: Enterprise remote support connections.
   remoteAccessHostAllowEnterpriseRemoteSupportConnections: TYPE_BOOL
@@ -8907,8 +8794,7 @@ chrome.users.RemoteAccessHostClientDomainList: Remote access clients.
     Remote access client domain. Configure the required domain names for remote access clients.
 
 chrome.users.RemoteAccessHostClipboardSizeBytes: Clipboard sync max size.
-  remoteAccessHostClipboardSizeBytes
-    value: TYPE_INT64
+  remoteAccessHostClipboardSizeBytes: TYPE_INT64
 
 chrome.users.RemoteAccessHostDomainList: Remote access hosts.
   remoteAccessHostDomainList: TYPE_LIST
@@ -9033,8 +8919,7 @@ chrome.users.SafeSitesFilterBehavior: SafeSites URL filter.
     SAFE_SITES_FILTER_ENABLED: Filter sites for adult content.
 
 chrome.users.SamlLockScreenOfflineSigninTimeLimitDays: SAML single sign-on unlock frequency.
-  samlLockScreenOfflineSigninTimeLimitDays
-    value: TYPE_INT64
+  samlLockScreenOfflineSigninTimeLimitDays: TYPE_INT64
 
 chrome.users.SamlLockScreenReauthenticationEnabled: SAML single sign-on password synchronization flows.
   samlLockScreenReauthenticationEnabled: TYPE_BOOL
@@ -9115,16 +9000,14 @@ chrome.users.SecurityTokenSessionSettings: Security token removal.
     IGNORE: Nothing.
     LOGOUT: Log the user out.
     LOCK: Lock the current session.
-  securityTokenSessionNotificationSeconds
-    duration: TYPE_STRING
+  securityTokenSessionNotificationSeconds: TYPE_INT64
 
 chrome.users.SecurityTokenSessionSettingsV2: Security token removal.
   securityTokenSessionBehavior: TYPE_ENUM
     IGNORE: Nothing.
     LOGOUT: Log the user out.
     LOCK: Lock the current session.
-  securityTokenSessionNotificationSeconds
-    duration: TYPE_INT64
+  securityTokenSessionNotificationSeconds: TYPE_INT64
 
 chrome.users.SelectToSpeakEnabled: Select to speak.
   selectToSpeakEnabled: TYPE_ENUM
@@ -9149,12 +9032,10 @@ chrome.users.ServiceWorkerToControlSrcdocIframeEnabled: Service worker control o
     false: Block service workers from controlling srcdoc iframes.
 
 chrome.users.SessionLength: Maximum user session length.
-  sessionDurationLimit
-    duration: TYPE_STRING
+  sessionDurationLimit: TYPE_INT64
 
 chrome.users.SessionLengthV2: Maximum user session length.
-  sessionDurationLimit
-    duration: TYPE_INT64
+  sessionDurationLimit: TYPE_INT64
 
 chrome.users.SetTimeoutWithoutOneMsClampEnabled: Javascript setTimeout() minimum.
   setTimeoutWithoutOneMsClampEnabled: TYPE_ENUM
