@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.09.04
+
+Fixed bug in `gam whatis <EmailItem>` where the check for an invitable user always failed.
+
+Fixed bug in `gam print shareddriveorganizers` where no organizers were displayed when `domain` in `gam.cfg` was blank.
+
+Updated to Python 3.13.5
+
 ### 7.09.03
 
 Updated `gam <UserTypeEntity> create focustime|outofoffice ... timerange <Time> <Time>` to check
