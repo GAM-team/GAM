@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.09.05
+
+Improved output of `gam info|show chromeschemas [std]` to more accurately display the schemas.
+
+Fixed bugs in `gam update chromepolicy` that caused invalid error messaages.
+
 ### 7.09.04
 
 Fixed bug in `gam whatis <EmailItem>` where the check for an invitable user always failed.
