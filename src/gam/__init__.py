@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.09.04'
+__version__ = '7.09.05'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -12353,7 +12353,8 @@ def checkServiceAccount(users):
     Ind.Increment()
     try:
       key = callGAPI(iam.projects().serviceAccounts().keys(), 'get',
-                     throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID, GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED],
+                     throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID, GAPI.NOT_FOUND,
+                                   GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
                      name=name, fields='validAfterTime')
       key_created, _ = iso8601.parse_date(key['validAfterTime'])
       key_age = todaysTime()-key_created
@@ -12366,6 +12367,10 @@ def checkServiceAccount(users):
                                  Ent.SVCACCT, GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['client_email']],
                                 str(e))
       printPassFail(Msg.SERVICE_ACCOUNT_PRIVATE_KEY_AGE.format('UNKNOWN'), testWarn)
+    except GAPI.serviceNotAvailable as e:
+      entityActionFailedExit([Ent.PROJECT, GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['project_id'],
+                              Ent.SVCACCT, GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['client_email']],
+                             str(e))
   else:
     printPassFail(Msg.SERVICE_ACCOUNT_SKIPPING_KEY_AGE_CHECK.format(key_type), testPass)
   Ind.Decrement()
@@ -28111,27 +28116,21 @@ def commonprefix(m):
       return s1[:i]
   return s1
 
-def simplifyChromeSchema(schema):
+SCHEMA_TYPE_MESSAGE_MAP = {
+  'NullableDuration': {'type': 'TYPE_INT64', 'namedType': 'duration'},
+  'NullableLong': {'type': 'TYPE_INT64', 'namedType': 'value'},
+  'SystemTimezone': {'type': 'TYPE_STRING', 'namedType': 'value'}
+  }
+
+def simplifyChromeSchemaUpdate(schema):
   schema_name = schema['name'].split('/')[-1]
-  schema_dict = {'name': schema_name,
-                 'description': schema.get('policyDescription', ''),
-                 'settings': {}
-                }
-  fieldDescriptions = schema['fieldDescriptions']
-  savedSettingName = ''
-  savedTypeName = ''
+  schema_dict = {'name': schema_name, 'settings': {}}
   for mtype in schema['definition']['messageType']:
-    numSettings = len(mtype['field'])
+    if mtype['name'] in SCHEMA_TYPE_MESSAGE_MAP:
+      continue
     for setting in mtype['field']:
       setting_name = setting['name']
-      setting_dict = {'name': setting_name,
-                      'constraints': None,
-                      'descriptions':  [],
-                      'type': setting['type'],
-                     }
-      if mtype['name'] == savedTypeName and numSettings == 1:
-        setting_dict['name'] = savedSettingName
-        savedTypeName = ''
+      setting_dict = {'name': setting_name, 'type': setting['type'], 'namedType': ''}
       if setting_dict['type'] == 'TYPE_STRING' and setting.get('label') == 'LABEL_REPEATED':
         setting_dict['type'] = 'TYPE_LIST'
       if setting_dict['type'] == 'TYPE_ENUM':
@@ -28142,29 +28141,83 @@ def simplifyChromeSchema(schema):
             setting_dict['enum_prefix'] = commonprefix(setting_dict['enums'])
             prefix_len = len(setting_dict['enum_prefix'])
             setting_dict['enums'] = [enum[prefix_len:] for enum in setting_dict['enums'] if not enum.endswith('UNSPECIFIED')]
-            setting_dict['descriptions'] = ['']*len(setting_dict['enums'])
-            for i, an in enumerate(setting_dict['enums']):
+      elif setting_dict['type'] == 'TYPE_MESSAGE':
+        type_name = setting['typeName']
+        if type_name not in SCHEMA_TYPE_MESSAGE_MAP:
+          continue
+        setting_dict['type'] = SCHEMA_TYPE_MESSAGE_MAP[type_name]['type']
+        setting_dict['namedType'] = SCHEMA_TYPE_MESSAGE_MAP[type_name]['namedType']
+      schema_dict['settings'][setting_name.lower()] = setting_dict
+  return(schema_name, schema_dict)
+
+def simplifyChromeSchemaDisplay(schema):
+  schema_name = schema['name'].split('/')[-1]
+  schema_dict = {'name': schema_name, 'description': schema.get('policyDescription', '')}
+  fieldDescriptions = schema['fieldDescriptions']
+  enumDict = {}
+  for enumType in schema['definition'].get('enumType', []):
+    enumEntry = {}
+    enumEntry['enums'] = [enum['name'] for enum in enumType['value']]
+    enumEntry['enum_prefix'] = commonprefix(enumEntry['enums'])
+    enumEntry['enum_prefix_len'] = prefix_len = len(enumEntry['enum_prefix'])
+    enumEntry['enums'] = [enum[prefix_len:] for enum in enumEntry['enums'] if not enum.endswith('UNSPECIFIED')]
+    enumDict[enumType['name']] = enumEntry.copy()
+  mesgDict = {}
+  mesgPops = set()
+  for mesgType in schema['definition']['messageType']:
+    mtypeEntry = {'field': {}, 'subfield': False}
+    for mfield in mesgType['field']:
+      mfield.pop('number')
+      mtypeEntry['field'][mfield.pop('name')] = mfield
+    mesgDict[mesgType['name']] = mtypeEntry.copy()
+  for _, mtypeEntry in mesgDict.items():
+    for mfieldName, mfield in mtypeEntry['field'].items():
+      mfield['descriptions'] = []
+      if mfield['type'] == 'TYPE_STRING' and mfield.get('label') == 'LABEL_REPEATED':
+        mfield['type'] = 'TYPE_LIST'
+      if mfield['type'] == 'TYPE_ENUM':
+        mfield['subtype'] = enumDict[mfield['typeName']]
+        for an_enum in schema['definition']['enumType']:
+          if an_enum['name'] == mfield['typeName']:
+            mfield['descriptions'] = ['']*len(mfield['subtype']['enums'])
+            for i, an in enumerate(mfield['subtype']['enums']):
               for fdesc in fieldDescriptions:
-                if fdesc.get('field') == setting_name:
+                if fdesc.get('field') == mfieldName:
                   for d in fdesc.get('knownValueDescriptions', []):
-                    if d['value'][prefix_len:] == an:
-                      setting_dict['descriptions'][i] = d.get('description', '')
+                    if d['value'][mfield['subtype']['enum_prefix_len']:] == an:
+                      mfield['descriptions'][i] = d.get('description', '')
                       break
                   break
             break
-      elif setting_dict['type'] == 'TYPE_MESSAGE':
-        savedSettingName = setting_name
-        savedTypeName = setting['typeName']
+      elif mfield['type'] == 'TYPE_MESSAGE':
+        subfield = mfield['typeName']
+        if subfield not in SCHEMA_TYPE_MESSAGE_MAP:
+          mesgDict[subfield]['subfield'] = True
+          mfield['subtype'] = mesgDict[subfield]
+        else:
+          mfield['type'] = SCHEMA_TYPE_MESSAGE_MAP[subfield]['type']
+          mesgPops.add(subfield)
         continue
       else:
-        setting_dict['enums'] = None
-        for fdesc in schema['fieldDescriptions']:
-          if fdesc['field'] == setting_name:
+        for fdesc in fieldDescriptions:
+          if fdesc['field'] == mfieldName:
             if 'knownValueDescriptions' in fdesc:
-              setting_dict['descriptions'] = fdesc['knownValueDescriptions']
+              if isinstance(fdesc['knownValueDescriptions'], list):
+                for kvd in fdesc['knownValueDescriptions']:
+                  if isinstance(kvd, dict):
+                    if 'description' in kvd:
+                      mfield['descriptions'].append(f"{kvd['value']}: {kvd['description']}")
+                    else:
+                      mfield['descriptions'].append(f"{kvd['value']}")
+                  else:
+                    mfield['descriptions'].extend(kvd)
+              else:
+                mfield['descriptions'].append(kvd)
             elif 'description' in fdesc:
-              setting_dict['descriptions'] = [fdesc['description']]
-      schema_dict['settings'][setting_name.lower()] = setting_dict
+              mfield['descriptions'].append(fdesc['description'])
+  for pfield in mesgPops:
+    mesgDict.pop(pfield)
+  schema_dict['settings'] = mesgDict
   return(schema_name, schema_dict)
 
 def _getPolicyOrgUnitTarget(cd, cp, myarg, groupEmail):
@@ -28507,7 +28560,7 @@ def doUpdateChromePolicy():
     elif myarg == 'convertcrnl':
       convertCRsNLs = True
     else:
-      schemaName, schema = simplifyChromeSchema(_getChromePolicySchema(cp, Cmd.Previous(), '*'))
+      schemaName, schema = simplifyChromeSchemaUpdate(_getChromePolicySchema(cp, Cmd.Previous(), '*'))
       body['requests'].append({'policyValue': {'policySchema': schemaName, 'value': {}},
                                'updateMask': ''})
       schemaNameList.append(schemaName)
@@ -28593,8 +28646,9 @@ def doUpdateChromePolicy():
         if field not in schema['settings']:
           Cmd.Backup()
           missingChoiceExit(schema['settings'])
-        casedField = schema['settings'][field]['name']
-        vtype = schema['settings'][field]['type']
+        field_settings = schema['settings'][field]
+        casedField = field_settings['name']
+        vtype = field_settings['type']
         value = getString(Cmd.OB_STRING, minLen=0 if vtype in {'TYPE_STRING', 'TYPE_LIST'}  else 1)
         if vtype in ['TYPE_INT64', 'TYPE_INT32', 'TYPE_UINT64']:
           if not value.isnumeric():
@@ -28611,8 +28665,8 @@ def doUpdateChromePolicy():
             invalidChoiceExit(value, TRUE_FALSE, True)
         elif vtype == 'TYPE_ENUM':
           value = value.upper()
-          prefix = schema['settings'][field]['enum_prefix']
-          enum_values = schema['settings'][field]['enums']
+          prefix = field_settings['enum_prefix']
+          enum_values = field_settings['enums']
           if value in enum_values:
             value = f'{prefix}{value}'
           elif value.replace(prefix, '') in enum_values:
@@ -28639,7 +28693,10 @@ def doUpdateChromePolicy():
           elif value and not CHROME_TARGET_VERSION_PATTERN.match(value):
             Cmd.Backup()
             invalidArgumentExit(Msg.CHROME_TARGET_VERSION_FORMAT)
-        body['requests'][-1]['policyValue']['value'][casedField] = value
+        if field_settings['namedType']:
+          body['requests'][-1]['policyValue']['value'][casedField] = {field_settings['namedType']: value}
+        else:
+          body['requests'][-1]['policyValue']['value'][casedField] = value
         body['requests'][-1]['updateMask'] += f'{casedField},'
   checkPolicyArgs(targetResource, printer_id, app_id)
   count = len(body['requests'])
@@ -28940,7 +28997,9 @@ def _showChromePolicySchema(schema, FJQC, i=0, count=0):
     return
   printEntity([Ent.CHROME_POLICY_SCHEMA, schema['name']], i, count)
   Ind.Increment()
-  showJSON(None, schema, dictObjectsKey={'messageType': 'name', 'field': 'name', 'fieldDescriptions': 'field'})
+  showJSON(None, schema,
+           dictObjectsKey={'messageType': 'name', 'field': 'name',
+                           'fieldDescriptions': 'field', 'knownValueDescriptions': 'value'})
   Ind.Decrement()
 
 CHROME_POLICY_SCHEMA_FIELDS_CHOICE_MAP = {
@@ -29074,31 +29133,35 @@ def doPrintShowChromePolicySchemas():
     csvPF.writeCSVfile('Chrome Policy Schemas')
 
 def _showChromePolicySchemaStd(schema):
-  printKeyValueList([f'{schema.get("name")}', f'{schema.get("description")}'])
-  Ind.Increment()
-  for val in schema['settings'].values():
-    vtype = val.get('type')
-    printKeyValueList([f'{val.get("name")}', f'{vtype}'])
+  def _printEntry(mtypeName, mtypeEntry):
+    vtype = mtypeEntry['type']
+    if vtype != 'TYPE_MESSAGE':
+      printKeyValueList([f'{mtypeName}', f'{vtype}'])
+    else:
+      printKeyValueList([f'{mtypeName}'])
     Ind.Increment()
     if vtype == 'TYPE_ENUM':
-      enums = val.get('enums', [])
-      descriptions = val.get('descriptions', [])
-      for i in range(len(val.get('enums', []))):
+      enums = mtypeEntry['subtype']['enums']
+      descriptions = mtypeEntry['descriptions']
+      for i in range(len(enums)):
         printKeyValueList([f'{enums[i]}', f'{descriptions[i]}'])
-    elif vtype == 'TYPE_BOOL':
-      pvs = val.get('descriptions')
-      for pvi in pvs:
-        if isinstance(pvi, dict):
-          pvalue = pvi.get('value')
-          pdescription = pvi.get('description')
-          printKeyValueList([f'{pvalue}', f'{pdescription}'])
-        elif isinstance(pvi, list):
-          printKeyValueList([f'{pvi[0]}'])
+    elif vtype == 'TYPE_MESSAGE':
+      for mfieldName, mfield in mtypeEntry['subtype']['field'].items():
+        # managedBookmarks is recursive
+        if mtypeName != 'entries':
+          _printEntry(mfieldName, mfield)
     else:
-      description = val.get('descriptions')
-      if len(description) > 0:
-        printKeyValueList([f'{description[0]}'])
+      for description in mtypeEntry.get('descriptions', []):
+        printKeyValueList([description])
     Ind.Decrement()
+
+  printKeyValueList([f'{schema.get("name")}', f'{schema.get("description")}'])
+  Ind.Increment()
+  for _, mtypeEntry in schema['settings'].items():
+    if mtypeEntry['subfield']:
+      continue
+    for mfieldName, mfield in mtypeEntry['field'].items():
+      _printEntry(mfieldName, mfield)
   Ind.Decrement()
 
 # gam info chromeschema std <SchemaName>
@@ -29109,7 +29172,7 @@ def doInfoChromePolicySchemasStd(cp):
     schema = callGAPI(cp.customers().policySchemas(), 'get',
                       throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
                       name=name)
-    _, schema_dict = simplifyChromeSchema(schema)
+    _, schema_dict = simplifyChromeSchemaDisplay(schema)
     _showChromePolicySchemaStd(schema_dict)
   except GAPI.notFound:
     entityUnknownWarning(Ent.CHROME_POLICY_SCHEMA, name)
@@ -29131,7 +29194,7 @@ def doShowChromePolicySchemasStd(cp):
                          parent=parent, filter=sfilter)
   schemas = {}
   for schema in result:
-    schema_name, schema_dict = simplifyChromeSchema(schema)
+    schema_name, schema_dict = simplifyChromeSchemaDisplay(schema)
     schemas[schema_name.lower()] = schema_dict
   for _, schema in sorted(iter(schemas.items())):
     _showChromePolicySchemaStd(schema)
@@ -66178,11 +66241,7 @@ def printSharedDriveOrganizers(users, useDomainAdminAccess=False):
   showNoOrganizerDrives = SHOW_NO_PERMISSIONS_DRIVES_CHOICE_MAP['false']
   fieldsList = ['role', 'type', 'emailAddress']
   cd = entityList = orgUnitId = query = matchPattern = None
-  domainList = set()
-  if GC.Values[GC.DOMAIN]:
-    domainList.add(GC.Values[GC.DOMAIN])
-  else:
-    domainList.add(GM.Globals[GM.DECODED_ID_TOKEN].get('hd', 'UNKNOWN').lower())
+  domainList = set([(GC.Values[GC.DOMAIN] if GC.Values[GC.DOMAIN] else _getValueFromOAuth('hd'))])
   oneOrganizer = True
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()

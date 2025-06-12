@@ -1,3 +1,9 @@
+7.09.05
+
+Improved output of `gam info|show chromeschemas [std]` to more accurately display the schemas.
+
+Fixed bugs in `gam update chromepolicy` that caused invalid error messaages.
+
 7.09.04
 
 Fixed bug in `gam whatis <EmailItem>` where the check for an invitable user always failed.
