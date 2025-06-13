@@ -4266,6 +4266,13 @@ chrome.devices.MobileDataRoaming: Mobile data roaming.
     true: Allow mobile data roaming.
     false: Do not allow mobile data roaming.
 
+chrome.devices.PartnerAccess: Allow EMM partners access to device management.
+  chromeDeviceManagementApiEnabled: TYPE_BOOL
+    true: Enable Chrome management - partner access.
+    false: Disable Chrome management - partner access.
+  ackNoticeForChromeDeviceManagementApiEnabledSetToTrue: TYPE_BOOL
+    This field must be set to true to acknowledge the notice message associated with the field 'chrome_device_management_api_enabled' set to value 'true'. Please sse the notices listed with this policy for more information.
+
 chrome.devices.PowerManagement: Power management.
   loginScreenPowerManagement: TYPE_BOOL
     true: Allow device to sleep/shut down when idle on the sign-in screen.
@@ -5979,6 +5986,9 @@ chrome.users.appsconfig.AllowedAppTypes: Allowed types of apps and extensions.
     platform_app: Chrome packaged app.
 
 chrome.users.appsconfig.AllowedInstallSources: Allows setting of the allowed install sources for apps. Note these must be set together.
+  playStoreInstallSources: TYPE_ENUM
+    ALLOW_ALL_APPS: All apps allowed, admin manages blocklist.
+    BLOCK_ALL_APPS: All apps blocked, admin manages allowlist.
   chromeWebStoreInstallSources: TYPE_ENUM
     ALLOW_ALL_APPS: All apps allowed, admin manages blocklist.
     BLOCK_ALL_APPS: All apps blocked, admin manages allowlist.
@@ -7855,6 +7865,11 @@ chrome.users.InsertKeyModifier: Control the shortcut used to trigger the Insert 
     MANDATORY: Do not allow users to override.
     RECOMMENDED: Allow users to override.
 
+chrome.users.InstantTetheringAllowed: Instant Tethering.
+  instantTetheringAllowed: TYPE_BOOL
+    true: Allow users to use Instant Tethering.
+    false: Do not allow users to use Instant Tethering.
+
 chrome.users.IntegratedWebAuthenticationAllowed: Login credentials for network authentication.
   integratedWebAuthenticationAllowed: TYPE_BOOL
     true: Use login credentials for network authentication to a managed proxy.
@@ -8991,6 +9006,11 @@ chrome.users.SecondaryGoogleAccountSignin: Sign-in to secondary accounts.
   allowedDomainsForApps: TYPE_LIST
     Whether the OS version updates will be set to a version defined in the manifest of a kiosk app.
 
+chrome.users.SecondaryGoogleAccountUsage: Managed account as secondary account.
+  secondaryGoogleAccountUsage: TYPE_ENUM
+    ALL: All usages of managed accounts are allowed.
+    PRIMARY_ACCOUNT_SIGNIN: Block addition of a managed account as secondary account (in-session).
+
 chrome.users.SecurityKeyAttestation: Security key attestation.
   securityKeyPermitAttestation: TYPE_LIST
     Enter URL or domain. Specifies URLs and domains for which no prompt will be shown when attestation certificates from security keys are requested. Additionally, a signal will be sent to the security key indicating that individual attestation may be used. Without this, users will be prompted in Chrome 65+ when sites request attestation of security keys. URLs (like "https://example.com/some/path") will only match as U2F AppIDs. Domains (like "example.com") only match as WebAuthn RP IDs. Thus, to cover both U2F and WebAuthn APIs for a given site, both the AppID URL and domain would need to be listed.
@@ -9211,6 +9231,7 @@ chrome.users.SiteSearchSettings: Site search.
       name: TYPE_STRING
       shortcut: TYPE_STRING
       url: TYPE_STRING
+      allowUserOverride: TYPE_BOOL
 
 chrome.users.SmartLockAllowed: Smart Lock.
   smartLockAllowed: TYPE_BOOL
@@ -9225,6 +9246,11 @@ chrome.users.SmartScreenDimDelay: Delay screen dim on user activity.
   powerSmartDimEnabled: TYPE_BOOL
     true: Enable smart dim model.
     false: Disable smart dim model.
+
+chrome.users.SmsMessagesAllowed: Messages.
+  smsMessagesAllowed: TYPE_BOOL
+    true: Allow users to sync SMS messages between their phone and Chromebook.
+    false: Do not allow users to sync SMS messages between their phone and Chromebook.
 
 chrome.users.SpellcheckEnabled: Spell check.
   spellcheckEnabled: TYPE_ENUM
@@ -9918,5 +9944,6 @@ chrome.users.ZstdContentEncodingEnabled: Zstd compression.
   zstdContentEncodingEnabled: TYPE_BOOL
     true: Allow zstd-compressed web content.
     false: Do not allow zstd-compressed web content.
+
 
 ```
