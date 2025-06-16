@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.09.06
+
+Upddated `gam print|show shareddrives', `gam print|show shareddriveacls', `gam print shareddriveorganizers`
+to display the Shared Drives in ascending name order; the API returns them in an unidentifiable order.
+
 ### 7.09.05
 
 Improved output of `gam info|show chromeschemas [std]` to more accurately display the schemas.
