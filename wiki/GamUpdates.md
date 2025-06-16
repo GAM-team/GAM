@@ -12,7 +12,7 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 
 ### 7.09.06
 
-Upddated `gam print|show shareddrives', `gam print|show shareddriveacls', `gam print shareddriveorganizers`
+Upddated `gam print|show shareddrives`, `gam print|show shareddriveacls`, `gam print shareddriveorganizers`
 to display the Shared Drives in ascending name order; the API returns them in an unidentifiable order.
 
 ### 7.09.05
