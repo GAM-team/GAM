@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.09.06'
+__version__ = '7.09.07'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -57618,9 +57618,10 @@ FILETREE_FIELDS_CHOICE_MAP = {
   'parents': 'parents',
   'size': 'size',
   'trashed': 'trashed',
+  'webviewlink': 'webViewLink',
   }
 
-FILETREE_FIELDS_PRINT_ORDER = ['id', 'parents', 'owners', 'mimeType', 'size', 'explicitlyTrashed', 'trashed']
+FILETREE_FIELDS_PRINT_ORDER = ['id', 'parents', 'owners', 'mimeType', 'size', 'explicitlyTrashed', 'trashed', 'webViewLink']
 
 # gam <UserTypeEntity> print filetree [todrive <ToDriveAttribute>*]
 #	[select <DriveFileEntity> [selectsubquery <QueryDriveFile>] [depth <Number>]]
@@ -57785,7 +57786,7 @@ def printShowFileTree(users):
     else:
       unknownArgumentExit()
   fieldsList = ['driveId', 'id', 'name', 'parents', 'mimeType', 'ownedByMe', 'owners(emailAddress)',
-                'shared', sizeField, 'explicitlyTrashed', 'trashed']
+                'shared', sizeField, 'explicitlyTrashed', 'trashed', 'webViewLink']
   if csvPF:
     if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES]:
       fileNameTitle = 'title'

@@ -7204,7 +7204,8 @@ gam <UserTypeEntity> show filesharecounts
         owners|
         parents|
         size|
-        trashed
+        trashed|
+        webviewlink
 <FileTreeFieldNameList> ::= "<FileTreeFieldName>(,<FileTreeFieldName>)*"
 
 gam <UserTypeEntity> print filetree [todrive <ToDriveAttribute>*]
