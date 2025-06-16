@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.09.07
+
+Added `webviewlink` to `<FileTreeFieldName>` for use in `gam <UserTypeEntity> print|show filetree`.
+
 ### 7.09.06
 
 Upddated `gam print|show shareddrives`, `gam print|show shareddriveacls`, `gam print shareddriveorganizers`

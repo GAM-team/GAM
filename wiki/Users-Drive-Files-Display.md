@@ -968,7 +968,8 @@ Display a list of file/folder names indented to show structure.
         owners|
         parents|
         size|
-        trashed
+        trashed|
+        webviewlink
 <FileTreeFieldNameList> ::= "<FileTreeFieldName>(,<FileTreeFieldName>)*"
 
 gam <UserTypeEntity> print filetree [todrive <ToDriveAttribute>*]
