@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.09.05'
+__version__ = '7.09.06'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -65775,13 +65775,13 @@ def printShowSharedDrives(users, useDomainAdminAccess=False):
         entityPerformActionNumItems([Ent.USER, user], jcount, Ent.SHAREDDRIVE, i, count)
       Ind.Increment()
       j = 0
-      for shareddrive in matchedFeed:
+      for shareddrive in sorted(matchedFeed, key=lambda k: k['name']):
         j += 1
         shareddrive = stripNonShowFields(shareddrive)
         _showSharedDrive(user, shareddrive, j, jcount, FJQC)
       Ind.Decrement()
     else:
-      for shareddrive in matchedFeed:
+      for shareddrive in sorted(matchedFeed, key=lambda k: k['name']):
         shareddrive = stripNonShowFields(shareddrive)
         if FJQC.formatJSON:
           row = {'User': user, 'id': shareddrive['id'], 'name': shareddrive['name']}
@@ -66156,7 +66156,7 @@ def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
         entityPerformActionNumItems([Ent.USER, user], jcount, Ent.SHAREDDRIVE, i, count)
       Ind.Increment()
       j = 0
-      for shareddrive in matchFeed:
+      for shareddrive in sorted(matchFeed, key=lambda k: k['name']):
         j += 1
         if not FJQC.formatJSON:
           _showDriveFilePermissions(Ent.SHAREDDRIVE, f'{shareddrive["name"]} ({shareddrive["id"]}) - {shareddrive["createdTime"]}',
@@ -66170,7 +66170,7 @@ def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
       Ind.Decrement()
     elif matchFeed:
       if oneItemPerRow:
-        for shareddrive in matchFeed:
+        for shareddrive in sorted(matchFeed, key=lambda k: k['name']):
           baserow = {'User': user, 'id': shareddrive['id'], 'name': shareddrive['name'], 'createdTime': shareddrive['createdTime']}
           if addCSVData:
             baserow.update(addCSVData)
@@ -66191,7 +66191,7 @@ def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
               baserow['JSON'] = json.dumps({})
               csvPF.WriteRowNoFilter(baserow)
       else:
-        for shareddrive in matchFeed:
+        for shareddrive in sorted(matchFeed, key=lambda k: k['name']):
           baserow = {'User': user, 'id': shareddrive['id'], 'name': shareddrive['name'], 'createdTime': shareddrive['createdTime']}
           if addCSVData:
             baserow.update(addCSVData)
@@ -66392,7 +66392,7 @@ def printSharedDriveOrganizers(users, useDomainAdminAccess=False):
         pass
     if len(matchFeed) == 0:
       setSysExitRC(NO_ENTITIES_FOUND_RC)
-    for shareddrive in matchFeed:
+    for shareddrive in sorted(matchFeed, key=lambda k: k['name']):
       row = {'id': shareddrive['id'], 'name': shareddrive['name'],
              'organizers': delimiter.join(shareddrive['organizers']),
              'createdTime': shareddrive['createdTime']}

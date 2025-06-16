@@ -5031,18 +5031,18 @@ gam <UserTypeEntity> delete permissions <SharedDriveEntityAdmin> <DriveFilePermi
 
 In these commands, the Google administrator named in oauth2.txt is used.
 
-gam copy teamdriveacls <SharedDriveEntity> to <SharedDriveEntity>
+gam copy shareddriveacls <SharedDriveEntity> to <SharedDriveEntity>
         [adminaccess|asadmin]
         [showpermissionsmessages [<Boolean>]]
         [excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
         (mappermissionsdomain <DomainName> <DomainName>)*
-gam sync teamdriveacls <SharedDriveEntity> with <SharedDriveEntity>
+gam sync shareddriveacls <SharedDriveEntity> with <SharedDriveEntity>
         [adminaccess|asadmin]
         [showpermissionsmessages [<Boolean>]]
         [excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
         (mappermissionsdomain <DomainName> <DomainName>)*
 
-gam print teamdriveacls [todrive <ToDriveAttribute>*]
+gam print shareddriveacls [todrive <ToDriveAttribute>*]
         [teamdriveadminquery|query <QueryTeamDrive>]
         [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         [user|group <EmailAddress> [checkgroups]] (role|roles <SharedDriveACLRoleList>)*
@@ -5050,7 +5050,7 @@ gam print teamdriveacls [todrive <ToDriveAttribute>*]
         [oneitemperrow] [<DrivePermissionsFieldName>*|(fields <DrivePermissionsFieldNameList>)]
         (addcsvdata <FieldName> <String>)*
         [formatjson [quotechar <Character>]]
-gam show teamdriveacls
+gam show shareddriveacls
         [teamdriveadminquery|query <QueryTeamDrive>]
         [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         [user|group <EmailAddress> [checkgroups]] (role|roles <SharedDriveACLRoleList>)*
@@ -5060,18 +5060,18 @@ gam show teamdriveacls
 
 In these commands, you specify an administrator and then indicate that you want domain administrator access with the adminaccess option.
 
-gam <UserTypeEntity> copy teamdriveacls <SharedDriveEntity> to <SharedDriveEntity>
+gam <UserTypeEntity> copy shareddriveacls <SharedDriveEntity> to <SharedDriveEntity>
         [adminaccess|asadmin]
         [showpermissionsmessages [<Boolean>]]
         [excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
         (mappermissionsdomain <DomainName> <DomainName>)*
-gam <UserTypeEntity> sync teamdriveacls <SharedDriveEntity> with <SharedDriveEntity>
+gam <UserTypeEntity> sync shareddriveacls <SharedDriveEntity> with <SharedDriveEntity>
         [adminaccess|asadmin]
         [showpermissionsmessages [<Boolean>]]
         [excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
         (mappermissionsdomain <DomainName> <DomainName>)*
 
-gam <UserTypeEntity> print teamdriveacls [todrive <ToDriveAttribute>*]
+gam <UserTypeEntity> print shareddriveacls [todrive <ToDriveAttribute>*]
         [adminaccess|asadmin] [teamdriveadminquery|query <QueryTeamDrive>]
         [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         [user|group <EmailAddress> [checkgroups]] (role|roles <SharedDriveACLRoleList>)*
@@ -5080,7 +5080,7 @@ gam <UserTypeEntity> print teamdriveacls [todrive <ToDriveAttribute>*]
         [shownopermissionsdrives false|true|only]
         (addcsvdata <FieldName> <String>)*
         [formatjson [quotechar <Character>]]
-gam <UserTypeEntity> show teamdriveacls
+gam <UserTypeEntity> show shareddriveacls
         [adminaccess|asadmin] [teamdriveadminquery|query <QueryTeamDrive>]
         [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         [user|group <EmailAddress> [checkgroups]] (role|roles <SharedDriveACLRoleList>)*
