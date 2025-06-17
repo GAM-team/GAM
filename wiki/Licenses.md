@@ -11,7 +11,7 @@
 - [Synchronize licenses](#synchronize-licenses)
 
 ## API documentation
-* [License Manager API](https://developers.google.com/admin-sdk/licensing/rest/v1/licenseAssignments)
+* [License Manager API](https://developers.google.com/workspace/admin/licensing/reference/rest/v1/licenseAssignments)
 
 ## License Products and SKUs
 * [Product and SKU IDs](https://developers.google.com/admin-sdk/licensing/v1/how-tos/products)
