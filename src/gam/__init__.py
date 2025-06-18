@@ -25991,7 +25991,7 @@ def _printChatItem(user, citem, parent, entityType, csvPF, FJQC, addCSVData=None
     _cleanChatSpace(citem)
     baserow = {'User': user} if user is not None else {}
   elif entityType == Ent.CHAT_EMOJI:
-    baserow = {'User': user}
+    baserow = {'User': user, 'name': citem['name'], 'emojiName': citem['emojiName']}
   else:
     if user is not None:
       baserow = {'User': user, 'space.name': parent['name'], 'space.displayName': parent['displayName']}
@@ -26150,7 +26150,7 @@ CHAT_EMOJI_SHOW_CREATED_BY_CHOICE_MAP = {
 #	[showcreatedby any|me|others]
 #	[formatjson [quotechar <Character>]]
 def printShowChatEmojis(users):
-  csvPF = CSVPrintFile(['User', 'name'])  if Act.csvFormat() else None
+  csvPF = CSVPrintFile(['User', 'name', 'emojiName'])  if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   pfilter = CHAT_EMOJI_SHOW_CREATED_BY_CHOICE_MAP['me']
   while Cmd.ArgumentsRemaining():
@@ -26185,12 +26185,12 @@ def printShowChatEmojis(users):
         entityPerformActionNumItems(kvList, jcount, Ent.CHAT_EMOJI, i, count)
       Ind.Increment()
       j = 0
-      for emoji in emojis:
+      for emoji in sorted(emojis, key=lambda k: k['emojiName']):
         j += 1
         _showChatItem(emoji, Ent.CHAT_EMOJI, FJQC, j, jcount)
       Ind.Decrement()
     else:
-      for emoji in emojis:
+      for emoji in sorted(emojis, key=lambda k: k['emojiName']):
         _printChatItem(user, emoji, '', Ent.CHAT_EMOJI, csvPF, FJQC)
   if csvPF:
     csvPF.writeCSVfile('Chat Custom Emojis')
@@ -26677,6 +26677,7 @@ def printShowChatSpaces(users):
     except GAPI.failedPrecondition:
       userChatServiceNotEnabledWarning(user, i, count)
       continue
+    sortName = 'displayName' if useAdminAccess else 'name'
     jcount = len(spaces)
     if jcount == 0:
       setSysExitRC(NO_ENTITIES_FOUND_RC)
@@ -26685,12 +26686,12 @@ def printShowChatSpaces(users):
         entityPerformActionNumItems(kvList, jcount, Ent.CHAT_SPACE, i, count)
       Ind.Increment()
       j = 0
-      for space in spaces:
+      for space in sorted(spaces, key=lambda k: k[sortName]):
         j += 1
         _showChatItem(space, Ent.CHAT_SPACE, FJQC, j, jcount)
       Ind.Decrement()
     else:
-      for space in spaces:
+      for space in sorted(spaces, key=lambda k: k[sortName]):
         _printChatItem(user, space, None, Ent.CHAT_SPACE, csvPF, FJQC)
   if csvPF:
     csvPF.writeCSVfile('Chat Spaces')
@@ -27347,7 +27348,8 @@ def printShowChatMembers(users):
                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  fields="nextPageToken,spaces(name,displayName,spaceType,membershipCount)", pageSize=CHAT_PAGE_SIZE,
                                  **kwargsCS)
-          for space in spaces:
+          sortName = 'displayName' if useAdminAccess else 'name'
+          for space in sorted(spaces, key=lambda k: k[sortName]):
             if space['spaceType'] == 'SPACE' and 'membershipCount' in space:
               parentList.append({'name': space['name'], 'displayName': space.get('displayName', 'None')})
         except (GAPI.notFound, GAPI.invalidArgument, GAPI.internalError,
@@ -27364,7 +27366,8 @@ def printShowChatMembers(users):
                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  fields="nextPageToken,spaces(name,displayName,spaceType,membershipCount)", pageSize=CHAT_PAGE_SIZE,
                                  **kwargsCS)
-          for space in spaces:
+          sortName = 'displayName' if useAdminAccess else 'name'
+          for space in sorted(spaces, key=lambda k: k[sortName]):
 #            if 'membershipCount' in space:
 #              parentList.append({'name': space['name'], 'displayName': space.get('displayName', 'None')})
             parentList.append({'name': space['name'], 'displayName': space.get('displayName', 'None')})

@@ -5,6 +5,9 @@ Added commands to manage/display Chat Custom Emojis.
 * See: https://github.com/GAM-team/GAM/wiki/Users-Chat#manage-chat-emojis
 * See: https://github.com/GAM-team/GAM/wiki/Users-Chat#display-chat-emojis
 
+Updated `gam <UserItem> print|show chatspaces|chatmembers asadmin` to display
+the spaces in ascending display name order.
+
 7.09.07
 
 Added `webviewlink` to `<FileTreeFieldName>` for use in `gam <UserTypeEntity> print|show filetree`.
