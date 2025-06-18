@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.09.07'
+__version__ = '7.10.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -22786,7 +22786,7 @@ def _processPeopleContactPhotos(users, function):
         if function == 'GetContactPhoto' and not os.path.isdir(targetFolder):
           os.makedirs(targetFolder)
       elif myarg == 'filename':
-        filenamePattern = getString(Cmd.OB_PHOTO_FILENAME_PATTERN)
+        filenamePattern = getString(Cmd.OB_FILE_NAME_PATTERN)
       else:
         unknownArgumentExit()
     subForContactId = filenamePattern.find('#contactid#') != -1
@@ -25990,6 +25990,8 @@ def _printChatItem(user, citem, parent, entityType, csvPF, FJQC, addCSVData=None
   if entityType == Ent.CHAT_SPACE:
     _cleanChatSpace(citem)
     baserow = {'User': user} if user is not None else {}
+  elif entityType == Ent.CHAT_EMOJI:
+    baserow = {'User': user}
   else:
     if user is not None:
       baserow = {'User': user, 'space.name': parent['name'], 'space.displayName': parent['displayName']}
@@ -26008,6 +26010,190 @@ def _printChatItem(user, citem, parent, entityType, csvPF, FJQC, addCSVData=None
     row.update({'name': citem['name'],
                 'JSON': json.dumps(cleanJSON(citem, timeObjects=CHAT_TIME_OBJECTS), ensure_ascii=False, sort_keys=True)})
     csvPF.WriteRowNoFilter(row)
+
+def _getValidateEmojiName():
+  name = getString(Cmd.OB_CHAT_EMOJI_NAME)
+  if re.match(r'^:[0-9a-z_-]+:$', name):
+    return name
+  Cmd.Backup()
+  usageErrorExit(Msg.INVALID_EMOJI_NAME.format(name))
+
+# gam <UserTypeEntity> create chatemoji <ChatEmojiName>
+#	 ([drivedir|(sourcefolder <FilePath>)] [filename <FileNamePattern>])
+#	[formatjson]
+def createChatEmoji(users):
+  FJQC = FormatJSONQuoteChar()
+  name = _getValidateEmojiName()
+  body = {'emojiName': name, 'payload': {'filename': '', 'fileContent': ''}}
+  sourceFolder = os.getcwd()
+  filenamePattern = '#email#.jpg'
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'drivedir':
+      sourceFolder = GC.Values[GC.DRIVE_DIR]
+    elif myarg == 'sourcefolder':
+      sourceFolder = os.path.expanduser(getString(Cmd.OB_FILE_PATH))
+      if not os.path.isdir(sourceFolder):
+        entityDoesNotExistExit(Ent.DIRECTORY, sourceFolder)
+    elif myarg == 'filename':
+      filenamePattern = getString(Cmd.OB_FILE_NAME_PATTERN)
+    else:
+      FJQC.GetFormatJSON(myarg)
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, chat, kvList = buildChatServiceObject(API.CHAT_CUSTOM_EMOJIS, user, i, count, [Ent.CHAT_EMOJI, name])
+    if not chat:
+      continue
+    user, userName, _ = splitEmailAddressOrUID(user)
+    filename = _substituteForUser(filenamePattern, user, userName)
+    if sourceFolder is not None:
+      filename = os.path.join(sourceFolder, filename)
+    filename = os.path.expanduser(filename)
+    try:
+      with open(filename, 'rb') as f:
+        image_data = f.read()
+    except (OSError, IOError) as e:
+      entityActionFailedWarning([Ent.USER, user, Ent.CHAT_EMOJI, filename], str(e), i, count)
+      continue
+    body['payload'] = {'filename': os.path.basename(filename),
+                       'fileContent':base64.urlsafe_b64encode(image_data).decode(UTF8)}
+    try:
+      emoji = callGAPI(chat.customEmojis(), 'create',
+                       throwReasons=[GAPI.ALREADY_EXISTS, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
+                       body=body)
+      _showChatItem(emoji, Ent.CHAT_EMOJI, FJQC, i, count)
+    except (GAPI.alreadyExists, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+      exitIfChatNotConfigured(chat, kvList, str(e), i, count)
+    except GAPI.failedPrecondition:
+      userChatServiceNotEnabledWarning(user, i, count)
+
+def getEmojiName(myarg):
+  if myarg == 'emojiname':
+    name = _getValidateEmojiName()
+    return 'customEmojis/'+name
+  _, chatEmoji = Cmd.Previous().split('/', 1)
+  return 'customEmojis/'+chatEmoji
+
+# gam <UserTypeEntity> delete chatemoji <ChatEmoji>
+def deleteChatEmoji(users):
+  name = None
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'emojiname':
+      name = getEmojiName(myarg)
+    elif myarg.startswith('customemojis/'):
+      name = getEmojiName(myarg)
+    else:
+      unknownArgumentExit()
+  if not name:
+    missingArgumentExit('ChatEmoji')
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, chat, kvList = buildChatServiceObject(API.CHAT_CUSTOM_EMOJIS, user, i, count, [Ent.CHAT_EMOJI, name])
+    if not chat:
+      continue
+    try:
+      callGAPI(chat.customEmojis(), 'delete',
+               throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
+               name=name)
+      entityActionPerformed(kvList, i, count)
+    except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+      exitIfChatNotConfigured(chat, kvList, str(e), i, count)
+    except GAPI.failedPrecondition:
+      userChatServiceNotEnabledWarning(user, i, count)
+
+# gam <UserTypeEntity> info chatemoji <ChatEmoji>
+#	[formatjson]
+def infoChatEmoji(users):
+  FJQC = FormatJSONQuoteChar()
+  name = None
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'emojiname':
+      name = getEmojiName(myarg)
+    elif myarg.startswith('customemojis/'):
+      name = getEmojiName(myarg)
+    else:
+      FJQC.GetFormatJSON(myarg)
+  if not name:
+    missingArgumentExit('ChatEmoji')
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, chat, kvList = buildChatServiceObject(API.CHAT_CUSTOM_EMOJIS, user, i, count, [Ent.CHAT_EMOJI, name])
+    if not chat:
+      continue
+    try:
+      emoji = callGAPI(chat.customEmojis(), 'get',
+                       throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
+                       name=name)
+      if not FJQC.formatJSON:
+        entityPerformAction(kvList, i, count)
+      _showChatItem(emoji, Ent.CHAT_EMOJI, FJQC, i, count)
+    except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+      exitIfChatNotConfigured(chat, kvList, str(e), i, count)
+    except GAPI.failedPrecondition:
+      userChatServiceNotEnabledWarning(user, i, count)
+
+CHAT_EMOJI_SHOW_CREATED_BY_CHOICE_MAP = {
+  'any': None,
+  'me': 'creator("users/me")',
+  'others': 'NOT creator("users/me")'
+  }
+
+# gam <UserTypeEntity> show chatemojis
+#	[showcreatedby any|me|others]
+#	[formatjson]
+# gam <UserTypeEntity> print chatemojis [todrive <ToDriveAttribute>*]
+#	[showcreatedby any|me|others]
+#	[formatjson [quotechar <Character>]]
+def printShowChatEmojis(users):
+  csvPF = CSVPrintFile(['User', 'name'])  if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
+  pfilter = CHAT_EMOJI_SHOW_CREATED_BY_CHOICE_MAP['me']
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif myarg =='showcreatedby':
+      pfilter = getChoice(CHAT_EMOJI_SHOW_CREATED_BY_CHOICE_MAP, mapChoice=True)
+    else:
+      FJQC.GetFormatJSONQuoteChar(myarg, True)
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, chat, kvList = buildChatServiceObject(API.CHAT_CUSTOM_EMOJIS, user, i, count, [Ent.CHAT_EMOJI, None])
+    if not chat:
+      continue
+    try:
+      emojis = callGAPIpages(chat.customEmojis(), 'list', 'customEmojis',
+                             pageMessage=_getChatPageMessage(Ent.CHAT_EMOJI, user, i, count, pfilter),
+                             throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                             pageSize=CHAT_PAGE_SIZE, filter=pfilter)
+    except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+      exitIfChatNotConfigured(chat, kvList, str(e), i, count)
+      continue
+    except GAPI.failedPrecondition:
+      userChatServiceNotEnabledWarning(user, i, count)
+      break
+    if not csvPF:
+      jcount = len(emojis)
+      if not FJQC.formatJSON:
+        entityPerformActionNumItems(kvList, jcount, Ent.CHAT_EMOJI, i, count)
+      Ind.Increment()
+      j = 0
+      for emoji in emojis:
+        j += 1
+        _showChatItem(emoji, Ent.CHAT_EMOJI, FJQC, j, jcount)
+      Ind.Decrement()
+    else:
+      for emoji in emojis:
+        _printChatItem(user, emoji, '', Ent.CHAT_EMOJI, csvPF, FJQC)
+  if csvPF:
+    csvPF.writeCSVfile('Chat Custom Emojis')
 
 # gam setup chat
 def doSetupChat():
@@ -67871,7 +68057,7 @@ def updatePhoto(users):
   baseFileIdEntity = drive = owner = None
   sourceFolder = os.getcwd()
   if Cmd.NumArgumentsRemaining() == 1:
-    filenamePattern = getString(Cmd.OB_PHOTO_FILENAME_PATTERN)
+    filenamePattern = getString(Cmd.OB_FILE_NAME_PATTERN)
   else:
     filenamePattern = '#email#.jpg'
     while Cmd.ArgumentsRemaining():
@@ -67883,7 +68069,7 @@ def updatePhoto(users):
         if not os.path.isdir(sourceFolder):
           entityDoesNotExistExit(Ent.DIRECTORY, sourceFolder)
       elif myarg == 'filename':
-        filenamePattern = getString(Cmd.OB_PHOTO_FILENAME_PATTERN)
+        filenamePattern = getString(Cmd.OB_FILE_NAME_PATTERN)
       elif myarg == 'gphoto':
         owner, drive = buildGAPIServiceObject(API.DRIVE3, getEmailAddress())
         if not drive:
@@ -67984,7 +68170,7 @@ def getPhoto(users, profileMode):
       if not os.path.isdir(targetFolder):
         os.makedirs(targetFolder)
     elif myarg == 'filename':
-      filenamePattern = getString(Cmd.OB_PHOTO_FILENAME_PATTERN)
+      filenamePattern = getString(Cmd.OB_FILE_NAME_PATTERN)
     elif myarg == 'nofile':
       writeFileData = False
     elif myarg == 'noshow':
@@ -76983,6 +77169,7 @@ USER_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_CALENDAR:		addCreateCalendars,
   Cmd.ARG_GROUP:		addUserToGroups,
   Cmd.ARG_CALENDARACL:		createCalendarACLs,
+  Cmd.ARG_CHATEMOJI:		createChatEmoji,
   Cmd.ARG_CHATMEMBER:		createChatMember,
   Cmd.ARG_CHATMESSAGE:		createChatMessage,
   Cmd.ARG_CHATSPACE:		createChatSpace,
@@ -77099,6 +77286,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_BACKUPCODE:	deleteBackupCodes,
       Cmd.ARG_CALENDAR:		deleteCalendars,
       Cmd.ARG_CALENDARACL:	deleteCalendarACLs,
+      Cmd.ARG_CHATEMOJI:	deleteChatEmoji,
       Cmd.ARG_CHATMEMBER:	deleteUpdateChatMember,
       Cmd.ARG_CHATMESSAGE:	deleteChatMessage,
       Cmd.ARG_CHATSPACE:	deleteChatSpace,
@@ -77203,6 +77391,7 @@ USER_COMMANDS_WITH_OBJECTS = {
     (Act.INFO,
      {Cmd.ARG_CALENDAR:		infoCalendars,
       Cmd.ARG_CALENDARACL:	infoCalendarACLs,
+      Cmd.ARG_CHATEMOJI:	infoChatEmoji,
       Cmd.ARG_CHATEVENT:	infoChatEvent,
       Cmd.ARG_CHATMEMBER:	infoChatMember,
       Cmd.ARG_CHATMESSAGE:	infoChatMessage,
@@ -77275,6 +77464,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CALENDAR:		printShowCalendars,
       Cmd.ARG_CALENDARACL:	printShowCalendarACLs,
       Cmd.ARG_CALSETTINGS:	printShowCalSettings,
+      Cmd.ARG_CHATEMOJI:	printShowChatEmojis,
       Cmd.ARG_CHATEVENT:	printShowChatEvents,
       Cmd.ARG_CHATMEMBER:	printShowChatMembers,
       Cmd.ARG_CHATMESSAGE:	printShowChatMessages,
@@ -77382,6 +77572,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CALENDAR:		printShowCalendars,
       Cmd.ARG_CALENDARACL:	printShowCalendarACLs,
       Cmd.ARG_CALSETTINGS:	printShowCalSettings,
+      Cmd.ARG_CHATEMOJI:	printShowChatEmojis,
       Cmd.ARG_CHATEVENT:	printShowChatEvents,
       Cmd.ARG_CHATMEMBER:	printShowChatMembers,
       Cmd.ARG_CHATMESSAGE:	printShowChatMessages,
@@ -77598,6 +77789,7 @@ USER_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_CLASSIFICATIONLABELPERMISSION:	Cmd.ARG_DRIVELABELPERMISSION,
   Cmd.ARG_CLASSIFICATIONLABELPERMISSIONS:	Cmd.ARG_DRIVELABELPERMISSION,
   Cmd.ARG_CLASSROOMINVITATIONS:	Cmd.ARG_CLASSROOMINVITATION,
+  Cmd.ARG_CHATEMOJIS:		Cmd.ARG_CHATEMOJI,
   Cmd.ARG_CHATEVENTS:		Cmd.ARG_CHATEVENT,
   Cmd.ARG_CHATMEMBERS:		Cmd.ARG_CHATMEMBER,
   Cmd.ARG_CHATMESSAGES:		Cmd.ARG_CHATMESSAGE,

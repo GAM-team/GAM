@@ -86,6 +86,7 @@ class GamEntity():
   CHANNEL_SKU = 'chsk'
   CHAT_BOT = 'chbo'
   CHAT_ADMIN = 'chad'
+  CHAT_EMOJI = 'chem'
   CHAT_EVENT = 'chev'
   CHAT_MANAGER_USER = 'chgu'
   CHAT_MEMBER = 'chme'
@@ -436,6 +437,7 @@ class GamEntity():
     CHANNEL_SKU: ['Channel SKUs', 'Channel SKU'],
     CHAT_BOT: ['Chat BOTs', 'Chat BOT'],
     CHAT_ADMIN: ['Chat Admins', 'Chat Admin'],
+    CHAT_EMOJI: ['Chat Emojis', 'Chat Emoji'],
     CHAT_EVENT: ['Chat Events', 'Chat Event'],
     CHAT_MANAGER_USER: ['Chat User Managers', 'Chat User Manager'],
     CHAT_MESSAGE: ['Chat Messages', 'Chat Message'],

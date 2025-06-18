@@ -1,4 +1,4 @@
-This document describes the GAM command line syntax in modified BNF, see https://en.wikipedia.org/wiki/Backus-Naur_Form
+his document describes the GAM command line syntax in modified BNF, see https://en.wikipedia.org/wiki/Backus-Naur_Form
 Skip the History section and start reading at Introduction.
 
 Items on the command line are space separated, when an actual space character is required, it will be indicated by <Space>.
@@ -380,6 +380,8 @@ If an item contains spaces, it should be surrounded by ".
         domain:<DomainName>|domain|default
 <CalendarItem> ::= <EmailAddress>
 <ChannelCustomerID> ::= <String>
+<ChatEmojiName> ::= :<String>:
+<ChatEmoji> ::= emojiname <ChatEmojiName> | customemojis/<String>
 <ChatMember> ::= spaces/<String>/members/<String>
 <ChatMessage> ::= spaces/<String>/messages/<String>
 <ChatSpace> ::= spaces/<String> | space <String> | space spaces/<String>
@@ -664,6 +666,7 @@ If an item contains spaces, it should be surrounded by ".
         (gdoc|ghtml <UserGoogleDoc>)|
         (gcsdoc|gcshtml <StorageBucketObjectName>)
 <YouTubeChannelID> ::= <String>
+
 ## Lists of basic items
 
 <APIScopeURLList> ::= "<APIScopeURL>(,<APIScopeURL>)*"
@@ -6434,6 +6437,22 @@ gam <UserTypeEntity> show chatevents
 gam <UserTypeEntity> print chatevents [todrive <ToDriveAttribute>*]
         <ChatSpace>+
         filter <String>
+        [formatjson [quotechar <Character>]]
+
+<ChatEmojiName> ::= :[0-9a-z_-]+:
+<ChatEmoji> ::= emojiname <ChatEmojiName> | customemojis/<String>
+
+gam <UserTypeEntity> create chatemoji <ChatEmojiName>
+         ([drivedir|(sourcefolder <FilePath>)] [filename <FileNamePattern>])
+        [formatjson]
+gam <UserTypeEntity> delete chatemoji <ChatEmoji>
+gam <UserTypeEntity> info chatemoji <ChatEmoji>
+        [formatjson]
+gam <UserTypeEntity> show chatemojis
+        [showcreatedby any|me|others]
+        [formatjson]
+gam <UserTypeEntity> print chatemojis [todrive <ToDriveAttribute>*]
+        [showcreatedby any|me|others]
         [formatjson [quotechar <Character>]]
 
 # Users - Drive

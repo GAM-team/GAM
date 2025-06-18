@@ -26,6 +26,7 @@ ANALYTICS_ADMIN = 'analyticsadmin'
 CALENDAR = 'calendar'
 CBCM = 'cbcm'
 CHAT = 'chat'
+CHAT_CUSTOM_EMOJIS = 'chatcustomemojis'
 CHAT_EVENTS = 'chatevents'
 CHAT_MEMBERSHIPS = 'chatmemberships'
 CHAT_MEMBERSHIPS_ADMIN = 'chatmembershipsadmin'
@@ -210,6 +211,7 @@ _INFO = {
   CALENDAR: {'name': 'Calendar API', 'version': 'v3', 'v2discovery': True, 'mappedAPI': 'calendar-json'},
   CBCM: {'name': 'Chrome Browser Cloud Management API', 'version': 'v1.1beta1', 'v2discovery': True, 'localjson': True},
   CHAT: {'name': 'Chat API', 'version': 'v1', 'v2discovery': True},
+  CHAT_CUSTOM_EMOJIS: {'name': 'Chat API - Custom Emojis', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},
   CHAT_EVENTS: {'name': 'Chat API - Events', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},
   CHAT_MEMBERSHIPS: {'name': 'Chat API - Memberships', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},
   CHAT_MEMBERSHIPS_ADMIN: {'name': 'Chat API - Memberships Admin', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},
@@ -544,6 +546,10 @@ _SVCACCT_SCOPES = [
    'api': CALENDAR,
    'subscopes': READONLY,
    'scope': 'https://www.googleapis.com/auth/calendar'},
+  {'name': 'Chat API - Custom Emojis',
+   'api': CHAT_CUSTOM_EMOJIS,
+   'subscopes': READONLY,
+   'scope': 'https://www.googleapis.com/auth/chat.customemojis'},
   {'name': 'Chat API - Memberships',
    'api': CHAT_MEMBERSHIPS,
    'subscopes': READONLY,
