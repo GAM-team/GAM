@@ -26658,6 +26658,9 @@ def printShowChatSpaces(users):
     substituteQueryTimes(queries, queryTimes)
     pfilter = kwargsCS['query'] = queries[0]
     kwargsCS['useAdminAccess'] = True
+    sortName = 'displayName'
+  else:
+    sortName = 'name'
   for user in users:
     i += 1
     user, chat, kvList = buildChatServiceObject(api, user, i, count, None, useAdminAccess)
@@ -26677,7 +26680,6 @@ def printShowChatSpaces(users):
     except GAPI.failedPrecondition:
       userChatServiceNotEnabledWarning(user, i, count)
       continue
-    sortName = 'displayName' if useAdminAccess else 'name'
     jcount = len(spaces)
     if jcount == 0:
       setSysExitRC(NO_ENTITIES_FOUND_RC)
@@ -27326,6 +27328,9 @@ def printShowChatMembers(users):
   i, count, users = getEntityArgument(users)
   if useAdminAccess:
     _chkChatAdminAccess(count)
+    sortName = 'displayName'
+  else:
+    sortName = 'name'
   for user in users:
     i += 1
     user, chat, kvList = buildChatServiceObject(api, user, i, count, [Ent.CHAT_SPACE, None], useAdminAccess)
@@ -27348,7 +27353,6 @@ def printShowChatMembers(users):
                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  fields="nextPageToken,spaces(name,displayName,spaceType,membershipCount)", pageSize=CHAT_PAGE_SIZE,
                                  **kwargsCS)
-          sortName = 'displayName' if useAdminAccess else 'name'
           for space in sorted(spaces, key=lambda k: k[sortName]):
             if space['spaceType'] == 'SPACE' and 'membershipCount' in space:
               parentList.append({'name': space['name'], 'displayName': space.get('displayName', 'None')})
@@ -27366,7 +27370,6 @@ def printShowChatMembers(users):
                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  fields="nextPageToken,spaces(name,displayName,spaceType,membershipCount)", pageSize=CHAT_PAGE_SIZE,
                                  **kwargsCS)
-          sortName = 'displayName' if useAdminAccess else 'name'
           for space in sorted(spaces, key=lambda k: k[sortName]):
 #            if 'membershipCount' in space:
 #              parentList.append({'name': space['name'], 'displayName': space.get('displayName', 'None')})
