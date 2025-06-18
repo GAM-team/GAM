@@ -88,7 +88,7 @@ Google requires that you have a Chat Bot configured in order to use the Chat API
          (gdoc <UserGoogleDoc>)|
          (gcsdoc <StorageBucketObjectName>))
 
-<ChatEmojiName> ::= :<String>:
+<ChatEmojiName> ::= :[0-9a-z_-]+:
 <ChatEmoji> ::= emojiname <ChatEmojiName> | customemojis/<String>
 <ChatEvent> ::= spaces/<String>/spaceEvents/<String>
 <ChatMember> ::= spaces/<String>/members/<String>
@@ -914,13 +914,13 @@ gam <UserTypeEntity> create chatemoji <ChatEmojiName>
 Emoji names must start and end with colons, must be lowercase and can only contain alphanumeric characters, hyphens, and underscores.
 Hyphens and underscores should be used to separate words and cannot be used consecutively.
 
-By default, the emoji will be uploaded from the current working directory.
-* `drivedir` - The emoji will be uploaded from the directory specified by `drive_dir` in gam.cfg
-* `sourcefolder <FilePath>` - The emoji will be uploaded from `<FilePath>`
+By default, the emoji file will be uploaded from the current working directory.
+* `drivedir` - The emoji file will be uploaded from the directory specified by `drive_dir` in gam.cfg
+* `sourcefolder <FilePath>` - The emoji file will be uploaded from `<FilePath>`
 
-* `filename <FileNamePattern>` - A file name
-    * `#email#` and `#user#` will be replaced by the user's full email address
-    * `#username#` will be replaced by the local part of the user's email address
+Specify the emoji file name; the following substitutions will be made:
+* `#email#` and `#user#` will be replaced by the user's full email address
+* `#username#` will be replaced by the local part of the user's email address
 
 ### Delete a Chat Emoji
 Deletes the given Chat emoji.

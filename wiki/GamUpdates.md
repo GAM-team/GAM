@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.10.00
+
+Added commands to manage/display Chat Custom Emojis.
+
+* See: https://github.com/GAM-team/GAM/wiki/Users-Chat#manage-chat-emojis
+* See: https://github.com/GAM-team/GAM/wiki/Users-Chat#display-chat-emojis
+
 ### 7.09.07
 
 Added `webviewlink` to `<FileTreeFieldName>` for use in `gam <UserTypeEntity> print|show filetree`.

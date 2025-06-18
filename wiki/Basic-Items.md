@@ -96,7 +96,7 @@
         banana|basil|blueberry|flamingo|graphite|grape|
         lavender|peacock|sage|tangerine|tomato
 <FileFormat> ::=
-        csv|doc|dot|docx|dotx|epub|html|jpeg|jpg|mht|odp|ods|odt|
+        csv|doc|dot|docx|dotx|epub|html|jpeg|jpg|json|mht|odp|ods|odt|
         pdf|png|ppt|pot|potx|pptx|rtf|svg|tsv|txt|xls|xlt|xlsx|xltx|zip|
         ms|microsoft|openoffice|
 <LabelColorHex> ::=
@@ -278,6 +278,8 @@
         domain:<DomainName>|domain|default
 <CalendarItem> ::= <EmailAddress>
 <ChannelCustomerID> ::= <String>
+<ChatEmojiName> ::= :[0-9a-z_-]+:
+<ChatEmoji> ::= emojiname <ChatEmojiName> | customemojis/<String>
 <ChatMember> ::= spaces/<String>/members/<String>
 <ChatMessage> ::= spaces/<String>/messages/<String>
 <ChatSpace> ::= spaces/<String> | space <String> | space spaces/<String>
