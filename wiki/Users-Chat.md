@@ -12,6 +12,8 @@
 - [Manage Chat Messages](#manage-chat-messages)
 - [Display Chat Messages](#display-chat-messages)
 - [Display Chat Events](#display-chat-events)
+- [Manage Chat Emojis](#manage-chat-emojis)
+- [Display Chat Emojis](#display-chat-emojis)
 - [Bulk Operations](#bulk-operations)
 
 ## Introduction
@@ -19,6 +21,7 @@ To use these commands you must update your service account authorization.
 ```
 gam user user@domain.com update serviceaccount
 
+[*]  3)  Chat API - Custom Emojis (supports readonly)
 [*]  4)  Chat API - Memberships (supports readonly)
 [*]  5)  Chat API - Memberships Admin (supports readonly)
 [*]  6)  Chat API - Messages (supports readonly)
@@ -51,10 +54,12 @@ Google requires that you have a Chat Bot configured in order to use the Chat API
 ## API documentation
 * [Overview](https://developers.google.com/workspace/chat/overview)
 * [Chat API](https://developers.google.com/workspace/chat/api/reference/rest)
+* [Chat API - Custom Emojis](https://developers.google.com/workspace/chat/api/reference/rest/v1/customEmojis)
 * [Chat API - Members](https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.members/list)
 * [Chat API - Messages](https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.messages/list)
 * [Chat API - Events](https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.spaceEvents/list)
 * [Apps in Google Chat](https://support.google.com/chat/answer/7655820)
+* [Manage customemoji permissions](https://support.google.com/a/answer/12850085)
 * [Manage Spaces in Admin Console](https://support.google.com/a/answer/13369245)
 * [Predefined permission settings](https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces#Space.FIELDS.predefined_permission_settings)
 
@@ -83,6 +88,8 @@ Google requires that you have a Chat Bot configured in order to use the Chat API
          (gdoc <UserGoogleDoc>)|
          (gcsdoc <StorageBucketObjectName>))
 
+<ChatEmojiName> ::= :<String>:
+<ChatEmoji> ::= emojiname <ChatEmojiName> | customemojis/<String>
 <ChatEvent> ::= spaces/<String>/spaceEvents/<String>
 <ChatMember> ::= spaces/<String>/members/<String>
 <ChatMemberList> ::= "<ChatMember>(,<ChatMember>)*"
@@ -895,6 +902,75 @@ For example, the following queries are valid on Windows PowerShell:
 filter 'start_time=\"2024-03-15T11:30:00-04:00\" AND event_types:\"google.workspace.chat.message.v1.created\"'
 filter 'start_time=\"2024-03-15T11:30:00+00:00\" AND end_time=\"2024-03-3100:00:00+00:00\" AND event_types:\"google.workspace.chat.message.v1.created\"'
 ```
+
+## Manage Chat Emojis
+
+### Create a Chat Emoji
+```
+gam <UserTypeEntity> create chatemoji <ChatEmojiName>
+         ([drivedir|(sourcefolder <FilePath>)] [filename <FileNamePattern>])
+        [formatjson]
+```
+Emoji names must start and end with colons, must be lowercase and can only contain alphanumeric characters, hyphens, and underscores.
+Hyphens and underscores should be used to separate words and cannot be used consecutively.
+
+By default, the emoji will be uploaded from the current working directory.
+* `drivedir` - The emoji will be uploaded from the directory specified by `drive_dir` in gam.cfg
+* `sourcefolder <FilePath>` - The emoji will be uploaded from `<FilePath>`
+
+* `filename <FileNamePattern>` - A file name
+    * `#email#` and `#user#` will be replaced by the user's full email address
+    * `#username#` will be replaced by the local part of the user's email address
+
+### Delete a Chat Emoji
+Deletes the given Chat emoji.
+
+```
+gam <UserTypeEntity> delete chatemoji <Chatemoji>
+```
+
+## Display Chat Emojis
+### Display a specific Chat emoji
+
+```
+gam <UserTypeEntity> info chatemoji <Chatemoji>
+        [formatjson]
+```
+By default, Gam displays the information as an indented list of keys and values.
+* `formatjson` - Display the fields in JSON format.
+
+### Display information about all chat emojis
+```
+gam <UserTypeEntity> show chatemojis
+        [showcreatedby any|me|others]
+        [formatjson]
+```
+Select emojis to display:
+* `showcreatedby any` - Display all emojis regardless of creator
+* `showcreatedby ` - Display all emojis created by the user; this is the default
+* `showcreatedby others` - Display all emojis not created by the user
+
+By default, Gam displays the information as an indented list of keys and values.
+* `formatjson` - Display the fields in JSON format.
+
+```
+gam <UserTypeEntity> print chatemojis [todrive <ToDriveAttribute>*]
+        [showcreatedby any|me|others]
+        [formatjson [quotechar <Character>]]
+```
+Select emojis to display:
+* `showcreatedby any` - Display all emojis regardless of creator
+* `showcreatedby ` - Display all emojis created by the user; this is the default
+* `showcreatedby others` - Display all emojis not created by the user
+
+By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
+* `formatjson` - Display the fields in JSON format.
+
+By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
+the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
+When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
+The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
+`quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
 ## Bulk Operations
 ### Display information about all chat spaces for a collection of users
