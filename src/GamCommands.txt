@@ -4440,13 +4440,14 @@ gam report usage customer [todrive <ToDriveAttribute>*]
         calendar|calendars|
         chat|
         chrome|
+        classroom|
         contextawareaccess|
         currents|gplus|google+|
         datastudio|
         devices|mobile|
         domain|
         drive|doc|docs|
-        gcp|
+        gcp|cloud|
         gemini|geminiforworkspace|
         groups|group|
         groupsenterprise|enterprisegroups|
@@ -4465,7 +4466,7 @@ gam report <ActivityApplicationName> [todrive <ToDriveAttribute>*]
         [(user all|<UserItem>)|(orgunit|org|ou <OrgUnitPath> [showorgunit])|(select <UserTypeEntity>)]
         [([start <Time>] [end <Time>])|(range <Time> <Time>)|
          yesterday|today|thismonth|(previousmonths <Integer>)]
-        [filtertime.* <Time>] [filter|filters <String>]
+        [filtertime.String> <Time>] [filter|filters <String>]
         [event|events <EventNameList>] [ip <String>]
         [groupidfilter <String>]
         [maxactivities <Number>] [maxevents <Number>] [maxresults <Number>]
@@ -7417,10 +7418,12 @@ gam <UserTypeEntity> print filters [labelidsonly] [todrive <ToDriveAttribute>*]
 
 gam <UserTypeEntity> create form
         title <String> [description <String>] [isquiz [<Boolean>]] [<JSONData>]
+        [ispublished [<Boolean>] isacceptingresponses [<Boolean>]]
         [drivefilename <DriveFileName>] [<DriveFileParentAttribute>]
         [(csv [todrive <ToDriveAttribute>*]) | returnidonly]
 gam <UserTypeEntity> update form <DriveFileEntity>
         [title <String>] [description <String>] [isquiz [<Boolean>]] [<JSONData>]
+        [ispublished [<Boolean>] isacceptingresponses [<Boolean>]]
 
 gam <UserTypeEntity> print forms <DriveFileEntity> [todrive <ToDriveAttribute>*]
         (addcsvdata <FieldName> <String>)*

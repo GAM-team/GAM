@@ -1,3 +1,8 @@
+7.10.01
+
+Added options `ispublished [<Boolean>]` and `isacceptingresponses [<Boolean>]` to
+`gam <UserTypeEntity> create|update form`.
+
 7.10.00
 
 Added commands to manage/display Chat Custom Emojis.

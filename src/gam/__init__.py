@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.10.00'
+__version__ = '7.10.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -13556,7 +13556,10 @@ REPORT_CHOICE_MAP = {
   'calendars': 'calendar',
   'chat': 'chat',
   'chrome': 'chrome',
+  'classroom': 'classroom',
+  'cloud': 'gcp',
   'contextawareaccess': 'context_aware_access',
+  'currents': 'gplus',
   'customer': 'customer',
   'customers': 'customer',
   'datastudio': 'data_studio',
@@ -72603,8 +72606,23 @@ def updateFormRequestUpdateMasks(ubody):
         v['updateMask'] = ','.join(v['updateMask'])
         break
 
+def _initPublishSettings():
+  return {'publishSettings': {'publishState': {'isPublished': False, 'isAcceptingResponses': False}},
+          'updateMask': ''}
+
+def _getPublishSettings(myarg, pbody):
+  if myarg == 'ispublished':
+    pbody['publishSettings']['publishState']['isPublished'] = getBoolean()
+  elif myarg == 'isacceptingresponses':
+    pbody['publishSettings']['publishState']['isAcceptingResponses'] = getBoolean()
+  else:
+    return False
+  pbody['updateMask'] = 'publishState'
+  return True
+
 # gam <UserTypeEntity> create form
 #	title <String> [description <String>] [isquiz [<Boolean>]] [<JSONData>]
+#	[ispublished [<Boolean>] isacceptingresponses [<Boolean>]]
 #	[drivefilename <DriveFileName>] [<DriveFileParentAttribute>]
 #	[(csv [todrive <ToDriveAttribute>*]) | returnidonly]
 def createForm(users):
@@ -72613,6 +72631,7 @@ def createForm(users):
   title = ''
   body = {'mimeType': MIMETYPE_GA_FORM}
   ubody = {'includeFormInResponse': True, 'requests': []}
+  pbody = _initPublishSettings()
   parentParms = initDriveFileAttributes()
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -72626,6 +72645,8 @@ def createForm(users):
     elif myarg == 'json':
       jsonData = getJSON([])
       ubody['requests'].extend(jsonData.get('requests', []))
+    elif _getPublishSettings(myarg, pbody):
+      pass
     elif myarg == 'drivefilename':
       body['name'] = getString(Cmd.OB_DRIVE_FILE_NAME)
     elif getDriveFileParentAttribute(myarg, parentParms):
@@ -72666,6 +72687,10 @@ def createForm(users):
       form = callGAPI(gform.forms(), 'batchUpdate',
                       throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                       formId=formId, body=ubody)
+      if pbody['updateMask']:
+        callGAPI(gform.forms(), 'setPublishSettings',
+                 throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                 formId=formId, body=pbody)
       if returnIdOnly:
         writeStdout(f'{formId}\n')
       elif not csvPF:
@@ -72690,8 +72715,10 @@ def createForm(users):
 
 # gam <UserTypeEntity> update form <DriveFileEntity>
 #	[title <String>] [description <String>] [isquiz [Boolean>]] [<JSONData>]
+#	[ispublished [<Boolean>] isacceptingresponses [<Boolean>]]
 def updateForm(users):
   ubody = {'includeFormInResponse': False, 'requests': []}
+  pbody = _initPublishSettings()
   fileIdEntity = getDriveFileEntity()
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -72704,10 +72731,12 @@ def updateForm(users):
     elif myarg == 'json':
       jsonData = getJSON([])
       ubody['requests'].extend(jsonData.get('requests', []))
+    elif _getPublishSettings(myarg, pbody):
+      pass
     else:
       unknownArgumentExit()
   updateFormRequestUpdateMasks(ubody)
-  if not ubody['requests']:
+  if not ubody['requests'] and not pbody['updateMask']:
     return
   i, count, users = getEntityArgument(users)
   for user in users:
@@ -72723,9 +72752,14 @@ def updateForm(users):
     for formId in fileIdEntity['list']:
       j += 1
       try:
-        callGAPI(gform.forms(), 'batchUpdate',
-                 throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                 formId=formId, body=ubody)
+        if ubody['requests']:
+          callGAPI(gform.forms(), 'batchUpdate',
+                   throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                   formId=formId, body=ubody)
+        if pbody['updateMask']:
+          callGAPI(gform.forms(), 'setPublishSettings',
+                   throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                   formId=formId, body=pbody)
         entityActionPerformed([Ent.USER, user, Ent.FORM, formId], j, jcount)
       except (GAPI.notFound, GAPI.invalidArgument) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.FORM, formId], str(e), j, jcount)

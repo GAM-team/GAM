@@ -650,7 +650,7 @@ _SVCACCT_SCOPES = [
    'api': GMAIL,
    'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/gmail.modify'},
-  {'name': 'Gmail API - Basic Settings (Filters,IMAP, Language, POP, Vacation) - read/write, Sharing Settings (Delegates, Forwarding, SendAs) - read',
+  {'name': 'Gmail API - Basic Settings (Filters, IMAP, Language, POP, Vacation) - read/write, Sharing Settings (Delegates, Forwarding, SendAs) - read',
    'api': GMAIL,
    'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/gmail.settings.basic'},
