@@ -49,6 +49,7 @@ gam user user@domain.com update serviceaccount
 ```
 gam <UserTypeEntity> create form
         title <String> [description <String>] [isquiz [Boolean>]] [<JSONData>]
+        [ispublished [<Boolean>] isacceptingresponses [<Boolean>]]
         [drivefilename <DriveFileName>] [<DriveFileParentAttribute>]
         [(csv [todrive <ToDriveAttribute>*]) | returnidonly]
 ```
@@ -79,6 +80,7 @@ Select forms with `<DriveFileEntity>`:
 ```
 gam <UserTypeEntity> update form <DriveFileEntity>
         [title <String>] [description <String>] [isquiz [Boolean>]] [<JSONData>]
+        [ispublished [<Boolean>] isacceptingresponses [<Boolean>]]
 ```
 
 `<JSONData>` is a list of form update requests.
@@ -87,7 +89,7 @@ gam <UserTypeEntity> update form <DriveFileEntity>
 
 ## Extended Example
 
-This example illustrates the use of JSN data to create and update forms
+This example illustrates the use of JSON data to create and update forms
 concerning student classtoom attendance.
 The form has two items: Absences and Notes.
 In `Absences`, the teacher can check `All present.` or check individual student absences.

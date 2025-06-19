@@ -44,13 +44,14 @@ config csv_output_row_filter "'\"accounts:used_quota_in_mb\":count>15000'"
         calendar|calendars|
         chat|
         chrome|
+        classroom|
         contextawareaccess|
         currents|gplus|google+|
         datastudio|
         devices|mobile|
         domain|
         drive|doc|docs|
-        gcp|
+        gcp|cloud|
         gemini|geminiforworkspace|
         groups|group|
         groupsenterprise|enterprisegroups|
