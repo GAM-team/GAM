@@ -72,6 +72,8 @@ This table and other suggestions came from:
 <EmailAddress> ::= <String>@<DomainName>
 <UniqueID> ::= id:<String>
 <GroupItem> ::= <EmailAddress>|<UniqueID>|<String>
+<LabelID> ::= <String>
+<LabelIDList> ::= "<LabelID>(,<LabelID)*"
 <LabelName> ::= <String>
 <QueryGmail> ::= <String> See: https://support.google.com/mail/answer/7190
 <Time> ::=
@@ -389,6 +391,7 @@ Your command line will have: `embedimage file1.jpg image1` embedimage file2.jpg 
 ```
 gam <UserTypeEntity> archive messages <GroupItem>
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
+         [labelids <LabelIDList>]
          [quick|notquick] [doit] [max_to_archive <Number>])|(ids <MessageIDEntity>)
         [csv [todrive <ToDriveAttribute>*]]
 ```
@@ -400,6 +403,7 @@ Messages are archived to the group specified by `<GroupItem>`.
 
 ### Archive a selected set of messages
 * `((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+` - Criteria to select messages
+* `labelids <LabelIDList>` - Select messages with labels that match all of the specified label IDs.
 * `max_to_archive` - Limit the number of messages that will be archived; use a value of 0 for no limit
 * `doit` - No messages are archived unless you specify `doit`. By not specifying `doit`, you can preview the messages selected to verify that the results match your expectations.
 
@@ -432,10 +436,14 @@ See below for message selection.
 Export messages in EML format.
 ```
 gam <UserTypeEntity> export message|messages
-        (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [max_to_export <Number>])|(ids <MessageIDEntity>)
+        (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
+         [labelids <LabelIDList>]
+         [quick|notquick] [max_to_export <Number>])|(ids <MessageIDEntity>)
         [targetfolder <FilePath>] [targetname <FileName>] [overwrite [<Boolean>]]
 gam <UserTypeEntity> export thread|threads
-        (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [max_to_export <Number>])|(ids <ThreadIDEntity>)
+        (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
+         [labelids <LabelIDList>]
+         [quick|notquick] [max_to_export <Number>])|(ids <MessageIDEntity>)
         [targetfolder <FilePath>] [targetname <FileName>] [overwrite [<Boolean>]]
 ```
 
@@ -459,10 +467,12 @@ See below for message selection.
 ```
 gam <UserTypeEntity> forward message|messages recipient|to <RecipientEntity>
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
+         [labelids <LabelIDList>]
          [quick|notquick] [doit] [max_to_forward <Number>])|(ids <MessageIDEntity>)
          [subject <String>] [addorigfieldstosubject]
 gam <UserTypeEntity> forward thread|threads recipient|to <RecipientEntity>
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
+         [labelids <LabelIDList>]
          [quick|notquick] [doit] [max_to_forward <Number>])|(ids <ThreadIDEntity>)
          [subject <String>] [addorigfieldstosubject]
 ```
@@ -482,23 +492,28 @@ See below for message selection.
 ```
 gam <UserTypeEntity> delete messages|threads
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
+         [labelids <LabelIDList>]
          [quick|notquick] [doit] [max_to_delete <Number>])|(ids <MessageIDEntity>)
         [csv [todrive <ToDriveAttribute>*]]
 gam <UserTypeEntity> modify messages|threads
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
+         [labelids <LabelIDList>]
          [quick|notquick] [doit] [max_to_modify <Number>])|(ids <MessageIDEntity>)
         ((addlabel <LabelName>)|(removelabel <LabelName>))+
         [csv [todrive <ToDriveAttribute>*]]
 gam <UserTypeEntity> spam messages|threads
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
+         [labelids <LabelIDList>]
          [quick|notquick] [doit] [max_to_spam <Number>])|(ids <MessageIDEntity>)
         [csv [todrive <ToDriveAttribute>*]]
 gam <UserTypeEntity> trash messages|threads
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
+         [labelids <LabelIDList>]
          [quick|notquick] [doit] [max_to_trash <Number>])|(ids <MessageIDEntity>)
         [csv [todrive <ToDriveAttribute>*]]
 gam <UserTypeEntity> untrash messages|threads
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
+         [labelids <LabelIDList>]
          [quick|notquick] [doit] [max_to_untrash <Number>])|(ids <MessageIDEntity>)
         [csv [todrive <ToDriveAttribute>*]]
 ```
@@ -522,6 +537,7 @@ user@domain.com,18e9fc58c5491f4c,Deleted,
 
 ### Manage a selected set of messages
 * `((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+` - Criteria to select messages
+* `labelids <LabelIDList>` - Select messages with labels that match all of the specified label IDs.
 * `max_to_xxx` - Limit the number of messages that will be processed; use a value of 0 for no limit
 * `doit` - No messages are processed unless you specify `doit`. By not specifying `doit`, you can preview the messages selected to verify that the results match your expectations.
 
@@ -570,6 +586,7 @@ gam config auto_batch_min 1 groups_inde EastOffice delete message query "rfc822m
 ```
 gam <UserTypeEntity> show messages|threads
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])*
+         [labelids <LabelIDList>]
          [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <MessageIDEntity>)
         [labelmatchpattern <REMatchPattern>] [sendermatchpattern <REMatchPattern>]
         [countsonly|positivecountsonly] [useronly]
@@ -581,6 +598,7 @@ gam <UserTypeEntity> show messages|threads
             [targetfolder <FilePath>] [overwrite [<Boolean>]]
 gam <UserTypeEntity> print messages|threads [todrive <ToDriveAttribute>*]
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])*
+         [labelids <LabelIDList>]
          [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <MessageIDEntity>)
         [labelmatchpattern <REMatchPattern>] [sendermatchpattern <REMatchPattern>]
         [countsonly|positivecountsonly] [useronly]
@@ -607,6 +625,7 @@ gam user user@domain.com print|show threads maxmessagesperthread 1
 
 ## Display a selected set of messages
 * `((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+` - Criteria to select messages
+* `labelids <LabelIDList>` - Select messages with labels that match all of the specified label IDs.
 * `max_to_xxx` - Limit the number of messages that will be displayed
 * `includespamtrash` - Include messages in the Spam and Trash folders
 * `labelmatchpattern <REMatchPattern>` - Only display messages with some label that matches `<REMatchPattern>`

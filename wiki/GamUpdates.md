@@ -12,6 +12,9 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 
 ### 7.10.02
 
+Added option `labelids <LabelIdList>` to all commands that process messages;
+this option causes GAM to only return messages with labels that match all of the specified label IDs.
+
 Updated `gam <UserTypeEntity> print|show forms` to always display `isPublished` and
 `isAcceptingResponses` in `publishSettings/publishState` regardless of their value;
 the API doesn't return these values when they are False.
