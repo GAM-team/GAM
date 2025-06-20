@@ -54,6 +54,12 @@ gam <UserTypeEntity> create form
         [(csv [todrive <ToDriveAttribute>*]) | returnidonly]
 ```
 
+When applicable, both `ispublished` and `isacceptingresponses` must be specified;
+the valid combinations are:
+* `ispublished true isacceptingresponses true`
+* `ispublished true isacceptingresponses false`
+* `ispublished false isacceptingresponses false`
+
 `<JSONData>` is a list of form update requests.
 
 * See: https://developers.google.com/forms/api/reference/rest/v1/forms/batchUpdate
@@ -82,6 +88,12 @@ gam <UserTypeEntity> update form <DriveFileEntity>
         [title <String>] [description <String>] [isquiz [Boolean>]] [<JSONData>]
         [ispublished [<Boolean>] isacceptingresponses [<Boolean>]]
 ```
+
+When applicable, both `ispublished` and `isacceptingresponses` must be specified;
+the valid combinations are:
+* `ispublished true isacceptingresponses true`
+* `ispublished true isacceptingresponses false`
+* `ispublished false isacceptingresponses false`
 
 `<JSONData>` is a list of form update requests.
 
