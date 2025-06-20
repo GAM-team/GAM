@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.10.02
+
+Updated `gam <UserTypeEntity> print|show forms` to always display `isPublished` and
+`isAcceptingResponses` in `publishSettings/publishState` regardless of their value;
+the API doesn't return these values when they are False.
+
 ### 7.10.01
 
 Added options `ispublished [<Boolean>]` and `isacceptingresponses [<Boolean>]` to

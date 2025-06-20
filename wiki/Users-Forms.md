@@ -54,11 +54,13 @@ gam <UserTypeEntity> create form
         [(csv [todrive <ToDriveAttribute>*]) | returnidonly]
 ```
 
-When applicable, both `ispublished` and `isacceptingresponses` must be specified;
-the valid combinations are:
+The valid combinations of `ispublished` and `isacceptingresponses` are:
 * `ispublished true isacceptingresponses true`
 * `ispublished true isacceptingresponses false`
 * `ispublished false isacceptingresponses false`
+* `ispublished false` - Sets `isacceptingresponses false`
+* `isacceptingresponses false` - Sets `ispublished false`
+* `isacceptingresponses true` - Sets `ispublished true`
 
 `<JSONData>` is a list of form update requests.
 
@@ -89,11 +91,13 @@ gam <UserTypeEntity> update form <DriveFileEntity>
         [ispublished [<Boolean>] isacceptingresponses [<Boolean>]]
 ```
 
-When applicable, both `ispublished` and `isacceptingresponses` must be specified;
-the valid combinations are:
+The valid combinations of `ispublished` and `isacceptingresponses` are:
 * `ispublished true isacceptingresponses true`
 * `ispublished true isacceptingresponses false`
 * `ispublished false isacceptingresponses false`
+* `ispublished false` - Sets `isacceptingresponses false`
+* `isacceptingresponses false` - Sets `ispublished false`
+* `isacceptingresponses true` - Sets `ispublished true`
 
 `<JSONData>` is a list of form update requests.
 
