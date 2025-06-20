@@ -1,3 +1,9 @@
+7.10.02
+
+Updated `gam <UserTypeEntity> print|show forms` to always display `isPublished` and
+`isAcceptingResponses` in `publishSettings/publishState` regardless of their value;
+the API doesn't return these values when they are False.
+
 7.10.01
 
 Added options `ispublished [<Boolean>]` and `isacceptingresponses [<Boolean>]` to

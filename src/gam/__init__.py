@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.10.01'
+__version__ = '7.10.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -72607,14 +72607,19 @@ def updateFormRequestUpdateMasks(ubody):
         break
 
 def _initPublishSettings():
-  return {'publishSettings': {'publishState': {'isPublished': False, 'isAcceptingResponses': False}},
-          'updateMask': ''}
+  return {'publishSettings': {'publishState': {}}, 'updateMask': ''}
 
 def _getPublishSettings(myarg, pbody):
   if myarg == 'ispublished':
-    pbody['publishSettings']['publishState']['isPublished'] = getBoolean()
+    bval = getBoolean()
+    pbody['publishSettings']['publishState']['isPublished'] = bval
+    if not bval:
+      pbody['publishSettings']['publishState']['isAcceptingResponses'] = bval
   elif myarg == 'isacceptingresponses':
-    pbody['publishSettings']['publishState']['isAcceptingResponses'] = getBoolean()
+    bval = getBoolean()
+    pbody['publishSettings']['publishState']['isAcceptingResponses'] = bval
+    if bval:
+      pbody['publishSettings']['publishState']['isPublished'] = bval
   else:
     return False
   pbody['updateMask'] = 'publishState'
@@ -72808,6 +72813,9 @@ def printShowForms(users):
         result = callGAPI(gform.forms(), 'get',
                           throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED],
                           formId=formId)
+        if 'publishSettings' in result and 'publishState' in result['publishSettings']:
+          result['publishSettings']['publishState'].setdefault('isPublished', False)
+          result['publishSettings']['publishState'].setdefault('isAcceptingResponses', False)
         if not csvPF:
           if not FJQC.formatJSON:
             printEntity([Ent.FORM, result['formId']], j, jcount)
