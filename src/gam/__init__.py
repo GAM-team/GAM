@@ -70133,6 +70133,7 @@ def _initMessageThreadParameters(entityType, doIt, maxToProcess):
           'query': '', 'queryTimes': {},
           'entityType': entityType, 'messageEntity': None, 'doIt': doIt, 'quick': True,
           'labelMatchPattern': None, 'senderMatchPattern': None,
+          'labelIds': [],
           'maxToProcess': maxToProcess, 'maxItems': 0, 'maxMessagesPerThread': 0,
           'maxToKeywords': [MESSAGES_MAX_TO_KEYWORDS[Act.Get()], 'maxtoprocess'],
           'listType': listType, 'fields': f'nextPageToken,{listType}(id)'}
@@ -70165,6 +70166,8 @@ def _getMessageSelectParameters(myarg, parameters):
     parameters['labelMatchPattern'] = getREPattern(re.IGNORECASE)
   elif myarg == 'sendermatchpattern':
     parameters['senderMatchPattern'] = getREPattern(re.IGNORECASE)
+  elif myarg == 'labelids':
+    parameters['labelIds'].extend(getEntityList(Cmd.OB_LABEL_ID_LIST))
   elif myarg == 'ids':
     parameters['messageEntity'] = getUserObjectEntity(Cmd.OB_MESSAGE_ID, parameters['entityType'])
   elif myarg == 'quick':
@@ -71809,7 +71812,8 @@ def printShowMessagesThreads(users, entityType):
         listResult = callGAPIpages(service, 'list', parameters['listType'],
                                    pageMessage=getPageMessageForWhom(), maxItems=parameters['maxItems'],
                                    throwReasons=GAPI.GMAIL_THROW_REASONS+GAPI.GMAIL_LIST_THROW_REASONS,
-                                   userId='me', q=parameters['query'], fields=parameters['fields'], includeSpamTrash=includeSpamTrash,
+                                   userId='me', q=parameters['query'], labelIds=parameters['labelIds'],
+                                   fields=parameters['fields'], includeSpamTrash=includeSpamTrash,
                                    maxResults=GC.Values[GC.MESSAGE_MAX_RESULTS])
         messageIds = [message['id'] for message in listResult]
       else:
