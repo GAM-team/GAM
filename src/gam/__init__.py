@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.10.02'
+__version__ = '7.10.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -70267,7 +70267,8 @@ def archiveMessages(users):
         listResult = callGAPIpages(service, 'list', parameters['listType'],
                                    pageMessage=getPageMessageForWhom(), maxItems=parameters['maxItems'],
                                    throwReasons=GAPI.GMAIL_THROW_REASONS+GAPI.GMAIL_LIST_THROW_REASONS,
-                                   userId='me', q=parameters['query'], fields=parameters['fields'],
+                                   userId='me', q=parameters['query'], labelIds=parameters['labelIds'],
+                                   fields=parameters['fields'],
                                    maxResults=GC.Values[GC.MESSAGE_MAX_RESULTS])
         messageIds = [message['id'] for message in listResult]
     except (GAPI.failedPrecondition, GAPI.permissionDenied, GAPI.invalid, GAPI.invalidArgument) as e:
@@ -70456,7 +70457,8 @@ def _processMessagesThreads(users, entityType):
         listResult = callGAPIpages(service, 'list', parameters['listType'],
                                    pageMessage=getPageMessageForWhom(), maxItems=parameters['maxItems'],
                                    throwReasons=GAPI.GMAIL_THROW_REASONS+GAPI.GMAIL_LIST_THROW_REASONS,
-                                   userId='me', q=parameters['query'], fields=parameters['fields'], includeSpamTrash=includeSpamTrash,
+                                   userId='me', q=parameters['query'], labelIds=parameters['labelIds'],
+                                   fields=parameters['fields'], includeSpamTrash=includeSpamTrash,
                                    maxResults=GC.Values[GC.MESSAGE_MAX_RESULTS])
         messageIds = [message['id'] for message in listResult]
       else:
@@ -70572,7 +70574,8 @@ def exportMessagesThreads(users, entityType):
         listResult = callGAPIpages(service, 'list', parameters['listType'],
                                    pageMessage=getPageMessageForWhom(), maxItems=parameters['maxItems'],
                                    throwReasons=GAPI.GMAIL_THROW_REASONS+GAPI.GMAIL_LIST_THROW_REASONS,
-                                   userId='me', q=parameters['query'], fields=parameters['fields'], includeSpamTrash=includeSpamTrash,
+                                   userId='me', q=parameters['query'], labelIds=parameters['labelIds'],
+                                   fields=parameters['fields'], includeSpamTrash=includeSpamTrash,
                                    maxResults=GC.Values[GC.MESSAGE_MAX_RESULTS])
         entityIds = [entity['id'] for entity in listResult]
     except (GAPI.failedPrecondition, GAPI.permissionDenied, GAPI.invalid, GAPI.invalidArgument) as e:
@@ -70707,7 +70710,8 @@ def forwardMessagesThreads(users, entityType):
         listResult = callGAPIpages(service, 'list', parameters['listType'],
                                    pageMessage=getPageMessageForWhom(), maxItems=parameters['maxItems'],
                                    throwReasons=GAPI.GMAIL_THROW_REASONS+GAPI.GMAIL_LIST_THROW_REASONS,
-                                   userId='me', q=parameters['query'], fields=parameters['fields'], includeSpamTrash=includeSpamTrash,
+                                   userId='me', q=parameters['query'], labelIds=parameters['labelIds'],
+                                   fields=parameters['fields'], includeSpamTrash=includeSpamTrash,
                                    maxResults=GC.Values[GC.MESSAGE_MAX_RESULTS])
         entityIds = [entity['id'] for entity in listResult]
       except (GAPI.failedPrecondition, GAPI.permissionDenied, GAPI.invalid, GAPI.invalidArgument) as e:

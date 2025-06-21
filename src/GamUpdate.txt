@@ -1,3 +1,8 @@
+7.10.03
+
+Fixed bug in commands that modify messages where the `labelids <LabelIdList>` option
+was not being applied.
+
 7.10.02
 
 Added option `labelids <LabelIdList>` to all commands that process messages;
