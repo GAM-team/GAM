@@ -39,20 +39,18 @@ config csv_output_row_filter "'\"accounts:used_quota_in_mb\":count>15000'"
 ## Activity reports
 ```
 <ActivityApplicationName> ::=
-        access|accesstransparency|
+        accesstransparency|access|
         admin|
         calendar|calendars|
         chat|
         chrome|
         classroom|
         contextawareaccess|
-        currents|gplus|google+|
+        gplus|currents|google+|
         datastudio|
-        devices|mobile|
-        domain|
         drive|doc|docs|
         gcp|cloud|
-        gemini|geminiforworkspace|
+        geminiinworkspaceapps|gemini|geminiforworkspace|
         groups|group|
         groupsenterprise|enterprisegroups|
         jamboard|

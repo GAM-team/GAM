@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.10.04
+
+Updated `gam report <ActivityApplicationName>` to accept accept application names as defined
+in the Reports API discovery document; this means that GAM does not have to be updated when
+Google defines a new application name.
+
+`gemini_in_workspace_apps` is now available in `gam report`.
+
 ### 7.10.03
 
 Fixed bug in commands that modify messages where the `labelids <LabelIdList>` option
