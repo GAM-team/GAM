@@ -108,7 +108,7 @@ Paul shall send emails from the marketing email address with the name Paul from 
 ``` gam user paul add sendas marketing@example.com "Paul from Example" replyto paul```
 
 ## Display sendas
-### Display the information as an indented list of keys and values.
+### Display the sendas information as an indented list of keys and values.
 ```
 gam <UserTypeEntity> info sendas <EmailAddressEntity> [compact|format|html]
 gam <UserTypeEntity> show sendas [compact|format|html]
@@ -126,7 +126,19 @@ By default, all sendas addresses are shown, use these options to limit the displ
 
 Use the `verifyonly` option to display `True` or `False` in the signature field based on whether the signature is non-blank.
 
-### Display the information in CSV form.
+To capture a signature for use as input to GAM, do the following.
+```
+gam redirect stdout ./signature.html user user@domain.com show sendas compact
+```
+Edit signature.html and remove the following data leaving just the HTML.
+```
+SendAs Address: <user@domain.com>
+  IsPrimary: True
+  Default: True
+  Signature:
+```
+
+### Display the sendas information in CSV form.
 ```
 gam <UserTypeEntity> print sendas [compact]
         [primary|default] [verifyonly] [todrive <ToDriveAttribute>*]
@@ -170,7 +182,7 @@ email address signature rather than the alias signature to be set.
 If you have a current default signature, the API will update that, but if you delete it, it seems that the API will not over-write any of the other signatures, but instead add a new signature called `My signature`. If you rename that signature, the API will keep on updating that same signature, and not touch the other signatures.
 
 ## Display signature
-### Display the information as an indented list of keys and values.
+### Display the signature as an indented list of keys and values.
 ```
 gam <UserTypeEntity> show signature|sig [compact|format|html]
         [primary|default] [verifyonly]
@@ -199,7 +211,7 @@ SendAs Address: <user@domain.com>
   Signature:
 ```
 
-### Display the information in CSV form.
+### Display the signature in CSV form.
 ```
 gam <UserTypeEntity> print signature [compact]
             [primary|default] [verifyonly] [todrive <ToDriveAttribute>*]
