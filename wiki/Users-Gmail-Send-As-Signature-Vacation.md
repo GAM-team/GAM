@@ -187,6 +187,18 @@ By default, the signature for `<UserTypeEntity>` is displayed, use these options
 
 Use the `verifyonly` option to display `True` or `False` in the signature field based on whether the signature is non-blank.
 
+To capture a signature for use as input to GAM, do the following.
+```
+gam redirect stdout ./signature.html user user@domain.com show signature compact
+```
+Edit signature.html and remove the following data leaving just the HTML.
+```
+SendAs Address: <user@domain.com>
+  IsPrimary: True
+  Default: True
+  Signature:
+```
+
 ### Display the information in CSV form.
 ```
 gam <UserTypeEntity> print signature [compact]
