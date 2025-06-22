@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.10.03'
+__version__ = '7.10.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -13548,52 +13548,55 @@ def doReportUsage():
 NL_SPACES_PATTERN = re.compile(r'\n +')
 DISABLED_REASON_TIME_PATTERN = re.compile(r'.*(\d{4}/\d{2}/\d{2}-\d{2}:\d{2}:\d{2})')
 
-REPORT_CHOICE_MAP = {
-  'access': 'access_transparency',
-  'accesstransparency': 'access_transparency',
-  'admin': 'admin',
-  'calendar': 'calendar',
+REPORT_ALIASES_CHOICE_MAP = {
+  'access': 'accesstransparency',
   'calendars': 'calendar',
-  'chat': 'chat',
-  'chrome': 'chrome',
-  'classroom': 'classroom',
   'cloud': 'gcp',
-  'contextawareaccess': 'context_aware_access',
   'currents': 'gplus',
-  'customer': 'customer',
   'customers': 'customer',
-  'datastudio': 'data_studio',
+  'domain': 'customer',
   'devices': 'mobile',
   'doc': 'drive',
   'docs': 'drive',
-  'domain': 'customer',
-  'drive': 'drive',
-  'enterprisegroups': 'groups_enterprise',
-  'gcp': 'gcp',
-  'gemini': 'gemini_for_workspace',
-  'geminiforworkspace': 'gemini_for_workspace',
-  'gplus': 'gplus',
-  'google+': 'gplus',
+  'enterprisegroups': 'groupsenterprise',
+  'gemini': 'geminiinworkspaceapps',
+  'geminiforworkspace': 'geminiinworkspaceapps',
   'group': 'groups',
+  'google+': 'gplus',
+  'hangoutsmeet': 'meet',
+  'logins': 'login',
+  'lookerstudio': 'datastudio',
+  'oauthtoken': 'token',
+  'tokens': 'token',
+  'users': 'user',
+  }
+
+REPORT_CHOICE_MAP = {
+  'accesstransparency': 'access_transparency',
+  'admin': 'admin',
+  'calendar': 'calendar',
+  'chat': 'chat',
+  'chrome': 'chrome',
+  'contextawareaccess': 'context_aware_access',
+  'customer': 'customer',
+  'datastudio': 'data_studio',
+  'drive': 'drive',
+  'gcp': 'gcp',
+  'geminiinworkspaceapps': 'gemini_in_workspace_apps',
+  'gplus': 'gplus',
   'groups': 'groups',
   'groupsenterprise': 'groups_enterprise',
-  'hangoutsmeet': 'meet',
   'jamboard': 'jamboard',
   'keep': 'keep',
   'login': 'login',
-  'logins': 'login',
-  'lookerstudio': 'data_studio',
   'meet': 'meet',
   'mobile': 'mobile',
-  'oauthtoken': 'token',
   'rules': 'rules',
   'saml': 'saml',
   'token': 'token',
-  'tokens': 'token',
   'usage': 'usage',
   'usageparameters': 'usageparameters',
   'user': 'user',
-  'users': 'user',
   'useraccounts': 'user_accounts',
   'vault': 'vault',
   }
@@ -13883,7 +13886,7 @@ def doReport():
     if dyn_choice.replace('_', '') not in REPORT_CHOICE_MAP and \
        dyn_choice not in REPORT_CHOICE_MAP.values():
       REPORT_CHOICE_MAP[dyn_choice.replace('_', '')] = dyn_choice
-  report = getChoice(REPORT_CHOICE_MAP, mapChoice=True)
+  report = getChoice(REPORT_CHOICE_MAP, choiceAliases=REPORT_ALIASES_CHOICE_MAP, mapChoice=True)
   if report == 'usage':
     doReportUsage()
     return

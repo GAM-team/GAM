@@ -4435,20 +4435,18 @@ gam report usage customer [todrive <ToDriveAttribute>*]
         [convertmbtogb]
 
 <ActivityApplicationName> ::=
-        access|accesstransparency|
+        accesstransparency|access|
         admin|
         calendar|calendars|
         chat|
         chrome|
         classroom|
         contextawareaccess|
-        currents|gplus|google+|
+        gplus|currents|google+|
         datastudio|
-        devices|mobile|
-        domain|
         drive|doc|docs|
         gcp|cloud|
-        gemini|geminiforworkspace|
+        geminiinworkspaceapps|gemini|geminiforworkspace|
         groups|group|
         groupsenterprise|enterprisegroups|
         jamboard|
@@ -4466,7 +4464,7 @@ gam report <ActivityApplicationName> [todrive <ToDriveAttribute>*]
         [(user all|<UserItem>)|(orgunit|org|ou <OrgUnitPath> [showorgunit])|(select <UserTypeEntity>)]
         [([start <Time>] [end <Time>])|(range <Time> <Time>)|
          yesterday|today|thismonth|(previousmonths <Integer>)]
-        [filtertime.String> <Time>] [filter|filters <String>]
+        [filtertime.<String> <Time>] [filter|filters <String>]
         [event|events <EventNameList>] [ip <String>]
         [groupidfilter <String>]
         [maxactivities <Number>] [maxevents <Number>] [maxresults <Number>]
