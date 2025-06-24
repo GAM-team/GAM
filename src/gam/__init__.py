@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.10.04'
+__version__ = '7.10.05'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -59527,7 +59527,8 @@ def _copyPermissions(drive, user, i, count, j, jcount,
         entityActionPerformed(kvList, k, kcount)
     except (GAPI.notFound, GAPI.permissionNotFound,
             GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.unknownError,
-            GAPI.fileNeverWritable, GAPI.badRequest, GAPI.cannotRemoveOwner, GAPI.cannotModifyInheritedTeamDrivePermission,
+            GAPI.fileNeverWritable, GAPI.badRequest, GAPI.cannotRemoveOwner,
+            GAPI.cannotModifyInheritedTeamDrivePermission, GAPI.cannotModifyInheritedPermission,
             GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded, GAPI.cannotDeletePermission) as e:
       entityActionFailedWarning(kvList, str(e), k, kcount)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
@@ -59554,7 +59555,8 @@ def _copyPermissions(drive, user, i, count, j, jcount,
         entityActionPerformed(kvList, k, kcount)
     except (GAPI.notFound, GAPI.permissionNotFound,
             GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.unknownError,
-            GAPI.fileNeverWritable, GAPI.badRequest, GAPI.cannotRemoveOwner, GAPI.cannotModifyInheritedTeamDrivePermission,
+            GAPI.fileNeverWritable, GAPI.badRequest, GAPI.cannotRemoveOwner,
+            GAPI.cannotModifyInheritedTeamDrivePermission, GAPI.cannotModifyInheritedPermission,
             GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded) as e:
       entityActionFailedWarning(kvList, str(e), k, kcount)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
@@ -60561,7 +60563,8 @@ def _updateMoveFilePermissions(drive, user, i, count,
           entityActionPerformed(kvList, k, kcount)
       except (GAPI.notFound, GAPI.permissionNotFound,
               GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.unknownError,
-              GAPI.fileNeverWritable, GAPI.badRequest, GAPI.cannotRemoveOwner, GAPI.cannotModifyInheritedTeamDrivePermission,
+              GAPI.fileNeverWritable, GAPI.badRequest, GAPI.cannotRemoveOwner,
+              GAPI.cannotModifyInheritedTeamDrivePermission, GAPI.cannotModifyInheritedPermission,
               GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded, GAPI.cannotDeletePermission) as e:
         entityActionFailedWarning(kvList, str(e), k, kcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
@@ -63984,7 +63987,8 @@ def updateDriveFileACLs(users, useDomainAdminAccess=False):
               GAPI.targetUserRoleLimitedByLicenseRestriction, GAPI.insufficientAdministratorPrivileges,
               GAPI.publishOutNotPermitted, GAPI.shareInNotPermitted, GAPI.shareOutNotPermitted, GAPI.shareOutNotPermittedToUser,
               GAPI.organizerOnNonTeamDriveItemNotSupported, GAPI.fileOrganizerOnNonTeamDriveNotSupported,
-              GAPI.cannotUpdatePermission, GAPI.cannotModifyInheritedTeamDrivePermission, GAPI.fieldNotWritable) as e:
+              GAPI.cannotUpdatePermission, GAPI.cannotModifyInheritedTeamDrivePermission, GAPI.cannotModifyInheritedPermission,
+              GAPI.fieldNotWritable) as e:
         entityActionFailedWarning([Ent.USER, user, entityType, fileName], str(e), j, jcount)
       except (GAPI.notFound, GAPI.teamDriveDomainUsersOnlyRestriction, GAPI.teamDriveTeamMembersOnlyRestriction,
               GAPI.cannotShareTeamDriveTopFolderWithAnyoneOrDomains, GAPI.ownerOnTeamDriveItemNotSupported,
@@ -64257,7 +64261,8 @@ def deleteDriveFileACLs(users, useDomainAdminAccess=False):
         if updateSheetProtectedRanges and mimeType == MIMETYPE_GA_SPREADSHEET:
           _updateSheetProtectedRangesACLchange(sheet, user, i, count, j, jcount, fileId, fileName, False, permission)
       except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.unknownError,
-              GAPI.fileNeverWritable, GAPI.badRequest, GAPI.cannotRemoveOwner, GAPI.cannotModifyInheritedTeamDrivePermission,
+              GAPI.fileNeverWritable, GAPI.badRequest, GAPI.cannotRemoveOwner,
+              GAPI.cannotModifyInheritedTeamDrivePermission, GAPI.cannotModifyInheritedPermission,
               GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded, GAPI.cannotDeletePermission) as e:
         entityActionFailedWarning([Ent.USER, user, entityType, fileName], str(e), j, jcount)
       except GAPI.notFound as e:
@@ -64313,7 +64318,8 @@ def deletePermissions(users, useDomainAdminAccess=False):
                  fileId=ri[RI_ENTITY], permissionId=ri[RI_ITEM], supportsAllDrives=True)
         entityActionPerformed([Ent.DRIVE_FILE_OR_FOLDER_ID, ri[RI_ENTITY], Ent.PERMISSION_ID, ri[RI_ITEM]], int(ri[RI_J]), int(ri[RI_JCOUNT]))
       except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.unknownError,
-              GAPI.badRequest, GAPI.cannotRemoveOwner, GAPI.cannotModifyInheritedTeamDrivePermission,
+              GAPI.badRequest, GAPI.cannotRemoveOwner,
+              GAPI.cannotModifyInheritedTeamDrivePermission, GAPI.cannotModifyInheritedPermission,
               GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded, GAPI.permissionNotFound, GAPI.cannotDeletePermission,
               GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
         entityActionFailedWarning([Ent.DRIVE_FILE_OR_FOLDER_ID, ri[RI_ENTITY], Ent.PERMISSION_ID, ri[RI_ITEM]], str(e), int(ri[RI_J]), int(ri[RI_JCOUNT]))

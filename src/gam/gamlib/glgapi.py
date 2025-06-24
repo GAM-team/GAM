@@ -41,6 +41,7 @@ CANNOT_DELETE_PERMISSION = 'cannotDeletePermission'
 CANNOT_DELETE_PRIMARY_CALENDAR = 'cannotDeletePrimaryCalendar'
 CANNOT_DELETE_PRIMARY_SENDAS = 'cannotDeletePrimarySendAs'
 CANNOT_DELETE_RESOURCE_WITH_CHILDREN = 'cannotDeleteResourceWithChildren'
+CANNOT_MODIFY_INHERITED_PERMISSION = 'cannotModifyInheritedPermission'
 CANNOT_MODIFY_INHERITED_TEAMDRIVE_PERMISSION = 'cannotModifyInheritedTeamDrivePermission'
 CANNOT_MODIFY_RESTRICTED_LABEL = 'cannotModifyRestrictedLabel'
 CANNOT_MODIFY_VIEWERS_CAN_COPY_CONTENT = 'cannotModifyViewersCanCopyContent'
@@ -248,10 +249,10 @@ DRIVE3_UPDATE_ACL_THROW_REASONS = [BAD_REQUEST, INVALID_OWNERSHIP_TRANSFER, CANN
                                    FILE_ORGANIZER_ON_FOLDERS_IN_SHARED_DRIVE_ONLY,
                                    FILE_ORGANIZER_ON_NON_TEAMDRIVE_NOT_SUPPORTED,
                                    CANNOT_UPDATE_PERMISSION,
-                                   CANNOT_MODIFY_INHERITED_TEAMDRIVE_PERMISSION,
+                                   CANNOT_MODIFY_INHERITED_TEAMDRIVE_PERMISSION, CANNOT_MODIFY_INHERITED_PERMISSION,
                                    FIELD_NOT_WRITABLE, PERMISSION_NOT_FOUND]
 DRIVE3_DELETE_ACL_THROW_REASONS = [BAD_REQUEST, CANNOT_REMOVE_OWNER,
-                                   CANNOT_MODIFY_INHERITED_TEAMDRIVE_PERMISSION,
+                                   CANNOT_MODIFY_INHERITED_TEAMDRIVE_PERMISSION, CANNOT_MODIFY_INHERITED_PERMISSION,
                                    INSUFFICIENT_ADMINISTRATOR_PRIVILEGES, SHARING_RATE_LIMIT_EXCEEDED,
                                    NOT_FOUND, PERMISSION_NOT_FOUND, CANNOT_DELETE_PERMISSION]
 DRIVE3_MODIFY_LABEL_THROW_REASONS = DRIVE_USER_THROW_REASONS+[FILE_NOT_FOUND, NOT_FOUND, FORBIDDEN, INTERNAL_ERROR,
@@ -397,6 +398,8 @@ class cannotDeletePrimaryCalendar(Exception):
 class cannotDeletePrimarySendAs(Exception):
   pass
 class cannotDeleteResourceWithChildren(Exception):
+  pass
+class cannotModifyInheritedPermission(Exception):
   pass
 class cannotModifyInheritedTeamDrivePermission(Exception):
   pass
@@ -698,6 +701,7 @@ REASON_EXCEPTION_MAP = {
   CANNOT_DELETE_PRIMARY_CALENDAR: cannotDeletePrimaryCalendar,
   CANNOT_DELETE_PRIMARY_SENDAS: cannotDeletePrimarySendAs,
   CANNOT_DELETE_RESOURCE_WITH_CHILDREN: cannotDeleteResourceWithChildren,
+  CANNOT_MODIFY_INHERITED_PERMISSION: cannotModifyInheritedPermission,
   CANNOT_MODIFY_INHERITED_TEAMDRIVE_PERMISSION: cannotModifyInheritedTeamDrivePermission,
   CANNOT_MODIFY_RESTRICTED_LABEL: cannotModifyRestrictedLabel,
   CANNOT_MODIFY_VIEWERS_CAN_COPY_CONTENT: cannotModifyViewersCanCopyContent,

@@ -1,3 +1,8 @@
+7.10.05
+
+Google renamed an error: cannotModifyInheritedTeamDrivePermission became cannotModifyInheritedPermission.
+GAM will now handle the new error.
+
 7.10.04
 
 Updated `gam report <ActivityApplicationName>` to accept accept application names as defined
