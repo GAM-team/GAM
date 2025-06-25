@@ -810,7 +810,7 @@ jobs:
           echo "Created shared drive ${driveid}"
           $gam create user $newuser firstname GHA lastname $JID displayname "Github Actions ${JID}" password random recoveryphone 12125121110 recoveryemail jay0lee@gmail.com gha.jid $JID languages en+,en-GB- ou "${newou}"
           $gam user $newuser add license workspaceenterpriseplus
-          $gam user $newuser update photo https://dummyimage.com/400x600/000/fff
+          $gam user $newuser update photo https://dummyimage.com/98x98/000/fff.jpg
           $gam user $newuser get photo
           $gam user $newuser delete photo
           $gam create alias $newalias user $newuser
