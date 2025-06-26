@@ -457,10 +457,6 @@ jobs:
       - name: Custom wheels for Win arm64
         if: runner.os == 'Windows' && runner.arch == 'ARM64'
         run: |
-          latest_lxml_whl=$(curl https://api.github.com/repos/GAM-team/lxml-wheel/releases/latest -s | jq -r .assets.[0].browser_download_url)
-          echo "Downloading ${latest_lxml_whl}..."
-          curl -O -L "$latest_lxml_whl"
-          "$PYTHON" -m pip install lxml*.whl
           latest_crypt_whl=$(curl https://api.github.com/repos/jay0lee/cryptography/releases/latest -s | jq -r .assets.[0].browser_download_url)
           echo "Downloading ${latest_crypt_whl}..."
           curl -O -L "$latest_crypt_whl"
