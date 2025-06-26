@@ -10,13 +10,22 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.10.07
+
+Updated `gam <UserTypeEntity> copy|move drivefile` to hanndle additional instances of
+the `cannotModifyInheritedPermission` error.
+
+Added license SKU `Google AI Ultra for Business`
+* ProductID - 101047
+* SKUID - 1010470008 | geminiultra
+
 ### 7.10.06
 
 Added option `clientstates` to `gam print devices` to include client states in device output.
 
 ### 7.10.05
 
-Google renamed an error: cannotModifyInheritedTeamDrivePermission became cannotModifyInheritedPermission.
+Google renamed an error: `cannotModifyInheritedTeamDrivePermission` became `cannotModifyInheritedPermission`.
 GAM will now handle the new error.
 
 ### 7.10.04
