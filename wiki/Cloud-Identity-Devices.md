@@ -211,6 +211,7 @@ gam print devices [todrive <ToDriveAttribute>*]
         [orderby <DeviceOrderByFieldName> [ascending|descending]]
         [all|company|personal|nocompanydevices|nopersonaldevices]
         [nodeviceusers|oneuserperrow]
+        [clientstates]
         [formatjson [quotechar <Character>]]
 ```
 By default, all devices are displayed; use the query options to limit the display.

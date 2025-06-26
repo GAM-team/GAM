@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.10.06
+
+Added option `clientstates` to `gam print devices` to include client states in device output.
+
 ### 7.10.05
 
 Google renamed an error: cannotModifyInheritedTeamDrivePermission became cannotModifyInheritedPermission.
