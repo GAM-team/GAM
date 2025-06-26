@@ -920,7 +920,7 @@ jobs:
           $gam config enable_dasa true save
           $gam print users query "gha.jid=$JID" | $gam csv - gam delete user ~primaryEmail  || if [ $? != 50 ]; then exit $?; fi # expect a 50 return code (vault hold on user)
           $gam print mobile
-          $gam print devices
+          $gam print devices clientstates
           $gam print browsers
           $gam print cros allfields orderby serialnumber
           $gam show crostelemetry storagepercentonly
