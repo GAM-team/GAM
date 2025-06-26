@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.10.06'
+__version__ = '7.10.07'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -8864,6 +8864,7 @@ class CSVPrintFile():
                           GAPI.fileOrganizerNotYetEnabledForThisTeamDrive,
                           GAPI.fileOrganizerOnFoldersInSharedDriveOnly,
                           GAPI.fileOrganizerOnNonTeamDriveNotSupported,
+                          GAPI.cannotModifyInheritedPermission,
                           GAPI.teamDrivesFolderSharingNotSupported, GAPI.invalidLinkVisibility,
                           GAPI.invalidSharingRequest, GAPI.fileNeverWritable, GAPI.abusiveContentRestriction) as e:
                     entityActionFailedWarning([Ent.USER, user, Ent.SPREADSHEET, title,
@@ -29957,7 +29958,7 @@ DEVICE_ORDERBY_CHOICE_MAP = {
 #	[orderby <DeviceOrderByFieldName> [ascending|descending]]
 #	[all|company|personal|nocompanydevices|nopersonaldevices]
 #	[nodeviceusers|oneuserperrow]
-#   [clientstates]
+#	[clientstates]
 #	[formatjson [quotechar <Character>]]
 # 	[showitemcountonly]
 def doPrintCIDevices():
@@ -59522,6 +59523,7 @@ def _copyPermissions(drive, user, i, count, j, jcount,
               GAPI.fileOrganizerNotYetEnabledForThisTeamDrive,
               GAPI.fileOrganizerOnFoldersInSharedDriveOnly,
               GAPI.fileOrganizerOnNonTeamDriveNotSupported,
+              GAPI.cannotModifyInheritedPermission,
               GAPI.teamDrivesFolderSharingNotSupported, GAPI.invalidLinkVisibility, GAPI.abusiveContentRestriction) as e:
         entityActionFailedWarning(kvList, str(e), k, kcount)
         break
@@ -60629,6 +60631,7 @@ def _updateMoveFilePermissions(drive, user, i, count,
                 GAPI.fileOrganizerNotYetEnabledForThisTeamDrive,
                 GAPI.fileOrganizerOnFoldersInSharedDriveOnly,
                 GAPI.fileOrganizerOnNonTeamDriveNotSupported,
+                GAPI.cannotModifyInheritedPermission,
                 GAPI.teamDrivesFolderSharingNotSupported, GAPI.invalidLinkVisibility, GAPI.abusiveContentRestriction) as e:
           entityActionFailedWarning(kvList, str(e), k, kcount)
           break
@@ -63883,6 +63886,7 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
               GAPI.fileOrganizerNotYetEnabledForThisTeamDrive,
               GAPI.fileOrganizerOnFoldersInSharedDriveOnly,
               GAPI.fileOrganizerOnNonTeamDriveNotSupported,
+              GAPI.cannotModifyInheritedPermission,
               GAPI.teamDrivesFolderSharingNotSupported, GAPI.invalidLinkVisibility,
               GAPI.invalidSharingRequest, GAPI.fileNeverWritable, GAPI.abusiveContentRestriction) as e:
         entityActionFailedWarning([Ent.USER, user, entityType, fileName, Ent.PERMISSION_ID, permissionId], str(e), j, jcount)
@@ -64118,6 +64122,7 @@ def createDriveFilePermissions(users, useDomainAdminAccess=False):
               GAPI.fileOrganizerNotYetEnabledForThisTeamDrive,
               GAPI.fileOrganizerOnFoldersInSharedDriveOnly,
               GAPI.fileOrganizerOnNonTeamDriveNotSupported,
+              GAPI.cannotModifyInheritedPermission,
               GAPI.teamDrivesFolderSharingNotSupported, GAPI.invalidLinkVisibility,
               GAPI.invalidSharingRequest, GAPI.fileNeverWritable, GAPI.abusiveContentRestriction,
               GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
