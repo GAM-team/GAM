@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.10.05'
+__version__ = '7.10.06'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -29508,6 +29508,7 @@ def getCIDeviceEntity():
     return ([], ci, customer, False)
 
 DEVICE_USERNAME_PATTERN = re.compile(r'^(devices/.+)/(deviceUsers/.+)$')
+DEVICE_USERNAME_CLIENT_STATE_PATTERN = re.compile(r'^(devices/.+/deviceUsers/.+)/clientStates/(.+)$')
 DEVICE_USERNAME_FORMAT_REQUIRED = 'devices/<String>/deviceUsers/<String>'
 def getCIDeviceUserEntity():
   ci = buildGAPICIDeviceServiceObject()
@@ -29956,6 +29957,7 @@ DEVICE_ORDERBY_CHOICE_MAP = {
 #	[orderby <DeviceOrderByFieldName> [ascending|descending]]
 #	[all|company|personal|nocompanydevices|nopersonaldevices]
 #	[nodeviceusers|oneuserperrow]
+#   [clientstates]
 #	[formatjson [quotechar <Character>]]
 # 	[showitemcountonly]
 def doPrintCIDevices():
@@ -29971,6 +29973,7 @@ def doPrintCIDevices():
   queries = [None]
   view, entityType = DEVICE_VIEW_CHOICE_MAP['all']
   getDeviceUsers = True
+  getClientStates = False
   oneUserPerRow = showItemCountOnly = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -29986,6 +29989,8 @@ def doPrintCIDevices():
       view, entityType = DEVICE_VIEW_CHOICE_MAP[myarg]
     elif myarg == 'nodeviceusers':
       getDeviceUsers = False
+    elif myarg == 'clientstates':
+      getClientStates = True
     elif myarg in {'oneuserperrow', 'oneitemperrow'}:
       getDeviceUsers = oneUserPerRow = True
     elif getFieldsList(myarg, DEVICE_FIELDS_CHOICE_MAP, fieldsList, initialField='name'):
@@ -30004,14 +30009,16 @@ def doPrintCIDevices():
   if FJQC.formatJSON and oneUserPerRow:
     csvPF.SetJSONTitles(['name', 'user.name', 'JSON'])
   itemCount = 0
+  throwReasons = [GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED]
+  retryReasons = GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS
   for query in queries:
     printGettingAllAccountEntities(entityType, query)
     pageMessage = getPageMessage()
     try:
       devices = callGAPIpages(ci.devices(), 'list', 'devices',
                               pageMessage=pageMessage,
-                              throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                              throwReasons=throwReasons,
+                              retryReasons=retryReasons,
                               customer=customer, filter=query,
                               orderBy=OBY.orderBy, view=view, fields=fields, pageSize=100)
       if showItemCountOnly:
@@ -30030,10 +30037,27 @@ def doPrintCIDevices():
       try:
         deviceUsers = callGAPIpages(ci.devices().deviceUsers(), 'list', 'deviceUsers',
                                     pageMessage=pageMessage,
-                                    throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                                    retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                                    throwReasons=throwReasons,
+                                    retryReasons=retryReasons,
                                     customer=customer, filter=query, parent=parent,
                                     orderBy=OBY.orderBy, fields=userFields, pageSize=20)
+        if getClientStates:
+          printGettingAllAccountEntities(Ent.DEVICE_USER_CLIENT_STATE, None)
+          states = callGAPIpages(ci.devices().deviceUsers().clientStates(), 'list', 'clientStates',
+                                 pageMessage=pageMessage,
+                                 throwReasons=throwReasons,
+                                 retryReasons=retryReasons,
+                                 customer=customer, filter=query, parent='devices/-/deviceUsers/-')
+          for state in states:
+            mg = DEVICE_USERNAME_CLIENT_STATE_PATTERN.match(state['name'])
+            if mg:
+              du = mg.group(1)
+              state_name = mg.group(2)
+              for i in range(len(deviceUsers)):
+                if deviceUsers[i]['name'] == du:
+                  deviceUsers[i].setdefault('clientstates', {})
+                  deviceUsers[i]['clientstates'][state_name] = state
+                  break
         for deviceUser in deviceUsers:
           mg = DEVICE_USERNAME_PATTERN.match(deviceUser['name'])
           if mg:

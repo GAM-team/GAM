@@ -1,3 +1,7 @@
+7.10.06
+
+"gam print devices clientstates" to include client states in device output
+
 7.10.05
 
 Google renamed an error: cannotModifyInheritedTeamDrivePermission became cannotModifyInheritedPermission.
