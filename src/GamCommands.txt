@@ -279,6 +279,7 @@ If an item contains spaces, it should be surrounded by ".
         geminiedu | 1010470004 | Gemini Education |
         geminiedupremium| 1010470005 | Gemini Education Premium |
         geminient| duetai | 1010470001 | Gemini Enterprise |
+        geminiultra | 1010470008 | Google AI Ultra for Business |
         gsuitebasic | gafb | gafw | basic | Google-Apps-For-Business |
         gsuitebusiness | gau | gsb | unlimited | Google-Apps-Unlimited |
         gsuitebusinessarchived | gsbau | businessarchived | 1010340002 | Google Workspace Business - Archived User |

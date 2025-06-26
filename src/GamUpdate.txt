@@ -3,6 +3,10 @@
 Updated `gam <UserTypeEntity> copy|move drivefile` to hanndle additional instances of
 the `cannotModifyInheritedPermission` error.
 
+Added license SKU `Google AI Ultra for Business`
+* ProductID - 101047
+* SKUID - 1010470008 | geminiultra
+
 7.10.06
 
 Added option `clientstates` to `gam print devices` to include client states in device output.

@@ -108,7 +108,7 @@ _SKUS = {
   '1010470007': {
     'product': '101047', 'aliases': ['aimeetingsandmessaging'], 'displayName': 'AI Meetings and Messaging'},
   '1010470008': {
-    'product': '101047', 'aliases': ['geminiultra', ], 'displayName': 'Google AI Ultra for Business'},
+    'product': '101047', 'aliases': ['geminiultra'], 'displayName': 'Google AI Ultra for Business'},
   '1010490001': {
     'product': '101049', 'aliases': ['eeu'], 'displayName': 'Endpoint Education Upgrade'},
   '1010500001': {
