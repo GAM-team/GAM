@@ -1,18 +1,11 @@
 # Using GAM7 with a delegated admin service account
-- [Thanks](#thanks)
 - [Introduction](#introduction)
 - [Advantages](#advantages)
 - [Disadvantages](#disadvantages)
 - [Setup Steps](#setup-steps)
 
-## Thanks
-
-Thanks to Jay Lee for the original version of this document.
-
 ## Introduction
 Delegated admin service accounts (DASA) are regular [GCP service accounts](https://cloud.google.com/iam/docs/service-accounts#what_are_service_accounts) that are granted a Workspace [delegated admin role](https://support.google.com/a/answer/33325). Service accounts have an email address like `gam-project-xuw-sp1-c4b@gam-project-xuw-sp1-c4b.iam.gserviceaccount.com` and are not part of a Workspace or Cloud Identity domain even if they are owned by a project in the domain’s organization. Service accounts cannot login to Google web services interactively, they are only able to call Google APIs.
-
-GAM7 version 6.50.00 or higher is required.
 
 ## Advantages
 * DASA accounts don’t require a Workspace or Cloud Identity license.
