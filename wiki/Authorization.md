@@ -111,7 +111,7 @@ Verify whether the super admin you'll be using is in an OU where reauthenticatio
   * rerun `gam oauth create` at whatever frequency is specified
 
 Additional steps may be required if errors are encountered.
-* [Authorize a user to create projects](#authorize-a-super-admin-to-create-projects)
+* [Authorize a user to create projects](#authorize-a-user-to-create-projects)
 * [Authorize Service Account Key Uploads](#authorize-service-account-key-uploads)
 * [Authorize GAM to create projects](#authorize-gam-to-create-projects)
 
