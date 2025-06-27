@@ -5,6 +5,8 @@ on:
   push:
     paths:
       - 'wiki/**'
+  workflow_dispatch:
+
 jobs:
   pushwiki:
     runs-on: ubuntu-latest
