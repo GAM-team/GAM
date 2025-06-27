@@ -5,7 +5,7 @@
 - [Python Regular Expressions](Python-Regular-Expressions)
 - [Definitions](#definitions)
 - [Manage Projects](#manage-projects)
-  - [Authorize a super admin to create projects](#authorize-a-super-admin-to-create-projects)
+  - [Authorize a user to create projects](#authorize-a-user-to-create-projects)
   - [Authorize Service Account Key Uploads](#authorize-service-account-key-uploads)
   - [Authorize GAM to create projects](#authorize-gam-to-create-projects)
   - [Create a new GCP project folder](#create-a-new-gcp-project-folder)
@@ -74,11 +74,6 @@ Verify that all scopes are available:
 * Select "ON for everyone"
 * Click "SAVE"
 
-Verify that internal apps are trusted.
-* Access the admin console and go to Security -> Access and data control -> API Controls
-* Check that "Trust internal, domain-owned apps" is present in the **Settings** section
-* Click "SAVE"
-
 If you run a Google Workspace Education SKU, verify that Classroom API is enabled if required.
 * Access the admin console and go to Apps -> Google Workspace - Classroom
 * Expand "Data access"
@@ -110,12 +105,13 @@ Verify whether the super admin you'll be using is in an OU where reauthenticatio
 * Access the admin console and go to Security -> Overview
 * Scroll down and open Google Cloud session control section
 * Select the OU containing the super admin
-* If Require reauthentication is selected and Exempt Trusted apps is not checked, you'll have to do `gam oauth create` at whatever frequency is specified
-* If that sounds unappealing, check Exempt Trusted apps
-* Click "OVERRIDE"
+* If Require reauthentication is selected, you'll need either:
+  * uncheck Google Cloud Storage and any other GCP APIs that you selected on `gam oauth create` (reauth is only necessary for GCP APIs)
+  * enable "Exempt Trusted apps"
+  * rerun `gam oauth create` at whatever frequency is specified
 
 Additional steps may be required if errors are encountered.
-* [Authorize a super admin to create projects](#authorize-a-super-admin-to-create-projects)
+* [Authorize a user to create projects](#authorize-a-super-admin-to-create-projects)
 * [Authorize Service Account Key Uploads](#authorize-service-account-key-uploads)
 * [Authorize GAM to create projects](#authorize-gam-to-create-projects)
 
@@ -169,8 +165,8 @@ For `print|show projects`, you can eliminate the password prompt and authenticat
 gam print projects admin admin@domain.com
 ```
 
-## Authorize a super admin to create projects
-If you try to create a project and get an error saying that the admin you specified is not authorized to create projects,
+## Authorize a user to create projects
+If you try to create a project and get an error saying that the user you specified is not authorized to create projects,
 perform these steps and then retry the create project command.
 
 * Login as an existing super admin at console.cloud.google.com
@@ -184,12 +180,11 @@ perform these steps and then retry the create project command.
 * Click in the Select a role box
 * Type project creator in the Filter box
 * Click Project Creator
-* Click + Add Another Role
-* Type orgpolicy.policyAdmin in the Filter box
-* Click Organization Policy Administrator
 * Click Save
 
 ## Authorize Service Account Key Uploads
+
+*IMPORTANT:* Google best practice is to NOT use service account keys. Rather than overriding Google's default policy please consider [running GAM on Google Compute Engine Securely](https://github.com/GAM-team/GAM/wiki/l-Running-GAM-on-Google-Compute-Engine-(GCE)-Securely) so that service account keys are not necessary.
 
 If you try to create a project and get an error saying that Constraint `constraints/iam.disableServiceAccountKeyUpload violated for service account projects/gam-project-xxxxx`,
 perform these steps and then you should be able to authorize and use your project.
