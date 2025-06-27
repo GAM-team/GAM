@@ -12,14 +12,28 @@
 
 ## Notes
 To use these commands you must update your client access authentication.
-You'll enter 19R to turn on the Cloud Identity Policy scope; then continue
+You'll enter 20r to turn on the Cloud Identity Policy scope; then continue
 with authentication.
 ```
 gam oauth delete
 gam oauth create
 ...
-[R] 19)  Cloud Identity - Policy
+[R] 20)  Cloud Identity - Policy (supports readonly)
 ```
+You must enable access to policies in the GCP cloud console.
+
+* Login at console.cloud.google.com
+* In the upper left click the three lines to the left of Google Cloud and select IAM & Admin
+* Under IAM & Admin select IAM
+* Click in the box to the right of Google Cloud
+* Click the three dots at the right and select IAM/Permissions
+* Now you should be at "Permissions for organization ..."
+* Click on Grant Access
+* Enter the GAM project creator address in Principals
+* Click in the Select a role box
+* Type orgpolicy.policyAdmin in the Filter box
+* Click Organization Policy Administrator
+* Click Save
 
 ## Definitions
 ```
