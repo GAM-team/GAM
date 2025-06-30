@@ -327,7 +327,7 @@ By default, Gam displays all Teams Drives accessible by the user.
 
 Use option `showwebviewlink` to display the web view link for the Shared Drive.
 * `showwebviewlink text` - Displays `https://drive.google.com/drive/folders/<SharedDriveID>`
-* `showwebviewlink hyperlink` - Dsiplays `=HYPERLINK("https://drive.google.com/drive/folders/<SharedDriveID>", "<SharedDriveNamw>")
+* `showwebviewlink hyperlink` - Dsiplays `=HYPERLINK("https://drive.google.com/drive/folders/<SharedDriveID>", "<SharedDriveName>")`
 
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
@@ -344,7 +344,7 @@ By default, Gam displays all Teams Drives accessible by the user.
 
 Use option `showwebviewlink` to display the web view link for the Shared Drive.
 * `showwebviewlink text` - Displays `https://drive.google.com/drive/folders/<SharedDriveID>`
-* `showwebviewlink hyperlink` - Dsiplays `=HYPERLINK("https://drive.google.com/drive/folders/<SharedDriveID>", "<SharedDriveNamw>")
+* `showwebviewlink hyperlink` - Dsiplays `=HYPERLINK("https://drive.google.com/drive/folders/<SharedDriveID>", "<SharedDriveName>")`
 
 The Google Drive API does not list roles for Shared Drives so GAM generates a role from the capabilities:
 * `commenter - canComment: True, canEdit: False`

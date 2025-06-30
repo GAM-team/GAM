@@ -383,7 +383,7 @@ By default, all Shared Drives are displayed; use the following options to select
 
 Use option `showwebviewlink` to display the web view link for the Shared Drive.
 * `showwebviewlink text` - Displays `https://drive.google.com/drive/folders/<SharedDriveID>`
-* `showwebviewlink hyperlink` - Dsiplays `=HYPERLINK("https://drive.google.com/drive/folders/<SharedDriveID>", "<SharedDriveNamw>")
+* `showwebviewlink hyperlink` - Dsiplays `=HYPERLINK("https://drive.google.com/drive/folders/<SharedDriveID>", "<SharedDriveName>")`
 
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
@@ -402,7 +402,7 @@ By default, all Shared Drives are displayed; use the following options to select
 
 Use option `showwebviewlink` to display the web view link for the Shared Drive.
 * `showwebviewlink text` - Displays `https://drive.google.com/drive/folders/<SharedDriveID>`
-* `showwebviewlink hyperlink` - Dsiplays `=HYPERLINK("https://drive.google.com/drive/folders/<SharedDriveID>", "<SharedDriveNamw>")
+* `showwebviewlink hyperlink` - Dsiplays `=HYPERLINK("https://drive.google.com/drive/folders/<SharedDriveID>", "<SharedDriveName>")`
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.

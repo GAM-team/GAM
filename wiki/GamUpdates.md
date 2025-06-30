@@ -14,7 +14,7 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 
 Added choices `text` and `hyperlink` to option `showwebviewlink` in `gam [<UserTypeEntity>] print|show shareddrives`.
 * `showwebviewlink text` - Displays `https://drive.google.com/drive/folders/<SharedDriveID>`
-* `showwebviewlink hyperlink` - Dsiplays `=HYPERLINK("https://drive.google.com/drive/folders/<SharedDriveID>", "<SharedDriveNamw>")
+* `showwebviewlink hyperlink` - Dsiplays `=HYPERLINK("https://drive.google.com/drive/folders/<SharedDriveID>", "<SharedDriveName>")`
 
 ### 7.10.09
 
