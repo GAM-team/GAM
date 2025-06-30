@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.10.08'
+__version__ = '7.10.09'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -65800,7 +65800,7 @@ def _showSharedDrive(user, shareddrive, j, jcount, FJQC):
     printKeyValueList(['hidden', shareddrive['hidden']])
   if 'createdTime' in shareddrive:
     printKeyValueList(['createdTime', formatLocalTime(shareddrive['createdTime'])])
-  for setting in ['backgroundImageLink', 'colorRgb', 'themeId', 'orgUnit', 'orgUnitId']:
+  for setting in ['backgroundImageLink', 'colorRgb', 'themeId', 'orgUnit', 'orgUnitId', 'webViewLink']:
     if setting in shareddrive:
       printKeyValueList([setting, shareddrive[setting]])
   if 'role' in shareddrive:
@@ -65875,6 +65875,7 @@ SHAREDDRIVE_ACL_ROLES_MAP = {
 #	[matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
 #	(role|roles <SharedDriveACLRoleList>)*
 #	[fields <SharedDriveFieldNameList>] [noorgunits [<Boolean>]]
+#	[showwebviewlink]
 #	[guiroles [<Boolean>]] [formatjson [quotechar <Character>]]
 # 	[showitemcountonly]
 # gam <UserTypeEntity> show shareddrives
@@ -65882,6 +65883,7 @@ SHAREDDRIVE_ACL_ROLES_MAP = {
 #	[matchname <REMatchPattrn>] [orgunit|org|ou <OrgUnitPath>]
 #	(role|roles <SharedDriveACLRoleLIst>)*
 #	[fields <SharedDriveFieldNameList>] [noorgunits [<Boolean>]]
+#	[showwebviewlink]
 #	[guiroles [<Boolean>]] [formatjson]
 # 	[showitemcountonly]
 def printShowSharedDrives(users, useDomainAdminAccess=False):
@@ -65890,6 +65892,8 @@ def printShowSharedDrives(users, useDomainAdminAccess=False):
       td_ouid = shareddrive.get('orgUnitId')
       if td_ouid:
         shareddrive['orgUnit'] = orgUnitIdToPathMap.get(f'id:{td_ouid}', UNKNOWN)
+    if showWebViewLink:
+      shareddrive['webViewLink'] = 'https://drive.google.com/drive/folders/'+shareddrive['id']
     if not showFields:
       return shareddrive
     sshareddrive = {}
@@ -65908,6 +65912,7 @@ def printShowSharedDrives(users, useDomainAdminAccess=False):
   showOrgUnitPaths = True
   orgUnitIdToPathMap = None
   guiRoles = showItemCountOnly = False
+  showWebViewLink = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -65937,6 +65942,8 @@ def printShowSharedDrives(users, useDomainAdminAccess=False):
       showOrgUnitPaths = not getBoolean()
     elif myarg == 'guiroles':
       guiRoles = getBoolean()
+    elif myarg == 'showwebviewlink':
+      showWebViewLink = True
     elif myarg == 'showitemcountonly':
       showItemCountOnly = True
       showOrgUnitPaths = False
@@ -65961,6 +65968,14 @@ def printShowSharedDrives(users, useDomainAdminAccess=False):
     orgUnitIdToPathMap = getOrgUnitIdToPathMap(cd)
     if showFields:
       showFields.add('orgUnit')
+  if showWebViewLink:
+    if showFields:
+      showFields.add('webViewLink')
+    if csvPF:
+      csvPF.AddTitle('webViewLink')
+      if FJQC.formatJSON:
+        csvPF.AddJSONTitles(['webViewLink'])
+        csvPF.MoveJSONTitlesToEnd(['JSON'])
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -66029,6 +66044,8 @@ def printShowSharedDrives(users, useDomainAdminAccess=False):
           row = {'User': user, 'id': shareddrive['id'], 'name': shareddrive['name']}
           if not useDomainAdminAccess:
             row['role'] = shareddrive['role'] if not guiRoles else SHAREDDRIVE_API_GUI_ROLES_MAP[shareddrive['role']]
+          if showWebViewLink:
+            row['webViewLink'] = shareddrive['webViewLink']
           row['JSON'] = json.dumps(cleanJSON(shareddrive, timeObjects=SHAREDDRIVE_TIME_OBJECTS), ensure_ascii=False, sort_keys=True)
           csvPF.WriteRow(row)
         else:

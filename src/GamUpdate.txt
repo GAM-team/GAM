@@ -1,3 +1,8 @@
+7.10.09
+
+Added option `showwebviewlink` to `gam [<UserTypeEntity>] print|show shareddrives` that
+displays the web view link for the Shared Drive: `https://drive.google.com/drive/folders/<SharedDriveID>`.
+
 7.10.08
 
 Fixed bug in commands that modify messages where the `labelids <LabelIdList>` option

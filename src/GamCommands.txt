@@ -4817,11 +4817,13 @@ gam print shareddrives [todrive <ToDriveAttribute>*]
         [teamdriveadminquery|query <QueryTeamDrive>]
         [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         [fields <SharedDriveFieldNameList>] [noorgunits [<Boolean>]]
+        [showwebviewlink]
         [formatjson [quotechar <Character>]]
 gam show shareddrives
         [teamdriveadminquery|query <QueryTeamDrive>]
         [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         [fields <SharedDriveFieldNameList>] [noorgunits [<Boolean>]]
+        [showwebviewlink]
         [formatjson] [noorgunits [<Boolean>]]
 
 gam print shareddriveorganizers [todrive <ToDriveAttribute>*]
@@ -4902,12 +4904,14 @@ gam <UserTypeEntity> print shareddrives [todrive <ToDriveAttribute>*]
         [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         (role|roles <SharedDriveACLRoleList>)*
         [fields <SharedDriveFieldNameList>]
+        [showwebviewlink]
         [guiroles [<Boolean>]] [formatjson [quotechar <Character>]]
 gam <UserTypeEntity> show shareddrives
         [teamdriveadminquery|query <QueryTeamDrive>]
         [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         (role|roles <SharedDriveACLRoleList>)*
         [fields <SharedDriveFieldNameList>]
+        [showwebviewlink]
         [guiroles [<Boolean>]] [formatjson]
 
 <PermissionMatch> ::=
