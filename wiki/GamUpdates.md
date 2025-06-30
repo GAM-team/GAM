@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.10.08
+
+Fixed bug in commands that modify messages where the `labelids <LabelIdList>` option
+could not be used unless one of these options was also specified: `query`, `matchlabel`, `ids`;
+it can be now be used by itself.
+
 ### 7.10.07
 
 Updated `gam <UserTypeEntity> copy|move drivefile` to hanndle additional instances of
