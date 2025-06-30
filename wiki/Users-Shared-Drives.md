@@ -318,12 +318,16 @@ gam <UserTypeEntity> show shareddriveinfo <SharedDriveEntity>
 gam <UserTypeEntity> show shareddrives
         [matchname <REMatchPattern>] (role|roles <SharedDriveACLRoleList>)*
         [fields <SharedDriveFieldNameList>]
-        [showwebviewlink]
+        [showwebviewlink text|hyperlink]
         [guiroles [<Boolean>] [formatjson]
 ```
 By default, Gam displays all Teams Drives accessible by the user.
 * `matchname <REMatchPattern>` - Display Shared Drives with names that match a pattern.
 * `(role|roles <SharedDriveACLRoleList>)*` - Display Shared Drives where the user has one of the specified roles.
+
+Use option `showwebviewlink` to display the web view link for the Shared Drive.
+* `showwebviewlink text` - Displays `https://drive.google.com/drive/folders/<SharedDriveID>`
+* `showwebviewlink hyperlink` - Dsiplays `=HYPERLINK("https://drive.google.com/drive/folders/<SharedDriveID>", "<SharedDriveNamw>")
 
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
@@ -331,12 +335,16 @@ By default, Gam displays the information as an indented list of keys and values.
 gam <UserTypeEntity> print shareddrives [todrive <ToDriveAttribute>*]
         [matchname <REMatchPattern>] (role|roles <SharedDriveACLRoleList>)*
         [fields <SharedDriveFieldNameList>]
-        [showwebviewlink]
+        [showwebviewlink text|hyperlink]
         [guiroles [<Boolean>]] [formatjson [quotechar <Character>]]
 ```
 By default, Gam displays all Teams Drives accessible by the user.
 * `matchname <REMatchPattern>` - Display Shared Drives with names that match a pattern.
 * `(role|roles <SharedDriveACLRoleList>)*` - Display Shared Drives where the user has one of the specified roles.
+
+Use option `showwebviewlink` to display the web view link for the Shared Drive.
+* `showwebviewlink text` - Displays `https://drive.google.com/drive/folders/<SharedDriveID>`
+* `showwebviewlink hyperlink` - Dsiplays `=HYPERLINK("https://drive.google.com/drive/folders/<SharedDriveID>", "<SharedDriveNamw>")
 
 The Google Drive API does not list roles for Shared Drives so GAM generates a role from the capabilities:
 * `commenter - canComment: True, canEdit: False`

@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.10.10
+
+Added choices `text` and `hyperlink` to option `showwebviewlink` in `gam [<UserTypeEntity>] print|show shareddrives`.
+* `showwebviewlink text` - Displays `https://drive.google.com/drive/folders/<SharedDriveID>`
+* `showwebviewlink hyperlink` - Dsiplays `=HYPERLINK("https://drive.google.com/drive/folders/<SharedDriveID>", "<SharedDriveNamw>")
+
 ### 7.10.09
 
 Added option `showwebviewlink` to `gam [<UserTypeEntity>] print|show shareddrives` that

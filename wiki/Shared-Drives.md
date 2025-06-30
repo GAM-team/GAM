@@ -373,13 +373,17 @@ gam [<UserTypeEntity>] show shareddrives
         [adminaccess|asadmin] [teamdriveadminquery|query <QueryTeamDrive>]
         [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         [fields <SharedDriveFieldNameList>]
-        [showwebviewlink]
+        [showwebviewlink text|hyperlink]
         [formatjson]
 ```
 By default, all Shared Drives are displayed; use the following options to select a subset of Shared Drives:
 * `teamdriveadminquery|query <QueryTeamDrive>` - Use a query to select Shared Drives
 * `matchname <REMatchPattern>` - Retrieve Shared Drives with names that match a pattern.
 * `orgunit|org|ou <OrgUnitPath>` - Only Shared Drives in the specified Org Unit are selected
+
+Use option `showwebviewlink` to display the web view link for the Shared Drive.
+* `showwebviewlink text` - Displays `https://drive.google.com/drive/folders/<SharedDriveID>`
+* `showwebviewlink hyperlink` - Dsiplays `=HYPERLINK("https://drive.google.com/drive/folders/<SharedDriveID>", "<SharedDriveNamw>")
 
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
@@ -388,13 +392,17 @@ gam [<UserTypeEntity>] print shareddrives [todrive <ToDriveAttribute>*]
         [adminaccess|asadmin] [teamdriveadminquery|query <QueryTeamDrive>]
         [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         [fields <SharedDriveFieldNameList>]
-        [showwebviewlink]
+        [showwebviewlink text|hyperlink]
         [formatjson [quotechar <Character>]]
 ```
 By default, all Shared Drives are displayed; use the following options to select a subset of Shared Drives:
 * `teamdriveadminquery|query <QueryTeamDrive>` - Use a query to select Shared Drives
 * `matchname <REMatchPattern>` - Retrieve Shared Drives with names that match a pattern.
 * `orgunit|org|ou <OrgUnitPath>` - Only Shared Drives in the specified Org Unit are selected
+
+Use option `showwebviewlink` to display the web view link for the Shared Drive.
+* `showwebviewlink text` - Displays `https://drive.google.com/drive/folders/<SharedDriveID>`
+* `showwebviewlink hyperlink` - Dsiplays `=HYPERLINK("https://drive.google.com/drive/folders/<SharedDriveID>", "<SharedDriveNamw>")
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.
