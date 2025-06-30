@@ -372,7 +372,9 @@ By default, Gam displays the information as an indented list of keys and values.
 gam [<UserTypeEntity>] show shareddrives
         [adminaccess|asadmin] [teamdriveadminquery|query <QueryTeamDrive>]
         [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
-        [fields <SharedDriveFieldNameList>] [formatjson]
+        [fields <SharedDriveFieldNameList>]
+        [showwebviewlink]
+        [formatjson]
 ```
 By default, all Shared Drives are displayed; use the following options to select a subset of Shared Drives:
 * `teamdriveadminquery|query <QueryTeamDrive>` - Use a query to select Shared Drives
@@ -385,7 +387,9 @@ By default, Gam displays the information as an indented list of keys and values.
 gam [<UserTypeEntity>] print shareddrives [todrive <ToDriveAttribute>*]
         [adminaccess|asadmin] [teamdriveadminquery|query <QueryTeamDrive>]
         [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
-        [fields <SharedDriveFieldNameList>] [formatjson [quotechar <Character>]]
+        [fields <SharedDriveFieldNameList>]
+        [showwebviewlink]
+        [formatjson [quotechar <Character>]]
 ```
 By default, all Shared Drives are displayed; use the following options to select a subset of Shared Drives:
 * `teamdriveadminquery|query <QueryTeamDrive>` - Use a query to select Shared Drives

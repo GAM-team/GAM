@@ -318,6 +318,7 @@ gam <UserTypeEntity> show shareddriveinfo <SharedDriveEntity>
 gam <UserTypeEntity> show shareddrives
         [matchname <REMatchPattern>] (role|roles <SharedDriveACLRoleList>)*
         [fields <SharedDriveFieldNameList>]
+        [showwebviewlink]
         [guiroles [<Boolean>] [formatjson]
 ```
 By default, Gam displays all Teams Drives accessible by the user.
@@ -329,7 +330,9 @@ By default, Gam displays the information as an indented list of keys and values.
 ```
 gam <UserTypeEntity> print shareddrives [todrive <ToDriveAttribute>*]
         [matchname <REMatchPattern>] (role|roles <SharedDriveACLRoleList>)*
-        [fields <SharedDriveFieldNameList>] [formatjson [quotechar <Character>]]
+        [fields <SharedDriveFieldNameList>]
+        [showwebviewlink]
+        [guiroles [<Boolean>]] [formatjson [quotechar <Character>]]
 ```
 By default, Gam displays all Teams Drives accessible by the user.
 * `matchname <REMatchPattern>` - Display Shared Drives with names that match a pattern.
