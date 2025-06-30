@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.10.09'
+__version__ = '7.10.10'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -65870,12 +65870,14 @@ SHAREDDRIVE_ACL_ROLES_MAP = {
   'writer': 'writer',
   }
 
+SHOWWEBVIEWLINK_CHOICES = {'text', 'hyperlink'}
+
 # gam <UserTypeEntity> print shareddrives [todrive <ToDriveAttribute>*]
 #	[asadmin [shareddriveadminquery|query <QuerySharedDrive>]]
 #	[matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
 #	(role|roles <SharedDriveACLRoleList>)*
 #	[fields <SharedDriveFieldNameList>] [noorgunits [<Boolean>]]
-#	[showwebviewlink]
+#	[showwebviewlink [text|hyperlink]]
 #	[guiroles [<Boolean>]] [formatjson [quotechar <Character>]]
 # 	[showitemcountonly]
 # gam <UserTypeEntity> show shareddrives
@@ -65883,7 +65885,7 @@ SHAREDDRIVE_ACL_ROLES_MAP = {
 #	[matchname <REMatchPattrn>] [orgunit|org|ou <OrgUnitPath>]
 #	(role|roles <SharedDriveACLRoleLIst>)*
 #	[fields <SharedDriveFieldNameList>] [noorgunits [<Boolean>]]
-#	[showwebviewlink]
+#	[showwebviewlink [text|hyperlink]]
 #	[guiroles [<Boolean>]] [formatjson]
 # 	[showitemcountonly]
 def printShowSharedDrives(users, useDomainAdminAccess=False):
@@ -65893,7 +65895,10 @@ def printShowSharedDrives(users, useDomainAdminAccess=False):
       if td_ouid:
         shareddrive['orgUnit'] = orgUnitIdToPathMap.get(f'id:{td_ouid}', UNKNOWN)
     if showWebViewLink:
-      shareddrive['webViewLink'] = 'https://drive.google.com/drive/folders/'+shareddrive['id']
+      if showWebViewLink == 'text':
+        shareddrive['webViewLink'] = 'https://drive.google.com/drive/folders/'+shareddrive['id']
+      else:
+        shareddrive['webViewLink'] = '=HYPERLINK("https://drive.google.com/drive/folders/'+shareddrive['id']+'", "'+shareddrive['name']+'")'
     if not showFields:
       return shareddrive
     sshareddrive = {}
@@ -65912,7 +65917,7 @@ def printShowSharedDrives(users, useDomainAdminAccess=False):
   showOrgUnitPaths = True
   orgUnitIdToPathMap = None
   guiRoles = showItemCountOnly = False
-  showWebViewLink = False
+  showWebViewLink = ''
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -65943,7 +65948,7 @@ def printShowSharedDrives(users, useDomainAdminAccess=False):
     elif myarg == 'guiroles':
       guiRoles = getBoolean()
     elif myarg == 'showwebviewlink':
-      showWebViewLink = True
+      showWebViewLink = getChoice(SHOWWEBVIEWLINK_CHOICES)
     elif myarg == 'showitemcountonly':
       showItemCountOnly = True
       showOrgUnitPaths = False
