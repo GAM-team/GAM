@@ -20,7 +20,8 @@
 
 ## Query documentation
 * [Cloud Identity Groups API - Search Dynamic Groups](https://cloud.google.com/identity/docs/reference/rest/v1/groups#dynamicgroupquery)
-* [Member REstrictions](https://cloud.google.com/identity/docs/reference/rest/v1/SecuritySettings#MemberRestriction)
+* [Dynamic Groups Member Attributes](https://cloud.google.com/identity/docs/how-to/dynamic-groups-attributes)
+* [Member Restrictions](https://cloud.google.com/identity/docs/reference/rest/v1/SecuritySettings#MemberRestriction)
 
 ## Notes
 
