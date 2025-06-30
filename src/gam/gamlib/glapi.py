@@ -226,15 +226,15 @@ _INFO = {
   CHROMEMANAGEMENT_TELEMETRY: {'name': 'Chrome Management API - Telemetry', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHROMEMANAGEMENT},
   CHROMEPOLICY: {'name': 'Chrome Policy API', 'version': 'v1', 'v2discovery': True},
   CHROMEVERSIONHISTORY: {'name': 'Chrome Version History API', 'version': 'v1', 'v2discovery': True},
-  CLOUDCHANNEL: {'name': 'Channel Channel API', 'version': 'v1', 'v2discovery': True},
-  CLOUDIDENTITY_DEVICES: {'name': 'Cloud Identity Devices API', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
-  CLOUDIDENTITY_GROUPS: {'name': 'Cloud Identity Groups API', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
-  CLOUDIDENTITY_GROUPS_BETA: {'name': 'Cloud Identity Groups API', 'version': 'v1beta1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
-  CLOUDIDENTITY_INBOUND_SSO: {'name': 'Cloud Identity Inbound SSO API', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
-  CLOUDIDENTITY_ORGUNITS: {'name': 'Cloud Identity OrgUnits API', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
-  CLOUDIDENTITY_ORGUNITS_BETA: {'name': 'Cloud Identity OrgUnits API', 'version': 'v1beta1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
-  CLOUDIDENTITY_POLICY: {'name': 'Cloud Identity Policy API', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
-  CLOUDIDENTITY_USERINVITATIONS: {'name': 'Cloud Identity User Invitations API', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
+  CLOUDCHANNEL: {'name': 'Cloud Channel API', 'version': 'v1', 'v2discovery': True},
+  CLOUDIDENTITY_DEVICES: {'name': 'Cloud Identity API - Devices', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
+  CLOUDIDENTITY_GROUPS: {'name': 'Cloud Identity API - Groups', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
+  CLOUDIDENTITY_GROUPS_BETA: {'name': 'Cloud Identity API - Groups Beta', 'version': 'v1beta1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
+  CLOUDIDENTITY_INBOUND_SSO: {'name': 'Cloud Identity API - Inbound SSO Settings', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
+  CLOUDIDENTITY_ORGUNITS: {'name': 'Cloud Identity API - OrgUnits', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
+  CLOUDIDENTITY_ORGUNITS_BETA: {'name': 'Cloud Identity API - OrgUnits Beta', 'version': 'v1beta1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
+  CLOUDIDENTITY_POLICY: {'name': 'Cloud Identity API - Policy', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
+  CLOUDIDENTITY_USERINVITATIONS: {'name': 'Cloud Identity API - User Invitations', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDRESOURCEMANAGER: {'name': 'Cloud Resource Manager API v3', 'version': 'v3', 'v2discovery': True},
   CONTACTS: {'name': 'Contacts API', 'version': 'v3', 'v2discovery': False},
   CONTACTDELEGATION: {'name': 'Contact Delegation API', 'version': 'v1', 'v2discovery': True, 'localjson': True},
@@ -258,13 +258,13 @@ _INFO = {
   LICENSING: {'name': 'License Manager API', 'version': 'v1', 'v2discovery': True},
   LOOKERSTUDIO: {'name': 'Looker Studio API', 'version': 'v1', 'v2discovery': True, 'localjson': True},
   MEET: {'name': 'Meet API', 'version': 'v2', 'v2discovery': True},
-  MEET_BETA: {'name': 'Meet API', 'version': 'v2beta', 'v2discovery': True, 'localjson': True, 'mappedAPI': MEET},
+  MEET_BETA: {'name': 'Meet API Beta', 'version': 'v2beta', 'v2discovery': True, 'localjson': True, 'mappedAPI': MEET},
   OAUTH2: {'name': 'OAuth2 API', 'version': 'v2', 'v2discovery': False},
   ORGPOLICY: {'name': 'Organization Policy API', 'version': 'v2', 'v2discovery': True},
   PEOPLE: {'name': 'People API', 'version': 'v1', 'v2discovery': True},
   PEOPLE_DIRECTORY: {'name': 'People Directory API', 'version': 'v1', 'v2discovery': True, 'mappedAPI': PEOPLE},
   PEOPLE_OTHERCONTACTS: {'name': 'People  API - Other Contacts', 'version': 'v1', 'v2discovery': True, 'mappedAPI': PEOPLE},
-  PRINTERS: {'name': 'Directory API Printers', 'version': 'directory_v1', 'v2discovery': True, 'mappedAPI': 'admin'},
+  PRINTERS: {'name': 'Directory API - Printers', 'version': 'directory_v1', 'v2discovery': True, 'mappedAPI': 'admin'},
   PUBSUB: {'name': 'Pub / Sub API', 'version': 'v1', 'v2discovery': True},
   REPORTS: {'name': 'Reports API', 'version': 'reports_v1', 'v2discovery': True, 'mappedAPI': 'admin'},
   RESELLER: {'name': 'Reseller API', 'version': 'v1', 'v2discovery': True},
@@ -362,29 +362,29 @@ _CLIENT_SCOPES = [
    'subscopes': READONLY,
    'offByDefault': True,
    'scope': 'https://www.googleapis.com/auth/apps.order'},
-  {'name': 'Cloud Identity Groups API',
+  {'name': 'Cloud Identity API - Groups',
    'api': CLOUDIDENTITY_GROUPS,
    'subscopes': READONLY,
    'scope': 'https://www.googleapis.com/auth/cloud-identity.groups'},
-  {'name': 'Cloud Identity Groups API Beta (Enables group locking/unlocking)',
+  {'name': 'Cloud Identity API - Groups Beta (Enables group locking/unlocking)',
    'api': CLOUDIDENTITY_GROUPS_BETA,
    'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/cloud-identity.groups'},
-  {'name': 'Cloud Identity - Inbound SSO Settings',
+  {'name': 'Cloud Identity API - Inbound SSO Settings',
    'api': CLOUDIDENTITY_INBOUND_SSO,
    'subscopes': READONLY,
    'scope': 'https://www.googleapis.com/auth/cloud-identity.inboundsso'},
-  {'name': 'Cloud Identity OrgUnits API',
+  {'name': 'Cloud Identity API - OrgUnits Beta',
    'api': CLOUDIDENTITY_ORGUNITS_BETA,
    'subscopes': READONLY,
    'scope': 'https://www.googleapis.com/auth/cloud-identity.orgunits'},
-  {'name': 'Cloud Identity - Policy',
+  {'name': 'Cloud Identity API - Policy',
    'api': CLOUDIDENTITY_POLICY,
    'subscopes': READONLY,
    'roByDefault': True,
    'scope': 'https://www.googleapis.com/auth/cloud-identity.policies'
   },
-  {'name': 'Cloud Identity User Invitations API',
+  {'name': 'Cloud Identity API - User Invitations',
    'api': CLOUDIDENTITY_USERINVITATIONS,
    'subscopes': READONLY,
    'scope': 'https://www.googleapis.com/auth/cloud-identity.userinvitations'},
@@ -833,3 +833,27 @@ def getSvcAcctScopesList(userServiceAccountAccessOnly, svcAcctSpecialScopes):
 
 def hasLocalJSON(api):
   return _INFO[api].get('localjson', False)
+
+def findAPIforScope(scopesList):
+  def checkScopeMatch(scope, cscope):
+    if cscope['scope'] == scope:
+      requiredAPIs.append(cscope['name'])
+      return True
+    if cscope['subscopes'] == READONLY and cscope['scope']+'.readonly' == scope:
+      requiredAPIs.append(cscope['name']+' (supports readonly)')
+      return True
+    return False
+    
+  requiredAPIs = []
+  for scope in scopesList:
+    for cscope in _CLIENT_SCOPES:
+      if checkScopeMatch(scope, cscope):
+        break
+    else:
+      for cscope in _SVCACCT_SCOPES:
+        if checkScopeMatch(scope, cscope):
+          break
+  if not requiredAPIs:
+    requiredAPIs = scopesList
+  return ' or '.join(requiredAPIs)
+    

@@ -1,3 +1,9 @@
+7.10.08
+
+Fixed bug in commands that modify messages where the `labelids <LabelIdList>` option
+could not be used unless one of these options was also specified: `query`, `matchlabel`, `ids`;
+it can be now be used by itself.
+
 7.10.07
 
 Updated `gam <UserTypeEntity> copy|move drivefile` to hanndle additional instances of

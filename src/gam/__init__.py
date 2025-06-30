@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.10.07'
+__version__ = '7.10.08'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -5187,6 +5187,12 @@ def checkGAPIError(e, softErrors=False, retryOnHttpError=False, mapNotFound=True
       return (0, None, None)
     else:
       systemErrorExit(HTTP_ERROR_RC, eContent)
+  requiredScopes = ''
+  wwwAuthenticate = e.resp.get('www-authenticate', '')
+  if 'insufficient_scope' in wwwAuthenticate:
+    mg = re.match(r'.+scope="(.+)"', wwwAuthenticate)
+    if mg:
+      requiredScopes = mg.group(1).split(' ')
   if 'error' in error:
     http_status = error['error']['code']
     reason = ''
@@ -5256,6 +5262,8 @@ def checkGAPIError(e, softErrors=False, retryOnHttpError=False, mapNotFound=True
       elif 'the authenticated user cannot access this service' in lmessage:
         error = makeErrorDict(http_status, GAPI.SERVICE_NOT_AVAILABLE, message)
       elif status == 'PERMISSION_DENIED' or 'the caller does not have permission' in lmessage or 'permission iam.serviceaccountkeys' in lmessage:
+        if requiredScopes:
+          message += f', {Msg.NO_SCOPES_FOR_API.format(API.findAPIforScope(requiredScopes))}'
         error = makeErrorDict(http_status, GAPI.PERMISSION_DENIED, message)
     elif http_status == 404:
       if status == 'NOT_FOUND' or 'requested entity was not found' in lmessage or 'does not exist' in lmessage:
@@ -70247,14 +70255,16 @@ def _finalizeMessageSelectParameters(parameters, queryOrIdsRequired):
       for queryTimeName, queryTimeValue in iter(parameters['queryTimes'].items()):
         parameters['query'] = parameters['query'].replace(f'#{queryTimeName}#', queryTimeValue)
     _mapMessageQueryDates(parameters)
-  elif queryOrIdsRequired and parameters['messageEntity'] is None:
-    missingArgumentExit('query|matchlabel|ids')
+  elif queryOrIdsRequired and parameters['messageEntity'] is None and not parameters['labelIds']:
+    missingArgumentExit('query|matchlabel|ids|labelids')
   else:
     parameters['query'] = None
   parameters['maxItems'] = parameters['maxToProcess'] if parameters['quick'] and not parameters['labelMatchPattern'] else 0
 
 # gam <UserTypeEntity> archive messages <GroupItem>
-#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_archive <Number>])|(ids <MessageIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
+#	 [labelids <LabelIDList>]
+#	 [quick|notquick] [doit] [max_to_archive <Number>])|(ids <MessageIDEntity>)
 #	[csv [todrive <ToDriveAttribute>*]]
 def archiveMessages(users):
   def _processMessageFailed(user, idsList, errMsg, j=0, jcount=0):
@@ -70539,39 +70549,59 @@ def _processMessagesThreads(users, entityType):
     csvPF.writeCSVfile(f'{Act.ToPerform()} Messages')
 
 # gam <UserTypeEntity> delete message|messages
-#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_delete <Number>])|(ids <MessageIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
+#	 [labelids <LabelIDList>]
+#	 [quick|notquick] [doit] [max_to_delete <Number>])|(ids <MessageIDEntity>)
 #	[csv [todrive <ToDriveAttribute>*]]
 # gam <UserTypeEntity> modify message|messages
-#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_modify <Number>])|(ids <MessageIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
+#	 [labelids <LabelIDList>]
+#	 [quick|notquick] [doit] [max_to_modify <Number>])|(ids <MessageIDEntity>)
 #	(addlabel <LabelName>)* (removelabel <LabelName>)*
 #	[csv [todrive <ToDriveAttribute>*]]
 # gam <UserTypeEntity> spam message|messages
-#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_spam <Number>])|(ids <MessageIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
+#	 [labelids <LabelIDList>]
+#	 [quick|notquick] [doit] [max_to_spam <Number>])|(ids <MessageIDEntity>)
 #	[csv [todrive <ToDriveAttribute>*]]
 # gam <UserTypeEntity> trash message|messages
-#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_trash <Number>])|(ids <MessageIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
+#	 [labelids <LabelIDList>]
+#	 [quick|notquick] [doit] [max_to_trash <Number>])|(ids <MessageIDEntity>)
 #	[csv [todrive <ToDriveAttribute>*]]
 # gam <UserTypeEntity> untrash message|messages
-#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_untrash <Number>])|(ids <MessageIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
+#	 [labelids <LabelIDList>]
+#	 [quick|notquick] [doit] [max_to_untrash <Number>])|(ids <MessageIDEntity>)
 #	[csv [todrive <ToDriveAttribute>*]]
 def processMessages(users):
   _processMessagesThreads(users, Ent.MESSAGE)
 
 # gam <UserTypeEntity> delete thread|threads
-#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_delete <Number>])|(ids <ThreadIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
+#	 [labelids <LabelIDList>]
+#	 [quick|notquick] [doit] [max_to_delete <Number>])|(ids <ThreadIDEntity>)
 #	[csv [todrive <ToDriveAttribute>*]]
 # gam <UserTypeEntity> modify thread|threads
-#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_modify <Number>])|(ids <ThreadIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
+#	 [labelids <LabelIDList>]
+#	 [quick|notquick] [doit] [max_to_modify <Number>])|(ids <ThreadIDEntity>)
 #	(addlabel <LabelName>)* (removelabel <LabelName>)*
 #	[csv [todrive <ToDriveAttribute>*]]
 # gam <UserTypeEntity> spam thread|threads
-#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_spam <Number>])|(ids <ThreadIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
+#	 [labelids <LabelIDList>]
+#	 [quick|notquick] [doit] [max_to_spam <Number>])|(ids <ThreadIDEntity>)
 #	[csv [todrive <ToDriveAttribute>*]]
 # gam <UserTypeEntity> trash thread|threads
-#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_trash <Number>])|(ids <MessageIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
+#	 [labelids <LabelIDList>]
+#	 [quick|notquick] [doit] [max_to_trash <Number>])|(ids <ThreadIDEntity>)
 #	[csv [todrive <ToDriveAttribute>*]]
 # gam <UserTypeEntity> untrash thread|threads
-#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_untrash <Number>])|(ids <ThreadIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
+#	 [labelids <LabelIDList>]
+#	 [quick|notquick] [doit] [max_to_untrash <Number>])|(ids <ThreadIDEntity>)
 #	[csv [todrive <ToDriveAttribute>*]]
 def processThreads(users):
   _processMessagesThreads(users, Ent.THREAD)
@@ -71993,7 +72023,9 @@ def printShowMessagesThreads(users, entityType):
       csvPF.writeCSVfile('Message Counts' if not show_labels else 'Message Label Counts')
 
 # gam <UserTypeEntity> print message|messages [todrive <ToDriveAttribute>*]
-#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])* [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <MessageIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])*
+#	 [labelids <LabelIDList>]
+#	 [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <MessageIDEntity>)
 #	[labelmatchpattern <REMatchPattern>] [sendermatchpattern <REMatchPattern>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
 #	[showlabels] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
@@ -72003,7 +72035,9 @@ def printShowMessagesThreads(users, entityType):
 #	    [showattachments [noshowtextplain]]]
 #	(addcsvdata <FieldName> <String>)*
 # gam <UserTypeEntity> show message|messages
-#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])* [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <MessageIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])*
+#	 [labelids <LabelIDList>]
+#	 [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <MessageIDEntity>)
 #	[labelmatchpattern <REMatchPattern>] [sendermatchpattern <REMatchPattern>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
 #	[showlabels] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
@@ -72016,7 +72050,9 @@ def printShowMessages(users):
   printShowMessagesThreads(users, Ent.MESSAGE)
 
 # gam <UserTypeEntity> print thread|threads [todrive <ToDriveAttribute>*]
-#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])* [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <ThreadIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])*
+#	 [labelids <LabelIDList>]
+#	 [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <ThreadIDEntity>)
 #	[labelmatchpattern <REMatchPattern>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
 #	[showlabels] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
@@ -72026,7 +72062,9 @@ def printShowMessages(users):
 #	    [showattachments [noshowtextplain]]]
 #	(addcsvdata <FieldName> <String>)*
 # gam <UserTypeEntity> show thread|threads
-#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])* [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <ThreadIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])*
+#	 [labelids <LabelIDList>]
+#	 [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <ThreadIDEntity>)
 #	[labelmatchpattern <REMatchPattern>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
 #	[showlabels] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
