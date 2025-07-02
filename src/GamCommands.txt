@@ -3120,8 +3120,15 @@ gam delete courses <CourseEntity> [archive|archived]
 gam course <CourseID> create|add alias <CourseAlias>
 gam course <CourseID> delete alias <CourseAlias>
 
+gam course <CourseID> create announcement
+        text <String> [scheduledtime <Time>] [state draft|published]
+gam course <CourseID> remove announcement <CourseAnnouncementID>
+gam course <CourseID> update announcement <CourseAnnouncementID>
+        [text <String>] [scheduledtime <Time>] [state published]
+
 gam course <CourseID> create|add topic <CourseTopic>
 gam course <CourseID> delete topic <CourseTopicID>
+gam course <CourseID> update topic <CourseTopicID> <CourseTopic>
 
 gam course <CourseID> create|add teachers [makefirstteacherowner] <UserItem>
 gam course <CourseID> create|add students <UserItem>
@@ -3133,8 +3140,15 @@ gam course <CourseID> sync students [addonly|removeonly] <UserTypeEntity>
 gam courses <CourseEntity> create|add alias <CourseAliasEntity>
 gam courses <CourseEntity> delete alias <CourseAliasEntity>
 
+gam courses <CourseEntity> create announcement
+        text <String> [scheduledtime <Time>] [state draft|published]
+gam courses <CourseEntity> remove announcement <CourseAnnouncementIDEntity>
+gam courses <CourseEntity> update announcement <CourseAnnouncemntIDEntity>
+        [text <String>] [scheduledtime <Time>] [state published]
+
 gam courses <CourseEntity> create|add topic <CourseTopicEntity>
 gam courses <CourseEntity> delete topic <CourseTopicIDEntity>
+gam courses <CourseEntity> update topic <CourseTopicIDEntity> <CourseTopic>
 
 gam courses <CourseEntity> create|add teachers [makefirstteacherowner] <UserTypeEntity>
 gam courses <CourseEntity> create|add students <UserTypeEntity>

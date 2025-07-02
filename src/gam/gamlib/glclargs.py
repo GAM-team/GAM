@@ -875,8 +875,11 @@ class GamCLArgs():
   OB_CONTACT_GROUP_ITEM = 'ContactGroupItem'
   OB_COURSE_ALIAS = 'CourseAlias'
   OB_COURSE_ALIAS_ENTITY = 'CourseAliasEntity'
+  OB_COURSE_ANNOUNCEMENT_ID = "CourseAnnouncementID"
   OB_COURSE_ANNOUNCEMENT_ID_ENTITY = "CourseAnnouncementIDEntity"
   OB_COURSE_ANNOUNCEMENT_STATE_LIST = "CourseAnnouncementStateList"
+  OB_COURSE_ANNOUNCEMENT_ADD_STATE_LIST = "CourseAnnouncementAddStateList"
+  OB_COURSE_ANNOUNCEMENT_UPDATE_STATE_LIST = "CourseAnnouncementUpdateStateList"
   OB_COURSE_ENTITY = 'CourseEntity'
   OB_COURSE_ID = 'CourseID'
   OB_COURSE_MATERIAL_ID_ENTITY = 'CourseMaterialIDEntity'

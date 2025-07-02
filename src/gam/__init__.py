@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.10.10'
+__version__ = '7.11.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -46776,6 +46776,13 @@ COURSE_STATE_MAPS = {
     'published': 'PUBLISHED',
     'deleted': 'DELETED',
     },
+  Cmd.OB_COURSE_ANNOUNCEMENT_ADD_STATE_LIST: {
+    'draft': 'DRAFT',
+    'published': 'PUBLISHED',
+    },
+  Cmd.OB_COURSE_ANNOUNCEMENT_UPDATE_STATE_LIST: {
+    'published': 'PUBLISHED',
+    },
   Cmd.OB_COURSE_WORK_STATE_LIST: {
     'draft': 'DRAFT',
     'published': 'PUBLISHED',
@@ -48923,7 +48930,7 @@ def doPrintCourseParticipants():
     csvPF.SetSortTitles(COURSE_PARTICIPANTS_SORT_TITLES)
   csvPF.writeCSVfile('Course Participants')
 
-def _batchAddItemsToCourse(croom, courseId, i, count, addParticipants, role):
+def _batchAddItemsToCourse(croom, courseId, i, count, addItems, addType):
   _ADD_PART_REASON_TO_MESSAGE_MAP = {GAPI.NOT_FOUND: Msg.DOES_NOT_EXIST,
                                      GAPI.ALREADY_EXISTS: Msg.DUPLICATE,
                                      GAPI.FAILED_PRECONDITION: Msg.NOT_ALLOWED}
@@ -48939,7 +48946,7 @@ def _batchAddItemsToCourse(croom, courseId, i, count, addParticipants, role):
         else:
           errMsg = getHTTPError(_ADD_PART_REASON_TO_MESSAGE_MAP, http_status, reason, message)
           if (reason == GAPI.PERMISSION_DENIED) and (ri[RI_ROLE] in {Ent.STUDENT, Ent.TEACHER}) and ('CannotDirectAddUser' in errMsg):
-            errMsg += f' Add external user with: gam user {ri[RI_ITEM]} create classroominvitation courses {ri[RI_ENTITY]} role {Ent.Singular(ri[RI_ROLE])}'
+            errMsg += f' Add external user with: gam user {ri[RI_ITEM]} create classroominvitation courses {ri[RI_ENTITY]} addType {Ent.Singular(ri[RI_ROLE])}'
         entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM]], errMsg, int(ri[RI_J]), int(ri[RI_JCOUNT]))
         return
       waitOnFailure(1, 10, reason, message)
@@ -48961,39 +48968,44 @@ def _batchAddItemsToCourse(croom, courseId, i, count, addParticipants, role):
       except (GAPI.quotaExceeded, GAPI.serviceNotAvailable) as e:
         entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM]], str(e), int(ri[RI_J]), int(ri[RI_JCOUNT]))
 
-  if role == Ent.STUDENT:
+  if addType == Ent.STUDENT:
     service = croom.courses().students()
     attribute = 'userId'
-  elif role == Ent.TEACHER:
+  elif addType == Ent.TEACHER:
     service = croom.courses().teachers()
     attribute = 'userId'
-  elif role == Ent.COURSE_ALIAS:
+  elif addType == Ent.COURSE_ALIAS:
     service = croom.courses().aliases()
     attribute = 'alias'
-  else: # role == Ent.COURSE_TOPIC:
+  elif addType == Ent.COURSE_TOPIC:
     service = croom.courses().topics()
     attribute = 'name'
+  else: # addType == Ent.COURSE_ANNOUNCEMENT:
+    service = croom.courses().announcements()
+    attribute = 'text'
   method = getattr(service, 'create')
   Act.Set(Act.ADD)
-  jcount = len(addParticipants)
+  jcount = len(addItems)
   noScopeCourseId = removeCourseIdScope(courseId)
-  entityPerformActionNumItems([Ent.COURSE, noScopeCourseId], jcount, role, i, count)
+  entityPerformActionNumItems([Ent.COURSE, noScopeCourseId], jcount, addType, i, count)
   Ind.Increment()
   svcargs = dict([('courseId', courseId), ('body', {attribute: None}), ('fields', '')]+GM.Globals[GM.EXTRA_ARGS_LIST])
   dbatch = croom.new_batch_http_request(callback=_callbackAddItemsToCourse)
   bcount = 0
   j = 0
-  for participant in addParticipants:
+  for addItem in addItems:
     j += 1
     svcparms = svcargs.copy()
-    if role in {Ent.STUDENT, Ent.TEACHER}:
-      svcparms['body'][attribute] = cleanItem = normalizeEmailAddressOrUID(participant)
-    elif role == Ent.COURSE_ALIAS:
-      svcparms['body'][attribute] = addCourseAliasScope(participant)
+    if addType in {Ent.STUDENT, Ent.TEACHER}:
+      svcparms['body'][attribute] = cleanItem = normalizeEmailAddressOrUID(addItem)
+    elif addType == Ent.COURSE_ALIAS:
+      svcparms['body'][attribute] = addCourseAliasScope(addItem)
       cleanItem = removeCourseAliasScope(svcparms['body'][attribute])
-    else: # role == Ent.COURSE_TOPIC:
-      svcparms['body'][attribute] = cleanItem = participant
-    dbatch.add(method(**svcparms), request_id=batchRequestID(noScopeCourseId, 0, 0, j, jcount, cleanItem, role))
+    elif addType == Ent.COURSE_TOPIC:
+      svcparms['body'][attribute] = cleanItem = addItem
+    else: # addType == Ent.COURSE_ANNOUNCEMENT:
+      svcparms['body'] = cleanItem = addItem
+    dbatch.add(method(**svcparms), request_id=batchRequestID(noScopeCourseId, 0, 0, j, jcount, cleanItem, addType))
     bcount += 1
     if bcount >= GC.Values[GC.BATCH_SIZE]:
       executeBatch(dbatch)
@@ -49003,7 +49015,7 @@ def _batchAddItemsToCourse(croom, courseId, i, count, addParticipants, role):
     dbatch.execute()
   Ind.Decrement()
 
-def _batchRemoveItemsFromCourse(croom, courseId, i, count, removeParticipants, role):
+def _batchRemoveItemsFromCourse(croom, courseId, i, count, removeItems, removeType):
   _REMOVE_PART_REASON_TO_MESSAGE_MAP = {GAPI.NOT_FOUND: Msg.DOES_NOT_EXIST,
                                         GAPI.FORBIDDEN: Msg.FORBIDDEN,
                                         GAPI.PERMISSION_DENIED: Msg.PERMISSION_DENIED}
@@ -49024,7 +49036,7 @@ def _batchRemoveItemsFromCourse(croom, courseId, i, count, removeParticipants, r
       try:
         callGAPI(service, 'delete',
                  throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED,
-                               GAPI.QUOTA_EXCEEDED, GAPI.SERVICE_NOT_AVAILABLE],
+                               GAPI.QUOTA_EXCEEDED, GAPI.SERVICE_NOT_AVAILABLE, GAPI.FAILED_PRECONDITION],
                  retryReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE], triesLimit=0 if reason != GAPI.NOT_FOUND else 3,
                  courseId=addCourseIdScope(ri[RI_ENTITY]),
                  body={attribute: ri[RI_ITEM] if ri[RI_ROLE] != Ent.COURSE_ALIAS else addCourseAliasScope(ri[RI_ITEM])},
@@ -49035,42 +49047,47 @@ def _batchRemoveItemsFromCourse(croom, courseId, i, count, removeParticipants, r
         entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM]], Msg.FORBIDDEN, int(ri[RI_J]), int(ri[RI_JCOUNT]))
       except GAPI.permissionDenied:
         entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM]], Msg.PERMISSION_DENIED, int(ri[RI_J]), int(ri[RI_JCOUNT]))
-      except (GAPI.quotaExceeded, GAPI.serviceNotAvailable) as e:
+      except (GAPI.quotaExceeded, GAPI.serviceNotAvailable, GAPI.failedPrecondition) as e:
         entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM]], str(e), int(ri[RI_J]), int(ri[RI_JCOUNT]))
 
-  if role == Ent.STUDENT:
+  if removeType == Ent.STUDENT:
     service = croom.courses().students()
     attribute = 'userId'
-  elif role == Ent.TEACHER:
+  elif removeType == Ent.TEACHER:
     service = croom.courses().teachers()
     attribute = 'userId'
-  elif role == Ent.COURSE_ALIAS:
+  elif removeType == Ent.COURSE_ALIAS:
     service = croom.courses().aliases()
     attribute = 'alias'
-  else: # role == Ent.COURSE_TOPIC:
+  elif removeType == Ent.COURSE_TOPIC:
     service = croom.courses().topics()
+    attribute = 'id'
+  else: # removeType == Ent.COURSE_ANNOUNCEMENT:
+    service = croom.courses().announcements()
     attribute = 'id'
   method = getattr(service, 'delete')
   Act.Set(Act.REMOVE)
-  jcount = len(removeParticipants)
+  jcount = len(removeItems)
   noScopeCourseId = removeCourseIdScope(courseId)
-  entityPerformActionNumItems([Ent.COURSE, noScopeCourseId], jcount, role, i, count)
+  entityPerformActionNumItems([Ent.COURSE, noScopeCourseId], jcount, removeType, i, count)
   Ind.Increment()
   svcargs = dict([('courseId', courseId), ('fields', ''), (attribute, None)]+GM.Globals[GM.EXTRA_ARGS_LIST])
   dbatch = croom.new_batch_http_request(callback=_callbackRemoveItemsFromCourse)
   bcount = 0
   j = 0
-  for participant in removeParticipants:
+  for removeItem in removeItems:
     j += 1
     svcparms = svcargs.copy()
-    if role in {Ent.STUDENT, Ent.TEACHER}:
-      svcparms[attribute] = cleanItem = normalizeEmailAddressOrUID(participant)
-    elif role == Ent.COURSE_ALIAS:
-      svcparms[attribute] = addCourseAliasScope(participant)
+    if removeType in {Ent.STUDENT, Ent.TEACHER}:
+      svcparms[attribute] = cleanItem = normalizeEmailAddressOrUID(removeItem)
+    elif removeType == Ent.COURSE_ALIAS:
+      svcparms[attribute] = addCourseAliasScope(removeItem)
       cleanItem = removeCourseAliasScope(svcparms[attribute])
-    else: # role == Ent.COURSE_TOPIC:
-      svcparms[attribute] = cleanItem = participant
-    dbatch.add(method(**svcparms), request_id=batchRequestID(noScopeCourseId, 0, 0, j, jcount, cleanItem, role))
+    elif removeType == Ent.COURSE_TOPIC:
+      svcparms[attribute] = cleanItem = removeItem
+    else: # removeType == Ent.COURSE_ANNOUNCEMENT:
+      svcparms[attribute] = cleanItem = removeItem
+    dbatch.add(method(**svcparms), request_id=batchRequestID(noScopeCourseId, 0, 0, j, jcount, cleanItem, removeType))
     bcount += 1
     if bcount >= GC.Values[GC.BATCH_SIZE]:
       executeBatch(dbatch)
@@ -49100,9 +49117,28 @@ def _updateCourseOwner(croom, courseId, owner, i, count):
       entityActionPerformedMessage([Ent.COURSE, removeCourseIdScope(courseId), Ent.TEACHER, owner], Msg.ALREADY_WAS_OWNER, i, count)
   Act.Set(action)
 
-ADD_REMOVE_PARTICIPANT_TYPES_MAP = {
+def getCourseAnnouncement(createCmd):
+  body = {}
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'text':
+      body['text'] = getString(Cmd.OB_STRING, minLen=1, maxLen=30000)
+    elif myarg == 'scheduledtime':
+      body['scheduledTime'] = getTimeOrDeltaFromNow()
+    elif myarg == 'state':
+      body['state'] = getChoice(COURSE_STATE_MAPS[Cmd.OB_COURSE_ANNOUNCEMENT_ADD_STATE_LIST if createCmd else Cmd.OB_COURSE_ANNOUNCEMENT_UPDATE_STATE_LIST],
+                                mapChoice=True)
+    else:
+      unknownArgumentExit()
+  if createCmd and 'text' not in body:
+    missingArgumentExit('text <String>')
+  return body
+
+ADD_REMOVE_UPDATE_ITEM_TYPES_MAP = {
   'alias': Ent.COURSE_ALIAS,
   'aliases': Ent.COURSE_ALIAS,
+  'announcement': Ent.COURSE_ANNOUNCEMENT,
+  'announcements': Ent.COURSE_ANNOUNCEMENT,
   'student': Ent.STUDENT,
   'students': Ent.STUDENT,
   'teacher': Ent.TEACHER,
@@ -49123,6 +49159,10 @@ PARTICIPANT_EN_MAP = {
 
 # gam courses <CourseEntity> create alias <CourseAliasEntity>
 # gam course <CourseID> create alias <CourseAlias>
+# gam courses <CourseEntity> create announcement
+#	text <String> [scheduledtime <Time>] [state draft|published]
+# gam course <CourseID> create announcement
+#	text <String> [scheduledtime <Time>] [state draft|published]
 # gam courses <CourseEntity> create topic <CourseTopicEntity>
 # gam course <CourseID> create topic <CourseTopic>
 # gam courses <CourseEntity> create students <UserTypeEntity>
@@ -49131,35 +49171,39 @@ PARTICIPANT_EN_MAP = {
 # gam course <CourseID> create teacher [makefirstteacherowner] <EmailAddress>
 def doCourseAddItems(courseIdList, getEntityListArg):
   croom = buildGAPIObject(API.CLASSROOM)
-  role = getChoice(ADD_REMOVE_PARTICIPANT_TYPES_MAP, mapChoice=True)
-  if role == Ent.TEACHER:
+  addType = getChoice(ADD_REMOVE_UPDATE_ITEM_TYPES_MAP, mapChoice=True)
+  if addType == Ent.TEACHER:
     makeFirstTeacherOwner = checkArgumentPresent(['makefirstteacherowner'])
   else:
     makeFirstTeacherOwner = False
   if not getEntityListArg:
-    if role in {Ent.STUDENT, Ent.TEACHER}:
+    if addType in {Ent.STUDENT, Ent.TEACHER}:
       addItems = getStringReturnInList(Cmd.OB_EMAIL_ADDRESS)
-    elif role == Ent.COURSE_ALIAS:
+    elif addType == Ent.COURSE_ALIAS:
       addItems = getStringReturnInList(Cmd.OB_COURSE_ALIAS)
-    else: # role == Ent.COURSE_TOPIC:
+    elif addType == Ent.COURSE_TOPIC:
       addItems = getStringReturnInList(Cmd.OB_COURSE_TOPIC)
+    else: # addType == Ent.COURSE_ANNOUNCEMENT:
+      addItems = [getCourseAnnouncement(True)]
     courseParticipantLists = None
   else:
-    if role in {Ent.STUDENT, Ent.TEACHER}:
+    if addType in {Ent.STUDENT, Ent.TEACHER}:
       _, addItems = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS,
-                                      typeMap={Cmd.ENTITY_COURSEPARTICIPANTS: PARTICIPANT_EN_MAP[role]},
+                                      typeMap={Cmd.ENTITY_COURSEPARTICIPANTS: PARTICIPANT_EN_MAP[addType]},
                                       isSuspended=False, isArchived=False)
-    elif role == Ent.COURSE_ALIAS:
+    elif addType == Ent.COURSE_ALIAS:
       addItems = getEntityList(Cmd.OB_COURSE_ALIAS_ENTITY, shlexSplit=True)
-    else: # role == Ent.COURSE_TOPIC:
+    elif addType == Ent.COURSE_TOPIC:
       addItems = getEntityList(Cmd.OB_COURSE_TOPIC_ENTITY, shlexSplit=True)
+    else: # addType == Ent.COURSE_ANNOUNCEMENT:
+      addItems = getCourseAnnouncement(True)
     courseParticipantLists = addItems if isinstance(addItems, dict) else None
   if courseParticipantLists is None:
     firstTeacher = None
     if makeFirstTeacherOwner and addItems:
       firstTeacher = normalizeEmailAddressOrUID(addItems[0])
   checkForExtraneousArguments()
-  i, count, coursesInfo = _getCoursesOwnerInfo(croom, courseIdList, role == Ent.COURSE_TOPIC,
+  i, count, coursesInfo = _getCoursesOwnerInfo(croom, courseIdList, addType in {Ent.COURSE_TOPIC, Ent.COURSE_ANNOUNCEMENT},
                                                addCIIdScope=courseParticipantLists is None)
   for courseId, courseInfo in coursesInfo.items():
     i += 1
@@ -49169,43 +49213,51 @@ def doCourseAddItems(courseIdList, getEntityListArg):
       if makeFirstTeacherOwner and addItems:
         firstTeacher = normalizeEmailAddressOrUID(addItems[0])
       courseId = addCourseIdScope(courseId)
-    _batchAddItemsToCourse(courseInfo['croom'], courseId, i, count, addItems, role)
+    _batchAddItemsToCourse(courseInfo['croom'], courseId, i, count, addItems, addType)
     if makeFirstTeacherOwner and firstTeacher:
       _updateCourseOwner(courseInfo['croom'], courseId, firstTeacher, i, count)
 
 # gam courses <CourseEntity> remove alias <CourseAliasEntity>
 # gam course <CourseID> remove alias <CourseAlias>
+# gam courses <CourseEntity> remove announcement <CourseAnnouncementIDEntity>
+# gam course <CourseID> remove announcement <CourseAnnouncementID>
 # gam courses <CourseEntity> remove topic <CourseTopicIDEntity>
 # gam course <CourseID> remove topic <CourseTopicID>
 # gam courses <CourseEntity> remove teachers|students [owneracccess] <UserTypeEntity>
 # gam course <CourseID> remove teacher|student [owneracccess] <EmailAddress>
 def doCourseRemoveItems(courseIdList, getEntityListArg):
   croom = buildGAPIObject(API.CLASSROOM)
-  role = getChoice(ADD_REMOVE_PARTICIPANT_TYPES_MAP, mapChoice=True)
+  removeType = getChoice(ADD_REMOVE_UPDATE_ITEM_TYPES_MAP, mapChoice=True)
   if not getEntityListArg:
-    if role in {Ent.STUDENT, Ent.TEACHER}:
+    if removeType in {Ent.STUDENT, Ent.TEACHER}:
       useOwnerAccess = GC.Values[GC.USE_COURSE_OWNER_ACCESS]
       if checkArgumentPresent(OWNER_ACCESS_OPTIONS):
         useOwnerAccess = True
       removeItems = getStringReturnInList(Cmd.OB_EMAIL_ADDRESS)
-    elif role == Ent.COURSE_ALIAS:
+    elif removeType == Ent.COURSE_ALIAS:
       useOwnerAccess = False
       removeItems = getStringReturnInList(Cmd.OB_COURSE_ALIAS)
-    else: # role == Ent.COURSE_TOPIC:
+    elif removeType == Ent.COURSE_TOPIC:
       useOwnerAccess = True
       removeItems = getStringReturnInList(Cmd.OB_COURSE_TOPIC_ID)
+    else: # removeType == Ent.COURSE_ANNOUNCEMENT:
+      useOwnerAccess = True
+      removeItems = getStringReturnInList(Cmd.OB_COURSE_ANNOUNCEMENT_ID)
     courseParticipantLists = None
   else:
-    if role in {Ent.STUDENT, Ent.TEACHER}:
+    if removeType in {Ent.STUDENT, Ent.TEACHER}:
       useOwnerAccess = checkArgumentPresent(OWNER_ACCESS_OPTIONS)
       _, removeItems = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS,
-                                         typeMap={Cmd.ENTITY_COURSEPARTICIPANTS: PARTICIPANT_EN_MAP[role]})
-    elif role == Ent.COURSE_ALIAS:
+                                         typeMap={Cmd.ENTITY_COURSEPARTICIPANTS: PARTICIPANT_EN_MAP[removeType]})
+    elif removeType == Ent.COURSE_ALIAS:
       useOwnerAccess = False
       removeItems = getEntityList(Cmd.OB_COURSE_ALIAS_ENTITY, shlexSplit=True)
-    else: # role == Ent.COURSE_TOPIC:
+    elif removeType == Ent.COURSE_TOPIC:
       useOwnerAccess = True
       removeItems = getEntityList(Cmd.OB_COURSE_TOPIC_ID_ENTITY, shlexSplit=True)
+    else: # removeType == Ent.COURSE_ANNOUNCEMENT:
+      useOwnerAccess = True
+      removeItems = getEntityList(Cmd.OB_COURSE_ANNOUNCEMENT_ID_ENTITY, shlexSplit=True)
     courseParticipantLists = removeItems if isinstance(removeItems, dict) else None
   checkForExtraneousArguments()
   i, count, coursesInfo = _getCoursesOwnerInfo(croom, courseIdList, useOwnerAccess,
@@ -49215,7 +49267,72 @@ def doCourseRemoveItems(courseIdList, getEntityListArg):
     if courseParticipantLists:
       removeItems = courseParticipantLists[courseId]
       courseId = addCourseIdScope(courseId)
-    _batchRemoveItemsFromCourse(courseInfo['croom'], courseId, i, count, removeItems, role)
+    _batchRemoveItemsFromCourse(courseInfo['croom'], courseId, i, count, removeItems, removeType)
+
+# gam courses <CourseEntity> update announcement <CourseAnnouncemntIDEntity>
+#	[text <String>] [scheduledtime <Time>] [state published]
+# gam course <CourseID> update announcement <CourseAnnouncementID>
+#	[text <String>] [scheduledtime <Time>] [state published]
+# gam courses <CourseEntity> update topic <CourseTopicIDEntity> <CourseTopic>
+# gam course <CourseID> update topic <CourseTopicID> <CourseTopic>
+def doCourseUpdateItems(courseIdList, getEntityListArg):
+  croom = buildGAPIObject(API.CLASSROOM)
+  updateType = getChoice(ADD_REMOVE_UPDATE_ITEM_TYPES_MAP, mapChoice=True)
+  if not getEntityListArg:
+    if updateType == Ent.COURSE_TOPIC:
+      useOwnerAccess = True
+      updateItems = getStringReturnInList(Cmd.OB_COURSE_TOPIC_ID)
+      body = {'name': getString(Cmd.OB_COURSE_TOPIC)}
+    else: # updateType == Ent.COURSE_ANNOUNCEMENT:
+      useOwnerAccess = True
+      updateItems = getStringReturnInList(Cmd.OB_COURSE_ANNOUNCEMENT_ID)
+      body = getCourseAnnouncement(False)
+    courseItemLists = None
+  else:
+    if updateType == Ent.COURSE_TOPIC:
+      useOwnerAccess = True
+      updateItems = getEntityList(Cmd.OB_COURSE_TOPIC_ID_ENTITY, shlexSplit=True)
+      body = {'name': getString(Cmd.OB_COURSE_TOPIC)}
+    else: # updateType == Ent.COURSE_ANNOUNCEMENT:
+      useOwnerAccess = True
+      updateItems = getEntityList(Cmd.OB_COURSE_ANNOUNCEMENT_ID_ENTITY, shlexSplit=True)
+      body = getCourseAnnouncement(False)
+    courseItemLists = updateItems if isinstance(updateItems, dict) else None
+  checkForExtraneousArguments()
+  i, count, coursesInfo = _getCoursesOwnerInfo(croom, courseIdList, useOwnerAccess,
+                                               addCIIdScope=courseItemLists is None)
+  for courseId, courseInfo in coursesInfo.items():
+    i += 1
+    if courseItemLists:
+      updateItems = courseItemLists[courseId]
+      courseId = addCourseIdScope(courseId)
+    jcount = len(updateItems)
+    noScopeCourseId = removeCourseIdScope(courseId)
+    if updateType == Ent.COURSE_TOPIC:
+      service = courseInfo['croom'].courses().topics()
+    else: # updateType == Ent.COURSE_ANNOUNCEMENT:
+      service = courseInfo['croom'].courses().announcements()
+    entityPerformActionNumItems([Ent.COURSE, noScopeCourseId], jcount, updateType, i, count)
+    Ind.Increment()
+    j = 0
+    for updateItem in updateItems:
+      j += 1
+      try:
+        callGAPI(service, 'patch',
+                 throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED,
+                               GAPI.QUOTA_EXCEEDED, GAPI.SERVICE_NOT_AVAILABLE],
+                 retryReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE],
+                 courseId=addCourseIdScope(courseId), id=updateItem, updateMask=','.join(body.keys()), body=body, fields='')
+        entityActionPerformed([Ent.COURSE, courseId, updateType, updateItem], j, jcount)
+      except GAPI.notFound:
+        entityActionFailedWarning([Ent.COURSE, courseId, updateType, updateItem], Msg.DOES_NOT_EXIST, j, jcount)
+      except GAPI.forbidden:
+        entityActionFailedWarning([Ent.COURSE, courseId, updateType, updateItem], Msg.FORBIDDEN, j, jcount)
+      except GAPI.permissionDenied:
+        entityActionFailedWarning([Ent.COURSE, courseId, updateType, updateItem], Msg.PERMISSION_DENIED, j, jcount)
+      except (GAPI.quotaExceeded, GAPI.serviceNotAvailable) as e:
+        entityActionFailedWarning([Ent.COURSE, courseId, updateType, updateItem], str(e), j, jcount)
+    Ind.Decrement()
 
 # gam courses <CourseEntity> clear teachers|students
 # gam course <CourseID> clear teacher|student
@@ -77165,6 +77282,7 @@ COURSE_SUBCOMMANDS = {
   'add': 			(Act.ADD, doCourseAddItems),
   'clear': 			(Act.REMOVE, doCourseClearParticipants),
   'remove': 			(Act.REMOVE, doCourseRemoveItems),
+  'update': 			(Act.UPDATE, doCourseUpdateItems),
   'sync': 			(Act.SYNC, doCourseSyncParticipants),
   }
 
