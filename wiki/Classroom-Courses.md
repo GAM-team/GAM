@@ -8,7 +8,7 @@
 - [Create and update courses](#create-and-update-courses)
 - [Delete courses](#delete-courses)
 - [Manage course aliases](#manage-course-aliases)
-- [Manage course announcement](#manage-course-announcement)
+- [Manage course announcements](#manage-course-announcements)
 - [Manage course topics](#manage-course-topics)
 - [Display courses](#display-courses)
 - [Display course counts](#display-course-counts)

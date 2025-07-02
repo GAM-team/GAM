@@ -1723,9 +1723,9 @@ User,Owner,id,name,ownedByMe,trashed,explicitlyTrashed,directFileCount,directFil
 user@domain.com,user@domain.com,012YenC8f12ALUk9PVA,My Drive,,False,False,100,138212,24,167,189598,79,-1,My Drive
 user@domain.com,user@domain.com,Trash,Trash,,True,True,0,0,1,3,3072,9,-1,Trash
 
-$ gam redirect csv ./MyDriveUsage.csv user user@domain.com print diskusage shareddriveid 0AL5LiIe4dqxZUk9PVA  show summaryandtrash
+$ gam redirect csv ./SharedDriveUsage.csv user user@domain.com print diskusage shareddriveid 0AL5LiIe4dqxZUk9PVA show summaryandtrash
 User: user@domain.com, Print 1 Drive Disk Usage
-$ more MyDriveUsage.csv 
+$ more SharedDriveUsage.csv 
 User,id,name,trashed,explicitlyTrashed,directFileCount,directFileSize,directFolderCount,totalFileCount,totalFileSize,totalFolderCount,depth,path
 user@domain.com,0125LiIe4dqxZUk9PVA,TS Shared Drive 1,False,False,16,6144,7,42,73799,25,-1,SharedDrives/TS Shared Drive 1
 user@domain.com,Trash,Trash,True,True,1,1024,0,1,1024,0,-1,Trash
