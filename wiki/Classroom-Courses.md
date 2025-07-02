@@ -8,6 +8,7 @@
 - [Create and update courses](#create-and-update-courses)
 - [Delete courses](#delete-courses)
 - [Manage course aliases](#manage-course-aliases)
+- [Manage course announcement](#manage-course-announcement)
 - [Manage course topics](#manage-course-topics)
 - [Display courses](#display-courses)
 - [Display course counts](#display-course-counts)
@@ -389,17 +390,40 @@ These commands can process multiple courses.
 gam courses <CourseEntity> add alias <CourseAliasEntity>
 gam courses <CourseEntity> delete alias <CourseAliasEntity>
 ```
+
+## Manage course announcements
+These commands can process a single course.
+```
+gam course <CourseID> add announcement
+        text <String> [scheduledtime <Time>] [state draft|published]
+gam course <CourseID> delete announcement <CourseAnnouncementID>
+gam course <CourseID> update announcement <CourseAnnouncementID>
+        [text <String>] [scheduledtime <Time>] [state published]
+```
+These commands can process multiple courses.
+```
+gam courses <CourseEntity> add announcement
+        text <String> [scheduledtime <Time>] [state draft|published]
+gam courses <CourseEntity> delete announcement <CourseAnnouncementIDEntity>
+gam courses <CourseEntity> update announcement <CourseAnnouncementIDEntity>
+        [text <String>] [scheduledtime <Time>] [state published]
+```
+
 ## Manage course topics
 These commands can process a single course.
 ```
 gam course <CourseID> add topic <CourseTopic>
 gam course <CourseID> delete topic <CourseTopicID>
+gam course <CourseID> update topic <CourseTopicID> <CourseTopic>
+
 ```
 These commands can process multiple courses.
 ```
 gam courses <CourseEntity> add topic <CourseTopicEntity>
 gam courses <CourseEntity> delete topic <CourseTopicIDEntity>
+gam courses <CourseEntity> update topic <CourseTopicIDEntity> <CourseTopic>
 ```
+
 ## Display courses
 ```
 gam info course <CourseID> [owneremail] [alias|aliases] [show all|students|teachers] [countsonly]

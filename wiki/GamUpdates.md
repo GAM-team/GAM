@@ -10,11 +10,19 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.11.00
+
+Added commands to manage classroom/course announcements.
+
+* See: https://github.com/GAM-team/GAM/wiki/Classroom-Courses#manage-course-announcements
+
+Upgraded to OpenSSL 3.5.1.
+
 ### 7.10.10
 
 Added choices `text` and `hyperlink` to option `showwebviewlink` in `gam [<UserTypeEntity>] print|show shareddrives`.
 * `showwebviewlink text` - Displays `https://drive.google.com/drive/folders/<SharedDriveID>`
-* `showwebviewlink hyperlink` - Dsiplays `=HYPERLINK("https://drive.google.com/drive/folders/<SharedDriveID>", "<SharedDriveName>")`
+* `showwebviewlink hyperlink` - Displays `=HYPERLINK("https://drive.google.com/drive/folders/<SharedDriveID>", "<SharedDriveName>")`
 
 ### 7.10.09
 
