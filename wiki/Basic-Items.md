@@ -302,6 +302,11 @@
 <ContactGroupItem> ::= <ContactGroupID>|<ContactGroupName>
 <CorporaAttribute> ::= alldrives|allteamdrives|domain|onlyteamdrives|user
 <CourseAlias> ::= <String>
+<CourseAnnouncementContent> ::=
+        ((text <String>)|
+         (textfile <FileName> [charset <Charset>])|
+         (gdoc <UserGoogleDoc>)|
+         (gcsdoc <StorageBucketObjectName>))
 <CourseAnnouncementID> ::= <Number>
 <CourseAnnouncementState> ::= draft|published|deleted
 <CourseID> ::= <Number>|d:<CourseAlias>

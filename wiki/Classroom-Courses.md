@@ -56,6 +56,11 @@ gam user user@domain.com check|update serviceaccount
 <CourseAliasEntity> ::=
         <CourseAliasList>|<FileSelector>|<CSVFileSelector>|<CSVkmdSelector>|<CSVDataSelector>
         See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
+<CourseAnnouncementContent> ::=
+        ((text <String>)|
+         (textfile <FileName> [charset <Charset>])|
+         (gdoc <UserGoogleDoc>)|
+         (gcsdoc <StorageBucketObjectName>))
 <CourseAnnouncementID> ::= <Number>
 <CourseAnnouncementIDList> ::= "<CourseAnnouncementID>(,<CourseAnnouncementID>)*"
 <CourseAnnouncementIDEntity> ::=
@@ -395,18 +400,18 @@ gam courses <CourseEntity> delete alias <CourseAliasEntity>
 These commands can process a single course.
 ```
 gam course <CourseID> add announcement
-        text <String> [scheduledtime <Time>] [state draft|published]
+        <CourseAnnouncementContent> [scheduledtime <Time>] [state draft|published]
 gam course <CourseID> delete announcement <CourseAnnouncementID>
 gam course <CourseID> update announcement <CourseAnnouncementID>
-        [text <String>] [scheduledtime <Time>] [state published]
+        [<CourseAnnouncementContent>] [scheduledtime <Time>] [state published]
 ```
 These commands can process multiple courses.
 ```
 gam courses <CourseEntity> add announcement
-        text <String> [scheduledtime <Time>] [state draft|published]
+        <CourseAnnouncementContent> [scheduledtime <Time>] [state draft|published]
 gam courses <CourseEntity> delete announcement <CourseAnnouncementIDEntity>
 gam courses <CourseEntity> update announcement <CourseAnnouncementIDEntity>
-        [text <String>] [scheduledtime <Time>] [state published]
+        [<CourseAnnouncementContent>] [scheduledtime <Time>] [state published]
 ```
 
 ## Manage course topics

@@ -38,7 +38,7 @@
 - [Print user counts by OrgUnit](#print-user-counts-by-orgunit)
 - [Print user list](#print-user-list)
 - [Display user counts](#display-user-counts)
-- [Verify domain membership]($verify-domain-membership)
+- [Verify domain membership](#verify-domain-membership)
 
 ## API documentation
 * [Directory API - Users](https://developers.google.com/admin-sdk/directory/reference/rest/v1/users)
