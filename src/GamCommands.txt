@@ -1,4 +1,4 @@
-his document describes the GAM command line syntax in modified BNF, see https://en.wikipedia.org/wiki/Backus-Naur_Form
+This document describes the GAM command line syntax in modified BNF, see https://en.wikipedia.org/wiki/Backus-Naur_Form
 Skip the History section and start reading at Introduction.
 
 Items on the command line are space separated, when an actual space character is required, it will be indicated by <Space>.
@@ -405,6 +405,11 @@ If an item contains spaces, it should be surrounded by ".
 <ContactGroupItem> ::= <ContactGroupID>|<ContactGroupName>
 <CorporaAttribute> ::= alldrives|allteamdrives|domain|onlyteamdrives|user
 <CourseAlias> ::= <String>
+<CourseAnnouncementContent> ::=
+        ((text <String>)|
+         (textfile <FileName> [charset <Charset>])|
+         (gdoc <UserGoogleDoc>)|
+         (gcsdoc <StorageBucketObjectName>))
 <CourseAnnouncementID> ::= <Number>
 <CourseAnnouncementState> ::= draft|published|deleted
 <CourseID> ::= <Number>|d:<CourseAlias>
@@ -3120,11 +3125,17 @@ gam delete courses <CourseEntity> [archive|archived]
 gam course <CourseID> create|add alias <CourseAlias>
 gam course <CourseID> delete alias <CourseAlias>
 
+<CourseAnnouncementContent> ::=
+        ((text <String>)|
+         (textfile <FileName> [charset <Charset>])|
+         (gdoc <UserGoogleDoc>)|
+         (gcsdoc <StorageBucketObjectName>))
+
 gam course <CourseID> create announcement
-        text <String> [scheduledtime <Time>] [state draft|published]
+        <CourseAnnouncementContent> [scheduledtime <Time>] [state draft|published]
 gam course <CourseID> remove announcement <CourseAnnouncementID>
 gam course <CourseID> update announcement <CourseAnnouncementID>
-        [text <String>] [scheduledtime <Time>] [state published]
+        [<CourseAnnouncementContent>] [scheduledtime <Time>] [state published]
 
 gam course <CourseID> create|add topic <CourseTopic>
 gam course <CourseID> delete topic <CourseTopicID>
@@ -3141,10 +3152,10 @@ gam courses <CourseEntity> create|add alias <CourseAliasEntity>
 gam courses <CourseEntity> delete alias <CourseAliasEntity>
 
 gam courses <CourseEntity> create announcement
-        text <String> [scheduledtime <Time>] [state draft|published]
+        <CourseAnnouncementContent>> [scheduledtime <Time>] [state draft|published]
 gam courses <CourseEntity> remove announcement <CourseAnnouncementIDEntity>
-gam courses <CourseEntity> update announcement <CourseAnnouncemntIDEntity>
-        [text <String>] [scheduledtime <Time>] [state published]
+gam courses <CourseEntity> update announcement <CourseAnnouncementIDEntity>
+        [<CourseAnnouncementContent>] [scheduledtime <Time>] [state published]
 
 gam courses <CourseEntity> create|add topic <CourseTopicEntity>
 gam courses <CourseEntity> delete topic <CourseTopicIDEntity>

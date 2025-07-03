@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.11.00'
+__version__ = '7.11.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -634,7 +634,8 @@ def accessErrorMessage(cd, errMsg=None):
     cd = buildGAPIObject(API.DIRECTORY)
   try:
     callGAPI(cd.customers(), 'get',
-             throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID_INPUT, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+             throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID_INPUT, GAPI.RESOURCE_NOT_FOUND,
+                           GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
              customerKey=GC.Values[GC.CUSTOMER_ID], fields='id')
   except (GAPI.badRequest, GAPI.invalidInput):
     return formatKeyValueList('',
@@ -671,14 +672,16 @@ def accessErrorExitNonDirectory(api, errMsg):
                                      ''))
 
 def ClientAPIAccessDeniedExit(errMsg=None):
-  stderrErrorMsg(Msg.API_ACCESS_DENIED)
-  if errMsg:
+  if errMsg is None:
+    stderrErrorMsg(Msg.API_ACCESS_DENIED)
+    missingScopes = API.getClientScopesSet(GM.Globals[GM.CURRENT_CLIENT_API])-GM.Globals[GM.CURRENT_CLIENT_API_SCOPES]
+    if missingScopes:
+      writeStderr(Msg.API_CHECK_CLIENT_AUTHORIZATION.format(GM.Globals[GM.OAUTH2_CLIENT_ID],
+                                                            ','.join(sorted(missingScopes))))
+    systemErrorExit(API_ACCESS_DENIED_RC, None)
+  else:
     stderrErrorMsg(errMsg)
-  missingScopes = API.getClientScopesSet(GM.Globals[GM.CURRENT_CLIENT_API])-GM.Globals[GM.CURRENT_CLIENT_API_SCOPES]
-  if missingScopes:
-    writeStderr(Msg.API_CHECK_CLIENT_AUTHORIZATION.format(GM.Globals[GM.OAUTH2_CLIENT_ID],
-                                                          ','.join(sorted(missingScopes))))
-  systemErrorExit(API_ACCESS_DENIED_RC, None)
+    systemErrorExit(API_ACCESS_DENIED_RC, Msg.REAUTHENTICATION_IS_NEEDED)
 
 def SvcAcctAPIAccessDenied():
   _getSvcAcctData()
@@ -4458,6 +4461,8 @@ def handleOAuthTokenError(e, softErrors, displayError=False, i=0, count=0):
       errMsg.startswith('invalid_request: Invalid impersonation &quot;sub&quot; field')):
     if not GM.Globals[GM.CURRENT_SVCACCT_USER]:
       ClientAPIAccessDeniedExit()
+    # 403 Forbidden, API disabled, user not enabled
+    # 400 Bad Request, user not defined
     if softErrors:
       entityActionFailedWarning([Ent.USER, GM.Globals[GM.CURRENT_SVCACCT_USER], Ent.USER, None], errMsg, i, count)
       return None
@@ -4465,6 +4470,7 @@ def handleOAuthTokenError(e, softErrors, displayError=False, i=0, count=0):
   if errMsg in API.OAUTH2_UNAUTHORIZED_ERRORS:
     if not GM.Globals[GM.CURRENT_SVCACCT_USER]:
       ClientAPIAccessDeniedExit()
+    # 401 Unauthorized, API disabled, user enabled
     if softErrors:
       if displayError:
         apiOrScopes = API.getAPIName(GM.Globals[GM.CURRENT_SVCACCT_API]) if GM.Globals[GM.CURRENT_SVCACCT_API] else ','.join(sorted(GM.Globals[GM.CURRENT_SVCACCT_API_SCOPES]))
@@ -6515,7 +6521,8 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
           printGettingAllEntityItemsForWhom(Ent.TEACHER, removeCourseIdScope(courseId), entityType=Ent.COURSE)
           result = callGAPIpages(courseInfo['croom'].courses().teachers(), 'list', 'teachers',
                                  pageMessage=getPageMessageForWhom(),
-                                 throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.BAD_REQUEST, GAPI.SERVICE_NOT_AVAILABLE],
+                                 throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.SERVICE_NOT_AVAILABLE,
+                                               GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  courseId=courseId, fields='nextPageToken,teachers/profile/emailAddress',
                                  pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS])
@@ -6528,7 +6535,8 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
           printGettingAllEntityItemsForWhom(Ent.STUDENT, removeCourseIdScope(courseId), entityType=Ent.COURSE)
           result = callGAPIpages(courseInfo['croom'].courses().students(), 'list', 'students',
                                  pageMessage=getPageMessageForWhom(),
-                                 throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.BAD_REQUEST, GAPI.SERVICE_NOT_AVAILABLE],
+                                 throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.SERVICE_NOT_AVAILABLE,
+                                               GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  courseId=courseId, fields='nextPageToken,students/profile/emailAddress',
                                  pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS])
@@ -6544,8 +6552,8 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
         entityActionNotPerformedWarning([Ent.COURSE, removeCourseIdScope(courseId)], str(e))
         GM.Globals[GM.CLASSROOM_SERVICE_NOT_AVAILABLE] = True
         break
-      except (GAPI.forbidden, GAPI.badRequest):
-        ClientAPIAccessDeniedExit()
+      except (GAPI.forbidden, GAPI.permissionDenied, GAPI.badRequest) as e:
+        ClientAPIAccessDeniedExit(str(e))
   elif entityType == Cmd.ENTITY_CROS:
     buildGAPIObject(API.DIRECTORY)
     result = convertEntityToList(entity)
@@ -9023,7 +9031,7 @@ class CSVPrintFile():
     normalizeSortHeaders()
     if self.outputTranspose:
       newRows = []
-      newTitlesList = [i for i in range(len(self.rows)+1)]
+      newTitlesList = list(range(len(self.rows) + 1))
       for title in titlesList:
         i = 0
         newRow = {i: title}
@@ -16010,8 +16018,9 @@ def doCreateDomainAlias():
   checkForExtraneousArguments()
   try:
     callGAPI(cd.domainAliases(), 'insert',
-             throwReasons=[GAPI.DOMAIN_NOT_FOUND, GAPI.DUPLICATE, GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.NOT_FOUND,
-                           GAPI.FORBIDDEN, GAPI.CONFLICT],
+             throwReasons=[GAPI.DOMAIN_NOT_FOUND, GAPI.DUPLICATE, GAPI.INVALID, GAPI.CONFLICT,
+                           GAPI.BAD_REQUEST, GAPI.NOT_FOUND,
+                           GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
              customer=GC.Values[GC.CUSTOMER_ID], body=body, fields='')
     entityActionPerformed([Ent.DOMAIN, body['parentDomainName'], Ent.DOMAIN_ALIAS, body['domainAliasName']])
   except GAPI.domainNotFound:
@@ -16020,8 +16029,10 @@ def doCreateDomainAlias():
     entityActionFailedWarning([Ent.DOMAIN, body['parentDomainName'], Ent.DOMAIN_ALIAS, body['domainAliasName']], Msg.DUPLICATE)
   except (GAPI.invalid, GAPI.conflict) as e:
     entityActionFailedWarning([Ent.DOMAIN, body['parentDomainName'], Ent.DOMAIN_ALIAS, body['domainAliasName']], str(e))
-  except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden) as e:
+  except (GAPI.badRequest, GAPI.notFound) as e:
     accessErrorExit(cd, str(e))
+  except (GAPI.forbidden, GAPI.permissionDenied) as e:
+    ClientAPIAccessDeniedExit(str(e))
 
 # gam delete domainalias|aliasdomain <DomainAlias>
 def doDeleteDomainAlias():
@@ -16030,13 +16041,16 @@ def doDeleteDomainAlias():
   checkForExtraneousArguments()
   try:
     callGAPI(cd.domainAliases(), 'delete',
-             throwReasons=[GAPI.DOMAIN_ALIAS_NOT_FOUND, GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
+             throwReasons=[GAPI.DOMAIN_ALIAS_NOT_FOUND, GAPI.BAD_REQUEST, GAPI.NOT_FOUND,
+                           GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
              customer=GC.Values[GC.CUSTOMER_ID], domainAliasName=domainAliasName)
     entityActionPerformed([Ent.DOMAIN_ALIAS, domainAliasName])
   except GAPI.domainAliasNotFound:
     entityActionFailedWarning([Ent.DOMAIN_ALIAS, domainAliasName], Msg.DOES_NOT_EXIST)
-  except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden) as e:
+  except (GAPI.badRequest, GAPI.notFound) as e:
     accessErrorExit(cd, str(e))
+  except (GAPI.forbidden, GAPI.permissionDenied) as e:
+    ClientAPIAccessDeniedExit(str(e))
 
 DOMAIN_TIME_OBJECTS = {'creationTime'}
 DOMAIN_ALIAS_PRINT_ORDER = ['parentDomainName', 'creationTime', 'verified']
@@ -16064,14 +16078,17 @@ def doInfoDomainAlias():
   FJQC = FormatJSONQuoteChar(formatJSONOnly=True)
   try:
     result = callGAPI(cd.domainAliases(), 'get',
-                      throwReasons=[GAPI.DOMAIN_ALIAS_NOT_FOUND, GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
+                      throwReasons=[GAPI.DOMAIN_ALIAS_NOT_FOUND, GAPI.BAD_REQUEST, GAPI.NOT_FOUND,
+                                    GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                       customer=GC.Values[GC.CUSTOMER_ID], domainAliasName=domainAliasName)
     aliasSkipObjects = DOMAIN_ALIAS_SKIP_OBJECTS
     _showDomainAlias(result, FJQC, aliasSkipObjects)
   except GAPI.domainAliasNotFound:
     entityActionFailedWarning([Ent.DOMAIN_ALIAS, domainAliasName], Msg.DOES_NOT_EXIST)
-  except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden) as e:
+  except (GAPI.badRequest, GAPI.notFound) as e:
     accessErrorExit(cd, str(e))
+  except (GAPI.forbidden, GAPI.permissionDenied) as e:
+    ClientAPIAccessDeniedExit(str(e))
 
 def _printDomain(domain, csvPF):
   row = {}
@@ -16107,7 +16124,8 @@ def doPrintShowDomainAliases():
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   try:
     domainAliases = callGAPIitems(cd.domainAliases(), 'list', 'domainAliases',
-                                  throwReasons=[GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
+                                  throwReasons=[GAPI.BAD_REQUEST, GAPI.NOT_FOUND,
+                                                GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                                   customer=GC.Values[GC.CUSTOMER_ID])
     count = len(domainAliases)
     if showItemCountOnly:
@@ -16125,8 +16143,10 @@ def doPrintShowDomainAliases():
         csvPF.WriteRowNoFilter({'domainAliasName': domainAlias['domainAliasName'],
                                 'JSON': json.dumps(cleanJSON(domainAlias, timeObjects=DOMAIN_TIME_OBJECTS),
                                                    ensure_ascii=False, sort_keys=True)})
-  except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden) as e:
+  except (GAPI.badRequest, GAPI.notFound) as e:
     accessErrorExit(cd, str(e))
+  except (GAPI.forbidden, GAPI.permissionDenied) as e:
+    ClientAPIAccessDeniedExit(str(e))
   if csvPF:
     csvPF.writeCSVfile('Domain Aliases')
 
@@ -16137,15 +16157,19 @@ def doCreateDomain():
   checkForExtraneousArguments()
   try:
     callGAPI(cd.domains(), 'insert',
-             throwReasons=[GAPI.DUPLICATE, GAPI.DOMAIN_NOT_FOUND, GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.CONFLICT],
+             throwReasons=[GAPI.DUPLICATE, GAPI.CONFLICT,
+                           GAPI.DOMAIN_NOT_FOUND, GAPI.BAD_REQUEST, GAPI.NOT_FOUND,
+                           GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
              customer=GC.Values[GC.CUSTOMER_ID], body=body, fields='')
     entityActionPerformed([Ent.DOMAIN, body['domainName']])
   except GAPI.duplicate:
     entityDuplicateWarning([Ent.DOMAIN, body['domainName']])
   except GAPI.conflict as e:
     entityActionFailedWarning([Ent.DOMAIN, body['domainName']], str(e))
-  except (GAPI.domainNotFound, GAPI.badRequest, GAPI.notFound, GAPI.forbidden) as e:
+  except (GAPI.domainNotFound, GAPI.badRequest, GAPI.notFound) as e:
     accessErrorExit(cd, str(e))
+  except (GAPI.forbidden, GAPI.permissionDenied) as e:
+    ClientAPIAccessDeniedExit(str(e))
 
 # gam update domain <DomainName> primary
 def doUpdateDomain():
@@ -16162,13 +16186,17 @@ def doUpdateDomain():
     missingArgumentExit('primary')
   try:
     callGAPI(cd.customers(), 'update',
-             throwReasons=[GAPI.DOMAIN_NOT_VERIFIED_SECONDARY, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID_INPUT],
+             throwReasons=[GAPI.DOMAIN_NOT_VERIFIED_SECONDARY, GAPI.BAD_REQUEST,
+                           GAPI.RESOURCE_NOT_FOUND, GAPI.INVALID_INPUT,
+                           GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
              customerKey=GC.Values[GC.CUSTOMER_ID], body=body, fields='')
     entityActionPerformedMessage([Ent.DOMAIN, domainName], Msg.NOW_THE_PRIMARY_DOMAIN)
   except GAPI.domainNotVerifiedSecondary:
     entityActionFailedWarning([Ent.DOMAIN, domainName], Msg.DOMAIN_NOT_VERIFIED_SECONDARY)
-  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.invalidInput) as e:
+  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.invalidInput) as e:
     accessErrorExit(cd, str(e))
+  except (GAPI.forbidden, GAPI.permissionDenied) as e:
+    ClientAPIAccessDeniedExit(str(e))
 
 # gam delete domain <DomainName>
 def doDeleteDomain():
@@ -16177,11 +16205,14 @@ def doDeleteDomain():
   checkForExtraneousArguments()
   try:
     callGAPI(cd.domains(), 'delete',
-             throwReasons=[GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
+             throwReasons=[GAPI.BAD_REQUEST, GAPI.NOT_FOUND,
+                           GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
              customer=GC.Values[GC.CUSTOMER_ID], domainName=domainName)
     entityActionPerformed([Ent.DOMAIN, domainName])
-  except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden) as e:
+  except (GAPI.badRequest, GAPI.notFound) as e:
     accessErrorExit(cd, str(e))
+  except (GAPI.forbidden, GAPI.permissionDenied) as e:
+    ClientAPIAccessDeniedExit(str(e))
 
 CUSTOMER_LICENSE_MAP = {
   'accounts:num_users': 'Total Users',
@@ -16210,7 +16241,7 @@ def _showCustomerLicenseInfo(customerInfo, FJQC):
   while True:
     try:
       result = callGAPI(rep.customerUsageReports(), 'get',
-                        throwReasons=[GAPI.INVALID, GAPI.FORBIDDEN],
+                        throwReasons=[GAPI.INVALID, GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                         date=tryDate, customerId=customerInfo['id'],
                         fields='warnings,usageReports', parameters=parameters)
       usageReports = numUsersAvailable(result)
@@ -16228,8 +16259,8 @@ def _showCustomerLicenseInfo(customerInfo, FJQC):
       if not tryDate:
         return
       continue
-    except GAPI.forbidden:
-      return
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
   if not FJQC.formatJSON:
     printKeyValueList([f'User counts as of {tryDate}:'])
     Ind.Increment()
@@ -47688,7 +47719,8 @@ def _getCoursesOwnerInfo(croom, courseIds, useOwnerAccess, addCIIdScope=True):
     if courseId not in coursesInfo:
       try:
         course = callGAPI(croom.courses(), 'get',
-                          throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
+                          throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE,
+                                        GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                           retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                           id=courseId, fields='name,ownerId')
         if useOwnerAccess:
@@ -47699,9 +47731,9 @@ def _getCoursesOwnerInfo(croom, courseIds, useOwnerAccess, addCIIdScope=True):
           coursesInfo[ciCourseId] = {'name': course['name'], 'croom': ocroom}
       except GAPI.notFound:
         entityDoesNotExistWarning(Ent.COURSE, courseId)
-      except (GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
+      except GAPI.serviceNotAvailable as e:
         entityActionFailedWarning([Ent.COURSE, courseId], str(e))
-      except GAPI.forbidden:
+      except (GAPI.forbidden, GAPI.permissionDenied) as e:
         ClientAPIAccessDeniedExit()
   return 0, len(coursesInfo), coursesInfo
 
@@ -48931,43 +48963,73 @@ def doPrintCourseParticipants():
   csvPF.writeCSVfile('Course Participants')
 
 def _batchAddItemsToCourse(croom, courseId, i, count, addItems, addType):
+  def _addIdToResponse(response, riItem):
+    if addType == Ent.COURSE_ANNOUNCEMENT:
+      respId = response.get('id', '')
+    elif addType == Ent.COURSE_TOPIC:
+      respId = response.get('topicId', '')
+    else:
+      respId = ''
+    if respId:
+      return riItem + f'({respId})'
+    return riItem
+
   _ADD_PART_REASON_TO_MESSAGE_MAP = {GAPI.NOT_FOUND: Msg.DOES_NOT_EXIST,
                                      GAPI.ALREADY_EXISTS: Msg.DUPLICATE,
                                      GAPI.FAILED_PRECONDITION: Msg.NOT_ALLOWED}
-  def _callbackAddItemsToCourse(request_id, _, exception):
+  def _callbackAddItemsToCourse(request_id, response, exception):
     ri = request_id.splitlines()
+    if addType == Ent.COURSE_ANNOUNCEMENT:
+      mg = re.match(r"^{'text': '(.+)'}$", ri[RI_ITEM])
+      if mg:
+        riText = mg.group(1)
+      else:
+        riText = ''
+      if len(riText) > 100:
+        riItem = riText[0:100]+'...'
+      else:
+        riItem = riText
+    else:
+      riItem = ri[RI_ITEM]
     if exception is None:
-      entityActionPerformed([Ent.COURSE, ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM]], int(ri[RI_J]), int(ri[RI_JCOUNT]))
+      riItem = _addIdToResponse(response, riItem)
+      entityActionPerformed([Ent.COURSE, ri[RI_ENTITY], addType, riItem], int(ri[RI_J]), int(ri[RI_JCOUNT]))
     else:
       http_status, reason, message = checkGAPIError(exception)
-      if (reason not in {GAPI.QUOTA_EXCEEDED, GAPI.SERVICE_NOT_AVAILABLE}) and ((reason != GAPI.NOT_FOUND) or (ri[RI_ROLE] == Ent.COURSE_ALIAS)):
+      if (reason not in {GAPI.QUOTA_EXCEEDED, GAPI.SERVICE_NOT_AVAILABLE}) and ((reason != GAPI.NOT_FOUND) or (addType == Ent.COURSE_ALIAS)):
         if reason in [GAPI.FORBIDDEN, GAPI.BACKEND_ERROR]:
-          errMsg = getPhraseDNEorSNA(ri[RI_ITEM])
+          errMsg = getPhraseDNEorSNA(riItem)
         else:
           errMsg = getHTTPError(_ADD_PART_REASON_TO_MESSAGE_MAP, http_status, reason, message)
-          if (reason == GAPI.PERMISSION_DENIED) and (ri[RI_ROLE] in {Ent.STUDENT, Ent.TEACHER}) and ('CannotDirectAddUser' in errMsg):
-            errMsg += f' Add external user with: gam user {ri[RI_ITEM]} create classroominvitation courses {ri[RI_ENTITY]} addType {Ent.Singular(ri[RI_ROLE])}'
-        entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM]], errMsg, int(ri[RI_J]), int(ri[RI_JCOUNT]))
+          if (reason == GAPI.PERMISSION_DENIED) and (addType in {Ent.STUDENT, Ent.TEACHER}) and ('CannotDirectAddUser' in errMsg):
+            errMsg += f' Add external user with: gam user {riItem} create classroominvitation courses {ri[RI_ENTITY]} addType {Ent.Singular(addType)}'
+        entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], addType, riItem], errMsg, int(ri[RI_J]), int(ri[RI_JCOUNT]))
         return
       waitOnFailure(1, 10, reason, message)
+      if addType in {Ent.STUDENT, Ent.TEACHER, Ent.COURSE_TOPIC}:
+        rbody = {attribute: riItem}
+      elif addType == Ent.COURSE_ALIAS:
+        rbody = {attribute: addCourseAliasScope(riItem)}
+      else: # addType == Ent.COURSE_ANNOUNCEMENT:
+        rbody = ri[RI_ITEM]
       try:
-        callGAPI(service, 'create',
-                 throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.BACKEND_ERROR,
-                               GAPI.ALREADY_EXISTS, GAPI.FAILED_PRECONDITION,
-                               GAPI.QUOTA_EXCEEDED, GAPI.SERVICE_NOT_AVAILABLE],
-                 retryReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE], triesLimit=0 if reason != GAPI.NOT_FOUND else 3,
-                 courseId=addCourseIdScope(ri[RI_ENTITY]),
-                 body={attribute: ri[RI_ITEM] if ri[RI_ROLE] != Ent.COURSE_ALIAS else addCourseAliasScope(ri[RI_ITEM])},
-                 fields='')
+        result = callGAPI(service, 'create',
+                          throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.BACKEND_ERROR,
+                                        GAPI.ALREADY_EXISTS, GAPI.FAILED_PRECONDITION,
+                                        GAPI.QUOTA_EXCEEDED, GAPI.SERVICE_NOT_AVAILABLE],
+                          retryReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE], triesLimit=0 if reason != GAPI.NOT_FOUND else 3,
+                          courseId=addCourseIdScope(ri[RI_ENTITY]), body=rbody, fields=returnFields)
+        riItem = _addIdToResponse(result, riItem)
       except (GAPI.notFound, GAPI.backendError, GAPI.forbidden):
-        entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM]], getPhraseDNEorSNA(ri[RI_ITEM]), int(ri[RI_J]), int(ri[RI_JCOUNT]))
+        entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], addType, riItem], getPhraseDNEorSNA(riItem), int(ri[RI_J]), int(ri[RI_JCOUNT]))
       except GAPI.alreadyExists:
-        entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM]], Msg.DUPLICATE, int(ri[RI_J]), int(ri[RI_JCOUNT]))
+        entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], addType, riItem], Msg.DUPLICATE, int(ri[RI_J]), int(ri[RI_JCOUNT]))
       except GAPI.failedPrecondition:
-        entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM]], Msg.NOT_ALLOWED, int(ri[RI_J]), int(ri[RI_JCOUNT]))
+        entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], addType, riItem], Msg.NOT_ALLOWED, int(ri[RI_J]), int(ri[RI_JCOUNT]))
       except (GAPI.quotaExceeded, GAPI.serviceNotAvailable) as e:
-        entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM]], str(e), int(ri[RI_J]), int(ri[RI_JCOUNT]))
+        entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], addType, riItem], str(e), int(ri[RI_J]), int(ri[RI_JCOUNT]))
 
+  returnFields = ''
   if addType == Ent.STUDENT:
     service = croom.courses().students()
     attribute = 'userId'
@@ -48980,16 +49042,18 @@ def _batchAddItemsToCourse(croom, courseId, i, count, addItems, addType):
   elif addType == Ent.COURSE_TOPIC:
     service = croom.courses().topics()
     attribute = 'name'
+    returnFields = 'topicId'
   else: # addType == Ent.COURSE_ANNOUNCEMENT:
     service = croom.courses().announcements()
     attribute = 'text'
+    returnFields = 'id'
   method = getattr(service, 'create')
   Act.Set(Act.ADD)
   jcount = len(addItems)
   noScopeCourseId = removeCourseIdScope(courseId)
   entityPerformActionNumItems([Ent.COURSE, noScopeCourseId], jcount, addType, i, count)
   Ind.Increment()
-  svcargs = dict([('courseId', courseId), ('body', {attribute: None}), ('fields', '')]+GM.Globals[GM.EXTRA_ARGS_LIST])
+  svcargs = dict([('courseId', courseId), ('body', {attribute: None}), ('fields', returnFields)]+GM.Globals[GM.EXTRA_ARGS_LIST])
   dbatch = croom.new_batch_http_request(callback=_callbackAddItemsToCourse)
   bcount = 0
   j = 0
@@ -49021,34 +49085,37 @@ def _batchRemoveItemsFromCourse(croom, courseId, i, count, removeItems, removeTy
                                         GAPI.PERMISSION_DENIED: Msg.PERMISSION_DENIED}
   def _callbackRemoveItemsFromCourse(request_id, _, exception):
     ri = request_id.splitlines()
+    riItem = ri[RI_ITEM]
     if exception is None:
-      entityActionPerformed([Ent.COURSE, ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM]], int(ri[RI_J]), int(ri[RI_JCOUNT]))
+      entityActionPerformed([Ent.COURSE, ri[RI_ENTITY], removeType, riItem], int(ri[RI_J]), int(ri[RI_JCOUNT]))
     else:
       http_status, reason, message = checkGAPIError(exception)
       if reason not in {GAPI.QUOTA_EXCEEDED, GAPI.SERVICE_NOT_AVAILABLE}:
-        if reason == GAPI.NOT_FOUND and ri[RI_ROLE] != Ent.COURSE_ALIAS:
-          errMsg = f'{Msg.NOT_A} {Ent.Singular(ri[RI_ROLE])}'
+        if reason == GAPI.NOT_FOUND and removeType != Ent.COURSE_ALIAS:
+          errMsg = f'{Msg.NOT_A} {Ent.Singular(removeType)}'
         else:
           errMsg = getHTTPError(_REMOVE_PART_REASON_TO_MESSAGE_MAP, http_status, reason, message)
-        entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM]], errMsg, int(ri[RI_J]), int(ri[RI_JCOUNT]))
+        entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], removeType, riItem], errMsg, int(ri[RI_J]), int(ri[RI_JCOUNT]))
         return
       waitOnFailure(1, 10, reason, message)
+      if removeType in {Ent.STUDENT, Ent.TEACHER, Ent.COURSE_TOPIC, Ent.COURSE_ANNOUNCEMENT}:
+        rbody = {attribute: riItem}
+      else: # removeType == Ent.COURSE_ALIAS:
+        rbody = {attribute: addCourseAliasScope(riItem)}
       try:
         callGAPI(service, 'delete',
                  throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED,
                                GAPI.QUOTA_EXCEEDED, GAPI.SERVICE_NOT_AVAILABLE, GAPI.FAILED_PRECONDITION],
                  retryReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE], triesLimit=0 if reason != GAPI.NOT_FOUND else 3,
-                 courseId=addCourseIdScope(ri[RI_ENTITY]),
-                 body={attribute: ri[RI_ITEM] if ri[RI_ROLE] != Ent.COURSE_ALIAS else addCourseAliasScope(ri[RI_ITEM])},
-                 fields='')
+                 courseId=addCourseIdScope(ri[RI_ENTITY]), body=rbody, fields='')
       except GAPI.notFound:
-        entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM]], Msg.DOES_NOT_EXIST, int(ri[RI_J]), int(ri[RI_JCOUNT]))
+        entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], removeType, riItem], Msg.DOES_NOT_EXIST, int(ri[RI_J]), int(ri[RI_JCOUNT]))
       except GAPI.forbidden:
-        entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM]], Msg.FORBIDDEN, int(ri[RI_J]), int(ri[RI_JCOUNT]))
+        entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], removeType, riItem], Msg.FORBIDDEN, int(ri[RI_J]), int(ri[RI_JCOUNT]))
       except GAPI.permissionDenied:
-        entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM]], Msg.PERMISSION_DENIED, int(ri[RI_J]), int(ri[RI_JCOUNT]))
+        entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], removeType, riItem], Msg.PERMISSION_DENIED, int(ri[RI_J]), int(ri[RI_JCOUNT]))
       except (GAPI.quotaExceeded, GAPI.serviceNotAvailable, GAPI.failedPrecondition) as e:
-        entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], ri[RI_ROLE], ri[RI_ITEM]], str(e), int(ri[RI_J]), int(ri[RI_JCOUNT]))
+        entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], removeType, riItem], str(e), int(ri[RI_J]), int(ri[RI_JCOUNT]))
 
   if removeType == Ent.STUDENT:
     service = croom.courses().students()
@@ -49121,8 +49188,8 @@ def getCourseAnnouncement(createCmd):
   body = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if myarg == 'text':
-      body['text'] = getString(Cmd.OB_STRING, minLen=1, maxLen=30000)
+    if myarg in SORF_TEXT_ARGUMENTS:
+      body['text'] = getStringOrFile(myarg, minLen=1, unescapeCRLF=True)[0]
     elif myarg == 'scheduledtime':
       body['scheduledTime'] = getTimeOrDeltaFromNow()
     elif myarg == 'state':
@@ -49160,9 +49227,9 @@ PARTICIPANT_EN_MAP = {
 # gam courses <CourseEntity> create alias <CourseAliasEntity>
 # gam course <CourseID> create alias <CourseAlias>
 # gam courses <CourseEntity> create announcement
-#	text <String> [scheduledtime <Time>] [state draft|published]
+#	<CourseAnnouncementContent> [scheduledtime <Time>] [state draft|published]
 # gam course <CourseID> create announcement
-#	text <String> [scheduledtime <Time>] [state draft|published]
+#	<CourseAnnouncementContent> [scheduledtime <Time>] [state draft|published]
 # gam courses <CourseEntity> create topic <CourseTopicEntity>
 # gam course <CourseID> create topic <CourseTopic>
 # gam courses <CourseEntity> create students <UserTypeEntity>
@@ -49270,9 +49337,9 @@ def doCourseRemoveItems(courseIdList, getEntityListArg):
     _batchRemoveItemsFromCourse(courseInfo['croom'], courseId, i, count, removeItems, removeType)
 
 # gam courses <CourseEntity> update announcement <CourseAnnouncemntIDEntity>
-#	[text <String>] [scheduledtime <Time>] [state published]
+#	[<CourseAnnouncementContent>] [scheduledtime <Time>] [state published]
 # gam course <CourseID> update announcement <CourseAnnouncementID>
-#	[text <String>] [scheduledtime <Time>] [state published]
+#	[<CourseAnnouncementContent>] [scheduledtime <Time>] [state published]
 # gam courses <CourseEntity> update topic <CourseTopicIDEntity> <CourseTopic>
 # gam course <CourseID> update topic <CourseTopicID> <CourseTopic>
 def doCourseUpdateItems(courseIdList, getEntityListArg):
