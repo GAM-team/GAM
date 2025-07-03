@@ -180,6 +180,7 @@
         createdtime|
         id|
         name|
+        restrictions|
         themeid
 <SharedDriveFieldNameList> ::= "<SharedDriveFieldName>(,<SharedDriveFieldName>)*"
 
@@ -200,6 +201,8 @@
         allowcontentmanagerstosharefolders|
         copyrequireswriterpermission|
         domainusersonly|
+        downloadrestrictedforreaders|
+        downloadrestrictedforwriters|
         drivemembersonly|teammembersonly|
         sharingfoldersrequiresorganizerpermission
 
