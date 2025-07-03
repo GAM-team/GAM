@@ -337,6 +337,7 @@ ENTITY_IS_A_GROUP_RC = 22
 ENTITY_IS_A_GROUP_ALIAS_RC = 23
 ENTITY_IS_AN_UNMANAGED_ACCOUNT_RC = 24
 ORGUNIT_NOT_EMPTY_RC = 25
+USER_SUSPENDED_RC = 26
 CHECK_USER_GROUPS_ERROR_RC = 29
 ORPHANS_COLLECTED_RC = 30
 # Warnings/Errors
@@ -44337,6 +44338,28 @@ def doUndeleteUsers():
 def doUndeleteUser():
   undeleteUsers(getStringReturnInList(Cmd.OB_USER_ITEM))
 
+# gam check suspended <UserItem>
+def doCheckUserSuspended():
+  cd = buildGAPIObject(API.DIRECTORY)
+  user = getEmailAddress()
+  checkForExtraneousArguments()
+  try:
+    result = callGAPI(cd.users(), 'get',
+                      throwReasons=GAPI.USER_GET_THROW_REASONS,
+                      userKey=user, fields='suspended,suspensionReason', projection='basic')
+  except (GAPI.userNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden):
+    entityDoesNotExistExit(Ent.USER, user)
+  except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
+    accessErrorExit(cd)
+  kvList = [Ent.Singular(Ent.USER), user]
+  up = 'suspended'
+  kvList.extend([UProp.PROPERTIES[up][UProp.TITLE], result[up]])
+  if result[up]:
+    up = 'suspensionReason'
+    kvList.extend([UProp.PROPERTIES[up][UProp.TITLE], result[up]])
+    setSysExitRC(USER_SUSPENDED_RC)
+  printKeyValueList(kvList)
+
 # gam <UserTypeEntity> suspend users [noactionifalias]
 # gam <UserTypeEntity> unsuspend users [noactionifalias]
 def suspendUnsuspendUsers(entityList):
@@ -76554,6 +76577,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_USERINVITATION:	doCheckCIUserInvitations,
       Cmd.ARG_ISINVITABLE:	doCheckCIUserInvitations,
       Cmd.ARG_ORG:		doCheckOrgUnit,
+      Cmd.ARG_SUSPENDED:	doCheckUserSuspended,
      }
     ),
   'clear':

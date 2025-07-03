@@ -10,6 +10,20 @@ a literal string, a file or a Google Doc.
          (gcsdoc <StorageBucketObjectName>))
 ```
 
+Added command `gam check suspended <UserItem>` that checks the suspension status of a user
+and sets the return code to 0 if the user is not suspended or 26 if it is.
+```
+$ gam check suspended testok@domain.com
+User: testok@domain.com, Account Suspended: False
+$ echo $?
+0
+
+$ gam check suspended testsusp@domain.com
+User: testsusp@domain.com, Account Suspended: True, Suspension Reason: ADMIN
+$ echo $?
+26
+```
+
 7.11.00
 
 Added commands to manage classroom/course announcements.

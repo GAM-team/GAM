@@ -5639,6 +5639,7 @@ gam update user <UserItem> [ignorenullpassword] <UserAttribute>*
         [logpassword <FileName>]
 gam delete user <UserItem> [noactionifalias]
 gam undelete user <UserItem> [ou|org|orgunit <OrgUnitPath>]
+gam check suspended <UserItem>
 gam suspend user <UserItem> [noactionifalias]
 gam unsuspend user <UserItem> [noactionifalias]
 gam info user [<UserItem>]

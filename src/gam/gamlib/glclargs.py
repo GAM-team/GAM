@@ -777,6 +777,7 @@ class GamCLArgs():
   ARG_STORAGEBUCKETS = 'storagebuckets'
   ARG_STORAGEFILE = 'storagefile'
   ARG_STORAGEFILES = 'storagefiles'
+  ARG_SUSPENDED = 'suspended'
   ARG_SVCACCT = 'svcacct'
   ARG_SVCACCTS = 'svcaccts'
   ARG_TASK = 'task'
