@@ -21,6 +21,7 @@
   - [Update a user's attributes with JSON data](#update-a-users-attributes-with-json-data)
   - [Update a user's OU based on group membership](#update-a-users-ou-based-on-group-membership)
   - [Do not update a user's OU if currently in a special purpose OU](#do-not-update-a-users-ou-if-currently-in-a-special-purpose-ou)
+- [Check a user's suspension status](#check-a-users-suspension-status)
 - [Delete or suspend users](#delete-or-suspend-users)
 - [Undelete or unsuspend users](#undelete-or-unsuspend-users)
 - [Display information about users](#display-information-about-users)
@@ -894,6 +895,25 @@ specify OU paths, not IDs.
 ```
 gam csv SISdata.csv gam update user "~primaryEmail" suspended off firstname "~First Name" lastname "~Last Name"
         ou "~OU" immutableous "'/Students/Lower School/Restricted,'/Students/Middle School/Restricted'"
+```
+
+## Check a user's suspension status
+This command checks the suspension status of a single user
+and sets the return code to 0 if the user is not suspended or 26 if it is.
+```
+gam check suspended <UserItem>
+```
+Example.
+```
+$ gam check suspended testok@domain.com
+User: testok@domain.com, Account Suspended: False
+$ echo $?
+0
+
+$ gam check suspended testsusp@domain.com
+User: testsusp@domain.com, Account Suspended: True, Suspension Reason: ADMIN
+$ echo $?
+26
 ```
 
 ## Delete or suspend users
