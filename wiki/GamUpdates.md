@@ -10,6 +10,18 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.11.01
+
+Updated `gam course <CourseID> create|update announcement` to accept input from
+a literal string, a file or a Google Doc.
+```
+<CourseAnnouncementContent> ::=
+        ((text <String>)|
+         (textfile <FileName> [charset <Charset>])|
+         (gdoc <UserGoogleDoc>)|
+         (gcsdoc <StorageBucketObjectName>))
+```
+
 ### 7.11.00
 
 Added commands to manage classroom/course announcements.
