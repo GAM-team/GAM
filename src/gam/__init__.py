@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.11.01'
+__version__ = '7.12.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -54517,6 +54517,7 @@ DRIVE_CAPABILITIES_SUBFIELDS_CHOICE_MAP = {
   'canaddmydriveparent': 'canAddMyDriveParent',
   'canchangecopyrequireswriterpermission': 'canChangeCopyRequiresWriterPermission',
   'canchangecopyrequireswriterpermissionrestriction': 'canChangeCopyRequiresWriterPermissionRestriction',
+  'canchangedownloadrestriction': 'canChangeDownloadRestriction',
   'canchangedomainusersonlyrestriction': 'canChangeDomainUsersOnlyRestriction',
   'canchangedrivebackground': 'canChangeDriveBackground',
   'canchangedrivemembersonlyrestriction': 'canChangeDriveMembersOnlyRestriction',
@@ -65586,6 +65587,8 @@ SHAREDDRIVE_RESTRICTIONS_MAP = {
   'allowcontentmanagerstosharefolders': 'sharingFoldersRequiresOrganizerPermission',
   'copyrequireswriterpermission': 'copyRequiresWriterPermission',
   'domainusersonly': 'domainUsersOnly',
+  'downloadrestrictedforreaders': 'restrictedForReaders',
+  'downloadrestrictedforwriters': 'restrictedForWriters',
   'drivemembersonly': 'driveMembersOnly',
   'sharingfoldersrequiresorganizerpermission': 'sharingFoldersRequiresOrganizerPermission',
   'teammembersonly': 'driveMembersOnly',
@@ -65594,7 +65597,10 @@ SHAREDDRIVE_RESTRICTIONS_MAP = {
 def _getSharedDriveRestrictions(myarg, body):
   def _setRestriction(restriction):
     body.setdefault('restrictions', {})
-    if restriction != 'allowcontentmanagerstosharefolders':
+    if restriction in {'downloadrestrictedforreaders', 'downloadrestrictedforwriters'}:
+      body['restrictions'].setdefault('downloadRestriction', {})
+      body['restrictions']['downloadRestriction'][SHAREDDRIVE_RESTRICTIONS_MAP[restriction]] = getBoolean()
+    elif restriction != 'allowcontentmanagerstosharefolders':
       body['restrictions'][SHAREDDRIVE_RESTRICTIONS_MAP[restriction]] = getBoolean()
     else:
       body['restrictions'][SHAREDDRIVE_RESTRICTIONS_MAP[restriction]] = not getBoolean()
@@ -65768,6 +65774,7 @@ def createSharedDrive(users, useDomainAdminAccess=False):
                    bailOnInternalError=True,
                    throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN,
                                                                GAPI.NO_MANAGE_TEAMDRIVE_ADMINISTRATOR_PRIVILEGE,
+                                                               GAPI.OUTSIDE_DOMAIN_MEMBER_CANNOT_CHANGE_TEAMDRIVE_RESTRICTIONS,
                                                                GAPI.BAD_REQUEST, GAPI.INTERNAL_ERROR, GAPI.PERMISSION_DENIED,
                                                                GAPI.FILE_NOT_FOUND],
                    useDomainAdminAccess=useDomainAdminAccess, driveId=driveId, body=updateBody)
@@ -65787,7 +65794,8 @@ def createSharedDrive(users, useDomainAdminAccess=False):
       if orgUnit:
         waitingForCreationToComplete(moveToOrgUnitDelay)
         ci = _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci, returnIdOnly or csvPF)
-    except (GAPI.notFound, GAPI.forbidden, GAPI.badRequest, GAPI.noManageTeamDriveAdministratorPrivilege) as e:
+    except (GAPI.notFound, GAPI.forbidden, GAPI.badRequest,
+            GAPI.noManageTeamDriveAdministratorPrivilege, GAPI.outsideDomainMemberCannotChangeTeamDriveRestrictions) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
       userDriveServiceNotEnabledWarning(user, str(e), i, count)
@@ -65842,6 +65850,7 @@ def updateSharedDrive(users, useDomainAdminAccess=False):
                           bailOnInternalError=True,
                           throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.BAD_REQUEST,
                                                                       GAPI.NO_MANAGE_TEAMDRIVE_ADMINISTRATOR_PRIVILEGE,
+                                                                      GAPI.OUTSIDE_DOMAIN_MEMBER_CANNOT_CHANGE_TEAMDRIVE_RESTRICTIONS,
                                                                       GAPI.INTERNAL_ERROR, GAPI.FILE_NOT_FOUND],
                           useDomainAdminAccess=useDomainAdminAccess, driveId=driveId, body=body, fields='name')
         entityActionPerformed([Ent.USER, user, Ent.SHAREDDRIVE_NAME, result['name'], Ent.SHAREDDRIVE_ID, driveId], i, count)
@@ -65859,7 +65868,7 @@ def updateSharedDrive(users, useDomainAdminAccess=False):
       if orgUnit:
         ci = _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci, False)
     except (GAPI.notFound, GAPI.forbidden, GAPI.badRequest, GAPI.internalError,
-            GAPI.noManageTeamDriveAdministratorPrivilege) as e:
+            GAPI.noManageTeamDriveAdministratorPrivilege, GAPI.outsideDomainMemberCannotChangeTeamDriveRestrictions) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId], str(e), i, count)
     except GAPI.fileNotFound as e:
       entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, driveId,
@@ -65988,14 +65997,6 @@ def _getSharedDriveRole(shareddrive):
   return role
 
 def _showSharedDrive(user, shareddrive, j, jcount, FJQC):
-  def _showCapabilitiesRestrictions(field):
-    if field in shareddrive:
-      printKeyValueList([field, ''])
-      Ind.Increment()
-      for capability in sorted(shareddrive[field]):
-        printKeyValueList([capability, shareddrive[field][capability]])
-      Ind.Decrement()
-
   if FJQC.formatJSON:
     printLine(json.dumps(cleanJSON(shareddrive, timeObjects=SHAREDDRIVE_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
     return
@@ -66012,8 +66013,9 @@ def _showSharedDrive(user, shareddrive, j, jcount, FJQC):
       printKeyValueList([setting, shareddrive[setting]])
   if 'role' in shareddrive:
     printKeyValueList(['role', shareddrive['role']])
-  _showCapabilitiesRestrictions('capabilities')
-  _showCapabilitiesRestrictions('restrictions')
+  for setting in ['capabilities', 'restrictions']:
+    if setting in shareddrive:
+      showJSON(setting, shareddrive[setting])
   Ind.Decrement()
 
 # gam <UserTypeEntity> info shareddrive <SharedDriveEntity>

@@ -4803,6 +4803,8 @@ gam <UserTypeEntity> sendemail from <EmailAddress>
         allowcontentmanagerstosharefolders|
         copyrequireswriterpermission|
         domainusersonly|
+        downloadrestrictedforreaders|
+        downloadrestrictedforwriters|
         drivemembersonly|teammembersonly|
         sharingfoldersrequiresorganizerpermission
 
@@ -6956,6 +6958,7 @@ gam <UserTypeEntity> collect orphans
         capabilities.canchangecopyrequireswriterpermission|
         capabilities.canchangecopyrequireswriterpermissionrestriction|
         capabilities.canchangedomainusersonlyrestriction|
+        capabilities.canchangedownloadrestriction|
         capabilities.canchangedrivebackground|
         capabilities.canchangedrivemembersonlyrestriction|
         capabilities.canchangesecurityupdateenabled|
@@ -8362,6 +8365,8 @@ gam <UserTypeEntity> print tasklists [todrive <ToDriveAttribute>*]
         allowcontentmanagerstosharefolders|
         copyrequireswriterpermission|
         domainusersonly|
+        downloadrestrictedforreaders|
+        downloadrestrictedforwriters|
         drivemembersonly|teammembersonly|
         sharingfoldersrequiresorganizerpermission
 

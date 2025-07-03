@@ -1,4 +1,9 @@
-7.11.01
+7.12.00
+
+Updated `gam info|show shareddrive` to handle changes in the Drive API that caused traps.
+
+Added `downloadrestrictedforreaders` and `downloadrestrictedforwriters` to
+`<SharedDriveRestrictionsSubfieldName>` to support new Shared Drive restrictions.
 
 Updated `gam course <CourseID> create|update announcement` to accept input from
 a literal string, a file or a Google Doc.
