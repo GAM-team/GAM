@@ -15074,7 +15074,7 @@ def getRecipients():
 #	(embedimage <FileName> <String>)*
 #	[newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
 #	(<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
-# gam <UserTypeEntity> sendemail recipient <RecipientEntity> [replyto <EmailAddress>]
+# gam <UserTypeEntity> sendemail recipient|to <RecipientEntity> [replyto <EmailAddress>]
 #	[cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
 #	[subject <String>]
 #	[<MessageContent>]
@@ -15107,11 +15107,12 @@ def doSendEmail(users=None):
     if checkArgumentPresent({'recipient', 'recipients', 'to'}):
       msgFroms = [normalizeEmailAddressOrUID(entity) for entity in entityList]
       recipients = getRecipients()
-    else:
-      if checkArgumentPresent({'from'}):
-        msgFroms = [getString(Cmd.OB_EMAIL_ADDRESS)]
-        count = 1
+    elif checkArgumentPresent({'from'}):
       recipients = [normalizeEmailAddressOrUID(entity) for entity in entityList]
+      msgFroms = [getString(Cmd.OB_EMAIL_ADDRESS)]
+      count = 1
+    else:
+      missingArgumentExit('recipient|to|from')
   msgHeaders = {}
   ccRecipients = []
   bccRecipients = []
@@ -16282,12 +16283,15 @@ def setTrueCustomerId(cd=None):
       cd = buildGAPIObject(API.DIRECTORY)
     try:
       customerInfo = callGAPI(cd.customers(), 'get',
-                              throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID_INPUT, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                              throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID_INPUT, GAPI.RESOURCE_NOT_FOUND,
+                                            GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                               customerKey=GC.MY_CUSTOMER,
                               fields='id')
       GC.Values[GC.CUSTOMER_ID] = customerInfo['id']
-    except (GAPI.badRequest, GAPI.invalidInput, GAPI.resourceNotFound, GAPI.forbidden):
+    except (GAPI.badRequest, GAPI.invalidInput, GAPI.resourceNotFound):
       pass
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
 
 def _getCustomerId():
   customerId = GC.Values[GC.CUSTOMER_ID]
@@ -16321,7 +16325,8 @@ def doInfoCustomer(returnCustomerInfo=None, FJQC=None):
     FJQC = FormatJSONQuoteChar(formatJSONOnly=True)
   try:
     customerInfo = callGAPI(cd.customers(), 'get',
-                            throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID_INPUT, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                            throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID_INPUT, GAPI.RESOURCE_NOT_FOUND,
+                                          GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                             customerKey=customerId)
     if 'customerCreationTime' in customerInfo:
       customerInfo['customerCreationTime'] = formatLocalTime(customerInfo['customerCreationTime'])
@@ -16330,7 +16335,8 @@ def doInfoCustomer(returnCustomerInfo=None, FJQC=None):
     primaryDomain = {'domainName': UNKNOWN, 'verified': UNKNOWN}
     try:
       domains = callGAPIitems(cd.domains(), 'list', 'domains',
-                              throwReasons=[GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
+                              throwReasons=[GAPI.BAD_REQUEST, GAPI.NOT_FOUND,
+                                            GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                               customer=customerInfo['id'], fields='domains(creationTime,domainName,isPrimary,verified)')
       for domain in domains:
         if domain.get('isPrimary'):
@@ -16366,8 +16372,8 @@ def doInfoCustomer(returnCustomerInfo=None, FJQC=None):
     _showCustomerLicenseInfo(customerInfo, FJQC)
   except (GAPI.badRequest, GAPI.invalidInput, GAPI.domainNotFound, GAPI.notFound, GAPI.resourceNotFound):
     accessErrorExit(cd)
-  except GAPI.forbidden as e:
-    entityActionFailedExit([Ent.CUSTOMER_ID, customerId], str(e))
+  except (GAPI.forbidden, GAPI.permissionDenied) as e:
+    ClientAPIAccessDeniedExit(str(e))
 
 # gam update customer [primary <DomainName>] [adminsecondaryemail|alternateemail <EmailAddress>] [language <LanguageCode] [phone|phonenumber <String>]
 #	[contact|contactname <String>] [name|organizationname <String>]
@@ -16395,15 +16401,18 @@ def doUpdateCustomer():
   if body:
     try:
       callGAPI(cd.customers(), 'patch',
-               throwReasons=[GAPI.DOMAIN_NOT_VERIFIED_SECONDARY, GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+               throwReasons=[GAPI.DOMAIN_NOT_VERIFIED_SECONDARY, GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND,
+                             GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                customerKey=customerId, body=body, fields='')
       entityActionPerformed([Ent.CUSTOMER_ID, GC.Values[GC.CUSTOMER_ID]])
     except GAPI.domainNotVerifiedSecondary:
       entityActionFailedWarning([Ent.CUSTOMER_ID, GC.Values[GC.CUSTOMER_ID], Ent.DOMAIN, body['customerDomain']], Msg.DOMAIN_NOT_VERIFIED_SECONDARY)
     except (GAPI.invalid, GAPI.invalidInput) as e:
       entityActionFailedWarning([Ent.CUSTOMER_ID, GC.Values[GC.CUSTOMER_ID]], str(e))
-    except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
+    except (GAPI.badRequest, GAPI.resourceNotFound):
       accessErrorExit(cd)
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
 
 # gam info instance [formatjson]
 def doInfoInstance():
@@ -16450,13 +16459,16 @@ def doInfoDomain():
   FJQC = FormatJSONQuoteChar(formatJSONOnly=True)
   try:
     result = callGAPI(cd.domains(), 'get',
-                      throwReasons=[GAPI.DOMAIN_NOT_FOUND, GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
+                      throwReasons=[GAPI.DOMAIN_NOT_FOUND, GAPI.BAD_REQUEST, GAPI.NOT_FOUND,
+                                    GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                       customer=GC.Values[GC.CUSTOMER_ID], domainName=domainName)
     _showDomain(result, FJQC)
   except GAPI.domainNotFound:
     entityActionFailedWarning([Ent.DOMAIN, domainName], Msg.DOES_NOT_EXIST)
-  except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
+  except (GAPI.badRequest, GAPI.notFound):
     accessErrorExit(cd)
+  except (GAPI.forbidden, GAPI.permissionDenied) as e:
+    ClientAPIAccessDeniedExit(str(e))
 
 DOMAIN_SORT_TITLES = ['domainName', 'parentDomainName', 'creationTime', 'type', 'verified']
 
@@ -16504,8 +16516,10 @@ def doPrintShowDomains():
         csvPF.WriteRowNoFilter({'domainName': domain['domainName'],
                                 'JSON': json.dumps(cleanJSON(domain, timeObjects=DOMAIN_TIME_OBJECTS),
                                                    ensure_ascii=False, sort_keys=True)})
-  except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden, GAPI.domainNotFound) as e:
+  except (GAPI.badRequest, GAPI.notFound, GAPI.domainNotFound) as e:
     accessErrorExit(cd, str(e))
+  except (GAPI.forbidden, GAPI.permissionDenied) as e:
+    ClientAPIAccessDeniedExit(str(e))
   if csvPF:
     csvPF.writeCSVfile('Domains')
 
@@ -16515,10 +16529,13 @@ def _listPrivileges(cd):
   fields = f'items({",".join(PRINT_PRIVILEGES_FIELDS)})'
   try:
     return callGAPIitems(cd.privileges(), 'list', 'items',
-                         throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND, GAPI.FORBIDDEN],
+                         throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND,
+                                       GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                          customer=GC.Values[GC.CUSTOMER_ID], fields=fields)
-  except (GAPI.badRequest, GAPI.customerNotFound, GAPI.forbidden):
+  except (GAPI.badRequest, GAPI.customerNotFound):
     accessErrorExit(cd)
+  except (GAPI.forbidden, GAPI.permissionDenied) as e:
+    ClientAPIAccessDeniedExit(str(e))
 
 # gam print privileges [todrive <ToDriveAttribute>*]
 # gam show privileges
@@ -16564,12 +16581,15 @@ def makeRoleIdNameMap():
   cd = buildGAPIObject(API.DIRECTORY)
   try:
     result = callGAPIpages(cd.roles(), 'list', 'items',
-                           throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND, GAPI.FORBIDDEN],
+                           throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND,
+                                         GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                            customer=GC.Values[GC.CUSTOMER_ID],
                            fields='nextPageToken,items(roleId,roleName)',
                            maxResults=100)
-  except (GAPI.badRequest, GAPI.customerNotFound, GAPI.forbidden):
+  except (GAPI.badRequest, GAPI.customerNotFound):
     accessErrorExit(cd)
+  except (GAPI.forbidden, GAPI.permissionDenied) as e:
+    ClientAPIAccessDeniedExit(str(e))
   for role in result:
     GM.Globals[GM.MAP_ROLE_ID_TO_NAME][role['roleId']] = role['roleName']
     GM.Globals[GM.MAP_ROLE_NAME_TO_ID][role['roleName'].lower()] = role['roleId']
@@ -16659,19 +16679,23 @@ def doCreateUpdateAdminRoles():
   try:
     if not updateCmd:
       result = callGAPI(cd.roles(), 'insert',
-                        throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND, GAPI.FORBIDDEN]+[GAPI.DUPLICATE],
+                        throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND,
+                                      GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED]+[GAPI.DUPLICATE],
                         customer=GC.Values[GC.CUSTOMER_ID], body=body, fields='roleId,roleName')
     else:
       result = callGAPI(cd.roles(), 'patch',
-                        throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND, GAPI.FORBIDDEN]+[GAPI.NOT_FOUND, GAPI.FAILED_PRECONDITION, GAPI.CONFLICT],
+                        throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND,
+                                      GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED]+[GAPI.NOT_FOUND, GAPI.FAILED_PRECONDITION, GAPI.CONFLICT],
                         customer=GC.Values[GC.CUSTOMER_ID], roleId=roleId, body=body, fields='roleId,roleName')
     entityActionPerformed([Ent.ADMIN_ROLE, f"{result['roleName']}({result['roleId']})"])
   except GAPI.duplicate as e:
     entityActionFailedWarning([Ent.ADMIN_ROLE, f"{body['roleName']}"], str(e))
-  except (GAPI.notFound, GAPI.forbidden, GAPI.failedPrecondition, GAPI.conflict) as e:
+  except (GAPI.notFound, GAPI.failedPrecondition, GAPI.conflict) as e:
     entityActionFailedWarning([Ent.ADMIN_ROLE, roleId], str(e))
   except (GAPI.badRequest, GAPI.customerNotFound):
     accessErrorExit(cd)
+  except (GAPI.forbidden, GAPI.permissionDenied) as e:
+    ClientAPIAccessDeniedExit(str(e))
 
 # gam delete adminrole <RoleItem>
 def doDeleteAdminRole():
@@ -16680,13 +16704,16 @@ def doDeleteAdminRole():
   checkForExtraneousArguments()
   try:
     callGAPI(cd.roles(), 'delete',
-             throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND, GAPI.FORBIDDEN]+[GAPI.NOT_FOUND, GAPI.FAILED_PRECONDITION],
+             throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND,
+                           GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED]+[GAPI.NOT_FOUND, GAPI.FAILED_PRECONDITION],
              customer=GC.Values[GC.CUSTOMER_ID], roleId=roleId)
     entityActionPerformed([Ent.ADMIN_ROLE, f"{role}({roleId})"])
-  except (GAPI.notFound, GAPI.forbidden, GAPI.failedPrecondition) as e:
+  except (GAPI.notFound, GAPI.failedPrecondition) as e:
     entityActionFailedWarning([Ent.ADMIN_ROLE, roleId], str(e))
   except (GAPI.badRequest, GAPI.customerNotFound):
     accessErrorExit(cd)
+  except (GAPI.forbidden, GAPI.permissionDenied) as e:
+    ClientAPIAccessDeniedExit(str(e))
 
 PRINT_ADMIN_ROLES_FIELDS = ['roleId', 'roleName', 'roleDescription', 'isSuperAdminRole', 'isSystemRole']
 
@@ -16747,18 +16774,22 @@ def doInfoPrintShowAdminRoles():
       printGettingAllAccountEntities(Ent.ADMIN_ROLE)
       roles = callGAPIpages(cd.roles(), 'list', 'items',
                             pageMessage=getPageMessage(),
-                            throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND, GAPI.FORBIDDEN],
+                            throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND,
+                                          GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                             customer=GC.Values[GC.CUSTOMER_ID], fields=fields)
     else:
       fields = getFieldsFromFieldsList(fieldsList)
       roles = [callGAPI(cd.roles(), 'get',
-                        throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.FAILED_PRECONDITION,
-                                      GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND],
+                        throwReasons=[GAPI.NOT_FOUND, GAPI.FAILED_PRECONDITION,
+                                      GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND,
+                                      GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                         customer=GC.Values[GC.CUSTOMER_ID], roleId=roleId, fields=fields)]
-  except (GAPI.notFound, GAPI.forbidden, GAPI.failedPrecondition) as e:
+  except (GAPI.notFound, GAPI.failedPrecondition) as e:
     entityActionFailedWarning([Ent.ADMIN_ROLE, roleId], str(e))
   except (GAPI.badRequest, GAPI.customerNotFound):
     accessErrorExit(cd)
+  except (GAPI.forbidden, GAPI.permissionDenied) as e:
+    ClientAPIAccessDeniedExit(str(e))
   for role in roles:
     role.setdefault('isSuperAdminRole', False)
     role.setdefault('isSystemRole', False)
@@ -16817,8 +16848,9 @@ def doCreateAdmin():
   try:
     result = callGAPI(cd.roleAssignments(), 'insert',
                       throwReasons=[GAPI.INTERNAL_ERROR, GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND,
-                                    GAPI.FORBIDDEN, GAPI.CUSTOMER_EXCEEDED_ROLE_ASSIGNMENTS_LIMIT, GAPI.SERVICE_NOT_AVAILABLE,
-                                    GAPI.INVALID_ORGUNIT, GAPI.DUPLICATE, GAPI.CONDITION_NOT_MET],
+                                    GAPI.CUSTOMER_EXCEEDED_ROLE_ASSIGNMENTS_LIMIT, GAPI.SERVICE_NOT_AVAILABLE,
+                                    GAPI.INVALID_ORGUNIT, GAPI.DUPLICATE, GAPI.CONDITION_NOT_MET,
+                                    GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                       retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       customer=GC.Values[GC.CUSTOMER_ID], body=body, fields='roleAssignmentId,assigneeType')
     assigneeType = result.get('assigneeType')
@@ -16832,14 +16864,16 @@ def doCreateAdmin():
                                  f'{Ent.Singular(entityType)} {user}, {Ent.Singular(Ent.ADMIN_ROLE)} {role}, {Ent.Singular(Ent.SCOPE)} {scope}')
   except GAPI.internalError:
     pass
-  except (GAPI.badRequest, GAPI.customerNotFound):
-    accessErrorExit(cd)
-  except (GAPI.forbidden, GAPI.customerExceededRoleAssignmentsLimit, GAPI.serviceNotAvailable, GAPI.conditionNotMet) as e:
+  except (GAPI.customerExceededRoleAssignmentsLimit, GAPI.serviceNotAvailable, GAPI.conditionNotMet) as e:
     entityActionFailedWarning([Ent.ADMINISTRATOR, user, Ent.ADMIN_ROLE, role], str(e))
   except GAPI.invalidOrgunit:
     entityActionFailedWarning([Ent.ADMINISTRATOR, user], Msg.INVALID_ORGUNIT)
   except GAPI.duplicate:
     entityActionFailedWarning([Ent.ADMINISTRATOR, user, Ent.ADMIN_ROLE, role], Msg.DUPLICATE)
+  except (GAPI.badRequest, GAPI.customerNotFound):
+    accessErrorExit(cd)
+  except (GAPI.forbidden, GAPI.permissionDenied) as e:
+    ClientAPIAccessDeniedExit(str(e))
 
 # gam delete admin <RoleAssignmentId>
 def doDeleteAdmin():
@@ -16848,17 +16882,20 @@ def doDeleteAdmin():
   checkForExtraneousArguments()
   try:
     callGAPI(cd.roleAssignments(), 'delete',
-             throwReasons=[GAPI.NOT_FOUND, GAPI.OPERATION_NOT_SUPPORTED, GAPI.FORBIDDEN,
+             throwReasons=[GAPI.NOT_FOUND, GAPI.OPERATION_NOT_SUPPORTED,
                            GAPI.INVALID_INPUT, GAPI.SERVICE_NOT_AVAILABLE, GAPI.RESOURCE_NOT_FOUND,
-                           GAPI.FAILED_PRECONDITION, GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND],
+                           GAPI.FAILED_PRECONDITION, GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND,
+                           GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
              customer=GC.Values[GC.CUSTOMER_ID], roleAssignmentId=roleAssignmentId)
     entityActionPerformed([Ent.ADMIN_ROLE_ASSIGNMENT, roleAssignmentId])
-  except (GAPI.notFound, GAPI.operationNotSupported, GAPI.forbidden,
-          GAPI.invalidInput, GAPI.serviceNotAvailable, GAPI.resourceNotFound, GAPI.failedPrecondition) as e:
+  except (GAPI.notFound, GAPI.operationNotSupported, GAPI.invalidInput,
+          GAPI.serviceNotAvailable, GAPI.resourceNotFound, GAPI.failedPrecondition) as e:
     entityActionFailedWarning([Ent.ADMIN_ROLE_ASSIGNMENT, roleAssignmentId], str(e))
   except (GAPI.badRequest, GAPI.customerNotFound):
     accessErrorExit(cd)
+  except (GAPI.forbidden, GAPI.permissionDenied) as e:
+    ClientAPIAccessDeniedExit(str(e))
 
 ASSIGNEE_EMAILTYPE_TOFIELD_MAP = {
   'user': 'assignedToUser',
@@ -16882,17 +16919,20 @@ def doPrintShowAdmins():
       if roleId not in rolePrivileges:
         try:
           rolePrivileges[roleId] = callGAPI(cd.roles(), 'get',
-                                            throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.FAILED_PRECONDITION,
-                                                          GAPI.SERVICE_NOT_AVAILABLE, GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND],
+                                            throwReasons=[GAPI.NOT_FOUND, GAPI.FAILED_PRECONDITION,
+                                                          GAPI.SERVICE_NOT_AVAILABLE, GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND,
+                                                          GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                             customer=GC.Values[GC.CUSTOMER_ID],
                                             roleId=roleId,
                                             fields='rolePrivileges')
-        except (GAPI.notFound, GAPI.forbidden, GAPI.failedPrecondition, GAPI.serviceNotAvailable) as e:
+        except (GAPI.notFound, GAPI.failedPrecondition, GAPI.serviceNotAvailable) as e:
           entityActionFailedExit([Ent.USER, userKey, Ent.ADMIN_ROLE, admin['roleId']], str(e))
           rolePrivileges[roleId] = None
         except (GAPI.badRequest, GAPI.customerNotFound):
           accessErrorExit(cd)
+        except (GAPI.forbidden, GAPI.permissionDenied) as e:
+          ClientAPIAccessDeniedExit(str(e))
       return rolePrivileges[roleId]
 
   def _setNamesFromIds(admin, privileges):
@@ -16902,9 +16942,7 @@ def doPrintShowAdmins():
     if assignedTo not in assignedToIdEmailMap:
       assigneeType = admin.get('assigneeType')
       assignedToField = ASSIGNEE_EMAILTYPE_TOFIELD_MAP.get(assigneeType, None)
-      assigneeEmail, assigneeType = convertUIDtoEmailAddressWithType(f'uid:{assignedTo}',
-                                                                     cd,
-                                                                     sal,
+      assigneeEmail, assigneeType = convertUIDtoEmailAddressWithType(f'uid:{assignedTo}', cd, sal,
                                                                      emailTypes=list(ASSIGNEE_EMAILTYPE_TOFIELD_MAP.keys()))
       if not assignedToField and assigneeType in ASSIGNEE_EMAILTYPE_TOFIELD_MAP:
         assignedToField = ASSIGNEE_EMAILTYPE_TOFIELD_MAP[assigneeType]
@@ -16961,16 +16999,19 @@ def doPrintShowAdmins():
                            pageMessage=getPageMessage(),
                            throwReasons=[GAPI.INVALID, GAPI.USER_NOT_FOUND,
                                          GAPI.FORBIDDEN, GAPI.SERVICE_NOT_AVAILABLE,
-                                         GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND],
+                                         GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND,
+                                         GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                            customer=GC.Values[GC.CUSTOMER_ID], fields=fields, **kwargs)
   except (GAPI.invalid, GAPI.userNotFound):
     entityUnknownWarning(Ent.ADMINISTRATOR, userKey)
     return
-  except (GAPI.forbidden, GAPI.serviceNotAvailable) as e:
+  except (GAPI.serviceNotAvailable) as e:
     entityActionFailedExit([Ent.ADMINISTRATOR, userKey, Ent.ADMIN_ROLE, roleId], str(e))
   except (GAPI.badRequest, GAPI.customerNotFound):
     accessErrorExit(cd)
+  except (GAPI.forbidden, GAPI.permissionDenied) as e:
+    ClientAPIAccessDeniedExit(str(e))
   if not csvPF:
     count = len(admins)
     performActionNumItems(count, Ent.ADMIN_ROLE_ASSIGNMENT)
@@ -21461,7 +21502,9 @@ def queryPeopleOtherContacts(people, contactQuery, fields, entityType, user, i=0
     return entityList
   except GAPI.permissionDenied as e:
     ClientAPIAccessDeniedExit(str(e))
-  except (GAPI.serviceNotAvailable, GAPI.forbidden):
+  except GAPI.forbidden:
+    userPeopleServiceNotEnabledWarning(user, i, count)
+  except GAPI.serviceNotAvailable:
     entityUnknownWarning(entityType, user, i, count)
   return None
 
@@ -21581,10 +21624,8 @@ def createUserPeopleContact(users):
         csvPF.WriteRow(row)
     except GAPI.invalidArgument as e:
       entityActionFailedWarning([entityType, user, peopleEntityType, None], str(e), i, count)
-    except (GAPI.permissionDenied, GAPI.failedPrecondition) as e:
+    except (GAPI.serviceNotAvailable, GAPI.forbidden, GAPI.permissionDenied, GAPI.failedPrecondition) as e:
       ClientAPIAccessDeniedExit(str(e))
-    except (GAPI.serviceNotAvailable, GAPI.forbidden):
-      ClientAPIAccessDeniedExit()
   if csvPF:
     csvPF.writeCSVfile('People Contacts')
 
@@ -21746,10 +21787,8 @@ def _clearUpdatePeopleContacts(users, updateContacts):
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName], str(e), j, jcount)
       except (GAPI.notFound, GAPI.internalError):
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName], Msg.DOES_NOT_EXIST, j, jcount)
-      except (GAPI.permissionDenied, GAPI.failedPrecondition) as e:
+      except (GAPI.serviceNotAvailable, GAPI.forbidden, GAPI.permissionDenied, GAPI.failedPrecondition) as e:
         ClientAPIAccessDeniedExit(str(e))
-      except (GAPI.serviceNotAvailable, GAPI.forbidden):
-        ClientAPIAccessDeniedExit()
     Ind.Decrement()
 
 # gam <UserTypeEntity> clear contacts <PeopleResourceNameEntity>|<PeopleUserContactSelection>
@@ -21896,10 +21935,8 @@ def dedupReplaceDomainUserPeopleContacts(users):
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName], str(e), j, jcount)
       except (GAPI.notFound, GAPI.internalError):
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName], Msg.DOES_NOT_EXIST, j, jcount)
-      except (GAPI.permissionDenied, GAPI.failedPrecondition) as e:
+      except (GAPI.serviceNotAvailable, GAPI.forbidden, GAPI.permissionDenied, GAPI.failedPrecondition) as e:
         ClientAPIAccessDeniedExit(str(e))
-      except (GAPI.serviceNotAvailable, GAPI.forbidden):
-        ClientAPIAccessDeniedExit()
     Ind.Decrement()
 
 # gam <UserTypeEntity> delete contacts <PeopleResourceNameEntity>|<PeopleUserContactSelection>
@@ -21951,10 +21988,8 @@ def deleteUserPeopleContacts(users):
         entityActionPerformed([entityType, user, peopleEntityType, resourceName], j, jcount)
       except (GAPI.notFound, GAPI.internalError):
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName], Msg.DOES_NOT_EXIST, j, jcount)
-      except (GAPI.permissionDenied, GAPI.failedPrecondition) as e:
+      except (GAPI.serviceNotAvailable, GAPI.forbidden, GAPI.permissionDenied, GAPI.failedPrecondition) as e:
         ClientAPIAccessDeniedExit(str(e))
-      except (GAPI.serviceNotAvailable, GAPI.forbidden):
-        ClientAPIAccessDeniedExit()
     Ind.Decrement()
 
 def _initPersonMetadataParameters():
@@ -22248,10 +22283,8 @@ def _infoPeople(users, entityType, source):
       except GAPI.invalidArgument as e:
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName], str(e), j, jcount)
         continue
-      except (GAPI.permissionDenied, GAPI.failedPrecondition) as e:
+      except (GAPI.serviceNotAvailable, GAPI.forbidden, GAPI.permissionDenied, GAPI.failedPrecondition) as e:
         ClientAPIAccessDeniedExit(str(e))
-      except (GAPI.serviceNotAvailable, GAPI.forbidden):
-        ClientAPIAccessDeniedExit()
       if showContactGroups and contactGroupIDs:
         addContactGroupNamesToContacts([result], contactGroupIDs, False)
       _showPerson(entityType, user, peopleEntityType, result, j, jcount, FJQC, parameters)
@@ -22428,10 +22461,8 @@ def copyUserPeopleOtherContacts(users):
       except (GAPI.notFound, GAPI.internalError):
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName], Msg.DOES_NOT_EXIST, j, jcount)
         continue
-      except GAPI.permissionDenied as e:
+      except (GAPI.serviceNotAvailable, GAPI.forbidden, GAPI.permissionDenied, GAPI.failedPrecondition) as e:
         ClientAPIAccessDeniedExit(str(e))
-      except (GAPI.serviceNotAvailable, GAPI.forbidden):
-        ClientAPIAccessDeniedExit()
     Ind.Decrement()
 
 # gam <UserTypeEntity> delete othercontacts
@@ -22544,10 +22575,8 @@ def processUserPeopleOtherContacts(users):
       except (GAPI.notFound, GAPI.internalError):
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName], Msg.DOES_NOT_EXIST, j, jcount)
         continue
-      except GAPI.permissionDenied as e:
+      except (GAPI.serviceNotAvailable, GAPI.forbidden, GAPI.permissionDenied, GAPI.failedPrecondition) as e:
         ClientAPIAccessDeniedExit(str(e))
-      except (GAPI.serviceNotAvailable, GAPI.forbidden):
-        ClientAPIAccessDeniedExit()
     Ind.Decrement()
 
 # gam <UserTypeEntity> print othercontacts [todrive <ToDriveAttribute>*] <OtherContactSelection>
@@ -22663,10 +22692,8 @@ def _printShowPeople(source):
                                pageSize=GC.Values[GC.PEOPLE_MAX_RESULTS],
                                sources=sources, mergeSources=mergeSources,
                                readMask=fields, fields='nextPageToken,people', **kwargs)
-  except (GAPI.permissionDenied, GAPI.failedPrecondition) as e:
+  except (GAPI.serviceNotAvailable, GAPI.forbidden, GAPI.permissionDenied, GAPI.failedPrecondition) as e:
     ClientAPIAccessDeniedExit(str(e))
-  except (GAPI.serviceNotAvailable, GAPI.forbidden):
-    ClientAPIAccessDeniedExit()
   if not countsOnly:
     _printPersonEntityList(peopleEntityType, entityList, Ent.DOMAIN, GC.Values[GC.DOMAIN], 0, 0, csvPF, FJQC, parameters, None)
   else:
@@ -22785,10 +22812,8 @@ def printShowUserPeopleProfiles(users):
     except GAPI.notFound:
       entityUnknownWarning(Ent.PEOPLE_PROFILE, user, i, count)
       continue
-    except (GAPI.permissionDenied, GAPI.failedPrecondition) as e:
+    except (GAPI.serviceNotAvailable, GAPI.forbidden, GAPI.permissionDenied, GAPI.failedPrecondition) as e:
       ClientAPIAccessDeniedExit(str(e))
-    except (GAPI.serviceNotAvailable, GAPI.forbidden):
-      ClientAPIAccessDeniedExit()
     if not csvPF:
       _showPerson(entityType, user, Ent.PEOPLE_PROFILE, result, i, count, FJQC, parameters)
     else:
@@ -22941,10 +22966,8 @@ def _processPeopleContactPhotos(users, function):
         entityDoesNotHaveItemWarning([entityType, user, peopleEntityType, resourceName, Ent.PHOTO, filename], j, jcount)
       except (GAPI.invalidArgument, OSError, IOError) as e:
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName, Ent.PHOTO, filename], str(e), j, jcount)
-      except (GAPI.permissionDenied, GAPI.failedPrecondition) as e:
+      except (GAPI.serviceNotAvailable, GAPI.forbidden, GAPI.permissionDenied, GAPI.failedPrecondition) as e:
         ClientAPIAccessDeniedExit(str(e))
-      except (GAPI.serviceNotAvailable, GAPI.forbidden):
-        ClientAPIAccessDeniedExit()
         break
     Ind.Decrement()
 
@@ -23266,10 +23289,8 @@ def printShowUserPeopleContactGroups(users):
                                  throwReasons=GAPI.PEOPLE_ACCESS_THROW_REASONS,
                                  pageSize=GC.Values[GC.PEOPLE_MAX_RESULTS],
                                  groupFields=fields, fields='nextPageToken,contactGroups')
-    except GAPI.permissionDenied as e:
+    except (GAPI.serviceNotAvailable, GAPI.forbidden, GAPI.permissionDenied) as e:
       ClientAPIAccessDeniedExit(str(e))
-    except (GAPI.serviceNotAvailable, GAPI.forbidden):
-      ClientAPIAccessDeniedExit()
     _printPersonEntityList(Ent.PEOPLE_CONTACT_GROUP, entityList, entityType, user, i, count, csvPF, FJQC, parameters, None)
   if csvPF:
     csvPF.writeCSVfile('People Contact Groups')
@@ -31814,15 +31835,18 @@ def getMobileDeviceEntity():
     printGettingAllAccountEntities(Ent.MOBILE_DEVICE, query)
     devices = callGAPIpages(cd.mobiledevices(), 'list', 'mobiledevices',
                             pageMessage=getPageMessage(),
-                            throwReasons=[GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                            throwReasons=[GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND,
+                                          GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                             customerId=GC.Values[GC.CUSTOMER_ID], query=query,
                             fields='nextPageToken,mobiledevices(resourceId,email)')
+    return ([{'resourceId': device['resourceId'], 'email': device.get('email', [])} for device in devices], cd, False)
   except GAPI.invalidInput:
     Cmd.Backup()
     usageErrorExit(Msg.INVALID_QUERY)
-  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
+  except (GAPI.badRequest, GAPI.resourceNotFound):
     accessErrorExit(cd)
-  return ([{'resourceId': device['resourceId'], 'email': device.get('email', [])} for device in devices], cd, False)
+  except (GAPI.forbidden, GAPI.permissionDenied) as e:
+    ClientAPIAccessDeniedExit(str(e))
 
 def _getUpdateDeleteMobileOptions(myarg, options):
   if myarg in {'matchusers', 'ifusers'}:
@@ -31875,14 +31899,17 @@ def doUpdateMobileDevices():
         callGAPI(cd.mobiledevices(), 'action',
                  bailOnInternalError=True,
                  throwReasons=[GAPI.INTERNAL_ERROR, GAPI.RESOURCE_ID_NOT_FOUND,
-                               GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                               GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND,
+                               GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                  customerId=GC.Values[GC.CUSTOMER_ID], resourceId=resourceId, body=body)
         printEntityKVList([Ent.MOBILE_DEVICE, resourceId, Ent.USER, deviceUser],
                           [Msg.ACTION_APPLIED, body['action']], i, count)
       except GAPI.internalError:
         entityActionFailedWarning([Ent.MOBILE_DEVICE, resourceId], Msg.DOES_NOT_EXIST, i, count)
-      except (GAPI.resourceIdNotFound, GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden) as e:
+      except (GAPI.resourceIdNotFound, GAPI.badRequest, GAPI.resourceNotFound) as e:
         entityActionFailedWarning([Ent.MOBILE_DEVICE, resourceId], str(e), i, count)
+      except (GAPI.forbidden, GAPI.permissionDenied) as e:
+        ClientAPIAccessDeniedExit(str(e))
 
 # gam delete mobile|mobiles <MobileDeviceEntity>
 #	[doit] [matchusers <UserTypeEntity>]
@@ -31906,14 +31933,16 @@ def doDeleteMobileDevices():
       try:
         callGAPI(cd.mobiledevices(), 'delete',
                  bailOnInternalError=True,
-                 throwReasons=[GAPI.INTERNAL_ERROR, GAPI.RESOURCE_ID_NOT_FOUND, GAPI.BAD_REQUEST,
-                               GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                 throwReasons=[GAPI.INTERNAL_ERROR, GAPI.RESOURCE_ID_NOT_FOUND, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND,
+                               GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                  customerId=GC.Values[GC.CUSTOMER_ID], resourceId=resourceId)
         entityActionPerformed([Ent.MOBILE_DEVICE, resourceId, Ent.USER, deviceUser], i, count)
       except GAPI.internalError:
         entityActionFailedWarning([Ent.MOBILE_DEVICE, resourceId], Msg.DOES_NOT_EXIST, i, count)
-      except (GAPI.resourceIdNotFound, GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden) as e:
+      except (GAPI.resourceIdNotFound, GAPI.badRequest, GAPI.resourceNotFound) as e:
         entityActionFailedWarning([Ent.MOBILE_DEVICE, resourceId], str(e), i, count)
+      except (GAPI.forbidden, GAPI.permissionDenied) as e:
+        ClientAPIAccessDeniedExit(str(e))
 
 MOBILE_FIELDS_CHOICE_MAP = {
   'adbstatus': 'adbStatus',
@@ -31995,8 +32024,8 @@ def doInfoMobileDevices():
     try:
       mobile = callGAPI(cd.mobiledevices(), 'get',
                         bailOnInternalError=True,
-                        throwReasons=[GAPI.INTERNAL_ERROR, GAPI.RESOURCE_ID_NOT_FOUND,
-                                      GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                        throwReasons=[GAPI.INTERNAL_ERROR, GAPI.RESOURCE_ID_NOT_FOUND, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND,
+                                      GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                         customerId=GC.Values[GC.CUSTOMER_ID], resourceId=resourceId, projection=parameters['projection'], fields=fields)
       if FJQC.formatJSON:
         printLine(json.dumps(cleanJSON(mobile, timeObjects=MOBILE_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
@@ -32013,8 +32042,10 @@ def doInfoMobileDevices():
         Ind.Decrement()
     except GAPI.internalError:
       entityActionFailedWarning([Ent.MOBILE_DEVICE, resourceId], Msg.DOES_NOT_EXIST, i, count)
-    except (GAPI.resourceIdNotFound, GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden) as e:
+    except (GAPI.resourceIdNotFound, GAPI.badRequest, GAPI.resourceNotFound) as e:
       entityActionFailedWarning([Ent.MOBILE_DEVICE, resourceId], str(e), i, count)
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
 
 MOBILE_ORDERBY_CHOICE_MAP = {
   'deviceid': 'deviceId',
@@ -32143,7 +32174,8 @@ def doPrintMobileDevices():
     try:
       feed = yieldGAPIpages(cd.mobiledevices(), 'list', 'mobiledevices',
                             pageMessage=pageMessage,
-                            throwReasons=[GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                            throwReasons=[GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND,
+                                          GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                             customerId=GC.Values[GC.CUSTOMER_ID], query=query, projection=parameters['projection'],
                             orderBy=orderBy, sortOrder=sortOrder, fields=fields, maxResults=GC.Values[GC.MOBILE_MAX_RESULTS])
       for mobiles in feed:
@@ -32157,8 +32189,10 @@ def doPrintMobileDevices():
     except GAPI.invalidInput:
       entityActionFailedWarning([Ent.MOBILE_DEVICE, None], invalidQuery(query))
       return
-    except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
+    except (GAPI.badRequest, GAPI.resourceNotFound):
       accessErrorExit(cd)
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
   if showItemCountOnly:
     writeStdout(f'{itemCount}\n')
     return
@@ -36484,8 +36518,8 @@ def doPrintShowCIPolicies():
                                                  sort_keys=True)})
 
   _checkPoliciesWithDASA()
-  groups_ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
   ci = buildGAPIObject(API.CLOUDIDENTITY_POLICY)
+  groups_ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
   cd = buildGAPIObject(API.DIRECTORY)
   csvPF = CSVPrintFile(['name']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
@@ -38496,10 +38530,13 @@ def doPrintShowResourceCalendars():
   try:
     resources = callGAPIpages(cd.resources().calendars(), 'list', 'items',
                               pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute='resourceName',
-                              throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID_INPUT],
+                              throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN,
+                                            GAPI.PERMISSION_DENIED, GAPI.INVALID_INPUT],
                               query=query, customer=GC.Values[GC.CUSTOMER_ID], fields=fields)
-  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
+  except (GAPI.badRequest, GAPI.resourceNotFound):
     accessErrorExit(cd)
+  except (GAPI.forbidden, GAPI.permissionDenied) as e:
+    ClientAPIAccessDeniedExit(str(e))
   except GAPI.invalidInput as e:
     entityActionFailedWarning([Ent.RESOURCE_CALENDAR, ''], str(e))
     return
@@ -40738,7 +40775,8 @@ def doCreateUpdateUserSchemas():
     try:
       if updateCmd:
         oldBody = callGAPI(cd.schemas(), 'get',
-                           throwReasons=[GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                           throwReasons=[GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND,
+                                         GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                            customerId=GC.Values[GC.CUSTOMER_ID], schemaKey=schemaName, fields='schemaName,displayName,fields')
         for field in oldBody['fields']:
           field.pop('etag', None)
@@ -40777,15 +40815,18 @@ def doCreateUpdateUserSchemas():
         addBody['schemaName'] = schemaName.replace(' ', '_')
         addBody['displayName'] = schemaDisplayName if schemaDisplayName else schemaName
         result = callGAPI(cd.schemas(), 'insert',
-                          throwReasons=[GAPI.DUPLICATE, GAPI.CONDITION_NOT_MET, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                          throwReasons=[GAPI.DUPLICATE, GAPI.CONDITION_NOT_MET, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND,
+                                        GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                           customerId=GC.Values[GC.CUSTOMER_ID], body=addBody, fields='schemaName')
         entityActionPerformed([Ent.USER_SCHEMA, result['schemaName']], i, count)
     except GAPI.duplicate:
       entityDuplicateWarning([Ent.USER_SCHEMA, schemaName], i, count)
-    except (GAPI.conditionNotMet, GAPI.fieldInUse, GAPI.forbidden) as e:
+    except (GAPI.conditionNotMet, GAPI.fieldInUse) as e:
       entityActionFailedWarning([Ent.USER_SCHEMA, schemaName], str(e), i, count)
     except (GAPI.badRequest, GAPI.resourceNotFound):
       checkEntityAFDNEorAccessErrorExit(cd, Ent.USER_SCHEMA, schemaName, i, count)
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
 
 # gam delete schema|schemas <SchemaEntity>
 def doDeleteUserSchemas():
@@ -40798,13 +40839,16 @@ def doDeleteUserSchemas():
     i += 1
     try:
       callGAPI(cd.schemas(), 'delete',
-               throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN, GAPI.FIELD_IN_USE],
+               throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FIELD_IN_USE,
+                             GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                customerId=GC.Values[GC.CUSTOMER_ID], schemaKey=schemaKey)
       entityActionPerformed([Ent.USER_SCHEMA, schemaKey], i, count)
     except GAPI.fieldInUse as e:
       entityActionFailedWarning([Ent.USER_SCHEMA, schemaKey], str(e), i, count)
-    except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
+    except (GAPI.badRequest, GAPI.resourceNotFound):
       checkEntityAFDNEorAccessErrorExit(cd, Ent.USER_SCHEMA, schemaKey, i, count)
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
 
 # gam info schema|schemas <SchemaEntity>
 def doInfoUserSchemas():
@@ -40817,11 +40861,14 @@ def doInfoUserSchemas():
     i += 1
     try:
       schema = callGAPI(cd.schemas(), 'get',
-                        throwReasons=[GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                        throwReasons=[GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND,
+                                      GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                         customerId=GC.Values[GC.CUSTOMER_ID], schemaKey=schemaKey)
       _showSchema(schema, i, count)
-    except (GAPI.invalid, GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
+    except (GAPI.invalid, GAPI.badRequest, GAPI.resourceNotFound):
       checkEntityAFDNEorAccessErrorExit(cd, Ent.USER_SCHEMA, schemaKey, i, count)
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
 
 SCHEMAS_SORT_TITLES = ['schemaId', 'schemaName', 'displayName']
 SCHEMAS_INDEXED_TITLES = ['fields']
@@ -40834,7 +40881,8 @@ def doPrintShowUserSchemas():
   getTodriveOnly(csvPF)
   try:
     result = callGAPI(cd.schemas(), 'list',
-                      throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                      throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND,
+                                    GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                       customerId=GC.Values[GC.CUSTOMER_ID])
     jcount = len(result.get('schemas', [])) if (result) else 0
     if not csvPF:
@@ -40852,8 +40900,10 @@ def doPrintShowUserSchemas():
       else:
         for schema in result['schemas']:
           csvPF.WriteRowTitles(flattenJSON(schema))
-  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
+  except (GAPI.badRequest, GAPI.resourceNotFound):
     accessErrorExit(cd)
+  except (GAPI.forbidden, GAPI.permissionDenied) as e:
+    ClientAPIAccessDeniedExit(str(e))
   if csvPF:
     csvPF.writeCSVfile('User Schemas')
 
@@ -41114,11 +41164,14 @@ def convertExportNameToID(v, nameOrId, matterId, matterNameId):
   if cg:
     try:
       export = callGAPI(v.matters().exports(), 'get',
-                        throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
+                        throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN,
+                                      GAPI.INVALID_ARGUMENT, GAPI.FAILED_PRECONDITION],
                         matterId=matterId, exportId=cg.group(1))
       return (export['id'], export['name'], formatVaultNameId(export['id'], export['name']))
     except (GAPI.notFound, GAPI.badRequest):
       entityDoesNotHaveItemExit([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_EXPORT, nameOrId])
+    except (GAPI.failedPrecondition) as e:
+      entityActionFailedExit([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_EXPORT, nameOrId], str(e))
     except (GAPI.forbidden, GAPI.invalidArgument) as e:
       ClientAPIAccessDeniedExit(str(e))
   nameOrIdlower = nameOrId.lower()
@@ -41614,10 +41667,11 @@ def doInfoVaultExport():
   fields = getFieldsFromFieldsList(fieldsList)
   try:
     export = callGAPI(v.matters().exports(), 'get',
-                      throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
+                      throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN,
+                                    GAPI.INVALID_ARGUMENT, GAPI.FAILED_PRECONDITION],
                       matterId=matterId, exportId=exportId, fields=fields)
     _showVaultExport(matterNameId, export, cd, FJQC)
-  except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden, GAPI.invalidArgument) as e:
+  except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden, GAPI.invalidArgument, GAPI.failedPrecondition) as e:
     entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_EXPORT, exportNameId], str(e))
 
 VAULT_EXPORT_STATUS_MAP = {'completed': 'COMPLETED', 'failed': 'FAILED', 'inprogress': 'IN_PROGRESS'}
@@ -41810,9 +41864,10 @@ def doCopyVaultExport():
   while True:
     try:
       export = callGAPI(v.matters().exports(), 'get',
-                        throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
+                        throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN,
+                                      GAPI.INVALID_ARGUMENT, GAPI.FAILED_PRECONDITION],
                         matterId=matterId, exportId=exportId)
-    except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden, GAPI.invalidArgument) as e:
+    except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden, GAPI.invalidArgument, GAPI.failedPrecondition) as e:
       entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_EXPORT, exportNameId], str(e))
       return
     if export['status'] == 'COMPLETED':
@@ -41910,9 +41965,10 @@ def doDownloadVaultExport():
   while True:
     try:
       export = callGAPI(v.matters().exports(), 'get',
-                        throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
+                        throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN,
+                                      GAPI.INVALID_ARGUMENT, GAPI.FAILED_PRECONDITION],
                         matterId=matterId, exportId=exportId)
-    except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden, GAPI.invalidArgument) as e:
+    except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden, GAPI.invalidArgument, GAPI.failedPrecondition) as e:
       entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_EXPORT, exportNameId], str(e))
       return
     if export['status'] == 'COMPLETED':
@@ -44413,13 +44469,13 @@ def signoutTurnoff2SVUsers(entityList):
       callGAPI(service, function,
                throwReasons=[GAPI.NOT_FOUND, GAPI.USER_NOT_FOUND, GAPI.INVALID, GAPI.INVALID_INPUT,
                              GAPI.DOMAIN_NOT_FOUND, GAPI.DOMAIN_CANNOT_USE_APIS,
-                             GAPI.FORBIDDEN, GAPI.AUTH_ERROR],
+                             GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED, GAPI.AUTH_ERROR],
                userKey=user)
       entityActionPerformed([Ent.USER, user], i, count)
     except (GAPI.notFound, GAPI.userNotFound):
       entityUnknownWarning(Ent.USER, user, i, count)
     except (GAPI.invalid, GAPI.invalidInput, GAPI.domainNotFound, GAPI.domainCannotUseApis,
-            GAPI.forbidden, GAPI.authError) as e:
+            GAPI.forbidden, GAPI.permissionDenied, GAPI.authError) as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
 
 # gam <UserTypeEntity> waitformailbox [retries <Number>]
@@ -47283,10 +47339,7 @@ class CourseAttributes():
           newTopicsByName[topicName] = result['topicId']
           entityModifierItemValueListActionPerformed([Ent.COURSE, newCourseId, Ent.COURSE_TOPIC, topicName], Act.MODIFIER_FROM,
                                                      [Ent.COURSE, self.courseId], j, jcount)
-        except GAPI.notFound as e:
-          entityActionFailedWarning([Ent.COURSE, newCourseId], str(e), i, count)
-          return
-        except (GAPI.failedPrecondition, GAPI.invalidArgument, GAPI.forbidden, GAPI.serviceNotAvailable) as e:
+        except (GAPI.notFound, GAPI.failedPrecondition, GAPI.invalidArgument, GAPI.forbidden, GAPI.serviceNotAvailable) as e:
           entityModifierItemValueListActionFailedWarning([Ent.COURSE, newCourseId], Act.MODIFIER_FROM,
                                                          [Ent.COURSE, self.courseId, Ent.COURSE_TOPIC, topicName], str(e), j, jcount)
     if self.courseAnnouncements:
@@ -47309,10 +47362,7 @@ class CourseAttributes():
                             courseId=newCourseId, body=body, fields='id')
           entityModifierItemValueListActionPerformed([Ent.COURSE, newCourseId, Ent.COURSE_ANNOUNCEMENT_ID, result['id']], Act.MODIFIER_FROM,
                                                      [Ent.COURSE, self.courseId, Ent.COURSE_ANNOUNCEMENT, courseAnnouncementId], j, jcount)
-        except GAPI.notFound as e:
-          entityActionFailedWarning([Ent.COURSE, newCourseId], str(e), i, count)
-          return
-        except (GAPI.badRequest, GAPI.failedPrecondition, GAPI.backendError, GAPI.internalError,
+        except (GAPI.notFound, GAPI.badRequest, GAPI.failedPrecondition, GAPI.backendError, GAPI.internalError,
                 GAPI.permissionDenied, GAPI.forbidden, GAPI.serviceNotAvailable) as e:
           entityModifierItemValueListActionFailedWarning([Ent.COURSE, newCourseId], Act.MODIFIER_FROM,
                                                          [Ent.COURSE, self.courseId, Ent.COURSE_ANNOUNCEMENT, courseAnnouncementId], str(e), j, jcount)
@@ -47344,10 +47394,7 @@ class CourseAttributes():
                             courseId=newCourseId, body=body, fields='id')
           entityModifierItemValueListActionPerformed([Ent.COURSE, newCourseId, Ent.COURSE_MATERIAL_ID, result['id']], Act.MODIFIER_FROM,
                                                      [Ent.COURSE, self.courseId, Ent.COURSE_MATERIAL, courseMaterialId], j, jcount)
-        except GAPI.notFound as e:
-          entityActionFailedWarning([Ent.COURSE, newCourseId], str(e), i, count)
-          return
-        except (GAPI.badRequest, GAPI.failedPrecondition, GAPI.backendError, GAPI.internalError,
+        except (GAPI.notFound, GAPI.badRequest, GAPI.failedPrecondition, GAPI.backendError, GAPI.internalError,
                 GAPI.permissionDenied, GAPI.forbidden, GAPI.serviceNotAvailable) as e:
           entityModifierItemValueListActionFailedWarning([Ent.COURSE, newCourseId], Act.MODIFIER_FROM,
                                                          [Ent.COURSE, self.courseId, Ent.COURSE_MATERIAL, courseMaterialId], str(e), j, jcount)
@@ -47384,10 +47431,7 @@ class CourseAttributes():
                             courseId=newCourseId, body=body, fields='id')
           entityModifierItemValueListActionPerformed([Ent.COURSE, newCourseId, Ent.COURSE_WORK_ID, result['id']], Act.MODIFIER_FROM,
                                                      [Ent.COURSE, self.courseId, Ent.COURSE_WORK, courseWorkId], j, jcount)
-        except GAPI.notFound as e:
-          entityActionFailedWarning([Ent.COURSE, newCourseId], str(e), i, count)
-          return
-        except (GAPI.badRequest, GAPI.failedPrecondition, GAPI.backendError, GAPI.internalError, GAPI.invalidArgument,
+        except (GAPI.notFound, GAPI.badRequest, GAPI.failedPrecondition, GAPI.backendError, GAPI.internalError, GAPI.invalidArgument,
                 GAPI.permissionDenied, GAPI.forbidden, GAPI.serviceNotAvailable) as e:
           entityModifierItemValueListActionFailedWarning([Ent.COURSE, newCourseId], Act.MODIFIER_FROM,
                                                          [Ent.COURSE, self.courseId, Ent.COURSE_WORK, courseWorkId], str(e), j, jcount)
@@ -47757,7 +47801,7 @@ def _getCoursesOwnerInfo(croom, courseIds, useOwnerAccess, addCIIdScope=True):
       except GAPI.serviceNotAvailable as e:
         entityActionFailedWarning([Ent.COURSE, courseId], str(e))
       except (GAPI.forbidden, GAPI.permissionDenied) as e:
-        ClientAPIAccessDeniedExit()
+        ClientAPIAccessDeniedExit(str(e))
   return 0, len(coursesInfo), coursesInfo
 
 def _getCourseAliasesMembers(croom, ocroom, courseId, courseShowProperties, teachersFields, studentsFields, showGettings=False, i=0, count=0):
@@ -47773,13 +47817,14 @@ def _getCourseAliasesMembers(croom, ocroom, courseId, courseShowProperties, teac
     try:
       aliases = callGAPIpages(croom.courses().aliases(), 'list', 'aliases',
                               pageMessage=pageMessage,
-                              throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.SERVICE_NOT_AVAILABLE, GAPI.NOT_IMPLEMENTED],
+                              throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE, GAPI.NOT_IMPLEMENTED,
+                                            GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                               courseId=courseId, pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS])
     except (GAPI.notFound, GAPI.serviceNotAvailable, GAPI.notImplemented):
       pass
-    except GAPI.forbidden:
-      ClientAPIAccessDeniedExit()
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
   if courseShowProperties['members'] != 'none':
     if courseShowProperties['members'] != 'students':
       if showGettings:
@@ -47788,13 +47833,14 @@ def _getCourseAliasesMembers(croom, ocroom, courseId, courseShowProperties, teac
       try:
         teachers = callGAPIpages(ocroom.courses().teachers(), 'list', 'teachers',
                                  pageMessage=pageMessage,
-                                 throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.SERVICE_NOT_AVAILABLE],
+                                 throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE,
+                                               GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  courseId=courseId, fields=teachersFields, pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS])
       except (GAPI.notFound, GAPI.serviceNotAvailable):
         pass
-      except GAPI.forbidden:
-        ClientAPIAccessDeniedExit()
+      except (GAPI.forbidden, GAPI.permissionDenied) as e:
+        ClientAPIAccessDeniedExit(str(e))
     if courseShowProperties['members'] != 'teachers':
       if showGettings:
         printGettingEntityItemForWhom(Ent.STUDENT, formatKeyValueList('', [Ent.Singular(Ent.COURSE), courseId], currentCount(i, count)))
@@ -47802,13 +47848,14 @@ def _getCourseAliasesMembers(croom, ocroom, courseId, courseShowProperties, teac
       try:
         students = callGAPIpages(ocroom.courses().students(), 'list', 'students',
                                  pageMessage=pageMessage,
-                                 throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.SERVICE_NOT_AVAILABLE],
+                                 throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE,
+                                               GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  courseId=courseId, fields=studentsFields, pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS])
       except (GAPI.notFound, GAPI.serviceNotAvailable):
         pass
-      except GAPI.forbidden:
-        ClientAPIAccessDeniedExit()
+      except (GAPI.forbidden, GAPI.permissionDenied) as e:
+        ClientAPIAccessDeniedExit(str(e))
   return (aliases, teachers, students)
 
 def _doInfoCourses(courseIdList):
@@ -47904,10 +47951,10 @@ def _doInfoCourses(courseIdList):
       Ind.Decrement()
     except GAPI.notFound:
       entityActionFailedWarning([Ent.COURSE, removeCourseIdScope(courseId)], Msg.DOES_NOT_EXIST, i, count)
-    except (GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
+    except GAPI.serviceNotAvailable as e:
       entityActionFailedWarning([Ent.COURSE, removeCourseIdScope(courseId)], str(e), i, count)
-    except GAPI.forbidden:
-      ClientAPIAccessDeniedExit()
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
 
 # gam info courses <CourseEntity> [owneraccess]
 #	[owneremail] [alias|aliases] [show none|all|students|teachers] [countsonly]
@@ -48014,7 +48061,8 @@ def _getCoursesInfo(croom, courseSelectionParameters, courseShowProperties, getO
     courseId = addCourseIdScope(courseId)
     try:
       info = callGAPI(croom.courses(), 'get',
-                      throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.SERVICE_NOT_AVAILABLE],
+                      throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE,
+                                    GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                       retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       id=courseId, fields=fields)
       coursesInfo.append(info)
@@ -48022,8 +48070,8 @@ def _getCoursesInfo(croom, courseSelectionParameters, courseShowProperties, getO
       entityDoesNotExistWarning(Ent.COURSE, courseId)
     except GAPI.serviceNotAvailable as e:
       entityActionFailedWarning([Ent.COURSE, courseId], str(e))
-    except GAPI.forbidden:
-      ClientAPIAccessDeniedExit()
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
   return coursesInfo
 
 # gam print courses [todrive <ToDriveAttribute>*] (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
@@ -49610,7 +49658,8 @@ def _cancelGuardianInvitation(croom, studentId, invitationId, i=0, count=0, j=0,
     entityActionFailedWarning([Ent.STUDENT, studentId, Ent.GUARDIAN_INVITATION, invitationId], str(e), j, jcount)
     return -1
   except (GAPI.forbidden, GAPI.permissionDenied) as e:
-    studentUnknownWarning(studentId, str(e), i, count)
+    ClientAPIAccessDeniedExit(str(e))
+#    studentUnknownWarning(studentId, str(e), i, count)
     return -1
 
 # gam cancel guardianinvitation|guardianinvitations <GuardianInvitationID> <StudentItem>
@@ -49655,7 +49704,8 @@ def _deleteGuardian(croom, studentId, guardianId, guardianEmail, i, count, j, jc
     entityActionFailedWarning([Ent.STUDENT, studentId, Ent.GUARDIAN, guardianEmail], str(e), j, jcount)
     return -1
   except (GAPI.forbidden, GAPI.permissionDenied) as e:
-    studentUnknownWarning(studentId, str(e), i, count)
+    ClientAPIAccessDeniedExit(str(e))
+#    studentUnknownWarning(studentId, str(e), i, count)
     return -1
 
 def _doDeleteGuardian(croom, studentId, guardianId, guardianClass, i=0, count=0, j=0, jcount=0):
@@ -67271,7 +67321,7 @@ def _addUserToGroups(cd, user, addGroupsSet, addGroups, i, count):
                retryReasons=GAPI.MEMBERS_RETRY_REASONS,
                groupKey=group, body=body, fields='')
       entityActionPerformed([Ent.GROUP, group, role, user], j, jcount)
-    except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
+    except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid):
       entityUnknownWarning(Ent.GROUP, group, j, jcount)
     except (GAPI.duplicate, GAPI.cyclicMembershipsNotAllowed, GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
       entityActionFailedWarning([Ent.GROUP, group, role, user], str(e), j, jcount)
@@ -67279,6 +67329,8 @@ def _addUserToGroups(cd, user, addGroupsSet, addGroups, i, count):
       entityActionPerformedMessage([Ent.GROUP, group, role, user], Msg.ACTION_MAY_BE_DELAYED, j, jcount)
     except (GAPI.memberNotFound, GAPI.resourceNotFound, GAPI.invalidMember) as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
   Ind.Decrement()
 
 # gam <UserTypeEntity> add group|groups
@@ -67338,12 +67390,14 @@ def _deleteUserFromGroups(cd, user, deleteGroupsSet, deleteGroups, i, count):
                retryReasons=GAPI.MEMBERS_RETRY_REASONS,
                groupKey=group, memberKey=user)
       entityActionPerformed([Ent.GROUP, group, role, user], j, jcount)
-    except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
+    except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid):
       entityUnknownWarning(Ent.GROUP, group, j, jcount)
     except (GAPI.memberNotFound, GAPI.invalidMember, GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.GROUP, group], str(e), j, jcount)
     except GAPI.conflict:
       entityActionPerformedMessage([Ent.GROUP, group, role, user], Msg.ACTION_MAY_BE_DELAYED, j, jcount)
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
   Ind.Decrement()
 
 def _getUserGroupOptionalDomainCustomerId():
@@ -67410,8 +67464,10 @@ def deleteUserFromGroups(users):
       except (GAPI.invalidMember, GAPI.invalidInput):
         badRequestWarning(Ent.GROUP, Ent.MEMBER, user)
         continue
-      except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.forbidden, GAPI.badRequest):
+      except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.badRequest):
         accessErrorExit(cd)
+      except (GAPI.forbidden, GAPI.permissionDenied) as e:
+        ClientAPIAccessDeniedExit(str(e))
       deleteGroups = {}
       for group in result:
         if not matchPattern or checkUserGroupMatchPattern(group['email'], matchPattern):
@@ -67440,10 +67496,12 @@ def _updateUserGroups(cd, user, updateGroupsSet, updateGroups, i, count):
                retryReasons=GAPI.MEMBERS_RETRY_REASONS,
                groupKey=group, memberKey=user, body=body, fields='')
       entityActionPerformed([Ent.GROUP, group, role, user], j, jcount)
-    except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
+    except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid):
       entityUnknownWarning(Ent.GROUP, group, j, jcount)
     except (GAPI.memberNotFound, GAPI.invalidMember, GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.GROUP, group], str(e), j, jcount)
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
   Ind.Decrement()
 
 # gam <UserTypeEntity> update group|groups
@@ -67490,8 +67548,10 @@ def updateUserGroups(users):
       except (GAPI.invalidMember, GAPI.invalidInput):
         badRequestWarning(Ent.GROUP, Ent.MEMBER, user)
         continue
-      except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.forbidden, GAPI.badRequest):
+      except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.badRequest):
         accessErrorExit(cd)
+      except (GAPI.forbidden, GAPI.permissionDenied) as e:
+        ClientAPIAccessDeniedExit(str(e))
       updateGroups = {}
       for group in result:
         updateGroups[group['email']] = {'role': baseRole, 'delivery_settings': baseDeliverySettings}
@@ -67565,8 +67625,10 @@ def syncUserWithGroups(users):
     except (GAPI.invalidMember, GAPI.invalidInput):
       badRequestWarning(Ent.GROUP, Ent.MEMBER, user)
       continue
-    except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.forbidden, GAPI.badRequest):
+    except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.badRequest):
       accessErrorExit(cd)
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
     for groupEntity in entityList:
       groupEmail = groupEntity['email']
       try:
@@ -67685,7 +67747,7 @@ def checkUserInGroups(users):
                             retryReasons=GAPI.MEMBERS_RETRY_REASONS,
                             groupKey=groupEmail, memberKey=user, fields='role')
           _checkMember(result)
-        except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
+        except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid):
           entityUnknownWarning(Ent.GROUP, groupEmail, j, jcount)
           _setCheckError()
         except GAPI.memberNotFound:
@@ -67697,6 +67759,8 @@ def checkUserInGroups(users):
         except (GAPI.invalidMember, GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
           entityActionFailedWarning([Ent.USER, user, Ent.GROUP, groupEmail], str(e), j, jcount)
           _setCheckError()
+        except (GAPI.forbidden, GAPI.permissionDenied) as e:
+          ClientAPIAccessDeniedExit(str(e))
       else:
         try:
           result = callGAPIpages(cd.members(), 'list', 'members',
@@ -67714,12 +67778,14 @@ def checkUserInGroups(users):
             else:
               csvPF.WriteRow({'user': user, 'group': groupEmail, 'role': notMemberOrRole})
             _setCheckError()
-        except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
+        except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid):
           entityUnknownWarning(Ent.GROUP, groupEmail, j, jcount)
           _setCheckError()
         except (GAPI.invalidMember, GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
           entityActionFailedWarning([Ent.USER, user, Ent.GROUP, groupEmail], str(e), j, jcount)
           _setCheckError()
+        except (GAPI.forbidden, GAPI.permissionDenied) as e:
+          ClientAPIAccessDeniedExit(str(e))
     Ind.Decrement()
   if csvPF:
     csvPF.writeCSVfile('User Check Groups')
@@ -67798,11 +67864,13 @@ def printShowUserGroups(users):
     except (GAPI.invalidMember, GAPI.invalidInput):
       badRequestWarning(Ent.GROUP, Ent.MEMBER, user)
       continue
-    except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.forbidden, GAPI.badRequest):
+    except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.badRequest):
       if kwargs.get('domain'):
         badRequestWarning(Ent.GROUP, Ent.DOMAIN, kwargs['domain'])
         return
       accessErrorExit(cd)
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
     jcount = len(entityList)
     if totalOnly:
       if not csvPF:
@@ -67932,6 +68000,8 @@ def printShowGroupTree(users):
     except (GAPI.invalidMember, GAPI.invalidInput):
       entityUnknownWarning(Ent.USER, user, i, count)
       continue
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
     j = 0
     jcount = len(groups)
     if not csvPF and not FJQC.formatJSON:
@@ -68024,11 +68094,13 @@ def printUserGroupsList(users):
     except (GAPI.invalidMember, GAPI.invalidInput):
       badRequestWarning(Ent.GROUP, Ent.MEMBER, user)
       continue
-    except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.forbidden, GAPI.badRequest):
+    except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.badRequest):
       if kwargs.get('domain'):
         badRequestWarning(Ent.GROUP, Ent.DOMAIN, kwargs['domain'])
         return
       accessErrorExit(cd)
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
     csvPF.WriteRow({'User': user, 'Groups': len(entityList), 'GroupsList': delimiter.join([group['email'] for group in entityList])})
   csvPF.writeCSVfile('User GroupsList')
 
@@ -69211,19 +69283,23 @@ def deleteTokens(users):
     try:
       callGAPI(cd.tokens(), 'get',
                throwReasons=[GAPI.USER_NOT_FOUND, GAPI.DOMAIN_NOT_FOUND,
-                             GAPI.DOMAIN_CANNOT_USE_APIS, GAPI.FORBIDDEN,
-                             GAPI.NOT_FOUND, GAPI.RESOURCE_NOT_FOUND],
+                             GAPI.DOMAIN_CANNOT_USE_APIS,
+                             GAPI.NOT_FOUND, GAPI.RESOURCE_NOT_FOUND,
+                             GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                userKey=user, clientId=clientId, fields='')
       callGAPI(cd.tokens(), 'delete',
                throwReasons=[GAPI.USER_NOT_FOUND, GAPI.DOMAIN_NOT_FOUND,
-                             GAPI.DOMAIN_CANNOT_USE_APIS, GAPI.FORBIDDEN,
-                             GAPI.NOT_FOUND, GAPI.RESOURCE_NOT_FOUND],
+                             GAPI.DOMAIN_CANNOT_USE_APIS,
+                             GAPI.NOT_FOUND, GAPI.RESOURCE_NOT_FOUND,
+                             GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                userKey=user, clientId=clientId)
       entityActionPerformed([Ent.USER, user, Ent.ACCESS_TOKEN, clientId], i, count)
     except (GAPI.notFound, GAPI.resourceNotFound) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.ACCESS_TOKEN, clientId], str(e), i, count)
-    except (GAPI.userNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden):
+    except (GAPI.userNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis):
       entityUnknownWarning(Ent.USER, user, i, count)
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
 
 TOKENS_FIELDS_TITLES = ['clientId', 'displayText', 'anonymous', 'nativeApp', 'userKey', 'scopes']
 TOKENS_AGGREGATE_FIELDS_TITLES = ['clientId', 'displayText', 'anonymous', 'nativeApp', 'users', 'scopes']
@@ -69317,13 +69393,15 @@ def _printShowTokens(entityType, users):
       if clientId:
         results = [callGAPI(cd.tokens(), 'get',
                             throwReasons=[GAPI.USER_NOT_FOUND, GAPI.DOMAIN_NOT_FOUND,
-                                          GAPI.DOMAIN_CANNOT_USE_APIS, GAPI.FORBIDDEN, GAPI.BAD_REQUEST,
-                                          GAPI.NOT_FOUND, GAPI.RESOURCE_NOT_FOUND],
+                                          GAPI.DOMAIN_CANNOT_USE_APIS, GAPI.BAD_REQUEST,
+                                          GAPI.NOT_FOUND, GAPI.RESOURCE_NOT_FOUND,
+                                          GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                             userKey=user, clientId=clientId, fields=fields)]
       else:
         results = callGAPIitems(cd.tokens(), 'list', 'items',
                                 throwReasons=[GAPI.USER_NOT_FOUND, GAPI.DOMAIN_NOT_FOUND,
-                                              GAPI.DOMAIN_CANNOT_USE_APIS, GAPI.FORBIDDEN, GAPI.BAD_REQUEST],
+                                              GAPI.DOMAIN_CANNOT_USE_APIS, GAPI.BAD_REQUEST,
+                                              GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                                 userKey=user, fields=f'items({fields})')
       jcount = len(results)
       if not aggregateUsersBy:
@@ -69363,8 +69441,10 @@ def _printShowTokens(entityType, users):
         aggregateTokensById[user] = jcount
     except (GAPI.notFound, GAPI.resourceNotFound) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.ACCESS_TOKEN, clientId], str(e), i, count)
-    except (GAPI.userNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden, GAPI.badRequest):
+    except (GAPI.userNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.badRequest):
       entityUnknownWarning(Ent.USER, user, i, count)
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
   if aggregateUsersBy == 'clientId':
     if not csvPF:
       jcount = len(aggregateTokensById)
