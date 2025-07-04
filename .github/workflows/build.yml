@@ -853,7 +853,7 @@ jobs:
           $gam user $newuser show labels > labels.txt
           $gam user $gam_user importemail subject "GHA import $newbase" message "This is a test import" labels IMPORTANT,UNREAD,INBOX,STARRED
           $gam user $gam_user insertemail subject "GHA insert $newbase" file gam.py labels INBOX,UNREAD # yep body is gam code
-          $gam user $gam_user sendemail subject "GHA send $gam_user $newbase" file gam.py recipient admin@pdl.jaylee.us
+          $gam user $gam_user sendemail recipient admin@pdl.jaylee.us subject "GHA send $gam_user $newbase" file gam.py
           $gam user $gam_user draftemail subject "GHA draft $newbase" message "Draft message test"
           $gam csvfile sample.csv:email waitformailbox retries 20
           $gam user $newuser delegate to "${newbase}-bulkuser-1" || if [ $? != 50 ]; then exit $?; fi # expect a 50 return code (delegation failed)
