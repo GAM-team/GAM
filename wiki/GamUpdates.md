@@ -12,6 +12,9 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 
 ### 7.12.00
 
+Started updated handling of missing scopes messages in client access commands;
+this is a work in progress.
+
 Updated `gam info|show shareddrive` to handle changes in the Drive API that caused traps.
 
 Added `downloadrestrictedforreaders` and `downloadrestrictedforwriters` to
@@ -26,6 +29,7 @@ a literal string, a file or a Google Doc.
          (gdoc <UserGoogleDoc>)|
          (gcsdoc <StorageBucketObjectName>))
 ```
+
 Added command `gam check suspended <UserItem>` that checks the suspension status of a user
 and sets the return code to 0 if the user is not suspended or 26 if it is.
 ```
@@ -39,6 +43,9 @@ User: testsusp@domain.com, Account Suspended: True, Suspension Reason: ADMIN
 $ echo $?
 26
 ```
+
+Updated `gam <UserTypeEntity> sendemail` to verify that one of `recipient|to|from`
+immediately follows `sendemail`.
 
 ### 7.11.00
 
