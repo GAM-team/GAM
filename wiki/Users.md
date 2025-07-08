@@ -340,7 +340,7 @@ Here is how that data is represented in GAM:
 Locations:
   type: desk
     area: desk
-    buildingId: Building-ID
+    buildingId: Building id
     buildingName: Building name
     floorName: Floor name
     floorSection: Floor section
@@ -360,13 +360,15 @@ External IDs:
 ```
 These options will set those values:
 ```
-location type desk area desk buildingid Building-ID floorname "Floor name" floorsection "Floor section" endlocation
+location type desk area desk buildingid "id:Building id" floorname "Floor name" floorsection "Floor section" endlocation
 organization customtype "" description "Type of employee" costcenter "Cost center" department "Department" title "Job Title" primary
 relation manager manageremail@domain.com
 externalid organization "Employee ID"
 ```
-When setting `location buildingid <String>` Google expects a validated building ID, you can use a non-validated
+When setting `location buildingid id:<String>` Google expects a validated building ID, you can use a non-validated
 building ID by specifying `nv:` at the beginning of `<String>`; e.g., `nv:Building X` sets the building ID to `Building X`.
+You can also use `buildingid <String>`, i.e., no `'id:` or `nv:` prefix, `<String>` is then interpreted as a building name
+and GAM validates it to get the building id that is required by the API.
 
 ## Passwords
 To set a user's password, you specify a `<Password>` string and a hash method that specifies how to interpret the string
