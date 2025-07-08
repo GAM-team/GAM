@@ -4564,7 +4564,7 @@ gam update resoldcustomer <CustomerID> <ResoldCustomerAttribues>+
 gam info resoldcustomer <CustomerID> [formatjson]
 
 gam create|add resoldsubscription <CustomerID> (sku <SKUID>)
-        (plan annual_monthly_pay|annual_yearly_pay|flexible|trial) (seats <Number>)
+        (plan annual_monthly_pay|annual_yearly_pay|flexible|trial|free) (seats <Number>)
         [customer_auth_token <String>] [deal <String>] [purchaseorderid <String>]
 gam update resoldsubscription <CustomerID> <SKUID>
         activate|suspend|startpaidservice|

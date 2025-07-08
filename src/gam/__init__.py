@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.12.00'
+__version__ = '7.12.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -15329,6 +15329,7 @@ PLAN_NAME_MAP = {
   'annualmonthlypay': 'ANNUAL_MONTHLY_PAY',
   'annualyearlypay': 'ANNUAL_YEARLY_PAY',
   'flexible': 'FLEXIBLE',
+  'free': 'FREE',
   'trial': 'TRIAL',
   }
 
@@ -15412,7 +15413,7 @@ RENEWAL_TYPE_MAP = {
 #	activate|suspend|startpaidservice|
 #	(renewal auto_renew_monthly_pay|auto_renew_yearly_pay|cancel|renew_current_users_monthly_pay|renew_current_users_yearly_pay|switch_to_pay_as_you_go)|
 #	(seats <Number>)|
-#	(plan annual_monthly_pay|annual_yearly_pay|flexible|trial [deal <String>] [purchaseorderid <String>] [seats <Number>])
+#	(plan annual_monthly_pay|annual_yearly_pay|flexible|trial|free [deal <String>] [purchaseorderid <String>] [seats <Number>])
 def doUpdateResoldSubscription():
   def _getSeats():
     seats1 = getInteger(minVal=0)

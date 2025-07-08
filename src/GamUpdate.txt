@@ -1,3 +1,9 @@
+7.12.01
+
+Added support for `plan free` in `gam create resoldsubscription`.
+
+* The free plan is exclusive to the Cloud Identity SKU and does not incur any billing.
+
 7.12.00
 
 Started updated handling of missing scopes messages in client access commands;
