@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.12.01
+
+Added support for `plan free` in `gam create resoldsubscription`.
+
+* The free plan is exclusive to the Cloud Identity SKU and does not incur any billing.
+
 ### 7.12.00
 
 Started updated handling of missing scopes messages in client access commands;

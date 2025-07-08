@@ -135,7 +135,7 @@ By default, Gam displays the information as an indented list of keys and values.
 ## Manage Resold Subscriptions
 ```
 gam create resoldsubscription <CustomerID> (sku <SKUID>)
-         (plan annual_monthly_pay|annual_yearly_pay|flexible|trial)
+         (plan annual_monthly_pay|annual_yearly_pay|flexible|trial|free)
          (seats <Number>)
          [customer_auth_token <String>] [deal <String>] [purchaseorderid <String>]
 gam update resoldsubscription <CustomerID> <SKUID>
