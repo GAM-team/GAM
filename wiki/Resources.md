@@ -390,14 +390,14 @@ gam delete building <BuildingID>
 gam info building <BuildingID>
         [formatjson]
 gam show buildings
-        [allfields|<BuildingFildName>*|(fields <BuildingFieldNameList>)]
+        [allfields|<BuildingFieldName>*|(fields <BuildingFieldNameList>)]
         [formatjson]
 ```
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 ```
 gam print buildings [todrive <ToDriveAttribute>*]
-        [allfields|<BuildingFildName>*|(fields <BuildingFieldNameList>)]
+        [allfields|<BuildingFieldName>*|(fields <BuildingFieldNameList>)]
         [delimiter <Character>] [formatjson [quotechar <Character>]]
 ```
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
