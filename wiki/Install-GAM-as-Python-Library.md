@@ -14,7 +14,7 @@ pip install git+https://github.com/GAM-team/GAM.git#subdirectory=src
 
 Or as a PEP 508 Requirement Specifier, e.g. in requirements.txt file:
 ```
-advanced-gam-for-google-workspace @ git+https://github.com/GAM-team/GAM.git#subdirectory=src
+gam-for-google-workspace @ git+https://github.com/GAM-team/GAM.git#subdirectory=src
 ```
 
 Or a pyproject.toml file:
@@ -23,13 +23,13 @@ Or a pyproject.toml file:
 name = "your-project"
 # ...
 dependencies = [
-    "advanced-gam-for-google-workspace @ git+https://github.com/GAM-team/GAM.git#subdirectory=src"
+    "gam-for-google-workspace @ git+https://github.com/GAM-team/GAM.git#subdirectory=src"
 ]
 ```
 
 Target a specific revision or tag:
 ```
-advanced-gam-for-google-workspace @ git+https://github.com/GAM-team/GAM.git@v6.76.01#subdirectory=src
+gam-for-google-workspace @ git+https://github.com/GAM-team/GAM.git@v7.12.01#subdirectory=src
 ```
 
 ## Using the library
