@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.12.01'
+__version__ = '7.12.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -6246,6 +6246,7 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
       result = callGAPIpages(cd.users(), 'list', 'users',
                              pageMessage=getPageMessage(),
                              throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                              customer=GC.Values[GC.CUSTOMER_ID],
                              query=query, orderBy='email', fields='nextPageToken,users(primaryEmail,archived)',
                              maxResults=GC.Values[GC.USER_MAX_RESULTS])
@@ -6270,6 +6271,7 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
         result = callGAPIpages(cd.users(), 'list', 'users',
                                pageMessage=getPageMessageForWhom(),
                                throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.DOMAIN_NOT_FOUND, GAPI.FORBIDDEN],
+                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                domain=domain,
                                query=query, orderBy='email', fields='nextPageToken,users(primaryEmail,archived)',
                                maxResults=GC.Values[GC.USER_MAX_RESULTS])
@@ -6448,6 +6450,7 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
                               pageMessage=pageMessage, messageAttribute='primaryEmail',
                               throwReasons=[GAPI.INVALID_ORGUNIT, GAPI.ORGUNIT_NOT_FOUND,
                                             GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                               customer=GC.Values[GC.CUSTOMER_ID], query=orgUnitPathQuery(ou, isSuspended), orderBy='email',
                               fields=fields, maxResults=GC.Values[GC.USER_MAX_RESULTS])
         for users in feed:
@@ -6481,6 +6484,7 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
                                pageMessage=getPageMessage(),
                                throwReasons=[GAPI.INVALID_ORGUNIT, GAPI.ORGUNIT_NOT_FOUND,
                                              GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                customer=GC.Values[GC.CUSTOMER_ID], query=query, orderBy='email',
                                fields='nextPageToken,users(primaryEmail,suspended,archived)',
                                maxResults=GC.Values[GC.USER_MAX_RESULTS])
@@ -13321,6 +13325,7 @@ def getUserOrgUnits(cd, orgUnit, orgUnitId):
                            pageMessage=getPageMessageForWhom(),
                            throwReasons=[GAPI.INVALID_ORGUNIT, GAPI.ORGUNIT_NOT_FOUND,
                                          GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                           retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                            customer=GC.Values[GC.CUSTOMER_ID], query=orgUnitPathQuery(orgUnit, None), orderBy='email',
                            fields='nextPageToken,users(primaryEmail,orgUnitPath)', maxResults=GC.Values[GC.USER_MAX_RESULTS])
     userOrgUnits = {}
@@ -17786,6 +17791,7 @@ def _doInfoOrgs(entityList):
         orgUnitPath = result['orgUnitPath']
         users = callGAPIpages(cd.users(), 'list', 'users',
                               throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID_INPUT, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                               customer=GC.Values[GC.CUSTOMER_ID], query=orgUnitPathQuery(orgUnitPath, isSuspended), orderBy='email',
                               fields='nextPageToken,users(primaryEmail,orgUnitPath)', maxResults=GC.Values[GC.USER_MAX_RESULTS])
         printEntitiesCount(entityType, None)
@@ -18053,6 +18059,7 @@ def doPrintOrgs():
                             pageMessage=pageMessage,
                             throwReasons=[GAPI.INVALID_ORGUNIT, GAPI.ORGUNIT_NOT_FOUND,
                                           GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                             customer=GC.Values[GC.CUSTOMER_ID], query=orgUnitPathQuery(orgUnitPath, None), orderBy='email',
                             fields='nextPageToken,users(orgUnitPath,suspended)', maxResults=GC.Values[GC.USER_MAX_RESULTS])
       for users in feed:
@@ -18342,6 +18349,7 @@ def doCheckOrgUnit():
                             pageMessage=pageMessage,
                             throwReasons=[GAPI.INVALID_ORGUNIT, GAPI.ORGUNIT_NOT_FOUND,
                                           GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                             customer=GC.Values[GC.CUSTOMER_ID], query=orgUnitPathQuery(orgUnitPath, None),
                             fields='nextPageToken,users(orgUnitPath)', maxResults=GC.Values[GC.USER_MAX_RESULTS])
       for users in feed:
@@ -18907,7 +18915,7 @@ def doPrintAliases():
                                    throwReasons=[GAPI.INVALID_ORGUNIT, GAPI.INVALID_INPUT, GAPI.DOMAIN_NOT_FOUND,
                                                  GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN, GAPI.BAD_REQUEST,
                                                  GAPI.UNKNOWN_ERROR, GAPI.FAILED_PRECONDITION],
-                                   retryReasons=[GAPI.UNKNOWN_ERROR, GAPI.FAILED_PRECONDITION],
+                                   retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS+[GAPI.UNKNOWN_ERROR, GAPI.FAILED_PRECONDITION],
                                    query=query, orderBy='email',
                                    fields=f'nextPageToken,users({",".join(userFields)})',
                                    maxResults=GC.Values[GC.USER_MAX_RESULTS], **kwargs)
@@ -19006,7 +19014,7 @@ def doPrintAddresses():
                                pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute='primaryEmail',
                                throwReasons=[GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN, GAPI.BAD_REQUEST,
                                              GAPI.UNKNOWN_ERROR, GAPI.FAILED_PRECONDITION],
-                               retryReasons=[GAPI.UNKNOWN_ERROR, GAPI.FAILED_PRECONDITION],
+                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS+[GAPI.UNKNOWN_ERROR, GAPI.FAILED_PRECONDITION],
                                orderBy='email', fields=f'nextPageToken,users({",".join(userFields)})',
                                maxResults=GC.Values[GC.USER_MAX_RESULTS], **kwargs)
   except (GAPI.unknownError, GAPI.failedPrecondition) as e:
@@ -44339,6 +44347,7 @@ def undeleteUsers(entityList):
       try:
         deleted_users = callGAPIpages(cd.users(), 'list', 'users',
                                       throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                       customer=GC.Values[GC.CUSTOMER_ID], showDeleted=True, orderBy='email',
                                       maxResults=GC.Values[GC.USER_MAX_RESULTS])
       except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
@@ -45591,7 +45600,7 @@ def doPrintUsers(entityList=None):
                               throwReasons=[GAPI.DOMAIN_NOT_FOUND, GAPI.INVALID_ORGUNIT, GAPI.INVALID_INPUT,
                                             GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN,
                                             GAPI.UNKNOWN_ERROR, GAPI.FAILED_PRECONDITION],
-                              retryReasons=[GAPI.UNKNOWN_ERROR, GAPI.FAILED_PRECONDITION],
+                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS+[GAPI.UNKNOWN_ERROR, GAPI.FAILED_PRECONDITION],
                               query=query, fields=fields,
                               showDeleted=showDeleted, orderBy=orderBy, sortOrder=sortOrder, viewType=viewType,
                               projection=schemaParms['projection'], customFieldMask=schemaParms['customFieldMask'],
@@ -45797,6 +45806,7 @@ def doPrintUserCountsByOrgUnit():
     result = callGAPIpages(cd.users(), 'list', 'users',
                            pageMessage=pageMessage,
                            throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.DOMAIN_NOT_FOUND, GAPI.FORBIDDEN],
+                           retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                            orderBy='email', fields='nextPageToken,users(orgUnitPath,archived,suspended)',
                            maxResults=GC.Values[GC.USER_MAX_RESULTS], **kwargs)
   except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.domainNotFound):

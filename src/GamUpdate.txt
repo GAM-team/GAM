@@ -1,3 +1,10 @@
+7.12.02
+
+Updated `gam print users` to handle the following error:
+```
+ERROR: 503: serviceNotAvailable - The service is currently unavailable
+```
+
 7.12.01
 
 Added support for `plan free` in `gam create resoldsubscription`.

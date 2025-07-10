@@ -4657,10 +4657,10 @@ gam delete building <BuildingID>
 gam info building <BuildingID>
         [formatjson]
 gam show buildings
-        [allfields|<BuildingFildName>*|(fields <BuildingFieldNameList>)]
+        [allfields|<BuildingFieldName>*|(fields <BuildingFieldNameList>)]
         [formatjson]
 gam print buildings [todrive <ToDriveAttribute>*]
-        [allfields|<BuildingFildName>*|(fields <BuildingFieldNameList>)]
+        [allfields|<BuildingFieldName>*|(fields <BuildingFieldNameList>)]
         [delimiter <Character>] [formatjson [quotechar <Character>]]
 
 gam create|add feature name <Name>
