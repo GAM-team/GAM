@@ -2,9 +2,11 @@
 - [API documentation](#api-documentation)
 - [Introduction](#introduction)
 - [Definitions](#definitions)
-- [Delete Chrome profiles](#delete-chrome-profiles)
-- [Display Chrome profiles](#display-chrome-profiles)
+- [Delete Chrome Profiles](#delete-chrome-profiles)
+- [Display Chrome Profiles](#display-chrome-profiles)
 - [Profile Query Searchable Fields](#profile-query-searchable-fields)
+- [Create a Chrome Profile command](#create-a-chrome-profile-command)
+- [Display Chrome Profile commands](#display-chrome-profile-commands)
 
 ## Introduction
 These features were added in version 7.01.00.
@@ -21,13 +23,15 @@ Follow instructions at: Turn on managed profile reporting
 
 ## API documentation
 * [Chrome Management API - Profiles](https://developers.google.com/chrome/management/reference/rest/v1/customers.profiles)
+* [Chrome Management API - Profile Commands](https://developers.google.com/chrome/management/reference/rest/v1/customers.profiles.commands)
 * [Turn on Chrome Browser and Profile Reporting](https://support.google.com/chrome/a/answer/9301421)
 
 ## Definitions
 ```
 <CustomerID> ::= <String>
 <ChromeProfilePermanentID> ::= <String>
-<ChromeProfileName> ::= customers/<CustomerID>/profiles/<ChromeProfilePermanentID>
+<ChromeProfileName> ::= customers/<CustomerID>/profiles/<ChromeProfilePermanentID> | <ChromeProfilePermanentID>
+<ChromeProfileCommandName> ::= <ChomeProfileName>/commands/<String>
 
 <ChromeProfileFieldName> ::=
         affiliationstate|
@@ -89,7 +93,7 @@ Select the fields to be displayed:
 * `<ChromeProfileFieldName>* [fields <ChromeProfileFieldNameList>]` - Display a selected list of fields
 
 By default, Gam displays the information as an indented list of keys and values:
-- `formatjson` - Display the fields in JSON format.
+* `formatjson` - Display the fields in JSON format.
 
 ```
 gam show chromeprofiles
@@ -110,14 +114,14 @@ The `filtertime<String> <Time>` value replaces the string `#fiktertime<String>#`
 The characters following `filtertime` can be any combination of lowercase letters and numbers.
 
 By default, Gam displays the information as an indented list of keys and values:
-- `formatjson` - Display the fields in JSON format.
+* `formatjson` - Display the fields in JSON format.
 
 ```
 gam print chromeprofiles [todrive <ToDriveAttribute>*]
         [filtertime.* <Time>] [filter <String>]
         [orderby <ChromeProfileOrderByFieldName> [ascending|descending]]
         <ChromeProfileFieldName>* [fields <ChromeProfileFieldNameList>]
-        [[formatjson [quotechar <Character>]]
+        [formatjson [quotechar <Character>]]
 ```
 
 Use these options to select Chrome profiles; if none are chosen, all Chrome profiles in the account are selected:
@@ -193,3 +197,38 @@ Print information about Chrome profiles on Windows.
 ```
 gam print chromeprofiles filter "osPlatformType=WINDOWS"
 ```
+
+## Create a Chrome Profile command
+```
+gam create chromeprofilecommand <ChromeProfileName>
+        [clearcache [<Boolean>]] [clearcookies [<Boolean>]]
+        [formatjson]
+```
+## Display Chrome Profile commands
+```
+gam info chromeprofilecommand <ChromeProfileCommandName>
+        [formatjson]
+```
+By default, Gam displays the information as an indented list of keys and values:
+* `formatjson` - Display the fields in JSON format.
+
+```
+gam show chromeprofilecommands <ChromeProfileName>
+        [formatjson]
+```
+
+By default, Gam displays the information as an indented list of keys and values:
+* `formatjson` - Display the fields in JSON format.
+```
+gam print chromeprofilecommands <ChromeProfileName> [todrive <ToDriveAttribute>*]
+        [formatjson [quotechar <Character>]]
+```
+By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format:
+* `formatjson` - Display the fields in JSON format.
+
+By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
+the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
+When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
+The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
+`quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
+
