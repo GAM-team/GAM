@@ -111,6 +111,7 @@ class GamEntity():
   CHROME_POLICY_IMAGE = 'cpim'
   CHROME_POLICY_SCHEMA = 'cpsc'
   CHROME_PROFILE = 'cpro'
+  CHROME_PROFILE_COMMAND = 'cpcm'
   CHROME_RELEASE = 'crel'
   CHROME_VERSION = 'cver'
   CLASSIFICATION_LABEL = 'dlab'
@@ -462,6 +463,7 @@ class GamEntity():
     CHROME_POLICY_IMAGE: ['Chrome Policy Images', 'Chrome Policy Image'],
     CHROME_POLICY_SCHEMA: ['Chrome Policy Schemas', 'Chrome Policy Schema'],
     CHROME_PROFILE: ['Chrome Profiles', 'Chrome Profile'],
+    CHROME_PROFILE_COMMAND: ['Chrome Profile Commands', 'Chrome Profile Command'],
     CHROME_RELEASE: ['Chrome Releases', 'Chrome Release'],
     CHROME_VERSION: ['Chrome Versions', 'Chrome Version'],
     CLASSIFICATION_LABEL: ['Classification Labels', 'Classification Label'],

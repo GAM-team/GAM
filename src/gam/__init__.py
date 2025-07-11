@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.12.02'
+__version__ = '7.13.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -25606,7 +25606,7 @@ CHROMEPROFILE_ORDERBY_CHOICE_MAP = {
 #	[filtertime.* <Time>] [filter <String>]
 #	[orderby <ChromeProfileOrderByFieldName> [ascending|descending]]
 #	<ChromeProfileFieldName>* [fields <ChromeProfileFieldNameList>]
-#	[[formatjson [quotechar <Character>]]
+#	[formatjson [quotechar <Character>]]
 def doPrintShowChromeProfiles():
   def _printProfile(profile):
     row = flattenJSON(profile, timeObjects=CHROMEPROFILE_TIME_OBJECTS)
@@ -25675,6 +25675,112 @@ def doPrintShowChromeProfiles():
     if sortHeaders:
       csvPF.SetSortTitles(['name', 'profileId'])
     csvPF.writeCSVfile('Chrome Profiles')
+
+CHROMEPROFILECOMMAND_TIME_OBJECTS = {
+  'clientExecutionTime',
+  'issueTime',
+  }
+
+def _showChromeProfileCommand(profcmd, FJQC, i=0, count=0):
+  if FJQC.formatJSON:
+    printLine(json.dumps(cleanJSON(profcmd, timeObjects=CHROMEPROFILECOMMAND_TIME_OBJECTS),
+              ensure_ascii=False, sort_keys=True))
+    return
+  printEntity([Ent.CHROME_PROFILE_COMMAND, profcmd['name']], i, count)
+  Ind.Increment()
+  showJSON(None, profcmd, timeObjects=CHROMEPROFILECOMMAND_TIME_OBJECTS)
+  Ind.Decrement()
+
+# gam create chromeprofilecommand <ChromeProfileName>
+#	[clearcache [<Boolean>]] [clearcookies [<Boolean>]]
+#	[formatjson]
+def doCreateChromeProfileCommand():
+  cm = buildGAPIObject(API.CHROMEMANAGEMENT)
+  profileName = _getChromeProfileName()
+  body = {'commandType': 'clearBrowsingData', 'payload': {}}
+  FJQC = FormatJSONQuoteChar()
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'clearcache':
+      body['payload']['clearCache'] = getBoolean()
+    elif myarg == 'clearcookies':
+      body['payload']['clearCookies'] = getBoolean()
+    else:
+      FJQC.GetFormatJSON(myarg)
+  try:
+    profcmd = callGAPI(cm.customers().profiles().commands(), 'create',
+                       throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED],
+                       parent=profileName, body=body)
+    _showChromeProfileCommand(profcmd, FJQC)
+  except (GAPI.invalidArgument, GAPI.notFound, GAPI.permissionDenied) as e:
+    entityActionFailedExit([Ent.CHROME_PROFILE_COMMAND, profileName], str(e))
+
+# gam info chromeprofilecommand <ChromeProfileCommandName>
+#	[formatjson]
+def doInfoChromeProfileCommand():
+  cm = buildGAPIObject(API.CHROMEMANAGEMENT)
+  profileCommandName = _getChromeProfileName()
+  FJQC = FormatJSONQuoteChar()
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    FJQC.GetFormatJSON(myarg)
+  try:
+    profcmd = callGAPI(cm.customers().profiles().commands(), 'get',
+                       throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED],
+                       name=profileCommandName)
+    _showChromeProfileCommand(profcmd, FJQC)
+  except (GAPI.invalidArgument, GAPI.notFound, GAPI.permissionDenied) as e:
+    entityActionFailedExit([Ent.CHROME_PROFILE, profileCommandName], str(e))
+
+# gam show chromeprofilecommands <ChromeProfileName>
+#	[formatjson]
+# gam print chromeprofilecommands <ChromeProfileName> [todrive <ToDriveAttribute>*]
+#	[formatjson [quotechar <Character>]]
+def doPrintShowChromeProfileCommands():
+  def _printProfileCommand(profcmd):
+    row = flattenJSON(profcmd, timeObjects=CHROMEPROFILECOMMAND_TIME_OBJECTS)
+    if not FJQC.formatJSON:
+      csvPF.WriteRowTitles(row)
+    elif csvPF.CheckRowTitles(row):
+      csvPF.WriteRowNoFilter({'name': profcmd['name'],
+                              'JSON': json.dumps(cleanJSON(profcmd, timeObjects=CHROMEPROFILECOMMAND_TIME_OBJECTS),
+                                                 ensure_ascii=False, sort_keys=True)})
+
+  cm = buildGAPIObject(API.CHROMEMANAGEMENT)
+  csvPF = CSVPrintFile(['name']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
+  profileName = _getChromeProfileName()
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    else:
+      FJQC.GetFormatJSONQuoteChar(myarg, True)
+  printGettingEntityItemForWhom(Ent.CHROME_PROFILE_COMMAND, profileName)
+  pageMessage = getPageMessage()
+  try:
+    feed = yieldGAPIpages(cm.customers().profiles().commands(), 'list', 'chromeBrowserProfileCommands',
+                          pageMessage=pageMessage,
+                          throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                          parent=profileName, pageSize=100)
+    for profcmds in feed:
+      if not csvPF:
+        jcount = len(profcmds)
+        if not FJQC.formatJSON:
+          performActionNumItems(jcount, Ent.CHROME_PROFILE_COMMAND)
+        Ind.Increment()
+        j = 0
+        for profcmd in profcmds:
+          j += 1
+          _showChromeProfileCommand(profcmd, FJQC, j, jcount)
+        Ind.Decrement()
+      else:
+        for profcmd in profcmds:
+          _printProfileCommand(profcmd)
+  except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+    entityActionFailedExit([Ent.CHROME_PROFILE, profileName], str(e))
+  if csvPF:
+    csvPF.writeCSVfile('Chrome Profile Commands')
 
 BROWSER_ORDERBY_CHOICE_MAP = {
   'annotatedassetid': 'annotated_asset_id', 'asset': 'annotated_asset_id', 'assetid': 'annotated_asset_id',
@@ -76616,6 +76722,7 @@ MAIN_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_CHATMESSAGE:		doCreateChatMessage,
   Cmd.ARG_CHROMENETWORK:	doCreateChromeNetwork,
   Cmd.ARG_CHROMEPOLICYIMAGE:	doCreateChromePolicyImage,
+  Cmd.ARG_CHROMEPROFILECOMMAND:	doCreateChromeProfileCommand,
   Cmd.ARG_CIGROUP:		doCreateCIGroup,
   Cmd.ARG_CONTACT:		doCreateDomainContact,
   Cmd.ARG_COURSE:		doCreateCourse,
@@ -76810,6 +76917,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHATSPACE:	doInfoChatSpace,
       Cmd.ARG_CHROMEAPP:	doInfoChromeApp,
       Cmd.ARG_CHROMEPROFILE:	doInfoChromeProfile,
+      Cmd.ARG_CHROMEPROFILECOMMAND:	doInfoChromeProfileCommand,
       Cmd.ARG_CHROMESCHEMA:	doInfoChromePolicySchemas,
       Cmd.ARG_CIGROUP:		doInfoCIGroups,
       Cmd.ARG_CIGROUPMEMBERS:	doInfoCIGroupMembers,
@@ -76896,6 +77004,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMENEEDSATTN:	doPrintShowChromeNeedsAttn,
       Cmd.ARG_CHROMEPOLICY:	doPrintShowChromePolicies,
       Cmd.ARG_CHROMEPROFILE:	doPrintShowChromeProfiles,
+      Cmd.ARG_CHROMEPROFILECOMMAND:	doPrintShowChromeProfileCommands,
       Cmd.ARG_CHROMESCHEMA:	doPrintShowChromePolicySchemas,
       Cmd.ARG_CHROMESNVALIDITY:	doPrintChromeSnValidity,
       Cmd.ARG_CHROMEVERSIONS:	doPrintShowChromeVersions,
@@ -77028,6 +77137,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMENEEDSATTN:	doPrintShowChromeNeedsAttn,
       Cmd.ARG_CHROMEPOLICY:	doPrintShowChromePolicies,
       Cmd.ARG_CHROMEPROFILE:	doPrintShowChromeProfiles,
+      Cmd.ARG_CHROMEPROFILECOMMAND:	doPrintShowChromeProfileCommands,
       Cmd.ARG_CHROMESCHEMA:	doPrintShowChromePolicySchemas,
       Cmd.ARG_CHROMEVERSIONS:	doPrintShowChromeVersions,
       Cmd.ARG_CIGROUPMEMBERS:	doShowCIGroupMembers,
@@ -77210,6 +77320,7 @@ MAIN_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_CHROMENETWORKS:	Cmd.ARG_CHROMENETWORK,
   Cmd.ARG_CHROMEPOLICIES:	Cmd.ARG_CHROMEPOLICY,
   Cmd.ARG_CHROMEPROFILES:	Cmd.ARG_CHROMEPROFILE,
+  Cmd.ARG_CHROMEPROFILECOMMANDS:	Cmd.ARG_CHROMEPROFILECOMMAND,
   Cmd.ARG_CHROMESCHEMAS:	Cmd.ARG_CHROMESCHEMA,
   Cmd.ARG_CIGROUPS:		Cmd.ARG_CIGROUP,
   Cmd.ARG_CIGROUPSMEMBERS:	Cmd.ARG_CIGROUPMEMBERS,

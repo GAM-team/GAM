@@ -387,6 +387,9 @@ If an item contains spaces, it should be surrounded by ".
 <ChatMessage> ::= spaces/<String>/messages/<String>
 <ChatSpace> ::= spaces/<String> | space <String> | space spaces/<String>
 <ChatThread> ::= spaces/<String>/threads/<String>
+<ChromeProfilePermanentID> ::= <String>
+<ChromeProfileName> ::= customers/<CustomerID>/profiles/<ChromeProfilePermanentID> | <ChromeProfilePermanentID>
+<ChromeProfileCommandName> ::= <ChomeProfileName>/commands/<String>
 <GIGroupAlias> ::= <EmailAddress>
 <GIGroupItem> ::= <EmailAddress>|<UniqueID>|groups/<String>
 <CIGroupMemberType> ::= cbcmbrowser|chromeosdevice|customer|group|other|serviceaccount|user
@@ -530,6 +533,7 @@ If an item contains spaces, it should be surrounded by ".
 <Password> ::= <String>
 <PeopleResourceName> ::= people/<String>
 <PrinterID> ::= <String>
+<ChromeProfileID> ::= <String>
 <ProjectID> ::= <String>
         Must match this Python Regular Expression: [a-z][a-z0-9-]{4,28}[a-z0-9]
 <ProjectName> ::= <String>
@@ -2215,6 +2219,10 @@ gam show chromeneedsattn
 
 # Chrome Profile Management
 
+<ChromeProfilePermanentID> ::= <String>
+<ChromeProfileName> ::= customers/<CustomerID>/profiles/<ChromeProfilePermanentID> | <ChromeProfilePermanentID>
+<ChromeProfileCommandName> ::= <ChomeProfileName>/commands/<String>
+
 <ChromeProfileFieldName> ::=
         affiliationstate|
         annotatedlocation|
@@ -2273,7 +2281,19 @@ gam print chromeprofiles [todrive <ToDriveAttribute>*]
         [filtertime.* <Time>] [filter <String>]
         [orderby <ChromeProfileOrderByFieldName> [ascending|descending]]
         <ChromeProfileFieldName>* [fields <ChromeProfileFieldNameList>]
-        [[formatjson [quotechar <Character>]]
+        [formatjson [quotechar <Character>]]
+
+gam create chromeprofilecommand <ChromeProfileName>
+        [clearcache [<Boolean>]] [clearcookies [<Boolean>]]
+        [formatjson]
+
+gam info chromeprofilecommand <ChromeProfileCommandName>
+        [formatjson]
+
+gam show chromeprofilecommands <ChromeProfileName>
+        [formatjson]
+gam print chromeprofilecommands <ChromeProfileName> [todrive <ToDriveAttribute>*]
+        [formatjson [quotechar <Character>]]
 
 # Chrome Versions Counts
 
