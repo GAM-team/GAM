@@ -1,4 +1,4 @@
-oUpdate History
+Update History
 * [GAM Updates](GamUpdates)
 
 Installation
