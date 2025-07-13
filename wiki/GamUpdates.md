@@ -10,6 +10,23 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.13.01
+
+Enhanced `gam create|print|show chromeprofilecommand` to allow specification
+of multiple Chrome browser profiles rather than just one.
+```
+<ChromeProfilePermanentID> ::= <String>
+<ChromeProfileName> ::= customers/<CustomerID>/profiles/<ChromeProfilePermanentID> | <ChromeProfilePermanentID>
+<ChromeProfileNameList> ::= "<ChromeProfileName>(,<ChromeProfileName>)*"
+<ChromeProfileNameEntity> ::=
+<ChromeProfileNameEntity> ::=
+        <ChromeProfileNameList> |
+        (select <FileSelector>|<CSVFileSelector>) |
+        (filter <String> (filtertime<String> <Time>)* [orderby <ChromeProfileOrderByFieldName> [ascending|descending]])
+
+gam create|print_show chromeprofilecommand <ChromeProfileNameEntity>
+```
+
 ### 7.13.00
 
 Added commands that send remote commands to Chrome browser profiles and display the results;

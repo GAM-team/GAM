@@ -284,6 +284,9 @@
 <ChatMessage> ::= spaces/<String>/messages/<String>
 <ChatSpace> ::= spaces/<String> | space <String> | space spaces/<String>
 <ChatThread> ::= spaces/<String>/threads/<String>
+<ChromeProfilePermanentID> ::= <String>
+<ChromeProfileName> ::= customers/<CustomerID>/profiles/<ChromeProfilePermanentID> | <ChromeProfilePermanentID>
+<ChromeProfileCommandName> ::= <ChomeProfileName>/commands/<String>
 <GIGroupAlias> ::= <EmailAddress>
 <GIGroupItem> ::= <EmailAddress>|<UniqueID>|groups/<String>
 <CIGroupMemberType> ::= cbcmbrowser|chromeosdevice|customer|group|other|serviceaccount|user

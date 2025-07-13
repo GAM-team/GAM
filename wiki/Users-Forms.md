@@ -290,7 +290,7 @@ Select forms with `<DriveFileEntity>`:
 * `my_forms` - Display responses for all forms owned by the user
 ```
 gam <UserTypeEntity> show formresponses <DriveFileEntity>
-        [filtertime.* <Time>] [filter <String>]
+        [filter <String> (filtertime<String> <Time>)*]
         [countsonly|formatjson]
 ```
 By default, GAM displays form response details, use the `countsonly` option to get the number of responses but no response details.
@@ -302,11 +302,12 @@ By default, GAM displays all form responses, you can filter by response time:
 For example, to get the form responses submitted since the beginning of the year:
 * `filter timestamp >= 2022-01-01T00:00:00Z`
 
-Use the `filtertime.* <Time>` option to allow times, usually relative, to be substituted into the `filter <String>` option.
+Use the `filtertime<String <Time>` option to allow times, usually relative, to be substituted into the `filter <String>` option.
+The `filtertime<String> <Time>` value replaces the string `#filtertime<String>#` in any filters..
 The characters following `filtertime` can be any combination of lowercase letters and numbers.
 
-For example, to get the responses subnitted in the last four hours:
-* `filtertime4h -4h filter "timestamp >= #filtertime4h#`
+For example, to get the responses submitted in the last four hours:
+* `filter "timestamp >= #filtertime4h#" filtertime4h -4h`
 
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the form response in JSON format
@@ -314,7 +315,7 @@ By default, Gam displays the information as an indented list of keys and values.
 ```
 gam <UserTypeEntity> print formresponses <DriveFileEntity> [todrive <ToDriveAttribute>*]
         (addcsvdata <FieldName> <String>)*
-        [filtertime.* <Time>] [filter <String>]
+        [filter <String> (filtertime<String> <Time>)*]
         [countsonly|(formatjson [quotechar <Character>])]
 ```
 By default, GAM displays form response details, use the `countsonly` option to get the number of responses but no response details.
@@ -328,11 +329,12 @@ By default, GAM displays all form responses, you can filter by response time:
 For example, to get the form responses submitted since the beginning of the year:
 * `filter timestamp >= 2022-01-01T00:00:00Z`
 
-Use the `filtertime.* <Time>` option to allow times, usually relative, to be substituted into the `filter <String>` option.
+Use the `filtertime<String> <Time>` option to allow times, usually relative, to be substituted into the `filter <String>` option.
+The `filtertime<String> <Time>` value replaces the string `#filtertime<String>#` in any filters..
 The characters following `filtertime` can be any combination of lowercase letters and numbers.
 
 For example, to get the responses subnitted in the last four hours:
-* `filtertime4h -4h filter "timestamp >= #filtertime4h#`
+* `filter "timestamp >= #filtertime4h#" filtertime4h -4h`
 
 By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
 the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.

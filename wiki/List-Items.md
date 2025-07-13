@@ -11,6 +11,7 @@
 <CalendarACLScopeList> ::= "<CalendarACLScope>(,<CalendarACLScope>)*"
 <CalendarList> ::= "<CalendarItem>(,<CalendarItem>)*"
 <ChatSpaceList> ::= "<ChatSpace>(,<ChatSpace>)*"
+<ChromeProfileNameList> ::= "<ChromeProfileName>(,<ChromeProfileName>)*"
 <CIGroupAliasList> ::= "<CIGroupAlias>(,<CIGroupAlias>)*"
 <CIGroupMemberTypeList> ::= "<CIGroupMemberType>(,<CIGroupMemberType>)*"
 <CIPolicyNameList> ::= "<CIPolicyName>(,<CIPolicyName>)*"

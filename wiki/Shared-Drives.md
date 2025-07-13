@@ -45,6 +45,8 @@
 * [Shared Drives Search](https://developers.google.com/drive/api/guides/search-shareddrives)
 
 ## Definitions
+* [`<FileSelector> | <CSVFileSelector>`](Collections-of-Items)
+
 ```
 <ColorHex> ::= "#<Hex><Hex><Hex><Hex><Hex><Hex>"
 <ColorNameGoogle> ::=

@@ -144,6 +144,10 @@ Data fields identified in a `csvkmd` argument.
         <CalendarACLScopeList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 <CalendarEntity> ::=
         <CalendarList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+<ChromeProfileNameEntity> ::=
+        <ChromeProfileNameList> |
+        (select <FileSelector>|<CSVFileSelector>) |
+        (filter <String> (filtertime<String> <Time>)* [orderby <ChromeProfileOrderByFieldName> [ascending|descending]])
 <CIPolicyNameEntity> ::=
         <CIPolicyNameList> | <FileSelector> | <CSVFileSelector>
 <ClassificationLabelNameEntity> ::=
@@ -206,6 +210,7 @@ Data fields identified in a `csvkmd` argument.
         all_shortcuts |
         all_3p_shortcuts |
         all_items |
+        my_commentable_items |
         my_docs |
         my_files |
         my_folders |
@@ -231,6 +236,7 @@ Data fields identified in a `csvkmd` argument.
         others_3p_shortcuts |
         others_items |
         writable_files
+
 <DriveFileEntityShortcut> ::=
         alldrives |
         mydrive_any |
@@ -246,6 +252,7 @@ Data fields identified in a `csvkmd` argument.
         sharedwithme_all |
         sharedwithme_mydrive |
         sharedwithme_notmydrive
+
 <DriveFileEntity> ::=
         <DriveFileIDEntity> |
         <DriveFileNameEntity> |

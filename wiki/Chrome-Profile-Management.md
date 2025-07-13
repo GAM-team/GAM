@@ -5,6 +5,7 @@
 - [Delete Chrome Profiles](#delete-chrome-profiles)
 - [Display Chrome Profiles](#display-chrome-profiles)
 - [Profile Query Searchable Fields](#profile-query-searchable-fields)
+- [Collections of Chrome Profile names for commands](#collections-of-chrome-profile-names-for-commands)
 - [Create a Chrome Profile command](#create-a-chrome-profile-command)
 - [Display Chrome Profile commands](#display-chrome-profile-commands)
 
@@ -27,11 +28,18 @@ Follow instructions at: Turn on managed profile reporting
 * [Turn on Chrome Browser and Profile Reporting](https://support.google.com/chrome/a/answer/9301421)
 
 ## Definitions
+* [`<FileSelector> | <CSVFileSelector>`](Collections-of-Items)
+
 ```
 <CustomerID> ::= <String>
 <ChromeProfilePermanentID> ::= <String>
 <ChromeProfileName> ::= customers/<CustomerID>/profiles/<ChromeProfilePermanentID> | <ChromeProfilePermanentID>
 <ChromeProfileCommandName> ::= <ChomeProfileName>/commands/<String>
+<ChromeProfileNameList> ::= "<ChromeProfileName>(,<ChromeProfileName>)*"
+<ChromeProfileNameEntity> ::=
+        <ChromeProfileNameList> |
+        (select <FileSelector>|<CSVFileSelector>) |
+        (filter <String> (filtertime<String> <Time>)* [orderby <ChromeProfileOrderByFieldName> [ascending|descending]])
 
 <ChromeProfileFieldName> ::=
         affiliationstate|
@@ -97,7 +105,7 @@ By default, Gam displays the information as an indented list of keys and values:
 
 ```
 gam show chromeprofiles
-        [filtertime.* <Time>] [filter <String>]
+        [filter <String> (filtertime<String> <Time>)*]
         [orderby <ChromeProfileOrderByFieldName> [ascending|descending]]
         <ChromeProfileFieldName>* [fields <ChromeProfileFieldNameList>]
         [formatjson]
@@ -110,7 +118,7 @@ Select the fields to be displayed:
 * `<ChromeProfileFieldName>* [fields <ChromeProfileFieldNameList>]` - Display a selected list of fields
 
 Use the `filtertime<String> <Time>` option to allow times, usually relative, to be substituted into the `filter <String>` option.
-The `filtertime<String> <Time>` value replaces the string `#fiktertime<String>#` in the `filter <String>`.
+The `filtertime<String> <Time>` value replaces the string `#filtertime<String>#` in the `filter <String>`.
 The characters following `filtertime` can be any combination of lowercase letters and numbers.
 
 By default, Gam displays the information as an indented list of keys and values:
@@ -118,7 +126,7 @@ By default, Gam displays the information as an indented list of keys and values:
 
 ```
 gam print chromeprofiles [todrive <ToDriveAttribute>*]
-        [filtertime.* <Time>] [filter <String>]
+        [filter <String> (filtertime<String> <Time>)*]
         [orderby <ChromeProfileOrderByFieldName> [ascending|descending]]
         <ChromeProfileFieldName>* [fields <ChromeProfileFieldNameList>]
         [formatjson [quotechar <Character>]]
@@ -197,14 +205,30 @@ Print information about Chrome profiles on Windows.
 ```
 gam print chromeprofiles filter "osPlatformType=WINDOWS"
 ```
+## Collections of Chrome Profile names for commands
+```
+<ChromeProfileNameEntity> ::=
+        <ChromeProfileNameList> |
+        (select <FileSelector>|<CSVFileSelector>) |
+        (filter <String> (filtertime<String> <Time>)* [orderby <ChromeProfileOrderByFieldName> [ascending|descending]])
+```
+* `<ChromeProfileNameList>` - List of Chrome profile names
+* `select <FileSelector>|<CSVFileSelector>` - A flat or CSV file containing Chrome profile names
+* `filter <String> (filtertime<String> <Time>)*` - A filter to select Chrome profiles
+
+Use the `filtertime<String> <Time>` option to allow times, usually relative, to be substituted into the `filter <String>` option.
+The `filtertime<String> <Time>` value replaces the string `#filtertime<String>#` in the `filter <String>`.
+The characters following `filtertime` can be any combination of lowercase letters and numbers.
 
 ## Create a Chrome Profile command
+Clear a Chrome Browser profile cache and/or cookies.
 ```
-gam create chromeprofilecommand <ChromeProfileName>
+gam create chromeprofilecommand <ChromeProfileNameEntity>
         [clearcache [<Boolean>]] [clearcookies [<Boolean>]]
         [formatjson]
 ```
 ## Display Chrome Profile commands
+Display the status of a specific Chrome Browser profile command.
 ```
 gam info chromeprofilecommand <ChromeProfileCommandName>
         [formatjson]
@@ -212,15 +236,16 @@ gam info chromeprofilecommand <ChromeProfileCommandName>
 By default, Gam displays the information as an indented list of keys and values:
 * `formatjson` - Display the fields in JSON format.
 
+Display the status of selected Chrome Browser profile commands.
 ```
-gam show chromeprofilecommands <ChromeProfileName>
+gam show chromeprofilecommands <ChromeProfileNameEntity>
         [formatjson]
 ```
 
 By default, Gam displays the information as an indented list of keys and values:
 * `formatjson` - Display the fields in JSON format.
 ```
-gam print chromeprofilecommands <ChromeProfileName> [todrive <ToDriveAttribute>*]
+gam print chromeprofilecommands <ChromeProfileNameEntity> [todrive <ToDriveAttribute>*]
         [formatjson [quotechar <Character>]]
 ```
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format:

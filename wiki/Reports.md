@@ -68,7 +68,7 @@ gam report <ActivityApplicationName> [todrive <ToDriveAttribute>*]
         [(user all|<UserItem>)|(orgunit|org|ou <OrgUnitPath> [showorgunit])|(select <UserTypeEntity>)]
         [([start <Time>] [end <Time>])|(range <Time> <Time>)|
          yesterday|today|thismonth|(previousmonths <Integer>)]
-        [filtertime<String> <Time>] [filter|filters <String>]
+        [filter <String> (filtertime<String> <Time>)*]
         [event|events <EventNameList>] [ip <String>]
         [groupidfilter <String>]
         [maxactivities <Number>] [maxevents <Number>] [maxresults <Number>]
@@ -363,7 +363,7 @@ gam report users|user [todrive <ToDriveAttribute>*]
         [(date <Date>)|(range <Date> <Date>)|
          yesterday|today|thismonth|(previousmonths <Integer>)]
         [(nodatechange | limitdatechanges <Integer>) | (fulldatarequired all|<UserServiceNameList>)]
-        [filtertime<String> <Time>] [filter|filters <String>]
+        [filter <String> (filtertime<String> <Time>)*]
         [(fields|parameters <String>)|(services <UserServiceNameList>)]
         [aggregatebydate|aggregatebyuser [Boolean]]
         [maxresults <Number>]
@@ -413,7 +413,7 @@ where you can specify a relative date without having to change the script.
 
 For example, filter for last logins more that 60 days ago.
 ```
-filtertime60d -60d filters "accounts:last_login_time<#filtertime60d#"
+filters "accounts:last_login_time<#filtertime60d#" filtertime60d -60d
 ```
 
 Select the fields/parameters to display.
