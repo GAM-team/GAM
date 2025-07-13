@@ -857,7 +857,8 @@ class GamCLArgs():
   OB_CHAT_SPACE = 'ChatSpace'
   OB_CHAT_SPACE_LIST = 'ChatSpaceList'
   OB_CHAT_THREAD = 'ChatThread'
-  OB_CHROMEPROFILE_ID = 'ChromeProfileId'
+  OB_CHROMEPROFILE_NAME = 'ChromeProfileName'
+  OB_CHROMEPROFILE_NAME_LIST = 'ChromeProfileNameList'
   OB_CHROME_VERSION = 'ChromeVersion'
   OB_CIDR_NETMASK = 'CIDRnetmask'
   OB_CIGROUP_ALIAS_LIST = "CIGroupAliasList"

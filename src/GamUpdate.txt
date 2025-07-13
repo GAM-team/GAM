@@ -1,3 +1,19 @@
+7.13.01
+
+Enhanced `gam create|print|show chromeprofilecommand` to allow specification
+of multiple Chrome browser profiles rather than just one.
+```
+<ChromeProfilePermanentID> ::= <String>
+<ChromeProfileName> ::= customers/<CustomerID>/profiles/<ChromeProfilePermanentID> | <ChromeProfilePermanentID>
+<ChromeProfileNameList> ::= "<ChromeProfileName>(,<ChromeProfileName>)*"
+<ChromeProfileNameEntity> ::=
+        <ChromeProfileNameList> |
+        (select <FileSelector>|<CSVFileSelector>) |
+        (filter <String> (filtertime<String> <Time>)* [orderby <ChromeProfileOrderByFieldName> [ascending|descending]])
+
+gam create|print_show chromeprofilecommand <ChromeProfileNameEntity>
+```
+
 7.13.00
 
 Added commands that send remote commands to Chrome browser profiles and display the results;
@@ -12807,7 +12823,7 @@ gam <UserTypeEntity> update teamdrive <TeamDriveEntity> [adminaccess|asadmin] [n
 Updated gam report users to support new orgUnitID argument in Reports API.
 
 gam report users|user [todrive <ToDriveAttribute>*] [date <Date>] [nodatechange | (fulldatarequired all|<ReportsAppList>)]
-        [(user all|<UserItem>)|(orgunit|org|ou <OrgUnitPath>)|(select <UserTypeEntity>)] (filtertime.* <Time>)* [filter|filters <String>] [fields|parameters <String>]
+        [(user all|<UserItem>)|(orgunit|org|ou <OrgUnitPath>)|(select <UserTypeEntity>)] (filtertime<String> <Time>)* [filter|filters <String>] [fields|parameters <String>]
         [maxactivities <Number>] [maxresults <Number>]
 
 Select the users for whom information is desired.
@@ -13398,15 +13414,15 @@ gam print cros query "sync:#querytime1#.." querytime1 -30d
 For example, to print information about CrOS devices synced between 45 days ago and 30 days ago:
 gam print cros query "sync:#querytime1#..#querytime2#" querytime1 -45d querytime2 -30d
 
-Added filtertime.* <Time> option to gam report to allow times, usually relative, to be substituted into the filter <String> option.
-The filtertime.* value replaces the string #filtertime.*# in the filter <String>.
+Added filtertime<String> <Time> option to gam report to allow times, usually relative, to be substituted into the filter <String> option.
+The filtertime<String> value replaces the string #filtertime<String># in the filter <String>.
 The characters following filtertime can be any combination of lowercase letters and numbers.
     gam report users|user [todrive <ToDriveAttribute>*] [date <Date>] [nodatechange | (fulldatarequired all|<ReportsAppList>)]
-        [(user all|<UserItem>)|(select <UserTypeEntity>)] (filtertime.* <Time>)* [filter|filters <String>] [fields|parameters <String>]
+        [(user all|<UserItem>)|(select <UserTypeEntity>)] (filtertime<String> <Time>)* [filter|filters <String>] [fields|parameters <String>]
         [maxactivities <Number>] [maxresults <Number>]
     gam report admin|calendar|calendars|drive|docs|doc|gplus|groups|group|logins|login|mobile|rules|tokens|token [todrive <ToDriveAttribute>*] [maxresults <Number>] [maxactivities <Number>]
         [([start <Time>] [end <Time>])|yesterday] [(user all|<UserItem>)|(select <UserTypeEntity>)]
-        [event <String>] (filtertime.* <Time>)* [filter|filters <String>] [ip <String>] [countsonly] [summary]
+        [event <String>] (filtertime<String> <Time>)* [filter|filters <String>] [ip <String>] [countsonly] [summary]
 
 For example, this command reports on the users that haven't logged in in the last 5 years.
 gam report users parameters accounts:last_login_time filters "accounts:last_login_time<#filtertime#" filtertime -5y
@@ -13562,21 +13578,21 @@ Added units of years to <Date>, <DateTime> and <Time>; a year is 365 days. Added
         never|
         now|today
 
-Added filtertime <Time> option to gam report to allow times, usually relative, to be substituted into the filter <String> option.
-If both filtertime and filter are specified, the filtertime value replaces the string #filtertime# in the filter <String>.
+Added filtertime<String> <Time> option to gam report to allow times, usually relative, to be substituted into the filter <String> option.
+If both filtertime<String> and filter are specified, the filtertime value replaces the string #filtertime<String># in the filter <String>.
 
 gam report users|user [todrive <ToDriveAttribute>*] [date <Date>] [nodatechange | (fulldatarequired all|<ReportsAppList>)]
-        [(user all|<UserItem>)|(select <UserTypeEntity>)] [filtertime <Time>] [filter|filters <String>] [fields|parameters <String>]
+        [(user all|<UserItem>)|(select <UserTypeEntity>)] [filtertime<String> <Time>] [filter|filters <String>] [fields|parameters <String>]
         [maxactivities <Number>] [maxresults <Number>]
 gam report admin|calendar|calendars|drive|docs|doc|gplus|groups|group|logins|login|mobile|rules|tokens|token [todrive <ToDriveAttribute>*] [maxresults <Number>] [maxactivities <Number>]
         [([start <Time>] [end <Time>])|yesterday] [(user all|<UserItem>)|(select <UserTypeEntity>)]
-        [event <String>] [filtertime <Time>] [filter|filters <String>] [ip <String>] [countsonly] [summary]
+        [event <String>] [filtertime<String> <Time>] [filter|filters <String>] [ip <String>] [countsonly] [summary]
 
 For example, this command reports on the users that haven't logged in in the last 5 years.
-gam report users parameters accounts:last_login_time filters "accounts:last_login_time<#filtertime#" filtertime -5y
+gam report users parameters accounts:last_login_time filters "accounts:last_login_time<#filtertime5y#" filtertime5y -5y
 
 For example, this command reports on the users that haven't ever logged in.
-gam report users parameters accounts:last_login_time filters "accounts:last_login_time==#filtertime#" filtertime never
+gam report users parameters accounts:last_login_time filters "accounts:last_login_time==#filtertimeNever#" filtertimeNever never
 
 4.60.14
 

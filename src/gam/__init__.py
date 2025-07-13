@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.13.00'
+__version__ = '7.13.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -13641,7 +13641,7 @@ REPORT_ACTIVITIES_TIME_OBJECTS = {'time'}
 #	[(user all|<UserItem>)|(orgunit|org|ou <OrgUnitPath> [showorgunit])|(select <UserTypeEntity>)]
 #	[([start <Time>] [end <Time>])|(range <Time> <Time>)|
 #	 yesterday|today|thismonth|(previousmonths <Integer>)]
-#	[filtertime.* <Time>] [filter|filters <String>]
+#	[filter <String> (filtertime<String> <Time>)*]
 #	[event|events <EventNameList>] [ip <String>]
 #	[groupidfilter <String>]
 #	[maxactivities <Number>] [maxevents <Number>] [maxresults <Number>]
@@ -13653,7 +13653,7 @@ REPORT_ACTIVITIES_TIME_OBJECTS = {'time'}
 #	[(date <Date>)|(range <Date> <Date>)|
 #	 yesterday|today|thismonth|(previousmonths <Integer>)]
 #	[nodatechange | (fulldatarequired all|<UserServiceNameList>)]
-#	[filtertime.* <Time>] [filter|filters <String>]
+#	[filter <String> (filtertime<String> <Time>)*]
 #	[(fields|parameters <String>)|(services <UserServiceNameList>)]
 #	[aggregatebydate|aggregatebyuser [Boolean]]
 #	[maxresults <Number>]
@@ -25491,7 +25491,7 @@ def doUpdateBrowsers():
       checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_BROWSER, deviceId, i, count)
 
 def _getChromeProfileName():
-  profileName = getString(Cmd.OB_CHROMEPROFILE_ID)
+  profileName = getString(Cmd.OB_CHROMEPROFILE_NAME)
   if not profileName.startswith('customers'):
     customerId = _getCustomerId()
     profileName = f'customers/{customerId}/profiles/{profileName}'
@@ -25598,12 +25598,12 @@ CHROMEPROFILE_ORDERBY_CHOICE_MAP = {
   }
 
 # gam show chromeprofiles
-#	[filtertime.* <Time>] [filter <String>]
+#	[filter <String> (filtertime<String> <Time>)*]
 #	[orderby <ChromeProfileOrderByFieldName> [ascending|descending]]
 #	<ChromeProfileFieldName>* [fields <ChromeProfileFieldNameList>]
 #	[formatjson]
 # gam print chromeprofiles [todrive <ToDriveAttribute>*]
-#	[filtertime.* <Time>] [filter <String>]
+#	[filter <String> (filtertime<String> <Time>)*]
 #	[orderby <ChromeProfileOrderByFieldName> [ascending|descending]]
 #	<ChromeProfileFieldName>* [fields <ChromeProfileFieldNameList>]
 #	[formatjson [quotechar <Character>]]
@@ -25641,7 +25641,7 @@ def doPrintShowChromeProfiles():
       sortHeaders = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
-  if filterTimes and filter is not None:
+  if filterTimes and cbfilter is not None:
     for filterTimeName, filterTimeValue in iter(filterTimes.items()):
       cbfilter = cbfilter.replace(f'#{filterTimeName}#', filterTimeValue)
   fields = getItemFieldsFromFieldsList('chromeBrowserProfiles', fieldsList)
@@ -25676,6 +25676,55 @@ def doPrintShowChromeProfiles():
       csvPF.SetSortTitles(['name', 'profileId'])
     csvPF.writeCSVfile('Chrome Profiles')
 
+def _getChromeProfileNameList():
+  if not Cmd.PeekArgumentPresent(['select', 'filter', 'filters']):
+    return getString(Cmd.OB_CHROMEPROFILE_NAME_LIST).replace(',', ' ').split()
+  return []
+
+def _initChromeProfileNameParameters():
+  cm = buildGAPIObject(API.CHROMEMANAGEMENT)
+  return (cm, {'profileNameList': _getChromeProfileNameList(), 'customerId': _getCustomerId(),
+               'cbfilter': None, 'filterTimes': {},
+               'OBY': OrderBy(CHROMEPROFILE_ORDERBY_CHOICE_MAP)})
+
+def _getChromeProfileNameParameters(myarg, parameters):
+  if not parameters['cbfilter'] and myarg == 'select':
+    parameters['profileNameList'].extend(getEntityList(Cmd.OB_CHROMEPROFILE_NAME_LIST))
+  elif not parameters['profileNameList'] and myarg == 'orderby':
+    parameters['OBY'].GetChoice()
+  elif not parameters['profileNameList'] and myarg.startswith('filtertime'):
+    parameters['filterTimes'][myarg] = getTimeOrDeltaFromNow()
+  elif not parameters['profileNameList'] and myarg in {'filter', 'filters'}:
+    parameters['cbfilter'] = getString(Cmd.OB_STRING)
+  else:
+    return False
+  return True
+
+def _getChromeProfileNameEntityForCommand(cm, parameters):
+  if parameters['cbfilter'] is None:
+    customerId = parameters['customerId']
+    for i, profileName in enumerate(parameters['profileNameList']):
+      if not profileName.startswith('customers'):
+        parameters['profileNameList'][i] = f'customers/{customerId}/profiles/{profileName}'
+    return
+  if parameters['filterTimes']:
+    for filterTimeName, filterTimeValue in iter(parameters['filterTimes'].items()):
+      parameters['cbfilter'] = parameters['cbfilter'].replace(f'#{filterTimeName}#', filterTimeValue)
+  printGettingAllAccountEntities(Ent.CHROME_PROFILE, parameters['cbfilter'])
+  pageMessage = getPageMessage()
+  try:
+    feed = yieldGAPIpages(cm.customers().profiles(), 'list', 'chromeBrowserProfiles',
+                          pageMessage=pageMessage,
+                          throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                          parent=f'customers/{parameters["customerId"]}', pageSize=200,
+                          filter=parameters['cbfilter'], orderBy=parameters['OBY'].orderBy,
+                          fields='nextPageToken,chromeBrowserProfiles(name)')
+    for profiles in feed:
+      for profile in profiles:
+        parameters['profileNameList'].append(profile['name'])
+  except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
+    entityActionFailedExit([Ent.CHROME_PROFILE, parameters['cbfilter']], str(e))
+
 CHROMEPROFILECOMMAND_TIME_OBJECTS = {
   'clientExecutionTime',
   'issueTime',
@@ -25691,12 +25740,11 @@ def _showChromeProfileCommand(profcmd, FJQC, i=0, count=0):
   showJSON(None, profcmd, timeObjects=CHROMEPROFILECOMMAND_TIME_OBJECTS)
   Ind.Decrement()
 
-# gam create chromeprofilecommand <ChromeProfileName>
+# gam create chromeprofilecommand <ChromeProfileNameEntity>
 #	[clearcache [<Boolean>]] [clearcookies [<Boolean>]]
 #	[formatjson]
 def doCreateChromeProfileCommand():
-  cm = buildGAPIObject(API.CHROMEMANAGEMENT)
-  profileName = _getChromeProfileName()
+  cm, parameters = _initChromeProfileNameParameters()
   body = {'commandType': 'clearBrowsingData', 'payload': {}}
   FJQC = FormatJSONQuoteChar()
   while Cmd.ArgumentsRemaining():
@@ -25707,13 +25755,20 @@ def doCreateChromeProfileCommand():
       body['payload']['clearCookies'] = getBoolean()
     else:
       FJQC.GetFormatJSON(myarg)
-  try:
-    profcmd = callGAPI(cm.customers().profiles().commands(), 'create',
-                       throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED],
-                       parent=profileName, body=body)
-    _showChromeProfileCommand(profcmd, FJQC)
-  except (GAPI.invalidArgument, GAPI.notFound, GAPI.permissionDenied) as e:
-    entityActionFailedExit([Ent.CHROME_PROFILE_COMMAND, profileName], str(e))
+  _getChromeProfileNameEntityForCommand(cm, parameters)
+  count = len(parameters['profileNameList'])
+  i = 0
+  for profileName in parameters['profileNameList']:
+    i +=1
+    try:
+      profcmd = callGAPI(cm.customers().profiles().commands(), 'create',
+                         throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED],
+                         parent=profileName, body=body)
+      _showChromeProfileCommand(profcmd, FJQC)
+    except (GAPI.notFound) as e:
+      entityActionFailedWarning([Ent.CHROME_PROFILE_COMMAND, profileName], str(e), i, count)
+    except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
+      entityActionFailedExit([Ent.CHROME_PROFILE_COMMAND, profileName], str(e))
 
 # gam info chromeprofilecommand <ChromeProfileCommandName>
 #	[formatjson]
@@ -25732,9 +25787,9 @@ def doInfoChromeProfileCommand():
   except (GAPI.invalidArgument, GAPI.notFound, GAPI.permissionDenied) as e:
     entityActionFailedExit([Ent.CHROME_PROFILE, profileCommandName], str(e))
 
-# gam show chromeprofilecommands <ChromeProfileName>
+# gam show chromeprofilecommands <ChromeProfileNameEntity>
 #	[formatjson]
-# gam print chromeprofilecommands <ChromeProfileName> [todrive <ToDriveAttribute>*]
+# gam print chromeprofilecommands <ChromeProfilNameEntity> [todrive <ToDriveAttribute>*]
 #	[formatjson [quotechar <Character>]]
 def doPrintShowChromeProfileCommands():
   def _printProfileCommand(profcmd):
@@ -25746,28 +25801,31 @@ def doPrintShowChromeProfileCommands():
                               'JSON': json.dumps(cleanJSON(profcmd, timeObjects=CHROMEPROFILECOMMAND_TIME_OBJECTS),
                                                  ensure_ascii=False, sort_keys=True)})
 
-  cm = buildGAPIObject(API.CHROMEMANAGEMENT)
   csvPF = CSVPrintFile(['name']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
-  profileName = _getChromeProfileName()
+  cm, parameters = _initChromeProfileNameParameters()
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
+    elif _getChromeProfileNameParameters(myarg, parameters):
+      pass
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
-  printGettingEntityItemForWhom(Ent.CHROME_PROFILE_COMMAND, profileName)
-  pageMessage = getPageMessage()
-  try:
-    feed = yieldGAPIpages(cm.customers().profiles().commands(), 'list', 'chromeBrowserProfileCommands',
-                          pageMessage=pageMessage,
-                          throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                          parent=profileName, pageSize=100)
-    for profcmds in feed:
+  _getChromeProfileNameEntityForCommand(cm, parameters)
+  count = len(parameters['profileNameList'])
+  i = 0
+  for profileName in parameters['profileNameList']:
+    i +=1
+    printGettingEntityItemForWhom(Ent.CHROME_PROFILE_COMMAND, profileName, i, count)
+    pageMessage = getPageMessage()
+    try:
+      profcmds = callGAPIpages(cm.customers().profiles().commands(), 'list', 'chromeBrowserProfileCommands',
+                               pageMessage=pageMessage,
+                               throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                               parent=profileName, pageSize=100)
       if not csvPF:
         jcount = len(profcmds)
-        if not FJQC.formatJSON:
-          performActionNumItems(jcount, Ent.CHROME_PROFILE_COMMAND)
         Ind.Increment()
         j = 0
         for profcmd in profcmds:
@@ -25777,8 +25835,10 @@ def doPrintShowChromeProfileCommands():
       else:
         for profcmd in profcmds:
           _printProfileCommand(profcmd)
-  except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
-    entityActionFailedExit([Ent.CHROME_PROFILE, profileName], str(e))
+    except (GAPI.notFound) as e:
+      entityActionFailedWarning([Ent.CHROME_PROFILE, profileName], str(e), i, count)
+    except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
+      entityActionFailedExit([Ent.CHROME_PROFILE, profileName], str(e))
   if csvPF:
     csvPF.writeCSVfile('Chrome Profile Commands')
 
@@ -73375,11 +73435,11 @@ def printShowForms(users):
 FORM_RESPONSE_TIME_OBJECTS = {'createTime', 'lastSubmittedTime'}
 
 # gam <UserTypeEntity> print formresponses <DriveFileEntity> [todrive <ToDriveAttribute>*]
-#	[filtertime.* <Time>] [filter <String>]
+#	[filter <String> (filtertime<String> <Time>)*]
 #	(addcsvdata <FieldName> <String>)*
 #	[countsonly|(formatjson [quotechar <Character>])]
 # gam <UserTypeEntity> show formresponses <DriveFileEntity>
-#	[filtertime.* <Time>] [filter <String>]
+#	[filter <String> (filtertime<String> <Time>)*]
 #	[countsonly|formatjson]
 def printShowFormResponses(users):
   csvPF = CSVPrintFile(['User', 'formId', 'responseId', 'createTime', 'lastSubmittedTime', 'respondentEmail', 'totalScore'],
@@ -73405,7 +73465,7 @@ def printShowFormResponses(users):
       addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
-  if filterTimes and filter is not None:
+  if filterTimes and frfilter is not None:
     for filterTimeName, filterTimeValue in iter(filterTimes.items()):
       frfilter = frfilter.replace(f'#{filterTimeName}#', filterTimeValue)
   if csvPF:
