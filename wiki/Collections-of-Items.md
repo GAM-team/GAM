@@ -147,7 +147,8 @@ Data fields identified in a `csvkmd` argument.
 <ChromeProfileNameEntity> ::=
         <ChromeProfileNameList> |
         (select <FileSelector>|<CSVFileSelector>) |
-        (filter <String> (filtertime<String> <Time>)* [orderby <ChromeProfileOrderByFieldName> [ascending|descending]])
+        (filter <String> (filtertime<String> <Time>)* [orderby <ChromeProfileOrderByFieldName> [ascending|descending]]) |
+        (commands <ChromeProfileCommandNameList>|<FileSelector>|<CSVFileSelector>)
 <CIPolicyNameEntity> ::=
         <CIPolicyNameList> | <FileSelector> | <CSVFileSelector>
 <ClassificationLabelNameEntity> ::=

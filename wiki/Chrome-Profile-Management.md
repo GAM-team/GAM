@@ -34,12 +34,14 @@ Follow instructions at: Turn on managed profile reporting
 <CustomerID> ::= <String>
 <ChromeProfilePermanentID> ::= <String>
 <ChromeProfileName> ::= customers/<CustomerID>/profiles/<ChromeProfilePermanentID> | <ChromeProfilePermanentID>
-<ChromeProfileCommandName> ::= <ChomeProfileName>/commands/<String>
 <ChromeProfileNameList> ::= "<ChromeProfileName>(,<ChromeProfileName>)*"
+<ChromeProfileCommandName> ::= <ChomeProfileName>/commands/<String>
+<ChromeProfileCommandNameList> ::= "<ChromeProfileCommandName>(,<ChromeProfileCommandName>)*"
 <ChromeProfileNameEntity> ::=
         <ChromeProfileNameList> |
         (select <FileSelector>|<CSVFileSelector>) |
-        (filter <String> (filtertime<String> <Time>)* [orderby <ChromeProfileOrderByFieldName> [ascending|descending]])
+        (filter <String> (filtertime<String> <Time>)* [orderby <ChromeProfileOrderByFieldName> [ascending|descending]]) |
+        (commands <ChromeProfileCommandNameList>|<FileSelector>|<CSVFileSelector>)
 
 <ChromeProfileFieldName> ::=
         affiliationstate|
@@ -209,12 +211,16 @@ gam print chromeprofiles filter "osPlatformType=WINDOWS"
 ```
 <ChromeProfileNameEntity> ::=
         <ChromeProfileNameList> |
-        (select <FileSelector>|<CSVFileSelector>) |
-        (filter <String> (filtertime<String> <Time>)* [orderby <ChromeProfileOrderByFieldName> [ascending|descending]])
+        (select <ChromeProfileNameList>|<FileSelector>|<CSVFileSelector>) |
+        (filter <String> (filtertime<String> <Time>)* [orderby <ChromeProfileOrderByFieldName> [ascending|descending]]) |
+        (commands <ChromeProfileCommandNameList>|<FileSelector>|<CSVFileSelector>)
 ```
-* `<ChromeProfileNameList>` - List of Chrome profile names
+* `<ChromeProfileNameList>` - A list of Chrome profile names
+* `select <ChromeProfileNameList>` - A list of Chrome profile names
 * `select <FileSelector>|<CSVFileSelector>` - A flat or CSV file containing Chrome profile names
 * `filter <String> (filtertime<String> <Time>)*` - A filter to select Chrome profiles
+* `commands  <ChromeProfileCommandNameList>` - A list of  Chrome profile command names
+* `commands  <FileSelector>|<CSVFileSelector>` - A flat or CSV file containing Chrome profile command names
 
 Use the `filtertime<String> <Time>` option to allow times, usually relative, to be substituted into the `filter <String>` option.
 The `filtertime<String> <Time>` value replaces the string `#filtertime<String>#` in the `filter <String>`.
@@ -225,8 +231,12 @@ Clear a Chrome Browser profile cache and/or cookies.
 ```
 gam create chromeprofilecommand <ChromeProfileNameEntity>
         [clearcache [<Boolean>]] [clearcookies [<Boolean>]]
-        [formatjson]
+        [csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]]
 ```
+By default, when a Chrome profile command is created, GAM outputs details of the command as indented keywords and values.
+* `formatjson` - Display the details in JSON format.
+* `csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]` - Output the details in CSV format.
+
 ## Display Chrome Profile commands
 Display the status of a specific Chrome Browser profile command.
 ```
@@ -266,7 +276,7 @@ Clear cache and cookies for two specific Chrome profiles:
 gam create chromeprofilecommand 4c6c0a9f-de78-4285-be86-713fca8cffff,aa03151c-7c1d-41fe-b793-5753e167ffff clearcache clearcookies
 ```
 
-Display the status for those Chrome profiles:
+Display the command status for those Chrome profiles:
 ```
 gam show chromeprofilecommand 4c6c0a9f-de78-4285-be86-713fca8cffff,aa03151c-7c1d-41fe-b793-5753e167ffff
 gam print chromeprofilecommand 4c6c0a9f-de78-4285-be86-713fca8cffff,aa03151c-7c1d-41fe-b793-5753e167ffff
@@ -277,7 +287,7 @@ Clear cache and cookies for Chrome profiles in a CSV file named `ChromeProfiles.
 gam create chromeprofilecommand select csvfile ChromeProfiles.csv:name clearcache clearcookies
 ```
 
-Display the status for those Chrome profiles:
+Display the command status for those Chrome profiles:
 ```
 gam show chromeprofilecommand select csvfile ChromeProfiles.csv:name
 gam print chromeprofilecommand select csvfile ChromeProfiles.csv:name
@@ -288,8 +298,19 @@ Clear cache and cookies for Chrome profiles with last activity more that 60 days
 gam create chromeprofilecommand filter "lastActivityTime < \"#filtertime1#\"" filtertime1 -60d clearcache clearcookies
 ```
 
-Display the status for those Chrome profiles:
+Display the command status for those Chrome profiles:
 ```
 gam show chromeprofilecommand filter "lastActivityTime < \"#filtertime1#\"" filtertime1 -60d
 gam print chromeprofilecommand filter "lastActivityTime < \"#filtertime1#\"" filtertime1 -60d
+```
+
+Clear cache and cookies for Chrome profiles with last activity more that 60 days ago:
+```
+gam redirect csv ./ChromeProfileCmds.csv create chromeprofilecommand filter "lastActivityTime < \"#filtertime1#\"" filtertime1 -60d clearcache clearcookies csv
+```
+
+Display the command status for those Chrome profile commands
+```
+gam show chromeprofilecommand commands ChromeProfileCmds.csv:name
+gam print chromeprofilecommand commands ChromeProfileCmds.csv:name
 ```

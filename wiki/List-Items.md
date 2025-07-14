@@ -12,6 +12,7 @@
 <CalendarList> ::= "<CalendarItem>(,<CalendarItem>)*"
 <ChatSpaceList> ::= "<ChatSpace>(,<ChatSpace>)*"
 <ChromeProfileNameList> ::= "<ChromeProfileName>(,<ChromeProfileName>)*"
+<ChromeProfileCommandNameList> ::= "<ChromeProfileCommandName>(,<ChromeProfileCommandName>)*"
 <CIGroupAliasList> ::= "<CIGroupAlias>(,<CIGroupAlias>)*"
 <CIGroupMemberTypeList> ::= "<CIGroupMemberType>(,<CIGroupMemberType>)*"
 <CIPolicyNameList> ::= "<CIPolicyName>(,<CIPolicyName>)*"
