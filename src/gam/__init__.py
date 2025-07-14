@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.13.01'
+__version__ = '7.13.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -25749,7 +25749,9 @@ def doCreateChromeProfileCommand():
   FJQC = FormatJSONQuoteChar()
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if myarg == 'clearcache':
+    if _getChromeProfileNameParameters(myarg, parameters):
+      pass
+    elif myarg == 'clearcache':
       body['payload']['clearCache'] = getBoolean()
     elif myarg == 'clearcookies':
       body['payload']['clearCookies'] = getBoolean()
