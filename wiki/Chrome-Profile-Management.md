@@ -257,3 +257,39 @@ When using the `formatjson` option, double quotes are used extensively in the da
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
+### Examples
+
+For Windows PowerShell, replace `\"` with ``` `" ```.
+
+Clear cache and cookies for two specific Chrome profiles:
+```
+gam create chromeprofilecommand 4c6c0a9f-de78-4285-be86-713fca8cffff,aa03151c-7c1d-41fe-b793-5753e167ffff clearcache clearcookies
+```
+
+Display the status for those Chrome profiles:
+```
+gam show chromeprofilecommand 4c6c0a9f-de78-4285-be86-713fca8cffff,aa03151c-7c1d-41fe-b793-5753e167ffff
+gam print chromeprofilecommand 4c6c0a9f-de78-4285-be86-713fca8cffff,aa03151c-7c1d-41fe-b793-5753e167ffff
+```
+
+Clear cache and cookies for Chrome profiles in a CSV file named `ChromeProfiles.csv` with a column `name`:
+```
+gam create chromeprofilecommand select csvfile ChromeProfiles.csv:name clearcache clearcookies
+```
+
+Display the status for those Chrome profiles:
+```
+gam show chromeprofilecommand select csvfile ChromeProfiles.csv:name
+gam print chromeprofilecommand select csvfile ChromeProfiles.csv:name
+```
+
+Clear cache and cookies for Chrome profiles with last activity more that 60 days ago:
+```
+gam create chromeprofilecommand filter "lastActivityTime < \"#filtertime1#\"" filtertime1 -60d clearcache clearcookies
+```
+
+Display the status for those Chrome profiles:
+```
+gam show chromeprofilecommand filter "lastActivityTime < \"#filtertime1#\"" filtertime1 -60d
+gam print chromeprofilecommand filter "lastActivityTime < \"#filtertime1#\"" filtertime1 -60d
+```
