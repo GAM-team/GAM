@@ -14,6 +14,12 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 
 Fixed bug in `gam create chromeprofilecommand` where `select|filter` were not recognized.
 
+Updated `gam create datatransfer <OldOwnerID> datastudio <NewOwnerID>` that generated the following
+error due to an unhandled API change.
+```
+ERROR: Invalid choice (google data studio): Expected <calendar|looker studio|drive and docs>
+```
+
 ### 7.13.01
 
 Enhanced `gam create|print|show chromeprofilecommand` to allow specification

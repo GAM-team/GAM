@@ -13,8 +13,7 @@
 ```
 <DataTransferService> ::=
         calendar|
-        currents|
-        datastudio|lookerstudio|"google data studio"|
+        datastudio|lookerstudio|"looker studio"|
         drive|gdrive|googledrive|"drive and docs"
 <DataTransferServiceList> ::= "<DataTransferService>(,<DataTransferService>)*"
 
@@ -38,7 +37,7 @@ gam create|add datatransfer|transfer <OldOwnerID> <DataTransferServiceList> <New
         (<ParameterKey> <ParameterValue>)*
         [wait <Integer> <Integer>]
 ```
-For`datastudio` and `drive`, there are options to control the privacy level of the files to be transferred.
+For`lookerstudio` and `drive`, there are options to control the privacy level of the files to be transferred.
 * `private` or `privacy_level private` - Transfer files that are not shared with anyone
 * `shared` or `privacy_level shared` - Transfer files shared with at least one other user; this is the **default**
 * `all` or `privacy_level private,shared` - Transfer all files
