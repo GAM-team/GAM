@@ -859,6 +859,8 @@ class GamCLArgs():
   OB_CHAT_THREAD = 'ChatThread'
   OB_CHROMEPROFILE_NAME = 'ChromeProfileName'
   OB_CHROMEPROFILE_NAME_LIST = 'ChromeProfileNameList'
+  OB_CHROMEPROFILE_COMMAND_NAME = 'ChromeProfileCommandName'
+  OB_CHROMEPROFILE_COMMAND_NAME_LIST = 'ChromeProfileNameCommandList'
   OB_CHROME_VERSION = 'ChromeVersion'
   OB_CIDR_NETMASK = 'CIDRnetmask'
   OB_CIGROUP_ALIAS_LIST = "CIGroupAliasList"

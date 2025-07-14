@@ -685,6 +685,7 @@ If an item contains spaces, it should be surrounded by ".
 <CalendarList> ::= "<CalendarItem>(,<CalendarItem>)*"
 <ChatSpaceList> ::= "<ChatSpace>(,<ChatSpace>)*"
 <ChromeProfileNameList> ::= "<ChromeProfileName>(,<ChromeProfileName>)*"
+<ChromeProfileCommandNameList> ::= "<ChromeProfileCommandName>(,<ChromeProfileCommandName>)*"
 <CIGroupAliasList> ::= "<CIGroupAlias>(,<CIGroupAlias>)*"
 <CIGroupMemberTypeList> ::= "<CIGroupMemberType>(,<CIGroupMemberType>)*"
 <CIPolicyNameList> ::= "<CIPolicyName>(,<CIPolicyName>)*"
@@ -2228,12 +2229,14 @@ gam show chromeneedsattn
 
 <ChromeProfilePermanentID> ::= <String>
 <ChromeProfileName> ::= customers/<CustomerID>/profiles/<ChromeProfilePermanentID> | <ChromeProfilePermanentID>
-<ChromeProfileCommandName> ::= <ChomeProfileName>/commands/<String>
 <ChromeProfileNameList> ::= "<ChromeProfileName>(,<ChromeProfileName>)*"
+<ChromeProfileCommandName> ::= <ChomeProfileName>/commands/<String>
+<ChromeProfileCommandNameList> ::= "<ChromeProfileCommandName>(,<ChromeProfileCommandName>)*"
 <ChromeProfileNameEntity> ::=
         <ChromeProfileNameList> |
-        (select <FileSelector>|<CSVFileSelector>) |
-        (filter <String> (filtertime<String> <Time>)* [orderby <ChromeProfileOrderByFieldName> [ascending|descending]])
+        (select <ChromeProfileNameList>|<FileSelector>|<CSVFileSelector>) |
+        (filter <String> (filtertime<String> <Time>)* [orderby <ChromeProfileOrderByFieldName> [ascending|descending]]) |
+        (commands <ChromeProfileCommandNameList>|<FileSelector>|<CSVFileSelector>)
 
 <ChromeProfileFieldName> ::=
         affiliationstate|
@@ -2297,7 +2300,7 @@ gam print chromeprofiles [todrive <ToDriveAttribute>*]
 
 gam create chromeprofilecommand <ChromeProfileNameEntity>
         [clearcache [<Boolean>]] [clearcookies [<Boolean>]]
-        [formatjson]
+        [csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]]
 
 gam info chromeprofilecommand <ChromeProfileCommandName>
         [formatjson]
