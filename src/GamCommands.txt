@@ -3444,8 +3444,7 @@ gam print|show transferapps
 
 <DataTransferService> ::=
         calendar|
-        currents|
-        datastudio|lookerstudio|"google data studio"|
+        datastudio|lookerstudio|"looker studio"|
         googledrive|gdrive|drive|"drive and docs"
 <DataTransferServiceList> ::= "<DataTransferService>(,<DataTransferService>)*"
 

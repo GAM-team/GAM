@@ -17071,14 +17071,14 @@ def _convertTransferAppIDtoName(apps, appID):
   return f'applicationId: {appID}'
 
 DRIVE_AND_DOCS_APP_NAME = 'drive and docs'
-GOOGLE_DATA_STUDIO_APP_NAME = 'google data studio'
+GOOGLE_LOOKER_STUDIO_APP_NAME = 'looker studio'
 
 SERVICE_NAME_CHOICE_MAP = {
-  'datastudio': GOOGLE_DATA_STUDIO_APP_NAME,
+  'datastudio': GOOGLE_LOOKER_STUDIO_APP_NAME,
   'drive': DRIVE_AND_DOCS_APP_NAME,
   'googledrive': DRIVE_AND_DOCS_APP_NAME,
   'gdrive': DRIVE_AND_DOCS_APP_NAME,
-  'lookerstudio': GOOGLE_DATA_STUDIO_APP_NAME,
+  'lookerstudio': GOOGLE_LOOKER_STUDIO_APP_NAME,
   }
 
 def _validateTransferAppName(apps, appName):
