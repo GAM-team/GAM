@@ -97,6 +97,7 @@ Client Access
 * [Domain Shared Contacts](Domain-SharedContacts)
 * [Email Audit Monitor](Email-Audit-Monitor)
 * [Find File Owner](Find-File-Owner)
+* [Global Address List](Global-Address-List))
 * [Google Data Transfers](Google-Data-Transfers)
 * [Groups](Groups)
 * [Groups - Membership](Groups-Membership)

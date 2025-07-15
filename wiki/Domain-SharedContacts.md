@@ -308,12 +308,3 @@ the quote character itself, the column delimiter (comma by default) and new-line
 When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
-
-## Display global address list
-As of mid-October 2024, Google deprecated the API that retrieved the Global Address List.
-
-These commands are a work-around.
-```
-gam config csv_output_row_filter "includeInGlobalAddressList:boolean:true" redirect csv ./UserGAL.csv print users fields name,gal
-gam config csv_output_row_filter "includeInGlobalAddressList:boolean:true" batch_size 25 redirect csv ./GroupGAL.csv print groups fields name,gal
-```
