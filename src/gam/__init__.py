@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.13.03'
+__version__ = '7.14.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -24113,7 +24113,10 @@ def infoCrOSDevices(entityList):
         printKeyValueList([up, ''])
         Ind.Increment()
         for key, value in sorted(iter(cros[up].items())):
-          printKeyValueList([key, value])
+          if key not in CROS_TIME_OBJECTS:
+            printKeyValueList([key, value])
+          else:
+            printKeyValueList([key, formatLocalTime(value)])
         Ind.Decrement()
     if not noLists:
       activeTimeRanges = _filterActiveTimeRanges(cros, True, listLimit, startDate, endDate, activeTimeRangesOrder)
@@ -76488,6 +76491,134 @@ def importTasklist(users):
                           tasklist=tasklistId, parent=parent, body=task)
         parentIdMap[taskId] = result['id']
 
+TAGMANAGER_PARAMETERS = {
+  Ent.TAGMANAGER_ACCOUNT: {'respType': 'account', 'parentEntityType': None,
+                           'idList': ['accountId']},
+  Ent.TAGMANAGER_CONTAINER: {'respType': 'container', 'parentEntityType': Ent.TAGMANAGER_ACCOUNT,
+                             'idList': ['accountId', 'containerId']},
+  Ent.TAGMANAGER_WORKSPACE: {'respType': 'workspace', 'parentEntityType': Ent.TAGMANAGER_CONTAINER,
+                             'idList': ['accountId', 'containerId', 'workspaceId']},
+  Ent.TAGMANAGER_TAG: {'respType': 'tag', 'parentEntityType': Ent.TAGMANAGER_WORKSPACE,
+                       'idList': ['accountId', 'containerId', 'workspaceId', 'tagId']},
+  }
+
+def printShowTagManagerObjects(users, entityType):
+  csvPF = CSVPrintFile(['User', 'name', 'path']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
+  if entityType == Ent.TAGMANAGER_ACCOUNT:
+    kwargs = {'includeGoogleTags': False}
+    parentList = [None]
+  else:
+    kwargs = {'parent': None}
+    if not checkArgumentPresent('select'):
+      parentList = getString(Cmd.OB_TAGMANAGER_PATH_LIST).replace(',', ' ').split()
+    else:
+      parentList = getEntityList(Cmd.OB_TAGMANAGER_PATH_LIST)
+  parameters = TAGMANAGER_PARAMETERS[entityType]
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif entityType == Ent.TAGMANAGER_ACCOUNT and myarg == 'includegoogletags':
+      kwargs['includeGoogleTags'] = getBoolean()
+    else:
+      FJQC.GetFormatJSONQuoteChar(myarg, True)
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, svc = buildGAPIServiceObject(API.TAGMANAGER, user, i, count)
+    if not svc:
+      continue
+    if entityType == Ent.TAGMANAGER_ACCOUNT:
+      svc = svc.accounts()
+    elif entityType == Ent.TAGMANAGER_CONTAINER:
+      svc = svc.accounts().containers()
+    elif entityType == Ent.TAGMANAGER_WORKSPACE:
+      svc = svc.accounts().containers().workspaces()
+    else: #elif entityType == Ent.TAGMANAGER_TAG:
+      svc = svc.accounts().containers().workspaces().tags()
+    jcount = len(parentList)
+    j = 0
+    for parent in parentList:
+      j += 1
+      if entityType == Ent.TAGMANAGER_ACCOUNT:
+        printGettingAllEntityItemsForWhom(entityType, user, i, count)
+      else:
+        kwargs['parent'] = parent
+        qualifier = f' for {Ent.Singular(parameters["parentEntityType"])}: {parent}'
+        printGettingAllEntityItemsForWhom(entityType, user, i, count, qualifier=qualifier)
+      try:
+        results = callGAPIpages(svc, 'list', parameters['respType'],
+                                 pageMessage=getPageMessageForWhom(),
+                                 throwReasons=GAPI.TAGMANAGER_THROW_REASONS,
+                                 **kwargs)
+      except (GAPI.badRequest, GAPI.invalid, GAPI.notFound) as e:
+        entityActionFailedWarning([Ent.USER, user, entityType, kwargs['parent']], str(e), j, jcount)
+        continue
+      kcount = len(results)
+      if not csvPF:
+        if not  FJQC.formatJSON:
+          entityPerformActionNumItems([Ent.USER, user], kcount, entityType, j, jcount)
+        Ind.Increment()
+        k = 0
+        for result in results:
+          k += 1
+          if not  FJQC.formatJSON:
+            printEntity([entityType, result['path']], k, kcount)
+            Ind.Increment()
+            for tmid in parameters['idList']:
+              printKeyValueList([tmid, result.pop(tmid)])
+            printKeyValueList(['name', result.pop('name')])
+            showJSON(None, result)
+            Ind.Decrement()
+          else:
+            printLine(json.dumps(cleanJSON(result), ensure_ascii=False, sort_keys=True))
+        Ind.Decrement()
+      else:
+        for result in results:
+          baseRow = {'User': user}
+          for tmid in parameters['idList']:
+            baseRow[tmid] = result.pop(tmid)
+          row = flattenJSON(result, flattened=baseRow)
+          if not FJQC.formatJSON:
+            csvPF.WriteRowTitles(row)
+          elif csvPF.CheckRowTitles(row):
+            row = {'User': user, 'name': result['name'], 'path': result['path']}
+            row['JSON'] = json.dumps(cleanJSON(result), ensure_ascii=False, sort_keys=True)
+            csvPF.WriteRowNoFilter(row)
+  if csvPF:
+    csvPF.writeCSVfile(Ent.Plural(entityType))
+
+# gam <UserTypeEntity> show tagmanageraccounts
+#	[includegoogletags [<Boolean>]]
+#	[formatjson]
+# gam <UserTypeEntity> print tagmanagerccounts [todrive <ToDriveAttribute>*]
+#	[includegoogletags [<Boolean>]]
+#	[formatjson [quotechar <Character>]]
+def printShowTagManagerAccounts(users):
+  printShowTagManagerObjects(users, Ent.TAGMANAGER_ACCOUNT)
+
+# gam <UserTypeEntity> show tagmanagercontainers <TagManagerAccountPathEntity>
+#	[formatjson]
+# gam <UserTypeEntity> print tagmanagercontainers <TagManagerAccountPathEntity> [todrive <ToDriveAttribute>*]
+#	[formatjson [quotechar <Character>]]
+def printShowTagManagerContainers(users):
+  printShowTagManagerObjects(users, Ent.TAGMANAGER_CONTAINER)
+
+# gam <UserTypeEntity> show tagmanagerworkspaces <TagManagerContainerPathEntity>
+#	[formatjson]
+# gam <UserTypeEntity> print tagmanagerworkspaces <TagManagerContainerPathEntity>
+#	[formatjson [quotechar <Character>]]
+def printShowTagManagerWorkspaces(users):
+  printShowTagManagerObjects(users, Ent.TAGMANAGER_WORKSPACE)
+
+# gam <UserTypeEntity> show tagmanagertags <TagManagerWorkspacePathEntity>
+#	[formatjson]
+# gam <UserTypeEntity> print tagmanagertags <TagManagerWorkspacePathEntity> [todrive <ToDriveAttribute>*]
+#	[formatjson [quotechar <Character>]]
+def printShowTagManagerTags(users):
+  printShowTagManagerObjects(users, Ent.TAGMANAGER_TAG)
+
 def getCRMOrgId():
   setTrueCustomerId()
   _, crm = buildGAPIServiceObject(API.CLOUDRESOURCEMANAGER, None)
@@ -78216,6 +78347,10 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_SITE:		deprecatedUserSites,
       Cmd.ARG_SITEACL:		deprecatedUserSites,
       Cmd.ARG_SITEACTIVITY:	deprecatedUserSites,
+      Cmd.ARG_TAGMANAGERACCOUNT:	printShowTagManagerAccounts,
+      Cmd.ARG_TAGMANAGERCONTAINER:	printShowTagManagerContainers,
+      Cmd.ARG_TAGMANAGERWORKSPACE:	printShowTagManagerWorkspaces,
+      Cmd.ARG_TAGMANAGERTAG:	printShowTagManagerTags,
       Cmd.ARG_TASK:		printShowTasks,
       Cmd.ARG_TASKLIST:		printShowTasklists,
       Cmd.ARG_THREAD:		printShowThreads,
@@ -78323,6 +78458,10 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_SITE:		deprecatedUserSites,
       Cmd.ARG_SITEACL:		deprecatedUserSites,
       Cmd.ARG_SMIME:		printShowSmimes,
+      Cmd.ARG_TAGMANAGERACCOUNT:	printShowTagManagerAccounts,
+      Cmd.ARG_TAGMANAGERCONTAINER:	printShowTagManagerContainers,
+      Cmd.ARG_TAGMANAGERWORKSPACE:	printShowTagManagerWorkspaces,
+      Cmd.ARG_TAGMANAGERTAG:	printShowTagManagerTags,
       Cmd.ARG_TASK:		printShowTasks,
       Cmd.ARG_TASKLIST:		printShowTasklists,
       Cmd.ARG_THREAD:		printShowThreads,
@@ -78562,6 +78701,10 @@ USER_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_SITES:		Cmd.ARG_SITE,
   Cmd.ARG_SITEACLS:		Cmd.ARG_SITEACL,
   Cmd.ARG_SMIMES:		Cmd.ARG_SMIME,
+  Cmd.ARG_TAGMANAGERACCOUNTS:	Cmd.ARG_TAGMANAGERACCOUNT,
+  Cmd.ARG_TAGMANAGERCONTAINERS:	Cmd.ARG_TAGMANAGERCONTAINER,
+  Cmd.ARG_TAGMANAGERWORKSPACES:	Cmd.ARG_TAGMANAGERWORKSPACE,
+  Cmd.ARG_TAGMANAGERTAGS:	Cmd.ARG_TAGMANAGERTAG,
   Cmd.ARG_TASKS:		Cmd.ARG_TASK,
   Cmd.ARG_TASKLISTS:		Cmd.ARG_TASKLIST,
   Cmd.ARG_TEAMDRIVE:		Cmd.ARG_SHAREDDRIVE,

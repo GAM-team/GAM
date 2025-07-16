@@ -94,6 +94,7 @@ SITEVERIFICATION = 'siteVerification'
 STORAGE = 'storage'
 STORAGEREAD = 'storageread'
 STORAGEWRITE = 'storagewrite'
+TAGMANAGER = 'tagmanager'
 TASKS = 'tasks'
 VAULT = 'vault'
 YOUTUBE = 'youtube'
@@ -199,6 +200,7 @@ PROJECT_APIS = [
   'sheets.googleapis.com',
   'siteverification.googleapis.com',
   'storage-api.googleapis.com',
+  'tagmanager.googleapis.com',
   'tasks.googleapis.com',
   'vault.googleapis.com',
   'youtube.googleapis.com',
@@ -277,6 +279,7 @@ _INFO = {
   STORAGE: {'name': 'Cloud Storage API', 'version': 'v1', 'v2discovery': True},
   STORAGEREAD: {'name': 'Cloud Storage API - Read', 'version': 'v1', 'v2discovery': True, 'mappedAPI': STORAGE},
   STORAGEWRITE: {'name': 'Cloud Storage API - Write', 'version': 'v1', 'v2discovery': True, 'mappedAPI': STORAGE},
+  TAGMANAGER: {'name': 'Tag Manager API', 'version': 'v2', 'v2discovery': True},
   TASKS: {'name': 'Tasks API', 'version': 'v1', 'v2discovery': True},
   VAULT: {'name': 'Vault API', 'version': 'v1', 'v2discovery': True},
   YOUTUBE: {'name': 'Youtube API', 'version': 'v3', 'v2discovery': True},
@@ -696,6 +699,10 @@ _SVCACCT_SCOPES = [
    'api': SHEETS,
    'subscopes': READONLY,
    'scope': 'https://www.googleapis.com/auth/spreadsheets'},
+  {'name': 'Tag Manager API - read only',
+   'api': TAGMANAGER,
+   'subscopes': [],
+   'scope': 'https://www.googleapis.com/auth/tagmanager.readonly'},
   {'name': 'Tasks API',
    'api': TASKS,
    'subscopes': READONLY,

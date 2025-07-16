@@ -1,3 +1,9 @@
+7.14.00
+
+Added commands to display Google Tag Manager accounts, containers, workspaces and tags.
+
+* See: https://github.com/GAM-team/GAM/wiki/Users-Tag-Manager
+
 7.13.03
 
 Added option `csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]]`
