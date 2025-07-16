@@ -171,6 +171,7 @@ Service Account Access
 * [Users - Profile Photo](Users-Profile-Photo)
 * [Users - Shared Drives](Users-Shared-Drives)
 * [Users - Spreadsheets](Users-Spreadsheets)
+* [Users - Tag Manager](Users-Tag-Manager)
 * [Users - Tasks](Users-Tasks)
 * [Users - YouTube](Users-YouTube)
 

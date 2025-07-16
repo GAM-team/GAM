@@ -519,6 +519,14 @@
         gs://<StorageBucketName>/<StorageObjectName>|
         <StorageBucketName>/<StorageObjectName>
 <Tag> ::= <String>
+<TagManagerAccountID> ::= <String>
+<TagManagerAccountPath> ::= accounts/<TagManagerAccountID>
+<TagManagerContainerID> ::= <String>
+<TagManagerContainerPath> ::= accounts/<TagManagerAccountID>/containers/<TagManagerContainerID>
+<TagManagerWorkspaceID> ::= <String>
+<TagManagerWorkspacePath> ::= accounts/<TagManagerAccountID>/containers/<TagManagerContainerID>/workspaces/<TagManagerWorkspaceID>
+<TagManagerTagID> ::= <String>
+<TagManagerTagPath> ::= accounts/<TagManagerAccountID>/containers/<TagManagerContainerID>/workspaces/<TagManagerWorkspaceID>/tags/<TagManagerTagID>
 <TakeoutBucketName> ::= takeout-export-[a-f,0-9,-]*
 <TaskID> ::= <String>
 <TaskListID> ::= <String>
