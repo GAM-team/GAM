@@ -196,6 +196,7 @@ $ gam redirect csv ./tmworkspaces.csv multiprocess redirect stderr - multiproces
 $ gam redirect csv ./tmtags.csv multiprocess redirect stderr - multiprocess csv tmworkspaces.csv gam user "~User" print tagmanagertags "~path"
 
 $ gam redirect csv ./tmpermissions.csv multiprocess redirect stderr - multiprocess csv tmaccounts.csv gam user "~User" print tagmanagerpermissions "~path"
+```
 
 Multiple users - Get indented keys and values data from CSV data.
 ```
