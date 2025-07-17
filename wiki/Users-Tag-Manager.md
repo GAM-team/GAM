@@ -16,6 +16,10 @@ To use these commands you must add the 'Tag Manager API' to your project and upd
 ```
 gam update project
 gam user user@domain.com update serviceaccount
+
+[*] 41)  Tag Manager API - Accounts, Containers, Workspaces, Tags - read only
+[*] 42)  Tag Manager API - Users
+
 ```
 
 ## Definitions

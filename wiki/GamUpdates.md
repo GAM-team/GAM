@@ -12,7 +12,7 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 
 ### 7.14.00
 
-Added commands to display Google Tag Manager accounts, containers, workspaces and tags.
+Added commands to display Google Tag Manager accounts, containers, workspaces, tags and user permissions.
 
 * See: https://github.com/GAM-team/GAM/wiki/Users-Tag-Manager
 
