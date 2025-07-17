@@ -157,3 +157,61 @@ When using the `formatjson` option, double quotes are used extensively in the da
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
+### Examples
+Get CSV data.
+```
+$ gam redirect csv ./tmaccounts.csv user taguser@aomain.com print tagmanageraccounts 
+Getting all Tag Manager Accounts for taguser@domain.com
+Got 1 Tag Manager Account for taguser@domain.com...
+
+$ gam redirect csv ./tmcontainers.csv user taguser@aomain.com print tagmanagercontainers select csvfile tmaccounts.csv:path
+Getting all Tag Manager Containers for Tag Manager Account: accounts/4702003212 for taguser@domain.com
+Got 2 Tag Manager Containers for Tag Manager Account: accounts/4702003212 for taguser@domain.com...
+
+$ gam redirect csv ./tmworkspaces.csv user taguser@aomain.com print tagmanagerworkspaces select csvfile tmcontainers.csv:path
+Getting all Tag Manager Workspaces for Tag Manager Container: accounts/4702003212/containers/11964247 for taguser@domain.com
+Got 1 Tag Manager Workspace for Tag Manager Container: accounts/4702003212/containers/11964247 for taguser@domain.com...
+Getting all Tag Manager Workspaces for Tag Manager Container: accounts/4702003212/containers/225086202 for taguser@domain.com
+Got 2 Tag Manager Workspaces for Tag Manager Container: accounts/4702003212/containers/225086202 for taguser@domain.com...
+
+$ gam redirect csv ./tmtags.csv user taguser@aomain.com print tagmanagertags select csvfile tmworkspaces.csv:path
+Getting all Tag Manager Tags for Tag Manager Workspace: accounts/4702003212/containers/11964247/workspaces/1 for taguser@domain.com
+Got 1 Tag Manager Tag for Tag Manager Workspace: accounts/4702003212/containers/11964247/workspaces/1 for taguser@domain.com...
+Getting all Tag Manager Tags for Tag Manager Workspace: accounts/4702003212/containers/225086202/workspaces/3 for taguser@domain.com
+Got 2 Tag Manager Tags for Tag Manager Workspace: accounts/4702003212/containers/225086202/workspaces/3 for taguser@domain.com...
+Getting all Tag Manager Tags for Tag Manager Workspace: accounts/4702003212/containers/225086202/workspaces/2 for taguser@domain.com
+Got 0 Tag Manager Tags for Tag Manager Workspace: accounts/4702003212/containers/225086202/workspaces/2 for taguser@domain.com...
+
+$ gam redirect csv ./tmpermissions.csv user taguser@aomain.com print tagmanagerpermissions select csvfile tmaccounts.csv:path
+Getting all Tag Manager Permissions for Tag Manager Account: accounts/4702003212 for taguser@domain.com
+Got 2 Tag Manager Permissions for Tag Manager Account: accounts/4702003212 for taguser@domain.com...
+```
+
+Get indented keys and values data.
+```
+$ gam redirect stdout ./tmaccounts.txt user taguser@aomain.com show tagmanageraccounts 
+Getting all Tag Manager Accounts for taguser@domain.com
+Got 1 Tag Manager Account for taguser@domain.com...
+
+$ gam redirect stdout ./tmcontainers.txt user taguser@aomain.com show tagmanagercontainers select csvfile tmaccounts.csv:path
+Getting all Tag Manager Containers for Tag Manager Account: accounts/4702003212 for taguser@domain.com
+Got 2 Tag Manager Containers for Tag Manager Account: accounts/4702003212 for taguser@domain.com...
+
+$ gam redirect stdout ./tmworkspaces.txt user taguser@aomain.com show tagmanagerworkspaces select csvfile tmcontainers.csv:path
+Getting all Tag Manager Workspaces for Tag Manager Container: accounts/4702003212/containers/11964247 for taguser@domain.com
+Got 1 Tag Manager Workspace for Tag Manager Container: accounts/4702003212/containers/11964247 for taguser@domain.com...
+Getting all Tag Manager Workspaces for Tag Manager Container: accounts/4702003212/containers/225086202 for taguser@domain.com
+Got 2 Tag Manager Workspaces for Tag Manager Container: accounts/4702003212/containers/225086202 for taguser@domain.com...
+
+$ gam redirect stdout ./tmtags.txt user taguser@aomain.com show tagmanagertags select csvfile tmworkspaces.csv:path
+Getting all Tag Manager Tags for Tag Manager Workspace: accounts/4702003212/containers/11964247/workspaces/1 for taguser@domain.com
+Got 1 Tag Manager Tag for Tag Manager Workspace: accounts/4702003212/containers/11964247/workspaces/1 for taguser@domain.com...
+Getting all Tag Manager Tags for Tag Manager Workspace: accounts/4702003212/containers/225086202/workspaces/3 for taguser@domain.com
+Got 2 Tag Manager Tags for Tag Manager Workspace: accounts/4702003212/containers/225086202/workspaces/3 for taguser@domain.com...
+Getting all Tag Manager Tags for Tag Manager Workspace: accounts/4702003212/containers/225086202/workspaces/2 for taguser@domain.com
+Got 0 Tag Manager Tags for Tag Manager Workspace: accounts/4702003212/containers/225086202/workspaces/2 for taguser@domain.com...
+
+$ gam redirect stdout ./tmpermissions.txt user taguser@aomain.com show tagmanagerpermissions select csvfile tmaccounts.csv:path
+Getting all Tag Manager Permissions for Tag Manager Account: accounts/4702003212 for taguser@domain.com
+Got 2 Tag Manager Permissions for Tag Manager Account: accounts/4702003212 for taguser@domain.com...
+```
