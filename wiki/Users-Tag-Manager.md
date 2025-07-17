@@ -159,60 +159,54 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
 ### Examples
-Get CSV data.
+Single user - Get CSV data.
 ```
 $ gam redirect csv ./tmaccounts.csv user taguser@domain.com print tagmanageraccounts 
-Getting all Tag Manager Accounts for taguser@domain.com
-Got 1 Tag Manager Account for taguser@domain.com...
 
 $ gam redirect csv ./tmcontainers.csv user taguser@domain.com print tagmanagercontainers select csvfile tmaccounts.csv:path
-Getting all Tag Manager Containers for Tag Manager Account: accounts/4702003212 for taguser@domain.com
-Got 2 Tag Manager Containers for Tag Manager Account: accounts/4702003212 for taguser@domain.com...
 
 $ gam redirect csv ./tmworkspaces.csv user taguser@domain.com print tagmanagerworkspaces select csvfile tmcontainers.csv:path
-Getting all Tag Manager Workspaces for Tag Manager Container: accounts/4702003212/containers/11964247 for taguser@domain.com
-Got 1 Tag Manager Workspace for Tag Manager Container: accounts/4702003212/containers/11964247 for taguser@domain.com...
-Getting all Tag Manager Workspaces for Tag Manager Container: accounts/4702003212/containers/225086202 for taguser@domain.com
-Got 2 Tag Manager Workspaces for Tag Manager Container: accounts/4702003212/containers/225086202 for taguser@domain.com...
 
 $ gam redirect csv ./tmtags.csv user taguser@domain.com print tagmanagertags select csvfile tmworkspaces.csv:path
-Getting all Tag Manager Tags for Tag Manager Workspace: accounts/4702003212/containers/11964247/workspaces/1 for taguser@domain.com
-Got 1 Tag Manager Tag for Tag Manager Workspace: accounts/4702003212/containers/11964247/workspaces/1 for taguser@domain.com...
-Getting all Tag Manager Tags for Tag Manager Workspace: accounts/4702003212/containers/225086202/workspaces/3 for taguser@domain.com
-Got 2 Tag Manager Tags for Tag Manager Workspace: accounts/4702003212/containers/225086202/workspaces/3 for taguser@domain.com...
-Getting all Tag Manager Tags for Tag Manager Workspace: accounts/4702003212/containers/225086202/workspaces/2 for taguser@domain.com
-Got 0 Tag Manager Tags for Tag Manager Workspace: accounts/4702003212/containers/225086202/workspaces/2 for taguser@domain.com...
 
 $ gam redirect csv ./tmpermissions.csv user taguser@domain.com print tagmanagerpermissions select csvfile tmaccounts.csv:path
-Getting all Tag Manager Permissions for Tag Manager Account: accounts/4702003212 for taguser@domain.com
-Got 2 Tag Manager Permissions for Tag Manager Account: accounts/4702003212 for taguser@domain.com...
 ```
 
-Get indented keys and values data.
+Single user - Get indented keys and values data from CSV data.
 ```
 $ gam redirect stdout ./tmaccounts.txt user taguser@domain.com show tagmanageraccounts 
-Getting all Tag Manager Accounts for taguser@domain.com
-Got 1 Tag Manager Account for taguser@domain.com...
 
 $ gam redirect stdout ./tmcontainers.txt user taguser@domain.com show tagmanagercontainers select csvfile tmaccounts.csv:path
-Getting all Tag Manager Containers for Tag Manager Account: accounts/4702003212 for taguser@domain.com
-Got 2 Tag Manager Containers for Tag Manager Account: accounts/4702003212 for taguser@domain.com...
 
 $ gam redirect stdout ./tmworkspaces.txt user taguser@domain.com show tagmanagerworkspaces select csvfile tmcontainers.csv:path
-Getting all Tag Manager Workspaces for Tag Manager Container: accounts/4702003212/containers/11964247 for taguser@domain.com
-Got 1 Tag Manager Workspace for Tag Manager Container: accounts/4702003212/containers/11964247 for taguser@domain.com...
-Getting all Tag Manager Workspaces for Tag Manager Container: accounts/4702003212/containers/225086202 for taguser@domain.com
-Got 2 Tag Manager Workspaces for Tag Manager Container: accounts/4702003212/containers/225086202 for taguser@domain.com...
 
 $ gam redirect stdout ./tmtags.txt user taguser@domain.com show tagmanagertags select csvfile tmworkspaces.csv:path
-Getting all Tag Manager Tags for Tag Manager Workspace: accounts/4702003212/containers/11964247/workspaces/1 for taguser@domain.com
-Got 1 Tag Manager Tag for Tag Manager Workspace: accounts/4702003212/containers/11964247/workspaces/1 for taguser@domain.com...
-Getting all Tag Manager Tags for Tag Manager Workspace: accounts/4702003212/containers/225086202/workspaces/3 for taguser@domain.com
-Got 2 Tag Manager Tags for Tag Manager Workspace: accounts/4702003212/containers/225086202/workspaces/3 for taguser@domain.com...
-Getting all Tag Manager Tags for Tag Manager Workspace: accounts/4702003212/containers/225086202/workspaces/2 for taguser@domain.com
-Got 0 Tag Manager Tags for Tag Manager Workspace: accounts/4702003212/containers/225086202/workspaces/2 for taguser@domain.com...
 
 $ gam redirect stdout ./tmpermissions.txt user taguser@domain.com show tagmanagerpermissions select csvfile tmaccounts.csv:path
-Getting all Tag Manager Permissions for Tag Manager Account: accounts/4702003212 for taguser@domain.com
-Got 2 Tag Manager Permissions for Tag Manager Account: accounts/4702003212 for taguser@domain.com...
+```
+
+Multiple  users - Get CSV data.
+```
+$ gam redirect csv ./tmaccounts.csv multiprocess redirect stderr - multiprocess csv Users.csv gam user "~User" print tagmanageraccounts 
+
+$ gam redirect csv ./tmcontainers.csv multiprocess redirect stderr - multiprocess csv tmaccounts.csv gam user "~User" print tagmanagercontainers "~path"
+
+$ gam redirect csv ./tmworkspaces.csv multiprocess redirect stderr - multiprocess csv tmcontainers.csv gam user "~User" print tagmanagerworkspaces "~path"
+
+$ gam redirect csv ./tmtags.csv multiprocess redirect stderr - multiprocess csv tmworkspaces.csv gam user "~User" print tagmanagertags "~path"
+
+$ gam redirect csv ./tmpermissions.csv multiprocess redirect stderr - multiprocess csv tmaccounts.csv gam user "~User" print tagmanagerpermissions "~path"
+
+Multiple users - Get indented keys and values data from CSV data.
+```
+$ gam redirect stdout ./tmaccounts.txt multiprocess redirect stderr - multiprocess csv Users.csv gam user "~User" show tagmanageraccounts 
+
+$ gam redirect stdout ./tmcontainers.txt multiprocess redirect stderr - multiprocess csv tmaccounts.csv gam user "~User" show tagmanagercontainers "~path"
+
+$ gam redirect stdout ./tmworkspaces.txt multiprocess redirect stderr - multiprocess csv tmcontainers.csv gam user "~User" show tagmanagerworkspaces "~path"
+
+$ gam redirect stdout ./tmtags.txt multiprocess redirect stderr - multiprocess csv tmworkspaces.csv gam user "~User" show tagmanagertags "~path"
+
+$ gam redirect stdout ./tmpermissions.txt multiprocess redirect stderr - multiprocess csv tmaccounts.csv gam  user "~User" show tagmanagerpermissions "~path"
+
 ```
