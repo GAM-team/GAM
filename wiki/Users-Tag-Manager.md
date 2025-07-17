@@ -7,6 +7,7 @@
 - [Display Tag Manager Workspaces](#display-tag-manager-workspaces)
 - [Display Tag Manager Tags](#display-tag-manager-tags)
 - [Display Tag Manager User Permissions](#display-tag-manager-user-permissions)
+- [Examples](#examples)
 
 ## API documentation
 * [Tag Manager API](https://developers.google.com/tag-manager/reference/rest)
