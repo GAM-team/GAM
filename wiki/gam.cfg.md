@@ -994,6 +994,7 @@ gam update project
 gam oauth create
 gam info domain
 gam config customer_id <CustomerID> save
+gam user user@xxx.com check serviceaccount
 ```
 
 ### New clients
