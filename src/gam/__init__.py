@@ -76492,18 +76492,20 @@ def importTasklist(users):
         parentIdMap[taskId] = result['id']
 
 TAGMANAGER_PARAMETERS = {
-  Ent.TAGMANAGER_ACCOUNT: {'respType': 'account', 'parentEntityType': None,
-                           'idList': ['accountId']},
-  Ent.TAGMANAGER_CONTAINER: {'respType': 'container', 'parentEntityType': Ent.TAGMANAGER_ACCOUNT,
-                             'idList': ['accountId', 'containerId']},
-  Ent.TAGMANAGER_WORKSPACE: {'respType': 'workspace', 'parentEntityType': Ent.TAGMANAGER_CONTAINER,
-                             'idList': ['accountId', 'containerId', 'workspaceId']},
-  Ent.TAGMANAGER_TAG: {'respType': 'tag', 'parentEntityType': Ent.TAGMANAGER_WORKSPACE,
-                       'idList': ['accountId', 'containerId', 'workspaceId', 'tagId']},
+  Ent.TAGMANAGER_ACCOUNT: {'api': API.TAGMANAGER, 'respType': 'account', 'parentEntityType': None,
+                           'name': 'name', 'idList': ['accountId']},
+  Ent.TAGMANAGER_CONTAINER: {'api': API.TAGMANAGER, 'respType': 'container', 'parentEntityType': Ent.TAGMANAGER_ACCOUNT,
+                             'name': 'name', 'idList': ['accountId', 'containerId']},
+  Ent.TAGMANAGER_WORKSPACE: {'api': API.TAGMANAGER, 'respType': 'workspace', 'parentEntityType': Ent.TAGMANAGER_CONTAINER,
+                             'name': 'name', 'idList': ['accountId', 'containerId', 'workspaceId']},
+  Ent.TAGMANAGER_TAG: {'api': API.TAGMANAGER, 'respType': 'tag', 'parentEntityType': Ent.TAGMANAGER_WORKSPACE,
+                       'name': 'name', 'idList': ['accountId', 'containerId', 'workspaceId', 'tagId']},
+  Ent.TAGMANAGER_PERMISSION: {'api': API.TAGMANAGER_USERS, 'respType': 'userPermission', 'parentEntityType': Ent.TAGMANAGER_ACCOUNT,
+                             'name': 'emailAddress', 'idList': ['accountId']},
   }
 
 def printShowTagManagerObjects(users, entityType):
-  csvPF = CSVPrintFile(['User', 'name', 'path']) if Act.csvFormat() else None
+  csvPF = CSVPrintFile(['User']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   if entityType == Ent.TAGMANAGER_ACCOUNT:
     kwargs = {'includeGoogleTags': False}
@@ -76515,6 +76517,8 @@ def printShowTagManagerObjects(users, entityType):
     else:
       parentList = getEntityList(Cmd.OB_TAGMANAGER_PATH_LIST)
   parameters = TAGMANAGER_PARAMETERS[entityType]
+  if csvPF:
+    csvPF.AddTitles([parameters['name'], 'path'])
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -76526,7 +76530,7 @@ def printShowTagManagerObjects(users, entityType):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, svc = buildGAPIServiceObject(API.TAGMANAGER, user, i, count)
+    user, svc = buildGAPIServiceObject(parameters['api'], user, i, count)
     if not svc:
       continue
     if entityType == Ent.TAGMANAGER_ACCOUNT:
@@ -76535,8 +76539,10 @@ def printShowTagManagerObjects(users, entityType):
       svc = svc.accounts().containers()
     elif entityType == Ent.TAGMANAGER_WORKSPACE:
       svc = svc.accounts().containers().workspaces()
-    else: #elif entityType == Ent.TAGMANAGER_TAG:
+    elif entityType == Ent.TAGMANAGER_TAG:
       svc = svc.accounts().containers().workspaces().tags()
+    else: #elif entityType == Ent.TAGMANAGER_PERMISSION:
+      svc = svc.accounts().user_permissions()
     jcount = len(parentList)
     j = 0
     for parent in parentList:
@@ -76566,9 +76572,9 @@ def printShowTagManagerObjects(users, entityType):
           if not  FJQC.formatJSON:
             printEntity([entityType, result['path']], k, kcount)
             Ind.Increment()
+            printKeyValueList([parameters['name'], result.pop(parameters['name'])])
             for tmid in parameters['idList']:
               printKeyValueList([tmid, result.pop(tmid)])
-            printKeyValueList(['name', result.pop('name')])
             showJSON(None, result)
             Ind.Decrement()
           else:
@@ -76583,7 +76589,7 @@ def printShowTagManagerObjects(users, entityType):
           if not FJQC.formatJSON:
             csvPF.WriteRowTitles(row)
           elif csvPF.CheckRowTitles(row):
-            row = {'User': user, 'name': result['name'], 'path': result['path']}
+            row = {'User': user, parameters['name']: result[parameters['name']], 'path': result['path']}
             row['JSON'] = json.dumps(cleanJSON(result), ensure_ascii=False, sort_keys=True)
             csvPF.WriteRowNoFilter(row)
   if csvPF:
@@ -76618,6 +76624,13 @@ def printShowTagManagerWorkspaces(users):
 #	[formatjson [quotechar <Character>]]
 def printShowTagManagerTags(users):
   printShowTagManagerObjects(users, Ent.TAGMANAGER_TAG)
+
+# gam <UserTypeEntity> show tagmanagerpermissions <TagManagerAccountPathEntity>
+#	[formatjson]
+# gam <UserTypeEntity> print tagmanagerpermissions <TagManagerAccountPathEntity> [todrive <ToDriveAttribute>*]
+#	[formatjson [quotechar <Character>]]
+def printShowTagManagerPermissions(users):
+  printShowTagManagerObjects(users, Ent.TAGMANAGER_PERMISSION)
 
 def getCRMOrgId():
   setTrueCustomerId()
@@ -78349,8 +78362,9 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_SITEACTIVITY:	deprecatedUserSites,
       Cmd.ARG_TAGMANAGERACCOUNT:	printShowTagManagerAccounts,
       Cmd.ARG_TAGMANAGERCONTAINER:	printShowTagManagerContainers,
-      Cmd.ARG_TAGMANAGERWORKSPACE:	printShowTagManagerWorkspaces,
+      Cmd.ARG_TAGMANAGERPERMISSION:	printShowTagManagerPermissions,
       Cmd.ARG_TAGMANAGERTAG:	printShowTagManagerTags,
+      Cmd.ARG_TAGMANAGERWORKSPACE:	printShowTagManagerWorkspaces,
       Cmd.ARG_TASK:		printShowTasks,
       Cmd.ARG_TASKLIST:		printShowTasklists,
       Cmd.ARG_THREAD:		printShowThreads,
@@ -78460,8 +78474,9 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_SMIME:		printShowSmimes,
       Cmd.ARG_TAGMANAGERACCOUNT:	printShowTagManagerAccounts,
       Cmd.ARG_TAGMANAGERCONTAINER:	printShowTagManagerContainers,
-      Cmd.ARG_TAGMANAGERWORKSPACE:	printShowTagManagerWorkspaces,
+      Cmd.ARG_TAGMANAGERPERMISSION:	printShowTagManagerPermissions,
       Cmd.ARG_TAGMANAGERTAG:	printShowTagManagerTags,
+      Cmd.ARG_TAGMANAGERWORKSPACE:	printShowTagManagerWorkspaces,
       Cmd.ARG_TASK:		printShowTasks,
       Cmd.ARG_TASKLIST:		printShowTasklists,
       Cmd.ARG_THREAD:		printShowThreads,
@@ -78703,8 +78718,9 @@ USER_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_SMIMES:		Cmd.ARG_SMIME,
   Cmd.ARG_TAGMANAGERACCOUNTS:	Cmd.ARG_TAGMANAGERACCOUNT,
   Cmd.ARG_TAGMANAGERCONTAINERS:	Cmd.ARG_TAGMANAGERCONTAINER,
-  Cmd.ARG_TAGMANAGERWORKSPACES:	Cmd.ARG_TAGMANAGERWORKSPACE,
+  Cmd.ARG_TAGMANAGERPERMISSIONS:	Cmd.ARG_TAGMANAGERPERMISSION,
   Cmd.ARG_TAGMANAGERTAGS:	Cmd.ARG_TAGMANAGERTAG,
+  Cmd.ARG_TAGMANAGERWORKSPACES:	Cmd.ARG_TAGMANAGERWORKSPACE,
   Cmd.ARG_TASKS:		Cmd.ARG_TASK,
   Cmd.ARG_TASKLISTS:		Cmd.ARG_TASKLIST,
   Cmd.ARG_TEAMDRIVE:		Cmd.ARG_SHAREDDRIVE,

@@ -8408,6 +8408,11 @@ gam <UserTypeEntity> show tagmanagertags <TagManagerWorkspacePathEntity>
 gam <UserTypeEntity> print tagmanagertags <TagManagerWorkspacePathEntity> [todrive <ToDriveAttribute>*]
         [formatjson [quotechar <Character>]]
 
+gam <UserTypeEntity> show tagmanagerpermissions <TagManagerAccountPathEntity>
+        [formatjson]
+gam <UserTypeEntity> print tagmanagerpermissions <TagManagerAccountPathEntity> [todrive <ToDriveAttribute>*]
+        [formatjson [quotechar <Character>]]
+
 # Users - Tasks
 
 <TaskAttribute> ::=

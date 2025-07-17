@@ -360,8 +360,9 @@ class GamEntity():
   SVCACCT_KEY = 'svky'
   TAGMANAGER_ACCOUNT = 'tmac'
   TAGMANAGER_CONTAINER = 'tmco'
-  TAGMANAGER_WORKSPACE = 'tmws'
+  TAGMANAGER_PERMISSION = 'tmpm'
   TAGMANAGER_TAG = 'tmtg'
+  TAGMANAGER_WORKSPACE = 'tmws'
   TARGET_USER = 'tgt '
   TASK = 'task'
   TASKLIST = 'tali'
@@ -716,8 +717,9 @@ class GamEntity():
     SVCACCT_KEY: ['Service Account Keys', 'Service Account Key'],
     TAGMANAGER_ACCOUNT: ['Tag Manager Accounts', 'Tag Manager Account'],
     TAGMANAGER_CONTAINER: ['Tag Manager Containers', 'Tag Manager Container'],
-    TAGMANAGER_WORKSPACE: ['Tag Manager Workspaces', 'Tag Manager Workspace'],
+    TAGMANAGER_PERMISSION: ['Tag Manager Permissions', 'Tag Manager Permission'],
     TAGMANAGER_TAG: ['Tag Manager Tags', 'Tag Manager Tag'],
+    TAGMANAGER_WORKSPACE: ['Tag Manager Workspaces', 'Tag Manager Workspace'],
     TARGET_USER: ['Target Users', 'Target User'],
     TASK: ['Tasks', 'Task'],
     TASKLIST: ['Tasklists', 'Tasklist'],

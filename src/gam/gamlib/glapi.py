@@ -95,6 +95,7 @@ STORAGE = 'storage'
 STORAGEREAD = 'storageread'
 STORAGEWRITE = 'storagewrite'
 TAGMANAGER = 'tagmanager'
+TAGMANAGER_USERS = 'tagmanagerusers'
 TASKS = 'tasks'
 VAULT = 'vault'
 YOUTUBE = 'youtube'
@@ -280,6 +281,7 @@ _INFO = {
   STORAGEREAD: {'name': 'Cloud Storage API - Read', 'version': 'v1', 'v2discovery': True, 'mappedAPI': STORAGE},
   STORAGEWRITE: {'name': 'Cloud Storage API - Write', 'version': 'v1', 'v2discovery': True, 'mappedAPI': STORAGE},
   TAGMANAGER: {'name': 'Tag Manager API', 'version': 'v2', 'v2discovery': True},
+  TAGMANAGER_USERS: {'name': 'Tag Manager API - Users', 'version': 'v2', 'v2discovery': True, 'mappedAPI': TAGMANAGER},
   TASKS: {'name': 'Tasks API', 'version': 'v1', 'v2discovery': True},
   VAULT: {'name': 'Vault API', 'version': 'v1', 'v2discovery': True},
   YOUTUBE: {'name': 'Youtube API', 'version': 'v3', 'v2discovery': True},
@@ -702,7 +704,13 @@ _SVCACCT_SCOPES = [
   {'name': 'Tag Manager API - read only',
    'api': TAGMANAGER,
    'subscopes': [],
+   'offByDefault': True,
    'scope': 'https://www.googleapis.com/auth/tagmanager.readonly'},
+  {'name': 'Tag Manager API - Users',
+   'api': TAGMANAGER_USERS,
+   'subscopes': [],
+   'offByDefault': True,
+   'scope': 'https://www.googleapis.com/auth/tagmanager.manage.users'},
   {'name': 'Tasks API',
    'api': TASKS,
    'subscopes': READONLY,
