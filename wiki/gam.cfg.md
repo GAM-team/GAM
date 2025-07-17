@@ -994,7 +994,7 @@ gam update project
 gam oauth create
 gam info domain
 gam config customer_id <CustomerID> save
-gam user user@xxx.com check serviceaccount
+gam user user@xxx.com update serviceaccount
 ```
 
 ### New clients
@@ -1016,7 +1016,7 @@ gam create project
 gam oauth create
 gam info domain
 gam config customer_id <CustomerID> save
-gam user user@foo.com check serviceaccount
+gam user user@foo.com update serviceaccount
 ```
 
 To get information about a client, select a section.
