@@ -6,6 +6,7 @@
 - [Display Tag Manager Containers](#display-tag-manager-containers)
 - [Display Tag Manager Workspaces](#display-tag-manager-workspaces)
 - [Display Tag Manager Tags](#display-tag-manager-tags)
+- [Display Tag Manager User Permissions](#display-tag-manager-user-permissions)
 
 ## API documentation
 * [Tag Manager API](https://developers.google.com/tag-manager/reference/rest)
@@ -130,3 +131,25 @@ the quote character itself, the column delimiter (comma by default) and new-line
 When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
+
+## Display Tag Manager User Permissions
+```
+gam <UserTypeEntity> show tagmanagerpermissions <TagManagerAccountPathEntity>
+        [formatjson]
+```
+By default, Gam displays the permissions as an indented list of keys and values.
+* `formatjson` - Display the permission in JSON format
+
+```
+gam <UserTypeEntity> print tagmanagerpermissions <TagManagerAccountPathEntity> [todrive <ToDriveAttribute>*]
+        [formatjson [quotechar <Character>]]
+```
+By default, Gam displays the permissions as columns of fields; the following option causes the output to be in JSON format,
+* `formatjson` - Display the fields in JSON format.
+
+By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
+the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
+When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
+The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
+`quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
+
