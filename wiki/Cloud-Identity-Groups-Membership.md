@@ -40,7 +40,7 @@ Dynamic Groups require Cloud Identity Premium accounts.
 * https://cloud.google.com/identity/docs/how-to/create-dynamic-groups
 
 The `cimember <UserItem>` option of `gam print|show cigroup-members` requires a Google Workspace Enterprise Standard, Enterprise Plus, and Enterprise for Education;
-and Cloud Identity Premium accounts. Unfortunately, even if you have the required account, the API call that supports the query doesn't work.
+and Cloud Identity Premium accounts.
 
 * https://cloud.google.com/identity/docs/reference/rest/v1/groups.memberships/searchTransitiveGroups
 
