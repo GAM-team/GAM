@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+###7.14.02
+
+Fixed bug in `gam print|show cigroups|cigroups-members cimember <UserItem>` that generated the following error:
+```
+Cloud Identity Group Print Failed: Request contains an invalid argument.
+```
+
 ### 7.14.01
 
 Don't install yubikey library via pip by default. To install with yubikey support use pip install gam7[yubikey]
