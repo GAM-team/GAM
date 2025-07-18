@@ -19,7 +19,8 @@
 * [Security Groups](https://gsuiteupdates.googleblog.com/2020/09/security-groups-beta.html)
 
 ## Query documentation
-* [Cloud Identity Groups API - Search Dynamic Groups](https://cloud.google.com/identity/docs/reference/rest/v1/groups#dynamicgroupquery)
+* [Cloud Identity Groups API - Search](https://cloud.google.com/identity/docs/reference/rest/v1/groups/search)
+* [Cloud Identity Groups API - Dynamic Group Query](https://cloud.google.com/identity/docs/reference/rest/v1/groups#dynamicgroupquery)
 * [Dynamic Groups Member Attributes](https://cloud.google.com/identity/docs/how-to/dynamic-groups-attributes)
 * [Member Restrictions](https://cloud.google.com/identity/docs/reference/rest/v1/SecuritySettings#MemberRestriction)
 
