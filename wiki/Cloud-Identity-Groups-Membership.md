@@ -1,6 +1,5 @@
 # Cloud Identity Groups - Membership
 - [API documentation](#api-documentation)
-- [Query documentation](#query-documentation)
 - [Python Regular Expressions](Python-Regular-Expressions) Match function
 - [Definitions](#definitions)
 - [Notes](#Notes)
@@ -21,10 +20,6 @@
 * [Cloud Identity Groups API - Membership](https://cloud.google.com/identity/docs/reference/rest/v1/groups.memberships)
 * [Cloud Identity Groups](https://gsuiteupdates.googleblog.com/2020/08/new-api-cloud-identity-groups-google.html)
 * [Security Groups](https://gsuiteupdates.googleblog.com/2020/09/security-groups-beta.html)
-
-## Query documentation
-* [Cloud Identity Groups API - Search Dynamic Groups](https://cloud.google.com/identity/docs/reference/rest/v1/groups#dynamicgroupquery)
-* [Member Restrictions](https://cloud.google.com/identity/docs/reference/rest/v1/SecuritySettings#MemberRestriction)
 
 ## Notes
 
