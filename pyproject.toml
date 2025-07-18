@@ -7,7 +7,9 @@ authors = [
     { name="Jay Lee", email="jay0lee@gmail.com" },
     { name="Ross Scroggs", email="Ross.Scroggs@gmail.com" },
 ]
-# # The following files should be edited to match: setup.cfg, requirements.txt
+# The following deps and optional deps should be edited to match: setup.cfg, requirements.txt
+# notice that yubikey-manager remains optional further down since it is less command and adds
+#significant compile dependencies.
 dependencies = [
     "chardet>=5.2.0",
     "cryptography>=44.0.2",
@@ -22,7 +24,6 @@ dependencies = [
     "passlib>=1.7.4",
     "pathvalidate>=3.2.3",
     "python-dateutil",
-    "yubikey-manager>=5.6.1",
 ]
 description = "CLI tool to manage Google Workspace"
 readme = "README.md"
