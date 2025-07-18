@@ -37100,7 +37100,7 @@ def getCIGroupTransitiveMembers(ci, groupName, membersList, i, count):
     entityUnknownWarning(Ent.CLOUD_IDENTITY_GROUP, groupName, i, count)
     return False
   except GAPI.permissionDenied as e:
-    entityActionFailedExit([Ent.CLOUD_IDENTITY_GROUP, groupName], str(e))
+    entityActionFailedWarning([Ent.CLOUD_IDENTITY_GROUP, groupName], str(e))
     return False
   for member in groupMembers:
     membersList.append(getCIGroupTransitiveMemberRoleFixType(groupName, member))
