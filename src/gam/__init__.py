@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.14.02'
+__version__ = '7.14.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -6011,7 +6011,11 @@ def getCIGroupMemberRoleFixType(member):
 def getCIGroupTransitiveMemberRoleFixType(groupName, tmember):
   ''' map transitive member to normal member '''
   tid = tmember['preferredMemberKey'][0].get('id', GC.Values[GC.CUSTOMER_ID]) if tmember['preferredMemberKey'] else ''
-  ttype, tname = tmember['member'].split('/')
+  if '/' in tmember['member']:
+    ttype, tname = tmember['member'].split('/')
+  else:
+    ttype = ''
+    tname = tmember['member']
   member = {'name': f'{groupName}/membershipd/{tname}', 'preferredMemberKey': {'id': tid}}
   if 'type' not in tmember:
     if tid == GC.Values[GC.CUSTOMER_ID]:

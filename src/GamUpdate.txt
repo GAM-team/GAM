@@ -1,3 +1,7 @@
+7.14.03
+
+Fixed bug in `gam print cigroup-members includederivedmembership` that caused a trap.
+
 7.14.02
 
 Fixed bug in `gam print|show cigroups|cigroups-members cimember <UserItem>` that generated the following error:
