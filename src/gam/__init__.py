@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.14.01'
+__version__ = '7.14.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -6106,7 +6106,7 @@ def getCIGroupMembershipGraph(ci, member):
     result = callGAPI(ci.groups().memberships(), 'getMembershipGraph',
                       throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                       parent=parent,
-                      query=f"member_key_id == '{member}' && CIGROUP_DISCUSSION_FORUM_LABEL in labels")
+                      query=f"member_key_id == '{member}' && '{CIGROUP_DISCUSSION_FORUM_LABEL}' in labels")
     return (ci, result.get('response', {}))
   except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
           GAPI.forbidden, GAPI.badRequest, GAPI.invalid, GAPI.invalidArgument,
@@ -36850,7 +36850,7 @@ def doPrintCIGroups():
       showOwnedBy = convertUIDtoEmailAddress(getEmailAddress(), emailTypes=['user'])
     elif myarg in {'cimember', 'enterprisemember', 'ciowner'}:
       emailAddress = convertUIDtoEmailAddress(getEmailAddress(), emailTypes=['user', 'group'])
-      memberQuery = f"member_key_id == '{emailAddress}' && CIGROUP_DISCUSSION_FORUM_LABEL in labels"
+      memberQuery = f"member_key_id == '{emailAddress}' && '{CIGROUP_DISCUSSION_FORUM_LABEL}' in labels"
       entitySelection = None
       if myarg == 'ciowner':
         showOwnedBy = emailAddress
@@ -37273,7 +37273,7 @@ def doPrintCIGroupMembers():
       showOwnedBy = convertUIDtoEmailAddress(getEmailAddress(), emailTypes=['user'])
     elif myarg in {'cimember', 'enterprisemember', 'ciowner'}:
       emailAddress = convertUIDtoEmailAddress(getEmailAddress(), emailTypes=['user', 'group'])
-      query = f"member_key_id == '{emailAddress}' && CIGROUP_DISCUSSION_FORUM_LABEL in labels"
+      query = f"member_key_id == '{emailAddress}' && '{CIGROUP_DISCUSSION_FORUM_LABEL}' in labels"
       entityList = None
       if myarg == 'ciowner':
         showOwnedBy = emailAddress
@@ -37492,7 +37492,7 @@ def doShowCIGroupMembers():
       showOwnedBy = convertUIDtoEmailAddress(getEmailAddress(), emailTypes=['user'])
     elif myarg in {'cimember', 'enterprisemember', 'ciowner'}:
       emailAddress = convertUIDtoEmailAddress(getEmailAddress(), emailTypes=['user', 'group'])
-      query = f"member_key_id == '{emailAddress}' && CIGROUP_DISCUSSION_FORUM_LABEL in labels"
+      query = f"member_key_id == '{emailAddress}' && '{CIGROUP_DISCUSSION_FORUM_LABEL}' in labels"
       entityList = None
       if myarg == 'ciowner':
         showOwnedBy = emailAddress
