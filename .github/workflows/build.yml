@@ -418,7 +418,7 @@ jobs:
             $env:arch =  "ARM64"
             # TODO: figure out why Windows ARM64 isn't compat with PGO optimiazation
             # causes 10-20% slowdown in Python
-            PCBuild\build.bat -c Release -p $env:arch --pgo
+            PCBuild\build.bat -c Release -p $env:arch
           }
 
       - name: Mac/Linux Build Python
