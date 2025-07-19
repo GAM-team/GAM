@@ -292,10 +292,10 @@ jobs:
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
           cd "${OPENSSL_SOURCE_PATH}"
-          if ([ "$RUNNER_OS" == "Windows" ] && [ "$RUNNER_ARCH" == "ARM64" ]); then
+          #if ([ "$RUNNER_OS" == "Windows" ] && [ "$RUNNER_ARCH" == "ARM64" ]); then
             # https://github.com/openssl/openssl/issues/26239
-            export CFLAGS=-DNO_INTERLOCKEDOR64
-          fi
+            #export CFLAGS=-DNO_INTERLOCKEDOR64
+          #fi
           # --libdir=lib is needed so Python can find OpenSSL libraries
           "${PERL}" ./Configure --libdir=lib --prefix="${OPENSSL_INSTALL_PATH}" $OPENSSL_CONFIG_OPTS
 
@@ -310,9 +310,9 @@ jobs:
         run: |
           cd "${OPENSSL_SOURCE_PATH}"
           # TODO: remove this once https://github.com/openssl/openssl/issues/26239 is fixed.
-          if ([ "$RUNNER_OS" == "Windows" ] && [ "$RUNNER_ARCH" == "ARM64" ]); then
-            export CFLAGS=-DNO_INTERLOCKEDOR64
-          fi
+          #if ([ "$RUNNER_OS" == "Windows" ] && [ "$RUNNER_ARCH" == "ARM64" ]); then
+          #  export CFLAGS=-DNO_INTERLOCKEDOR64
+          #fi
           $MAKE "$MAKEOPT"
 
       - name: Install OpenSSL
@@ -462,7 +462,7 @@ jobs:
           curl -O -L "$latest_crypt_whl"
           "$PYTHON" -m pip install cryptography*.whl
 
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      #- uses: actions-rust-lang/setup-rust-toolchain@v1
 
      # - name: Compile cryptography from source (no legacy)
      #   if: runner.os != 'Windows' || runner.arch != 'ARM64'
