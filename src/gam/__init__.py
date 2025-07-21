@@ -36832,11 +36832,11 @@ def doPrintCIGroups():
 
   ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
   setTrueCustomerId()
+  parent = f'customers/{GC.Values[GC.CUSTOMER_ID]}'
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   memberRestrictions = sortHeaders = False
   memberDisplayOptions = initPGGroupMemberDisplayOptions()
   pageSize = 500
-  parent = f'customers/{GC.Values[GC.CUSTOMER_ID]}'
   groupFieldsLists = {'ci': ['groupKey']}
   csvPF = CSVPrintFile(['email'])
   FJQC = FormatJSONQuoteChar(csvPF)
@@ -36854,7 +36854,7 @@ def doPrintCIGroups():
       showOwnedBy = convertUIDtoEmailAddress(getEmailAddress(), emailTypes=['user'])
     elif myarg in {'cimember', 'enterprisemember', 'ciowner'}:
       emailAddress = convertUIDtoEmailAddress(getEmailAddress(), emailTypes=['user', 'group'])
-      memberQuery = f"member_key_id == '{emailAddress}' && '{CIGROUP_DISCUSSION_FORUM_LABEL}' in labels"
+      memberQuery = f"member_key_id == '{emailAddress}' && '{CIGROUP_DISCUSSION_FORUM_LABEL}' in labels && parent == '{parent}'"
       entitySelection = None
       if myarg == 'ciowner':
         showOwnedBy = emailAddress
@@ -37256,6 +37256,7 @@ def _getCIListGroupMembersArgs(listView):
 def doPrintCIGroupMembers():
   ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
   setTrueCustomerId()
+  parent = f'customers/{GC.Values[GC.CUSTOMER_ID]}'
   memberOptions = initMemberOptions()
   memberDisplayOptions = initIPSGMGroupMemberDisplayOptions()
   groupColumn = True
@@ -37277,7 +37278,7 @@ def doPrintCIGroupMembers():
       showOwnedBy = convertUIDtoEmailAddress(getEmailAddress(), emailTypes=['user'])
     elif myarg in {'cimember', 'enterprisemember', 'ciowner'}:
       emailAddress = convertUIDtoEmailAddress(getEmailAddress(), emailTypes=['user', 'group'])
-      query = f"member_key_id == '{emailAddress}' && '{CIGROUP_DISCUSSION_FORUM_LABEL}' in labels"
+      query = f"member_key_id == '{emailAddress}' && '{CIGROUP_DISCUSSION_FORUM_LABEL}' in labels && parent == '{parent}'"
       entityList = None
       if myarg == 'ciowner':
         showOwnedBy = emailAddress
@@ -37479,6 +37480,7 @@ def doShowCIGroupMembers():
 
   ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
   setTrueCustomerId()
+  parent = f'customers/{GC.Values[GC.CUSTOMER_ID]}'
   subTitle = f'{Msg.ALL} {Ent.Plural(Ent.CLOUD_IDENTITY_GROUP)}'
   groupFieldsLists = {'ci': ['groupKey', 'name']}
   entityList = query = showOwnedBy = None
@@ -37496,7 +37498,7 @@ def doShowCIGroupMembers():
       showOwnedBy = convertUIDtoEmailAddress(getEmailAddress(), emailTypes=['user'])
     elif myarg in {'cimember', 'enterprisemember', 'ciowner'}:
       emailAddress = convertUIDtoEmailAddress(getEmailAddress(), emailTypes=['user', 'group'])
-      query = f"member_key_id == '{emailAddress}' && '{CIGROUP_DISCUSSION_FORUM_LABEL}' in labels"
+      query = f"member_key_id == '{emailAddress}' && '{CIGROUP_DISCUSSION_FORUM_LABEL}' in labels parent == '{parent}'"
       entityList = None
       if myarg == 'ciowner':
         showOwnedBy = emailAddress
@@ -45047,6 +45049,7 @@ def infoUsers(entityList):
 
   cd = buildGAPIObject(API.DIRECTORY)
   ci = None
+  setTrueCustomerId()
   getAliases = getBuildingNames = getCIGroupsTree = getGroups = getLicenses = getSchemas = not GC.Values[GC.QUICK_INFO_USER]
   getGroupsTree = False
   FJQC = FormatJSONQuoteChar()

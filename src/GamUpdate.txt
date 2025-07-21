@@ -1,5 +1,10 @@
 7.14.04
 
+Fixed bug in `gam print|show cigroups cimember <UserItem>` that generated the following error:
+```
+ERROR: Cloud Identity Group: groups/-, Print Failed: Error(4013): Insufficient permissions to retrieve memberships.
+```
+
 Updated `gam <UserTypeEntity> update user suspended off` and `gam <UserTypeEntity> unsuspend users`
 to handle the following error that occurs when trying to unsuspend a user that has been suspended for abuse.
 ```
