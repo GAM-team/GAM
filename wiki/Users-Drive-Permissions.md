@@ -214,6 +214,12 @@ The option `updatesheetprotectedranges` only applies to items in `<DriveFileEnti
     * ACLs with role reader or commenter will be removed from existing protected ranges
     * ACLs with role writer or higher will be added to existing protected ranges
 
+`
+`enforceexpansiveaccess` defaults to the value of `gam.cfg/enforce_expansive_access` that controls
+the ability to update inherited ACLs.
+* False - Inherited ACLs can be updated
+* True = Inherited ACLs can not be updated
+
 By default, the file ID is displayed in the output; to see the file name, use the `showtitles`
 option; this requires an additional API call per file.
 
@@ -233,6 +239,11 @@ The option `updatesheetprotectedranges` only applies to items in `<DriveFileEnti
 * `updatesheetprotectedranges` or `updatesheetprotectedranges true`
   * Sheet Protected Ranges are updated to reflect the deleted ACL; additional API calls are required.
     * ACLs with any role will be removed from existing protected ranges
+
+`enforceexpansiveaccess` defaults to the value of `gam.cfg/enforce_expansive_access` that controls
+the ability to delete delete inherited ACLs.
+* False - Inherited ACLs can be deleted
+* True = Inherited ACLs can not be deleted
 
 By default, the file ID is displayed in the output; to see the file name, use the `showtitles`
 option; this requires an additional API call per file.
@@ -266,6 +277,11 @@ gam <UserTypeEntity> delete permissions <DriveFileEntity> <DriveFilePermissionID
         <PermissionMatch>* [<PermissionMatchAction>]
         [enforceexpansiveaccess [<Boolean>]]
 ```
+`enforceexpansiveaccess` defaults to the value of `gam.cfg/enforce_expansive_access` that controls
+the ability to delete delete inherited ACLs.
+* False - Inherited ACLs can be deleted
+* True = Inherited ACLs can not be deleted
+
 When deleting permissions from JSON data, permissions with role `owner` true are never processed.
 
 ## Display file permissions/sharing
