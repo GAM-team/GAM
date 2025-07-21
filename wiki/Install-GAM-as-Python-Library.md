@@ -1,20 +1,14 @@
 # Install GAM as Python Library
 
-Thanks to Jay Lee for showing me how to do this.
-
-On Windows, you need to install Git to use the pip command.
-* See: https://pythoninoffice.com/python-pip-install-from-github/
-
-Scroll down to Install Git
 
 You can install GAM as a Python library with pip.
 ```
-pip install git+https://github.com/GAM-team/GAM.git#subdirectory=src
+pip install gam7
 ```
 
 Or as a PEP 508 Requirement Specifier, e.g. in requirements.txt file:
 ```
-gam-for-google-workspace @ git+https://github.com/GAM-team/GAM.git#subdirectory=src
+gam7
 ```
 
 Or a pyproject.toml file:
@@ -23,13 +17,13 @@ Or a pyproject.toml file:
 name = "your-project"
 # ...
 dependencies = [
-    "gam-for-google-workspace @ git+https://github.com/GAM-team/GAM.git#subdirectory=src"
+    "gam7"
 ]
 ```
 
-Target a specific revision or tag:
+Target a specific version:
 ```
-gam-for-google-workspace @ git+https://github.com/GAM-team/GAM.git@v7.12.01#subdirectory=src
+gam7==/7.13.3
 ```
 
 ## Using the library
