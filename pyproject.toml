@@ -7,7 +7,6 @@ authors = [
     { name="Jay Lee", email="jay0lee@gmail.com" },
     { name="Ross Scroggs", email="Ross.Scroggs@gmail.com" },
 ]
-# The following deps and optional deps should be edited to match requirements.txt
 # notice that yubikey-manager remains optional further down since it is less command and adds
 #significant compile dependencies.
 dependencies = [
