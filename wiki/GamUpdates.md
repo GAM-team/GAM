@@ -10,6 +10,21 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.14.04
+
+Fixed bug in `gam print|show cigroups cimember <UserItem>` that generated the following error:
+```
+ERROR: Cloud Identity Group: groups/-, Print Failed: Error(4013): Insufficient permissions to retrieve memberships.
+```
+
+Updated `gam <UserTypeEntity> update user suspended off` and `gam <UserTypeEntity> unsuspend users`
+to handle the following error that occurs when trying to unsuspend a user that has been suspended for abuse.
+```
+ERROR: 412: adminCannotUnsuspend - Cannot restore a user suspended for abuse.
+```
+
+* See: https://support.google.com/a/answer/1110339
+
 ### 7.14.03
 
 Fixed bug in `gam print cigroup-members includederivedmembership` that caused a trap.
