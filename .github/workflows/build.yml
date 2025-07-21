@@ -473,7 +473,7 @@ jobs:
         run: |
           echo "before anything..."
           "$PYTHON" -m pip list
-          "$PYTHON" -m pip install --upgrade ..
+          "$PYTHON" -m pip install --upgrade ..[yubikey]
           "$PYTHON" -m pip list
           #"$PYTHON" -m pip install --force-reinstall --no-deps --upgrade cryptography
           echo "after everything..."
