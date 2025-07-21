@@ -23,6 +23,7 @@
 ABORTED = 'aborted'
 ABUSIVE_CONTENT_RESTRICTION = 'abusiveContentRestriction'
 ACCESS_NOT_CONFIGURED = 'accessNotConfigured'
+ADMIN_CANNOT_UNSUSPEND = 'adminCannotUnsuspend'
 ALREADY_EXISTS = 'alreadyExists'
 APPLY_LABEL_FORBIDDEN = 'applyLabelForbidden'
 AUTH_ERROR = 'authError'
@@ -368,6 +369,8 @@ class abusiveContentRestriction(Exception):
   pass
 class accessNotConfigured(Exception):
   pass
+class adminCannotUnsuspend(Exception):
+  pass
 class alreadyExists(Exception):
   pass
 class applyLabelForbidden(Exception):
@@ -689,6 +692,7 @@ REASON_EXCEPTION_MAP = {
   ABORTED: aborted,
   ABUSIVE_CONTENT_RESTRICTION: abusiveContentRestriction,
   ACCESS_NOT_CONFIGURED: accessNotConfigured,
+  ADMIN_CANNOT_UNSUSPEND: adminCannotUnsuspend,
   ALREADY_EXISTS: alreadyExists,
   APPLY_LABEL_FORBIDDEN: applyLabelForbidden,
   AUTH_ERROR: authError,

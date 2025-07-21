@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.14.03'
+__version__ = '7.14.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -44425,7 +44425,7 @@ def updateUsers(entityList):
           try:
             result = callGAPI(cd.users(), 'update',
                               throwReasons=[GAPI.CONDITION_NOT_MET, GAPI.USER_NOT_FOUND, GAPI.DOMAIN_NOT_FOUND,
-                                            GAPI.FORBIDDEN, GAPI.BAD_REQUEST,
+                                            GAPI.FORBIDDEN, GAPI.BAD_REQUEST, GAPI.ADMIN_CANNOT_UNSUSPEND,
                                             GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.INVALID_PARAMETER,
                                             GAPI.INVALID_ORGUNIT, GAPI.INVALID_SCHEMA_VALUE, GAPI.DUPLICATE,
                                             GAPI.INSUFFICIENT_ARCHIVED_USER_LICENSES, GAPI.CONFLICT],
@@ -44487,7 +44487,8 @@ def updateUsers(entityList):
       entityActionFailedWarning([Ent.USER, user, Ent.USER, body['primaryEmail']], str(e), i, count)
     except GAPI.invalidOrgunit:
       entityActionFailedWarning([Ent.USER, user], Msg.INVALID_ORGUNIT, i, count)
-    except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden, GAPI.badRequest,
+    except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
+            GAPI.forbidden, GAPI.badRequest, GAPI.adminCannotUnsuspend,
             GAPI.invalid, GAPI.invalidInput, GAPI.invalidParameter, GAPI.insufficientArchivedUserLicenses,
             GAPI.conflict, GAPI.badRequest, GAPI.backendError, GAPI.systemError, GAPI.conditionNotMet) as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
@@ -44655,12 +44656,14 @@ def suspendUnsuspendUsers(entityList):
     try:
       callGAPI(cd.users(), 'update',
                throwReasons=[GAPI.USER_NOT_FOUND, GAPI.DOMAIN_NOT_FOUND,
-                             GAPI.DOMAIN_CANNOT_USE_APIS, GAPI.FORBIDDEN, GAPI.BAD_REQUEST],
+                             GAPI.DOMAIN_CANNOT_USE_APIS, GAPI.FORBIDDEN, GAPI.BAD_REQUEST,
+                             GAPI.ADMIN_CANNOT_UNSUSPEND],
                userKey=user, body=body)
       entityActionPerformed([Ent.USER, user], i, count)
     except GAPI.userNotFound:
       entityUnknownWarning(Ent.USER, user, i, count)
-    except (GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden, GAPI.badRequest) as e:
+    except (GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
+            GAPI.badRequest, GAPI.adminCannotUnsuspend) as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
 
 # gam suspend users <UserTypeEntity> [noactionifalias]
@@ -49545,7 +49548,7 @@ def doCourseAddItems(courseIdList, getEntityListArg):
       addItems = getStringReturnInList(Cmd.OB_COURSE_ALIAS)
     elif addType == Ent.COURSE_TOPIC:
       addItems = getStringReturnInList(Cmd.OB_COURSE_TOPIC)
-    else: # addType == Ent.COURSE_ANNOUNCEMENT:
+    else: #elif addType == Ent.COURSE_ANNOUNCEMENT:
       addItems = [getCourseAnnouncement(True)]
     courseParticipantLists = None
   else:

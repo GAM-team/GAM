@@ -1,3 +1,13 @@
+7.14.04
+
+Updated `gam <UserTypeEntity> update user suspended off` and `gam <UserTypeEntity> unsuspend users`
+to handle the following error that occurs when trying to unsuspend a user that has been suspended for abuse.
+```
+ERROR: 412: adminCannotUnsuspend - Cannot restore a user suspended for abuse.
+```
+
+* See: https://support.google.com/a/answer/1110339
+
 7.14.03
 
 Fixed bug in `gam print cigroup-members includederivedmembership` that caused a trap.
