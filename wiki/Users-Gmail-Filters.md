@@ -80,8 +80,8 @@ All `<FilterAction>s` except `forward <EmailAddress>` involve adding/removing la
 * `label <LabelName>` - Add the user label `<LabelName>`; only one user label can be specified. It will be created if necessary.
 
 In Gmail, you can have a multi-level label like `Top/Middle/Bottom`; you can also have a single-level label like `Top/Middle/Bottom`,
-* If `buildpath` is omitted or `<Boolean>` is set to False, a <labelName>` containing `/` will be created as single-level.
-* If `buildpath` is present and `<Boolean>` is omitted or set to True, a <labelName>` containing `/` will be created as multi-level;
+* If `buildpath` is omitted or `<Boolean>` is set to False, a `<labelName>` containing `/` will be created as single-level.
+* If `buildpath` is present and `<Boolean>` is omitted or set to True, a `<labelName>` containing `/` will be created as multi-level;
 all parent labels are created as necessary.
 
 If `forward <EmailAddress>` is specified, the filter creation will fail if the user has not defined `<EmailAddress>` as a forwarding address.
