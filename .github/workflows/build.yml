@@ -473,8 +473,6 @@ jobs:
         run: |
           echo "before anything..."
           "$PYTHON" -m pip list
-          # TEMPORARY manual httplib2 to test significant breaking changes 
-          "$PYTHON" -m pip install --upgrade https://github.com/httplib2/httplib2/archive/refs/heads/master.zip
           "$PYTHON" -m pip install --upgrade ..[yubikey]
           "$PYTHON" -m pip list
           #"$PYTHON" -m pip install --force-reinstall --no-deps --upgrade cryptography
