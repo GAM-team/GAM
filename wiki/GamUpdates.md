@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.15.00
+
+Updated  `gam print shareddriveorganizers` to make `shownoorganizerdrives` default to `True`
+as documented; it was defaulting to `False`.
+
+Cleaned up code for processing Python dictionary structures; this should have no noticable effect.
+
 ### 7.14.04
 
 Fixed bug in `gam print|show cigroups cimember <UserItem>` that generated the following error:
