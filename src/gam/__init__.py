@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.14.04'
+__version__ = '7.15.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -2251,10 +2251,10 @@ def getMatchSkipFields(fieldNames):
   return (matchFields, skipFields)
 
 def checkMatchSkipFields(row, fieldnames, matchFields, skipFields):
-  for matchField, matchPattern in iter(matchFields.items()):
+  for matchField, matchPattern in matchFields.items():
     if (matchField not in row) or not matchPattern.search(row[matchField]):
       return False
-  for skipField, matchPattern in iter(skipFields.items()):
+  for skipField, matchPattern in skipFields.items():
     if (skipField in row) and matchPattern.search(row[skipField]):
       return False
   if fieldnames and (GC.Values[GC.CSV_INPUT_ROW_FILTER] or GC.Values[GC.CSV_INPUT_ROW_DROP_FILTER]):
@@ -2695,7 +2695,7 @@ def printKeyValueListWithCount(kvList, i, count):
   writeStdout(formatKeyValueList(Ind.Spaces(), kvList, currentCountNL(i, count)))
 
 def printKeyValueDict(kvDict):
-  for key, value in iter(kvDict.items()):
+  for key, value in kvDict.items():
     writeStdout(formatKeyValueList(Ind.Spaces(), [key, value], '\n'))
 
 def printKeyValueWithCRsNLs(key, value):
@@ -3532,7 +3532,7 @@ def SetGlobalVariables():
           _printValueError(sectionName, itemName, f'"{filterVal}"', f'{Msg.EXPECTED}: column:filter')
           continue
         filterDict[column] = filterStr
-    for column, filterStr in iter(filterDict.items()):
+    for column, filterStr in filterDict.items():
       for c in REGEX_CHARS:
         if c in column:
           columnPat = column
@@ -3767,7 +3767,7 @@ def SetGlobalVariables():
   def _verifyValues(sectionName, inputFilterSectionName, outputFilterSectionName):
     printKeyValueList([Ent.Singular(Ent.SECTION), sectionName]) # Do not use printEntity
     Ind.Increment()
-    for itemName, itemEntry in iter(GC.VAR_INFO.items()):
+    for itemName, itemEntry in GC.VAR_INFO.items():
       sectName = sectionName
       if itemName in GC.CSV_INPUT_ROW_FILTER_ITEMS:
         if inputFilterSectionName:
@@ -3778,7 +3778,7 @@ def SetGlobalVariables():
       cfgValue = GM.Globals[GM.PARSER].get(sectName, itemName)
       varType = itemEntry[GC.VAR_TYPE]
       if varType == GC.TYPE_CHOICE:
-        for choice, value in iter(itemEntry[GC.VAR_CHOICES].items()):
+        for choice, value in itemEntry[GC.VAR_CHOICES].items():
           if cfgValue == value:
             cfgValue = choice
             break
@@ -3798,7 +3798,7 @@ def SetGlobalVariables():
     Ind.Decrement()
 
   def _chkCfgDirectories(sectionName):
-    for itemName, itemEntry in iter(GC.VAR_INFO.items()):
+    for itemName, itemEntry in GC.VAR_INFO.items():
       if itemEntry[GC.VAR_TYPE] == GC.TYPE_DIRECTORY:
         dirPath = GC.Values[itemName]
         if (not dirPath) and (itemName in {GC.GMAIL_CSE_INCERT_DIR, GC.GMAIL_CSE_INKEY_DIR}):
@@ -3813,7 +3813,7 @@ def SetGlobalVariables():
                                          '\n'))
 
   def _chkCfgFiles(sectionName):
-    for itemName, itemEntry in iter(GC.VAR_INFO.items()):
+    for itemName, itemEntry in GC.VAR_INFO.items():
       if itemEntry[GC.VAR_TYPE] == GC.TYPE_FILE:
         fileName = GC.Values[itemName]
         if (not fileName) and (itemName in {GC.EXTRA_ARGS, GC.CMDLOG}):
@@ -3916,18 +3916,18 @@ def SetGlobalVariables():
     GC.Defaults[GC.DRIVE_DIR] = os.path.join(homePath, 'Downloads')
     GM.Globals[GM.GAM_CFG_FILE] = os.path.join(GM.Globals[GM.GAM_CFG_PATH], FN_GAM_CFG)
     if not os.path.isfile(GM.Globals[GM.GAM_CFG_FILE]):
-      for itemName, itemEntry in iter(GC.VAR_INFO.items()):
+      for itemName, itemEntry in GC.VAR_INFO.items():
         if itemEntry[GC.VAR_TYPE] == GC.TYPE_DIRECTORY:
           _getDefault(itemName, itemEntry, None)
       oldGamPath = os.environ.get(EV_OLDGAMPATH, GC.Defaults[GC.CONFIG_DIR])
-      for itemName, itemEntry in iter(GC.VAR_INFO.items()):
+      for itemName, itemEntry in GC.VAR_INFO.items():
         if itemEntry[GC.VAR_TYPE] != GC.TYPE_DIRECTORY:
           _getDefault(itemName, itemEntry, oldGamPath)
       GM.Globals[GM.PARSER] = configparser.RawConfigParser(defaults=collections.OrderedDict(sorted(list(GC.Defaults.items()), key=lambda t: t[0])))
       _checkMakeDir(GC.CONFIG_DIR)
       _checkMakeDir(GC.CACHE_DIR)
       _checkMakeDir(GC.DRIVE_DIR)
-      for itemName, itemEntry in iter(GC.VAR_INFO.items()):
+      for itemName, itemEntry in GC.VAR_INFO.items():
         if itemEntry[GC.VAR_TYPE] == GC.TYPE_FILE:
           srcFile = os.path.expanduser(_stripStringQuotes(GM.Globals[GM.PARSER].get(configparser.DEFAULTSECT, itemName)))
           _copyCfgFile(srcFile, GC.CONFIG_DIR, oldGamPath)
@@ -4035,7 +4035,7 @@ def SetGlobalVariables():
   prevExtraArgsTxt = GC.Values.get(GC.EXTRA_ARGS, None)
   prevOauth2serviceJson = GC.Values.get(GC.OAUTH2SERVICE_JSON, None)
 # Assign global variables, directories, timezone first as other variables depend on them
-  for itemName, itemEntry in sorted(iter(GC.VAR_INFO.items())):
+  for itemName, itemEntry in sorted(GC.VAR_INFO.items()):
     varType = itemEntry[GC.VAR_TYPE]
     if varType == GC.TYPE_DIRECTORY:
       GC.Values[itemName] = _getCfgDirectory(sectionName, itemName)
@@ -4043,7 +4043,7 @@ def SetGlobalVariables():
       GC.Values[itemName] = _getCfgTimezone(sectionName, itemName)
   GM.Globals[GM.DATETIME_NOW] = datetime.datetime.now(GC.Values[GC.TIMEZONE])
 # Everything else except row filters
-  for itemName, itemEntry in sorted(iter(GC.VAR_INFO.items())):
+  for itemName, itemEntry in sorted(GC.VAR_INFO.items()):
     varType = itemEntry[GC.VAR_TYPE]
     if varType == GC.TYPE_BOOLEAN:
       GC.Values[itemName] = _getCfgBoolean(sectionName, itemName)
@@ -4066,7 +4066,7 @@ def SetGlobalVariables():
     elif varType == GC.TYPE_FILE:
       GC.Values[itemName] = _getCfgFile(sectionName, itemName)
 # Row filters
-  for itemName, itemEntry in sorted(iter(GC.VAR_INFO.items())):
+  for itemName, itemEntry in sorted(GC.VAR_INFO.items()):
     varType = itemEntry[GC.VAR_TYPE]
     if varType == GC.TYPE_ROWFILTER:
       GC.Values[itemName] = _getCfgRowFilter(sectionName, itemName)
@@ -4200,7 +4200,7 @@ def SetGlobalVariables():
 # Clear input row filters/limit from parser, children can define but shouldn't inherit global value
 # Clear output header/row filters/limit from parser, children can define or they will inherit global value if not defined
   if GM.Globals[GM.PID] == 0:
-    for itemName, itemEntry in sorted(iter(GC.VAR_INFO.items())):
+    for itemName, itemEntry in sorted(GC.VAR_INFO.items()):
       varType = itemEntry[GC.VAR_TYPE]
       if varType in {GC.TYPE_HEADERFILTER, GC.TYPE_HEADERFORCE, GC.TYPE_HEADERORDER, GC.TYPE_ROWFILTER}:
         GM.Globals[GM.PARSER].set(sectionName, itemName, '')
@@ -7264,13 +7264,13 @@ def send_email(msgSubject, msgBody, msgTo, i=0, count=0, clientAccess=False, msg
       return
     toSent = set(recipients.split(','))
     toFailed = {}
-    for addr, err in iter(result.items()):
+    for addr, err in result.items():
       if addr in toSent:
         toSent.remove(addr)
         toFailed[addr] = f'{err[0]}: {err[1]}'
     if toSent:
       entityActionPerformed([entityType, ','.join(toSent), Ent.MESSAGE, msgSubject], i, count)
-    for addr, errMsg in iter(toFailed.items()):
+    for addr, errMsg in toFailed.items():
       entityActionFailedWarning([entityType, addr, Ent.MESSAGE, msgSubject], errMsg, i, count)
 
   def cleanAddr(emailAddr):
@@ -7305,7 +7305,7 @@ def send_email(msgSubject, msgBody, msgTo, i=0, count=0, clientAccess=False, msg
   if bccRecipients:
     message['Bcc'] = bccRecipients.lower()
   if msgHeaders:
-    for header, value in iter(msgHeaders.items()):
+    for header, value in msgHeaders.items():
       if header not in {'Subject', 'From', 'To', 'Reply-To', 'Cc', 'Bcc'}:
         message[header] = value
   if mailBox is None:
@@ -8065,7 +8065,7 @@ class CSVPrintFile():
     localUser = localParent = False
     tdfileidLocation = tdparentLocation = tdaddsheetLocation = tdupdatesheetLocation = tduserLocation = Cmd.Location()
     tdsheetLocation = {}
-    for sheetEntity in iter(self.TDSHEET_ENTITY_MAP.values()):
+    for sheetEntity in self.TDSHEET_ENTITY_MAP.values():
       tdsheetLocation[sheetEntity] = Cmd.Location()
     self.todrive = {'user': GC.Values[GC.TODRIVE_USER], 'title': None, 'description': None,
                     'sheetEntity': None, 'addsheet': False, 'updatesheet': False, 'sheettitle': None,
@@ -8215,7 +8215,7 @@ class CSVPrintFile():
                                    throwReasons=GAPI.SHEETS_ACCESS_THROW_REASONS,
                                    spreadsheetId=self.todrive['fileId'],
                                    fields='spreadsheetUrl,sheets(properties(sheetId,title),protectedRanges(range(sheetId),requestingUserCanEdit))')
-            for sheetEntity in iter(self.TDSHEET_ENTITY_MAP.values()):
+            for sheetEntity in self.TDSHEET_ENTITY_MAP.values():
               if self.todrive[sheetEntity]:
                 sheetId = getSheetIdFromSheetEntity(spreadsheet, self.todrive[sheetEntity])
                 if sheetId is None:
@@ -8352,13 +8352,13 @@ class CSVPrintFile():
             elif addPermissionsTitle:
               titles.append(field)
               addPermissionsTitle = False
-            for subField in iter(self.driveSubfieldsChoiceMap[field.lower()].values()):
+            for subField in self.driveSubfieldsChoiceMap[field.lower()].values():
               if not isinstance(subField, list):
                 titles.append(f'{field}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}0{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{subField}')
               else:
                 titles.extend([f'{field}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}0{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{subSubField}' for subSubField in subField])
           else:
-            for subField in iter(self.driveSubfieldsChoiceMap[field.lower()].values()):
+            for subField in self.driveSubfieldsChoiceMap[field.lower()].values():
               if not isinstance(subField, list):
                 titles.append(f'{field}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{subField}')
               else:
@@ -8759,7 +8759,7 @@ class CSVPrintFile():
             csvFile.seek(0)
             spreadsheet = None
             if self.todrive['updatesheet']:
-              for sheetEntity in iter(self.TDSHEET_ENTITY_MAP.values()):
+              for sheetEntity in self.TDSHEET_ENTITY_MAP.values():
                 if self.todrive[sheetEntity]:
                   entityValueList = [Ent.USER, user, Ent.SPREADSHEET, title, self.todrive[sheetEntity]['sheetType'], self.todrive[sheetEntity]['sheetValue']]
                   if spreadsheet is None:
@@ -9101,7 +9101,7 @@ def cleanJSON(topStructure, listLimit=None, skipObjects=None, timeObjects=None):
       listLen = len(structure)
       listLen = min(listLen, listLimit or listLen)
       return [_clean(v, '', DEFAULT_SKIP_OBJECTS) for v in structure[0:listLen]]
-    return {k: _clean(v, k, DEFAULT_SKIP_OBJECTS) for k, v in sorted(iter(structure.items())) if k not in subSkipObjects}
+    return {k: _clean(v, k, DEFAULT_SKIP_OBJECTS) for k, v in sorted(structure.items()) if k not in subSkipObjects}
 
   timeObjects = timeObjects or set()
   return _clean(topStructure, '', DEFAULT_SKIP_OBJECTS.union(skipObjects or set()))
@@ -9136,7 +9136,7 @@ def flattenJSON(topStructure, flattened=None,
           _flatten(structure[i], '', f'{path}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{i}')
     else:
       if structure:
-        for k, v in sorted(iter(structure.items())):
+        for k, v in sorted(structure.items()):
           if k not in DEFAULT_SKIP_OBJECTS:
             _flatten(v, k, f'{path}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{k}')
       else:
@@ -9147,7 +9147,7 @@ def flattenJSON(topStructure, flattened=None,
   timeObjects = timeObjects or set()
   noLenObjects = noLenObjects or set()
   simpleLists = simpleLists or set()
-  for k, v in sorted(iter(topStructure.items())):
+  for k, v in sorted(topStructure.items()):
     if k not in allSkipObjects:
       _flatten(v, k, k)
   return flattened
@@ -10025,7 +10025,7 @@ def MultiprocessGAMCommands(items, showCmds):
         while poolProcessResults[0] > 0:
           time.sleep(1)
           completedProcesses = []
-          for p, result in iter(poolProcessResults.items()):
+          for p, result in poolProcessResults.items():
             if p != 0 and result.ready():
               poolCallback(result.get())
               completedProcesses.append(p)
@@ -10077,7 +10077,7 @@ def MultiprocessGAMCommands(items, showCmds):
       if parallelPoolProcesses > 0:
         while poolProcessResults[0] == parallelPoolProcesses:
           completedProcesses = []
-          for p, result in iter(poolProcessResults.items()):
+          for p, result in poolProcessResults.items():
             if p != 0 and result.ready():
               poolCallback(result.get())
               completedProcesses.append(p)
@@ -10098,7 +10098,7 @@ def MultiprocessGAMCommands(items, showCmds):
                                                                PROCESS_PLURAL_SINGULAR[poolProcessResults[0] == 1],
                                                                Msg.BATCH_CSV_WAIT_LIMIT.format(waitRemaining)))
         completedProcesses = []
-        for p, result in iter(poolProcessResults.items()):
+        for p, result in poolProcessResults.items():
           if p != 0 and result.ready():
             poolCallback(result.get())
             completedProcesses.append(p)
@@ -10254,7 +10254,7 @@ def doBatch(threadBatch=False):
       if line.startswith('#'):
         continue
       if kwValues:
-        for kw, value in iter(kwValues.items()):
+        for kw, value in kwValues.items():
           line = line.replace(f'%{kw}%', value)
       try:
         argv = shlex.split(line)
@@ -10385,7 +10385,7 @@ def getSubFields(initial_argv, fieldNames):
 
 def processSubFields(GAM_argv, row, subFields):
   argv = GAM_argv[:]
-  for GAM_argvI, fields in iter(subFields.items()):
+  for GAM_argvI, fields in subFields.items():
     oargv = argv[GAM_argvI][:]
     argv[GAM_argvI] = ''
     pos = 0
@@ -11273,7 +11273,7 @@ def doOAuthInfo():
   if 'expires_in' in token_info:
     printKeyValueList(['Expires', ISOformatTimeStamp((datetime.datetime.now()+datetime.timedelta(seconds=token_info['expires_in'])).replace(tzinfo=GC.Values[GC.TIMEZONE]))])
   if showDetails:
-    for k, v in sorted(iter(token_info.items())):
+    for k, v in sorted(token_info.items()):
       if k not in  ['email', 'expires_in', 'issued_to', 'scope']:
         printKeyValueList([k, v])
   printBlankLine()
@@ -12081,7 +12081,7 @@ def doPrintShowProjects():
       if jcount > 0:
         printKeyValueList(['labels', jcount])
         Ind.Increment()
-        for k, v in iter(project['labels'].items()):
+        for k, v in project['labels'].items():
           printKeyValueList([k, v])
         Ind.Decrement()
       if 'parent' in project:
@@ -12104,7 +12104,7 @@ def doPrintShowProjects():
           if 'condition' in binding:
             printKeyValueList(['condition', ''])
             Ind.Increment()
-            for k, v in iter(binding['condition'].items()):
+            for k, v in binding['condition'].items():
               printKeyValueList([k, v])
             Ind.Decrement()
           Ind.Decrement()
@@ -12145,7 +12145,7 @@ def doPrintShowProjects():
         prow = row.copy()
         prow[f'policy{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}role'] = binding['role']
         if 'condition' in binding:
-          for k, v in iter(binding['condition'].items()):
+          for k, v in binding['condition'].items():
             prow[f'policy{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}condition{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{k}'] = v
         members = binding.get('members', [])
         if not oneMemberPerRow:
@@ -12301,7 +12301,7 @@ def checkServiceAccount(users):
     testDeprecated = 'DEPRECATED'
   if Act.Get() == Act.CHECK:
     if not checkScopesSet:
-      for scope in iter(GM.Globals[GM.SVCACCT_SCOPES].values()):
+      for scope in GM.Globals[GM.SVCACCT_SCOPES].values():
         checkScopesSet.update(scope)
   else:
     if not checkScopesSet:
@@ -12508,7 +12508,7 @@ def _showSAKeys(keys, count, currentPrivateKeyId):
     keyName = key.pop('name').rsplit('/', 1)[-1]
     printKeyValueListWithCount(['name', keyName], i, count)
     Ind.Increment()
-    for k, v in sorted(iter(key.items())):
+    for k, v in sorted(key.items()):
       if k not in SVCACCT_KEY_TIME_OBJECTS:
         printKeyValueList([k, v])
       else:
@@ -13540,7 +13540,7 @@ def doReportUsage():
               versions = {}
               for version in item['msgValue']:
                 versions[version['version_number']] = version['num_devices']
-              for k, v in sorted(iter(versions.items()), reverse=True):
+              for k, v in sorted(versions.items(), reverse=True):
                 title = f'cros:num_devices_chrome_{k}'
                 row[title] = v
             else:
@@ -13808,7 +13808,7 @@ def doReport():
             versions = {}
             for version in item['msgValue']:
               versions[version['version_number']] = version['num_devices']
-            for k, v in sorted(iter(versions.items()), reverse=True):
+            for k, v in sorted(versions.items(), reverse=True):
               title = f'cros:device_version{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{k}'
               csvPF.AddTitles(title)
               row[title] = v
@@ -13817,7 +13817,7 @@ def doReport():
             for subitem in item['msgValue']:
               if 'count' in subitem:
                 mycount = myvalue = None
-                for key, value in iter(subitem.items()):
+                for key, value in subitem.items():
                   if key == 'count':
                     mycount = value
                   else:
@@ -13882,7 +13882,7 @@ def doReport():
             for subitem in item['msgValue']:
               if 'count' in subitem:
                 mycount = myvalue = None
-                for key, value in iter(subitem.items()):
+                for key, value in subitem.items():
                   if key == 'count':
                     mycount = value
                   else:
@@ -14077,7 +14077,7 @@ def doReport():
   if usageReports and not includeServices:
     includeServices = set(fullDataServices)
   if filterTimes and filters is not None:
-    for filterTimeName, filterTimeValue in iter(filterTimes.items()):
+    for filterTimeName, filterTimeValue in filterTimes.items():
       filters = filters.replace(f'#{filterTimeName}#', filterTimeValue)
   if not orgUnitId:
     showOrgUnit = False
@@ -14191,9 +14191,9 @@ def doReport():
       if user != 'all' and lastDate is None and GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
         csvPF.WriteRowNoFilter({'date': prevTryDate, 'email': user})
     if aggregateByDate:
-      for usageDate, events in iter(eventCounts.items()):
+      for usageDate, events in eventCounts.items():
         row = {'date': usageDate}
-        for event, count in iter(events.items()):
+        for event, count in events.items():
           if convertMbToGb and event.endswith('_in_gb'):
             count = f'{count/1024:.2f}'
           row[event] = count
@@ -14201,11 +14201,11 @@ def doReport():
       csvPF.SortRows('date', False)
       csvPF.writeCSVfile(f'User Reports Aggregate - {tryDate}')
     elif aggregateByUser:
-      for email, events in iter(eventCounts.items()):
+      for email, events in eventCounts.items():
         row = {'email': email}
         if showOrgUnit:
           row['orgUnitPath'] = userOrgUnits.get(email, UNKNOWN)
-        for event, count in iter(events.items()):
+        for event, count in events.items():
           if convertMbToGb and event.endswith('_in_gb'):
             count = f'{count/1024:.2f}'
           row[event] = count
@@ -14376,7 +14376,7 @@ def doReport():
                     for mess in message['parameter']:
                       value = mess.get('value', ' '.join(mess.get('multiValue', [])))
                       parts[mess['name']] = parts.get(mess['name'], [])+[value]
-                  for part, v in iter(parts.items()):
+                  for part, v in parts.items():
                     if part == 'scope_name':
                       part = 'scope'
                     event[part] = ' '.join(v)
@@ -14443,20 +14443,20 @@ def doReport():
           csvPF.AddTitles(sorted(addCSVData.keys()))
         if eventCounts:
           if not countsByDate:
-            for actor, events in iter(eventCounts.items()):
+            for actor, events in eventCounts.items():
               row = {'emailAddress': actor}
               row.update(zeroEventCounts)
-              for event, count in iter(events.items()):
+              for event, count in events.items():
                 row[event] = count
               if addCSVData:
                 row.update(addCSVData)
               csvPF.WriteRowTitles(row)
           else:
-            for actor, eventDates in iter(eventCounts.items()):
-              for eventDate, events in iter(eventDates.items()):
+            for actor, eventDates in eventCounts.items():
+              for eventDate, events in eventDates.items():
                 row = {'emailAddress': actor, 'date': eventDate}
                 row.update(zeroEventCounts)
-                for event, count in iter(events.items()):
+                for event, count in events.items():
                   row[event] = count
                 if addCSVData:
                   row.update(addCSVData)
@@ -14471,7 +14471,7 @@ def doReport():
         if addCSVData:
           csvPF.AddTitles(sorted(addCSVData.keys()))
         if eventCounts:
-          for event, count in sorted(iter(eventCounts.items())):
+          for event, count in sorted(eventCounts.items()):
             row = {'event': event, 'count': count}
             if addCSVData:
               row.update(addCSVData)
@@ -14756,7 +14756,7 @@ def _getTagReplacementFieldValues(user, i, count, tagReplacements, results=None)
     else:
       results = {'primaryEmail': user}
   userName, domain = splitEmailAddress(user)
-  for _, tag in iter(tagReplacements['tags'].items()):
+  for tag in tagReplacements['tags'].values():
     if tag.get('field'):
       field = tag['field']
       if field == 'primaryEmail':
@@ -18128,7 +18128,7 @@ def doPrintOrgs():
     if showCrOSCounts or showUserCounts:
       if showCrOSCounts:
         total = 0
-        for k, v in sorted(iter(crosCounts[orgUnitPath].items())):
+        for k, v in sorted(crosCounts[orgUnitPath].items()):
           row[f'CrOS{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{k}'] = v
           total += v
         row[f'CrOS{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}Total'] = total
@@ -20235,7 +20235,8 @@ def _clearUpdateContacts(updateContacts):
         if not localContactSelects(contactsManager, contactQuery, fields):
           continue
       if updateContacts:
-        for field, value in iter(update_fields.items()):
+##### Zip
+        for field, value in update_fields.items():
           fields[field] = value
         contactEntry = contactsManager.FieldsToContact(fields)
       else:
@@ -22017,7 +22018,7 @@ def _processPersonMetadata(person, parameters):
         person[PEOPLE_UPDATE_TIME] = formatLocalTime(sources[0][PEOPLE_UPDATE_TIME])
   if parameters['sourceTypes']:
     stripKeys = []
-    for k, v in iter(person.items()):
+    for k, v in person.items():
       if isinstance(v, list):
         person[k] = []
         for entry in v:
@@ -22032,7 +22033,7 @@ def _processPersonMetadata(person, parameters):
       person.pop(k, None)
   if parameters['strip']:
     person.pop(PEOPLE_METADATA, None)
-    for _, v in iter(person.items()):
+    for v in person.values():
       if isinstance(v, list):
         for entry in v:
           if isinstance(entry, dict):
@@ -23164,7 +23165,7 @@ PEOPLE_GROUP_TIME_OBJECTS = {'updateTime'}
 
 def _normalizeContactGroupMetadata(contactGroup):
   normalizedContactGroup = contactGroup.copy()
-  for k, v in iter(normalizedContactGroup.pop('metadata', {}).items()):
+  for k, v in normalizedContactGroup.pop('metadata', {}).items():
     normalizedContactGroup[k] = v
   return normalizedContactGroup
 
@@ -24116,7 +24117,7 @@ def infoCrOSDevices(entityList):
       if up in cros:
         printKeyValueList([up, ''])
         Ind.Increment()
-        for key, value in sorted(iter(cros[up].items())):
+        for key, value in sorted(cros[up].items()):
           if key not in CROS_TIME_OBJECTS:
             printKeyValueList([key, value])
           else:
@@ -24391,7 +24392,7 @@ def substituteQueryTimes(queries, queryTimes):
   if queryTimes:
     for i, query in enumerate(queries):
       if query is not None:
-        for queryTimeName, queryTimeValue in iter(queryTimes.items()):
+        for queryTimeName, queryTimeValue in queryTimes.items():
           query = query.replace(f'#{queryTimeName}#', queryTimeValue)
         queries[i] = query
 
@@ -24476,7 +24477,7 @@ def doPrintCrOSDevices(entityList=None):
       return
     for attrib in ['diskSpaceUsage', 'osUpdateStatus', 'tpmVersionInfo']:
       if attrib in cros:
-        for key, value in sorted(iter(cros[attrib].items())):
+        for key, value in sorted(cros[attrib].items()):
           attribKey = f'{attrib}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{key}'
           if key not in CROS_TIME_OBJECTS:
             cros[attribKey] = value
@@ -25649,7 +25650,7 @@ def doPrintShowChromeProfiles():
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if filterTimes and cbfilter is not None:
-    for filterTimeName, filterTimeValue in iter(filterTimes.items()):
+    for filterTimeName, filterTimeValue in filterTimes.items():
       cbfilter = cbfilter.replace(f'#{filterTimeName}#', filterTimeValue)
   fields = getItemFieldsFromFieldsList('chromeBrowserProfiles', fieldsList)
   customerId = _getCustomerId()
@@ -25724,7 +25725,7 @@ def _getChromeProfileNameEntityForCommand(cm, parameters):
           parameters['commandNameList'][i] = f'customers/{customerId}/profiles/{commandName}'
     return
   if parameters['filterTimes']:
-    for filterTimeName, filterTimeValue in iter(parameters['filterTimes'].items()):
+    for filterTimeName, filterTimeValue in parameters['filterTimes'].items():
       parameters['cbfilter'] = parameters['cbfilter'].replace(f'#{filterTimeName}#', filterTimeValue)
   printGettingAllAccountEntities(Ent.CHROME_PROFILE, parameters['cbfilter'])
   pageMessage = getPageMessage()
@@ -28652,7 +28653,7 @@ def simplifyChromeSchemaDisplay(schema):
       mfield.pop('number')
       mtypeEntry['field'][mfield.pop('name')] = mfield
     mesgDict[mesgType['name']] = mtypeEntry.copy()
-  for _, mtypeEntry in mesgDict.items():
+  for mtypeEntry in mesgDict.values():
     for mfieldName, mfield in mtypeEntry['field'].items():
       mfield['descriptions'] = []
       if mfield['type'] == 'TYPE_STRING' and mfield.get('label') == 'LABEL_REPEATED':
@@ -29625,8 +29626,8 @@ def _showChromePolicySchemaStd(schema):
     if vtype == 'TYPE_ENUM':
       enums = mtypeEntry['subtype']['enums']
       descriptions = mtypeEntry['descriptions']
-      for i in range(len(enums)):
-        printKeyValueList([f'{enums[i]}', f'{descriptions[i]}'])
+      for i, v in enumerate(enums):
+        printKeyValueList([f'{v}', f'{descriptions[i]}'])
     elif vtype == 'TYPE_MESSAGE':
       for mfieldName, mfield in mtypeEntry['subtype']['field'].items():
         # managedBookmarks is recursive
@@ -29639,7 +29640,7 @@ def _showChromePolicySchemaStd(schema):
 
   printKeyValueList([f'{schema.get("name")}', f'{schema.get("description")}'])
   Ind.Increment()
-  for _, mtypeEntry in schema['settings'].items():
+  for mtypeEntry in schema['settings'].values():
     if mtypeEntry['subfield']:
       continue
     for mfieldName, mfield in mtypeEntry['field'].items():
@@ -29678,7 +29679,7 @@ def doShowChromePolicySchemasStd(cp):
   for schema in result:
     schema_name, schema_dict = simplifyChromeSchemaDisplay(schema)
     schemas[schema_name.lower()] = schema_dict
-  for _, schema in sorted(iter(schemas.items())):
+  for _, schema in sorted(schemas.items()):
     _showChromePolicySchemaStd(schema)
     printBlankLine()
 
@@ -30036,11 +30037,11 @@ def doSyncCIDevices():
       if last_sync == NEVER_TIME_NOMS:
         remoteDeviceMap[sndt]['unassigned'] = True
   devicesToAdd = []
-  for sndt, device in iter(localDevices.items()):
+  for sndt, device in localDevices.items():
     if sndt not in remoteDevices:
       devicesToAdd.append(device)
   missingDevices = []
-  for sndt, device in iter(remoteDevices.items()):
+  for sndt, device in remoteDevices.items():
     if sndt not in localDevices:
       missingDevices.append(device)
   Act.Set([Act.CREATE, Act.CREATE_PREVIEW][preview])
@@ -30337,10 +30338,10 @@ def doPrintCIDevices():
             if mg:
               du = mg.group(1)
               state_name = mg.group(2)
-              for i in range(len(deviceUsers)):
-                if deviceUsers[i]['name'] == du:
-                  deviceUsers[i].setdefault('clientstates', {})
-                  deviceUsers[i]['clientstates'][state_name] = state
+              for deviceUser in deviceUsers:
+                if deviceUser['name'] == du:
+                  deviceUser.setdefault('clientstates', {})
+                  deviceUser['clientstates'][state_name] = state
                   break
         for deviceUser in deviceUsers:
           mg = DEVICE_USERNAME_PATTERN.match(deviceUser['name'])
@@ -32748,7 +32749,7 @@ def doCreateGroup(ciGroupsAPI=False):
       entityActionNotPerformedWarning([Ent.GROUP, groupEmail], Msg.EMAIL_ADDRESS_IS_UNMANAGED_ACCOUNT)
       return
   if ciGroupsAPI:
-    for k, v in iter(GROUP_CIGROUP_FIELDS_MAP.items()):
+    for k, v in GROUP_CIGROUP_FIELDS_MAP.items():
       if k in gs_body:
         body[v] = gs_body.pop(k)
     body.setdefault('displayName', groupEmail)
@@ -33262,7 +33263,7 @@ def doUpdateGroups():
       gs = buildGAPIObject(API.GROUPSSETTINGS)
       gs_body = getSettingsFromGroup(cd, ','.join(entityList), gs, gs_body)
       if ci_body:
-        for k, v in iter(GROUP_CIGROUP_FIELDS_MAP.items()):
+        for k, v in GROUP_CIGROUP_FIELDS_MAP.items():
           if k in gs_body:
             ci_body[v] = gs_body.pop(k)
       if gs_body:
@@ -33896,7 +33897,7 @@ def _showCIGroup(group, groupEmail, i=0, count=0):
       continue
     value = group[key]
     if key == 'labels':
-      for k, v in iter(value.items()):
+      for k, v in value.items():
         if v == '':
           value[k] = True
     if isinstance(value, (list, dict)):
@@ -34099,7 +34100,7 @@ def infoGroups(entityList):
         else:
           printKeyValueWithCRsNLs(key, value)
       if settings:
-        for key, attr in sorted(iter(GROUP_SETTINGS_ATTRIBUTES.items())):
+        for _, attr in sorted(GROUP_SETTINGS_ATTRIBUTES.items()):
           key = attr[0]
           if key in settings:
             if key not in GROUP_FIELDS_WITH_CRS_NLS:
@@ -34114,7 +34115,7 @@ def infoGroups(entityList):
           else:
             showTitle = True
           if showDeprecatedAttributes:
-            for subkey, subattr in sorted(iter(GROUP_MERGED_TO_COMPONENT_MAP[key].items())):
+            for _, subattr in sorted(GROUP_MERGED_TO_COMPONENT_MAP[key].items()):
               subkey = subattr[0]
               if subkey in settings:
                 if showTitle:
@@ -34126,7 +34127,7 @@ def infoGroups(entityList):
             Ind.Decrement()
         if showDeprecatedAttributes:
           showTitle = True
-          for subkey, attr in sorted(iter(GROUP_DEPRECATED_ATTRIBUTES.items())):
+          for _, attr in sorted(GROUP_DEPRECATED_ATTRIBUTES.items()):
             subkey = attr[0]
             if subkey in settings:
               if showTitle:
@@ -34246,23 +34247,23 @@ def clearUnneededGroupMatchPatterns(matchPatterns):
     matchPatterns.pop(field, None)
 
 def checkGroupMatchPatterns(groupEmail, group, matchPatterns):
-  for field, match in iter(matchPatterns.items()):
+  for field, matchp in matchPatterns.items():
     if field == 'email':
-      if not match['not']:
-        if not match['pattern'].match(groupEmail):
+      if not matchp['not']:
+        if not matchp['pattern'].match(groupEmail):
           return False
       else:
-        if match['pattern'].match(groupEmail):
+        if matchp['pattern'].match(groupEmail):
           return False
     elif field == 'adminCreated':
-      if match != group[field]:
+      if matchp != group[field]:
         return False
     else: # field in {'name', 'displayName', 'description'}:
-      if not match['not']:
-        if not match['pattern'].match(group[field]):
+      if not matchp['not']:
+        if not matchp['pattern'].match(group[field]):
           return False
       else:
-        if match['pattern'].match(group[field]):
+        if matchp['pattern'].match(group[field]):
           return False
   return True
 
@@ -34416,11 +34417,11 @@ def doPrintGroups():
     if matchSettings:
       if not isinstance(groupSettings, dict):
         return
-      for key, match in iter(matchSettings.items()):
+      for key, matchp in matchSettings.items():
         gvalue = groupSettings.get(key)
-        if match['notvalues'] and gvalue in match['notvalues']:
+        if matchp['notvalues'] and gvalue in matchp['notvalues']:
           return
-        if match['values'] and gvalue not in match['values']:
+        if matchp['values'] and gvalue not in matchp['values']:
           return
     if showOwnedBy and not checkGroupShowOwnedBy(showOwnedBy, groupMembers):
       return
@@ -34458,7 +34459,7 @@ def doPrintGroups():
       addMemberInfoToRow(row, groupMembers, typesSet, memberOptions, memberDisplayOptions, delimiter,
                          isSuspended, isArchived, False)
     if isinstance(groupSettings, dict):
-      for key, value in iter(groupSettings.items()):
+      for key, value in groupSettings.items():
         if key not in {'kind', 'etag', 'email', 'name', 'description'}:
           if value is None:
             value = ''
@@ -34469,12 +34470,12 @@ def doPrintGroups():
             row[key] = value
     groupCloudEntity = ciGroups.get(row['email'], {})
     if groupCloudEntity:
-      for k, v in iter(groupCloudEntity.pop('labels', {}).items()):
+      for k, v in groupCloudEntity.pop('labels', {}).items():
         if v == '':
           groupCloudEntity[f'labels{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{k}'] = True
         else:
           groupCloudEntity[f'labels{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{k}'] = v
-      for key, value in sorted(iter(flattenJSON({'cloudIdentity': groupCloudEntity}, flattened={}, timeObjects=CIGROUP_TIME_OBJECTS).items())):
+      for key, value in sorted(flattenJSON({'cloudIdentity': groupCloudEntity}, flattened={}, timeObjects=CIGROUP_TIME_OBJECTS).items()):
         csvPF.AddTitles(key)
         row[key] = value
     csvPF.WriteRow(row)
@@ -34618,11 +34619,11 @@ def doPrintGroups():
     elif myarg == 'maxresults':
       maxResults = getInteger(minVal=1, maxVal=200)
     elif myarg == 'nodeprecated':
-      deprecatedAttributesSet.update([attr[0] for attr in iter(GROUP_DISCOVER_ATTRIBUTES.values())])
-      deprecatedAttributesSet.update([attr[0] for attr in iter(GROUP_ASSIST_CONTENT_ATTRIBUTES.values())])
-      deprecatedAttributesSet.update([attr[0] for attr in iter(GROUP_MODERATE_CONTENT_ATTRIBUTES.values())])
-      deprecatedAttributesSet.update([attr[0] for attr in iter(GROUP_MODERATE_MEMBERS_ATTRIBUTES.values())])
-      deprecatedAttributesSet.update([attr[0] for attr in iter(GROUP_DEPRECATED_ATTRIBUTES.values())])
+      deprecatedAttributesSet.update([attr[0] for attr in GROUP_DISCOVER_ATTRIBUTES.values()])
+      deprecatedAttributesSet.update([attr[0] for attr in GROUP_ASSIST_CONTENT_ATTRIBUTES.values()])
+      deprecatedAttributesSet.update([attr[0] for attr in GROUP_MODERATE_CONTENT_ATTRIBUTES.values()])
+      deprecatedAttributesSet.update([attr[0] for attr in GROUP_MODERATE_MEMBERS_ATTRIBUTES.values()])
+      deprecatedAttributesSet.update([attr[0] for attr in GROUP_DEPRECATED_ATTRIBUTES.values()])
     elif myarg in {'convertcrnl', 'converttextnl', 'convertfooternl'}:
       convertCRNL = True
     elif myarg == 'delimiter':
@@ -34670,7 +34671,7 @@ def doPrintGroups():
       valueList = getChoice({'not': 'notvalues'}, mapChoice=True, defaultChoice='values')
       matchBody = {}
       getGroupAttrValue(getString(Cmd.OB_FIELD_NAME).lower(), matchBody)
-      for key, value in iter(matchBody.items()):
+      for key, value in matchBody.items():
         matchSettings.setdefault(key, {'notvalues': [], 'values': []})
         matchSettings[key][valueList].append(value)
     elif getPGGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions):
@@ -34851,13 +34852,13 @@ def doPrintGroups():
   if sortHeaders:
     sortTitles = ['email']+GROUP_INFO_PRINT_ORDER+['aliases', 'nonEditableAliases']
     if getSettings:
-      sortTitles += sorted([attr[0] for attr in iter(GROUP_SETTINGS_ATTRIBUTES.values())])
+      sortTitles += sorted([attr[0] for attr in GROUP_SETTINGS_ATTRIBUTES.values()])
       for key in GROUP_MERGED_ATTRIBUTES_PRINT_ORDER:
         sortTitles.append(key)
         if not deprecatedAttributesSet:
-          sortTitles += sorted([attr[0] for attr in iter(GROUP_MERGED_TO_COMPONENT_MAP[key].values())])
+          sortTitles += sorted([attr[0] for attr in GROUP_MERGED_TO_COMPONENT_MAP[key].values()])
       if not deprecatedAttributesSet:
-        sortTitles += sorted([attr[0] for attr in iter(GROUP_DEPRECATED_ATTRIBUTES.values())])
+        sortTitles += sorted([attr[0] for attr in GROUP_DEPRECATED_ATTRIBUTES.values()])
     if rolesSet:
       setMemberDisplaySortTitles(memberDisplayOptions, sortTitles)
     csvPF.SetSortTitles(sortTitles)
@@ -35848,7 +35849,7 @@ def doUpdateCIGroups():
       elif myarg in ['memberrestriction', 'memberrestrictions']:
         query = getString(Cmd.OB_QUERY, minLen=0)
         member_types = {'USER': '1', 'SERVICE_ACCOUNT': '2', 'GROUP': '3',}
-        for key, val in iter(member_types.items()):
+        for key, val in member_types.items():
           query = query.replace(key, val)
         se_body['memberRestriction'] = {'query': query}
       elif myarg == 'locked':
@@ -35864,7 +35865,7 @@ def doUpdateCIGroups():
     if gs_body:
       gs = buildGAPIObject(API.GROUPSSETTINGS)
       gs_body = getSettingsFromGroup(cd, ','.join(entityList), gs, gs_body)
-      for k, v in iter(GROUP_CIGROUP_FIELDS_MAP.items()):
+      for k, v in GROUP_CIGROUP_FIELDS_MAP.items():
         if k in gs_body:
           ci_body[v] = gs_body.pop(k)
       if gs_body:
@@ -36817,12 +36818,12 @@ def doPrintCIGroups():
       csvPF.WriteRowNoFilter(row)
       return
     mapCIGroupFieldNames(groupEntity)
-    for k, v in iter(groupEntity.pop('labels', {}).items()):
+    for k, v in groupEntity.pop('labels', {}).items():
       if v == '':
         groupEntity[f'labels{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{k}'] = True
       else:
         groupEntity[f'labels{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{k}'] = v
-    for key, value in sorted(iter(flattenJSON(groupEntity, flattened={}, timeObjects=CIGROUP_TIME_OBJECTS).items())):
+    for key, value in sorted(flattenJSON(groupEntity, flattened={}, timeObjects=CIGROUP_TIME_OBJECTS).items()):
       csvPF.AddTitles(key)
       row[key] = value
     if rolesSet and groupMembers is not None:
@@ -38058,7 +38059,7 @@ def _getBuildingByNameOrId(cd, minLen=1, allowNV=False):
 # No exact name match, check for case insensitive name matches
   which_building_lower = which_building.lower()
   ci_matches = []
-  for buildingName, buildingId in iter(GM.Globals[GM.MAP_BUILDING_NAME_TO_ID].items()):
+  for buildingName, buildingId in GM.Globals[GM.MAP_BUILDING_NAME_TO_ID].items():
     if buildingName.lower() == which_building_lower:
       ci_matches.append({'buildingName': buildingName, 'buildingId': buildingId})
 # One match, return ID
@@ -39436,7 +39437,7 @@ def _getCalendarEventAttribute(myarg, body, parameters, function):
       body.pop(field, None)
 
   def clearJSONsubfields(body, clearFields):
-    for field, subfields in iter(clearFields.items()):
+    for field, subfields in clearFields.items():
       if field in body:
         if isinstance(body[field], list):
           for item in body[field]:
@@ -41722,7 +41723,7 @@ def _validateVaultQuery(body, corpusArgumentMap):
   if 'searchMethod' not in body['query']:
     missingArgumentExit(formatChoiceList(VAULT_SEARCH_METHODS_MAP))
   if 'exportOptions' in body:
-    for corpus, options in iter(VAULT_CORPUS_OPTIONS_MAP.items()):
+    for corpus, options in VAULT_CORPUS_OPTIONS_MAP.items():
       if body['query']['corpus'] != corpus:
         body['exportOptions'].pop(options, None)
 
@@ -45008,7 +45009,7 @@ def _filterSchemaFields(userEntity, schemaParms):
   customSchemas = {}
   for schema in sorted(schemas):
     if schema in schemaParms['selectedSchemaFields']:
-      for field, value in sorted(iter(schemas[schema].items())):
+      for field, value in sorted(schemas[schema].items()):
         if field not in schemaParms['selectedSchemaFields'][schema]:
           continue
         customSchemas.setdefault(schema, {})
@@ -45952,7 +45953,7 @@ def doPrintUsers(entityList=None):
       if sortRows and orderBy == 'email':
         csvPF.SortRows('primaryEmail', reverse=sortOrder == 'DESCENDING')
   elif not FJQC.formatJSON:
-    for domain, count in sorted(iter(domainCounts.items())):
+    for domain, count in sorted(domainCounts.items()):
       csvPF.WriteRowNoFilter({'domain': domain, 'count': count})
   else:
     csvPF.WriteRowNoFilter({'JSON': json.dumps(cleanJSON(domainCounts), ensure_ascii=False, sort_keys=True)})
@@ -46047,7 +46048,7 @@ def doPrintUserCountsByOrgUnit():
       userCounts[orgUnitPath]['active'] += 1
     userCounts[orgUnitPath]['total'] += 1
   totalCounts = USER_COUNTS_ZERO_FIELDS.copy()
-  for k, v in sorted(iter(userCounts.items())):
+  for k, v in sorted(userCounts.items()):
     _printUserCounts(k, v)
     for f in USER_COUNTS_FIELDS:
       totalCounts[f] += v[f]
@@ -51856,7 +51857,7 @@ def transferCalendars(users):
                   body[field] = updateBody[field]
           else:
             body = {}
-          for field, updateField in iter(updateBody.items()):
+          for field, updateField in updateBody.items():
             if field not in appendFieldsList:
               body[field] = updateField
           callGAPI(targetCal.calendars(), 'patch',
@@ -52202,7 +52203,7 @@ def updateCalendarAttendees(users):
           entityActionNotPerformedWarning([Ent.EVENT, eventSummary], Msg.USER_IS_NOT_ORGANIZER, k, kcount)
           continue
         needsUpdate = False
-        for _, v in sorted(iter(attendeeMap.items())):
+        for _, v in sorted(attendeeMap.items()):
           v['done'] = False
         updatedAttendeesAdd = []
         updatedAttendeesRemove = []
@@ -52258,7 +52259,7 @@ def updateCalendarAttendees(users):
               entityPerformActionModifierNewValue([Ent.EVENT, eventSummary, Ent.ATTENDEE, oldAddr], Act.MODIFIER_WITH, update['email'], u, ucount)
               updatedAttendeesAdd.append(attendee)
               needsUpdate = True
-        for newAddr, v in sorted(iter(attendeeMap.items())):
+        for newAddr, v in sorted(attendeeMap.items()):
           if v['op'] == 'add' and not v['done']:
             u += 1
             v['done'] = True
@@ -52271,7 +52272,7 @@ def updateCalendarAttendees(users):
             entityPerformAction([Ent.EVENT, eventSummary, Ent.ATTENDEE, newAddr], u, ucount)
             updatedAttendeesAdd.append(attendee)
             needsUpdate = True
-        for newAddr, v in sorted(iter(attendeeMap.items())):
+        for newAddr, v in sorted(attendeeMap.items()):
           if not v['done']:
             u += 1
             Act.Set(Act.SKIP)
@@ -54088,7 +54089,7 @@ def printDriveActivity(users):
         if isinstance(v, (dict, list)):
           _updateKnownUsers(v)
     elif isinstance(structure, dict):
-      for k, v in sorted(iter(structure.items())):
+      for k, v in sorted(structure.items()):
         if k != 'knownUser':
           if isinstance(v, (dict, list)):
             _updateKnownUsers(v)
@@ -54335,7 +54336,7 @@ def printShowDriveSettings(users):
     if title in fieldsList and title in feed:
       printKeyValueList([title, None])
       Ind.Increment()
-      for item, value in sorted(iter(feed[title].items())):
+      for item, value in sorted(feed[title].items()):
         printKeyValueList([item, delimiter.join(value)])
       Ind.Decrement()
 
@@ -54351,7 +54352,7 @@ def printShowDriveSettings(users):
       jcount = len(feed[title])
       row[title] = jcount
       j = 0
-      for item, value in sorted(iter(feed[title].items())):
+      for item, value in sorted(feed[title].items()):
         row[f'{title}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{j:02d}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{item}'] = delimiter.join(value)
         j += 1
 
@@ -54429,7 +54430,7 @@ def printShowDriveSettings(users):
         if 'maxImportSizes' in fieldsList and 'maxImportSizes' in fieldsList:
           printKeyValueList(['maxImportSizes', None])
           Ind.Increment()
-          for setting, value in iter(feed['maxImportSizes'].items()):
+          for setting, value in feed['maxImportSizes'].items():
             printKeyValueList([setting, formatFileSize(int(value))])
           Ind.Decrement()
         if 'driveThemes' in fieldsList and 'driveThemes' in feed:
@@ -54451,7 +54452,7 @@ def printShowDriveSettings(users):
           jcount = len(feed['maxImportSizes'])
           row['maxImportSizes'] = jcount
           j = 0
-          for setting, value in iter(feed['maxImportSizes'].items()):
+          for setting, value in feed['maxImportSizes'].items():
             row[f'maxImportSizes{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{j}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{setting}'] = formatFileSize(int(value))
             j += 1
         if 'driveThemes' in fieldsList and 'driveThemes' in feed:
@@ -54540,7 +54541,7 @@ def getFilePaths(drive, fileTree, initialResult, filePathInfo, addParentsToTree=
         paths[parentId][lparentId] = filePathInfo['allPaths'][lparentId]
 
   def _makeFilePaths(localPaths, fplist, filePaths, name, maxDepth):
-    for k, v in iter(localPaths.items()):
+    for k, v in localPaths.items():
       fplist.append(filePathInfo['ids'].get(k, ''))
       if not v:
         fp = fplist[:]
@@ -54646,28 +54647,28 @@ def _mapDriveProperties(f_file):
   properties = f_file.pop('properties', [])
   if appProperties:
     f_file.setdefault('properties', [])
-    for key, value in sorted(iter(appProperties.items())):
+    for key, value in sorted(appProperties.items()):
       f_file['properties'].append({'key': key, 'value': value, 'visibility': 'PRIVATE'})
   if properties:
     f_file.setdefault('properties', [])
-    for key, value in sorted(iter(properties.items())):
+    for key, value in sorted(properties.items()):
       f_file['properties'].append({'key': key, 'value': value, 'visibility': 'PUBLIC'})
 
 def _mapDriveFieldNames(f_file, user, parentsSubFields, mapToLabels):
   if mapToLabels:
-    for attrib, v2attrib in iter(API.DRIVE3_TO_DRIVE2_LABELS_MAP.items()):
+    for attrib, v2attrib in API.DRIVE3_TO_DRIVE2_LABELS_MAP.items():
       if attrib in f_file:
         f_file.setdefault('labels', {})
         f_file['labels'][v2attrib] = f_file.pop(attrib)
-  for attrib, v2attrib in iter(API.DRIVE3_TO_DRIVE2_FILES_FIELDS_MAP.items()):
+  for attrib, v2attrib in API.DRIVE3_TO_DRIVE2_FILES_FIELDS_MAP.items():
     if attrib in f_file:
       f_file[v2attrib] = f_file.pop(attrib)
   capabilities = f_file.get('capabilities')
   if capabilities:
-    for attrib, v2attrib in iter(API.DRIVE3_TO_DRIVE2_CAPABILITIES_FIELDS_MAP.items()):
+    for attrib, v2attrib in API.DRIVE3_TO_DRIVE2_CAPABILITIES_FIELDS_MAP.items():
       if attrib in capabilities:
         f_file[v2attrib] = capabilities[attrib]
-    for attrib, v2attrib in iter(API.DRIVE3_TO_DRIVE2_CAPABILITIES_NAMES_MAP.items()):
+    for attrib, v2attrib in API.DRIVE3_TO_DRIVE2_CAPABILITIES_NAMES_MAP.items():
       if attrib in capabilities:
         capabilities[v2attrib] = capabilities.pop(attrib)
   if 'spaces' in f_file:
@@ -54691,7 +54692,7 @@ def _mapDriveFieldNames(f_file, user, parentsSubFields, mapToLabels):
     _mapDrivePermissionNames(permission)
 
 def _mapDriveRevisionNames(revision):
-  for attrib, v2attrib in iter(API.DRIVE3_TO_DRIVE2_REVISIONS_FIELDS_MAP.items()):
+  for attrib, v2attrib in API.DRIVE3_TO_DRIVE2_REVISIONS_FIELDS_MAP.items():
     if attrib in revision:
       revision[v2attrib] = revision.pop(attrib)
   if 'lastModifyingUser' in revision:
@@ -56135,7 +56136,7 @@ class PermissionMatch():
   @staticmethod
   def CheckPermissionMatch(permission, permissionMatch):
     match = False
-    for field, value in iter(permissionMatch[1].items()):
+    for field, value in permissionMatch[1].items():
       if field in {'type', 'role'}:
         if permission.get(field, '') not in value:
           break
@@ -56434,7 +56435,7 @@ class DriveListParameters():
     if self.excludeTrashed:
       self.AppendToQuery('trashed=false')
     if self.fileIdEntity['query']:
-      for queryTimeName, queryTimeValue in iter(self.queryTimes.items()):
+      for queryTimeName, queryTimeValue in self.queryTimes.items():
         self.fileIdEntity['query'] = self.fileIdEntity['query'].replace(f'#{queryTimeName}#', queryTimeValue)
       self.fileIdEntity['query'] = _mapDrive2QueryToDrive3(self.fileIdEntity['query'])
     if not fileIdEntity.get('shareddrive'):
@@ -56749,7 +56750,7 @@ def printFileList(users):
 
   def writeMimeTypeCountsRow(user, sourceId, sourceName, mimeTypeInfo):
     countTotal = sizeTotal = 0
-    for mtinfo in iter(mimeTypeInfo.values()):
+    for mtinfo in mimeTypeInfo.values():
       countTotal += mtinfo['count']
       sizeTotal += mtinfo['size']
     row = {'Owner': user, 'Total': countTotal}
@@ -56760,7 +56761,7 @@ def printFileList(users):
       row['Size'] = sizeTotal
     if addCSVData:
       row.update(addCSVData)
-    for mimeType, mtinfo in sorted(iter(mimeTypeInfo.items())):
+    for mimeType, mtinfo in sorted(mimeTypeInfo.items()):
       row[f'{mimeType}'] = mtinfo['count']
       if showMimeTypeSize:
         row[f'{mimeType}:Size'] = mtinfo['size']
@@ -56962,7 +56963,7 @@ def printFileList(users):
     fileNameTitle = 'name'
   csvPF.RemoveTitles(['capabilities'])
   if DLP.queryTimes and selectSubQuery:
-    for queryTimeName, queryTimeValue in iter(DLP.queryTimes.items()):
+    for queryTimeName, queryTimeValue in DLP.queryTimes.items():
       selectSubQuery = selectSubQuery.replace(f'#{queryTimeName}#', queryTimeValue)
     selectSubQuery = _mapDrive2QueryToDrive3(selectSubQuery)
   if addCSVData:
@@ -57061,7 +57062,7 @@ def printFileList(users):
         if incrementalPrint:
           if countsOnly:
             if summary != FILECOUNT_SUMMARY_NONE:
-              for mimeType, mtinfo in iter(mimeTypeInfo.items()):
+              for mimeType, mtinfo in mimeTypeInfo.items():
                 summaryMimeTypeInfo.setdefault(mimeType, {'count': 0, 'size': 0})
                 summaryMimeTypeInfo[mimeType]['count'] += mtinfo['count']
                 summaryMimeTypeInfo[mimeType]['size'] += mtinfo['size']
@@ -57141,7 +57142,7 @@ def printFileList(users):
       if countsOnly:
         if showSource:
           if summary != FILECOUNT_SUMMARY_NONE:
-            for mimeType, mtinfo in iter(mimeTypeInfo.items()):
+            for mimeType, mtinfo in mimeTypeInfo.items():
               summaryMimeTypeInfo.setdefault(mimeType, {'count': 0, 'size': 0})
               summaryMimeTypeInfo[mimeType]['count'] += mtinfo['count']
               summaryMimeTypeInfo[mimeType]['size'] += mtinfo['size']
@@ -57150,7 +57151,7 @@ def printFileList(users):
     if countsOnly:
       if not showSource:
         if summary != FILECOUNT_SUMMARY_NONE:
-          for mimeType, mtinfo in iter(mimeTypeInfo.items()):
+          for mimeType, mtinfo in mimeTypeInfo.items():
             summaryMimeTypeInfo.setdefault(mimeType, {'count': 0, 'size': 0})
             summaryMimeTypeInfo[mimeType]['count'] += mtinfo['count']
             summaryMimeTypeInfo[mimeType]['size'] += mtinfo['size']
@@ -57703,14 +57704,14 @@ def printShowFileCounts(users):
   def showMimeTypeInfo(user, mimeTypeInfo, sharedDriveId, sharedDriveName, lastModification, i, count):
     if summary != FILECOUNT_SUMMARY_NONE:
       if count != 0:
-        for mimeType, mtinfo in iter(mimeTypeInfo.items()):
+        for mimeType, mtinfo in mimeTypeInfo.items():
           summaryMimeTypeInfo.setdefault(mimeType, {'count': 0, 'size': 0})
           summaryMimeTypeInfo[mimeType]['count'] += mtinfo['count']
           summaryMimeTypeInfo[mimeType]['size'] += mtinfo['size']
         if summary == FILECOUNT_SUMMARY_ONLY:
           return
     countTotal = sizeTotal = 0
-    for mtinfo in iter(mimeTypeInfo.values()):
+    for mtinfo in mimeTypeInfo.values():
       countTotal += mtinfo['count']
       sizeTotal += mtinfo['size']
     if not csvPF:
@@ -57727,7 +57728,7 @@ def printShowFileCounts(users):
       Ind.Increment()
       if showLastModification:
         _showLastModification(lastModification)
-      for mimeType, mtinfo in sorted(iter(mimeTypeInfo.items())):
+      for mimeType, mtinfo in sorted(mimeTypeInfo.items()):
         if not showMimeTypeSize:
           printKeyValueList([mimeType, mtinfo['count']])
         else:
@@ -57744,7 +57745,7 @@ def printShowFileCounts(users):
         _updateLastModificationRow(row, lastModification)
       if addCSVData:
         row.update(addCSVData)
-      for mimeType, mtinfo in sorted(iter(mimeTypeInfo.items())):
+      for mimeType, mtinfo in sorted(mimeTypeInfo.items()):
         row[f'{mimeType}'] = mtinfo['count']
         if showMimeTypeSize:
           row[f'{mimeType}:Size'] = mtinfo['size']
@@ -58250,14 +58251,14 @@ def printShowFileShareCounts(users):
   def showShareCounts(user, shareCounts, i, count):
     if summary != FILECOUNT_SUMMARY_NONE:
       if count != 0:
-        for field, shareCount in iter(shareCounts.items()):
+        for field, shareCount in shareCounts.items():
           summaryShareCounts[field] += shareCount
         if summary == FILECOUNT_SUMMARY_ONLY:
           return
     if not csvPF:
       printEntity([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, shareCounts[FILESHARECOUNTS_TOTAL]], i, count)
       Ind.Increment()
-      for field, shareCount in iter(shareCounts.items()):
+      for field, shareCount in shareCounts.items():
         printKeyValueList([field, shareCount])
       Ind.Decrement()
     else:
@@ -59922,7 +59923,7 @@ def _copyPermissions(drive, user, i, count, j, jcount,
 
   def getNonInheritedPermissions(permissions):
     nonInheritedPermIds = set()
-    for permissionId, permission in iter(permissions.items()):
+    for permissionId, permission in permissions.items():
       if not permission['inherited']:
         nonInheritedPermIds.add(permissionId)
     return nonInheritedPermIds
@@ -59946,7 +59947,7 @@ def _copyPermissions(drive, user, i, count, j, jcount,
   copySourcePerms = {}
   deleteTargetPermIds = set()
   updateTargetPerms = {}
-  for permissionId, permission in iter(sourcePerms.items()):
+  for permissionId, permission in sourcePerms.items():
     kvList = permissionKVList(user, entityType, newFileTitle, permission)
     if isPermissionCopyable(kvList, permission):
       copySourcePerms[permissionId] = permission
@@ -60000,7 +60001,7 @@ def _copyPermissions(drive, user, i, count, j, jcount,
   Act.Set(Act.COPY)
   kcount = len(copySourcePerms)
   k = 0
-  for permissionId, permission in iter(copySourcePerms.items()):
+  for permissionId, permission in copySourcePerms.items():
     k += 1
     kvList = permissionKVList(user, entityType, newFileTitle, permission)
     permission.pop('id')
@@ -60073,7 +60074,7 @@ def _copyPermissions(drive, user, i, count, j, jcount,
   Act.Set(Act.UPDATE)
   kcount = len(updateTargetPerms)
   k = 0
-  for permissionId, permission in iter(updateTargetPerms.items()):
+  for permissionId, permission in updateTargetPerms.items():
     k += 1
     kvList = permissionKVList(user, entityType, newFileTitle, permission)
     removeExpiration = permission['updates'].pop('removeExpiration', False)
@@ -61072,7 +61073,7 @@ def _updateMoveFilePermissions(drive, user, i, count,
   Ind.Increment()
   deleteSourcePerms = {}
   addSourcePerms = {}
-  for permissionId, permission in iter(sourcePerms.items()):
+  for permissionId, permission in sourcePerms.items():
     kvList = permissionKVList(user, entityType, fileTitle, permission)
     if isPermissionDeletable(kvList, permission):
       pass
@@ -61083,7 +61084,7 @@ def _updateMoveFilePermissions(drive, user, i, count,
   if kcount > 0:
     Act.Set(Act.DELETE)
     k = 0
-    for permissionId, permission in iter(deleteSourcePerms.items()):
+    for permissionId, permission in deleteSourcePerms.items():
       k += 1
       kvList = permissionKVList(user, entityType, fileTitle, permission)
       try:
@@ -61110,7 +61111,7 @@ def _updateMoveFilePermissions(drive, user, i, count,
   if kcount > 0:
     Act.Set(Act.CREATE)
     k = 0
-    for permissionId, permission in iter(addSourcePerms.items()):
+    for permissionId, permission in addSourcePerms.items():
       k += 1
       kvList = permissionKVList(user, entityType, fileTitle, permission)
       permission.pop('id')
@@ -63429,7 +63430,7 @@ def transferOwnership(users):
           else:
             _identifyChildrenToTransfer(fileEntryInfo, user, i, count)
       if csvPF:
-        for xferFileId, fileInfo in iter(filesToTransfer.items()):
+        for xferFileId, fileInfo in filesToTransfer.items():
           row = {'OldOwner': user, 'NewOwner': newOwner, 'type': Ent.Singular(fileInfo['type']), 'id': xferFileId, 'name': fileInfo['name']}
           if filepath:
             addFilePathsToRow(drive, fileTree, fileTree[xferFileId]['info'], filePathInfo, csvPF, row)
@@ -63440,7 +63441,7 @@ def transferOwnership(users):
       entityPerformActionNumItemsModifier([Ent.USER, user], kcount, Ent.DRIVE_FILE_OR_FOLDER, f'{Act.MODIFIER_TO} {Ent.Singular(Ent.USER)}: {newOwner}', i, count)
       Ind.Increment()
       k = 0
-      for xferFileId, fileInfo in iter(filesToTransfer.items()):
+      for xferFileId, fileInfo in filesToTransfer.items():
         k += 1
         entityType = fileInfo['type']
         fileDesc = f'{fileInfo["name"]} ({xferFileId})'
@@ -63800,8 +63801,8 @@ def claimOwnership(users):
           else:
             _identifyChildrenToClaim(fileEntryInfo, user, i, count)
       if csvPF:
-        for oldOwner in filesToClaim:
-          for claimFileId, fileInfo in iter(filesToClaim[oldOwner].items()):
+        for oldOwner, oldOwnerFilesToClaim in filesToClaim.items():
+          for claimFileId, fileInfo in oldOwnerFilesToClaim.items():
             row = {'NewOwner': user, 'OldOwner': oldOwner, 'type': Ent.Singular(fileInfo['type']), 'id': claimFileId, 'name': fileInfo['name']}
             if filepath:
               addFilePathsToRow(drive, fileTree, fileTree[claimFileId]['info'], filePathInfo, csvPF, row)
@@ -63812,10 +63813,10 @@ def claimOwnership(users):
       entityPerformActionNumItems([Ent.USER, user], kcount, Ent.USER, i, count)
       Ind.Increment()
       k = 0
-      for oldOwner in filesToClaim:
+      for oldOwner, oldOwnerFilesToClaim in filesToClaim.items():
         k += 1
         _, userDomain = splitEmailAddress(oldOwner)
-        lcount = len(filesToClaim[oldOwner])
+        lcount = len(oldOwnerFilesToClaim)
         if userDomain == GC.Values[GC.DOMAIN] or userDomain in subdomains:
           _, sourceDrive = buildGAPIServiceObject(API.DRIVE3, oldOwner, k, kcount)
           if not sourceDrive:
@@ -63824,7 +63825,7 @@ def claimOwnership(users):
                                               f'{Act.MODIFIER_FROM} {Ent.Singular(Ent.USER)}: {oldOwner}', k, kcount)
           Ind.Increment()
           l = 0
-          for xferFileId, fileInfo in iter(filesToClaim[oldOwner].items()):
+          for xferFileId, fileInfo in oldOwnerFilesToClaim.items():
             l += 1
             entityType = fileInfo['type']
             fileDesc = f'{fileInfo["name"]} ({xferFileId})'
@@ -63937,7 +63938,7 @@ def claimOwnership(users):
                                                       f'{Act.MODIFIER_FROM} {Ent.Singular(Ent.USER)}: {oldOwner}', j, jcount)
           Ind.Increment()
           l = 0
-          for xferFileId, fileInfo in iter(filesToClaim[oldOwner].items()):
+          for xferFileId, fileInfo in oldOwnerFilesToClaim.items():
             l += 1
             entityActionNotPerformedWarning([Ent.USER, user, fileInfo['type'], f'{fileInfo["name"]} ({xferFileId})'],
                                             Msg.USER_IN_OTHER_DOMAIN.format(Ent.Singular(Ent.USER), oldOwner), l, lcount)
@@ -66275,7 +66276,7 @@ SHAREDDRIVE_API_GUI_ROLES_MAP = {
 def _getSharedDriveRole(shareddrive):
   if 'capabilities' not in shareddrive:
     return None
-  for role, capabilities in iter(SHAREDDRIVE_ROLES_CAPABILITIES_MAP.items()):
+  for role, capabilities in SHAREDDRIVE_ROLES_CAPABILITIES_MAP.items():
     match = True
     for capability in capabilities:
       if capabilities[capability] != shareddrive['capabilities'].get(capability, ''):
@@ -67008,7 +67009,7 @@ def printSharedDriveOrganizers(users, useDomainAdminAccess=False):
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   roles = set(['organizer'])
   includeTypes = set()
-  showNoOrganizerDrives = SHOW_NO_PERMISSIONS_DRIVES_CHOICE_MAP['false']
+  showNoOrganizerDrives = SHOW_NO_PERMISSIONS_DRIVES_CHOICE_MAP['true']
   fieldsList = ['role', 'type', 'emailAddress']
   cd = entityList = orgUnitId = query = matchPattern = None
   domainList = set([(GC.Values[GC.DOMAIN] if GC.Values[GC.DOMAIN] else _getValueFromOAuth('hd'))])
@@ -69698,12 +69699,12 @@ def _printShowTokens(entityType, users):
       performActionNumItems(jcount, Ent.ACCESS_TOKEN)
       Ind.Increment()
       j = 0
-      for _, token in sorted(iter(aggregateTokensById.items())):
+      for _, token in sorted(aggregateTokensById.items()):
         j += 1
         _showToken(token, tokenTitle, aggregateUsersBy, j, jcount)
       Ind.Decrement()
     else:
-      for _, token in sorted(iter(aggregateTokensById.items())):
+      for _, token in sorted(aggregateTokensById.items()):
         _printToken(token)
   elif aggregateUsersBy == 'displayText':
     if not csvPF:
@@ -69711,24 +69712,24 @@ def _printShowTokens(entityType, users):
       performActionNumItems(jcount, Ent.ACCESS_TOKEN)
       Ind.Increment()
       j = 0
-      for _, tokenIds in sorted(iter(tokenNameIdMap.items())):
+      for _, tokenIds in sorted(tokenNameIdMap.items()):
         for tokcid in sorted(tokenIds):
           j += 1
           _showToken(aggregateTokensById[tokcid], tokenTitle, aggregateUsersBy, j, jcount)
       Ind.Decrement()
     else:
-      for _, tokenIds in sorted(iter(tokenNameIdMap.items())):
+      for _, tokenIds in sorted(tokenNameIdMap.items()):
         for tokcid in sorted(tokenIds):
           _printToken(aggregateTokensById[tokcid])
   else: # aggregateUsersBy == 'user':
     if not csvPF:
       jcount = len(aggregateTokensById)
       j = 0
-      for user, count in sorted(iter(aggregateTokensById.items())):
+      for user, count in sorted(aggregateTokensById.items()):
         j += 1
         printEntityKVList([Ent.USER, user], [Ent.Plural(Ent.ACCESS_TOKEN), count], j, jcount)
     else:
-      for user, count in sorted(iter(aggregateTokensById.items())):
+      for user, count in sorted(aggregateTokensById.items()):
         csvPF.WriteRow({'user': user, 'tokenCount': count})
   if csvPF:
     csvPF.writeCSVfile('OAuth Tokens')
@@ -70629,10 +70630,10 @@ def printShowLabels(users):
         labelTree = _buildLabelTree(labels)
         Ind.Increment()
         if not showNested:
-          for label, _ in sorted(iter(labelTree.items()), key=lambda k: (k[1]['info']['type'], k[1]['info']['name'])):
+          for label, _ in sorted(labelTree.items(), key=lambda k: (k[1]['info']['type'], k[1]['info']['name'])):
             _printFlatLabel(labelTree[label])
         else:
-          for label, _ in sorted(iter(labelTree.items()), key=lambda k: (k[1]['info']['type'], k[1]['info']['name'])):
+          for label, _ in sorted(labelTree.items(), key=lambda k: (k[1]['info']['type'], k[1]['info']['name'])):
             _printNestedLabel(labelTree[label])
         Ind.Decrement()
       else:
@@ -70810,7 +70811,7 @@ def _finalizeMessageSelectParameters(parameters, queryOrIdsRequired):
     if parameters['labelGroupOpen']:
       parameters['query'] += ')'
     if parameters['queryTimes']:
-      for queryTimeName, queryTimeValue in iter(parameters['queryTimes'].items()):
+      for queryTimeName, queryTimeValue in parameters['queryTimes'].items():
         parameters['query'] = parameters['query'].replace(f'#{queryTimeName}#', queryTimeValue)
     _mapMessageQueryDates(parameters)
   elif queryOrIdsRequired and parameters['messageEntity'] is None and not parameters['labelIds']:
@@ -71696,7 +71697,7 @@ def _draftImportInsertMessage(users, operation):
           message = MIMEText(tmpHTML, 'html', UTF8)
         else:
           message = MIMEText(tmpText, 'plain', UTF8)
-      for header, value in iter(msgHeaders.items()):
+      for header, value in msgHeaders.items():
         if substituteForUserInHeaders:
           value = _substituteForUser(value, user, userName)
         message[header] = Header()
@@ -71716,7 +71717,7 @@ def _draftImportInsertMessage(users, operation):
       body = {'raw': base64.urlsafe_b64encode(bytes(tmpFile.read(), UTF8)).decode()}
       tmpFile.close()
     else:
-      for header, value in iter(msgHeaders.items()):
+      for header, value in msgHeaders.items():
         if substituteForUserInHeaders:
           value = _substituteForUser(value, user, userName)
         msgText = re.sub(fr'(?sm)\n{header}:.+?(?=[\r\n]+[a-zA-Z0-9-]+:)', f'\n{header}: {value}', msgText, 1)
@@ -72494,14 +72495,14 @@ def printShowMessagesThreads(users, entityType):
         if onlyUser or positiveCountsOnly or labelMatchPattern:
           for sender in senderLabelsMaps:
             userLabelsMap = {}
-            for labelId, label in iter(senderLabelsMaps[sender].items()):
+            for labelId, label in senderLabelsMaps[sender].items():
               if (label['match'] and
                   (not onlyUser or label['type'] != LABEL_TYPE_SYSTEM) and
                   (not positiveCountsOnly or label['count'] > 0)):
                 userLabelsMap[labelId] = label
             senderLabelsMaps[sender] = userLabelsMap
         if not csvPF:
-          for sender, labelsMap in sorted(iter(senderLabelsMaps.items())):
+          for sender, labelsMap in sorted(senderLabelsMaps.items()):
             jcount = len(labelsMap)
             kvlist = [Ent.USER, user]
             if senderMatchPattern:
@@ -72509,7 +72510,7 @@ def printShowMessagesThreads(users, entityType):
             entityPerformActionNumItems(kvlist, jcount, Ent.LABEL, i, count)
             Ind.Increment()
             j = 0
-            for label in sorted(iter(labelsMap.values()), key=lambda k: k['name']):
+            for label in sorted(labelsMap.values(), key=lambda k: k['name']):
               j += 1
               if not show_size:
                 printEntityKVList([Ent.LABEL, label['name']], ['Count', label['count'], 'Type', label['type']], j, jcount)
@@ -72517,7 +72518,7 @@ def printShowMessagesThreads(users, entityType):
                 printEntityKVList([Ent.LABEL, label['name']], ['Count', label['count'], 'Size', label['size'], 'Type', label['type']], j, jcount)
             Ind.Decrement()
         else:
-          for sender, labelsMap in sorted(iter(senderLabelsMaps.items())):
+          for sender, labelsMap in sorted(senderLabelsMaps.items()):
             row = {'User': user}
             if senderMatchPattern:
               row['Sender'] = sender
@@ -72526,7 +72527,7 @@ def printShowMessagesThreads(users, entityType):
                 label.pop('size', None)
             if addCSVData:
               row.update(addCSVData)
-            csvPF.WriteRowTitles(flattenJSON({'Labels': sorted(iter(labelsMap.values()), key=lambda k: k['name'])}, flattened=row))
+            csvPF.WriteRowTitles(flattenJSON({'Labels': sorted(labelsMap.values(), key=lambda k: k['name'])}, flattened=row))
       elif not senderMatchPattern:
         v = messageThreadCounts[parameters['listType']]
         if not positiveCountsOnly or v > 0:
@@ -72542,11 +72543,11 @@ def printShowMessagesThreads(users, entityType):
       else:
         if not show_size:
           if not csvPF:
-            for k, v in sorted(iter(senderCounts.items())):
+            for k, v in sorted(senderCounts.items()):
               if not positiveCountsOnly or v['count'] > 0:
                 printEntityKVList([Ent.USER, user, Ent.SENDER, k], [parameters['listType'], v['count']], i, count)
           else:
-            for k, v in sorted(iter(senderCounts.items())):
+            for k, v in sorted(senderCounts.items()):
               if not positiveCountsOnly or v['count'] > 0:
                 row = {'User': user, 'Sender': k, parameters['listType']: v['count']}
                 if addCSVData:
@@ -72554,11 +72555,11 @@ def printShowMessagesThreads(users, entityType):
                 csvPF.WriteRow(row)
         else:
           if not csvPF:
-            for k, v in sorted(iter(senderCounts.items())):
+            for k, v in sorted(senderCounts.items()):
               if not positiveCountsOnly or v['count'] > 0:
                 printEntityKVList([Ent.USER, user, Ent.SENDER, k], [parameters['listType'], v['count'], 'size', v['size']], i, count)
           else:
-            for k, v in sorted(iter(senderCounts.items())):
+            for k, v in sorted(senderCounts.items()):
               if not positiveCountsOnly or v['count'] > 0:
                 row = {'User': user, 'Sender': k, parameters['listType']: v['count'], 'size': v['size']}
                 if addCSVData:
@@ -73037,7 +73038,7 @@ def createFilter(users):
     try:
       lcount = len(addLabelIndicies)
       l = 0
-      for addLabelName, addLabelData in iter(addLabelIndicies.items()):
+      for addLabelName, addLabelData in addLabelIndicies.items():
         l += 1
         retries = 3
         for _ in range(1, retries+1):
@@ -73519,7 +73520,7 @@ def printShowFormResponses(users):
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if filterTimes and frfilter is not None:
-    for filterTimeName, filterTimeValue in iter(filterTimes.items()):
+    for filterTimeName, filterTimeValue in filterTimes.items():
       frfilter = frfilter.replace(f'#{filterTimeName}#', filterTimeValue)
   if csvPF:
     if countsOnly:
@@ -78753,7 +78754,7 @@ def showAPICallsRetryData():
     Ind.Reset()
     writeStderr(Msg.API_CALLS_RETRY_DATA)
     Ind.Increment()
-    for k, v in sorted(iter(GM.Globals[GM.API_CALLS_RETRY_DATA].items())):
+    for k, v in sorted(GM.Globals[GM.API_CALLS_RETRY_DATA].items()):
       m, s = divmod(int(v[1]), 60)
       h, m = divmod(m, 60)
       writeStderr(formatKeyValueList(Ind.Spaces(), [k, f'{v[0]}/{h}:{m:02d}:{s:02d}'], '\n'))
