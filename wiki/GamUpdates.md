@@ -16,6 +16,8 @@ Added `downloadrestrictions.restrictedforreaders` and `downloadrestrictions.rest
 to `<SharedDriveRestrictionsSubfieldName>`; previously, only the abbreviations `downloadrestrictedforreaders`
 and `downloadrestrictedforwriters` were supported (they are still supported).
 
+Updated `gam <UserTypeEntity> copy drivefile` to handle unexpected data returned by Google that caused a trap.
+
 ### 7.15.00
 
 Updated  `gam print shareddriveorganizers` to make `shownoorganizerdrives` default to `True`
