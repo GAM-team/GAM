@@ -181,8 +181,8 @@
         allowcontentmanagerstosharefolders|
         copyrequireswriterpermission|
         domainusersonly|
-        downloadrestrictedforreaders|
-        downloadrestrictedforwriters|
+        downloadrestrictedforreaders|downloadrestrictions.restrictedforreaders|
+        downloadrestrictedforwriters|downloadrestrictions.restrictedforwriters|
         drivemembersonly|teammembersonly|
         sharingfoldersrequiresorganizerpermission
 
@@ -217,7 +217,7 @@ The user that creates a Shared Drive is given the permission role organizer for 
 gam <UserTypeEntity> create shareddrive <Name>
         [(theme|themeid <String>)|
          ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
-        (<SharedDriveRestrictionsSubfieldName> <Boolean>)*
+        ([restrictions.]<SharedDriveRestrictionsSubfieldName> <Boolean>)*
         [hide <Boolean>] [ou|org|orgunit <OrgUnitItem>]
         [errorretries <Integer>] [updateinitialdelay <Integer>] [updateretrydelay <Integer>]
         [(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*) | returnidonly]
@@ -228,7 +228,7 @@ gam <UserTypeEntity> create shareddrive <Name>
   * `<Float>` - Y coordinate, typically 0.0
   * `<Float>` - width, typically 1.0
 * `color` - set the Shared Drive color
-* `<SharedDriveRestrictionsSubfieldName> <Boolean>` - Set Shared Drive Restrictions
+* `[restrictions.]<SharedDriveRestrictionsSubfieldName> <Boolean>` - Set Shared Drive Restrictions
 * `hide <Boolean>` - Set Shared Drive visibility
 
 If any attributes other than `themeid` are specified, GAM must create the Drive and then update the Drive attributes.
@@ -284,13 +284,13 @@ This command is used to set basic Shared Drive settings.
 gam <UserTypeEntity> update shareddrive <SharedDriveEntity> [adminaccess|asadmin] [name <Name>]
         [(theme|themeid <String>)|
          ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
-        (<SharedDriveRestrictionsSubfieldName> <Boolean>)*
+        ([restrictions.]<SharedDriveRestrictionsSubfieldName> <Boolean>)*
         [hide|hidden <Boolean>] [ou|org|orgunit <OrgUnitItem>]
 ```
 * `themeid` - a Shared Drive themeId obtained from `show shareddrivethemes`
 * `customtheme` - set the backgroundImageFile property described here:  https://developers.google.com/drive/v3/reference/teamdrives
 * `color` - set the Shared Drive color
-* `<SharedDriveRestrictionsSubfieldName> <Boolean>` - Set Shared Drive Restrictions
+* `[restrictions.]<SharedDriveRestrictionsSubfieldName> <Boolean>` - Set Shared Drive Restrictions
 * `hidden <Boolean>` - Set Shared Drive visibility
 
 This option is only available when the command is run as an administrator.
