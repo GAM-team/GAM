@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.15.00'
+__version__ = '7.15.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -60309,7 +60309,7 @@ def _checkForExistingShortcut(drive, fileId, fileName, parentId):
                                  supportsAllDrives=True, includeItemsFromAllDrives=True,
                                  q=f"shortcutDetails.targetId = '{fileId}' and trashed = False", fields='files(id,name,parents)')['files']
     for shortcut in existingShortcuts:
-      if parentId in shortcut['parents'] and fileName == shortcut['name']:
+      if parentId in shortcut.get('parents', []) and fileName == shortcut['name']:
         return shortcut['id']
   except (GAPI.invalidQuery, GAPI.invalid, GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy):
     pass
@@ -65885,6 +65885,10 @@ SHAREDDRIVE_RESTRICTIONS_MAP = {
   'sharingfoldersrequiresorganizerpermission': 'sharingFoldersRequiresOrganizerPermission',
   'teammembersonly': 'driveMembersOnly',
   }
+SHAREDDRIVE_DOWNLOAD_RESTRICTIONS_MAP = {
+  'restrictedforreaders': 'downloadrestrictedforreaders',
+  'restrictedforwriters': 'downloadrestrictedforwriters',
+  }
 
 def _getSharedDriveRestrictions(myarg, body):
   def _setRestriction(restriction):
@@ -65899,7 +65903,12 @@ def _getSharedDriveRestrictions(myarg, body):
 
   if myarg.startswith('restrictions.'):
     _, subField = myarg.split('.', 1)
-    if subField in SHAREDDRIVE_RESTRICTIONS_MAP:
+    if subField.startswith('downloadrestrictions.'):
+      _, subField = subField.split('.', 1)
+      if subField in SHAREDDRIVE_DOWNLOAD_RESTRICTIONS_MAP:
+        _setRestriction(SHAREDDRIVE_DOWNLOAD_RESTRICTIONS_MAP[subField])
+        return True
+    elif subField in SHAREDDRIVE_RESTRICTIONS_MAP:
       _setRestriction(subField)
       return True
     invalidChoiceExit(subField, SHAREDDRIVE_RESTRICTIONS_MAP, True)
