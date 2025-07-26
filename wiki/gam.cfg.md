@@ -412,9 +412,8 @@ never_time
         has the value "1970-01-01T00:00:00.000Z"
         Default: Never
 no_browser
-        If no_browser is True, GAM won't open a browser if todrive is set
-        when creating CSV files and GAM prints a link and waits for
-        the verification code when oauth2.txt is being created
+        If no_browser is True, GAM won't open a browser when it prints a link
+        and waits for the verification code when oauth2.txt is being created/updated
         Signal file: OldGamPath/nobrowser.txt
 no_cache
         Disable GAM API caching
