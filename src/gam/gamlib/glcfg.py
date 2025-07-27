@@ -155,8 +155,6 @@ DRIVE_DIR = 'drive_dir'
 DRIVE_MAX_RESULTS = 'drive_max_results'
 # Use Drive V3 beta
 DRIVE_V3_BETA = 'drive_v3_beta'
-# Use Drive V3 ntive names
-DRIVE_V3_NATIVE_NAMES = 'drive_v3_native_names'
 # When processing email messages in batches, how many should be processed in each batch
 EMAIL_BATCH_SIZE = 'email_batch_size'
 # Enable Delegated Admin Service Account
@@ -382,7 +380,6 @@ Defaults = {
   ENFORCE_EXPANSIVE_ACCESS: TRUE,
   DRIVE_MAX_RESULTS: '1000',
   DRIVE_V3_BETA: FALSE,
-  DRIVE_V3_NATIVE_NAMES: TRUE,
   EMAIL_BATCH_SIZE: '50',
   ENABLE_DASA: FALSE,
   ENABLE_GCLOUD_REAUTH: FALSE,
@@ -551,7 +548,6 @@ VAR_INFO = {
   ENFORCE_EXPANSIVE_ACCESS: {VAR_TYPE: TYPE_BOOLEAN},
   DRIVE_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 1000)},
   DRIVE_V3_BETA: {VAR_TYPE: TYPE_BOOLEAN},
-  DRIVE_V3_NATIVE_NAMES: {VAR_TYPE: TYPE_BOOLEAN},
   EMAIL_BATCH_SIZE: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 100)},
   ENABLE_DASA: {VAR_TYPE: TYPE_BOOLEAN, VAR_SIGFILE: 'enabledasa.txt', VAR_SFFT: (FALSE, TRUE)},
   ENABLE_GCLOUD_REAUTH: {VAR_TYPE: TYPE_BOOLEAN},

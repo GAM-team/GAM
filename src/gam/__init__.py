@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.15.01'
+__version__ = '7.16.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -7862,7 +7862,6 @@ class CSVPrintFile():
       GM.Globals[GM.CSV_OUTPUT_TIMESTAMP_COLUMN] = GC.Values.get(GC.CSV_OUTPUT_TIMESTAMP_COLUMN, '')
     self.SetTimestampColumn(GM.Globals[GM.CSV_OUTPUT_TIMESTAMP_COLUMN])
     self.SetFormatJSON(False)
-    self.SetMapDrive3Titles(False)
     self.SetNodataFields(False, None, None, None, False)
     self.SetFixPaths(False)
     self.SetShowPermissionsLast(False)
@@ -7931,13 +7930,6 @@ class CSVPrintFile():
   def SetSortAllTitles(self):
     self.sortTitlesList = self.titlesList[:]
     self.sortTitlesSet = set(self.sortTitlesList)
-
-  def SetMapDrive3Titles(self, mapDrive3Titles):
-    self.mapDrive3Titles = mapDrive3Titles
-
-  def MapDrive3TitlesToDrive2(self):
-    _mapDrive3TitlesToDrive2(self.titlesList, API.DRIVE3_TO_DRIVE2_FILES_FIELDS_MAP)
-    self.titlesSet = set(self.titlesList)
 
   def AddJSONTitle(self, title):
     self.JSONtitlesSet.add(title)
@@ -8974,7 +8966,6 @@ class CSVPrintFile():
                                                       self.formatJSON, self.JSONtitlesList,
                                                       self.columnDelimiter, self.noEscapeChar, self.quoteChar,
                                                       self.sortHeaders, self.timestampColumn,
-                                                      self.mapDrive3Titles,
                                                       self.fixPaths,
                                                       self.mapNodataFields,
                                                       self.nodataFields,
@@ -9009,8 +9000,6 @@ class CSVPrintFile():
           self.MovePermsToEnd()
         if not self.rows and self.nodataFields is not None:
           self.FixNodataTitles()
-        if self.mapDrive3Titles:
-          self. MapDrive3TitlesToDrive2()
       else:
         self.titlesList = self.headerForce
       if self.timestampColumn:
@@ -9646,11 +9635,10 @@ def CSVFileQueueHandler(mpQueue, mpQueueStdout, mpQueueStderr, csvPF, datetimeNo
       csvPF.SetQuoteChar(dataItem[7])
       csvPF.SetSortHeaders(dataItem[8])
       csvPF.SetTimestampColumn(dataItem[9])
-      csvPF.SetMapDrive3Titles(dataItem[10])
-      csvPF.SetFixPaths(dataItem[11])
-      csvPF.SetNodataFields(dataItem[12], dataItem[13], dataItem[14], dataItem[15], dataItem[16])
-      csvPF.SetShowPermissionsLast(dataItem[17])
-      csvPF.SetZeroBlankMimeTypeCounts(dataItem[18])
+      csvPF.SetFixPaths(dataItem[10])
+      csvPF.SetNodataFields(dataItem[11], dataItem[12], dataItem[13], dataItem[14], dataItem[15])
+      csvPF.SetShowPermissionsLast(dataItem[16])
+      csvPF.SetZeroBlankMimeTypeCounts(dataItem[17])
     elif dataType == GM.REDIRECT_QUEUE_DATA:
       csvPF.rows.extend(dataItem)
     elif dataType == GM.REDIRECT_QUEUE_ARGS:
@@ -54605,11 +54593,6 @@ DRIVEFILE_ORDERBY_CHOICE_MAP = {
   'viewedbymetime': 'viewedByMeTime',
   }
 
-def _mapDrive3TitlesToDrive2(titles, drive3TitlesMap):
-  for i, title in enumerate(titles):
-    if title in drive3TitlesMap:
-      titles[i] = drive3TitlesMap[title]
-
 def _mapDriveUser(field):
   if 'me' in field:
     field['isAuthenticatedUser'] = field.pop('me')
@@ -54617,32 +54600,25 @@ def _mapDriveUser(field):
     field['picture'] = {'url': field.pop('photoLink')}
 
 def _mapDrivePermissionNames(permission):
-  if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES]:
-    if 'displayName' in permission:
-      permission['name'] = permission.pop('displayName')
-    if 'expirationTime' in permission:
-      permission['expirationDate'] = formatLocalTime(permission.pop('expirationTime'))
-    if 'allowFileDiscovery' in permission:
-      permission['withLink'] = not permission.pop('allowFileDiscovery')
   emailAddress = permission.get('emailAddress')
   if emailAddress:
     _, permission['domain'] = splitEmailAddress(emailAddress)
 
-def _mapDriveParents(f_file, parentsSubFields):
+def _mapDriveInfo(f_file, parentsSubFields, showParentsIdsAsList):
   if 'parents' in f_file:
     parents = f_file.pop('parents')
-    if len(parents) == 1 and parents[0] == ORPHANS:
-      return
-    f_file['parents'] = []
-    for parentId in parents:
-      parent = {}
-      if parentsSubFields['id']:
-        parent['id'] = parentId
-      if parentsSubFields['isRoot']:
-        parent['isRoot'] = parentId == parentsSubFields['rootFolderId']
-      f_file['parents'].append(parent)
+    if showParentsIdsAsList:
+      f_file['parentsIds'] = parents
+    elif len(parents) != 1 or parents[0] != ORPHANS:
+      f_file['parents'] = []
+      for parentId in parents:
+        parent = {}
+        if parentsSubFields['id']:
+          parent['id'] = parentId
+        if parentsSubFields['isRoot']:
+          parent['isRoot'] = parentId == parentsSubFields['rootFolderId']
+        f_file['parents'].append(parent)
 
-def _mapDriveProperties(f_file):
   appProperties = f_file.pop('appProperties', [])
   properties = f_file.pop('properties', [])
   if appProperties:
@@ -54654,51 +54630,10 @@ def _mapDriveProperties(f_file):
     for key, value in sorted(properties.items()):
       f_file['properties'].append({'key': key, 'value': value, 'visibility': 'PUBLIC'})
 
-def _mapDriveFieldNames(f_file, user, parentsSubFields, mapToLabels):
-  if mapToLabels:
-    for attrib, v2attrib in API.DRIVE3_TO_DRIVE2_LABELS_MAP.items():
-      if attrib in f_file:
-        f_file.setdefault('labels', {})
-        f_file['labels'][v2attrib] = f_file.pop(attrib)
-  for attrib, v2attrib in API.DRIVE3_TO_DRIVE2_FILES_FIELDS_MAP.items():
-    if attrib in f_file:
-      f_file[v2attrib] = f_file.pop(attrib)
-  capabilities = f_file.get('capabilities')
-  if capabilities:
-    for attrib, v2attrib in API.DRIVE3_TO_DRIVE2_CAPABILITIES_FIELDS_MAP.items():
-      if attrib in capabilities:
-        f_file[v2attrib] = capabilities[attrib]
-    for attrib, v2attrib in API.DRIVE3_TO_DRIVE2_CAPABILITIES_NAMES_MAP.items():
-      if attrib in capabilities:
-        capabilities[v2attrib] = capabilities.pop(attrib)
-  if 'spaces' in f_file:
-    f_file['appDataContents'] = 'appDataFolder' in f_file['spaces']
-  if 'lastModifyingUser' in f_file:
-    if 'displayName' in f_file['lastModifyingUser']:
-      f_file['lastModifyingUserName'] = f_file['lastModifyingUser']['displayName']
-    _mapDriveUser(f_file['lastModifyingUser'])
-  if 'owners' in f_file:
-    for owner in f_file['owners']:
-      _mapDriveUser(owner)
-      if 'displayName' in owner:
-        f_file.setdefault('ownerNames', [])
-        f_file['ownerNames'].append(owner['displayName'])
-  _mapDriveUser(f_file.get('sharingUser', {}))
-  _mapDriveParents(f_file, parentsSubFields)
-  _mapDriveProperties(f_file)
   for permission in f_file.get('permissions', []):
-    if (permission.get('type') == 'user') and (permission.get('emailAddress', '').lower() == user) and ('role' in permission):
-      f_file['userPermission'] = {'id': 'me', 'role': permission['role'], 'type': permission['type']}
-    _mapDrivePermissionNames(permission)
-
-def _mapDriveRevisionNames(revision):
-  for attrib, v2attrib in API.DRIVE3_TO_DRIVE2_REVISIONS_FIELDS_MAP.items():
-    if attrib in revision:
-      revision[v2attrib] = revision.pop(attrib)
-  if 'lastModifyingUser' in revision:
-    if 'displayName' in revision['lastModifyingUser']:
-      revision['lastModifyingUserName'] = revision['lastModifyingUser']['displayName']
-    _mapDriveUser(revision['lastModifyingUser'])
+    emailAddress = permission.get('emailAddress')
+    if emailAddress:
+      _, permission['domain'] = splitEmailAddress(emailAddress)
 
 DRIVEFILE_BASIC_PERMISSION_FIELDS = [
   'displayName', 'id', 'emailAddress', 'domain', 'role', 'type',
@@ -54949,11 +54884,7 @@ FILEINFO_FIELDS_TITLES = ['name', 'mimeType']
 FILEPATH_FIELDS_TITLES = ['name', 'id', 'mimeType', 'ownedByMe', 'parents', 'sharedWithMeTime', 'driveId']
 FILEPATH_FIELDS = ','.join(FILEPATH_FIELDS_TITLES)
 
-def _getDriveTimeObjects():
-  timeObjects = ['createdTime', 'viewedByMeTime', 'modifiedByMeTime', 'modifiedTime', 'restrictionTime', 'sharedWithMeTime', 'trashedTime']
-  if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES]:
-    _mapDrive3TitlesToDrive2(timeObjects, API.DRIVE3_TO_DRIVE2_FILES_FIELDS_MAP)
-  return set(timeObjects)
+DRIVE_TIME_OBJECTS = {'createdTime', 'viewedByMeTime', 'modifiedByMeTime', 'modifiedTime', 'restrictionTime', 'sharedWithMeTime', 'trashedTime'}
 
 def _getDriveFieldSubField(field, fieldsList, parentsSubFields):
   field, subField = field.split('.', 1)
@@ -55150,7 +55081,6 @@ def showFileInfo(users):
     showNoParents = True
   includeLabels = ','.join(DFF.includeLabels)
   pathFields = FILEPATH_FIELDS
-  timeObjects = _getDriveTimeObjects()
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -55244,22 +55174,14 @@ def showFileInfo(users):
         if fullpath:
           # Save simple parents list as mappings turn it into a list of dicts
           fpparents = result['parents'][:]
-        if showParentsIdsAsList and 'parents' in result:
-          result['parentsIds'] = result.pop('parents')
-        if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES]:
-          _mapDriveFieldNames(result, user, DFF.parentsSubFields, True)
-        else:
-          _mapDriveParents(result, DFF.parentsSubFields)
-          _mapDriveProperties(result)
-          for permission in result.get('permissions', []):
-            _mapDrivePermissionNames(permission)
+        _mapDriveInfo(result, DFF.parentsSubFields, showParentsIdsAsList)
         if not FJQC.formatJSON:
-          showJSON(None, result, skipObjects=skipObjects, timeObjects=timeObjects, simpleLists=simpleLists,
+          showJSON(None, result, skipObjects=skipObjects, timeObjects=DRIVE_TIME_OBJECTS, simpleLists=simpleLists,
                    dictObjectsKey={'owners': 'displayName', 'fields': 'id', 'labels': 'id', 'user': 'emailAddress', 'parents': 'id',
-                                   'permissions': ['name', 'displayName'][GC.Values[GC.DRIVE_V3_NATIVE_NAMES]]})
+                                   'permissions': 'displayName'})
           Ind.Decrement()
         else:
-          printLine(json.dumps(cleanJSON(result, skipObjects=skipObjects, timeObjects=timeObjects), ensure_ascii=False, sort_keys=True))
+          printLine(json.dumps(cleanJSON(result, skipObjects=skipObjects, timeObjects=DRIVE_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
         if fullpath:
           # Restore simple parents list
           fileTree[fileId]['info']['parents'] = fpparents[:]
@@ -55651,18 +55573,12 @@ FILEREVISIONS_FIELDS_CHOICE_MAP = {
   'size': 'size',
   }
 
-def _getFileRevisionsTimeObjects():
-  timeObjects = ['modifiedTime']
-  if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES]:
-    _mapDrive3TitlesToDrive2(timeObjects, API.DRIVE3_TO_DRIVE2_FILES_FIELDS_MAP)
-  return set(timeObjects)
+FILEREVISIONS_TIME_OBJECTS = {'modifiedTime'}
 
-def _showRevision(revision, timeObjects, i=0, count=0):
+def _showRevision(revision, i=0, count=0):
   printEntity([Ent.DRIVE_FILE_REVISION, revision['id']], i, count)
   Ind.Increment()
-  if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES]:
-    _mapDriveRevisionNames(revision)
-  showJSON(None, revision, ['id'], timeObjects)
+  showJSON(None, revision, ['id'], timeObjects=FILEREVISIONS_TIME_OBJECTS)
   Ind.Decrement()
 
 DRIVE_REVISIONS_INDEXED_TITLES = ['revisions']
@@ -55686,7 +55602,6 @@ def printShowFileRevisions(users):
   revisionsEntity = None
   oneItemPerRow = previewDelete = showTitles = stripCRsFromName = False
   OBY = OrderBy(DRIVEFILE_ORDERBY_CHOICE_MAP)
-  fileNameTitle = 'title' if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES] else 'name'
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -55704,7 +55619,7 @@ def printShowFileRevisions(users):
     elif myarg == 'showtitles':
       showTitles = True
       if csvPF:
-        csvPF.AddTitles(fileNameTitle)
+        csvPF.AddTitles('name')
     elif myarg == 'stripcrsfromname':
       stripCRsFromName = True
     elif getFieldsList(myarg, FILEREVISIONS_FIELDS_CHOICE_MAP, fieldsList, initialField='id'):
@@ -55715,7 +55630,6 @@ def printShowFileRevisions(users):
     fields = getItemFieldsFromFieldsList('revisions', fieldsList)
   else:
     fields = '*'
-  timeObjects = _getFileRevisionsTimeObjects()
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -55755,29 +55669,24 @@ def printShowFileRevisions(users):
         k = 0
         for revision in results:
           k += 1
-          _showRevision(revision, timeObjects, k, kcount)
+          _showRevision(revision, k, kcount)
         Ind.Decrement()
       elif results:
         if oneItemPerRow:
           for revision in results:
             row = {'Owner': user, 'id': fileId}
             if showTitles:
-              row[fileNameTitle] = fileName
-            if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES]:
-              _mapDriveRevisionNames(revision)
-            csvPF.WriteRowTitles(flattenJSON({'revision': revision}, flattened=row, timeObjects=timeObjects))
+              row['name'] = fileName
+            csvPF.WriteRowTitles(flattenJSON({'revision': revision}, flattened=row, timeObjects=FILEREVISIONS_TIME_OBJECTS))
         else:
-          if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES]:
-            for revision in results:
-              _mapDriveRevisionNames(revision)
           if showTitles:
-            csvPF.WriteRowTitles(flattenJSON({'revisions': results}, flattened={'Owner': user, 'id': fileId, fileNameTitle: fileName}, timeObjects=timeObjects))
+            csvPF.WriteRowTitles(flattenJSON({'revisions': results}, flattened={'Owner': user, 'id': fileId, 'name': fileName}, timeObjects=FILEREVISIONS_TIME_OBJECTS))
           else:
-            csvPF.WriteRowTitles(flattenJSON({'revisions': results}, flattened={'Owner': user, 'id': fileId}, timeObjects=timeObjects))
+            csvPF.WriteRowTitles(flattenJSON({'revisions': results}, flattened={'Owner': user, 'id': fileId}, timeObjects=FILEREVISIONS_TIME_OBJECTS))
     Ind.Decrement()
   if csvPF:
     if oneItemPerRow:
-      csvPF.SetSortTitles(['Owner', 'id', fileNameTitle, 'revision.id'])
+      csvPF.SetSortTitles(['Owner', 'id', 'name', 'revision.id'])
     else:
       csvPF.SetSortTitles(['Owner', 'id', 'revisions'])
       csvPF.SetIndexedTitles(DRIVE_REVISIONS_INDEXED_TITLES)
@@ -56587,10 +56496,10 @@ def printFileList(users):
   def _printFileInfoRow(baserow, fileInfo):
     row = baserow.copy()
     if not FJQC.formatJSON:
-      csvPF.WriteRowTitles(flattenJSON(fileInfo, flattened=row, skipObjects=skipObjects, timeObjects=timeObjects,
+      csvPF.WriteRowTitles(flattenJSON(fileInfo, flattened=row, skipObjects=skipObjects, timeObjects=DRIVE_TIME_OBJECTS,
                                        simpleLists=simpleLists, delimiter=delimiter))
     else:
-      row['JSON'] = json.dumps(cleanJSON(fileInfo, skipObjects=skipObjects, timeObjects=timeObjects),
+      row['JSON'] = json.dumps(cleanJSON(fileInfo, skipObjects=skipObjects, timeObjects=DRIVE_TIME_OBJECTS),
                                ensure_ascii=False, sort_keys=True)
       csvPF.WriteRowTitlesJSONNoFilter(row)
 
@@ -56641,15 +56550,7 @@ def printFileList(users):
                           fullpath=fullpath, showDepth=showDepth, folderPathOnly=folderPathOnly)
       else:
         addFilePathsToInfo(drive, fileTree, fileInfo, filePathInfo, folderPathOnly=folderPathOnly)
-    if showParentsIdsAsList and 'parents' in fileInfo:
-      fileInfo['parentsIds'] = fileInfo.pop('parents')
-    if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES]:
-      _mapDriveFieldNames(fileInfo, user, DFF.parentsSubFields, False)
-    else:
-      _mapDriveParents(fileInfo, DFF.parentsSubFields)
-      _mapDriveProperties(fileInfo)
-      for permission in fileInfo.get('permissions', []):
-        _mapDrivePermissionNames(permission)
+    _mapDriveInfo(fileInfo, DFF.parentsSubFields, showParentsIdsAsList)
     if showParentsIdsAsList and 'parentsIds' in fileInfo:
       fileInfo['parents'] = len(fileInfo['parentsIds'])
     if addCSVData:
@@ -56657,24 +56558,24 @@ def printFileList(users):
     if not countsOnly:
       if not oneItemPerRow or 'permissions' not in fileInfo:
         if not FJQC.formatJSON:
-          csvPF.WriteRowTitles(flattenJSON(fileInfo, flattened=row, skipObjects=skipObjects, timeObjects=timeObjects,
+          csvPF.WriteRowTitles(flattenJSON(fileInfo, flattened=row, skipObjects=skipObjects, timeObjects=DRIVE_TIME_OBJECTS,
                                            simpleLists=simpleLists, delimiter=delimiter))
         else:
           if 'id' in fileInfo:
             row['id'] = fileInfo['id']
-          if fileNameTitle in fileInfo:
-            row[fileNameTitle] = fileInfo[fileNameTitle]
+          if 'name' in fileInfo:
+            row['name'] = fileInfo['name']
           if 'owners' in fileInfo:
             flattenJSON({'owners': fileInfo['owners']}, flattened=row, skipObjects=skipObjects)
-          row['JSON'] = json.dumps(cleanJSON(fileInfo, skipObjects=skipObjects, timeObjects=timeObjects),
+          row['JSON'] = json.dumps(cleanJSON(fileInfo, skipObjects=skipObjects, timeObjects=DRIVE_TIME_OBJECTS),
                                    ensure_ascii=False, sort_keys=True)
           csvPF.WriteRowTitlesJSONNoFilter(row)
       else:
         baserow = row.copy()
         if 'id' in fileInfo:
           baserow['id'] = fileInfo['id']
-        if fileNameTitle in fileInfo:
-          baserow[fileNameTitle] = fileInfo[fileNameTitle]
+        if 'name' in fileInfo:
+          baserow['name'] = fileInfo['name']
         if 'owners' in fileInfo:
           flattenJSON({'owners': fileInfo['owners']}, flattened=baserow, skipObjects=skipObjects)
         for permission in fileInfo.pop('permissions'):
@@ -56688,7 +56589,7 @@ def printFileList(users):
               _printFileInfoRow(baserow, fileInfo)
     else:
       if not countsRowFilter:
-        csvPFco.UpdateMimeTypeCounts(flattenJSON(fileInfo, flattened=row, skipObjects=skipObjects, timeObjects=timeObjects,
+        csvPFco.UpdateMimeTypeCounts(flattenJSON(fileInfo, flattened=row, skipObjects=skipObjects, timeObjects=DRIVE_TIME_OBJECTS,
                                                  simpleLists=simpleLists, delimiter=delimiter), mimeTypeInfo, sizeField)
       else:
         mimeTypeInfo.setdefault(fileInfo['mimeType'], {'count': 0, 'size': 0})
@@ -56955,12 +56856,6 @@ def printFileList(users):
     csvPF.AddTitles('paths')
     csvPF.SetFixPaths(True)
   includeLabels = ','.join(DFF.includeLabels)
-  timeObjects = _getDriveTimeObjects()
-  if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES]:
-    fileNameTitle = 'title'
-    csvPF.SetMapDrive3Titles(True)
-  else:
-    fileNameTitle = 'name'
   csvPF.RemoveTitles(['capabilities'])
   if DLP.queryTimes and selectSubQuery:
     for queryTimeName, queryTimeValue in DLP.queryTimes.items():
@@ -56980,9 +56875,9 @@ def printFileList(users):
       if not FJQC.formatJSON:
         nodataFields = ['Owner']+list(set(DFF.fieldsList)-skipObjects)
       else:
-        nodataFields = ['Owner', 'id', fileNameTitle, 'owners.emailAddress']
+        nodataFields = ['Owner', 'id', 'name', 'owners.emailAddress']
     else:
-      nodataFields = ['Owner', 'id', fileNameTitle, 'owners.emailAddress']
+      nodataFields = ['Owner', 'id', 'name', 'owners.emailAddress']
       if not FJQC.formatJSON:
         nodataFields.append('permissions')
     if filepath:
@@ -57162,7 +57057,7 @@ def printFileList(users):
     if not csvPF.rows:
       setSysExitRC(NO_ENTITIES_FOUND_RC)
     if not FJQC.formatJSON:
-      csvPF.SetSortTitles(['Owner', 'id', fileNameTitle])
+      csvPF.SetSortTitles(['Owner', 'id', 'name'])
     else:
       if 'JSON' in csvPF.JSONtitlesList:
         csvPF.MoveJSONTitlesToEnd(['JSON'])
@@ -57430,8 +57325,7 @@ def printShowFileComments(users):
 #	[fullpath] [folderpathonly [<Boolean>]] [pathdelimiter <Character>]
 #	[followshortcuts [<Boolean>]]
 def printShowFilePaths(users):
-  fileNameTitle = 'title' if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES] else 'name'
-  csvPF = CSVPrintFile(['Owner', 'id', fileNameTitle, 'paths'], 'sortall', ['paths']) if Act.csvFormat() else None
+  csvPF = CSVPrintFile(['Owner', 'id', 'name', 'paths'], 'sortall', ['paths']) if Act.csvFormat() else None
   fileIdEntity = getDriveFileEntity()
   fullpath = folderPathOnly = followShortcuts = oneItemPerRow = returnPathOnly = stripCRsFromName = False
   pathDelimiter = '/'
@@ -57532,11 +57426,11 @@ def printShowFilePaths(users):
           if oneItemPerRow:
             if paths:
               for path in paths:
-                csvPF.WriteRow({'Owner': user, 'id': fileId, fileNameTitle: result['name'], 'path': path})
+                csvPF.WriteRow({'Owner': user, 'id': fileId, 'name': result['name'], 'path': path})
             else:
-              csvPF.WriteRow({'Owner': user, 'id': fileId, fileNameTitle: result['name']})
+              csvPF.WriteRow({'Owner': user, 'id': fileId, 'name': result['name']})
           else:
-            csvPF.WriteRowTitles(flattenJSON({'paths': paths}, flattened={'Owner': user, 'id': fileId, fileNameTitle: result['name']}))
+            csvPF.WriteRowTitles(flattenJSON({'paths': paths}, flattened={'Owner': user, 'id': fileId, 'name': result['name']}))
       except GAPI.fileNotFound:
         entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], Msg.DOES_NOT_EXIST, j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
@@ -57549,8 +57443,7 @@ def printShowFilePaths(users):
 # gam <UserTypeEntity> print fileparenttree <DriveFileEntity> [todrive <ToDriveAttribute>*]
 #	[stripcrsfromname]
 def printFileParentTree(users):
-  fileNameTitle = 'title' if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES] else 'name'
-  csvPF = CSVPrintFile(['Owner', 'isBase', 'baseId', 'id', fileNameTitle, 'parentId', 'depth', 'isRoot'], 'sortall')
+  csvPF = CSVPrintFile(['Owner', 'isBase', 'baseId', 'id', 'name', 'parentId', 'depth', 'isRoot'], 'sortall')
   fileIdEntity = getDriveFileEntity()
   stripCRsFromName = False
   while Cmd.ArgumentsRemaining():
@@ -57610,7 +57503,7 @@ def printFileParentTree(users):
       kcount = len(fileList)
       isBase = True
       for result in fileList:
-        csvPF.WriteRow({'Owner': user, 'isBase': isBase, 'baseId': baseId, 'id': result['id'], fileNameTitle: result['name'],
+        csvPF.WriteRow({'Owner': user, 'isBase': isBase, 'baseId': baseId, 'id': result['id'], 'name': result['name'],
                         'parentId': result['parents'][0], 'depth': kcount, 'isRoot': result['isRoot']})
         isBase = False
         kcount -= 1
@@ -58409,7 +58302,7 @@ def printShowFileTree(users):
       userInfo['index'] += 1
       row = userInfo.copy()
       row['depth'] = depth
-      row[fileNameTitle] = ('' if noindent else Ind.SpacesSub1())+fileEntry['name']
+      row['name'] = ('' if noindent else Ind.SpacesSub1())+fileEntry['name']
       for field in FILETREE_FIELDS_PRINT_ORDER:
         if showFields[field]:
           if field == 'parents':
@@ -58417,7 +58310,7 @@ def printShowFileTree(users):
           elif field == 'owners':
             row[field] = delimiter.join([owner['emailAddress'] for owner in fileEntry.get(field, [])])
           elif field == 'size':
-            row[fileSize] = fileEntry.get(sizeField, 0)
+            row['size'] = fileEntry.get(sizeField, 0)
           else:
             row[field] = fileEntry.get(field, '')
       csvPF.WriteRow(row)
@@ -58518,14 +58411,6 @@ def printShowFileTree(users):
       unknownArgumentExit()
   fieldsList = ['driveId', 'id', 'name', 'parents', 'mimeType', 'ownedByMe', 'owners(emailAddress)',
                 'shared', sizeField, 'explicitlyTrashed', 'trashed', 'webViewLink']
-  if csvPF:
-    if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES]:
-      fileNameTitle = 'title'
-      fileSize = 'fileSize'
-      csvPF.SetMapDrive3Titles(True)
-    else:
-      fileNameTitle = 'name'
-      fileSize = 'size'
   buildTree = (not fileIdEntity
                or (not fileIdEntity['dict']
                    and not fileIdEntity['query']
@@ -58585,7 +58470,7 @@ def printShowFileTree(users):
     if jcount == 0:
       continue
     if csvPF:
-      userInfo = {'User': user, 'index': 0, 'depth': 0, fileNameTitle: ''}
+      userInfo = {'User': user, 'index': 0, 'depth': 0, 'name': ''}
     j = 0
     Ind.Increment()
     for fileId in fileIdEntity['list']:
@@ -58745,8 +58630,7 @@ def createDriveFile(users):
     media_body = getMediaBody(parameters)
     body['mimeType'] = parameters[DFA_LOCALMIMETYPE]
   if csvPF:
-    fileNameTitle = 'title' if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES] else 'name'
-    csvPF.SetTitles(['User', fileNameTitle, 'id'])
+    csvPF.SetTitles(['User', 'name', 'id'])
     if showDetails:
       csvPF.AddTitles(['parentId', 'mimeType'])
     if addCSVData:
@@ -58806,7 +58690,7 @@ def createDriveFile(users):
         else:
           entityActionPerformed(kvList, i, count)
       else:
-        row = {'User': user, fileNameTitle: result['name'], 'id': result['id']}
+        row = {'User': user, 'name': result['name'], 'id': result['id']}
         if showDetails:
           row.update({'parentId': parentId, 'mimeType': result['mimeType']})
         if addCSVData:
@@ -60362,8 +60246,8 @@ copyReturnItemMap = {
 #	[enforceexpansiveaccess [<Boolean>]]
 def copyDriveFile(users):
   def _writeCSVData(user, oldName, oldId, newName, newId, mimeType):
-    row = {'User': user, fileNameTitle: oldName, 'id': oldId,
-           newFileNameTitle: newName, 'newId': newId, 'mimeType': mimeType}
+    row = {'User': user, 'name': oldName, 'id': oldId,
+           'newName': newName, 'newId': newId, 'mimeType': mimeType}
     if addCSVData:
       row.update(addCSVData)
     csvPF.WriteRow(row)
@@ -60753,9 +60637,7 @@ def copyDriveFile(users):
     else:
       unknownArgumentExit()
   if csvPF:
-    fileNameTitle = 'title' if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES] else 'name'
-    newFileNameTitle = f'new{fileNameTitle.capitalize()}'
-    csvPF.SetTitles(['User', fileNameTitle, 'id', newFileNameTitle, 'newId', 'mimeType'])
+    csvPF.SetTitles(['User', 'name', 'id', 'newName', 'newId', 'mimeType'])
     if addCSVData:
       csvPF.AddTitles(sorted(addCSVData.keys()))
   i, count, users = getEntityArgument(users)
@@ -64155,11 +64037,8 @@ def _getDriveFileACLPrintKeysTimeObjects():
   printKeys = ['id', 'type', 'emailAddress', 'domain', 'role', 'permissionDetails',
                'expirationTime', 'photoLink', 'allowFileDiscovery', 'deleted',
                'pendingOwner', 'view']
-  timeObjects = ['expirationTime']
-  if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES]:
-    _mapDrive3TitlesToDrive2(printKeys, API.DRIVE3_TO_DRIVE2_FILES_FIELDS_MAP)
-    _mapDrive3TitlesToDrive2(timeObjects, API.DRIVE3_TO_DRIVE2_FILES_FIELDS_MAP)
-  return (printKeys, set(timeObjects))
+  timeObjects = {'expirationTime'}
+  return (printKeys, timeObjects)
 
 # DriveFileACL commands utilities
 def _showDriveFilePermissionJSON(user, fileId, fileName, createdTime, permission, timeObjects):
@@ -64251,7 +64130,6 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
   showDetails = True
   csvPF = None
   FJQC = FormatJSONQuoteChar(csvPF)
-  fileNameTitle = 'title' if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES] else 'name'
   fileIdEntity = getDriveFileEntity()
   body = {}
   body['type'] = permType = getChoice(DRIVEFILE_ACL_PERMISSION_TYPES)
@@ -64327,7 +64205,7 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
   printKeys, timeObjects = _getDriveFileACLPrintKeysTimeObjects()
   if csvPF:
     if showTitles:
-      csvPF.AddTitles(fileNameTitle)
+      csvPF.AddTitles('name')
       csvPF.SetSortAllTitles()
     if FJQC.formatJSON:
       csvPF.SetJSONTitles(csvPF.titlesList+['JSON'])
@@ -64366,7 +64244,7 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
         if csvPF:
           baserow = {'Owner': user, 'id': fileId}
           if showTitles:
-            baserow[fileNameTitle] = fileName
+            baserow['name'] = fileName
           row = baserow.copy()
           _mapDrivePermissionNames(permission)
           flattenJSON({'permission': permission}, flattened=row, timeObjects=timeObjects)
@@ -64422,7 +64300,6 @@ def updateDriveFileACLs(users, useDomainAdminAccess=False):
   showDetails = True
   csvPF = None
   FJQC = FormatJSONQuoteChar(csvPF)
-  fileNameTitle = 'title' if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES] else 'name'
   body = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -64457,7 +64334,7 @@ def updateDriveFileACLs(users, useDomainAdminAccess=False):
     missingArgumentExit(f'role {formatChoiceList(DRIVEFILE_ACL_ROLES_MAP)}')
   printKeys, timeObjects = _getDriveFileACLPrintKeysTimeObjects()
   if csvPF and showTitles:
-    csvPF.AddTitles(fileNameTitle)
+    csvPF.AddTitles('name')
     csvPF.SetSortAllTitles()
     if FJQC.formatJSON:
       csvPF.SetJSONTitles(csvPF.titlesList+['JSON'])
@@ -64500,7 +64377,7 @@ def updateDriveFileACLs(users, useDomainAdminAccess=False):
         if csvPF:
           baserow = {'Owner': user, 'id': fileId}
           if showTitles:
-            baserow[fileNameTitle] = fileName
+            baserow['name'] = fileName
           row = baserow.copy()
           _mapDrivePermissionNames(permission)
           flattenJSON({'permission': permission}, flattened=row, timeObjects=timeObjects)
@@ -65065,7 +64942,6 @@ def printShowDriveFileACLs(users, useDomainAdminAccess=False):
   fieldsList = []
   OBY = OrderBy(DRIVEFILE_ORDERBY_CHOICE_MAP)
   PM = PermissionMatch()
-  fileNameTitle = 'title' if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES] else 'name'
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -65084,7 +64960,7 @@ def printShowDriveFileACLs(users, useDomainAdminAccess=False):
         addTitle = getString(Cmd.OB_STRING)
         showTitles = False
       if csvPF:
-        csvPF.AddTitles(fileNameTitle)
+        csvPF.AddTitles('name')
         csvPF.SetSortAllTitles()
     elif getDriveFilePermissionsFields(myarg, fieldsList):
       pass
@@ -65169,7 +65045,7 @@ def printShowDriveFileACLs(users, useDomainAdminAccess=False):
       else:
         baserow = {'Owner': user, 'id': fileId}
         if showTitles or addTitle:
-          baserow[fileNameTitle] = fileName
+          baserow['name'] = fileName
         if oneItemPerRow:
           for permission in permissions:
             _mapDrivePermissionNames(permission)
@@ -65736,7 +65612,6 @@ def doPrintShowOwnership():
   customerId = GC.Values[GC.CUSTOMER_ID]
   if customerId == GC.MY_CUSTOMER:
     customerId = None
-  fileNameTitle = 'title' if not GC.Values[GC.DRIVE_V3_NATIVE_NAMES] else 'name'
   csvPF = CSVPrintFile('Owner') if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   addCSVData = {}
@@ -65781,7 +65656,7 @@ def doPrintShowOwnership():
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if csvPF and not FJQC.formatJSON:
-    csvPF.AddTitles(['id', fileNameTitle, 'type', 'ownerIsSharedDrive', 'driveId', 'event'])
+    csvPF.AddTitles(['id', 'name', 'type', 'ownerIsSharedDrive', 'driveId', 'event'])
     if addCSVData:
       csvPF.AddTitles(sorted(addCSVData.keys()))
     csvPF.SetSortAllTitles()
@@ -65814,7 +65689,7 @@ def doPrintShowOwnership():
         elif event['name'] != 'change_owner' and item['name'] == 'owner':
           fileInfo['Owner'] = item['value']
         elif item['name'] == 'doc_title':
-          fileInfo[fileNameTitle] = item['value']
+          fileInfo['name'] = item['value']
         elif item['name'] == 'doc_type':
           fileInfo['type'] = item['value']
         elif item['name'] == 'owner_is_shared_drive':
@@ -65827,7 +65702,7 @@ def doPrintShowOwnership():
           if not csvPF:
             if not FJQC.formatJSON:
               printEntityKVList([Ent.OWNER, fileInfo['Owner']],
-                                ['id', fileInfo['id'], fileNameTitle, fileInfo.get(fileNameTitle, ''),
+                                ['id', fileInfo['id'], 'name', fileInfo.get('name', ''),
                                  'type', fileInfo.get('type', ''),
                                  'ownerIsSharedDrive', fileInfo.get('ownerIsSharedDrive', False),
                                  'driveId', fileInfo.get('driveId', ''),

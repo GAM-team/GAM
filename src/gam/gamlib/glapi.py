@@ -750,56 +750,6 @@ _USER_SVCACCT_ONLY_SCOPES = [
    'scope': 'https://www.googleapis.com/auth/apps.groups.migration'},
   ]
 
-DRIVE3_TO_DRIVE2_ABOUT_FIELDS_MAP = {
-  'displayName': 'name',
-  'limit': 'quotaBytesTotal',
-  'usage': 'quotaBytesUsedAggregate',
-  'usageInDrive': 'quotaBytesUsed',
-  'usageInDriveTrash': 'quotaBytesUsedInTrash',
-  }
-
-DRIVE3_TO_DRIVE2_CAPABILITIES_FIELDS_MAP = {
-  'canComment': 'canComment',
-  'canReadRevisions': 'canReadRevisions',
-  'canCopy': 'copyable',
-  'canEdit': 'editable',
-  'canShare': 'shareable',
-  }
-
-DRIVE3_TO_DRIVE2_CAPABILITIES_NAMES_MAP = {
-  'canChangeViewersCanCopyContent': 'canChangeRestrictedDownload',
-  }
-
-DRIVE3_TO_DRIVE2_FILES_FIELDS_MAP = {
-  'allowFileDiscovery': 'withLink',
-  'createdTime': 'createdDate',
-  'expirationTime': 'expirationDate',
-  'modifiedByMe': 'modified',
-  'modifiedByMeTime': 'modifiedByMeDate',
-  'modifiedTime': 'modifiedDate',
-  'name': 'title',
-  'restrictionTime': 'restrictionDate',
-  'sharedWithMeTime': 'sharedWithMeDate',
-  'size': 'fileSize',
-  'trashedTime': 'trashedDate',
-  'viewedByMe': 'viewed',
-  'viewedByMeTime': 'lastViewedByMeDate',
-  'webViewLink': 'alternateLink',
-  }
-
-DRIVE3_TO_DRIVE2_LABELS_MAP = {
-  'modifiedByMe': 'modified',
-  'starred': 'starred',
-  'trashed': 'trashed',
-  'viewedByMe': 'viewed',
-  }
-
-DRIVE3_TO_DRIVE2_REVISIONS_FIELDS_MAP = {
-  'modifiedTime': 'modifiedDate',
-  'keepForever': 'pinned',
-  'size': 'fileSize',
-  }
-
 def getAPIName(api):
   return _INFO[api]['name']
 

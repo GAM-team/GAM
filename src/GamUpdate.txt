@@ -1,8 +1,17 @@
+7.16.00
+
+Removed `drive_v3_native_names` from `gam.cfg`; GAM now only uses Drive API v3 fields names on output.
+If you had `drive_v3_native_names = False` in `gam.cfg` or are updating from Legacy GAM:
+
+* See: https://github.com/GAM-team/GAM/wiki/Drive-REST-API-v3
+
 7.15.01
 
 Added `downloadrestrictions.restrictedforreaders` and `downloadrestrictions.restrictedforwriters`
 to `<SharedDriveRestrictionsSubfieldName>`; previously, only the abbreviations `downloadrestrictedforreaders`
 and `downloadrestrictedforwriters` were supported (they are still supported).
+
+Updated `gam <UserTypeEntity> copy drivefile` to handle unexpected data returned by Google that caused a trap.
 
 7.15.00
 
