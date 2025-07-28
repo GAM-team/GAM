@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.16.00'
+__version__ = '7.16.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -53817,6 +53817,11 @@ DRIVE_FILE_CONTENT_RESTRICTIONS_CHOICE_MAP = {
   'ownerrestricted': 'ownerRestricted',
   }
 
+DRIVE_FILE_ITEM_DOWNLOAD_RESTRICTION_CHOICE_MAP = {
+  'restrictedforreaders': 'restrictedForReaders',
+  'restrictedforwriters': 'restrictedForWriters',
+  }
+
 def getDriveFileProperty(visibility=None):
   key = getString(Cmd.OB_PROPERTY_KEY)
   value = getString(Cmd.OB_PROPERTY_VALUE, minLen=0) or None
@@ -53903,6 +53908,10 @@ def getDriveFileCopyAttribute(myarg, body, parameters):
           else:
             Cmd.Backup()
             usageErrorExit(Msg.REASON_ONLY_VALID_WITH_CONTENTRESTRICTIONS_READONLY_TRUE)
+  elif myarg == 'itemdownloadrestriction':
+    body.setdefault('downloadRestrictions', {'itemDownloadRestriction': {}})
+    restriction = getChoice(DRIVE_FILE_ITEM_DOWNLOAD_RESTRICTION_CHOICE_MAP, mapChoice=True)
+    body['downloadRestrictions']['itemDownloadRestriction'][restriction] = getBoolean()
   elif myarg == 'inheritedpermissionsdisabled':
     body['inheritedPermissionsDisabled'] = getBoolean()
   elif myarg == 'property':
@@ -54657,6 +54666,7 @@ DRIVE_FIELDS_CHOICE_MAP = {
   'createddate': 'createdTime',
   'createdtime': 'createdTime',
   'description': 'description',
+  'downloadrestrictions': 'downloadRestrictions',
   'driveid': 'driveId',
   'drivename': 'driveId',
   'editable': 'capabilities.canEdit',
@@ -54803,6 +54813,11 @@ DRIVE_CONTENT_RESTRICTIONS_SUBFIELDS_CHOICE_MAP = {
   'type': 'type',
   }
 
+DRIVE_DOWNLOAD_RESTRICTIONS_SUBFIELDS_CHOICE_MAP = {
+  'itemdownloadrestriction': 'itemDownloadRestriction',
+  'effectivedownloadrestrictionwithcontext': 'effectiveDownloadRestrictionWithContext',
+  }
+
 DRIVE_LABELINFO_SUBFIELDS_CHOICE_MAP = {
   'id': 'labels(id)',
   'fields': 'labels(fields)',
@@ -54867,6 +54882,7 @@ DRIVE_SHORTCUTDETAILS_SUBFIELDS_CHOICE_MAP = {
 DRIVE_SUBFIELDS_CHOICE_MAP = {
   'capabilities': DRIVE_CAPABILITIES_SUBFIELDS_CHOICE_MAP,
   'contentrestrictions': DRIVE_CONTENT_RESTRICTIONS_SUBFIELDS_CHOICE_MAP,
+  'downloadrestrictions': DRIVE_DOWNLOAD_RESTRICTIONS_SUBFIELDS_CHOICE_MAP,
   'labelinfo': DRIVE_LABELINFO_SUBFIELDS_CHOICE_MAP,
   'labels': DRIVE_LABEL_CHOICE_MAP,
   'lastmodifyinguser': DRIVE_SHARINGUSER_SUBFIELDS_CHOICE_MAP,

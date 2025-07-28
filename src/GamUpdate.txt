@@ -1,3 +1,23 @@
+7.16.01
+
+Added `downloadrestictions` and `<DriveDownloadRestrictionsSubfieldName>` to `<DriveFieldName>`.
+```
+<DriveDownloadRestrictionsSubfieldName> ::=
+  downloadrestrictions.itemdownloadrestriction|
+  downloadrestrictions.effectivedownloadrestrictionwithcontext
+```
+
+Added `itemdownloadrestriction (restrictedforreaders [<Boolean>]) (restrictedforwriters [<Boolean>])`
+to `<DriveFileAttribute>`.
+
+From the Drive API documentation:
+```
+itemDownloadRestriction - The download restriction of the file applied directly by the owner or organizer. This does not take into account shared drive settings or DLP rules.
+effectiveDownloadRestrictionWithContext - Output only. The effective download restriction applied to this file. This considers all restriction settings and DLP rules.
+restrictedForReaders - Whether download and copy is restricted for readers.
+restrictedForWriters - Whether download and copy is restricted for writers. If true, download is also restricted for readers.
+```
+
 7.16.00
 
 Removed `drive_v3_native_names` from `gam.cfg`; GAM now only uses Drive API v3 fields names on output.

@@ -6597,6 +6597,7 @@ gam <UserTypeEntity> print chatemojis [todrive <ToDriveAttribute>*]
         (folderColorRgb <ColorValue>)|
         (indexabletext <String>)|
         (inheritedpermissionsdisabled [<Boolean>])|
+        (itemdownloadrestriction (restrictedforreaders [<Boolean>]) (restrictedforwriters [<Boolean>]))|
         (keeprevisionforever|pinned)|
         (lastviewedbyme <Time>)|
         (mimetype <MimeType>)|
@@ -7071,6 +7072,10 @@ gam <UserTypeEntity> collect orphans
         contentrestrictions.restrictiontime|
         contentrestrictions.type
 
+<DriveDownloadRestrictionsSubfieldName> ::=
+  downloadrestrictions.itemdownloadrestriction|
+  downloadrestrictions.effectivedownloadrestrictionwithcontext
+
 <ClassificationLabelInfoSubfieldName> ::=
         labels.id|              # modifiedByMe
         labels.revisionid|      # copyRequiresWriterPermission
@@ -7164,6 +7169,8 @@ gam <UserTypeEntity> collect orphans
         copyrequireswriterpermission|
         createddate|createdtime|
         description|
+        downloadrestictions|
+        <DriveDownloadRestrictionsSubfieldName>|
         driveid|
         drivename|
         editable|
