@@ -2,8 +2,6 @@
 Use these steps if you have used any version of GAM in your domain. They will update your GAM project
 and all necessary authentications.
 
-* See: https://github.com/GAM-team/GAM/wiki/Drive-REST-API-v3
-
 - [Drive API v2 to Drive API v3](Drive-REST-v3)
 - [Downloads-Installs](Downloads-Installs)
 - [Linux and MacOS and Google Cloud Shell](#linux-and-mac-os-and-google-cloud-shell)
