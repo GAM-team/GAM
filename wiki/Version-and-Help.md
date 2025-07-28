@@ -1,4 +1,3 @@
-k
 # Version and Help
 
 Print the current version of Gam with details

@@ -1,5 +1,7 @@
 Legacy GAM used Drive API v2, GAM7 uses  Drive API v3. See: https://developers.google.com/drive/v3/web/migration
-Many of the changes are internal to GAM7 and have no visible effect. Google has modified/renamed many field names and these will affect scripts that parse the output from `gam print/show drivesettings/drivefileacls/fileinfo/filelist/filerevisions`. Additionally, Google has dropped some fields and their values are no longer available. On input, GAM7 accepts both the old and new field names where applicable.
+Many of the changes are internal to GAM7 and have no visible effect.
+Google has modified/renamed many field names and these will affect scripts that parse the output from `gam print/show drivesettings/drivefileacls/fileinfo/filelist/filerevisions`.
+Additionally, Google has dropped some fields and their values are no longer available. On input, GAM7 accepts both the old and new field names where applicable.
 
 If you use Legacy GAM and have scripts that process the output from these print commands, you may have to make modifications to your scripts when you upgrade to GAM7.
 Run your print/show commands with a version of Legacy GAM and save the output.
