@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.16.00
+
+Removed `drive_v3_native_names` from `gam.cfg`; GAM now only uses Drive API v3 fields names on output.
+If you had `drive_v3_native_names = False` in `gam.cfg` or are updating from Legacy GAM:
+
+* See: https://github.com/GAM-team/GAM/wiki/Drive-REST-API-v3
+
 ### 7.15.01
 
 Added `downloadrestrictions.restrictedforreaders` and `downloadrestrictions.restrictedforwriters`
