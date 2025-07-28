@@ -157,12 +157,16 @@
         contentrestrictions.restrictiontime|
         contentrestrictions.type
 
-<DriveLabelInfoSubfieldName> ::=
+<DriveDownloadRestrictionsSubfieldName> ::=
+  downloadrestrictions.itemdownloadrestriction|
+  downloadrestrictions.effectivedownloadrestrictionwithcontext
+
+<ClassificationLabelInfoSubfieldName> ::=
         labels.id|              # modifiedByMe
         labels.revisionid|      # copyRequiresWriterPermission
         labels.fields           # viewedByMe
 
-<DriveLabelsSubfieldName> ::=
+<ClassificationLabelsSubfieldName~> ::=
         labels.modified|        # modifiedByMe
         labels.restricted|      # copyRequiresWriterPermission
         labels.starred|         # starred
@@ -251,6 +255,8 @@
         copyrequireswriterpermission|
         createddate|createdtime|
         description|
+        downloadrestictions|
+        <DriveDownloadRestrictionsSubfieldName>|
         driveid|
         drivename|
         editable|
@@ -269,9 +275,9 @@
         inheritedpermissionsdisabled|
         isappauthorized|
         labelinfo|
-        <DriveLabelInfoSubfieldName>|
+        <ClassificationLabelInfoSubfieldName>|
         labels|
-        <DriveLabelsSubfieldName>|
+        <ClassificationLabelsSubfieldName>|
         lastmodifyinguser|
         <DriveLastModifyingUserSubfieldName>|
         lastmodifyingusername|

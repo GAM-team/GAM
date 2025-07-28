@@ -125,6 +125,7 @@
         (folderColorRgb <ColorValue>)|
         (indexabletext <String>)|
         (inheritedpermissionsdisabled [<Boolean>])|
+        (itemdownloadrestriction (restrictedforreaders [<Boolean>]) (restrictedforwriters [<Boolean>]))|
         (keeprevisionforever|pinned)|
         (lastviewedbyme <Time>)|
         (mimetype <MimeType>)|
