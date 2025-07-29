@@ -12,6 +12,8 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 
 ### 7.16.01
 
+The Drive API now supports setting download restrictions on individual files.
+
 Added `downloadrestictions` and `<DriveDownloadRestrictionsSubfieldName>` to `<DriveFieldName>`.
 ```
 <DriveDownloadRestrictionsSubfieldName> ::=
