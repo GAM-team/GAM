@@ -174,6 +174,7 @@ Service Account Access
 * [Users - Tag Manager](Users-Tag-Manager)
 * [Users - Tasks](Users-Tasks)
 * [Users - YouTube](Users-YouTube)
+* [Users - Web Resources and Sites](Users-Web-Resoures-and-Sites)
 
 GAM Tutorials
 * [Account Auditing](l-ExamplesAccountAuditing)

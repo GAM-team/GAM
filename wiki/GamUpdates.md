@@ -10,6 +10,17 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.17.00
+
+Added commands to discover Sites and WebResources that managed users (previously unmanaged) may have access to for better governance and visibility.
+These are special purpose commands and will not generally be used.
+```
+gam <UserTypeEntity> show webresources
+gam <UserTypeEntity> print webresources [todrive <ToDriveAttribute>*]
+gam <UserTypeEntity> show webmastersites
+gam <UserTypeEntity> print webmastersites [todrive <ToDriveAttribute>*]
+```
+
 ### 7.16.01
 
 The Drive API now supports setting download restrictions on individual files.
