@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.16.01'
+__version__ = '7.17.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -47077,6 +47077,72 @@ def doInfoSiteVerification():
   else:
     printKeyValueList(['No Sites Verified.'])
 
+# gam <UserTypeEntity> show webresources
+# gam <UserTypeEntity> print webresources [todrive <ToDriveAttribute>*]
+def printShowWebResources(users):
+  csvPF = CSVPrintFile(['User', 'site.identifier']) if Act.csvFormat() else None
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    else:
+      unknownArgumentExit()
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, verif = buildGAPIServiceObject(API.SITEVERIFICATION, user, i, count)
+    if not verif:
+      continue
+    sites = callGAPIitems(verif.webResource(), 'list', 'items')
+    jcount = len(sites)
+    if not csvPF:
+      entityPerformActionNumItems([Ent.USER, user], jcount, Ent.WEB_RESOURCE, i, count)
+      Ind.Increment()
+      j = 0
+      for site in sorted(sites, key=lambda k: (k['site']['type'], k['site']['identifier'])):
+        j += 1
+        _showSiteVerificationInfo(site)
+      Ind.Decrement()
+    else:
+      for site in sites:
+        row = flattenJSON(site, flattened={'User': user})
+        csvPF.WriteRowTitles(row)
+  if csvPF:
+    csvPF.writeCSVfile('Web Resources')
+
+# gam <UserTypeEntity> show webmastersites
+# gam <UserTypeEntity> print webmastersites [todrive <ToDriveAttribute>*]
+def printShowWebMasterSites(users):
+  csvPF = CSVPrintFile(['User', 'siteUrl']) if Act.csvFormat() else None
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    else:
+      unknownArgumentExit()
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, searchconsole = buildGAPIServiceObject(API.SEARCHCONSOLE, user, i, count)
+    if not searchconsole:
+      continue
+    sites = callGAPIitems(searchconsole.sites(), 'list', 'siteEntry')
+    jcount = len(sites)
+    if not csvPF:
+      entityPerformActionNumItems([Ent.USER, user], jcount, Ent.WEB_MASTERSITE, i, count)
+      Ind.Increment()
+      j = 0
+      for site in sorted(sites, key=lambda k: k['siteUrl']):
+        j += 1
+        _showSiteVerificationInfo(site)
+      Ind.Decrement()
+    else:
+      for site in sites:
+        row = flattenJSON(site, flattened={'User': user})
+        csvPF.WriteRowTitles(row)
+  if csvPF:
+    csvPF.writeCSVfile('Web Master Sites')
+
 def checkCourseExists(croom, courseId, i=0, count=0, entityType=Ent.COURSE):
   courseId = addCourseIdScope(courseId)
   try:
@@ -53818,6 +53884,8 @@ DRIVE_FILE_CONTENT_RESTRICTIONS_CHOICE_MAP = {
   }
 
 DRIVE_FILE_ITEM_DOWNLOAD_RESTRICTION_CHOICE_MAP = {
+  'downloadrestrictedforreaders': 'restrictedForReaders',
+  'downloadrestrictedforwriters': 'restrictedForWriters',
   'restrictedforreaders': 'restrictedForReaders',
   'restrictedforwriters': 'restrictedForWriters',
   }
@@ -53873,6 +53941,20 @@ def getDriveFileAddRemoveParentAttribute(myarg, parameters):
     return False
   return True
 
+def _getDriveFileDownloadRestrictions(myarg, body):
+  subField = myarg
+  if subField.startswith('downloadrestrictions.'):
+    _, subField = subField.split('.', 1)
+  if subField.startswith('itemdownloadrestriction.'):
+    _, subField = subField.split('.', 1)
+  if subField == 'itemdownloadrestriction':
+    subField = getChoice(DRIVE_FILE_ITEM_DOWNLOAD_RESTRICTION_CHOICE_MAP)
+  if subField in DRIVE_FILE_ITEM_DOWNLOAD_RESTRICTION_CHOICE_MAP:
+    body.setdefault('downloadRestrictions', {'itemDownloadRestriction': {}})
+    body['downloadRestrictions']['itemDownloadRestriction'][DRIVE_FILE_ITEM_DOWNLOAD_RESTRICTION_CHOICE_MAP[subField]] = getBoolean()
+    return True
+  return False
+
 def getDriveFileCopyAttribute(myarg, body, parameters):
   if myarg == 'ignoredefaultvisibility':
     parameters[DFA_IGNORE_DEFAULT_VISIBILITY] = getBoolean()
@@ -53908,10 +53990,8 @@ def getDriveFileCopyAttribute(myarg, body, parameters):
           else:
             Cmd.Backup()
             usageErrorExit(Msg.REASON_ONLY_VALID_WITH_CONTENTRESTRICTIONS_READONLY_TRUE)
-  elif myarg == 'itemdownloadrestriction':
-    body.setdefault('downloadRestrictions', {'itemDownloadRestriction': {}})
-    restriction = getChoice(DRIVE_FILE_ITEM_DOWNLOAD_RESTRICTION_CHOICE_MAP, mapChoice=True)
-    body['downloadRestrictions']['itemDownloadRestriction'][restriction] = getBoolean()
+  elif _getDriveFileDownloadRestrictions(myarg, body):
+    pass
   elif myarg == 'inheritedpermissionsdisabled':
     body['inheritedPermissionsDisabled'] = getBoolean()
   elif myarg == 'property':
@@ -78284,6 +78364,8 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_USERLIST:		doPrintUserList,
       Cmd.ARG_VACATION:		printShowVacation,
       Cmd.ARG_VAULTHOLD:	printShowUserVaultHolds,
+      Cmd.ARG_WEBMASTERSITE:	printShowWebMasterSites,
+      Cmd.ARG_WEBRESOURCE:	printShowWebResources,
       Cmd.ARG_WORKINGLOCATION:	printShowWorkingLocation,
       Cmd.ARG_YOUTUBECHANNEL:	printShowYouTubeChannel,
      }
@@ -78394,6 +78476,8 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_TOKEN:		printShowTokens,
       Cmd.ARG_VAULTHOLD:	printShowUserVaultHolds,
       Cmd.ARG_VACATION:		printShowVacation,
+      Cmd.ARG_WEBMASTERSITE:	printShowWebMasterSites,
+      Cmd.ARG_WEBRESOURCE:	printShowWebResources,
       Cmd.ARG_WORKINGLOCATION:	printShowWorkingLocation,
       Cmd.ARG_YOUTUBECHANNEL:	printShowYouTubeChannel,
      }
@@ -78645,6 +78729,8 @@ USER_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_USERS:		Cmd.ARG_USER,
   Cmd.ARG_VAULTHOLDS:		Cmd.ARG_VAULTHOLD,
   Cmd.ARG_VERIFICATIONCODES:	Cmd.ARG_BACKUPCODE,
+  Cmd.ARG_WEBMASTERSITES:	Cmd.ARG_WEBMASTERSITE,
+  Cmd.ARG_WEBRESOURCES: 	Cmd.ARG_WEBRESOURCE,
   Cmd.ARG_WORKINGLOCATIONS:	Cmd.ARG_WORKINGLOCATION,
   Cmd.ARG_YOUTUBECHANNELS:	Cmd.ARG_YOUTUBECHANNEL,
   }

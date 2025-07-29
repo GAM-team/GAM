@@ -85,6 +85,7 @@ PRINTERS = 'printers'
 PUBSUB = 'pubsub'
 REPORTS = 'reports'
 RESELLER = 'reseller'
+SEARCHCONSOLE = 'searchconsole'
 SERVICEACCOUNTLOOKUP = 'serviceaccountlookup'
 SERVICEMANAGEMENT = 'servicemanagement'
 SERVICEUSAGE = 'serviceusage'
@@ -198,6 +199,7 @@ PROJECT_APIS = [
   'people.googleapis.com',
   'pubsub.googleapis.com',
   'reseller.googleapis.com',
+  'searchconsole.googleapis.com',
   'sheets.googleapis.com',
   'siteverification.googleapis.com',
   'storage-api.googleapis.com',
@@ -271,6 +273,7 @@ _INFO = {
   PUBSUB: {'name': 'Pub / Sub API', 'version': 'v1', 'v2discovery': True},
   REPORTS: {'name': 'Reports API', 'version': 'reports_v1', 'v2discovery': True, 'mappedAPI': 'admin'},
   RESELLER: {'name': 'Reseller API', 'version': 'v1', 'v2discovery': True},
+  SEARCHCONSOLE: {'name': 'Search Console API', 'version': 'v1', 'v2discovery': True},
   SERVICEACCOUNTLOOKUP: {'name': 'Service Account Lookup pseudo-API', 'version': 'v1', 'v2discovery': True, 'localjson': True},
   SERVICEMANAGEMENT: {'name': 'Service Management API', 'version': 'v1', 'v2discovery': True},
   SERVICEUSAGE: {'name': 'Service Usage API', 'version': 'v1', 'v2discovery': True},
@@ -697,10 +700,20 @@ _SVCACCT_SCOPES = [
    'api': PEOPLE_OTHERCONTACTS,
    'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/contacts.other.readonly'},
+  {'name': 'Search Console  API - read only',
+   'api': SEARCHCONSOLE,
+   'subscopes': [],
+   'offByDefault': True,
+   'scope': 'https://www.googleapis.com/auth/webmasters.readonly'},
   {'name': 'Sheets API',
    'api': SHEETS,
    'subscopes': READONLY,
    'scope': 'https://www.googleapis.com/auth/spreadsheets'},
+  {'name': 'Site Verification API',
+   'api': SITEVERIFICATION,
+   'subscopes': [],
+   'offByDefault': True,
+   'scope': 'https://www.googleapis.com/auth/siteverification'},
   {'name': 'Tag Manager API - Accounts, Containers, Workspaces, Tags - read only',
    'api': TAGMANAGER,
    'subscopes': [],

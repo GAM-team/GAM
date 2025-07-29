@@ -6597,7 +6597,7 @@ gam <UserTypeEntity> print chatemojis [todrive <ToDriveAttribute>*]
         (folderColorRgb <ColorValue>)|
         (indexabletext <String>)|
         (inheritedpermissionsdisabled [<Boolean>])|
-        (itemdownloadrestriction (restrictedforreaders [<Boolean>]) (restrictedforwriters [<Boolean>]))|
+        (itemdownloadrestriction restrictedforreaders|restrictedforwriters [<Boolean>])|
         (keeprevisionforever|pinned)|
         (lastviewedbyme <Time>)|
         (mimetype <MimeType>)|
@@ -8703,3 +8703,11 @@ gam <UserTypeEntity> print youtubechannels [todrive <ToDriveAttribute>*]
 gam create|add verify|verification <DomainName>
 gam update verify|verification <DomainName> cname|txt|text|site|file
 gam info verify|verification
+
+# Web Resourses and Sites
+
+gam <UserTypeEntity> show webresources
+gam <UserTypeEntity> print webresources [todrive <ToDriveAttribute>*]
+gam <UserTypeEntity> show webmastersites
+gam <UserTypeEntity> print webmastersites [todrive <ToDriveAttribute>*]
+```

@@ -394,6 +394,8 @@ class GamEntity():
   VAULT_MATTER_ID = 'vlmi'
   VAULT_OPERATION = 'vlto'
   VAULT_QUERY = 'vltq'
+  WEB_MASTERSITE = 'wems'
+  WEB_RESOURCE = 'were'
   WEBCLIPS_ENABLED = 'webc'
   YOUTUBE_CHANNEL = 'ytch'
   # _NAMES[0] is plural, _NAMES[1] is singular unless the item name is explicitly plural (Calendar Settings)
@@ -752,6 +754,8 @@ class GamEntity():
     VAULT_OPERATION: ['Vault Operations', 'Vault Operation'],
     VAULT_QUERY: ['Vault Queries', 'Vault Query'],
     WEBCLIPS_ENABLED: ['Web Clips Enabled', 'Web Clips Enabled'],
+    WEB_MASTERSITE: ['Web Master Sites', 'Web Master Site'],
+    WEB_RESOURCE: ['Web Resources', 'Web Resource'],
     YOUTUBE_CHANNEL: ['YouTube Channels', 'YouTube Channel'],
     ROLE_MANAGER: ['Managers', 'Manager'],
     ROLE_MEMBER: ['Members', 'Member'],
