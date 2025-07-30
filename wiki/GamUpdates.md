@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.17.01
+
+Fixed bug in `gam <UserTypeEntity> show webmastersites` that caused a trap.
+
 ### 7.17.00
 
 Added commands to discover Sites and WebResources that managed users (previously unmanaged) may have access to for better governance and visibility.
