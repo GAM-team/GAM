@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.17.00'
+__version__ = '7.17.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -46963,8 +46963,8 @@ def doCreateSiteVerification():
   printKeyValueList(['Meta HTML Header Data', webserver_meta_record['token']])
   printBlankLine()
 
-def _showSiteVerificationInfo(site):
-  printKeyValueList(['Site', site['site']['identifier']])
+def _showSiteVerificationInfo(site, i=0, count=0):
+  printKeyValueListWithCount(['Site', site['site']['identifier']], i, count)
   Ind.Increment()
   printKeyValueList(['ID', unquote(site['id'])])
   printKeyValueList(['Type', site['site']['type']])
@@ -47072,8 +47072,11 @@ def doInfoSiteVerification():
   checkForExtraneousArguments()
   sites = callGAPIitems(verif.webResource(), 'list', 'items')
   if sites:
+    count = len(sites)
+    i = 0
     for site in sorted(sites, key=lambda k: (k['site']['type'], k['site']['identifier'])):
-      _showSiteVerificationInfo(site)
+      i += 1
+      _showSiteVerificationInfo(site, i, count)
   else:
     printKeyValueList(['No Sites Verified.'])
 
@@ -47101,7 +47104,7 @@ def printShowWebResources(users):
       j = 0
       for site in sorted(sites, key=lambda k: (k['site']['type'], k['site']['identifier'])):
         j += 1
-        _showSiteVerificationInfo(site)
+        _showSiteVerificationInfo(site, j, jcount)
       Ind.Decrement()
     else:
       for site in sites:
@@ -47134,7 +47137,10 @@ def printShowWebMasterSites(users):
       j = 0
       for site in sorted(sites, key=lambda k: k['siteUrl']):
         j += 1
-        _showSiteVerificationInfo(site)
+        printKeyValueListWithCount(['Site', site['siteUrl']], j, jcount)
+        Ind.Increment()
+        printKeyValueList(['permissionLevel', site['permissionLevel']])
+        Ind.Decrement()
       Ind.Decrement()
     else:
       for site in sites:
