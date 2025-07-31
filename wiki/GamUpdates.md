@@ -16,6 +16,7 @@ Updated `gam <UserTypeEntity> print|show webmastersites` to handle the following
 that occurs if you haven't updated your project to include the Google Search Console API.
 ```
 ERROR: 403: permissionDenied - Google Search Console API has not been used in project 111055363999 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/searchconsole.googleapis.com/overview?project=111055363999 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.
+```
 
 ### 7.17.01
 
