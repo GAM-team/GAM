@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.17.01'
+__version__ = '7.17.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -5688,19 +5688,22 @@ def getUserEmailFromID(uid, cd):
   try:
     result = callGAPI(cd.users(), 'get',
                       throwReasons=GAPI.USER_GET_THROW_REASONS,
+                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       userKey=uid, fields='primaryEmail')
     return result.get('primaryEmail')
   except (GAPI.userNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
-          GAPI.badRequest, GAPI.backendError, GAPI.systemError):
+          GAPI.badRequest, GAPI.backendError, GAPI.systemError, GAPI.serviceNotAvailable):
     return None
 
 def getGroupEmailFromID(uid, cd):
   try:
     result = callGAPI(cd.groups(), 'get',
                       throwReasons=GAPI.GROUP_GET_THROW_REASONS,
+                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       groupKey=uid, fields='email')
     return result.get('email')
-  except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden, GAPI.badRequest):
+  except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
+          GAPI.badRequest, GAPI.serviceNotAvailable):
     return None
 
 def getServiceAccountEmailFromID(account_id, sal=None):
@@ -47129,7 +47132,11 @@ def printShowWebMasterSites(users):
     user, searchconsole = buildGAPIServiceObject(API.SEARCHCONSOLE, user, i, count)
     if not searchconsole:
       continue
-    sites = callGAPIitems(searchconsole.sites(), 'list', 'siteEntry')
+    try:
+      sites = callGAPIitems(searchconsole.sites(), 'list', 'siteEntry',
+                            throwReasons=[GAPI.PERMISSION_DENIED])
+    except GAPI.permissionDenied as e:
+      accessErrorExitNonDirectory(API.SEARCHCONSOLE, str(e))
     jcount = len(sites)
     if not csvPF:
       entityPerformActionNumItems([Ent.USER, user], jcount, Ent.WEB_MASTERSITE, i, count)
