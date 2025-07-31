@@ -3,7 +3,7 @@
 - [Introduction](#introduction)
 - [Definitions](#definitions)
 - [Display Web Resources](#display-web-resources)
-- [Display Web Sites](#display-web-sites)
+- [Display Web Master Sites](#display-web-master-sites)
 
 ## API documentation
 * [Web Resources](https://developers.google.com/site-verification/v1/webResource/list)
@@ -36,13 +36,13 @@ gam <UserItem> print webresources [todrive <ToDriveAttribute>*]
 ```
 Gam displays the information as columns of fields.
 
-## Display Web Sites
+## Display Web Master Sites
 ```
-gam <UserItem> show websites
+gam <UserItem> show webmastersites
 ```
 Gam displays the information as an indented list of keys and values.
 
 ```
-gam <UserItem> print websites [todrive <ToDriveAttribute>*]
+gam <UserItem> print webmastersites [todrive <ToDriveAttribute>*]
 ```
 Gam displays the information as columns of fields.
