@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### - 7.17.02
+
+Updated `gam <UserTypeEntity> print|show webmastersites` to handle the following error
+that occurs if you haven't updated your project to include the Google Search Console API.
+```
+ERROR: 403: permissionDenied - Google Search Console API has not been used in project 111055363999 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/searchconsole.googleapis.com/overview?project=111055363999 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.
+
 ### 7.17.01
 
 Fixed bug in `gam <UserTypeEntity> show webmastersites` that caused a trap.
