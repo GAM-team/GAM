@@ -12,8 +12,8 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 
 ### 7.17.03
 
-Fixed bug in gam <UserItem> print|show chatspaces asadmin fields <ChatSpaceFieldNameList>` that caused a trap
-when `isplayname` was not in `<ChatSpaceFieldNameList>`.
+Fixed bug in `gam <UserItem> print|show chatspaces asadmin fields <ChatSpaceFieldNameList>` that caused a trap
+when `displayname` was not in `<ChatSpaceFieldNameList>`.
 
 ### 7.17.02
 
