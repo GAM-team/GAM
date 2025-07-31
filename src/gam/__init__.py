@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.17.02'
+__version__ = '7.17.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -26940,7 +26940,7 @@ def printShowChatSpaces(users):
     substituteQueryTimes(queries, queryTimes)
     pfilter = kwargsCS['query'] = queries[0]
     kwargsCS['useAdminAccess'] = True
-    sortName = 'displayName'
+    sortName = 'displayName' if 'displayName' in fieldsList else 'name'
   else:
     sortName = 'name'
   for user in users:
