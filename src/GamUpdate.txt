@@ -1,7 +1,16 @@
+7.18.00
+
+Added commands to display Business Profile Accounts.
+These are special purpose commands and will not generally be used.
+```
+gam show businessprofileaccounts
+gam print businessprofileaccounts [todrive <ToDriveAttribute>*]
+```
+
 7.17.03
 
-Fixed bug in gam <UserItem> print|show chatspaces asadmin fields <ChatSpaceFieldNameList>` that caused a trap
-when `isplayname` was not in `<ChatSpaceFieldNameList>`.
+Fixed bug in `gam <UserItem> print|show chatspaces asadmin fields <ChatSpaceFieldNameList>` that caused a trap
+when `displayname` was not in `<ChatSpaceFieldNameList>`.
 
 7.17.02
 

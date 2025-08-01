@@ -441,6 +441,8 @@ class GamCLArgs():
   ARG_BUCKETS = 'buckets'
   ARG_BUILDING = 'building'
   ARG_BUILDINGS = 'buildings'
+  ARG_BUSINESSPROFILEACCOUNT = 'businessprofileaccount'
+  ARG_BUSINESSPROFILEACCOUNTS = 'businessprofileaccounts'
   ARG_CAALEVEL = 'caalevel'
   ARG_CAALEVELS = 'caalevels'
   ARG_CALATTENDEES = 'calattendees'

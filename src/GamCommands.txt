@@ -3436,6 +3436,13 @@ gam print guardian|guardians [todrive <ToDriveAttribute>*] [accepted|invitations
         [showstudentemails]
         [formatjson [quotechar <Character>]]
 
+# Business Profile Accounts
+
+gam show businessprofileaccounts
+        [type locationgroup|organization|personal|usergroup]
+gam print businessprofileaccounts [todrive <ToDriveAttribute>*]
+        [type locationgroup|organization|personal|usergroup]
+
 # Classroom User Profiles
 
 gam <UserTypeEntity> print classroomprofile [todrive <ToDriveAttribute>*]

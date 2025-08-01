@@ -24,6 +24,7 @@ ACCESSCONTEXTMANAGER = 'accesscontextmanager'
 ALERTCENTER = 'alertcenter'
 ANALYTICS_ADMIN = 'analyticsadmin'
 CALENDAR = 'calendar'
+BUSINESSACCOUNTMANAGEMENT = 'mybusinessaccountmanagement'
 CBCM = 'cbcm'
 CHAT = 'chat'
 CHAT_CUSTOM_EMOJIS = 'chatcustomemojis'
@@ -101,6 +102,7 @@ TASKS = 'tasks'
 VAULT = 'vault'
 YOUTUBE = 'youtube'
 #
+BUSINESSACCOUNTMANAGEMENT_SCOPE = 'https://www.googleapis.com/auth/business.manage'
 CHROMEVERSIONHISTORY_URL = 'https://versionhistory.googleapis.com/v1/chrome/platforms'
 DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive'
 GMAIL_SEND_SCOPE = 'https://www.googleapis.com/auth/gmail.send'
@@ -174,6 +176,7 @@ PROJECT_APIS = [
   'alertcenter.googleapis.com',
   'analyticsadmin.googleapis.com',
 #  'audit.googleapis.com',
+  'mybusinessaccountmanagement.googleapis.com',
   'calendar-json.googleapis.com',
   'chat.googleapis.com',
   'chromemanagement.googleapis.com',
@@ -213,6 +216,7 @@ _INFO = {
   ACCESSCONTEXTMANAGER: {'name': 'Access Context Manager API', 'version': 'v1', 'v2discovery': True},
   ALERTCENTER: {'name': 'AlertCenter API', 'version': 'v1beta1', 'v2discovery': True},
   ANALYTICS_ADMIN: {'name': 'Analytics Admin API', 'version': 'v1beta', 'v2discovery': True},
+  BUSINESSACCOUNTMANAGEMENT: {'name': 'Business Account Management API', 'version': 'v1', 'v2discovery': True},
   CALENDAR: {'name': 'Calendar API', 'version': 'v3', 'v2discovery': True, 'mappedAPI': 'calendar-json'},
   CBCM: {'name': 'Chrome Browser Cloud Management API', 'version': 'v1.1beta1', 'v2discovery': True, 'localjson': True},
   CHAT: {'name': 'Chat API', 'version': 'v1', 'v2discovery': True},
@@ -293,6 +297,11 @@ _INFO = {
 READONLY = ['readonly',]
 
 _CLIENT_SCOPES = [
+  {'name': 'Business Account Management API',
+   'api': BUSINESSACCOUNTMANAGEMENT,
+   'subscopes': [],
+   'offByDefault': True,
+   'scope': BUSINESSACCOUNTMANAGEMENT_SCOPE},
   {'name': 'Calendar API',
    'api': CALENDAR,
    'subscopes': READONLY,

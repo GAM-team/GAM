@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.17.03'
+__version__ = '7.18.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -5579,7 +5579,12 @@ def buildGAPIObject(api, credentials=None):
     try:
       API_Scopes = set(list(service._rootDesc['auth']['oauth2']['scopes']))
     except KeyError:
-      API_Scopes = set(API.VAULT_SCOPES) if api == API.VAULT else set()
+      if api == API.VAULT:
+        API_Scopes = set(API.VAULT_SCOPES)
+      elif api == API.BUSINESSACCOUNTMANAGEMENT:
+        API_Scopes = {API.BUSINESSACCOUNTMANAGEMENT_SCOPE}
+      else:
+        API_Scopes = set()
     GM.Globals[GM.CURRENT_CLIENT_API] = api
     GM.Globals[GM.CURRENT_CLIENT_API_SCOPES] = API_Scopes.intersection(GM.Globals[GM.CREDENTIALS_SCOPES])
     if api not in API.SCOPELESS_APIS and not GM.Globals[GM.CURRENT_CLIENT_API_SCOPES]:
@@ -47069,6 +47074,51 @@ def doUpdateSiteVerification():
   _showSiteVerificationInfo(verify_result)
   printKeyValueList([Msg.YOU_CAN_ADD_DOMAIN_TO_ACCOUNT.format(a_domain, GC.Values[GC.DOMAIN])])
 
+PROFILE_ACCOUNT_TYPE_MAP = {
+  'locationgroup': 'LOCATION_GROUP',
+  'organization': 'ORGANIZATION',
+  'personal': 'PERSONAL',
+  'usergroup': 'USER_GROUP',
+  }
+
+# gam show businessprofileaccounts
+#	[type locationgroup|organization|personal|usergroup]
+# gam print businessprofileaccounts [todrive <ToDriveAttribute>*]
+#	[type locationgroup|organization|personal|usergroup]
+def doPrintShowBusinessProfileAccounts():
+  bp = buildGAPIObject(API.BUSINESSACCOUNTMANAGEMENT)
+  csvPF = CSVPrintFile(['name', 'accountName']) if Act.csvFormat() else None
+  kwargs = {}
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif myarg == 'type':
+      kwargs['filter'] = f'type={getChoice(PROFILE_ACCOUNT_TYPE_MAP, mapChoice=True)}'
+    else:
+      unknownArgumentExit()
+  try:
+    accounts = callGAPIpages(bp.accounts(), 'list', 'accounts',
+                             throwReasons=[GAPI.PERMISSION_DENIED],
+                             **kwargs)
+  except GAPI.permissionDenied as e:
+    accessErrorExitNonDirectory(API.BUSINESSACCOUNTMANAGEMENT, str(e))
+  if not csvPF:
+    count = len(accounts)
+    i = 0
+    for account in sorted(accounts, key=lambda k: k['name']):
+      i += 1
+      printKeyValueListWithCount(['Account', account['name']], i, count)
+      Ind.Increment()
+      showJSON(None, account)
+      Ind.Decrement()
+  else:
+    for account in accounts:
+      row = flattenJSON(account, flattened={'name': account['name'], 'accountName': account['accountName']})
+      csvPF.WriteRowTitles(row)
+  if csvPF:
+    csvPF.writeCSVfile('Business Profile Accounts')
+
 # gam info verify|verification
 def doInfoSiteVerification():
   verif = buildGAPIObject(API.SITEVERIFICATION)
@@ -77237,6 +77287,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_BROWSER:		doPrintShowBrowsers,
       Cmd.ARG_BROWSERTOKEN:	doPrintShowBrowserTokens,
       Cmd.ARG_BUILDING:		doPrintShowBuildings,
+      Cmd.ARG_BUSINESSPROFILEACCOUNT:	doPrintShowBusinessProfileAccounts,
       Cmd.ARG_CAALEVEL:		doPrintShowCAALevels,
       Cmd.ARG_CHANNELCUSTOMER:	doPrintShowChannelCustomers,
       Cmd.ARG_CHANNELCUSTOMERENTITLEMENT:	doPrintShowChannelCustomerEntitlements,
@@ -77370,6 +77421,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_BROWSER:		doPrintShowBrowsers,
       Cmd.ARG_BROWSERTOKEN:	doPrintShowBrowserTokens,
       Cmd.ARG_BUILDING:		doPrintShowBuildings,
+      Cmd.ARG_BUSINESSPROFILEACCOUNT:	doPrintShowBusinessProfileAccounts,
       Cmd.ARG_CAALEVEL:		doPrintShowCAALevels,
       Cmd.ARG_CHANNELCUSTOMER:	doPrintShowChannelCustomers,
       Cmd.ARG_CHANNELCUSTOMERENTITLEMENT:	doPrintShowChannelCustomerEntitlements,
@@ -77556,6 +77608,7 @@ MAIN_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_BUCKET:		Cmd.ARG_STORAGEBUCKET,
   Cmd.ARG_BUCKETS:		Cmd.ARG_STORAGEBUCKET,
   Cmd.ARG_BUILDINGS:		Cmd.ARG_BUILDING,
+  Cmd.ARG_BUSINESSPROFILEACCOUNTS:	Cmd.ARG_BUSINESSPROFILEACCOUNT,
   Cmd.ARG_CAALEVELS:		Cmd.ARG_CAALEVEL,
   Cmd.ARG_CHATMEMBERS:		Cmd.ARG_CHATMEMBER,
   Cmd.ARG_CHANNELCUSTOMERS:	Cmd.ARG_CHANNELCUSTOMER,

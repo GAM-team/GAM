@@ -75,6 +75,7 @@ class GamEntity():
   BACKUP_VERIFICATION_CODES = 'buvc'
   BUILDING = 'bldg'
   BUILDING_ID = 'bldi'
+  BUSINESS_PROFILE_ACCOUNT = 'bpac'
   CAA_LEVEL = 'calv'
   CALENDAR = 'cale'
   CALENDAR_ACL = 'cacl'
@@ -434,6 +435,7 @@ class GamEntity():
     BACKUP_VERIFICATION_CODES: ['Backup Verification Codes', 'Backup Verification Codes'],
     BUILDING: ['Buildings', 'Building'],
     BUILDING_ID: ['Building IDs', 'Building ID'],
+    BUSINESS_PROFILE_ACCOUNT: ['Business Profile Accounts', 'Business Profile Account'],
     CAA_LEVEL: ['CAA Levels', 'CAA Level'],
     CALENDAR: ['Calendars', 'Calendar'],
     CALENDAR_ACL: ['Calendar ACLs', 'Calendar ACL'],
