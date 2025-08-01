@@ -10,6 +10,15 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.18.00
+
+Added commands to display Business Profile Accounts.
+These are special purpose commands and will not generally be used.
+```
+gam show businessprofileaccounts
+gam print businessprofileaccounts [todrive <ToDriveAttribute>*]
+```
+
 ### 7.17.03
 
 Fixed bug in `gam <UserItem> print|show chatspaces asadmin fields <ChatSpaceFieldNameList>` that caused a trap
