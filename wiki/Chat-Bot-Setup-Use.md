@@ -1,4 +1,4 @@
-# Chat Bot
+# Chat Bot Setup and Use
 - [Introduction](#introduction)
 - [Set up a Chat Bot](#set-up-a-chat-bot)
 - [API documentation](#api-documentation)

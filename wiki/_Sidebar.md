@@ -129,7 +129,7 @@ Client Access
 * [Version and Help](Version-and-Help)
 
 Special Service Account Access
-* [Chat Bot](Chat-Bot)
+* [Chat Bot Setup and Use](Chat-Bot-Setup-Use)
 
 Service Account Access
 * [Users - Analytics Admin](Users-Analytics-Admin)
