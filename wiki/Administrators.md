@@ -9,6 +9,7 @@
 - [Display administrators](#display-administrators)
 - [Copy privileges from one role to a new role](#copy-privileges-from-one-role-to-a-new-role)
 - [Copy roles from one administrator to another](#copy-roles-from-one-administrator-to-another)
+- [Copy non-system admin roles from a source workspace to a target workspace](#copy-non-system-admin-roles-from-a-source-workspace-to-a-target-workspace_
 
 ## API documentation
 * [About Administrator roles](https://support.google.com/a/answer/33325?ref_topic=4514341)
@@ -21,13 +22,16 @@
 <DomainName> ::= <String>(.<String>)+
 <EmailAddress> ::= <String>@<DomainName>
 <GroupItem> ::= <EmailAddress>|<UniqueID>|<String>
+<JSONData> ::= (json [charset <Charset>] <String>) | (json file <FileName> [charset <Charset>]) |
 <OrgUnitID> ::= id:<String>
 <OrgUnitPath> ::= /|(/<String)+
 <OrgUnitItem> ::= <OrgUnitID>|<OrgUnitPath>
 <Privilege> ::= <String>
 <PrivilegeList> ::= "<Privilege>(,<Privilege)*"
 <RoleAssignmentID> ::= <String>
-<RoleItem> ::= id:<String>|uid:<String>|<String>
+<RoleID> ::= <String>
+<RoleName> ::= <String>
+<RoleItem> ::= id:<RoleID>|<RoleName>
 <UniqueID> ::= id:<String>
 <UserItem> ::= <EmailAddress>|<UniqueID>|<String>
 ```
@@ -1383,9 +1387,11 @@ Show 111 Privileges
 ## Manage administrative roles
 ```
 gam create adminrole <String> [description <String>]
-        privileges all|all_ou|<PrivilegeList>|(select <FileSelector>|<CSVFileSelector>>)
+        privileges all|all_ou|<PrivilegeList>|(select <FileSelector>|<CSVFileSelector>>)|<JSONData>
+        [csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]] (addcsvdata <FieldName> <String>)*]
 gam update adminrole <RoleItem> [name <String>] [description <String>]
-        [privileges all|all_ou|<PrivilegeList>|(select <FileSelector>|<CSVFileSelector>>)] 
+        [privileges all|all_ou|<PrivilegeList>|(select <FileSelector>|<CSVFileSelector>>)|<JSONData>] 
+        [csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]] (addcsvdata <FieldName> <String>)*]
 gam delete adminrole <RoleItem>
 ```
 * `privileges all` - All defined privileges
@@ -1393,23 +1399,60 @@ gam delete adminrole <RoleItem>
 * `privileges <PrivilegeList>` - A specific list of privileges
 * `privileges select <FileSelector>|<CSVFileSelector>>` - A collection of privileges from a flat or CSV file
 
+By default, when an admin role is created|update, GAM displays `<RoleName>(<RoleID>) created|updated`.
+* `csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]` - Output the admin roledetails in CSV format.
+
+When `csv` is uused, Add additional columns of data from the command line to the output.
+* `addcsvdata <FieldName> <String>`
+
 ## Display administrative roles
 ```
 gam info adminrole <RoleItem> [privileges]
+        [formatjson]
 ```
 * `privileges` - Display privileges associated with role
+
+By default, Gam displays the information as an indented list of keys and values.
+* `formatjson` - Display the fields in JSON format.
+
+```
+gam show adminroles|roles
+        [role <RoleItem>] [privileges]
+	[nosystemroles]
+	[formatjson]
+```
+* `privileges` - Display privileges associated with each role
+
+By default, all roles are displayed:
+* `role <RoleItem>` - Display a specific role.
+* `nosystemroles` - Display onnly non-system roles.
+
+By default, Gam displays the information as an indented list of keys and values.
+* `formatjson` - Display the fields in JSON format.
+
 ```
 gam print adminroles|roles [todrive <ToDriveAttribute>*]
         [role <RoleItem>] [privileges] [oneitemperrow]
-gam show adminroles|roles
-        [role <RoleItem>] [privileges]
+        [nosystemroles]
+        [formatjson [quotechar <Character>]]
 ```
-By default, all roles are displayed, use `role <RoleItem>` to display a specific role.
-
 * `privileges` - Display privileges associated with each role
 
-By default, with `print`, all privileges for a role are shown on one row as a repeating item.
+By default, all privileges for a role are shown on one row as a repeating item.
 When `oneitemperrow` is specified, each privilege is output on a separate row/line with the other role fields.
+
+By default, all roles are displayed:
+* `role <RoleItem>` - Display a specific role.
+* `nosystemroles` - Display onnly non-system roles.
+
+By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format:
+* `formatjson` - Display the fields in JSON format.
+
+By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
+the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
+When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
+The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
+`quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
 ## Create an administrator
 Add an administrator role to an administrator.
@@ -1469,3 +1512,15 @@ gam config csv_input_row_filter "scopeType:regex:CUSTOMER" redirect stdout ./Upd
 gam config csv_input_row_filter "scopeType:regex:ORG_UNIT" redirect stdout ./UpdateNewAdminOrgUnitRoles.txt multiprocess redirect stderr stdout csv CurrentAdminRoles.csv gam create admin newadmin@domain.com "id:~~roleId~~" org_unit "id:~~orgUnitId~~"
 ```
 
+## Copy non-system admin roles from a source workspace to a target workspace
+This requires GAM version 7.18.01 or higher.
+
+In the source workspace to the following:
+```
+gam redirect csv ./SourceNonSystemRoles.csv print adminroles privileges nosystemroles formatjson quotechar "'"
+```
+
+In the target workspacce do the following:
+```
+gam redirect csv ./TargetNonSystemRoles.csv multiprocess quotechar "'"  redirect stderr - multiprocess csv SourceNonSystemRoles.csv quotechar "'" gam create adminrole "~roleName" description "~roleDescription" privileges json "~JSON" csv addcsvdata oldRoleId "~roleId" formatjson
+```
