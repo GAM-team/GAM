@@ -10,6 +10,23 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.18.01
+
+Added option `nosystemroles` to `gam print|show adminroles` that causes GAM
+to only display non-system roles.
+
+Added option `formatjson` to `gam info|print|show adminroles`; this will be most useful
+when the `privileges` option is used.
+
+Updated `gam create|update adminrole` to allow specification of privileges with
+JSON data: `privileges <JSONData>`. These two updates make it easier to copy admin roles.
+
+Updated `gam create|update adminrole` to allow output of the created/updated
+role data in CSV format; by default, GAM displays `<RoleName>(<RoleID>) created|updated`.
+```
+csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]] (addcsvdata <FieldName> <String>)*
+```
+
 ### 7.18.00
 
 Added commands to display Business Profile Accounts.
