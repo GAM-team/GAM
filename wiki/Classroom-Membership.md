@@ -12,6 +12,7 @@
 * [Google Classroom API](https://developers.google.com/classroom/reference/rest)
 * [Google Classroom API - Courses Students](https://developers.google.com/classroom/reference/rest/v1/courses.students)
 * [Google Classroom API - Courses Teachers](https://developers.google.com/classroom/reference/rest/v1/courses.teachers)
+* [Classroom Membership Limits](https://support.google.com/edu/classroom/answer/7300976)
 
 ## Definitions
 ```
