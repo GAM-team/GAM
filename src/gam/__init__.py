@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.18.00'
+__version__ = '7.18.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -16621,10 +16621,14 @@ def getRoleId():
       invalidChoiceExit(role, GM.Globals[GM.MAP_ROLE_NAME_TO_ID], True)
   return (role, roleId)
 
+PRINT_ADMIN_ROLES_FIELDS = ['roleId', 'roleName', 'roleDescription', 'isSuperAdminRole', 'isSystemRole']
+
 # gam create adminrole <String> [description <String>]
-#	privileges all|all_ou|<PrivilegesList>|(select <FileSelector>|<CSVFileSelector>)
+#	privileges all|all_ou|<PrivilegeList>|(select <FileSelector>|<CSVFileSelector>)|<JSONData>
+#	[csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]] (addcsvdata <FieldName> <String>)*]
 # gam update adminrole <RoleItem> [name <String>] [description <String>]
-#	[privileges all|all_ou|<PrivilegesList>|(select <FileSelector>|<CSVFileSelector>)]
+#	[privileges all|all_ou|<PrivilegeList>|(select <FileSelector>|<CSVFileSelector>)|<JSONData>]
+#	[csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]] (addcsvdata <FieldName> <String>)*]
 def doCreateUpdateAdminRoles():
   def expandChildPrivileges(privilege):
     for childPrivilege in privilege.get('childPrivileges', []):
@@ -16641,6 +16645,9 @@ def doCreateUpdateAdminRoles():
   allPrivileges = {}
   ouPrivileges = {}
   childPrivileges = {}
+  csvPF = None
+  FJQC = FormatJSONQuoteChar(None)
+  addCSVData = {}
   for privilege in _listPrivileges(cd):
     allPrivileges[privilege['privilegeName']] = privilege['serviceId']
     if privilege['isOuScopable']:
@@ -16654,6 +16661,8 @@ def doCreateUpdateAdminRoles():
         body['rolePrivileges'] = [{'privilegeName': p, 'serviceId': v} for p, v in allPrivileges.items()]
       elif privs == 'ALL_OU':
         body['rolePrivileges'] = [{'privilegeName': p, 'serviceId': v} for p, v in ouPrivileges.items()]
+      elif privs == 'JSON':
+        body['rolePrivileges'] = getJSON(['roleId', 'roleName', 'isAdminRole', 'isSystemRole']).get('rolePrivileges', [])
       else:
         if privs == 'SELECT':
           privsList = [p.upper() for p in getEntityList(Cmd.OB_PRIVILEGE_LIST)]
@@ -16675,25 +16684,59 @@ def doCreateUpdateAdminRoles():
           else:
             invalidChoiceExit(p, list(allPrivileges.keys())+list(ouPrivileges.keys())+list(childPrivileges.keys()), True)
     elif myarg == 'description':
-      body['roleDescription'] = getString(Cmd.OB_STRING)
+      body['roleDescription'] = getString(Cmd.OB_STRING, minLen=0)
     elif myarg == 'name':
       body['roleName'] = getString(Cmd.OB_STRING)
+    elif myarg == 'csv':
+      csvPF = CSVPrintFile(PRINT_ADMIN_ROLES_FIELDS)
+      FJQC.SetCsvPF(csvPF)
+    elif csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif csvPF and myarg == 'addcsvdata':
+      k = getString(Cmd.OB_STRING)
+      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
     else:
-      unknownArgumentExit()
+      FJQC.GetFormatJSONQuoteChar(myarg, True)
   if not updateCmd and not body.get('rolePrivileges'):
     missingArgumentExit('privileges')
+  if csvPF:
+    if addCSVData:
+      csvPF.AddTitles(sorted(addCSVData.keys()))
+    if not FJQC.formatJSON:
+      csvPF.AddTitles('rolePrivileges')
+    else:
+      csvPF.AddJSONTitles(sorted(addCSVData.keys()))
+      csvPF.MoveJSONTitlesToEnd(['JSON'])
+    fieldsList = ','.join(PRINT_ADMIN_ROLES_FIELDS+['rolePrivileges'])
+  else:
+    fieldsList = 'roleId,roleName'
   try:
     if not updateCmd:
       result = callGAPI(cd.roles(), 'insert',
                         throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND,
                                       GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED]+[GAPI.DUPLICATE],
-                        customer=GC.Values[GC.CUSTOMER_ID], body=body, fields='roleId,roleName')
+                        customer=GC.Values[GC.CUSTOMER_ID], body=body, fields=fieldsList)
     else:
       result = callGAPI(cd.roles(), 'patch',
                         throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND,
                                       GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED]+[GAPI.NOT_FOUND, GAPI.FAILED_PRECONDITION, GAPI.CONFLICT],
-                        customer=GC.Values[GC.CUSTOMER_ID], roleId=roleId, body=body, fields='roleId,roleName')
-    entityActionPerformed([Ent.ADMIN_ROLE, f"{result['roleName']}({result['roleId']})"])
+                        customer=GC.Values[GC.CUSTOMER_ID], roleId=roleId, body=body, fields=fieldsList)
+    if not csvPF:
+      entityActionPerformed([Ent.ADMIN_ROLE, f"{result['roleName']}({result['roleId']})"])
+    else:
+      if not FJQC.formatJSON:
+        if addCSVData:
+          result.update(addCSVData)
+        csvPF.WriteRowNoFilter(result)
+      else:
+        row = {}
+        for field in PRINT_ADMIN_ROLES_FIELDS:
+          if field in result:
+            row[field] = result[field]
+        if addCSVData:
+          row.update(addCSVData)
+        row['JSON'] = json.dumps(cleanJSON(result), ensure_ascii=False, sort_keys=True)
+        csvPF.WriteRowNoFilter(row)
   except GAPI.duplicate as e:
     entityActionFailedWarning([Ent.ADMIN_ROLE, f"{body['roleName']}"], str(e))
   except (GAPI.notFound, GAPI.failedPrecondition, GAPI.conflict) as e:
@@ -16702,6 +16745,8 @@ def doCreateUpdateAdminRoles():
     accessErrorExit(cd)
   except (GAPI.forbidden, GAPI.permissionDenied) as e:
     ClientAPIAccessDeniedExit(str(e))
+  if csvPF:
+    csvPF.writeCSVfile('Admin Roles')
 
 # gam delete adminrole <RoleItem>
 def doDeleteAdminRole():
@@ -16721,9 +16766,10 @@ def doDeleteAdminRole():
   except (GAPI.forbidden, GAPI.permissionDenied) as e:
     ClientAPIAccessDeniedExit(str(e))
 
-PRINT_ADMIN_ROLES_FIELDS = ['roleId', 'roleName', 'roleDescription', 'isSuperAdminRole', 'isSystemRole']
-
-def _showAdminRole(role, i=0, count=0):
+def _showAdminRole(role, FJQC, i=0, count=0):
+  if FJQC.formatJSON:
+    printLine(json.dumps(cleanJSON(role), ensure_ascii=False, sort_keys=True))
+    return
   printEntity([Ent.ADMIN_ROLE, role['roleName']], i, count)
   Ind.Increment()
   for field in PRINT_ADMIN_ROLES_FIELDS:
@@ -16744,15 +16790,21 @@ def _showAdminRole(role, i=0, count=0):
   Ind.Decrement()
 
 # gam info adminrole <RoleItem> [privileges]
+#	[formatjson]
 # gam print adminroles|roles [todrive <ToDriveAttribute>*]
 #	[role <RoleItem>] [privileges] [oneitemperrow]
+#	[nosystemroles]
+#	[formatjson [quotechar <Character>]]
 # gam show adminroles|roles
 #	[role <RoleItem>] [privileges]
+#	[nosystemroles]
+#	[formatjson]
 def doInfoPrintShowAdminRoles():
   cd = buildGAPIObject(API.DIRECTORY)
   fieldsList = PRINT_ADMIN_ROLES_FIELDS[:]
   csvPF = CSVPrintFile(fieldsList, PRINT_ADMIN_ROLES_FIELDS) if Act.csvFormat() else None
-  oneItemPerRow = False
+  FJQC = FormatJSONQuoteChar(csvPF)
+  noSystemRoles = oneItemPerRow = False
   if Act.Get() != Act.INFO:
     roleId = None
   else:
@@ -16767,13 +16819,17 @@ def doInfoPrintShowAdminRoles():
       fieldsList.append('rolePrivileges')
     elif myarg == 'oneitemperrow':
       oneItemPerRow = True
+    elif myarg == 'nosystemroles':
+      noSystemRoles = True
     else:
-      unknownArgumentExit()
-  if csvPF and 'rolePrivileges' in fieldsList:
-    if not oneItemPerRow:
-      csvPF.AddTitles(['rolePrivileges'])
-    else:
-      csvPF.AddTitles(['privilegeName', 'serviceId'])
+      FJQC.GetFormatJSONQuoteChar(myarg, True)
+  if csvPF:
+    if 'rolePrivileges' in fieldsList:
+      if not oneItemPerRow:
+        if not FJQC.formatJSON:
+          csvPF.AddTitles(['rolePrivileges'])
+      else:
+        csvPF.AddTitles(['privilegeName', 'serviceId'])
   try:
     if roleId is None:
       fields = getItemFieldsFromFieldsList('items', fieldsList)
@@ -16783,6 +16839,8 @@ def doInfoPrintShowAdminRoles():
                             throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND,
                                           GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                             customer=GC.Values[GC.CUSTOMER_ID], fields=fields)
+      if noSystemRoles:
+        roles = [role for role in roles if not role.get('isSystemRole', False)]
     else:
       fields = getFieldsFromFieldsList(fieldsList)
       roles = [callGAPI(cd.roles(), 'get',
@@ -16801,23 +16859,38 @@ def doInfoPrintShowAdminRoles():
     role.setdefault('isSystemRole', False)
   if not csvPF:
     count = len(roles)
-    performActionNumItems(count, Ent.ADMIN_ROLE)
+    if not FJQC.formatJSON:
+      performActionNumItems(count, Ent.ADMIN_ROLE)
     Ind.Increment()
     i = 0
     for role in roles:
       i += 1
-      _showAdminRole(role, i, count)
+      _showAdminRole(role, FJQC, i, count)
     Ind.Decrement()
   else:
     for role in roles:
       if not oneItemPerRow or 'rolePrivileges' not in role:
-        csvPF.WriteRowTitles(flattenJSON(role))
+        row = flattenJSON(role)
+        if not FJQC.formatJSON:
+          csvPF.WriteRowTitles(row)
+        elif csvPF.CheckRowTitles(row):
+          row = {}
+          for field in PRINT_ADMIN_ROLES_FIELDS:
+            if field in role:
+              row[field] = role[field]
+          row['JSON'] = json.dumps(cleanJSON(role), ensure_ascii=False, sort_keys=True)
+          csvPF.WriteRowNoFilter(row)
       else:
         privileges = role.pop('rolePrivileges')
         baserow = flattenJSON(role)
         for privilege in privileges:
           row = flattenJSON(privilege, flattened=baserow.copy())
-          csvPF.WriteRowTitles(row)
+          if not FJQC.formatJSON:
+            csvPF.WriteRowTitles(row)
+          elif csvPF.CheckRowTitles(row):
+            row = baserow.copy()
+            row['JSON'] = json.dumps(cleanJSON(privilege), ensure_ascii=False, sort_keys=True)
+            csvPF.WriteRowNoFilter(row)
   if csvPF:
     csvPF.writeCSVfile('Admin Roles')
 

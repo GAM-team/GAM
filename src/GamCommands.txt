@@ -1511,15 +1511,22 @@ gam show privileges
 <RoleItem> ::= id:<String>|uid:<string>|<String>
 
 gam create adminrole <String> [description <String>]
-        privileges all|all_ou|<PrivilegesList>|(select <FileSelector>|<CSVFileSelector>)
+        privileges all|all_ou|<PrivilegeList>|(select <FileSelector>|<CSVFileSelector>)|<JSONData>
+        [csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]] (addcsvdata <FieldName> <String>)*]
 gam update adminrole <RoleItem> [name <String>] [description <String>]
-         [privileges all|all_ou|<PrivilegesList>|(select <FileSelector>|<CSVFileSelector>)]
+        [privileges all|all_ou|<PrivilegeList>|(select <FileSelector>|<CSVFileSelector>)|<JSONData>]
+        [csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]] (addcsvdata <FieldName> <String>)*]
 gam delete adminrole <RoleItem>
 gam info adminrole <RoleItem> [privileges]
+        [formatjson]
 gam print adminroles|roles [todrive <ToDriveAttribute>*]
         [role <RoleItem>] [privileges] [oneitemperrow]
+        [nosystemroles]
+        [formatjson [quotechar <Character>]]
 gam show adminroles|roles
         [role <RoleItem>] [privileges]
+	[nosystemroles]
+	[formatjson]
 
 gam create|add admin <EmailAddress>|<UniqueID> <RoleItem> customer|(org_unit <OrgUnitItem>)
         [condition securitygroup|nonsecuritygroup]
