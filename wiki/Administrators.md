@@ -9,7 +9,7 @@
 - [Display administrators](#display-administrators)
 - [Copy privileges from one role to a new role](#copy-privileges-from-one-role-to-a-new-role)
 - [Copy roles from one administrator to another](#copy-roles-from-one-administrator-to-another)
-- [Copy non-system admin roles from a source workspace to a target workspace](#copy-non-system-admin-roles-from-a-source-workspace-to-a-target-workspace_
+- [Copy non-system admin roles from a source workspace to a target workspace](#copy-non-system-admin-roles-from-a-source-workspace-to-a-target-workspace)
 
 ## API documentation
 * [About Administrator roles](https://support.google.com/a/answer/33325?ref_topic=4514341)
