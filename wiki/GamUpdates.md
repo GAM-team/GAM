@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.18.02
+
+Upgraded to OpenSSL 3.5.2.
+
 ### 7.18.01
 
 Added option `nosystemroles` to `gam print|show adminroles` that causes GAM
