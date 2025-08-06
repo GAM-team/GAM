@@ -391,8 +391,8 @@ gam config csv_input_row_filter "permission.type:regex:domain" redirect stdout .
 ### My Drives
 
 Get My Drive ACLs sharing to that email address:
-* Replace <Type> with user or group
-* Replace email@domain.com with actual address
+* Replace `<Type>` with user or group
+* Replace `email@domain.com` with actual email address
 ```
 gam config auto_batch_min 1 num_threads 20 redirect csv ./MyDriveShares.csv multiprocess redirect stderr - multiprocess all users print filelist fields id,name,mimetype,basicpermissions query "'email@domain.com' in readers or 'email@domain.com' in writers" pm notrole owner type <Type> emailaddress email@domain.com em pmfilter oneitemperrow
 ```
@@ -411,10 +411,11 @@ gam config num_threads 20 redirect stdout ./AddMyDriveShares.txt multiprocess re
 Get an organizer for each Shared Drive
 ```
 gam redirect csv ./SharedDriveOrganizers.csv print shareddriveorganizers
+```
 
 Get Shared Drive ACLs explicitly sharing to that email address:
-* Replace <Type> with user or group
-* Replace email@domain.com with actual address
+* Replace `<Type>` with user or group
+* Replace `email@domain.com` with actual email address
 ```
 gam config num_threads 20 csv_input_row_filter "organizers:regex:^.+$" redirect csv ./SharedDriveShares.csv multiprocess redirect stderr - multiprocess csv SharedDriveOrganizers.csv gam user "~organizers"  print filelist select shareddriveid "~id" fields id,name,mimetype,basicpermissions,driveid showdrivename query "'email@domain.com' in readers or 'email@domain.com' in writers" pm type <Type> emailaddress email@domain.com inherited false em pmfilter oneitemperrow
 ```
