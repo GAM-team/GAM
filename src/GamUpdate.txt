@@ -1,3 +1,7 @@
+7.18.02
+
+Upgraded to OpenSSL 3.5.2.
+
 7.18.01
 
 Added option `nosystemroles` to `gam print|show adminroles` that causes GAM
