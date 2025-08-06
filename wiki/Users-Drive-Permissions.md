@@ -10,6 +10,7 @@
 - [Delete all ACLs except owner from a user's My Drive](#delete-all-acls-except-owner-from-a-users-my-drive)
 - [Change shares to User1 to shares to User2](#change-shares-to-user1-to-shares-to-user2)
 - [Map All ACLs from an old domain to a new domain](#map-all-acls-from-an-old-domain-to-a-new-domain)
+- [Remove all ACLs for a specific user or group email address](#remove-all-ACLs-for-a-specific-user-or-group-email-address)
 
 ## API documentation
 * [Drive API - Permissions](https://developers.google.com/drive/api/v3/reference/permissions)
@@ -385,3 +386,47 @@ gam config csv_input_row_filter "permission.type:regex:user|group" redirect stdo
 gam config csv_input_row_filter "permission.type:regex:domain" redirect stdout ./AddNewDomainACLsDomainShares.txt multiprocess redirect stderr stdout csv ./allUsersFiles.csv gam user "~Owner" create drivefileacl "~id" "~permission.type" "~permission.domain" role "~permission.role" allowfilediscovery "~permission.allowFileDiscovery" mappermissionsdomain olddomain.com newdomain.com
 ```
     
+## Remove all ACLs for a specific user or group email address
+
+### My Drives
+
+Get My Drive ACLs sharing to that email address:
+* Replace <Type> with user or group
+* Replace email@domain.com with actual address
+```
+gam config auto_batch_min 1 num_threads 20 redirect csv ./MyDriveShares.csv multiprocess redirect stderr - multiprocess all users print filelist fields id,name,mimetype,basicpermissions query "'email@domain.com' in readers or 'email@domain.com' in writers" pm notrole owner type <Type> emailaddress email@domain.com em pmfilter oneitemperrow
+```
+
+Delete those My Drive ACLs.
+```
+gam config num_threads 20 redirect stdout ./DeleteMyDriveShares.txt multiprocess redirect stderr stdout csv MyDriveShares.csv gam user "~Owner" delete drivefleacl "~id" "id:~~permissions.id~~"
+```
+
+Add My Drive ACLs with a different email address and the same role.
+```
+gam config num_threads 20 redirect stdout ./AddMyDriveShares.txt multiprocess redirect stderr stdout csv MyDriveShares.csv gam user "~Owner" add drivefleacl "~id" "~permission.type" newemail@domain.rom role "~permission.role"
+```
+
+### Shared Drives
+Get an organizer for each Shared Drive
+```
+gam redirect csv ./SharedDriveOrganizers.csv print shareddriveorganizers
+
+Get Shared Drive ACLs explicitly sharing to that email address:
+* Replace <Type> with user or group
+* Replace email@domain.com with actual address
+```
+gam config num_threads 20 csv_input_row_filter "organizers:regex:^.+$" redirect csv ./SharedDriveShares.csv multiprocess redirect stderr - multiprocess csv SharedDriveOrganizers.csv gam user "~organizers"  print filelist select shareddriveid "~id" fields id,name,mimetype,basicpermissions,driveid showdrivename query "'email@domain.com' in readers or 'email@domain.com' in writers" pm type <Type> emailaddress email@domain.com inherited false em pmfilter oneitemperrow
+```
+
+Delete those Shared Drive ACLs.
+```
+gam config num_threads 20 redirect stdout ./DeleteSharedDriveShares.txt multiprocess redirect stderr stdout csv SharedDriveShares.csv gam user "~Owner" delete drivefleacl "~id" "id:~~permissions.id~~"
+```
+
+Add Shared Drive ACLs with a different email address and the same role.
+```
+gam config num_threads 20 redirect stdout ./ReplaceSharedDriveShares.txt multiprocess redirect stderr stdout csv SharedDriveShares.csv gam user "~Owner" add drivefleacl "~id" "~permission.type" newemail@domain.rom role "~permission.role"
+```
+
+
