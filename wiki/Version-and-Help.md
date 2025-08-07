@@ -35,7 +35,7 @@ Path: /Users/Admin/bin/gam7
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
 Time: 2023-06-02T21:10:00-07:00
 Your system time differs from admin.googleapis.com by less than 1 second
-OpenSSL 3.5.2 22
+OpenSSL 3.5.2 5 ASug 2025
 cryptography 43.0.3
 filelock 3.16.1
 google-api-python-client 2.149.0
