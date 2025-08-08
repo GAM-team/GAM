@@ -119,6 +119,7 @@ USERINFO_PROFILE_SCOPE = 'https://www.googleapis.com/auth/userinfo.profile' # pr
 VAULT_SCOPES = ['https://www.googleapis.com/auth/ediscovery', 'https://www.googleapis.com/auth/ediscovery.readonly']
 REQUIRED_SCOPES = [USERINFO_EMAIL_SCOPE, USERINFO_PROFILE_SCOPE]
 REQUIRED_SCOPES_SET = set(REQUIRED_SCOPES)
+NUM_CLIENT_SCOPES_ERROR_LIMIT = 48
 #
 JWT_APIS = {
   ACCESSCONTEXTMANAGER: [CLOUD_PLATFORM_SCOPE],

@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.18.02'
+__version__ = '7.18.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -10673,9 +10673,6 @@ Unselect all scopes by entering a 'u'; yields [ ] for all scopes
 Exit without changes/authorization by entering an 'e'
 Continue to authorization by entering a 'c'
 '''
-  if clientAccess:
-    oauth2_menu += '''  Note, if all scopes are selected, Google will probably generate an authorization error
-'''
   menu = oauth2_menu % tuple(range(numScopes))
   selectedScopes = ['*'] * numScopes
   if currentScopes is None and clientAccess:
@@ -10776,7 +10773,25 @@ Continue to authorization by entering a 'c'
           break
         sys.stdout.write(f'{ERROR_PREFIX}Invalid input "{choice}"\n')
     if selection == 'c':
-      break
+      if clientAccess:
+        numSelectedScopes = 0
+        i = 0
+        for a_scope in scopesList:
+          if selectedScopes[i] == '*':
+            if a_scope['scope']:
+              numSelectedScopes += 1
+          elif selectedScopes[i] != ' ':
+            numSelectedScopes += 1
+          i += 1
+        if numSelectedScopes <= API.NUM_CLIENT_SCOPES_ERROR_LIMIT:
+          break
+# If number of scopes is > 48 we'll probably get an error
+        writeStdout(Msg.NUM_SELECTED_CLIENT_SCOPES.format(numSelectedScopes, API.NUM_CLIENT_SCOPES_ERROR_LIMIT))
+        choice = readStdin('\nPlease enter c to continue to authorization or any other key to amend selection: ')
+        if choice and choice.lower() == 'c':
+          break
+      else:
+        break
   return selectedScopes
 
 def _localhost_to_ip():

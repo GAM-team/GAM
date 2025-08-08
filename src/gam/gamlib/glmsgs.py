@@ -433,6 +433,7 @@ NO_SVCACCT_ACCESS_ALLOWED = 'No Service Account Access allowed'
 NO_TRANSFER_LACK_OF_DISK_SPACE = 'Transfer not performed due to lack of target drive space.'
 NO_USAGE_PARAMETERS_DATA_AVAILABLE = 'No usage parameters data available.'
 NO_USER_COUNTS_DATA_AVAILABLE = 'No User counts data available.'
+NUM_SELECTED_CLIENT_SCOPES = '\n{0} scopes are selected, if more than {1} scopes are selected, Google will probably generate a "Something went wrong" error\n'
 OAUTH2_GO_TO_LINK_MESSAGE = """
 Go to the following link in a browser on this computer or on another computer:
 
