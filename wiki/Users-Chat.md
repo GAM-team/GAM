@@ -464,7 +464,7 @@ gam <UserItem> delete chatmember asadmin <ChatSpace>
 
 Delete members from a chat space by specifying chatmember names, asadmin
 ```
-gam <UserItem> remove chatmember members asadmin <ChatMemberList>
+gam <UserItem> remove chatmember asadmin members <ChatMemberList>
 ```
 
 ### Update a members role in a user's chat space
