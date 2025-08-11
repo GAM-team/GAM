@@ -13,6 +13,7 @@
   - [Move with ownership change](#move-with-ownership-change)
   - [Complex moves](#complex-moves)
   - [Move content of a Shared Drive to another Shared Drive](#move-content-of-a-shared-drive-to-another-shared-drive)
+  - [Move content of a Shared Drive to a My Drive](#move-content-of-a-shared-drive-to-a-my-drive)
 
 ## API documentation
 * [Drive API - Files](https://developers.google.com/drive/api/v3/reference/files)
@@ -673,8 +674,10 @@ gam user user@domain.com move drivefile teamdriveid 0AC_1AB teamdriveparentid 0A
 ```
 
 If you want the source Shared Drive with ID 0AC_1AB to be contained in a top level folder of the target Shared Drive with ID 0AE_9ZX, omit the `mergewithparent` argument.
+The folder on the target Shared Drive will have the same name as the name of the source Shared Drive; use the `newfilename <DriveFileName>` to use a different name.
 ```
 gam user user@domain.com move drivefile teamdriveid 0AC_1AB teamdriveparentid 0AE_9ZX
+gam user user@domain.com move drivefile teamdriveid 0AC_1AB teamdriveparentid 0AE_9ZX newfilename "Copy of source Shared Drive"
 ```
 
 ### Inter-workspace moves
@@ -692,3 +695,21 @@ User: user@domaina.com, Move 1 Drive File/Folder
   User: user@domaina.com, Drive Folder: Shared Drive A(<SharedDriveAID>), Retained
 ```
 To get this to work, you must check `Allow people outside of Domain A to access files` on Shared Drive A in domaina.com
+
+## Move content of a Shared Drive to a My Drive
+Suppose you have a Shared Drive with ID 0AC_1AB with multiple files and folders, and want to move all of its content to the root of a My Drive.
+
+The following command will change the parents of the top level files and folders from 0AC_1AB to the root of the My Drive; the sub files and folders will move along with their top level folder.
+
+* No permissions are processed.
+```
+gam user user@domain.com move drivefile teamdriveid 0AC_1AB parentid root mergewithparent 
+```
+
+If you want the contents of Shared Drive with ID 0AC_1AB to be contained in a top level folder of the My Drive, omit the `mergewithparent` argument.
+The folder on the My Drive will have the same name as the name of the Shared Drive; use the `newfilename <DriveFileName>` to use a different name.
+```
+gam user user@domain.com move drivefile teamdriveid 0AC_1AB parentid root
+gam user user@domain.com move drivefile teamdriveid 0AC_1AB parentid root newfilename "Copy of Shared Drive"
+```
+
