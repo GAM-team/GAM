@@ -539,6 +539,7 @@ If an item contains spaces, it should be surrounded by ".
         Must match this Python Regular Expression: [a-zA-Z0-9 '"!-]{4,30}
 <PropertyKey> ::= <String>
 <PropertyValue> ::= <String>
+<PubSubTopicName> ::= <String>
 <QueryAlert> ::= <String>
         See: https://developers.google.com/admin-sdk/alertcenter/guides/query-filters
 <QueryBrowser> ::= <String>
@@ -1553,6 +1554,9 @@ gam show alertfeedback [alert <AlertID>] [filter <QueryAlert>] [orderby createti
         [formatjson]
 gam print alertfeedback [todrive <ToDriveAttribute>*] [alert <AlertID>] [filter <QueryAlert>] [orderby createtime [ascending|descending]]
         [formatjson [quotechar <Character>]]
+
+gam alerts showsettings
+gam alerts setsettings <PubSubTopicName>
 
 # Aliases
 

@@ -1013,6 +1013,7 @@ class GamCLArgs():
   OB_PROJECT_ID_ENTITY = 'ProjectIDEntity'
   OB_PROPERTY_KEY = 'PropertyKey'
   OB_PROPERTY_VALUE = 'PropertyValue'
+  OB_PUBSUB_TOPIC_NAME = 'PubSubTopicName'
   OB_QUERY = 'Query'
   OB_QUERY_ITEM = 'QueryItem'
   OB_QUERY_LIST = 'QueryList'

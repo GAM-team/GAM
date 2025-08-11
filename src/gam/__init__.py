@@ -37775,6 +37775,60 @@ def doShowLicenses():
   for u_license in licenseCounts:
     printEntityKVList(u_license[:-2], [Ent.Plural(u_license[-2]), u_license[-1]])
 
+# gam alerts showsettings
+def doAlertsShowSettings():
+  user, ac = buildGAPIServiceObject(API.ALERTCENTER, _getAdminEmail())
+  if not ac:
+    return
+  try:
+    settings = callGAPI(ac.v1beta1(), 'getSettings',
+             throwReasons=GAPI.ALERT_THROW_REASONS+[GAPI.NOT_FOUND])
+    _showAlertSettings(settings)
+  except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.permissionDenied):
+    userAlertsServiceNotEnabledWarning(user)
+
+# gam alerts setsettings <PubSubTopicName>
+def doAlertsSetSettings():
+    pubSubTopicName = getString(Cmd.OB_PUBSUB_TOPIC_NAME)
+    kwargs = {'body': {
+      'notifications': [
+        {
+          'cloudPubsubTopic': {
+              'topicName': pubSubTopicName
+          }
+        }
+      ]
+    }}
+    user, ac = buildGAPIServiceObject(API.ALERTCENTER, _getAdminEmail())
+    if not ac:
+        return
+    try:
+        settings = callGAPI(ac.v1beta1(), 'updateSettings',
+                            throwReasons=GAPI.ALERT_THROW_REASONS+[GAPI.NOT_FOUND],
+                            **kwargs)
+        _showAlertSettings(settings)
+    except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.permissionDenied):
+        userAlertsServiceNotEnabledWarning(user)
+
+def _showAlertSettings(settings):
+  printLine(Ind.Spaces() + 'settings:')
+  if 'notifications' in settings:
+    Ind.Increment()
+    notifications = settings['notifications']
+    printLine(Ind.Spaces() + 'notifications:')
+    for index, notification in enumerate(notifications):
+        Ind.Increment()
+        printLine(Ind.Spaces() + f'notification[{index}]:')
+        if 'cloudPubsubTopic' in notification:
+          Ind.Increment()
+          printLine(Ind.Spaces() + 'cloudPubsubTopic:')
+          Ind.Increment()
+          printKeyValueDict(notification['cloudPubsubTopic'])
+          Ind.Decrement()
+          Ind.Decrement()
+        Ind.Decrement()
+    Ind.Decrement()
+
 # gam delete alert <AlertID>
 # gam undelete alert <AlertID>
 def doDeleteOrUndeleteAlert():
@@ -78067,6 +78121,17 @@ def processResourceCommands():
 def processResourcesCommands():
   executeResourceCommands(getEntityList(Cmd.OB_RESOURCE_ENTITY))
 
+# Alerts command sub-commands
+ALERTS_SUBCOMMANDS = {
+  'showsettings': 		(Act.SHOW, doAlertsShowSettings),
+  'setsettings': 		(Act.SET, doAlertsSetSettings),
+}
+
+def processAlertsCommands():
+  CL_subCommand = getChoice(ALERTS_SUBCOMMANDS)
+  Act.Set(ALERTS_SUBCOMMANDS[CL_subCommand][CMD_ACTION])
+  ALERTS_SUBCOMMANDS[CL_subCommand][CMD_FUNCTION]()
+
 # Commands
 COMMANDS_MAP = {
   'oauth':			processOauthCommands,
@@ -78076,6 +78141,7 @@ COMMANDS_MAP = {
   'courses':			processCoursesCommands,
   'resource':			processResourceCommands,
   'resources':			processResourcesCommands,
+  'alerts':             processAlertsCommands,
   }
 
 # Commands aliases
