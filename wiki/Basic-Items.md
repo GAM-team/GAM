@@ -436,6 +436,7 @@
         Must match this Python Regular Expression: [a-zA-Z0-9 '"!-]{4,30}
 <PropertyKey> ::= <String>
 <PropertyValue> ::= <String>
+<PubSubTopicName> ::= <String>
 <QueryAlert> ::= <String>
         See: https://developers.google.com/admin-sdk/alertcenter/guides/query-filters
 <QueryBrowser> ::= <String>

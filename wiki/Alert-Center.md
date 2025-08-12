@@ -7,6 +7,7 @@
 - [Display alerts](#display-alerts)
 - [Manage alert feedback](#manage-alert-feedback)
 - [Display alert feedback](#display-alert-feedback)
+- [Configuring settings](#configuring-settings)
 
 ## API documentation
 * [Alert Center API](https://developers.google.com/admin-sdk/alertcenter/reference/rest/)
@@ -18,6 +19,7 @@
 ## Definitions
 ```
 <AlertID> ::= <String>
+<PubSubTopicName> ::= <String>
 <QueryAlert> ::= <String> See: https://developers.google.com/admin-sdk/alertcenter/guides/query-filters
 ```
 ## Introduction
@@ -95,3 +97,15 @@ the quote character itself, the column delimiter (comma by default) and new-line
 When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
+
+## Configuring settings
+
+Alert Center can be configured to send notifications to a Google Cloud Pub/Sub topic, but it first requires configuration.
+* See https://developers.google.com/workspace/admin/alertcenter/guides/notifications for information.
+
+Gam can be used to display or modify the settings:
+```
+gam show alertsettings
+gam update alertsettings <PubSubTopicName>
+gam clear alertsettings
+```
