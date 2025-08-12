@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.18.04
+
+Added commands to display/manage Alert Center Pub/Sub notifications.
+* See: https://github.com/GAM-team/GAM/wiki/Alert-Center#configuring-settings
+
 ### 7.18.03
 
 Updated `gam oauth create` to give a warning if the number of selected scopes will
