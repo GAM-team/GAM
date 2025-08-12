@@ -54,6 +54,7 @@ class GamEntity():
   ALERT_ID = 'alri'
   ALERT_FEEDBACK = 'alfb'
   ALERT_FEEDBACK_ID = 'alfi'
+  ALERT_SETTINGS = 'alrs'
   ALIAS = 'alia'
   ALIAS_EMAIL = 'alie'
   ALIAS_TARGET = 'alit'
@@ -285,10 +286,11 @@ class GamEntity():
   MIMETYPE = 'mime'
   MOBILE_DEVICE = 'mobi'
   NAME = 'name'
+  NONEDITABLE_ALIAS = 'neal'
   NOTE = 'note'
   NOTE_ACL = 'nota'
   NOTES_ACLS = 'naac'
-  NONEDITABLE_ALIAS = 'neal'
+  NOTIFICATION = 'noti'
   OAUTH2_TXT_FILE = 'oaut'
   OAUTH2SERVICE_JSON_FILE = 'oau2'
   ORGANIZATIONAL_UNIT = 'orgu'
@@ -414,6 +416,7 @@ class GamEntity():
     ALERT_ID: ['Alert IDs', 'Alert ID'],
     ALERT_FEEDBACK: ['Alert Feedbacks', 'Alert Feedback'],
     ALERT_FEEDBACK_ID: ['Alert Feedback IDs', 'Alert Feedback ID'],
+    ALERT_SETTINGS: ['Alert Settings', 'Alert Settings'],
     ALIAS: ['Aliases', 'Alias'],
     ALIAS_EMAIL: ['Alias Emails', 'Alias Email'],
     ALIAS_TARGET: ['Alias Targets', 'Alias Target'],
@@ -645,10 +648,11 @@ class GamEntity():
     MIMETYPE: ['MIME Types', 'MIME Type'],
     MOBILE_DEVICE: ['Mobile Devices', 'Mobile Device'],
     NAME: ['Names', 'Name'],
+    NONEDITABLE_ALIAS: ['Non-Editable Aliases', 'Non-Editable Alias'],
     NOTE: ['Notes', 'Note'],
     NOTE_ACL: ['Note ACLs', 'Note ACL'],
     NOTES_ACLS: ["'Note's ACLs", "Note's ACLs"],
-    NONEDITABLE_ALIAS: ['Non-Editable Aliases', 'Non-Editable Alias'],
+    NOTIFICATION: ['Notifications', 'Notification'],
     OAUTH2_TXT_FILE: ['Client OAuth2 File', 'Client OAuth2 File'],
     OAUTH2SERVICE_JSON_FILE: ['Service Account OAuth2 File', 'Service Account OAuth2 File'],
     ORGANIZATIONAL_UNIT: ['Organizational Units', 'Organizational Unit'],

@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.18.03'
+__version__ = '7.18.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -27081,6 +27081,8 @@ def _getChatMemberEmail(cd, member):
     if member['member']['type'] == 'HUMAN':
       _, memberUid = member['member']['name'].split('/')
       member['member']['email'], _ = convertUIDtoEmailAddressWithType(f'uid:{memberUid}', cd, None, emailTypes=['user'])
+      if member['member']['email'].find('@') == -1:
+        member['member']['email'] = 'id:'+member['member']['email']
   elif 'groupMember' in member:
     _, memberUid = member['groupMember']['name'].split('/')
     member['groupMember']['email'], _ = convertUIDtoEmailAddressWithType(f'uid:{memberUid}', cd, None, emailTypes=['group'])
@@ -37797,6 +37799,54 @@ def doDeleteOrUndeleteAlert():
     entityActionFailedWarning([Ent.ALERT_ID, alertId], str(e))
   except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.permissionDenied):
     userAlertsServiceNotEnabledWarning(user)
+
+def _showAlertSettings(settings):
+  notifications = settings.get('notifications', [])
+  count = len(notifications)
+  entityPerformAction([Ent.ALERT_SETTINGS, None])
+  i = 0
+  for notification in notifications:
+    i += 1
+    printEntity([Ent.NOTIFICATION, None], i, count)
+    Ind.Increment()
+    showJSON(None, notification)
+    Ind.Decrement()
+
+# gam show alertsettings
+def doShowAlertSettings():
+  checkForExtraneousArguments()
+  user, ac = buildGAPIServiceObject(API.ALERTCENTER, _getAdminEmail())
+  if not ac:
+    return
+  try:
+    settings = callGAPI(ac.v1beta1(), 'getSettings',
+                        throwReasons=GAPI.ALERT_THROW_REASONS)
+    _showAlertSettings(settings)
+  except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.permissionDenied):
+    userAlertsServiceNotEnabledWarning(user)
+
+# gam update alertsettings <PubsubTopicName>
+def doUpdateAlertSettings(clear=False):
+  if not clear:
+    body = {'notifications':
+            [{'cloudPubsubTopic': {'topicName': getString(Cmd.OB_PUBSUB_TOPIC_NAME)}}]}
+  else:
+    body = {'notifications': []}
+  checkForExtraneousArguments()
+  user, ac = buildGAPIServiceObject(API.ALERTCENTER, _getAdminEmail())
+  if not ac:
+    return
+  try:
+    settings = callGAPI(ac.v1beta1(), 'updateSettings',
+                        throwReasons=GAPI.ALERT_THROW_REASONS,
+                        body=body)
+    _showAlertSettings(settings)
+  except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.permissionDenied):
+    userAlertsServiceNotEnabledWarning(user)
+
+# gam clear alertsettings
+def doClearAlertSettings():
+  doUpdateAlertSettings(clear=True)
 
 ALERT_TIME_OBJECTS = {'createTime', 'startTime', 'endTime'}
 
@@ -77185,7 +77235,8 @@ MAIN_COMMANDS_WITH_OBJECTS = {
     ),
   'clear':
     (Act.CLEAR,
-     {Cmd.ARG_CONTACT:		doClearDomainContacts,
+     {Cmd.ARG_ALERTSETTINGS:	doClearAlertSettings,
+      Cmd.ARG_CONTACT:		doClearDomainContacts,
      }
     ),
   'close':
@@ -77506,6 +77557,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_ADMIN:		doPrintShowAdmins,
       Cmd.ARG_ALERT:		doPrintShowAlerts,
       Cmd.ARG_ALERTFEEDBACK:	doPrintShowAlertFeedback,
+      Cmd.ARG_ALERTSETTINGS:	doShowAlertSettings,
       Cmd.ARG_BROWSER:		doPrintShowBrowsers,
       Cmd.ARG_BROWSERTOKEN:	doPrintShowBrowserTokens,
       Cmd.ARG_BUILDING:		doPrintShowBuildings,
@@ -77598,6 +77650,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
   'update':
     (Act.UPDATE,
      {Cmd.ARG_ADMINROLE:	doCreateUpdateAdminRoles,
+      Cmd.ARG_ALERTSETTINGS:	doUpdateAlertSettings,
       Cmd.ARG_ALIAS:		doCreateUpdateAliases,
       Cmd.ARG_BROWSER:		doUpdateBrowsers,
       Cmd.ARG_BUILDING:		doUpdateBuilding,
