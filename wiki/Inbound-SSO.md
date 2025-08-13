@@ -53,7 +53,7 @@ use the `returnnameonly` option to have GAM display just the profile name of the
 This will be useful in scripts that create|update a profile and then want to perform subsequent GAM commands that
 reference the profile.
 
-If `returnnameonly is specified, `inProgress` is returned if the API does not return a complete result.
+If `returnnameonly` is specified, `inProgress` is returned if the API does not return a complete result.
 
 ```
 gam delete inboundssoprofile <SSOProfileItem>
@@ -130,10 +130,14 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 
 ## Manage assignments
 ```
-gam create inboundssoassignment (group <GroupItem> rank <Number>)|(ou|org|orgunit <OrgUnitItem>)
-        (mode sso_off)|(mode saml_sso profile <SSOProfileItem>)(mode domain_wide_saml_if_enabled) [neverredirect]
-gam update inboundssoassignment  <SSOAssignmentName>[(group <GroupItem> rank <Number>)|(ou|org|orgunit <OrgUnitItem>)]
-        [(mode sso_off)|(mode saml_sso profile <SSOProfileItem>)(mode domain_wide_saml_if_enabled)] [neverredirect]
+gam create inboundssoassignment
+        (group <GroupItem> rank <Number>)|(ou|org|orgunit <OrgUnitItem>)
+        (mode sso_off)|(mode saml_sso profile <SSOProfileItem>)(mode domain_wide_saml_if_enabled)
+        [neverredirect]
+gam update inboundssoassignment  <SSOAssignmentName>
+        [(group <GroupItem> rank <Number>)|(ou|org|orgunit <OrgUnitItem>)]
+        [(mode sso_off)|(mode saml_sso profile <SSOProfileItem>)(mode domain_wide_saml_if_enabled)]
+        [neverredirect]
 gam delete inboundssoassignment <SSOAssignmentSelector>
 ```
 
