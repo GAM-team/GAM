@@ -1011,12 +1011,14 @@ jobs:
           echo "Date version: ${dateversion}"
           echo "dateversion=${dateversion}" >> $GITHUB_OUTPUT
 
-      - uses: "marvinpinto/action-automatic-releases@latest"
-        name: Publish draft release
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "${{ steps.dateversion.outputs.dateversion }}"
-          prerelease: false
-          draft: true
-          files: |
+      - name: Publish draft release
+        uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8
+        draft: true
+        prerelease: false
+        tag_name: "${{ steps.dateversion.outputs.dateversion }}"
+        overwrite_files: true
+        fail_on_unmatched_files: true
+        files: |
             gam-binaries/*
+
+        
