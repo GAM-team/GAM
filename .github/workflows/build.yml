@@ -1013,12 +1013,13 @@ jobs:
 
       - name: Publish draft release
         uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8
-        draft: true
-        prerelease: false
-        tag_name: "${{ steps.dateversion.outputs.dateversion }}"
-        overwrite_files: true
-        fail_on_unmatched_files: true
-        files: |
+        with:
+          draft: true
+          prerelease: false
+          tag_name: "${{ steps.dateversion.outputs.dateversion }}"
+          overwrite_files: true
+          fail_on_unmatched_files: true
+          files: |
             gam-binaries/*
 
         
