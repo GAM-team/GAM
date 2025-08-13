@@ -392,7 +392,7 @@ Your command line will have: `embedimage file1.jpg image1 embedimage file2.jpg i
 
 ## Send an email to users
 ```
-gam <UserTypeEntity> sendemail [from <EmailAddress>]
+gam <UserTypeEntity> sendemail from <EmailAddress>
         [replyto <EmailAddress>]
         [cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
         [subject <String>]
@@ -405,8 +405,6 @@ gam <UserTypeEntity> sendemail [from <EmailAddress>]
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
 ```
 Emails will be sent to the users in `<UserTypeEntity>`.
-
-By default, emails will be sent from the admin user named in oauth2.txt, override this with the `from <EmailAddress>` option.
 
 When using the Gmail API/SMTP, GAM gets no/little indication as to the status of the message delivery; the from user will get a non-delivery receipt if the message
 could not be sent to the specified recipients.

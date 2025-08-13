@@ -132,7 +132,7 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 ```
 gam create inboundssoassignment (group <GroupItem> rank <Number>)|(ou|org|orgunit <OrgUnitItem>)
         (mode sso_off)|(mode saml_sso profile <SSOProfileItem>)(mode domain_wide_saml_if_enabled) [neverredirect]
-gam update inboundssoassignment [(group <GroupItem> rank <Number>)|(ou|org|orgunit <OrgUnitItem>)]
+gam update inboundssoassignment  <SSOAssignmentName>[(group <GroupItem> rank <Number>)|(ou|org|orgunit <OrgUnitItem>)]
         [(mode sso_off)|(mode saml_sso profile <SSOProfileItem>)(mode domain_wide_saml_if_enabled)] [neverredirect]
 gam delete inboundssoassignment <SSOAssignmentSelector>
 ```
