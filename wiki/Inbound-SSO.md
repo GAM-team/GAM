@@ -1,17 +1,15 @@
 # Inbound SSO
-- [SSO](#sso)
+- [Setup SSO](https://support.google.com/a/answer/12032922)
+- [Admin Console](https://admin.google.com/ac/security/sso)
 - [API documentation](#api-documentation)
 - [Definitions](#definitions)
+- [Setup SSO](#setupsso)
 - [Manage profiles](#manage-profiles)
 - [Display profiles](#display-profiles)
 - [Manage credentials](#manage-credentials)
 - [Display credentials](#display-credentials)
 - [Manage assignments](#manage-assignments)
 - [Display assignments](#display-assignments)
-
-## SSO
-* [SSO](https://support.google.com/a/answer/12032922)
-* [Admin Console](https://admin.google.com/ac/security/sso)
 
 ## API documentation
 * [Cloud Identity API - Inbound SAML SSO Profiles](https://cloud.google.com/identity/docs/reference/rest/v1beta1/inboundSamlSsoProfiles)
