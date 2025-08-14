@@ -1,5 +1,5 @@
 # Inbound SSO
-- [Admin Console](#admin-console)
+- [SSO](#sso)
 - [API documentation](#api-documentation)
 - [Definitions](#definitions)
 - [Manage profiles](#manage-profiles)
@@ -9,12 +9,14 @@
 - [Manage assignments](#manage-assignments)
 - [Display assignments](#display-assignments)
 
-## Admin Console
-* https://admin.google.com/ac/security/sso
+## SSO
+* [SSO](https://support.google.com/a/answer/12032922)
+* [Admin Console](https://admin.google.com/ac/security/sso)
 
 ## API documentation
 * [Cloud Identity API - Inbound SAML SSO Profiles](https://cloud.google.com/identity/docs/reference/rest/v1beta1/inboundSamlSsoProfiles)
 * [Cloud Identity API - Inbound SAML SSO Profiles idp Credentials](https://cloud.google.com/identity/docs/reference/rest/v1beta1/inboundSamlSsoProfiles.idpCredentials)
+* [Cloud Identity API - Inbound OIDC SSO Profiles](https://cloud.google.com/identity/docs/reference/rest/v1beta1/inboundOidcSsoProfiles)
 * [Cloud Identity API - Inbound SSO Assignments](https://cloud.google.com/identity/docs/reference/rest/v1beta1/inboundSsoAssignments)
 
 ## Definitions
@@ -41,13 +43,17 @@
 ```
 ## Manage profiles
 ```
-gam create inboundssoprofile [name <SSOProfileDisplayName>]
+gam create inboundssoprofile [saml|oidc] [name <SSOProfileDisplayName>]
         [entityid <String>] [loginurl <URL>] [logouturl <URL>] [changepasswordurl <URL>]
         [returnnameonly]
-gam update inboundssoprofile <SSOProfileItem>
+gam update inboundssoprofile [saml|oidc] <SSOProfileItem>
         [entityid <String>] [loginurl <URL>] [logouturl <URL>] [changepasswordurl <URL>]
         [returnnameonly]
 ```
+Select type of profile:
+* `saml` - SAML profile; this is the default
+* `oidc` - OIDC profile
+
 By default, all fields of the created|updated profile are displayed;
 use the `returnnameonly` option to have GAM display just the profile name of the created|updated profile.
 This will be useful in scripts that create|update a profile and then want to perform subsequent GAM commands that
@@ -56,31 +62,49 @@ reference the profile.
 If `returnnameonly` is specified, `inProgress` is returned if the API does not return a complete result.
 
 ```
-gam delete inboundssoprofile <SSOProfileItem>
+gam delete inboundssoprofile [saml|oidc] <SSOProfileItem>
 ```
+Select type of profile:
+* `saml` - SAML profile; this is the default
+* `oidc` - OIDC profile
 
 ## Display profiles
 Display a specific profile.
 ```
-gam info inboundssoprofile <SSOProfileItem>
+gam info inboundssoprofile [all|saml|oidc] <SSOProfileItem>
         [formatjson]
 ```
+Select type of profile:
+* `all` - All profiles are displayed; this is the default
+* `saml` - SAML profile
+* `oidc` - OIDC profile
+
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 
-Display all profiles.
+Display profiles.
 ```
-gam show inboundssoprofiles
+gam show inboundssoprofiles [all|saml|oidc]
         [formatjson]
 ```
+Select profiles to display:
+* `all` - All profiles are displayed; this is the default
+* `saml` - Display SAML profiles
+* `oidc` - Display OIDC profiles
+
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 
-Display all profiles in a CSV file.
+Display profiles in a CSV file.
 ```
-gam print inboundssoprofiles [todrive <ToDriveAttribute>*]
+gam print inboundssoprofiles [all|saml|oidc] [todrive <ToDriveAttribute>*]
         [[formatjson [quotechar <Character>]]
 ```
+Select profiles to display:
+* `all` - All profiles are displayed; this is the default
+* `saml` - Display SAML profiles
+* `oidc` - Display OIDC profiles
+
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.
 
