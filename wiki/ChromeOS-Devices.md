@@ -62,15 +62,6 @@ To use the `crostelemetry` commands you must authorize an additional scope:
 gam oauth create
 ```
 
-Many commands come in two forms:
-```
-gam <CrOSTypeEntity> <Command> ...
-gam <Command> cros <CrOSEntity> ...
-```
-The first form allows more powerful selection of devices with `<CrOSTypeEntity>`.
-
-The second form is backwards compatible with Legacy GAM and selection with `<CrOSEntity>` is limited.
-
 ## Definitions
 * [`<CrOSTypeEntity>`](Collections-of-ChromeOS-Devices)
  
@@ -332,7 +323,6 @@ gam select default config update_cros_ou_with_id true save
 
 ```
 gam <CrOSTypeEntity> update <CrOSAttribute>+ [quickcrosmove [<Boolean>]] [nobatchupdate]
-gam update cros <CrOSEntity> <CrOSAttribute>+ [quickcrosmove [<Boolean>]] [nobatchupdate]
 ```
 
 Google has introduced a new, faster method for moving CrOS devices to a new OU. The `quickcrosmove` option controls which method Gam uses.
@@ -419,8 +409,6 @@ gam update ou csvkmd cros.csv keyfield OU datafield deviceId add croscsvdata dev
 
 gam <CrOSTypeEntity> update action <CrOSAction> [acknowledge_device_touch_requirement]
         [actionbatchsize <Integer>]
-gam update cros <CrOSEntity> action <CrOSAction> [acknowledge_device_touch_requirement]
-        [actionbatchsize <Integer>]
 ```
 As of GAM version `6.67.00`, the new API function `batchChangeStatus` replaces the old API function `action`; ChromeOS devices are now processed in batches.
 The batch size defaults to 10, the `actionbatchsize <Integer>` option can be used to set a batch size between 10 and 250.
@@ -457,21 +445,18 @@ is configurable from 0 to some large number. If the status reaches `EXPIRED`, `C
         wipe_users|
         take_a_screenshot
 
-gam cros <CrOSTypeEntity> issuecommand command <CrOSCommand> [times_to_check_status <Integer>] [doit]
-gam issuecommand cros <CrOSEntity> command <CrOSCommand> [times_to_check_status <Integer>] [doit]
+gam <CrOSTypeEntity> issuecommand command <CrOSCommand> [times_to_check_status <Integer>] [doit]
 ```
 If the final status is not reached before GAM exits, you can issue the following commands to continue checking the status.
 ```
-gam cros <CrOSTypeEntity> getcommand commandid <CommandID> [times_to_check_status <Integer>]
-gam getcommand cros <CrOSEntity> commandid <CommandID> [times_to_check_status <Integer>]
+gam <CrOSTypeEntity> getcommand commandid <CommandID> [times_to_check_status <Integer>]
 ```
 
 ### Action Examples
 Remove user profile data from the device; the device will remain enrolled and connected.
 User data not synced to the Cloud including Downloads, Android app data and Crostini Linux VMs will be permanently lost.
-Commands with issuecommand directly after gam will work with Legacy GAM & GAM7, whereas commands where the issuecommand is after the cros <CrOSTypeEntity> will work only with GAM7. 
 ```
-gam issuecommand cros dd1d659a-0ea4-4e94-905e-4726c7a5f1e9 command wipe_users doit
+gam cros dd1d659a-0ea4-4e94-905e-4726c7a5f1e9 issuecommand command wipe_users doit
 ```
 Remove profiles using the annotatedAssetID, which is a user editable field, in this example the device has an asset ID of CB1234.
 ```
@@ -483,7 +468,6 @@ gam cros_queries "asset_id:CB1234,asset_id:CB5678" issuecommand command wipe_use
 ```
 Powerwash the device with serial number 143040348.
 ```
-gam issuecommand cros query:id:143040348 command remote_powerwash times_to_check_status 10 doit
 gam cros_sn 143040348 issuecommand command remote_powerwash times_to_check_status 10 doit
 ```
 
@@ -829,7 +813,6 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 
 ```
 gam <CrOSTypeEntity> info downloadfile latest|<Time> [targetfolder <FilePath>]
-gam info cros <CrOSEntity> downloadfile latest|<Time> [targetfolder <FilePath>]
 ```
 
 Select the device file to download by its timestamp.
