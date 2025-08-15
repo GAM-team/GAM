@@ -474,7 +474,6 @@ gam cros_sn 143040348 issuecommand command remote_powerwash times_to_check_statu
 Powerwash all devices in the /StudentCarts OrgUnit. Devices will need to be manually reconnected to WiFi which may mean entering a PSK.
 Use `wipe_users` if that's going to create too much work for you.
 ```
-gam issuecommand cros "query:orgunitpath:/StudentCarts" command remote_powerwash times_to_check_status 0 doit
 gam cros_ou /StudentCarts issuecommand command remote_powerwash times_to_check_status 0 doit
 ```
 ## ChromeOS device lists
