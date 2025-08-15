@@ -5,7 +5,7 @@ Print the current version of Gam with details
 gam version
 GAM 7.18.05 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
-Python 3.13.5 64-bit final
+Python 3.13.7 64-bit final
 MacOS Sequoia 15.6 x86_64
 Path: /Users/Admin/bin/gam7
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
@@ -17,7 +17,7 @@ Print the current version of Gam with details and time offset information
 gam version timeoffset
 GAM 7.18.05 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
-Python 3.13.5 64-bit final
+Python 3.13.7 64-bit final
 MacOS Sequoia 15.6 x86_64
 Path: /Users/Admin/bin/gam7
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
@@ -29,7 +29,7 @@ Print the current version of Gam with extended details and SSL information
 gam version extended
 GAM 7.18.05 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
-Python 3.13.5 64-bit final
+Python 3.13.7 64-bit final
 MacOS Sequoia 15.6 x86_64
 Path: /Users/Admin/bin/gam7
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
@@ -84,7 +84,7 @@ Print the current version of Gam and address of this Wiki
 gam help
 GAM 7.18.05 - https://github.com/GAM-team/GAM
 GAM Team <google-apps-manager@googlegroups.com>
-Python 3.13.5 64-bit final
+Python 3.13.7 64-bit final
 MacOS Sequoia 15.6 x86_64
 Path: /Users/Admin/bin/gam7
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com

@@ -18,6 +18,8 @@ Currently, if you enter `gam select <SectionName>` and nothing else on the comma
 GAM performs no action. Now, it will be treated as if you entered:
 `gam select <SectionName> save`
 
+Updated to Python 3.13.7.
+
 ### 7.18.04
 
 Added commands to display/manage Alert Center Pub/Sub notifications.
