@@ -44901,21 +44901,39 @@ def waitForMailbox(entityList):
     Ind.Decrement()
 
 def getUserLicenses(lic, user, skus):
-  def _callbackGetLicense(_, response, exception):
+  def _callbackGetLicense(request_id, response, exception):
     if exception is None:
       if response and 'skuId' in response:
         licenses.append(response['skuId'])
+        del(sku_calls[request_id])
+    else:
+      if exception.reason == not_found:
+        del(sku_calls[request_id])
 
+  not_found = 'User does not have a license for specified sku and product'
   licenses = []
   svcargs = dict([('userId', user['primaryEmail']), ('productId', None), ('skuId', None), ('fields', 'skuId')]+GM.Globals[GM.EXTRA_ARGS_LIST])
   method = getattr(lic.licenseAssignments(), 'get')
   dbatch = lic.new_batch_http_request(callback=_callbackGetLicense)
+  sku_calls = {}
   for sku in skus:
     svcparms = svcargs.copy()
     svcparms['productId'] = sku[0]
-    svcparms['skuId'] = sku[1]
-    dbatch.add(method(**svcparms))
-  dbatch.execute()
+    sku_id = sku[1]
+    svcparms['skuId'] = sku_id
+    sku_calls[sku_id] = method(**svcparms)
+  try_count = 0
+  while sku_calls:
+    try_count += 1
+    dbatch = lic.new_batch_http_request(callback=_callbackGetLicense)
+    for sku_id, sku_call in sku_calls.items():
+      dbatch.add(sku_call, request_id=sku_id)
+    dbatch.execute()
+    if sku_calls:
+      if try_count >= 5:
+        # give up and return what we have
+        return licenses
+    time.sleep(5)
   return licenses
 
 USER_NAME_PROPERTY_PRINT_ORDER = [
