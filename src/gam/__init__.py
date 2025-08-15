@@ -44907,10 +44907,15 @@ def getUserLicenses(lic, user, skus):
         licenses.append(response['skuId'])
         del(sku_calls[request_id])
     else:
-      if exception.reason == not_found:
+      _, reason, _ = checkGAPIError(exception, softErrors=True)
+      if reason in reasons_to_quit:
         del(sku_calls[request_id])
 
-  not_found = 'User does not have a license for specified sku and product'
+  reasons_to_quit = [
+          GAPI.ACCESS_NOT_CONFIGURED, # license API not turned on
+          GAPI.PERMISSION_DENIED, # Admin doesn't have rights to license assignments
+          GAPI.NOT_FOUND # API call succeeded, user does not have this license
+          ]
   licenses = []
   svcargs = dict([('userId', user['primaryEmail']), ('productId', None), ('skuId', None), ('fields', 'skuId')]+GM.Globals[GM.EXTRA_ARGS_LIST])
   method = getattr(lic.licenseAssignments(), 'get')
