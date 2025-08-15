@@ -35,6 +35,9 @@ Select a section from gam.cfg and process a GAM command using values from that s
   - Print the variable values for the selected section
   - Values are determined in this order: Selected section, DEFAULT section, Program default
 
+If you enter `gam select <SectionName>` and nothing else on the command line,
+it will be treated as if you entered: `gam select <SectionName> save`
+
 ### Display sections
 Display all of the sections in gam.cfg and mark the currently selected section with a *.
 ```
