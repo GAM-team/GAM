@@ -1,3 +1,11 @@
+7.10.05
+
+Added support for Inbound SSO OIDC profiles.
+
+Currently, if you enter `gam select <SectionName>` and nothing else on the command line,
+GAM performs no action. Now, it will be treated as if you entered:
+`gam select <SectionName> save`
+
 7.18.04
 
 Added commands to display/manage Alert Center Pub/Sub notifications.

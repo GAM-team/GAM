@@ -4282,19 +4282,19 @@ gam show policies
 <SSOProfileItem> ::= <SSOProfileDisplayName>|<SSOProfileName>
 <SSOProfileItemList> ::= "<SSOProfileItem>(,<SSOProfileItem>)*"
 
-gam create inboundssoprofile [name <SSOProfileDisplayName>]
+gam create inboundssoprofile [saml|oidc] [name <SSOProfileDisplayName>]
         [entityid <String>] [loginurl <URL>] [logouturl <URL>] [changepasswordurl <URL>]
         [returnnameonly]
-gam update inboundssoprofile <SSOProfileItem>
+gam update inboundssoprofile [saml|oidc] <SSOProfileItem>
         [entityid <String>] [loginurl <URL>] [logouturl <URL>] [changepasswordurl <URL>]
         [returnnameonly]
-gam delete inboundssoprofile <SSOProfileItem>
+gam delete inboundssoprofile [saml|oidc] <SSOProfileItem>
 
-gam info inboundssoprofile <SSOProfileItem>
+gam info inboundssoprofile [all|saml|oidc] <SSOProfileItem>
         [formatjson]
-gam show inboundssoprofiles
+gam show inboundssoprofiles [all|saml|oidc]
         [formatjson]
-gam print inboundssoprofiles [todrive <ToDriveAttribute>*]
+gam print inboundssoprofiles [all|saml|oidc] [todrive <ToDriveAttribute>*]
         [[formatjson [quotechar <Character>]]
 
 <SSOCredentialsName> ::= [id:]inboundSamlSsoProfiles/<String>/idpCredentials/<String>
@@ -4318,10 +4318,14 @@ gam print inboundssocredentials [profile|profiles <SSOProfileItemList>]
         orgunits/<String> |
         orgunit:<OrgUnitPath>
 
-gam create inboundssoassignment (group <GroupItem> rank <Number>)|(ou|org|orgunit <OrgUnitItem>)
-        (mode sso_off)|(mode saml_sso profile <SSOProfileItem>)(mode domain_wide_saml_if_enabled) [neverredirect]
-gam update inboundssoassignment [(group <GroupItem> rank <Number>)|(ou|org|orgunit <OrgUnitItem>)]
-        [(mode sso_off)|(mode saml_sso profile <SSOProfileItem>)(mode domain_wide_saml_if_enabled)] [neverredirect]
+gam create inboundssoassignment
+        (group <GroupItem> rank <Number>)|(ou|org|orgunit <OrgUnitItem>)
+        (mode sso_off)|(mode saml_sso profile <SSOProfileItem>)|(mode oidc_sso profile <SSOProfileName>}|(mode domain_wide_saml_if_enabled)
+        [neverredirect]
+gam update inboundssoassignment <SSOAssignmentName>
+        [(group <GroupItem> rank <Number>)|(ou|org|orgunit <OrgUnitItem>)]
+        (mode sso_off)|(mode saml_sso profile <SSOProfileItem>)|(mode oidc_sso profile <SSOProfileName>}|(mode domain_wide_saml_if_enabled)
+        [neverredirect]
 gam delete inboundssoassignment <SSOAssignmentSelector>
 
 gam info inboundssoassignment <SSOAssignmentSelector>
