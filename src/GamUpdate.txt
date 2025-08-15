@@ -1,10 +1,20 @@
-7.10.05
+7.18.06
+
+Updated `gam <UserTypeEntity> delete|modify messages` to improve the handling
+of the following error.
+```
+quotaExceeded - User-rate limit exceeded
+```
+
+7.18.05
 
 Added support for Inbound SSO OIDC profiles.
 
 Currently, if you enter `gam select <SectionName>` and nothing else on the command line,
 GAM performs no action. Now, it will be treated as if you entered:
 `gam select <SectionName> save`
+
+Updated to Python 3.13.7.
 
 7.18.04
 

@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.18.05'
+__version__ = '7.18.06'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -44905,10 +44905,10 @@ def getUserLicenses(lic, user, skus):
     if exception is None:
       if response and 'skuId' in response:
         licenses.append(response['skuId'])
-        del(sku_calls[request_id])
+        del sku_calls[request_id]
     else:
       if exception.reason == not_found:
-        del(sku_calls[request_id])
+        del sku_calls[request_id]
 
   not_found = 'User does not have a license for specified sku and product'
   licenses = []
@@ -71292,7 +71292,7 @@ def _processMessagesThreads(users, entityType):
       try:
         callGAPI(gmail.users().messages(), function,
                  throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.INVALID_MESSAGE_ID, GAPI.INVALID, GAPI.INVALID_ARGUMENT,
-                                                        GAPI.FAILED_PRECONDITION, GAPI.PERMISSION_DENIED],
+                                                        GAPI.FAILED_PRECONDITION, GAPI.PERMISSION_DENIED, GAPI.QUOTA_EXCEEDED],
                  userId='me', body=body)
         for messageId in body['ids']:
           mcount += 1
@@ -71302,7 +71302,7 @@ def _processMessagesThreads(users, entityType):
             csvPF.WriteRow({'User': user, entityHeader: messageId, 'action': Act.Performed()})
       except GAPI.serviceNotAvailable:
         mcount += bcount
-      except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+      except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.quotaExceeded) as e:
         _processMessageFailed(user, idsList, f'{str(e)} ({mcount+1}-{mcount+bcount}/{jcount})')
         mcount += bcount
       except GAPI.invalidMessageId:
@@ -71315,7 +71315,8 @@ def _processMessagesThreads(users, entityType):
 
   _GMAIL_ERROR_REASON_TO_MESSAGE_MAP = {GAPI.NOT_FOUND: Msg.DOES_NOT_EXIST,
                                         GAPI.INVALID_MESSAGE_ID: Msg.INVALID_MESSAGE_ID,
-                                        GAPI.FAILED_PRECONDITION: Msg.FAILED_PRECONDITION}
+                                        GAPI.FAILED_PRECONDITION: Msg.FAILED_PRECONDITION,
+                                        GAPI.QUOTA_EXCEEDED: Msg.QUOTA_EXCEEDED}
 
   def _callbackProcessMessage(request_id, _, exception):
     ri = request_id.splitlines()
@@ -71326,7 +71327,9 @@ def _processMessagesThreads(users, entityType):
         csvPF.WriteRow({'User': ri[RI_ENTITY], entityHeader: ri[RI_ITEM], 'action': Act.Performed()})
     else:
       http_status, reason, message = checkGAPIError(exception)
-      _processMessageFailed(ri[RI_ENTITY], ri[RI_ITEM], getHTTPError(_GMAIL_ERROR_REASON_TO_MESSAGE_MAP, http_status, reason, message), int(ri[RI_J]), int(ri[RI_JCOUNT]))
+      _processMessageFailed(ri[RI_ENTITY], ri[RI_ITEM],
+                            getHTTPError(_GMAIL_ERROR_REASON_TO_MESSAGE_MAP, http_status, reason, message),
+                            int(ri[RI_J]), int(ri[RI_JCOUNT]))
 
   def _batchProcessMessagesThreads(service, function, user, jcount, messageIds, **kwargs):
     svcargs = dict([('userId', 'me'), ('id', None), ('fields', '')]+list(kwargs.items())+GM.Globals[GM.EXTRA_ARGS_LIST])
@@ -71424,7 +71427,9 @@ def _processMessagesThreads(users, entityType):
       continue
     if parameters['messageEntity'] is None:
       if parameters['maxToProcess'] and jcount > parameters['maxToProcess']:
-        entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.COUNT_N_EXCEEDS_MAX_TO_PROCESS_M.format(jcount, Act.ToPerform(), parameters['maxToProcess']), i, count)
+        entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount,
+                                                   Msg.COUNT_N_EXCEEDS_MAX_TO_PROCESS_M.format(jcount, Act.ToPerform(), parameters['maxToProcess']),
+                                                   i, count)
         continue
       if not parameters['doIt']:
         entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.USE_DOIT_ARGUMENT_TO_PERFORM_ACTION, i, count)
