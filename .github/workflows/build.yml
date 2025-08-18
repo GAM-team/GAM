@@ -216,9 +216,8 @@ jobs:
 
       - name: MacOS import developer certificates for signing
         if: runner.os == 'macOS'
-        uses: apple-actions/import-codesign-certs@v3
+        uses: apple-actions/import-codesign-certs@95e84a1a18f2bdbc5c6ab9b7f4429372e4b13a8b # 5.0.3
         with:
-          keychain: signing_temp
           p12-file-base64: ${{ secrets.CERTIFICATES_P12 }}
           p12-password: ${{ secrets.CERTIFICATES_P12_PASSWORD }}
 
