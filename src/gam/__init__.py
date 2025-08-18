@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.18.06'
+__version__ = '7.18.07'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -58313,11 +58313,11 @@ def printShowDrivelastModifications(users):
   DLP.Finalize(fileIdEntity)
   if csvPF:
     sortTitles = ['User', 'id', 'name'] if fileIdEntity.get('shareddrive') else ['User']
+    if addCSVData:
+      sortTitles.extend(sorted(addCSVData.keys()))
     sortTitles.extend(['lastModifiedFileId', 'lastModifiedFileName',
                        'lastModifiedFileMimeType', 'lastModifiedFilePath',
                        'lastModifyingUser', 'lastModifiedTime'])
-    if addCSVData:
-      sortTitles.extend(sorted(addCSVData.keys()))
     csvPF.SetTitles(sortTitles)
     csvPF.SetSortAllTitles()
   pagesFields = getItemFieldsFromFieldsList('files', fieldsList)

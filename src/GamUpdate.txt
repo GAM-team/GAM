@@ -1,3 +1,8 @@
+7.18.07
+
+Updated `gam <UserTypeEntity> print drivelastmodification` to put `addcsvdata` columns
+after `User,id,name` rather than after the last column.
+
 7.18.06
 
 Updated `gam <UserTypeEntity> delete|modify messages` to improve the handling
