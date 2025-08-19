@@ -16,7 +16,7 @@ defaults:
     working-directory: src
 
 jobs:
-  check-apis:
+  check-certs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
