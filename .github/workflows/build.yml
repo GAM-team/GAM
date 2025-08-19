@@ -1016,7 +1016,6 @@ jobs:
           draft: true
           prerelease: false
           tag_name: "${{ steps.dateversion.outputs.dateversion }}"
-          overwrite_files: true
           fail_on_unmatched_files: true
           files: |
             gam-binaries/*
