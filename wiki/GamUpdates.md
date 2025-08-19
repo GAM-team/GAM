@@ -10,6 +10,17 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.19.00
+
+Eliminated `drive_v3_beta` and `meet_v2_beta` from `gam.cfg` as the API betas are no longer used.
+
+Updated `Meet API` scopes so that GAM can read metadata about additional Meet spaces.
+[*] 34)  Meet API - Read Only
+[*] 35)  Meet API - Read Write
+
+`Meet API - Read Only` - Allow apps to read metadata about any meeting space the user has access to.
+`Meet API - Read Write` - Allow apps to create, modify, and read metadata about meeting spaces *created by your app*.
+
 ### 7.18.07
 
 Updated `gam <UserTypeEntity> print drivelastmodification` to put `addcsvdata` columns
