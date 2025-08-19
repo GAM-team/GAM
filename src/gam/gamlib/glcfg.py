@@ -153,8 +153,6 @@ DOMAIN = 'domain'
 DRIVE_DIR = 'drive_dir'
 # When retrieving lists of Drive files/folders from API, how many should be retrieved in each chunk
 DRIVE_MAX_RESULTS = 'drive_max_results'
-# Use Drive V3 beta
-DRIVE_V3_BETA = 'drive_v3_beta'
 # When processing email messages in batches, how many should be processed in each batch
 EMAIL_BATCH_SIZE = 'email_batch_size'
 # Enable Delegated Admin Service Account
@@ -177,8 +175,6 @@ INTER_BATCH_WAIT = 'inter_batch_wait'
 LICENSE_MAX_RESULTS = 'license_max_results'
 # License SKUs to process
 LICENSE_SKUS = 'license_skus'
-# Use Meet V2 beta
-MEET_V2_BETA = 'meet_v2_beta'
 # When retrieving lists of Google Group members from API, how many should be retrieved in each chunk
 MEMBER_MAX_RESULTS = 'member_max_results'
 # CI API Group members max page size when view=BASIC
@@ -379,7 +375,6 @@ Defaults = {
   DRIVE_DIR: '',
   ENFORCE_EXPANSIVE_ACCESS: TRUE,
   DRIVE_MAX_RESULTS: '1000',
-  DRIVE_V3_BETA: FALSE,
   EMAIL_BATCH_SIZE: '50',
   ENABLE_DASA: FALSE,
   ENABLE_GCLOUD_REAUTH: FALSE,
@@ -390,7 +385,6 @@ Defaults = {
   INTER_BATCH_WAIT: '0',
   LICENSE_MAX_RESULTS: '100',
   LICENSE_SKUS: '',
-  MEET_V2_BETA: FALSE,
   MEMBER_MAX_RESULTS: '200',
   MEMBER_MAX_RESULTS_CI_BASIC: '1000',
   MEMBER_MAX_RESULTS_CI_FULL: '500',
@@ -547,7 +541,6 @@ VAR_INFO = {
   DRIVE_DIR: {VAR_TYPE: TYPE_DIRECTORY, VAR_ENVVAR: 'GAMDRIVEDIR'},
   ENFORCE_EXPANSIVE_ACCESS: {VAR_TYPE: TYPE_BOOLEAN},
   DRIVE_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 1000)},
-  DRIVE_V3_BETA: {VAR_TYPE: TYPE_BOOLEAN},
   EMAIL_BATCH_SIZE: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 100)},
   ENABLE_DASA: {VAR_TYPE: TYPE_BOOLEAN, VAR_SIGFILE: 'enabledasa.txt', VAR_SFFT: (FALSE, TRUE)},
   ENABLE_GCLOUD_REAUTH: {VAR_TYPE: TYPE_BOOLEAN},
@@ -558,7 +551,6 @@ VAR_INFO = {
   INTER_BATCH_WAIT: {VAR_TYPE: TYPE_FLOAT, VAR_LIMITS: (0.0, 60.0)},
   LICENSE_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (10, 1000)},
   LICENSE_SKUS: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
-  MEET_V2_BETA: {VAR_TYPE: TYPE_BOOLEAN},
   MEMBER_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 200)},
   MEMBER_MAX_RESULTS_CI_BASIC: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 1000)},
   MEMBER_MAX_RESULTS_CI_FULL: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 500)},

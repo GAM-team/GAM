@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.18.07'
+__version__ = '7.19.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -4739,8 +4739,6 @@ def getAPIService(api, httpObj):
                                          discoveryServiceUrl=DISCOVERY_URIS[v2discovery], static_discovery=False)
 
 def getService(api, httpObj):
-### Drive v3beta
-#  mapDriveURL = api == API.DRIVE3 and GC.Values[GC.DRIVE_V3_BETA]
   hasLocalJSON = API.hasLocalJSON(api)
   api, version, v2discovery = API.getVersion(api)
   if api in GM.Globals[GM.CURRENT_API_SERVICES] and version in GM.Globals[GM.CURRENT_API_SERVICES][api]:
@@ -4756,9 +4754,6 @@ def getService(api, httpObj):
                                                   discoveryServiceUrl=DISCOVERY_URIS[v2discovery], static_discovery=False)
         GM.Globals[GM.CURRENT_API_SERVICES].setdefault(api, {})
         GM.Globals[GM.CURRENT_API_SERVICES][api][version] = service._rootDesc.copy()
-### Drive v3beta
-#        if mapDriveURL:
-#          setattr(service, '_baseUrl', getattr(service, '_baseUrl').replace('/v3/', '/v3beta/'))
         if GM.Globals[GM.CACHE_DISCOVERY_ONLY]:
           clearServiceCache(service)
         return service
@@ -5615,8 +5610,6 @@ def buildGAPIServiceObject(api, user, i=0, count=0, displayError=True):
   userEmail = getSaUser(user)
   httpObj = getHttpObj(cache=GM.Globals[GM.CACHE_DIR])
   service = getService(api, httpObj)
-  if api == API.MEET_BETA:
-    api = API.MEET
   credentials = getSvcAcctCredentials(api, userEmail)
   request = transportCreateRequest(httpObj)
   triesLimit = 3
@@ -13628,6 +13621,7 @@ REPORT_CHOICE_MAP = {
   'drive': 'drive',
   'gcp': 'gcp',
   'geminiinworkspaceapps': 'gemini_in_workspace_apps',
+  'gmail': 'gmail',
   'gplus': 'gplus',
   'groups': 'groups',
   'groupsenterprise': 'groups_enterprise',
@@ -28239,9 +28233,7 @@ def printShowChatEvents(users):
   if csvPF:
     csvPF.writeCSVfile('Chat Events')
 
-def buildMeetServiceObject(api=API.MEET, user=None, i=0, count=0, entityTypeList=None):
-  if GC.Values[GC.MEET_V2_BETA]:
-    api = API.MEET_BETA
+def buildMeetServiceObject(api, user=None, i=0, count=0, entityTypeList=None):
   user, meet = buildGAPIServiceObject(api, user, i, count)
   kvList = [Ent.USER, user]
   if entityTypeList is not None:
@@ -28420,7 +28412,7 @@ def infoMeetSpace(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, meet, kvList = buildMeetServiceObject(API.MEET, user, i, count, [Ent.MEET_SPACE, name])
+    user, meet, kvList = buildMeetServiceObject(API.MEET_READONLY, user, i, count, [Ent.MEET_SPACE, name])
     if not meet:
       continue
     try:
@@ -28530,7 +28522,7 @@ def printShowMeetConferences(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, meet, kvList = buildMeetServiceObject(API.MEET, user, i, count, [Ent.MEET_CONFERENCE, None])
+    user, meet, kvList = buildMeetServiceObject(API.MEET_READONLY, user, i, count, [Ent.MEET_CONFERENCE, None])
     if not meet:
       continue
     try:
@@ -28606,7 +28598,7 @@ def _printShowMeetItems(users, entityType):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, meet, kvList = buildMeetServiceObject(API.MEET, user, i, count, [Ent.MEET_CONFERENCE, parent])
+    user, meet, kvList = buildMeetServiceObject(API.MEET_READONLY, user, i, count, [Ent.MEET_CONFERENCE, parent])
     if not meet:
       continue
     if entityType == Ent.MEET_PARTICIPANT:

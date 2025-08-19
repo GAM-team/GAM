@@ -76,7 +76,7 @@ KEEP = 'keep'
 LICENSING = 'licensing'
 LOOKERSTUDIO = 'datastudio'
 MEET = 'meet'
-MEET_BETA = 'meetbeta'
+MEET_READONLY = 'meetreadonly'
 OAUTH2 = 'oauth2'
 ORGPOLICY = 'orgpolicy'
 PEOPLE = 'people'
@@ -267,8 +267,8 @@ _INFO = {
   KEEP: {'name': 'Keep API', 'version': 'v1', 'v2discovery': True},
   LICENSING: {'name': 'License Manager API', 'version': 'v1', 'v2discovery': True},
   LOOKERSTUDIO: {'name': 'Looker Studio API', 'version': 'v1', 'v2discovery': True, 'localjson': True},
-  MEET: {'name': 'Meet API', 'version': 'v2', 'v2discovery': True},
-  MEET_BETA: {'name': 'Meet API Beta', 'version': 'v2beta', 'v2discovery': True, 'localjson': True, 'mappedAPI': MEET},
+  MEET: {'name': 'Meet API - Read Write', 'version': 'v2', 'v2discovery': True},
+  MEET_READONLY: {'name': 'Meet API - Read Only', 'version': 'v2', 'v2discovery': True, 'mappedAPI': MEET},
   OAUTH2: {'name': 'OAuth2 API', 'version': 'v2', 'v2discovery': False},
   ORGPOLICY: {'name': 'Organization Policy API', 'version': 'v2', 'v2discovery': True},
   PEOPLE: {'name': 'People API', 'version': 'v1', 'v2discovery': True},
@@ -689,11 +689,14 @@ _SVCACCT_SCOPES = [
    'api': LOOKERSTUDIO,
    'subscopes': READONLY,
    'scope': 'https://www.googleapis.com/auth/datastudio'},
-  {'name': 'Meet API',
+  {'name': 'Meet API - Read Write',
    'api': MEET,
-   'subscopes': READONLY,
-   'scope': 'https://www.googleapis.com/auth/meetings.space.created',
-   'roscope': 'https://www.googleapis.com/auth/meetings.space.readonly'},
+   'subscopes': [],
+   'scope': 'https://www.googleapis.com/auth/meetings.space.created'},
+  {'name': 'Meet API - Read Only',
+   'api': MEET_READONLY,
+   'subscopes': [],
+   'scope': 'https://www.googleapis.com/auth/meetings.space.readonly'},
   {'name': 'OAuth2 API',
    'api': OAUTH2,
    'subscopes': [],
@@ -844,4 +847,3 @@ def findAPIforScope(scopesList):
   if not requiredAPIs:
     requiredAPIs = scopesList
   return ' or '.join(requiredAPIs)
-    
