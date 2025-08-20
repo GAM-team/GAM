@@ -15,11 +15,10 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 Eliminated `drive_v3_beta` and `meet_v2_beta` from `gam.cfg` as the API betas are no longer used.
 
 Updated `Meet API` scopes so that GAM can read metadata about additional Meet spaces.
-[*] 34)  Meet API - Read Only
-[*] 35)  Meet API - Read Write
-
-`Meet API - Read Only` - Allow apps to read metadata about any meeting space the user has access to.
-`Meet API - Read Write` - Allow apps to create, modify, and read metadata about meeting spaces *created by your app*.
+```
+[*] 34)  Meet API - Display Meets regardless of creator
+[*] 35)  Meet API - Manage/Display Meets created by this GAM
+```
 
 ### 7.18.07
 
