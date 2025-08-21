@@ -29,7 +29,8 @@ To use these commands you must add the 'Meet API' to your project and update you
 gam update project
 gam user user@domain.com update serviceaccount
 ...
-[*] 36)  Meet API (supports readonly)
+[*] 34)  Meet API - Display Meet Conference Records
+[*] 35)  Meet API - Manage/Display Meet Spaces
 
 ```
 ## Definitions
