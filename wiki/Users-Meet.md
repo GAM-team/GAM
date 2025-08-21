@@ -29,10 +29,10 @@ To use these commands you must add the 'Meet API' to your project and update you
 gam update project
 gam user user@domain.com update serviceaccount
 ...
-[*] 34)  Meet API - Display Meet Conference Records
-[*] 35)  Meet API - Manage/Display Meet Spaces
-
+[*] 34)  Meet API - Manage/Display Meeting Spaces
+[*] 35)  Meet API - Read Meeting Spaces metadata
 ```
+
 ## Definitions
 * [`<UserTypeEntity>`](Collections-of-Users)
 ```
