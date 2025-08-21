@@ -10706,14 +10706,21 @@ Continue to authorization by entering a 'c'
         api = a_scope['api']
         possibleScope = a_scope['scope']
         if api in currentScopes:
-          for scope in currentScopes[api]:
-            if scope == possibleScope:
-              selectedScopes[i] = '*'
-              break
-            if 'readonly' in a_scope['subscopes']:
-              if (scope == possibleScope+'.readonly') or (scope == a_scope.get('roscope')):
-                selectedScopes[i] = 'R'
+          if not isinstance(possibleScope, list):
+            for scope in currentScopes[api]:
+              if scope == possibleScope:
+                selectedScopes[i] = '*'
                 break
+              if 'readonly' in a_scope['subscopes']:
+                if (scope == possibleScope+'.readonly') or (scope == a_scope.get('roscope')):
+                  selectedScopes[i] = 'R'
+                  break
+          else:
+            for scope in possibleScope:
+              if scope not in currentScopes[api]:
+                break
+            else:
+              selectedScopes[i] = '*'
         i += 1
   else:
     i = 0
@@ -12324,8 +12331,12 @@ def checkServiceAccount(users):
       for scope in scopesList:
         if selectedScopes[i] == '*':
           saScopes.setdefault(scope['api'], [])
-          saScopes[scope['api']].append(scope['scope'])
-          checkScopesSet.add(scope['scope'])
+          if not isinstance(scope['scope'], list):
+            saScopes[scope['api']].append(scope['scope'])
+            checkScopesSet.add(scope['scope'])
+          else:
+            saScopes[scope['api']].extend(scope['scope'])
+            checkScopesSet.update(scope['scope'])
         elif selectedScopes[i] == 'R':
           saScopes.setdefault(scope['api'], [])
           if 'roscope' not in scope:
@@ -28342,7 +28353,7 @@ def createMeetSpace(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, meet, kvList = buildMeetServiceObject(API.MEET, user, i, count, [Ent.MEET_SPACE, None])
+    user, meet, kvList = buildMeetServiceObject(API.MEET_SPACES, user, i, count, [Ent.MEET_SPACE, None])
     if not meet:
       continue
     try:
@@ -28381,7 +28392,7 @@ def updateMeetSpace(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, meet, kvList = buildMeetServiceObject(API.MEET, user, i, count, [Ent.MEET_SPACE, name])
+    user, meet, kvList = buildMeetServiceObject(API.MEET_SPACES, user, i, count, [Ent.MEET_SPACE, name])
     if not meet:
       continue
     try:
@@ -28412,7 +28423,7 @@ def infoMeetSpace(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, meet, kvList = buildMeetServiceObject(API.MEET_READONLY, user, i, count, [Ent.MEET_SPACE, name])
+    user, meet, kvList = buildMeetServiceObject(API.MEET_SPACES, user, i, count, [Ent.MEET_SPACE, name])
     if not meet:
       continue
     try:
@@ -28441,7 +28452,7 @@ def endMeetConference(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, meet, kvList = buildMeetServiceObject(API.MEET, user, i, count, [Ent.MEET_SPACE, name, Ent.MEET_CONFERENCE, None])
+    user, meet, kvList = buildMeetServiceObject(API.MEET_SPACES, user, i, count, [Ent.MEET_SPACE, name, Ent.MEET_CONFERENCE, None])
     if not meet:
       continue
     try:
@@ -28522,7 +28533,7 @@ def printShowMeetConferences(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, meet, kvList = buildMeetServiceObject(API.MEET_READONLY, user, i, count, [Ent.MEET_CONFERENCE, None])
+    user, meet, kvList = buildMeetServiceObject(API.MEET_CONFRECS, user, i, count, [Ent.MEET_CONFERENCE, None])
     if not meet:
       continue
     try:
@@ -28598,7 +28609,7 @@ def _printShowMeetItems(users, entityType):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, meet, kvList = buildMeetServiceObject(API.MEET_READONLY, user, i, count, [Ent.MEET_CONFERENCE, parent])
+    user, meet, kvList = buildMeetServiceObject(API.MEET_CONFRECS, user, i, count, [Ent.MEET_CONFERENCE, parent])
     if not meet:
       continue
     if entityType == Ent.MEET_PARTICIPANT:
