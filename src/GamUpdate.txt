@@ -4,8 +4,8 @@ Eliminated `drive_v3_beta` and `meet_v2_beta` from `gam.cfg` as the API betas ar
 
 Updated `Meet API` scopes so that GAM can read metadata about additional Meet spaces.
 ```
-[*] 34)  Meet API - Display Meet Conference Records
-[*] 35)  Meet API - Manage/Display Meet Spaces
+[*] 34)  Meet API - Manage/Display Meeting Spaces
+[*] 35)  Meet API - Read Meeting Spaces metadata
 ```
 
 7.18.07

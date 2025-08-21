@@ -4795,7 +4795,10 @@ def defaultSvcAcctScopes():
   for scope in scopesList:
     if not scope.get('offByDefault'):
       saScopes.setdefault(scope['api'], [])
-      saScopes[scope['api']].append(scope['scope'])
+      if not isinstance(scope['scope'], list):
+        saScopes[scope['api']].append(scope['scope'])
+      else:
+        saScopes[scope['api']].extend(scope['scope'])
   saScopes[API.DRIVEACTIVITY].append(API.DRIVE_SCOPE)
   saScopes[API.DRIVE2] = saScopes[API.DRIVE3]
   saScopes[API.DRIVETD] = saScopes[API.DRIVE3]
@@ -28533,7 +28536,7 @@ def printShowMeetConferences(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, meet, kvList = buildMeetServiceObject(API.MEET_CONFRECS, user, i, count, [Ent.MEET_CONFERENCE, None])
+    user, meet, kvList = buildMeetServiceObject(API.MEET_READONLY, user, i, count, [Ent.MEET_CONFERENCE, None])
     if not meet:
       continue
     try:
@@ -28609,7 +28612,7 @@ def _printShowMeetItems(users, entityType):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, meet, kvList = buildMeetServiceObject(API.MEET_CONFRECS, user, i, count, [Ent.MEET_CONFERENCE, parent])
+    user, meet, kvList = buildMeetServiceObject(API.MEET_READONLY, user, i, count, [Ent.MEET_CONFERENCE, parent])
     if not meet:
       continue
     if entityType == Ent.MEET_PARTICIPANT:

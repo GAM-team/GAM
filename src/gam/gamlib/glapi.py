@@ -75,8 +75,8 @@ IAM_CREDENTIALS = 'iamcredentials'
 KEEP = 'keep'
 LICENSING = 'licensing'
 LOOKERSTUDIO = 'datastudio'
-MEET_CONFRECS = 'meetreadonly'
 MEET_SPACES = 'meet'
+MEET_READONLY = 'meetreadonly'
 OAUTH2 = 'oauth2'
 ORGPOLICY = 'orgpolicy'
 PEOPLE = 'people'
@@ -267,8 +267,8 @@ _INFO = {
   KEEP: {'name': 'Keep API', 'version': 'v1', 'v2discovery': True},
   LICENSING: {'name': 'License Manager API', 'version': 'v1', 'v2discovery': True},
   LOOKERSTUDIO: {'name': 'Looker Studio API', 'version': 'v1', 'v2discovery': True, 'localjson': True},
-  MEET_CONFRECS: {'name': 'Meet API - Display Meet Conference Records', 'version': 'v2', 'v2discovery': True, 'mappedAPI': MEET_SPACES},
-  MEET_SPACES: {'name': 'Meet API - Manage/Display Meet Spaces', 'version': 'v2', 'v2discovery': True},
+  MEET_SPACES: {'name': 'Meet API - Manage/Display Meeting Spaces', 'version': 'v2', 'v2discovery': True},
+  MEET_READONLY: {'name': 'Meet API - Read Meeting Spaces metadata', 'version': 'v2', 'v2discovery': True, 'mappedAPI': MEET_SPACES},
   OAUTH2: {'name': 'OAuth2 API', 'version': 'v2', 'v2discovery': False},
   ORGPOLICY: {'name': 'Organization Policy API', 'version': 'v2', 'v2discovery': True},
   PEOPLE: {'name': 'People API', 'version': 'v1', 'v2discovery': True},
@@ -689,15 +689,15 @@ _SVCACCT_SCOPES = [
    'api': LOOKERSTUDIO,
    'subscopes': READONLY,
    'scope': 'https://www.googleapis.com/auth/datastudio'},
-  {'name': 'Meet API - Display Meet Conference Records',
-   'api': MEET_CONFRECS,
-   'subscopes': [],
-   'scope': 'https://www.googleapis.com/auth/meetings.space.readonly'},
-  {'name': 'Meet API - Manage/Display Meet Spaces',
+  {'name': 'Meet API - Manage/Display Meeting Spaces',
    'api': MEET_SPACES,
    'subscopes': [],
    'scope': ['https://www.googleapis.com/auth/meetings.space.created',
              'https://www.googleapis.com/auth/meetings.space.settings']},
+  {'name': 'Meet API - Read Meeting Spaces metadata',
+   'api': MEET_READONLY,
+   'subscopes': [],
+   'scope': 'https://www.googleapis.com/auth/meetings.space.readonly'},
   {'name': 'OAuth2 API',
    'api': OAUTH2,
    'subscopes': [],
