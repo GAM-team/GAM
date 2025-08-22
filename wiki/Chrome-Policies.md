@@ -239,6 +239,10 @@ bookmarks.json
 
 gam update chromepolicy chrome.users.ManagedBookmarksSetting  json file bookmarks.json orgunit "/Students/
 ```
+Allowlist the Google Translate extension for the Students OrgUnit
+```
+gam update chromepolicy chrome.users.apps.InstallType appInstallType ALLOWED app_id chrome:aapbdbdomjkkjkaonfhkkikfgjllcleb ou "/Students"
+```
 
 ## Delete Chrome policy
 You can delete a policy for all devices/users within an OU, users with a group or for a specific printer or application within an OU.
