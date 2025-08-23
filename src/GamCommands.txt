@@ -4549,11 +4549,12 @@ gam report usage customer [todrive <ToDriveAttribute>*]
         chrome|
         classroom|
         contextawareaccess|
-        gplus|currents|google+|
         datastudio|
         drive|doc|docs|
         gcp|cloud|
         geminiinworkspaceapps|gemini|geminiforworkspace|
+        gmail|
+        gplus|currents|google+|
         groups|group|
         groupsenterprise|enterprisegroups|
         jamboard|

@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.19.00'
+__version__ = '7.19.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -74689,7 +74689,7 @@ def printShowSignature(users):
     try:
       if selection is None:
         sendas = callGAPI(gmail.users().settings().sendAs(), 'get',
-                          throwReasons=GAPI.GMAIL_THROW_REASONS,
+                          throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND],
                           userId='me', sendAsEmail=user)
       else:
         results = callGAPIitems(gmail.users().settings().sendAs(), 'list', 'sendAs',
@@ -74718,6 +74718,8 @@ def printShowSignature(users):
               if field in sendas[item]:
                 row[f'smtpMsa{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{field}'] = sendas[item][field]
         csvPF.WriteRowTitles(row)
+    except GAPI.notFound as e:
+      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
     except GAPI.serviceNotAvailable:
       userGmailServiceNotEnabledWarning(user, i, count)
   if csvPF:
