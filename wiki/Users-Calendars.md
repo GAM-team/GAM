@@ -125,7 +125,7 @@
         (foregroundcolor <ColorValue>)|
         (hidden <Boolean>)|
         (notification clear|(email <CalendarEmailNotificatonEventTypeList>))|
-        (reminder clear|(email|popup <Number>)|(<Number> email|popup))|
+        (reminder clear|(email|popup <Number>)|(<Number> email|popup))*|
         (selected <Boolean>)|
         (summary <String>)
 

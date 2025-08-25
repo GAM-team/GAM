@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.19.01
+
+Updated `gam <UserTypeEntity> print|show signature` to handle the following error
+that occurs when an alias is specified.
+```
+ERROR: 404: notFound - Requested entity was not found.
+```
+
 ### 7.19.00
 
 Eliminated `drive_v3_beta` and `meet_v2_beta` from `gam.cfg` as the API betas are no longer used.
