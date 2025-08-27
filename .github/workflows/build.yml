@@ -630,7 +630,7 @@ jobs:
           $procMain.WaitForExit() 
           $procLog.Kill()
 
-      - name: Generate OTP, login and sign
+      - name: Login to Certum
         if: runner.os == 'Windows'
         shell: pwsh
         env:
