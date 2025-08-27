@@ -30,6 +30,7 @@ env:
   PYTHON_SOURCE_PATH: ${{ github.workspace }}/src/cpython
   CRYPTOGRAPHY_BUILD_OPENSSL_NO_LEGACY: 1
   CRYPTOGRAPHY_OPENSSL_NO_LEGACY: 1
+  WINDOWS_CODESIGN_CERT_HASH: 590dc5bb10dfb31dbff38c0e2f9c35ef0f6d0e9e
 
 jobs:
   build:
@@ -593,6 +594,72 @@ jobs:
           echo "GAM Version ${GAMVERSION}"
           echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
 
+      - name: Install WinAppDriver
+        if: runner.os == 'Windows'
+        run: |
+          choco install -y winappdriver
+
+      - name: Enabled dev mode for WinAppDriver
+        if: runner.os == 'Windows'
+        shell: cmd
+        run : |
+         reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" /t REG_DWORD /f /v "AllowDevelopmentWithoutDevLicense" /d "1"
+
+      - name: Install NPM stuff
+        if: runner.os == 'Windows'
+        run: |
+          echo "Installing appium..."
+          npm install -g appium
+          echo "Installing totp-generator..."
+          npm install "totp-generator"
+          echo "Installing wdio..."
+          npm install @wdio/cli
+          echo "Installing appium win driver..."
+          appium driver install windows
+
+      - name: Install Certum MSI
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $url = "https://files.certum.eu/software/SimplySignDesktop/Windows/9.3.2.67/SimplySignDesktop-9.3.2.67-64-bit-en.msi"
+          $file = "SimplySignDesktop-9.3.2.67-64-bit-en.msi"
+          Invoke-WebRequest $url -OutFile $file
+          $log = "install.log" 
+          $procMain = Start-Process "msiexec" "/i `"$file`" /qn /l*! `"$log`"" -NoNewWindow -PassThru
+          $procLog = Start-Process "powershell" "Get-Content -Path `"$log`" -Wait" -NoNewWindow -PassThru 
+          $procMain.WaitForExit() 
+          $procLog.Kill()
+
+      - name: Generate OTP, login and sign
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          TOTP_SECRET: ${{ secrets.TOTP_SECRET }}
+        run: |
+          # disable win private firewall that interferes with appium server
+          Set-NetFirewallProfile -Profile Private -Enabled False
+          $appiumCmd = Get-Command appium
+          $appiumPath = $appiumCmd.Path
+          Start-Process -Filepath "powershell.exe" -ArgumentList "-File", $appiumPath, "--address", "127.0.0.1", "--log-level", "error"
+          Start-Sleep -Seconds 10
+          write-host "appium started"
+          write-host "running SimplySignDesktop login..."
+          node ssd.mjs --log-level warn
+          write-host "sleeping during login..."
+          Start-Sleep 10
+
+      - name: Sign gam.exe
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          write-Host "Signing ${gam}...."
+          # Always explicitely use x64 version os signtool.exe, arm64 version apparently can't
+          # see Certum certs since SimplySignDesktop is x64-only today.
+          Start-Process -Wait -NoNewWindow -ErrorAction Continue -FilePath 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe'  -ArgumentList "sign", "/sha1", "590dc5bb10dfb31dbff38c0e2f9c35ef0f6d0e9e", "/tr", "http://time.certum.pl", "/td", "SHA256", "/fd", "SHA256", "/v", "$gam"
+          write-Host "Verifying signature of ${gam}...."
+          # verify signature. If we failed to sign we should fail to verify and die.
+          & 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe' verify /pa "$gam"
+
       - name: Configure user and service account auth
         id: configserviceaccount
         env:
@@ -600,34 +667,6 @@ jobs:
         run: |
           ../.github/actions/decrypt.sh "${GAMCFGDIR}"
           $gam create signjwtserviceaccount
-
-      - name: Upload gam.exe Windows for signing
-        if: runner.os == 'Windows' && matrix.goal != 'test'
-        run: |
-          export folder_number=$(date +%s)
-          export folder_id=$($gam user gam-win-signer@pdl.jaylee.us add drivefile drivefilename "UPLOADING_FOR_SIGN ${folder_number}" parentid "1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp" mimetype gfolder returnidonly)
-          $gam user gam-win-signer@pdl.jaylee.us add drivefile localfile "$gam" parentid "$folder_id"
-          $gam user gam-win-signer@pdl.jaylee.us update drivefile "$folder_id" newfilename "READYTOSIGN ${folder_number}"
-          export signed_folder="SIGNED ${folder_number}"
-          zero_results="gam-win-signer@pdl.jaylee.us,0"
-          while true; do
-            result_counts=$($gam user gam-win-signer@pdl.jaylee.us print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" countsonly)
-            echo "$result_counts"
-            if [[ ! "$result_counts" =~ "$zero_results" ]]; then
-              echo "looks like we have results"
-              break
-            fi
-            echo "no results, sleeping 10..."
-            sleep 10
-          done
-          # download signed gam.exe
-          $gam user gam-win-signer@pdl.jaylee.us print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us print filelist query "'~~id~~' in parents and name = 'gam.exe'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us get drivefile ~id targetfolder "$gampath" targetname "signed-gam.exe" overwrite true acknowledgeabuse true
-          # delete signed folder on drive
-          $gam user gam-win-signer@pdl.jaylee.us print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us trash drivefile "~id"
-          # remove unsigned gam.exe and rename signed-gam.exe
-          rm -v -f "${gampath}/gam.exe"
-          mv -v -f "${gampath}/signed-gam.exe" "${gampath}/gam.exe"
-          #"/c/Program Files (x86)/Windows Kits/10/bin/10.0.22621.0/x64/signtool.exe" verify /v /pa "$gam"
 
       - name: Attest gam executable was generated from this Action
         uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # 2.4.0
@@ -681,31 +720,17 @@ jobs:
           rm -v -f *.wixobj
           echo "MSI_FILENAME=${MSI_FILENAME}" >> $GITHUB_ENV
 
-      - name: Upload gam MSI Windows for signing
-        if: runner.os == 'Windows' && matrix.goal != 'test'
+      - name: Sign GAM MSI
+        if: runner.os == 'Windows'
+        shell: pwsh
         run: |
-          export folder_number=$(date +%s)
-          export folder_id=$($gam user gam-win-signer@pdl.jaylee.us add drivefile drivefilename "UPLOADING_FOR_SIGN ${folder_number}" parentid "1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp" mimetype gfolder returnidonly)
-          $gam user gam-win-signer@pdl.jaylee.us add drivefile localfile "$MSI_FILENAME" parentid "$folder_id"
-          rm -f -v "$MSI_FILENAME"
-          $gam user gam-win-signer@pdl.jaylee.us update drivefile "$folder_id" newfilename "READYTOSIGN ${folder_number}"
-          export signed_folder="SIGNED ${folder_number}"
-          zero_results="gam-win-signer@pdl.jaylee.us,0"
-          while true; do
-            result_counts=$($gam user gam-win-signer@pdl.jaylee.us print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" countsonly)
-            echo "$result_counts"
-            if [[ ! "$result_counts" =~ "$zero_results" ]]; then
-              echo "looks like we have results"
-              break
-            fi
-            echo "no results, sleeping 10..."
-            sleep 10
-          done
-          # download signed package
-          $gam user gam-win-signer@pdl.jaylee.us print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us print filelist query "'~~id~~' in parents and name contains '.msi'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us get drivefile ~id targetfolder "$GITHUB_WORKSPACE" targetname "$MSI_FILENAME" overwrite true acknowledgeabuse true
-          # delete signed folder on drive
-          $gam user gam-win-signer@pdl.jaylee.us print filelist query "name = '${signed_folder}' and '1Xz3hYq4Mfa_r6D8EcBZHLDtHDFurYSvp' in parents and mimeType = 'application/vnd.google-apps.folder'" id | $gam csv - gam user gam-win-signer@pdl.jaylee.us trash drivefile "~id"
-          #"/c/Program Files (x86)/Windows Kits/10/bin/10.0.22621.0/x64/signtool.exe" verify /v /pa "$MSI_FILENAME"
+          write-Host "Signing ${MSI_FILENAME}...."
+          # Always explicitely use x64 version os signtool.exe, arm64 version apparently can't
+          # see Certum certs since SimplySignDesktop is x64-only today.
+          Start-Process -Wait -NoNewWindow -ErrorAction Continue -FilePath 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe'  -ArgumentList "sign", "/sha1", "590dc5bb10dfb31dbff38c0e2f9c35ef0f6d0e9e", "/tr", "http://time.certum.pl", "/td", "SHA256", "/fd", "SHA256", "/v", "$MSI_FILENAME"
+          write-Host "Verifying signature of ${MSI_FILENAME}...."
+          # verify signature. If we failed to sign we should fail to verify and die.
+          & 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe' verify /pa "$MSI_FILENAME"
 
       - name: Attest that gam package files were generated from this Action
         uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # 2.4.0
