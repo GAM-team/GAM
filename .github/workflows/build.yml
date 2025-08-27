@@ -644,7 +644,7 @@ jobs:
           Start-Sleep -Seconds 10
           write-host "appium started"
           write-host "running SimplySignDesktop login..."
-          node ssd.mjs --log-level warn
+          node tools/ssd.mjs --log-level warn
           write-host "sleeping during login..."
           Start-Sleep 10
 
