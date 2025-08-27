@@ -658,7 +658,7 @@ jobs:
           Start-Process -Wait -NoNewWindow -ErrorAction Continue -FilePath 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe'  -ArgumentList "sign", "/sha1", "590dc5bb10dfb31dbff38c0e2f9c35ef0f6d0e9e", "/tr", "http://time.certum.pl", "/td", "SHA256", "/fd", "SHA256", "/v", "$env:gam"
           write-Host "Verifying signature of ${env:gam}...."
           # verify signature. If we failed to sign we should fail to verify and die.
-          & 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe' verify /pa "$env:gam"
+          & 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe' verify /pa /v "$env:gam"
 
       - name: Configure user and service account auth
         id: configserviceaccount
@@ -730,7 +730,7 @@ jobs:
           Start-Process -Wait -NoNewWindow -ErrorAction Continue -FilePath 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe'  -ArgumentList "sign", "/sha1", "590dc5bb10dfb31dbff38c0e2f9c35ef0f6d0e9e", "/tr", "http://time.certum.pl", "/td", "SHA256", "/fd", "SHA256", "/v", "$env:MSI_FILENAME"
           write-Host "Verifying signature of ${env:MSI_FILENAME}...."
           # verify signature. If we failed to sign we should fail to verify and die.
-          & 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe' verify /pa "$env:MSI_FILENAME"
+          & 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe' verify /pa /v "$env:MSI_FILENAME"
 
       - name: Attest that gam package files were generated from this Action
         uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # 2.4.0
