@@ -39,6 +39,16 @@
 [Collections of Items](Collections-of-Items)
 ```
 <AttendeeStatus> ::= accepted|declined|needsaction|tentative
+<Date> ::=
+        <Year>-<Month>-<Day> |
+        (+|-)<Number>(d|w|y) |
+        never|
+        today
+<Time> ::=
+        <Year>-<Month>-<Day>(<Space>|T)<Hour>:<Minute>:<Second>[.<MilliSeconds>](Z|(+|-(<Hour>:<Minute>))) |
+        (+|-)<Number>(m|h|d|w|y) |
+        never|
+        now|today
 <EmailItem> ::= <EmailAddress>|<UniqueID>|<String>
 <EmailItemList> ::= "<EmailItem>(,<EmailItem>)*"
 <EmailAddressList> ::= "<EmailAddess>(,<EmailAddress>)*"
