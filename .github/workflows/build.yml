@@ -605,7 +605,7 @@ jobs:
         run : |
          reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" /t REG_DWORD /f /v "AllowDevelopmentWithoutDevLicense" /d "1"
 
-      - name: Install NPM stuff
+      - name: Install appium and totp tools
         if: runner.os == 'Windows'
         run: |
           echo "Installing appium..."
