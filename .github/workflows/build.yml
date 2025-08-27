@@ -77,7 +77,7 @@ jobs:
             jid: 9
             goal: build
             name: Build Arm MacOS 15
-          - os: windows-2022
+          - os: windows-2025
             jid: 10
             goal: build
             name: Build Intel Windows
