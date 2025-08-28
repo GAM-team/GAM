@@ -249,9 +249,22 @@ Does user have license SKU 73?
 ```
 If you do a couple of info user commands back to back, you start to run into quota issues.
 
-You can help yourself in the following way: generate a list of all of the SKUs that exist in your workspace.
+You can help yourself in the following way: generate a list of all of the license SKUs that exist in your workspace.
+```
+gam config csv_output_row_filter "licenses:count>0" print license countsonly allskus
+Got 0 Licenses for 1010010001 (Cloud Identity)...
+Got 0 Licenses for 1010050001 (Cloud Identity Premium)...
+...
+Got 0 Licenses for Google-Vault (Google Vault)...
+Got 0 Licenses for Google-Vault-Former-Employee (Google Vault - Former Employee)...
+productId,productDisplay,skuId,skuDisplay,licenses
+101031,Google Workspace for Education,1010310008,Google Workspace for Education Plus,410
+101031,Google Workspace for Education,1010310009,Google Workspace for Education Plus (Staff),103
+101033,Google Voice,1010330004,Google Voice Standard,3
+Google-Apps,Google Workspace,1010070001,Google Workspace for Education Fundamentals,1453
+```
 
-Then do (example, use actual list): gam config license_skus 1010020028,1010070001, ... save
+Then do (example, use your actual list): gam config license_skus 1010310008,1010310009,1010330004,1010070001 save
 Now, rather that asking 73 questions per user, GAM will only ask about the license SKUs in the list.
 It is much less likely that quota issues will occur,
 
