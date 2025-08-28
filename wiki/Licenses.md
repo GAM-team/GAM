@@ -3,6 +3,7 @@
 - [License Products and SKUs](#license-products-and-skus)
 - [Definitions](#definitions)
 - [Notes](#Notes)
+- [Info User Performance](#info-user-performance)
 - [Display license counts](#display-license-counts)
 - [Display licenses](#display-licenses)
 - [Add licenses](#add-licenses)
@@ -232,6 +233,27 @@ You can enter a non-validated SKU as follows:
 nv:<String>:<String>
 ```
 The first `<String>` is a Product and the second `<String>` is a SKU.
+
+## Info User Performance
+
+In GAM versions prior 7.18.05, when you did `gam info user`, GAM would make one attempt to get the user's licenses.
+If something went wrong, you might not get the complete list.
+
+The License Manager API doesn't have a call that returns the list of licenses that a user has; you have to ask:
+```
+Does user have license SKU 1?
+Does user have license SKU 2?
+Does user have license SKU 3?
+...
+Does user have license SKU 73?
+```
+If you do a couple of info user commands back to back, you start to run into quota issues.
+
+You can help yourself in the following way: generate a list of all of the SKUs that exist in your workspace.
+
+Then do (example, use actual list): gam config license_skus 1010020028,1010070001, ... save
+Now, rather that asking 73 questions per user, GAM will only ask about the license SKUs in the list.
+It is much less likely that quota issues will occur,
 
 ## Display license counts
 ```

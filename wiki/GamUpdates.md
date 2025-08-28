@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.19.02
+
+Update `gam info user <UserItem>` to eliminate 5 second delay when getting license info.
+
+Additional information:
+* See: https://github.com/GAM-team/GAM/wiki/Licenses#info-user-performance
+
 ### 7.19.01
 
 Updated `gam <UserTypeEntity> print|show signature` to handle the following error
