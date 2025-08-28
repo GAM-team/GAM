@@ -1,3 +1,10 @@
+7.19.02
+
+Update `gam info user <UserItem>` to eliminate 5 second delay when getting license info.
+
+Additional information:
+* See: https://github.com/GAM-team/GAM/wiki/Licenses#info-user-performance
+
 7.19.01
 
 Updated `gam <UserTypeEntity> print|show signature` to handle the following error

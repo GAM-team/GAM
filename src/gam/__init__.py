@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.19.01'
+__version__ = '7.19.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -32228,9 +32228,9 @@ def doUpdateMobileDevices():
                           [Msg.ACTION_APPLIED, body['action']], i, count)
       except GAPI.internalError:
         entityActionFailedWarning([Ent.MOBILE_DEVICE, resourceId], Msg.DOES_NOT_EXIST, i, count)
-      except (GAPI.resourceIdNotFound, GAPI.badRequest, GAPI.resourceNotFound) as e:
+      except (GAPI.resourceIdNotFound, GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden) as e:
         entityActionFailedWarning([Ent.MOBILE_DEVICE, resourceId], str(e), i, count)
-      except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      except GAPI.permissionDenied as e:
         ClientAPIAccessDeniedExit(str(e))
 
 # gam delete mobile|mobiles <MobileDeviceEntity>
@@ -44907,6 +44907,12 @@ def waitForMailbox(entityList):
     Ind.Decrement()
 
 def getUserLicenses(lic, user, skus):
+  reasons_to_quit = [
+    GAPI.ACCESS_NOT_CONFIGURED, # license API not turned on
+    GAPI.PERMISSION_DENIED, # Admin doesn't have rights to license assignments
+    GAPI.NOT_FOUND # API call succeeded, user does not have this license
+  ]
+
   def _callbackGetLicense(request_id, response, exception):
     if exception is None:
       if response and 'skuId' in response:
@@ -44914,18 +44920,12 @@ def getUserLicenses(lic, user, skus):
         del sku_calls[request_id]
     else:
       _, reason, _ = checkGAPIError(exception, softErrors=True)
-      reasons_to_quit = [
-        GAPI.ACCESS_NOT_CONFIGURED, # license API not turned on
-        GAPI.PERMISSION_DENIED, # Admin doesn't have rights to license assignments
-        GAPI.NOT_FOUND # API call succeeded, user does not have this license
-      ]
       if reason in reasons_to_quit:
         del sku_calls[request_id]
 
   licenses = []
   svcargs = dict([('userId', user['primaryEmail']), ('productId', None), ('skuId', None), ('fields', 'skuId')]+GM.Globals[GM.EXTRA_ARGS_LIST])
   method = getattr(lic.licenseAssignments(), 'get')
-  dbatch = lic.new_batch_http_request(callback=_callbackGetLicense)
   sku_calls = {}
   for sku in skus:
     svcparms = svcargs.copy()
@@ -44944,7 +44944,7 @@ def getUserLicenses(lic, user, skus):
       if try_count >= 5:
         # give up and return what we have
         return licenses
-    time.sleep(5)
+      time.sleep(5)
   return licenses
 
 USER_NAME_PROPERTY_PRINT_ORDER = [
