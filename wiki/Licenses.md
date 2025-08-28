@@ -264,7 +264,9 @@ productId,productDisplay,skuId,skuDisplay,licenses
 Google-Apps,Google Workspace,1010070001,Google Workspace for Education Fundamentals,1453
 ```
 
-Then do (example, use your actual list): gam config license_skus 1010310008,1010310009,1010330004,1010070001 save
+Then do (example, use your actual list):
+`gam config license_skus 1010310008,1010310009,1010330004,1010070001 save`
+
 Now, rather that asking 73 questions per user, GAM will only ask about the license SKUs in the list.
 It is much less likely that quota issues will occur,
 
