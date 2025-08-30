@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.19.03
+
+Fixed bug where specifying a `<UserItem>` as `id:1234567890` could lead to errors like this:
+```
+ERROR: 400: invalidArgument - Resource name has invalid email.
+```
+
 ### 7.19.02
 
 Update `gam info user <UserItem>` to eliminate 5 second delay when getting license info.
