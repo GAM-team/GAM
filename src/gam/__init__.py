@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.19.02'
+__version__ = '7.19.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -5807,7 +5807,7 @@ def convertUIDtoEmailAddress(emailAddressOrUID, cd=None, emailTypes=None,
     normalizedEmailAddressOrUID = normalizeEmailAddressOrUID(emailAddressOrUID, ciGroupsAPI=ciGroupsAPI)
     if normalizedEmailAddressOrUID.startswith(NON_EMAIL_MEMBER_PREFIXES):
       return normalizedEmailAddressOrUID
-  email, _ = convertUIDtoEmailAddressWithType(emailAddressOrUID, cd, emailTypes,
+  email, _ = convertUIDtoEmailAddressWithType(emailAddressOrUID, cd, None, emailTypes,
                                               checkForCustomerId, ciGroupsAPI, aliasAllowed)
   return email
 
