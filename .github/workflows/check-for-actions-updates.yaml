@@ -23,8 +23,7 @@ jobs:
       - name: Run actions-up check
         id: actions-check
         run: |
-          echo "## GitHub Actions Update Check" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "GitHub Actions Update Check..."
 
           # Initialize variables
           HAS_UPDATES=false
@@ -43,68 +42,11 @@ jobs:
 
           # Create formatted output
           if [ "$HAS_UPDATES" = true ]; then
-            echo "Found $UPDATE_COUNT GitHub Actions with available updates" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "<details>" >> $GITHUB_STEP_SUMMARY
-            echo "<summary>Click to see details</summary>" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            cat actions-up-raw.txt >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            echo "</details>" >> $GITHUB_STEP_SUMMARY
-
-            # Create detailed markdown report with better formatting
-            {
-              echo "## GitHub Actions Update Report"
-              echo ""
-
-              echo "### Summary"
-              echo "- **Updates available:** $UPDATE_COUNT"
-              echo ""
-
-              # See the raw output above for details.
-              echo "### How to Update"
-              echo ""
-              echo "You have several options to update these actions:"
-              echo ""
-              echo "#### Option 1: Automatic Update (Recommended)"
-              echo '```bash'
-              echo "# Run this command locally in your repository"
-              echo "npx actions-up"
-              echo '```'
-              echo ""
-              echo "#### Option 2: Manual Update"
-              echo "1. Review each update in the table above"
-              echo "2. For breaking changes, click the Release Notes link to review changes"
-              echo "3. Edit the workflow files and update the version numbers"
-              echo "4. Test the changes in your CI/CD pipeline"
-              echo ""
-              echo "---"
-              echo ""
-              echo "<details>"
-              echo "<summary>Raw actions-up output</summary>"
-              echo ""
-              echo '```'
-              cat actions-up-raw.txt
-              echo '```'
-              echo "</details>"
-            } > actions-up-report.md
-
-            echo "has-updates=true" >> $GITHUB_OUTPUT
-            echo "update-count=$UPDATE_COUNT" >> $GITHUB_OUTPUT
+            echo "Found $UPDATE_COUNT GitHub Actions with available updates"
+            echo "actions-up output:"
+            cat actions-up-raw.txt
           else
-            echo "All GitHub Actions are up to date!" >> $GITHUB_STEP_SUMMARY
-
-            {
-              echo "## GitHub Actions Update Report"
-              echo ""
-              echo "### All GitHub Actions in this repository are up to date!"
-              echo ""
-              echo "No action required. Your workflow files are using the latest versions of all GitHub Actions."
-            } > actions-up-report.md
-
-            echo "has-updates=false" >> $GITHUB_OUTPUT
-            echo "update-count=0" >> $GITHUB_OUTPUT
+            echo "All GitHub Actions are up to date."
           fi
 
       - name: Comment PR with updates
