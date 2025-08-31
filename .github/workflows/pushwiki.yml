@@ -18,7 +18,7 @@ jobs:
           git clone https://github.com/GAM-team/GAM
 
       - name: Checkout Wiki source
-        uses: actions/checkout@master
+        uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v5.0.0
         with:
           path: GAM.wiki
           repository: GAM-team/GAM.wiki
