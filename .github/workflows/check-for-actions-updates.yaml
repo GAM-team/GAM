@@ -47,6 +47,8 @@ jobs:
             cat actions-up-raw.txt
           else
             echo "All GitHub Actions are up to date."
+            echo "actions-up output:"
+            cat actions-up-raw.txt
           fi
 
       - name: Comment PR with updates
