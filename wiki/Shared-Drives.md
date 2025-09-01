@@ -237,7 +237,8 @@ Three forms of the commands are available:
 | Viewer | reader |
 
 ## GUI API restriction name mapping
-| GUI Setting | Checked | Unchecked | API Setting | False | True
+| GUI Setting | Checked | Unchecked | API Setting | False | True |
+|-------------|---------|-----------|-------------|-------|------|
 | Allow people outside of Aurora School to access files | X | | domainusersonly | X | |}
 | Allow people outside of Aurora School to access files | | X | domainusersonly | | X |}
 
