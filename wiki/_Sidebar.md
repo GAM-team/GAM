@@ -84,6 +84,7 @@ Client Access
 * [Classroom - Guardians](Classroom-Guardians)
 * [Classroom - Invitations](Classroom-Invitations)
 * [Classroom - Membership](Classroom-Membership)
+* [Classroom - Student Groups](Classroom-StudentGroups)
 * [Cloud Channel](Cloud-Channel)
 * [Cloud Identity Devices](Cloud-Identity-Devices)
 * [Cloud Identity Groups](Cloud-Identity-Groups)

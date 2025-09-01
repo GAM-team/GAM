@@ -98,6 +98,7 @@
 <SharedDriveACLRoleList> ::= "<SharedDriveACLRole>(,<SharedDriveACLRole>)*"
 <SharedDriveIDList> ::= "<SharedDriveID>(,<SharedDriveID>)*"
 <StringList> ::= "<String>(,<String>)*"
+<StudentGroupIDList> ::= "<StudentGroupID>(,<StudentGroupID>)*"
 <TagManagerAccountPathList> ::= "<TagManagerAccountPath>(,<TagManagerAccountPath>)*"
 <TagManagerContainerPathList> ::= "<TagManagerContainerPath>(,<TagManagerContainerPath>)*"
 <TagManagerWorkspacePathList> ::= "<TagManagerWorkspacePath>(,<TagManagerWorkspacePath>)*"

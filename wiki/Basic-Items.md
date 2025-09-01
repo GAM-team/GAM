@@ -503,6 +503,7 @@
 <SiteItem> ::= [<DomainName>/]<SiteName>
 <S/MIMEID> ::= <String>
 <SMTPHostName> ::= <String>
+<StudentGroupID> ::= <Number>
 <StudentItem> ::= <EmailAddress>|<UniqueID>|<String>
 <SharedDriveACLRole> ::=
         commenter|
