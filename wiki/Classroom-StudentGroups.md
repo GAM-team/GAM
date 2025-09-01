@@ -11,6 +11,7 @@
 - [Display student group membership counts](#display-student-group-membership-counts)
 
 ## Notes
+These commands wera added in version 7.20.00.
 To use these commands your project must be enrolled the Developer Preview program.
 * https://developers.google.com/workspace/preview
 
@@ -33,7 +34,7 @@ You will need an API key
 * Click close
 
 Issue the following GAM command:
-gam config developer_preview_api_key <API Key Value> save
+`gam config developer_preview_api_key <API Key Value> save`
 
 Once you get an email from Google that your project has been registered you can use these commands.
 
@@ -96,6 +97,19 @@ gam clear course-studentgroups
         (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
 ```
 
+By default, the `create|clear course-studentgroups` commands manage student group information about all courses.
+
+To manage student group information for a specific set of courses, use the following option; it can be repeated to select multiple courses.
+* `(course|class <CourseID>)*` - Display courses with the specified `<CourseID>`.
+
+To manage student group information for courses based on their having a particular participant, use the following options. Both options can be specified.
+* `teacher <UserItem>` - Display courses with the specified teacher.
+* `student <UserItem>` - Display courses with the specified student.
+
+To manage student group information for courses based on their state, use the following option. This option can be combined with the `teacher` and `student` options.
+By default, all course states are selected.
+* `states <CourseStateList>` - Display courses with any of the specified states.
+
 ## Display student groups
 ```
 gam print course-studentgroups [todrive <ToDriveAttribute>*]
@@ -104,14 +118,14 @@ gam print course-studentgroups [todrive <ToDriveAttribute>*]
 ```
 By default, the `print course-studentgroups` command displays student group information about all courses.
 
-To get student group information for a specific set of courses, use the following option; it can be repeated to select multiple courses.
+To display student group information for a specific set of courses, use the following option; it can be repeated to select multiple courses.
 * `(course|class <CourseID>)*` - Display courses with the specified `<CourseID>`.
 
-To get student group information for courses based on their having a particular participant, use the following options. Both options can be specified.
+To display student group information for courses based on their having a particular participant, use the following options. Both options can be specified.
 * `teacher <UserItem>` - Display courses with the specified teacher.
 * `student <UserItem>` - Display courses with the specified student.
 
-To get student group information for courses based on their state, use the following option. This option can be combined with the `teacher` and `student` options.
+To display student group information for courses based on their state, use the following option. This option can be combined with the `teacher` and `student` options.
 By default, all course states are selected.
 * `states <CourseStateList>` - Display courses with any of the specified states.
 
@@ -148,14 +162,14 @@ gam print course-studentgroup-members [todrive <ToDriveAttribute>*]
 ```
 By default, the `print course-studentgroup-members` command displays student group member information about all courses.
 
-To get student group member information for a specific set of courses, use the following option; it can be repeated to select multiple courses.
+To display student group member information for a specific set of courses, use the following option; it can be repeated to select multiple courses.
 * `(course|class <CourseID>)*` - Display courses with the specified `<CourseID>`.
 
-To get student group member information for courses based on their having a particular participant, use the following options. Both options can be specified.
+To display student group member information for courses based on their having a particular participant, use the following options. Both options can be specified.
 * `teacher <UserItem>` - Display courses with the specified teacher.
 * `student <UserItem>` - Display courses with the specified student.
 
-To get student group member information for courses based on their state, use the following option. This option can be combined with the `teacher` and `student` options.
+To display student group member information for courses based on their state, use the following option. This option can be combined with the `teacher` and `student` options.
 By default, all course states are selected.
 * `states <CourseStateList>` - Display courses with any of the specified states.
 
