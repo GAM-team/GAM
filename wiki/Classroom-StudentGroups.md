@@ -3,6 +3,7 @@
 - [API documentation](#api-documentation)
 - [Definitions](#definitions)
 - [Special quoting for course aliases](#special-quoting-for-course-aliases)
+- [Special quoting for lists of titles](#special-quoting-for-lists-of_titles)
 - [Manage student groups](#manage-student-groups)
 - [Display student groups](#display-student-groups)
 - [Display student group counts](#display-student-group-counts)
@@ -60,6 +61,11 @@ Once you get an email from Google saying that your project has been registered y
 <CourseState> ::= active|archived|provisioned|declined|suspended
 <CourseStateList> ::= all|"<CourseState>(,<CourseState>)*"
 
+<StringList> ::= "<String>(,<String>)*"
+<StringEntity> ::=
+        <StringList> | <FileSelector> | <CSVFileSelector>
+        See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
+
 <StudentGroupID> ::= <Number>
 <StudentGroupIDList> ::= "<StudentGroupID>(,<StudentGroupID>)*"
 <StudentGroupEntity> ::=
@@ -82,6 +88,25 @@ The shell strips the `"` leaving a single argument `'d:Math Class'`; as gam is e
 
 For multiple aliases you must enter: `gam info courses "'d:Math Class','d:Science Class'"`
 
+## Special quoting for lists of titles
+As student group titles can contain spaces, some care must be used when entering `selevct <StringList>`.
+
+Suppose you want to create a student group `Advanced Students`. `gam create course-studentgroups course <CourseID> title "Advanced Students"`
+
+The shell strips the `"` leaving a single argument `Advanced Math`; gam correctly processes the argument as it is expecting a single title.
+
+Suppose you enter the command: `gam create course-studentgroups course <CourseID> select "Advanced Students"`
+
+The shell strips the `"` leaving a single argument `Advanced Students`; as gam is expecting a list, it splits the argument on space leaving two items and then tries to process `Advanced` and `Students`, not what you want.
+
+You must enter: `gam create course-studentgroups course <CourseID> select "'Advanced Students'"`
+
+The shell strips the `"` leaving a single argument `'Advanced Students'`; as gam is expecting a list, it splits the argument on space while honoring the `'` leaving one item `Advanced Students` and correctly processes the item.
+
+For multiple titles you can enter either of the following:
+* `gam create course-studentgroups course <CourseID> select "'Advanced Students','Beginner Students'"`
+* `gam create course-studentgroups course <CourseID> title"Advanced Students" title "Beginner Students"`
+
 See: [Lists and Collections](Lists-and-Collections)
 
 ## Manage student groups
@@ -89,13 +114,16 @@ See: [Lists and Collections](Lists-and-Collections)
 ```
 gam create course-studentgroups
         (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
-        title <String>
+        ((title <String>)|(select <StringEntity))+
         [csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]]
 gam update course-studentgroups <CourseID> <StudentGroupID> title <String>
 gam delete course-studentgroups <CourseID> <StudentGroupIDEntity>
 gam clear course-studentgroups
         (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
 ```
+
+When creating student groups, the API does not check for duplicate titles; you can have multiple student grpups
+with the same title; they will have unique `<StudentGroupID>s`.
 
 The `update|delete course-studentgroups` commands manage a specific course.
 
@@ -111,6 +139,34 @@ To manage student group information for courses based on their having a particul
 To manage student group information for courses based on their state, use the following option. This option can be combined with the `teacher` and `student` options.
 By default, all course states are selected.
 * `states <CourseStateList>` - Display courses with any of the specified states.
+
+By default, when a student group is created, you will get output like this:
+```
+Course: <CourseID>, Course Student Group: <Title>(<StudentGroupId>), Added
+```
+If you use the `csv` option, you will get output like this:
+```
+courseId,courseName,studentGroupId,studentGroupTitle
+<CourseID>,<CourseName>,<StudentGroupID>,<Title>
+```
+This gives you a record the the student group IDs.
+
+### Example
+```
+$ more titles.csv
+title
+Advanced Students
+Middle Students
+Beginner Students
+
+$ gam redirect csv ./StudentGroups.csv add coursestudentgroups course <CourseID> select csvfile titles.csv:title csv
+
+$ more StudentGroups.csv 
+courseId,courseName,studentGroupId,studentGroupTitle
+<CourseID>,<CourseName>,796177544247,Advanced Students
+<CourseID>,<CourseName>,796177718666,Middle Students
+<CourseID>,<CourseName>,796177727901,Beginner Students
+```
 
 ## Display student groups
 ```
