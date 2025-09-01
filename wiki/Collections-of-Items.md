@@ -351,6 +351,8 @@ Data fields identified in a `csvkmd` argument.
         <SiteACLScopeList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 <SiteEntity> ::=
         <SiteList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+<StringEntity> ::=
+        <StringList> | <FileSelector> | <CSVFileSelector>
 <StudentGroupEntity> ::=
         <StudentGroupIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector>
 <TagManagerAccountPathEntity> ::=

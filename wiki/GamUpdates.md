@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.20.02
+
+Upgraded `gam create course-studentgroups` to allow specification of multiple student group titles;
+multiple student groups can be created in a single command.
+* `((title <String>)|(select <StringEntity))+`
+
 ### 7.20.01
 
 Added option `showaccesssettings` to `gam [<UserTypeEntity>] print|show chatspaces`. When listing

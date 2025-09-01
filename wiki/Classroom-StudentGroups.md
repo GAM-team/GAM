@@ -160,6 +160,7 @@ Middle Students
 Beginner Students
 
 $ gam redirect csv ./StudentGroups.csv add coursestudentgroups course <CourseID> select csvfile titles.csv:title csv
+Course: <CourseID>, Add 3 Course Student Groups
 
 $ more StudentGroups.csv 
 courseId,courseName,studentGroupId,studentGroupTitle
