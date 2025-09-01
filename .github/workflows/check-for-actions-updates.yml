@@ -33,7 +33,7 @@ jobs:
 
           # Run actions-up and capture output
           echo "Running actions-up to check for updates..."
-          actions-up --dry-run > actions-up-raw.txt 2>&1 || true
+          actions-up > actions-up-raw.txt 2>&1 || true
 
           # Parse the output to detect updates
           if grep -q "→" actions-up-raw.txt; then
@@ -51,9 +51,11 @@ jobs:
           echo "actions-up output:"
           cat actions-up-raw.txt
 
-      - name: Commit files
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add .github/workflows/*
-          git diff --quiet && git diff --staged --quiet || git commit -am 'GitHub Actions Updates Needed'
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6 # Use the action
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Automated changes"
+          title: "GitHub Actions versions neeeding updating"
+          body: "This PR was created automatically by a GitHub Action."
+          branch: "automated-pr-branch"
