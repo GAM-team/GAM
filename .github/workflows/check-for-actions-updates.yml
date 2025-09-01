@@ -12,44 +12,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install actions-up
-        run: npm install -g actions-up
-
-      - name: Run actions-up check
-        id: actions-check
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "GitHub Actions Update Check..."
-
-          # Initialize variables
-          HAS_UPDATES=false
-          UPDATE_COUNT=0
-
-          # Run actions-up and capture output
-          echo "Running actions-up to check for updates..."
-          actions-up > actions-up-raw.txt 2>&1 || true
-
-          # Parse the output to detect updates
-          if grep -q "→" actions-up-raw.txt; then
-            HAS_UPDATES=true
-            # Count the number of updates (lines with arrows)
-            UPDATE_COUNT=$(grep -c "→" actions-up-raw.txt || echo "0")
-          fi
-
-          # Create formatted output
-          if [ "$HAS_UPDATES" = true ]; then
-            echo "Found $UPDATE_COUNT GitHub Actions with available updates"
-          else
-            echo "All GitHub Actions are up to date."
-          fi
-          echo "actions-up output:"
-          cat actions-up-raw.txt
+      - name: Run actions-up
+        run: npx actions-up
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6 # Use the action
