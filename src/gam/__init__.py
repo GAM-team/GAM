@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.20.00'
+__version__ = '7.20.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -27004,31 +27004,33 @@ CHAT_SPACES_ADMIN_ORDERBY_CHOICE_MAP = {
 
 # gam [<UserTypeEntity>] show chatspaces
 #	[types <ChatSpaceTypeList>]
-#	[fields <ChatSpaceFieldNameList>]
+#	[fields <ChatSpaceFieldNameList>] [showaccesssettings]
 #	[formatjson]
 # gam [<UserTypeEntity>] print chatspaces [todrive <ToDriveAttribute>*]
 #	[types <ChatSpaceTypeList>]
-#	[fields <ChatSpaceFieldNameList>]
+#	[fields <ChatSpaceFieldNameList>] [showaccesssettings]
 #	[formatjson [quotechar <Character>]]
 # gam <UserItem> show chatspaces asadmin
 #	[query <String>] [querytime<String> <Time>]
 #	[orderby <ChatSpaceAdminOrderByFieldName> [ascending|descending]]
-#	[fields <ChatSpaceFieldNameList>]
+#	[fields <ChatSpaceFieldNameList>] [showaccesssettings]
 #	[formatjson]
 # gam <UserItem> print chatspaces asadmin [todrive <ToDriveAttribute>*]
 #	[query <String>] [querytime<String> <Time>]
 #	[orderby <ChatSpaceAdminOrderByFieldName> [ascending|descending]]
-#	[fields <ChatSpaceFieldNameList>]
+#	[fields <ChatSpaceFieldNameList>] [showaccesssettings]
 #	[formatjson [quotechar <Character>]]
 def printShowChatSpaces(users):
   csvPF = CSVPrintFile(['User', 'name'] if not isinstance(users, list) else ['name']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   OBY = OrderBy(CHAT_SPACES_ADMIN_ORDERBY_CHOICE_MAP)
   useAdminAccess, api, kwargsCS = _getChatAdminAccess(API.CHAT_SPACES_ADMIN, API.CHAT_SPACES)
+  kwargsSAS = {'useAdminAccess': useAdminAccess}
   fieldsList = []
   queries = []
   queryTimes = {}
   pfilter = ''
+  showAccessSettings = False
   if useAdminAccess:
     function = 'search'
     queries = ['customer = "customers/my_customer" AND spaceType = "SPACE"']
@@ -27044,8 +27046,12 @@ def printShowChatSpaces(users):
       pass
     elif useAdminAccess and _getChatSpaceSearchParms(myarg, queries, queryTimes, OBY):
       pass
+    elif myarg == 'showaccesssettings':
+      showAccessSettings = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
+  if showAccessSettings and fieldsList:
+    fieldsList.extend(['name', 'spaceType'])
   fields = getItemFieldsFromFieldsList('spaces', fieldsList)
   i, count, users = getEntityArgument(users)
   if useAdminAccess:
@@ -27070,6 +27076,17 @@ def printShowChatSpaces(users):
                                            GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                              fields=fields, pageSize=CHAT_PAGE_SIZE, **kwargsCS)
+      if showAccessSettings:
+        for space in spaces:
+          if space['spaceType'] == 'SPACE':
+            try:
+              result = callGAPI(chat.spaces(), 'get',
+                                throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR,
+                                              GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
+                                name=space['name'], fields='accessSettings', **kwargsSAS)
+              space.update(result)
+            except (GAPI.notFound, GAPI.invalidArgument, GAPI.internalError, GAPI.permissionDenied, GAPI.failedPrecondition):
+              pass
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.internalError, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
       continue

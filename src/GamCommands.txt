@@ -2000,10 +2000,10 @@ gam info chatspace <ChatSpace>
         [fields <ChatSpaceFieldNameList>]
         [formatjson]
 gam show chatspaces
-        [fields <ChatSpaceFieldNameList>]
+        [fields <ChatSpaceFieldNameList>] [showaccessssettings]
         [formatjson]
 gam print chatspaces [todrive <ToDriveAttribute>*]
-        [fields <ChatSpaceFieldNameList>]
+        [fields <ChatSpaceFieldNameList>] [showaccessssettings]
         [formatjson [quotechar <Character>]]
 
 <ChatMemberFieldName> ::=
@@ -6409,11 +6409,11 @@ gam <UserTypeEntity> info chatspacedm <UserItem>
         [formatjson]
 gam <UserTypeEntity> show chatspaces
         [types <ChatSpaceTypeList>]
-        [fields <ChatSpaceFieldNameList>]
+        [fields <ChatSpaceFieldNameList>] [showaccessssettings]
         [formatjson]
 gam <UserTypeEntity> print chatspaces [todrive <ToDriveAttribute>*]
         [types <ChatSpaceTypeList>]
-        [fields <ChatSpaceFieldNameList>]
+        [fields <ChatSpaceFieldNameList>] [showaccessssettings]
         [formatjson [quotechar <Character>]]
 
 gam <UserItem> info chatspace asadmin <ChatSpace>
@@ -6422,12 +6422,12 @@ gam <UserItem> info chatspace asadmin <ChatSpace>
 gam <UserItem> show chatspaces asadmin
         [query <String>] [querytime<String> <Time>]
         [orderby <ChatSpaceAdminOrderByFieldName> [ascending|descending]]
-        [fields <ChatSpaceFieldNameList>]
+        [fields <ChatSpaceFieldNameList>] [showaccessssettings]
         [formatjson]
 gam <UserItem> print chatspaces asadmin [todrive <ToDriveAttribute>*]
         [query <String>] [querytime<String> <Time>]
         [orderby <ChatSpaceAdminOrderByFieldName> [ascending|descending]]
-        [fields <ChatSpaceFieldNameList>]
+        [fields <ChatSpaceFieldNameList>] [showaccessssettings]
         [formatjson [quotechar <Character>]]
 
 gam <UserTypeEntity> create chatmember <ChatSpace>
