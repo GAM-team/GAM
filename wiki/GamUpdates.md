@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.20.01
+
+Added option `showaccesssettings` to `gam [<UserTypeEntity>] print|show chatspaces`. When listing
+Chat Spaces, the Chat API does not return the `accessSettings` field; if you need to see this field,
+add `showaccesssettings` to the command. This requires an additional Chat API call per chat space of type `SPACE`
+to get the `accessSettings` field.
+
 ### 7.20.00
 
 Added initial support for student groups in Google Classroom. This is a work in progress and requires Developer Preview membership.

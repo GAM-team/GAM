@@ -320,11 +320,15 @@ By default, Gam displays the information as an indented list of keys and values.
 ```
 gam <UserTypeEntity> show chatspaces
         [types <ChatSpaceTypeList>]
-        [fields <ChatSpaceFieldNameList>]
+        [fields <ChatSpaceFieldNameList>] [showaccessssettings]
         [formatjson]
 ```
 By default, chat spaces of all types are displayed.
 * `types <ChatSpaceTypeList>` - Display specific types of spaces.
+
+When listing Chat Spaces, the Chat API does not return the `accessSettings` field; if you need to see this fieldf,
+add `showaccesssettings` to the command. This requires an additional Chat API call per chat space of type `SPACE`
+to get the `accessSettings` field.
 
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
@@ -332,11 +336,15 @@ By default, Gam displays the information as an indented list of keys and values.
 ```
 gam <UserTypeEntity> print chatspaces [todrive <ToDriveAttribute>*]
         [types <ChatSpaceTypeList>]
-        [fields <ChatSpaceFieldNameList>]
+        [fields <ChatSpaceFieldNameList>] [showaccessssettings]
         [formatjson [quotechar <Character>]]
 ```
 By default, chat spaces of all types are displayed.
 * `types <ChatSpaceTypeList>` - Display specific types of spaces.
+
+When listing Chat Spaces, the Chat API does not return the `accessSettings` field; if you need to see this fieldf,
+add `showaccesssettings` to the command. This requires an additional Chat API call per chat space of type `SPACE`
+to get the `accessSettings` field.
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.
@@ -385,12 +393,16 @@ Only spaces of `<ChatSpaceType>` `space` are displayed; spaces of `<ChatSpaceTyp
 gam <UserItem> show chatspaces asadmin
         [query <String>] [querytime<String> <Time>]
         [orderby <ChatSpaceAdminOrderByFieldName> [ascending|descending]]
-        [fields <ChatSpaceFieldNameList>]
+        [fields <ChatSpaceFieldNameList>] [showaccessssettings]
         [formatjson]
 ```
 By default, all chat spaces of type SPACE are displayed.
 * `query <String> [querytime<String> <Time>]` - Display selected chat spaces
   * See: https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces/search
+
+When listing Chat Spaces, the Chat API does not return the `accessSettings` field; if you need to see this fieldf,
+add `showaccesssettings` to the command. This requires an additional Chat API call per chat space of type `SPACE`
+to get the `accessSettings` field.
 
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
@@ -399,12 +411,16 @@ By default, Gam displays the information as an indented list of keys and values.
 gam <UserItem> print chatspaces asadmin [todrive <ToDriveAttribute>*]
         [query <String>] [querytime<String> <Time>]
         [orderby <ChatSpaceAdminOrderByFieldName> [ascending|descending]]
-        [fields <ChatSpaceFieldNameList>]
+        [fields <ChatSpaceFieldNameList>] [showaccessssettings]
         [formatjson [quotechar <Character>]]
 ```
 By default, all chat spaces of type SPACE are displayed.
 * `query <String> [querytime<String> <Time>]` - Display selected chat spaces
   * See: https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces/search
+
+When listing Chat Spaces, the Chat API does not return the `accessSettings` field; if you need to see this fieldf,
+add `showaccesssettings` to the command. This requires an additional Chat API call per chat space of type `SPACE`
+to get the `accessSettings` field.
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.
@@ -975,8 +991,9 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 ## Bulk Operations
 ### Display information about all chat spaces for a collection of users
 ```
-gam config auto_batch_min 1 redirect csv ./ChatSpaces.csv multiprocess [todrive <ToDriveAttribute>*] redirect stdout - multiprocess redirect stderr <UserTypeEntity> print chatspaces
+gam config auto_batch_min 1 redirect csv ./ChatSpaces.csv multiprocess [todrive <ToDriveAttribute>*] redirect stdout - multiprocess redirect stderr <UserTypeEntity> print chatsacesp
         [types <ChatSpaceTypeList>]
+        [fields <ChatSpaceFieldNameList>] [showaccessssettings]
         [formatjson [quotechar <Character>]]
 ```
 
