@@ -528,6 +528,9 @@ class GamCLArgs():
   ARG_COURSEANNOUNCEMENTS = 'courseannouncements'
   ARG_COURSEMATERIALS = 'coursematerials'
   ARG_COURSEPARTICIPANTS = 'courseparticipants'
+  ARG_COURSESTUDENTGROUP = 'coursestudentgroup'
+  ARG_COURSESTUDENTGROUPS = 'coursestudentgroups'
+  ARG_COURSESTUDENTGROUPMEMBERS = 'coursestudentgroupmembers'
   ARG_COURSESUBMISSIONS = 'coursesubmissions'
   ARG_COURSETOPICS = 'coursetopics'
   ARG_COURSEWORK = 'coursework'
@@ -1055,6 +1058,8 @@ class GamCLArgs():
   OB_STATE_NAME_LIST = "StateNameList"
   OB_STRING = 'String'
   OB_STRING_LIST = 'StringList'
+  OB_STUDENTGROUP_ID = 'StudentGroupID'
+  OB_STUDENTGROUP_ID_ENTITY = 'StudentGroupIDEntity'
   OB_STUDENT_ITEM = 'StudentItem'
   OB_TAG = 'Tag'
   OB_TAGMANAGER_PATH_LIST = 'TagManagerPathList'

@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.19.03'
+__version__ = '7.20.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -4731,6 +4731,7 @@ def clearServiceCache(service):
   return False
 
 DISCOVERY_URIS = [googleapiclient.discovery.V1_DISCOVERY_URI, googleapiclient.discovery.V2_DISCOVERY_URI]
+CLASSROOM_DEVELOPER_PREVIEW_DISCOVERY_URI = "https://{api}.googleapis.com/$discovery/rest?labels=DEVELOPER_PREVIEW&version={apiVersion}"
 
 # Used for API.CLOUDRESOURCEMANAGER, API.SERVICEUSAGE, API.IAM
 def getAPIService(api, httpObj):
@@ -4750,8 +4751,13 @@ def getService(api, httpObj):
     triesLimit = 3
     for n in range(1, triesLimit+1):
       try:
+        if api != API.CLASSROOM or not GC.Values[GC.DEVELOPER_PREVIEW_API_KEY]:
+          discoveryServiceUrl = DISCOVERY_URIS[v2discovery]
+        else:
+          discoveryServiceUrl = CLASSROOM_DEVELOPER_PREVIEW_DISCOVERY_URI
+        developerKey = GC.Values[GC.DEVELOPER_PREVIEW_API_KEY]
         service = googleapiclient.discovery.build(api, version, http=httpObj, cache_discovery=False,
-                                                  discoveryServiceUrl=DISCOVERY_URIS[v2discovery], static_discovery=False)
+                                                  discoveryServiceUrl=discoveryServiceUrl, developerKey=developerKey, static_discovery=False)
         GM.Globals[GM.CURRENT_API_SERVICES].setdefault(api, {})
         GM.Globals[GM.CURRENT_API_SERVICES][api][version] = service._rootDesc.copy()
         if GM.Globals[GM.CACHE_DISCOVERY_ONLY]:
@@ -48430,6 +48436,14 @@ def _convertCourseUserIdToEmail(croom, userId, emails, entityValueList, i, count
     emails[userId] = userEmail
   return userEmail
 
+def _getCourseOwnerSA(croom, course, useOwnerAccess):
+  if not useOwnerAccess:
+    return croom
+  courseOwnerId = course["ownerId"]
+  if courseOwnerId not in GM.Globals[GM.CLASSROOM_OWNER_SA]:
+    _, GM.Globals[GM.CLASSROOM_OWNER_SA][courseOwnerId] = buildGAPIServiceObject(API.CLASSROOM, f'uid:{courseOwnerId}')
+  return GM.Globals[GM.CLASSROOM_OWNER_SA][courseOwnerId]
+
 def _getCoursesOwnerInfo(croom, courseIds, useOwnerAccess, addCIIdScope=True):
   coursesInfo = {}
   for courseId in courseIds:
@@ -48443,13 +48457,10 @@ def _getCoursesOwnerInfo(croom, courseIds, useOwnerAccess, addCIIdScope=True):
                           throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE,
                                         GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                           retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                          id=courseId, fields='name,ownerId')
-        if useOwnerAccess:
-          _, ocroom = buildGAPIServiceObject(API.CLASSROOM, f'uid:{course["ownerId"]}')
-        else:
-          ocroom = croom
+                          id=courseId, fields='id,name,ownerId')
+        ocroom = _getCourseOwnerSA(croom, course, useOwnerAccess)
         if ocroom is not None:
-          coursesInfo[ciCourseId] = {'name': course['name'], 'croom': ocroom}
+          coursesInfo[ciCourseId] = {'id': course['id'], 'name': course['name'], 'croom': ocroom}
       except GAPI.notFound:
         entityDoesNotExistWarning(Ent.COURSE, courseId)
       except GAPI.serviceNotAvailable as e:
@@ -48836,12 +48847,9 @@ def doPrintCourses():
     for field in courseShowProperties['skips']:
       course.pop(field, None)
     courseId = course['id']
-    if useOwnerAccess:
-      _, ocroom = buildGAPIServiceObject(API.CLASSROOM, f'uid:{course["ownerId"]}')
-      if not ocroom:
-        continue
-    else:
-      ocroom = croom
+    ocroom = _getCourseOwnerSA(croom, course, useOwnerAccess)
+    if not ocroom:
+      continue
     if courseShowProperties['ownerEmail']:
       course['ownerEmail'] = _convertCourseUserIdToEmail(croom, course['ownerId'], ownerEmails,
                                                          [Ent.COURSE, courseId, Ent.OWNER_ID, course['ownerId']], i, count)
@@ -49651,12 +49659,9 @@ def doPrintCourseParticipants():
   for course in coursesInfo:
     i += 1
     courseId = course['id']
-    if useOwnerAccess:
-      _, ocroom = buildGAPIServiceObject(API.CLASSROOM, f'uid:{course["ownerId"]}')
-      if not ocroom:
-        continue
-    else:
-      ocroom = croom
+    ocroom = _getCourseOwnerSA(croom, course, useOwnerAccess)
+    if not ocroom:
+      continue
     _, teachers, students = _getCourseAliasesMembers(croom, ocroom, courseId, courseShowProperties, teachersFields, studentsFields, True, i, count)
     if showItemCountOnly:
       if courseShowProperties['members'] != 'students':
@@ -51208,6 +51213,461 @@ def printShowClassroomProfile(users):
       entityActionFailedWarning([Ent.USER, userId], str(e))
   if csvPF:
     csvPF.writeCSVfile('Classroom User Profiles')
+
+# gam create course-studentgroups
+#	(course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
+#	title <String>
+#	[csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]]
+def doCreateCourseStudentGroups():
+  croom = buildGAPIObject(API.CLASSROOM)
+  csvPF = None
+  FJQC = FormatJSONQuoteChar(None)
+  courseSelectionParameters = _initCourseSelectionParameters()
+  courseShowProperties = _initCourseShowProperties(['name'])
+  useOwnerAccess = GC.Values[GC.USE_COURSE_OWNER_ACCESS]
+  kwargs  = {'courseId': None, 'body': {}}
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'title':
+      kwargs['body']['title'] = getString(Cmd.OB_STRING)
+    elif _getCourseSelectionParameters(myarg, courseSelectionParameters):
+      pass
+    elif myarg == 'csv':
+      csvPF = CSVPrintFile(['courseId', 'courseName', 'studentGroupId', 'studentGroupTitle'])
+      FJQC = FormatJSONQuoteChar(csvPF)
+    elif csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    else:
+      FJQC.GetFormatJSONQuoteChar(myarg, True)
+  if 'title' not in kwargs['body']:
+    missingArgumentExit('title')
+  if csvPF and FJQC.formatJSON:
+    csvPF.SetJSONTitles(['courseId', 'courseName', 'JSON'])
+  coursesInfo = _getCoursesInfo(croom, courseSelectionParameters, courseShowProperties, useOwnerAccess)
+  if coursesInfo is None:
+    return
+  count = len(coursesInfo)
+  i = 0
+  for course in coursesInfo:
+    i += 1
+    courseId = course['id']
+    ocroom = _getCourseOwnerSA(croom, course, useOwnerAccess)
+    if not ocroom:
+      continue
+    kwargs['courseId'] = courseId
+    kvList = [Ent.COURSE, courseId, Ent.COURSE_STUDENTGROUP, None]
+    try:
+      studentGroup = callGAPI(ocroom.courses().studentGroups(), 'create',
+                              throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE, GAPI.NOT_IMPLEMENTED,
+                                            GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
+                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                              previewVersion='V1_20250630_PREVIEW',
+                              **kwargs)
+      kvList[-1] = f"{studentGroup['title']}({studentGroup['id']})"
+      if not csvPF:
+        entityActionPerformed(kvList, i, count)
+      elif not  FJQC.formatJSON:
+        csvPF.WriteRow({'courseId': courseId, 'courseName': course['name'],
+                        'studentGroupId': studentGroup['id'], 'studentGroupTitle': studentGroup['title']})
+      else:
+        csvPF.WriteRowNoFilter({'courseId': courseId, 'courseName': course['name'],
+                                'JSON': json.dumps(cleanJSON(studentGroup), ensure_ascii=False, sort_keys=True)})
+    except GAPI.notFound as e:
+      entityActionFailedWarning(kvList, str(e), i, count)
+    except (GAPI.serviceNotAvailable, GAPI.notImplemented) as e:
+      entityActionFailedExit([Ent.COURSE, courseId], str(e), i, count)
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
+  if csvPF:
+    csvPF.writeCSVfile('Course Student Groups')
+
+# gam update course-studentgroup <CourseID> <StudentGroupID> title <String>
+def doUpdateCourseStudentGroups():
+  croom = buildGAPIObject(API.CLASSROOM)
+  courseId = getString(Cmd.OB_COURSE_ID)
+  studentGroupId = getString(Cmd.OB_STUDENTGROUP_ID)
+  kwargs = {'courseId': courseId, 'id':  studentGroupId, 'body': {}, 'updateMask': ''}
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'title':
+      kwargs['body']['title'] = getString(Cmd.OB_STRING)
+      kwargs['updateMask'] = myarg
+    else:
+      unknownArgumentExit()
+  if 'title' not in kwargs['body']:
+    missingArgumentExit('title')
+  _, count, coursesInfo = _getCoursesOwnerInfo(croom, [courseId], GC.Values[GC.USE_COURSE_OWNER_ACCESS])
+  if count == 0:
+    return
+  ocroom = coursesInfo[courseId]['croom']
+  courseId = coursesInfo[courseId]['id']
+  kvList = [Ent.COURSE, courseId, Ent.COURSE_STUDENTGROUP, studentGroupId]
+  try:
+    studentGroup = callGAPI(ocroom.courses().studentGroups(), 'patch',
+                            throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE, GAPI.NOT_IMPLEMENTED,
+                                          GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
+                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                            previewVersion='V1_20250630_PREVIEW',
+                            **kwargs)
+    kvList[-1] = f"{studentGroup['title']}({studentGroup['id']})"
+    entityActionPerformed(kvList)
+  except GAPI.notFound as e:
+    entityActionFailedWarning(kvList, str(e))
+  except (GAPI.serviceNotAvailable, GAPI.notImplemented) as e:
+    entityActionFailedExit([Ent.COURSE, courseId], str(e))
+  except (GAPI.forbidden, GAPI.permissionDenied) as e:
+    ClientAPIAccessDeniedExit(str(e))
+
+# gam delete course-studentgroups <CourseID> <StudentGroupIDEntity>
+def doDeleteCourseStudentGroups():
+  croom = buildGAPIObject(API.CLASSROOM)
+  courseId = getString(Cmd.OB_COURSE_ID)
+  studentGroupIds = getEntityList(Cmd.OB_STUDENTGROUP_ID_ENTITY, shlexSplit=False)
+  checkForExtraneousArguments()
+  _, count, coursesInfo = _getCoursesOwnerInfo(croom, [courseId], GC.Values[GC.USE_COURSE_OWNER_ACCESS])
+  if count == 0:
+    return
+  ocroom = coursesInfo[courseId]['croom']
+  courseId = coursesInfo[courseId]['id']
+  kwargs = {'courseId': courseId, 'id': None}
+  kvList = [Ent.COURSE, courseId, Ent.COURSE_STUDENTGROUP, None]
+  count = len(studentGroupIds)
+  i = 0
+  for studentGroupId in studentGroupIds:
+    i += 1
+    kwargs['id'] = kvList[-1] = studentGroupId
+    try:
+      callGAPI(ocroom.courses().studentGroups(), 'delete',
+               throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE, GAPI.NOT_IMPLEMENTED,
+                             GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
+               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+               previewVersion='V1_20250630_PREVIEW',
+               **kwargs)
+      entityActionPerformed(kvList, i, count)
+    except GAPI.notFound as e:
+      entityActionFailedWarning(kvList, str(e), i, count)
+    except (GAPI.serviceNotAvailable, GAPI.notImplemented) as e:
+      entityActionFailedExit([Ent.COURSE, courseId], str(e), i, count)
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
+
+# gam clear course-studentgroups
+#	(course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
+def doClearCourseStudentGroups():
+  croom = buildGAPIObject(API.CLASSROOM)
+  courseSelectionParameters = _initCourseSelectionParameters()
+  courseShowProperties = _initCourseShowProperties(['name'])
+  useOwnerAccess = GC.Values[GC.USE_COURSE_OWNER_ACCESS]
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if _getCourseSelectionParameters(myarg, courseSelectionParameters):
+      pass
+    else:
+      unknownArgumentExit()
+  coursesInfo = _getCoursesInfo(croom, courseSelectionParameters, courseShowProperties, useOwnerAccess)
+  if coursesInfo is None:
+    return
+  count = len(coursesInfo)
+  i = 0
+  for course in coursesInfo:
+    i += 1
+    courseId = course['id']
+    ocroom = _getCourseOwnerSA(croom, course, useOwnerAccess)
+    if not ocroom:
+      continue
+    kwargs = {'courseId': courseId, 'id': None}
+    kvList = [Ent.COURSE, courseId, Ent.COURSE_STUDENTGROUP, None]
+    studentGroups = []
+    printGettingEntityItemForWhom(Ent.COURSE_STUDENTGROUP, formatKeyValueList('', [Ent.Singular(Ent.COURSE), courseId], currentCount(i, count)))
+    pageMessage = getPageMessage()
+    try:
+      studentGroups = callGAPIpages(ocroom.courses().studentGroups(), 'list', 'studentGroups',
+                                    pageMessage=pageMessage,
+                                    throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE, GAPI.NOT_IMPLEMENTED,
+                                                  GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
+                                    retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                                    previewVersion='V1_20250630_PREVIEW',
+                                    courseId=courseId)
+    except GAPI.notFound as e:
+      entityActionFailedWarning([Ent.COURSE, courseId], str(e))
+      continue
+    except (GAPI.serviceNotAvailable, GAPI.notImplemented) as e:
+      entityActionFailedExit([Ent.COURSE, courseId], str(e))
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
+    jcount = len(studentGroups)
+    entityPerformActionNumItems([Ent.COURSE, courseId], jcount, Ent.COURSE_STUDENTGROUP, i, count)
+    Ind.Increment()
+    j = 0
+    for studentGroup in studentGroups:
+      j += 1
+      kwargs['id'] = kvList[-1] = studentGroup['id']
+      try:
+        callGAPI(ocroom.courses().studentGroups(), 'delete',
+                 throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE, GAPI.NOT_IMPLEMENTED,
+                               GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
+                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                 previewVersion='V1_20250630_PREVIEW',
+                 **kwargs)
+        entityActionPerformed(kvList, j, jcount)
+      except GAPI.notFound as e:
+        entityActionFailedWarning(kvList, str(e), j, jcount)
+      except (GAPI.serviceNotAvailable, GAPI.notImplemented) as e:
+        entityActionFailedExit([Ent.COURSE, courseId], str(e), j, jcount)
+      except (GAPI.forbidden, GAPI.permissionDenied) as e:
+        ClientAPIAccessDeniedExit(str(e))
+    Ind.Decrement()
+
+# gam print course-studentgroups [todrive <ToDriveAttribute>*]
+#	(course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
+#	[showitemcountonly] [formatjson [quotechar <Character>]]
+def doPrintCourseStudentGroups(showMembers=False):
+  croom = buildGAPIObject(API.CLASSROOM)
+  cd = buildGAPIObject(API.DIRECTORY)
+  csvPF = CSVPrintFile(['courseId', 'courseName', 'studentGroupId', 'studentGroupTitle'])
+  FJQC = FormatJSONQuoteChar(csvPF)
+  courseSelectionParameters = _initCourseSelectionParameters()
+  courseShowProperties = _initCourseShowProperties(['name'])
+  showItemCountOnly = False
+  useOwnerAccess = GC.Values[GC.USE_COURSE_OWNER_ACCESS]
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif _getCourseSelectionParameters(myarg, courseSelectionParameters):
+      pass
+    elif myarg == 'showitemcountonly':
+      showItemCountOnly = True
+    else:
+      FJQC.GetFormatJSONQuoteChar(myarg, True)
+  coursesInfo = _getCoursesInfo(croom, courseSelectionParameters, courseShowProperties, useOwnerAccess)
+  if coursesInfo is None:
+    if showItemCountOnly:
+      writeStdout('0\n')
+    return
+  itemCount = 0
+  count = len(coursesInfo)
+  i = 0
+  for course in coursesInfo:
+    i += 1
+    courseId = course['id']
+    ocroom = _getCourseOwnerSA(croom, course, useOwnerAccess)
+    if not ocroom:
+      continue
+    studentGroups = []
+    printGettingEntityItemForWhom(Ent.COURSE_STUDENTGROUP, formatKeyValueList('', [Ent.Singular(Ent.COURSE), courseId], currentCount(i, count)))
+    pageMessage = getPageMessage()
+    try:
+      studentGroups = callGAPIpages(ocroom.courses().studentGroups(), 'list', 'studentGroups',
+                                    pageMessage=pageMessage,
+                                    throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE, GAPI.NOT_IMPLEMENTED,
+                                                  GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
+                                    retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                                    previewVersion='V1_20250630_PREVIEW',
+                                    courseId=courseId)
+    except GAPI.notFound as e:
+      entityActionFailedWarning([Ent.COURSE, courseId], str(e))
+      continue
+    except (GAPI.serviceNotAvailable, GAPI.notImplemented) as e:
+      entityActionFailedExit([Ent.COURSE, courseId], str(e))
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
+    if not showMembers and showItemCountOnly:
+      itemCount += len(studentGroups)
+      continue
+    for studentGroup in studentGroups:
+      studentGroupId = studentGroup['id']
+      if not showMembers:
+        if not FJQC.formatJSON:
+          csvPF.WriteRowTitles({'courseId': courseId, 'courseName': course['name'],
+                                'studentGroupId': studentGroupId, 'studentGroupTitle': studentGroup['title']})
+        else:
+          row = {'courseId': courseId, 'courseName': course['name']}
+          if csvPF.CheckRowTitles(row):
+            row['JSON'] = json.dumps(cleanJSON(studentGroup), ensure_ascii=False, sort_keys=False)
+            csvPF.WriteRowTitles(row)
+        continue
+      printGettingEntityItemForWhom(Ent.USER, formatKeyValueList('', [Ent.Singular(Ent.COURSE_STUDENTGROUP), studentGroupId],
+                                                                 currentCount(i, count)))
+      pageMessage = getPageMessage()
+      try:
+        students = callGAPIpages(ocroom.courses().studentGroups().studentGroupMembers(), 'list', 'studentGroupMembers',
+                                 pageMessage=pageMessage,
+                                 throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE,
+                                               GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
+                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                                 previewVersion='V1_20250630_PREVIEW',
+                                 courseId=courseId, studentGroupId=studentGroupId)
+        if showItemCountOnly:
+          itemCount += len(students)
+          continue
+        for member in students:
+          member['userEmail'] = convertUIDtoEmailAddress(f"id:{member['userId']}", cd=cd, emailTypes=['user'])
+      except GAPI.notFound as e:
+        entityActionFailedWarning([Ent.COURSE, courseId, Ent.COURSE_STUDENTGROUP, studentGroupId], str(e))
+        continue
+      except (GAPI.serviceNotAvailable, GAPI.notImplemented) as e:
+        entityActionFailedExit([Ent.COURSE, courseId, Ent.COURSE_STUDENTGROUP, studentGroupId], str(e))
+      except (GAPI.forbidden, GAPI.permissionDenied) as e:
+        ClientAPIAccessDeniedExit(str(e))
+      if not FJQC.formatJSON:
+        row = {'courseId': courseId, 'courseName': course['name'],
+               'studentGroupId': studentGroupId, 'studentGroupTitle': studentGroup['title']}
+        for member in students:
+          csvPF.WriteRowTitles(flattenJSON(member, flattened=row.copy()))
+      else:
+        row = {'courseId': courseId, 'courseName': course['name'],
+               'studentGroupId': studentGroupId, 'studentGroupTitle': studentGroup['title']}
+        row['JSON'] = json.dumps(list(students))
+        csvPF.WriteRowNoFilter(row)
+  if showItemCountOnly:
+    writeStdout(f'{itemCount}\n')
+    return
+  if not showMembers:
+    title = 'Course Student Groups'
+  else:
+    title = 'Course Student Group Members'
+  csvPF.writeCSVfile(title)
+
+# gam create course-studentgroup-members <CourseID> <StudentGroupID> <UserTypeEntity>
+# gam delete course-studentgroup-members <CourseID> <StudentGroupID> <UserTypeEntity>
+# gam sync course-studentgroup-members <CourseID> <StudentGroupID> <UserTypeEntity>
+# gam clear course-studentgroup-members <CourseID> <StudentGroupID>
+def doProcessCourseStudentGroupMembers():
+  def _getCurrentStudents():
+    printGettingEntityItemForWhom(Ent.USER, Ent.Singular(Ent.COURSE_STUDENTGROUP), studentGroupId)
+    pageMessage = getPageMessage()
+    try:
+      return callGAPIpages(ocroom.courses().studentGroups().studentGroupMembers(), 'list', 'studentGroupMembers',
+                           pageMessage=pageMessage,
+                           throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE,
+                                         GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
+                           retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                           previewVersion='V1_20250630_PREVIEW',
+                           courseId=courseId, studentGroupId=studentGroupId)
+    except GAPI.notFound as e:
+      entityActionFailedWarning([Ent.COURSE, courseId, Ent.COURSE_STUDENTGROUP, studentGroupId], str(e))
+      return []
+    except (GAPI.serviceNotAvailable, GAPI.notImplemented) as e:
+      entityActionFailedExit([Ent.COURSE, courseId, Ent.COURSE_STUDENTGROUP, studentGroupId], str(e))
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
+
+  def _getStudentUserId(kvList, student, i, count):
+    normalizedEmailAddressOrUID = normalizeEmailAddressOrUID(student)
+    if normalizedEmailAddressOrUID.find('@') == -1:
+      return normalizedEmailAddressOrUID
+    try:
+      return callGAPI(cd.users(), 'get',
+                      throwReasons=GAPI.USER_GET_THROW_REASONS,
+                      userKey=normalizedEmailAddressOrUID, fields='id')['id']
+    except (GAPI.userNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
+            GAPI.badRequest, GAPI.backendError, GAPI.systemError) as e:
+      entityActionFailedWarning(kvList, str(e), i, count)
+    return None
+
+  def _processStudent(function, kvList, kwargs, i, count):
+    try:
+      callGAPI(ocroom.courses().studentGroups().studentGroupMembers(), function,
+               throwReasons=[GAPI.NOT_FOUND, GAPI.ALREADY_EXISTS,
+                             GAPI.SERVICE_NOT_AVAILABLE, GAPI.NOT_IMPLEMENTED,
+                             GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
+               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+               previewVersion='V1_20250630_PREVIEW',
+               **kwargs)
+      entityActionPerformed(kvList, i, count)
+    except (GAPI.alreadyExists, GAPI.notFound) as e:
+      entityActionFailedWarning(kvList, str(e), i, count)
+    except (GAPI.serviceNotAvailable, GAPI.notImplemented) as e:
+      entityActionFailedExit([Ent.COURSE, courseId], str(e))
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
+
+  def _addStudents(students, getUserIds):
+    count = len(students)
+    i = 0
+    entityPerformActionNumItems([Ent.COURSE, courseId, Ent.COURSE_STUDENTGROUP, studentGroupId], count, Ent.USER)
+    kvList = [Ent.COURSE, courseId, Ent.COURSE_STUDENTGROUP, studentGroupId, Ent.USER, '']
+    kwargs = {'courseId': courseId, 'studentGroupId': studentGroupId, 'body': {'userId': ''}}
+    for student in students:
+      i += 1
+      if getUserIds:
+        userId = _getStudentUserId(kvList, student, i, count)
+        if userId is None:
+          continue
+        kvList[-1] = student
+      else:
+        userId = student
+        kvList[-1] = convertUIDtoEmailAddress(f"id:{userId}", cd=cd, emailTypes=['user'])
+      kwargs['body']['userId'] = userId
+      _processStudent('create', kvList, kwargs, i, count)
+
+  def _removeStudents(students, getUserIds):
+    count = len(students)
+    i = 0
+    entityPerformActionNumItems([Ent.COURSE, courseId, Ent.COURSE_STUDENTGROUP, studentGroupId], count, Ent.USER)
+    kvList = [Ent.COURSE, courseId, Ent.COURSE_STUDENTGROUP, studentGroupId, Ent.USER, '']
+    kwargs = {'courseId': courseId, 'studentGroupId': studentGroupId, 'userId': ''}
+    for student in students:
+      i += 1
+      if getUserIds:
+        userId = _getStudentUserId(kvList, student, i, count)
+        if userId is None:
+          continue
+        kvList[-1] = student
+      else:
+        userId = student
+        kvList[-1] = convertUIDtoEmailAddress(f"id:{userId}", cd=cd, emailTypes=['user'])
+      kwargs['userId'] = userId
+      _processStudent('delete', kvList, kwargs, i, count)
+
+  croom = buildGAPIObject(API.CLASSROOM)
+  cd = buildGAPIObject(API.DIRECTORY)
+  action = Act.Get()
+  courseId = getString(Cmd.OB_COURSE_ID)
+  studentGroupId = getString(Cmd.OB_STUDENTGROUP_ID)
+  if action != Act.CLEAR:
+    _, clStudents = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS, groupMemberType=Ent.TYPE_USER)
+    clStudents = [normalizeEmailAddressOrUID(student) for student in clStudents]
+    checkForExtraneousArguments()
+  _, count, coursesInfo = _getCoursesOwnerInfo(croom, [courseId], GC.Values[GC.USE_COURSE_OWNER_ACCESS])
+  if count == 0:
+    return
+  ocroom = coursesInfo[courseId]['croom']
+  courseId = coursesInfo[courseId]['id']
+  if action in {Act.SYNC, Act.CLEAR}:
+    currentStudents = [student['userId'] for student in _getCurrentStudents()]
+  if action == Act.CLEAR:
+    _removeStudents(currentStudents, False)
+  elif action == Act.DELETE:
+    _removeStudents(clStudents, True)
+  elif action in {Act.ADD, Act.CREATE}:
+    _addStudents(clStudents, True)
+  else: # elif action == Act.SYNC:
+    currentMembersSet = set(currentStudents)
+    syncMembersSet = set()
+    count = len(clStudents)
+    i = 0
+    kvList = [Ent.COURSE, courseId, Ent.COURSE_STUDENTGROUP, studentGroupId, Ent.USER, '']
+    for student in clStudents:
+      i += 1
+      kvList[-1] = student
+      userId = _getStudentUserId(kvList, student, i, count)
+      if userId is None:
+        continue
+      syncMembersSet.add(userId)
+    removeStudentsSet = currentMembersSet-syncMembersSet
+    addStudentsSet = syncMembersSet-currentMembersSet
+    Act.Set(Act.DELETE)
+    _removeStudents(removeStudentsSet, False)
+    Act.Set(Act.ADD)
+    _addStudents(addStudentsSet, False)
+
+# gam print course-studentgroup-members [todrive <ToDriveAttribute>*]
+#	(course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
+#	[showitemcountonly] [formatjson [quotechar <Character>]]
+def doPrintCourseStudentGroupMembers():
+  doPrintCourseStudentGroups(showMembers=True)
 
 def _showASPs(user, asps, i=0, count=0):
   Act.Set(Act.SHOW)
@@ -77337,6 +77797,8 @@ MAIN_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_CIGROUP:		doCreateCIGroup,
   Cmd.ARG_CONTACT:		doCreateDomainContact,
   Cmd.ARG_COURSE:		doCreateCourse,
+  Cmd.ARG_COURSESTUDENTGROUP:	doCreateCourseStudentGroups,
+  Cmd.ARG_COURSESTUDENTGROUPMEMBERS:	doProcessCourseStudentGroupMembers,
   Cmd.ARG_DATATRANSFER:		doCreateDataTransfer,
   Cmd.ARG_DEVICE:		doCreateCIDevice,
   Cmd.ARG_DOMAIN:		doCreateDomain,
@@ -77412,6 +77874,8 @@ MAIN_COMMANDS_WITH_OBJECTS = {
     (Act.CLEAR,
      {Cmd.ARG_ALERTSETTINGS:	doClearAlertSettings,
       Cmd.ARG_CONTACT:		doClearDomainContacts,
+      Cmd.ARG_COURSESTUDENTGROUP:	doClearCourseStudentGroups,
+      Cmd.ARG_COURSESTUDENTGROUPMEMBERS:	doProcessCourseStudentGroupMembers,
      }
     ),
   'close':
@@ -77454,6 +77918,8 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CONTACTPHOTO:	doDeleteDomainContactPhoto,
       Cmd.ARG_COURSE:		doDeleteCourse,
       Cmd.ARG_COURSES:		doDeleteCourses,
+      Cmd.ARG_COURSESTUDENTGROUP:	doDeleteCourseStudentGroups,
+      Cmd.ARG_COURSESTUDENTGROUPMEMBERS:	doProcessCourseStudentGroupMembers,
       Cmd.ARG_DEVICE:		doDeleteCIDevice,
       Cmd.ARG_DEVICEUSER:	doDeleteCIDeviceUser,
       Cmd.ARG_DOMAIN:		doDeleteDomain,
@@ -77631,6 +78097,8 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_COURSEANNOUNCEMENTS:	doPrintCourseAnnouncements,
       Cmd.ARG_COURSEMATERIALS:	doPrintCourseMaterials,
       Cmd.ARG_COURSEPARTICIPANTS:	doPrintCourseParticipants,
+      Cmd.ARG_COURSESTUDENTGROUP:	doPrintCourseStudentGroups,
+      Cmd.ARG_COURSESTUDENTGROUPMEMBERS:	doPrintCourseStudentGroupMembers,
       Cmd.ARG_COURSESUBMISSIONS:	doPrintCourseSubmissions,
       Cmd.ARG_COURSETOPICS:	doPrintCourseTopics,
       Cmd.ARG_COURSEWORK:	doPrintCourseWork,
@@ -77815,6 +78283,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
     (Act.SYNC,
      {Cmd.ARG_DEVICE:		doSyncCIDevices,
       Cmd.ARG_SHAREDDRIVEACLS:	copySyncSharedDriveACLs,
+      Cmd.ARG_COURSESTUDENTGROUPMEMBERS:	doProcessCourseStudentGroupMembers,
      }
     ),
   'unhide':
@@ -77837,6 +78306,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CONTACTPHOTO:	doUpdateDomainContactPhoto,
       Cmd.ARG_COURSE:		doUpdateCourse,
       Cmd.ARG_COURSES:		doUpdateCourses,
+      Cmd.ARG_COURSESTUDENTGROUP:	doUpdateCourseStudentGroups,
       Cmd.ARG_CROS:		doUpdateCrOSDevices,
       Cmd.ARG_CUSTOMER:		doUpdateCustomer,
       Cmd.ARG_DEVICE:		doUpdateCIDevice,
@@ -77954,6 +78424,7 @@ MAIN_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_CLASSROOMINVITATIONS:	Cmd.ARG_CLASSROOMINVITATION,
   Cmd.ARG_CONTACTS:		Cmd.ARG_CONTACT,
   Cmd.ARG_CONTACTPHOTOS:	Cmd.ARG_CONTACTPHOTO,
+  Cmd.ARG_COURSESTUDENTGROUPS:	Cmd.ARG_COURSESTUDENTGROUP,
   Cmd.ARG_CROSES:		Cmd.ARG_CROS,
   Cmd.ARG_DATATRANSFERS:	Cmd.ARG_DATATRANSFER,
   Cmd.ARG_DEVICES:		Cmd.ARG_DEVICE,

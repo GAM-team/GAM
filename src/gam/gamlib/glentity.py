@@ -155,6 +155,8 @@ class GamEntity():
   COURSE_MATERIAL_STATE = 'cmst'
   COURSE_NAME = 'cona'
   COURSE_STATE = 'cost'
+  COURSE_STUDENTGROUP = 'cosg'
+  COURSE_STUDENTGROUP_MEMBER = 'csgm'
   COURSE_SUBMISSION_ID = 'csid'
   COURSE_SUBMISSION_STATE = 'csst'
   COURSE_TOPIC = 'ctop'
@@ -517,6 +519,8 @@ class GamEntity():
     COURSE_MATERIAL_STATE: ['Course Material States', 'Course Material State'],
     COURSE_NAME: ['Course Names', 'Course Name'],
     COURSE_STATE: ['Course States', 'Course State'],
+    COURSE_STUDENTGROUP: ['Course Student Groups', 'Course Student Group'],
+    COURSE_STUDENTGROUP_MEMBER: ['Course Student Group Members', 'Course Student Group Member'],
     COURSE_SUBMISSION_ID: ['Course Submission IDs', 'Course Submission ID'],
     COURSE_SUBMISSION_STATE: ['Course Submission States', 'Course Submission State'],
     COURSE_TOPIC: ['Course Topics', 'Course Topic'],

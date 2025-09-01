@@ -606,6 +606,7 @@ If an item contains spaces, it should be surrounded by ".
 <SiteItem> ::= [<DomainName>/]<SiteName>
 <S/MIMEID> ::= <String>
 <SMTPHostName> ::= <String>
+<StudentGroupID> ::= <Number>
 <StudentItem> ::= <EmailAddress>|<UniqueID>|<String>
 <SharedDriveACLRole> ::=
         commenter|
@@ -780,6 +781,7 @@ If an item contains spaces, it should be surrounded by ".
 <SharedDriveACLRoleList> ::= "<SharedDriveACLRole>(,<SharedDriveACLRole>)*"
 <SharedDriveIDList> ::= "<SharedDriveID>(,<SharedDriveID>)*"
 <StringList> ::= "<String>(,<String>)*"
+<StudentGroupIDList> ::= "<StudentGroupID>(,<StudentGroupID>)*"
 <TagManagerAccountPathList> ::= "<TagManagerAccountPath>(,<TagManagerAccountPath>)*"
 <TagManagerContainerPathList> ::= "<TagManagerContainerPath>(,<TagManagerContainerPath>)*"
 <TagManagerWorkspacePathList> ::= "<TagManagerWorkspacePath>(,<TagManagerWorkspacePath>)*"
@@ -1244,6 +1246,8 @@ Specify a collection of items by directly specifying them; the item type is dete
         <SiteACLScopeList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 <SiteEntity> ::=
         <SiteList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+<StudentGroupEntity> ::=
+        <StudentGroupIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector>
 <TagManagerAccountPathEntity> ::=
         <TagManagerAccountPathList> |
         (select <FileSelector>|<CSVFileSelector>) |
@@ -3388,6 +3392,28 @@ gam print course-works [todrive <ToDriveAttribute>*]
         [timefilter creationtime|updatetime|scheduledtime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
         [countsonly] [formatjson [quotechar <Character>]]
 
+# Classroom - Student Groups
+
+gam create course-studentgroups
+        (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
+        title <String>
+        [csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]]
+gam update course-studentgroups <CourseID> <StudentGroupID> title <String>
+gam delete course-studentgroups <CourseID> <StudentGroupIDEntity>
+gam clear course-studentgroups
+        (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
+gam print course-studentgroups [todrive <ToDriveAttribute>*]
+        (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
+        [formatjson [quotechar <Character>]]
+
+gam create course-studentgroup-members <CourseID> <StudentGroupID> <UserTypeEntity>
+gam delete course-studentgroup-members <CourseID> <StudentGroupID> <UserTypeEntity>
+gam sync course-studentgroup-members <CourseID> <StudentGroupID> <UserTypeEntity>
+gam clear course-studentgroupmembers <CourseID> <StudentGroupID>
+gam print course-studentgroup-members [todrive <ToDriveAttribute>*]
+        (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
+        [showitemcountonly] [formatjson [quotechar <Character>]]
+
 # Classroom - Invitations
 
 gam <UserTypeEntity> create classroominvitation courses <CourseEntity> [role owner|student|teacher]
@@ -3696,17 +3722,17 @@ gam print contacts [todrive <ToDriveAttribute>*] <ContactSelection>
         userdefined
 <PeopleFieldNameList> ::= "<PeopleFieldName>(,<PeopleFieldName>)*"
 
-gam info peoplecontacts <PeopleResourceNameEntity>
+gam info domaincontacts|peoplecontacts <PeopleResourceNameEntity>
         [allfields|(fields <PeopleFieldNameList>)] [showmetadata]
         [formatjson]
-gam print peoplecontacts [todrive <ToDriveAttribute>*]
+gam print domaincontacts|peoplecontacts [todrive <ToDriveAttribute>*]
         [sources <PeopleSourceName>]
         [query <String>]
         [mergesources <PeopleMergeSourceName>]
         [coountsonly]
         [allfields|(fields <PeopleFieldNameList>)] [showmetadata]
         [formatjson [quotechar <Character>]]
-gam show peoplecontacts
+gam show domaincontacts|peoplecontacts
         [sources <PeopleSourceName>]
         [query <String>]
         [mergesources <PeopleMergeSourceName>]

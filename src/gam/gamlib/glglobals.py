@@ -31,6 +31,8 @@ API_CALLS_RETRY_DATA = 'rtry'
 CACHE_DIR = 'gacd'
 # Reset GAM cache directory after discovery
 CACHE_DISCOVERY_ONLY = 'gcdo'
+# Classroom owner service object
+CLASSROOM_OWNER_SA = 'cosa'
 # Classroom service not available
 CLASSROOM_SERVICE_NOT_AVAILABLE = 'csna'
 # Command logging
@@ -221,6 +223,7 @@ Globals = {
   API_CALLS_RETRY_DATA: {},
   CACHE_DIR: None,
   CACHE_DISCOVERY_ONLY: True,
+  CLASSROOM_OWNER_SA: {},
   CLASSROOM_SERVICE_NOT_AVAILABLE: False,
   CMDLOG_HANDLER: None,
   CMDLOG_LOGGER: None,

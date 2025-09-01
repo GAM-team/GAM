@@ -53,7 +53,7 @@ Please go to:
  5. Click "NEXT"
  6. Under "Audience", choose INTERNAL
  7. Click "NEXT"
- 8. Under, "Contact Information", enter an email address in "Email addresses *"
+ 8. Under, "Contact Information", enter {2} or another value in "Email addresses *"
  9. Click "NEXT"
 10. Under "Finish", click "I agree to the Google API Services: User Data Policy."
 11. Click "CONTINUE"
