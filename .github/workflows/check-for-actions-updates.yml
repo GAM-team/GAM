@@ -4,6 +4,9 @@ on:
     - cron: '37 20 * * 3'
   workflow_dispatch:
 
+permissions:
+  actions: write
+
 jobs:
   check-actions:
     name: Check for GHA updates
