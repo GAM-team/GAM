@@ -1246,6 +1246,8 @@ Specify a collection of items by directly specifying them; the item type is dete
         <SiteACLScopeList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 <SiteEntity> ::=
         <SiteList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+<StringEntity> ::=
+        <StringList> | <FileSelector> | <CSVFileSelector>
 <StudentGroupEntity> ::=
         <StudentGroupIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector>
 <TagManagerAccountPathEntity> ::=
@@ -3396,7 +3398,7 @@ gam print course-works [todrive <ToDriveAttribute>*]
 
 gam create course-studentgroups
         (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
-        title <String>
+        ((title <String>)|(select <StringEntity))+
         [csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]]
 gam update course-studentgroups <CourseID> <StudentGroupID> title <String>
 gam delete course-studentgroups <CourseID> <StudentGroupIDEntity>

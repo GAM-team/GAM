@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.20.01'
+__version__ = '7.20.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -51233,7 +51233,7 @@ def printShowClassroomProfile(users):
 
 # gam create course-studentgroups
 #	(course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
-#	title <String>
+#	((title <String>)|(select <StringEntity))+
 #	[csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]]
 def doCreateCourseStudentGroups():
   croom = buildGAPIObject(API.CLASSROOM)
@@ -51243,10 +51243,13 @@ def doCreateCourseStudentGroups():
   courseShowProperties = _initCourseShowProperties(['name'])
   useOwnerAccess = GC.Values[GC.USE_COURSE_OWNER_ACCESS]
   kwargs  = {'courseId': None, 'body': {}}
+  titles = []
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'title':
-      kwargs['body']['title'] = getString(Cmd.OB_STRING)
+      titles.append(getString(Cmd.OB_STRING))
+    elif myarg == 'select':
+      titles.extend(getEntityList(Cmd.OB_STRING_ENTITY, shlexSplit=True))
     elif _getCourseSelectionParameters(myarg, courseSelectionParameters):
       pass
     elif myarg == 'csv':
@@ -51256,8 +51259,9 @@ def doCreateCourseStudentGroups():
       csvPF.GetTodriveParameters()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
-  if 'title' not in kwargs['body']:
+  if not titles:
     missingArgumentExit('title')
+  jcount = len(titles)
   if csvPF and FJQC.formatJSON:
     csvPF.SetJSONTitles(['courseId', 'courseName', 'JSON'])
   coursesInfo = _getCoursesInfo(croom, courseSelectionParameters, courseShowProperties, useOwnerAccess)
@@ -51272,29 +51276,36 @@ def doCreateCourseStudentGroups():
     if not ocroom:
       continue
     kwargs['courseId'] = courseId
-    kvList = [Ent.COURSE, courseId, Ent.COURSE_STUDENTGROUP, None]
-    try:
-      studentGroup = callGAPI(ocroom.courses().studentGroups(), 'create',
-                              throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE, GAPI.NOT_IMPLEMENTED,
-                                            GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
-                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                              previewVersion='V1_20250630_PREVIEW',
-                              **kwargs)
-      kvList[-1] = f"{studentGroup['title']}({studentGroup['id']})"
-      if not csvPF:
-        entityActionPerformed(kvList, i, count)
-      elif not  FJQC.formatJSON:
-        csvPF.WriteRow({'courseId': courseId, 'courseName': course['name'],
-                        'studentGroupId': studentGroup['id'], 'studentGroupTitle': studentGroup['title']})
-      else:
-        csvPF.WriteRowNoFilter({'courseId': courseId, 'courseName': course['name'],
-                                'JSON': json.dumps(cleanJSON(studentGroup), ensure_ascii=False, sort_keys=True)})
-    except GAPI.notFound as e:
-      entityActionFailedWarning(kvList, str(e), i, count)
-    except (GAPI.serviceNotAvailable, GAPI.notImplemented) as e:
-      entityActionFailedExit([Ent.COURSE, courseId], str(e), i, count)
-    except (GAPI.forbidden, GAPI.permissionDenied) as e:
-      ClientAPIAccessDeniedExit(str(e))
+    entityPerformActionNumItems([Ent.COURSE, courseId], jcount, Ent.COURSE_STUDENTGROUP, i, count)
+    Ind.Increment()
+    j = 0
+    for title in titles:
+      j += 1
+      kwargs['body']['title'] = title
+      kvList = [Ent.COURSE, courseId, Ent.COURSE_STUDENTGROUP, None]
+      try:
+        studentGroup = callGAPI(ocroom.courses().studentGroups(), 'create',
+                                throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE, GAPI.NOT_IMPLEMENTED,
+                                              GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
+                                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                                previewVersion='V1_20250630_PREVIEW',
+                                **kwargs)
+        kvList[-1] = f"{studentGroup['title']}({studentGroup['id']})"
+        if not csvPF:
+          entityActionPerformed(kvList, j, jcount)
+        elif not  FJQC.formatJSON:
+          csvPF.WriteRow({'courseId': courseId, 'courseName': course['name'],
+                          'studentGroupId': studentGroup['id'], 'studentGroupTitle': studentGroup['title']})
+        else:
+          csvPF.WriteRowNoFilter({'courseId': courseId, 'courseName': course['name'],
+                                  'JSON': json.dumps(cleanJSON(studentGroup), ensure_ascii=False, sort_keys=True)})
+      except GAPI.notFound as e:
+        entityActionFailedWarning(kvList, str(e), j, jcount)
+      except (GAPI.serviceNotAvailable, GAPI.notImplemented) as e:
+        entityActionFailedExit([Ent.COURSE, courseId], str(e), j, jcount)
+      except (GAPI.forbidden, GAPI.permissionDenied) as e:
+        ClientAPIAccessDeniedExit(str(e))
+    Ind.Decrement()
   if csvPF:
     csvPF.writeCSVfile('Course Student Groups')
 

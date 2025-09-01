@@ -1,3 +1,9 @@
+7.20.02
+
+Upgraded `gam create course-studentgroups` to allow specification of multiple student group titles;
+multiple student groups can be created in a single command.
+* `((title <String>)|(select <StringEntity))+`
+
 7.20.01
 
 Added option `showaccesssettings` to `gam [<UserTypeEntity>] print|show chatspaces`. When listing

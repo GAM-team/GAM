@@ -1057,6 +1057,7 @@ class GamCLArgs():
   OB_SPREADSHEET_RANGE_LIST = 'SpreadsheetRangeList'
   OB_STATE_NAME_LIST = "StateNameList"
   OB_STRING = 'String'
+  OB_STRING_ENTITY = 'StringEntity'
   OB_STRING_LIST = 'StringList'
   OB_STUDENTGROUP_ID = 'StudentGroupID'
   OB_STUDENTGROUP_ID_ENTITY = 'StudentGroupIDEntity'
