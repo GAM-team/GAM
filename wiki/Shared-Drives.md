@@ -4,7 +4,7 @@
 - [Definitions](#definitions)
 - [Introduction](#introduction)
 - [GUI API permission name mapping](#gui-api-permission-name-mapping)
-- [GUI API restriction name mapping](gui-api-restriction-name-mapping)
+- [GUI API restriction name mapping](#gui-api-restriction-name-mapping)
 - [Display Shared Drive themes](#display-shared-drive-themes)
 - [Manage Shared Drives](#manage-shared-drives)
   - [Create a Shared Drive](#create-a-shared-drive)
