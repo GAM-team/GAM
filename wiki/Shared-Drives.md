@@ -4,6 +4,7 @@
 - [Definitions](#definitions)
 - [Introduction](#introduction)
 - [GUI API permission name mapping](#gui-api-permission-name-mapping)
+- [GUI API restriction name mapping](gui-api-restriction-name-mapping)
 - [Display Shared Drive themes](#display-shared-drive-themes)
 - [Manage Shared Drives](#manage-shared-drives)
   - [Create a Shared Drive](#create-a-shared-drive)
@@ -234,6 +235,11 @@ Three forms of the commands are available:
 | Contributor | writer |
 | Commenter | commenter |
 | Viewer | reader |
+
+## GUI API restriction name mapping
+| GUI Setting | Checked | Unchecked | API Setting | False | True
+| Allow people outside of Aurora School to access files | X | | domainusersonly | X | |}
+| Allow people outside of Aurora School to access files | | X | domainusersonly | | X |}
 
 ## Display Shared Drive themes
 ```
