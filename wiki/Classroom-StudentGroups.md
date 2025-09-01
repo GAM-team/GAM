@@ -12,6 +12,7 @@
 
 ## Notes
 These commands wera added in version 7.20.00.
+
 To use these commands your project must be enrolled the Developer Preview program.
 * https://developers.google.com/workspace/preview
 
@@ -36,7 +37,7 @@ You will need an API key
 Issue the following GAM command:
 `gam config developer_preview_api_key <API Key Value> save`
 
-Once you get an email from Google that your project has been registered you can use these commands.
+Once you get an email from Google saying that your project has been registered you can use these commands.
 
 ## API documentation
 * [Google Classroom API](https://developers.google.com/classroom/reference/rest)
@@ -85,7 +86,6 @@ See: [Lists and Collections](Lists-and-Collections)
 
 ## Manage student groups
 
-These commands can process multiple courses and `add` and `delete` can process multiple students/teachers.
 ```
 gam create course-studentgroups
         (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
@@ -96,6 +96,8 @@ gam delete course-studentgroups <CourseID> <StudentGroupIDEntity>
 gam clear course-studentgroups
         (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
 ```
+
+The `update|delete course-studentgroups` commands manage a specific course.
 
 By default, the `create|clear course-studentgroups` commands manage student group information about all courses.
 

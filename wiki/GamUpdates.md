@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.20.00
+
+Added initial support for student groups in Google Classroom. This is a work in progress and requires Developer Preview membership.
+* See: https://github.com/GAM-team/GAM/wiki/Classroom-StudentGroups#notes
+
 ### 7.19.03
 
 Fixed bug where specifying a `<UserItem>` as `id:1234567890` could lead to errors like this:
