@@ -1,0 +1,15 @@
+[36m
+🚀 Actions Up!
+[39m
+[33m-[39m Scanning GitHub Actions...
+[32m✔[39m Found [33m27[39m actions in [33m6[39m workflows and [33m0[39m composite actions
+[33m-[39m Checking for updates...
+[32m✔[39m Found [33m3[39m updates available ([31m2[39m breaking)
+[?25l[36m?[39m Choose which actions to update (Press [36m<space>[39m to select, [36m<a>[39m to toggle all, [36m<i>[39m to invert selection) [2m…[22m 
+[36m❯[39m [90m○[39m [40m[90mworkflows/check-for-actions-updates.yml[39m[49m
+ [0m [0m [90m ○ Action                                                    Current     ❯  Target[39m
+ [0m   ○[0m actions/checkout                                          v4          ❯  v5.0.0 [90m(ff7abcd)[39m
+ [0m   ○[0m actions/setup-node                                        v4          ❯  v4.4.0 [90m(d7a1131)[39m
+ [0m   ○[0m peter-evans/create-pull-request                           v6          ❯  v7.0.8 [90m(18e4695)[39m
+
+Enter to start updating. Ctrl-c to cancel.[7A[107G[?25h
