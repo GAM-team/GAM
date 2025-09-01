@@ -15,7 +15,7 @@ jobs:
       - name: Run actions-up
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx actions-up
+        run: npx actions-up --yes
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6 # Use the action
