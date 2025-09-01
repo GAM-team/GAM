@@ -3,7 +3,7 @@
 - [API documentation](#api-documentation)
 - [Definitions](#definitions)
 - [Special quoting for course aliases](#special-quoting-for-course-aliases)
-- [Special quoting for lists of titles](#special-quoting-for-lists-of_titles)
+- [Special quoting for lists of titles](#special-quoting-for-lists-of-titles)
 - [Manage student groups](#manage-student-groups)
 - [Display student groups](#display-student-groups)
 - [Display student group counts](#display-student-group-counts)
