@@ -239,10 +239,19 @@ Three forms of the commands are available:
 ## GUI API restriction name mapping
 | GUI Setting | Checked | Unchecked | API Setting | False | True |
 |-------------|---------|-----------|-------------|-------|------|
+| Access |
 | Allow people outside of Aurora School to access files | X | | domainusersonly | X | |}
 | Allow people outside of Aurora School to access files | | X | domainusersonly | | X |}
 | Allow people who aren't shared drive members to access files | X | | drivemembersonly | X | |
 | Allow people who aren't shared drive members to access files | | X | drivemembersonly | | X |
+| Role permissions |
+| Allow content managers to share folders | X | | sharingfoldersrequiresorganizerpermission | X | |
+| Allow content managers to share folders | | X | sharingfoldersrequiresorganizerpermission | | X |
+| People who can download, copy, and print |
+| Contributors and content managers | X | | downloadrestrictedforwriters | X | |
+| Contributors and content managers | | X | downloadrestrictedforwriters | | X |
+| Commenters and viewers | X | | downloadrestrictedforreaders | X | |
+| Commenters and viewers | | X | downloadrestrictedforreaders | | X |
 
 ## Display Shared Drive themes
 ```
