@@ -176,6 +176,16 @@ gam <UserTypeEntity> transfer ownership <DriveFileEntity> <UserItem>
 ```
 See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Ownership#transfer-ownership-of-files-that-a-source-user-owns-to-a-target-user
 
+If you specify `role owner`, Google requires that a nofitication message be sent to the new owner.
+Google sends a preformatted message, use `emailnessage <String>` to include additional information in the message.
+
+If you get the following error message from Google:
+```
+You are trying to invite user@domain.com. Since there is no Google account associated with this email address, you must check the "Notify people" box to invite this recipient."
+```
+
+Use the `sendemail` option and `emailmessage <String>` (if desired) to `check the "Notify people" box`.
+
 The options `withlink|allowfilediscovery|discoverable` are only valid for ACLs to `anyone` or `domain`.
 
 The option `expiration <Time>` is only valid for `role commenter|contributor|viewer` for files and `commenter|viewer` for folders.
@@ -264,6 +274,16 @@ From the Google Drive API documentation.
 * `movetonewownersroot` - This parameter only takes effect if the item is not in a shared drive and the request is attempting to transfer the ownership of the item.
   * `false` - Parents are not changed. The file is an orphan for the new owner. This is the default.
   * `true` - The item is moved to the new owner's My Drive root folder and all prior parents removed. The file is an orphan for the old owner.
+
+If you specify a pernission with `role owner`, Google requires that a nofitication message be sent to the new owner.
+Google sends a preformatted message, use `emailnessage <String>` to include additional information in the message.
+
+If you get the following error message from Google:
+```
+You are trying to invite user@domain.com. Since there is no Google account associated with this email address, you must check the "Notify people" box to invite this recipient."
+```
+
+Use the `sendemail` option and `emailmessage <String>` (if desired) to `check the "Notify people" box`.
 
 Permission matching only applies when the `(json [charset <Charset>] <JSONData>)|(json file <FileName> [charset <Charset>])`
 variant of `<DriveFilePermissionEntity>` and `<DriveFilePermissionIDEntity>` is used.
