@@ -241,6 +241,8 @@ Three forms of the commands are available:
 |-------------|---------|-----------|-------------|-------|------|
 | Allow people outside of Aurora School to access files | X | | domainusersonly | X | |}
 | Allow people outside of Aurora School to access files | | X | domainusersonly | | X |}
+| Allow people who aren't shared drive members to access files | X | | drivemembersonly | X | |
+| Allow people who aren't shared drive members to access files | | X | drivemembersonly | | X |
 
 ## Display Shared Drive themes
 ```
