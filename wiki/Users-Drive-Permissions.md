@@ -176,8 +176,8 @@ gam <UserTypeEntity> transfer ownership <DriveFileEntity> <UserItem>
 ```
 See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Ownership#transfer-ownership-of-files-that-a-source-user-owns-to-a-target-user
 
-If you specify `role owner`, Google requires that a nofitication message be sent to the new owner.
-Google sends a preformatted message, use `emailnessage <String>` to include additional information in the message.
+If you specify `role owner`, Google requires that a notification message be sent to the new owner.
+Google sends a preformatted message, use `emailmessage <String>` to include additional information in the message.
 
 If you get the following error message from Google:
 ```
@@ -275,8 +275,8 @@ From the Google Drive API documentation.
   * `false` - Parents are not changed. The file is an orphan for the new owner. This is the default.
   * `true` - The item is moved to the new owner's My Drive root folder and all prior parents removed. The file is an orphan for the old owner.
 
-If you specify a pernission with `role owner`, Google requires that a nofitication message be sent to the new owner.
-Google sends a preformatted message, use `emailnessage <String>` to include additional information in the message.
+If you specify a pernission with `role owner`, Google requires that a notification message be sent to the new owner.
+Google sends a preformatted message, use `emailmessage <String>` to include additional information in the message.
 
 If you get the following error message from Google:
 ```
