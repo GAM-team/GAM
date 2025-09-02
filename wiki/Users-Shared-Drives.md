@@ -2,7 +2,8 @@
 - [API documentation](#api-documentation)
 - [Query documentation](#query-documentation)
 - [Definitions](#definitions)
-- [GUI API permission name mapping](#gui-api-permission-name-mapping)
+- [API GUI permission name mapping](#api-gui-permission-name-mapping)
+- [API GUI restriction name mapping](#api-gui-restriction-name-mapping)
 - [Display Shared Drive themes](#display-shared-drive-themes)
 - [Manage Shared Drives](#manage-shared-drives)
   - [Create a Shared Drive](#create-a-shared-drive)
@@ -185,25 +186,47 @@
         downloadrestrictedforwriters|downloadrestrictions.restrictedforwriters|
         drivemembersonly|teammembersonly|
         sharingfoldersrequiresorganizerpermission
-
-Each pair of restrictions below are equivalent:
-
-allowcontentmanagerstosharefolders true
-sharingfoldersrequiresorganizerpermission false
-
-allowcontentmanagerstosharefolders false
-sharingfoldersrequiresorganizerpermission true
 ```
 
-## GUI API permission name mapping
+## API GUI permission name mapping
 
-| GUI setting | API setting |
-|------------|------------|
-| Manager | organizer |
-| Content manager | fileOrganizer |
-| Contributor | writer |
-| Commenter | commenter |
-| Viewer | reader |
+| API setting | GUI setting |
+|-------------|-------------|
+| organizer | Manager |
+| fileOrganizer | Content manager |
+| writer | Contributor |
+| commenter | Commenter |
+| reader | Viewer |
+
+## API GUI restriction name mapping
+| API Setting | Description |
+|-------------|-------------|
+| adminManagedRestrictions | Whether administrative privileges on this shared drive are required to modify restrictions. |
+| domainUsersOnly | Whether access to this shared drive and items inside this shared drive is restricted to users of the domain to which this shared drive belongs. |
+| driveMembersOnly | Whether access to items inside this shared drive is restricted to its members. |
+| allowcontentmanagerstosharefolders | If true, users with either the organizer role or the file organizer role can share folders. If false, only users with the organizer role can share folders.  |
+| sharingFoldersRequiresOrganizerPermission | If true, only users with the organizer role can share folders. If false, users with either the organizer role or the file organizer role can share folders. |
+| copyRequiresWriterPermission | Whether the options to copy, print, or download files inside this shared drive, should be disabled for readers and commenters. |
+| downloadRestrictions.restrictedForWriters | Whether download and copy is restricted for writers. If true, download is also restricted for readers. |
+| downloadRestrictions.restrictedForReaders | Whether download and copy is restricted for readers. |
+
+| API Setting | False | True | GUI Setting | Checked | Unchecked |
+|-------------|-------|------|-------------|---------|-----------|
+| | | | **Access** |
+| domainUsersOnly | X | | Allow people outside of Domain nameto access files | X | |
+| domainUsersOnly | | X | Allow people outside of Domain name to access files | | X |
+| driveMembersOnly | X | | Allow people who aren't shared drive members to access files | X | |
+| driveMembersOnly | | X |  Allow people who aren't shared drive members to access files | | X |
+| | | | **Role permissions** |
+| allowcontentmanagerstosharefolders | X | | Allow content managers to share folders | | X |
+| allowcontentmanagerstosharefolders | | X | Allow content managers to share folders | X | |
+| sharingFoldersRequiresOrganizerPermission | X | | Allow content managers to share folders | X | |
+| sharingFoldersRequiresOrganizerPermission | | X | Allow content managers to share folders | | X |
+| | | | **People who can download, copy, and print** |
+| downloadRestrictions.restrictedForWriters | X | | Contributors and content managers | X | |
+| downloadRestrictions.restrictedForWriters | | X | Contributors and content managers | | X |
+| downloadRestrictions.restrictedForReaders | X | | Commenters and viewers | X | |
+| downloadRestrictions.restrictedForReaders | | X | Commenters and viewers | | X |
 
 ## Display Shared Drive themes
 ```
