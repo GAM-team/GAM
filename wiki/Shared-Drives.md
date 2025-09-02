@@ -209,6 +209,7 @@
         drivemembersonly|teammembersonly|
         sharingfoldersrequiresorganizerpermission
 ```
+
 ## Introduction
 A domain administrator with the Drive and Docs administrator privilege can search for Shared Drives or update permissions for Shared Drives
 owned by their organization, regardless of the admin's membership in any given Shared Drive.
