@@ -3,8 +3,8 @@
 - [Query documentation](#query-documentation)
 - [Definitions](#definitions)
 - [Introduction](#introduction)
-- [GUI API permission name mapping](#gui-api-permission-name-mapping)
-- [GUI API restriction name mapping](#gui-api-restriction-name-mapping)
+- [API GUI permission name mapping](#api-gui-permission-name-mapping)
+- [API GUI restriction name mapping](#api-gui-restriction-name-mapping)
 - [Display Shared Drive themes](#display-shared-drive-themes)
 - [Manage Shared Drives](#manage-shared-drives)
   - [Create a Shared Drive](#create-a-shared-drive)
@@ -226,17 +226,17 @@ Three forms of the commands are available:
 * `gam <UserTypeEntity> action ... adminaccess` - The user named in `<UserTypeEntty>` is used, adminaccess indicates that the user is a domain administrator
 * `gam <UserTypeEntity> action ...` - The user named in `<UserTypeEntty>` is used, access is limited to drives for which they are an organizer
 
-## GUI API permission name mapping
+## API GUI permission name mapping
 
-| GUI setting | API setting |
+| API setting | GUI setting |
 |------------|------------|
-| Manager | organizer |
-| Content manager | fileOrganizer |
-| Contributor | writer |
-| Commenter | commenter |
-| Viewer | reader |
+| organizer | Manager |
+| fileOrganizer | Content manager |
+| writer | Contributor |
+| commenter | Commenter |
+| reader | Viewer |
 
-## GUI API restriction name mapping
+## API GUI restriction name mapping
 | API Setting | Description |
 |-------------|-------------|
 | adminManagedRestrictions | Whether administrative privileges on this shared drive are required to modify restrictions. |
@@ -247,22 +247,22 @@ Three forms of the commands are available:
 | downloadRestrictions.restrictedForWriters | Whether download and copy is restricted for writers. If true, download is also restricted for readers. |
 | downloadRestrictions.restrictedForReaders | Whether download and copy is restricted for readers. |
 
-| API Setting | False | True | GUI Setting | Check | Unchecked |
+| API Setting | False | True | GUI Setting | Checked | Unchecked |
 |-------------|---------|-----------|-------------|-------|------|
-| | | | Access |
+| | | | **Access** |
 | domainUsersOnly | X | | Allow people outside of Aurora School to access files | X | |
 | domainUsersOnly | | X | Allow people outside of Aurora School to access files | | X |
 | driveMembersOnly | X | | Allow people who aren't shared drive members to access files | X | |
 | driveMembersOnly | | X |  Allow people who aren't shared drive members to access files | | X |
-| | | | Role permissions |
+| | | | **Role permissions** |
 | sharingFoldersRequiresOrganizerPermission | X | | Allow content managers to share folders | X | |
 | sharingFoldersRequiresOrganizerPermission | | X | Allow content managers to share folders | | X |
-| | | | People who can download, copy, and print |
+| | | | **People who can download, copy, and print** |
 | downloadRestrictions.restrictedForWriters | X | | Contributors and content managers | X | |
 | downloadRestrictions.restrictedForWriters | | X | Contributors and content managers | | X |
 | downloadRestrictions.restrictedForReaders | X | | Commenters and viewers | X | |
 | downloadRestrictions.restrictedForReaders | | X | Commenters and viewers | | X |
-`
+
 ## Display Shared Drive themes
 ```
 gam show shareddrivethemes
