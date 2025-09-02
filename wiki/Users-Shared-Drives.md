@@ -204,7 +204,7 @@
 | adminManagedRestrictions | Whether administrative privileges on this shared drive are required to modify restrictions. |
 | domainUsersOnly | Whether access to this shared drive and items inside this shared drive is restricted to users of the domain to which this shared drive belongs. |
 | driveMembersOnly | Whether access to items inside this shared drive is restricted to its members. |
-| allowcontentmanagerstosharefolders | If true, users with either the organizer role or the file organizer role can share folders. If false, only users with the organizer role can share folders.  |
+| allowContentManagersToShareFolders (GAM defined) | If true, users with either the organizer role or the file organizer role can share folders. If false, only users with the organizer role can share folders.  |
 | sharingFoldersRequiresOrganizerPermission | If true, only users with the organizer role can share folders. If false, users with either the organizer role or the file organizer role can share folders. |
 | copyRequiresWriterPermission | Whether the options to copy, print, or download files inside this shared drive, should be disabled for readers and commenters. |
 | downloadRestrictions.restrictedForWriters | Whether download and copy is restricted for writers. If true, download is also restricted for readers. |
@@ -218,8 +218,8 @@
 | driveMembersOnly | X | | Allow people who aren't shared drive members to access files | X | |
 | driveMembersOnly | | X |  Allow people who aren't shared drive members to access files | | X |
 | | | | **Role permissions** |
-| allowcontentmanagerstosharefolders | X | | Allow content managers to share folders | | X |
-| allowcontentmanagerstosharefolders | | X | Allow content managers to share folders | X | |
+| allowContentManagersToShareFolders | X | | Allow content managers to share folders | | X |
+| allowContentManagersToShareFolders | | X | Allow content managers to share folders | X | |
 | sharingFoldersRequiresOrganizerPermission | X | | Allow content managers to share folders | X | |
 | sharingFoldersRequiresOrganizerPermission | | X | Allow content managers to share folders | | X |
 | | | | **People who can download, copy, and print** |
