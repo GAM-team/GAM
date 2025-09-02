@@ -247,22 +247,21 @@ Three forms of the commands are available:
 | downloadRestrictions.restrictedForWriters | Whether download and copy is restricted for writers. If true, download is also restricted for readers. |
 | downloadRestrictions.restrictedForReaders | Whether download and copy is restricted for readers. |
 
-| GUI Setting | Checked | Unchecked | API Setting | False | True |
+| API Setting | False | True | GUI Setting | Check | Unchecked |
 |-------------|---------|-----------|-------------|-------|------|
-| Shared drive settings |
-| Access |
-| Allow people outside of Aurora School to access files | X | | domainUsersPnly | X | |}
-| Allow people outside of Aurora School to access files | | X | domainUsersOnly | | X |}
-| Allow people who aren't shared drive members to access files | X | | driveMembersOnly | X | |
-| Allow people who aren't shared drive members to access files | | X | driveMembersOnly | | X |
-| Role permissions |
-| Allow content managers to share folders | X | | sharingFoldersRequiresOrganizerPermission | X | |
-| Allow content managers to share folders | | X | sharingFoldersRequiresOrganizerPermission | | X |
-| People who can download, copy, and print |
-| Contributors and content managers | X | | downloadRestrictions.restrictedForWriters | X | |
-| Contributors and content managers | | X | downloadRestrictions.restrictedForWriters | | X |
-| Commenters and viewers | X | | downloadRestrictions.restrictedForReaders | X | |
-| Commenters and viewers | | X | downloadRestrictions.restrictedForReaders | | X |
+| | | | Access |
+| domainUsersOnly | X | | Allow people outside of Aurora School to access files | X | |
+| domainUsersOnly | | X | Allow people outside of Aurora School to access files | | X |
+| driveMembersOnly | X | | Allow people who aren't shared drive members to access files | X | |
+| driveMembersOnly | | X |  Allow people who aren't shared drive members to access files | | X |
+| | | | Role permissions |
+| sharingFoldersRequiresOrganizerPermission | X | | Allow content managers to share folders | X | |
+| sharingFoldersRequiresOrganizerPermission | | X | Allow content managers to share folders | | X |
+| | | | People who can download, copy, and print |
+| downloadRestrictions.restrictedForWriters | X | | Contributors and content managers | X | |
+| downloadRestrictions.restrictedForWriters | | X | Contributors and content managers | | X |
+| downloadRestrictions.restrictedForReaders | X | | Commenters and viewers | X | |
+| downloadRestrictions.restrictedForReaders | | X | Commenters and viewers | | X |
 `
 ## Display Shared Drive themes
 ```
