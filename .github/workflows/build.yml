@@ -655,7 +655,7 @@ jobs:
           write-Host "Signing ${env:gam}...."
           # Always explicitely use x64 version os signtool.exe, arm64 version apparently can't
           # see Certum certs since SimplySignDesktop is x64-only today.
-          Start-Process -Wait -NoNewWindow -ErrorAction Continue -FilePath 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe'  -ArgumentList "sign", "/sha1", "590dc5bb10dfb31dbff38c0e2f9c35ef0f6d0e9e", "/tr", "http://time.certum.pl", "/td", "SHA256", "/fd", "SHA256", "/v", "$env:gam"
+          Start-Process -Wait -NoNewWindow -ErrorAction Continue -FilePath 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe'  -ArgumentList "sign", "/sha1", "$env:WINDOWS_CODESIGN_CERT_HASH", "/tr", "http://time.certum.pl", "/td", "SHA256", "/fd", "SHA256", "/v", "$env:gam"
           write-Host "Verifying signature of ${env:gam}...."
           # verify signature. If we failed to sign we should fail to verify and die.
           & 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe' verify /pa /v "$env:gam"
@@ -727,7 +727,7 @@ jobs:
           write-Host "Signing ${env:MSI_FILENAME}...."
           # Always explicitely use x64 version os signtool.exe, arm64 version apparently can't
           # see Certum certs since SimplySignDesktop is x64-only today.
-          Start-Process -Wait -NoNewWindow -ErrorAction Continue -FilePath 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe'  -ArgumentList "sign", "/sha1", "590dc5bb10dfb31dbff38c0e2f9c35ef0f6d0e9e", "/tr", "http://time.certum.pl", "/td", "SHA256", "/fd", "SHA256", "/v", "$env:MSI_FILENAME"
+          Start-Process -Wait -NoNewWindow -ErrorAction Continue -FilePath 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe'  -ArgumentList "sign", "/sha1", "$env:WINDOWS_CODESIGN_CERT_HASH", "/tr", "http://time.certum.pl", "/td", "SHA256", "/fd", "SHA256", "/v", "$env:MSI_FILENAME"
           write-Host "Verifying signature of ${env:MSI_FILENAME}...."
           # verify signature. If we failed to sign we should fail to verify and die.
           & 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe' verify /pa /v "$env:MSI_FILENAME"
