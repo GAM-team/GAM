@@ -243,8 +243,10 @@ Three forms of the commands are available:
 
 | API Setting | False | True | GUI Setting | Checked | Unchecked |
 |-------------|-------|------|-------------|---------|-----------|
+| adminManagedRestrictions | X | | Shared drive settings can be modified | | |
+| adminManagedRestrictions |  | X | Shared drive settings can **not** be modified | | |
 | | | | **Access** |
-| domainUsersOnly | X | | Allow people outside of Domain nameto access files | X | |
+| domainUsersOnly | X | | Allow people outside of Domain name to access files | X | |
 | domainUsersOnly | | X | Allow people outside of Domain name to access files | | X |
 | driveMembersOnly | X | | Allow people who aren't shared drive members to access files | X | |
 | driveMembersOnly | | X |  Allow people who aren't shared drive members to access files | | X |
