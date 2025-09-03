@@ -51450,8 +51450,26 @@ def doClearCourseStudentGroups():
 #	(course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
 #	[showitemcountonly] [formatjson [quotechar <Character>]]
 def doPrintCourseStudentGroups(showMembers=False):
+  def _getCourseStudents():
+    studentIdEmailMap = {}
+    try:
+      students = callGAPIpages(ocroom.courses().students(), 'list', 'students',
+                               throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE,
+                                             GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
+                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                               courseId=courseId, fields='nextPageToken,students(profile(id,emailAddress))',
+                               pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS])
+      for student in students:
+        studentIdEmailMap[student['profile']['id']] = student['profile']['emailAddress']
+    except GAPI.notFound:
+      pass
+    except (GAPI.serviceNotAvailable, GAPI.notImplemented) as e:
+      entityActionFailedExit([Ent.COURSE, courseId], str(e))
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
+    return studentIdEmailMap
+
   croom = buildGAPIObject(API.CLASSROOM)
-  cd = buildGAPIObject(API.DIRECTORY)
   csvPF = CSVPrintFile(['courseId', 'courseName', 'studentGroupId', 'studentGroupTitle'])
   FJQC = FormatJSONQuoteChar(csvPF)
   courseSelectionParameters = _initCourseSelectionParameters()
@@ -51503,6 +51521,8 @@ def doPrintCourseStudentGroups(showMembers=False):
     if not showMembers and showItemCountOnly:
       itemCount += len(studentGroups)
       continue
+    if showMembers:
+      studentIdEmailMap = _getCourseStudents()
     for studentGroup in studentGroups:
       studentGroupId = studentGroup['id']
       if not showMembers:
@@ -51530,7 +51550,7 @@ def doPrintCourseStudentGroups(showMembers=False):
           itemCount += len(students)
           continue
         for member in students:
-          member['userEmail'] = convertUIDtoEmailAddress(f"id:{member['userId']}", cd=cd, emailTypes=['user'])
+          member['userEmail'] = studentIdEmailMap.get(member['userId'], member['userId'])
       except GAPI.notFound as e:
         entityActionFailedWarning([Ent.COURSE, courseId, Ent.COURSE_STUDENTGROUP, studentGroupId], str(e))
         continue
@@ -51565,11 +51585,8 @@ def doProcessCourseStudentGroupMembers():
   def _getCourseStudents():
     studentIdEmailMap = {}
     studentEmailIdMap = {}
-    printGettingEntityItemForWhom(Ent.STUDENT, formatKeyValueList('', [Ent.Singular(Ent.COURSE), courseId], ''))
-    pageMessage = getPageMessage()
     try:
       students = callGAPIpages(ocroom.courses().students(), 'list', 'students',
-                               pageMessage=pageMessage,
                                throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE,
                                              GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
@@ -51580,7 +51597,7 @@ def doProcessCourseStudentGroupMembers():
         studentEmailIdMap[student['profile']['emailAddress'].lower()] = student['profile']['id']
       return (studentIdEmailMap, studentEmailIdMap)
     except GAPI.notFound as e:
-      entityActionFailedExit([Ent.COURSE, courseId, studentGroupId], str(e))
+      entityActionFailedExit([Ent.COURSE, courseId], str(e))
     except (GAPI.serviceNotAvailable, GAPI.notImplemented) as e:
       entityActionFailedExit([Ent.COURSE, courseId], str(e))
     except (GAPI.forbidden, GAPI.permissionDenied) as e:
