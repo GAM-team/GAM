@@ -1,3 +1,9 @@
+7.20.03
+
+Rebranded license SKU `1010470004` from `Gemini Education` to `Google AI Pro for Education`.
+
+Additional updates to student groups in Google Classroom.
+
 7.20.02
 
 Upgraded `gam create course-studentgroups` to allow specification of multiple student group titles;

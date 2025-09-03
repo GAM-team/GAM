@@ -266,7 +266,7 @@ If an item contains spaces, it should be surrounded by ".
         appsheetstandard | appsheetenterprisestandard | 1010380002 | AppSheet Enterprise Standard |
         appsheetplus | appsheetenterpriseplus | 1010380003 | AppSheet Enterprise Plus |
         assuredcontrols | 1010390001 | Assured Controls |
-        assuredcontrolsplus | 1010390002 | Assured Controls Plus | 
+        assuredcontrolsplus | 1010390002 | Assured Controls Plus |
         bce | beyondcorp | beyondcorpenterprise | cep | chromeenterprisepremium | 1010400001 | Chrome Enterprise Premium |
         cdm | chrome | googlechromedevicemanagement | Google-Chrome-Device-Management |
         cloudidentity | identity | 1010010001 | Cloud Identity |
@@ -275,8 +275,8 @@ If an item contains spaces, it should be surrounded by ".
         colabpro | 1010500001 | Colab Pro |
         colabpro+ | colabproplus | 1010500002 | Colab Pro+ |
         eeu | 1010490001 | SKU Endpoint Education Upgrade |
+        gaiproedu | geminiedu | 1010470004 | Google AI Pro for Education |
         geminibiz | 1010470003 | Gemini Business |
-        geminiedu | 1010470004 | Gemini Education |
         geminiedupremium| 1010470005 | Gemini Education Premium |
         geminient| duetai | 1010470001 | Gemini Enterprise |
         geminiultra | 1010470008 | Google AI Ultra for Business |
@@ -316,12 +316,12 @@ If an item contains spaces, it should be surrounded by ".
         wsbizstarter | workspacebusinessstarter | wsbizstart | 1010020027 | Google Workspace Business Starter |
         wsbizstarterarchived | workspacebusinessstarterarchived | 1010340005 | Google Workspace Business Starter - Archived User |
         wsentess | workspaceenterpriseessentials | 1010060003 | Google Workspace Enterprise Essentials |
-        wsentplus | workspaceenterpriseplus | gae | gse | enterprise | gsuiteenterprise | 1010020020 | Google Workspace Enterprise Plus |
+        wsentplus | workspaceenterpriseplus | gae | gse | enterprise | gsuiteenterprise | 1010020020 | Google Workspace Enterprise Plus (formerly G Suite Enterprise) |
         wsentstan | workspaceenterprisestandard | 1010020026 | Google Workspace Enterprise Standard |
         wsentstanarchived | workspaceenterprisestandardarchived | 1010340004 | Google Workspace Enterprise Standard - Archived User |
         wsentstarter | workspaceenterprisestarter | wes | 1010020029 | Workspace Enterprise Starter |
-        wsess | workspaceesentials | gsuiteessentials | essentials | d4e | driveenterprise | drive4enterprise | 1010060001 | Google Workspace Essentials |
-        wsessplus | workspaceessentialsplus | 1010060005 | Google Workspace Essentials Plus |
+        wsess | workspaceesentials | gsuiteessentials | essentials | d4e | driveenterprise | drive4enterprise | 1010060001 | Google Workspace Essentials (formerly G Suite Essentials) |
+        wsessplus | workspaceessentialsplus | 1010060005 | Google Workspace Enterprise Essentials Plus |
         wsflw | workspacefrontline | workspacefrontlineworker | 1010020030 | Google Workspace Frontline Starter |
         wsflwstan | workspacefrontlinestan | workspacefrontlineworkerstan | 1010020031 | Google Workspace Frontline Standard |
         wsflwplus | workspacefrontlineplus | workspacefrontlineworkerplus | 1010020034 | Google Workspace Frontline Plus
@@ -5096,7 +5096,7 @@ gam create|add drivefileacl <SharedDriveEntityAdmin>
         anyone|(user <UserItem>)|(group <GroupItem>)|(domain <DomainName>)
         (role <DriveFileACLRole>) [withlink|(allowfilediscovery|discoverable [<Boolean>])]
         (mappermissionsdomain <DomainName> <DomainName>)*
-        [expiration <Time>] [sendemail] [emailmessage <String>]
+        [expiration <Time>] [sendemail|sendnotification] [emailmessage <String>]
         [showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
 gam update drivefileacl <SharedDriveEntityAdmin> <DriveFilePermissionIDorEmail>
         (role <DriveFileACLRole>) [expires|expiration <Time>] [removeexpiration [<Boolean>]]
@@ -5123,7 +5123,7 @@ gam print drivefileacls <SharedDriveEntityAdmin> [todrive <ToDriveAttribute>*]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [formatjson [quotechar <Character>]]
 gam create|add permissions <SharedDriveEntityAdmin> <DriveFilePermissionEntity>
-        [expires|expiration <Time>] [sendemail] [emailmessage <String>]
+        [expires|expiration <Time>] [sendemail|sendnotification] [emailmessage <String>]
         <PermissionMatch>* [<PermissionMatchAction>]
 gam delete permissions <SharedDriveEntityAdmin> <DriveFilePermissionIDEntity>
         <PermissionMatch>* [<PermissionMatchAction>]
@@ -5136,7 +5136,7 @@ gam <UserTypeEntity> create|add drivefileacl <SharedDriveEntityAdmin>
         (role <DriveFileACLRole>) [withlink|(allowfilediscovery|discoverable [<Boolean>])]
         (mappermissionsdomain <DomainName> <DomainName>)*
         [movetonewownersroot [<Boolean>]]
-        [expiration <Time>] [sendemail] [emailmessage <String>]
+        [expiration <Time>] [sendemail|sendnotification] [emailmessage <String>]
         [showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
         adminaccess
 gam <UserTypeEntity> update drivefileacl <SharedDriveEntityAdmin> <DriveFilePermissionIDorEmail>
@@ -5167,7 +5167,7 @@ gam <UserTypeEntity> print drivefileacls <SharedDriveEntityAdmin> [todrive <ToDr
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [formatjson [quotechar <Character>]]
 gam <UserTypeEntity> create|add permissions <SharedDriveEntityAdmin> <DriveFilePermissionEntity>
-        [expires|expiration <Time>] [sendemail] [emailmessage <String>] adminaccess
+        [expires|expiration <Time>] [sendemail|sendnotification] [emailmessage <String>] adminaccess
         <PermissionMatch>* [<PermissionMatchAction>]
 gam <UserTypeEntity> delete permissions <SharedDriveEntityAdmin> <DriveFilePermissionIDEntity> adminaccess
         <PermissionMatch>* [<PermissionMatchAction>]
@@ -6896,7 +6896,7 @@ gam <UserTypeEntity> create|add drivefileacl <DriveFileEntity> [adminaccess|asad
         anyone|(user <UserItem>)|(group <GroupItem>)|(domain <DomainName>) (role <DriveFileACLRole>)
         [withlink|(allowfilediscovery|discoverable [<Boolean>])] [expiration <Time>]
         [moveToNewOwnersRoot [<Boolean>]]
-        [sendemail] [emailmessage <String>]
+        [sendemail|sendnotification] [emailmessage <String>]
         [updatesheetprotectedranges [<Boolean>]]
         [showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
 gam <UserTypeEntity> update drivefileacl <DriveFileEntity> <DriveFilePermissionIDorEmail>
@@ -6922,7 +6922,7 @@ gam <UserTypeEntity> print drivefileacls <DriveFileEntity> [todrive <ToDriveAttr
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [formatjson [quotechar <Character>]]
 gam <UserTypeEntity> create|add permissions <DriveFileEntity> <DriveFilePermissionEntity>
-        [expires|expiration <Time>] [sendemail] [emailmessage <String>]
+        [expires|expiration <Time>] [sendemail|sendnotification] [emailmessage <String>]
         [movetonewownersroot [<Boolean>]]
         <PermissionMatch>* [<PermissionMatchAction>]
 gam <UserTypeEntity> delete permissions <DriveFileEntity> <DriveFilePermissionIDEntity>

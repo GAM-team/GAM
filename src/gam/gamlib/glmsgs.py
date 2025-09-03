@@ -499,6 +499,7 @@ STATISTICS_MOVE_FILE = 'Total: {0}, Moved: {1}, Shortcut created {2}, Shortcut e
 STATISTICS_MOVE_FOLDER = 'Total: {0}, Moved: {1}, Shortcut created {2}, Shortcut exists {3}, Duplicate: {4}, Merged: {5}, Move Failed: {6}, Not writable: {7}'
 STATISTICS_USER_NOT_ORGANIZER = 'User not organizer: {0}'
 STRING_LENGTH = 'string length'
+STUDENT_NOT_IN_COURSE = 'Student not in course'
 SUBKEY_FIELD_MISMATCH = 'subkeyfield {0} does not match saved subkeyfield {1}'
 SUBSCRIPTION_NOT_FOUND = 'Could not find subscription'
 SUFFIX_NOT_ALLOWED_WITH_CUSTOMLANGUAGE = 'Suffix {0} not allowed with customLanguage {1}'

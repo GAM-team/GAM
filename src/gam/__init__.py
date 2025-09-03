@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.20.02'
+__version__ = '7.20.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -51247,7 +51247,7 @@ def doCreateCourseStudentGroups():
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'title':
-      titles.append(getString(Cmd.OB_STRING))
+      titles.append(getString(Cmd.OB_STRING, maxLen=100))
     elif myarg == 'select':
       titles.extend(getEntityList(Cmd.OB_STRING_ENTITY, shlexSplit=True))
     elif _getCourseSelectionParameters(myarg, courseSelectionParameters):
@@ -51515,7 +51515,7 @@ def doPrintCourseStudentGroups(showMembers=False):
             row['JSON'] = json.dumps(cleanJSON(studentGroup), ensure_ascii=False, sort_keys=False)
             csvPF.WriteRowTitles(row)
         continue
-      printGettingEntityItemForWhom(Ent.USER, formatKeyValueList('', [Ent.Singular(Ent.COURSE_STUDENTGROUP), studentGroupId],
+      printGettingEntityItemForWhom(Ent.STUDENT, formatKeyValueList('', [Ent.Singular(Ent.COURSE_STUDENTGROUP), studentGroupId],
                                                                  currentCount(i, count)))
       pageMessage = getPageMessage()
       try:
@@ -51562,8 +51562,32 @@ def doPrintCourseStudentGroups(showMembers=False):
 # gam sync course-studentgroup-members <CourseID> <StudentGroupID> <UserTypeEntity>
 # gam clear course-studentgroup-members <CourseID> <StudentGroupID>
 def doProcessCourseStudentGroupMembers():
-  def _getCurrentStudents():
-    printGettingEntityItemForWhom(Ent.USER, Ent.Singular(Ent.COURSE_STUDENTGROUP), studentGroupId)
+  def _getCourseStudents():
+    studentIdEmailMap = {}
+    studentEmailIdMap = {}
+    printGettingEntityItemForWhom(Ent.STUDENT, formatKeyValueList('', [Ent.Singular(Ent.COURSE), courseId], ''))
+    pageMessage = getPageMessage()
+    try:
+      students = callGAPIpages(ocroom.courses().students(), 'list', 'students',
+                               pageMessage=pageMessage,
+                               throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE,
+                                             GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
+                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                               courseId=courseId, fields='nextPageToken,students(profile(id,emailAddress))',
+                               pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS])
+      for student in students:
+        studentIdEmailMap[student['profile']['id']] = student['profile']['emailAddress'].lower()
+        studentEmailIdMap[student['profile']['emailAddress'].lower()] = student['profile']['id']
+      return (studentIdEmailMap, studentEmailIdMap)
+    except GAPI.notFound as e:
+      entityActionFailedExit([Ent.COURSE, courseId, studentGroupId], str(e))
+    except (GAPI.serviceNotAvailable, GAPI.notImplemented) as e:
+      entityActionFailedExit([Ent.COURSE, courseId], str(e))
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
+
+  def _getGroupCurrentStudents():
+    printGettingEntityItemForWhom(Ent.STUDENT, formatKeyValueList('', [Ent.Singular(Ent.COURSE_STUDENTGROUP), studentGroupId], ''))
     pageMessage = getPageMessage()
     try:
       return callGAPIpages(ocroom.courses().studentGroups().studentGroupMembers(), 'list', 'studentGroupMembers',
@@ -51581,18 +51605,24 @@ def doProcessCourseStudentGroupMembers():
     except (GAPI.forbidden, GAPI.permissionDenied) as e:
       ClientAPIAccessDeniedExit(str(e))
 
-  def _getStudentUserId(kvList, student, i, count):
-    normalizedEmailAddressOrUID = normalizeEmailAddressOrUID(student)
-    if normalizedEmailAddressOrUID.find('@') == -1:
-      return normalizedEmailAddressOrUID
-    try:
-      return callGAPI(cd.users(), 'get',
-                      throwReasons=GAPI.USER_GET_THROW_REASONS,
-                      userKey=normalizedEmailAddressOrUID, fields='id')['id']
-    except (GAPI.userNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
-            GAPI.badRequest, GAPI.backendError, GAPI.systemError) as e:
-      entityActionFailedWarning(kvList, str(e), i, count)
-    return None
+  def _validateClStudents(clStudents):
+    status = True
+    clStudentIds = []
+    count = len(clStudents)
+    i = 0
+    kvList = [Ent.COURSE, courseId, Ent.STUDENT, '']
+    for student in clStudents:
+      i += 1
+      student = normalizeEmailAddressOrUID(student)
+      if student in studentIdEmailMap:
+        clStudentIds.append(student)
+      elif student in studentEmailIdMap:
+        clStudentIds.append(studentEmailIdMap[student])
+      else:
+        kvList[-1] = student
+        entityActionFailedWarning(kvList, Msg.STUDENT_NOT_IN_COURSE, i, count)
+        status = False
+    return clStudentIds if status else None
 
   def _processStudent(function, kvList, kwargs, i, count):
     try:
@@ -51611,85 +51641,69 @@ def doProcessCourseStudentGroupMembers():
     except (GAPI.forbidden, GAPI.permissionDenied) as e:
       ClientAPIAccessDeniedExit(str(e))
 
-  def _addStudents(students, getUserIds):
+  def _addStudents(students):
     count = len(students)
     i = 0
-    entityPerformActionNumItems([Ent.COURSE, courseId, Ent.COURSE_STUDENTGROUP, studentGroupId], count, Ent.USER)
-    kvList = [Ent.COURSE, courseId, Ent.COURSE_STUDENTGROUP, studentGroupId, Ent.USER, '']
+    entityPerformActionNumItems([Ent.COURSE, courseId, Ent.COURSE_STUDENTGROUP, studentGroupId], count, Ent.STUDENT)
+    kvList = [Ent.COURSE, courseId, Ent.COURSE_STUDENTGROUP, studentGroupId, Ent.STUDENT, '']
     kwargs = {'courseId': courseId, 'studentGroupId': studentGroupId, 'body': {'userId': ''}}
+    Ind.Increment()
     for student in students:
       i += 1
-      if getUserIds:
-        userId = _getStudentUserId(kvList, student, i, count)
-        if userId is None:
-          continue
-        kvList[-1] = student
-      else:
-        userId = student
-        kvList[-1] = convertUIDtoEmailAddress(f"id:{userId}", cd=cd, emailTypes=['user'])
-      kwargs['body']['userId'] = userId
+      kvList[-1] = studentIdEmailMap[student]
+      kwargs['body']['userId'] = student
       _processStudent('create', kvList, kwargs, i, count)
+    Ind.Decrement()
 
-  def _removeStudents(students, getUserIds):
+  def _removeStudents(students):
     count = len(students)
     i = 0
-    entityPerformActionNumItems([Ent.COURSE, courseId, Ent.COURSE_STUDENTGROUP, studentGroupId], count, Ent.USER)
-    kvList = [Ent.COURSE, courseId, Ent.COURSE_STUDENTGROUP, studentGroupId, Ent.USER, '']
+    entityPerformActionNumItems([Ent.COURSE, courseId, Ent.COURSE_STUDENTGROUP, studentGroupId], count, Ent.STUDENT)
+    kvList = [Ent.COURSE, courseId, Ent.COURSE_STUDENTGROUP, studentGroupId, Ent.STUDENT, '']
     kwargs = {'courseId': courseId, 'studentGroupId': studentGroupId, 'userId': ''}
+    Ind.Increment()
     for student in students:
       i += 1
-      if getUserIds:
-        userId = _getStudentUserId(kvList, student, i, count)
-        if userId is None:
-          continue
-        kvList[-1] = student
-      else:
-        userId = student
-        kvList[-1] = convertUIDtoEmailAddress(f"id:{userId}", cd=cd, emailTypes=['user'])
-      kwargs['userId'] = userId
+      kvList[-1] = studentIdEmailMap[student]
+      kwargs['userId'] = student
       _processStudent('delete', kvList, kwargs, i, count)
+    Ind.Decrement()
 
   croom = buildGAPIObject(API.CLASSROOM)
-  cd = buildGAPIObject(API.DIRECTORY)
   action = Act.Get()
   courseId = getString(Cmd.OB_COURSE_ID)
   studentGroupId = getString(Cmd.OB_STUDENTGROUP_ID)
   if action != Act.CLEAR:
     _, clStudents = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS, groupMemberType=Ent.TYPE_USER)
-    clStudents = [normalizeEmailAddressOrUID(student) for student in clStudents]
+    clStudentIds = []
     checkForExtraneousArguments()
   _, count, coursesInfo = _getCoursesOwnerInfo(croom, [courseId], GC.Values[GC.USE_COURSE_OWNER_ACCESS])
   if count == 0:
     return
   ocroom = coursesInfo[courseId]['croom']
   courseId = coursesInfo[courseId]['id']
+  studentIdEmailMap, studentEmailIdMap = _getCourseStudents()
   if action in {Act.SYNC, Act.CLEAR}:
-    currentStudents = [student['userId'] for student in _getCurrentStudents()]
+    currentStudents = [student['userId'] for student in _getGroupCurrentStudents()]
+  if action != Act.CLEAR:
+    clStudentIds = _validateClStudents(clStudents)
+    if clStudentIds is None:
+      return
   if action == Act.CLEAR:
-    _removeStudents(currentStudents, False)
+    _removeStudents(currentStudents)
   elif action == Act.DELETE:
-    _removeStudents(clStudents, True)
+    _removeStudents(clStudentIds)
   elif action in {Act.ADD, Act.CREATE}:
-    _addStudents(clStudents, True)
+    _addStudents(clStudentIds)
   else: # elif action == Act.SYNC:
     currentMembersSet = set(currentStudents)
-    syncMembersSet = set()
-    count = len(clStudents)
-    i = 0
-    kvList = [Ent.COURSE, courseId, Ent.COURSE_STUDENTGROUP, studentGroupId, Ent.USER, '']
-    for student in clStudents:
-      i += 1
-      kvList[-1] = student
-      userId = _getStudentUserId(kvList, student, i, count)
-      if userId is None:
-        continue
-      syncMembersSet.add(userId)
+    syncMembersSet = set(clStudentIds)
     removeStudentsSet = currentMembersSet-syncMembersSet
     addStudentsSet = syncMembersSet-currentMembersSet
     Act.Set(Act.DELETE)
-    _removeStudents(removeStudentsSet, False)
+    _removeStudents(removeStudentsSet)
     Act.Set(Act.ADD)
-    _addStudents(addStudentsSet, False)
+    _addStudents(addStudentsSet)
 
 # gam print course-studentgroup-members [todrive <ToDriveAttribute>*]
 #	(course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
@@ -65073,7 +65087,7 @@ def _checkFileIdEntityDomainAccess(fileIdEntity, useDomainAdminAccess):
 #	(mappermissionsdomain <DomainName> <DomainName>)*
 #	[moveToNewOwnersRoot [<Boolean>]]
 #	[updatesheetprotectedranges  [<Boolean>]]
-#	[sendemail] [emailmessage <String>]
+#	[sendemail|sendnotification] [emailmessage <String>]
 #	[showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
 def createDriveFileACL(users, useDomainAdminAccess=False):
   moveToNewOwnersRoot = False
@@ -65117,7 +65131,7 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
     elif myarg in {'expiration', 'expires'}:
       expirationLocation = Cmd.Location()
       body['expirationTime'] = getTimeOrDeltaFromNow()
-    elif myarg == 'sendemail':
+    elif myarg in {'sendemail', 'sendnotification'}:
       sendNotificationEmail = True
     elif myarg == 'emailmessage':
       sendNotificationEmail = True
@@ -65373,7 +65387,7 @@ def doUpdateDriveFileACLs():
   updateDriveFileACLs([_getAdminEmail()], True)
 
 # gam [<UserTypeEntity>] create permissions <DriveFileEntity> <DriveFilePermissionsEntity> [asadmin]
-#	[expiration <Time>] [sendmail] [emailmessage <String>]
+#	[expiration <Time>] [sendemail|sendnotification] [emailmessage <String>]
 #	[moveToNewOwnersRoot [<Boolean>]]
 #	<PermissionMatch>* [<PermissionMatchAction>]
 def createDriveFilePermissions(users, useDomainAdminAccess=False):
@@ -65491,7 +65505,7 @@ def createDriveFilePermissions(users, useDomainAdminAccess=False):
       moveToNewOwnersRoot = getBoolean()
     elif myarg in {'expiration', 'expires'}:
       expiration = getTimeOrDeltaFromNow()
-    elif myarg == 'sendemail':
+    elif myarg in {'sendemail', 'sendnotification'}:
       sendNotificationEmail = True
     elif myarg == 'emailmessage':
       sendNotificationEmail = True
