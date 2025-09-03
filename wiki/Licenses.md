@@ -63,7 +63,7 @@
 | Gemini Education Premium | 1010470005 | geminiedupremium |
 | Gemini Enterprise | 1010470001 | geminient | duetai |
 | Google AI Pro for Education | 1010470004 | gaiproedu |
-| Google AI Ultra for Business | 1010470008 | geminiultra }
+| Google AI Ultra for Business | 1010470008 | geminiultra |
 | Google Apps Message Security | Google-Apps-For-Postini | postini |
 | Google Chrome Device Management | Google-Chrome-Device-Management | cdm |
 | Google Drive Storage 16TB | Google-Drive-storage-16TB | 16tb |
