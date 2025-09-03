@@ -60,10 +60,10 @@
 | G Suite Legacy | Google-Apps | standard |
 | G Suite Lite | Google-Apps-Lite | gsuitelite |
 | Gemini Business | 1010470003 | geminibiz
-| Gemini Education | 1010470004 | geminiedu |
 | Gemini Education Premium | 1010470005 | geminiedupremium |
 | Gemini Enterprise | 1010470001 | geminient | duetai |
-| Google AI Ultra for Business | 1010470008 | geminiultra |
+| Google AI Pro for Education | 1010470004 | gaiproedu |
+| Google AI Ultra for Business | 1010470008 | geminiultra }
 | Google Apps Message Security | Google-Apps-For-Postini | postini |
 | Google Chrome Device Management | Google-Chrome-Device-Management | cdm |
 | Google Drive Storage 16TB | Google-Drive-storage-16TB | 16tb |
@@ -161,18 +161,17 @@
         assuredcontrolsplus | 1010390002 | Assured Controls Plus |
         bce | beyondcorp | beyondcorpenterprise | cep | chromeenterprisepremium | 1010400001 | Chrome Enterprise Premium |
         cdm | chrome | googlechromedevicemanagement | Google-Chrome-Device-Management |
-        bce | beyondcorp | beyondcorpenterprise | cep | chromeenterprisepremium | 1010400001 | Chrome Enterprise Premium |
-        cdm | chrome | googlechromedevicemanagement | Google-Chrome-Device-Management |
         cloudidentity | identity | 1010010001 | Cloud Identity |
         cloudidentitypremium | identitypremium | 1010050001 | Cloud Identity Premium |
         cloudsearch | 1010350001 | Cloud Search |
         colabpro | 1010500001 | Colab Pro |
         colabpro+ | colabproplus | 1010500002 | Colab Pro+ |
         eeu | 1010490001 | SKU Endpoint Education Upgrade |
+        gaiproedu | geminiedu | 1010470004 | Google AI Pro for Education |
         geminibiz | 1010470003 | Gemini Business |
-        geminiedu | 1010470004 | Gemini Education |
         geminiedupremium| 1010470005 | Gemini Education Premium |
         geminient| duetai | 1010470001 | Gemini Enterprise |
+        geminiultra | 1010470008 | Google AI Ultra for Business |
         gsuitebasic | gafb | gafw | basic | Google-Apps-For-Business |
         gsuitebusiness | gau | gsb | unlimited | Google-Apps-Unlimited |
         gsuitebusinessarchived | gsbau | businessarchived | 1010340002 | Google Workspace Business - Archived User |
@@ -216,7 +215,8 @@
         wsess | workspaceesentials | gsuiteessentials | essentials | d4e | driveenterprise | drive4enterprise | 1010060001 | Google Workspace Essentials (formerly G Suite Essentials) |
         wsessplus | workspaceessentialsplus | 1010060005 | Google Workspace Enterprise Essentials Plus |
         wsflw | workspacefrontline | workspacefrontlineworker | 1010020030 | Google Workspace Frontline Starter |
-        wsflwstan | workspacefrontlinestan | workspacefrontlineworkerstan | 1010020031 | Google Workspace Frontline Standard
+        wsflwstan | workspacefrontlinestan | workspacefrontlineworkerstan | 1010020031 | Google Workspace Frontline Standard |
+        wsflwplus | workspacefrontlineplus | workspacefrontlineworkerplus | 1010020034 | Google Workspace Frontline Plus
 <SKUIDList> ::= "<SKUID>(,<SKUID>)*"
 ```
 ## Notes
