@@ -326,7 +326,7 @@ Use an existing project to create and download two files: `client_secrets.json` 
 Use an existing uninitialized/uncredentialed project and configure it to be a GAM project; this typically used when
 the GCP  administrators have created a basic project because project creation is not available for most users.
 
-See Jay's notes about how to do this: https://github.com/GAM-team/GAM/wiki/GAM-with--minimal-GCP-rights
+See Jay's notes about how to do this: https://github.com/GAM-team/GAM/wiki/GAM-with-minimal-GCP-rights
 
 ```
 gam use project [<EmailAddress>] [project <ProjectID>]
