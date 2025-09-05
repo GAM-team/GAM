@@ -19,6 +19,7 @@ dependencies = [
     "google-auth-oauthlib>=1.2.2",
     "google-auth>=2.39.0",
     "httplib2>=0.22.0",
+    "iso8601",
     "lxml>=5.4.0",
     "passlib>=1.7.4",
     "pathvalidate>=3.2.3",
