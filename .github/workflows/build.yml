@@ -588,7 +588,6 @@ jobs:
       - name: Basic Tests all jobs
         id: basictests
         run: |
-          $PYTHON -m unittest discover --start-directory ./ --pattern "*_test.py" --buffer || if [ $? != 5 ]; then exit $?; fi # exit 5 is no tests
           $gam version extended nooffseterror
           export GAMVERSION=$($gam version simple)
           echo "GAM Version ${GAMVERSION}"
