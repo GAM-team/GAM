@@ -2013,11 +2013,11 @@ def getTimeOrDeltaFromNow(returnDateTime=False):
         except OverflowError:
           pass
       try:
-        fullDateTime, tz = iso8601.parse_date(argstr)
+        fullDateTime = iso8601.parse_date(argstr)
         Cmd.Advance()
         if not returnDateTime:
           return argstr.replace(' ', 'T')
-        return (fullDateTime, tz, argstr.replace(' ', 'T'))
+        return (fullDateTime, fullDateTime.tzinfo, argstr.replace(' ', 'T'))
       except (iso8601.ParseError, OverflowError):
         pass
       invalidArgumentExit(YYYYMMDDTHHMMSS_FORMAT_REQUIRED)
@@ -2335,7 +2335,7 @@ def formatLocalTime(dateTimeStr):
   if dateTimeStr in {NEVER_TIME, NEVER_TIME_NOMS}:
     return GC.Values[GC.NEVER_TIME]
   try:
-    timestamp, _ = iso8601.parse_date(dateTimeStr)
+    timestamp = iso8601.parse_date(dateTimeStr)
     if not GC.Values[GC.OUTPUT_TIMEFORMAT]:
       if GM.Globals[GM.CONVERT_TO_LOCAL_TIME]:
         return ISOformatTimeStamp(timestamp.astimezone(GC.Values[GC.TIMEZONE]))
@@ -7436,7 +7436,7 @@ def RowFilterMatch(row, titlesList, rowFilter, rowFilterModeAll, rowDropFilter, 
         return None
     else:
       try:
-        rowTime, _ = iso8601.parse_date(rowDate)
+        rowTime = iso8601.parse_date(rowDate)
       except (iso8601.ParseError, OverflowError):
         return None
     return ISOformatTimeStamp(datetime.datetime(rowTime.year, rowTime.month, rowTime.day, tzinfo=iso8601.UTC))
@@ -7501,7 +7501,7 @@ def RowFilterMatch(row, titlesList, rowFilter, rowFilterModeAll, rowDropFilter, 
     if YYYYMMDD_PATTERN.match(rowDate):
       return None
     try:
-      rowTime, _ = iso8601.parse_date(rowDate)
+      rowTime = iso8601.parse_date(rowDate)
     except (iso8601.ParseError, OverflowError):
       return None
     return f'{rowTime.hour:02d}:{rowTime.minute:02d}'
@@ -12413,7 +12413,7 @@ def checkServiceAccount(users):
                      throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID, GAPI.NOT_FOUND,
                                    GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
                      name=name, fields='validAfterTime')
-      key_created, _ = iso8601.parse_date(key['validAfterTime'])
+      key_created = iso8601.parse_date(key['validAfterTime'])
       key_age = todaysTime()-key_created
       printPassFail(Msg.SERVICE_ACCOUNT_PRIVATE_KEY_AGE.format(key_age.days), testWarn if key_age.days > 30 else testPass)
     except GAPI.permissionDenied:
@@ -14368,7 +14368,7 @@ def doReport():
             eventTime = activity.get('id', {}).get('time', UNKNOWN)
             if eventTime != UNKNOWN:
               try:
-                eventTime, _ = iso8601.parse_date(eventTime)
+                eventTime = iso8601.parse_date(eventTime)
               except (iso8601.ParseError, OverflowError):
                 eventTime = UNKNOWN
             if eventTime != UNKNOWN:
@@ -23867,7 +23867,7 @@ def _filterDeviceFiles(cros, selected, listLimit, startTime, endTime):
   filteredItems = []
   i = 0
   for item in cros.get('deviceFiles', []):
-    timeValue, _ = iso8601.parse_date(item['createTime'])
+    timeValue = iso8601.parse_date(item['createTime'])
     if ((startTime is None) or (timeValue >= startTime)) and ((endTime is None) or (timeValue <= endTime)):
       item['createTime'] = formatLocalTime(item['createTime'])
       filteredItems.append(item)
@@ -23884,7 +23884,7 @@ def _filterCPUStatusReports(cros, selected, listLimit, startTime, endTime):
   filteredItems = []
   i = 0
   for item in cros.get('cpuStatusReports', []):
-    timeValue, _ = iso8601.parse_date(item['reportTime'])
+    timeValue = iso8601.parse_date(item['reportTime'])
     if ((startTime is None) or (timeValue >= startTime)) and ((endTime is None) or (timeValue <= endTime)):
       item['reportTime'] = formatLocalTime(item['reportTime'])
       for tempInfo in item.get('cpuTemperatureInfo', []):
@@ -23905,7 +23905,7 @@ def _filterSystemRamFreeReports(cros, selected, listLimit, startTime, endTime):
   filteredItems = []
   i = 0
   for item in cros.get('systemRamFreeReports', []):
-    timeValue, _ = iso8601.parse_date(item['reportTime'])
+    timeValue = iso8601.parse_date(item['reportTime'])
     if ((startTime is None) or (timeValue >= startTime)) and ((endTime is None) or (timeValue <= endTime)):
       item['reportTime'] = formatLocalTime(item['reportTime'])
       item['systemRamFreeInfo'] = ','.join([str(x) for x in item['systemRamFreeInfo']])
@@ -23938,7 +23938,7 @@ def _filterScreenshotFiles(cros, selected, listLimit, startTime, endTime):
   filteredItems = []
   i = 0
   for item in cros.get('screenshotFiles', []):
-    timeValue, _ = iso8601.parse_date(item['createTime'])
+    timeValue = iso8601.parse_date(item['createTime'])
     if ((startTime is None) or (timeValue >= startTime)) and ((endTime is None) or (timeValue <= endTime)):
       item['createTime'] = formatLocalTime(item['createTime'])
       filteredItems.append(item)
@@ -24386,7 +24386,7 @@ def getDeviceFilesEntity():
     else:
       for timeItem in myarg.split(','):
         try:
-          timestamp, _ = iso8601.parse_date(timeItem)
+          timestamp = iso8601.parse_date(timeItem)
           deviceFilesEntity['list'].append(ISOformatTimeStamp(timestamp.astimezone(GC.Values[GC.TIMEZONE])))
         except (iso8601.ParseError, OverflowError):
           Cmd.Backup()
@@ -24415,14 +24415,14 @@ def _selectDeviceFiles(deviceId, deviceFiles, deviceFilesEntity):
     count = 0
     if deviceFilesEntity['time'][0] == 'before':
       for deviceFile in deviceFiles:
-        createTime, _ = iso8601.parse_date(deviceFile['createTime'])
+        createTime = iso8601.parse_date(deviceFile['createTime'])
         if createTime >= dateTime:
           break
         count += 1
       return deviceFiles[:count]
 #   if deviceFilesEntity['time'][0] == 'after':
     for deviceFile in deviceFiles:
-      createTime, _ = iso8601.parse_date(deviceFile['createTime'])
+      createTime = iso8601.parse_date(deviceFile['createTime'])
       if createTime >= dateTime:
         break
       count += 1
@@ -24431,14 +24431,14 @@ def _selectDeviceFiles(deviceId, deviceFiles, deviceFilesEntity):
     dateTime = deviceFilesEntity['range'][1]
     spos = 0
     for deviceFile in deviceFiles:
-      createTime, _ = iso8601.parse_date(deviceFile['createTime'])
+      createTime = iso8601.parse_date(deviceFile['createTime'])
       if createTime >= dateTime:
         break
       spos += 1
     dateTime = deviceFilesEntity['range'][2]
     epos = spos
     for deviceFile in deviceFiles[spos:]:
-      createTime, _ = iso8601.parse_date(deviceFile['createTime'])
+      createTime = iso8601.parse_date(deviceFile['createTime'])
       if createTime >= dateTime:
         break
       epos += 1
@@ -25221,7 +25221,7 @@ def doInfoPrintShowCrOSTelemetry():
           i = 0
           for item in listItems:
             if 'reportTime' in item:
-              timeValue, _ = iso8601.parse_date(item['reportTime'])
+              timeValue = iso8601.parse_date(item['reportTime'])
             else:
               timeValue = None
             if (timeValue is None) or (((startTime is None) or (timeValue >= startTime)) and ((endTime is None) or (timeValue <= endTime))):
@@ -40068,7 +40068,7 @@ def _getEventDaysOfWeek(event):
           pass
       elif 'dateTime' in event[attr]:
         try:
-          dateTime, _ = iso8601.parse_date(event[attr]['dateTime'])
+          dateTime = iso8601.parse_date(event[attr]['dateTime'])
           event[attr]['dayOfWeek'] = calendarlib.day_abbr[dateTime.weekday()]
         except (iso8601.ParseError, OverflowError):
           pass
@@ -48699,7 +48699,7 @@ def _courseItemPassesFilter(item, courseItemFilter):
     return False
   startTime = courseItemFilter['startTime']
   endTime = courseItemFilter['endTime']
-  timeValue, _ = iso8601.parse_date(timeStr)
+  timeValue = iso8601.parse_date(timeStr)
   return ((startTime is None) or (timeValue >= startTime)) and ((endTime is None) or (timeValue <= endTime))
 
 def _gettingCoursesQuery(courseSelectionParameters):
@@ -56258,7 +56258,7 @@ def _selectRevisionIds(drive, fileId, origUser, user, i, count, j, jcount, revis
     count = 0
     if revisionsEntity['time'][0] == 'before':
       for revision in results:
-        modifiedDateTime, _ = iso8601.parse_date(revision['modifiedTime'])
+        modifiedDateTime = iso8601.parse_date(revision['modifiedTime'])
         if modifiedDateTime >= dateTime:
           break
         revisionIds.append(revision['id'])
@@ -56268,7 +56268,7 @@ def _selectRevisionIds(drive, fileId, origUser, user, i, count, j, jcount, revis
       return revisionIds
 # time: after
     for revision in results:
-      modifiedDateTime, _ = iso8601.parse_date(revision['modifiedTime'])
+      modifiedDateTime = iso8601.parse_date(revision['modifiedTime'])
       if modifiedDateTime >= dateTime:
         revisionIds.append(revision['id'])
         count += 1
@@ -56280,7 +56280,7 @@ def _selectRevisionIds(drive, fileId, origUser, user, i, count, j, jcount, revis
   endDateTime = revisionsEntity['range'][2]
   count = 0
   for revision in results:
-    modifiedDateTime, _ = iso8601.parse_date(revision['modifiedTime'])
+    modifiedDateTime = iso8601.parse_date(revision['modifiedTime'])
     if modifiedDateTime >= startDateTime:
       if modifiedDateTime >= endDateTime:
         break
@@ -56490,7 +56490,7 @@ def _selectRevisionResults(results, fileId, origUser, revisionsEntity, previewDe
     count = 0
     if revisionsEntity['time'][0] == 'before':
       for revision in results:
-        modifiedDateTime, _ = iso8601.parse_date(revision['modifiedTime'])
+        modifiedDateTime = iso8601.parse_date(revision['modifiedTime'])
         if modifiedDateTime >= dateTime:
           break
         count += 1
@@ -56501,7 +56501,7 @@ def _selectRevisionResults(results, fileId, origUser, revisionsEntity, previewDe
       return results[:count]
 # time: after
     for revision in results:
-      modifiedDateTime, _ = iso8601.parse_date(revision['modifiedTime'])
+      modifiedDateTime = iso8601.parse_date(revision['modifiedTime'])
       if modifiedDateTime >= dateTime:
         break
       count += 1
@@ -56518,7 +56518,7 @@ def _selectRevisionResults(results, fileId, origUser, revisionsEntity, previewDe
     count = 0
     selectedResults = []
     for revision in  results:
-      modifiedDateTime, _ = iso8601.parse_date(revision['modifiedTime'])
+      modifiedDateTime = iso8601.parse_date(revision['modifiedTime'])
       if modifiedDateTime >= startDateTime:
         if modifiedDateTime >= endDateTime:
           break
@@ -57056,7 +57056,7 @@ class PermissionMatch():
           break
       elif field in {'expirationstart', 'expirationend'}:
         if 'expirationTime' in permission:
-          expirationDateTime, _ = iso8601.parse_date(permission['expirationTime'])
+          expirationDateTime = iso8601.parse_date(permission['expirationTime'])
           if field == 'expirationstart':
             if expirationDateTime < value:
               break
