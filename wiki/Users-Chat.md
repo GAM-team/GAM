@@ -44,6 +44,7 @@ Google requires that you have a Chat Bot configured in order to use the Chat API
 ## Set up a Chat Bot
 
 * Run the command `gam setup chat`; it will point you to a URL to configure your Chat Bot.
+* Uncheck "Build this chat app as a workspace add-on"
 * Enter an App name and Description of your choosing.
 * For the Avatar URL you can use `https://dummyimage.com/384x256/4d4d4d/0011ff.png&text=+GAM` or a public URL to an image of your own choosing.
 * In Functionality, uncheck both "Receive 1:1 messages" and "Join spaces and group conversations"
