@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.20.03'
+__version__ = '7.20.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -120,6 +120,10 @@ from google.auth.jwt import Credentials as JWTCredentials
 import google.oauth2.service_account
 import google_auth_oauthlib.flow
 import google_auth_httplib2
+import googleapiclient
+import googleapiclient.discovery
+import googleapiclient.errors
+import googleapiclient.http
 import httplib2
 
 httplib2.RETRIES = 5
@@ -139,6 +143,7 @@ from gamlib import glgapi as GAPI
 from gamlib import glgdata as GDATA
 from gamlib import glglobals as GM
 from gamlib import glindent
+from gamlib import gliso8601 as iso8601
 from gamlib import glmsgs as Msg
 from gamlib import glskus as SKU
 from gamlib import gluprop as UProp
@@ -149,12 +154,6 @@ import gdata.apps.audit
 import gdata.apps.audit.service
 import gdata.apps.contacts
 import gdata.apps.contacts.service
-# Import local library, does not include discovery documents
-import googleapiclient
-import googleapiclient.discovery
-import googleapiclient.errors
-import googleapiclient.http
-from iso8601 import iso8601
 
 IS08601_TIME_FORMAT = '%Y-%m-%dT%H:%M:%S%:z'
 RFC2822_TIME_FORMAT = '%a, %d %b %Y %H:%M:%S %z'
