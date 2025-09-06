@@ -3736,10 +3736,7 @@ def SetGlobalVariables():
     if value and not os.path.isabs(value):
       value = os.path.expanduser(os.path.join(_getCfgDirectory(sectionName, GC.CONFIG_DIR), value))
     elif not value and itemName == GC.CACERTS_PEM:
-      if hasattr(sys, '_MEIPASS'):
-        value = os.path.join(sys._MEIPASS, GC.FN_CACERTS_PEM) #pylint: disable=no-member
-      else:
-        value = os.path.join(GM.Globals[GM.GAM_PATH], GC.FN_CACERTS_PEM)
+      value = os.path.join(GM.Globals[GM.GAM_PATH], GC.FN_CACERTS_PEM)
     return value
 
   def _readGamCfgFile(config, fileName):
