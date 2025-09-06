@@ -188,7 +188,7 @@ jobs:
           export PYTHON=$(which python3)
           export PIP=$(which pip3)
           export gam="${PYTHON} -m gam"
-          export gampath="$(readlink -e .)"
+          export gampath="$(readlink -e .)/gam"
           echo -e "PYTHON: ${PYTHON}\nPIP: ${PIP}\gam: ${gam}\ngampath: ${gampath}"
           echo "PYTHON=${PYTHON}" >> $GITHUB_ENV
           echo "PIP=${PIP}" >> $GITHUB_ENV
