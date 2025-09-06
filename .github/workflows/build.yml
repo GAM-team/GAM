@@ -537,7 +537,7 @@ jobs:
 
       - name: Copy extra package files
         run: |
-          cp -v cacerts.pem "$gampath"
+          cp -v gam/cacerts.pem "$gampath"
           cp -v LICENSE "$gampath"
           cp -v GamCommands.txt "$gampath"
           cp -v GamUpdate.txt "$gampath"
