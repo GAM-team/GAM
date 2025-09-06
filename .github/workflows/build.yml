@@ -536,6 +536,7 @@ jobs:
           echo -e "GAM: ${gam}\nGAMPATH: ${gampath}"
 
       - name: Copy extra package files
+        if: matrix.goal == 'build'
         run: |
           cp -v gam/cacerts.pem "$gampath"
           cp -v LICENSE "$gampath"
