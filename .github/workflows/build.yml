@@ -223,7 +223,8 @@ jobs:
           p12-password: ${{ secrets.CERTIFICATES_P12_PASSWORD }}
 
       - name: Windows Configure VCode
-        uses: ilammy/msvc-dev-cmd@460a772e4cf7358f9f2f23773240813e40e7a894 # v1.13.0
+        uses: ilammy/msvc-dev-cmd@v1
+        #uses: ilammy/msvc-dev-cmd@460a772e4cf7358f9f2f23773240813e40e7a894 # v1.13.0
         if: runner.os == 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         with:
           arch: ${{ runner.arch }}
