@@ -749,6 +749,7 @@ jobs:
             gam*.tar.xz
             gam*.zip
             gam*.msi
+            *.png
 
       - name: Basic Tests build jobs only
         if: matrix.goal != 'test' && steps.cache-python-ssl.outputs.cache-hit != 'true'
