@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2023 Ross Scroggs All Rights Reserved.
+# Copyright (C) 2025 Ross Scroggs All Rights Reserved.
 #
 # All Rights Reserved.
 #
@@ -19,10 +19,19 @@
 """YubiKey"""
 
 import base64
-import datetime
 from secrets import SystemRandom
 import string
 import sys
+
+import arrow
+
+from gam import mplock
+
+from gam import systemErrorExit
+from gam import readStdin
+from gam import writeStdout
+
+from gam.gamlib import glmsgs as Msg
 
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
@@ -48,14 +57,6 @@ YUBIKEY_APDU_ERROR_RC = 84
 YUBIKEY_VALUE_ERROR_RC = 85
 YUBIKEY_MULTIPLE_CONNECTED_RC = 86
 YUBIKEY_NOT_FOUND_RC = 87
-
-from gam import mplock
-
-from gam import systemErrorExit
-from gam import readStdin
-from gam import writeStdout
-
-from gam.gamlib import glmsgs as Msg
 
 PIN_PUK_CHARS = string.ascii_letters+string.digits+string.punctuation
 
@@ -155,8 +156,8 @@ class YubiKey():
                                   KEY_TYPE.RSA2048,
                                   PIN_POLICY.ALWAYS,
                                   TOUCH_POLICY.NEVER)
-        now = datetime.datetime.utcnow()
-        valid_to = now + datetime.timedelta(days=36500)
+        now = arrow.utcnow()
+        valid_to = now.shift(days=36500)
         subject = 'CN=GAM Created Key'
         piv.authenticate(MANAGEMENT_KEY_TYPE.TDES, DEFAULT_MANAGEMENT_KEY)
         piv.verify_pin(new_pin)

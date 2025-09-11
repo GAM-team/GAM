@@ -1,3 +1,7 @@
+7.21.00
+
+Replaced datetime, dateutil, calendar and iso8601 Python libraries with arrow library.
+
 7.20.04
 
 Cleaned up Python library imports: googleapiclient, iso8601.

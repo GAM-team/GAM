@@ -25,17 +25,15 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.20.04'
+__version__ = '7.21.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
 import base64
-import calendar as calendarlib
 import codecs
 import collections
 import configparser
 import csv
-import datetime
 from email.charset import add_charset, QP
 from email.generator import Generator
 from email.header import decode_header, Header
@@ -109,7 +107,7 @@ from cryptography.x509.oid import NameOID
 if not getattr(sys, 'frozen', False):
   sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 
-from dateutil.relativedelta import relativedelta
+import arrow
 
 from pathvalidate import sanitize_filename, sanitize_filepath
 
@@ -143,7 +141,6 @@ from gamlib import glgapi as GAPI
 from gamlib import glgdata as GDATA
 from gamlib import glglobals as GM
 from gamlib import glindent
-from gamlib import gliso8601 as iso8601
 from gamlib import glmsgs as Msg
 from gamlib import glskus as SKU
 from gamlib import gluprop as UProp
@@ -162,7 +159,7 @@ def ISOformatTimeStamp(timestamp):
   return timestamp.isoformat('T', 'seconds')
 
 def currentISOformatTimeStamp(timespec='milliseconds'):
-  return datetime.datetime.now(GC.Values[GC.TIMEZONE]).isoformat('T', timespec)
+  return arrow.now(GC.Values[GC.TIMEZONE]).isoformat('T', timespec)
 
 Act = glaction.GamAction()
 Cmd = glclargs.GamCLArgs()
@@ -212,6 +209,7 @@ ONE_GIGA_10_BYTES = 1000000000
 ONE_KILO_BYTES = 1024
 ONE_MEGA_BYTES = 1048576
 ONE_GIGA_BYTES = 1073741824
+DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 SECONDS_PER_MINUTE = 60
 SECONDS_PER_HOUR = 3600
 SECONDS_PER_DAY = 86400
@@ -1842,13 +1840,13 @@ def getStringWithCRsNLsOrFile():
   return (unescapeCRsNLs(getString(Cmd.OB_STRING, minLen=0)), UTF8, False)
 
 def todaysDate():
-  return datetime.datetime(GM.Globals[GM.DATETIME_NOW].year, GM.Globals[GM.DATETIME_NOW].month, GM.Globals[GM.DATETIME_NOW].day,
-                           tzinfo=GC.Values[GC.TIMEZONE])
+  return arrow.Arrow(GM.Globals[GM.DATETIME_NOW].year, GM.Globals[GM.DATETIME_NOW].month, GM.Globals[GM.DATETIME_NOW].day,
+                     tzinfo=GC.Values[GC.TIMEZONE])
 
 def todaysTime():
-  return datetime.datetime(GM.Globals[GM.DATETIME_NOW].year, GM.Globals[GM.DATETIME_NOW].month, GM.Globals[GM.DATETIME_NOW].day,
-                           GM.Globals[GM.DATETIME_NOW].hour, GM.Globals[GM.DATETIME_NOW].minute,
-                           tzinfo=GC.Values[GC.TIMEZONE])
+  return arrow.Arrow(GM.Globals[GM.DATETIME_NOW].year, GM.Globals[GM.DATETIME_NOW].month, GM.Globals[GM.DATETIME_NOW].day,
+                     GM.Globals[GM.DATETIME_NOW].hour, GM.Globals[GM.DATETIME_NOW].minute,
+                     tzinfo=GC.Values[GC.TIMEZONE])
 
 def getDelta(argstr, pattern):
   if argstr == 'NOW':
@@ -1861,22 +1859,22 @@ def getDelta(argstr, pattern):
   sign = tg.group(1)
   delta = int(tg.group(2))
   unit = tg.group(3)
-  if unit == 'y':
-    deltaTime = datetime.timedelta(days=delta*365)
-  elif unit == 'w':
-    deltaTime = datetime.timedelta(weeks=delta)
-  elif unit == 'd':
-    deltaTime = datetime.timedelta(days=delta)
-  elif unit == 'h':
-    deltaTime = datetime.timedelta(hours=delta)
-  elif unit == 'm':
-    deltaTime = datetime.timedelta(minutes=delta)
+  if sign == '-':
+    delta = -delta
   baseTime = todaysDate()
   if unit in {'h', 'm'}:
-    baseTime = baseTime+datetime.timedelta(hours=GM.Globals[GM.DATETIME_NOW].hour, minutes=GM.Globals[GM.DATETIME_NOW].minute)
-  if sign == '-':
-    return baseTime-deltaTime
-  return baseTime+deltaTime
+    baseTime = baseTime.shift(hours=GM.Globals[GM.DATETIME_NOW].hour, minutes=GM.Globals[GM.DATETIME_NOW].minute)
+  if unit == 'y':
+    return baseTime.shift(days=delta*365)
+  if unit == 'w':
+    return baseTime.shift(weeks=delta)
+  if unit == 'd':
+    return baseTime.shift(days=delta)
+  if unit == 'h':
+    return baseTime.shift(hours=delta)
+  if unit == 'm':
+    return baseTime.shift(minutes=delta)
+  return baseTime
 
 DELTA_DATE_PATTERN = re.compile(r'^([+-])(\d+)([dwy])$')
 DELTA_DATE_FORMAT_REQUIRED = '(+|-)<Number>(d|w|y)'
@@ -1915,7 +1913,7 @@ def getYYYYMMDD(minLen=1, returnTimeStamp=False, returnDateTime=False, alternate
       elif argstr == 'NEVER':
         argstr = NEVER_DATE
       try:
-        dateTime = datetime.datetime.strptime(argstr, YYYYMMDD_FORMAT)
+        dateTime = arrow.Arrow.strptime(argstr, YYYYMMDD_FORMAT)
         Cmd.Advance()
         if returnTimeStamp:
           return time.mktime(dateTime.timetuple())*1000
@@ -1937,7 +1935,7 @@ def getHHMM():
     argstr = Cmd.Current().strip().upper()
     if argstr:
       try:
-        datetime.datetime.strptime(argstr, HHMM_FORMAT)
+        arrow.Arrow.strptime(argstr, HHMM_FORMAT)
         Cmd.Advance()
         return argstr
       except ValueError:
@@ -1957,7 +1955,7 @@ def getYYYYMMDD_HHMM():
         argstr = NEVER_DATETIME
       argstr = argstr.replace('T', ' ')
       try:
-        datetime.datetime.strptime(argstr, YYYYMMDD_HHMM_FORMAT)
+        arrow.Arrow.strptime(argstr, YYYYMMDD_HHMM_FORMAT)
         Cmd.Advance()
         return argstr
       except ValueError:
@@ -1976,10 +1974,10 @@ def getDateOrDeltaFromNow(returnDateTime=False):
           argstr = 'TODAY'
         argDate = getDeltaDate(argstr)
       elif argstr == 'NEVER':
-        argDate = datetime.datetime.strptime(NEVER_DATE, YYYYMMDD_FORMAT)
+        argDate = arrow.Arrow.strptime(NEVER_DATE, YYYYMMDD_FORMAT)
       elif YYYYMMDD_PATTERN.match(argstr):
         try:
-          argDate = datetime.datetime.strptime(argstr, YYYYMMDD_FORMAT)
+          argDate = arrow.Arrow.strptime(argstr, YYYYMMDD_FORMAT)
         except ValueError:
           invalidArgumentExit(YYYYMMDD_FORMAT_REQUIRED)
       else:
@@ -1987,7 +1985,7 @@ def getDateOrDeltaFromNow(returnDateTime=False):
       Cmd.Advance()
       if not returnDateTime:
         return argDate.strftime(YYYYMMDD_FORMAT)
-      return (datetime.datetime(argDate.year, argDate.month, argDate.day, tzinfo=GC.Values[GC.TIMEZONE]),
+      return (arrow.Arrow(argDate.year, argDate.month, argDate.day, tzinfo=GC.Values[GC.TIMEZONE]),
               GC.Values[GC.TIMEZONE], argDate.strftime(YYYYMMDD_FORMAT))
   missingArgumentExit(YYYYMMDD_FORMAT_REQUIRED)
 
@@ -2004,7 +2002,7 @@ def getTimeOrDeltaFromNow(returnDateTime=False):
         argstr = NEVER_TIME
       elif YYYYMMDD_PATTERN.match(argstr):
         try:
-          dateTime = datetime.datetime.strptime(argstr, YYYYMMDD_FORMAT)
+          dateTime = arrow.Arrow.strptime(argstr, YYYYMMDD_FORMAT)
         except ValueError:
           invalidArgumentExit(YYYYMMDD_FORMAT_REQUIRED)
         try:
@@ -2012,12 +2010,12 @@ def getTimeOrDeltaFromNow(returnDateTime=False):
         except OverflowError:
           pass
       try:
-        fullDateTime = iso8601.parse_date(argstr)
+        fullDateTime = arrow.get(argstr)
         Cmd.Advance()
         if not returnDateTime:
           return argstr.replace(' ', 'T')
         return (fullDateTime, fullDateTime.tzinfo, argstr.replace(' ', 'T'))
-      except (iso8601.ParseError, OverflowError):
+      except (arrow.parser.ParserError, OverflowError):
         pass
       invalidArgumentExit(YYYYMMDDTHHMMSS_FORMAT_REQUIRED)
   missingArgumentExit(YYYYMMDDTHHMMSS_FORMAT_REQUIRED)
@@ -2030,19 +2028,19 @@ def getRowFilterDateOrDeltaFromNow(argstr):
     deltaDate = getDelta(argstr, DELTA_DATE_PATTERN)
     if deltaDate is None:
       return (False, DELTA_DATE_FORMAT_REQUIRED)
-    argstr = ISOformatTimeStamp(deltaDate.replace(tzinfo=iso8601.UTC))
+    argstr = ISOformatTimeStamp(deltaDate.replace(tzinfo='UTC'))
   elif argstr == 'NEVER' or YYYYMMDD_PATTERN.match(argstr):
     if argstr == 'NEVER':
       argstr = NEVER_DATE
     try:
-      dateTime = datetime.datetime.strptime(argstr, YYYYMMDD_FORMAT)
+      dateTime = arrow.Arrow.strptime(argstr, YYYYMMDD_FORMAT)
     except ValueError:
       return (False, YYYYMMDD_FORMAT_REQUIRED)
-    argstr = ISOformatTimeStamp(dateTime.replace(tzinfo=iso8601.UTC))
+    argstr = ISOformatTimeStamp(dateTime.replace(tzinfo='UTC'))
   try:
-    iso8601.parse_date(argstr)
+    arrow.get(argstr)
     return (True, argstr.replace(' ', 'T'))
-  except (iso8601.ParseError, OverflowError):
+  except (arrow.parser.ParserError, OverflowError):
     return (False, YYYYMMDD_FORMAT_REQUIRED)
 
 def getRowFilterTimeOrDeltaFromNow(argstr):
@@ -2056,14 +2054,14 @@ def getRowFilterTimeOrDeltaFromNow(argstr):
     argstr = NEVER_TIME
   elif YYYYMMDD_PATTERN.match(argstr):
     try:
-      dateTime = datetime.datetime.strptime(argstr, YYYYMMDD_FORMAT)
+      dateTime = arrow.Arrow.strptime(argstr, YYYYMMDD_FORMAT)
     except ValueError:
       return (False, YYYYMMDD_FORMAT_REQUIRED)
     argstr = ISOformatTimeStamp(dateTime.replace(tzinfo=GC.Values[GC.TIMEZONE]))
   try:
-    iso8601.parse_date(argstr)
+    arrow.get(argstr)
     return (True, argstr.replace(' ', 'T'))
-  except (iso8601.ParseError, OverflowError):
+  except (arrow.parser.ParserError, OverflowError):
     return (False, YYYYMMDDTHHMMSS_FORMAT_REQUIRED)
 
 def mapQueryRelativeTimes(query, keywords):
@@ -2096,9 +2094,9 @@ class StartEndTime():
       self.endDateTime, _, self.endTime = self._getValueOrDeltaFromNow(True)
     elif myarg == 'yesterday':
       currDate = todaysDate()
-      self.startDateTime = currDate+datetime.timedelta(days=-1)
+      self.startDateTime = currDate.shift(days=-1)
       self.startTime = ISOformatTimeStamp(self.startDateTime)
-      self.endDateTime = currDate+datetime.timedelta(seconds=-1)
+      self.endDateTime = currDate.shift(seconds=-1)
       self.endTime = ISOformatTimeStamp(self.endDateTime)
     elif myarg == 'today':
       currDate = todaysDate()
@@ -2113,12 +2111,12 @@ class StartEndTime():
       else:
         firstMonth = getInteger(minVal=1, maxVal=6)
       currDate = todaysDate()
-      self.startDateTime = currDate+relativedelta(months=-firstMonth, day=1, hour=0, minute=0, second=0, microsecond=0)
+      self.startDateTime = currDate.shift(months=-firstMonth, day=1, hour=0, minute=0, second=0, microsecond=0)
       self.startTime = ISOformatTimeStamp(self.startDateTime)
       if myarg == 'thismonth':
         self.endDateTime = todaysTime()
       else:
-        self.endDateTime = currDate+relativedelta(day=1, hour=23, minute=59, second=59, microsecond=0)+relativedelta(days=-1)
+        self.endDateTime = currDate.shift(day=1, hour=23, minute=59, second=59, microsecond=0).shift(days=-1)
       self.endTime = ISOformatTimeStamp(self.endDateTime)
     if self.startDateTime and self.endDateTime and self.endDateTime < self.startDateTime:
       Cmd.Backup()
@@ -2334,7 +2332,7 @@ def formatLocalTime(dateTimeStr):
   if dateTimeStr in {NEVER_TIME, NEVER_TIME_NOMS}:
     return GC.Values[GC.NEVER_TIME]
   try:
-    timestamp = iso8601.parse_date(dateTimeStr)
+    timestamp = arrow.get(dateTimeStr)
     if not GC.Values[GC.OUTPUT_TIMEFORMAT]:
       if GM.Globals[GM.CONVERT_TO_LOCAL_TIME]:
         return ISOformatTimeStamp(timestamp.astimezone(GC.Values[GC.TIMEZONE]))
@@ -2342,27 +2340,27 @@ def formatLocalTime(dateTimeStr):
     if GM.Globals[GM.CONVERT_TO_LOCAL_TIME]:
       return timestamp.astimezone(GC.Values[GC.TIMEZONE]).strftime(GC.Values[GC.OUTPUT_TIMEFORMAT])
     return timestamp.strftime(GC.Values[GC.OUTPUT_TIMEFORMAT])
-  except (iso8601.ParseError, OverflowError):
+  except (arrow.parser.ParserError, OverflowError):
     return dateTimeStr
 
 def formatLocalSecondsTimestamp(timestamp):
   if not GC.Values[GC.OUTPUT_TIMEFORMAT]:
-    return ISOformatTimeStamp(datetime.datetime.fromtimestamp(int(timestamp), GC.Values[GC.TIMEZONE]))
-  return datetime.datetime.fromtimestamp(int(timestamp), GC.Values[GC.TIMEZONE]).strftime(GC.Values[GC.OUTPUT_TIMEFORMAT])
+    return ISOformatTimeStamp(arrow.Arrow.fromtimestamp(int(timestamp), GC.Values[GC.TIMEZONE]))
+  return arrow.Arrow.fromtimestamp(int(timestamp), GC.Values[GC.TIMEZONE]).strftime(GC.Values[GC.OUTPUT_TIMEFORMAT])
 
 def formatLocalTimestamp(timestamp):
   if not GC.Values[GC.OUTPUT_TIMEFORMAT]:
-    return ISOformatTimeStamp(datetime.datetime.fromtimestamp(int(timestamp)//1000, GC.Values[GC.TIMEZONE]))
-  return datetime.datetime.fromtimestamp(int(timestamp)//1000, GC.Values[GC.TIMEZONE]).strftime(GC.Values[GC.OUTPUT_TIMEFORMAT])
+    return ISOformatTimeStamp(arrow.Arrow.fromtimestamp(int(timestamp)//1000, GC.Values[GC.TIMEZONE]))
+  return arrow.Arrow.fromtimestamp(int(timestamp)//1000, GC.Values[GC.TIMEZONE]).strftime(GC.Values[GC.OUTPUT_TIMEFORMAT])
 
 def formatLocalTimestampUTC(timestamp):
-  return ISOformatTimeStamp(datetime.datetime.fromtimestamp(int(timestamp)//1000, iso8601.UTC))
+  return ISOformatTimeStamp(arrow.Arrow.fromtimestamp(int(timestamp)//1000, 'UTC'))
 
 def formatLocalDatestamp(timestamp):
   try:
     if not GC.Values[GC.OUTPUT_DATEFORMAT]:
-      return datetime.datetime.fromtimestamp(int(timestamp)//1000, GC.Values[GC.TIMEZONE]).strftime(YYYYMMDD_FORMAT)
-    return datetime.datetime.fromtimestamp(int(timestamp)//1000, GC.Values[GC.TIMEZONE]).strftime(GC.Values[GC.OUTPUT_DATEFORMAT])
+      return arrow.Arrow.fromtimestamp(int(timestamp)//1000, GC.Values[GC.TIMEZONE]).strftime(YYYYMMDD_FORMAT)
+    return arrow.Arrow.fromtimestamp(int(timestamp)//1000, GC.Values[GC.TIMEZONE]).strftime(GC.Values[GC.OUTPUT_DATEFORMAT])
   except OverflowError:
     return NEVER_DATE
 
@@ -3708,16 +3706,16 @@ def SetGlobalVariables():
     value = _stripStringQuotes(GM.Globals[GM.PARSER].get(sectionName, itemName).lower())
     if value == 'utc':
       GM.Globals[GM.CONVERT_TO_LOCAL_TIME] = False
-      return iso8601.UTC
+      return arrow.now(value).tzinfo
     GM.Globals[GM.CONVERT_TO_LOCAL_TIME] = True
     if value == 'local':
-      return iso8601.Local
+      return arrow.now(value).tzinfo
     try:
-      return iso8601.parse_timezone_str(value)
-    except (iso8601.ParseError, OverflowError):
+      return arrow.now(value).tzinfo
+    except (arrow.parser.ParserError, OverflowError):
       _printValueError(sectionName, itemName, value, f'{Msg.EXPECTED}: {TIMEZONE_FORMAT_REQUIRED}')
       GM.Globals[GM.CONVERT_TO_LOCAL_TIME] = False
-      return iso8601.UTC
+      return arrow.now('utc').tzinfo
 
   def _getCfgDirectory(sectionName, itemName):
     dirPath = os.path.expanduser(_stripStringQuotes(GM.Globals[GM.PARSER].get(sectionName, itemName)))
@@ -4043,7 +4041,7 @@ def SetGlobalVariables():
       GC.Values[itemName] = _getCfgDirectory(sectionName, itemName)
     elif varType == GC.TYPE_TIMEZONE:
       GC.Values[itemName] = _getCfgTimezone(sectionName, itemName)
-  GM.Globals[GM.DATETIME_NOW] = datetime.datetime.now(GC.Values[GC.TIMEZONE])
+  GM.Globals[GM.DATETIME_NOW] = arrow.now(GC.Values[GC.TIMEZONE])
 # Everything else except row filters
   for itemName, itemEntry in sorted(GC.VAR_INFO.items()):
     varType = itemEntry[GC.VAR_TYPE]
@@ -4389,9 +4387,8 @@ _DEFAULT_TOKEN_LIFETIME_SECS = 3600  # 1 hour in seconds
 class signjwtJWTCredentials(google.auth.jwt.Credentials):
   ''' Class used for DASA '''
   def _make_jwt(self):
-    now = datetime.datetime.utcnow()
-    lifetime = datetime.timedelta(seconds=self._token_lifetime)
-    expiry = now + lifetime
+    now = arrow.utcnow()
+    expiry = now.shift(seconds=self._token_lifetime)
     payload = {
       "iat": google.auth._helpers.datetime_to_secs(now),
       "exp": google.auth._helpers.datetime_to_secs(expiry),
@@ -4415,9 +4412,8 @@ class signjwtCredentials(google.oauth2.service_account.Credentials):
   ''' Class used for DwD '''
 
   def _make_authorization_grant_assertion(self):
-    now = datetime.datetime.utcnow()
-    lifetime = datetime.timedelta(seconds=_DEFAULT_TOKEN_LIFETIME_SECS)
-    expiry = now + lifetime
+    now = arrow.utcnow()
+    expiry = now.shift(seconds=_DEFAULT_TOKEN_LIFETIME_SECS)
     payload = {
         "iat": google.auth._helpers.datetime_to_secs(now),
         "exp": google.auth._helpers.datetime_to_secs(expiry),
@@ -4537,7 +4533,7 @@ def getOauth2TxtCredentials(exitOnError=True, api=None, noDASA=False, refreshOnl
           creds.token = jsonDict['access_token']
           creds._id_token = jsonDict['id_token_jwt']
           GM.Globals[GM.DECODED_ID_TOKEN] = jsonDict['id_token']
-        creds.expiry = datetime.datetime.strptime(token_expiry, YYYYMMDDTHHMMSSZ_FORMAT)
+        creds.expiry = arrow.Arrow.strptime(token_expiry, YYYYMMDDTHHMMSSZ_FORMAT).naive
         return (not noScopes, creds)
       if jsonDict and exitOnError:
         invalidOauth2TxtExit(Msg.INVALID)
@@ -7427,15 +7423,15 @@ def RowFilterMatch(row, titlesList, rowFilter, rowFilterModeAll, rowDropFilter, 
   def stripTimeFromDateTime(rowDate):
     if YYYYMMDD_PATTERN.match(rowDate):
       try:
-        rowTime = datetime.datetime.strptime(rowDate, YYYYMMDD_FORMAT)
+        rowTime = arrow.Arrow.strptime(rowDate, YYYYMMDD_FORMAT)
       except ValueError:
         return None
     else:
       try:
-        rowTime = iso8601.parse_date(rowDate)
-      except (iso8601.ParseError, OverflowError):
+        rowTime = arrow.get(rowDate)
+      except (arrow.parser.ParserError, OverflowError):
         return None
-    return ISOformatTimeStamp(datetime.datetime(rowTime.year, rowTime.month, rowTime.day, tzinfo=iso8601.UTC))
+    return ISOformatTimeStamp(arrow.Arrow(rowTime.year, rowTime.month, rowTime.day, tzinfo='UTC'))
 
   def rowDateTimeFilterMatch(dateMode, op, filterDate):
     def checkMatch(rowDate):
@@ -7497,8 +7493,8 @@ def RowFilterMatch(row, titlesList, rowFilter, rowFilterModeAll, rowDropFilter, 
     if YYYYMMDD_PATTERN.match(rowDate):
       return None
     try:
-      rowTime = iso8601.parse_date(rowDate)
-    except (iso8601.ParseError, OverflowError):
+      rowTime = arrow.get(rowDate)
+    except (arrow.parser.ParserError, OverflowError):
       return None
     return f'{rowTime.hour:02d}:{rowTime.minute:02d}'
 
@@ -8699,10 +8695,10 @@ class CSVPrintFile():
             sheetTitle = self.todrive['sheetEntity']['sheetTitle']
         else:
           sheetTitle = self.todrive['sheettitle']
-        tdbasetime = tdtime = datetime.datetime.now(GC.Values[GC.TIMEZONE])
+        tdbasetime = tdtime = arrow.now(GC.Values[GC.TIMEZONE])
         if self.todrive['daysoffset'] is not None or self.todrive['hoursoffset'] is not None:
-          tdtime = tdbasetime+relativedelta(days=-self.todrive['daysoffset'] if self.todrive['daysoffset'] is not None else 0,
-                                            hours=-self.todrive['hoursoffset'] if self.todrive['hoursoffset'] is not None else 0)
+          tdtime = tdbasetime.shift(days=-self.todrive['daysoffset'] if self.todrive['daysoffset'] is not None else 0,
+                                    hours=-self.todrive['hoursoffset'] if self.todrive['hoursoffset'] is not None else 0)
         if self.todrive['timestamp']:
           if title:
             title += ' - '
@@ -8712,8 +8708,8 @@ class CSVPrintFile():
             title += tdtime.strftime(self.todrive['timeformat'])
         if self.todrive['sheettimestamp']:
           if self.todrive['sheetdaysoffset'] is not None or self.todrive['sheethoursoffset'] is not None:
-            tdtime = tdbasetime+relativedelta(days=-self.todrive['sheetdaysoffset'] if self.todrive['sheetdaysoffset'] is not None else 0,
-                                              hours=-self.todrive['sheethoursoffset'] if self.todrive['sheethoursoffset'] is not None else 0)
+            tdtime = tdbasetime.shift(days=-self.todrive['sheetdaysoffset'] if self.todrive['sheetdaysoffset'] is not None else 0,
+                                      hours=-self.todrive['sheethoursoffset'] if self.todrive['sheethoursoffset'] is not None else 0)
           if sheetTitle:
             sheetTitle += ' - '
           if not self.todrive['sheettimeformat']:
@@ -9302,7 +9298,7 @@ def getLocalGoogleTimeOffset(testLocation=GOOGLE_TIMECHECK_LOCATION):
   for prot in ['http', 'https']:
     try:
       headerData = httpObj.request(f'{prot}://'+testLocation, 'HEAD')
-      googleUTC = datetime.datetime.strptime(headerData[0]['date'], '%a, %d %b %Y %H:%M:%S %Z').replace(tzinfo=iso8601.UTC)
+      googleUTC = arrow.Arrow.strptime(headerData[0]['date'], '%a, %d %b %Y %H:%M:%S %Z', tzinfo='UTC')
     except (httplib2.HttpLib2Error, RuntimeError) as e:
       handleServerError(e)
     except httplib2.socks.HTTPError as e:
@@ -9315,7 +9311,7 @@ def getLocalGoogleTimeOffset(testLocation=GOOGLE_TIMECHECK_LOCATION):
       if prot == 'http':
         continue
       systemErrorExit(NETWORK_ERROR_RC, Msg.INVALID_HTTP_HEADER.format(str(headerData)))
-    offset = remainder = int(abs((datetime.datetime.now(iso8601.UTC)-googleUTC).total_seconds()))
+    offset = remainder = int(abs((arrow.utcnow()-googleUTC).total_seconds()))
     if offset < MAX_LOCAL_GOOGLE_TIME_OFFSET and prot == 'http':
       continue
     timeoff = []
@@ -11029,7 +11025,7 @@ class Credentials(google.oauth2.credentials.Credentials):
     expiry = info.get('token_expiry')
     if expiry:
       # Convert the raw expiry to datetime
-      expiry = datetime.datetime.strptime(expiry, YYYYMMDDTHHMMSSZ_FORMAT)
+      expiry = arrow.Arrow.strptime(expiry, YYYYMMDDTHHMMSSZ_FORMAT)
     id_token_data = info.get('decoded_id_token')
 
     # Provide backwards compatibility with field names when loading from JSON.
@@ -11293,7 +11289,7 @@ def doOAuthInfo():
   if 'email' in token_info:
     printKeyValueList(['Google Workspace Admin', f'{token_info["email"]}'])
   if 'expires_in' in token_info:
-    printKeyValueList(['Expires', ISOformatTimeStamp((datetime.datetime.now()+datetime.timedelta(seconds=token_info['expires_in'])).replace(tzinfo=GC.Values[GC.TIMEZONE]))])
+    printKeyValueList(['Expires', ISOformatTimeStamp(arrow.now(GC.Values[GC.TIMEZONE]).shift(seconds=token_info['expires_in']))])
   if showDetails:
     for k, v in sorted(token_info.items()):
       if k not in  ['email', 'expires_in', 'issued_to', 'scope']:
@@ -12409,7 +12405,7 @@ def checkServiceAccount(users):
                      throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID, GAPI.NOT_FOUND,
                                    GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
                      name=name, fields='validAfterTime')
-      key_created = iso8601.parse_date(key['validAfterTime'])
+      key_created = arrow.get(key['validAfterTime'])
       key_age = todaysTime()-key_created
       printPassFail(Msg.SERVICE_ACCOUNT_PRIVATE_KEY_AGE.format(key_age.days), testWarn if key_age.days > 30 else testPass)
     except GAPI.permissionDenied:
@@ -12664,15 +12660,15 @@ def _generatePrivateKeyAndPublicCert(projectId, clientEmail, name, key_size, b64
                                                                 _validate=False)]))
   # Gooogle seems to enforce the not before date strictly. Set the not before
   # date to be UTC two minutes ago which should cover any clock skew.
-  now = datetime.datetime.utcnow()
-  builder = builder.not_valid_before(now - datetime.timedelta(minutes=2))
+  now = arrow.utcnow()
+  builder = builder.not_valid_before(now.shift(minutes=-2))
   # Google defaults to 12/31/9999 date for end time if there's no
   # policy to restrict key age
   if validityHours:
-    expires = now + datetime.timedelta(hours=validityHours) - datetime.timedelta(minutes=2)
+    expires = now.shift(hours=validityHours, minutes=-2)
     builder = builder.not_valid_after(expires)
   else:
-    builder = builder.not_valid_after(datetime.datetime(9999, 12, 31, 23, 59))
+    builder = builder.not_valid_after(arrow.Arrow(9999, 12, 31, 23, 59))
   builder = builder.serial_number(x509.random_serial_number())
   builder = builder.public_key(public_key)
   builder = builder.add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
@@ -13049,7 +13045,7 @@ def _showMailboxMonitorRequestStatus(request, i=0, count=0):
 def doCreateMonitor():
   auditObject, parameters = getAuditParameters(emailAddressRequired=True, requestIdRequired=False, destUserRequired=True)
   #end_date defaults to 30 days in the future...
-  end_date = (GM.Globals[GM.DATETIME_NOW]+datetime.timedelta(days=30)).strftime(YYYYMMDD_HHMM_FORMAT)
+  end_date = GM.Globals[GM.DATETIME_NOW].shift(days=30).strftime(YYYYMMDD_HHMM_FORMAT)
   begin_date = None
   incoming_headers_only = outgoing_headers_only = drafts_headers_only = chats_headers_only = False
   drafts = chats = True
@@ -13222,7 +13218,7 @@ def _adjustTryDate(errMsg, numDateChanges, limitDateChanges, prevTryDate):
     else:
       match_date = re.match('End date greater than LastReportedDate.', errMsg)
       if match_date:
-        tryDateTime = datetime.datetime.strptime(prevTryDate, YYYYMMDD_FORMAT)-datetime.timedelta(days=1)
+        tryDateTime = arrow.Arrow.strptime(prevTryDate, YYYYMMDD_FORMAT).shift(days=-1)
         tryDate = tryDateTime.strftime(YYYYMMDD_FORMAT)
   if (not match_date) or (numDateChanges > limitDateChanges >= 0):
     printWarningMessage(DATA_NOT_AVALIABLE_RC, errMsg)
@@ -13233,18 +13229,17 @@ def _checkDataRequiredServices(result, tryDate, dataRequiredServices, parameterS
 # -1: Data not available:
 #  0: Backup to earlier date
 #  1: Data available
-  oneDay = datetime.timedelta(days=1)
   dataWarnings = result.get('warnings', [])
   usageReports = result.get('usageReports', [])
   # move to day before if we don't have at least one usageReport with parameters
   if not usageReports or not usageReports[0].get('parameters', []):
-    tryDateTime = datetime.datetime.strptime(tryDate, YYYYMMDD_FORMAT)-oneDay
+    tryDateTime = arrow.Arrow.strptime(tryDate, YYYYMMDD_FORMAT).shift(days=-1)
     return (0, tryDateTime.strftime(YYYYMMDD_FORMAT), None)
   for warning in dataWarnings:
     if warning['code'] == 'PARTIAL_DATA_AVAILABLE':
       for app in warning['data']:
         if app['key'] == 'application' and app['value'] != 'docs' and app['value'] in dataRequiredServices:
-          tryDateTime = datetime.datetime.strptime(tryDate, YYYYMMDD_FORMAT)-oneDay
+          tryDateTime = arrow.Arrow.strptime(tryDate, YYYYMMDD_FORMAT).shift(days=-1)
           return (0, tryDateTime.strftime(YYYYMMDD_FORMAT), None)
     elif warning['code'] == 'DATA_NOT_AVAILABLE':
       for app in warning['data']:
@@ -13261,11 +13256,11 @@ def _checkDataRequiredServices(result, tryDate, dataRequiredServices, parameterS
         if not requiredServices:
           break
     else:
-      tryDateTime = datetime.datetime.strptime(tryDate, YYYYMMDD_FORMAT)-oneDay
+      tryDateTime = arrow.Arrow.strptime(tryDate, YYYYMMDD_FORMAT).shift(days=-1)
       return (0, tryDateTime.strftime(YYYYMMDD_FORMAT), None)
   if checkUserEmail:
     if 'entity' not in usageReports[0] or 'userEmail' not in usageReports[0]['entity']:
-      tryDateTime = datetime.datetime.strptime(tryDate, YYYYMMDD_FORMAT)-oneDay
+      tryDateTime = arrow.Arrow.strptime(tryDate, YYYYMMDD_FORMAT).shift(days=-1)
       return (0, tryDateTime.strftime(YYYYMMDD_FORMAT), None)
   return (1, tryDate, usageReports)
 
@@ -13379,11 +13374,13 @@ REPORTS_PARAMETERS_SIMPLE_TYPES = ['intValue', 'boolValue', 'datetimeValue', 'st
 #	[(user all|<UserItem>)|(orgunit|org|ou <OrgUnitPath> [showorgunit])|(select <UserTypeEntity>)]
 #	[([start|startdate <Date>] [end|enddate <Date>])|(range <Date> <Date>)|
 #	 thismonth|(previousmonths <Integer>)]
+#	[skipdates <Date>[:<Date>](,<Date>[:<Date>])*] [skipdaysofweek <DayOfWeek>(,<DayOfWeek>)*]
 #	[fields|parameters <String>)]
 #	[convertmbtogb]
 # gam report usage customer [todrive <ToDriveAttribute>*]
 #	[([start|startdate <Date>] [end|enddate <Date>])|(range <Date> <Date>)|
 #	 thismonth|(previousmonths <Integer>)]
+#	[skipdates <Date>[:<Date>](,<Date>[:<Date>])*] [skipdaysofweek <DayOfWeek>(,<DayOfWeek>)*]
 #	[fields|parameters <String>)]
 #	[convertmbtogb]
 def doReportUsage():
@@ -13405,8 +13402,8 @@ def doReportUsage():
         invalidArgumentExit(DELTA_DATE_FORMAT_REQUIRED)
       return deltaDate
     try:
-      argDate = datetime.datetime.strptime(argstr, YYYYMMDD_FORMAT)
-      return datetime.datetime(argDate.year, argDate.month, argDate.day, tzinfo=GC.Values[GC.TIMEZONE])
+      argDate = arrow.Arrow.strptime(argstr, YYYYMMDD_FORMAT)
+      return arrow.Arrow(argDate.year, argDate.month, argDate.day, tzinfo=GC.Values[GC.TIMEZONE])
     except ValueError:
       Cmd.Backup()
       invalidArgumentExit(YYYYMMDD_FORMAT_REQUIRED)
@@ -13437,7 +13434,6 @@ def doReportUsage():
   startEndTime = StartEndTime('startdate', 'enddate', 'date')
   skipDayNumbers = []
   skipDates = set()
-  oneDay = datetime.timedelta(days=1)
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -13475,10 +13471,10 @@ def doReportUsage():
             usageErrorExit(Msg.INVALID_DATE_TIME_RANGE.format(myarg, skipEnd, myarg, skipStart))
           while skipStartDate <= skipEndDate:
             skipDates.add(skipStartDate)
-            skipStartDate += oneDay
+            skipStartDate = skipStartDate.shift(days=1)
     elif myarg == 'skipdaysofweek':
-      skipdaynames = getString(Cmd.OB_STRING).split(',')
-      dow = [d.lower() for d in calendarlib.day_abbr]
+      skipdaynames = getString(Cmd.OB_STRING).lower().split(',')
+      dow = [d.lower() for d in DAYS_OF_WEEK]
       skipDayNumbers = [dow.index(d) for d in skipdaynames if d in dow]
     elif userReports and myarg == 'user':
       userKey = getString(Cmd.OB_EMAIL_ADDRESS)
@@ -13497,7 +13493,7 @@ def doReportUsage():
   if startEndTime.endDateTime is None:
     startEndTime.endDateTime = todaysDate()
   if startEndTime.startDateTime is None:
-    startEndTime.startDateTime = startEndTime.endDateTime+datetime.timedelta(days=-30)
+    startEndTime.startDateTime = startEndTime.endDateTime.shift(days=-30)
   startDateTime = startEndTime.startDateTime
   startDate = startDateTime.strftime(YYYYMMDD_FORMAT)
   endDateTime = startEndTime.endDateTime
@@ -13530,10 +13526,10 @@ def doReportUsage():
   parameters = ','.join(parameters) if parameters else None
   while startDateTime <= endDateTime:
     if startDateTime.weekday() in skipDayNumbers or startDateTime in skipDates:
-      startDateTime += oneDay
+      startDateTime = startDateTime.shift(days=1)
       continue
     useDate = startDateTime.strftime(YYYYMMDD_FORMAT)
-    startDateTime += oneDay
+    startDateTime = startDateTime.shift(days=1)
     try:
       for kwarg in kwargs:
         if userReports:
@@ -13724,7 +13720,7 @@ def doReport():
           mg = DISABLED_REASON_TIME_PATTERN.match(item['stringValue'])
           if mg:
             try:
-              disabledTime = formatLocalTime(datetime.datetime.strptime(mg.group(1), '%Y/%m/%d-%H:%M:%S').replace(tzinfo=iso8601.UTC).strftime(YYYYMMDDTHHMMSSZ_FORMAT))
+              disabledTime = formatLocalTime(arrow.Arrow.strptime(mg.group(1), '%Y/%m/%d-%H:%M:%S').replace(tzinfo='UTC').strftime(YYYYMMDDTHHMMSSZ_FORMAT))
               row['accounts:disabled_time'] = disabledTime
               csvPF.AddTitles('accounts:disabled_time')
             except ValueError:
@@ -13959,7 +13955,6 @@ def doReport():
   eventCounts = {}
   eventNames = []
   startEndTime = StartEndTime('start', 'end')
-  oneDay = datetime.timedelta(days=1)
   filterTimes = {}
   maxActivities = maxEvents = 0
   maxResults = 1000
@@ -14171,7 +14166,7 @@ def doReport():
             if fullData == 0:
               if numDateChanges > limitDateChanges >= 0:
                 break
-              startDateTime = endDateTime = datetime.datetime.strptime(tryDate, YYYYMMDD_FORMAT)
+              startDateTime = endDateTime = arrow.Arrow.strptime(tryDate, YYYYMMDD_FORMAT)
               continue
           if not select and userKey == 'all':
             pageMessage = getPageMessageForWhom(forWhom, showDate=tryDate)
@@ -14200,7 +14195,7 @@ def doReport():
           tryDate = _adjustTryDate(str(e), numDateChanges, limitDateChanges, tryDate)
           if not tryDate:
             break
-          startDateTime = endDateTime = datetime.datetime.strptime(tryDate, YYYYMMDD_FORMAT)
+          startDateTime = endDateTime = arrow.Arrow.strptime(tryDate, YYYYMMDD_FORMAT)
           continue
         except GAPI.invalidInput as e:
           systemErrorExit(GOOGLE_API_ERROR_RC, str(e))
@@ -14213,7 +14208,7 @@ def doReport():
           break
         except GAPI.forbidden as e:
           accessErrorExit(None, str(e))
-        startDateTime += oneDay
+        startDateTime = startDateTime.shift(days=1)
       if exitUserLoop:
         break
       if user != 'all' and lastDate is None and GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
@@ -14270,7 +14265,7 @@ def doReport():
           if fullData == 0:
             if numDateChanges > limitDateChanges >= 0:
               break
-            startDateTime = endDateTime = datetime.datetime.strptime(tryDate, YYYYMMDD_FORMAT)
+            startDateTime = endDateTime = arrow.Arrow.strptime(tryDate, YYYYMMDD_FORMAT)
             continue
         usage = callGAPIpages(service, 'get', 'usageReports',
                               throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.FORBIDDEN],
@@ -14288,13 +14283,13 @@ def doReport():
         tryDate = _adjustTryDate(str(e), numDateChanges, limitDateChanges, tryDate)
         if not tryDate:
           break
-        startDateTime = endDateTime = datetime.datetime.strptime(tryDate, YYYYMMDD_FORMAT)
+        startDateTime = endDateTime = arrow.Arrow.strptime(tryDate, YYYYMMDD_FORMAT)
         continue
       except GAPI.invalidInput as e:
         systemErrorExit(GOOGLE_API_ERROR_RC, str(e))
       except GAPI.forbidden as e:
         accessErrorExit(None, str(e))
-      startDateTime += oneDay
+      startDateTime = startDateTime.shift(days=1)
     csvPF.writeCSVfile(f'Customer Report - {tryDate}')
   else: # activityReports
     csvPF.SetTitles('name')
@@ -14364,8 +14359,8 @@ def doReport():
             eventTime = activity.get('id', {}).get('time', UNKNOWN)
             if eventTime != UNKNOWN:
               try:
-                eventTime = iso8601.parse_date(eventTime)
-              except (iso8601.ParseError, OverflowError):
+                eventTime = arrow.get(eventTime)
+              except (arrow.parser.ParserError, OverflowError):
                 eventTime = UNKNOWN
             if eventTime != UNKNOWN:
               eventDate = eventTime.strftime(YYYYMMDD_FORMAT)
@@ -14389,7 +14384,7 @@ def doReport():
                     if val is not None:
                       val = int(val)
                       if val >= 62135683200:
-                        event[item['name']] = ISOformatTimeStamp(datetime.datetime.fromtimestamp(val-62135683200, GC.Values[GC.TIMEZONE]))
+                        event[item['name']] = ISOformatTimeStamp(arrow.Arrow.fromtimestamp(val-62135683200, GC.Values[GC.TIMEZONE]))
                       else:
                         event[item['name']] = val
                   else:
@@ -23844,7 +23839,7 @@ def _filterActiveTimeRanges(cros, selected, listLimit, startDate, endDate, activ
     activeTimeRanges.reverse()
   i = 0
   for item in activeTimeRanges:
-    activityDate = datetime.datetime.strptime(item['date'], YYYYMMDD_FORMAT)
+    activityDate = arrow.Arrow.strptime(item['date'], YYYYMMDD_FORMAT)
     if ((startDate is None) or (activityDate >= startDate)) and ((endDate is None) or (activityDate <= endDate)):
       item['duration'] = formatMilliSeconds(item['activeTime'])
       item['minutes'] = item['activeTime']//60000
@@ -23863,7 +23858,7 @@ def _filterDeviceFiles(cros, selected, listLimit, startTime, endTime):
   filteredItems = []
   i = 0
   for item in cros.get('deviceFiles', []):
-    timeValue = iso8601.parse_date(item['createTime'])
+    timeValue = arrow.get(item['createTime'])
     if ((startTime is None) or (timeValue >= startTime)) and ((endTime is None) or (timeValue <= endTime)):
       item['createTime'] = formatLocalTime(item['createTime'])
       filteredItems.append(item)
@@ -23880,7 +23875,7 @@ def _filterCPUStatusReports(cros, selected, listLimit, startTime, endTime):
   filteredItems = []
   i = 0
   for item in cros.get('cpuStatusReports', []):
-    timeValue = iso8601.parse_date(item['reportTime'])
+    timeValue = arrow.get(item['reportTime'])
     if ((startTime is None) or (timeValue >= startTime)) and ((endTime is None) or (timeValue <= endTime)):
       item['reportTime'] = formatLocalTime(item['reportTime'])
       for tempInfo in item.get('cpuTemperatureInfo', []):
@@ -23901,7 +23896,7 @@ def _filterSystemRamFreeReports(cros, selected, listLimit, startTime, endTime):
   filteredItems = []
   i = 0
   for item in cros.get('systemRamFreeReports', []):
-    timeValue = iso8601.parse_date(item['reportTime'])
+    timeValue = arrow.get(item['reportTime'])
     if ((startTime is None) or (timeValue >= startTime)) and ((endTime is None) or (timeValue <= endTime)):
       item['reportTime'] = formatLocalTime(item['reportTime'])
       item['systemRamFreeInfo'] = ','.join([str(x) for x in item['systemRamFreeInfo']])
@@ -23934,7 +23929,7 @@ def _filterScreenshotFiles(cros, selected, listLimit, startTime, endTime):
   filteredItems = []
   i = 0
   for item in cros.get('screenshotFiles', []):
-    timeValue = iso8601.parse_date(item['createTime'])
+    timeValue = arrow.get(item['createTime'])
     if ((startTime is None) or (timeValue >= startTime)) and ((endTime is None) or (timeValue <= endTime)):
       item['createTime'] = formatLocalTime(item['createTime'])
       filteredItems.append(item)
@@ -23971,7 +23966,7 @@ def _computeDVRstorageFreePercentage(cros):
 
 def _getFilterDateTime():
   filterDate = getYYYYMMDD(returnDateTime=True)
-  return (filterDate, filterDate.replace(tzinfo=iso8601.UTC))
+  return (filterDate, filterDate.replace(tzinfo='UTC'))
 
 CROS_FIELDS_CHOICE_MAP = {
   'activetimeranges': ['activeTimeRanges.activeTime', 'activeTimeRanges.date'],
@@ -24382,9 +24377,9 @@ def getDeviceFilesEntity():
     else:
       for timeItem in myarg.split(','):
         try:
-          timestamp = iso8601.parse_date(timeItem)
+          timestamp = arrow.get(timeItem)
           deviceFilesEntity['list'].append(ISOformatTimeStamp(timestamp.astimezone(GC.Values[GC.TIMEZONE])))
-        except (iso8601.ParseError, OverflowError):
+        except (arrow.parser.ParserError, OverflowError):
           Cmd.Backup()
           invalidArgumentExit(YYYYMMDDTHHMMSS_FORMAT_REQUIRED)
   return deviceFilesEntity
@@ -24411,14 +24406,14 @@ def _selectDeviceFiles(deviceId, deviceFiles, deviceFilesEntity):
     count = 0
     if deviceFilesEntity['time'][0] == 'before':
       for deviceFile in deviceFiles:
-        createTime = iso8601.parse_date(deviceFile['createTime'])
+        createTime = arrow.get(deviceFile['createTime'])
         if createTime >= dateTime:
           break
         count += 1
       return deviceFiles[:count]
 #   if deviceFilesEntity['time'][0] == 'after':
     for deviceFile in deviceFiles:
-      createTime = iso8601.parse_date(deviceFile['createTime'])
+      createTime = arrow.get(deviceFile['createTime'])
       if createTime >= dateTime:
         break
       count += 1
@@ -24427,14 +24422,14 @@ def _selectDeviceFiles(deviceId, deviceFiles, deviceFilesEntity):
     dateTime = deviceFilesEntity['range'][1]
     spos = 0
     for deviceFile in deviceFiles:
-      createTime = iso8601.parse_date(deviceFile['createTime'])
+      createTime = arrow.get(deviceFile['createTime'])
       if createTime >= dateTime:
         break
       spos += 1
     dateTime = deviceFilesEntity['range'][2]
     epos = spos
     for deviceFile in deviceFiles[spos:]:
-      createTime = iso8601.parse_date(deviceFile['createTime'])
+      createTime = arrow.get(deviceFile['createTime'])
       if createTime >= dateTime:
         break
       epos += 1
@@ -25217,7 +25212,7 @@ def doInfoPrintShowCrOSTelemetry():
           i = 0
           for item in listItems:
             if 'reportTime' in item:
-              timeValue = iso8601.parse_date(item['reportTime'])
+              timeValue = arrow.get(item['reportTime'])
             else:
               timeValue = None
             if (timeValue is None) or (((startTime is None) or (timeValue >= startTime)) and ((endTime is None) or (timeValue <= endTime))):
@@ -40058,15 +40053,15 @@ def _getEventDaysOfWeek(event):
     if attr in event:
       if 'date' in event[attr]:
         try:
-          dateTime = datetime.datetime.strptime(event[attr]['date'], YYYYMMDD_FORMAT)
-          event[attr]['dayOfWeek'] = calendarlib.day_abbr[dateTime.weekday()]
+          dateTime = arrow.Arrow.strptime(event[attr]['date'], YYYYMMDD_FORMAT)
+          event[attr]['dayOfWeek'] = DAYS_OF_WEEK[dateTime.weekday()]
         except ValueError:
           pass
       elif 'dateTime' in event[attr]:
         try:
-          dateTime = iso8601.parse_date(event[attr]['dateTime'])
-          event[attr]['dayOfWeek'] = calendarlib.day_abbr[dateTime.weekday()]
-        except (iso8601.ParseError, OverflowError):
+          dateTime = arrow.get(event[attr]['dateTime'])
+          event[attr]['dayOfWeek'] = DAYS_OF_WEEK[dateTime.weekday()]
+        except (arrow.parser.ParserError, OverflowError):
           pass
 
 def _createCalendarEvents(user, origCal, function, calIds, count, body, parameters):
@@ -46860,7 +46855,7 @@ def doCreateInboundSSOCredential():
                                                         count, Ent.Choose(Ent.INBOUND_SSO_CREDENTIALS, count)))
   if generateKey:
     privKey, pemData = _generatePrivateKeyAndPublicCert('', '', 'GAM', keySize, b64enc_pub=False)
-    timestamp = datetime.datetime.now(GC.Values[GC.TIMEZONE]).strftime('%Y%m%d-%I%M%S')
+    timestamp = arrow.now(GC.Values[GC.TIMEZONE]).strftime('%Y%m%d-%I%M%S')
     priv_file = f'privatekey-{timestamp}.pem'
     writeFile(priv_file, privKey)
     writeStdout(Msg.WROTE_PRIVATE_KEY_DATA.format(priv_file))
@@ -47932,8 +47927,8 @@ class CourseAttributes():
   def checkDueDate(self, body):
     if 'dueDate' in body and 'dueTime' in body:
       try:
-        return self.currDateTime < datetime.datetime(body['dueDate']['year'], body['dueDate']['month'], body['dueDate']['day'],
-                                                     body['dueTime'].get('hours', 0), body['dueTime'].get('minutes', 0), tzinfo=iso8601.UTC)
+        return self.currDateTime < arrow.Arrow(body['dueDate']['year'], body['dueDate']['month'], body['dueDate']['day'],
+                                               body['dueTime'].get('hours', 0), body['dueTime'].get('minutes', 0), tzinfo='UTC')
       except ValueError:
         pass
     return False
@@ -48115,7 +48110,7 @@ class CourseAttributes():
     entityPerformActionModifierItemValueList([Ent.COURSE, newCourse['id']], Act.MODIFIER_FROM, [Ent.COURSE, self.courseId], i, count)
     Ind.Increment()
     if not self.removeDueDate:
-      self.currDateTime = datetime.datetime.now(iso8601.UTC)
+      self.currDateTime = arrow.utcnow()
     self.CopyAttributes(newCourse, i, count)
     if self.csvPF:
       self.csvPF.writeCSVfile('Course Drive File IDs')
@@ -48695,7 +48690,7 @@ def _courseItemPassesFilter(item, courseItemFilter):
     return False
   startTime = courseItemFilter['startTime']
   endTime = courseItemFilter['endTime']
-  timeValue = iso8601.parse_date(timeStr)
+  timeValue = arrow.get(timeStr)
   return ((startTime is None) or (timeValue >= startTime)) and ((endTime is None) or (timeValue <= endTime))
 
 def _gettingCoursesQuery(courseSelectionParameters):
@@ -53326,22 +53321,21 @@ def getStatusEventDateTime(dateType, dateList):
   firstDate = getYYYYMMDD(minLen=1, returnDateTime=True).replace(tzinfo=GC.Values[GC.TIMEZONE])
   if dateType == 'range':
     lastDate = getYYYYMMDD(minLen=1, returnDateTime=True).replace(tzinfo=GC.Values[GC.TIMEZONE])
-  deltaDay = datetime.timedelta(days=1)
-  deltaWeek = datetime.timedelta(weeks=1)
   if dateType in {'date', 'allday'}:
-    dateList.append({'type': 'date', 'first': firstDate, 'last': firstDate+deltaDay,
-                     'ulast': firstDate+deltaDay, 'udelta': deltaDay})
+    dateList.append({'type': 'date', 'first': firstDate, 'last': firstDate.shift(days=1),
+                     'ulast': firstDate.shift(days=1), 'udelta': {'days': 1}})
   elif dateType == 'range':
-    dateList.append({'type': dateType, 'first': firstDate, 'last': lastDate+deltaDay,
-                     'ulast': lastDate, 'udelta': deltaDay})
+    dateList.append({'type': dateType, 'first': firstDate, 'last': lastDate.shift(days=1),
+                     'ulast': lastDate, 'udelta': {'days': 1}})
   elif dateType == 'daily':
     argRepeat = getInteger(minVal=1, maxVal=366)
-    dateList.append({'type': dateType, 'first': firstDate, 'last': firstDate+datetime.timedelta(days=argRepeat),
-                     'ulast': firstDate+datetime.timedelta(days=argRepeat), 'udelta': deltaDay})
+    dateList.append({'type': dateType, 'first': firstDate, 'last': firstDate.shift(days=argRepeat),
+                     'ulast': firstDate.shift(days=argRepeat), 'udelta': {'days': 1}})
   else: #weekly
     argRepeat = getInteger(minVal=1, maxVal=52)
-    dateList.append({'type': dateType, 'first': firstDate, 'last': firstDate+deltaDay, 'pdelta': deltaWeek, 'repeats': argRepeat,
-                     'ulast': firstDate+datetime.timedelta(weeks=argRepeat), 'udelta': deltaWeek})
+    dateList.append({'type': dateType, 'first': firstDate, 'last': firstDate.shift(days=1),
+                     'pdelta': {'weeks': 1}, 'repeats': argRepeat,
+                     'ulast': firstDate.shift(weeks=argRepeat), 'udelta': {'weeks': 1}})
 
 def _showCalendarStatusEvent(primaryEmail, calId, eventEntityType, event, k, kcount, FJQC):
   if FJQC.formatJSON:
@@ -53529,7 +53523,7 @@ def createStatusEvent(users, eventType):
         if wlDate['type'] != 'timerange':
           body['start']['date'] = first.strftime(YYYYMMDD_FORMAT)
           kvList[5] = body['start']['date']
-          body['end']['date'] = (first+datetime.timedelta(days=1)).strftime(YYYYMMDD_FORMAT)
+          body['end']['date'] = (first.shift(days=1)).strftime(YYYYMMDD_FORMAT)
         else:
           body['start']['dateTime'] = ISOformatTimeStamp(first)
           kvList[5] = body['start']['dateTime']
@@ -53548,7 +53542,7 @@ def createStatusEvent(users, eventType):
           entityActionPerformed(kvList, j, jcount)
           if wlDate['type'] == 'timerange':
             break
-          first += wlDate['udelta']
+          first = first.shift(**wlDate['udelta'])
         except (GAPI.forbidden, GAPI.invalid) as e:
           entityActionFailedWarning([Ent.CALENDAR, user], str(e), i, count)
           break
@@ -53749,8 +53743,8 @@ def printShowStatusEvent(users, eventType):
               _getEventDaysOfWeek(event)
             _printCalendarEvent(user, calId, event, csvPF, FJQC)
         if 'pdelta' in wlDate:
-          first += wlDate['pdelta']
-          last += wlDate['pdelta']
+          first = first.shift(**wlDate['pdelta'])
+          last = last.shift(**wlDate['pdelta'])
   if csvPF:
     csvPF.writeCSVfile(f'Calendar {Ent.Plural(entityType)}')
 
@@ -56254,7 +56248,7 @@ def _selectRevisionIds(drive, fileId, origUser, user, i, count, j, jcount, revis
     count = 0
     if revisionsEntity['time'][0] == 'before':
       for revision in results:
-        modifiedDateTime = iso8601.parse_date(revision['modifiedTime'])
+        modifiedDateTime = arrow.get(revision['modifiedTime'])
         if modifiedDateTime >= dateTime:
           break
         revisionIds.append(revision['id'])
@@ -56264,7 +56258,7 @@ def _selectRevisionIds(drive, fileId, origUser, user, i, count, j, jcount, revis
       return revisionIds
 # time: after
     for revision in results:
-      modifiedDateTime = iso8601.parse_date(revision['modifiedTime'])
+      modifiedDateTime = arrow.get(revision['modifiedTime'])
       if modifiedDateTime >= dateTime:
         revisionIds.append(revision['id'])
         count += 1
@@ -56276,7 +56270,7 @@ def _selectRevisionIds(drive, fileId, origUser, user, i, count, j, jcount, revis
   endDateTime = revisionsEntity['range'][2]
   count = 0
   for revision in results:
-    modifiedDateTime = iso8601.parse_date(revision['modifiedTime'])
+    modifiedDateTime = arrow.get(revision['modifiedTime'])
     if modifiedDateTime >= startDateTime:
       if modifiedDateTime >= endDateTime:
         break
@@ -56486,7 +56480,7 @@ def _selectRevisionResults(results, fileId, origUser, revisionsEntity, previewDe
     count = 0
     if revisionsEntity['time'][0] == 'before':
       for revision in results:
-        modifiedDateTime = iso8601.parse_date(revision['modifiedTime'])
+        modifiedDateTime = arrow.get(revision['modifiedTime'])
         if modifiedDateTime >= dateTime:
           break
         count += 1
@@ -56497,7 +56491,7 @@ def _selectRevisionResults(results, fileId, origUser, revisionsEntity, previewDe
       return results[:count]
 # time: after
     for revision in results:
-      modifiedDateTime = iso8601.parse_date(revision['modifiedTime'])
+      modifiedDateTime = arrow.get(revision['modifiedTime'])
       if modifiedDateTime >= dateTime:
         break
       count += 1
@@ -56514,7 +56508,7 @@ def _selectRevisionResults(results, fileId, origUser, revisionsEntity, previewDe
     count = 0
     selectedResults = []
     for revision in  results:
-      modifiedDateTime = iso8601.parse_date(revision['modifiedTime'])
+      modifiedDateTime = arrow.get(revision['modifiedTime'])
       if modifiedDateTime >= startDateTime:
         if modifiedDateTime >= endDateTime:
           break
@@ -57052,7 +57046,7 @@ class PermissionMatch():
           break
       elif field in {'expirationstart', 'expirationend'}:
         if 'expirationTime' in permission:
-          expirationDateTime = iso8601.parse_date(permission['expirationTime'])
+          expirationDateTime = arrow.get(permission['expirationTime'])
           if field == 'expirationstart':
             if expirationDateTime < value:
               break
@@ -59535,7 +59529,7 @@ def processFilenameReplacements(name, replacements):
   return name
 
 def addTimestampToFilename(parameters, body):
-  tdtime = datetime.datetime.now(GC.Values[GC.TIMEZONE])
+  tdtime = arrow.now(GC.Values[GC.TIMEZONE])
   body['name'] += ' - '
   if not parameters[DFA_TIMEFORMAT]:
     body['name'] += ISOformatTimeStamp(tdtime)
@@ -71663,8 +71657,8 @@ def _mapMessageQueryDates(parameters):
     if not mg:
       break
     try:
-      dt = datetime.datetime(int(mg.groups()[1]), int(mg.groups()[2]), int(mg.groups()[3]), tzinfo=GC.Values[GC.TIMEZONE])
-      query = query[:mg.start(2)]+str(int(datetime.datetime.timestamp(dt)))+query[mg.end(4):]
+      dt = arrow.Arrow(int(mg.groups()[1]), int(mg.groups()[2]), int(mg.groups()[3]), tzinfo=GC.Values[GC.TIMEZONE])
+      query = query[:mg.start(2)]+str(dt.int_timestamp)+query[mg.end(4):]
     except ValueError:
       pass
     pos = mg.end()
@@ -72845,9 +72839,9 @@ def printShowMessagesThreads(users, entityType):
     if pLoc > 0:
       dateTimeValue = dateTimeValue[:pLoc]
     try:
-      dateTimeValue = datetime.datetime.strptime(dateTimeValue, RFC2822_TIME_FORMAT)
+      dateTimeValue = arrow.Arrow.strptime(dateTimeValue, RFC2822_TIME_FORMAT)
       if dateHeaderConvertTimezone:
-        dateTimeValue = dateTimeValue.astimezone(GC.Values[GC.TIMEZONE])
+        dateTimeValue = dateTimeValue.to(GC.Values[GC.TIMEZONE])
       return dateTimeValue.strftime(dateHeaderFormat)
     except ValueError:
       return headerValue

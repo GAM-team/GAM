@@ -21,6 +21,7 @@
 """
 
 GAM_VER_LIBS = [
+  'arrow',
   'chardet',
   'cryptography',
   'filelock',
@@ -33,6 +34,5 @@ GAM_VER_LIBS = [
   'passlib',
   'pathvalidate',
   'pyscard',
-  'python-dateutil',
   'yubikey-manager',
 ]

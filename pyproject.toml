@@ -10,6 +10,7 @@ authors = [
 # notice that yubikey-manager remains optional further down since it is less command and adds
 #significant compile dependencies.
 dependencies = [
+    "arrow>=1.3.0",
     "chardet>=5.2.0",
     "cryptography>=44.0.2",
     "distro; sys_platform=='linux'",
@@ -21,8 +22,7 @@ dependencies = [
     "httplib2>=0.22.0",
     "lxml>=5.4.0",
     "passlib>=1.7.4",
-    "pathvalidate>=3.2.3",
-    "python-dateutil",
+    "pathvalidate>=3.2.3"
 ]
 description = "CLI tool to manage Google Workspace"
 readme = "README.md"
