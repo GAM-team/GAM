@@ -785,6 +785,7 @@ jobs:
           $gam config enable_dasa true save 
           $gam checkconn
           $gam user "$gam_user" check serviceaccount
+	  echo "***** gam info domain"
           $gam info domain
           $gam info user
           export tstamp=$($PYTHON -c "import time; print(time.time_ns())")
