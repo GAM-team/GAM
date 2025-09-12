@@ -1990,7 +1990,7 @@ def getDateOrDeltaFromNow(returnDateTime=False):
   missingArgumentExit(YYYYMMDD_FORMAT_REQUIRED)
 
 YYYYMMDDTHHMMSS_FORMAT_REQUIRED = 'yyyy-mm-ddThh:mm:ss[.fff](Z|(+|-(hh:mm)))'
-TIMEZONE_FORMAT_REQUIRED = 'Z|(+|-(hh:mm))'
+TIMEZONE_FORMAT_REQUIRED = 'utc|z|local|(+|-(hh:mm))|<ValidTimezoneName>'
 
 def getTimeOrDeltaFromNow(returnDateTime=False):
   if Cmd.ArgumentsRemaining():
@@ -3704,9 +3704,9 @@ def SetGlobalVariables():
 
   def _getCfgTimezone(sectionName, itemName):
     value = _stripStringQuotes(GM.Globals[GM.PARSER].get(sectionName, itemName).lower())
-    if value == 'utc':
+    if value in {'utc', 'z'}:
       GM.Globals[GM.CONVERT_TO_LOCAL_TIME] = False
-      return arrow.now(value).tzinfo
+      return arrow.now('utc').tzinfo
     GM.Globals[GM.CONVERT_TO_LOCAL_TIME] = True
     if value == 'local':
       return arrow.now(value).tzinfo
