@@ -4533,7 +4533,7 @@ def getOauth2TxtCredentials(exitOnError=True, api=None, noDASA=False, refreshOnl
           creds.token = jsonDict['access_token']
           creds._id_token = jsonDict['id_token_jwt']
           GM.Globals[GM.DECODED_ID_TOKEN] = jsonDict['id_token']
-        creds.expiry = arrow.Arrow.strptime(token_expiry, YYYYMMDDTHHMMSSZ_FORMAT).naive
+        creds.expiry = arrow.Arrow.strptime(token_expiry, YYYYMMDDTHHMMSSZ_FORMAT, tzinfo='UTC').naive
         return (not noScopes, creds)
       if jsonDict and exitOnError:
         invalidOauth2TxtExit(Msg.INVALID)
