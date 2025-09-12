@@ -784,6 +784,7 @@ jobs:
           $gam oauth refresh
           $gam config enable_dasa true save 
           $gam checkconn
+          echo "***** gam check serviceaccount"
           $gam user "$gam_user" check serviceaccount
           echo "***** gam info domain"
           $gam info domain

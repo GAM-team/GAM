@@ -12368,12 +12368,16 @@ def checkServiceAccount(users):
   Ind.Decrement()
   oa2 = buildGAPIObject(API.OAUTH2)
   printMessage(Msg.SERVICE_ACCOUNT_PRIVATE_KEY_AUTHENTICATION)
+  print('*****CSA1')
   # We are explicitly not doing DwD here, just confirming service account can auth
   auth_error = ''
   try:
     request = transportCreateRequest()
+    print('*****CSA2')
     credentials.refresh(request)
+    print('*****CSA3')
     sa_token_info = callGAPI(oa2, 'tokeninfo', access_token=credentials.token)
+    print('*****CSA4')
     if sa_token_info:
       saTokenStatus = testPass
     else:
@@ -12405,8 +12409,13 @@ def checkServiceAccount(users):
                      throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID, GAPI.NOT_FOUND,
                                    GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
                      name=name, fields='validAfterTime')
+      print('*****CSA5')
+      key_created = arrow.get(key['validAfterTime'])
+      print('*****CSA6')
       key_created = arrow.get(key['validAfterTime'])
       key_age = todaysTime()-key_created
+      print('*****CSA7')
+      key_created = arrow.get(key['validAfterTime'])
       printPassFail(Msg.SERVICE_ACCOUNT_PRIVATE_KEY_AGE.format(key_age.days), testWarn if key_age.days > 30 else testPass)
     except GAPI.permissionDenied:
       printMessage(Msg.UPDATE_PROJECT_TO_VIEW_MANAGE_SAKEYS)
