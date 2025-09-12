@@ -4390,8 +4390,8 @@ class signjwtJWTCredentials(google.auth.jwt.Credentials):
     now = arrow.utcnow()
     expiry = now.shift(seconds=self._token_lifetime)
     payload = {
-      "iat": google.auth._helpers.datetime_to_secs(now),
-      "exp": google.auth._helpers.datetime_to_secs(expiry),
+      "iat": now.int_timestamp,
+      "exp": expiry.int_timestamp,
       "iss": self._issuer,
       "sub": self._subject,
     }
@@ -4399,7 +4399,7 @@ class signjwtJWTCredentials(google.auth.jwt.Credentials):
       payload["aud"] = self._audience
     payload.update(self._additional_claims)
     jwt = self._signer.sign(payload)
-    return jwt, expiry
+    return jwt, expiry.naive
 
 # Some Workforce Identity Federation endpoints such as GitHub Actions
 # only allow TLS 1.2 as of April 2023.
@@ -4415,11 +4415,11 @@ class signjwtCredentials(google.oauth2.service_account.Credentials):
     now = arrow.utcnow()
     expiry = now.shift(seconds=_DEFAULT_TOKEN_LIFETIME_SECS)
     payload = {
-        "iat": google.auth._helpers.datetime_to_secs(now),
-        "exp": google.auth._helpers.datetime_to_secs(expiry),
-        "iss": self._service_account_email,
-        "aud": API.GOOGLE_OAUTH2_TOKEN_ENDPOINT,
-        "scope": google.auth._helpers.scopes_to_string(self._scopes or ()),
+      "iat": now.int_timestamp,
+      "exp": expiry.int_timestamp,
+      "iss": self._service_account_email,
+      "aud": API.GOOGLE_OAUTH2_TOKEN_ENDPOINT,
+      "scope": google.auth._helpers.scopes_to_string(self._scopes or ()),
     }
     payload.update(self._additional_claims)
     # The subject can be a user email for domain-wide delegation.
@@ -12368,16 +12368,12 @@ def checkServiceAccount(users):
   Ind.Decrement()
   oa2 = buildGAPIObject(API.OAUTH2)
   printMessage(Msg.SERVICE_ACCOUNT_PRIVATE_KEY_AUTHENTICATION)
-  print('*****CSA1')
   # We are explicitly not doing DwD here, just confirming service account can auth
   auth_error = ''
   try:
     request = transportCreateRequest()
-    print('*****CSA2')
     credentials.refresh(request)
-    print('*****CSA3')
     sa_token_info = callGAPI(oa2, 'tokeninfo', access_token=credentials.token)
-    print('*****CSA4')
     if sa_token_info:
       saTokenStatus = testPass
     else:
@@ -12409,13 +12405,8 @@ def checkServiceAccount(users):
                      throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID, GAPI.NOT_FOUND,
                                    GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
                      name=name, fields='validAfterTime')
-      print('*****CSA5')
-      key_created = arrow.get(key['validAfterTime'])
-      print('*****CSA6')
       key_created = arrow.get(key['validAfterTime'])
       key_age = todaysTime()-key_created
-      print('*****CSA7')
-      key_created = arrow.get(key['validAfterTime'])
       printPassFail(Msg.SERVICE_ACCOUNT_PRIVATE_KEY_AGE.format(key_age.days), testWarn if key_age.days > 30 else testPass)
     except GAPI.permissionDenied:
       printMessage(Msg.UPDATE_PROJECT_TO_VIEW_MANAGE_SAKEYS)
@@ -12670,14 +12661,14 @@ def _generatePrivateKeyAndPublicCert(projectId, clientEmail, name, key_size, b64
   # Gooogle seems to enforce the not before date strictly. Set the not before
   # date to be UTC two minutes ago which should cover any clock skew.
   now = arrow.utcnow()
-  builder = builder.not_valid_before(now.shift(minutes=-2))
+  builder = builder.not_valid_before(now.shift(minutes=-2).naive)
   # Google defaults to 12/31/9999 date for end time if there's no
   # policy to restrict key age
   if validityHours:
-    expires = now.shift(hours=validityHours, minutes=-2)
+    expires = now.shift(hours=validityHours, minutes=-2).naive
     builder = builder.not_valid_after(expires)
   else:
-    builder = builder.not_valid_after(arrow.Arrow(9999, 12, 31, 23, 59))
+    builder = builder.not_valid_after(arrow.Arrow(9999, 12, 31, 23, 59).naive)
   builder = builder.serial_number(x509.random_serial_number())
   builder = builder.public_key(public_key)
   builder = builder.add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
