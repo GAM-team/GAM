@@ -10,7 +10,7 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
-### 7.21.00
+### 7.21.01
 
 Replaced datetime, dateutil, calendar and iso8601 Python libraries with arrow library.
 This should have no performance impact; report any problems.
