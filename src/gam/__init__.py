@@ -11025,7 +11025,7 @@ class Credentials(google.oauth2.credentials.Credentials):
     expiry = info.get('token_expiry')
     if expiry:
       # Convert the raw expiry to datetime
-      expiry = arrow.Arrow.strptime(expiry, YYYYMMDDTHHMMSSZ_FORMAT)
+      expiry = arrow.Arrow.strptime(expiry, YYYYMMDDTHHMMSSZ_FORMAT, tzinfo='UTC').naive
     id_token_data = info.get('decoded_id_token')
 
     # Provide backwards compatibility with field names when loading from JSON.
