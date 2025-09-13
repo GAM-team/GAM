@@ -1,6 +1,13 @@
-7.21.00
+7.21.01
 
 Replaced datetime, dateutil, calendar and iso8601 Python libraries with arrow library.
+This should have no performance impact; report any problems.
+
+You can now use timezone names when setting `timezone` in `gam.cfg`.
+* See: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+```
+gam config timezone America/Los_Angeles save
+```
 
 7.20.04
 
