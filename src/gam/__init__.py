@@ -9361,6 +9361,7 @@ MACOS_CODENAMES = {
   13: 'Ventura',
   14: 'Sonoma',
   15: 'Sequoia',
+  26: 'Tahoe',
   }
 
 def getOSPlatform():
@@ -9370,7 +9371,7 @@ def getOSPlatform():
   elif myos == 'Windows':
     pltfrm = ' '.join(platform.win32_ver())
   elif myos == 'Darwin':
-    myos = 'MacOS'
+    myos = 'macOS'
     mac_ver = platform.mac_ver()[0]
     major_ver = int(mac_ver.split('.')[0]) # macver 10.14.6 == major_ver 10
     minor_ver = int(mac_ver.split('.')[1]) # macver 10.14.6 == minor_ver 14
