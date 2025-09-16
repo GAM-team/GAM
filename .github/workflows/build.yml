@@ -463,6 +463,8 @@ jobs:
           echo "before anything..."
           "$PYTHON" -m pip list
           "$PYTHON" -m pip install --upgrade ..[yubikey]
+          # forcefully update all installed packages
+          "$PYTHON" -m pip --disable-pip-version-check list --outdated --format=json | "$PYTHON" -c "import json, sys; print('\n'.join([x['name'] for x in json.load(sys.stdin)]))" | xargs -n1 "$PYTHON" -m pip install -U
           "$PYTHON" -m pip list
           echo "after everything..."
           "$PYTHON" -m pip list
