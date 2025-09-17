@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.21.02
+
+GAM now builds on macOS 26 Tahoe and properly identifies the OS.
+
+A custom build of the cryptography library is no longer needed for Windows arm64 builds as the project now releases their own build for the OS.
+
+Upgrade to OpenSSL 3.5.3 latest
+
 ### 7.21.01
 
 Replaced datetime, dateutil, calendar and iso8601 Python libraries with arrow library.
