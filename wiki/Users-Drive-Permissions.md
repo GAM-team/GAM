@@ -10,8 +10,9 @@
 - [Delete all ACLs except owner from a user's My Drive](#delete-all-acls-except-owner-from-a-users-my-drive)
 - [Change shares to User1 to shares to User2](#change-shares-to-user1-to-shares-to-user2)
 - [Map All ACLs from an old domain to a new domain](#map-all-acls-from-an-old-domain-to-a-new-domain)
-- [Remove all ACLs for a specific user or group email address](#remove-all-ACLs-for-a-specific-user-or-group-email-address)
-- [Remove domainCanFind-domainWithLink ACLs](#remove-domaincanfind-domainwithlink-acls)
+- [Remove ACLs for a specific user or group email address](#remove-ACLs-for-a-specific-user-or-group-email-address)
+- [Remove domainCanFind-domainWithLink ACLs for internal domain](#remove-domaincanfind-domainwithlink-acls-for-internal-domain)
+- [Remove My Drive ACLs for external domains](#remove_my_drive-acls-for-external-domains)
 - [Remove anyoneCanFind-anyoneWithLink ACLs](#remove-anyonecanfind-anyonewithlink-acls)
 
 ## API documentation
@@ -408,7 +409,7 @@ gam config csv_input_row_filter "permission.type:regex:user|group" redirect stdo
 gam config csv_input_row_filter "permission.type:regex:domain" redirect stdout ./AddNewDomainACLsDomainShares.txt multiprocess redirect stderr stdout csv ./allUsersFiles.csv gam user "~Owner" create drivefileacl "~id" "~permission.type" "~permission.domain" role "~permission.role" allowfilediscovery "~permission.allowFileDiscovery" mappermissionsdomain olddomain.com newdomain.com
 ```
     
-## Remove all ACLs for a specific user or group email address
+## Remove ACLs for a specific user or group email address
 
 ### My Drives
 
@@ -452,16 +453,16 @@ Add Shared Drive ACLs with a different email address and the same role.
 gam config num_threads 20 redirect stdout ./ReplaceSharedDriveShares.txt multiprocess redirect stderr stdout csv SharedDriveShares.csv gam user "~Owner" add drivefleacl "~id" "~permission.type" newemail@domain.rom role "~permission.role"
 ```
 
-## Remove domainCanFind-domainWithLink ACLs
+## Remove domainCanFind-domainWithLink ACLs for internal domain
 
-Replace `<Query>` below with one of these:
+Replace `<Query>` below with one of these; they only apply to your internal domain:
 * domainCanFind - query "visibility='domainCanFind'"
 * domainWithLink - query "visibility='domainWithLink'"
 * both - query "(visibility='domainCanFind' or visibility='domainWithLink')"
 
 ### My Drives
 
-Get My Drive domainCanFind/domainWithLink ACLs
+Get My Drive domainCanFind/domainWithLink ACLs for internal domain
 ```
 gam config auto_batch_min 1 num_threads 20 redirect csv ./MyDriveShares.csv multiprocess redirect stderr - multiprocess all users print filelist fields id,name,mimetype,basicpermissions <Query> pm type domain em pmfilter oneitemperrow
 ```
@@ -477,7 +478,8 @@ Get an organizer for each Shared Drive
 gam redirect csv ./SharedDriveOrganizers.csv print shareddriveorganizers
 ```
 
-Get Shared Drive domainCanFind/domainWithLink ACLs
+Get Shared Drive ACLs domainCanFind/domainWithLink ACLs for internal domain
+* Replace `<Domain>` with actual domain name
 ```
 gam config num_threads 20 csv_input_row_filter "organizers:regex:^.+$" redirect csv ./SharedDriveShares.csv multiprocess redirect stderr - multiprocess csv SharedDriveOrganizers.csv gam user "~organizers"  print filelist select shareddriveid "~id" fields id,name,mimetype,basicpermissions,driveid showdrivename <Query> pm type domain inherited false em pmfilter oneitemperrow
 ```
@@ -485,6 +487,23 @@ gam config num_threads 20 csv_input_row_filter "organizers:regex:^.+$" redirect 
 Delete those Shared Drive ACLs.
 ```
 gam config num_threads 20 redirect stdout ./DeleteSharedDriveShares.txt multiprocess redirect stderr stdout csv SharedDriveShares.csv gam user "~Owner" delete drivefleacl "~id" "id:~~permission.id~~"
+```
+
+## Remove My Drive ACLs for external domains
+
+### My Drives
+
+Get My Drive ACLs sharing to external domain(s)
+Replace `<Domains>` with specification of external domain(s)
+* `domain domain.com` - A single external domain
+* `domainlist domain1.com,domain2.com,domain3.com...` - A kist of external domains
+```
+gam config auto_batch_min 1 num_threads 20 redirect csv ./MyDriveShares.csv multiprocess redirect stderr - multiprocess all users print filelist fields id,name,mimetype,basicpermissions pm type domain <Domains> em pmfilter oneitemperrow
+```
+
+Delete those My Drive ACLs.
+```
+gam config num_threads 20 redirect stdout ./DeleteMyDriveShares.txt multiprocess redirect stderr stdout csv MyDriveShares.csv gam user "~Owner" delete drivefleacl "~id" "id:~~permission.id~~"
 ```
 
 ## Remove anyoneCanFind-anyoneWithLink ACLs
