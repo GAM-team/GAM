@@ -11,6 +11,7 @@
 - [Change shares to User1 to shares to User2](#change-shares-to-user1-to-shares-to-user2)
 - [Map All ACLs from an old domain to a new domain](#map-all-acls-from-an-old-domain-to-a-new-domain)
 - [Remove ACLs for a specific user or group email address](#remove-ACLs-for-a-specific-user-or-group-email-address)
+- [Remove ACLs for all users-groups in external domains](#remove-acls-for-all-users-groups-in-external-domains)
 - [Remove domainCanFind-domainWithLink ACLs for internal domain](#remove-domaincanfind-domainwithlink-acls-for-internal-domain)
 - [Remove My Drive ACLs for external domains](#remove-my-drive-acls-for-external-domains)
 - [Remove anyoneCanFind-anyoneWithLink ACLs](#remove-anyonecanfind-anyonewithlink-acls)
@@ -442,6 +443,64 @@ Get Shared Drive ACLs explicitly sharing to that email address:
 * Replace `email@domain.com` with actual email address
 ```
 gam config num_threads 20 csv_input_row_filter "organizers:regex:^.+$" redirect csv ./SharedDriveShares.csv multiprocess redirect stderr - multiprocess csv SharedDriveOrganizers.csv gam user "~organizers"  print filelist select shareddriveid "~id" fields id,name,mimetype,basicpermissions,driveid showdrivename query "'email@domain.com' in readers or 'email@domain.com' in writers" pm type <Type> emailaddress email@domain.com inherited false em pmfilter oneitemperrow
+```
+
+Delete those Shared Drive ACLs.
+```
+gam config num_threads 20 redirect stdout ./DeleteSharedDriveShares.txt multiprocess redirect stderr stdout csv SharedDriveShares.csv gam user "~Owner" delete drivefleacl "~id" "id:~~permission.id~~"
+```
+
+Add Shared Drive ACLs with a different email address and the same role.
+```
+gam config num_threads 20 redirect stdout ./ReplaceSharedDriveShares.txt multiprocess redirect stderr stdout csv SharedDriveShares.csv gam user "~Owner" add drivefleacl "~id" "~permission.type" newemail@domain.rom role "~permission.role"
+```
+
+## Remove ACLs for all users-groups in external domains
+
+### My Drives
+
+Get My Drive ACLs sharing to external domain users/groups.
+
+Replace `<Types>` as required:
+* `type user` - External domain users
+* `type group` - External domain groups
+* `typelist user,group` - External users and groups
+
+Replace `<Domains>` with specification of external domain(s)
+* `domain domain.com` - A single external domain
+* `domainlist domain1.com,domain2.com,domain3.com...` - A list of external domains
+```
+gam config auto_batch_min 1 num_threads 20 redirect csv ./MyDriveShares.csv multiprocess redirect stderr - multiprocess all users print filelist fields id,name,mimetype,basicpermissions pm notrole owner <Types> <Domains> em pmfilter oneitemperrow
+```
+
+Delete those My Drive ACLs.
+```
+gam config num_threads 20 redirect stdout ./DeleteMyDriveShares.txt multiprocess redirect stderr stdout csv MyDriveShares.csv gam user "~Owner" delete drivefleacl "~id" "id:~~permission.id~~"
+```
+
+Add My Drive ACLs with a different email address and the same role.
+```
+gam config num_threads 20 redirect stdout ./AddMyDriveShares.txt multiprocess redirect stderr stdout csv MyDriveShares.csv gam user "~Owner" add drivefleacl "~id" "~permission.type" newemail@domain.rom role "~permission.role"
+```
+
+### Shared Drives
+Get an organizer for each Shared Drive
+```
+gam redirect csv ./SharedDriveOrganizers.csv print shareddriveorganizers
+```
+
+Get Shared Drive ACLs sharing to external domain users/groups.
+
+Replace `<Types>` as required:
+* `type user` - External domain users
+* `type group` - External domain groups
+* `typelist user,group` - External users and groups
+
+Replace `<Domains>` with specification of external domain(s)
+* `domain domain.com` - A single external domain
+* `domainlist domain1.com,domain2.com,domain3.com...` - A list of external domains
+```
+gam config num_threads 20 csv_input_row_filter "organizers:regex:^.+$" redirect csv ./SharedDriveShares.csv multiprocess redirect stderr - multiprocess csv SharedDriveOrganizers.csv gam user "~organizers"  print filelist select shareddriveid "~id" fields id,name,mimetype,basicpermissions,driveid showdrivename pm <Types> <Domains> inherited false em pmfilter oneitemperrow
 ```
 
 Delete those Shared Drive ACLs.
