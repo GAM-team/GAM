@@ -1,3 +1,8 @@
+7.21.03
+
+Added option `notifyrecoveryemail` to `gam create user` and `gam <UserTypeEntity> update user password <String>`
+that sends the passsword notification email to the user's recovery email address (if defined).
+
 7.21.02
 
 GAM now builds on macOS 26 Tahoe and properly identifies the OS.

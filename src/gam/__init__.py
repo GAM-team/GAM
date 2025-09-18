@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.21.02'
+__version__ = '7.21.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -43947,6 +43947,7 @@ def getUserAttributes(cd, updateCmd, noUid=False):
     invalidArgumentExit(Cmd.OB_SCHEMA_NAME_FIELD_NAME)
 
   parameters = {
+    'notifyRecoveryEmail': False,
     'verifyNotInvitable': False,
     'createIfNotFound': False,
     'noActionIfAlias': False,
@@ -43963,7 +43964,7 @@ def getUserAttributes(cd, updateCmd, noUid=False):
     body = {'name': {'givenName': UNKNOWN, 'familyName': UNKNOWN}}
     body['primaryEmail'] = getEmailAddress(noUid=noUid)
   notFoundBody = {}
-  notify = {'subject': '', 'message': '', 'html': False, 'charset': UTF8, 'password': ''}
+  notify = {'recipients': [], 'subject': '', 'message': '', 'html': False, 'charset': UTF8, 'password': ''}
   primary = {}
   updatePrimaryEmail = {}
   groupOrgUnitMap = None
@@ -43975,7 +43976,9 @@ def getUserAttributes(cd, updateCmd, noUid=False):
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'notify':
-      notify['recipients'] = getNormalizedEmailAddressEntity(shlexSplit=True, noLower=True)
+      notify['recipients'].extend(getNormalizedEmailAddressEntity(shlexSplit=True, noLower=True))
+    elif myarg == 'notifyrecoveryemail':
+      parameters['notifyRecoveryEmail'] = True
     elif myarg == 'subject':
       notify['subject'] = getString(Cmd.OB_STRING)
     elif myarg in SORF_MSG_FILE_ARGUMENTS:
@@ -44391,7 +44394,7 @@ def createUserAddAliases(cd, user, aliasList, i, count):
 #	(groups [<GroupRole>] [[delivery] <DeliverySetting>] <GroupEntity>)*
 #	[alias|aliases <EmailAddressList>]
 #	[license <SKUID> [product|productid <ProductID>]]
-#	[notify <EmailAddressList>
+#	[[notify <EmailAddressList>] [notifyrecoveryemail]
 #	    [subject <String>]
 #	    [notifypassword <String>]
 #	    [from <EmailAaddress>]
@@ -44409,7 +44412,7 @@ def doCreateUser():
   suffix = 0
   originalEmail = body['primaryEmail']
   atLoc = originalEmail.find('@')
-  fields = '*' if tagReplacements['subs'] else 'primaryEmail,name'
+  fields = '*' if tagReplacements['subs'] else 'primaryEmail,name,recoveryEmail'
   while True:
     user = body['primaryEmail']
     if parameters['verifyNotInvitable']:
@@ -44450,7 +44453,9 @@ def doCreateUser():
     createUserAddToGroups(cd, result['primaryEmail'], addGroups, 0, 0)
   if addAliases:
     createUserAddAliases(cd, result['primaryEmail'], addAliases, 0, 0)
-  if notify.get('recipients'):
+  if (notify.get('recipients') or (parameters['notifyRecoveryEmail'] and result.get('recoveryEmail'))):
+    if parameters['notifyRecoveryEmail'] and result.get('recoveryEmail'):
+      notify['recipients'].append(result['recoveryEmail'])
     sendCreateUpdateUserNotification(result, notify, tagReplacements)
   for productSku in parameters[LICENSE_PRODUCT_SKUIDS]:
     productId = productSku[0]
@@ -44493,7 +44498,7 @@ def verifyUserPrimaryEmail(cd, user, createIfNotFound, i, count):
 #	[createifnotfound] [notfoundpassword (random [<Integer>])|blocklogin|<Password>]
 #	(groups [<GroupRole>] [[delivery] <DeliverySetting>] <GroupEntity>)*
 #	[alias|aliases <EmailAddressList>]
-#	[notify <EmailAddressList>
+#	[[notify <EmailAddressList>] [notifyrecoveryemail]
 #	    [subject <String>]
 #	    [notifypassword <String>]
 #	    [from <EmailAaddress>]
@@ -44522,7 +44527,7 @@ def updateUsers(entityList):
   else:
     checkImmutableOUs = False
   i, count, entityList = getEntityArgument(entityList)
-  fields = '*' if tagReplacements['subs'] else 'primaryEmail,name'
+  fields = '*' if tagReplacements['subs'] else 'primaryEmail,name,recoveryEmail'
   for user in entityList:
     i += 1
     user = userKey = normalizeEmailAddressOrUID(user)
@@ -44598,7 +44603,10 @@ def updateUsers(entityList):
             entityActionPerformed([Ent.USER, user], i, count)
             if PwdOpts.filename and PwdOpts.password:
               writeFile(PwdOpts.filename, f'{userKey},{PwdOpts.password}\n', mode='a', continueOnError=True)
-            if parameters['notifyOnUpdate'] and notify.get('recipients') and notify['password']:
+            if (parameters['notifyOnUpdate'] and notify['password'] and
+                (notify.get('recipients') or (parameters['notifyRecoveryEmail'] and result.get('recoveryEmail')))):
+              if parameters['notifyRecoveryEmail'] and result.get('recoveryEmail'):
+                notify['recipients'].append(result['recoveryEmail'])
               sendCreateUpdateUserNotification(result, notify, tagReplacements, i, count, createMessage=False)
             break
           except GAPI.conditionNotMet as e:
@@ -44632,8 +44640,10 @@ def updateUsers(entityList):
                     createUserAddToGroups(cd, result['primaryEmail'], addGroups, i, count)
                   if addAliases:
                     createUserAddAliases(cd, result['primaryEmail'], addAliases, i, count)
-                  if notify.get('recipients'):
+                  if (notify.get('recipients') or (parameters['notifyRecoveryEmail'] and result.get('recoveryEmail'))):
                     notify['password'] = notify['notFoundPassword']
+                    if parameters['notifyRecoveryEmail'] and result.get('recoveryEmail'):
+                      notify['recipients'].append(result['recoveryEmail'])
                     sendCreateUpdateUserNotification(result, notify, tagReplacements, i, count)
                 except GAPI.duplicate:
                   duplicateAliasGroupUserWarning(cd, [Ent.USER, body['primaryEmail']], i, count)

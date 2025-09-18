@@ -5710,7 +5710,7 @@ gam create|add user <EmailAddress> [ignorenullpassword] <UserAttribute>*
         (groups [<GroupRole>] [[delivery] <DeliverySetting>] <GroupEntity>)*
         [alias|aliases <EmailAddressList>]
         [license <SKUIDList> [product|productid <ProductID>]]
-        [notify <EmailAddressList>
+        [[notify <EmailAddressList>] [notifyrecoveryemail]
             [subject <String>]
             [notifypassword <String>]
             [from <EmailAaddress>]
@@ -5736,7 +5736,7 @@ gam update user <UserItem> [ignorenullpassword] <UserAttribute>*
         [createifnotfound] [notfoundpassword (random [<Integer>])|blocklogin|<Password>]
         (groups [<GroupRole>] [[delivery] <DeliverySetting>] <GroupEntity>)*
         [alias|aliases <EmailAddressList>]
-        [notify <EmailAddressList>
+        [[notify <EmailAddressList>] [notifyrecoveryemail]
             [subject <String>]
             [notifypassword <String>]
             [from <EmailAaddress>]
@@ -5774,7 +5774,7 @@ gam update users <UserTypeEntity> [ignorenullpassword] <UserAttribute>*
         [createifnotfound] [notfoundpassword (random [<Integer>])|blocklogin|<Password>]
         (groups [<GroupRole>] [[delivery] <DeliverySetting>] <GroupEntity>)*
         [alias|aliases <EmailAddressList>]
-        [notify <EmailAddressList>
+        [[notify <EmailAddressList>] [notifyrecoveryemail]
             [subject <String>]
             [notifypassword <String>]
             [from <EmailAddress>]
@@ -5811,7 +5811,7 @@ gam <UserTypeEntity> update users [ignorenullpassword] <UserAttribute>*
         [createifnotfound] [notfoundpassword (random [<Integer>])|blocklogin|<Password>]
         (groups [<GroupRole>] [[delivery] <DeliverySetting>] <GroupEntity>)*
         [alias|aliases <EmailAddressList>]
-        [notify <EmailAddressList>
+        [[notify <EmailAddressList>] [notifyrecoveryemail]
             [subject <String>]
             [notifypassword <String>]
             [from <EmailAaddress>]
