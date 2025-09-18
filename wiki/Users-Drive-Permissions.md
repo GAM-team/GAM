@@ -12,7 +12,7 @@
 - [Map All ACLs from an old domain to a new domain](#map-all-acls-from-an-old-domain-to-a-new-domain)
 - [Remove ACLs for a specific user or group email address](#remove-ACLs-for-a-specific-user-or-group-email-address)
 - [Remove domainCanFind-domainWithLink ACLs for internal domain](#remove-domaincanfind-domainwithlink-acls-for-internal-domain)
-- [Remove My Drive ACLs for external domains](#remove_my_drive-acls-for-external-domains)
+- [Remove My Drive ACLs for external domains](#remove-my-drive-acls-for-external-domains)
 - [Remove anyoneCanFind-anyoneWithLink ACLs](#remove-anyonecanfind-anyonewithlink-acls)
 
 ## API documentation
