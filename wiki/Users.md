@@ -401,9 +401,10 @@ password "helloworld" nohash
 ```
 
 ## Password Notification
-When creating a user or updating a user's password, you can send a message with details to an email address; this might be the user's secondary email address.
+When creating a user or updating a user's password, you can send a message with details to an email address;'
+this might be the user's secondary email address or their recovery email address.
 ```
-[notify <EmailAddressList>
+[[notify <EmailAddressList>] [notifyrecoveryemail]
     [subject <String>]
     [notifypassword <String>]
     [from <EmailAaddress>]
@@ -416,6 +417,7 @@ When creating a user or updating a user's password, you can send a message with 
 [notifyonupdate [<Boolean>]]
 ```
 * `notify <EmailAddressList>` - Specify recipients
+* `notifyrecoveryemail` - Use the user's recovery email address (if defined) as a recipient
 
 If subject is not specified, the following value will be used:
 * create - `Welcome to #domain#`
@@ -653,7 +655,7 @@ gam update user <UserItem> [ignorenullpassword] <UserAttribute>*
         [createifnotfound] [notfoundpassword (random [<Integer>])|blocklogin|<Password>]
         (groups [<GroupRole>] [[delivery] <DeliverySetting>] <GroupEntity>)*
         [alias|aliases <EmailAddressList>]
-        [notify <EmailAddressList>
+        [[notify <EmailAddressList>] [notifyrecoveryemail]
             [subject <String>]
             [notifypassword <String>]
             [from <EmailAaddress>]
@@ -675,7 +677,7 @@ gam update users <UserTypeEntity> [ignorenullpassword] <UserAttribute>*
         [createifnotfound] [notfoundpassword (random [<Integer>])|blocklogin|<Password>]
         (groups [<GroupRole>] [[delivery] <DeliverySetting>] <GroupEntity>)*
         [alias|aliases <EmailAddressList>]
-        [notify <EmailAddressList>
+        [[notify <EmailAddressList>] [notifyrecoveryemail]
             [subject <String>]
             [notifypassword <String>]
             [from <EmailAddress>]
@@ -697,7 +699,7 @@ gam <UserTypeEntity> update users [ignorenullpassword] <UserAttribute>*
         [createifnotfound] [notfoundpassword (random [<Integer>])|blocklogin|<Password>]
         (groups [<GroupRole>] [[delivery] <DeliverySetting>] <GroupEntity>)*
         [alias|aliases <EmailAddressList>]
-        [notify <EmailAddressList>
+        [[notify <EmailAddressList>] [notifyrecoveryemail]
             [subject <String>]
             [notifypassword <String>]
             [from <EmailAaddress>]

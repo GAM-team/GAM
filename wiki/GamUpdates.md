@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.21.03
+
+Added option `notifyrecoveryemail` to `gam create user` and `gam <UserTypeEntity> update user password <String>`
+that sends the passsword notification email to the user's recovery email address (if defined).
+
 ### 7.21.02
 
 GAM now builds on macOS 26 Tahoe and properly identifies the OS.

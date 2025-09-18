@@ -3,10 +3,10 @@
 Print the current version of Gam with details
 ```
 gam version
-GAM 7.21.01 - https://github.com/GAM-team/GAM - pyinstaller
+GAM 7.21.03 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.13.7 64-bit final
-MacOS Sequoia 15.6.1 x86_64
+macOS Sequoia 15.7 x86_64
 Path: /Users/Admin/bin/gam7
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
 Time: 2023-06-02T21:10:00-07:00
@@ -15,10 +15,10 @@ Time: 2023-06-02T21:10:00-07:00
 Print the current version of Gam with details and time offset information
 ```
 gam version timeoffset
-GAM 7.21.01 - https://github.com/GAM-team/GAM - pyinstaller
+GAM 7.21.03 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.13.7 64-bit final
-MacOS Sequoia 15.6.1 x86_64
+macOS Sequoia 15.7 x86_64
 Path: /Users/Admin/bin/gam7
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
 Your system time differs from www.googleapis.com by less than 1 second
@@ -27,25 +27,29 @@ Your system time differs from www.googleapis.com by less than 1 second
 Print the current version of Gam with extended details and SSL information
 ```
 gam version extended
-GAM 7.21.01 - https://github.com/GAM-team/GAM - pyinstaller
+GAM 7.21.03 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.13.7 64-bit final
-MacOS Sequoia 15.6.1 x86_64
+macOS Sequoia 15.7 x86_64
 Path: /Users/Admin/bin/gam7
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
 Time: 2023-06-02T21:10:00-07:00
 Your system time differs from admin.googleapis.com by less than 1 second
-OpenSSL 3.5.2 5 ASug 2025
-cryptography 43.0.3
-filelock 3.16.1
-google-api-python-client 2.149.0
+OpenSSL 3.5.3 16 Sep 2025
+arrow 1.3.0
+chardet 5.2.0
+cryptography 46.0.1
+filelock 3.19.1
+google-api-python-client 2.182.0
 google-auth-httplib2 0.2.0
-google-auth-oauthlib 1.2.1
-google-auth 2.35.0
-httplib2 0.22.0
+google-auth-oauthlib 1.2.2
+google-auth 2.40.3
+lxml 6.0.1
+httplib2 0.31.0
 passlib 1.7.4
-python-dateutil 2.9.0.post0
-yubikey-manager 5.5.1
+pathvalidate 3.3.1
+pyscard 2.3.0
+yubikey-manager 5.8.0
 admin.googleapis.com connects using TLSv1.3 TLS_AES_256_GCM_SHA384
 ```
 
@@ -64,7 +68,7 @@ MacOS High Sierra 10.13.6 x86_64
 Path: /Users/Admin/bin/gam7
 Version Check:
   Current: 5.35.08
-   Latest: 7.21.01
+   Latest: 7.21.03
 echo $?
 1
 ```
@@ -72,7 +76,7 @@ echo $?
 Print the current version number without details
 ```
 gam version simple
-7.21.01
+7.21.03
 ```
 In Linux/MacOS you can do:
 ```
@@ -82,10 +86,10 @@ echo $VER
 Print the current version of Gam and address of this Wiki
 ```
 gam help
-GAM 7.21.01 - https://github.com/GAM-team/GAM
+GAM 7.21.03 - https://github.com/GAM-team/GAM
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.13.7 64-bit final
-MacOS Sequoia 15.6.1 x86_64
+macOS Sequoia 15.7 x86_64
 Path: /Users/Admin/bin/gam7
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
 Time: 2023-06-02T21:10:00-07:00
