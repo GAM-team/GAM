@@ -3,6 +3,8 @@
     - [src/gam/__init.py](https://github.com/GAM-team/GAM/blob/main/src/gam/__init__.py) `__version___` value should be updated to the new version.
     - [src/GamUpdate.txt](https://github.com/GAM-team/GAM/blob/main/src/GamUpdate.txt) should be updated with a high-level changelog.
     - [wiki/GamUpdates.md](https://github.com/GAM-team/GAM/blob/main/wiki/GamUpdates.md) should be updated with same high-level changelog.
+    - [wiki/Version-and-Help.md](https://github.com/GAM-team/GAM/blob/main/wiki/Version-and-Help.md) should be updated with current version N.NN.NN
+    - [wiki/How-to-Upgrade-Legacy-GAM-to-GAM7.md](https://github.com/GAM-team/GAM/blob/main/wiki/How-to-Upgrade-Legacy-GAM-to-GAM7.md) should be updated with current version N.NN.NN
 2. The [build.yaml](https://github.com/GAM-team/GAM/blob/main/.github/workflows/build.yml) Github Action for final commit should complete successfully and creating a new dated Draft release.
     - We should *NEVER* upload release files manually. Only release files automatically created and [attested](https://github.com/GAM-team/GAM/wiki/Verifying-a-GAM7-Build-is-Legitimate-and-Official#github-attestation-linuxmacoswindows) as created by the Github Action should be used.
 3. Edit the Draft release:
