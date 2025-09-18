@@ -494,9 +494,10 @@ gam config num_threads 20 redirect stdout ./DeleteSharedDriveShares.txt multipro
 ### My Drives
 
 Get My Drive ACLs sharing to external domain(s)
+
 Replace `<Domains>` with specification of external domain(s)
 * `domain domain.com` - A single external domain
-* `domainlist domain1.com,domain2.com,domain3.com...` - A kist of external domains
+* `domainlist domain1.com,domain2.com,domain3.com...` - A list of external domains
 ```
 gam config auto_batch_min 1 num_threads 20 redirect csv ./MyDriveShares.csv multiprocess redirect stderr - multiprocess all users print filelist fields id,name,mimetype,basicpermissions pm type domain <Domains> em pmfilter oneitemperrow
 ```
