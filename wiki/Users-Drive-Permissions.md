@@ -464,7 +464,7 @@ Get My Drive ACLs sharing to external domain users/groups.
 Replace `<Types>` as required:
 * `type user` - External domain users
 * `type group` - External domain groups
-* `typelist user,group` - External users and groups
+* `typelist user,group` - External domain users and groups
 
 Replace `<Domains>` with specification of external domain(s)
 * `domain domain.com` - A single external domain
@@ -494,7 +494,7 @@ Get Shared Drive ACLs sharing to external domain users/groups.
 Replace `<Types>` as required:
 * `type user` - External domain users
 * `type group` - External domain groups
-* `typelist user,group` - External users and groups
+* `typelist user,group` - External domain users and groups
 
 Replace `<Domains>` with specification of external domain(s)
 * `domain domain.com` - A single external domain
