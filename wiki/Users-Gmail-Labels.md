@@ -11,6 +11,7 @@
 
 ## API documentation
 * [Gmail API - Labels](https://developers.google.com/gmail/api/v1/reference/users.labels)
+* [Gmail Labels](https://developers.google.com/workspace/gmail/api/guides/labels)
 
 ## Definitions
 * [`<UserTypeEntity>`](Collections-of-Users)
