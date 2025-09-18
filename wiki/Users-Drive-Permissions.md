@@ -18,6 +18,7 @@
 ## API documentation
 * [Drive API - Permissions](https://developers.google.com/drive/api/v3/reference/permissions)
 * [Shortcuts](https://developers.google.com/drive/api/guides/shortcuts)
+* [Roles and permissions](https://developers.google.com/workspace/drive/api/guides/ref-roles)
 * [Limited and Expansive Access](https://developers.google.com/workspace/drive/api/guides/limited-expansive-access)
 
 ## Definitions
