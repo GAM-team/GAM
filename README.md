@@ -18,6 +18,11 @@ this will download GAM, install it and start setup.
 
 Download the MSI Installer from the [GitHub Releases] page. Install the MSI and you'll be prompted to setup GAM.
 
+## Use your own Python
+If you'd prefer to install GAM as a Python package you can install with pip:
+```
+pip install gam7
+```
 # Documentation
 
 The GAM documentation is hosted in the [GitHub Wiki]
