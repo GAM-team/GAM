@@ -5,6 +5,8 @@
 ## Introduction
 GAM7 can run on a Linux or Windows [Google Compute Engine (GCE)](https://cloud.google.com/products/compute) virtual machine and use the attached service account to access Google Workspace APIs. The advantage of this configuration is that no service account private key is accessible to GAM7 directly and [there is no risk of the key being stolen/lost](https://cloud.google.com/iam/docs/best-practices-for-managing-service-account-keys#alternatives).
 
+**Note**: This method is recommended when running GAM **inside** Google Cloud. If you're running GAM **outside** Google Cloud (on-premises, other cloud providers, CI/CD systems), consider [Workload Identity Federation](https://github.com/GAM-team/GAM/wiki/Using-GAM7-with-keyless-authentication-Workload-Identity-Federation) instead - Google's officially recommended keyless authentication method for external environments.
+
 ## Setup Steps
 1. Create a [GCP project](https://cloud.google.com/resource-manager/docs/creating-managing-projects).
 
