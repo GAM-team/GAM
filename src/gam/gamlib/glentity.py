@@ -384,11 +384,13 @@ class GamEntity():
   URL = 'url '
   USER = 'user'
   USER_ALIAS = 'uali'
+  USER_NOT_ARCHIVED = 'usna'
+  USER_ARCHIVED = 'usar'
   USER_EMAIL = 'uema'
   USER_INVITATION = 'uinv'
-  USER_NOT_SUSPENDED = 'uns'
-  USER_SCHEMA = 'usch'
+  USER_NOT_SUSPENDED = 'usns'
   USER_SUSPENDED = 'usup'
+  USER_SCHEMA = 'usch'
   VACATION = 'vaca'
   VACATION_ENABLED = 'vace'
   VALUE = 'val'
@@ -748,11 +750,13 @@ class GamEntity():
     URL: ['URLs', 'URL'],
     USER: ['Users', 'User'],
     USER_ALIAS: ['User Aliases', 'User Alias'],
+    USER_NOT_ARCHIVED: ['Users (Not archived)', 'User (Not archived)'],
+    USER_ARCHIVED: ['Users (Archived)', 'User (Archived)'],
     USER_EMAIL: ['User Emails', 'User Email'],
     USER_INVITATION: ['User Invitations', 'User Invitation'],
     USER_NOT_SUSPENDED: ['Users (Not suspended)', 'User (Not suspended)'],
-    USER_SCHEMA: ['Schemas', 'Schema'],
     USER_SUSPENDED: ['Users (Suspended)', 'User (Suspended)'],
+    USER_SCHEMA: ['Schemas', 'Schema'],
     VACATION: ['Vacation', 'Vacation'],
     VACATION_ENABLED: ['Vacation Enabled', 'Vacation Enabled'],
     VALUE: ['Values', 'Value'],

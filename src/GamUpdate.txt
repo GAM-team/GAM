@@ -1,3 +1,20 @@
+7.22.00
+
+Expanded `<UserTypeEntity>` to allow specification of non-archived/archived users.
+  * See [Collections of Users](Collections-of-Users)
+
+These commands have been updated:
+  * `gam print aliases`
+  * `gam update groups`
+  * `gam info orgs`
+  * `gam print orgs`
+  * `gam print users`
+
+Added `datetime <DateTimeFormat>` command that can be embedded in Gam batch files. The current time is formatted with `<DateTimeFormat>`
+and subsequent lines in `<BatchContent>` will have `%datetime%` replaced with the formatted time value.
+
+See: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
+
 7.21.03
 
 Added option `notifyrecoveryemail` to `gam create user` and `gam <UserTypeEntity> update user password <String>`

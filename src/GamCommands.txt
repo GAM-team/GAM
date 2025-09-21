@@ -428,6 +428,8 @@ If an item contains spaces, it should be surrounded by ".
 <CourseWorkState> ::= draft|published|deleted
 <CrOSID> ::= <String>
 <CustomerID> ::= <String>
+<DateTimeFormat> ::= <String>
+        See: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
 <DeliverySetting> ::=
         allmail|
         abridged|daily|
@@ -663,11 +665,11 @@ If an item contains spaces, it should be surrounded by ".
         (tdreturnidonly [<Boolean>])|
         (tdshare <EmailAddress> commenter|reader|writer)*|
         (tdsheet (id:<Number>)|<String>)|
-        (tdsheettimestamp [<Boolean>] [tdsheettimeformat <String>])
+        (tdsheettimestamp [<Boolean>] [tdsheettimeformat <DateTimeFormat>])
         (tdsheettitle <String>)|
         (tdsubject <String>)|
         ([tdsheetdaysoffset <Number>] [tdsheethoursoffset <Number>])|
-        (tdtimestamp [<Boolean>] [tdtimeformat <String>]
+        (tdtimestamp [<Boolean>] [tdtimeformat <DateTimeFormat>]
             [tddaysoffset <Number>] [tdhoursoffset <Number>])|
         (tdtimezone <TimeZone>)|
         (tdtitle <String>)|
@@ -902,25 +904,25 @@ Specify a collection of ChromeOS devices by directly specifying them or by speci
 Specify a collection of Users by directly specifying them or by specifying items that will yield a list of users.
 
 <UserTypeEntity> ::=
-        (all users|users_ns|users_susp|users_ns_susp)|
+        (all users|users_na|users_arch|users_ns|users_susp|users_arch_or_susp|users_na_ns|users_ns_susp)|
         (user <UserItem>)|
         (users <UserList>)|
         (oauthuser)
-        (domains|domains_ns|domains_susp <DomainNameListList>)|
-        (group|group_ns|group_susp|group_inde <GroupItem>)|
-        (groups|groups_ns|groups_susp|groups_inde <GroupList>)|
+        (domains|domains_na|domains_arch|domains_ns|domains_susp|domains_na_ns <DomainNameListList>)|
+        (group|group_na|group_arch|group_ns|group_susp|group_na_ns|group_inde <GroupItem>)|
+        (groups|groups_na|groups_arch|groups_ns|groups_susp|groups_na_ns|groups_inde <GroupList>)|
         (group_inde <GroupItem>)|(groups_inde <GroupList>)|
-        (group_users|group_users_ns|group_users_susp <GroupList>
+        (group_users|group_users_na|group_users_arch|group_users_ns|group_users_susp|group_users_na_ns <GroupList>
                 [members] [managers] [owners]
                 [primarydomain] [domains <DomainNameList>] [recursive|includederivedmembership] end)|
         (group_users_select <GroupList>
                 [members] [managers] [owners]
                 [notsuspended|suspended] [notarchived|archived]
                 [primarydomain] [domains <DomainNameList>] [recursive|includederivedmembership] end)|
-        (ou|ou_ns|ou_susp <OrgUnitItem>)|
-        (ou_and_children|ou_and_children_ns|ou_and_children_susp <OrgUnitItem>)|
-        (ous|ous_ns|ous_susp <OrgUnitList>)|
-        (ous_and_children|ous_and_children_ns|ous_and_children_susp <OrgUnitList>)|
+        (ou|ou_na|ou_arch|ou_ns|ou_susp|ou_na_ns <OrgUnitItem>)|
+        (ou_and_children|ou_and_children_na|ou_and_children_arch|ou_and_children_ns|ou_and_children_susp|ou_and_children_na_ns <OrgUnitItem>)|
+        (ous|ous_na|ous_arch|ous_ns|ous_susp|ous_na_ns <OrgUnitList>)|
+        (ous_and_children|ous_and_children_na|ous_and_children_arch|ous_and_children_ns|ous_and_children_susp|ous_and_children_na_ns <OrgUnitList>)|
         (courseparticipants <CourseIDList>)|
         (students <CourseIDList>)|
         (teachers <CourseIDList>)|
@@ -940,20 +942,24 @@ Specify a collection of Users by directly specifying them or by specifying items
              (gcsdoc(:<FieldName>)+ <StorageBucketObjectName>))
             [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [endcsv|(fields <FieldNameList>)]
-            (matchfield|skipfield <FieldName> <REMatchPattern>)*
+            (matchfield|skipfield <FieldName> <RESearchPattern>)*
             [delimiter <Character>])|
         (datafile
-            users|groups|groups_ns|groups_susp|groups_inde|ous|ous_ns|ous_susp|
-            ous_and_children|ous_and_children_ns|ous_and_children_susp|
-            courseparticipants|students|teachers
+            users|
+                groups|groups_na|groups_arch|groups_ns|groups_susp|groups_na_ns|groups_inde|
+                ous|ous_na|ous_arch|ous_ns|ous_susps|ous_na_ns|
+                ous_and_children|ous_and_children_na|ous_and_children_arch|ous_and_children_ns|ous_and_children_susp|ous_and_children_na_ns|
+                courseparticipants|students|teachers
             ((<FileName> [charset <Charset>])|
               (gdoc <UserGoogleDoc>)|
               (gcsdoc <StorageBucketObjectName>))
              [delimiter <Character>])|
         (csvdatafile
-            users|groups|groups_ns|groups_susp|groups_inde|ous|ous_ns|ous_susp|
-            ous_and_children|ous_and_children_ns|ous_and_children_susp|
-            courseparticipants|students|teachers
+            users|
+                groups|groups_na|groups_arch|groups_ns|groups_susp|groups_na_ns|groups_inde|
+                ous|ous_na|ous_arch|ous_ns|ous_susps|ous_na_ns|
+                ous_and_children|ous_and_children_na|ous_and_children_arch|ous_and_children_ns|ous_and_children_susp|ous_and_children_na_ns|
+                courseparticipants|students|teachers
             ((<FileName>(:<FieldName>)+ [charset <Charset>] )|
               (gsheet(:<FieldName>)+ <UserGoogleSheet>)|
               (gdoc(:<FieldName>)+ <UserGoogleDoc>)|
@@ -961,21 +967,23 @@ Specify a collection of Users by directly specifying them or by specifying items
               (gcsdoc(:<FieldName>)+ <StorageBucketObjectName>))
             [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [endcsv|(fields <FieldNameList>)]
-            (matchfield|skipfield <FieldName> <REMatchPattern>)*
+            (matchfield|skipfield <FieldName> <RESearchPattern>)*
             [delimiter <Character>])|
         (csvkmd
-            users|groups|groups_ns|groups_susp|groups_inde|ous|ous_ns|ous_susp|
-            ous_and_children|ous_and_children_ns|ous_and_children_susp|
-            courseparticipants|students|teachers
+            users|
+                groups|groups_na|groups_arch|groups_ns|groups_susp|groups_na_ns|groups_inde|
+                ous|ous_na|ous_arch|ous_ns|ous_susps|ous_na_ns|
+                ous_and_children|ous_and_children_na|ous_and_children_arch|ous_and_children_ns|ous_and_children_susp|ous_and_children_na_ns|
+                courseparticipants|students|teachers
             ((<FileName>|
               (gsheet <UserGoogleSheet>)|
               (gdoc <UserGoogleDoc>)|
               (gcscsv <StorageBucketObjectName>)|
               (gcsdoc <StorageBucketObjectName>))
              [charset <Charset>] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>] [fields <FieldNameList>])
-            keyfield <FieldName> [keypattern <REMatchPattern>] [keyvalue <String>] [delimiter <Character>]
-            subkeyfield <FieldName> [keypattern <REMatchPattern>] [keyvalue <String>] [delimiter <Character>]
-            (matchfield|skipfield <FieldName> <REMatchPattern>)*
+            keyfield <FieldName> [keypattern <RESearchPattern>] [keyvalue <RESubstitution>] [delimiter <Character>]
+            subkeyfield <FieldName> [keypattern <RESearchPattern>] [keyvalue <RESubstitution>] [delimiter <Character>]
+            (matchfield|skipfield <FieldName> <RESearchPattern>)*
             [datafield <FieldName>(:<FieldName>)* [delimiter <Character>]])
         (csvdata <FieldName>(:<FieldName>*))
 
@@ -1007,23 +1015,25 @@ Specify a collection of items by directly specifying them; the item type is dete
              (gcsdoc(:<FieldName>)+ <StorageBucketObjectName>))
             [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [endcsv|(fields <FieldNameList>)]
-            (matchfield|skipfield <FieldName> <REMatchPattern>)*
+            (matchfield|skipfield <FieldName> <RESearchPattern>)*
             [delimiter <Character>]
 
 <CSVkmdSelector> ::=
         csvkmd
-            users|groups|groups_ns|groups_susp|groups_inde|ous|ous_ns|ous_susp|
-            ous_and_children|ous_and_children_ns|ous_and_children_susp|
-            courseparticipants|students|teachers
+            users|
+                groups|groups_na|groups_arch|groups_ns|groups_susp|groups_inde|
+                ous|ous_na|ous_arch|ous_ns|ous_susp|
+                ous_and_children|ous_and_children_na|ous_and_children_arch|ous_and_children_ns|ous_and_children_susp|
+                courseparticipants|students|teachers
             ((<FileName>|
               (gsheet <UserGoogleSheet>)|
               (gdoc <UserGoogleDoc>)|
               (gcscsv <StorageBucketObjectName>)|
               (gcsdoc <StorageBucketObjectName>))
              [charset <Charset>] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>] [fields <FieldNameList>])
-            keyfield <FieldName> [keypattern <REMatchPattern>] [keyvalue <String>] [delimiter <Character>]
-            subkeyfield <FieldName> [keypattern <REMatchPattern>] [keyvalue <String>] [delimiter <Character>]
-            (matchfield|skipfield <FieldName> <REMatchPattern>)*
+            keyfield <FieldName> [keypattern <RESearchPattern>] [keyvalue <String>] [delimiter <Character>]
+            subkeyfield <FieldName> [keypattern <RESearchPattern>] [keyvalue <String>] [delimiter <Character>]
+            (matchfield|skipfield <FieldName> <RESearchPattern>)*
             [datafield <FieldName>(:<FieldName>)* [delimiter <Character>]]
 <CSVSubkeySelector> ::= csvsubkey <FieldName>
 <CSVDataSelector> ::= csvdata <FieldName>(:<FieldName>)*
@@ -1379,13 +1389,13 @@ gam tbatch <BatchContent> [showcmds [<Boolean>]]
 
 gam csv <CSVLoopContent> [warnifnodata]
         [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>] [fields <FieldNameList>]
-        (matchfield|skipfield <FieldName> <REMatchPattern>)* [showcmds [<Boolean>]]
+        (matchfield|skipfield <FieldName> <RESearchPattern>)* [showcmds [<Boolean>]]
         [skiprows <Integer>] [maxrows <Integer>]
         gam <GAMArgumentList>
 
 gam loop <CSVLoopContent> [warnifnodata]
         [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>] [fields <FieldNameList>]
-        (matchfield|skipfield <FieldName> <REMatchPattern>)* [showcmds [<Boolean>]]
+        (matchfield|skipfield <FieldName> <RESearchPattern>)* [showcmds [<Boolean>]]
         [skiprows <Integer>] [maxrows <Integer>]
         gam <GAMArgumentList>
 
@@ -1532,8 +1542,8 @@ gam print adminroles|roles [todrive <ToDriveAttribute>*]
         [formatjson [quotechar <Character>]]
 gam show adminroles|roles
         [role <RoleItem>] [privileges]
-	[nosystemroles]
-	[formatjson]
+        [nosystemroles]
+        [formatjson]
 
 gam create|add admin <EmailAddress>|<UniqueID> <RoleItem> customer|(org_unit <OrgUnitItem>)
         [condition securitygroup|nonsecuritygroup]
@@ -1582,7 +1592,7 @@ gam print alias|aliases [todrive <ToDriveAttribute>*]
          [limittoou <OrgUnitItem>])
         [user|users <EmailAddressList>] [group|groups <EmailAddressList>]
         [select <UserTypeEntity>]
-        [aliasmatchpattern <REMatchPattern>]
+        [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
         [shownoneditable] [nogroups] [nousers]
         [onerowpertarget] [delimiter <Character>]
         [suppressnoaliasrows]
@@ -1743,7 +1753,7 @@ gam calendar <CalendarEntity> printacl [todrive <ToDriveAttribute>*]
         (range <Date> <Date>)|
         (recurrence <RRULE, EXRULE, RDATE and EXDATE line>)|
         (reminder <Number> email|popup))|
-	(resource <ResourceID>)|
+        (resource <ResourceID>)|
         (selectattendees [<AttendeeAttendance>] [<AttendeeStatus>] <UserTypeEntity>)|
         (sequence <Integer>)|
         (sharedproperty <PropertyKey> <PropertyValue>)|
@@ -4470,8 +4480,10 @@ gam update orgs|ous <OrgUnitEntity> sync <CrOSTypeEntity> [removetoou <OrgUnitIt
 gam update orgs|ous <OrgUnitEntity> sync <UserTypeEntity> [removetoou <OrgUnitItem>]
 gam delete orgs|ous <OrgUnitEntity>
 
-gam info org|ou <OrgUnitItem> [nousers|notsuspended|suspended] [children|child]
-gam info orgs|ous <OrgUnitEntity> [nousers|notsuspended|suspended] [children|child]
+gam info org|ou <OrgUnitItem>
+        [nousers | ([notarchived|archived] [notsuspended|suspended])] [children|child]
+gam info orgs|ous <OrgUnitEntity>
+        [nousers | ([notarchived|archived] [notsuspended|suspended])] [children|child]
 
 <OrgUnitSelector> ::=
         cros_ou | cros_ou_and_children|
@@ -5856,7 +5868,7 @@ gam print users [todrive <ToDriveAttribute>*]
         [userview] [basic|full|allfields|(<UserFieldName>*|fields <UserFieldNameList>)]
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
-        [issuspended <Boolean>] [aliasmatchpattern <REMatchPattern>]
+        [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
         [showvalidcolumn] (addcsvdata <FieldName> <String>)*
         [showitemcountonly]
 
@@ -5873,7 +5885,7 @@ gam print users [todrive <ToDriveAttribute>*] select <UserTypeEntity>
         [userview] [basic|full|allfields|(<UserFieldName>*|fields <UserFieldNameList>)]
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
-        [issuspended <Boolean>] [aliasmatchpattern <REMatchPattern>]
+        [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
         [showvalidcolumn] (addcsvdata <FieldName> <String>)*
         [showitemcountonly]
 
@@ -5888,7 +5900,7 @@ gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
         [userview] [basic|full|allfields|(<UserFieldName>*|fields <UserFieldNameList>)]
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
-        [issuspended <Boolean>] [aliasmatchpattern <REMatchPattern>]
+        [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
         [showvalidcolumn] (addcsvdata <FieldName> <String>)*
         [showitemcountonly]
 
@@ -5909,7 +5921,7 @@ gam print users [todrive <ToDriveAttribute>*]
         ([domain|domains <DomainNameEntity>] [(query <QueryUser>)|(queries <QueryUserList>)]
          [limittoou <OrgUnitItem>] [deleted_only|only_deleted])
         [formatjson [quotechar <Character>]] [countsonly|countonly]
-        [issuspended <Boolean>]
+        [issuspended <Boolean>] [isarchived <Boolean>]
 
 Print user domain counts for specified users.
 
@@ -6688,7 +6700,7 @@ gam <UserTypeEntity> create|add drivefile
         [(localfile <FileName>|-)|(url <URL>)]
         [(drivefilename|newfilename <DriveFileName>) | (replacefilename <REMatchPattern> <RESubstitution>)*]
         [stripnameprefix <String>] [noduplicate]
-        [timestamp [<Boolean>]] [timeformat <String>]
+        [timestamp [<Boolean>]] [timeformat <DateTimeFormat>]
         <DriveFileCreateAttribute>*
         [(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> currenttime|<String>)*) |
          (returnidonly|returnlinkonly|returneditlinkonly|showdetails)]
@@ -6709,7 +6721,7 @@ gam <UserTypeEntity> update drivefile <DriveFileEntity> [copy] [returnidonly|ret
         [(localfile <FileName>|-)|(url <URL>)]
         [retainname | (newfilename <DriveFileName>) | (replacefilename <REMatchPattern> <RESubstitution>)*]
         [stripnameprefix <String>]
-        [timestamp [<Boolean>]] [timeformat <String>]
+        [timestamp [<Boolean>]] [timeformat <DateTimeFormat>]
         <DriveFileUpdateAttribute>*
         [(gsheet|csvsheet <SheetEntity> [clearfilter])|(addsheet <String>)]
         [charset <Charset>] [columndelimiter <Character>]
@@ -8591,7 +8603,7 @@ gam <UserTypeEntity> print shareddriveorganizers [todrive <ToDriveAttribute>*]
         [shownorganizerdrives [false|true|only]]
         [includefileorganizers [<Boolean>]]
         [delimiter <Character>]
-	
+
 # Users - Force Signout and Turn Off 2-Step Verification
 
 gam <UserTypeEntity> signout

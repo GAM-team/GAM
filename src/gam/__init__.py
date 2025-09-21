@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.21.03'
+__version__ = '7.22.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -969,14 +969,14 @@ SUSPENDED_CHOICE_MAP = {'notsuspended': False, 'suspended': True}
 def _getIsSuspended(myarg):
   if myarg in SUSPENDED_CHOICE_MAP:
     return SUSPENDED_CHOICE_MAP[myarg]
-  return getBoolean()
+  return getBoolean() #issuspended
 
 ARCHIVED_ARGUMENTS = {'notarchived', 'archived', 'isarchived'}
 ARCHIVED_CHOICE_MAP = {'notarchived': False, 'archived': True}
 def _getIsArchived(myarg):
   if myarg in ARCHIVED_CHOICE_MAP:
     return ARCHIVED_CHOICE_MAP[myarg]
-  return getBoolean()
+  return getBoolean() #isarchived
 
 def _getOptionalIsSuspendedIsArchived():
   isSuspended = isArchived = None
@@ -1549,10 +1549,12 @@ def getOrderBySortOrder(choiceMap, defaultSortOrderChoice='ASCENDING', mapSortOr
   return (getChoice(choiceMap, mapChoice=True),
           getChoice(SORTORDER_CHOICE_MAP, defaultChoice=defaultSortOrderChoice, mapChoice=mapSortOrderChoice))
 
-def orgUnitPathQuery(path, isSuspended):
+def orgUnitPathQuery(path, isSuspended, isArchived):
   query = "orgUnitPath='{0}'".format(path.replace("'", "\\'")) if path != '/' else ''
   if isSuspended is not None:
     query += f' isSuspended={isSuspended}'
+  if isArchived is not None:
+    query += f' isArchived={isArchived}'
   return query
 
 def makeOrgUnitPathAbsolute(path):
@@ -6247,63 +6249,77 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
         _showInvalidEntity(Ent.USER, user)
     if GC.Values[GC.USER_SERVICE_ACCOUNT_ACCESS_ONLY]:
       return entityList
-  elif entityType in {Cmd.ENTITY_ALL_USERS, Cmd.ENTITY_ALL_USERS_NS, Cmd.ENTITY_ALL_USERS_NS_SUSP, Cmd.ENTITY_ALL_USERS_SUSP}:
+  elif entityType in Cmd.ALL_USER_ENTITY_TYPES:
     cd = buildGAPIObject(API.DIRECTORY)
-    if entityType == Cmd.ENTITY_ALL_USERS and isSuspended is not None:
-      query = f'isSuspended={isSuspended}'
+    if entityType == Cmd.ENTITY_ALL_USERS and ((isSuspended is not None) or (isArchived is not None)):
+      if isSuspended is not None:
+        query = f'isSuspended={isSuspended}'
+        if isArchived is not None:
+          query += f' isArchived={isArchived}'
+      else:
+        query = f'isArchived={isArchived}'
     else:
       query = Cmd.ALL_USERS_QUERY_MAP[entityType]
-    printGettingAllAccountEntities(Ent.USER)
+    printGettingAllAccountEntities(Ent.USER, query=query)
     try:
       result = callGAPIpages(cd.users(), 'list', 'users',
                              pageMessage=getPageMessage(),
                              throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                             customer=GC.Values[GC.CUSTOMER_ID],
-                             query=query, orderBy='email', fields='nextPageToken,users(primaryEmail,archived)',
+                             customer=GC.Values[GC.CUSTOMER_ID], query=query, orderBy='email',
+                             fields='nextPageToken,users(primaryEmail)',
                              maxResults=GC.Values[GC.USER_MAX_RESULTS])
     except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
       accessErrorExit(cd)
-    entityList = [user['primaryEmail'] for user in result if isArchived is None or isArchived == user['archived']]
-    printGotAccountEntities(len(entityList))
-  elif entityType in {Cmd.ENTITY_DOMAINS, Cmd.ENTITY_DOMAINS_NS, Cmd.ENTITY_DOMAINS_SUSP}:
-    if entityType == Cmd.ENTITY_DOMAINS_NS:
-      query = 'isSuspended=False'
-    elif entityType == Cmd.ENTITY_DOMAINS_SUSP:
-      query = 'isSuspended=True'
-    elif isSuspended is not None:
-      query = f'isSuspended={isSuspended}'
+    entityList = [user['primaryEmail'] for user in result]
+  elif entityType == Cmd.ENTITY_ALL_USERS_ARCH_OR_SUSP:
+    cd = buildGAPIObject(API.DIRECTORY)
+    for query in ['isSuspended=True', 'isArchived=True']:
+      printGettingAllAccountEntities(Ent.USER, query)
+      try:
+        result = callGAPIpages(cd.users(), 'list', 'users',
+                               pageMessage=getPageMessage(),
+                               throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                               customer=GC.Values[GC.CUSTOMER_ID], query=query, orderBy='email',
+                               fields='nextPageToken,users(primaryEmail)',
+                               maxResults=GC.Values[GC.USER_MAX_RESULTS])
+      except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
+        accessErrorExit(cd)
+      entitySet |= {user['primaryEmail'] for user in result}
+    entityList = sorted(list(entitySet))
+  elif entityType in Cmd.DOMAIN_ENTITY_TYPES:
+    if entityType == Cmd.ENTITY_DOMAINS and ((isSuspended is not None) or (isArchived is not None)):
+      if isSuspended is not None:
+        query = f'isSuspended={isSuspended}'
+        if isArchived is not None:
+          query += f' isArchived={isArchived}'
+      else:
+        query = f'isArchived={isArchived}'
     else:
-      query = None
+      query = Cmd.DOMAINS_QUERY_MAP[entityType]
     cd = buildGAPIObject(API.DIRECTORY)
     domains = convertEntityToList(entity)
     for domain in domains:
-      printGettingAllEntityItemsForWhom(Ent.USER, domain, entityType=Ent.DOMAIN)
+      printGettingAllEntityItemsForWhom(Ent.USER, domain, query=query, entityType=Ent.DOMAIN)
       try:
         result = callGAPIpages(cd.users(), 'list', 'users',
                                pageMessage=getPageMessageForWhom(),
                                throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.DOMAIN_NOT_FOUND, GAPI.FORBIDDEN],
                                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                               domain=domain,
-                               query=query, orderBy='email', fields='nextPageToken,users(primaryEmail,archived)',
+                               domain=domain, query=query, orderBy='email',
+                               fields='nextPageToken,users(primaryEmail)',
                                maxResults=GC.Values[GC.USER_MAX_RESULTS])
       except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.forbidden):
         checkEntityDNEorAccessErrorExit(cd, Ent.DOMAIN, domain)
         _incrEntityDoesNotExist(Ent.DOMAIN)
         continue
-      entityList = [user['primaryEmail'] for user in result if isArchived is None or isArchived == user['archived']]
-      printGotAccountEntities(len(entityList))
-  elif entityType in {Cmd.ENTITY_GROUP, Cmd.ENTITY_GROUPS,
-                      Cmd.ENTITY_GROUP_NS, Cmd.ENTITY_GROUPS_NS,
-                      Cmd.ENTITY_GROUP_SUSP, Cmd.ENTITY_GROUPS_SUSP,
-                      Cmd.ENTITY_GROUP_INDE, Cmd.ENTITY_GROUPS_INDE}:
-    if entityType in {Cmd.ENTITY_GROUP_NS, Cmd.ENTITY_GROUPS_NS}:
-      isSuspended = False
-    elif entityType in {Cmd.ENTITY_GROUP_SUSP, Cmd.ENTITY_GROUPS_SUSP}:
-      isSuspended = True
+      entityList.extend([user['primaryEmail'] for user in result])
+  elif entityType in Cmd.GROUP_ENTITY_TYPES or entityType in Cmd.GROUPS_ENTITY_TYPES:
+    isArchived, isSuspended = Cmd.GROUPS_QUERY_MAP.get(entityType, (isArchived, isSuspended))
     includeDerivedMembership = entityType in {Cmd.ENTITY_GROUP_INDE, Cmd.ENTITY_GROUPS_INDE}
     cd = buildGAPIObject(API.DIRECTORY)
-    groups = convertEntityToList(entity, nonListEntityType=entityType in {Cmd.ENTITY_GROUP, Cmd.ENTITY_GROUP_NS, Cmd.ENTITY_GROUP_SUSP, Cmd.ENTITY_GROUP_INDE})
+    groups = convertEntityToList(entity, nonListEntityType=entityType in Cmd.GROUP_ENTITY_TYPES)
     for group in groups:
       if validateEmailAddressOrUID(group, checkPeople=False):
         group = normalizeEmailAddressOrUID(group)
@@ -6329,11 +6345,8 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
             entityList.append(email)
       else:
         _showInvalidEntity(Ent.GROUP, group)
-  elif entityType in {Cmd.ENTITY_GROUP_USERS, Cmd.ENTITY_GROUP_USERS_NS, Cmd.ENTITY_GROUP_USERS_SUSP, Cmd.ENTITY_GROUP_USERS_SELECT}:
-    if entityType == Cmd.ENTITY_GROUP_USERS_NS:
-      isSuspended = False
-    elif entityType == Cmd.ENTITY_GROUP_USERS_SUSP:
-      isSuspended = True
+  elif entityType in Cmd.GROUP_USERS_ENTITY_TYPES:
+    isArchived, isSuspended = Cmd.GROUP_USERS_QUERY_MAP.get(entityType, (isArchived, isSuspended))
     cd = buildGAPIObject(API.DIRECTORY)
     groups = convertEntityToList(entity)
     includeDerivedMembership = False
@@ -6424,21 +6437,13 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
         _addCIGroupUsersToUsers(name, groupEmail, recursive)
       else:
         _showInvalidEntity(Ent.GROUP, group)
-  elif entityType in {Cmd.ENTITY_OU, Cmd.ENTITY_OUS, Cmd.ENTITY_OU_AND_CHILDREN, Cmd.ENTITY_OUS_AND_CHILDREN,
-                      Cmd.ENTITY_OU_NS, Cmd.ENTITY_OUS_NS, Cmd.ENTITY_OU_AND_CHILDREN_NS, Cmd.ENTITY_OUS_AND_CHILDREN_NS,
-                      Cmd.ENTITY_OU_SUSP, Cmd.ENTITY_OUS_SUSP, Cmd.ENTITY_OU_AND_CHILDREN_SUSP, Cmd.ENTITY_OUS_AND_CHILDREN_SUSP}:
-    if entityType in {Cmd.ENTITY_OU_NS, Cmd.ENTITY_OUS_NS, Cmd.ENTITY_OU_AND_CHILDREN_NS, Cmd.ENTITY_OUS_AND_CHILDREN_NS}:
-      isSuspended = False
-    elif entityType in {Cmd.ENTITY_OU_SUSP, Cmd.ENTITY_OUS_SUSP, Cmd.ENTITY_OU_AND_CHILDREN_SUSP, Cmd.ENTITY_OUS_AND_CHILDREN_SUSP}:
-      isSuspended = True
+  elif entityType in Cmd.OU_ENTITY_TYPES or entityType in Cmd.OUS_ENTITY_TYPES:
+    isArchived, isSuspended = Cmd.OU_QUERY_MAP.get(entityType, (isArchived, isSuspended))
     cd = buildGAPIObject(API.DIRECTORY)
-    ous = convertEntityToList(entity, shlexSplit=True, nonListEntityType=entityType in {Cmd.ENTITY_OU, Cmd.ENTITY_OU_AND_CHILDREN,
-                                                                                        Cmd.ENTITY_OU_NS, Cmd.ENTITY_OU_AND_CHILDREN_NS,
-                                                                                        Cmd.ENTITY_OU_SUSP, Cmd.ENTITY_OU_AND_CHILDREN_SUSP})
-    directlyInOU = entityType in {Cmd.ENTITY_OU, Cmd.ENTITY_OUS, Cmd.ENTITY_OU_NS, Cmd.ENTITY_OUS_NS, Cmd.ENTITY_OU_SUSP, Cmd.ENTITY_OUS_SUSP}
+    ous = convertEntityToList(entity, shlexSplit=True, nonListEntityType=entityType in Cmd.OU_ENTITY_TYPES)
+    directlyInOU = entityType in Cmd.OU_DIRECT_ENTITY_TYPES
     qualifier = Msg.DIRECTLY_IN_THE.format(Ent.Singular(Ent.ORGANIZATIONAL_UNIT)) if directlyInOU else Msg.IN_THE.format(Ent.Singular(Ent.ORGANIZATIONAL_UNIT))
-    fields = 'nextPageToken,users(primaryEmail,orgUnitPath,archived)' if directlyInOU else 'nextPageToken,users(primaryEmail,archived)'
-    prevLen = 0
+    fields = 'nextPageToken,users(primaryEmail,orgUnitPath)' if directlyInOU else 'nextPageToken,users(primaryEmail)'
     for ou in ous:
       ou = makeOrgUnitPathAbsolute(ou)
       if ou.startswith('id:'):
@@ -6463,22 +6468,17 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
                               throwReasons=[GAPI.INVALID_ORGUNIT, GAPI.ORGUNIT_NOT_FOUND,
                                             GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                              customer=GC.Values[GC.CUSTOMER_ID], query=orgUnitPathQuery(ou, isSuspended), orderBy='email',
+                              customer=GC.Values[GC.CUSTOMER_ID], query=orgUnitPathQuery(ou, isSuspended, isArchived), orderBy='email',
                               fields=fields, maxResults=GC.Values[GC.USER_MAX_RESULTS])
         for users in feed:
           if directlyInOU:
             for user in users:
-              if ouLower == user.get('orgUnitPath', '').lower() and (isArchived is None or isArchived == user['archived']):
+              if ouLower == user.get('orgUnitPath', '').lower():
                 usersInOU += 1
                 entityList.append(user['primaryEmail'])
-          elif isArchived is None:
+          else:
             entityList.extend([user['primaryEmail'] for user in users])
             usersInOU += len(users)
-          else:
-            for user in users:
-              if isArchived == user['archived']:
-                usersInOU += 1
-                entityList.append(user['primaryEmail'])
         setGettingAllEntityItemsForWhom(Ent.USER, ou, qualifier=qualifier)
         printGotEntityItemsForWhom(usersInOU)
       except (GAPI.invalidInput, GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError, GAPI.badRequest,
@@ -6488,7 +6488,6 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
   elif entityType in {Cmd.ENTITY_QUERY, Cmd.ENTITY_QUERIES}:
     cd = buildGAPIObject(API.DIRECTORY)
     queries = convertEntityToList(entity, shlexSplit=True, nonListEntityType=entityType == Cmd.ENTITY_QUERY)
-    prevLen = 0
     for query in queries:
       printGettingAllAccountEntities(Ent.USER, query)
       try:
@@ -6512,9 +6511,6 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
             email not in entitySet):
           entitySet.add(email)
           entityList.append(email)
-      totalLen = len(entityList)
-      printGotAccountEntities(totalLen-prevLen)
-      prevLen = totalLen
   elif entityType == Cmd.ENTITY_LICENSES:
     skusList = []
     for item in entity.split(','):
@@ -6573,8 +6569,7 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
         ClientAPIAccessDeniedExit(str(e))
   elif entityType == Cmd.ENTITY_CROS:
     buildGAPIObject(API.DIRECTORY)
-    result = convertEntityToList(entity)
-    for deviceId in result:
+    for deviceId in convertEntityToList(entity):
       if deviceId not in entitySet:
         entitySet.add(deviceId)
         entityList.append(deviceId)
@@ -6598,7 +6593,6 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
                                   nonListEntityType=entityType == Cmd.ENTITY_CROS_QUERY)
     if entityType == Cmd.ENTITY_CROS_SN:
       queries = [f'id:{query}' for query in queries]
-    prevLen = 0
     for query in queries:
       printGettingAllAccountEntities(Ent.CROS_DEVICE, query)
       try:
@@ -6619,25 +6613,15 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
         if deviceId not in entitySet:
           entitySet.add(deviceId)
           entityList.append(deviceId)
-      totalLen = len(entityList)
-      printGotAccountEntities(totalLen-prevLen)
-      prevLen = totalLen
-  elif entityType in {Cmd.ENTITY_CROS_OU, Cmd.ENTITY_CROS_OU_AND_CHILDREN, Cmd.ENTITY_CROS_OUS, Cmd.ENTITY_CROS_OUS_AND_CHILDREN,
-                      Cmd.ENTITY_CROS_OU_QUERY, Cmd.ENTITY_CROS_OU_AND_CHILDREN_QUERY, Cmd.ENTITY_CROS_OUS_QUERY, Cmd.ENTITY_CROS_OUS_AND_CHILDREN_QUERY,
-                      Cmd.ENTITY_CROS_OU_QUERIES, Cmd.ENTITY_CROS_OU_AND_CHILDREN_QUERIES, Cmd.ENTITY_CROS_OUS_QUERIES, Cmd.ENTITY_CROS_OUS_AND_CHILDREN_QUERIES}:
+  elif entityType in Cmd.CROS_OU_ENTITY_TYPES or entityType in Cmd.CROS_OUS_ENTITY_TYPES:
     cd = buildGAPIObject(API.DIRECTORY)
-    ous = convertEntityToList(entity, shlexSplit=True,
-                              nonListEntityType=entityType in {Cmd.ENTITY_CROS_OU, Cmd.ENTITY_CROS_OU_AND_CHILDREN,
-                                                               Cmd.ENTITY_CROS_OU_QUERY, Cmd.ENTITY_CROS_OU_AND_CHILDREN_QUERY,
-                                                               Cmd.ENTITY_CROS_OU_QUERIES, Cmd.ENTITY_CROS_OU_AND_CHILDREN_QUERIES})
+    ous = convertEntityToList(entity, shlexSplit=True, nonListEntityType=entityType in Cmd.CROS_OU_ENTITY_TYPES)
     numOus = len(ous)
-    includeChildOrgunits = entityType in {Cmd.ENTITY_CROS_OU_AND_CHILDREN, Cmd.ENTITY_CROS_OUS_AND_CHILDREN,
-                                          Cmd.ENTITY_CROS_OU_AND_CHILDREN_QUERY, Cmd.ENTITY_CROS_OUS_AND_CHILDREN_QUERY,
-                                          Cmd.ENTITY_CROS_OU_AND_CHILDREN_QUERIES, Cmd.ENTITY_CROS_OUS_AND_CHILDREN_QUERIES}
+    includeChildOrgunits = entityType in Cmd.CROS_OU_CHILDREN_ENTITY_TYPES
     allQualifier = Msg.DIRECTLY_IN_THE.format(Ent.Choose(Ent.ORGANIZATIONAL_UNIT, numOus)) if not includeChildOrgunits else Msg.IN_THE.format(Ent.Choose(Ent.ORGANIZATIONAL_UNIT, numOus))
-    if entityType in {Cmd.ENTITY_CROS_OU_QUERY, Cmd.ENTITY_CROS_OU_AND_CHILDREN_QUERY, Cmd.ENTITY_CROS_OUS_QUERY, Cmd.ENTITY_CROS_OUS_AND_CHILDREN_QUERY}:
+    if entityType in Cmd.CROS_OU_QUERY_ENTITY_TYPES:
       queries = getQueries('query')
-    elif entityType in {Cmd.ENTITY_CROS_OU_QUERIES, Cmd.ENTITY_CROS_OU_AND_CHILDREN_QUERIES, Cmd.ENTITY_CROS_OUS_QUERIES, Cmd.ENTITY_CROS_OUS_AND_CHILDREN_QUERIES}:
+    elif entityType in Cmd.CROS_OU_QUERIES_ENTITY_TYPES:
       queries = getQueries('queries')
     else:
       queries = [None]
@@ -6710,7 +6694,6 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
     customerId = _getCustomerIdNoC()
     queries = convertEntityToList(entity, shlexSplit=entityType == Cmd.ENTITY_BROWSER_QUERIES,
                                   nonListEntityType=entityType == Cmd.ENTITY_BROWSER_QUERY)
-    prevLen = 0
     for query in queries:
       printGettingAllAccountEntities(Ent.CHROME_BROWSER, query)
       try:
@@ -6730,9 +6713,6 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
         if deviceId not in entitySet:
           entitySet.add(deviceId)
           entityList.append(deviceId)
-      totalLen = len(entityList)
-      printGotAccountEntities(totalLen-prevLen)
-      prevLen = totalLen
   else:
     systemErrorExit(UNKNOWN_ERROR_RC, 'getItemsToModify coding error')
   for errorType in [ENTITY_ERROR_DNE, ENTITY_ERROR_INVALID]:
@@ -7045,10 +7025,7 @@ def getEntityToModify(defaultEntityType=None, browserAllowed=False, crosAllowed=
         choices += Cmd.CROS_ENTITY_SELECTOR_DATAFILE_CSVKMD_SUBTYPES
       entityType = mapEntityType(getChoice(choices), typeMap)
       return (Cmd.ENTITY_USERS if entityType not in Cmd.CROS_ENTITY_SELECTOR_DATAFILE_CSVKMD_SUBTYPES else Cmd.ENTITY_CROS,
-              getItemsToModify(entityType, getEntitiesFromFile(shlexSplit=entityType in [Cmd.ENTITY_OUS, Cmd.ENTITY_OUS_AND_CHILDREN,
-                                                                                         Cmd.ENTITY_OUS_NS, Cmd.ENTITY_OUS_AND_CHILDREN_NS,
-                                                                                         Cmd.ENTITY_OUS_SUSP, Cmd.ENTITY_OUS_AND_CHILDREN_SUSP,
-                                                                                         Cmd.ENTITY_CROS_OUS, Cmd.ENTITY_CROS_OUS_AND_CHILDREN])))
+              getItemsToModify(entityType, getEntitiesFromFile(shlexSplit=entityType in Cmd.OUS_ENTITY_TYPES | {Cmd.ENTITY_CROS_OUS, Cmd.ENTITY_CROS_OUS_AND_CHILDREN})))
     if entitySelector == Cmd.ENTITY_SELECTOR_CSVDATAFILE:
       if userAllowed:
         choices += Cmd.USER_ENTITY_SELECTOR_DATAFILE_CSVKMD_SUBTYPES if not GC.Values[GC.USER_SERVICE_ACCOUNT_ACCESS_ONLY] else [Cmd.ENTITY_USERS]
@@ -7056,10 +7033,7 @@ def getEntityToModify(defaultEntityType=None, browserAllowed=False, crosAllowed=
         choices += Cmd.CROS_ENTITY_SELECTOR_DATAFILE_CSVKMD_SUBTYPES
       entityType = mapEntityType(getChoice(choices), typeMap)
       return (Cmd.ENTITY_USERS if entityType not in Cmd.CROS_ENTITY_SELECTOR_DATAFILE_CSVKMD_SUBTYPES else Cmd.ENTITY_CROS,
-              getItemsToModify(entityType, getEntitiesFromCSVFile(shlexSplit=entityType in [Cmd.ENTITY_OUS, Cmd.ENTITY_OUS_AND_CHILDREN,
-                                                                                            Cmd.ENTITY_OUS_NS, Cmd.ENTITY_OUS_AND_CHILDREN_NS,
-                                                                                            Cmd.ENTITY_OUS_SUSP, Cmd.ENTITY_OUS_AND_CHILDREN_SUSP,
-                                                                                            Cmd.ENTITY_CROS_OUS, Cmd.ENTITY_CROS_OUS_AND_CHILDREN])))
+              getItemsToModify(entityType, getEntitiesFromCSVFile(shlexSplit=entityType in Cmd.OUS_ENTITY_TYPES | {Cmd.ENTITY_CROS_OUS, Cmd.ENTITY_CROS_OUS_AND_CHILDREN})))
     if entitySelector == Cmd.ENTITY_SELECTOR_CSVKMD:
       if userAllowed:
         choices += Cmd.USER_ENTITY_SELECTOR_DATAFILE_CSVKMD_SUBTYPES if not GC.Values[GC.USER_SERVICE_ACCOUNT_ACCESS_ONLY] else [Cmd.ENTITY_USERS]
@@ -7102,10 +7076,7 @@ def getEntityToModify(defaultEntityType=None, browserAllowed=False, crosAllowed=
   if not GC.Values[GC.USER_SERVICE_ACCOUNT_ACCESS_ONLY]:
     buildGAPIObject(API.DIRECTORY)
   if entityClass == Cmd.ENTITY_USERS:
-    if entityType in [Cmd.ENTITY_GROUP_USERS,
-                      Cmd.ENTITY_GROUP_USERS_NS, Cmd.ENTITY_GROUP_USERS_SUSP,
-                      Cmd.ENTITY_GROUP_USERS_SELECT,
-                      Cmd.ENTITY_CIGROUP_USERS]:
+    if entityType in Cmd.GROUP_USERS_ENTITY_TYPES | {Cmd.ENTITY_CIGROUP_USERS}:
       # Skip over sub-arguments
       while Cmd.ArgumentsRemaining():
         myarg = getArgument()
@@ -10149,8 +10120,8 @@ def threadBatchWorker(showCmds=False, numItems=0):
       batchWriteStderr(f'{currentISOformatTimeStamp()},{pid}/{numItems},Error,{str(e)},{logCmd}\n')
     GM.Globals[GM.TBATCH_QUEUE].task_done()
 
-BATCH_COMMANDS = [Cmd.GAM_CMD, Cmd.COMMIT_BATCH_CMD, Cmd.PRINT_CMD, Cmd.SLEEP_CMD]
-TBATCH_COMMANDS = [Cmd.GAM_CMD, Cmd.COMMIT_BATCH_CMD, Cmd.EXECUTE_CMD, Cmd.PRINT_CMD, Cmd.SLEEP_CMD]
+BATCH_COMMANDS = [Cmd.GAM_CMD, Cmd.COMMIT_BATCH_CMD, Cmd.PRINT_CMD, Cmd.SLEEP_CMD, Cmd.DATETIME_CMD, Cmd.SET_CMD, Cmd.CLEAR_CMD]
+TBATCH_COMMANDS = [Cmd.GAM_CMD, Cmd.COMMIT_BATCH_CMD, Cmd.EXECUTE_CMD, Cmd.PRINT_CMD, Cmd.SLEEP_CMD, Cmd.DATETIME_CMD, Cmd.SET_CMD, Cmd.CLEAR_CMD]
 
 def ThreadBatchGAMCommands(items, showCmds):
   if not items:
@@ -10262,6 +10233,14 @@ def doBatch(threadBatch=False):
         continue
       if argv:
         cmd = argv[0].strip().lower()
+        if cmd == Cmd.DATETIME_CMD:
+          if len(argv) == 2:
+            kwValues['datetime'] = todaysTime().strftime(argv[1])
+          else:
+            writeStderr(f'Command: >>>{Cmd.QuotedArgumentList([argv[0]])}<<< {Cmd.QuotedArgumentList(argv[1:])}\n')
+            writeStderr(f'{ERROR_PREFIX}{Cmd.ARGUMENT_ERROR_NAMES[Cmd.ARGUMENT_INVALID][1]}: {Msg.EXPECTED} <{Cmd.DATETIME_CMD} DateTimeFormat>)>\n')
+            errors += 1
+          continue
         if cmd == Cmd.SET_CMD:
           if len(argv) == 3:
             kwValues[argv[1]] = argv[2]
@@ -13353,7 +13332,7 @@ def getUserOrgUnits(cd, orgUnit, orgUnitId):
                            throwReasons=[GAPI.INVALID_ORGUNIT, GAPI.ORGUNIT_NOT_FOUND,
                                          GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                           customer=GC.Values[GC.CUSTOMER_ID], query=orgUnitPathQuery(orgUnit, None), orderBy='email',
+                           customer=GC.Values[GC.CUSTOMER_ID], query=orgUnitPathQuery(orgUnit, None, None), orderBy='email',
                            fields='nextPageToken,users(primaryEmail,orgUnitPath)', maxResults=GC.Values[GC.USER_MAX_RESULTS])
     userOrgUnits = {}
     for user in result:
@@ -17848,10 +17827,29 @@ ORG_FIELD_INFO_ORDER = ['orgUnitId', 'name', 'description', 'parentOrgUnitPath',
 ORG_FIELDS_WITH_CRS_NLS = {'description'}
 
 def _doInfoOrgs(entityList):
+  def _printUsers(entityType, orgUnitPath, isSuspended, isArchived):
+    users = callGAPIpages(cd.users(), 'list', 'users',
+                          throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID_INPUT, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                          retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                          customer=GC.Values[GC.CUSTOMER_ID], query=orgUnitPathQuery(orgUnitPath, isSuspended, isArchived), orderBy='email',
+                          fields='nextPageToken,users(primaryEmail,orgUnitPath)', maxResults=GC.Values[GC.USER_MAX_RESULTS])
+    printEntitiesCount(entityType, None)
+    usersInOU = 0
+    Ind.Increment()
+    orgUnitPath = orgUnitPath.lower()
+    for user in users:
+      if orgUnitPath == user['orgUnitPath'].lower():
+        printKeyValueList([user['primaryEmail']])
+        usersInOU += 1
+      elif showChildren:
+        printKeyValueList([f'{user["primaryEmail"]} (child)'])
+        usersInOU += 1
+    Ind.Decrement()
+    printKeyValueList([Msg.TOTAL_ITEMS_IN_ENTITY.format(Ent.Plural(entityType), Ent.Singular(Ent.ORGANIZATIONAL_UNIT)), usersInOU])
+
   cd = buildGAPIObject(API.DIRECTORY)
   getUsers = True
-  isSuspended = None
-  entityType = Ent.USER
+  isSuspended = isArchived = None
   showChildren = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -17859,7 +17857,8 @@ def _doInfoOrgs(entityList):
       getUsers = False
     elif myarg in SUSPENDED_ARGUMENTS:
       isSuspended = _getIsSuspended(myarg)
-      entityType = Ent.USER_SUSPENDED if isSuspended else Ent.USER_NOT_SUSPENDED
+    elif myarg in ARCHIVED_ARGUMENTS:
+      isArchived = _getIsArchived(myarg)
     elif myarg in {'children', 'child'}:
       showChildren = True
     else:
@@ -17890,37 +17889,28 @@ def _doInfoOrgs(entityList):
             printKeyValueWithCRsNLs(field, value)
       if getUsers:
         orgUnitPath = result['orgUnitPath']
-        users = callGAPIpages(cd.users(), 'list', 'users',
-                              throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID_INPUT, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
-                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                              customer=GC.Values[GC.CUSTOMER_ID], query=orgUnitPathQuery(orgUnitPath, isSuspended), orderBy='email',
-                              fields='nextPageToken,users(primaryEmail,orgUnitPath)', maxResults=GC.Values[GC.USER_MAX_RESULTS])
-        printEntitiesCount(entityType, None)
-        usersInOU = 0
-        Ind.Increment()
-        orgUnitPath = orgUnitPath.lower()
-        for user in users:
-          if orgUnitPath == user['orgUnitPath'].lower():
-            printKeyValueList([user['primaryEmail']])
-            usersInOU += 1
-          elif showChildren:
-            printKeyValueList([f'{user["primaryEmail"]} (child)'])
-            usersInOU += 1
-        Ind.Decrement()
-        printKeyValueList([Msg.TOTAL_ITEMS_IN_ENTITY.format(Ent.Plural(entityType), Ent.Singular(Ent.ORGANIZATIONAL_UNIT)), usersInOU])
+        if isArchived is None and isSuspended is None:
+          _printUsers(Ent.USER, orgUnitPath, None, None)
+        else:
+          if isArchived is not None:
+            _printUsers(Ent.USER_ARCHIVED if isArchived else Ent.USER_NOT_ARCHIVED, orgUnitPath, None, isArchived)
+          if isSuspended is not None:
+            _printUsers(Ent.USER_SUSPENDED if isSuspended else Ent.USER_NOT_SUSPENDED, orgUnitPath, isSuspended, None)
       Ind.Decrement()
     except (GAPI.invalidInput, GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError):
       entityActionFailedWarning([Ent.ORGANIZATIONAL_UNIT, orgUnitPath], Msg.DOES_NOT_EXIST, i, count)
     except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.resourceNotFound, GAPI.forbidden):
       checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, orgUnitPath)
 
-# gam info orgs|ous <OrgUnitEntity> [nousers|notsuspended|suspended] [children|child]
-def doInfoOrgs():
-  _doInfoOrgs(getEntityList(Cmd.OB_ORGUNIT_ENTITY, shlexSplit=True))
-
-# gam info org|ou <OrgUnitItem> [nousers|notsuspended|suspended] [children|child]
+# gam info org|ou <OrgUnitItem>
+#	[nousers | ([notarchived|archived] [notsuspended|suspended])] [children|child]
 def doInfoOrg():
   _doInfoOrgs([getOrgUnitItem()])
+
+# gam info orgs|ous <OrgUnitEntity>
+#	[nousers | ([notarchived|archived] [notsuspended|suspended])] [children|child]
+def doInfoOrgs():
+  _doInfoOrgs(getEntityList(Cmd.OB_ORGUNIT_ENTITY, shlexSplit=True))
 
 ORG_ARGUMENT_TO_FIELD_MAP = {
   'blockinheritance': 'blockInheritance',
@@ -18151,7 +18141,7 @@ def doPrintOrgs():
     return
   if showUserCounts:
     for orgUnit in orgUnits:
-      userCounts[orgUnit['orgUnitPath']] = [0, 0]
+      userCounts[orgUnit['orgUnitPath']] = {'suspended': [0, 0], 'archived': [0, 0], 'total': 0}
     qualifier = Msg.IN_THE.format(Ent.Singular(Ent.ORGANIZATIONAL_UNIT))
     printGettingAllEntityItemsForWhom(Ent.USER, orgUnitPath, qualifier=qualifier, entityType=Ent.ORGANIZATIONAL_UNIT)
     pageMessage = getPageMessageForWhom()
@@ -18161,12 +18151,14 @@ def doPrintOrgs():
                             throwReasons=[GAPI.INVALID_ORGUNIT, GAPI.ORGUNIT_NOT_FOUND,
                                           GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                            customer=GC.Values[GC.CUSTOMER_ID], query=orgUnitPathQuery(orgUnitPath, None), orderBy='email',
-                            fields='nextPageToken,users(orgUnitPath,suspended)', maxResults=GC.Values[GC.USER_MAX_RESULTS])
+                            customer=GC.Values[GC.CUSTOMER_ID], query=orgUnitPathQuery(orgUnitPath, None, None), orderBy='email',
+                            fields='nextPageToken,users(orgUnitPath,suspended,archived)', maxResults=GC.Values[GC.USER_MAX_RESULTS])
       for users in feed:
         for user in users:
           if user['orgUnitPath'] in userCounts:
-            userCounts[user['orgUnitPath']][user['suspended']] += 1
+            userCounts[user['orgUnitPath']]['suspended'][user['suspended']] += 1
+            userCounts[user['orgUnitPath']]['archived'][user['archived']] += 1
+            userCounts[user['orgUnitPath']]['total'] += 1
     except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.invalidInput, GAPI.badRequest, GAPI.backendError,
             GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.resourceNotFound, GAPI.forbidden):
       checkEntityDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, orgUnitPath)
@@ -18233,15 +18225,34 @@ def doPrintOrgs():
             (maxCrOSCounts != -1 and total > maxCrOSCounts)):
           continue
       if showUserCounts:
-        row[f'Users{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}NotSuspended'] = userCounts[orgUnitPath][0]
-        row[f'Users{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}Suspended'] = userCounts[orgUnitPath][1]
-        row[f'Users{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}Total'] = total = userCounts[orgUnitPath][0]+userCounts[orgUnitPath][1]
+        row[f'Users{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}NotArchived'] = userCounts[orgUnitPath]['archived'][0]
+        row[f'Users{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}Archived'] = userCounts[orgUnitPath]['archived'][1]
+        row[f'Users{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}NotSuspended'] = userCounts[orgUnitPath]['suspended'][0]
+        row[f'Users{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}Suspended'] = userCounts[orgUnitPath]['suspended'][1]
+        row[f'Users{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}Total'] = total = userCounts[orgUnitPath]['total']
         if ((minUserCounts != -1 and total < minUserCounts) or
             (maxUserCounts != -1 and total > maxUserCounts)):
           continue
       csvPF.WriteRowTitles(row)
     else:
       csvPF.WriteRow(row)
+  if showCrOSCounts or showUserCounts:
+    crosTitles = []
+    userTitles = []
+    allTitles = csvPF.titlesList[:]
+    for title in allTitles:
+      if showCrOSCounts and title.startswith(f'CrOS{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}'):
+        crosTitles.append(title)
+        csvPF.RemoveTitles(title)
+      if showUserCounts and title.startswith(f'Users{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}'):
+        userTitles.append(title)
+        csvPF.RemoveTitles(title)
+    if showCrOSCounts:
+      csvPF.AddTitles(sorted(crosTitles))
+    if showUserCounts:
+      for title in ['NotArchived', 'Archived', 'NotSuspended', 'Suspended', 'Total']:
+        csvPF.AddTitles(f'Users{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{title}')
+    csvPF.SetSortTitles([])
   csvPF.writeCSVfile('Orgs')
 
 # gam show orgtree [fromparent <OrgUnitItem>] [batchsuborgs [Boolean>]]
@@ -18451,7 +18462,7 @@ def doCheckOrgUnit():
                             throwReasons=[GAPI.INVALID_ORGUNIT, GAPI.ORGUNIT_NOT_FOUND,
                                           GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                            customer=GC.Values[GC.CUSTOMER_ID], query=orgUnitPathQuery(orgUnitPath, None),
+                            customer=GC.Values[GC.CUSTOMER_ID], query=orgUnitPathQuery(orgUnitPath, None, None),
                             fields='nextPageToken,users(orgUnitPath)', maxResults=GC.Values[GC.USER_MAX_RESULTS])
       for users in feed:
         for user in users:
@@ -18872,7 +18883,7 @@ def makeUserGroupDomainQueryFilters(kwargsDict):
       kwargsQueries.append((kwargs, query))
   return kwargsQueries
 
-def userFilters(kwargs, query, orgUnitPath, isSuspended):
+def userFilters(kwargs, query, orgUnitPath, isSuspended, isArchived):
   queryTitle = ''
   if kwargs.get('domain'):
     queryTitle += f'domain={kwargs["domain"]}, '
@@ -18891,6 +18902,12 @@ def userFilters(kwargs, query, orgUnitPath, isSuspended):
     else:
       query += ' '
     query += f'isSuspended={isSuspended}'
+  if isArchived is not None:
+    if query is None:
+      query = ''
+    else:
+      query += ' '
+    query += f'isArchived={isArchived}'
   if query is not None:
     queryTitle += f'query="{query}", '
   if queryTitle:
@@ -18902,7 +18919,7 @@ def userFilters(kwargs, query, orgUnitPath, isSuspended):
 #	 [limittoou <OrgUnitItem>])
 #	[user|users <EmailAddressList>] [group|groups <EmailAddressList>]
 #	[select <UserTypeEntity>]
-#	[issuspended <Boolean>] [aliasmatchpattern <REMatchPattern>]
+#	[issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
 #	[shownoneditable] [nogroups] [nousers]
 #	[onerowpertarget] [delimiter <Character>]
 #	[suppressnoaliasrows]
@@ -18948,7 +18965,7 @@ def doPrintAliases():
   groups = []
   users = []
   aliasMatchPattern = re.compile(r'^.*$')
-  isSuspended = orgUnitPath = None
+  isArchived = isSuspended = orgUnitPath = None
   addCSVData = {}
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   while Cmd.ArgumentsRemaining():
@@ -18972,8 +18989,10 @@ def doPrintAliases():
       pass
     elif myarg == 'select':
       _, users = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
-    elif myarg == 'issuspended':
-      isSuspended = getBoolean()
+    elif myarg in SUSPENDED_ARGUMENTS:
+      isSuspended = _getIsSuspended(myarg)
+    elif myarg in ARCHIVED_ARGUMENTS:
+      isArchived = _getIsArchived(myarg)
     elif myarg in {'user','users'}:
       users.extend(convertEntityToList(getString(Cmd.OB_EMAIL_ADDRESS_LIST, minLen=0)))
     elif myarg in {'group', 'groups'}:
@@ -19008,7 +19027,7 @@ def doPrintAliases():
     for kwargsQuery in makeUserGroupDomainQueryFilters(kwargsDict):
       kwargs = kwargsQuery[0]
       query = kwargsQuery[1]
-      query, pquery = userFilters(kwargs, query, orgUnitPath, isSuspended)
+      query, pquery = userFilters(kwargs, query, orgUnitPath, isSuspended, isArchived)
       printGettingAllAccountEntities(Ent.USER, pquery)
       try:
         entityList = callGAPIpages(cd.users(), 'list', 'users',
@@ -45690,7 +45709,7 @@ USERS_INDEXED_TITLES = ['addresses', 'aliases', 'nonEditableAliases', 'emails', 
 #	[userview] [basic|full|allfields | <UserFieldName>* | fields <UserFieldNameList>]
 #	[delimiter <Character>] [sortheaders] [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
 #	[convertcrnl]
-#	[issuspended <Boolean>] [aliasmatchpattern <REMatchPattern>]
+#	[issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
 # 	[showitemcountonly]
 #	[showvalidcolumn] (addcsvdata <FieldName> <String>)*
 #
@@ -45703,7 +45722,7 @@ USERS_INDEXED_TITLES = ['addresses', 'aliases', 'nonEditableAliases', 'emails', 
 #	[userview] [basic|full|allfields | <UserFieldName>* | fields <UserFieldNameList>]
 #	[delimiter <Character>] [sortheaders] [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
 #	[convertcrnl]
-#	[issuspended <Boolean>] [aliasmatchpattern <REMatchPattern>]
+#	[issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
 # 	[showitemcountonly]
 #	[showvalidcolumn] (addcsvdata <FieldName> <String>)*
 #
@@ -45711,13 +45730,13 @@ USERS_INDEXED_TITLES = ['addresses', 'aliases', 'nonEditableAliases', 'emails', 
 #	([domain <DomainName>] [(query <QueryUser>)|(queries <QueryUserList>)]
 #	 [limittoou <OrgUnitItem>] [deleted_only|only_deleted])|[select <UserTypeEntity>]
 #	[formatjson [quotechar <Character>]] [countonly]
-#	[issuspended <Boolean>] [aliasmatchpattern <REMatchPattern>]
+#	[issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
 # 	[showitemcountonly]
 #	[showvalidcolumn] (addcsvdata <FieldName> <String>)*
 #
 # gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
 #	[formatjson [quotechar <Character>]] [countonly]
-#	[issuspended <Boolean>]
+#	[issuspended <Boolean>] [isarchived <Boolean>]
 # 	[showitemcountonly]
 def doPrintUsers(entityList=None):
   def _writeUserEntity(userEntity):
@@ -45873,7 +45892,7 @@ def doPrintUsers(entityList=None):
   schemaParms = _initSchemaParms('basic')
   projectionSet = False
   oneLicensePerRow = quotePlusPhoneNumbers = showDeleted = False
-  aliasMatchPattern = isSuspended = orgUnitPath = orgUnitPathLower = orderBy = sortOrder = None
+  aliasMatchPattern = isArchived = isSuspended = orgUnitPath = orgUnitPathLower = orderBy = sortOrder = None
   viewType = 'admin_view'
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   showValidColumn = ''
@@ -45892,8 +45911,10 @@ def doPrintUsers(entityList=None):
       showDeleted = True
     elif entityList is None and myarg == 'select':
       _, entityList = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
-    elif myarg == 'issuspended':
-      isSuspended = getBoolean()
+    elif myarg in SUSPENDED_ARGUMENTS:
+      isSuspended = _getIsSuspended(myarg)
+    elif myarg in ARCHIVED_ARGUMENTS:
+      isArchived = _getIsArchived(myarg)
     elif myarg == 'orderby':
       orderBy, sortOrder = getOrderBySortOrder(USERS_ORDERBY_CHOICE_MAP)
     elif myarg == 'userview':
@@ -46006,7 +46027,7 @@ def doPrintUsers(entityList=None):
     for kwargsQuery in makeUserGroupDomainQueryFilters(kwargsDict):
       kwargs = kwargsQuery[0]
       query  = kwargsQuery[1]
-      query, pquery = userFilters(kwargs, query, orgUnitPath, isSuspended)
+      query, pquery = userFilters(kwargs, query, orgUnitPath, isSuspended, isArchived)
       printGettingAllAccountEntities(Ent.USER, pquery)
       pageMessage = getPageMessage(showFirstLastItems=True)
       try:
@@ -46016,9 +46037,9 @@ def doPrintUsers(entityList=None):
                                             GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN,
                                             GAPI.UNKNOWN_ERROR, GAPI.FAILED_PRECONDITION],
                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS+[GAPI.UNKNOWN_ERROR, GAPI.FAILED_PRECONDITION],
-                              query=query, fields=fields,
                               showDeleted=showDeleted, orderBy=orderBy, sortOrder=sortOrder, viewType=viewType,
                               projection=schemaParms['projection'], customFieldMask=schemaParms['customFieldMask'],
+                              query=query, fields=fields,
                               maxResults=maxResults, **kwargs)
         for users in feed:
           if orgUnitPath is None:
@@ -54970,7 +54991,7 @@ def getDriveFileAttribute(myarg, body, parameters, updateCmd):
   elif myarg == 'timestamp':
     parameters[DFA_TIMESTAMP] = getBoolean()
   elif myarg == 'timeformat':
-    parameters[DFA_TIMEFORMAT] = getString(Cmd.OB_STRING, minLen=0)
+    parameters[DFA_TIMEFORMAT] = getString(Cmd.OB_DATETIME_FORMAT, minLen=0)
   elif getDriveFileCopyAttribute(myarg, body, parameters):
     pass
   else:
@@ -59557,7 +59578,7 @@ createReturnItemMap = {
 #	[(localfile <FileName>|-)|(url <URL>)]
 #	[(drivefilename|newfilename <DriveFileName>) | (replacefilename <REMatchPattern> <RESubstitution>)*]
 #	[stripnameprefix <String>]
-#	[timestamp <Boolean>]] [timeformat <String>]
+#	[timestamp <Boolean>]] [timeformat <DateTimeFormat>]
 #	<DriveFileCreateAttribute>* [noduplicate]
 #	[(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*)) |
 #	 (returnidonly|returnlinkonly|returneditlinkonly|showdetails)]
@@ -60084,7 +60105,7 @@ def checkDriveFileShortcut(users):
 #	[(localfile <FileName>|-)|(url <URL>)]
 #	[retainname | (newfilename <DriveFileName>) | (replacefilename <REMatchPattern> <RESubstitution>)*]
 #	[stripnameprefix <String>]
-#	[timestamp <Boolean>]] [timeformat <String>]
+#	[timestamp <Boolean>]] [timeformat <DateTimeFormat>]
 #	<DriveFileUpdateAttribute>*
 #	[(gsheet|csvsheet <SheetEntity> [clearfilter])|(addsheet <String>)]
 #	[charset <String>] [columndelimiter <Character>]
