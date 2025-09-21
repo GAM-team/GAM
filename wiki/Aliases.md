@@ -103,7 +103,7 @@ gam print aliases [todrive <ToDriveAttribute>*]
          [limittoou <OrgUnitItem>])
         [user|users <EmailAddressList>] [group|groups <EmailAddressList>]
         [select <UserTypeEntity>]
-        [aliasmatchpattern <REMatchPattern>]
+        [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
         [shownoneditable] [nogroups] [nousers]
         [onerowpertarget] [delimiter <Character>]
         [suppressnoaliasrows]
@@ -117,6 +117,8 @@ By default, group and user aliases in all domains in the account are selected; t
 * `user|users <EmailAddressList>` - Print aliases for users in `<EmailAddressList`
 * `select <UserTypeEntity>` - Print aliases for users in `<UserTypeEntity>`
 * `group|groups <EmailAddressList>` - Print aliases for groups in `<EmailAddressList`
+* `issuspended <Boolean>` - Limit users based on their status
+* `isarchived <Boolean>` - Limit users based on their status
 * `aliasmatchpattern <REMatchPattern>` - Print aliases that match a pattern
 * `nogroups` - Print only user aliases
 * `nousers` - Print only group aliases

@@ -68,6 +68,8 @@
 <ColorValue> ::= <ColorName>|<ColorHex>
 ```
 ```
+<DateTimeFormat> ::= <String>
+        See: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
 <DomainName> ::= <String>(.<String>)+
 <EmailAddress> ::= <String>@<DomainName>
 <DriveFileRevisionID> ::= <String>
@@ -178,7 +180,7 @@ gam <UserTypeEntity> create|add drivefile
         [(localfile <FileName>|-)|(url <URL>)]
         [(drivefilename|newfilename <DriveFileName>) | (replacefilename <REMatchPattern> <RESubstitution>)*]
         [stripnameprefix <String>] [noduplicate]
-        [timestamp [<Boolean>]] [timeformat <String>]
+        [timestamp [<Boolean>]] [timeformat <DateTimeFormat>]
         <DriveFileCreateAttribute>*
         [(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*) |
          (returnidonly|returnlinkonly|returneditlinkonly|showdetails)]
@@ -478,7 +480,7 @@ gam <UserTypeEntity> update drivefile <DriveFileEntity> [copy] [returnidonly|ret
         [(localfile <FileName>|-)|(url <URL>)]
         [retainname | (newfilename <DriveFileName>) | (replacefilename <REMatchPattern> <RESubstitution>)*]
         [stripnameprefix <String>]
-        [timestamp [<Boolean>]] [timeformat <String>]
+        [timestamp [<Boolean>]] [timeformat <DateTimeFormat>]
         <DriveFileUpdateAttribute>*
         [(gsheet|csvsheet <SheetEntity> [clearfilter])|(addsheet <String>)]
         [charset <Charset>] [columndelimiter <Character>]

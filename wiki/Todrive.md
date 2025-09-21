@@ -27,6 +27,8 @@ You can modify the default todrive behavior with options in `gam.cfg` or on the 
 
 ## Definitions
 ```
+<DateTimeFormat> ::= <String>
+        See: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
 <DriveFileID> ::= <String>
 <DriveFolderID> ::= <String>
 <TimeZone> ::= <String>
@@ -194,11 +196,11 @@ direct the uploaded file to a particular user and location and add a timestamp t
         (tdreturnidonly [<Boolean>])|
         (tdshare <EmailAddress> commenter|reader|writer)*|
         (tdsheet (id:<Number>)|<String>)|
-        (tdsheettimestamp [<Boolean>] [tdsheettimeformat <String>])
+        (tdsheettimestamp [<Boolean>] [tdsheettimeformat <DateTimeFormat>])
         (tdsheettitle <String>)|
         (tdsubject <String>)|
         ([tdsheetdaysoffset <Number>] [tdsheethoursoffset <Number>])|
-        (tdtimestamp [<Boolean>] [tdtimeformat <String>]
+        (tdtimestamp [<Boolean>] [tdtimeformat <DateTimeFormat>]
             ([tddaysoffset <Number>] [tdhoursoffset <Number>])|
         (tdtimezone <TimeZone>)|
         (tdtitle <String>)|

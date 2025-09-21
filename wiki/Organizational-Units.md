@@ -187,11 +187,15 @@ given if invalid CrOS deviceIds are specified.
 ## Display organizational units
 These commands display information as an indented list of keys and values.
 ```
-gam info org|ou <OrgUnitPath> [nousers|notsuspended|suspended] [children|child]
-gam info orgs|ous <OrgUnitEntity> [nousers|notsuspended|suspended] [children|child]
+gam info org|ou <OrgUnitPath> [nousers|notarchived|archived|notsuspended|suspended] [children|child]
+        [nousers | ([notarchived|archived] [notsuspended|suspended])] [children|child]
+gam info orgs|ous <OrgUnitEntity> [nousers|notarchived|archived|notsuspended|suspended] [children|child]
+        [nousers | ([notarchived|archived] [notsuspended|suspended])] [children|child]
 ```
 By default, all users of the org units are displayed:
 * `nousers` - Don't display users of the org units
+* `notarchived` - Display non-archived users of the org units
+* `archived` - Display archived users of the org units
 * `notsuspended` - Display non-suspended users of the org units
 * `suspended` - Display suspended users of the org units
 * `children|child` - Display users in any child org unit
@@ -214,7 +218,7 @@ By default, Gam prints all child org units of /.
 * `convertcrnl` - In the description field, convert carriage return to \r and new line to \n.
 
 Options `parentselector <OrgUnitSelector>` and `childselector <OrgUnitSelector>`  add an additional column `orgUnitSelector` to the output.
-This column value can be used in subsequent `gam csv` commands to appropriateley select members without duplication.
+This column value can be used in subsequent `gam csv` commands to appropriately select members without duplication.
 
 By default, all OUs are displayed. You can limit the display of OUs to those where the number
 of ChromeOS devices/users falls within a range. Gathering this data requires additional API calls

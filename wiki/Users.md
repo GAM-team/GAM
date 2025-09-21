@@ -1059,7 +1059,7 @@ gam print users [todrive <ToDriveAttribute>*]
         [userview] [allfields|basic|full|(<UserFieldName>*|fields <UserFieldNameList>)]
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
-        [issuspended <Boolean>] [aliasmatchpattern <REMatchPattern>]
+        [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
         [showvalidcolumn] (addcsvdata <FieldName> <String>)*
 ```
 
@@ -1070,6 +1070,7 @@ By default, users in all domains in the account are selected; these options allo
 * `limittoou <OrgUnitPath>|<OrgUnitID>` - Limit users to those in the specified `<OrgUnitItem>>`
 * `deleted_only|only_deleted` - Only display deleted users
 * `issuspended <Boolean>` - Limit users based on their status
+* `isarchived <Boolean>` - Limit users based on their status
 
 ### Print a header row and fields for users specified by `<UserTypeEntity>`
 ```
@@ -1084,7 +1085,7 @@ gam print users [todrive <ToDriveAttribute>*] select <UserTypeEntity>
         [userview] [basic|full|allfields|(<UserFieldName>*|fields <UserFieldNameList>)]
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
-        [issuspended <Boolean>] [aliasmatchpattern <REMatchPattern>]
+        [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
         [showvalidcolumn] (addcsvdata <FieldName> <String>)*
 
 gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
@@ -1098,7 +1099,7 @@ gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
         [userview] [basic|full|allfields|(<UserFieldName>*|fields <UserFieldNameList>)]
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
-        [issuspended <Boolean>] [aliasmatchpattern <REMatchPattern>]
+        [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
         [showvalidcolumn] (addcsvdata <FieldName> <String>)*
 ```
 
@@ -1189,7 +1190,7 @@ gam print users countonly [todrive <ToDriveAttribute>*]
         ([domain|domains <DomainNameEntity>] [(query <QueryUser>)|(queries <QueryUserList>)]
          [limittoou <OrgUnitItem>] [deleted_only|only_deleted])
         [formatjson [quotechar <Character>]]
-        [issuspended <Boolean>]
+        [issuspended <Boolean>] [isarchived <Boolean>]
 ```
 By default, users in all domains in the account are selected; these options allow selection of subsets of users:
 * `domain|domains <DomainNameEntity>` - Limit users to those in the domains specified by `<DomainNameEntity>`
@@ -1198,6 +1199,7 @@ By default, users in all domains in the account are selected; these options allo
 * `limittoou <OrgUnitPath>|<OrgUnitID>` - Limit users to those in the specified `<OrgUnitItem>>`
 * `deleted_only|only_deleted` - Only display deleted users
 * `issuspended <Boolean>` - Limit users based on their status
+* `isarchived <Boolean>` - Limit users based on their status
 
 ### Print domain counts for users specified by `<UserTypeEntity>`
 ```
@@ -1325,7 +1327,7 @@ gam print users select <UserTypeEntity> showitemcountonly
 gam print users
         ([domain|domains <DomainNameEntity>] [(query <QueryUser>)|(queries <QueryUserList>)]
          [limittoou <OrgUnitItem>] [deleted_only|only_deleted])|[select <UserTypeEntity>]
-        [issuspended <Boolean>]
+        [issuspended <Boolean>] [isarchived <Boolean>]
         showitemcountonly
 ```
 Example

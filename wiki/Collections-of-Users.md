@@ -1,5 +1,6 @@
 # Collections of Users
 - [Python Regular Expressions](Python-Regular-Expressions) Search function
+- [Notes](#notes)
 - [Definitions](#definitions)
 - [User Type Entity](#user-type-entity)
   - [All non-suspended Users](#all-non-suspended-users)
@@ -36,6 +37,37 @@
 - [Examples using CSV files and Google Sheets to update the membership of a group](#examples-using-csv-files-and-google-sheets-to-update-the-membership-of-a-group)
 - [Examples using CSV files to print users from groups](#examples-using-CSV-files-to-print-users-from-groups)
 - [Examples using multiple queries](#examples-using-multiple-queries)
+
+## Notes
+
+The followig items referencing non-archived/archived users were added to `<UserTypeEntity>` in version 7.22.00.
+```
+all users_na
+all users_arch
+all users_na_ns
+all users_arch_or_susp
+domains_na
+domains_arch
+domains_na_ns
+groups_na
+groups_arch
+groups_na_ns
+group_users_na
+group_users_arch
+group_users_na_ns
+ou_na
+ou_arch
+ou_na_ns
+ou_and_children_na
+ou_and_children_arch
+ou_and_children_na_ns
+ous_na
+ous_arch
+ous_na_ns
+ous_and_children_na
+ous_and_children_arch
+ous_and_children_na_ns
+```
 
 ## Definitions
 * [Basic Items](Basic-Items)
@@ -90,25 +122,25 @@
         <SharedDriveNameEntity>
 
 <UserTypeEntity> ::=
-        (all users|users_ns|users_susp|users_ns_susp)|
+        (all users|users_na|users_arch|users_ns|users_susp|users_ns_susp|users_arch_or_susp|users_na_ns)|
         (user <UserItem>)|
         (users <UserList>)|
         (oauthuser)
-        (domains|domains_ns|domains_susp <DomainNameList>)|
-        (group|group_ns|group_susp|group_inde <GroupItem>)|
-        (groups|groups_ns|groups_susp|groups_inde <GroupList>)|
+        (domains|domains_na|domains_arch|domains_ns|domains_susp|domains_na_ns <DomainNameListList>)|
+        (group|group_na|group_arch|group_ns|group_susp|group_na_ns|group_inde <GroupItem>)|
+        (groups|groups_na|groups_arch|groups_ns|groups_susp|groups_na_ns|groups_inde <GroupList>)|
         (group_inde <GroupItem>)|(groups_inde <GroupList>)|
-        (group_users|group_users_ns|group_users_susp <GroupList>
+        (group_users|group_users_na|group_users_arch|group_users_ns|group_users_susp|group_users_na_ns <GroupList>
                 [members] [managers] [owners]
                 [primarydomain] [domains <DomainNameList>] [recursive|includederivedmembership] end)|
         (group_users_select <GroupList>
                 [members] [managers] [owners]
                 [notsuspended|suspended] [notarchived|archived]
                 [primarydomain] [domains <DomainNameList>] [recursive|includederivedmembership] end)|
-        (ou|ou_ns|ou_susp <OrgUnitItem>)|
-        (ou_and_children|ou_and_children_ns|ou_and_children_susp <OrgUnitItem>)|
-        (ous|ous_ns|ous_susp <OrgUnitList>)|
-        (ous_and_children|ous_and_children_ns|ous_and_children_susp <OrgUnitList>)|
+        (ou|ou_na|ou_arch|ou_ns|ou_susp|ou_na_ns <OrgUnitItem>)|
+        (ou_and_children|ou_and_children_na|ou_and_children_arch|ou_and_children_ns|ou_and_children_susp|ou_and_children_na_ns <OrgUnitItem>)|
+        (ous|ous_na|ous_arch|ous_ns|ous_susp|ous_na_ns <OrgUnitList>)|
+        (ous_and_children|ous_and_children_na|ous_and_children_arch|ous_and_children_ns|ous_and_children_susp|ous_and_children_na_ns <OrgUnitList>)|
         (courseparticipants <CourseIDList>)|
         (students <CourseIDList>)|
         (teachers <CourseIDList>)|
@@ -126,41 +158,47 @@
              (gdoc(:<FieldName>)+ <UserGoogleDoc>)|
              (gcscsv(:<FieldName>)+ <StorageBucketObjectName>)|
              (gcsdoc(:<FieldName>)+ <StorageBucketObjectName>))
-            [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>][quotechar <Character>]
+            [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [endcsv|(fields <FieldNameList>)]
             (matchfield|skipfield <FieldName> <RESearchPattern>)*
             [delimiter <Character>])|
         (datafile
-            users|groups|groups_ns|groups_susp|groups_inde|ous|ous_ns|ous_susp|
-            ous_and_children|ous_and_children_ns|ous_and_children_susp|
-            courseparticipants|students|teachers
+            users|
+                groups|groups_na|groups_arch|groups_ns|groups_susp|groups_na_ns|groups_inde|
+                ous|ous_na|ous_arch|ous_ns|ous_susps|ous_na_ns|
+                ous_and_children|ous_and_children_na|ous_and_children_arch|ous_and_children_ns|ous_and_children_susp|ous_and_children_na_ns|
+                courseparticipants|students|teachers
             ((<FileName> [charset <Charset>])|
               (gdoc <UserGoogleDoc>)|
               (gcsdoc <StorageBucketObjectName>))
              [delimiter <Character>])|
         (csvdatafile
-            users|groups|groups_ns|groups_susp|groups_inde|ous|ous_ns|ous_susp|
-            ous_and_children|ous_and_children_ns|ous_and_children_susp|
-            courseparticipants|students|teachers
+            users|
+                groups|groups_na|groups_arch|groups_ns|groups_susp|groups_na_ns|groups_inde|
+                ous|ous_na|ous_arch|ous_ns|ous_susps|ous_na_ns|
+                ous_and_children|ous_and_children_na|ous_and_children_arch|ous_and_children_ns|ous_and_children_susp|ous_and_children_na_ns|
+                courseparticipants|students|teachers
             ((<FileName>(:<FieldName>)+ [charset <Charset>] )|
               (gsheet(:<FieldName>)+ <UserGoogleSheet>)|
               (gdoc(:<FieldName>)+ <UserGoogleDoc>)|
               (gcscsv(:<FieldName>)+ <StorageBucketObjectName>)|
               (gcsdoc(:<FieldName>)+ <StorageBucketObjectName>))
-            [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>][quotechar <Character>]
+            [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [endcsv|(fields <FieldNameList>)]
             (matchfield|skipfield <FieldName> <RESearchPattern>)*
             [delimiter <Character>])|
         (csvkmd
-            users|groups|groups_ns|groups_susp|groups_inde|ous|ous_ns|ous_susp|
-            ous_and_children|ous_and_children_ns|ous_and_children_susp|
-            courseparticipants|students|teachers
+            users|
+                groups|groups_na|groups_arch|groups_ns|groups_susp|groups_na_ns|groups_inde|
+                ous|ous_na|ous_arch|ous_ns|ous_susps|ous_na_ns|
+                ous_and_children|ous_and_children_na|ous_and_children_arch|ous_and_children_ns|ous_and_children_susp|ous_and_children_na_ns|
+                courseparticipants|students|teachers
             ((<FileName>|
               (gsheet <UserGoogleSheet>)|
               (gdoc <UserGoogleDoc>)|
               (gcscsv <StorageBucketObjectName>)|
               (gcsdoc <StorageBucketObjectName>))
-             [charset <Charset>] [columndelimiter <Character>] [noescapechar <Boolean>][quotechar <Character>] [fields <FieldNameList>])
+             [charset <Charset>] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>] [fields <FieldNameList>])
             keyfield <FieldName> [keypattern <RESearchPattern>] [keyvalue <RESubstitution>] [delimiter <Character>]
             subkeyfield <FieldName> [keypattern <RESearchPattern>] [keyvalue <RESubstitution>] [delimiter <Character>]
             (matchfield|skipfield <FieldName> <RESearchPattern>)*
@@ -172,12 +210,24 @@
 
 Use these options to select users for GAM commands.
 
+## All non-archived Users
+* `all users_na`
+
+## All archived Users
+* `all users_arch`
+
 ## All non-suspended Users
 * `all users`
 * `all users_ns`
 
 ## All suspended Users
 * `all users_susp`
+
+## All archived or suspended Users
+* `all users_arch_or_susp`
+
+## All non-archived and non-suspended Users
+* `all users_na_ns`
 
 ## All non-suspended and suspended Users
 * `all users_ns_susp`
@@ -192,22 +242,31 @@ Use these options to select users for GAM commands.
 * `oauthuser`
 
 ## Users in the domains `<DomainNameList>`
-* `domains|domains_ns|domains_susp <DomainNameList>`
+* `domains|domains_na|domains_arch|domains_ns|domains_susp|domains_na_ns <DomainNameList>`
     * `domains` - All users
+    * `domains_na` - Non-archived users
+    * `domains_arch` - Archived users
     * `domains_ns` - Non-suspended users
     * `domains_susp` - Suspended users
+    * `domains_na_ns` - Non-archived and non-suspended users
 
 ## Users directly in the group `<GroupItem>`
-* `group|group_ns|group_susp <GroupItem>`
+* `group|group_na|group_arch|group_ns|group_susp|group_na_ns <GroupItem>`
     * `group` - All user members
+    * `group_na` - Non-archived user members
+    * `group_arch` - Archived user members
     * `group_ns` - Non-suspended user members
     * `group_susp` - Suspended user members
+    * `group_na_ns` - Non-archived and non-suspended user members
 
 ## Users directly in the groups `<GroupList>`
-* `groups|groups_ns|groups_susp <GroupList>`
+* `groups|groups_na|groups_arch|groups_ns|groups_susp|groups_na_ns <GroupList>`
     * `groups` - All user members
+    * `groups_na` - Non-archived user members
+    * `groups_arch` - Archived user members
     * `groups_ns` - Non-suspended user members
     * `groups_susp` - Suspended user members
+    * `groups_na_ns` - Non-archived and non-suspended user members
 
 ## Users directly and indirectly in the group `<GroupItem>`
     * `group_inde` - All user members including those from all subgroups
@@ -216,10 +275,13 @@ Use these options to select users for GAM commands.
     * `groups_inde` - All user members including those from all subgroups
 
 ## Selected Users from groups
-* `group_users|group_users_ns|group_users_susp <GroupList> [members] [managers] [owners] [primarydomain] [domains <DomainNameList>] [recursive|includederivedmembership] end`
+* `group_users|group_users_na|group_users_arch|group_users_ns|group_users_susp|group_users_na_ns <GroupList> [members] [managers] [owners] [primarydomain] [domains <DomainNameList>] [recursive|includederivedmembership] end`
     * `group_users` - All user members
+    * `group_users_na` - Non-archived user members
+    * `group_users_arch` - Archived user members
     * `group_users_ns` - Non-suspended user members
     * `group_users_susp` - Suspended user members
+    * `group_users_na_ns` - Non-archived and non-suspended user members
     * `[members] [managers] [owners]` - The desired roles; if roles are not specified, all roles are included
     * `primarydomain` - Select Users from the primary domain
     * `domains <DomainNameList>` - Select Users from the list of domains
@@ -259,30 +321,41 @@ Use these options to select users for GAM commands.
     * `end` - Terminate the selection
 
 ## Users directly in the Organization Unit `<OrgUnitItem>`
-* `ou|ou_ns|ou_susp <OrgUnitItem>`
+* `ou|ou_na|ou_arch|ou_ns|ou_susp|ou_na_ns <OrgUnitItem>`
     * `ou` - All users
-    * `ou_ns` - Non-Suspended users
+    * `ou_na` - Non-archived users
+    * `ou_arch` - Archived users
+    * `ou_ns` - Non-suspended users
     * `ou_susp` - Suspended users
+    * `ou_na_ns` - Non-archived and nn-suspended users
 
 ## Users in the Organization Unit `<OrgUnitItem>` and all of its sub Organization Units
-* `ou_and_children|ou_and_children_ns|ou_and_children_susp <OrgUnitItem>`
+* `ou_and_children|ou_and_children_na|ou_and_children_arch|ou_and_children_ns|ou_and_children_susp|ou_and_children_na_ns <OrgUnitItem>`
     * `ou_and_children` - All  users
+    * `ou_and_children_na` - Non-archived users
+    * `ou_and_children_arch` - Archived users
     * `ou_and_children_ns` - Non-suspended users
     * `ou_and_children_susp` - Suspended users
+    * `ou_and_children_na_ns` - Non-archived and nn-suspended users
 
 ## Users directly in the Organization Units `<OrgUnitList>`
-* `ous|ous_ns|ous_susp <OrgUnitList>` - Users directly in the Organization Units `<OrgUnitList>`
+* `ous|ous_na|ous_arch|ous_ns|ous_susp|ous_na_ns <OrgUnitList>` - Users directly in the Organization Units `<OrgUnitList>`
     * `ous` - All users
+    * `ous_na` - Non-archived users
+    * `ous_arch` - Archived users
     * `ous_ns` - Non-suspended users
     * `ous_susp` - Suspended users
+    * `ous_na_ns` - Non-archived and nn-suspended users
 
 `<OrgUnitList>` may require special quoting based on whether the OUs contain spaces, commas or single quotes.
 
 For quoting rules, see: [List Quoting Rules](Command-Line-Parsing)
 
 ## Users in the Organization Units `<OrgUnitList>` and all of their sub Organization Units
-* `ous_and_children|ous_and_children_ns|ous_and_children_susp <OrgUnitList>` - Users in the Organization Units `<OrgUnitList>` and all of their sub Organization Units
+* `ous_and_children|ous_and_children_na|ous_and_children_arch|ous_and_children_ns|ous_and_children_susp|ous_and_children_na_ns <OrgUnitList>` - Users in the Organization Units `<OrgUnitList>` and all of their sub Organization Units
     * `ous_and_children` - All users
+    * `ous_and_children_na` - Non-archived users
+    * `ous_and_children_arch` - Archived users
     * `ous_and_children_ns` - Non-suspended users
     * `ous_and_children_susp` - Suspended users
 
@@ -363,15 +436,21 @@ csvfile
 ## Users from groups/OUs/courses in a flat file/Google Doc/Google Cloud Storage Object
 ```
 datafile
-   users|groups|groups_ns|groups_susp|groups_inde|ous|ous_ns|ous_susp|
-   ous_and_children|ous_and_children_ns|ous_and_children_susp|
-   courseparticipants|students|teachers
+   users|
+       groups|groups_na|groups_arch|groups_ns|groups_susp|groups_na_ns|groups_inde|
+       ous|ous_na|ous_arch|ous_ns|ous_susp|ous_na_ns|
+       ous_and_children|ous_and_children_na|ous_and_children_arch|ous_and_children_ns|ous_and_children_susp|ous_and_children_na_ns|
+       courseparticipants|students|teachers
    ((<FileName> [charset <Charset>])|
      (gdoc <UserGoogleDoc>)|
      (gcsdoc <StorageBucketObjectName>))
     [delimiter <Character>]
 ```
-* `users|groups|groups_ns|groups_susp|groups_inde|ous|ous_ns|ous_susp|ous_and_children|ous_and_children_ns|ous_and_children_susp|courseparticipants|students|teachers` - The type of item in the file
+* `users|`
+  * `groups|groups_na|groups_arch|groups_ns_|groups_susp|groups_na_ns|groups_inde|`
+  * `ous|ous_na|ous_arch|ous_ns|ous_susp|ous_na_ns|`
+  * `ous_and_children|ous_and_children_na|ous_and_children_arch|ous_and_children_ns|ous_and_children_susp|ous_and_children_na_ns|`
+  * `courseparticipants|students|teachers` - The type of item in the file
 * `<FileName>` - A flat file containing rows of the type of item specified
   * `charset <Charset>` - The character aset of the file if it isn't UTF-8
 * `gdoc <UserGoogleDoc>` - A Google Doc containing rows of the type of item specified
@@ -381,9 +460,11 @@ datafile
 ## Users from groups/OUs/courses in a CSV file/Google Sheet/Google Doc/Google Cloud Storage Object
 ```
 csvdatafile
-   users|groups|groups_ns|groups_susp|groups_inde|ous|ous_ns|ous_susp|
-   ous_and_children|ous_and_children_ns|ous_and_children_susp|
-   courseparticipants|students|teachers
+   users|
+       groups|groups_na|groups_arch|groups_ns|groups_susp|groups_na_ns|groups_inde|
+       ous|ous_na|ous_arch|ous_ns|ous_susp|ous_na_ns|
+       ous_and_children|ous_and_children_na|ous_and_children_arch|ous_and_children_ns|ous_and_children_susp|ous_and_children_na_ns|
+       courseparticipants|students|teachers
    ((<FileName>(:<FieldName>)+ [charset <Charset>] )|
      (gsheet(:<FieldName>)+ <UserGoogleSheet>)|
      (gdoc(:<FieldName>)+ <UserGoogleDoc>)|
@@ -394,9 +475,13 @@ csvdatafile
    (matchfield|skipfield <FieldName> <RESearchPattern>)*
    [delimiter <Character>]
 ```
-* `users|groups|groups_ns|groups_susp|groups_inde|ous|ous_ns|ous_susp|ous_and_children|ous_and_children_ns|ous_and_children_susp|courseparticipants|students|teachers` - The type of item in the file
+* `users|`
+  * `groups|groups_na|groups_arch|groups_ns_|groups_susp|groups_na_ns|groups_inde|`
+  * `ous|ous_na|ous_arch|ous_ns|ous_susp|ous_na_ns|`
+  * `ous_and_children|ous_and_children_na|ous_and_children_arch|ous_and_children_ns|ous_and_children_susp|ous_and_children_na_ns|`
+  * `courseparticipants|students|teachers` - The type of item in the file
 * `<FileName>(:<FieldName>)+` - A CSV file and the one or more columns contain the type of item specified
-  * `charset <Charset>` - The character aset of the file if it isn't UTF-8
+  * `charset <Charset>` - The character set of the file if it isn't UTF-8
 * `gsheet(:<FieldName>)+ <UserGoogleSheet>` - A Google Sheet and the one or more columns contain the type of item specified
 * `gdoc(:<FieldName>)+ <UserGoogleDoc>` - A Google Doc and the one or more columns contain the type of item specified
 * `gcscsv(:<FieldName>)+ <StorageBucketObjectName>` - A Google Cloud Storage Bucket Object and the one or more columns contain the type of item specified
@@ -413,9 +498,11 @@ csvdatafile
 ## Users directly in or from groups/OUs/courses in a CSV file/Google Sheet/Google Doc/Google Cloud Storage Object
 ```
 csvkmd
-   users|groups|groups_ns|groups_susp|groups_inde|ous|ous_ns|ous_susp|
-   ous_and_children|ous_and_children_ns|ous_and_children_susp|
-   courseparticipants|students|teachers
+   users|
+       groups|groups_na|groups_arch|groups_ns|groups_susp|groups_na_ns|groups_inde|
+       ous|ous_na|ous_arch|ous_ns|ous_susp|ous_na_ns|
+       ous_and_children|ous_and_children_na|ous_and_children_arch|ous_and_children_ns|ous_and_children_susp|ous_and_children_na_ns|
+       courseparticipants|students|teachers
    ((<FileName>|
      (gsheet <UserGoogleSheet>)|
      (gdoc <UserGoogleDoc>)|
@@ -427,9 +514,13 @@ csvkmd
    (matchfield|skipfield <FieldName> <RESearchPattern>)*
             [datafield <FieldName>(:<FieldName>)* [delimiter <Character>]]
 ```
-* `users|groups|groups_ns_|groups_susp|groups_inde|ous|ous_ns|ous_susp|ous_and_children|ous_and_children_ns|ous_and_children_susp|courseparticipants|students|teachers` - The type of item in the file
+* `users|`
+  * `groups|groups_na|groups_arch|groups_ns_|groups_susp|groups_na_ns|groups_inde|`
+  * `ous|ous_na|ous_arch|ous_ns|ous_susp|ous_na_ns|`
+  * `ous_and_children|ous_and_children_na|ous_and_children_arch|ous_and_children_ns|ous_and_children_susp|ous_and_children_na_ns|`
+  * `courseparticipants|students|teachers` - The type of item in the file
 * `<FileName>` - A CSV file containing rows with columns of the type of item specified
-  * `charset <Charset>` - The character aset of the file if it isn't UTF-8
+  * `charset <Charset>` - The character set of the file if it isn't UTF-8
 * `gsheet <UserGoogleSheet>` - A Google Sheet containing rows with columns of the type of item specified
 * `gdoc <UserGoogleDoc>` - A Google Doc containing rows with columns of the type of item specified
 * `gcscsv <StorageBucketObjectName>` - A Google Cloud Storage Bucket Object with columns of the type of item specified

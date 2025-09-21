@@ -92,6 +92,38 @@ See [Collections of Items](Collections-of-Items)
 Group membership commands involve specifying collections of users;
 for `<UserTypeEntity>`, see: [Collections of Users](Collections-of-Users)
 
+### Select users based on archived state
+When adding, deleting or synchronizing group members, to select only archived or non-archived users, use the following`<UserTypeEntity>`:
+```
+        (all users_na|users_arch)|
+        (domains_na|domains_arch <DomainNameList>)|
+        (group_na|group_arch <GroupItem>)|
+        (groups_na|groups_arch <GroupList>)|
+        (group_users_na|group_users_arch <GroupList>
+                [members] [managers] [owners]
+                [primarydomain] [domains <DomainNameList>] [recursive|includederivedmembership] end)|
+        (ou_na|ou_arch <OrgUnitItem>)|
+        (ou_and_children_na|ou_and_children_arch <OrgUnitItem>)|
+        (ous_na|ous_arch <OrgUnitList>)|
+        (ous_and_children_na|ous_and_children_arch <OrgUnitList>)
+```
+
+When adding, deleting or synchronizing group members, the `notarchived|archived` option can be used to select
+users in a particular archived state. This option can be used with the following `<UserTypeEntity>`:
+```
+        (all users)|
+        (domains <DomainNameList>)|
+        (group <GroupItem>)|
+        (groups <GroupList>)|
+        (group_users <GroupList>
+                [members] [managers] [owners]
+                [primarydomain] [domains <DomainNameList>] [recursive|includederivedmembership] end)|
+        (ou <OrgUnitItem>)|
+        (ou_and_children <OrgUnitItem>)|
+        (ous <OrgUnitList>)|
+        (ous_and_children <OrgUnitList>)
+```
+
 ### Select users based on suspension state
 When adding, deleting or synchronizing group members, to select only suspended or non-suspended users, use the following`<UserTypeEntity>`:
 ```
@@ -122,25 +154,6 @@ users in a particular suspension state. This option can be used with the followi
         (ou_and_children <OrgUnitItem>)|
         (ous <OrgUnitList>)|
         (ous_and_children <OrgUnitList>)
-```
-
-### Select users based on archived state
-When adding, deleting or synchronizing group members, the `notarchived|archived` option can be used to select
-users in a particular archived state. This option can be used with the following `<UserTypeEntity>`:
-```
-        (all users|users_ns|users_susp|users_ns_susp)|
-        (domains|domains_ns|domains_susp <DomainNameList>)|
-        (group|group_ns|group_susp <GroupItem>)|
-        (groups|groups_ns|groups_susp <GroupList>)|
-        (group_users|group_users_ns|group_users_susp <GroupList>
-                [members] [managers] [owners]
-                [primarydomain] [domains <DomainNameList>] [recursive|includederivedmembership] end)|
-        (ou|ou_ns|ou_susp <OrgUnitItem>)|
-        (ou_and_children|ou_and_children_ns|ou_and_children_susp <OrgUnitItem>)|
-        (ous|ous_ns|ous_susp <OrgUnitList>)|
-        (ous_and_children|ous_and_children_ns|ous_and_children_susp <OrgUnitList>)|
-        (query <QueryUser>)|
-        (queries <QueryUserList>)
 ```
 
 ## Add members to a group
@@ -275,6 +288,11 @@ For `notarchived|archived`, see: [Select users based on archived state](#select-
 
 The `notsuspended|suspended` and `notarchived|archived` not only control what users are selected from `<UserTypeEntity>`
 but they also control what users are selected from `<GroupEntity>`.
+* `notsuspended` - Select only non-suspended members
+* `suspended` - Select only suspended members
+* `notarchived` - Select only non-archived members
+* `archived` - Select only archived users
+* `notsuspended notarchived` - Select non-suspended and non-archived members
 
 The `remove_domain_nostatus_members` option is used to remove members from the group that are in your domain but have no status.
 These members were added to the group before the user or group that they represent was created.
@@ -373,10 +391,7 @@ By default, when clearing members from a group, all members, whether suspended/a
 * `suspended` - Clear only suspended members
 * `notarchived` - Clear only non-archived members
 * `archived` - Clear only archived users
-* `notsuspended notarchived` - Do not clear suspended and archived members
-* `suspended archived` - Clear suspended and archived members
-* `notsuspended archived` - Do not clear archived members
-* `suspended notarchived` - Do not clear suspended members
+* `notsuspended notarchived` - Clear non-suspended and non-archived members
 
 Members that have met the above qualifications to be cleared can be further qualifed by their email address.
 * `emailclearpattern <REMatchPattern>` - Members with email addresses that match `<REMatchPattern>` will be cleared; others will be retained
@@ -417,19 +432,12 @@ When `<UserTypeEntity>` specifies a group or groups:
 * `usersonly` - Only the user members from the specified groups are added
 * `groupsonly` - Only the group members from the specified groups are added
 
-By default, when updating members from organization units, all users, whether suspended or not, are included.
-* `notsuspended` - Do not include suspended users
-* `suspended` - Only include suspended users
-
-By default, when updating members from groups, all users, whether suspended/archived or not, are included.
-* `notsuspended` - Do not include suspended users
-* `suspended` - Only include suspended users
-* `notarchived` - Do not include archived users
-* `archived` - Only include archived users
-* `notsuspended notarchived` - Do not include suspended and archived users
-* `suspended archived` - Include only suspended or archived users
-* `notsuspended archived` - Only include archived users
-* `suspended notarchived` - Only include suspended users
+By default, when updating members from groups/organization units, all users, whether suspended/archived or not, are included.
+* `notsuspended` - Update only non-suspended members
+* `suspended` - Update only suspended members
+* `notarchived` - Update only non-archived members
+* `archived` - Update only archived users
+* `notsuspended notarchived` - Update non-suspended and non-archived members
 
 You can set the `delivery` option for the updated members:
 * `allmail` - All messages, delivered as soon as they arrive

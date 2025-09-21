@@ -10,6 +10,24 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.22.00
+
+Expanded `<UserTypeEntity>` to allow specification of non-archived/archived users.
+  * See [Collections of Users](Collections-of-Users)
+
+These commands have also been updated to deal with archived users:
+  * `gam print aliases`
+  * `gam update groups`
+  * `gam info orgs`
+  * `gam print orgs`
+  * `gam print users`
+
+Added `datetime <DateTimeFormat>` command that can be embedded in Gam batch files.
+The current time is formatted with `<DateTimeFormat>` and subsequent lines in `<BatchContent>`
+will have `%datetime%` replaced with the formatted time value.
+
+See: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
+
 ### 7.21.03
 
 Added option `notifyrecoveryemail` to `gam create user` and `gam <UserTypeEntity> update user password <String>`
@@ -1917,7 +1935,7 @@ number of domain aliasess on stdout; no CSV file is written.
 
 Added option `showitemcountonly` to `gam print domains` that causes GAM to display the
 number of domains on stdout; no CSV file is written.
-	 
+
 ### 6.77.16
 
 Fixed bug in `gam <UserTypeEntity> print filelist` that caused a trap.
@@ -2681,7 +2699,7 @@ Batch processing will suspend for `<Integer>` seconds before the next command li
 
 Added the following options to `<PermissionMatch>` that allow more powerful matching.
 ```
-nottype	<DriveFileACLType>
+nottype <DriveFileACLType>
 typelist <DriveFileACLTypeList>
 nottypelist <DriveFileACLTypeList>
 rolelist <DriveFileACLRoleList>
@@ -3333,7 +3351,7 @@ Added support for Google Workspace Labs license.
 
 ### 6.64.10
 
-Fixed bug introduced in	6.64.09	that caused a trap when	`gam redirect csv <FileName> multiprocess` was used.
+Fixed bug introduced in 6.64.09 that caused a trap when `gam redirect csv <FileName> multiprocess` was used.
 
 ### 6.64.09
 

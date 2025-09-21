@@ -325,6 +325,8 @@
 <CourseWorkState> ::= draft|published|deleted
 <CrOSID> ::= <String>
 <CustomerID> ::= <String>
+<DateTimeFormat> ::= <String>
+        See: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
 <DeliverySetting> ::=
         allmail|
         abridged|daily|

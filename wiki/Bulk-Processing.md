@@ -18,6 +18,9 @@ The variables `num_threads`, `num_tbatch_threads` and `auto_batch_min` in `gam.c
 * [Command data from Google Docs/Sheets/Storage](Command-Data-From-Google-Docs-Sheets-Storage)
 `gdoc <UserGoogleDoc>` and `gsheet <UserGoogleSheet>`
 
+<DateTimeFormat> ::= <String>
+        See: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
+
 ## Batch files
 There are two types of batch processing, one that uses processes and one that uses threads. Using processes is higher performance but `gam csv` commands are not supported.
 * `gam batch` - gam commands are run as processes, gam csv commands are not allowed in the batch file
@@ -45,6 +48,9 @@ Batch files can contain the following types of lines:
 * sleep \<Integer\> - Batch processing will suspend for \<Integer\> seconds before the next command line is processed
   * To be effective, this should immediately follow commit-batch
 * print \<String\> - Print \<String\> on stderr
+* datetime \<DateTimeFormat\>
+  * The current time is formatted with \<DateTimeFormat\> and subsequent lines will have `%datetime%` replaced with the formatted time value.
+  * See: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
 * set \<KeywordString\> \<ValueString\>
   * Subsequent lines will have %\<KeywordString\>% replaced with \<ValueString\>
 * clear \<KeywordString\>
