@@ -22,6 +22,7 @@ Configuration
   * [Multiple Users-Projects on One Computer](https://github.com/GAM-team/GAM/wiki/gam.cfg#multiple-users-projects-on-one-computer)
 * [Running GAM7 securely on a Google Compute Engine](Running-GAM7-securely-on-a-Google-Compute-Engine)
 * [Using GAM7 with a delegated admin service account](Using-GAM7-with-a-delegated-admin-service-account)
+* [Using GAM7 with keyless authentication - Workload Identity Federation](Using-GAM7-with-keyless-authentication-Workload-Identity-Federation)
 * [Using GAM7 with a YubiKey](Using-GAM7-with-a-YubiKey)
 * [GAM with minimal GCP rights](GAM-with-minimal-GCP-rights)
 
@@ -203,4 +204,3 @@ GAM Tutorials
 * [Unmanaged Users and Invitations](l-UnmanagedUsersExamples)
 * [User Email Settings](l-ExamplesEmailSettings)
 * [User Security Settings](l-SecurityExamples)
-

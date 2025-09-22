@@ -5,6 +5,8 @@
 - [FAQs](#faqs)
 - [Setup Steps](#setup-steps)
 
+**Alternative Approach**: For enhanced security and simplified operations when running GAM outside Google Cloud, consider [Workload Identity Federation](https://github.com/GAM-team/GAM/wiki/Using-GAM7-with-keyless-authentication-Workload-Identity-Federation) - Google's recommended keyless authentication method that eliminates the need for managing any long-lived credentials. If running GAM in Google Cloud, use [attached service accounts on GCE](https://github.com/GAM-team/GAM/wiki/Running-GAM7-securely-on-a-Google-Compute-Engine) instead.
+
 ## Thanks
 
 Thanks to Jay Lee for the original version of this document.
