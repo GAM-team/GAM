@@ -1,3 +1,7 @@
+7.22.01
+
+Short-term fix for proxy server issues by downgrading httplib2 to 0.22.0
+
 7.22.00
 
 Expanded `<UserTypeEntity>` to allow specification of non-archived/archived users.

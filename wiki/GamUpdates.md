@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.22.01
+
+Short-term fix for proxy server issues by downgrading httplib2 to 0.22.0
+
 ### 7.22.00
 
 Expanded `<UserTypeEntity>` to allow specification of non-archived/archived users.

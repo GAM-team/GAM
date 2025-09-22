@@ -3,7 +3,7 @@
 Print the current version of Gam with details
 ```
 gam version
-GAM 7.22.00 - https://github.com/GAM-team/GAM - pyinstaller
+GAM 7.22.01 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.13.7 64-bit final
 macOS Sequoia 15.7 x86_64
@@ -15,7 +15,7 @@ Time: 2023-06-02T21:10:00-07:00
 Print the current version of Gam with details and time offset information
 ```
 gam version timeoffset
-GAM 7.22.00 - https://github.com/GAM-team/GAM - pyinstaller
+GAM 7.22.01 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.13.7 64-bit final
 macOS Sequoia 15.7 x86_64
@@ -27,7 +27,7 @@ Your system time differs from www.googleapis.com by less than 1 second
 Print the current version of Gam with extended details and SSL information
 ```
 gam version extended
-GAM 7.22.00 - https://github.com/GAM-team/GAM - pyinstaller
+GAM 7.22.01 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.13.7 64-bit final
 macOS Sequoia 15.7 x86_64
