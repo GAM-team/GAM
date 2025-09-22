@@ -79,6 +79,7 @@ jobs:
             name: Build Arm MacOS 15
           - os: macos-15-intel
             jid: 10
+            goal: build
             name: Build x86_64 macOS 15
           - os: macos-26
             jid: 11
