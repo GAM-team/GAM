@@ -1,3 +1,5 @@
+[FAQ](GAM7-FAQ)
+
 Update History
 * [GAM Updates](GamUpdates)
 

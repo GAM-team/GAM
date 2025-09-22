@@ -15,7 +15,7 @@ The 27ft RV Jay drove his family to Niagara Falls this summer. They’re all sti
 some in full sentences 🙂
 
 # Has something changed with Ross?
-He’s just older, 75 and counting.
+He’s just older, 76 and counting.
 
 (Jay here, this is all I could get from Ross but he’s his usual awesome self helping admins in Chat and Groups forums as I write this and adding new features. Because some have asked, Ross is a real person. He is not an Advanced GenAI as rumours have claimed. 🙂)
 
