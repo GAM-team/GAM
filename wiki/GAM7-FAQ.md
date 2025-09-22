@@ -49,8 +49,8 @@ Both GAM7 and GAM-ADV versions use the same configuration file (gam.cfg), and cr
 # Help!!! Something went wrong!
 Well that’s not really a question but as ever, please reach out to either the GAM email support group:
 
-[git.io/gam-group](http://git.io/gam-group)
+[GAM Discussion Forum](https://groups.google.com/forum/#!forum/google-apps-manager)
 
 Or the Google Chat Space:
 
-[git.io/gam-chat](http://git.io/gam-chat)
+[GAM Public Chat Room](GAM-Public-Chat-Room)
