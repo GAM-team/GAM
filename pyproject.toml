@@ -19,10 +19,11 @@ dependencies = [
     "google-auth-httplib2>=0.2.0",
     "google-auth-oauthlib>=1.2.2",
     "google-auth>=2.39.0",
-    "httplib2==0.22.0",
+    "httplib2>=0.31.0",
     "lxml>=5.4.0",
     "passlib>=1.7.4",
-    "pathvalidate>=3.2.3"
+    "pathvalidate>=3.2.3",
+    "pysocks>=1.7.1",
 ]
 description = "CLI tool to manage Google Workspace"
 readme = "README.md"
