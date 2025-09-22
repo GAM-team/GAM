@@ -184,7 +184,7 @@ perform these steps and then retry the create project command.
 
 ## Authorize Service Account Key Uploads
 
-*IMPORTANT:* Google best practice is to NOT use service account keys. Rather than overriding Google's default policy please consider [running GAM on Google Compute Engine Securely](https://github.com/GAM-team/GAM/wiki/l-Running-GAM-on-Google-Compute-Engine-(GCE)-Securely) so that service account keys are not necessary.
+*IMPORTANT:* Google best practice is to NOT use service account keys. Rather than overriding Google's default policy please consider [Running GAM7 securely on a Google Compute Engine](https://github.com/GAM-team/GAM/wiki/Running-GAM7-securely-on-a-Google-Compute-Engine.md) so that service account keys are not necessary.
 
 If you try to create a project and get an error saying that Constraint `constraints/iam.disableServiceAccountKeyUpload violated for service account projects/gam-project-xxxxx`,
 perform these steps and then you should be able to authorize and use your project.
