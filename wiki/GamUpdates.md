@@ -10,9 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
-### 7.22.01
+### 7.22.02
 
-An update to the httplib2 library caused GAM proxy connections to fail; this has been fixed.
+An update to the httplib2 library caused GAM proxy connections to fail; this has been fixed
+by including the pysocks library needed by the latest httplib2 library.
 
 ### 7.22.00
 
