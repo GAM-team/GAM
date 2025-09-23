@@ -12,7 +12,7 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 
 ### 7.22.01
 
-Short-term fix for proxy server issues by downgrading httplib2 to 0.22.0
+An update to the httplib2 library caused GAM proxy connections to fail; this has been fixed.
 
 ### 7.22.00
 
