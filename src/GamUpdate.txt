@@ -1,7 +1,12 @@
+7.22.03
+
+Fix backwards compatability bug introduced in 7.22.00 for `gam print users` that changed `suspended`
+from a field name to a query option; it is now correctly interpreted as a field name.
+
 7.22.02
 
 An update to the httplib2 library caused GAM proxy connections to fail; this has been fixed
-by includinbg the pysocks library needed by the latest httplib2 library.
+by including the pysocks library needed by the latest httplib2 library.
 
 7.22.00
 

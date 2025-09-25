@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.22.02'
+__version__ = '7.22.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -18989,10 +18989,10 @@ def doPrintAliases():
       pass
     elif myarg == 'select':
       _, users = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
-    elif myarg in SUSPENDED_ARGUMENTS:
-      isSuspended = _getIsSuspended(myarg)
-    elif myarg in ARCHIVED_ARGUMENTS:
-      isArchived = _getIsArchived(myarg)
+    elif myarg == 'issuspended':
+      isSuspended = getBoolean()
+    elif myarg == 'isarchived':
+      isArchived = getBoolean()
     elif myarg in {'user','users'}:
       users.extend(convertEntityToList(getString(Cmd.OB_EMAIL_ADDRESS_LIST, minLen=0)))
     elif myarg in {'group', 'groups'}:
@@ -45754,71 +45754,82 @@ def doPrintUsers(entityList=None):
       csvPF.WriteRowNoFilter(row)
 
   def _printUser(userEntity, i, count):
-    if isSuspended is None or isSuspended == userEntity.get('suspended', isSuspended):
-      if showValidColumn:
-        userEntity[showValidColumn] = True
-      userEmail = userEntity['primaryEmail']
-      if printOptions['emailParts']:
-        if userEmail.find('@') != -1:
-          userEntity['primaryEmailLocal'], userEntity['primaryEmailDomain'] = splitEmailAddress(userEmail)
-      if 'languages' in userEntity and not FJQC.formatJSON:
-        userEntity['languages'] = _formatLanguagesList(userEntity.pop('languages'), delimiter)
-      for location in userEntity.get('locations', []):
-        location['buildingName'] = _getBuildingNameById(cd, location.get('buildingId', ''))
-      if quotePlusPhoneNumbers:
-        for phone in userEntity.get('phones', []):
-          phoneNumber = phone.get('value', '')
-          if phoneNumber.startswith('+'):
-            phone['value'] = "'"+phoneNumber
-      if schemaParms['selectedSchemaFields']:
-        _filterSchemaFields(userEntity, schemaParms)
-      if printOptions['getGroupFeed']:
-        printGettingAllEntityItemsForWhom(Ent.GROUP_MEMBERSHIP, userEmail, i, count)
-        try:
-          groups = callGAPIpages(cd.groups(), 'list', 'groups',
-                                 pageMessage=getPageMessageForWhom(),
-                                 throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
-                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                                 userKey=userEmail, orderBy='email', fields='nextPageToken,groups(email)')
-          numGroups = len(groups)
-          if not printOptions['groupsInColumns']:
-            userEntity['GroupsCount'] = numGroups
-            userEntity['Groups'] = delimiter.join([groupname['email'] for groupname in groups])
-          else:
-            if numGroups > printOptions['maxGroups']:
-              printOptions['maxGroups'] = numGroups
-            userEntity['Groups'] = numGroups
-            for j, group in enumerate(groups):
-              userEntity[f'Groups{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{j}'] = group['email']
-        except (GAPI.invalidMember, GAPI.invalidInput):
-          badRequestWarning(Ent.GROUP, Ent.MEMBER, userEmail)
-        except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.forbidden, GAPI.badRequest):
-          accessErrorExit(cd)
-      if aliasMatchPattern and 'aliases' in userEntity:
-        userEntity['aliases'] = [alias for alias in userEntity['aliases'] if aliasMatchPattern.match(alias)]
-      if printOptions['getLicenseFeed'] or printOptions['getLicenseFeedByUser']:
-        if printOptions['getLicenseFeed']:
-          u_licenses = licenses.get(userEmail.lower(), [])
+    
+    if (isSuspended is None and isArchived is None):
+      showUser = True
+    elif (isSuspended is not None and isArchived is None):
+      showUser = isSuspended == userEntity.get('suspended', isSuspended)
+    elif (isSuspended is None and isArchived is not  None):
+      showUser = isArchived == userEntity.get('archived', isArchived)
+    else:
+      showUser = ((isSuspended == userEntity.get('suspended', isSuspended)) and
+                  (isArchived == userEntity.get('archived', isArchived)))
+    if not showUser:
+      return
+    if showValidColumn:
+      userEntity[showValidColumn] = True
+    userEmail = userEntity['primaryEmail']
+    if printOptions['emailParts']:
+      if userEmail.find('@') != -1:
+        userEntity['primaryEmailLocal'], userEntity['primaryEmailDomain'] = splitEmailAddress(userEmail)
+    if 'languages' in userEntity and not FJQC.formatJSON:
+      userEntity['languages'] = _formatLanguagesList(userEntity.pop('languages'), delimiter)
+    for location in userEntity.get('locations', []):
+      location['buildingName'] = _getBuildingNameById(cd, location.get('buildingId', ''))
+    if quotePlusPhoneNumbers:
+      for phone in userEntity.get('phones', []):
+        phoneNumber = phone.get('value', '')
+        if phoneNumber.startswith('+'):
+          phone['value'] = "'"+phoneNumber
+    if schemaParms['selectedSchemaFields']:
+      _filterSchemaFields(userEntity, schemaParms)
+    if printOptions['getGroupFeed']:
+      printGettingAllEntityItemsForWhom(Ent.GROUP_MEMBERSHIP, userEmail, i, count)
+      try:
+        groups = callGAPIpages(cd.groups(), 'list', 'groups',
+                               pageMessage=getPageMessageForWhom(),
+                               throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
+                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                               userKey=userEmail, orderBy='email', fields='nextPageToken,groups(email)')
+        numGroups = len(groups)
+        if not printOptions['groupsInColumns']:
+          userEntity['GroupsCount'] = numGroups
+          userEntity['Groups'] = delimiter.join([groupname['email'] for groupname in groups])
         else:
-          u_licenses = getUserLicenses(lic, userEntity, skus)
-        if not oneLicensePerRow:
-          userEntity['LicensesCount'] = len(u_licenses)
-          if u_licenses:
-            userEntity['Licenses'] = delimiter.join(u_licenses)
-            userEntity['LicensesDisplay'] = delimiter.join([SKU.skuIdToDisplayName(skuId) for skuId in u_licenses])
+          if numGroups > printOptions['maxGroups']:
+            printOptions['maxGroups'] = numGroups
+          userEntity['Groups'] = numGroups
+          for j, group in enumerate(groups):
+            userEntity[f'Groups{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{j}'] = group['email']
+      except (GAPI.invalidMember, GAPI.invalidInput):
+        badRequestWarning(Ent.GROUP, Ent.MEMBER, userEmail)
+      except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.forbidden, GAPI.badRequest):
+        accessErrorExit(cd)
+    if aliasMatchPattern and 'aliases' in userEntity:
+      userEntity['aliases'] = [alias for alias in userEntity['aliases'] if aliasMatchPattern.match(alias)]
+    if printOptions['getLicenseFeed'] or printOptions['getLicenseFeedByUser']:
+      if printOptions['getLicenseFeed']:
+        u_licenses = licenses.get(userEmail.lower(), [])
       else:
-        u_licenses = []
+        u_licenses = getUserLicenses(lic, userEntity, skus)
       if not oneLicensePerRow:
-        _writeUserEntity(userEntity)
-      else:
+        userEntity['LicensesCount'] = len(u_licenses)
         if u_licenses:
-          for skuId in u_licenses:
-            userEntity['License'] = skuId
-            userEntity['LicenseDisplay'] = SKU.skuIdToDisplayName(skuId)
-            _writeUserEntity(userEntity)
-        else:
-          userEntity['License'] = userEntity['LicenseDisplay'] = ''
+          userEntity['Licenses'] = delimiter.join(u_licenses)
+          userEntity['LicensesDisplay'] = delimiter.join([SKU.skuIdToDisplayName(skuId) for skuId in u_licenses])
+    else:
+      u_licenses = []
+    if not oneLicensePerRow:
+      _writeUserEntity(userEntity)
+    else:
+      if u_licenses:
+        for skuId in u_licenses:
+          userEntity['License'] = skuId
+          userEntity['LicenseDisplay'] = SKU.skuIdToDisplayName(skuId)
           _writeUserEntity(userEntity)
+      else:
+        userEntity['License'] = userEntity['LicenseDisplay'] = ''
+        _writeUserEntity(userEntity)
 
   def _updateDomainCounts(emailAddress):
     nonlocal domainCounts
@@ -45911,10 +45922,10 @@ def doPrintUsers(entityList=None):
       showDeleted = True
     elif entityList is None and myarg == 'select':
       _, entityList = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
-    elif myarg in SUSPENDED_ARGUMENTS:
-      isSuspended = _getIsSuspended(myarg)
-    elif myarg in ARCHIVED_ARGUMENTS:
-      isArchived = _getIsArchived(myarg)
+    elif myarg == 'issuspended':
+      isSuspended = getBoolean()
+    elif myarg == 'isarchived':
+      isArchived = getBoolean() 
     elif myarg == 'orderby':
       orderBy, sortOrder = getOrderBySortOrder(USERS_ORDERBY_CHOICE_MAP)
     elif myarg == 'userview':
@@ -46092,6 +46103,8 @@ def doPrintUsers(entityList=None):
 # If no individual fields were specified (allfields, basic, full) or individual fields other than primaryEmail were specified, look up each user
     if isSuspended is not None and fieldsList:
       fieldsList.append('suspended')
+    if isArchived is not None and fieldsList:
+      fieldsList.append('archived')
     if projectionSet or len(set(fieldsList)) > 1 or showValidColumn:
       jcount = len(entityList)
       fields = getFieldsFromFieldsList(fieldsList)
