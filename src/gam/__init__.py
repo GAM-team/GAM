@@ -45762,7 +45762,7 @@ def doPrintUsers(entityList=None):
     elif (isSuspended is None and isArchived is not  None):
       showUser = isArchived == userEntity.get('archived', isArchived)
     else:
-      showUser = ((isSuspended == userEntity.get('suspended', isSuspended)) and
+      showUser = ((isSuspended == userEntity.get('suspended', isSuspended)) or
                   (isArchived == userEntity.get('archived', isArchived)))
     if not showUser:
       return
