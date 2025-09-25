@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.22.03
+
+Fix backwards compatability bug introduced in 7.22.00 for `gam print users` that changed `suspended`
+from a field name to a query option; it is now correctly interpreted as a field name.
+
 ### 7.22.02
 
 An update to the httplib2 library caused GAM proxy connections to fail; this has been fixed
