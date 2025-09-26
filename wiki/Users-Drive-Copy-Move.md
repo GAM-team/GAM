@@ -570,17 +570,12 @@ gam config auto_batch_min 1 csv_output_row_filter "owners.0.emailAddress:notrege
 ### Multiple parents
 No existing parents are copied for source top/sub files/folders.
 
-### Removed options
-The following options will generate an error; they were removed in 6.23.00:
-* `copysubfileparents` and `copysubfolderparents`.
-
 ### Move Folder Permissions
-When a folder is moved by recreating it, its permissions are not copied; these options control copying permissions for folders.
+When a folder is moved by recreating it, its permissions are not copied by the Drive API; these options control copying permissions for folders.
 
 For options of the form `option [<Boolean>]`; if `<Boolean>` is omitted, `true` is assumed.
 
 When recreated, a target folder inherits the permissions of its parent folder; these options control whether/how GAM copies the existing source folder permissions;
-The default values of options introduced in version 6.14.00 are set to match the behavior of earlier versions.
 
 When `mergewithparent` is `true`:
 * `copymergewithparentfolderpermissions false` - The permissions of the source top folder are not not copied to the target folder; this is the default action.
@@ -594,7 +589,7 @@ When `duplicatefolders` is `merge` and a sub folder is a duplicate:
 * `copymergedsubfolderpermissions false` - The permissions of the source sub folder are not not copied to the target folder.
 * `copymergedsubfolderpermissions true` - The permissions of the source sub folder are copied to the target folder; this is the default action.
 
-When `duplicatefolders` is `duplicatename` or `uniquename` and a top/sub folder is not a duplicate:
+When `duplicatefolders` is `merge` or `duplicatename` or `uniquename` and a top/sub folder is not a duplicate:
 * `copytopfolderpermissions true` - The permissions of the source top folder are copied to the target folder; this is the default action.
 * `copytopfolderpermissions false` - The permissions of the source top folder are not not copied to the target folder.
 * `copysubfolderpermissions true` - The permissions of the source sub folders are copied to the target folder; this is the default action.
