@@ -469,6 +469,10 @@ Replace `<Types>` as required:
 Replace `<Domains>` with specification of external domain(s)
 * `domain domain.com` - A single external domain
 * `domainlist domain1.com,domain2.com,domain3.com...` - A list of external domains
+
+If you want domains other than your internal domain(s)
+* `notdomain domain.com` - A single internal domain
+* `notdomainlist domain1.com,domain2.com,domain3.com...` - A list of internal domains
 ```
 gam config auto_batch_min 1 num_threads 20 redirect csv ./MyDriveShares.csv multiprocess redirect stderr - multiprocess all users print filelist fields id,name,mimetype,basicpermissions pm notrole owner <Types> <Domains> em pmfilter oneitemperrow
 ```
@@ -499,6 +503,10 @@ Replace `<Types>` as required:
 Replace `<Domains>` with specification of external domain(s)
 * `domain domain.com` - A single external domain
 * `domainlist domain1.com,domain2.com,domain3.com...` - A list of external domains
+
+If you want domains other than your internal domain(s)
+* `notdomain domain.com` - A single internal domain
+* `notdomainlist domain1.com,domain2.com,domain3.com...` - A list of internal domains
 ```
 gam config num_threads 20 csv_input_row_filter "organizers:regex:^.+$" redirect csv ./SharedDriveShares.csv multiprocess redirect stderr - multiprocess csv SharedDriveOrganizers.csv gam user "~organizers"  print filelist select shareddriveid "~id" fields id,name,mimetype,basicpermissions,driveid showdrivename pm <Types> <Domains> inherited false em pmfilter oneitemperrow
 ```
@@ -558,6 +566,10 @@ Get My Drive ACLs sharing to external domain(s)
 Replace `<Domains>` with specification of external domain(s)
 * `domain domain.com` - A single external domain
 * `domainlist domain1.com,domain2.com,domain3.com...` - A list of external domains
+
+If you want domains other than your internal domain(s)
+* `notdomain domain.com` - A single internal domain
+* `notdomainlist domain1.com,domain2.com,domain3.com...` - A list of internal domains
 ```
 gam config auto_batch_min 1 num_threads 20 redirect csv ./MyDriveShares.csv multiprocess redirect stderr - multiprocess all users print filelist fields id,name,mimetype,basicpermissions pm type domain <Domains> em pmfilter oneitemperrow
 ```
