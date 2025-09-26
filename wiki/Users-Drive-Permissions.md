@@ -424,12 +424,12 @@ gam config auto_batch_min 1 num_threads 20 redirect csv ./MyDriveShares.csv mult
 
 Delete those My Drive ACLs.
 ```
-gam config num_threads 20 redirect stdout ./DeleteMyDriveShares.txt multiprocess redirect stderr stdout csv MyDriveShares.csv gam user "~Owner" delete drivefleacl "~id" "id:~~permission.id~~"
+gam config num_threads 20 redirect stdout ./DeleteMyDriveShares.txt multiprocess redirect stderr stdout csv MyDriveShares.csv gam user "~Owner" delete drivefileacl "~id" "id:~~permission.id~~"
 ```
 
 Add My Drive ACLs with a different email address and the same role.
 ```
-gam config num_threads 20 redirect stdout ./AddMyDriveShares.txt multiprocess redirect stderr stdout csv MyDriveShares.csv gam user "~Owner" add drivefleacl "~id" "~permission.type" newemail@domain.rom role "~permission.role"
+gam config num_threads 20 redirect stdout ./AddMyDriveShares.txt multiprocess redirect stderr stdout csv MyDriveShares.csv gam user "~Owner" add drivefileacl "~id" "~permission.type" newemail@domain.rom role "~permission.role"
 ```
 
 ### Shared Drives
@@ -447,12 +447,12 @@ gam config num_threads 20 csv_input_row_filter "organizers:regex:^.+$" redirect 
 
 Delete those Shared Drive ACLs.
 ```
-gam config num_threads 20 redirect stdout ./DeleteSharedDriveShares.txt multiprocess redirect stderr stdout csv SharedDriveShares.csv gam user "~Owner" delete drivefleacl "~id" "id:~~permission.id~~"
+gam config num_threads 20 redirect stdout ./DeleteSharedDriveShares.txt multiprocess redirect stderr stdout csv SharedDriveShares.csv gam user "~Owner" delete drivefileacl "~id" "id:~~permission.id~~"
 ```
 
 Add Shared Drive ACLs with a different email address and the same role.
 ```
-gam config num_threads 20 redirect stdout ./ReplaceSharedDriveShares.txt multiprocess redirect stderr stdout csv SharedDriveShares.csv gam user "~Owner" add drivefleacl "~id" "~permission.type" newemail@domain.rom role "~permission.role"
+gam config num_threads 20 redirect stdout ./ReplaceSharedDriveShares.txt multiprocess redirect stderr stdout csv SharedDriveShares.csv gam user "~Owner" add drivefileacl "~id" "~permission.type" newemail@domain.rom role "~permission.role"
 ```
 
 ## Remove ACLs for all users-groups in external domains
@@ -475,12 +475,12 @@ gam config auto_batch_min 1 num_threads 20 redirect csv ./MyDriveShares.csv mult
 
 Delete those My Drive ACLs.
 ```
-gam config num_threads 20 redirect stdout ./DeleteMyDriveShares.txt multiprocess redirect stderr stdout csv MyDriveShares.csv gam user "~Owner" delete drivefleacl "~id" "id:~~permission.id~~"
+gam config num_threads 20 redirect stdout ./DeleteMyDriveShares.txt multiprocess redirect stderr stdout csv MyDriveShares.csv gam user "~Owner" delete drivefileacl "~id" "id:~~permission.id~~"
 ```
 
 Add My Drive ACLs with a different email address and the same role.
 ```
-gam config num_threads 20 redirect stdout ./AddMyDriveShares.txt multiprocess redirect stderr stdout csv MyDriveShares.csv gam user "~Owner" add drivefleacl "~id" "~permission.type" newemail@domain.rom role "~permission.role"
+gam config num_threads 20 redirect stdout ./AddMyDriveShares.txt multiprocess redirect stderr stdout csv MyDriveShares.csv gam user "~Owner" add drivefileacl "~id" "~permission.type" newemail@domain.rom role "~permission.role"
 ```
 
 ### Shared Drives
@@ -505,12 +505,12 @@ gam config num_threads 20 csv_input_row_filter "organizers:regex:^.+$" redirect 
 
 Delete those Shared Drive ACLs.
 ```
-gam config num_threads 20 redirect stdout ./DeleteSharedDriveShares.txt multiprocess redirect stderr stdout csv SharedDriveShares.csv gam user "~Owner" delete drivefleacl "~id" "id:~~permission.id~~"
+gam config num_threads 20 redirect stdout ./DeleteSharedDriveShares.txt multiprocess redirect stderr stdout csv SharedDriveShares.csv gam user "~Owner" delete drivefileacl "~id" "id:~~permission.id~~"
 ```
 
 Add Shared Drive ACLs with a different email address and the same role.
 ```
-gam config num_threads 20 redirect stdout ./ReplaceSharedDriveShares.txt multiprocess redirect stderr stdout csv SharedDriveShares.csv gam user "~Owner" add drivefleacl "~id" "~permission.type" newemail@domain.rom role "~permission.role"
+gam config num_threads 20 redirect stdout ./ReplaceSharedDriveShares.txt multiprocess redirect stderr stdout csv SharedDriveShares.csv gam user "~Owner" add drivefileacl "~id" "~permission.type" newemail@domain.rom role "~permission.role"
 ```
 
 ## Remove domainCanFind-domainWithLink ACLs for internal domain
@@ -529,7 +529,7 @@ gam config auto_batch_min 1 num_threads 20 redirect csv ./MyDriveShares.csv mult
 
 Delete those My Drive ACLs.
 ```
-gam config num_threads 20 redirect stdout ./DeleteMyDriveShares.txt multiprocess redirect stderr stdout csv MyDriveShares.csv gam user "~Owner" delete drivefleacl "~id" "id:~~permission.id~~"
+gam config num_threads 20 redirect stdout ./DeleteMyDriveShares.txt multiprocess redirect stderr stdout csv MyDriveShares.csv gam user "~Owner" delete drivefileacl "~id" "id:~~permission.id~~"
 ```
 
 ### Shared Drives
@@ -546,7 +546,7 @@ gam config num_threads 20 csv_input_row_filter "organizers:regex:^.+$" redirect 
 
 Delete those Shared Drive ACLs.
 ```
-gam config num_threads 20 redirect stdout ./DeleteSharedDriveShares.txt multiprocess redirect stderr stdout csv SharedDriveShares.csv gam user "~Owner" delete drivefleacl "~id" "id:~~permission.id~~"
+gam config num_threads 20 redirect stdout ./DeleteSharedDriveShares.txt multiprocess redirect stderr stdout csv SharedDriveShares.csv gam user "~Owner" delete drivefileacl "~id" "id:~~permission.id~~"
 ```
 
 ## Remove My Drive ACLs for external domains
@@ -564,7 +564,7 @@ gam config auto_batch_min 1 num_threads 20 redirect csv ./MyDriveShares.csv mult
 
 Delete those My Drive ACLs.
 ```
-gam config num_threads 20 redirect stdout ./DeleteMyDriveShares.txt multiprocess redirect stderr stdout csv MyDriveShares.csv gam user "~Owner" delete drivefleacl "~id" "id:~~permission.id~~"
+gam config num_threads 20 redirect stdout ./DeleteMyDriveShares.txt multiprocess redirect stderr stdout csv MyDriveShares.csv gam user "~Owner" delete drivefileacl "~id" "id:~~permission.id~~"
 ```
 
 ## Remove anyoneCanFind-anyoneWithLink ACLs
@@ -583,7 +583,7 @@ gam config auto_batch_min 1 num_threads 20 redirect csv ./MyDriveShares.csv mult
 
 Delete those My Drive ACLs.
 ```
-gam config num_threads 20 redirect stdout ./DeleteMyDriveShares.txt multiprocess redirect stderr stdout csv MyDriveShares.csv gam user "~Owner" delete drivefleacl "~id" "id:~~permission.id~~"
+gam config num_threads 20 redirect stdout ./DeleteMyDriveShares.txt multiprocess redirect stderr stdout csv MyDriveShares.csv gam user "~Owner" delete drivefileacl "~id" "id:~~permission.id~~"
 ```
 
 ### Shared Drives
@@ -599,5 +599,5 @@ gam config num_threads 20 csv_input_row_filter "organizers:regex:^.+$" redirect 
 
 Delete those Shared Drive ACLs.
 ```
-gam config num_threads 20 redirect stdout ./DeleteSharedDriveShares.txt multiprocess redirect stderr stdout csv SharedDriveShares.csv gam user "~Owner" delete drivefleacl "~id" "id:~~permission.id~~"
+gam config num_threads 20 redirect stdout ./DeleteSharedDriveShares.txt multiprocess redirect stderr stdout csv SharedDriveShares.csv gam user "~Owner" delete drivefileacl "~id" "id:~~permission.id~~"
 ```
