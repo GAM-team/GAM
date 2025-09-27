@@ -5423,6 +5423,15 @@ gam print vaultcounts [todrive <ToDriveAttributes>*]
 gam print vaultcounts [todrive <ToDriveAttributes>*]
         matter <MatterItem> operation <String> [wait <Integer>]
 
+gam create vaultexport|export matter <MatterItem> [name <String>]
+        vaultquery <QueryItem>
+        [driveclientsideencryption any|encrypted|unencrypted]
+        [includeaccessinfo <Boolean>]
+        [excludedrafts <Boolean>] [mailclientsideencryption any|encrypted|unencrypted]
+        [showconfidentialmodecontent <Boolean>] [usenewexport <Boolean>] [exportlinkeddrivefiles <Boolean>]
+        [format ics|mbox|pst|xml]
+        [region any|europe|us] [showdetails|returnidonly]
+
 gam create vaultexport|export matter <MatterItem> [name <String>] corpus calendar|drive|gemini|groups|hangouts_chat|mail|voice
         (accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
         (shareddrives|teamdrives (<SharedDriveIDList>|(select <FileSelector>|<CSVFileSelector>))) |
@@ -5433,12 +5442,13 @@ gam create vaultexport|export matter <MatterItem> [name <String>] corpus calenda
         [locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
         [responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*] [calendarversiondate <Date>|<Time>]
         [(includeshareddrives <Boolean>)|(shareddrivesoption included|included_if_account_is_not_a_member|not_included)]
-        [driveversiondate <Date>|<Time>] [includeaccessinfo <Boolean>]
-        [driveclientsideencryption any|encrypted|unencrypted]
+        [driveversiondate <Date>|<Time>]
         [includerooms <Boolean>]
+        (covereddata calllogs|textmessages|voicemails)*
+        [driveclientsideencryption any|encrypted|unencrypted]
+        [includeaccessinfo <Boolean>]
         [excludedrafts <Boolean>] [mailclientsideencryption any|encrypted|unencrypted]
         [showconfidentialmodecontent <Boolean>] [usenewexport <Boolean>] [exportlinkeddrivefiles <Boolean>]
-        [covereddata calllogs|textmessages|voicemails]
         [format ics|mbox|pst|xml]
         [region any|europe|us] [showdetails|returnidonly]
 gam delete vaultexport|export <ExportItem> matter <MatterItem>
@@ -5501,14 +5511,14 @@ gam create vaulthold|hold matter <MatterItem> [name <String>] corpus calendar|dr
         [(accounts|groups|users <EmailItemList>) | (orgunit|org|ou <OrgUnit>)]
         [query <QueryVaultCorpus>]
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
-        [includerooms <Boolean>] [covereddata calllogs|textmessages|voicemails]
+        [includerooms <Boolean>] (covereddata calllogs|textmessages|voicemails)*
         [includeshareddrives <Boolean>]
         [showdetails|returnidonly]
 gam update vaulthold|hold <HoldItem> matter <MatterItem>
         [([addaccounts|addgroups|addusers <EmailItemList>] [removeaccounts|removegroups|removeusers <EmailItemList>]) | (orgunit|org|ou <OrgUnit>)]
         [query <QueryVaultCorpus>]
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
-        [includerooms <Boolean>] [covereddata calllogs|textmessages|voicemails]
+        [includerooms <Boolean>] (covereddata calllogs|textmessages|voicemails)*
         [includeshareddrives <Boolean>]
         [showdetails]
 gam delete vaulthold|hold <HoldItem> matter <MatterItem>

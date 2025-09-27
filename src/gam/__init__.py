@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.22.04'
+__version__ = '7.22.05'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -41891,7 +41891,7 @@ def _buildVaultQuery(myarg, query, corpusArgumentMap):
     query['hangoutsChatOptions'] = {'includeRooms': getBoolean()}
 # mail
   elif myarg == 'excludedrafts':
-    query['mailOptions'] = {'excludeDrafts': getBoolean()}
+    query.setdefault('mailOptions', {})['excludeDrafts'] =  getBoolean()
   elif myarg == 'mailclientsideencryption':
     query.setdefault('mailOptions', {})['clientSideEncryptedOption'] = getChoice(VAULT_CSE_OPTION_MAP, mapChoice=True)
 # voice
@@ -41909,7 +41909,16 @@ def _validateVaultQuery(body, corpusArgumentMap):
       if body['query']['corpus'] != corpus:
         body['exportOptions'].pop(options, None)
 
-# gam create vaultexport|export matter <MatterItem> [name <String>] corpus calendar|drive|gemini|groups|hangouts_chat|mail|voice
+# gam create vaultexport|export matter <MatterItem> [name <String>]
+#	vaultquery <QueryItem>
+#	[driveclientsideencryption any|encrypted|unencrypted]
+#	[includeaccessinfo <Boolean>]
+#	[excludedrafts <Boolean>] [mailclientsideencryption any|encrypted|unencrypted]
+#	[showconfidentialmodecontent <Boolean>] [usenewexport <Boolean>] [exportlinkeddrivefiles <Boolean>]
+#	[format ics|mbox|pst|xml]
+#	[region any|europe|us] [showdetails|returnidonly]
+# gam create vaultexport|export matter <MatterItem> [name <String>]
+#	corpus calendar|drive|gemini|groups|hangouts_chat|mail|voice
 #	(accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
 #	(shareddrives|teamdrives (<SharedDriveIDList>|(select <FileSelector>|<CSVFileSelector>))) |
 #	    (rooms (<ChatSpaceList>|(select <FileSelector>|<CSVFileSelector>))) |
@@ -41919,23 +41928,25 @@ def _validateVaultQuery(body, corpusArgumentMap):
 #	[locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
 #	[responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*] [calendarversiondate <Date>|<Time>]
 #	[(includeshareddrives <Boolean>)|(shareddrivesoption included|included_if_account_is_not_a_member|not_included)]
-#	[driveversiondate <Date>|<Time>] [includeaccessinfo <Boolean>]
-#	[driveclientsideencryption any|encrypted|unencrypted]
+#	[driveversiondate <Date>|<Time>]
 #	[includerooms <Boolean>]
+#	(covereddata calllogs|textmessages|voicemails)*
+#	[driveclientsideencryption any|encrypted|unencrypted]
+#	[includeaccessinfo <Boolean>]
 #	[excludedrafts <Boolean>] [mailclientsideencryption any|encrypted|unencrypted]
 #	[showconfidentialmodecontent <Boolean>] [usenewexport <Boolean>] [exportlinkeddrivefiles <Boolean>]
-#	[covereddata calllogs|textmessages|voicemails]
 #	[format ics|mbox|pst|xml]
 #	[region any|europe|us] [showdetails|returnidonly]
 def doCreateVaultExport():
   v = buildGAPIObject(API.VAULT)
   matterId = None
   body = {'query': {'dataScope': 'ALL_DATA'}, 'exportOptions': {}}
+  includeAccessInfo = None
   exportFormat = None
+  useNewExport = None
   showConfidentialModeContent = None
   exportLinkedDriveFiles = None
   returnIdOnly = showDetails = False
-  useNewExport = None
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'matter':
@@ -41943,23 +41954,22 @@ def doCreateVaultExport():
       body['matterId'] = matterId
     elif myarg == 'name':
       body['name'] = getString(Cmd.OB_STRING)
+    elif matterId is not None and myarg == 'vaultquery':
+      _, _, _, body['query'] = convertQueryNameToID(v, getString(Cmd.OB_QUERY_ITEM), matterId, matterNameId)
     elif myarg in VAULT_QUERY_ARGS:
       _buildVaultQuery(myarg, body['query'], VAULT_CORPUS_ARGUMENT_MAP)
-    elif myarg == 'usenewexport':
-      useNewExport = getBoolean()
+    elif myarg == 'includeaccessinfo':
+      includeAccessInfo = getBoolean()
     elif myarg == 'format':
       exportFormat = getChoice(VAULT_EXPORT_FORMAT_MAP, mapChoice=True)
+    elif myarg == 'usenewexport':
+      useNewExport = getBoolean()
     elif myarg == 'showconfidentialmodecontent':
       showConfidentialModeContent = getBoolean()
     elif myarg == 'exportlinkeddrivefiles':
       exportLinkedDriveFiles = getBoolean()
     elif myarg == 'region':
       body['exportOptions']['region'] = getChoice(VAULT_EXPORT_REGION_MAP, mapChoice=True)
-    elif myarg == 'includeaccessinfo':
-      body['exportOptions'].setdefault('driveOptions', {})['includeAccessInfo'] = getBoolean()
-    elif myarg == 'covereddata':
-      body['exportOptions'].setdefault('voiceOptions', {'coveredData': []})
-      body['exportOptions']['voiceOptions']['coveredData'].append(getChoice(VAULT_VOICE_COVERED_DATA_MAP, mapChoice=True))
     elif myarg == 'showdetails':
       showDetails = True
       returnIdOnly = False
@@ -41979,7 +41989,10 @@ def doCreateVaultExport():
   if 'name' not in body:
     body['name'] = f'GAM {body["query"]["corpus"]} Export - {ISOformatTimeStamp(todaysTime())}'
   optionsField = VAULT_CORPUS_OPTIONS_MAP[body['query']['corpus']]
-  if body['query']['corpus'] != 'DRIVE':
+  if body['query']['corpus'] == 'DRIVE':
+    if includeAccessInfo is not None:
+      body['exportOptions'][optionsField]['includeAccessInfo'] = includeAccessInfo
+  else:
     body['exportOptions'][optionsField] = {'exportFormat': exportFormat}
     if body['query']['corpus'] == 'MAIL':
       if showConfidentialModeContent is not None:
