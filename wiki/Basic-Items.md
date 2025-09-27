@@ -462,6 +462,7 @@
         See: https://support.google.com/mail/answer/7190
 <QueryGroup> ::= <String>
         See: https://developers.google.com/admin-sdk/directory/v1/guides/search-groups
+<QueryItem> ::= <UniqueID>|<String>
 <QueryMemberRestrictions> ::= <String>
         See: https://cloud.google.com/identity/docs/reference/rest/v1beta1/SecuritySettings#MemberRestriction
 <QueryMobile> ::= <String>

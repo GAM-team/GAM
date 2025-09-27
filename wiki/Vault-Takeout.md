@@ -73,6 +73,7 @@
 <MatterItem> ::= <UniqueID>|<String>
 <MatterState> ::= open|closed|deleted
 <MatterStateList> ::= "<MatterState>(,<MatterState>)*"
+<QueryItem> ::= <UniqueID>|<String>
 <SharedDriveID> ::= <String>
 <SharedDriveIDList> ::= "<SharedDriveID>(,<SharedDriveID>)*"
 <URL> ::= <String>
@@ -606,6 +607,21 @@ The `shownames` argument controls whether account and org unit names are display
 
 ## Vault Holds
 ## Create Vault Holds
+### Create a hold from a saved Vault query.
+```
+gam create vaulthold|hold matter <MatterItem> [name <String>]
+        vaultquery <QueryItem>
+        [showdetails|returnidonly]
+```
+Specify the name of the hold:
+* `name <String>` - The hold will be named `<String>`
+* `default` - The hold will be named `GAM <corpus> Hold - <Time>`
+
+Use the `showdetails` option to have the full details of the hold displayed.
+
+Use the `returnidonly` option to have only the hold ID displayed.
+
+### Create a hold from parameters.
 ```
 gam create vaulthold|hold matter <MatterItem> [name <String>] corpus calendar|drive|mail|groups|hangouts_chat|voice
         [(accounts|groups|users <EmailItemList>) | (orgunit|org|ou <OrgUnit>)]
