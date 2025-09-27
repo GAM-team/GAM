@@ -243,7 +243,19 @@ gam print vaultcounts [todrive <ToDriveAttributes>*]
 
 ## Vault Exports
 ## Create Vault Exports
-Create a Google Vault export request.
+### Create a Google Vault export request using a saved Vault query.
+```
+gam create vaultexport|export matter <MatterItem> [name <String>]
+        vaultquery <QueryItem>
+        [driveclientsideencryption any|encrypted|unencrypted]
+        [includeaccessinfo <Boolean>]
+        [excludedrafts <Boolean>] [mailclientsideencryption any|encrypted|unencrypted]
+        [showconfidentialmodecontent <Boolean>] [usenewexport <Boolean>] [exportlinkeddrivefiles <Boolean>]
+        [format ics|mbox|pst|xml]
+        [region any|europe|us] [showdetails|returnidonly]
+```
+
+Create a Google Vault export request by specifying the query parameters.
 ```
 gam create vaultexport|export matter <MatterItem> [name <String>] corpus calendar|drive|gemini|groups|hangouts_chat|mail|voice
         (accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
@@ -255,12 +267,13 @@ gam create vaultexport|export matter <MatterItem> [name <String>] corpus calenda
         [locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
         [responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*] [calendarversiondate <Date>|<Time>]
         [(includeshareddrives <Boolean>)|(shareddrivesoption included|included_if_account_is_not_a_member|not_included)]
-        [driveversiondate <Date>|<Time>] [includeaccessinfo <Boolean>]
-        [driveclientsideencryption any|encrypted|unencrypted]
+        [driveversiondate <Date>|<Time>]
         [includerooms <Boolean>]
+        (covereddata calllogs|textmessages|voicemails)*
+        [driveclientsideencryption any|encrypted|unencrypted]
+        [includeaccessinfo <Boolean>]
         [excludedrafts <Boolean>] [mailclientsideencryption any|encrypted|unencrypted]
         [showconfidentialmodecontent <Boolean>] [usenewexport <Boolean>] [exportlinkeddrivefiles <Boolean>]
-        (covereddata calllogs|textmessages|voicemails)*
         [format ics|mbox|pst|xml]
         [region any|europe|us] [showdetails|returnidonly]
 ```
@@ -366,7 +379,7 @@ For `corpus mail`, you can specify whether to enable exporting linked Drive file
 See: https://support.google.com/vault/answer/4388708#new_gmail_export&zippy=%2Cfebruary-new-gmail-export-system-available
 
 For `corpus calendar`, you can specify the format of the exported data:
-* `format ics - Export in ICS format, this is the default
+* `format ics` - Export in ICS format, this is the default
 * `format pst` - Export in PST format
 
 For `corpus drive`, you can not specify the format of the exported data,
@@ -377,7 +390,7 @@ For `corpus groups`, `corpus hangouts_chat`, `corpus mail` and `corpus voice`, y
 * `format mbox` - Export in MBOX format, this is the default
 * `format pst` - Export in PST format
 
-For `corpus voice` you can specify thet data covered by the export,
+For `corpus voice` you can specify the data covered by the export,
 multiple values are allowed.:
 * `covereddata calllogs` - Call logs
 * `covereddata textmessages` - Voice text messages
@@ -624,7 +637,8 @@ Use the `returnidonly` option to have only the hold ID displayed.
 
 ### Create a hold from parameters.
 ```
-gam create vaulthold|hold matter <MatterItem> [name <String>] corpus calendar|drive|mail|groups|hangouts_chat|voice
+gam create vaulthold|hold matter <MatterItem> [name <String>]
+        corpus calendar|drive|mail|groups|hangouts_chat|voice
         [(accounts|groups|users <EmailItemList>) | (orgunit|org|ou <OrgUnit>)]
         [query <QueryVaultCorpus>]
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
@@ -655,10 +669,10 @@ For `corpus drive`, you can specify advanced search options:
 * `includeshareddrives False` - Files in shared drives are not included in the hold, this is the default
 * `includeshareddrives True` - Files in shared drives are included in the hold
 
-For `corpus mail`, you can specify search terms to limit the search.
+For `corpus mail|group`, you can specify search terms to limit the search.
 * `terms <String>` - [Vault search](https://support.google.com/vault/answer/2474474)
 
-For `corpus mail`, you can specify time limits on the search:
+For `corpus mail|group`, you can specify time limits on the search:
 * `start|starttime <Date>|<Time>` - The start time range for the search query. These timestamps are in GMT and rounded down to the start of the given date.
 * `end|endtime <Date>|<Time>` - The end time range for the search query. These timestamps are in GMT and rounded down to the start of the given date.
 
@@ -691,10 +705,10 @@ For a hold with `corpus drive`, you can specify advanced search options:
 * `includeshareddrives False` - Files in shared drives are not included in the hold, this is the default
 * `includeshareddrives True` - Files in shared drives are included in the hold
 
-For a hold with `corpus mail`, you can specify search terms to limit the search.
+For a hold with `corpus mail|groups`, you can specify search terms to limit the search.
 * `terms <String>` - [Vault search](https://support.google.com/vault/answer/2474474)
 
-For a hold with `corpus mail`, you can specify time limits on the search:
+For a hold with `corpus mai|groupsl`, you can specify time limits on the search:
 * `start|starttime <Date>|<Time>` - The start time range for the search query. These timestamps are in GMT and rounded down to the start of the given date.
 * `end|endtime <Date>|<Time>` - The end time range for the search query. These timestamps are in GMT and rounded down to the start of the given date.
 

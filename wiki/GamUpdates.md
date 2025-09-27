@@ -10,7 +10,22 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
-### - 7.22.04
+### 7.22.05
+
+Added a variant of `gam create vaultexport` that gets its query parameters from a saved Vault query.
+
+```
+gam create vaultexport|export matter <MatterItem> [name <String>]
+        vaultquery <QueryItem>
+        [driveclientsideencryption any|encrypted|unencrypted]
+        [includeaccessinfo <Boolean>]
+        [excludedrafts <Boolean>] [mailclientsideencryption any|encrypted|unencrypted]
+        [showconfidentialmodecontent <Boolean>] [usenewexport <Boolean>] [exportlinkeddrivefiles <Boolean>]
+        [format ics|mbox|pst|xml]
+        [region any|europe|us] [showdetails|returnidonly]
+```
+
+### 7.22.04
 
 Added a variant of `gam create vaulthold` that gets its parameters from a saved Vault query.
 ```

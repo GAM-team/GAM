@@ -29,6 +29,7 @@
 ```
 <DomainName> ::= <String>(.<String>)+
 <EmailAddress> ::= <String>@<DomainName>
+<JSONData> ::= (json [charset <Charset>] <String>) | (json file <FileName> [charset <Charset>]) |
 <UniqueID> ::= id:<String>
 <UserItem> ::= <EmailAddress>|<UniqueID>|<String>
 
