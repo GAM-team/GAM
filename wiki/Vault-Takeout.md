@@ -260,7 +260,7 @@ gam create vaultexport|export matter <MatterItem> [name <String>] corpus calenda
         [includerooms <Boolean>]
         [excludedrafts <Boolean>] [mailclientsideencryption any|encrypted|unencrypted]
         [showconfidentialmodecontent <Boolean>] [usenewexport <Boolean>] [exportlinkeddrivefiles <Boolean>]
-        [covereddata calllogs|textmessages|voicemails]
+        (covereddata calllogs|textmessages|voicemails)*
         [format ics|mbox|pst|xml]
         [region any|europe|us] [showdetails|returnidonly]
 ```
@@ -377,7 +377,8 @@ For `corpus groups`, `corpus hangouts_chat`, `corpus mail` and `corpus voice`, y
 * `format mbox` - Export in MBOX format, this is the default
 * `format pst` - Export in PST format
 
-For `corpus voice` you can specify thet data covered by the export:
+For `corpus voice` you can specify thet data covered by the export,
+multiple values are allowed.:
 * `covereddata calllogs` - Call logs
 * `covereddata textmessages` - Voice text messages
 * `covereddata voicemail` - Voicemail
@@ -628,7 +629,7 @@ gam create vaulthold|hold matter <MatterItem> [name <String>] corpus calendar|dr
         [query <QueryVaultCorpus>]
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
         [includerooms <Boolean>]
-        [covereddata calllogs|textmessages|voicemails]
+        (covereddata calllogs|textmessages|voicemails)*
         [includeshareddrives <Boolean>]
         [showdetails|returnidonly]
 ```
@@ -665,7 +666,8 @@ For `corpus hangouts_chat` you can specify advanced search options:
 * `includerooms False` - Do not include rooms, this is the default
 * `includerooms True` - Include rooms
 
-For `corpus voice` you can specify the data covered by the hold:
+For `corpus voice` you can specify the data covered by the hold,
+multiple values are allowed.:
 * `covereddata calllogs` - Call logs
 * `covereddata textmessages` - Voice text messages
 * `covereddata voicemail` - Voicemail
@@ -681,7 +683,7 @@ gam update vaulthold|hold <HoldItem> matter <MatterItem>
         [query <QueryVaultCorpus>]
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
         [includerooms <Boolean>]
-        [covereddata calllogs|textmessages|voicemails]
+        (covereddata calllogs|textmessages|voicemails)*
         [includeshareddrives <Boolean>]
         [showdetails]
 ```
@@ -700,7 +702,8 @@ For a hold with `corpus hangouts_chat` you can specify advanced search options:
 * `includerooms False` - Do not include rooms, this is the default
 * `includerooms True` - Include rooms
 
-For a hold with `corpus voice` you can specify the data covered by the hold:
+For a hold with `corpus voice` you can specify the data covered by the hold,
+multiple values are allowed.:
 * `covereddata calllogs` - Call logs
 * `covereddata textmessages` - Voice text messages
 * `covereddata voicemail` - Voicemail
