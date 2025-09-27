@@ -565,6 +565,7 @@ If an item contains spaces, it should be surrounded by ".
         See: https://support.google.com/mail/answer/7190
 <QueryGroup> ::= <String>
         See: https://developers.google.com/admin-sdk/directory/v1/guides/search-groups
+<QueryItem> ::= <UniqueID>|<String>
 <QueryMemberRestrictions> ::= <String>
         See: https://cloud.google.com/identity/docs/reference/rest/v1beta1/SecuritySettings#MemberRestriction
 <QueryMobile> ::= <String>
@@ -5493,6 +5494,9 @@ gam show vaultexports|exports
         [fields <VaultExportFieldNameList>] [shownames]
         [formatjson]
 
+gam create vaulthold|hold matter <MatterItem> [name <String>]
+        vaultquery <QueryItem>
+        [showdetails|returnidonly]
 gam create vaulthold|hold matter <MatterItem> [name <String>] corpus calendar|drive|mail|groups|hangouts_chat|voice
         [(accounts|groups|users <EmailItemList>) | (orgunit|org|ou <OrgUnit>)]
         [query <QueryVaultCorpus>]

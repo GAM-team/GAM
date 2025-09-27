@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.22.03'
+__version__ = '7.22.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -41654,7 +41654,7 @@ def convertQueryNameToID(v, nameOrId, matterId, matterNameId):
       query = callGAPI(v.matters().savedQueries(), 'get',
                        throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                        matterId=matterId, savedQueryId=cg.group(1))
-      return (query['savedQueryId'], query['displayName'], formatVaultNameId(query['savedQueryId'], query['displayName']))
+      return (query['savedQueryId'], query['displayName'], formatVaultNameId(query['savedQueryId'], query['displayName']), query['query'])
     except (GAPI.notFound, GAPI.badRequest):
       entityDoesNotHaveItemExit([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_QUERY, nameOrId])
     except (GAPI.forbidden, GAPI.invalidArgument) as e:
@@ -41663,12 +41663,12 @@ def convertQueryNameToID(v, nameOrId, matterId, matterNameId):
   try:
     queries = callGAPIpages(v.matters().savedQueries(), 'list', 'savedQueries',
                             throwReasons=[GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
-                            matterId=matterId, fields='savedQueries(savedQueryId,displayName),nextPageToken')
+                            matterId=matterId, fields='savedQueries(savedQueryId,displayName,query),nextPageToken')
   except (GAPI.forbidden, GAPI.invalidArgument) as e:
     ClientAPIAccessDeniedExit(str(e))
   for query in queries:
     if query['displayName'].lower() == nameOrIdlower:
-      return (query['savedQueryId'], query['displayName'], formatVaultNameId(query['savedQueryId'], query['displayName']))
+      return (query['savedQueryId'], query['displayName'], formatVaultNameId(query['savedQueryId'], query['displayName']), query['query'])
   entityDoesNotHaveItemExit([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_QUERY, nameOrId])
 
 def getMatterItem(v, state=None):
@@ -41896,7 +41896,8 @@ def _buildVaultQuery(myarg, query, corpusArgumentMap):
     query.setdefault('mailOptions', {})['clientSideEncryptedOption'] = getChoice(VAULT_CSE_OPTION_MAP, mapChoice=True)
 # voice
   elif myarg == 'covereddata':
-    query['voiceOptions'] = {'coveredData': getChoice(VAULT_VOICE_COVERED_DATA_MAP, mapChoice=True)}
+    query.setdefault('voiceOptions', {'coveredData': []})
+    query['voiceOptions']['coveredData'].append(getChoice(VAULT_VOICE_COVERED_DATA_MAP, mapChoice=True))
 
 def _validateVaultQuery(body, corpusArgumentMap):
   if 'corpus' not in body['query']:
@@ -41957,7 +41958,8 @@ def doCreateVaultExport():
     elif myarg == 'includeaccessinfo':
       body['exportOptions'].setdefault('driveOptions', {})['includeAccessInfo'] = getBoolean()
     elif myarg == 'covereddata':
-      body['exportOptions'].setdefault('voiceOptions', {})['coveredData'] = getChoice(VAULT_VOICE_COVERED_DATA_MAP, mapChoice=True)
+      body['exportOptions'].setdefault('voiceOptions', {'coveredData': []})
+      body['exportOptions']['voiceOptions']['coveredData'].append(getChoice(VAULT_VOICE_COVERED_DATA_MAP, mapChoice=True))
     elif myarg == 'showdetails':
       showDetails = True
       returnIdOnly = False
@@ -42459,6 +42461,34 @@ def _showVaultHold(matterNameId, hold, cd, FJQC, k=0, kcount=0):
   showJSON(None, hold, timeObjects=VAULT_HOLD_TIME_OBJECTS)
   Ind.Decrement()
 
+def _useVaultQuery(v, matterId, matterNameId, body):
+  _, _, _, query = convertQueryNameToID(v, getString(Cmd.OB_QUERY_ITEM), matterId, matterNameId)
+  body['corpus'] = query['corpus']
+  method = query.get('method')
+  if method == 'ACCOUNT':
+    body['accounts'] = []
+    for email in query['accountInfo']['emails']:
+      body['accounts'].append({'email': email})
+  elif method == 'ORG_UNIT':
+    body['orgUnit'] = {'orgUnitId': query['orgUnitInfo']['orgUnitId']}
+  queryType = VAULT_CORPUS_QUERY_MAP[query['corpus']]
+  if queryType is None:
+    return
+  body['query'] = {queryType: {}}
+  if query['corpus'] == 'DRIVE':
+    body['query'][queryType]['includeSharedDriveFiles'] = query['driveOptions'].get('includeSharedDrives', False)
+  elif query['corpus'] in {'GROUPS', 'MAIL'}:
+    if query.get('terms'):
+      body['query'][queryType]['terms'] = query['terms']
+    if query.get('startTime'):
+      body['query'][queryType]['startTime'] = query['startTime']
+    if query.get('endTime'):
+      body['query'][queryType]['endTime'] = query['endTime']
+  elif query['corpus'] == 'HANGOUTS_CHAT':
+    body['query'][queryType]['includeRooms'] = query['hangoutsChatOptions'].get('includeRooms', False)
+  elif query['corpus'] == 'VOICE':
+    body['query'][queryType]['coveredData'] = query['voiceOptions']['coveredData']
+
 def _getHoldQueryParameters(myarg, queryParameters):
   if myarg == 'query':
     queryParameters['queryLocation'] = Cmd.Location()
@@ -42474,7 +42504,8 @@ def _getHoldQueryParameters(myarg, queryParameters):
   elif myarg in {'includeshareddrives', 'includeteamdrives'}:
     queryParameters['includeSharedDriveFiles'] = getBoolean()
   elif myarg == 'covereddata':
-    queryParameters['coveredData'] = getChoice(VAULT_VOICE_COVERED_DATA_MAP, mapChoice=True)
+    queryParameters.setdefault('coveredData', [])
+    queryParameters['coveredData'].append(getChoice(VAULT_VOICE_COVERED_DATA_MAP, mapChoice=True))
   else:
     return False
   return True
@@ -42509,7 +42540,11 @@ def _setHoldQuery(body, queryParameters):
     if queryParameters.get('coveredData'):
       body['query'][queryType]['coveredData'] = queryParameters['coveredData']
 
-# gam create vaulthold|hold matter <MatterItem> [name <String>] corpus calendar|drive|mail|groups|hangouts_chat|voice
+# gam create vaulthold|hold matter <MatterItem> [name <String>]
+#	vaultquery <QueryItem>
+#	[showdetails|returnidonly]
+# gam create vaulthold|hold matter <MatterItem> [name <String>]
+#	corpus calendar|drive|mail|groups|hangouts_chat|voice
 #	[(accounts|groups|users <EmailItemList>) | (orgunit|org|ou <OrgUnit>)]
 #	[query <QueryVaultCorpus>]
 #	[terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
@@ -42523,13 +42558,16 @@ def doCreateVaultHold():
   matterId = None
   accounts = []
   queryParameters = {}
-  returnIdOnly = showDetails = False
+  returnIdOnly = showDetails = usedVaultQuery  = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'matter':
       matterId, matterNameId = getMatterItem(v)
     elif myarg == 'name':
       body['name'] = getString(Cmd.OB_STRING)
+    elif matterId is not None and myarg == 'vaultquery':
+      _useVaultQuery(v, matterId, matterNameId, body)
+      usedVaultQuery = True
     elif myarg == 'corpus':
       body['corpus'] = getChoice(VAULT_CORPUS_ARGUMENT_MAP, mapChoice=True)
     elif myarg in {'accounts', 'users', 'groups'}:
@@ -42553,7 +42591,8 @@ def doCreateVaultHold():
     missingArgumentExit(f'corpus {"|".join(VAULT_CORPUS_ARGUMENT_MAP)}')
   if 'name' not in body:
     body['name'] = f'GAM {body["corpus"]} Hold - {ISOformatTimeStamp(todaysTime())}'
-  _setHoldQuery(body, queryParameters)
+  if not usedVaultQuery:
+    _setHoldQuery(body, queryParameters)
   if accounts:
     body['accounts'] = []
     cd = buildGAPIObject(API.DIRECTORY)
@@ -43006,7 +43045,7 @@ def doInfoVaultQuery():
   v = buildGAPIObject(API.VAULT)
   if not Cmd.ArgumentIsAhead('matter'):
     matterId, matterNameId = getMatterItem(v)
-    queryId, queryName, queryNameId = convertQueryNameToID(v, getString(Cmd.OB_QUERY_ITEM), matterId, matterNameId)
+    queryId, queryName, queryNameId, _ = convertQueryNameToID(v, getString(Cmd.OB_QUERY_ITEM), matterId, matterNameId)
   else:
     queryName = getString(Cmd.OB_QUERY_ITEM)
   cd = drive = None
@@ -43016,7 +43055,7 @@ def doInfoVaultQuery():
     myarg = getArgument()
     if myarg == 'matter':
       matterId, matterNameId = getMatterItem(v)
-      queryId, queryName, queryNameId = convertQueryNameToID(v, queryName, matterId, matterNameId)
+      queryId, queryName, queryNameId, _ = convertQueryNameToID(v, queryName, matterId, matterNameId)
     elif myarg == 'shownames':
       cd = buildGAPIObject(API.DIRECTORY)
       _, drive = buildGAPIServiceObject(API.DRIVE3, _getAdminEmail())
@@ -45754,7 +45793,6 @@ def doPrintUsers(entityList=None):
       csvPF.WriteRowNoFilter(row)
 
   def _printUser(userEntity, i, count):
-    
     if (isSuspended is None and isArchived is None):
       showUser = True
     elif (isSuspended is not None and isArchived is None):
@@ -45925,7 +45963,7 @@ def doPrintUsers(entityList=None):
     elif myarg == 'issuspended':
       isSuspended = getBoolean()
     elif myarg == 'isarchived':
-      isArchived = getBoolean() 
+      isArchived = getBoolean()
     elif myarg == 'orderby':
       orderBy, sortOrder = getOrderBySortOrder(USERS_ORDERBY_CHOICE_MAP)
     elif myarg == 'userview':
