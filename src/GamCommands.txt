@@ -729,6 +729,7 @@ If an item contains spaces, it should be surrounded by ".
 <DomainNameList> ::= "<DomainName>(,<DomainName>)*"
 <DriveFileACLRoleList> ::= "<DriveFileACLRole>(,<DriveFileACLRole>)*"
 <DriveFileACLTypeList> ::= "<DriveFileACLType>(,<DriveFileACLType>)*"
+<DriveFileIDList> ::= "<DriveFileID>(,<DriveFileID>)*"
 <DriveFileList> ::= "<DriveFileItem>(,<DriveFileItem>)*"
 <DriveFilePermissionList> ::= "<DriveFilePermission>(,<DriveFilePermission>)*"
 <DriveFilePermissionIDList> ::= "<DriveFilePermissionID>(,<DriveFilePermissionID>)*"
@@ -5411,12 +5412,13 @@ gam show vaultmatters|matters [matterstate <MatterStateList>]
         [formatjson]
 
 gam print vaultcounts [todrive <ToDriveAttributes>*]
-        matter <MatterItem> corpus mail|groups
-        [(accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone]
-        [(shareddrives|teamdrives (<SharedDriveIDList>|(select <FileSelector>|<CSVFileSelector>))) |
-            (rooms (<ChatSpaceList>|(select <FileSelector>|<CSVFileSelector>))) |
-            (sitesurl (<URLList>||(select <FileSelector>|<CSVFileSelector>)))]
+        matter <MatterItem> <QueryItem>
+        [wait <Integer>]
+gam print vaultcounts [todrive <ToDriveAttributes>*]
+        matter <MatterItem>
+	corpus mail|groups
         [scope [all_data|held_data|unprocessed_data]]
+        [(accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone]
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
         [excludedrafts <Boolean>]
         [wait <Integer>]
@@ -5557,6 +5559,29 @@ gam show vaultholds|holds [matters <MatterItemList>]
 
 gam <UserTypeEntity> print vaultholds|holds [todrive <ToDriveAttribute>*]
 gam <UserTypeEntity> show vaultholds|holds
+
+gam create vaultquery <MatterItem> [name <String>]
+        corpus calendar|drive|gemini|groups|hangouts_chat|mail|voice
+        [scope all_data|held_data|unprocessed_data]
+        (accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
+        (documentids  (<DriveFileIDList>|(select <FileSelector>|<CSVFileSelector>))) |
+        (shareddrives|teamdrives (<SharedDriveIDList>|(select <FileSelector>|<CSVFileSelector>))) |
+        [(includeshareddrives <Boolean>)|(shareddrivesoption included|included_if_account_is_not_a_member|not_included)]
+        (sitesurl (<URLList>||(select <FileSelector>|<CSVFileSelector>)))
+        [driveversiondate <Date>|<Time>]
+        [includerooms <Boolean>]
+        (rooms (<ChatSpaceList>|(select <FileSelector>|<CSVFileSelector>))) |
+        [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
+        [locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
+        [responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*] [calendarversiondate <Date>|<Time>]
+        (covereddata calllogs|textmessages|voicemails)*
+        [shownames] [formatjson]
+
+gam copy vaultquery <MatterItem> <QueryItem> [targetmatter <MatterItem"] [name <String>]
+        [shownames] [formatjson]
+
+gam delete vaultquery <QueryItem> matter <MatterItem>
+gam delete vaultquery <MatterItem> <QueryItem>
 
 <VaultQueryFieldName> ::=
         createtime |

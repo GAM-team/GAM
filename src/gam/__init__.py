@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.22.05'
+__version__ = '7.22.06`'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -41716,6 +41716,7 @@ VAULT_SEARCH_METHODS_MAP = {
   'accounts': 'ACCOUNT',
   'chatspace': 'ROOM',
   'chatspaces': 'ROOM',
+  'documentids': 'DRIVE_DOCUMENT',
   'entireorg': 'ENTIRE_ORG',
   'everyone': 'ENTIRE_ORG',
   'org': 'ORG_UNIT',
@@ -41831,6 +41832,8 @@ def _buildVaultQuery(myarg, query, corpusArgumentMap):
     query['dataScope'] = 'ALL_DATA'
   if myarg == 'corpus':
     query['corpus'] = getChoice(corpusArgumentMap, mapChoice=True)
+  elif myarg == 'scope':
+    query['dataScope'] = getChoice(VAULT_EXPORT_DATASCOPE_MAP, mapChoice=True)
   elif myarg in VAULT_SEARCH_METHODS_MAP:
     if query.get('searchMethod'):
       Cmd.Backup()
@@ -41851,8 +41854,8 @@ def _buildVaultQuery(myarg, query, corpusArgumentMap):
       query['hangoutsChatInfo'] = {'roomId': roomIds}
     elif searchMethod == 'SITES_URL':
       query['sitesUrlInfo'] = {'urls': _getQueryList(Cmd.OB_URL_LIST)}
-  elif myarg == 'scope':
-    query['dataScope'] = getChoice(VAULT_EXPORT_DATASCOPE_MAP, mapChoice=True)
+    elif searchMethod == 'DRIVE_DOCUMENT':
+      query['driveDocumentInfo'] = {'documentIds': {'ids': _getQueryList(Cmd.OB_DRIVE_FILE_ID_LIST)}}
   elif myarg == 'terms':
     query['terms'] = getString(Cmd.OB_STRING)
   elif myarg in {'start', 'starttime'}:
@@ -41919,17 +41922,18 @@ def _validateVaultQuery(body, corpusArgumentMap):
 #	[region any|europe|us] [showdetails|returnidonly]
 # gam create vaultexport|export matter <MatterItem> [name <String>]
 #	corpus calendar|drive|gemini|groups|hangouts_chat|mail|voice
-#	(accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
+#	[scope all_data|held_data|unprocessed_data]
+#	(accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone|entireorg
+#	(documentids  (<DriveFileIDList>|(select <FileSelector>|<CSVFileSelector>))) |
 #	(shareddrives|teamdrives (<SharedDriveIDList>|(select <FileSelector>|<CSVFileSelector>))) |
-#	    (rooms (<ChatSpaceList>|(select <FileSelector>|<CSVFileSelector>))) |
-#	    (sitesurl (<URLList>||(select <FileSelector>|<CSVFileSelector>)))
-#	[scope <all_data|held_data|unprocessed_data>]
+#	[(includeshareddrives <Boolean>)|(shareddrivesoption included|included_if_account_is_not_a_member|not_included)]
+#	(sitesurl (<URLList>||(select <FileSelector>|<CSVFileSelector>)))
+#	[driveversiondate <Date>|<Time>]
+#	[includerooms <Boolean>]
+#	(rooms (<ChatSpaceList>|(select <FileSelector>|<CSVFileSelector>))) |
 #	[terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
 #	[locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
 #	[responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*] [calendarversiondate <Date>|<Time>]
-#	[(includeshareddrives <Boolean>)|(shareddrivesoption included|included_if_account_is_not_a_member|not_included)]
-#	[driveversiondate <Date>|<Time>]
-#	[includerooms <Boolean>]
 #	(covereddata calllogs|textmessages|voicemails)*
 #	[driveclientsideencryption any|encrypted|unencrypted]
 #	[includeaccessinfo <Boolean>]
@@ -41943,6 +41947,7 @@ def doCreateVaultExport():
   body = {'query': {'dataScope': 'ALL_DATA'}, 'exportOptions': {}}
   includeAccessInfo = None
   exportFormat = None
+  formatLocation = None
   useNewExport = None
   showConfidentialModeContent = None
   exportLinkedDriveFiles = None
@@ -41961,6 +41966,7 @@ def doCreateVaultExport():
     elif myarg == 'includeaccessinfo':
       includeAccessInfo = getBoolean()
     elif myarg == 'format':
+      formatLocation = Cmd.Location()
       exportFormat = getChoice(VAULT_EXPORT_FORMAT_MAP, mapChoice=True)
     elif myarg == 'usenewexport':
       useNewExport = getBoolean()
@@ -41981,18 +41987,19 @@ def doCreateVaultExport():
   if not matterId:
     missingArgumentExit('matter')
   _validateVaultQuery(body, VAULT_CORPUS_ARGUMENT_MAP)
-  if exportFormat is not None:
-    if not exportFormat in VAULT_CORPUS_EXPORT_FORMATS[body['query']['corpus']]:
-      invalidChoiceExit(exportFormat, VAULT_CORPUS_EXPORT_FORMATS[body['query']['corpus']], False)
-  elif body['query']['corpus'] != 'DRIVE':
-    exportFormat = VAULT_CORPUS_EXPORT_FORMATS[body['query']['corpus']][0]
   if 'name' not in body:
     body['name'] = f'GAM {body["query"]["corpus"]} Export - {ISOformatTimeStamp(todaysTime())}'
   optionsField = VAULT_CORPUS_OPTIONS_MAP[body['query']['corpus']]
   if body['query']['corpus'] == 'DRIVE':
     if includeAccessInfo is not None:
-      body['exportOptions'][optionsField]['includeAccessInfo'] = includeAccessInfo
+      body['exportOptions'][optionsField] = {'includeAccessInfo': includeAccessInfo}
   else:
+    if exportFormat is not None:
+      if not exportFormat in VAULT_CORPUS_EXPORT_FORMATS[body['query']['corpus']]:
+        Cmd.SetLocation(formatLocation)
+        invalidChoiceExit(exportFormat, VAULT_CORPUS_EXPORT_FORMATS[body['query']['corpus']], False)
+    else:
+      exportFormat = VAULT_CORPUS_EXPORT_FORMATS[body['query']['corpus']][0]
     body['exportOptions'][optionsField] = {'exportFormat': exportFormat}
     if body['query']['corpus'] == 'MAIL':
       if showConfidentialModeContent is not None:
@@ -42474,7 +42481,7 @@ def _showVaultHold(matterNameId, hold, cd, FJQC, k=0, kcount=0):
   showJSON(None, hold, timeObjects=VAULT_HOLD_TIME_OBJECTS)
   Ind.Decrement()
 
-def _useVaultQuery(v, matterId, matterNameId, body):
+def _useVaultQueryForHold(v, matterId, matterNameId, body):
   _, _, _, query = convertQueryNameToID(v, getString(Cmd.OB_QUERY_ITEM), matterId, matterNameId)
   body['corpus'] = query['corpus']
   method = query.get('method')
@@ -42579,7 +42586,7 @@ def doCreateVaultHold():
     elif myarg == 'name':
       body['name'] = getString(Cmd.OB_STRING)
     elif matterId is not None and myarg == 'vaultquery':
-      _useVaultQuery(v, matterId, matterNameId, body)
+      _useVaultQueryForHold(v, matterId, matterNameId, body)
       usedVaultQuery = True
     elif myarg == 'corpus':
       body['corpus'] = getChoice(VAULT_CORPUS_ARGUMENT_MAP, mapChoice=True)
@@ -43037,6 +43044,99 @@ def _showVaultQuery(matterNameId, query, cd, drive, FJQC, k=0, kcount=0):
   Ind.Increment()
   showJSON(None, query, timeObjects=VAULT_QUERY_TIME_OBJECTS)
   Ind.Decrement()
+
+def doCreateCopyVaultQuery(copyCmd):
+  v = buildGAPIObject(API.VAULT)
+  body = {'query': {'dataScope': 'ALL_DATA'}, 'displayName': ''}
+  matterId, matterNameId = getMatterItem(v)
+  if copyCmd:
+    _, queryName, _, body['query'] = convertQueryNameToID(v, getString(Cmd.OB_QUERY_ITEM), matterId, matterNameId)
+  targetId = None
+  cd = drive = None
+  FJQC = FormatJSONQuoteChar()
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'name':
+      body['displayName'] = getString(Cmd.OB_STRING)
+    elif copyCmd and myarg == 'targetmatter':
+      targetId, targetNameId = getMatterItem(v)
+    elif not copyCmd and myarg in VAULT_QUERY_ARGS:
+      _buildVaultQuery(myarg, body['query'], VAULT_CORPUS_ARGUMENT_MAP)
+    elif myarg == 'shownames':
+      cd = buildGAPIObject(API.DIRECTORY)
+      _, drive = buildGAPIServiceObject(API.DRIVE3, _getAdminEmail())
+      if drive is None:
+        return
+    else:
+      FJQC.GetFormatJSON(myarg)
+  if copyCmd:
+    if targetId is None:
+      targetId = matterId
+      targetNameId = matterNameId
+    if not body['displayName']:
+      body['displayName'] = f'Copy of {queryName}' if matterId == targetId else queryName
+    resultId = targetId
+    resultNameId = targetNameId
+  else:
+    if not body['displayName']:
+      body['displayName'] = 'GAM {body["query"]["corpus"]} Query - {ISOformatTimeStamp(todaysTime())}'
+    resultId = matterId
+    resultNameId = matterNameId
+  try:
+    result = callGAPI(v.matters().savedQueries(), 'create',
+                      throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT, GAPI.ALREADY_EXISTS],
+                      matterId=resultId, body=body)
+    _showVaultQuery(resultNameId, result, cd, drive, FJQC)
+  except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden, GAPI.invalidArgument, GAPI.alreadyExists) as e:
+    entityActionFailedWarning([Ent.VAULT_MATTER, resultNameId, Ent.VAULT_QUERY, body['displayName']], str(e))
+
+# gam create vaultquery <MatterItem> [name <String>]
+#	corpus calendar|drive|gemini|groups|hangouts_chat|mail|voice
+#	[scope all_data|held_data|unprocessed_data]
+#	(accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone|entireorg
+#	(documentids  (<DriveFileIDList>|(select <FileSelector>|<CSVFileSelector>))) |
+#	(shareddrives|teamdrives (<SharedDriveIDList>|(select <FileSelector>|<CSVFileSelector>))) |
+#	[(includeshareddrives <Boolean>)|(shareddrivesoption included|included_if_account_is_not_a_member|not_included)]
+#	(sitesurl (<URLList>||(select <FileSelector>|<CSVFileSelector>)))
+#	[driveversiondate <Date>|<Time>]
+#	[includerooms <Boolean>]
+#	(rooms (<ChatSpaceList>|(select <FileSelector>|<CSVFileSelector>))) |
+#	[terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
+#	[locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
+#	[responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*] [calendarversiondate <Date>|<Time>]
+#	(covereddata calllogs|textmessages|voicemails)*
+#	[shownames] [formatjson]
+def doCreateVaultQuery():
+  doCreateCopyVaultQuery(False)
+
+# gam copy vaultquery <MatterItem> <QueryItem> [targetmatter <MatterItem"] [name <String>]
+#	[shownames] [formatjson]
+def doCopyVaultQuery():
+  doCreateCopyVaultQuery(True)
+
+# gam delete vaultquery <QueryItem> matter <MatterItem>
+# gam delete vaultquery <MatterItem> <QueryItem>
+def doDeleteVaultQuery():
+  v = buildGAPIObject(API.VAULT)
+  if not Cmd.ArgumentIsAhead('matter'):
+    matterId, matterNameId = getMatterItem(v)
+    queryId, queryName, queryNameId, _ = convertQueryNameToID(v, getString(Cmd.OB_QUERY_ITEM), matterId, matterNameId)
+  else:
+    queryName = getString(Cmd.OB_QUERY_ITEM)
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'matter':
+      matterId, matterNameId = getMatterItem(v)
+      queryId, queryName, queryNameId, _ = convertQueryNameToID(v, queryName, matterId, matterNameId)
+    else:
+      unknownArgumentExit()
+  try:
+    callGAPI(v.matters().savedQueries(), 'delete',
+             throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
+             matterId=matterId, savedQueryId=queryId)
+    entityActionPerformed([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_QUERY, queryNameId])
+  except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden, GAPI.invalidArgument) as e:
+    entityActionFailedWarning([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_QUERY, queryNameId], str(e))
 
 VAULT_QUERY_FIELDS_CHOICE_MAP = {
   'createtime': 'createTime',
@@ -43523,12 +43623,13 @@ def doPrintShowVaultMatters():
 PRINT_VAULT_COUNTS_TITLES = ['account', 'count', 'error']
 
 # gam print vaultcounts [todrive <ToDriveAttributes>*]
-#	matter <MatterItem> corpus mail|groups
-#	(accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
-#	(shareddrives|teamdrives (<SharedDriveIDList>|(select <FileSelector>|<CSVFileSelector>))) |
-#	    (rooms (<ChatSpaceList>|(select <FileSelector>|<CSVFileSelector>))) |
-#	    (sitesurl (<URLList>||(select <FileSelector>|<CSVFileSelector>)))
-#	[scope <all_data|held_data|unprocessed_data>]
+#	matter <MatterItem> <QueryItem>
+#	[wait <Integer>]
+# gam print vaultcounts [todrive <ToDriveAttributes>*]
+#	matter <MatterItem>
+#	corpus mail|groups
+#	[scope all_data|held_data|unprocessed_data]
+#	(accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone|entireorg
 #	[terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
 #	[excludedrafts <Boolean>]
 #	[wait <Integer>]
@@ -43539,18 +43640,19 @@ def doPrintVaultCounts():
   csvPF = CSVPrintFile(PRINT_VAULT_COUNTS_TITLES, 'sortall')
   matterId = name = None
   operationWait = 15
-  body = {'view': 'ALL'}
-  query = {}
+  body = {'view': 'ALL', 'query': {}}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'matter':
-      matterId, _ = getMatterItem(v)
+      matterId, matterNameId = getMatterItem(v)
+    elif matterId is not None and myarg == 'vaultquery':
+      _, _, _, body['query'] = convertQueryNameToID(v, getString(Cmd.OB_QUERY_ITEM), matterId, matterNameId)
     elif myarg == 'operation':
       name = getString(Cmd.OB_STRING)
     elif myarg in VAULT_QUERY_ARGS:
-      _buildVaultQuery(myarg, query, VAULT_COUNTS_CORPUS_ARGUMENT_MAP)
+      _buildVaultQuery(myarg, body['query'], VAULT_COUNTS_CORPUS_ARGUMENT_MAP)
     elif myarg == 'wait':
       operationWait = getInteger(minVal=1)
     else:
@@ -43561,7 +43663,6 @@ def doPrintVaultCounts():
     operation = {'name': name}
     doWait = False
   else:
-    body['query'] = query
     _validateVaultQuery(body, VAULT_COUNTS_CORPUS_ARGUMENT_MAP)
     try:
       operation = callGAPI(v.matters(), 'count',
@@ -77976,6 +78077,7 @@ MAIN_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_VAULTEXPORT:		doCreateVaultExport,
   Cmd.ARG_VAULTHOLD:		doCreateVaultHold,
   Cmd.ARG_VAULTMATTER:		doCreateVaultMatter,
+  Cmd.ARG_VAULTQUERY:		doCreateVaultQuery,
   Cmd.ARG_VERIFY:		doCreateSiteVerification,
   }
 
@@ -78033,6 +78135,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
      {Cmd.ARG_SHAREDDRIVEACLS:	doCopySyncSharedDriveACLs,
       Cmd.ARG_STORAGEBUCKET:	doCopyCloudStorageBucket,
       Cmd.ARG_VAULTEXPORT:	doCopyVaultExport,
+      Cmd.ARG_VAULTQUERY:	doCopyVaultQuery,
      }
     ),
   'create':
@@ -78097,6 +78200,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_VAULTEXPORT:	doDeleteVaultExport,
       Cmd.ARG_VAULTHOLD:	doDeleteVaultHold,
       Cmd.ARG_VAULTMATTER:	doDeleteVaultMatter,
+      Cmd.ARG_VAULTQUERY:	doDeleteVaultQuery,
      }
     ),
   'download':

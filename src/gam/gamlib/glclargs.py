@@ -1216,6 +1216,7 @@ class GamCLArgs():
   OB_DOMAIN_NAME_LIST = 'DomainNameList'
   OB_DRIVE_FILE_ENTITY = 'DriveFileEntity'
   OB_DRIVE_FILE_ID = 'DriveFileID'
+  OB_DRIVE_FILE_ID_LIST = 'DriveFileIDList'
   OB_DRIVE_FILE_NAME = 'DriveFileName'
   OB_DRIVE_FILE_PERMISSION_ENTITY = 'DriveFilePermissionEntity'
   OB_DRIVE_FILE_PERMISSION_ID = 'DriveFilePermissionID'
