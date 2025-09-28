@@ -10,6 +10,41 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.22.06
+
+Added commands to create, copy and delete Vault saved queries.
+```
+gam create vaultquery <MatterItem> [name <String>]
+        corpus calendar|drive|gemini|groups|hangouts_chat|mail|voice
+        [scope all_data|held_data|unprocessed_data]
+        (accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
+        (documentids  (<DriveFileIDList>|(select <FileSelector>|<CSVFileSelector>))) |
+        (shareddrives|teamdrives (<SharedDriveIDList>|(select <FileSelector>|<CSVFileSelector>))) |
+        [(includeshareddrives <Boolean>)|(shareddrivesoption included|included_if_account_is_not_a_member|not_included)]
+        (sitesurl (<URLList>||(select <FileSelector>|<CSVFileSelector>)))
+        [driveversiondate <Date>|<Time>]
+        [includerooms <Boolean>]
+        (rooms (<ChatSpaceList>|(select <FileSelector>|<CSVFileSelector>))) |
+        [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
+        [locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
+        [responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*] [calendarversiondate <Date>|<Time>]
+        (covereddata calllogs|textmessages|voicemails)*
+        [shownames] [formatjson]
+
+gam copy vaultquery <MatterItem> <QueryItem> [targetmatter <MatterItem"] [name <String>]
+        [shownames] [formatjson]
+
+gam delete vaultquery <QueryItem> matter <MatterItem>
+gam delete vaultquery <MatterItem> <QueryItem>
+```
+
+Added a variant of `gam print vaultcounts` that gets its query parameters from a saved Vault query.
+```
+gam print vaultcounts [todrive <ToDriveAttributes>*]
+        matter <MatterItem> <QueryItem>
+        [wait <Integer>]
+```
+
 ### 7.22.05
 
 Added a variant of `gam create vaultexport` that gets its query parameters from a saved Vault query.

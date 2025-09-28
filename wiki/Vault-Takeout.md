@@ -21,6 +21,9 @@
   - [Display Vault Holds](#display-vault-holds)
   - [Display Vault Holds Affecting a User](#display-vault-holds-affecting-a-user)
 - [Vault Saved Queries](#vault-saved-queries)
+  - [Create Vault Saved Queries](#create-vault-saved-queries)
+  - [Copy Vault Saved Queries](#copy-vault-saved-queries)
+  - [Delete Vault Saved Queries](#delete-vault-saved-queries)
   - [Display Vault Saved Queries](#display-vault-saved-queries)
 - [Takeout](#takeout)
   - [Copy a Takeout Bucket](#copy-a-takeoutbucket)
@@ -66,6 +69,8 @@
 
 <ChatSpace> ::= spaces/<String> | space/<String> | <String>
 <ChatSpaceList> ::= "<ChatSpace>(,<ChatSpace>)*"
+<DriveFileID> ::= <String>
+<DriveFileIDList> ::= "<DriveFileID>(,<DriveFileID>)*"
 <ExportItem> ::= <UniqueID>|<String>
 <ExportStatus> ::= completed|failed|inprogrsss
 <ExportStatusList> ::= "<ExportStatus>(,<ExportStatus>)*"
@@ -202,11 +207,18 @@ Select fields to display:
 * `fields <VaultMatterFieldNameList>` - Display selected fields; `matterId` and `name` are always displayed
 
 ## Display Vault Counts
-Display item counts retained in Vault for the given users or groups.
+### Display item counts retained in Vault using a saved Vault query.
+```
+gam print vaultcounts [todrive <ToDriveAttributes>*]
+        matter <MatterItem> <QueryItem>
+        [wait <Integer>]
+```
+
+### Display item counts retained in Vault for the given users or groups.
 * The required argument `matter` specifies the matter name or ID (prefix with id:) where the count should be performed.
 * The required argument `corpus` specifies whether Gmail mailbox data or Google Groups archives are queried.
-* You need to specify one argument of accounts, orgunit or everyone to determine which users/groups to query.
 * The `scope` argument specifies the data to be queried, `all_data` is  the default and is recommended.
+* You need to specify one argument of accounts, orgunit or everyone to determine which users/groups to query.
 
 The command may take some time to complete; GAM makes repeated API calls until the operation is complete. By default,
 GAM waits 15 seconds between API calls; use the `wait <Integer>` option to specify a different wait period.
@@ -214,12 +226,10 @@ GAM waits 15 seconds between API calls; use the `wait <Integer>` option to speci
 This command can be useful for discovering legacy former employee accounts which no longer have any mail data retained by Vault.
 ```
 gam print vaultcounts [todrive <ToDriveAttributes>*]
-        matter <MatterItem> corpus mail|groups
-        (accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
-        [(shareddrives|teamdrives (<TeamDriveIDList>|(select <FileSelector>|<CSVFileSelector>))) |
-            (rooms (<ChatSpaceList>|(select <FileSelector>|<CSVFileSelector>))) |
-            (sitesurl (<URLList>||(select <FileSelector>|<CSVFileSelector>)))]
-        [scope <all_data|held_data|unprocessed_data>]
+        matter <MatterItem>
+        corpus mail|groups
+        [scope all_data|held_data|unprocessed_data]
+        (accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone|entireorg
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
         [excludedrafts <Boolean>]
         [wait <Integer>]
@@ -228,12 +238,13 @@ Specify the search method, this is optional:
 * `accounts <EmailAddressEntity>` - Search all accounts specified in `<EmailAddressEntity>`
 * `orgunit|org|ou <OrgUnitPath>` - Search all accounts in the OU `<OrgUnitPath>`
 * `everyone` - Search for all accounts in the organization
-* `shareddrives|teamdrives <SharedDriveIDList>` - Search for all accounts in the Shared Drives specified in `<SharedDriveIDList>`
-* `shareddrives|teamdrives select <FileSelector>|<CSVFileSelector>` - Search for all accounts in the Shared Drives specified in `<FileSelector>|<CSVFileSelector>`
-* `rooms <ChatSpaceList>` - Search in the Room specified in the chat rooms specified in `<ChatSpaceList>`
-* `rooms <ChatSpaceList>` - Search in the Room specified in the chat rooms specified in `<FileSelector>|<CSVFileSelector>`
-* `sitesurl <URLList>` - Search the published site URLs of new Google Sites in `<URLList>`
-* `sitesurl <URLList>` - Search the published site URLs of new Google Sites specified in `<FileSelector>|<CSVFileSelector>`
+
+For `corpus mail|group`, you can specify search terms to limit the search.
+* `terms <String>` - [Vault search](https://support.google.com/vault/answer/2474474)
+
+For `corpus mail|group`, you can specify time limits on the search:
+* `start|starttime <Date>|<Time>` - The start time range for the search query. These timestamps are in GMT and rounded down to the start of the given date.
+* `end|endtime <Date>|<Time>` - The end time range for the search query. These timestamps are in GMT and rounded down to the start of the given date.
 
 Check the status of a previous count operation with the name from a previous command.
 ```
@@ -257,20 +268,22 @@ gam create vaultexport|export matter <MatterItem> [name <String>]
 
 Create a Google Vault export request by specifying the query parameters.
 ```
-gam create vaultexport|export matter <MatterItem> [name <String>] corpus calendar|drive|gemini|groups|hangouts_chat|mail|voice
-        (accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
-        (shareddrives|teamdrives (<TeamDriveIDList>|(select <FileSelector>|<CSVFileSelector>))) |
-            (rooms (<ChatSpaceList>|(select <FileSelector>|<CSVFileSelector>))) |
-            (sitesurl (<URLList>||(select <FileSelector>|<CSVFileSelector>)))
+gam create vaultexport|export matter <MatterItem> [name <String>]
+        corpus calendar|drive|gemini|groups|hangouts_chat|mail|voice
         [scope all_data|held_data|unprocessed_data]
+        (accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
+        (documentids  (<DriveFileIDList>|(select <FileSelector>|<CSVFileSelector>))) |
+        (shareddrives|teamdrives (<SharedDriveIDList>|(select <FileSelector>|<CSVFileSelector>))) |
+        [(includeshareddrives <Boolean>)|(shareddrivesoption included|included_if_account_is_not_a_member|not_included)]
+        (sitesurl (<URLList>||(select <FileSelector>|<CSVFileSelector>)))
+        [driveversiondate <Date>|<Time>]
+        [includerooms <Boolean>]
+        (rooms (<ChatSpaceList>|(select <FileSelector>|<CSVFileSelector>))) |
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
         [locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
         [responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*] [calendarversiondate <Date>|<Time>]
-        [(includeshareddrives <Boolean>)|(shareddrivesoption included|included_if_account_is_not_a_member|not_included)]
-        [driveversiondate <Date>|<Time>]
-        [includerooms <Boolean>]
         (covereddata calllogs|textmessages|voicemails)*
-        [driveclientsideencryption any|encrypted|unencrypted]
+        ['driveclientsideencryption any|encrypted|unencrypted]
         [includeaccessinfo <Boolean>]
         [excludedrafts <Boolean>] [mailclientsideencryption any|encrypted|unencrypted]
         [showconfidentialmodecontent <Boolean>] [usenewexport <Boolean>] [exportlinkeddrivefiles <Boolean>]
@@ -785,6 +798,40 @@ gam <UserTypeEntity> show vaultholds|holds
 ```
 
 ## Vault Saved Queries
+## Create Vault Saved Queries
+```
+gam create vaultquery <MatterItem> [name <String>]
+        corpus calendar|drive|gemini|groups|hangouts_chat|mail|voice
+        [scope all_data|held_data|unprocessed_data]
+        (accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
+        (documentids  (<DriveFileIDList>|(select <FileSelector>|<CSVFileSelector>))) |
+        (shareddrives|teamdrives (<SharedDriveIDList>|(select <FileSelector>|<CSVFileSelector>))) |
+        [(includeshareddrives <Boolean>)|(shareddrivesoption included|included_if_account_is_not_a_member|not_included)]
+        (sitesurl (<URLList>||(select <FileSelector>|<CSVFileSelector>)))
+        [driveversiondate <Date>|<Time>]
+        [includerooms <Boolean>]
+        (rooms (<ChatSpaceList>|(select <FileSelector>|<CSVFileSelector>))) |
+        [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
+        [locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
+        [responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*] [calendarversiondate <Date>|<Time>]
+        (covereddata calllogs|textmessages|voicemails)*
+        [shownames] [formatjson]
+```
+
+## Copy Vault Saved Queries
+```
+gam copy vaultquery <MatterItem> <QueryItem> [targetmatter <MatterItem>] [name <String>]
+        [shownames] [formatjson]
+```
+
+If `targetmatter <MatterItem>` is omitted, the query is copied in the source matter.
+
+## Delete Vault Saved Queries
+```
+gam delete vaultquery <QueryItem> matter <MatterItem>
+gam delete vaultquery <MatterItem> <QueryItem>
+```
+
 ## Display Vault Saved Queries
 ```
 gam info vaultquery <QueryItem> matter <MatterItem>

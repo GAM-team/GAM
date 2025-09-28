@@ -43,6 +43,7 @@
 <DomainNameList> ::= "<DomainName>(,<DomainName>)*"
 <DriveFileACLRoleList> ::= "<DriveFileACLRole>(,<DriveFileACLRole>)*"
 <DriveFileACLTypeList> ::= "<DriveFileACLType>(,<DriveFileACLType>)*"
+<DriveFileIDList> ::= "<DriveFileID>(,<DriveFileID>)*"
 <DriveFileList> ::= "<DriveFileItem>(,<DriveFileItem>)*"
 <DriveFilePermissionList> ::= "<DriveFilePermission>(,<DriveFilePermission>)*"
 <DriveFilePermissionIDList> ::= "<DriveFilePermissionID>(,<DriveFilePermissionID>)*"
