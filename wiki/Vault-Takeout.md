@@ -283,7 +283,7 @@ gam create vaultexport|export matter <MatterItem> [name <String>]
         [locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
         [responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*] [calendarversiondate <Date>|<Time>]
         (covereddata calllogs|textmessages|voicemails)*
-        ['driveclientsideencryption any|encrypted|unencrypted]
+        [driveclientsideencryption any|encrypted|unencrypted]
         [includeaccessinfo <Boolean>]
         [excludedrafts <Boolean>] [mailclientsideencryption any|encrypted|unencrypted]
         [showconfidentialmodecontent <Boolean>] [usenewexport <Boolean>] [exportlinkeddrivefiles <Boolean>]
@@ -292,9 +292,9 @@ gam create vaultexport|export matter <MatterItem> [name <String>]
 ```
 <MatterItem> specifies the matter name or ID the export should be associated with.
 
-Specify the name of the export:
-* `name <String>` - The export will be named `<String>`
-* `default` - The export will be named `GAM <corpus> Export - <Time>`
+If `name <String>` is omitted, the  export will be named `GAM <corpus> Export - <Time>`
+
+## Vault Query options
 
 Specify the corpus of data, this option is required:
 * `calendar`
@@ -309,12 +309,14 @@ Specify the search method, this option is required:
 * `accounts <EmailAddressEntity>` - Search all accounts specified in `<EmailAddressEntity>`
 * `orgunit|org|ou <OrgUnitPath>` - Search all accounts in the OU `<OrgUnitPath>`
 * `everyone` - Search for all accounts in the organization
+* `documentids <DriveFileIDList>` - Search for all drive files specified in `<DriveFileIDList>`
+* `documentids select <FileSelector>|<CSVFileSelector>` - Search for all drive files  specified in `<FileSelector>|<CSVFileSelector>`
 * `shareddrives|teamdrives <SharedDriveIDList>` - Search for all accounts in the Shared Drives specified in `<SharedDriveIDList>`
 * `shareddrives|teamdrives select <FileSelector>|<CSVFileSelector>` - Search for all accounts in the Shared Drives specified in `<FileSelector>|<CSVFileSelector>`
-* `rooms <ChatSpaceList>` - Search in the Room specified in the chat rooms specified in `<ChatSpaceList>`
-* `rooms <ChatSpaceList>` - Search in the Room specified in the chat rooms specified in `<FileSelector>|<CSVFileSelector>`
 * `sitesurl <URLList>` - Search the published site URLs of new Google Sites in `<URLList>`
 * `sitesurl <URLList>` - Search the published site URLs of new Google Sites specified in `<FileSelector>|<CSVFileSelector>`
+* `rooms <ChatSpaceList>` - Search in the Room specified in the chat rooms specified in `<ChatSpaceList>`
+* `rooms <ChatSpaceList>` - Search in the Room specified in the chat rooms specified in `<FileSelector>|<CSVFileSelector>`
 
 Specify the scope of data to include in the export:
 * `all_data` - All available data; this is the default
@@ -397,7 +399,7 @@ For `corpus calendar`, you can specify the format of the exported data:
 
 For `corpus drive`, you can not specify the format of the exported data,
 
-For `corpus gemini`, `format xml` is the only format of the exported data,
+For `corpus gemini`, `format xml` is the only supported format of the exported data,
 
 For `corpus groups`, `corpus hangouts_chat`, `corpus mail` and `corpus voice`, you can specify the format of the exported data:
 * `format mbox` - Export in MBOX format, this is the default
@@ -818,6 +820,12 @@ gam create vaultquery <MatterItem> [name <String>]
         [shownames] [formatjson]
 ```
 
+If `name <String>` is omitted, the query is named `GAM <corpus> Query - <Time>`
+
+The `shownames` argument controls whether org unit and shared drive names are displayed in queries; additional API calls are required to get the names.
+
+See: [Vault Query options](#vault-query-options)
+
 ## Copy Vault Saved Queries
 ```
 gam copy vaultquery <MatterItem> <QueryItem> [targetmatter <MatterItem>] [name <String>]
@@ -825,6 +833,12 @@ gam copy vaultquery <MatterItem> <QueryItem> [targetmatter <MatterItem>] [name <
 ```
 
 If `targetmatter <MatterItem>` is omitted, the query is copied in the source matter.
+
+If `name <String>` is omitted:
+* `targetmatter <MatterItem>` specified - The copied query has the same name as the source query
+* `targetmatter <MatterItem>` omitted - The copied query is named `Copy of Source Query name`
+
+The `shownames` argument controls whether org unit and shared drive names are displayed in queries; additional API calls are required to get the names.
 
 ## Delete Vault Saved Queries
 ```
