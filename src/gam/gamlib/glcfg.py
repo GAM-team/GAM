@@ -69,6 +69,8 @@ CACHE_DISCOVERY_ONLY = 'cache_discovery_only'
 CHANNEL_CUSTOMER_ID = 'channel_customer_id'
 # Character set of batch, csv, data files
 CHARSET = 'charset'
+# When retrieving lists of Chat items from API, how many should be retrieved in each chunk
+CHAT_MAX_RESULTS = 'chat_max_results'
 # When retrieving lists of Google Classroom items from API, how many should be retrieved in each chunk
 CLASSROOM_MAX_RESULTS = 'classroom_max_results'
 # Path to client_secrets.json
@@ -335,6 +337,7 @@ Defaults = {
   CACHE_DISCOVERY_ONLY: TRUE,
   CHARSET: DEFAULT_CHARSET,
   CHANNEL_CUSTOMER_ID: '',
+  CHAT_MAX_RESULTS: '100',
   CLASSROOM_MAX_RESULTS: '0',
   CLIENT_SECRETS_JSON: FN_CLIENT_SECRETS_JSON,
   CLOCK_SKEW_IN_SECONDS: '10',
@@ -502,6 +505,7 @@ VAR_INFO = {
   CACHE_DISCOVERY_ONLY: {VAR_TYPE: TYPE_BOOLEAN, VAR_SIGFILE: 'allcache.txt', VAR_SFFT: (TRUE, FALSE)},
   CHARSET: {VAR_TYPE: TYPE_STRING, VAR_ENVVAR: 'GAM_CHARSET', VAR_LIMITS: (1, None)},
   CHANNEL_CUSTOMER_ID: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
+  CHAT_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 1000)},
   CLASSROOM_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (0, 1000)},
   CLIENT_SECRETS_JSON: {VAR_TYPE: TYPE_FILE, VAR_ENVVAR: 'CLIENTSECRETS', VAR_ACCESS: os.R_OK},
   CLOCK_SKEW_IN_SECONDS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (10, 3600)},

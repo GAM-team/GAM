@@ -96,6 +96,7 @@ class GamEntity():
   CHAT_MEMBER_USER = 'chmu'
   CHAT_MESSAGE = 'chms'
   CHAT_MESSAGE_ID = 'chmi'
+  CHAT_OWNER_USER = 'chou'
   CHAT_SPACE = 'chsp'
   CHAT_THREAD = 'chth'
   CHILD_ORGANIZATIONAL_UNIT = 'corg'
@@ -462,6 +463,7 @@ class GamEntity():
     CHAT_MEMBER: ['Chat Members', 'Chat Member'],
     CHAT_MEMBER_GROUP: ['Chat Group Members', 'Chat Group Member'],
     CHAT_MEMBER_USER: ['Chat User Members', 'Chat User Member'],
+    CHAT_OWNER_USER: ['Chat User Owners', 'Chat User Owner'],
     CHAT_SPACE: ['Chat Spaces', 'Chat Space'],
     CHAT_THREAD: ['Chat Threads', 'Chat Thread'],
     CHILD_ORGANIZATIONAL_UNIT: ['Child Organizational Units', 'Child Organizational Unit'],

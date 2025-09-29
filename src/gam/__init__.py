@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.22.07'
+__version__ = '7.23.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -26579,7 +26579,7 @@ def printShowChatEmojis(users):
                              pageMessage=_getChatPageMessage(Ent.CHAT_EMOJI, user, i, count, pfilter),
                              throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                             pageSize=CHAT_PAGE_SIZE, filter=pfilter)
+                             pageSize=GC.Values[GC.CHAT_MAX_RESULTS], filter=pfilter)
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
       continue
@@ -26649,7 +26649,14 @@ def  getChatSpaceParameters(myarg, body, typeChoicesMap, updateMask):
 
 CHAT_MEMBER_ROLE_MAP = {
   'member': 'ROLE_MEMBER',
-  'manager': 'ROLE_MANAGER'
+  'manager': 'ROLE_MANAGER',
+  'owner': 'ROLE_OWNER',
+  }
+
+CHAT_ROLE_ENTITY_TYPE_MAP = {
+  'ROLE_MEMBER': Ent.CHAT_MEMBER_USER,
+  'ROLE_MANAGER': Ent.CHAT_MANAGER_USER,
+  'ROLE_OWNER':  Ent.CHAT_OWNER_USER,
   }
 
 CHAT_MEMBER_TYPE_MAP = {
@@ -27006,7 +27013,6 @@ def _getChatSpaceSearchParms(myarg, queries, queryTimes, OBY):
     return False
   return True
 
-CHAT_PAGE_SIZE = 1000
 CHAT_SPACES_ADMIN_ORDERBY_CHOICE_MAP = {
   'createtime': 'createTime',
   'lastactivetime': 'lastActiveTime',
@@ -27086,7 +27092,7 @@ def printShowChatSpaces(users):
                              throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR,
                                            GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                             fields=fields, pageSize=CHAT_PAGE_SIZE, **kwargsCS)
+                             fields=fields, pageSize=GC.Values[GC.CHAT_MAX_RESULTS], **kwargsCS)
       if showAccessSettings:
         for space in spaces:
           if space['spaceType'] == 'SPACE':
@@ -27152,7 +27158,7 @@ def _getChatSpaceMembers(cd, chatSpace, ciGroupName):
                             pageMessage=_getChatPageMessage(Ent.CHAT_MEMBER, user, 0, 0, qfilter),
                             throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                            parent=chatSpace, fields=fields, pageSize=CHAT_PAGE_SIZE, **kwargsUAA)
+                            parent=chatSpace, fields=fields, pageSize=GC.Values[GC.CHAT_MAX_RESULTS], **kwargsUAA)
     for member in members:
       _getChatMemberEmail(cd, member)
       gmember = {}
@@ -27289,7 +27295,7 @@ def createChatMember(users):
     missingArgumentExit('space')
   if not userList and not groupList:
     missingArgumentExit('user|members|group|groups')
-  userEntityType = Ent.CHAT_MEMBER_USER if role == 'ROLE_MEMBER' else Ent.CHAT_MANAGER_USER
+  userEntityType = CHAT_ROLE_ENTITY_TYPE_MAP[role]
   userMembers = []
   for user in userList:
     userMembers.append({'member': {'name': f'users/{user}', 'type': mtype}})
@@ -27546,7 +27552,7 @@ def syncChatMembers(users):
       unknownArgumentExit()
   if not parent:
     missingArgumentExit('space')
-  userEntityType = Ent.CHAT_MEMBER_USER if role == 'ROLE_MEMBER' else Ent.CHAT_MANAGER_USER
+  userEntityType = CHAT_ROLE_ENTITY_TYPE_MAP[role]
   userMembers = {}
   syncUsersSet = set()
   for user in userList:
@@ -27576,7 +27582,7 @@ def syncChatMembers(users):
                               pageMessage=_getChatPageMessage(Ent.CHAT_MEMBER, user, i, count, qfilter),
                               throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                              parent=parent, showGroups=groupsSpecified, pageSize=CHAT_PAGE_SIZE, **kwargs, **kwargsUAA)
+                              parent=parent, showGroups=groupsSpecified, pageSize=GC.Values[GC.CHAT_MAX_RESULTS], **kwargs, **kwargsUAA)
       for member in members:
         if 'member' in member:
           if member['member']['type'] == mtype and member['role'] == role:
@@ -27777,7 +27783,7 @@ def printShowChatMembers(users):
                                  throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR,
                                                GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                                 fields="nextPageToken,spaces(name,displayName,spaceType,membershipCount)", pageSize=CHAT_PAGE_SIZE,
+                                 fields="nextPageToken,spaces(name,displayName,spaceType,membershipCount)", pageSize=GC.Values[GC.CHAT_MAX_RESULTS],
                                  **kwargsCS)
           for space in sorted(spaces, key=lambda k: k[sortName]):
             if space['spaceType'] == 'SPACE' and 'membershipCount' in space:
@@ -27794,7 +27800,7 @@ def printShowChatMembers(users):
                                  throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR,
                                                GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                                 fields="nextPageToken,spaces(name,displayName,spaceType,membershipCount)", pageSize=CHAT_PAGE_SIZE,
+                                 fields="nextPageToken,spaces(name,displayName,spaceType,membershipCount)", pageSize=GC.Values[GC.CHAT_MAX_RESULTS],
                                  **kwargsCS)
           for space in sorted(spaces, key=lambda k: k[sortName]):
 #            if 'membershipCount' in space:
@@ -27825,7 +27831,7 @@ def printShowChatMembers(users):
                                 pageMessage=_getChatPageMessage(Ent.CHAT_MEMBER, user, j, jcount, qfilter),
                                 throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                                parent=parentName, fields=fields, pageSize=CHAT_PAGE_SIZE, **kwargs, **kwargsUAA)
+                                parent=parentName, fields=fields, pageSize=GC.Values[GC.CHAT_MAX_RESULTS], **kwargs, **kwargsUAA)
         for member in members:
           _getChatMemberEmail(cd, member)
       except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
@@ -28139,7 +28145,7 @@ def printShowChatMessages(users):
                                  pageMessage=_getChatPageMessage(Ent.CHAT_MESSAGE, user, i, count, qfilter),
                                  throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                                 pageSize=CHAT_PAGE_SIZE, parent=parentName, filter=pfilter, showDeleted=showDeleted,
+                                 pageSize=GC.Values[GC.CHAT_MAX_RESULTS], parent=parentName, filter=pfilter, showDeleted=showDeleted,
                                  fields=fields)
         for message in messages:
           if 'sender' in message:
@@ -28257,7 +28263,7 @@ def printShowChatEvents(users):
                                pageMessage=_getChatPageMessage(Ent.CHAT_EVENT, user, i, count, qfilter),
                                throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                               pageSize=CHAT_PAGE_SIZE, parent=parentName, filter=pfilter)
+                               pageSize=GC.Values[GC.CHAT_MAX_RESULTS], parent=parentName, filter=pfilter)
       except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
         exitIfChatNotConfigured(chat, kvList, str(e), i, count)
         continue
