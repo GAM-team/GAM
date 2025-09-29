@@ -57,6 +57,7 @@
 <EmailAddressList> ::= "<EmailAddess>(,<EmailAddress>)*"
 <EmailAddressEntity> ::= <EmailAddressList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
         See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
+<JSONData> ::= (json [charset <Charset>] <String>) | (json file <FileName> [charset <Charset>]) |
 <TimeZone> ::= <String>
         See: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 <UniqueID> ::= id:<String>
@@ -232,12 +233,13 @@ gam print vaultcounts [todrive <ToDriveAttributes>*]
         (accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone|entireorg
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
         [excludedrafts <Boolean>]
+        [<JSONData>]
         [wait <Integer>]
 ```
 Specify the search method, this is optional:
 * `accounts <EmailAddressEntity>` - Search all accounts specified in `<EmailAddressEntity>`
 * `orgunit|org|ou <OrgUnitPath>` - Search all accounts in the OU `<OrgUnitPath>`
-* `everyone` - Search for all accounts in the organization
+* `everyone|entireorg` - Search for all accounts in the organization
 
 For `corpus mail|group`, you can specify search terms to limit the search.
 * `terms <String>` - [Vault search](https://support.google.com/vault/answer/2474474)
@@ -245,6 +247,8 @@ For `corpus mail|group`, you can specify search terms to limit the search.
 For `corpus mail|group`, you can specify time limits on the search:
 * `start|starttime <Date>|<Time>` - The start time range for the search query. These timestamps are in GMT and rounded down to the start of the given date.
 * `end|endtime <Date>|<Time>` - The end time range for the search query. These timestamps are in GMT and rounded down to the start of the given date.
+
+You can specify query options with `<JSONData>`.
 
 Check the status of a previous count operation with the name from a previous command.
 ```
@@ -283,6 +287,7 @@ gam create vaultexport|export matter <MatterItem> [name <String>]
         [locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
         [responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*] [calendarversiondate <Date>|<Time>]
         (covereddata calllogs|textmessages|voicemails)*
+        [<JSONData>]
         [driveclientsideencryption any|encrypted|unencrypted]
         [includeaccessinfo <Boolean>]
         [excludedrafts <Boolean>] [mailclientsideencryption any|encrypted|unencrypted]
@@ -308,7 +313,7 @@ Specify the corpus of data, this option is required:
 Specify the search method, this option is required:
 * `accounts <EmailAddressEntity>` - Search all accounts specified in `<EmailAddressEntity>`
 * `orgunit|org|ou <OrgUnitPath>` - Search all accounts in the OU `<OrgUnitPath>`
-* `everyone` - Search for all accounts in the organization
+* `everyone|entireorg` - Search for all accounts in the organization
 * `documentids <DriveFileIDList>` - Search for all drive files specified in `<DriveFileIDList>`
 * `documentids select <FileSelector>|<CSVFileSelector>` - Search for all drive files  specified in `<FileSelector>|<CSVFileSelector>`
 * `shareddrives|teamdrives <SharedDriveIDList>` - Search for all accounts in the Shared Drives specified in `<SharedDriveIDList>`
@@ -349,10 +354,6 @@ For `corpus calendar`, you can specify advanced search options:
   * Search the current version of the Calendar event, but export the contents of the last version saved before 12:00 AM UTC on the specified date.
   * Enter the date in UTC.
 
-For `corpus calendar`, you can specify the format of the exported data:
-* `format ics` - Export in ICS format, this is the default
-* `format pst` - Export in PST format
-
 For `corpus drive`, you can specify advanced search options:
 * `driveversiondate <Date>|<Time>` - Search the versions of the Drive file as of the reference date. These timestamps are in GMT and rounded down to the given date.
 * `includeshareddrives False` - Mapped to `sharedrivesoption included_if_account_is_not_a_member`
@@ -360,6 +361,16 @@ For `corpus drive`, you can specify advanced search options:
 * `sharedrivesoption included` - Resources in shared drives are included in the search
 * `sharedrivesoption included_if_account_is_not_a_member` - Resources in shared drives where account is not a member are included in the search, this is the default
 * `sharedrivesoption not_included` - Resources in shared drives are not included in the search
+
+For `corpus hangouts_chat` you can specify advanced search options:
+* `includerooms False` - Do not include rooms, this is the default
+* `includerooms True` - Include rooms
+
+You can specify query options with `<JSONData>`.
+
+## Vault Export options
+
+For `corpus drive`, you can specify advanced search options:
 * `driveclientsideencryption any` - Include both client-side encrypted and unencrypted content in search, this is the default.
 * `driveclientsideencryption encrypted` - Include client-side encrypted content only in search.
 * `driveclientsideencryption unencrypted` - Include client-side unencrypted content only in search.
@@ -367,10 +378,6 @@ For `corpus drive`, you can specify advanced search options:
 For `corpus drive`, you can specify whether to include access information for users with [indirect access](https://support.google.com/vault/answer/6099459#metadata) to the files:
 * `includeaccessinfo False` - Do not include access information for users with indirect access, this is the default
 * `includeaccessinfo True` - Include access information for users with indirect access
-
-For `corpus hangouts_chat` you can specify advanced search options:
-* `includerooms False` - Do not include rooms, this is the default
-* `includerooms True` - Include rooms
 
 For `corpus mail`, you can specify advanced search options:
 * `excludedrafts False` - Do not exclude drafts, this is the default
@@ -405,8 +412,7 @@ For `corpus groups`, `corpus hangouts_chat`, `corpus mail` and `corpus voice`, y
 * `format mbox` - Export in MBOX format, this is the default
 * `format pst` - Export in PST format
 
-For `corpus voice` you can specify the data covered by the export,
-multiple values are allowed.:
+For `corpus voice` you can specify the data covered by the export, multiple values are allowed.:
 * `covereddata calllogs` - Call logs
 * `covereddata textmessages` - Voice text messages
 * `covereddata voicemail` - Voicemail
@@ -817,8 +823,10 @@ gam create vaultquery <MatterItem> [name <String>]
         [locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
         [responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*] [calendarversiondate <Date>|<Time>]
         (covereddata calllogs|textmessages|voicemails)*
-        [shownames] [formatjson]
-```
+        [<JSONData>]
+        [shownames]
+        [showdetails|returnidonly|formatjson]
+``
 
 If `name <String>` is omitted, the query is named `GAM <corpus> Query - <Time>`
 
@@ -826,10 +834,17 @@ The `shownames` argument controls whether org unit and shared drive names are di
 
 See: [Vault Query options](#vault-query-options)
 
+Use the `showdetails` option to have the full details of the saved query displayed.
+
+Use the `returnidonly` option to have only the saved query ID displayed.
+
+Use the `formatjson` option to have only the saved query JSON displayed.
+
 ## Copy Vault Saved Queries
 ```
 gam copy vaultquery <MatterItem> <QueryItem> [targetmatter <MatterItem>] [name <String>]
-        [shownames] [formatjson]
+        [shownames]
+        [showdetails|returnidonly|formatjson]
 ```
 
 If `targetmatter <MatterItem>` is omitted, the query is copied in the source matter.
@@ -839,6 +854,12 @@ If `name <String>` is omitted:
 * `targetmatter <MatterItem>` omitted - The copied query is named `Copy of Source Query name`
 
 The `shownames` argument controls whether org unit and shared drive names are displayed in queries; additional API calls are required to get the names.
+
+Use the `showdetails` option to have the full details of the saved query displayed.
+
+Use the `returnidonly` option to have only the saved query ID displayed.
+
+Use the `formatjson` option to have only the saved query JSON displayed.
 
 ## Delete Vault Saved Queries
 ```
