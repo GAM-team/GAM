@@ -3,6 +3,7 @@
 - [Query documentation](#query-documentation)
 - [Python Regular Expressions](Python-Regular-Expressions) Match function
 - [Definitions](#definitions)
+- [Special quoting](#special-quoting)
 - [Vault Matters](#vault-matters)
   - [Create Vault Matters](#create-vault-matters)
   - [Manage Vault Matters](#manage-vault-matters)
@@ -77,6 +78,7 @@
 <ExportStatusList> ::= "<ExportStatus>(,<ExportStatus>)*"
 <HoldItem> ::= <UniqueID>|<String>
 <MatterItem> ::= <UniqueID>|<String>
+<MatterItemList> ::= "<MatterItem>(,<MatterItem>)*"
 <MatterState> ::= open|closed|deleted
 <MatterStateList> ::= "<MatterState>(,<MatterState>)*"
 <QueryItem> ::= <UniqueID>|<String>
@@ -142,8 +144,28 @@
 <VaultQueryFieldNameList> ::= "<VaultQueryFieldName>(,<VaultQueryFieldName>)*"
 
 ```
+
 You specify matters, exports and holds by ID (`<UniqueID>`) or name (`<String>`). The API requires an ID, so if you specify a name,
 GAM has to make additional API calls to convert the name to an ID.
+
+## Special quoting
+You specify a single matter with `matter <MatterItem>` and a list of matters with `matters <MatterItemList>`.
+
+As matter names can contain spaces, some care must be used when entering `<MatterItem>` and `<MatterItemList>` with names.
+
+Suppose you have a matter `Foo Bar`. To get information about a specific export: `gam info vaultexport "Foo Bar" <ExportItem>`
+
+The shell strips the `"` leaving a single argument `Foo Bar`; gam correctly processes the argument.
+
+Suppose you enter the command: `gam show vaultexports matters "Foo Bar"`
+
+The shell strips the `"` leaving a single argument `Foo Bar`; gam splits the argument on space leaving two items and then tries to process `Foo` and `Bar`, not what you want.
+
+You must enter: `gam info show vaultexports matters "'Foo Bar'"`
+
+The shell strips the `"` leaving a single argument `'Foo Bar'`; gam splits the argument on space while honoring the `'` leaving one item `Foo Bar` and correctly processes the item.
+
+For quoting rules, see: [List Quoting Rules](Command-Line-Parsing)
 
 ## Vault Matters
 ## Create Vault Matters
