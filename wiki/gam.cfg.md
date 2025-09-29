@@ -109,6 +109,11 @@ charset
         Character set of gam batch, gam csv, gam loop files.
         Default: utf-8
         Environment variable: GAM_CHARSET
+chat_max_results
+        When retrieving lists of Chat items from API,
+        how many should be retrieved in each API call
+        Default: 100
+        Range: 1 - 1000
 classroom_max_results
         When retrieving lists of Google Classroom items from API,
         how many should be retrieved in each API call

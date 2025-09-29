@@ -10,6 +10,18 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.23.00
+
+Added `chat_max_results` variable to `gam.cfg`.
+```
+chat_max_results
+    When retrieving lists of Chat items from API,
+    how many should be retrieved in each API call
+    Default: 100
+    Range: 1 - 1000
+```
+Previously, this vaule was always set to 1000 which could cause errors.
+
 ### 7.22.07
 
 Added options `showdetails` and `returnidonly` to `gam create|copy vaultquery`.
