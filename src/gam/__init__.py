@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.22.06'
+__version__ = '7.22.07'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -41814,11 +41814,13 @@ VAULT_QUERY_ARGS = [
 # drive
   'driveclientsideencryption', 'driveversiondate', 'includeshareddrives', 'includeteamdrives', 'shareddrivesoption',
 # hangoutsChat
-  'includerooms',
+  'includerooms', 
 # mail
   'mailclientsideencryption', 'excludedrafts',
 # voice
   'covereddata',
+# all
+  'json',
   ] + list(VAULT_SEARCH_METHODS_MAP.keys())
 
 def _buildVaultQuery(myarg, query, corpusArgumentMap):
@@ -41835,11 +41837,11 @@ def _buildVaultQuery(myarg, query, corpusArgumentMap):
   elif myarg == 'scope':
     query['dataScope'] = getChoice(VAULT_EXPORT_DATASCOPE_MAP, mapChoice=True)
   elif myarg in VAULT_SEARCH_METHODS_MAP:
-    if query.get('searchMethod'):
+    if query.get('method'):
       Cmd.Backup()
       usageErrorExit(Msg.MULTIPLE_SEARCH_METHODS_SPECIFIED.format(formatChoiceList(VAULT_SEARCH_METHODS_MAP)))
     searchMethod = VAULT_SEARCH_METHODS_MAP[myarg]
-    query['searchMethod'] = searchMethod
+    query['method'] = searchMethod
     if searchMethod == 'ACCOUNT':
       query['accountInfo'] = {'emails': getNormalizedEmailAddressEntity()}
     elif searchMethod == 'ORG_UNIT':
@@ -41901,11 +41903,19 @@ def _buildVaultQuery(myarg, query, corpusArgumentMap):
   elif myarg == 'covereddata':
     query.setdefault('voiceOptions', {'coveredData': []})
     query['voiceOptions']['coveredData'].append(getChoice(VAULT_VOICE_COVERED_DATA_MAP, mapChoice=True))
+# all
+  elif myarg == 'json':
+    jsonData = getJSON([])
+    if 'query' in jsonData:
+      query.update(jsonData['query'])
+    else:
+      query.update(jsonData)
+
 
 def _validateVaultQuery(body, corpusArgumentMap):
   if 'corpus' not in body['query']:
     missingArgumentExit(f'corpus {formatChoiceList(corpusArgumentMap)}')
-  if 'searchMethod' not in body['query']:
+  if 'method' not in body['query']:
     missingArgumentExit(formatChoiceList(VAULT_SEARCH_METHODS_MAP))
   if 'exportOptions' in body:
     for corpus, options in VAULT_CORPUS_OPTIONS_MAP.items():
@@ -41935,6 +41945,7 @@ def _validateVaultQuery(body, corpusArgumentMap):
 #	[locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
 #	[responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*] [calendarversiondate <Date>|<Time>]
 #	(covereddata calllogs|textmessages|voicemails)*
+#	[<JSONData>]
 #	[driveclientsideencryption any|encrypted|unencrypted]
 #	[includeaccessinfo <Boolean>]
 #	[excludedrafts <Boolean>] [mailclientsideencryption any|encrypted|unencrypted]
@@ -43054,6 +43065,7 @@ def doCreateCopyVaultQuery(copyCmd):
   targetId = None
   cd = drive = None
   FJQC = FormatJSONQuoteChar()
+  returnIdOnly = showDetails = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'name':
@@ -43067,6 +43079,12 @@ def doCreateCopyVaultQuery(copyCmd):
       _, drive = buildGAPIServiceObject(API.DRIVE3, _getAdminEmail())
       if drive is None:
         return
+    elif myarg == 'showdetails':
+      showDetails = True
+      returnIdOnly = False
+    elif myarg == 'returnidonly':
+      returnIdOnly = True
+      showDetails = False
     else:
       FJQC.GetFormatJSON(myarg)
   if copyCmd:
@@ -43078,6 +43096,7 @@ def doCreateCopyVaultQuery(copyCmd):
     resultId = targetId
     resultNameId = targetNameId
   else:
+    _validateVaultQuery(body, VAULT_CORPUS_ARGUMENT_MAP)
     if not body['displayName']:
       body['displayName'] = 'GAM {body["query"]["corpus"]} Query - {ISOformatTimeStamp(todaysTime())}'
     resultId = matterId
@@ -43086,7 +43105,13 @@ def doCreateCopyVaultQuery(copyCmd):
     result = callGAPI(v.matters().savedQueries(), 'create',
                       throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT, GAPI.ALREADY_EXISTS],
                       matterId=resultId, body=body)
-    _showVaultQuery(resultNameId, result, cd, drive, FJQC)
+    if not returnIdOnly:
+      if not FJQC.formatJSON:
+        entityActionPerformed([Ent.VAULT_MATTER, matterNameId, Ent.VAULT_QUERY, formatVaultNameId(result['displayName'], result['savedQueryId'])])
+      if showDetails or FJQC.formatJSON:
+        _showVaultQuery(resultNameId, result, cd, drive, FJQC)
+    else:
+      writeStdout(f'{result["savedQueryId"]}\n')
   except (GAPI.notFound, GAPI.badRequest, GAPI.forbidden, GAPI.invalidArgument, GAPI.alreadyExists) as e:
     entityActionFailedWarning([Ent.VAULT_MATTER, resultNameId, Ent.VAULT_QUERY, body['displayName']], str(e))
 
@@ -43105,12 +43130,15 @@ def doCreateCopyVaultQuery(copyCmd):
 #	[locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
 #	[responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*] [calendarversiondate <Date>|<Time>]
 #	(covereddata calllogs|textmessages|voicemails)*
-#	[shownames] [formatjson]
+#	[<JSONData>]
+#	[shownames]
+#	[showdetails|returnidonly|formatjson]
 def doCreateVaultQuery():
   doCreateCopyVaultQuery(False)
 
-# gam copy vaultquery <MatterItem> <QueryItem> [targetmatter <MatterItem"] [name <String>]
-#	[shownames] [formatjson]
+# gam copy vaultquery <MatterItem> <QueryItem> [targetmatter <MatterItem>] [name <String>]
+#	[shownames]
+#	[showdetails|returnidonly|formatjson]
 def doCopyVaultQuery():
   doCreateCopyVaultQuery(True)
 
@@ -43632,6 +43660,7 @@ PRINT_VAULT_COUNTS_TITLES = ['account', 'count', 'error']
 #	(accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone|entireorg
 #	[terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
 #	[excludedrafts <Boolean>]
+#	[<JSONData>]
 #	[wait <Integer>]
 # gam print vaultcounts [todrive <ToDriveAttributes>*]
 #	 matter <MatterItem> operation <String> [wait <Integer>]
@@ -43686,7 +43715,7 @@ def doPrintVaultCounts():
     doWait = True
   response = operation.get('response', {})
   query = operation['metadata']['query']
-  search_method = query.get('searchMethod')
+  search_method = query.get('method')
   # ARGH count results don't include accounts with zero items.
   # so we keep track of which accounts we searched and can report
   # zero data for them.

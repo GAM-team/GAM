@@ -5421,6 +5421,7 @@ gam print vaultcounts [todrive <ToDriveAttributes>*]
         [(accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone]
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
         [excludedrafts <Boolean>]
+        [<JSONData>]
         [wait <Integer>]
 gam print vaultcounts [todrive <ToDriveAttributes>*]
         matter <MatterItem> operation <String> [wait <Integer>]
@@ -5434,18 +5435,20 @@ gam create vaultexport|export matter <MatterItem> [name <String>]
         [format ics|mbox|pst|xml]
         [region any|europe|us] [showdetails|returnidonly]
 
-gam create vaultexport|export matter <MatterItem> [name <String>] corpus calendar|drive|gemini|groups|hangouts_chat|mail|voice
-        (accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
-        (shareddrives|teamdrives (<SharedDriveIDList>|(select <FileSelector>|<CSVFileSelector>))) |
-            (rooms (<ChatSpaceList>|(select <FileSelector>|<CSVFileSelector>))) |
-            (sitesurl (<URLList>||(select <FileSelector>|<CSVFileSelector>)))
+gam create vaultexport|export matter <MatterItem> [name <String>]
+        corpus calendar|drive|gemini|groups|hangouts_chat|mail|voice
         [scope all_data|held_data|unprocessed_data]
+        (accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone
+        (documentids  (<DriveFileIDList>|(select <FileSelector>|<CSVFileSelector>))) |
+        (shareddrives|teamdrives (<SharedDriveIDList>|(select <FileSelector>|<CSVFileSelector>))) |
+        [(includeshareddrives <Boolean>)|(shareddrivesoption included|included_if_account_is_not_a_member|not_included)]
+        (sitesurl (<URLList>||(select <FileSelector>|<CSVFileSelector>)))
+        [driveversiondate <Date>|<Time>]
+        [includerooms <Boolean>]
+        (rooms (<ChatSpaceList>|(select <FileSelector>|<CSVFileSelector>))) |
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
         [locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
         [responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*] [calendarversiondate <Date>|<Time>]
-        [(includeshareddrives <Boolean>)|(shareddrivesoption included|included_if_account_is_not_a_member|not_included)]
-        [driveversiondate <Date>|<Time>]
-        [includerooms <Boolean>]
         (covereddata calllogs|textmessages|voicemails)*
         [driveclientsideencryption any|encrypted|unencrypted]
         [includeaccessinfo <Boolean>]
@@ -5575,10 +5578,13 @@ gam create vaultquery <MatterItem> [name <String>]
         [locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
         [responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*] [calendarversiondate <Date>|<Time>]
         (covereddata calllogs|textmessages|voicemails)*
-        [shownames] [formatjson]
+	[<JSONData>]
+        [shownames]
+        [showdetails|returnidonly|formatjson]
 
-gam copy vaultquery <MatterItem> <QueryItem> [targetmatter <MatterItem"] [name <String>]
-        [shownames] [formatjson]
+gam copy vaultquery <MatterItem> <QueryItem> [targetmatter <MatterItem>] [name <String>]
+        [shownames]
+        [showdetails|returnidonly|formatjson]
 
 gam delete vaultquery <QueryItem> matter <MatterItem>
 gam delete vaultquery <MatterItem> <QueryItem>
