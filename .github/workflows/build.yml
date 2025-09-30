@@ -266,6 +266,9 @@ jobs:
             PYEXTERNALS_PATH=$(cygpath -u "${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_ARCH}")
             LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${PYEXTERNALS_PATH}"
             echo "PYTHON=${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_ARCH}/python.exe" >> $GITHUB_ENV
+            export PYTHONHOME="${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_ARCH}/"
+            export PYTHONHOME=$(realpath -u "$PYTHONHOME")
+            echo "PYTHONHOME=${PYTHONHOME}" >> $GITHUB_ENV
             echo "WIX_ARCH=${WIX_ARCH}" >> $GITHUB_ENV
           fi
           echo "We'll run make with: ${MAKEOPT}"
@@ -480,9 +483,6 @@ jobs:
 
       - name: Install pip requirements
         run: |
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            ${GITHUB_WORKSPACE}/venv/scripts/activate.bat
-          fi
           echo "before anything..."
           "$PYTHON" -m pip list
           "$PYTHON" -m pip install --upgrade ..[yubikey]
