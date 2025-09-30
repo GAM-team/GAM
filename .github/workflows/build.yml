@@ -194,13 +194,9 @@ jobs:
         if: matrix.goal == 'test'
         run: |
           export PYTHON=$(which python3)
-          export PIP=$(which pip3)
-          export gam="${PYTHON} -m gam"
           export gampath="$(readlink -e .)/gam"
-          echo -e "PYTHON: ${PYTHON}\nPIP: ${PIP}\gam: ${gam}\ngampath: ${gampath}"
+          echo -e "PYTHON: ${PYTHON}\ngam: ${gam}\ngampath: ${gampath}"
           echo "PYTHON=${PYTHON}" >> $GITHUB_ENV
-          echo "PIP=${PIP}" >> $GITHUB_ENV
-          echo "gam=${gam}" >> $GITHUB_ENV
           echo "gampath=${gampath}" >> $GITHUB_ENV
 
       - name: Install necessary Github-hosted Linux packages
@@ -462,7 +458,6 @@ jobs:
           "$PYTHON" -m pip install --upgrade setuptools-scm
           "$PYTHON" -m pip list
 
-
       - name: Create and use Python venv
         run: |
           cd "$GITHUB_WORKSPACE"
@@ -470,13 +465,17 @@ jobs:
           echo "1) ${PYTHON}"
           "$PYTHON" -m venv venv
           ls -alRF venv
-          if [[ "${RUNNER_OS}" == "Windows" ]]; then
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
             export PYTHON="${GITHUB_WORKSPACE}/venv/scripts/python.exe"
           else
             export PYTHON="${GITHUB_WORKSPACE}/venv/bin/python3"
           fi
           echo "2) ${PYTHON}"
           echo "PYTHON=${PYTHON}" >> $GITHUB_ENV
+          if [[ "$ACTIONS_GOAL" == "test" ]]; then
+            export gam="${PYTHON} gam.py"
+            echo "gam=${gam}" >> $GITHUB_ENV
+          fi
 
       - name: Install pip requirements
         run: |
