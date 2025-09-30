@@ -1,4 +1,4 @@
-7.23.01
+7.23.02
 
 Added option `oneitemperrow` to 'gam print course-materials|course-work` to have each of a
 course's materials displayed on a separate row with all of the other course fields.
