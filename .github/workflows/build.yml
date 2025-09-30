@@ -470,6 +470,7 @@ jobs:
             PYTHON=venv/scripts/python.exe
           else
             PYTHON=venv/bin/python
+          fi
           PYTHON=$(realpath "$PYTHON")
           echo "PYTHON=${PYTHON}" >> $GITHUB_ENV
 
