@@ -103,16 +103,16 @@ jobs:
             python: "3.11"
             jid: 15
             name: Test Python 3.11
-          #- os: ubuntu-24.04
-          #  goal: test
-          #  python: "3.12"
-          #  jid: 16
-          #  name: Test Python 3.12
-          #- os: ubuntu-24.04
-          #  goal: test
-          #  python: "3.14-dev"
-          #  jid: 16
-          #  name: Test Python 3.14-dev
+          - os: ubuntu-24.04
+            goal: test
+            python: "3.12"
+            jid: 16
+            name: Test Python 3.12
+          - os: ubuntu-24.04
+            goal: test
+            python: "3.14-dev"
+            jid: 17
+            name: Test Python 3.14-dev
 
     steps:
 
