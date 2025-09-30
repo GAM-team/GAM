@@ -257,15 +257,15 @@ jobs:
             MAKEOPT=""
             PERL="c:\strawberry\perl\bin\perl.exe"
             if [[ "$RUNNER_ARCH" == "ARM64" ]]; then
-              PYEXTERNALS_PATH="arm64"
+              PYEXTERNALS_ARCH="arm64"
               WIX_ARCH="arm64"
             elif [[ "$RUNNER_ARCH" == "X64" ]]; then
-              PYEXTERNALS_PATH="amd64"
+              PYEXTERNALS_ARCH="amd64"
               WIX_ARCH="x64"
             fi
-            PYEXTERNALS_PATH=$(cygpath -u "${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_PATH}")
+            PYEXTERNALS_PATH=$(cygpath -u "${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_ARCH}")
             LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${PYEXTERNALS_PATH}"
-            echo "PYTHON=${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_PATH}/python.exe" >> $GITHUB_ENV
+            echo "PYTHON=${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_ARCH}/python.exe" >> $GITHUB_ENV
             echo "WIX_ARCH=${WIX_ARCH}" >> $GITHUB_ENV
           fi
           echo "We'll run make with: ${MAKEOPT}"
