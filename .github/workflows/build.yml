@@ -463,7 +463,7 @@ jobs:
         run: |
           cd "$GITHUB_WORKSPACE"
           pwd
-          "$PYTHON" -m pip install --upgrade pyscard
+          "$PYTHON" -m pip install --upgrade --force-reinstall --no-binary pyscard
           echo "1) ${PYTHON}"
           "$PYTHON" -m venv venv
           ls -alRF venv
