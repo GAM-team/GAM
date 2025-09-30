@@ -255,7 +255,7 @@ WARNING: Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, Item: oa
 GAM 7.23.02 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.13.7 64-bit final
-MacOS Sequoia 15.6.1 x86_64
+macOS Tahoe 26.0.1 x86_64
 Path: /Users/admin/bin/gam7
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
 

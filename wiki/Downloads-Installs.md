@@ -25,14 +25,14 @@ start a new terminal session and reissue the command from above.
 ## Executable, Manual
 
 * Executable Archive, Manual, Linux/Google Cloud Shell
-  - `gam-7.wx.yz-linux-x86_64-glibc2.35.tar.xz`
+  - `gam-7.wx.yz-linux-x86_64-glibc2.36.tar.xz`
   - `gam-7.wx.yz-linux-x86_64-glibc2.39.tar.xz`
   - `gam-7.wx.yz-linux-x86_64-legacy.tar.xz`
   - Download the archive, extract the contents into some directory.
   - Start a terminal session.
 
 * Executable Archive, Manual, Raspberry Pi/ChromeOS ARM devices
-  - `gam-7.wx.yz-linux-arm64-glibc2.35.tar.xz`
+  - `gam-7.wx.yz-linux-arm64-glibc2.36.tar.xz`
   - `gam-7.wx.yz-linux-arm64-glibc2.39.tar.xz`
   - `gam-7.wx.yz-linux-arm64-legacy.tar.xz`
   - Download the archive, extract the contents into some directory.
@@ -43,13 +43,23 @@ start a new terminal session and reissue the command from above.
   - Download the archive, extract the contents into some directory.
   - Start a terminal session.
 
-* Executable Archive, Manual, Mac OS versions Sequoia - M3
-  - `gam-7.wx.yz-macos15.4-arm64.tar.xz`
+* Executable Archive, Manual, Mac OS versions Sequoia - M2/M3
+  - `gam-7.wx.yz-macos15.6-arm64.tar.xz`
   - Download the archive, extract the contents into some directory.
   - Start a terminal session.
 
-* Executable Archive, Manual, Mac OS, versions Ventura, Sonoma, Sequoia - Intel
+* Executable Archive, Manual, Mac OS versions Tahoe - M2/M3/M4
+  - `gam-7.wx.yz-macos26.0-arm64.tar.xz`
+  - Download the archive, extract the contents into some directory.
+  - Start a terminal session.
+
+* Executable Archive, Manual, Mac OS, versions Ventura, Sonoma - Intel
   - `gam-7.wx.yz-macos13.7-x86_64.tar.xz`
+  - Download the archive, extract the contents into some directory.
+  - Start a terminal session.
+
+* Executable Archive, Manual, Mac OS, versions Sequoia, Tahoe - Intel
+  - `gam-7.wx.yz-macos15.6-x86_64.tar.xz`
   - Download the archive, extract the contents into some directory.
   - Start a terminal session.
 
