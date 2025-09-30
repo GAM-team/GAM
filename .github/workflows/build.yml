@@ -468,9 +468,9 @@ jobs:
           echo "1) ${PYTHON}"
           "$PYTHON" -m venv venv
           if [[ "${RUNNER_OS}" == "Windows" ]]; then
-            export PYTHON="${GITHUB_WORKSPACE}/venv/scripts/python.exe"
+            export PYTHON="${GITHUB_WORKSPACE}/venv/scripts/python3.exe"
           else
-            export PYTHON="${GITHUB_WORKSPACE}/venv/bin/python"
+            export PYTHON="${GITHUB_WORKSPACE}/venv/bin/python3"
           fi
           echo "2) ${PYTHON}"
           echo "PYTHON=${PYTHON}" >> $GITHUB_ENV
