@@ -10,7 +10,7 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
-### 7.23.01
+### 7.23.02
 
 Added option `oneitemperrow` to 'gam print course-materials|course-work` to have each of a
 course's materials displayed on a separate row with all of the other course fields.
