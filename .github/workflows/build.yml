@@ -465,8 +465,10 @@ jobs:
 
       - name: Create and use Python venv
         run: |
+          pwd
           echo "1) ${PYTHON}"
           "$PYTHON" -m venv venv
+          ls -alRF venv
           if [[ "${RUNNER_OS}" == "Windows" ]]; then
             export PYTHON="${GITHUB_WORKSPACE}/venv/scripts/python3.exe"
           else
