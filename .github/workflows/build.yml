@@ -162,6 +162,7 @@ jobs:
           python-version: ${{ matrix.python }}
           allow-prereleases: true
           check-latest: true
+          freethreaded: ${{ matrix.freethreaded }}
 
       - name: common variables for all runs
         env:
