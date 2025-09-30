@@ -266,9 +266,6 @@ jobs:
             PYEXTERNALS_PATH=$(cygpath -u "${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_ARCH}")
             LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${PYEXTERNALS_PATH}"
             echo "PYTHON=${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_ARCH}/python.exe" >> $GITHUB_ENV
-            export PYTHONHOME="${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_ARCH}/"
-            export PYTHONHOME=$(realpath -u "$PYTHONHOME")
-            echo "PYTHONHOME=${PYTHONHOME}" >> $GITHUB_ENV
             echo "WIX_ARCH=${WIX_ARCH}" >> $GITHUB_ENV
           fi
           echo "We'll run make with: ${MAKEOPT}"
@@ -466,10 +463,13 @@ jobs:
         run: |
           cd "$GITHUB_WORKSPACE"
           pwd
+          "$PYTHON" -m pip install --upgrade pyscard
           echo "1) ${PYTHON}"
           "$PYTHON" -m venv venv
           ls -alRF venv
           if [[ "$RUNNER_OS" == "Windows" ]]; then
+            # hack till pyscard has a wheel for win arm64
+            "$PYTHON" -m pip install --upgrade pyscard
             export PYTHON="${GITHUB_WORKSPACE}/venv/scripts/python.exe"
           else
             export PYTHON="${GITHUB_WORKSPACE}/venv/bin/python3"
