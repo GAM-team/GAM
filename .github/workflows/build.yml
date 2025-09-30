@@ -462,11 +462,6 @@ jobs:
       - name: Create and use Python venv
         run: |
           cd "$GITHUB_WORKSPACE"
-          pwd
-          "$PYTHON" -m pip install --upgrade --force-reinstall pyscard
-          echo "1) ${PYTHON}"
-          "$PYTHON" -m venv venv
-          ls -alRF venv
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             # hack till pyscard has a wheel for win arm64
             "$PYTHON" -m pip install --upgrade pyscard
@@ -476,7 +471,6 @@ jobs:
           else
             export PYTHON="${GITHUB_WORKSPACE}/venv/bin/python3"
           fi
-          echo "2) ${PYTHON}"
           echo "PYTHON=${PYTHON}" >> $GITHUB_ENV
           if [[ "$ACTIONS_GOAL" == "test" ]]; then
             export gam="${PYTHON} gam.py"
