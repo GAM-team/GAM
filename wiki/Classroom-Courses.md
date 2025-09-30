@@ -570,6 +570,7 @@ gam print course-materials [todrive <ToDriveAttribute>*]
         (orderby <CourseMaterialOrderByFieldName> [ascending|descending])*)
         [showcreatoremails|creatoremail] [showtopicnames] [fields <CourseMaterialFieldNameList>]
         [timefilter creationtime|updatetime|scheduledtime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
+        [oneitemperrow]
         [countsonly] [formatjson [quotechar <Character>]]
 ```
 By default, the `print course-materials` command displays course materials information for all courses.
@@ -599,6 +600,10 @@ By default, all course materials fields are displayed; use the following options
 * `showcreatoremails` - Display course materials creator email; requires an additional API call per course materials.
 * `showtopicnames` - Display topic names; requires and additional API call per course.
 * `fields <CourseMaterialsFieldNameList>` - Select specific fields to display.
+
+With `print course-materials`, the materials selected for display are all output on one row/line as a repeating item with the other course fields.
+When `oneitemperrow` is specified, each material is output on a separate row/line with the other course fields.
+This simplifies processing the materials in the CSV file with subsequent Gam commands.
 
 Use the `countsonly` option to display the number of course materials in a course but not their details.
 
@@ -662,6 +667,7 @@ gam print course-work [todrive <ToDriveAttribute>*]
         [showcreatoremails] [showtopicnames] [fields <CourseWorkFieldNameList>]
         [showstudentsaslist [<Boolean>]] [delimiter <Character>]
         [timefilter creationtime|updatetime|scheduledtime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
+        [oneitemperrow]
         [countsonly] [formatjson [quotechar <Character>]]
 ```
 By default, the `print course-work` command displays course work information for all courses.
@@ -694,6 +700,10 @@ By default, all course work fields are displayed; use the following options to m
 
 By default, when course work is assigned to individual students, the student IDs are displayed in multiple indexed columns.
 Use options `showstudentsaslist [<Boolean>]` and `delimiter <Character>` to display the student IDs is a single column as a delimited list.
+
+With `print course-work`, any materials are all output on one row/line as a repeating item with the other course fields.
+When `oneitemperrow` is specified, each material is output on a separate row/line with the other course fields.
+This simplifies processing the materials in the CSV file with subsequent Gam commands.
 
 Use the `countsonly` option to display the number of course works in a course but not their details.
 

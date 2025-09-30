@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.23.01
+
+Added option `oneitemperrow` to 'gam print course-materials|course-work` to have each of a
+course's materials displayed on a separate row with all of the other course fields.
+This produces a CSV file that can be used in subsequent commands to process the materials without further script processing.
+
 ### 7.23.00
 
 Added `chat_max_results` variable to `gam.cfg`.
