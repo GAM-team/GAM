@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.23.02'
+__version__ = '7.23.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -27237,7 +27237,7 @@ def createChatMember(users):
                           throwReasons=[GAPI.ALREADY_EXISTS, GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_ARGUMENT,
                                         GAPI.INTERNAL_ERROR, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                           parent=parent, body=body, **kwargsUAA)
-        if role != 'ROLE_MEMBER' and entityType == Ent.CHAT_MANAGER_USER:
+        if role != 'ROLE_MEMBER' and entityType in (Ent.CHAT_MANAGER_USER, Ent.CHAT_OWNER_USER):
           member = callGAPI(chat.spaces().members(), 'patch',
                             bailOnInternalError=True,
                             throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR,

@@ -1,3 +1,7 @@
+7.23.03
+
+Upgraded to OpenSSL 3.5.4.
+
 7.23.02
 
 Added option `oneitemperrow` to 'gam print course-materials|course-work` to have each of a
@@ -119,7 +123,7 @@ GAM now builds on macOS 26 Tahoe and properly identifies the OS.
 
 A custom build of the cryptography library is no longer needed for Windows arm64 builds as the project now releases their own build for the OS.
 
-Upgrade to OpenSSL 3.5.3 latest
+Upgraded to OpenSSL 3.5.3.
 
 7.21.01
 
