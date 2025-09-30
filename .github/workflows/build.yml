@@ -465,13 +465,16 @@ jobs:
 
       - name: Create and use Python venv
         run: |
+          echo "1) ${PYTHON}"
           "$PYTHON" -m venv venv
           if [[ "${RUNNER_OS}" == "Windows" ]]; then
-            PYTHON=venv/scripts/python.exe
+            export PYTHON=venv/scripts/python.exe
           else
-            PYTHON=venv/bin/python
+            export PYTHON=venv/bin/python
           fi
-          PYTHON=$(realpath "$PYTHON")
+          echo "2) ${PYTHON}"
+          export PYTHON=$(realpath "$PYTHON")
+          echo "3) ${PYTHON}"
           echo "PYTHON=${PYTHON}" >> $GITHUB_ENV
 
       - name: Install pip requirements
