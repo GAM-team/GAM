@@ -263,7 +263,8 @@ jobs:
               PYEXTERNALS_PATH="amd64"
               WIX_ARCH="x64"
             fi
-            LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_PATH}"
+            PYEXTERNALS_PATH=$(cygpath -u "${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_PATH}")
+            LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${PYEXTERNALS_PATH}"
             echo "PYTHON=${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_PATH}/python.exe" >> $GITHUB_ENV
             echo "WIX_ARCH=${WIX_ARCH}" >> $GITHUB_ENV
           fi
