@@ -303,11 +303,11 @@ jobs:
           # --libdir=lib is needed so Python can find OpenSSL libraries
           "${PERL}" ./Configure --libdir=lib --prefix="${OPENSSL_INSTALL_PATH}" $OPENSSL_CONFIG_OPTS
 
-      - name: Rename GNU link on Windows
-        if: matrix.goal == 'build' && runner.os == 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
-        shell: bash
-        run: |
-          mv -v /usr/bin/link /usr/bin/gnulink
+    #  - name: Rename GNU link on Windows
+    #    if: matrix.goal == 'build' && runner.os == 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
+    #    shell: bash
+    #    run: |
+    #      mv -v /usr/bin/link /usr/bin/gnulink
 
       - name: Make OpenSSL
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
