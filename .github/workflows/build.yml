@@ -135,7 +135,7 @@ jobs:
         with:
           path: |
             cache.tar.xz
-          key: gam-${{ matrix.jid }}-20250922
+          key: gam-${{ matrix.jid }}-20250930
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
@@ -194,13 +194,9 @@ jobs:
         if: matrix.goal == 'test'
         run: |
           export PYTHON=$(which python3)
-          export PIP=$(which pip3)
-          export gam="${PYTHON} -m gam"
           export gampath="$(readlink -e .)/gam"
-          echo -e "PYTHON: ${PYTHON}\nPIP: ${PIP}\gam: ${gam}\ngampath: ${gampath}"
+          echo -e "PYTHON: ${PYTHON}\ngam: ${gam}\ngampath: ${gampath}"
           echo "PYTHON=${PYTHON}" >> $GITHUB_ENV
-          echo "PIP=${PIP}" >> $GITHUB_ENV
-          echo "gam=${gam}" >> $GITHUB_ENV
           echo "gampath=${gampath}" >> $GITHUB_ENV
 
       - name: Install necessary Github-hosted Linux packages
@@ -261,14 +257,15 @@ jobs:
             MAKEOPT=""
             PERL="c:\strawberry\perl\bin\perl.exe"
             if [[ "$RUNNER_ARCH" == "ARM64" ]]; then
-              PYEXTERNALS_PATH="arm64"
+              PYEXTERNALS_ARCH="arm64"
               WIX_ARCH="arm64"
             elif [[ "$RUNNER_ARCH" == "X64" ]]; then
-              PYEXTERNALS_PATH="amd64"
+              PYEXTERNALS_ARCH="amd64"
               WIX_ARCH="x64"
             fi
-            LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_PATH}"
-            echo "PYTHON=${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_PATH}/python.exe" >> $GITHUB_ENV
+            PYEXTERNALS_PATH=$(cygpath -u "${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_ARCH}")
+            LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${PYEXTERNALS_PATH}"
+            echo "PYTHON=${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_ARCH}/python.exe" >> $GITHUB_ENV
             echo "WIX_ARCH=${WIX_ARCH}" >> $GITHUB_ENV
           fi
           echo "We'll run make with: ${MAKEOPT}"
@@ -307,11 +304,11 @@ jobs:
           # --libdir=lib is needed so Python can find OpenSSL libraries
           "${PERL}" ./Configure --libdir=lib --prefix="${OPENSSL_INSTALL_PATH}" $OPENSSL_CONFIG_OPTS
 
-      - name: Rename GNU link on Windows
-        if: matrix.goal == 'build' && runner.os == 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
-        shell: bash
-        run: |
-          mv -v /usr/bin/link /usr/bin/gnulink
+    #  - name: Rename GNU link on Windows
+    #    if: matrix.goal == 'build' && runner.os == 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
+    #    shell: bash
+    #    run: |
+    #      mv -v /usr/bin/link /usr/bin/gnulink
 
       - name: Make OpenSSL
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
@@ -457,10 +454,29 @@ jobs:
           "$PYTHON" get-pip.py
           "$PYTHON" -m pip install --upgrade pip
           "$PYTHON" -m pip install --upgrade wheel
-          "$PYTHON" -m pip install setuptools
+          "$PYTHON" -m pip install --upgrade setuptools
           "$PYTHON" -m pip install --upgrade importlib-metadata
           "$PYTHON" -m pip install --upgrade setuptools-scm
           "$PYTHON" -m pip list
+
+      - name: Create and use Python venv
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          pwd
+          echo "1) ${PYTHON}"
+          "$PYTHON" -m venv venv
+          ls -alRF venv
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            export PYTHON="${GITHUB_WORKSPACE}/venv/scripts/python.exe"
+          else
+            export PYTHON="${GITHUB_WORKSPACE}/venv/bin/python3"
+          fi
+          echo "2) ${PYTHON}"
+          echo "PYTHON=${PYTHON}" >> $GITHUB_ENV
+          if [[ "$ACTIONS_GOAL" == "test" ]]; then
+            export gam="${PYTHON} gam.py"
+            echo "gam=${gam}" >> $GITHUB_ENV
+          fi
 
       - name: Install pip requirements
         run: |
