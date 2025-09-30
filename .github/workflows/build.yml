@@ -96,21 +96,25 @@ jobs:
           - os: ubuntu-24.04
             goal: test
             python: "3.10"
+            freethreaded: false
             jid: 14
             name: Test Python 3.10
           - os: ubuntu-24.04
             goal: test
             python: "3.11"
+            freethreaded: false
             jid: 15
             name: Test Python 3.11
           - os: ubuntu-24.04
             goal: test
             python: "3.12"
+            freethreaded: false
             jid: 16
             name: Test Python 3.12
           - os: ubuntu-24.04
             goal: test
             python: "3.14-dev"
+            freethreaded: false
             jid: 17
             name: Test Python 3.14-dev
           - os: ubuntu-24.04
