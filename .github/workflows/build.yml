@@ -457,10 +457,22 @@ jobs:
           "$PYTHON" get-pip.py
           "$PYTHON" -m pip install --upgrade pip
           "$PYTHON" -m pip install --upgrade wheel
-          "$PYTHON" -m pip install setuptools
+          "$PYTHON" -m pip install --upgrade setuptools
+          "$PYTHON" -m pip install --upgrade venv
           "$PYTHON" -m pip install --upgrade importlib-metadata
           "$PYTHON" -m pip install --upgrade setuptools-scm
           "$PYTHON" -m pip list
+
+
+      - name: Create and use Python venv
+        run: |
+          "$PYTHON" -m venv venv
+          if [[ "${RUNNER_OS}" == "Windows" ]]; then
+            PYTHON=venv/scripts/python.exe
+          else
+            PYTHON=venv/bin/python
+          PYTHON=$(realpath "$PYTHON")
+          echo "PYTHON=${PYTHON}" >> $GITHUB_ENV
 
       - name: Install pip requirements
         run: |
