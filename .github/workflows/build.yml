@@ -465,6 +465,7 @@ jobs:
 
       - name: Create and use Python venv
         run: |
+          cd "$GITHUB_WORKSPACE"
           pwd
           echo "1) ${PYTHON}"
           "$PYTHON" -m venv venv
