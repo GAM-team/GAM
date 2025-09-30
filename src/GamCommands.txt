@@ -3383,6 +3383,7 @@ gam print course-materials [todrive <ToDriveAttribute>*]
         (orderby <CourseMaterialOrderByFieldName> [ascending|descending])*)
         [showcreatoremails|creatoremail] [showtopicnames] [fields <CourseMaterialFieldNameList>]
         [timefilter creationtime|updatetime|scheduledtime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
+        [oneitemperrow]
         [countsonly] [formatjson [quotechar <Character>]]
 gam print course-submissions [todrive <ToDriveAttribute>*]
         (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] states <CourseStateList>])
@@ -3404,6 +3405,7 @@ gam print course-works [todrive <ToDriveAttribute>*]
         [showcreatoremails|creatoremail] [showtopicnames] [fields <CourseWorkFieldNameList>]
         [showstudentsaslist [<Boolean>]] [delimiter <Character>]
         [timefilter creationtime|updatetime|scheduledtime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
+        [oneitemperrow]
         [countsonly] [formatjson [quotechar <Character>]]
 
 # Classroom - Student Groups

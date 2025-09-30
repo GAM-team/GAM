@@ -49473,6 +49473,16 @@ def doPrintCourseWM(entityIDType, entityStateType):
       pass
     return topicNames
 
+  def _printCourseWMrow(course, courseWM):
+    row = flattenJSON(courseWM, flattened={'courseId': course['id'], 'courseName': course['name']}, timeObjects=TimeObjects,
+                      simpleLists=['studentIds'] if showStudentsAsList else None, delimiter=delimiter)
+    if not FJQC.formatJSON:
+      csvPF.WriteRowTitles(row)
+    elif csvPF.CheckRowTitles(row):
+      csvPF.WriteRowNoFilter({'courseId': course['id'], 'courseName': course['name'],
+                              'JSON': json.dumps(cleanJSON(courseWM, timeObjects=TimeObjects),
+                                                 ensure_ascii=False, sort_keys=True)})
+
   def _printCourseWM(course, courseWM, i, count):
     if applyCourseItemFilter and not _courseItemPassesFilter(courseWM, courseItemFilter):
       return
@@ -49484,14 +49494,13 @@ def doPrintCourseWM(entityIDType, entityStateType):
       topicId = courseWM.get('topicId')
       if topicId:
         courseWM['topicName'] = topicNames.get(topicId, topicId)
-    row = flattenJSON(courseWM, flattened={'courseId': course['id'], 'courseName': course['name']}, timeObjects=TimeObjects,
-                      simpleLists=['studentIds'] if showStudentsAsList else None, delimiter=delimiter)
-    if not FJQC.formatJSON:
-      csvPF.WriteRowTitles(row)
-    elif csvPF.CheckRowTitles(row):
-      csvPF.WriteRowNoFilter({'courseId': course['id'], 'courseName': course['name'],
-                              'JSON': json.dumps(cleanJSON(courseWM, timeObjects=TimeObjects),
-                                                 ensure_ascii=False, sort_keys=True)})
+    if not oneItemPerRow or not courseWM.get('materials', []):
+      _printCourseWMrow(course, courseWM)
+    else:
+      courseMaterials = courseWM.pop('materials')
+      for courseMaterial in courseMaterials:
+        courseWM['materials'] = courseMaterial
+        _printCourseWMrow(course, courseWM)
 
   croom = buildGAPIObject(API.CLASSROOM)
   if entityIDType == Ent.COURSE_WORK_ID:
@@ -49529,7 +49538,7 @@ def doPrintCourseWM(entityIDType, entityStateType):
   courseShowProperties = _initCourseShowProperties(['name'])
   OBY = OrderBy(OrderbyChoiceMap)
   creatorEmails = {}
-  showCreatorEmail = showTopicNames = False
+  oneItemPerRow = showCreatorEmail = showTopicNames = False
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   countsOnly = showStudentsAsList = False
   while Cmd.ArgumentsRemaining():
@@ -49546,6 +49555,9 @@ def doPrintCourseWM(entityIDType, entityStateType):
       pass
     elif myarg == 'orderby':
       OBY.GetChoice()
+    elif myarg == 'oneitemperrow':
+      oneItemPerRow = True
+      csvPF.RemoveIndexedTitles('materials')
     elif myarg in {'showcreatoremails', 'creatoremail'}:
       showCreatorEmail = True
     elif myarg == 'showtopicnames':
@@ -49626,6 +49638,7 @@ def doPrintCourseWM(entityIDType, entityStateType):
 #	(orderby <CourseMaterialsOrderByFieldName> [ascending|descending])*)
 #	[showcreatoremails|creatoremail] [showtopicnames] [fields <CourseMaterialFieldNameList>]
 #	[timefilter creationtime|updatetime|scheduledtime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
+#	[oneitemperrow]
 #	[countsonly] [formatjson [quotechar <Character>]]
 def doPrintCourseMaterials():
   doPrintCourseWM(Ent.COURSE_MATERIAL_ID, Ent.COURSE_MATERIAL_STATE)
@@ -49637,6 +49650,7 @@ def doPrintCourseMaterials():
 #	[showcreatoremails|creatoremail] [showtopicnames] [fields <CourseWorkFieldNameList>]
 #	[showstudentsaslist [<Boolean>]] [delimiter <Character>]
 #	[timefilter creationtime|updatetime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
+#	[oneitemperrow]
 #	[countsonly] [formatjson [quotechar <Character>]]
 def doPrintCourseWork():
   doPrintCourseWM(Ent.COURSE_WORK_ID, Ent.COURSE_WORK_STATE)
