@@ -473,7 +473,7 @@ jobs:
             export PYTHON=venv/bin/python
           fi
           echo "2) ${PYTHON}"
-          export PYTHON=$(realpath "$PYTHON")
+          export PYTHON=$(realpath --no-symlinks "$PYTHON")
           echo "3) ${PYTHON}"
           echo "PYTHON=${PYTHON}" >> $GITHUB_ENV
 
