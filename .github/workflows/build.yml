@@ -194,8 +194,8 @@ jobs:
               ;;
           esac 
           echo "JID=${JID}" >> $GITHUB_ENV
-          echo "freethreaded=${freethreaded} >> $GITHUB_ENV
-          if $freethreaded; then
+          echo "freethreaded=${freethreaded}" >> $GITHUB_ENV
+          if "$freethreaded"; then
             # Hush some warnings while we test
             export PYTHON_GIL=0
             echo "PYTHON_GIL=${PYTHON_GIL}" >> $GITHUB_ENV
