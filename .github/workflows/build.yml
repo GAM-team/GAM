@@ -943,7 +943,7 @@ jobs:
           $gam calendar $gam_user printevents after -0d
           $gam config enable_dasa false save
           matterid=uid:$($gam create vaultmatter name "GHA matter $newbase" description "test matter" returnidonly)
-          $gam create vaulthold matter $matterid name "GHA hold $newbase" corpus mail ou $newou
+          $gam create vaulthold matter $matterid name "GHA hold ${newbase}" corpus mail ou "$newou"
           $gam print vaultmatters matterstate open
           $gam print vaultholds matter $matterid
           $gam print vaultcount matter $matterid corpus mail everyone todrive tdnobrowser
