@@ -41,56 +41,69 @@ jobs:
         include:
           - os: ubuntu-22.04
             jid: 1
+            freethreaded: false
             goal: build
             name: Build Intel Ubuntu Jammy
           - os: ubuntu-24.04
             jid: 2
+            freethreaded: false
             goal: build
             name: Build Intel Ubuntu Noble
           - os: ubuntu-24.04-arm
             jid: 3
+            freethreaded: false
             goal: build
             name: Build Arm Ubuntu Noble
           - os: ubuntu-22.04-arm
             jid: 4
+            freethreaded: false
             goal: build
             name: Build Arm Ubuntu Jammy
           - os: ubuntu-22.04
             jid: 5
+            freethreaded: false
             goal: build
             staticx: yes
             name: Build Intel StaticX Legacy
           - os: ubuntu-22.04-arm
             jid: 6
+            freethreaded: false
             goal: build
             staticx: yes
             name: Build Arm StaticX Legacy
           - os: macos-13
             jid: 7
+            freethreaded: false
             goal: build
             name: Build Intel MacOS
           - os: macos-14
             jid: 8
+            freethreaded: false
             goal: build
             name: Build Arm MacOS 14
           - os: macos-15
             jid: 9
+            freethreaded: false
             goal: build
             name: Build Arm MacOS 15
           - os: macos-15-intel
             jid: 10
+            freethreaded: false
             goal: build
             name: Build x86_64 macOS 15
           - os: macos-26
             jid: 11
+            freethreaded: false
             goal: build
             name: Build Arm MacOS 26
           - os: windows-2025
             jid: 12
+            freethreaded: false
             goal: build
             name: Build Intel Windows
           - os: windows-11-arm
             jid: 13
+            freethreaded: false
             goal: build
             name: Build Arm Windows
           - os: ubuntu-24.04
@@ -167,6 +180,7 @@ jobs:
           JID: ${{ matrix.jid }}
           ACTIONS_CACHE: ${{ steps.cache-python-ssl.outputs.cache-hit }}
           ACTIONS_GOAL: ${{ matrix.goal }}
+          freethreaded: ${{ matrix.freethreaded }}
         run: |
           case $RUNNER_ARCH in
             X64)
@@ -180,6 +194,12 @@ jobs:
               ;;
           esac 
           echo "JID=${JID}" >> $GITHUB_ENV
+          echo "freethreaded=${freethreaded} >> $GITHUB_ENV
+          if $freethreaded; then
+            # Hush some warnings while we test
+            export PYTHON_GIL=0
+            echo "PYTHON_GIL=${PYTHON_GIL}" >> $GITHUB_ENV
+          fi
           echo "ACTIONS_CACHE=${ACTIONS_CACHE}" >> $GITHUB_ENV
           echo "ACTIONS_GOAL=${ACTIONS_GOAL}" >> $GITHUB_ENV
           curl_version=$(curl --version | head -n 1 | awk '{ print $2 }')
