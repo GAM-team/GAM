@@ -10,7 +10,7 @@
 - [Delete duplicate email addresses from contacts](#delete-duplicate-email-addresses-from-contacts)
 - [Manage domain contact photos](#manage-domain-contact-photos)
 - [Display domain shared contacts](#display-domain-shared-contacts)
-- [Display global address list](#display-global-address-list)
+- [Display global address list](#Global-Address-List)
 
 ## API documentation
 * [Domain Shared Contacts API](https://developers.google.com/admin-sdk/domain-shared-contacts)
