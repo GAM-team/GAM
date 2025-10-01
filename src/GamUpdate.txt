@@ -1,3 +1,15 @@
+7.23.04
+
+Added option `addcsvdata <FieldName> <String>` to `gam <UserTypeEntity> print events`
+and `gam calendars <CalendarEntity> print events` that adds additional columns of data to the CSV file output.
+An example would be to get the calendar name in addition to the calendar ID when printing events.
+```
+gam redirect csv ./Resources.csv print resources fields email,name
+gam redirect csv ./ResourceEventCounts.csv multiprocess redirect stderr - multiprocess csv Resources.csv gam calendar "~resourceEmail" print events starttime -1y countsonly addcsvdata calendarName "~resourceName"
+```
+
+Upgraded to OpenSSL 3.6.0.
+
 7.23.03
 
 Upgraded to OpenSSL 3.5.4.

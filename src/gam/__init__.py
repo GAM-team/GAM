@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.23.03'
+__version__ = '7.23.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -7867,6 +7867,13 @@ class CSVPrintFile():
     for title in titles if isinstance(titles, list) else [titles]:
       if title not in self.titlesSet:
         self.AddTitle(title)
+
+  def InsertTitles(self, position, titles):
+    for title in titles if isinstance(titles, list) else [titles]:
+      if title not in self.titlesSet:
+        self.titlesSet.add(title)
+        self.titlesList.insert(position, title)
+        position += 1
 
   def SetTitles(self, titles):
     self.titlesSet = set()
@@ -22429,12 +22436,12 @@ def infoUserPeopleContacts(users):
 
 # gam <UserTypeEntity> print contacts [todrive <ToDriveAttribute>*] <PeoplePrintShowUserContactSelection>
 #	[showgroups|showgroupnameslist] [orderby firstname|lastname|(lastmodified ascending)|(lastnodified descending)
-#	[countsonly|allfields|fields <PeopleFieldNameList>] [showmetadata]
-#	[formatjson [quotechar <Character>]]
+#	[allfields|fields <PeopleFieldNameList>] [showmetadata]
+#	[countsonly|(formatjson [quotechar <Character>])]
 # gam <UserTypeEntity> show contacts <PeoplePrintShowUserContactSelection>
 #	[showgroups] [orderby firstname|lastname|(lastmodified ascending)|(lastnodified descending)
-#	[countsonly|allfields|(fields <PeopleFieldNameList>)] [showmetadata]
-#	[formatjson]
+#	[allfields|(fields <PeopleFieldNameList>)] [showmetadata]
+#	[countsonly|formatjson]
 def printShowUserPeopleContacts(users):
   entityType = Ent.USER
   entityTypeName = Ent.Singular(entityType)
@@ -22473,6 +22480,8 @@ def printShowUserPeopleContacts(users):
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if countsOnly:
+    if csvPF:
+      csvPF.SetFormatJSON(False)
     fieldsList = ['emailAddresses']
   if contactQuery['mainContacts']:
     fields = _getPersonFields(PEOPLE_FIELDS_CHOICE_MAP, PEOPLE_CONTACTS_DEFAULT_FIELDS, fieldsList, parameters)
@@ -22710,11 +22719,11 @@ def processUserPeopleOtherContacts(users):
     Ind.Decrement()
 
 # gam <UserTypeEntity> print othercontacts [todrive <ToDriveAttribute>*] <OtherContactSelection>
-#	[countsonly|allfields|(fields <OtherContactFieldNameList>)] [showmetadata]
-#	[formatjson [quotechar <Character>]]
+#	[allfields|(fields <OtherContactFieldNameList>)] [showmetadata]
+#	[countsonly|(formatjson [quotechar <Character>])]
 # gam <UserTypeEntity> show othercontacts <OtherContactSelection>
-#	[countsonly|allfields|(fields <OtherContactFieldNameList>)] [showmetadata]
-#	[formatjson]
+#	[allfields|(fields <OtherContactFieldNameList>)] [showmetadata]
+#	[countsonly|formatjson]
 def printShowUserPeopleOtherContacts(users):
   entityType = Ent.USER
   entityTypeName = Ent.Singular(entityType)
@@ -22744,6 +22753,8 @@ def printShowUserPeopleOtherContacts(users):
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if countsOnly:
+    if csvPF:
+      csvPF.SetFormatJSON(False)
     fieldsList = ['emailAddresses']
   fields = _getPersonFields(PEOPLE_OTHER_CONTACTS_FIELDS_CHOICE_MAP, PEOPLE_CONTACTS_DEFAULT_FIELDS, fieldsList, parameters)
   i, count, users = getEntityArgument(users)
@@ -22813,6 +22824,8 @@ def _printShowPeople(source):
       function = 'searchDirectoryPeople'
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
+  if countsOnly and csvPF:
+    csvPF.SetFormatJSON(False)
   fields = _getPersonFields(PEOPLE_FIELDS_CHOICE_MAP, PEOPLE_CONTACTS_DEFAULT_FIELDS, fieldsList, parameters)
   printGettingAllEntityItemsForWhom(peopleEntityType, GC.Values[GC.DOMAIN], query=kwargs.get('query'))
   try:
@@ -22850,29 +22863,24 @@ def doInfoDomainPeopleContacts():
 # gam print people|peopleprofile [todrive <ToDriveAttribute>*]
 #	[query <String>]
 #	[mergesources <PeopleMergeSourceName>]
-#	[countsonly]
 #	[allfields|(fields <PeopleFieldNameList>)] [showmetadata]
-#	[formatjson [quotechar <Character>]]
+#	[countsonly|(formatjson [quotechar <Character>])]
 # gam show people|peopleprofile
 #	[query <String>]
 #	[mergesources <PeopleMergeSourceName>]
-#	[countsonly]
 #	[allfields|(fields <PeopleFieldNameList>)] [showmetadata]
-#	[formatjson]
+#	[countsonlyformatjson]
 # gam print domaincontacts|peoplecontacts [todrive <ToDriveAttribute>*]
 #	[sources <PeopleSourceName>]
 #	[query <String>]
 #	[mergesources <PeopleMergeSourceName>]
-#	[countsonly]
 #	[allfields|(fields <PeopleFieldNameList>)] [showmetadata]
-#	[formatjson [quotechar <Character>]]
+#	[countsonly|(formatjson [quotechar <Character>])]
 # gam show domaincontacts|peoplecontacts
 #	[sources <PeopleSourceName>]
 #	[query <String>]
 #	[mergesources <PeopleMergeSourceName>]
-#	[countsonly]
-#	[allfields|(fields <PeopleFieldNameList>)] [showmetadata]
-#	[formatjson]
+#	[countsonlyformatjson]
 def doPrintShowDomainPeopleProfiles():
   _printShowPeople('profile')
 
@@ -40125,7 +40133,7 @@ def _createCalendarEvents(user, origCal, function, calIds, count, body, paramete
       else:
         if parameters['showDayOfWeek']:
           _getEventDaysOfWeek(event)
-        _printCalendarEvent(user, calId, event, parameters['csvPF'], parameters['FJQC'])
+        _printCalendarEvent(user, calId, event, parameters['csvPF'], parameters['FJQC'], {})
     except (GAPI.invalid, GAPI.required, GAPI.timeRangeEmpty, GAPI.eventDurationExceedsLimit,
             GAPI.requiredAccessLevel, GAPI.participantIsNeitherOrganizerNorAttendee,
             GAPI.malformedWorkingLocationEvent, GAPI.badRequest) as e:
@@ -40229,7 +40237,7 @@ def _updateCalendarEvents(origUser, user, origCal, calIds, count, calendarEventE
         else:
           if parameters['showDayOfWeek']:
             _getEventDaysOfWeek(event)
-          _printCalendarEvent(user, calId, event, parameters['csvPF'], parameters['FJQC'])
+          _printCalendarEvent(user, calId, event, parameters['csvPF'], parameters['FJQC'], {})
       except (GAPI.notFound, GAPI.deleted) as e:
         if not checkCalendarExists(cal, calId, j, jcount):
           entityUnknownWarning(Ent.CALENDAR, calId, j, jcount)
@@ -40526,10 +40534,12 @@ def _showCalendarEvent(primaryEmail, calId, eventEntityType, event, k, kcount, F
   showJSON(None, event, skipObjects)
   Ind.Decrement()
 
-def _printCalendarEvent(user, calId, event, csvPF, FJQC):
+def _printCalendarEvent(user, calId, event, csvPF, FJQC, addCSVData):
   row = {'calendarId': calId, 'id': event['id']}
   if user:
     row['primaryEmail'] = user
+  if addCSVData:
+    row.update(addCSVData)
   flattenJSON(event, flattened=row, timeObjects=EVENT_TIME_OBJECTS)
   if not FJQC.formatJSON:
     csvPF.WriteRowTitles(row)
@@ -40542,7 +40552,7 @@ def _printCalendarEvent(user, calId, event, csvPF, FJQC):
     csvPF.WriteRowNoFilter(row)
 
 def _printShowCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEntity,
-                             csvPF, FJQC, fieldsList):
+                             csvPF, FJQC, fieldsList, addCSVData):
   i = 0
   for calId in calIds:
     i += 1
@@ -40568,7 +40578,7 @@ def _printShowCalendarEvents(origUser, user, origCal, calIds, count, calendarEve
           for event in events:
             if calendarEventEntity['showDayOfWeek']:
               _getEventDaysOfWeek(event)
-            _printCalendarEvent(user, calId, event, csvPF, FJQC)
+            _printCalendarEvent(user, calId, event, csvPF, FJQC, addCSVData)
         elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT] and user:
           csvPF.WriteRowNoFilter({'calendarId': calId, 'primaryEmail': user, 'id': ''})
       else:
@@ -40586,6 +40596,8 @@ def _printShowCalendarEvents(origUser, user, origCal, calIds, count, calendarEve
         row = {'calendarId': calId}
         if user:
           row['primaryEmail'] = user
+        if addCSVData:
+          row.update(addCSVData)
         row['events'] = jcount
         if not calendarEventEntity['eventRowFilter']:
           csvPF.WriteRow(row)
@@ -40816,6 +40828,8 @@ def _getCalendarPrintShowEventOptions(calendarEventEntity, entityType):
   csvPF = CSVPrintFile(['primaryEmail', 'calendarId', 'id'] if entityType == Ent.USER else ['calendarId', 'id'], 'sortall', indexedTitles=EVENT_INDEXED_TITLES) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   fieldsList = []
+  addCSVData = {}
+  addCSVDataLoc = 2 if entityType == Ent.USER else 1
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -40824,6 +40838,9 @@ def _getCalendarPrintShowEventOptions(calendarEventEntity, entityType):
       pass
     elif myarg == 'fields':
       _getEventFields(fieldsList)
+    elif csvPF and myarg == 'addcsvdata':
+      k = getString(Cmd.OB_STRING)
+      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
     elif myarg == 'countsonly':
       calendarEventEntity['countsOnly'] = True
     elif myarg == 'showdayofweek':
@@ -40836,27 +40853,35 @@ def _getCalendarPrintShowEventOptions(calendarEventEntity, entityType):
     fieldsList = ['id']
   if csvPF:
     if calendarEventEntity['countsOnly']:
+      csvPF.SetFormatJSON(False)
       csvPF.RemoveTitles(['id'])
+      if addCSVData:
+        csvPF.InsertTitles(addCSVDataLoc, sorted(addCSVData.keys()))
       csvPF.AddTitles(['events'])
+      csvPF.SetSortAllTitles()
       calendarEventEntity['countsOnlyTitles'] = csvPF.titlesList[:]
-    elif not FJQC.formatJSON and not fieldsList:
-      csvPF.AddSortTitles(EVENT_PRINT_ORDER)
+    else:
+      if addCSVData:
+        csvPF.InsertTitles(addCSVDataLoc, sorted(addCSVData.keys()))
+      if not FJQC.formatJSON and not fieldsList:
+        csvPF.AddTitles(EVENT_PRINT_ORDER)
+      csvPF.SetSortAllTitles()
   _addEventEntitySelectFields(calendarEventEntity, fieldsList)
-  return (csvPF, FJQC, fieldsList)
+  return (csvPF, FJQC, fieldsList, addCSVData)
 
 # gam calendars <CalendarEntity> print events <EventEntity> <EventDisplayProperties>*
 #	[fields <EventFieldNameList>] [showdayofweek]
-#	[countsonly [eventrowfilter]]
-#	[formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
+#	(addcsvdata <FieldName> <String>)*
+#	[eventrowfilter]
+#	[countsonly|(formatjson [quotechar <Character>])] [todrive <ToDriveAttribute>*]
 # gam calendars <CalendarEntity> show events <EventEntity> <EventDisplayProperties>*
 #	[fields <EventFieldNameList>] [showdayofweek]
-#	[countsonly]
-#	[formatjson]
+#	[countsonly|formatjson]
 def doCalendarsPrintShowEvents(calIds):
   calendarEventEntity = getCalendarEventEntity()
-  csvPF, FJQC, fieldsList = _getCalendarPrintShowEventOptions(calendarEventEntity, Ent.CALENDAR)
+  csvPF, FJQC, fieldsList, addCSVData = _getCalendarPrintShowEventOptions(calendarEventEntity, Ent.CALENDAR)
   _printShowCalendarEvents(None, None, None, calIds, len(calIds), calendarEventEntity,
-                           csvPF, FJQC, fieldsList)
+                           csvPF, FJQC, fieldsList, addCSVData)
   if csvPF:
     if calendarEventEntity['countsOnly'] and calendarEventEntity['eventRowFilter']:
       csvPF.SetTitles(calendarEventEntity['countsOnlyTitles'])
@@ -48863,13 +48888,15 @@ def _doInfoCourses(courseIdList):
 
 # gam info courses <CourseEntity> [owneraccess]
 #	[owneremail] [alias|aliases] [show none|all|students|teachers] [countsonly]
-#	[fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>] [formatjson]
+#	[fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>]
+#	[formatjson]
 def doInfoCourses():
   _doInfoCourses(getEntityList(Cmd.OB_COURSE_ENTITY, shlexSplit=True))
 
 # gam info course <CourseID> [owneraccess]
 #	[owneremail] [alias|aliases] [show none|all|students|teachers] [countsonly]
-#	[fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>] [formatjson]
+#	[fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>]
+#	[formatjson]
 def doInfoCourse():
   _doInfoCourses(getStringReturnInList(Cmd.OB_COURSE_ID))
 
@@ -49187,7 +49214,7 @@ COURSE_ANNOUNCEMENTS_INDEXED_TITLES = ['materials']
 #	(orderby <CourseAnnouncementOrderByFieldName> [ascending|descending])*)
 #	[showcreatoremails|creatoremail] [fields <CourseAnnouncementFieldNameList>]
 #	[timefilter creationtime|updatetime|scheduledtime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
-#	[countsonly] [formatjson [quotechar <Character>]]
+#	[countsonly|(formatjson [quotechar <Character>])]
 def doPrintCourseAnnouncements():
   def _printCourseAnnouncement(course, courseAnnouncement, i, count):
     if applyCourseItemFilter and not _courseItemPassesFilter(courseAnnouncement, courseItemFilter):
@@ -49243,6 +49270,8 @@ def doPrintCourseAnnouncements():
   coursesInfo = _getCoursesInfo(croom, courseSelectionParameters, courseShowProperties)
   if coursesInfo is None:
     return
+  if countsOnly:
+    csvPF.SetFormatJSON(False)
   applyCourseItemFilter = _setApplyCourseItemFilter(courseItemFilter, fieldsList)
   if showCreatorEmail and fieldsList:
     fieldsList.append('creatorUserId')
@@ -49299,7 +49328,7 @@ COURSE_TOPICS_SORT_TITLES = ['courseId', 'courseName', 'topicId', 'name', 'updat
 #	(course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] states <CourseStateList>])
 #	[topicids <CourseTopicIDEntity>]
 #	[timefilter updatetime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
-#	[countsonly] [formatjson [quotechar <Character>]]
+#	[countsonly|(formatjson [quotechar <Character>])]
 def doPrintCourseTopics():
   def _printCourseTopic(course, courseTopic):
     if applyCourseItemFilter and not _courseItemPassesFilter(courseTopic, courseItemFilter):
@@ -49340,6 +49369,8 @@ def doPrintCourseTopics():
   coursesInfo = _getCoursesInfo(croom, courseSelectionParameters, courseShowProperties)
   if coursesInfo is None:
     return
+  if countsOnly:
+    csvPF.SetFormatJSON(False)
   applyCourseItemFilter = _setApplyCourseItemFilter(courseItemFilter, fieldsList)
   courseTopicIdsLists = courseTopicIds if isinstance(courseTopicIds, dict) else None
   i = 0
@@ -49584,6 +49615,8 @@ def doPrintCourseWM(entityIDType, entityStateType):
   coursesInfo = _getCoursesInfo(croom, courseSelectionParameters, courseShowProperties)
   if coursesInfo is None:
     return
+  if countsOnly:
+    csvPF.SetFormatJSON(False)
   applyCourseItemFilter = _setApplyCourseItemFilter(courseItemFilter, fieldsList)
   courseWMIds = courseWMSelectionParameters['courseWMIds']
   courseWMIdsLists = courseWMIds if isinstance(courseWMIds, dict) else {}
@@ -49639,7 +49672,7 @@ def doPrintCourseWM(entityIDType, entityStateType):
 #	[showcreatoremails|creatoremail] [showtopicnames] [fields <CourseMaterialFieldNameList>]
 #	[timefilter creationtime|updatetime|scheduledtime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
 #	[oneitemperrow]
-#	[countsonly] [formatjson [quotechar <Character>]]
+#	[countsonly|(formatjson [quotechar <Character>])]
 def doPrintCourseMaterials():
   doPrintCourseWM(Ent.COURSE_MATERIAL_ID, Ent.COURSE_MATERIAL_STATE)
 
@@ -49651,7 +49684,7 @@ def doPrintCourseMaterials():
 #	[showstudentsaslist [<Boolean>]] [delimiter <Character>]
 #	[timefilter creationtime|updatetime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
 #	[oneitemperrow]
-#	[countsonly] [formatjson [quotechar <Character>]]
+#	[countsonly|(formatjson [quotechar <Character>])]
 def doPrintCourseWork():
   doPrintCourseWM(Ent.COURSE_WORK_ID, Ent.COURSE_WORK_STATE)
 
@@ -49695,7 +49728,7 @@ def _gettingCourseSubmissionQuery(courseSubmissionStates, late, userId):
 #	(submissionids <CourseSubmissionIDEntity>)|((submissionstates <CourseSubmissionStateList>)*) [late|notlate]
 #	[fields <CourseSubmissionFieldNameList>] [showuserprofile]
 #	[timefilter creationtime|updatetime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
-#	[countsonly] [formatjson [quotechar <Character>]]
+#	[countsonly|(formatjson [quotechar <Character>])]
 def doPrintCourseSubmissions():
   def _printCourseSubmission(course, courseSubmission):
     if applyCourseItemFilter and not _courseItemPassesFilter(courseSubmission, courseItemFilter):
@@ -49777,6 +49810,8 @@ def doPrintCourseSubmissions():
   coursesInfo = _getCoursesInfo(croom, courseSelectionParameters, courseShowProperties, getOwnerId=True)
   if coursesInfo is None:
     return
+  if countsOnly:
+    csvPF.SetFormatJSON(False)
   applyCourseItemFilter = _setApplyCourseItemFilter(courseItemFilter, fieldsList)
   courseWorkIds = courseWMSelectionParameters['courseWMIds']
   courseWorkIdsLists = courseWorkIds if isinstance(courseWorkIds, dict) else {}
@@ -53523,16 +53558,16 @@ def infoCalendarEvents(users):
 
 # gam <UserTypeEntity> print events <UserCalendarEntity> <EventEntity> <EventDisplayProperties>*
 #	[fields <EventFieldNameList>] [showdayofweek]
-#	[countsonly [eventrowfilter]]
-#	[formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
+#	(addcsvdata <FieldName> <String>)*
+#	[eventrowfilter]
+#	[countsonly|(formatjson [quotechar <Character>])] [todrive <ToDriveAttribute>*]
 # gam <UserTypeEntity> show events <UserCalendarEntity> <EventEntity> <EventDisplayProperties>*
 #	[fields <EventFieldNameList>] [showdayofweek]
-#	[countsonly]]
-#	[formatjson]
+#	~[countsonly|formatjson]
 def printShowCalendarEvents(users):
   calendarEntity = getUserCalendarEntity()
   calendarEventEntity = getCalendarEventEntity()
-  csvPF, FJQC, fieldsList = _getCalendarPrintShowEventOptions(calendarEventEntity, Ent.USER)
+  csvPF, FJQC, fieldsList, addCSVData = _getCalendarPrintShowEventOptions(calendarEventEntity, Ent.USER)
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -53543,7 +53578,7 @@ def printShowCalendarEvents(users):
       continue
     Ind.Increment()
     _printShowCalendarEvents(origUser, user, cal, calIds, jcount, calendarEventEntity,
-                             csvPF, FJQC, fieldsList)
+                             csvPF, FJQC, fieldsList, addCSVData)
     Ind.Decrement()
   if csvPF:
     if calendarEventEntity['countsOnly'] and calendarEventEntity['eventRowFilter']:
@@ -53987,7 +54022,7 @@ def printShowStatusEvent(users, eventType):
           for event in events:
             if showDayOfWeek:
               _getEventDaysOfWeek(event)
-            _printCalendarEvent(user, calId, event, csvPF, FJQC)
+            _printCalendarEvent(user, calId, event, csvPF, FJQC, {})
         if 'pdelta' in wlDate:
           first = first.shift(**wlDate['pdelta'])
           last = last.shift(**wlDate['pdelta'])
@@ -77238,7 +77273,7 @@ TASK_QUERY_STATE_MAP = {
 #	[updatedmin <Time>]
 #	[showcompleted [<Boolean>]] [showdeleted [<Boolean>]] [showhidden [<Boolean>]] [showall]
 #	[orderby completed|due|updated]
-#	[countsonly | (formatjson [quotechar <Character>])]
+#	[countsonly|(formatjson [quotechar <Character>])]
 def printShowTasks(users):
   def _showTaskAndChildren(tasklist, taskId, k, compact):
     if taskId in taskParentsProcessed:
@@ -77305,8 +77340,11 @@ def printShowTasks(users):
         csvPF.SetTitles(['User', CSVTitle])
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
-  if csvPF and FJQC.formatJSON:
-    csvPF.SetJSONTitles(['User', 'tasklistId', 'id', 'taskId', 'title', 'JSON'])
+  if csvPF:
+    if countsOnly:
+      csvPF.SetFormatJSON(False)
+    elif FJQC.formatJSON:
+      csvPF.SetJSONTitles(['User', 'tasklistId', 'id', 'taskId', 'title', 'JSON'])
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -77505,7 +77543,7 @@ def processTasklists(users):
 # gam <UserTypeEntity> show tasklists
 #	[countsonly|formatjson]
 # gam <UserTypeEntity> print tasklists [todrive <ToDriveAttribute>*]
-#	[countsonly | (formatjson [quotechar <Character>])]
+#	[countsonly|(formatjson [quotechar <Character>])]
 def printShowTasklists(users):
   csvPF = CSVPrintFile(['User', 'id', 'title']) if Act.csvFormat() else None
   if csvPF:
@@ -77523,6 +77561,8 @@ def printShowTasklists(users):
         csvPF.SetTitles(['User', CSVTitle])
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
+  if countsOnly and csvPF:
+    csvPF.SetFormatJSON(False)
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1

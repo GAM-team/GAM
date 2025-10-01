@@ -1932,12 +1932,12 @@ gam calendar|calendars <CalendarEntity> info events [<EventEntity>] [maxinstance
         [formatjson]
 gam calendar|calendars <CalendarEntity> show events [<EventEntity>] <EventDisplayProperty>*
         [fields <EventFieldNameList>] [showdayofweek]
-        [countsonly]
-        [formatjson]
+        [countsonly|formatjson]
 gam calendar|calendars <CalendarEntity> print events [<EventEntity>] <EventDisplayProperty>*
         [fields <EventFieldNameList>] [showdayofweek]
-        [countsonly [eventrowfilter]]
-        [formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
+        (addcsvdata <FieldName> <String>)*
+        [eventrowfilter]
+        [countsonly|(formatjson [quotechar <Character>])] [todrive <ToDriveAttribute>*]
 
 gam calendar <CalendarEntity> addevent <EventAttribute>+ [<EventNotificationAttribute>]
         [showdayofweek]
@@ -3745,16 +3745,14 @@ gam print domaincontacts|peoplecontacts [todrive <ToDriveAttribute>*]
         [sources <PeopleSourceName>]
         [query <String>]
         [mergesources <PeopleMergeSourceName>]
-        [coountsonly]
         [allfields|(fields <PeopleFieldNameList>)] [showmetadata]
-        [formatjson [quotechar <Character>]]
+        [coountsonly|(formatjson [quotechar <Character>])]
 gam show domaincontacts|peoplecontacts
         [sources <PeopleSourceName>]
         [query <String>]
         [mergesources <PeopleMergeSourceName>]
-        [coountsonly]
         [allfields|(fields <PeopleFieldNameList>)] [showmetadata]
-        [formatjson]
+        [coountsonly|formatjson]
 
 gam info people|peopleprofile <PeopleResourceNameEntity>
         [allfields|(fields <PeopleFieldNameList>)] [showmetadata]
@@ -3762,15 +3760,13 @@ gam info people|peopleprofile <PeopleResourceNameEntity>
 gam print people|peopleprofile [todrive <ToDriveAttribute>*]
         [query <String>]
         [mergesources <PeopleMergeSourceName>]
-        [coountsonly]
         [allfields|(fields <PeopleFieldNameList>)] [showmetadata]
-        [formatjson [quotechar <Character>]]
+        [coountsonly|(formatjson [quotechar <Character>])]
 gam show people|peopleprofile
         [query <String>]
         [mergesources <PeopleMergeSourceName>]
-        [coountsonly]
         [allfields|(fields <PeopleFieldNameList>)] [showmetadata]
-        [formatjson]
+        [coountsonly|formatjson]
 
 # Email Audit Monitor
 
@@ -6315,12 +6311,11 @@ gam <UserTypeEntity> info events <UserCalendarEntity> [<EventEntity>] [maxinstan
         [formatjson]
 gam <UserTypeEntity> show events <UserCalendarEntity> [<EventEntity>] <EventDisplayProperty>*
         [fields <EventFieldNameList>] [showdayofweek]
-        [countsonly]
-        [formatjson]
+        [countsonly|formatjson]
 gam <UserTypeEntity> print events <UserCalendarEntity> [<EventEntity>] <EventDisplayProperty>*
         [fields <EventFieldNameList>] [showdayofweek]
-        [countsonly [eventrowfilter]]
-        [formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
+        [eventrowfilter]]
+        [countsonly|(formatjson [quotechar <Character>])] [todrive <ToDriveAttribute>*]
 
 gam <UserTypeEntity> update calattendees <UserCalendarEntity> <EventEntity> [anyorganizer]
         [<EventNotificationAttribute>] [splitupdate] [dryrun|doit]
@@ -8344,13 +8339,13 @@ gam <UserTypeEntity> info contacts
 gam <UserTypeEntity> show contacts
         <PeoplePrintShowUserContactSelection>
         [orderby firstname|lastname|(lastmodified ascending)|(lastnodified descending)
-        [countsonly|allfields|(fields <PeopleFieldNameList>)] [showgroups] [showmetadata]
-        [formatjson]
+        [allfields|(fields <PeopleFieldNameList>)] [showgroups] [showmetadata]
+        [countsonly|formatjson]
 gam <UserTypeEntity> print contacts [todrive <ToDriveAttribute>*]
         <PeoplePrintShowUserContactSelection>
         [orderby firstname|lastname|(lastmodified ascending)|(lastnodified descending)
-        [countsonly|allfields|(fields <PeopleFieldNameList>)] [[showgroups|showgroupnameslist] showmetadata]
-        [formatjson [quotechar <Character>]]
+        [allfields|(fields <PeopleFieldNameList>)] [[showgroups|showgroupnameslist] showmetadata]
+        [countsonly|(formatjson [quotechar <Character>])]
 
 <OtherContactsFieldName> ::=
         emailaddresses|
@@ -8584,7 +8579,7 @@ gam <UserTypeEntity> info tasklist <TasklistEntity>
 gam <UserTypeEntity> show tasklists
         [countsonly|formatjson]
 gam <UserTypeEntity> print tasklists [todrive <ToDriveAttribute>*]
-        [countsonly | (formatjson [quotechar <Character>])]
+        [countsonly|(formatjson [quotechar <Character>])]
 
 # Users - Shared Drives
 
