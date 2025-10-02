@@ -1028,7 +1028,7 @@ jobs:
             tar_folders="bin/"
           fi
           echo '.git*' > ./excludes.txt
-          tar cJvvf --exclude-from excludes.txt cache.tar.xz $tar_folders
+          tar cJvvf cache.tar.xz --exclude-from=excludes.txt $tar_folders
 
   merge:
     if: (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
