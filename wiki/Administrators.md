@@ -1475,15 +1475,19 @@ gam delete admin <RoleAssignmentId>
 ## Display administrators
 ```
 gam print admins [todrive <ToDriveAttribute>*]
-        [user|group <EmailAddress>|<UniqueID>] [role <RoleItem>] [condition]
-        [privileges] [oneitemperrow]
+        [user|group <EmailAddress>|<UniqueID>] [role <RoleItem>]
+        [recursive] [condition] [privileges] [oneitemperrow]
 gam show admins
-        [user|group <EmailAddress>|<UniqueID>] [role <RoleItem>] [condition] [privileges]
+        [user|group <EmailAddress>|<UniqueID>] [role <RoleItem>]
+        [recursive] [condition] [privileges]
 ```
 By default, all administrators and roles are displayed; choose from the following
 options to limit the display:
-* `user <UserItem>` -  Display only this administrator
+* `user|group <EmailAddress>|<UniqueID>` - Display assignments to this administrator
 * `role <RoleItem>` - Display only administrators with this role
+
+By default, assignments to security groups are shown as a single item; use `recursive'
+to display assignments to the members of the security groups the security group membershop is recursively expanded.
 
 * `condition` - Display any conditions associated with a role assignment
 * `privileges` - Display privileges associated with each role assignment

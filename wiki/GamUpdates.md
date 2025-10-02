@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.23.05
+
+Added option `recursive` to `gam print|show admins` that will display assignments to the members
+of security groups assigned to roles; the security group membership is recursively expanded.
+
 ### 7.23.04
 
 Added option `addcsvdata <FieldName> <String>` to `gam <UserTypeEntity> print events`
