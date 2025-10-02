@@ -122,7 +122,7 @@ gam <UserTypeEntity> show tasks [tasklists <TasklistEntity>]
         [updatedmin <Time>]
         [showcompleted [<Boolean>]] [showdeleted [<Boolean>]] [showhidden [<Boolean>]] [showall]
         [orderby completed|due|updated]
-        [countsonly|compact|formatjson]
+        [compact|countsonly|formatjson]
 ```
 The API only supports dates in `duemin` and `duemax' but you must supply a null time:
 * `duemin YYYY-MM-DDT00:00:00Z` - Specify the starting due date
@@ -152,7 +152,7 @@ gam <UserTypeEntity> print tasks [tasklists <TasklistEntity>] [todrive <ToDriveA
         [updatedmin <Time>]
         [showcompleted [<Boolean>]] [showdeleted [<Boolean>]] [showhidden [<Boolean>]] [showall]
         [orderby completed|due|updated]
-        [countsonly | (formatjson [quotechar <Character>])]
+        [countsonly|(formatjson [quotechar <Character>])]
 ```
 The API only supports dates in `duemin` and `duemax' but you must supply a null time:
 * `duemin YYYY-MM-DDT00:00:00Z` - Specify the starting due date
@@ -230,7 +230,7 @@ By default, Gam displays the task lists as an indented list of keys and values.
 
 ```
 gam <UserTypeEntity> print tasklists [todrive <ToDriveAttribute>*]
-        [countsonly | (formatjson [quotechar <Character>])]
+        [countsonly|(formatjson [quotechar <Character>])]
 ```
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.

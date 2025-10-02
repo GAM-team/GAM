@@ -10,6 +10,18 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.23.04
+
+Added option `addcsvdata <FieldName> <String>` to `gam <UserTypeEntity> print events`
+and `gam calendars <CalendarEntity> print events` that adds additional columns of data to the CSV file output.
+An example would be to get the calendar name in addition to the calendar ID when printing events.
+```
+gam redirect csv ./Resources.csv print resources fields email,name
+gam redirect csv ./ResourceEventCounts.csv multiprocess redirect stderr - multiprocess csv Resources.csv gam calendar "~resourceEmail" print events starttime -1y countsonly addcsvdata calendarName "~resourceName"
+```
+
+Upgraded to OpenSSL 3.6.0.
+
 ### 7.23.03
 
 Upgraded to OpenSSL 3.5.4.

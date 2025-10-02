@@ -567,7 +567,7 @@ By default, Gam displays the information as an indented list of keys and values.
 ```
 gam calendar <CalendarEntity> show events [<EventEntity>] <EventDisplayProperty>*
         [fields <EventFieldNameList>] [showdayofweek]
-        [countsly] [formatjson]
+        [countsly|formatjson]
 ```
 In `<EventEntity>`, any `<EventSelectProperty>` options must precede all other options.
 
@@ -586,8 +586,9 @@ By default, Gam displays event details, use `countsonly` to display only the num
 ```
 gam calendar <CalendarEntity> print events [<EventEntity>] <EventDisplayProperty>*
         [fields <EventFieldNameList>] [showdayofweek]
-        [countsonly [eventrowfilter]]
-        [formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
+        (addcsvdata <FieldName> <String>)*
+        [eventrowfilter]
+        [countsonly|(formatjson [quotechar <Character>])] [todrive <ToDriveAttribute>*]
 ```
 In `<EventEntity>`, any `<EventSelectProperty>` options must precede all other options.
 
@@ -597,6 +598,9 @@ option `singleevents` to display all instances of a recurring event.
 `<EventDisplayProperty> orderby starttime` is only valid with `<EventSelectProperty> singleevents`.
 
 `showdayofweek` displays columns `start.dayOfWeek` and `end.dayOfWeek` when event start and end times are displayed.
+
+Add additional columns of data from the command line to the output after the calendarId.
+* `addcsvdata <FieldName> <String>`
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.

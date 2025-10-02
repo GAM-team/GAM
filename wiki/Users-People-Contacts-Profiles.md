@@ -398,8 +398,8 @@ By default, Gam displays the information as an indented list of keys and values.
 gam <UserTypeEntity> show contacts
         <PeoplePrintShowUserContactSelection>
         [orderby firstname|lastname|(lastmodified ascending)|(lastnodified descending)
-        [countsonly|allfields|(fields <PeopleFieldNameList>)] [showgroups] [showmetadata]
-        [formatjson]
+        [allfields|(fields <PeopleFieldNameList>)] [showgroups] [showmetadata]
+        [countsonly|formatjson]
 ```
 By default, Gam displays all of a user's people contacts.
 * `query <String>` - Display contacts based on the data in their fields
@@ -416,8 +416,8 @@ By default, Gam displays the information as an indented list of keys and values.
 gam <UserTypeEntity> print contacts [todrive <ToDriveAttribute>*]
         <PeoplePrintShowUserContactSelection>
         [orderby firstname|lastname|(lastmodified ascending)|(lastnodified descending)
-        [countsonly|allfields|(fields <PeopleFieldNameList>)] [showgroups] [showmetadata]
-        [formatjson [quotechar <Character>]]
+        [allfields|(fields <PeopleFieldNameList>)] [showgroups] [showmetadata]
+        [countsonly|(formatjson [quotechar <Character>])]
 ```
 By default, Gam displays all of a user's people contacts.
 * `query <String>` - Display contacts based on the data in their fields
@@ -547,8 +547,8 @@ User: user@domain.com, Delete maximum of 15 Other Contacts
 ```
 gam <UserTypeEntity> show othercontacts
         [<OtherContactsSelection>]
-        [countsonly|allfields|(fields <OtherContactsFieldNameList>)] [showmetadata]
-        [formatjson]
+        [allfields|(fields <OtherContactsFieldNameList>)] [showmetadata]
+        [countsonly|formatjson]
 ```
 By default, Gam displays all of a user's Other Contacts; use
 `<OtherContactsSelection>` to display a selection of Other Contacts.
@@ -563,8 +563,8 @@ By default, Gam displays the information as an indented list of keys and values.
 ```
 gam <UserTypeEntity> print othercontacts [todrive <ToDriveAttribute>*]
         [<OtherContactsSelection>]
-        [countsonly|allfields|(fields <OtherContactsFieldNameList>)] [showmetadata]
-        [formatjson [quotechar <Character>]]
+        [allfields|(fields <OtherContactsFieldNameList>)] [showmetadata]
+        [countsonly|(formatjson [quotechar <Character>])]
 ```
 By default, Gam displays all of a user's Other Contacts; use
 `<OtherContactsSelection>` to display a selection of Other Contacts.
