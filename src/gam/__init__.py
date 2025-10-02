@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.23.05'
+__version__ = '7.23.06'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -16990,21 +16990,37 @@ def doDeleteAdmin():
   except (GAPI.forbidden, GAPI.permissionDenied) as e:
     ClientAPIAccessDeniedExit(str(e))
 
-ASSIGNEE_EMAILTYPE_TOFIELD_MAP = {
+ADMIN_ASSIGNEE_TYPE_TO_ASSIGNEDTO_FIELD_MAP = {
   'user': 'assignedToUser',
   'group': 'assignedToGroup',
   'serviceaccount': 'assignedToServiceAccount',
+  'unknown': 'assignedToUnknown',
   }
+ALL_ASSIGNEE_TYPES = ['user', 'group', 'serviceaccount']
+
 PRINT_ADMIN_FIELDS = ['roleAssignmentId', 'roleId', 'assignedTo', 'scopeType', 'orgUnitId', 'assigneeType']
 PRINT_ADMIN_TITLES = ['roleAssignmentId', 'roleId', 'role',
                       'assignedTo', 'assignedToUser', 'assignedToGroup', 'assignedToServiceAccount', 'assignedToUnknown',
                       'scopeType', 'orgUnitId', 'orgUnit']
 
+def getAssigneeTypes(myarg, typesSet):
+  if myarg in {'type', 'types'}:
+    for gtype in getString(Cmd.OB_ADMIN_ASSIGNEE_TYPE_LIST).lower().replace(',', ' ').split():
+      if gtype in ADMIN_ASSIGNEE_TYPE_TO_ASSIGNEDTO_FIELD_MAP:
+        typesSet.add(ADMIN_ASSIGNEE_TYPE_TO_ASSIGNEDTO_FIELD_MAP[gtype])
+      else:
+        invalidChoiceExit(gtype, ADMIN_ASSIGNEE_TYPE_TO_ASSIGNEDTO_FIELD_MAP, True)
+  else:
+    return False
+  return True
+
 # gam print admins [todrive <ToDriveAttribute>*]
 #	[user|group <EmailAddress>|<UniqueID>] [role <RoleItem>]
+#	[types <AdminAssigneeTypeList>]
 #	[recursive] [condition] [privileges] [oneitemperrow]
 # gam show admins
 #	[user|group <EmailAddress>|<UniqueID>] [role <RoleItem>]
+#	[types <AdminAssigneeTypeList>]
 #	[recursive] [condition] [privileges]
 def doPrintShowAdmins():
   def _getPrivileges(admin):
@@ -17034,14 +17050,16 @@ def doPrintShowAdmins():
     assignedTo = admin['assignedTo']
     if assignedTo not in assignedToIdEmailMap:
       assigneeEmail, assigneeType = convertUIDtoEmailAddressWithType(f'uid:{assignedTo}', cd, sal,
-                                                                     emailTypes=allAssigneeTypes if admin.get('assigneeType') != 'group' else ['group'])
-      if assigneeType in ASSIGNEE_EMAILTYPE_TOFIELD_MAP:
-        assignedToField = ASSIGNEE_EMAILTYPE_TOFIELD_MAP[assigneeType]
+                                                                     emailTypes=ALL_ASSIGNEE_TYPES if admin.get('assigneeType') != 'group' else ['group'])
+      if assigneeType in ADMIN_ASSIGNEE_TYPE_TO_ASSIGNEDTO_FIELD_MAP:
+        assignedToField = ADMIN_ASSIGNEE_TYPE_TO_ASSIGNEDTO_FIELD_MAP[assigneeType]
       else:
         assignedToField = 'assignedToUnknown'
+      if assignedToField == 'assignedToUnknown':
         assigneeEmail = True
       assignedToIdEmailMap[assignedTo] = {'assignedToField': assignedToField, 'assigneeEmail': assigneeEmail}
     admin[assignedToIdEmailMap[assignedTo]['assignedToField']] = assignedToIdEmailMap[assignedTo]['assigneeEmail']
+    admin['assignedToField'] = assignedToIdEmailMap[assignedTo]['assignedToField']
     if privileges is not None:
       admin.update(privileges)
     if 'orgUnitId' in admin:
@@ -17058,11 +17076,11 @@ def doPrintShowAdmins():
   roleId = None
   userKey = None
   oneItemPerRow = recursive = showPrivileges = False
+  typesSet = set()
   kwargs = {}
   rolePrivileges = {}
   fieldsList = PRINT_ADMIN_FIELDS
   assignedToIdEmailMap = {}
-  allAssigneeTypes = list(ASSIGNEE_EMAILTYPE_TOFIELD_MAP.keys())
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -17071,6 +17089,8 @@ def doPrintShowAdmins():
       userKey = kwargs['userKey'] = getEmailAddress()
     elif myarg == 'role':
       _, roleId = getRoleId()
+    elif getAssigneeTypes(myarg, typesSet):
+      pass
     elif myarg == 'recursive':
       recursive = True
       allGroupRoles = ','.join(sorted(ALL_GROUP_ROLES))
@@ -17093,6 +17113,8 @@ def doPrintShowAdmins():
   if roleId and not kwargs:
     kwargs['roleId'] = roleId
     roleId = None
+  if not typesSet:
+    typesSet = set(ADMIN_ASSIGNEE_TYPE_TO_ASSIGNEDTO_FIELD_MAP.values())
   fields = getItemFieldsFromFieldsList('items', fieldsList)
   printGettingAllAccountEntities(Ent.ADMIN_ROLE_ASSIGNMENT)
   try:
@@ -17123,11 +17145,12 @@ def doPrintShowAdmins():
     i += 1
     if roleId and roleId != admin['roleId']:
       continue
+    assignedTo = admin['assignedTo']
     if admin['assigneeType'] != 'group' or not recursive:
       _setNamesFromIds(admin, _getPrivileges(admin))
-      expandedAdmins.append(admin)
+      if admin['assignedToField'] in typesSet:
+        expandedAdmins.append(admin)
       continue
-    assignedTo = admin['assignedTo']
     if assignedTo not in groupMembers:
       membersList = []
       membersSet = set()
@@ -17136,6 +17159,9 @@ def doPrintShowAdmins():
                       memberOptions, memberDisplayOptions, level, {Ent.TYPE_USER})
       groupMembers[assignedTo] = membersList[:]
     _setNamesFromIds(admin, _getPrivileges(admin))
+    if admin[assignedToIdEmailMap[assignedTo]['assignedToField']] not in typesSet:
+      continue
+    expandedAdmins.append(admin)
     if not groupMembers[assignedTo]:
       expandedAdmins.append(admin)
       continue
@@ -17173,6 +17199,7 @@ def doPrintShowAdmins():
     Ind.Decrement()
   else:
     for admin in expandedAdmins:
+      admin.pop('assignedToField')
       if not oneItemPerRow or 'rolePrivileges' not in admin:
         csvPF.WriteRowTitles(flattenJSON(admin))
       else:

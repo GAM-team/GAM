@@ -1,7 +1,16 @@
+7.23.06
+
+Added option `types <AdminAssigneeTypeList>` to `gam print|show admins` that allows filtering
+of admin assignments by the type of the assignee; by default, all assignee types are displayed.
+```
+<AdminAssigneeType> ::= group|user|serviceaccount|unknown
+<AdminAssigneeTypeList> ::= "<AdminAssigneeType>(,<AdminAssigneeType>)*"
+```
+
 7.23.05
 
-Added option `recursive` to `gam print|show admins` that will display assignments to the members
-of security groups assigned to roles; the security group membershop is recursively expanded.
+Added option `recursive` that will display assignments to the members
+of security groups assigned to roles; the security group membership is recursively expanded.
 
 7.23.04
 

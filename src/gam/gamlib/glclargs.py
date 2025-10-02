@@ -1138,6 +1138,7 @@ class GamCLArgs():
   OB_ARGUMENT = 'argument'
   OB_ASP_ID_LIST = 'ASPIDList'
   OB_ASSET_ID = 'AssetID'
+  OB_ADMIN_ASSIGNEE_TYPE_LIST = 'AdminAssigneeTypeList'
   OB_BROWSER_ENROLLEMNT_TOKEN_ID = 'BrowserEnrollmentTokenID'
   OB_BROWSER_ENTITY = 'BrowserEntity'
   OB_BUILDING_ID = 'BuildingID'

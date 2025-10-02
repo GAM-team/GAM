@@ -368,6 +368,7 @@ If an item contains spaces, it should be surrounded by ".
 ## Named items
 
 <AccessToken> ::= <String>
+<AdminAssigneeType> ::= group|user|serviceaccount|unknown
 <AlertID> ::= <String>
 <APIScopeURL> ::= <String>
 <APPID> ::= <String>
@@ -691,6 +692,7 @@ If an item contains spaces, it should be surrounded by ".
 
 ## Lists of basic items
 
+<AdminAssigneeTypeList> ::= "<AdminAssigneeType>(,<AdminAssigneeType>)*"
 <APIScopeURLList> ::= "<APIScopeURL>(,<APIScopeURL>)*"
 <ASPIDList> ::= "<ASPID>(,<ASPID>)*"
 <AssetTagList> ::= "<AssetTag>(,<AssetTag>)*"
@@ -1553,9 +1555,11 @@ gam delete admin <RoleAssignmentId>
 
 gam print admins [todrive <ToDriveAttribute>*]
         [user|group <EmailAddress>|<UniqueID>] [role <RoleItem>]
+        [types <AdminAssigneeTypeList>]
         [recursive] [condition] [privileges] [oneitemperrow]
 gam show admins
         [user|group <EmailAddress>|<UniqueID>] [role <RoleItem>]
+        [types <AdminAssigneeTypeList>]
         [recursive] [condition] [privileges]
 
 # Alert Center
