@@ -1487,7 +1487,7 @@ options to limit the display:
 * `role <RoleItem>` - Display only administrators with this role
 
 By default, assignments to security groups are shown as a single item; use `recursive`
-to display assignments to the members of the security groups the security group membershop is recursively expanded.
+to display assignments to the members of the security groups; the security group membershop is recursively expanded.
 
 * `condition` - Display any conditions associated with a role assignment
 * `privileges` - Display privileges associated with each role assignment
