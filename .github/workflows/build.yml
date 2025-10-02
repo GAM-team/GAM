@@ -158,7 +158,7 @@ jobs:
         with:
           path: |
             cache.tar.xz
-          key: gam-${{ matrix.jid }}-20251001
+          key: gam-${{ matrix.jid }}-20251002
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
@@ -1027,7 +1027,7 @@ jobs:
           else
             tar_folders="bin/"
           fi
-          tar cJvvf cache.tar.xz $tar_folders
+          tar cJvvf cache.tar.xz $tar_folders --exclude=.git
 
   merge:
     if: (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
