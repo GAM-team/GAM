@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.23.04'
+__version__ = '7.23.05'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -16995,16 +16995,17 @@ ASSIGNEE_EMAILTYPE_TOFIELD_MAP = {
   'group': 'assignedToGroup',
   'serviceaccount': 'assignedToServiceAccount',
   }
-PRINT_ADMIN_FIELDS = ['roleAssignmentId', 'roleId', 'assignedTo', 'scopeType', 'orgUnitId']
+PRINT_ADMIN_FIELDS = ['roleAssignmentId', 'roleId', 'assignedTo', 'scopeType', 'orgUnitId', 'assigneeType']
 PRINT_ADMIN_TITLES = ['roleAssignmentId', 'roleId', 'role',
                       'assignedTo', 'assignedToUser', 'assignedToGroup', 'assignedToServiceAccount', 'assignedToUnknown',
                       'scopeType', 'orgUnitId', 'orgUnit']
 
 # gam print admins [todrive <ToDriveAttribute>*]
-#	[user|group <EmailAddress>|<UniqueID>] [role <RoleItem>] [condition]
-#	[privileges] [oneitemperrow]
+#	[user|group <EmailAddress>|<UniqueID>] [role <RoleItem>]
+#	[recursive] [condition] [privileges] [oneitemperrow]
 # gam show admins
-#	[user|group <EmailAddress>|<UniqueID>] [role <RoleItem>] [condition] [privileges]
+#	[user|group <EmailAddress>|<UniqueID>] [role <RoleItem>]
+#	[recursive] [condition] [privileges]
 def doPrintShowAdmins():
   def _getPrivileges(admin):
     if showPrivileges:
@@ -17031,15 +17032,12 @@ def doPrintShowAdmins():
   def _setNamesFromIds(admin, privileges):
     admin['role'] = role_from_roleid(admin['roleId'])
     assignedTo = admin['assignedTo']
-    admin['assignedToUnknown'] = False
     if assignedTo not in assignedToIdEmailMap:
-      assigneeType = admin.get('assigneeType')
-      assignedToField = ASSIGNEE_EMAILTYPE_TOFIELD_MAP.get(assigneeType, None)
       assigneeEmail, assigneeType = convertUIDtoEmailAddressWithType(f'uid:{assignedTo}', cd, sal,
-                                                                     emailTypes=list(ASSIGNEE_EMAILTYPE_TOFIELD_MAP.keys()))
-      if not assignedToField and assigneeType in ASSIGNEE_EMAILTYPE_TOFIELD_MAP:
+                                                                     emailTypes=allAssigneeTypes if admin.get('assigneeType') != 'group' else ['group'])
+      if assigneeType in ASSIGNEE_EMAILTYPE_TOFIELD_MAP:
         assignedToField = ASSIGNEE_EMAILTYPE_TOFIELD_MAP[assigneeType]
-      if assigneeType == 'unknown':
+      else:
         assignedToField = 'assignedToUnknown'
         assigneeEmail = True
       assignedToIdEmailMap[assignedTo] = {'assignedToField': assignedToField, 'assigneeEmail': assigneeEmail}
@@ -17059,11 +17057,12 @@ def doPrintShowAdmins():
   csvPF = CSVPrintFile(PRINT_ADMIN_TITLES) if Act.csvFormat() else None
   roleId = None
   userKey = None
-  oneItemPerRow = showPrivileges = False
+  oneItemPerRow = recursive = showPrivileges = False
   kwargs = {}
   rolePrivileges = {}
   fieldsList = PRINT_ADMIN_FIELDS
   assignedToIdEmailMap = {}
+  allAssigneeTypes = list(ASSIGNEE_EMAILTYPE_TOFIELD_MAP.keys())
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -17072,6 +17071,15 @@ def doPrintShowAdmins():
       userKey = kwargs['userKey'] = getEmailAddress()
     elif myarg == 'role':
       _, roleId = getRoleId()
+    elif myarg == 'recursive':
+      recursive = True
+      allGroupRoles = ','.join(sorted(ALL_GROUP_ROLES))
+      memberOptions = initMemberOptions()
+      memberOptions[MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP] = True
+      memberOptions[MEMBEROPTION_DISPLAYMATCH] = False
+      memberDisplayOptions = initIPSGMGroupMemberDisplayOptions()
+      for role in [Ent.ROLE_MEMBER, Ent.ROLE_MANAGER, Ent.ROLE_OWNER]:
+        memberDisplayOptions[role]['show'] = True
     elif myarg == 'condition':
       fieldsList.append('condition')
       if csvPF:
@@ -17091,7 +17099,7 @@ def doPrintShowAdmins():
     admins = callGAPIpages(cd.roleAssignments(), 'list', 'items',
                            pageMessage=getPageMessage(),
                            throwReasons=[GAPI.INVALID, GAPI.USER_NOT_FOUND,
-                                         GAPI.FORBIDDEN, GAPI.SERVICE_NOT_AVAILABLE,
+                                         GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.SERVICE_NOT_AVAILABLE,
                                          GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND,
                                          GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
@@ -17099,39 +17107,72 @@ def doPrintShowAdmins():
   except (GAPI.invalid, GAPI.userNotFound):
     entityUnknownWarning(Ent.ADMINISTRATOR, userKey)
     return
-  except (GAPI.serviceNotAvailable) as e:
-    entityActionFailedExit([Ent.ADMINISTRATOR, userKey, Ent.ADMIN_ROLE, roleId], str(e))
+  except GAPI.notFound as e:
+    entityActionFailedExit([Ent.ADMIN_ROLE, kwargs['roleId']], str(e))
+  except (GAPI.forbidden, GAPI.serviceNotAvailable) as e:
+    entityActionFailedExit([Ent.ADMINISTRATOR, userKey], str(e))
   except (GAPI.badRequest, GAPI.customerNotFound):
     accessErrorExit(cd)
   except (GAPI.forbidden, GAPI.permissionDenied) as e:
     ClientAPIAccessDeniedExit(str(e))
+  count = len(admins)
+  groupMembers = {}
+  expandedAdmins = []
+  i = 0
+  for admin in admins:
+    i += 1
+    if roleId and roleId != admin['roleId']:
+      continue
+    if admin['assigneeType'] != 'group' or not recursive:
+      _setNamesFromIds(admin, _getPrivileges(admin))
+      expandedAdmins.append(admin)
+      continue
+    assignedTo = admin['assignedTo']
+    if assignedTo not in groupMembers:
+      membersList = []
+      membersSet = set()
+      level = 0
+      getGroupMembers(cd, assignedTo, allGroupRoles, membersList, membersSet, i, count,
+                      memberOptions, memberDisplayOptions, level, {Ent.TYPE_USER})
+      groupMembers[assignedTo] = membersList[:]
+    _setNamesFromIds(admin, _getPrivileges(admin))
+    if not groupMembers[assignedTo]:
+      expandedAdmins.append(admin)
+      continue
+    admin['assigneeType'] = 'user'
+    admin['assignedToGroup'] = assignedToIdEmailMap[assignedTo]['assigneeEmail']
+    for member in groupMembers[assignedTo]:
+      userAdmin = admin.copy()
+      userAdmin['assignedTo'] = member['id']
+      _setNamesFromIds(userAdmin, _getPrivileges(admin))
+      expandedAdmins.append(userAdmin)
+  admins = expandedAdmins
+  count = len(expandedAdmins)
   if not csvPF:
-    count = len(admins)
     performActionNumItems(count, Ent.ADMIN_ROLE_ASSIGNMENT)
     Ind.Increment()
     i = 0
-    for admin in admins:
+    for admin in expandedAdmins:
       i += 1
-      if roleId and roleId != admin['roleId']:
-        continue
-      _setNamesFromIds(admin, _getPrivileges(admin))
       printEntity([Ent.ADMIN_ROLE_ASSIGNMENT, admin['roleAssignmentId']], i, count)
       Ind.Increment()
       for field in PRINT_ADMIN_TITLES:
         if field in admin:
           if field == 'roleAssignmentId':
             continue
-          if field != 'rolePrivileges':
-            printKeyValueList([field, admin[field]])
-          else:
-            showJSON(None, admin[field])
+          printKeyValueList([field, admin[field]])
+      if showPrivileges:
+        rolePrivileges = admin.get('rolePrivileges', [])
+        jcount = len(rolePrivileges)
+        if jcount > 0:
+          printKeyValueList(['rolePrivileges', jcount])
+          Ind.Increment()
+          showJSON(None, rolePrivileges)
+          Ind.Decrement()
       Ind.Decrement()
     Ind.Decrement()
   else:
-    for admin in admins:
-      if roleId and roleId != admin['roleId']:
-        continue
-      _setNamesFromIds(admin, _getPrivileges(admin))
+    for admin in expandedAdmins:
       if not oneItemPerRow or 'rolePrivileges' not in admin:
         csvPF.WriteRowTitles(flattenJSON(admin))
       else:

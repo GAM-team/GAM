@@ -1552,10 +1552,11 @@ gam create|add admin <EmailAddress>|<UniqueID> <RoleItem> customer|(org_unit <Or
 gam delete admin <RoleAssignmentId>
 
 gam print admins [todrive <ToDriveAttribute>*]
-        [user|group <EmailAddress>|<UniqueID>] [role <RoleItem>] [condition]
-        [privileges] [oneitemperrow]
+        [user|group <EmailAddress>|<UniqueID>] [role <RoleItem>]
+        [recursive] [condition] [privileges] [oneitemperrow]
 gam show admins
-        [user|group <EmailAddress>|<UniqueID>] [role <RoleItem>] [condition] [privileges]
+        [user|group <EmailAddress>|<UniqueID>] [role <RoleItem>]
+        [recursive] [condition] [privileges]
 
 # Alert Center
 

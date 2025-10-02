@@ -1,3 +1,8 @@
+7.23.05
+
+Added option `recursive` to `gam print|show admins` that will display assignments to the members
+of security groups assigned to roles; the security group membershop is recursively expanded.
+
 7.23.04
 
 Added option `addcsvdata <FieldName> <String>` to `gam <UserTypeEntity> print events`
