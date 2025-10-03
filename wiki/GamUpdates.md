@@ -10,6 +10,15 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.23.06
+
+Added option `types <AdminAssigneeTypeList>` to `gam print|show admins` that allows filtering
+of admin assignments by the type of the assignee; by default, all assignee types are displayed.
+```
+<AdminAssigneeType> ::= group|user|serviceaccount|unknown
+<AdminAssigneeTypeList> ::= "<AdminAssigneeType>(,<AdminAssigneeType>)*"
+```
+
 ### 7.23.05
 
 Added option `recursive` to `gam print|show admins` that will display assignments to the members

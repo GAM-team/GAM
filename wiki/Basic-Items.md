@@ -265,6 +265,7 @@
 ## Named items
 ```
 <AccessToken> ::= <String>
+<AdminAssigneeType> ::= group|user|serviceaccount|unknown
 <AlertID> ::= <String>
 <APIScopeURL> ::= <String>
 <APPID> ::= <String>

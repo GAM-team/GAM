@@ -5,6 +5,7 @@
 
 ## Lists of basic items
 ```
+<AdminAssigneeTypeList> ::= "<AdminAssigneeType>(,<AdminAssigneeType>)*"
 <APIScopeURLList> ::= "<APIScopeURL>(,<APIScopeURL>)*"
 <ASPIDList> ::= "<ASPID>(,<ASPID>)*"
 <AssetTagList> ::= "<AssetTag>(,<AssetTag>)*"

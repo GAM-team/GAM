@@ -19,6 +19,8 @@
 
 ## Definitions
 ```
+<AdminAssigneeType> ::= group|user|serviceaccount|unknown
+<AdminAssigneeTypeList> ::= "<AdminAssigneeType>(,<AdminAssigneeType>)*"
 <DomainName> ::= <String>(.<String>)+
 <EmailAddress> ::= <String>@<DomainName>
 <GroupItem> ::= <EmailAddress>|<UniqueID>|<String>
@@ -1476,9 +1478,11 @@ gam delete admin <RoleAssignmentId>
 ```
 gam print admins [todrive <ToDriveAttribute>*]
         [user|group <EmailAddress>|<UniqueID>] [role <RoleItem>]
+        [types <AdminAssigneeTypeList>]
         [recursive] [condition] [privileges] [oneitemperrow]
 gam show admins
         [user|group <EmailAddress>|<UniqueID>] [role <RoleItem>]
+        [types <AdminAssigneeTypeList>]
         [recursive] [condition] [privileges]
 ```
 By default, all administrators and roles are displayed; choose from the following
@@ -1486,7 +1490,10 @@ options to limit the display:
 * `user|group <EmailAddress>|<UniqueID>` - Display assignments to this administrator
 * `role <RoleItem>` - Display only administrators with this role
 
-By default, assignments to security groups are shown as a single item; use `recursive`
+By default, all admin assignee types are displayed. use `types <AdminAssigneeTypeList>` to filter
+admin assignments by the type of the assignee.
+
+By default, assignments to security groups are displayed as a single item; use `recursive`
 to display assignments to the members of the security groups; the security group membershop is recursively expanded.
 
 * `condition` - Display any conditions associated with a role assignment
