@@ -1553,6 +1553,9 @@ gam create|add admin <EmailAddress>|<UniqueID> <RoleItem> customer|(org_unit <Or
         [condition securitygroup|nonsecuritygroup]
 gam delete admin <RoleAssignmentId>
 
+<AdminAssigneeType> ::= group|user|serviceaccount|unknown
+<AdminAssigneeTypeList> ::= "<AdminAssigneeType>(,<AdminAssigneeType>)*"
+
 gam print admins [todrive <ToDriveAttribute>*]
         [user|group <EmailAddress>|<UniqueID>] [role <RoleItem>]
         [types <AdminAssigneeTypeList>]
