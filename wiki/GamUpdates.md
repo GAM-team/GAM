@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.23.07
+
+Fixed bug in `gam print|show admins` where all admin assignments were not displayed when
+`types <AdminAssigneeTypeList>` was not specified, i.e., all assignments should be displayed.
+
 ### 7.23.06
 
 Added option `types <AdminAssigneeTypeList>` to `gam print|show admins` that allows filtering
