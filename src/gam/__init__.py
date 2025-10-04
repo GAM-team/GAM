@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.23.07'
+__version__ = '7.24.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -3049,9 +3049,10 @@ def getGDocData(gformat):
   mimeType = GDOC_FORMAT_MIME_TYPES[gformat]
   user = getEmailAddress()
   fileIdEntity = getDriveFileEntity(queryShortcutsOK=False)
-  user, drive, jcount = _validateUserGetFileIDs(user, 0, 0, fileIdEntity)
+  _, drive = buildGAPIServiceObject(chooseSaAPI(API.DRIVECD, API.DRIVE3), user)
   if not drive:
     sys.exit(GM.Globals[GM.SYSEXITRC])
+  _, _, jcount = _validateUserGetFileIDs(user, 0, 0, fileIdEntity, drive=drive)
   if jcount == 0:
     getGDocSheetDataFailedExit([Ent.USER, user], Msg.NO_ENTITIES_FOUND.format(Ent.Singular(Ent.DRIVE_FILE)))
   if jcount > 1:
@@ -3105,14 +3106,15 @@ def getGSheetData():
   user = getEmailAddress()
   fileIdEntity = getDriveFileEntity(queryShortcutsOK=False)
   sheetEntity = getSheetEntity(False)
-  user, drive, jcount = _validateUserGetFileIDs(user, 0, 0, fileIdEntity)
+  user, drive = buildGAPIServiceObject(chooseSaAPI(API.DRIVECD, API.DRIVE3), user)
   if not drive:
     sys.exit(GM.Globals[GM.SYSEXITRC])
+  _, _, jcount = _validateUserGetFileIDs(user, 0, 0, fileIdEntity, drive=drive)
   if jcount == 0:
     getGDocSheetDataFailedExit([Ent.USER, user], Msg.NO_ENTITIES_FOUND.format(Ent.Singular(Ent.DRIVE_FILE)))
   if jcount > 1:
     getGDocSheetDataFailedExit([Ent.USER, user], Msg.MULTIPLE_ENTITIES_FOUND.format(Ent.Plural(Ent.DRIVE_FILE), jcount, ','.join(fileIdEntity['list'])))
-  _, sheet = buildGAPIServiceObject(API.SHEETS, user)
+  _, sheet = buildGAPIServiceObject(chooseSaAPI(API.SHEETSCD, API.SHEETS), user)
   if not sheet:
     sys.exit(GM.Globals[GM.SYSEXITRC])
   fileId = fileIdEntity['list'][0]
@@ -4801,8 +4803,6 @@ def defaultSvcAcctScopes():
         saScopes[scope['api']].extend(scope['scope'])
   saScopes[API.DRIVEACTIVITY].append(API.DRIVE_SCOPE)
   saScopes[API.DRIVE2] = saScopes[API.DRIVE3]
-  saScopes[API.DRIVETD] = saScopes[API.DRIVE3]
-  saScopes[API.SHEETSTD] = saScopes[API.SHEETS]
   return saScopes
 
 def _getSvcAcctData():
@@ -5608,6 +5608,12 @@ def getSaUser(user):
   GM.Globals[GM.CURRENT_CLIENT_API] = currentClientAPI
   GM.Globals[GM.CURRENT_CLIENT_API_SCOPES] = currentClientAPIScopes
   return userEmail
+
+def chooseSaAPI(api1, api2):
+  _getSvcAcctData()
+  if api1 in GM.Globals[GM.SVCACCT_SCOPES]:
+    return api1
+  return api2
 
 def buildGAPIServiceObject(api, user, i=0, count=0, displayError=True):
   userEmail = getSaUser(user)
@@ -8030,7 +8036,7 @@ class CSVPrintFile():
 
     def getDriveObject():
       if not GC.Values[GC.TODRIVE_CLIENTACCESS]:
-        _, drive = buildGAPIServiceObject(API.DRIVETD, self.todrive['user'])
+        _, drive = buildGAPIServiceObject(chooseSaAPI(API.DRIVETD, API.DRIVE3), self.todrive['user'])
         if not drive:
           invalidTodriveUserExit(Ent.USER, Msg.NOT_FOUND)
       else:
@@ -8183,7 +8189,7 @@ class CSVPrintFile():
           if result['mimeType'] != MIMETYPE_GA_SPREADSHEET:
             invalidTodriveFileIdExit([], f'{Msg.NOT_A} {Ent.Singular(Ent.SPREADSHEET)}', tdfileidLocation)
           if not GC.Values[GC.TODRIVE_CLIENTACCESS]:
-            _, sheet = buildGAPIServiceObject(API.SHEETSTD, self.todrive['user'])
+            _, sheet = buildGAPIServiceObject(chooseSaAPI(API.SHEETSTD, API.SHEETS), self.todrive['user'])
             if sheet is None:
               invalidTodriveUserExit(Ent.USER, Msg.NOT_FOUND)
           else:
@@ -8696,7 +8702,7 @@ class CSVPrintFile():
             sheetTitle += tdtime.strftime(self.todrive['sheettimeformat'])
         action = Act.Get()
         if not GC.Values[GC.TODRIVE_CLIENTACCESS]:
-          user, drive = buildGAPIServiceObject(API.DRIVETD, self.todrive['user'])
+          user, drive = buildGAPIServiceObject(chooseSaAPI(API.DRIVETD, API.DRIVE3), self.todrive['user'])
           if not drive:
             closeFile(csvFile)
             return
@@ -8729,7 +8735,7 @@ class CSVPrintFile():
             if result['mimeType'] != MIMETYPE_GA_SPREADSHEET:
               todriveCSVErrorExit(entityValueList, f'{Msg.NOT_A} {Ent.Singular(Ent.SPREADSHEET)}')
             if not GC.Values[GC.TODRIVE_CLIENTACCESS]:
-              _, sheet = buildGAPIServiceObject(API.SHEETSTD, user)
+              _, sheet = buildGAPIServiceObject(chooseSaAPI(API.SHEETSTD, API.SHEETS), user)
               if sheet is None:
                 return
             else:
@@ -8877,7 +8883,7 @@ class CSVPrintFile():
                 (self.todrive['sheetEntity'] or self.todrive['locale'] or self.todrive['timeZone'] or
                  self.todrive['sheettitle'] or self.todrive['cellwrap'] or self.todrive['cellnumberformat'])):
               if not GC.Values[GC.TODRIVE_CLIENTACCESS]:
-                _, sheet = buildGAPIServiceObject(API.SHEETSTD, user)
+                _, sheet = buildGAPIServiceObject(chooseSaAPI(API.SHEETSTD, API.SHEETS), user)
                 if sheet is None:
                   return
               else:
@@ -16263,7 +16269,7 @@ def _showCustomerLicenseInfo(customerInfo, FJQC):
   while True:
     try:
       result = callGAPI(rep.customerUsageReports(), 'get',
-                        throwReasons=[GAPI.INVALID, GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
+                        throwReasons=[GAPI.INVALID, GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                         date=tryDate, customerId=customerInfo['id'],
                         fields='warnings,usageReports', parameters=parameters)
       usageReports = numUsersAvailable(result)
@@ -16276,7 +16282,7 @@ def _showCustomerLicenseInfo(customerInfo, FJQC):
       if fullData == 0:
         continue
       break
-    except GAPI.invalid as e:
+    except (GAPI.invalid, GAPI.failedPrecondition) as e:
       tryDate = _adjustTryDate(str(e), 0, -1, tryDate)
       if not tryDate:
         return
@@ -17052,10 +17058,7 @@ def doPrintShowAdmins():
     if assignedTo not in assignedToIdEmailMap:
       emailTypes = ALL_ASSIGNEE_TYPES if admin.get('assigneeType', '') != 'group' else ['group']
       assigneeEmail, assigneeType = convertUIDtoEmailAddressWithType(f'uid:{assignedTo}', cd, sal, emailTypes=emailTypes)
-      if assigneeType in ADMIN_ASSIGNEE_TYPE_TO_ASSIGNEDTO_FIELD_MAP:
-        assignedToField = ADMIN_ASSIGNEE_TYPE_TO_ASSIGNEDTO_FIELD_MAP[assigneeType]
-      else:
-        assignedToField = 'assignedToUnknown'
+      assignedToField = ADMIN_ASSIGNEE_TYPE_TO_ASSIGNEDTO_FIELD_MAP.get(assigneeType, 'assignedToUnknown')
       if assignedToField == 'assignedToUnknown':
         assigneeEmail = True
       assignedToIdEmailMap[assignedTo] = {'assignedToField': assignedToField, 'assigneeEmail': assigneeEmail}
@@ -17084,6 +17087,7 @@ def doPrintShowAdmins():
   typesSet = set()
   kwargs = {}
   rolePrivileges = {}
+  allGroupRoles = ','.join(sorted(ALL_GROUP_ROLES))
   fieldsList = PRINT_ADMIN_FIELDS+['assigneeType']
   assignedToIdEmailMap = {}
   while Cmd.ArgumentsRemaining():
@@ -17098,7 +17102,6 @@ def doPrintShowAdmins():
       pass
     elif myarg == 'recursive':
       recursive = True
-      allGroupRoles = ','.join(sorted(ALL_GROUP_ROLES))
       memberOptions = initMemberOptions()
       memberOptions[MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP] = True
       memberOptions[MEMBEROPTION_DISPLAYMATCH] = False
@@ -17136,7 +17139,7 @@ def doPrintShowAdmins():
     return
   except GAPI.notFound as e:
     entityActionFailedExit([Ent.ADMIN_ROLE, kwargs['roleId']], str(e))
-  except (GAPI.forbidden, GAPI.serviceNotAvailable) as e:
+  except GAPI.serviceNotAvailable as e:
     entityActionFailedExit([Ent.ADMINISTRATOR, userKey], str(e))
   except (GAPI.badRequest, GAPI.customerNotFound):
     accessErrorExit(cd)
@@ -17164,7 +17167,6 @@ def doPrintShowAdmins():
       groupMembers[assignedTo] = membersList[:]
     if not _setNamesFromIds(admin, _getPrivileges(admin)):
       continue
-    expandedAdmins.append(admin)
     if not groupMembers[assignedTo]:
       expandedAdmins.append(admin)
       continue
@@ -17203,7 +17205,7 @@ def doPrintShowAdmins():
   else:
     for admin in expandedAdmins:
       admin.pop('assigneeType', None)
-      admin.pop('assignedToField')
+      admin.pop('assignedToField', None)
       if not oneItemPerRow or 'rolePrivileges' not in admin:
         csvPF.WriteRowTitles(flattenJSON(admin))
       else:

@@ -60,6 +60,7 @@ DIRECTORY = 'directory'
 DOCS = 'docs'
 DRIVE2 = 'drive2'
 DRIVE3 = 'drive3'
+DRIVECD = 'drivecd'
 DRIVETD = 'drivetd'
 DRIVEACTIVITY = 'driveactivity'
 DRIVELABELS = 'drivelabels'
@@ -91,6 +92,7 @@ SERVICEACCOUNTLOOKUP = 'serviceaccountlookup'
 SERVICEMANAGEMENT = 'servicemanagement'
 SERVICEUSAGE = 'serviceusage'
 SHEETS = 'sheets'
+SHEETSCD = 'sheetscd'
 SHEETSTD = 'sheetstd'
 SITEVERIFICATION = 'siteVerification'
 STORAGE = 'storage'
@@ -253,7 +255,8 @@ _INFO = {
   DOCS: {'name': 'Docs API', 'version': 'v1', 'v2discovery': True},
   DRIVE2: {'name': 'Drive API v2', 'version': 'v2', 'v2discovery': False, 'mappedAPI': 'drive'},
   DRIVE3: {'name': 'Drive API v3', 'version': 'v3', 'v2discovery': False, 'mappedAPI': 'drive'},
-  DRIVETD: {'name': 'Drive API v3 - todrive', 'version': 'v3', 'v2discovery': False, 'mappedAPI': 'drive'},
+  DRIVECD: {'name': 'Drive API v3 - read command data', 'version': 'v3', 'v2discovery': False, 'mappedAPI': 'drive'},
+  DRIVETD: {'name': 'Drive API v3 - write todrive data', 'version': 'v3', 'v2discovery': False, 'mappedAPI': 'drive'},
   DRIVEACTIVITY: {'name': 'Drive Activity API v2', 'version': 'v2', 'v2discovery': True},
   DRIVELABELS_ADMIN: {'name': 'Drive Labels API - Admin', 'version': 'v2', 'v2discovery': True, 'mappedAPI': DRIVELABELS},
   DRIVELABELS_USER: {'name': 'Drive Labels API - User', 'version': 'v2', 'v2discovery': True, 'mappedAPI': DRIVELABELS},
@@ -283,7 +286,8 @@ _INFO = {
   SERVICEMANAGEMENT: {'name': 'Service Management API', 'version': 'v1', 'v2discovery': True},
   SERVICEUSAGE: {'name': 'Service Usage API', 'version': 'v1', 'v2discovery': True},
   SHEETS: {'name': 'Sheets API', 'version': 'v4', 'v2discovery': True},
-  SHEETSTD: {'name': 'Sheets API - todrive', 'version': 'v4', 'v2discovery': True, 'mappedAPI': SHEETS},
+  SHEETSCD: {'name': 'Sheets API - read command data', 'version': 'v4', 'v2discovery': True, 'mappedAPI': SHEETS},
+  SHEETSTD: {'name': 'Sheets API - write todrive data', 'version': 'v4', 'v2discovery': True, 'mappedAPI': SHEETS},
   SITEVERIFICATION: {'name': 'Site Verification API', 'version': 'v1', 'v2discovery': True},
   STORAGE: {'name': 'Cloud Storage API', 'version': 'v1', 'v2discovery': True},
   STORAGEREAD: {'name': 'Cloud Storage API - Read', 'version': 'v1', 'v2discovery': True, 'mappedAPI': STORAGE},
@@ -750,9 +754,15 @@ _SVCACCT_SCOPES = [
   ]
 
 _SVCACCT_SPECIAL_SCOPES = [
-  {'name': 'Drive API - todrive',
+  {'name': 'Drive API - read command data',
+   'api': DRIVECD,
+   'subscopes': [],
+   'offByDefault': True,
+   'scope': DRIVE_SCOPE+'.readonly'},
+  {'name': 'Drive API - write todrive data',
    'api': DRIVETD,
    'subscopes': [],
+   'offByDefault': True,
    'scope': DRIVE_SCOPE},
   {'name': 'Gmail API - Full Access - read only',
    'api': GMAIL,
@@ -764,8 +774,14 @@ _SVCACCT_SPECIAL_SCOPES = [
    'subscopes': [],
    'offByDefault': True,
    'scope': GMAIL_SEND_SCOPE},
-  {'name': 'Sheets API - todrive',
+  {'name': 'Sheets API - read command data',
+   'api': SHEETSCD,
+   'offByDefault': True,
+   'subscopes': [],
+   'scope': 'https://www.googleapis.com/auth/spreadsheets.readonly'},
+  {'name': 'Sheets API - write todrive data',
    'api': SHEETSTD,
+   'offByDefault': True,
    'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/spreadsheets'},
   ]
