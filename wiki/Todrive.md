@@ -330,16 +330,16 @@ you want the updated data copied to `Latest` so you don't have to remember what 
 gam redirect csv - todrive tdfileid <DriveFileID> tdupdatesheet tdsheet Tuesday tdbackupsheet "Backup Tuesday" tdcopysheet "Latest" ...
 ```
 ## Limited Service Account Access
-If you want to limit a user's service account access but still allow `todrive',
-issue the following command and authorize the additional service account APIs:
+If you want to limit a user's service account access to Drive, Gmail and Sheets but still allow `todrive`,
+issue the following command and make these settings:
 ```
-gam user user@domain.com update serviceaccount`
+gam user user@domain.com update serviceaccount
 
-Authorize these APIs:
-
-Drive API - todrive
-Gmail API - Send Messages - including todrive
-Sheets API - todrive
+[ ] 20)  Drive API (supports readonly)
+[*] 22)  Drive API - write todrive data
+[*] 31)  Gmail API - Send Messages - including todrive
+[ ] 42)  Sheets API (supports readonly)
+[*] 44)  Sheets API - write todrive data
 ```
 
 ## No Service Account Access

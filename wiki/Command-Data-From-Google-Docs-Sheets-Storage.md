@@ -5,6 +5,7 @@
   - [Plain Text](#plain-text)
   - [HTML](#html)
 - [Read data from a Google Sheet](#read-data-from-a-google-sheet)
+- [Limited Service Account Access](#limited-service-account-access)
 - [Read data from a Google Cloud Storage File](#read-data-from-a-google-cloud-storage-file)
   - [Plain Text](#plain-text)
   - [CSV](#csv)
@@ -79,6 +80,19 @@ Example:
 ```
 gam csv gsheet you@exmaple.com <DriveFileIDEntity> "Sheet 1" gam create user firstname "~FirstName" lastname "~lastName" email "~email"
 ```
+
+## Limited Service Account Access
+If you want to disable a user's service account access to Drive and Sheets but still allow reading command data from Google Docs and Sheets,
+issue the following command and make these settings:
+```
+gam user user@domain.com update serviceaccount
+
+[ ] 20)  Drive API (supports readonly)
+[*] 21)  Drive API - read command data
+[ ] 42)  Sheets API (supports readonly)
+[*] 43)  Sheets API - read command data
+```
+
 ## Read data from a Google Cloud Storage File
 ```
 <StorageBucketName> ::= <String>
