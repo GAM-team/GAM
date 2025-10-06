@@ -158,6 +158,7 @@ OAUTH2_TOKEN_ERRORS = [
   'access_denied: Account restricted',
   'internal_failure: Backend Error',
   'internal_failure: None',
+  'invalid_account: Forbidden',
   'invalid_grant',
   'invalid_grant: Bad Request',
   'invalid_grant: Invalid email or User ID',
