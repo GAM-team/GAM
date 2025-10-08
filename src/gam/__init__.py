@@ -9596,7 +9596,7 @@ def CSVFileQueueHandler(mpQueue, mpQueueStdout, mpQueueStderr, csvPF, datetimeNo
   clearRowFilters = False
 #  if sys.platform.startswith('win'):
 #    signal.signal(signal.SIGINT, signal.SIG_IGN)
-  if multiprocessing.get_start_method() == 'spawn':
+  if multiprocessing.get_start_method() != 'fork':
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     Cmd = glclargs.GamCLArgs()
   else:
@@ -9638,7 +9638,7 @@ def CSVFileQueueHandler(mpQueue, mpQueueStdout, mpQueueStderr, csvPF, datetimeNo
       Cmd.InitializeArguments(dataItem)
     elif dataType == GM.REDIRECT_QUEUE_GLOBALS:
       GM.Globals = dataItem
-      if multiprocessing.get_start_method() == 'spawn':
+      if multiprocessing.get_start_method() != 'fork':
         reopenSTDFile(GM.STDOUT)
         reopenSTDFile(GM.STDERR)
     elif dataType == GM.REDIRECT_QUEUE_VALUES:
@@ -9684,7 +9684,7 @@ def initializeCSVFileQueueHandler(mpManager, mpQueueStdout, mpQueueStderr):
 def terminateCSVFileQueueHandler(mpQueue, mpQueueHandler):
   GM.Globals[GM.PARSER] = None
   GM.Globals[GM.CSVFILE][GM.REDIRECT_QUEUE] = None
-  if multiprocessing.get_start_method() == 'spawn':
+  if multiprocessing.get_start_method() != 'fork':
     mpQueue.put((GM.REDIRECT_QUEUE_ARGS, Cmd.AllArguments()))
     savedValues = saveNonPickleableValues()
     mpQueue.put((GM.REDIRECT_QUEUE_GLOBALS, GM.Globals))
@@ -9714,13 +9714,13 @@ def StdQueueHandler(mpQueue, stdtype, gmGlobals, gcValues):
 
 #  if sys.platform.startswith('win'):
 #    signal.signal(signal.SIGINT, signal.SIG_IGN)
-  if multiprocessing.get_start_method() == 'spawn':
+  if multiprocessing.get_start_method() != 'fork':
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     GM.Globals = gmGlobals.copy()
     GC.Values = gcValues.copy()
   pid0DataItem = [KEYBOARD_INTERRUPT_RC, None]
   pidData = {}
-  if multiprocessing.get_start_method() == 'spawn':
+  if multiprocessing.get_start_method() != 'fork':
     if GM.Globals[stdtype][GM.REDIRECT_NAME] == 'null':
       fd = open(os.devnull, GM.Globals[stdtype][GM.REDIRECT_MODE], encoding=UTF8)
     elif GM.Globals[stdtype][GM.REDIRECT_NAME] == '-':
@@ -9808,7 +9808,7 @@ def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout,
   with mplock:
     initializeLogging()
 #    if sys.platform.startswith('win'):
-    if multiprocessing.get_start_method() == 'spawn':
+    if multiprocessing.get_start_method() != 'fork':
       signal.signal(signal.SIGINT, signal.SIG_IGN)
     GM.Globals[GM.API_CALLS_RETRY_DATA] = {}
     GM.Globals[GM.CMDLOG_LOGGER] = None
@@ -9949,7 +9949,7 @@ def MultiprocessGAMCommands(items, showCmds):
   mpManager = multiprocessing.Manager()
   l = mpManager.Lock()
   try:
-    if multiprocessing.get_start_method() == 'spawn':
+    if multiprocessing.get_start_method() != 'fork':
       pool = mpManager.Pool(processes=numPoolProcesses, initializer=initGamWorker, initargs=(l,), maxtasksperchild=200)
     else:
       pool = multiprocessing.Pool(processes=numPoolProcesses, initializer=initGamWorker, initargs=(l,), maxtasksperchild=200)
@@ -9958,7 +9958,7 @@ def MultiprocessGAMCommands(items, showCmds):
   except AssertionError as e:
     Cmd.SetLocation(0)
     usageErrorExit(str(e))
-  if multiprocessing.get_start_method() == 'spawn':
+  if multiprocessing.get_start_method() == 'fork':
     savedValues = saveNonPickleableValues()
   if GM.Globals[GM.STDOUT][GM.REDIRECT_MULTIPROCESS]:
     mpQueueStdout, mpQueueHandlerStdout = initializeStdQueueHandler(mpManager, GM.STDOUT, GM.Globals, GC.Values)
@@ -9973,7 +9973,7 @@ def MultiprocessGAMCommands(items, showCmds):
       mpQueueStderr = mpQueueStdout
   else:
     mpQueueStderr = None
-  if multiprocessing.get_start_method() == 'spawn':
+  if multiprocessing.get_start_method() != 'fork':
     restoreNonPickleableValues(savedValues)
   if mpQueueStdout:
     mpQueueStdout.put((0, GM.REDIRECT_QUEUE_DATA, GM.Globals[GM.STDOUT][GM.REDIRECT_MULTI_FD].getvalue()))
