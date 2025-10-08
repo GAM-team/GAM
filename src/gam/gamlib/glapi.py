@@ -755,12 +755,7 @@ _SVCACCT_SCOPES = [
   ]
 
 _SVCACCT_SPECIAL_SCOPES = [
-  {'name': 'Drive API - read command data',
-   'api': DRIVECD,
-   'subscopes': [],
-   'offByDefault': True,
-   'scope': DRIVE_SCOPE+'.readonly'},
-  {'name': 'Drive API - write todrive data',
+  {'name': 'Drive API - write todrive data - has access to all Drive',
    'api': DRIVETD,
    'subscopes': [],
    'offByDefault': True,
@@ -775,12 +770,7 @@ _SVCACCT_SPECIAL_SCOPES = [
    'subscopes': [],
    'offByDefault': True,
    'scope': GMAIL_SEND_SCOPE},
-  {'name': 'Sheets API - read command data',
-   'api': SHEETSCD,
-   'offByDefault': True,
-   'subscopes': [],
-   'scope': 'https://www.googleapis.com/auth/spreadsheets.readonly'},
-  {'name': 'Sheets API - write todrive data',
+  {'name': 'Sheets API - write todrive data - has access to all Sheets',
    'api': SHEETSTD,
    'offByDefault': True,
    'subscopes': [],
