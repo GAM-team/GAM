@@ -34,7 +34,8 @@ def main():
 
 # Run from command line
 if __name__ == '__main__':
-  multiprocessing.freeze_support()
+  if getattr(sys, 'frozen', False): # we're frozen:
+    multiprocessing.freeze_support()
   if platform.system() == 'Linux':
     # set explictly since it's not default in Python < 3.14, forkserver should
     # be safer than fork and less likely to see bulk command hangs.
