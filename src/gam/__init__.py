@@ -9958,7 +9958,7 @@ def MultiprocessGAMCommands(items, showCmds):
   except AssertionError as e:
     Cmd.SetLocation(0)
     usageErrorExit(str(e))
-  if multiprocessing.get_start_method() == 'fork':
+  if multiprocessing.get_start_method() != 'fork':
     savedValues = saveNonPickleableValues()
   if GM.Globals[GM.STDOUT][GM.REDIRECT_MULTIPROCESS]:
     mpQueueStdout, mpQueueHandlerStdout = initializeStdQueueHandler(mpManager, GM.STDOUT, GM.Globals, GC.Values)
