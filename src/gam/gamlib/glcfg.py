@@ -85,6 +85,8 @@ CMDLOG_MAX__BACKUPS = 'cmdlog_max__backups'
 CMDLOG_MAX_BACKUPS = 'cmdlog_max_backups'
 # Command logging max kilo bytes per log file
 CMDLOG_MAX_KILO_BYTES = 'cmdlog_max_kilo_bytes'
+# Use client access for command data from Google Docs/Sheets
+COMMANDDATA_CLIENTACCESS = 'commanddata_clientaccess'
 # GAM config directory containing client_secrets.json, oauth2.txt, oauth2service.json, extra_args.txt
 CONFIG_DIR = 'config_dir'
 # When retrieving lists of Google Contacts from API, how many should be retrieved in each chunk
@@ -344,6 +346,7 @@ Defaults = {
   CMDLOG: '',
   CMDLOG_MAX_BACKUPS: 5,
   CMDLOG_MAX_KILO_BYTES: 1000,
+  COMMANDDATA_CLIENTACCESS: FALSE,
   CONFIG_DIR: '',
   CONTACT_MAX_RESULTS: '100',
   CSV_INPUT_COLUMN_DELIMITER: ',',
@@ -512,6 +515,7 @@ VAR_INFO = {
   CMDLOG: {VAR_TYPE: TYPE_FILE, VAR_ACCESS: os.W_OK},
   CMDLOG_MAX_BACKUPS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 10)},
   CMDLOG_MAX_KILO_BYTES: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (100, 10000)},
+  COMMANDDATA_CLIENTACCESS: {VAR_TYPE: TYPE_BOOLEAN},
   CONFIG_DIR: {VAR_TYPE: TYPE_DIRECTORY, VAR_ENVVAR: 'GAMUSERCONFIGDIR'},
   CONTACT_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 10000)},
   CSV_INPUT_COLUMN_DELIMITER: {VAR_TYPE: TYPE_CHARACTER},

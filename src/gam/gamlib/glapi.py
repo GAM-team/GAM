@@ -60,7 +60,6 @@ DIRECTORY = 'directory'
 DOCS = 'docs'
 DRIVE2 = 'drive2'
 DRIVE3 = 'drive3'
-DRIVECD = 'drivecd'
 DRIVETD = 'drivetd'
 DRIVEACTIVITY = 'driveactivity'
 DRIVELABELS = 'drivelabels'
@@ -92,7 +91,6 @@ SERVICEACCOUNTLOOKUP = 'serviceaccountlookup'
 SERVICEMANAGEMENT = 'servicemanagement'
 SERVICEUSAGE = 'serviceusage'
 SHEETS = 'sheets'
-SHEETSCD = 'sheetscd'
 SHEETSTD = 'sheetstd'
 SITEVERIFICATION = 'siteVerification'
 STORAGE = 'storage'
@@ -107,6 +105,8 @@ YOUTUBE = 'youtube'
 BUSINESSACCOUNTMANAGEMENT_SCOPE = 'https://www.googleapis.com/auth/business.manage'
 CHROMEVERSIONHISTORY_URL = 'https://versionhistory.googleapis.com/v1/chrome/platforms'
 DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive'
+DRIVE_FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file'
+DRIVE_READONLY_SCOPE = 'https://www.googleapis.com/auth/drive.readonly'
 GMAIL_SEND_SCOPE = 'https://www.googleapis.com/auth/gmail.send'
 GOOGLE_AUTH_PROVIDER_X509_CERT_URL = 'https://www.googleapis.com/oauth2/v1/certs'
 GOOGLE_OAUTH2_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth'
@@ -256,7 +256,6 @@ _INFO = {
   DOCS: {'name': 'Docs API', 'version': 'v1', 'v2discovery': True},
   DRIVE2: {'name': 'Drive API v2', 'version': 'v2', 'v2discovery': False, 'mappedAPI': 'drive'},
   DRIVE3: {'name': 'Drive API v3', 'version': 'v3', 'v2discovery': False, 'mappedAPI': 'drive'},
-  DRIVECD: {'name': 'Drive API v3 - read command data', 'version': 'v3', 'v2discovery': False, 'mappedAPI': 'drive'},
   DRIVETD: {'name': 'Drive API v3 - write todrive data', 'version': 'v3', 'v2discovery': False, 'mappedAPI': 'drive'},
   DRIVEACTIVITY: {'name': 'Drive Activity API v2', 'version': 'v2', 'v2discovery': True},
   DRIVELABELS_ADMIN: {'name': 'Drive Labels API - Admin', 'version': 'v2', 'v2discovery': True, 'mappedAPI': DRIVELABELS},
@@ -287,7 +286,6 @@ _INFO = {
   SERVICEMANAGEMENT: {'name': 'Service Management API', 'version': 'v1', 'v2discovery': True},
   SERVICEUSAGE: {'name': 'Service Usage API', 'version': 'v1', 'v2discovery': True},
   SHEETS: {'name': 'Sheets API', 'version': 'v4', 'v2discovery': True},
-  SHEETSCD: {'name': 'Sheets API - read command data', 'version': 'v4', 'v2discovery': True, 'mappedAPI': SHEETS},
   SHEETSTD: {'name': 'Sheets API - write todrive data', 'version': 'v4', 'v2discovery': True, 'mappedAPI': SHEETS},
   SITEVERIFICATION: {'name': 'Site Verification API', 'version': 'v1', 'v2discovery': True},
   STORAGE: {'name': 'Cloud Storage API', 'version': 'v1', 'v2discovery': True},
@@ -535,6 +533,17 @@ _CLIENT_SCOPES = [
    'scope': 'https://www.googleapis.com/auth/ediscovery'},
   ]
 
+_COMMANDDATA_CLIENT_SCOPES = [
+  {'name': 'Drive API - commanddata_clientaccess',
+   'api': DRIVE3,
+   'subscopes': [],
+   'scope': DRIVE_READONLY_SCOPE},
+  {'name': 'Sheets API - commanddata_clientaccess',
+   'api': SHEETS,
+   'subscopes': [],
+   'scope': 'https://www.googleapis.com/auth/spreadsheets.readonly'},
+  ]
+
 _TODRIVE_CLIENT_SCOPES = [
   {'name': 'Drive API - todrive_clientaccess',
    'api': DRIVE3,
@@ -543,7 +552,7 @@ _TODRIVE_CLIENT_SCOPES = [
   {'name': 'Drive File API - todrive_clientaccess',
    'api': DRIVE3,
    'subscopes': [],
-   'scope': 'https://www.googleapis.com/auth/drive.file'},
+   'scope': DRIVE_FILE_SCOPE},
   {'name': 'Gmail API - todrive_clientaccess',
    'api': GMAIL,
    'subscopes': [],
@@ -648,7 +657,8 @@ _SVCACCT_SCOPES = [
   {'name': 'Drive Activity API v2 - must pair with Drive API',
    'api': DRIVEACTIVITY,
    'subscopes': [],
-   'scope': 'https://www.googleapis.com/auth/drive.activity'},
+   'scope': [DRIVE_READONLY_SCOPE,
+             'https://www.googleapis.com/auth/drive.activity']},
   {'name': 'Drive Labels API - Admin',
    'api': DRIVELABELS_ADMIN,
    'subscopes': READONLY,
@@ -661,10 +671,12 @@ _SVCACCT_SCOPES = [
    'api': DOCS,
    'subscopes': READONLY,
    'scope': 'https://www.googleapis.com/auth/documents'},
-  {'name': 'Forms API',
+  {'name': 'Forms API - must pair with Drive API',
    'api': FORMS,
    'subscopes': [],
-   'scope': DRIVE_SCOPE},
+   'scope': [DRIVE_READONLY_SCOPE,
+             'https://www.googleapis.com/auth/forms.body',
+             'https://www.googleapis.com/auth/forms.responses.readonly']},
   {'name': 'Gmail API - Full Access (Labels, Messages)',
    'api': GMAIL,
    'subscopes': [],
@@ -796,14 +808,18 @@ def getVersion(api):
 def getClientScopesSet(api):
   return {scope['scope'] for scope in _CLIENT_SCOPES if scope['api'] == api}
 
-def getClientScopesList(todriveClientAccess):
+def getClientScopesList(commanddataClientAccess, todriveClientAccess):
   caScopes = _CLIENT_SCOPES[:]
+  if commanddataClientAccess:
+    caScopes.extend(_COMMANDDATA_CLIENT_SCOPES)
   if todriveClientAccess:
     caScopes.extend(_TODRIVE_CLIENT_SCOPES)
   return sorted(caScopes, key=lambda k: k['name'])
 
-def getClientScopesURLs(todriveClientAccess):
+def getClientScopesURLs(commanddataClientAccess, todriveClientAccess):
   caScopes = _CLIENT_SCOPES[:]
+  if commanddataClientAccess:
+    caScopes.extend(_COMMANDDATA_CLIENT_SCOPES)
   if todriveClientAccess:
     caScopes.extend(_TODRIVE_CLIENT_SCOPES)
   return sorted({scope['scope'] for scope in _CLIENT_SCOPES})

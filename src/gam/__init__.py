@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.24.01'
+__version__ = '7.25.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -2113,12 +2113,12 @@ class StartEndTime():
       else:
         firstMonth = getInteger(minVal=1, maxVal=6)
       currDate = todaysDate()
-      self.startDateTime = currDate.shift(months=-firstMonth, day=1, hour=0, minute=0, second=0, microsecond=0)
+      self.startDateTime = currDate.replace(day=1, hour=0, minute=0, second=0, microsecond=0).shift(months=-firstMonth)
       self.startTime = ISOformatTimeStamp(self.startDateTime)
       if myarg == 'thismonth':
         self.endDateTime = todaysTime()
       else:
-        self.endDateTime = currDate.shift(day=1, hour=23, minute=59, second=59, microsecond=0).shift(days=-1)
+        self.endDateTime = currDate.replace(day=1, hour=23, minute=59, second=59, microsecond=0).shift(days=-1)
       self.endTime = ISOformatTimeStamp(self.endDateTime)
     if self.startDateTime and self.endDateTime and self.endDateTime < self.startDateTime:
       Cmd.Backup()
@@ -3049,7 +3049,10 @@ def getGDocData(gformat):
   mimeType = GDOC_FORMAT_MIME_TYPES[gformat]
   user = getEmailAddress()
   fileIdEntity = getDriveFileEntity(queryShortcutsOK=False)
-  _, drive = buildGAPIServiceObject(chooseSaAPI(API.DRIVECD, API.DRIVE3), user)
+  if not GC.Values[GC.COMMANDDATA_CLIENTACCESS]:
+    _, drive = buildGAPIServiceObject(API.DRIVE3, user)
+  else:
+    drive = buildGAPIObject(API.DRIVE3)
   if not drive:
     sys.exit(GM.Globals[GM.SYSEXITRC])
   _, _, jcount = _validateUserGetFileIDs(user, 0, 0, fileIdEntity, drive=drive)
@@ -3106,7 +3109,10 @@ def getGSheetData():
   user = getEmailAddress()
   fileIdEntity = getDriveFileEntity(queryShortcutsOK=False)
   sheetEntity = getSheetEntity(False)
-  user, drive = buildGAPIServiceObject(chooseSaAPI(API.DRIVECD, API.DRIVE3), user)
+  if not GC.Values[GC.COMMANDDATA_CLIENTACCESS]:
+    user, drive = buildGAPIServiceObject(API.DRIVE3, user)
+  else:
+    drive = buildGAPIObject(API.DRIVE3)
   if not drive:
     sys.exit(GM.Globals[GM.SYSEXITRC])
   _, _, jcount = _validateUserGetFileIDs(user, 0, 0, fileIdEntity, drive=drive)
@@ -3114,7 +3120,10 @@ def getGSheetData():
     getGDocSheetDataFailedExit([Ent.USER, user], Msg.NO_ENTITIES_FOUND.format(Ent.Singular(Ent.DRIVE_FILE)))
   if jcount > 1:
     getGDocSheetDataFailedExit([Ent.USER, user], Msg.MULTIPLE_ENTITIES_FOUND.format(Ent.Plural(Ent.DRIVE_FILE), jcount, ','.join(fileIdEntity['list'])))
-  _, sheet = buildGAPIServiceObject(chooseSaAPI(API.SHEETSCD, API.SHEETS), user)
+  if not GC.Values[GC.COMMANDDATA_CLIENTACCESS]:
+    _, sheet = buildGAPIServiceObject(API.SHEETS, user)
+  else:
+    sheet = buildGAPIObject(API.SHEETS)
   if not sheet:
     sys.exit(GM.Globals[GM.SYSEXITRC])
   fileId = fileIdEntity['list'][0]
@@ -11137,7 +11146,7 @@ class Credentials(google.oauth2.credentials.Credentials):
 
 def doOAuthRequest(currentScopes, login_hint, verifyScopes=False):
   client_id, client_secret = getOAuthClientIDAndSecret()
-  scopesList = API.getClientScopesList(GC.Values[GC.TODRIVE_CLIENTACCESS])
+  scopesList = API.getClientScopesList(GC.Values[GC.COMMANDDATA_CLIENTACCESS], GC.Values[GC.TODRIVE_CLIENTACCESS])
   if not currentScopes or verifyScopes:
     selectedScopes = getScopesFromUser(scopesList, True, currentScopes)
     if selectedScopes is None:
@@ -11183,7 +11192,7 @@ def doOAuthCreate():
   else:
     login_hint = None
     scopes = []
-    scopesList = API.getClientScopesList(GC.Values[GC.TODRIVE_CLIENTACCESS])
+    scopesList = API.getClientScopesList(GC.Values[GC.COMMANDDATA_CLIENTACCESS], GC.Values[GC.TODRIVE_CLIENTACCESS])
     while Cmd.ArgumentsRemaining():
       myarg = getArgument()
       if myarg == 'admin':
@@ -11199,7 +11208,9 @@ def doOAuthCreate():
               scopes.append(uscope)
               break
           else:
-            invalidChoiceExit(uscope, API.getClientScopesURLs(GC.Values[GC.TODRIVE_CLIENTACCESS]), True)
+            invalidChoiceExit(uscope,
+                              API.getClientScopesURLs(GC.Values[GC.COMMANDDATA_CLIENTACCESS], GC.Values[GC.TODRIVE_CLIENTACCESS]),
+                              True)
       else:
         unknownArgumentExit()
     if len(scopes) == 0:
@@ -11310,7 +11321,7 @@ def doOAuthUpdate():
       if 'scopes' in jsonDict:
         currentScopes = jsonDict['scopes']
       else:
-        currentScopes = API.getClientScopesURLs(GC.Values[GC.TODRIVE_CLIENTACCESS])
+        currentScopes = API.getClientScopesURLs(GC.Values[GC.COMMANDDATA_CLIENTACCESS], GC.Values[GC.TODRIVE_CLIENTACCESS])
     else:
       currentScopes = []
   except (AttributeError, IndexError, KeyError, SyntaxError, TypeError, ValueError) as e:
