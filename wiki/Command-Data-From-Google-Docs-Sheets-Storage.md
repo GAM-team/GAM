@@ -83,14 +83,20 @@ gam csv gsheet you@exmaple.com <DriveFileIDEntity> "Sheet 1" gam create user fir
 
 ## Limited Service Account Access
 If you want to disable a user's service account access to Drive and Sheets but still allow reading command data from Google Docs and Sheets,
-issue the following command and make these settings:
+issue the following commands. The admin specified in `gam oauth create` can read command data from Docs and Sheets to which it has access.
 ```
-gam user user@domain.com update serviceaccount
+gam config commanddata_clientaccess true save
+gam oauth create
+Enable the following and proceed to authorization.
 
-[ ] 20)  Drive API (supports readonly)
-[*] 21)  Drive API - read command data
-[ ] 42)  Sheets API (supports readonly)
-[*] 43)  Sheets API - read command data
+[*] 42)  Drive API - commanddata_clientaccess
+[*] 54)  Sheets API - commanddata_clientaccess
+```
+In these options, the `<EmailAddress> is not used, but for clarity you may want to specify the
+email address of the  admin specified in `gam oauth create`.
+```
+gdoc <EmailAddress> <DriveFileIDEntity>|<DriveFileNameEntity>|(<SharedDriveEntity> <SharedDriveFileNameEntity>)
+gsheet <EmailAddress> <DriveFileIDEntity>|<DriveFileNameEntity>|(<SharedDriveEntity> <SharedDriveFileNameEntity>) <SheetEntity>
 ```
 
 ## Read data from a Google Cloud Storage File

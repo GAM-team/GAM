@@ -140,6 +140,11 @@ cmdlog_max_kilo_bytes
         Maximum kilobytes per log file
         Default: 1000
         Range: 100 - 10000
+commanddata_clientaccess
+        Enable/disable use of client access rather than service account access for the
+        admin specified in `gam oauth create` when reading command data from Docs and Sheets
+        to which it has access.
+        Default: False
 config_dir
         GAM config directory containing client_secrets.json, oauth2.txt, oauth2service.json
         and extra_args.txt

@@ -10,6 +10,29 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.25.00
+
+Removed a capabilty added in 7.24.00 that allowed reading command data from Google Docs and Sheets
+when a user's service account access to Drive and Sheets had been disabled. Jay was concerned
+that this change could be exploited to give access to all user's files.
+
+This capability has been replaced by issuing the following commands. The admin specified in `gam oauth create`
+can read command data from Docs and Sheets to which it has access.
+```
+gam config commanddata_clientaccess true save
+gam oauth create
+Enable the following and proceed to authorization.
+
+[*] 42)  Drive API - commanddata_clientaccess
+[*] 54)  Sheets API - commanddata_clientaccess
+```
+
+* See: https://github.com/GAM-team/GAM/wiki/Command-Data-From-Google-Docs-Sheets-Storage#limited-service-account-access
+
+Fixed in bug in `gam report` that caused a trap with either of the `thismonth` or `previousmonths` options were used.
+
+Upgraded to Python 3.14.0.
+
 ### 7.24.01
 
 Updated GAM to handle the following error that occurs when GAM tries to authenticate

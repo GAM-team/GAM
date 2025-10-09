@@ -336,10 +336,10 @@ issue the following command and make these settings:
 gam user user@domain.com update serviceaccount
 
 [ ] 20)  Drive API (supports readonly)
-[*] 22)  Drive API - write todrive data
+[*] 22)  Drive API - write todrive data - has access to all Drive
 [*] 31)  Gmail API - Send Messages - including todrive
 [ ] 42)  Sheets API (supports readonly)
-[*] 44)  Sheets API - write todrive data
+[*] 44)  Sheets API - write todrive data - has access to all Sheets
 ```
 
 ## No Service Account Access
