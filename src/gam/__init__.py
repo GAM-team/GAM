@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.25.00'
+__version__ = '7.25.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -3716,12 +3716,12 @@ def SetGlobalVariables():
     return stringlist
 
   def _getCfgTimezone(sectionName, itemName):
-    value = _stripStringQuotes(GM.Globals[GM.PARSER].get(sectionName, itemName).lower())
-    if value in {'utc', 'z'}:
+    value = _stripStringQuotes(GM.Globals[GM.PARSER].get(sectionName, itemName))
+    if value.lower() in {'utc', 'z'}:
       GM.Globals[GM.CONVERT_TO_LOCAL_TIME] = False
       return arrow.now('utc').tzinfo
     GM.Globals[GM.CONVERT_TO_LOCAL_TIME] = True
-    if value == 'local':
+    if value.lower() == 'local':
       return arrow.now(value).tzinfo
     try:
       return arrow.now(value).tzinfo
@@ -4810,7 +4810,6 @@ def defaultSvcAcctScopes():
         saScopes[scope['api']].append(scope['scope'])
       else:
         saScopes[scope['api']].extend(scope['scope'])
-  saScopes[API.DRIVEACTIVITY].append(API.DRIVE_SCOPE)
   saScopes[API.DRIVE2] = saScopes[API.DRIVE3]
   return saScopes
 
@@ -12351,8 +12350,6 @@ def checkServiceAccount(users):
             saScopes[scope['api']].append(scope['roscope'])
             checkScopesSet.add(scope['roscope'])
         i += 1
-    if API.DRIVEACTIVITY in saScopes and API.DRIVE3 in saScopes:
-      saScopes[API.DRIVEACTIVITY].append(API.DRIVE_SCOPE)
     if API.DRIVE3 in saScopes:
       saScopes[API.DRIVE2] = saScopes[API.DRIVE3]
     GM.Globals[GM.OAUTH2SERVICE_JSON_DATA][API.OAUTH2SA_SCOPES] = saScopes
