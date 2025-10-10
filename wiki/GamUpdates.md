@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.25.01
+
+Fixed bug in `gam config timezone <String>` to handle timezone abbreviations correctly;
+they were incorrectly shifted to lowercase.
+
 ### 7.25.00
 
 Removed a capabilty added in 7.24.00 that allowed reading command data from Google Docs and Sheets

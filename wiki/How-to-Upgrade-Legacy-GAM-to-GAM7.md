@@ -252,7 +252,7 @@ writes the credentials into the file oauth2.txt.
 admin@server:/Users/admin$ rm -f /Users/admin/GAMConfig/oauth2.txt
 admin@server:/Users/admin$ gam version
 WARNING: Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, Item: oauth2_txt, Value: /Users/admin/GAMConfig/oauth2.txt, Not Found
-GAM 7.25.00 - https://github.com/GAM-team/GAM - pyinstaller
+GAM 7.25.01 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.14.0 64-bit final
 macOS Tahoe 26.0.1 x86_64
@@ -990,7 +990,7 @@ writes the credentials into the file oauth2.txt.
 C:\>del C:\GAMConfig\oauth2.txt
 C:\>gam version
 WARNING: Config File: C:\GAMConfig\gam.cfg, Section: DEFAULT, Item: oauth2_txt, Value: C:\GAMConfig\oauth2.txt, Not Found
-GAM 7.25.00 - https://github.com/GAM-team/GAM - pythonsource
+GAM 7.25.01 - https://github.com/GAM-team/GAM - pythonsource
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.14.0 64-bit final
 Windows-10-10.0.17134 AMD64
