@@ -107,6 +107,8 @@ CURRENT_SVCACCT_USER = 'csa'
 DATETIME_NOW = 'dtno'
 # If debug_level > 0: extra_args['prettyPrint'] = True, httplib2.debuglevel = gam_debug_level, appsObj.debug = True
 DEBUG_LEVEL = 'dbgl'
+# Whether debug output should redact sensitive credentials
+DEBUG_REDACTION = 'dbrd'
 # Decoded ID token
 DECODED_ID_TOKEN = 'didt'
 # Index of start of <UserTypeEntity> in command line
@@ -263,6 +265,7 @@ Globals = {
   CURRENT_SVCACCT_USER: None,
   DATETIME_NOW: None,
   DEBUG_LEVEL: 0,
+  DEBUG_REDACTION: True,
   DECODED_ID_TOKEN: None,
   ENTITY_CL_DELAY_START: 1,
   ENTITY_CL_START: 1,

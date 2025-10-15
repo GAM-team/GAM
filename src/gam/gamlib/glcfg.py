@@ -149,6 +149,8 @@ CSV_OUTPUT_USERS_AUDIT = 'csv_output_users_audit'
 CUSTOMER_ID = 'customer_id'
 # If debug_level > 0: extra_args['prettyPrint'] = True, httplib2.debuglevel = gam_debug_level, appsObj.debug = True
 DEBUG_LEVEL = 'debug_level'
+# redact sensitive credentials from debug output
+DEBUG_REDACTION = 'debug_redaction'
 # Developer Preview API Key
 DEVELOPER_PREVIEW_API_KEY = 'developer_preview_api_key'
 # When retrieving lists of ChromeOS devices from API, how many should be retrieved in each chunk
@@ -378,6 +380,7 @@ Defaults = {
   CSV_OUTPUT_USERS_AUDIT: FALSE,
   CUSTOMER_ID: MY_CUSTOMER,
   DEBUG_LEVEL: '0',
+  DEBUG_REDACTION: TRUE,
   DEVELOPER_PREVIEW_API_KEY: '',
   DEVICE_MAX_RESULTS: '200',
   DOMAIN: '',
@@ -547,6 +550,7 @@ VAR_INFO = {
   CSV_OUTPUT_USERS_AUDIT: {VAR_TYPE: TYPE_BOOLEAN},
   CUSTOMER_ID: {VAR_TYPE: TYPE_STRING, VAR_ENVVAR: 'CUSTOMER_ID', VAR_LIMITS: (0, None)},
   DEBUG_LEVEL: {VAR_TYPE: TYPE_INTEGER, VAR_SIGFILE: 'debug.gam', VAR_LIMITS: (0, None), VAR_SFFT: ('0', '4')},
+  DEBUG_REDACTION: {VAR_TYPE: TYPE_BOOLEAN},
   DEVELOPER_PREVIEW_API_KEY: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
   DEVICE_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 200)},
   DOMAIN: {VAR_TYPE: TYPE_STRING, VAR_ENVVAR: 'GA_DOMAIN', VAR_LIMITS: (0, None)},
