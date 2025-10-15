@@ -327,7 +327,7 @@ gam <UserTypeEntity> show chatspaces
 By default, chat spaces of all types are displayed.
 * `types <ChatSpaceTypeList>` - Display specific types of spaces.
 
-When listing Chat Spaces, the Chat API does not return the `accessSettings` field; if you need to see this fieldf,
+When listing Chat Spaces, the Chat API does not return the `accessSettings` field; if you need to see this field,
 add `showaccesssettings` to the command. This requires an additional Chat API call per chat space of type `SPACE`
 to get the `accessSettings` field.
 
@@ -343,7 +343,7 @@ gam <UserTypeEntity> print chatspaces [todrive <ToDriveAttribute>*]
 By default, chat spaces of all types are displayed.
 * `types <ChatSpaceTypeList>` - Display specific types of spaces.
 
-When listing Chat Spaces, the Chat API does not return the `accessSettings` field; if you need to see this fieldf,
+When listing Chat Spaces, the Chat API does not return the `accessSettings` field; if you need to see this field,
 add `showaccesssettings` to the command. This requires an additional Chat API call per chat space of type `SPACE`
 to get the `accessSettings` field.
 
@@ -401,7 +401,7 @@ By default, all chat spaces of type SPACE are displayed.
 * `query <String> [querytime<String> <Time>]` - Display selected chat spaces
   * See: https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces/search
 
-When listing Chat Spaces, the Chat API does not return the `accessSettings` field; if you need to see this fieldf,
+When listing Chat Spaces, the Chat API does not return the `accessSettings` field; if you need to see this field,
 add `showaccesssettings` to the command. This requires an additional Chat API call per chat space of type `SPACE`
 to get the `accessSettings` field.
 
@@ -419,7 +419,7 @@ By default, all chat spaces of type SPACE are displayed.
 * `query <String> [querytime<String> <Time>]` - Display selected chat spaces
   * See: https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces/search
 
-When listing Chat Spaces, the Chat API does not return the `accessSettings` field; if you need to see this fieldf,
+When listing Chat Spaces, the Chat API does not return the `accessSettings` field; if you need to see this field,
 add `showaccesssettings` to the command. This requires an additional Chat API call per chat space of type `SPACE`
 to get the `accessSettings` field.
 
