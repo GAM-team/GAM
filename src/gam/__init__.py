@@ -382,6 +382,7 @@ def redact_sensitive_google_text(text):
             r'4/[0-9A-Za-z-_]+', # Auth code
             r'GOCSPX-[0-9a-zA-Z-_]{28}', # Client secret
             r'AIza[0-9A-Za-z-_]{35}', # API key
+            r'eyJ[a-zA-Z0-9\-_]+\.eyJ[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]*' # JWT
             ]
     for pattern in patterns:
       text = re.sub(pattern, '****', text)
