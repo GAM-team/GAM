@@ -49,7 +49,7 @@ from email.policy import SMTP as policySMTP
 import hashlib
 from html.entities import name2codepoint
 from html.parser import HTMLParser
-import http.client as http_client
+import http.client
 import importlib
 from importlib.metadata import version as lib_version
 import io
@@ -374,6 +374,31 @@ YUBIKEY_APDU_ERROR_RC = 84
 YUBIKEY_VALUE_ERROR_RC = 85
 YUBIKEY_MULTIPLE_CONNECTED_RC = 86
 YUBIKEY_NOT_FOUND_RC = 87
+
+def redact_sensitive_google_text(text):
+    patterns = [
+            r'ya29.[0-9A-Za-z-_]+', # Access token
+            r'1/[0-9A-Za-z-]{43}|1/[0-9A-Za-z-]{64}', # Refresh token
+            r'4/[0-9A-Za-z-_]+', # Auth code
+            r'GOCSPX-[0-9a-zA-Z-_]{28}', # Client secret
+            r'AIza[0-9A-Za-z-_]{35}', # API key
+            ]
+    for pattern in patterns:
+      text = re.sub(pattern, '****', text)
+    return text
+
+def redactable_debug_print(*args):
+  processed_args = []
+  for arg in args:
+    if arg.startswith('b\''):
+      sbytes = arg[2:-1]
+      sbytes = bytes(sbytes, 'utf-8')
+      arg = sbytes.decode()
+      arg = arg.replace('\\r\\n', "\n          ")
+    if GC.Values[GC.DEBUG_REDACTION]:
+      arg = redact_sensitive_google_text(arg)
+    processed_args.append(arg)
+  print(*processed_args)
 
 # Multiprocessing lock
 mplock = None
@@ -4124,6 +4149,8 @@ def SetGlobalVariables():
   GM.Globals[GM.OAUTH2_TXT_LOCK] = f'{GC.Values[GC.OAUTH2_TXT]}.lock'
 # Override httplib2 settings
   httplib2.debuglevel = GC.Values[GC.DEBUG_LEVEL]
+# Use our own print function for http.client so we can redact and cleanup
+  http.client.print = redactable_debug_print
 # Reset global variables if required
   if prevExtraArgsTxt != GC.Values[GC.EXTRA_ARGS]:
     GM.Globals[GM.EXTRA_ARGS_LIST] = [('prettyPrint', GC.Values[GC.DEBUG_LEVEL] > 0)]
@@ -4775,7 +4802,7 @@ def getService(api, httpObj):
           waitOnFailure(n, triesLimit, INVALID_JSON_RC, str(e))
           continue
         systemErrorExit(INVALID_JSON_RC, str(e))
-      except (http_client.ResponseNotReady, OSError, googleapiclient.errors.HttpError) as e:
+      except (http.client.ResponseNotReady, OSError, googleapiclient.errors.HttpError) as e:
         errMsg = f'Connection error: {str(e) or repr(e)}'
         if n != triesLimit:
           waitOnFailure(n, triesLimit, SOCKET_ERROR_RC, errMsg)
@@ -5088,7 +5115,7 @@ def callGData(service, function,
         e = e.args[0]
       handleOAuthTokenError(e, GDATA.SERVICE_NOT_APPLICABLE in throwErrors)
       raise GDATA.ERROR_CODE_EXCEPTION_MAP[GDATA.SERVICE_NOT_APPLICABLE](str(e))
-    except (http_client.ResponseNotReady, OSError) as e:
+    except (http.client.ResponseNotReady, OSError) as e:
       errMsg = f'Connection error: {str(e) or repr(e)}'
       if n != triesLimit:
         waitOnFailure(n, triesLimit, SOCKET_ERROR_RC, errMsg)
@@ -5398,7 +5425,7 @@ def callGAPI(service, function,
         e = e.args[0]
       handleOAuthTokenError(e, GAPI.SERVICE_NOT_AVAILABLE in throwReasons)
       raise GAPI.REASON_EXCEPTION_MAP[GAPI.SERVICE_NOT_AVAILABLE](str(e))
-    except (http_client.ResponseNotReady, OSError) as e:
+    except (http.client.ResponseNotReady, OSError) as e:
       errMsg = f'Connection error: {str(e) or repr(e)}'
       if n != triesLimit:
         waitOnFailure(n, triesLimit, SOCKET_ERROR_RC, errMsg)
