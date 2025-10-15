@@ -378,7 +378,7 @@ YUBIKEY_NOT_FOUND_RC = 87
 def redact_sensitive_google_text(text):
     patterns = [
             r'ya29.[0-9A-Za-z-_]+', # Access token
-            r'1/[0-9A-Za-z-]{43}|1/[0-9A-Za-z-]{64}', # Refresh token
+            r'1%2F%2F[0-9A-Za-z-_]{100}|1%2F%2F[0-9A-Za-z-_]{64}|1%2F%2F[0-9A-Za-z-_]{43}', # Refresh token
             r'4/[0-9A-Za-z-_]+', # Auth code
             r'GOCSPX-[0-9a-zA-Z-_]{28}', # Client secret
             r'AIza[0-9A-Za-z-_]{35}', # API key
