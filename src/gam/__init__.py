@@ -376,16 +376,25 @@ YUBIKEY_MULTIPLE_CONNECTED_RC = 86
 YUBIKEY_NOT_FOUND_RC = 87
 
 def redact_sensitive_google_text(text):
-    patterns = [
-            r'ya29.[0-9A-Za-z-_]+', # Access token
-            r'1%2F%2F[0-9A-Za-z-_]{100}|1%2F%2F[0-9A-Za-z-_]{64}|1%2F%2F[0-9A-Za-z-_]{43}', # Refresh token
-            r'4/[0-9A-Za-z-_]+', # Auth code
-            r'GOCSPX-[0-9a-zA-Z-_]{28}', # Client secret
-            r'AIza[0-9A-Za-z-_]{35}', # API key
-            r'eyJ[a-zA-Z0-9\-_]+\.eyJ[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]*' # JWT
+    replace_patterns = [
+
+            # Positional patterns that redact sensitive credentials based on their location
+            (r'(Bearer\s+)\S+', r'\1*****'), # access tokens and JWTs in auth header
+            (r'([?&]refresh_token=)[^&]*', r'\1*****'), # refresh token URL parameter
+            (r'([?&]client_secret=)[^&]*', r'\1*****'), # client secret URL parameter
+            (r'([?&]key=)[^&]*', r'\1*****'), # API key URL parameter
+            (r'([?&]code=)[^&]*', r'\1*****'), # auth code URL parameter
+
+            # pattern match patterns that redact sensitive credentials based on known credential pattern
+            (r'ya29.[0-9A-Za-z-_]+', '*****'), # Access token
+            (r'1%2F%2F[0-9A-Za-z-_]{100}|1%2F%2F[0-9A-Za-z-_]{64}|1%2F%2F[0-9A-Za-z-_]{43}', '*****'), # Refresh token
+            (r'4/[0-9A-Za-z-_]+', '*****'), # Auth code
+            (r'GOCSPX-[0-9a-zA-Z-_]{28}', '*****'), # Client secret
+            (r'AIza[0-9A-Za-z-_]{35}', '*****'), # API key
+            (r'eyJ[a-zA-Z0-9\-_]+\.eyJ[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]*', '*****'), # JWT
             ]
-    for pattern in patterns:
-      text = re.sub(pattern, '****', text)
+    for pattern, replace in replace_patterns:
+      text = re.sub(pattern, replace, text)
     return text
 
 def redactable_debug_print(*args):
