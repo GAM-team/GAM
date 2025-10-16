@@ -126,10 +126,10 @@ jobs:
             name: Test Python 3.12
           - os: ubuntu-24.04
             goal: test
-            python: "3.14"
+            python: "3.15-dev"
             freethreaded: false
             jid: 17
-            name: Test Python 3.14
+            name: Test Python 3.15-dev
           - os: ubuntu-24.04
             goal: test
             python: "3.14"
