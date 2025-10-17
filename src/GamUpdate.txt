@@ -1,3 +1,11 @@
+7.26.00
+
+Added `debug_redaction` Boolean variable to `gam.cfg`. When True, the default,
+sensitive data like access/refresh tokens, client secret and authorization codes
+are redacted from debug output. This allows you to post debug output without
+compromising your account information. Even with debug redaction,
+anything shared publicly should be double-checked for sensitive content. 
+
 7.25.01
 
 Fixed bug in `gam config timezone <String>` to handle timezone abbreviations correctly;
