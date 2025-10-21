@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.27.01
+
+Fixed bug in `gam <UserTypeEntity> claim ownership <DriveFileEntity> ... onlyUsers|skipusers <UserTypeEntity>`
+where the email addresses in `onlyUsers|skipusers <UserTypeEntity>` were not normalized.
+
 ### 7.27.00
 
 Added `debug_redaction` Boolean variable to `gam.cfg`. When True, the default,
