@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.27.00'
+__version__ = '7.27.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -64917,11 +64917,11 @@ def claimOwnership(users):
     elif myarg == 'onlyusers':
       _, userList = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
       checkOnly = True
-      onlyOwners = set(userList)
+      onlyOwners = {normalizeEmailAddressOrUID(user, noUid=True) for user in userList}
     elif myarg == 'skipusers':
       _, userList = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
       checkSkip = len(userList) > 0
-      skipOwners = set(userList)
+      skipOwners = {normalizeEmailAddressOrUID(user, noUid=True) for user in userList}
     elif myarg == 'subdomains':
       subdomains = getEntityList(Cmd.OB_DOMAIN_NAME_ENTITY)
     elif myarg == 'includetrashed':
