@@ -33005,6 +33005,8 @@ def doCreateGroup(ciGroupsAPI=False):
       initialGroupConfig = 'WITH_INITIAL_OWNER'
     elif ciGroupsAPI and myarg in {'security', 'makesecuritygroup'}:
       body['labels'][CIGROUP_SECURITY_LABEL] = ''
+    elif ciGroupsAPI and myarg in ['locked']:
+      body['labels'][CIGROUP_LOCKED_LABEL] = ''
     elif myarg == 'verifynotinvitable':
       verifyNotInvitable = True
     else:
