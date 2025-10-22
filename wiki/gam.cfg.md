@@ -303,6 +303,9 @@ debug_level
         If debug_level > 0, turn on API debugging output.
         Default: 0
         Signal file: OldGamPath/debug.gam
+debug_redaction
+        Enable/disable redaction of sensitive data from API debugging output
+        Default: True
 device_max_results
         When retrieving lists of ChromeOS devices from API,
         how many should be retrieved in each API call
