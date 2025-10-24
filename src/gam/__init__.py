@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.27.02'
+__version__ = '7.27.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -26776,14 +26776,14 @@ def  getChatSpaceParameters(myarg, body, typeChoicesMap, updateMask):
 
 CHAT_MEMBER_ROLE_MAP = {
   'member': 'ROLE_MEMBER',
-  'manager': 'ROLE_MANAGER',
-  'owner': 'ROLE_OWNER',
+  'manager': 'ROLE_ASSISTANT_MANAGER',
+  'owner': 'ROLE_MANAGER',
   }
 
 CHAT_ROLE_ENTITY_TYPE_MAP = {
   'ROLE_MEMBER': Ent.CHAT_MEMBER_USER,
-  'ROLE_MANAGER': Ent.CHAT_MANAGER_USER,
-  'ROLE_OWNER':  Ent.CHAT_OWNER_USER,
+  'ROLE_ASSISTANT_MANAGER': Ent.CHAT_MANAGER_USER,
+  'ROLE_MANAGER':  Ent.CHAT_OWNER_USER,
   }
 
 CHAT_MEMBER_TYPE_MAP = {
@@ -26917,7 +26917,8 @@ CHAT_UPDATE_SPACE_TYPE_MAP = {
   }
 
 CHAT_SPACE_ROLE_PERMISSIONS_MAP = {
-  'managers': 'managersAllowed',
+  'owners': 'managersAllowed',
+  'managers': 'assistantManagersAllowed',
   'members': 'membersAllowed',
   }
 
@@ -26937,13 +26938,13 @@ CHAT_UPDATE_SPACE_PERMISSIONS_MAP = {
 #	 [type space]
 #	 [description <String>] [guidelines|rules <String>]
 #	 [history <Boolean>])
-#	managemembersandgroups managers|members
-#	modifyspacedetails managers|members
-#	togglehistory managers|members
-#	useatmentionall managers|members
-#	manageapps managers|members
-#	managewebhooks managers|members
-#	replymessages managers|members
+#	[managemembersandgroups owners|managers|members]
+#	[modifyspacedetails owners|managers|members]
+#	[togglehistory owners|managers|members]
+#	[useatmentionall owners|managers|members]
+#	[manageapps owners|managers|members]
+#	[managewebhooks owners|managers|members]
+2#	[replymessages owners|managers|members]
 #	[formatjson]
 def updateChatSpace(users):
   FJQC = FormatJSONQuoteChar()
@@ -26961,9 +26962,13 @@ def updateChatSpace(users):
       body.setdefault('permissionSettings', {})
       permissionSetting = CHAT_UPDATE_SPACE_PERMISSIONS_MAP[myarg]
       role = getChoice(CHAT_SPACE_ROLE_PERMISSIONS_MAP, mapChoice=True)
-      body['permissionSettings'][permissionSetting] = {'managersAllowed': True}
+      body['permissionSettings'][permissionSetting] = {}
+      body['permissionSettings'][permissionSetting][role] = True
       if role == 'membersAllowed':
-        body['permissionSettings'][permissionSetting].update({'membersAllowed': True})
+        body['permissionSettings'][permissionSetting]['assistantManagersAllowed'] = True
+        body['permissionSettings'][permissionSetting]['managersAllowed'] = True
+      elif role == 'assistantManagersAllowed':
+        body['permissionSettings'][permissionSetting]['managersAllowed'] = True
       updateMask.add(f'permissionSettings.{permissionSetting}')
     else:
       FJQC.GetFormatJSON(myarg)
@@ -27337,12 +27342,12 @@ def getGroupMemberID(cd, group, groupList):
   groupList.append(convertEmailAddressToUID(group, cd, emailType='group'))
 
 # gam <UserTypeEntity> create chatmember <ChatSpace>
-#	[type human|bot] [role member|manager]
+#	[type human|bot] [role member|manager|owner]
 #	(user <UserItem>)* (members <UserTypeEntity>)*
 #	(group <GroupItem>)* (groups <GroupEntity>)*
 #	[formatjson|returnidonly]
 # gam <UserItem> create chatmember asadmin <ChatSpace>
-#	[type human|bot] [role member|manager]
+#	[type human|bot] [role member|manager|owner]
 #	(user <UserItem>)* (members <UserTypeEntity>)*
 #	(group <GroupItem>)* (groups <GroupEntity>)*
 #	[formatjson|returnidonly]
@@ -27471,16 +27476,16 @@ def _deleteChatMembers(chat, kvList, jcount, memberNames, i, count, kwargsUAA):
 # gam <UserItem> remove chatmember asadmin
 #	members <ChatMemberList>
 # gam <UserTypeEntity> update chatmember <ChatSpace>
-#	role member|manager
+#	role member|manager|owner
 #	((user <UserItem>)|(members <UserTypeEntity>))+
 # gam <UserTypeEntity> modify chatmember
-#	role member|manager
+#	role member|manager|owner
 #	members <ChatMemberList>
 # gam <UserItem> update chatmember asadmin<ChatSpace>
-#	role member|manager
+#	role member|manager|owner
 #	((user <UserItem>)|(members <UserTypeEntity>))+
 # gam <UserItem> modify chatmember asadmin
-#	role member|manager
+#	role member|manager|owner
 #	members <ChatMemberList>
 def deleteUpdateChatMember(users):
   cd = buildGAPIObject(API.DIRECTORY)
@@ -27574,7 +27579,7 @@ def deleteUpdateChatMember(users):
 CHAT_SYNC_PREVIEW_TITLES = ['space', 'member', 'role', 'action', 'message']
 
 # gam <UserTypeEntity> sync chatmembers [asadmin] <ChatSpace>
-#	[role member|manager] [type human|bot]
+#	[role member|manager|owner] [type human|bot]
 #	[addonly|removeonly]
 #	[preview [actioncsv]]
 #	(users <UserTypeEntity>)* (groups <GroupEntity>)*

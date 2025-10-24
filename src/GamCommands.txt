@@ -4086,7 +4086,7 @@ gam print group-members [todrive <ToDriveAttribute>*]
 gam create cigroup <EmailAddress>
         [copyfrom <GroupItem>] <GroupAttribute>*
         [makeowner] [alias|aliases <CIGroupAliasList>]
-        [security|makesecuritygroup]
+        [security|makesecuritygroup] [locked]
         [dynamic <QueryDynamicGroup>]
 gam update cigroup <GroupEntity> [copyfrom <GroupItem>] <GroupAttribute>
         [security|makesecuritygroup|
@@ -6428,13 +6428,13 @@ gam <UserTypeEntity> update chatspace <ChatSpace>
          [type space]
          [description <String>] [guidelines|rules <String>]
          [history <Boolean>])
-        [managemembersandgroups managers|members]
-        [modifyspacedetails managers|members]
-        [togglehistory managers|members]
-        [useatmentionall managers|members]
-        [manageapps managers|members]
-        [managewebhooks managers|members]
-        [replymessages managers|members]
+        [managemembersandgroups owners|managers|members]
+        [modifyspacedetails owners|managers|members]
+        [togglehistory owners|managers|members]
+        [useatmentionall owners|managers|members]
+        [manageapps owners|managers|members]
+        [managewebhooks owners|managers|members]
+        [replymessages owners|managers|members]
         [formatjson]
 gam <UserTypeEntity> delete chatspace <ChatSpace>
 
@@ -6495,28 +6495,28 @@ gam <UserItem> print chatspaces asadmin [todrive <ToDriveAttribute>*]
         [formatjson [quotechar <Character>]]
 
 gam <UserTypeEntity> create chatmember <ChatSpace>
-        [type human|bot] [role member|manager]
+        [type human|bot] [role member|manager|owner]
         (user <UserItem>)* (members <UserTypeEntity>)*
         (group <GroupItem>)* (groups <GroupEntity>)*
         [formatjson|returnidonly]
 gam <UserTypeEntity> delete chatmember <ChatSpace>
         ((user <UserItem>)|(members <UserTypeEntity>)|
          (group <GroupItem>)|(groups <GroupEntity>))+
-gam <UserTypeEntity> remove chatmember members <ChatMemberList>
+`gam <UserTypeEntity> remove chatmember members <ChatMemberList>
 gam <UserTypeEntity> update chatmember <ChatSpace>
-        role member|manager
+        role member|manager|owner
         ((user <UserItem>)|(members <UserTypeEntity>))+
 gam <UserTypeEntity> modify chatmember
-        role member|manager
+        role member|manager|owner
         members <ChatMemberList>
 gam <UserTypeEntity> sync chatmembers <ChatSpace>
-        [role member|manager] [type human|bot]
+        [role member|manager|owner] [type human|bot]
         [addonly|removeonly]
         [preview [actioncsv]]
         (users <UserTypeEntity>)* (groups <GroupEntity>)*
 
 gam <UserItem> create chatmember asadmin <ChatSpace>
-        [type human|bot] [role member|manager]
+        [type human|bot] [role member|manager|owner]
         (user <UserItem>)* (members <UserTypeEntity>)*
         (group <GroupItem>)* (groups <GroupEntity>)*
         [formatjson|returnidonly]
@@ -6525,13 +6525,13 @@ gam <UserItem> delete chatmember asadmin <ChatSpace>
         ((user <UserItem>)|(members <UserTypeEntity>)|
          (group <GroupItem>)|(groups <GroupEntity>))+
 gam <UserItem> update chatmember asadmin <ChatSpace>
-        role member|manager
+        role member|manager|owner
         ((user <UserItem>)|(members <UserTypeEntity>))+
 gam <UserItem> modify chatmember asadmin
-        role member|manager
+        role member|manager|owner
         members <ChatMemberList>
 gam <UserItem> sync chatmembers asadmin <ChatSpace>
-        [role member|manager] [type human|bot]
+        [role member|manager|owner`] [type human|bot]
         [addonly|removeonly]
         [preview [actioncsv]]
         (users <UserTypeEntity>)* (groups <GroupEntity>)*

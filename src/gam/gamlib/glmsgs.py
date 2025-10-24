@@ -516,7 +516,7 @@ To set up Google Chat for your current project, please go to:
 
 and follow the instructions at:
 
-    https://github.com/GAM-team/GAM/wiki/Chat-Bot#set-up-a-chat-bot
+    https://github.com/GAM-team/GAM/wiki/Chat-Bot-Setup-Use#set-up-a-chat-bot
 
     You'll use projects/{1}/topics/no-topic in Connection settings Cloud Pub/Sub Topic Name
 """

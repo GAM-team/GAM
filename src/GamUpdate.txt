@@ -1,3 +1,24 @@
+7.27.03
+
+Updated `gam <UserTypeEntity> create|update|sync chatmember` role specification to `role member|manager|owner`.
+This is the mapping between the Chat UI and Chat API; GAM uses the Chat UI role names.
+```
+UI: Member,  API: ROLE_MEMBER
+UI: Manager, API: ROLE_ASSISTANT_MANAGER
+UI: Owner,   API: ROLE_MANAGER
+```
+
+Updated `gam <UserTypeEntity> update chatspace` options for permission settings.
+```
+        [managemembersandgroups owners|managers|members]
+        [modifyspacedetails owners|managers|members]
+        [togglehistory owners|managers|members]
+        [useatmentionall owners|managers|members]
+        [manageapps owners|managers|members]
+        [managewebhooks owners|managers|members]
+        [replymessages owners|managers|members]
+```
+
 7.27.02
 
 Added option `clearattachments <String>` to `gam [<UserTypeMessage>] update chatmessage`
