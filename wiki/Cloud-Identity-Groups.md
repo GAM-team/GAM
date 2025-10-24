@@ -245,7 +245,7 @@ to set `<GroupAttribute>`.
 gam create cigroup <EmailAddress>
         [copyfrom <GroupItem>] <GroupAttribute>*
         [makeowner] [alias|aliases <CIGroupAliasList>]
-        [security|makesecuritygroup]
+        [security|makesecuritygroup] [locked]
         [dynamic <QueryDynamicGroup>]
 gam update cigroup <GroupEntity> [copyfrom <GroupItem>] <GroupAttribute>
         [security|makesecuritygroup|
