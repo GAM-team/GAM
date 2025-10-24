@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.27.02
+
+Added option `clearattachments <String>` to `gam [<UserTypeMessage>] update chatmessage`
+that clears all attachments from a Chat message. If `<ChatContent>` is not specified,
+the current message text is retained and `<String>` is appended; `<String>` must be specified
+but can be empty in which case the current message test is preserved as-is.
+
 ### 7.27.01
 
 Fixed bug in `gam <UserTypeEntity> claim ownership <DriveFileEntity> ... onlyUsers|skipusers <UserTypeEntity>`

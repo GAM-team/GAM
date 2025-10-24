@@ -288,7 +288,7 @@ gam create chatmessage spaces spaces/AAAADi-pvqc gdoc announcements@domain.com n
 Updates and rewrites an existing Chat message. Message will show as edited and no notification will be sent to members.
 ```
 gam update chatmessage name <ChatMessage>
-        <ChatContent>
+        [<ChatContent>] [clearattachments <String>]
 ```
 Specify the source of the message:
 * `text <String>` - The message is `<String>`
@@ -296,12 +296,22 @@ Specify the source of the message:
 * `gdoc <UserGoogleDoc>` - The message is read from a Google Doc.
 * `gcsdoc <StorageBucketObjectName>` - The message is read from a Google Cloud Storage file.
 
+The option `clearattachments <String>` can be used to clear all attachments from a Chat message.
+If `<ChatContent>` is not specified, the current message text is retained and `<String>` is appended;
+`<String>` must be specified but can be empty in which case the current message test is preserved as-is.
+
 ### Example
+
 This example updates an existing chat message with new text.
 ```
 gam update chatmessage name spaces/AAAADi-pvqc/messages/PKJrx90ooIU.PKJrx90ooIU text "HELLO CHAT?"
 ```
 
+This example clears attachments from a chat message and appends ` - Attachments cleared`
+to the current message text.
+```
+gam update chatmessage name spaces/AAAADi-pvqc/messages/PKJrx90ooIU.PKJrx90ooIU clearattachments " - Attachments cleared"
+```
 ----
 
 ## Delete a Chat Message
