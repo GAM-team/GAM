@@ -2057,7 +2057,7 @@ gam create chatmessage <ChatSpace>
         [(thread <ChatThread>)|(threadkey <String>) [replyoption fail|fallbacktonew]]
         [returnidonly]
 gam update chatmessage name <ChatMessage>
-        <ChatContent>
+        [<ChatContent>] [clearattachments <String>]
 gam delete chatmessage name <ChatMessage>
 
 <ChatMessageFieldName> ::=
@@ -6586,7 +6586,7 @@ gam <UserTypeEntity> create chatmessage <ChatSpace>
         [replyoption fail|fallback]
         [returnidonly]
 gam <UserTypeEntity> update chatmessage name <ChatMessage>
-        <ChatContent>
+        [<ChatContent>] [clearattachments <String>]
 gam <UserTypeEntity> delete chatmessage name <ChatMessage>
 
 <ChatMessageFieldName> ::=

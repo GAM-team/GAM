@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.27.01'
+__version__ = '7.27.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -9182,7 +9182,7 @@ def showJSON(showName, showValue, skipObjects=None, timeObjects=None,
       return
     if objectName is not None:
       printJSONKey(objectName)
-      subObjectKey = dictObjectsKey.get(objectName)
+    subObjectKey = dictObjectsKey.get(objectName)
     if isinstance(objectValue, list):
       if objectName in simpleLists:
         printJSONValue(' '.join(objectValue))
@@ -26506,14 +26506,18 @@ CHAT_TIME_OBJECTS = {'createTime', 'deleteTime', 'eventTime', 'lastActiveTime', 
 def _showChatItem(citem, entityType, FJQC, i=0, count=0):
   if entityType == Ent.CHAT_SPACE:
     _cleanChatSpace(citem)
+    dictObjectsKey = {None: 'displayName'}
   elif entityType == Ent.CHAT_MESSAGE:
     _cleanChatMessage(citem)
+    dictObjectsKey = {None: 'text'}
+  else:
+    dictObjectsKey={}
   if FJQC.formatJSON:
     printLine(json.dumps(cleanJSON(citem, timeObjects=CHAT_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
     return
   printEntity([entityType, citem['name']], i, count)
   Ind.Increment()
-  showJSON(None, citem, timeObjects=CHAT_TIME_OBJECTS)
+  showJSON(None, citem, timeObjects=CHAT_TIME_OBJECTS, dictObjectsKey=dictObjectsKey)
   Ind.Decrement()
 
 def _printChatItem(user, citem, parent, entityType, csvPF, FJQC, addCSVData=None):
@@ -27986,10 +27990,11 @@ def _getChatSenderEmail(cd, sender):
     sender['email'], _ = convertUIDtoEmailAddressWithType(f'uid:{senderUid}', cd, None, emailTypes=['user'])
 
 def trimChatMessageIfRequired(body):
-  msgLen = len(body['text'])
-  if msgLen > 4096:
-    stderrWarningMsg(Msg.TRIMMED_MESSAGE_FROM_LENGTH_TO_MAXIMUM.format(msgLen, 4096))
-    body['text'] = body['text'][:4095]
+  if 'text' in body:
+    msgLen = len(body['text'])
+    if msgLen > 4096:
+      stderrWarningMsg(Msg.TRIMMED_MESSAGE_FROM_LENGTH_TO_MAXIMUM.format(msgLen, 4096))
+      body['text'] = body['text'][:4095]
 
 CHAT_MESSAGE_REPLY_OPTION_MAP = {
   'fail': 'REPLY_MESSAGE_OR_FAIL',
@@ -28066,22 +28071,29 @@ def doCreateChatMessage():
   createChatMessage([None])
 
 # gam [<UserTypeMessage>] update chatmessage name <ChatMessage>
-#	<ChatContent>
+#	[<ChatContent>] [clearattachments <String>]
 def updateChatMessage(users):
   name = None
   body = {}
+  updateMask = []
+  clearMsg = ''
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'name':
       name = getString(Cmd.OB_CHAT_MESSAGE)
     elif myarg in SORF_TEXT_ARGUMENTS:
       body['text'] = getStringOrFile(myarg, minLen=0, unescapeCRLF=True)[0]
+      updateMask.append('text')
+    elif myarg == 'clearattachments':
+      clearMsg = getString(Cmd.OB_STRING, minLen=0)
+      body['attachment'] = []
+      updateMask.append('attachment')
     else:
       unknownArgumentExit()
   if not name:
     missingArgumentExit('name')
-  if 'text' not in body:
-    missingArgumentExit('text or textfile')
+  if not updateMask:
+    missingArgumentExit('text|textfile|clearattachments')
   trimChatMessageIfRequired(body)
   i, count, users = getEntityArgument(users)
   for user in users:
@@ -28090,9 +28102,19 @@ def updateChatMessage(users):
     if not chat:
       continue
     try:
+      if 'attachment' in updateMask and 'text' not in updateMask:
+        resp = callGAPI(chat.spaces().messages(), 'get',
+                        throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
+                        name=name, fields='text')
+        body['text'] = resp.get('text', '')
+        if clearMsg:
+          body['text'] += clearMsg
+        elif not body['text']:
+          body['text'] = 'Attachments cleared'
+        updateMask.append('text')
       resp = callGAPI(chat.spaces().messages(), 'patch',
                       throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
-                      name=name, updateMask='text', body=body)
+                      name=name, updateMask=','.join(updateMask), body=body)
       kvList.extend([Ent.CHAT_THREAD, resp['thread']['name']])
       entityActionPerformed(kvList, i, count)
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
