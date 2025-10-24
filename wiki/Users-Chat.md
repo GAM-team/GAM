@@ -7,6 +7,7 @@
 - [Chat Space Permissions](#chat-space-permissions)
 - [Manage Chat Spaces](#manage-chat-spaces)
 - [Display Chat Spaces](#display-chat-spaces)
+- [UI API member role mapping](#ui-api-mwmber-role-mapping)
 - [Manage Chat Members](#manage-chat-members)
 - [Display Chat Members](#display-chat-members)
 - [Manage Chat Messages](#manage-chat-messages)
@@ -211,7 +212,7 @@ For `type space`, the following apply:
 * `description <String>` - Optional
 * `guidelines <String>` - Optional
 * `history <Boolean>` - Optional
-* `announcement|collaboration` - Initial permission settings; default is `collaboration`; this is in Developer Preview
+* `announcement|collaboration` - Initial permission settings; default is `collaboration`
 
 For `type groupchat`, the following apply:
 * `members <UserTypeEntity>` - Required, must specify between 2 and 20 users
@@ -244,29 +245,18 @@ gam <UserTypeEntity> update chatspace <ChatSpace>
          [type space]
          [description <String>] [guidelines|rules <String>]
          [history <Boolean>])
-        [managemembersandgroups managers|members]
-        [modifyspacedetails managers|members]
-        [togglehistory managers|members]
-        [useatmentionall managers|members]
-        [manageapps managers|members]
-        [managewebhooks managers|members]
-        [replymessages managers|members]
+        [managemembersandgroups owners|managers|members]
+        [modifyspacedetails owners|managers|members]
+        [togglehistory owners|managers|members]
+        [useatmentionall owners|managers|members]
+        [manageapps owners|managers|members]
+        [managewebhooks owners|managers|members]
+        [replymessages owners|managers|members]
         [formatjson]
 ```
 A groupchat space can be upgraded to a space by specifying `type space` and `displayname <String>`.
 
 The `restricted|audience` options can not be combined with options `displayname,type,description,guidelines,history`.
-
-You can manage permissions for chat spaces with the following options that are available with Developer Preview.
-        [managemembersandgroups managers|members]
-        [modifyspacedetails managers|members]
-        [togglehistory managers|members]
-        [useatmentionall managers|members]
-        [manageapps managers|members]
-        [managewebhooks managers|members]
-        [postmessages managers|members]
-        [replymessages managers|members]
-
 
 By default, Gam displays the information about the created chatspace as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
@@ -432,11 +422,20 @@ When using the `formatjson` option, double quotes are used extensively in the da
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
+## UI API member role mapping
+GAM uses the Chat UI role names.
+
+| UI setting | API setting |
+|------------|------------|
+| Member | ROLE_MEMBER |
+| Manager | ROLE_ASSISTANT_MANAGER |
+| Owner | ROLE_MANAGER |
+
 ## Manage Chat Members
 ### Add members to a user's chat space
 ```
 gam <UserTypeEntity> create chatmember <ChatSpace>
-        [type human|bot] [role member|manager]
+        [type human|bot] [role member|manager|owner]
         (user <UserItem>)* (members <UserTypeEntity>)*
         (group <GroupItem>)* (groups <GroupEntity>)*
         [formatjson|returnidonly]
@@ -462,7 +461,7 @@ gam <UserTypeEntity> remove chatmember members <ChatMemberList>
 Creating memberships for users outside the administrator's Google Workspace organization isn't supported using asadmin.
 ```
 gam <UserItem> create chatmember asadmin <ChatSpace>
-        [type human|bot] [role member|manager]
+        [type human|bot] [role member|manager|owner]
         (user <UserItem>)* (members <UserTypeEntity>)*
         (group <GroupItem>)* (groups <GroupEntity>)*
         [formatjson|returnidonly]
@@ -488,13 +487,13 @@ gam <UserItem> remove chatmember asadmin members <ChatMemberList>
 Update members by specifying a chat space, user/group email addresses and role.
 ```
 gam <UserTypeEntity> update chatmember <ChatSpace>
-        role member|manager
+        role member|manager|owner
         ((user <UserItem>)|(members <UserTypeEntity>))+
 ```
 Update members by specifying chatmember names and role.
 ```
 gam <UserTypeEntity> modify chatmember
-        role member|manager
+        role member|manager|owner
         members <ChatMemberList>
 ```
 
@@ -502,13 +501,13 @@ gam <UserTypeEntity> modify chatmember
 Update members by specifying a chat space, user/group email addresses and role.
 ```
 gam <UserItem> update chatmember asadmin <ChatSpace>
-        role member|manager
+        role member|manager|owner
         ((user <UserItem>)|(members <UserTypeEntity>))+
 ```
 Update members by specifying chatmember names and role.
 ```
 gam <UserItem> modify chatmember asadmin
-        role member|manager
+        role member|manager|owner
         members <ChatMemberList>
 ```
 
