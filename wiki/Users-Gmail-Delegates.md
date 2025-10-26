@@ -3,6 +3,7 @@
 - [API documentation](#api-documentation)
 - [Definitions](#definitions)
 - [Aliases](#aliases)
+- [Delegation Notification](#delegation-notification)
 - [Create Gmail delegates](#create-gmail-delegates)
 - [Delete Gmail delegates](#delete-gmail-delegates)
 - [Update Gmail delegates](#update-gmail-delegates)
@@ -31,6 +32,23 @@ mail delegation is enabled. In the admin console, go to Apps/Google Workspace/Gm
 <UserEntity> ::=
         <UserList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
         See: https://github.com/GAM-team/GAM/wiki/Collections-of-Users
+
+<StorageBucketName> ::= <String>
+<StorageObjectName> ::= <String>
+<StorageBucketObjectName> ::=
+        https://storage.cloud.google.com/<StorageBucketName>/<StorageObjectName>|
+        https://storage.googleapis.com/<StorageBucketName>/<StorageObjectName>|
+        gs://<StorageBucketName>/<StorageObjectName>|
+        <StorageBucketName>/<StorageObjectName>
+
+<UserGoogleDoc> ::=
+        <EmailAddress> <DriveFileIDEntity>|<DriveFileNameEntity>|(<SharedDriveEntity> <SharedDriveFileNameEntity>)
+
+<NotifyMessageContent> ::=
+        (message|textmessage|htmlmessage <String>)|
+        (file|textfile|htmlfile <FileName> [charset <Charset>])|
+        (gdoc|ghtml <UserGoogleDoc>)|
+        (gcsdoc|gcshtml <StorageBucketObjectName>)
 ```
 ## Aliases
 
@@ -39,11 +57,60 @@ The `convertalias` option causes GAM to make an extra API call per user in `<Use
 to convert aliases to primary email addresses. If you know that all of the email addresses
 in `<UserEntity>` are primary, you can omit `convertalias` and avoid the extra API calls.
 
+## Delegation Notification
+When creating a delegate, you can send a message to the delegate.
+```
+[notify [<Boolean>]
+    [subject <String>]
+    [from <EmailAaddress>] [mailbox <EmailAddress>]
+    [replyto <EmailAddress>]
+    [<NotifyMessageContent>]
+]
+```
+* `notify [<Boolean>]` - Should notification be sent
+
+In the subject and message, these strings will be replaced with the specified values:
+* `#user#` - user's email address
+* `#delegate#` - delegate's email address
+
+If subject is not specified, the following value will be used:
+* `#user# Delegation`
+
+`<NotifyMessageContent>` is the message, there are four ways to specify it:
+* `message|textmessage|htmlmessage <String>` - Use `<String>` as the message
+* `file|htmlfile <FileName> [charset <Charset>]` - Read the message from `<FileName>`
+* `gdoc|ghtml <UserGoogleDoc>` - Read the message from `<UserGoogleDoc>`
+* `gcsdoc|gcshtml <StorageBucketObjectName>` - Read the message from the Google Cloud Storage file `<StorageBucketObjectName>`
+
+If `<NotifyMessageContent>`is not specified, the following value will be used:
+* `#user# has granted you #delegate# access to read, delete and send mail on their behalf.`
+
+Use `\n` in `message <String>` to indicate a line break; no other special characters are recognized.
+
+By default, the email is sent from the admin user identified in oauth2.txt, `gam oauth info` will show the value.
+Use `from <EmailAddress>` to specify an alternate from address.
+Use `mailbox <EmailAddress>` if `from <EmailAddress>` specifies a group; GAM has to login as a user to be able to send a message. 
+Gam gets no indication as to the status of the message delivery; the from user will get a non-delivery receipt if the message could not be sent to the delegate.
+
+By default, messages are sent as plain text, use `html` or `html true` to indicate that the message is HTML.
+
 ## Create Gmail delegates
 These two commands are equivalent.
 ```
 gam <UserTypeEntity> add delegate|delegates [convertalias] <UserEntity>
+        [[notify <EmailAddressList>]
+            [subject <String>]
+            [from <EmailAaddress>] [mailbox <EmailAddress>]
+            [replyto <EmailAaddress>]
+            [<NotifyMessageContent>]
+        ]
 gam <UserTypeEntity> delegate|delegates to [convertalias] <UserEntity>
+        [[notify <EmailAddressList>]
+            [subject <String>]
+            [from <EmailAaddress>] [mailbox <EmailAddress>]
+            [replyto <EmailAaddress>]
+            [<NotifyMessageContent>]
+        ]
 ```
 ### Example
 
@@ -51,6 +118,7 @@ To give Bob access to Fred's mailbox as a delegate:
 
 ```
 gam user fred@domain.com add delegate bob@domain.com
+gam user fred@domain.com delegate to bob@domain.com
 ```
 
 ## Delete Gmail delegates
