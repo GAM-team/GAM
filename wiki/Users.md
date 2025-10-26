@@ -401,14 +401,13 @@ password "helloworld" nohash
 ```
 
 ## Password Notification
-When creating a user or updating a user's password, you can send a message with details to an email address;'
-this might be the user's secondary email address or their recovery email address.
+When creating a user or updating a user's password, you can send a message with details to an email address
+or addresses; these might be the user's secondary email address, their recovery email address or a help desk user.
 ```
 [[notify <EmailAddressList>] [notifyrecoveryemail]
     [subject <String>]
     [notifypassword <String>]
-    [from <EmailAaddress>]
-    [mailbox <EmailAddress>]
+    [from <EmailAaddress>] [mailbox <EmailAddress>]
     [replyto <EmailAddress>]
     [<NotifyMessageContent>]
     (replace <Tag> <UserReplacement>)*
@@ -418,6 +417,15 @@ this might be the user's secondary email address or their recovery email address
 ```
 * `notify <EmailAddressList>` - Specify recipients
 * `notifyrecoveryemail` - Use the user's recovery email address (if defined) as a recipient
+
+In the subject and message, these strings will be replaced with the specified values:
+* `#givenname#` - first/given name
+* `#familyname#` - last/family name
+* `#email#` - user's email address
+* `#user#` - user's email address
+* `#username#` - portion of user's email address before @
+* `#domain#` - portion of user's email after after @
+* `#password#` - password
 
 If subject is not specified, the following value will be used:
 * create - `Welcome to #domain#`
@@ -434,14 +442,8 @@ If `<NotifyMessageContent>`is not specified, the following value will be used:
     Start using your new account by signing in at\nhttps://www.google.com/accounts/AccountChooser?Email=#user#&continue=https://workspace.google.com/dashboard\n`
 * update - `The account password for #givenname# #familyname#, #user# has been changed to: #password#\n`
 
-In the subject and message, these strings will be replaced with the specified values:
-* `#givenname#` - first/given name
-* `#familyname#` - last/family name
-* `#email#` - user's email address
-* `#user#` - user's email address
-* `#username#` - portion of user's email address before @
-* `#domain#` - portion of user's email after after @
-* `#password#` - password
+Unless specified in `<NotifyMessageContent>`, messages are sent as plain text,
+use `html` or `html true` to indicate that the message is HTML.
 
 Use `\n` in `message <String>` to indicate a line break; no other special characters are recognized.
 
@@ -463,8 +465,6 @@ By default, the email is sent from the admin user identified in oauth2.txt, `gam
 Use `from <EmailAddress>` to specify an alternate from address.
 Use `mailbox <EmailAddress>` if `from <EmailAddress>` specifies a group; GAM has to login as a user to be able to send a message. 
 Gam gets no indication as to the status of the message delivery; the from user will get a non-delivery receipt if the message could not be sent to the `notify <EmailAddressList>`.
-
-By default, messages are sent as plain text, use `html` or `html true` to indicate that the message is HTML.
 
 ## Define schema fields
 You can set custom schema field values for users; schema fields can be scalar, a single value, or can be multivalued.
@@ -658,8 +658,7 @@ gam update user <UserItem> [ignorenullpassword] <UserAttribute>*
         [[notify <EmailAddressList>] [notifyrecoveryemail]
             [subject <String>]
             [notifypassword <String>]
-            [from <EmailAaddress>]
-            [mailbox <EmailAddress>]
+            [from <EmailAaddress>] [mailbox <EmailAddress>]
             [replyto <EmailAddress>]
             [<NotifyMessageContent>]
             (replace <Tag> <UserReplacement>)*
@@ -680,8 +679,7 @@ gam update users <UserTypeEntity> [ignorenullpassword] <UserAttribute>*
         [[notify <EmailAddressList>] [notifyrecoveryemail]
             [subject <String>]
             [notifypassword <String>]
-            [from <EmailAddress>]
-            [mailbox <EmailAddress>]
+            [from <EmailAddress>] [mailbox <EmailAddress>]
             [replyto <EmailAaddress>]
             [<NotifyMessageContent>]
             (replace <Tag> <UserReplacement>)*
@@ -702,8 +700,7 @@ gam <UserTypeEntity> update users [ignorenullpassword] <UserAttribute>*
         [[notify <EmailAddressList>] [notifyrecoveryemail]
             [subject <String>]
             [notifypassword <String>]
-            [from <EmailAaddress>]
-            [mailbox <EmailAddress>]
+            [from <EmailAaddress>] [mailbox <EmailAddress>]
             [replyto <EmailAddress>]
             [<NotifyMessageContent>]
             (replace <Tag> <UserReplacement>)*

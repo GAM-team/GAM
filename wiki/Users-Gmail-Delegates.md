@@ -64,7 +64,7 @@ When creating a delegate, you can send a message to the delegate.
     [subject <String>]
     [from <EmailAaddress>] [mailbox <EmailAddress>]
     [replyto <EmailAddress>]
-    [<NotifyMessageContent>]
+    [<NotifyMessageContent>] [html [<Boolean>]]
 ]
 ```
 * `notify [<Boolean>]` - Should notification be sent
@@ -74,7 +74,7 @@ In the subject and message, these strings will be replaced with the specified va
 * `#delegate#` - delegate's email address
 
 If subject is not specified, the following value will be used:
-* `#user# Delegation`
+* `#user# mail delegation to #delegate#`
 
 `<NotifyMessageContent>` is the message, there are four ways to specify it:
 * `message|textmessage|htmlmessage <String>` - Use `<String>` as the message
@@ -85,14 +85,15 @@ If subject is not specified, the following value will be used:
 If `<NotifyMessageContent>`is not specified, the following value will be used:
 * `#user# has granted you #delegate# access to read, delete and send mail on their behalf.`
 
+Unless specified in `<NotifyMessageContent>`, messages are sent as plain text,
+use `html` or `html true` to indicate that the message is HTML.
+
 Use `\n` in `message <String>` to indicate a line break; no other special characters are recognized.
 
 By default, the email is sent from the admin user identified in oauth2.txt, `gam oauth info` will show the value.
 Use `from <EmailAddress>` to specify an alternate from address.
 Use `mailbox <EmailAddress>` if `from <EmailAddress>` specifies a group; GAM has to login as a user to be able to send a message. 
 Gam gets no indication as to the status of the message delivery; the from user will get a non-delivery receipt if the message could not be sent to the delegate.
-
-By default, messages are sent as plain text, use `html` or `html true` to indicate that the message is HTML.
 
 ## Create Gmail delegates
 These two commands are equivalent.
