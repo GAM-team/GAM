@@ -5776,10 +5776,9 @@ gam create|add user <EmailAddress> [ignorenullpassword] <UserAttribute>*
         [[notify <EmailAddressList>] [notifyrecoveryemail]
             [subject <String>]
             [notifypassword <String>]
-            [from <EmailAaddress>]
-            [mailbox <EmailAaddress>]
+            [from <EmailAaddress>] [mailbox <EmailAaddress>]
             [replyto <EmailAaddress>]
-            [<NotifyMessageContent>]
+            [<NotifyMessageContent>] [html [<Boolean>]]
             (replace <Tag> <UserReplacement>)*
             (replaceregex <RESearchPattern> <RESubstitution> <Tag> <UserReplacement>)*
          ]
@@ -5802,10 +5801,9 @@ gam update user <UserItem> [ignorenullpassword] <UserAttribute>*
         [[notify <EmailAddressList>] [notifyrecoveryemail]
             [subject <String>]
             [notifypassword <String>]
-            [from <EmailAaddress>]
-            [mailbox <EmailAddress>]
+            [from <EmailAaddress>] [mailbox <EmailAddress>]
             [replyto <EmailAddress>]
-            [<NotifyMessageContent>]
+            [<NotifyMessageContent>] [html [<Boolean>]]
             (replace <Tag> <UserReplacement>)*
             (replaceregex <RESearchPattern> <RESubstitution> <Tag> <UserReplacement>)*
          ]
@@ -5840,10 +5838,9 @@ gam update users <UserTypeEntity> [ignorenullpassword] <UserAttribute>*
         [[notify <EmailAddressList>] [notifyrecoveryemail]
             [subject <String>]
             [notifypassword <String>]
-            [from <EmailAddress>]
-            [mailbox <EmailAddress>]
+            [from <EmailAddress>] [mailbox <EmailAddress>]
             [replyto <EmailAaddress>]
-            [<NotifyMessageContent>]
+            [<NotifyMessageContent>] [html [<Boolean>]]
             (replace <Tag> <UserReplacement>)*
             (replaceregex <RESearchPattern> <RESubstitution> <Tag> <UserReplacement>)*
         ]
@@ -5877,10 +5874,9 @@ gam <UserTypeEntity> update users [ignorenullpassword] <UserAttribute>*
         [[notify <EmailAddressList>] [notifyrecoveryemail]
             [subject <String>]
             [notifypassword <String>]
-            [from <EmailAaddress>]
-            [mailbox <EmailAddress>]
+            [from <EmailAaddress>] [mailbox <EmailAddress>]
             [replyto <EmailAddress>]
-            [<NotifyMessageContent>]
+            [<NotifyMessageContent>] [html [<Boolean>]]
             (replace <Tag> <UserReplacement>)*
             (replaceregex <RESearchPattern> <RESubstitution> <Tag> <UserReplacement>)*
         ]
@@ -7579,7 +7575,19 @@ gam <UserTypeEntity> deprovision|deprov [popimap] [signout] [turnoff2sv]
 # Users - Gmail - Delegates
 
 gam <UserTypeEntity> delegate to [convertalias] <UserEntity>
+        [notify [<Boolean>]
+            [subject <String>]
+            [from <EmailAaddress>] [mailbox <EmailAddress>]
+            [replyto <EmailAaddress>]
+            [<NotifyMessageContent>] [html [<Boolean>]]
+        ]
 gam <UserTypeEntity> create|add delegate|delegates [convertalias] <UserEntity>
+        [notify [<Boolean>]
+            [subject <String>]
+            [from <EmailAaddress>] [mailbox <EmailAddress>]
+            [replyto <EmailAaddress>]
+            [<NotifyMessageContent>] [html [<Boolean>]]
+        ]
 gam <UserTypeEntity> delete delegate|delegates [convertalias] <UserEntity>
 gam <UserTypeEntity> update delegate|delegates [convertalias] [<UserEntity>]
 gam <UserTypeEntity> show delegates|delegate [shownames] [csv]

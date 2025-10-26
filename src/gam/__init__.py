@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.27.03'
+__version__ = '7.27.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -44236,6 +44236,28 @@ USER_JSON_SKIP_FIELDS = ['agreedToTerms', 'aliases', 'creationTime', 'customerId
 
 ALLOW_EMPTY_CUSTOM_TYPE = 'allowEmptyCustomType'
 
+def getNotifyArguments(myarg, notify, userNotification):
+  if myarg == 'notify':
+    if userNotification:
+      notify['recipients'].extend(getNormalizedEmailAddressEntity(shlexSplit=True, noLower=True))
+    else: #delegateNotificatiomn
+      notify['notify'] = getBoolean()
+  elif myarg == 'subject':
+    notify['subject'] = getString(Cmd.OB_STRING)
+  elif myarg in SORF_MSG_FILE_ARGUMENTS:
+    notify['message'], notify['charset'], notify['html'] = getStringOrFile(myarg)
+  elif myarg == 'html':
+    notify['html'] = getBoolean()
+  elif myarg == 'from':
+    notify['from'] = getString(Cmd.OB_EMAIL_ADDRESS)
+  elif myarg == 'mailbox':
+    notify['mailbox'] = getString(Cmd.OB_EMAIL_ADDRESS)
+  elif myarg == 'replyto':
+    notify['replyto'] = getString(Cmd.OB_EMAIL_ADDRESS)
+  else:
+    return False
+  return True
+
 def getUserAttributes(cd, updateCmd, noUid=False):
   def getKeywordAttribute(keywords, attrdict, **opts):
     if Cmd.ArgumentsRemaining():
@@ -44351,22 +44373,10 @@ def getUserAttributes(cd, updateCmd, noUid=False):
   resolveConflictAccount = True
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if myarg == 'notify':
-      notify['recipients'].extend(getNormalizedEmailAddressEntity(shlexSplit=True, noLower=True))
+    if getNotifyArguments(myarg, notify, True):
+      pass
     elif myarg == 'notifyrecoveryemail':
       parameters['notifyRecoveryEmail'] = True
-    elif myarg == 'subject':
-      notify['subject'] = getString(Cmd.OB_STRING)
-    elif myarg in SORF_MSG_FILE_ARGUMENTS:
-      notify['message'], notify['charset'], notify['html'] = getStringOrFile(myarg)
-    elif myarg == 'html':
-      notify['html'] = getBoolean()
-    elif myarg == 'from':
-      notify['from'] = getString(Cmd.OB_EMAIL_ADDRESS)
-    elif myarg == 'replyto':
-      notify['replyto'] = getString(Cmd.OB_EMAIL_ADDRESS)
-    elif myarg == 'mailbox':
-      notify['mailbox'] = getString(Cmd.OB_EMAIL_ADDRESS)
     elif PwdOpts.ProcessArgument(myarg, notify, notFoundBody):
       pass
     elif _getTagReplacement(myarg, tagReplacements, True):
@@ -44772,12 +44782,12 @@ def createUserAddAliases(cd, user, aliasList, i, count):
 #	[license <SKUID> [product|productid <ProductID>]]
 #	[[notify <EmailAddressList>] [notifyrecoveryemail]
 #	    [subject <String>]
-#	    [notifypassword <String>]
-#	    [from <EmailAaddress>]
+#	    [from <EmailAaddress>] [mailbox <EmailAddress>]
 #	    [replyto <EmailAaddress>]
-#	    [<NotifyMessageContent>]
-#	    (replace <Tag> <UserReplacement>)*
-#	    (replaceregex <REMatchPattern> <RESubstitution> <Tag> <UserReplacement>)*]
+#	    [notifypassword <String>]
+#	    [<NotifyMessageContent>] [html [<Boolean>]]
+#	        (replace <Tag> <UserReplacement>)*
+#	        (replaceregex <REMatchPattern> <RESubstitution> <Tag> <UserReplacement>)*]
 #	[logpassword <FileName>] [ignorenullpassword]
 #	[addnumericsuffixonduplicate <Number>]
 def doCreateUser():
@@ -44876,12 +44886,12 @@ def verifyUserPrimaryEmail(cd, user, createIfNotFound, i, count):
 #	[alias|aliases <EmailAddressList>]
 #	[[notify <EmailAddressList>] [notifyrecoveryemail]
 #	    [subject <String>]
-#	    [notifypassword <String>]
-#	    [from <EmailAaddress>]
+#	    [from <EmailAaddress>] [mailbox <EmailAddress>]
 #	    [replyto <EmailAaddress>]
-#	    [<NotifyMessageContent>
+#	    [<NotifyMessageContent> [html [<Boolean>]]
 #	        (replace <Tag> <UserReplacement>)*
 #	        (replaceregex <REMatchPattern> <RESubstitution> <Tag> <UserReplacement>)*]
+#	    [notifypassword <String>]]
 #	[notifyonupdate [<Boolean>]]
 #	[logpassword <FileName>] [ignorenullpassword]
 def updateUsers(entityList):
@@ -73923,14 +73933,58 @@ def printShowMessages(users):
 def printShowThreads(users):
   printShowMessagesThreads(users, Ent.THREAD)
 
+def sendCreateDelegateNotification(user, delegate, basenotify, i=0, count=0, msgFrom=None):
+# Substitute for #user#, #delegate#
+  def _substituteForPattern(field, pattern, value):
+    if field.find('#') == -1:
+      return field
+    return field.replace(pattern, value)
+
+  def _makeSubstitutions(field):
+    notify[field] = _substituteForPattern(notify[field], '#user#', user)
+    notify[field] = _substituteForPattern(notify[field], '#delegate#', delegate)
+
+  notify = basenotify.copy()
+  if not notify['subject']:
+    notify['subject'] = Msg.CREATE_DELEGATE_NOTIFY_SUBJECT
+  _makeSubstitutions('subject')
+  if not notify['message']:
+    notify['message'] = Msg.CREATE_DELEGATE_NOTIFY_MESSAGE
+  elif notify['html']:
+    notify['message'] = notify['message'].replace('\r', '').replace('\\n', '<br/>')
+  else:
+    notify['message'] = notify['message'].replace('\r', '').replace('\\n', '\n')
+  _makeSubstitutions('message')
+  if 'from' in notify:
+    msgFrom = notify['from']
+  msgReplyTo = notify.get('replyto', None)
+  mailBox = notify.get('mailbox', None)
+  send_email(notify['subject'], notify['message'], delegate, i, count,
+             msgFrom=msgFrom, msgReplyTo=msgReplyTo, html=notify['html'], charset=notify['charset'], mailBox=mailBox)
+
 # gam <UserTypeEntity> create delegate|delegates [convertalias] <UserEntity>
+#	[notify [<Boolean>]
+#	    [subject <String>]
+#	    [from <EmailAaddress>] [mailbox <EmailAddress>]
+#	    [replyto <EmailAaddress>]
+#	    [<NotifyMessageContent>] [html [<Boolean>]]
+#	]
 # gam <UserTypeEntity> delete delegate|delegates [convertalias] <UserEntity>
 def processDelegates(users):
   cd = buildGAPIObject(API.DIRECTORY)
-  function = 'delete' if Act.Get() == Act.DELETE else 'create'
+  createCmd = Act.Get() != Act.DELETE
   aliasAllowed = not checkArgumentPresent(['convertalias'])
   delegateEntity = getUserObjectEntity(Cmd.OB_USER_ENTITY, Ent.DELEGATE)
-  checkForExtraneousArguments()
+  notify = {'notify': False, 'subject': '', 'message': '', 'html': False, 'charset': UTF8}
+  if createCmd:
+    while Cmd.ArgumentsRemaining():
+      myarg = getArgument()
+      if getNotifyArguments(myarg, notify, False):
+        pass
+      else:
+        unknownArgumentExit()
+  else:
+    checkForExtraneousArguments()
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -73942,25 +73996,37 @@ def processDelegates(users):
     for delegate in delegates:
       j += 1
       delegateEmail = convertUIDtoEmailAddress(delegate, cd=cd, emailTypes=['user', 'group'], aliasAllowed=aliasAllowed)
+      kvList = [Ent.USER, user, Ent.DELEGATE, delegateEmail]
       try:
-        if function == 'create':
-          callGAPI(gmail.users().settings().delegates(), function,
+        if createCmd:
+          callGAPI(gmail.users().settings().delegates(), 'create',
                    throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.ALREADY_EXISTS, GAPI.FAILED_PRECONDITION, GAPI.INVALID,
                                                           GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                    userId='me', body={'delegateEmail': delegateEmail})
+          entityActionPerformed(kvList, j, jcount)
+          if notify['notify']:
+            Ind.Increment()
+            sendCreateDelegateNotification(user, delegateEmail, notify, j, jcount)
+            Ind.Decrement()
         else:
-          callGAPI(gmail.users().settings().delegates(), function,
+          callGAPI(gmail.users().settings().delegates(), 'delete',
                    throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_INPUT, GAPI.PERMISSION_DENIED],
                    userId='me', delegateEmail=delegateEmail)
-        entityActionPerformed([Ent.USER, user, Ent.DELEGATE, delegateEmail], j, jcount)
+          entityActionPerformed(kvList, j, jcount)
       except (GAPI.alreadyExists, GAPI.failedPrecondition, GAPI.invalid,
               GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
-        entityActionFailedWarning([Ent.USER, user, Ent.DELEGATE, delegateEmail], str(e), j, jcount)
+        entityActionFailedWarning(kvList, str(e), j, jcount)
       except GAPI.serviceNotAvailable:
         userGmailServiceNotEnabledWarning(user, i, count)
     Ind.Decrement()
 
 # gam <UserTypeEntity> delegate to [convertalias] <UserEntity>
+#	[notify [<Boolean>]
+#	    [subject <String>]
+#	    [from <EmailAaddress>] [mailbox <EmailAddress>]
+#	    [replyto <EmailAaddress>]
+#	    [<NotifyMessageContent>] [html [<Boolean>]]
+#	]
 def delegateTo(users):
   checkArgumentPresent('to', required=True)
   processDelegates(users)
