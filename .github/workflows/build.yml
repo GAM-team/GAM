@@ -518,6 +518,10 @@ jobs:
           "$PYTHON" -m pip cache info
           echo "--list--"
           "$PYTHON" -m pip cache list
+          if [[ "$RUNNER_OS" != "Windows" ]]; then
+            # hack till pyscard wheels are updated
+            "$PYTHON" -m pip install --upgrade --force-reinstall git+https://github.com/LudovicRousseau/pyscard.git@dabf0491fc873e4b37be173014908daff4f42ec0
+          fi
           "$PYTHON" -m pip install --upgrade ..[yubikey]
           echo "after everything..."
           "$PYTHON" -m pip list
