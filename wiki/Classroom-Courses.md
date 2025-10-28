@@ -441,8 +441,10 @@ gam print courses [todrive <ToDriveAttribute>*]
         [owneremail] [owneremailmatchpattern <REMatchPattern>]
         [alias|aliases|aliasesincolumns [delimiter <Character>]]
         [show all|students|teachers] [countsonly]
-        [fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>] [formatjson [quotechar <Character>]]
         [timefilter creationtime|updatetime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
+        [fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>] [formatjson [quotechar <Character>]]
+        (addcsvdata <FieldName> <String>)*
+        [formatjson [quotechar <Character>]]
 ```
 By default, the `print courses` command displays information about all courses.
 
@@ -477,6 +479,7 @@ By default, all basic course fields are displayed; use the following options to 
     * `countsonly` - Eliminates the student/teacher profile information and outputs only the student/teacher counts.
 * `fields <CourseFieldNameList>` - Select specific basic fields to display.
 * `skipfields <CourseFieldNameList>` - Select specific basic fields to eliminate from display; typically used with `coursematerialsets`.
+* `addcsvdata <FieldName> <String>` - Add additional columns of data from the command line to the output
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.

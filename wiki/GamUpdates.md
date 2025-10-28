@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.27.05
+
+Added option `addcsvdata <FieldName> <String>` to `gam print courses`
+that adds additional columns of data to the CSV file output.
+
 ### 7.27.04
 
 Added options to `gam <UserTypeEntity> create delegate` that support
