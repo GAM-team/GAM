@@ -479,17 +479,6 @@ jobs:
           "${PYTHON}" -V
           "${PYTHON}" -c "import ssl; print(f'Using {ssl.OPENSSL_VERSION}')"
 
-      - name: Upgrade pip, wheel, etc
-        run: |
-          curl $curl_retry -O https://bootstrap.pypa.io/get-pip.py
-          "$PYTHON" get-pip.py
-          "$PYTHON" -m pip install --upgrade pip
-          "$PYTHON" -m pip install --upgrade wheel
-          "$PYTHON" -m pip install --upgrade setuptools
-          "$PYTHON" -m pip install --upgrade importlib-metadata
-          "$PYTHON" -m pip install --upgrade setuptools-scm
-          "$PYTHON" -m pip list
-
       - name: Create and use Python venv
         run: |
           cd "$GITHUB_WORKSPACE"
@@ -506,6 +495,18 @@ jobs:
             export gam="${PYTHON} gam.py"
             echo "gam=${gam}" >> $GITHUB_ENV
           fi
+
+      - name: Upgrade pip, wheel, etc
+        run: |
+          curl $curl_retry -O https://bootstrap.pypa.io/get-pip.py
+          "$PYTHON" get-pip.py
+          "$PYTHON" -m pip install --upgrade pip
+          "$PYTHON" -m pip install --upgrade wheel
+          "$PYTHON" -m pip install --upgrade setuptools
+          "$PYTHON" -m pip install --upgrade importlib-metadata
+          "$PYTHON" -m pip install --upgrade setuptools-scm
+          "$PYTHON" -m pip install --upgrade packaging
+          "$PYTHON" -m pip list
 
       - name: Install pip requirements
         run: |
