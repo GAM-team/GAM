@@ -496,7 +496,7 @@ jobs:
           "$PYTHON" -m venv venv
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             # hack till pyscard has a wheel for win arm64
-            "$PYTHON" -m pip install --upgrade --force-reinstall pyscard
+            "$PYTHON" -m pip install --upgrade --force-reinstall git+https://github.com/LudovicRousseau/pyscard.git@dabf0491fc873e4b37be173014908daff4f42ec0
             export PYTHON="${GITHUB_WORKSPACE}/venv/scripts/python.exe"
           else
             export PYTHON="${GITHUB_WORKSPACE}/venv/bin/python3"
@@ -515,6 +515,7 @@ jobs:
           "$PYTHON" -m pip cache info
           echo "--list--"
           "$PYTHON" -m pip cache list
+          "$PYTHON" -m pip install git+https://github.com/LudovicRousseau/pyscard.git@dabf0491fc873e4b37be173014908daff4f42ec0
           "$PYTHON" -m pip install --upgrade ..[yubikey]
           echo "after everything..."
           "$PYTHON" -m pip list
