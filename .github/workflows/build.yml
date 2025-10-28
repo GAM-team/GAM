@@ -479,24 +479,13 @@ jobs:
           "${PYTHON}" -V
           "${PYTHON}" -c "import ssl; print(f'Using {ssl.OPENSSL_VERSION}')"
 
-      - name: Upgrade pip, wheel, etc
-        run: |
-          curl $curl_retry -O https://bootstrap.pypa.io/get-pip.py
-          "$PYTHON" get-pip.py
-          "$PYTHON" -m pip install --upgrade pip
-          "$PYTHON" -m pip install --upgrade wheel
-          "$PYTHON" -m pip install --upgrade setuptools
-          "$PYTHON" -m pip install --upgrade importlib-metadata
-          "$PYTHON" -m pip install --upgrade setuptools-scm
-          "$PYTHON" -m pip list
-
       - name: Create and use Python venv
         run: |
           cd "$GITHUB_WORKSPACE"
           "$PYTHON" -m venv venv
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             # hack till pyscard has a wheel for win arm64
-            "$PYTHON" -m pip install --upgrade --force-reinstall pyscard
+            "$PYTHON" -m pip install --upgrade --force-reinstall git+https://github.com/LudovicRousseau/pyscard.git@dabf0491fc873e4b37be173014908daff4f42ec0
             export PYTHON="${GITHUB_WORKSPACE}/venv/scripts/python.exe"
           else
             export PYTHON="${GITHUB_WORKSPACE}/venv/bin/python3"
@@ -507,6 +496,18 @@ jobs:
             echo "gam=${gam}" >> $GITHUB_ENV
           fi
 
+      - name: Upgrade pip, wheel, etc
+        run: |
+          curl $curl_retry -O https://bootstrap.pypa.io/get-pip.py
+          "$PYTHON" get-pip.py
+          "$PYTHON" -m pip install --upgrade pip
+          "$PYTHON" -m pip install --upgrade wheel
+          "$PYTHON" -m pip install --upgrade setuptools
+          "$PYTHON" -m pip install --upgrade importlib-metadata
+          "$PYTHON" -m pip install --upgrade setuptools-scm
+          "$PYTHON" -m pip install --upgrade packaging
+          "$PYTHON" -m pip list
+
       - name: Install pip requirements
         run: |
           echo "before anything..."
@@ -515,6 +516,7 @@ jobs:
           "$PYTHON" -m pip cache info
           echo "--list--"
           "$PYTHON" -m pip cache list
+          "$PYTHON" -m pip install git+https://github.com/LudovicRousseau/pyscard.git@dabf0491fc873e4b37be173014908daff4f42ec0
           "$PYTHON" -m pip install --upgrade ..[yubikey]
           echo "after everything..."
           "$PYTHON" -m pip list
