@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.27.04'
+__version__ = '7.27.05'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -49166,6 +49166,7 @@ def _getCoursesInfo(croom, courseSelectionParameters, courseShowProperties, getO
 #	[show none|all|students|teachers] [countsonly]
 #	[fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>]
 #	[timefilter creationtime|updatetime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
+#	(addcsvdata <FieldName> <String>)*
 #	[showitemcountonly] [formatjson [quotechar <Character>]]
 def doPrintCourses():
   def _saveParticipants(course, participants, role, rtitles):
@@ -49209,6 +49210,7 @@ def doPrintCourses():
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   showItemCountOnly = False
   useOwnerAccess = GC.Values[GC.USE_COURSE_OWNER_ACCESS]
+  addCSVData = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -49223,6 +49225,9 @@ def doPrintCourses():
       pass
     elif myarg == 'showitemcountonly':
       showItemCountOnly = True
+    elif myarg == 'addcsvdata':
+      k = getString(Cmd.OB_STRING)
+      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   applyCourseItemFilter = _setApplyCourseItemFilter(courseItemFilter, None)
@@ -49234,6 +49239,11 @@ def doPrintCourses():
     if showItemCountOnly:
       writeStdout('0\n')
     return
+  if addCSVData:
+    csvPF.AddTitles(sorted(addCSVData.keys()))
+    if FJQC.formatJSON:
+      csvPF.AddJSONTitles(sorted(addCSVData.keys()))
+      csvPF.MoveJSONTitlesToEnd(['JSON'])
   if courseShowProperties['aliases']:
     if FJQC.formatJSON:
       csvPF.AddJSONTitles('JSON-aliases')
@@ -49291,11 +49301,15 @@ def doPrintCourses():
       if courseShowProperties['members'] != 'teachers':
         _saveParticipants(course, students, 'students', stitles)
     row = flattenJSON(course, timeObjects=COURSE_TIME_OBJECTS, noLenObjects=COURSE_NOLEN_OBJECTS)
+    if addCSVData:
+      row.update(addCSVData)
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
       row = {'id': courseId, 'JSON': json.dumps(cleanJSON(course, timeObjects=COURSE_TIME_OBJECTS),
                                                 ensure_ascii=False, sort_keys=True)}
+      if addCSVData:
+        row.update(addCSVData)
       if courseShowProperties['aliases']:
         row['JSON-aliases'] = json.dumps(list(aliases))
       if courseShowProperties['members'] != 'none':

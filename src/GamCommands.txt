@@ -3279,6 +3279,7 @@ gam print courses [todrive <ToDriveAttribute>*]
         [show all|students|teachers] [countsonly]
         [timefilter creationtime|updatetime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
         [fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>]
+        (addcsvdata <FieldName> <String>)*
         [formatjson [quotechar <Character>]]
         [showitemcountonly]
 

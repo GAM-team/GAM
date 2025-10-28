@@ -1,3 +1,8 @@
+7.27.05
+
+Added option `addcsvdata <FieldName> <String>` to `gam print courses`
+that adds additional columns of data to the CSV file output.
+
 7.27.04
 
 Added options to `gam <UserTypeEntity> create delegate` that support
