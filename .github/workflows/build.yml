@@ -508,20 +508,13 @@ jobs:
           "$PYTHON" -m pip install --upgrade importlib-metadata
           "$PYTHON" -m pip install --upgrade setuptools-scm
           "$PYTHON" -m pip install --upgrade packaging
+          "$PYTHON" -m pip install --upgrade uv
           "$PYTHON" -m pip list
 
       - name: Install pip requirements
         run: |
-          echo "before anything..."
-          "$PYTHON" -m pip list
-          echo "--info--"
-          "$PYTHON" -m pip cache info
-          echo "--list--"
-          "$PYTHON" -m pip cache list
-          "$PYTHON" -m pip install git+https://github.com/LudovicRousseau/pyscard.git@dabf0491fc873e4b37be173014908daff4f42ec0
-          "$PYTHON" -m pip install --upgrade ..[yubikey]
-          echo "after everything..."
-          "$PYTHON" -m pip list
+          "$PYTHON" -m uv pip install git+https://github.com/LudovicRousseau/pyscard.git@dabf0491fc873e4b37be173014908daff4f42ec0
+          "$PYTHON" -m uv pip install --upgrade ..[yubikey]
 
       - name: Install PyInstaller
         if: matrix.goal == 'build'
