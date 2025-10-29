@@ -35921,7 +35921,7 @@ def doPrintShowGroupTree():
 # gam create cigroup <EmailAddress>
 #	[copyfrom <GroupItem>] <GroupAttribute>
 #	[makeowner] [alias|aliases <CIGroupAliasList>]
-#	[security|makesecuritygroup]
+#	[security|makesecuritygroup] [locked]
 #	[dynamic <QueryDynamicGroup>]
 def doCreateCIGroup():
   doCreateGroup(ciGroupsAPI=True)
@@ -36105,7 +36105,6 @@ def doUpdateCIGroups():
 
   cd = buildGAPIObject(API.DIRECTORY)
   ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
-  cib = None
   entityType = Ent.CLOUD_IDENTITY_GROUP
   csvPF = None
   getBeforeUpdate = preview = False
@@ -36214,7 +36213,6 @@ def doUpdateCIGroups():
         _, name, _ = convertGroupEmailToCloudID(ci, group, i, count)
         if not name:
           continue
-        cipl = ci
         twoUpdates = False
         if 'labels' in ci_body or lockGroup is not None:
           try:
@@ -36243,20 +36241,16 @@ def doUpdateCIGroups():
             else:
               if CIGROUP_LOCKED_LABEL in ci_body['labels']:
                 ci_body['labels'].pop(CIGROUP_LOCKED_LABEL)
-          if CIGROUP_LOCKED_LABEL in ci_body['labels']:
-            if cib is None:
-              cib = buildGAPIObject(API.CLOUDIDENTITY_GROUPS_BETA)
-            cipl = cib
         if ci_body:
           try:
             if twoUpdates:
               ci_body['labels'].pop(CIGROUP_LOCKED_LABEL)
-              callGAPI(cipl.groups(), 'patch',
+              callGAPI(ci.groups(), 'patch',
                        throwReasons=GAPI.CIGROUP_UPDATE_THROW_REASONS,
                        retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                        name=name, body=ci_body, updateMask=','.join(list(ci_body.keys())))
               ci_body['labels'][CIGROUP_LOCKED_LABEL] = ''
-            callGAPI(cipl.groups(), 'patch',
+            callGAPI(ci.groups(), 'patch',
                      throwReasons=GAPI.CIGROUP_UPDATE_THROW_REASONS,
                      retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                      name=name, body=ci_body, updateMask=','.join(list(ci_body.keys())))
@@ -37240,20 +37234,17 @@ def doPrintCIGroups():
     else:
       getFullFieldsList = list(CIGROUP_FULL_FIELDS)
     getFullFields = ','.join(getFullFieldsList)#
-    cipl = ci
     if query:
       method = 'search'
       if 'parent' not in query:
         query += f" && parent == '{parent}'"
       kwargs = {'query': query}
-      if CIGROUP_LOCKED_LABEL in query:
-        cipl = buildGAPIObject(API.CLOUDIDENTITY_GROUPS_BETA)
     else:
       method = 'list'
       kwargs = {'parent': parent}
     printGettingAllAccountEntities(Ent.CLOUD_IDENTITY_GROUP, query)
     try:
-      entityList = callGAPIpages(cipl.groups(), method, 'groups',
+      entityList = callGAPIpages(ci.groups(), method, 'groups',
                                  pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute=['groupKey', 'id'],
                                  throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                                  view='FULL', fields=fieldsnp, pageSize=pageSize, **kwargs)
