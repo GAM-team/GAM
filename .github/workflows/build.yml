@@ -516,6 +516,9 @@ jobs:
           "$PYTHON" -m pip cache info
           echo "--list--"
           "$PYTHON" -m pip cache list
+          echo "--pip debug verbose--"
+          "$PYTHON" -m pip debug --verbose
+          echo "--------"
           "$PYTHON" -m pip install -vvv --upgrade ..[yubikey]
           echo "after everything..."
           "$PYTHON" -m pip list
