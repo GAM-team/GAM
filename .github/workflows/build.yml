@@ -486,8 +486,6 @@ jobs:
           "$PYTHON" get-pip.py
           "$PYTHON" -m venv venv
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            # hack till pyscard has a wheel for win arm64
-            "$PYTHON" -m pip install --upgrade --force-reinstall git+https://github.com/LudovicRousseau/pyscard.git@dabf0491fc873e4b37be173014908daff4f42ec0
             export PYTHON="${GITHUB_WORKSPACE}/venv/scripts/python.exe"
           else
             export PYTHON="${GITHUB_WORKSPACE}/venv/bin/python3"
@@ -502,7 +500,7 @@ jobs:
         run: |
           curl $curl_retry -O https://bootstrap.pypa.io/get-pip.py
           "$PYTHON" get-pip.py
-          "$PYTHON" -m pip install pip==25.2
+          "$PYTHON" -m pip install --upgrade pip
           "$PYTHON" -m pip install --upgrade wheel
           "$PYTHON" -m pip install --upgrade setuptools
           "$PYTHON" -m pip install --upgrade importlib-metadata
@@ -518,10 +516,6 @@ jobs:
           "$PYTHON" -m pip cache info
           echo "--list--"
           "$PYTHON" -m pip cache list
-          if [[ "$RUNNER_OS" != "Windows" ]]; then
-            # hack till pyscard wheels are updated
-            "$PYTHON" -m pip install --upgrade --force-reinstall git+https://github.com/LudovicRousseau/pyscard.git@dabf0491fc873e4b37be173014908daff4f42ec0
-          fi
           "$PYTHON" -m pip install --upgrade ..[yubikey]
           echo "after everything..."
           "$PYTHON" -m pip list
