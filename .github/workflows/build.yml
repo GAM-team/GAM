@@ -502,7 +502,7 @@ jobs:
         run: |
           curl $curl_retry -O https://bootstrap.pypa.io/get-pip.py
           "$PYTHON" get-pip.py
-          "$PYTHON" -m pip install --upgrade pip
+          "$PYTHON" -m pip install pip==25.2
           "$PYTHON" -m pip install --upgrade wheel
           "$PYTHON" -m pip install --upgrade setuptools
           "$PYTHON" -m pip install --upgrade importlib-metadata
