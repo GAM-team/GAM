@@ -4651,6 +4651,7 @@ gam report customers|customer|domain [todrive <ToDriveAttribute>*]
         [(nodatechange | limitdatechanges <Integer>) | (fulldatarequired all|<CustomerServiceNameList>)]
         [(fields|parameters <String>)|(services <CustomerServiceNameList>)] [noauthorizedapps]
         [convertmbtogb]
+        (addcsvdata <FieldName> <String>)*
 
 <UserServiceName> ::=
         accounts|
@@ -4673,6 +4674,7 @@ gam report users|user [todrive <ToDriveAttribute>*]
         [aggregatebydate|aggregatebyuser [Boolean]]
         [maxresults <Number>]
         [convertmbtogb]
+        (addcsvdata <FieldName> <String>)*
 
 # Reseller
 

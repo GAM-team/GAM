@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.27.05'
+__version__ = '7.27.06'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -13720,12 +13720,14 @@ REPORT_ACTIVITIES_TIME_OBJECTS = {'time'}
 #	[aggregatebydate|aggregatebyuser [Boolean]]
 #	[maxresults <Number>]
 #	[convertmbtogb]
+#	(addcsvdata <FieldName> <String>)*
 # gam report customers|customer|domain [todrive <ToDriveAttribute>*]
 #	[(date <Date>)|(range <Date> <Date>)|
 #	 yesterday|today|thismonth|(previousmonths <Integer>)]
 #	[nodatechange | (fulldatarequired all|<CustomerServiceNameList>)]
 #	[(fields|parameters <String>)|(services <CustomerServiceNameList>)] [noauthorizedapps]
 #	[convertmbtogb]
+#	(addcsvdata <FieldName> <String>)*
 def doReport():
   def processUserUsage(usage, lastDate):
     if not usage:
@@ -13743,6 +13745,8 @@ def doReport():
           row['orgUnitPath'] = userOrgUnits.get(row['email'], UNKNOWN)
       else:
         row['email'] = UNKNOWN
+      if addCSVData:
+        row.update(addCSVData)
       for item in user_report.get('parameters', []):
         if 'name' not in item:
           continue
@@ -13834,6 +13838,8 @@ def doReport():
       return (False, lastDate)
     lastDate = usage[0]['date']
     row = {'date': lastDate}
+    if addCSVData:
+      row.update(addCSVData)
     for item in usage[0].get('parameters', []):
       if 'name' not in item:
         continue
@@ -13908,12 +13914,16 @@ def doReport():
         continue
       for ptype in REPORTS_PARAMETERS_SIMPLE_TYPES:
         if ptype in item:
+          row = {'date': lastDate}
+          if addCSVData:
+            row.update(addCSVData)
           if ptype != 'datetimeValue':
             if convertMbToGb and name.endswith('_in_mb'):
               name = convertReportMBtoGB(name, item)
-            csvPF.WriteRow({'date': lastDate, 'name': name, 'value': item[ptype]})
+            row.update({'name': name, 'value': item[ptype]})
           else:
-            csvPF.WriteRow({'date': lastDate, 'name': name, 'value': formatLocalTime(item[ptype])})
+            row.update({'name': name, 'value': formatLocalTime(item[ptype])})
+          csvPF.WriteRow(row)
           break
       else:
         if 'msgValue' in item:
@@ -13922,6 +13932,8 @@ def doReport():
               continue
             for subitem in item['msgValue']:
               app = {'date': lastDate}
+              if addCSVData:
+                app.update(addCSVData)
               for an_item in subitem:
                 if an_item == 'client_name':
                   app['name'] = f'App: {escapeCRsNLs(subitem[an_item])}'
@@ -13934,7 +13946,11 @@ def doReport():
             values = []
             for subitem in item['msgValue']:
               values.append(f'{subitem["version_number"]}:{subitem["num_devices"]}')
-            csvPF.WriteRow({'date': lastDate, 'name': name, 'value': ' '.join(sorted(values, reverse=True))})
+            row = {'date': lastDate}
+            if addCSVData:
+              row.update(addCSVData)
+            row.update({'name': name, 'value': ' '.join(sorted(values, reverse=True))})
+            csvPF.WriteRow(row)
           else:
             values = []
             for subitem in item['msgValue']:
@@ -13949,7 +13965,11 @@ def doReport():
                     values.append(f'{myvalue}:{mycount}')
               else:
                 continue
-            csvPF.WriteRow({'date': lastDate, 'name': name, 'value': ' '.join(sorted(values, reverse=True))})
+            row = {'date': lastDate}
+            if addCSVData:
+              row.update(addCSVData)
+            row.update({'name': name, 'value': ' '.join(sorted(values, reverse=True))})
+            csvPF.WriteRow(row)
     csvPF.SortRowsTwoTitles('date', 'name', False)
     if authorizedApps:
       csvPF.AddTitle('client_id')
@@ -14099,7 +14119,7 @@ def doReport():
       eventRowFilter = True
     elif activityReports and myarg == 'groupidfilter':
       groupIdFilter = getString(Cmd.OB_STRING)
-    elif activityReports and myarg == 'addcsvdata':
+    elif myarg == 'addcsvdata':
       k = getString(Cmd.OB_STRING)
       addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
     elif activityReports and myarg == 'shownoactivities':
@@ -14164,6 +14184,8 @@ def doReport():
       titles = ['email'] if not showOrgUnit else ['email', 'orgUnitPath']
     else:
       titles = ['email', 'date'] if not showOrgUnit else ['email', 'orgUnitPath', 'date']
+    if addCSVData:
+      titles.extend(sorted(addCSVData.keys()))
     csvPF.SetTitles(titles)
     csvPF.SetSortAllTitles()
     i = 0
@@ -14250,6 +14272,8 @@ def doReport():
     if aggregateByDate:
       for usageDate, events in eventCounts.items():
         row = {'date': usageDate}
+        if addCSVData:
+          row.update(addCSVData)
         for event, count in events.items():
           if convertMbToGb and event.endswith('_in_gb'):
             count = f'{count/1024:.2f}'
@@ -14262,6 +14286,8 @@ def doReport():
         row = {'email': email}
         if showOrgUnit:
           row['orgUnitPath'] = userOrgUnits.get(email, UNKNOWN)
+        if addCSVData:
+          row.update(addCSVData)
         for event, count in events.items():
           if convertMbToGb and event.endswith('_in_gb'):
             count = f'{count/1024:.2f}'
@@ -14276,6 +14302,8 @@ def doReport():
     if startEndTime.startDateTime is None:
       startEndTime.startDateTime = startEndTime.endDateTime = todaysDate()
     csvPF.SetTitles('date')
+    if addCSVData:
+      csvPF.AddTitles(sorted(addCSVData.keys()))
     if not userCustomerRange or (startEndTime.startDateTime == startEndTime.endDateTime):
       csvPF.AddTitles(['name', 'value'])
     authorizedApps = []
@@ -24227,6 +24255,7 @@ CROS_LIST_FIELDS_CHOICE_MAP = {
 
 CROS_TIME_OBJECTS = {
   'createTime',
+  'extendedSupportStart',
   'firstEnrollmentTime',
   'lastDeprovisionTimestamp',
   'lastEnrollmentTime',
