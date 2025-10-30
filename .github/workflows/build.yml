@@ -486,6 +486,9 @@ jobs:
           "$PYTHON" get-pip.py
           "$PYTHON" -m venv venv
           if [[ "$RUNNER_OS" == "Windows" ]]; then
+            # pyscard seems to build outside venv but not in it.
+            # build it so it's cached.
+            "$PYTHON" -m pip install --upgrade pyscard
             export PYTHON="${GITHUB_WORKSPACE}/venv/scripts/python.exe"
           else
             export PYTHON="${GITHUB_WORKSPACE}/venv/bin/python3"
