@@ -1,6 +1,6 @@
-7.27.06
+7.28.00
 
-Added option `addcsvdata <FieldName> <String>` to `gam report customers|users`
+Added option `addcsvdata <FieldName> <String>` to `gam report [usage] customers|users`
 that adds additional columns of data to the CSV file output. This will be most useful
 when reading a CSV of user information and you want to include some of the user information,
 e.g., orgUnitPath, in the output.

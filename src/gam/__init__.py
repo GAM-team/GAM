@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.27.06'
+__version__ = '7.28.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -13411,12 +13411,14 @@ REPORTS_PARAMETERS_SIMPLE_TYPES = ['intValue', 'boolValue', 'datetimeValue', 'st
 #	[skipdates <Date>[:<Date>](,<Date>[:<Date>])*] [skipdaysofweek <DayOfWeek>(,<DayOfWeek>)*]
 #	[fields|parameters <String>)]
 #	[convertmbtogb]
+#	(addcsvdata <FieldName> <String>)*
 # gam report usage customer [todrive <ToDriveAttribute>*]
 #	[([start|startdate <Date>] [end|enddate <Date>])|(range <Date> <Date>)|
 #	 thismonth|(previousmonths <Integer>)]
 #	[skipdates <Date>[:<Date>](,<Date>[:<Date>])*] [skipdaysofweek <DayOfWeek>(,<DayOfWeek>)*]
 #	[fields|parameters <String>)]
 #	[convertmbtogb]
+#	(addcsvdata <FieldName> <String>)*
 def doReportUsage():
   def usageEntitySelectors():
     selectorChoices = Cmd.USER_ENTITY_SELECTORS+Cmd.USER_CSVDATA_ENTITY_SELECTORS
@@ -13468,6 +13470,7 @@ def doReportUsage():
   startEndTime = StartEndTime('startdate', 'enddate', 'date')
   skipDayNumbers = []
   skipDates = set()
+  addCSVData = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -13522,6 +13525,9 @@ def doReportUsage():
       select = True
     elif myarg == 'convertmbtogb':
       convertMbToGb = True
+    elif myarg == 'addcsvdata':
+      k = getString(Cmd.OB_STRING)
+      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
     else:
       unknownArgumentExit()
   if startEndTime.endDateTime is None:
@@ -13555,6 +13561,8 @@ def doReportUsage():
       titles.append('orgUnitPath')
   else:
     pageMessage = None
+  if addCSVData:
+    titles.extend(sorted(addCSVData.keys()))
   csvPF.SetTitles(titles)
   csvPF.SetSortAllTitles()
   parameters = ','.join(parameters) if parameters else None
@@ -13589,6 +13597,8 @@ def doReportUsage():
                 row['orgUnitPath'] = userOrgUnits.get(row['user'], UNKNOWN)
             else:
               row['user'] = UNKNOWN
+          if addCSVData:
+            row.update(addCSVData)
           for item in entity.get('parameters', []):
             if 'name' not in item:
               continue
