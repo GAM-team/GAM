@@ -15,6 +15,9 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 Added option `addcsvdata <FieldName> <String>` to `gam print courses`
 that adds additional columns of data to the CSV file output.
 
+The following scope is no longer necessary: `Cloud Identity API - Groups Beta (Enables group locking/unlocking)`
+as this scope `Cloud Identity API - Groups` now provides group locking/unlocking.
+
 ### 7.27.04
 
 Added options to `gam <UserTypeEntity> create delegate` that support

@@ -11,7 +11,7 @@
 
 ## API documentation
 * [Cloud Identity Groups Overview](https://cloud.google.com/identity/docs/groups)
-* [Create and Manage Groups uning API](https://support.google.com/a/answer/10427204)
+* [Create and Manage Groups using API](https://support.google.com/a/answer/10427204)
 * [Cloud Identity Groups API - Groups](https://cloud.google.com/identity/docs/reference/rest/v1/groups)
 * [Restrict Group Membership](https://support.google.com/a/answer/11192679)
 * [Lock Groups Beta](https://workspaceupdates.googleblog.com/2024/12/locked-groups-open-beta.html)
@@ -25,15 +25,6 @@
 * [Member Restrictions](https://cloud.google.com/identity/docs/reference/rest/v1/SecuritySettings#MemberRestriction)
 
 ## Notes
-
-In version 7.02.01 options `locked` and `unlocked` wre added to `gam update cigroups` that allow locking groups.
-
-* See: https://workspaceupdates.googleblog.com/2024/12/locked-groups-open-beta.html
-
-You'll have to do a `gam oauth create` and enable the following scope to use these options:
-```
-[*] 22)  Cloud Identity Groups API Beta (Enables group locking/unlocking)
-```
 
 In the Admin Directory API a group has the following characteristics:
 * `id` - The unique ID of a group
