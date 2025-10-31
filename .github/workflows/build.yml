@@ -71,11 +71,6 @@ jobs:
             goal: build
             staticx: yes
             name: Build Arm StaticX Legacy
-          - os: macos-13
-            jid: 7
-            freethreaded: false
-            goal: build
-            name: Build Intel MacOS
           - os: macos-14
             jid: 8
             freethreaded: false
