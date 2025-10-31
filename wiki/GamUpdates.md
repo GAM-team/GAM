@@ -10,6 +10,17 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.28.00
+
+Added option `addcsvdata <FieldName> <String>` to `gam report [usage] customers|users`
+that adds additional columns of data to the CSV file output. This will be most useful
+when reading a CSV of user information and you want to include some of the user information,
+e.g., orgUnitPath, in the output.
+```
+gam redirect csv ./Users.csv print users fields ou
+gam redirect csv ./UserStorageInfo.csv multiprocess csv Users.csv gam report users user "~primaryEmail" parameters accounts:drive_used_quota_in_mb,accounts:gmail_used_quota_in_mb,accounts:gplus_photos_used_quota_in_mb,accounts:total_quota_in_mb,accounts:used_quota_in_mb,accounts:used_quota_in_percentage addcsvdata orgUnitPath "~orgUnitPath"
+```
+
 ### 7.27.05
 
 Added option `addcsvdata <FieldName> <String>` to `gam print courses`

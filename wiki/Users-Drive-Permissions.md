@@ -117,25 +117,28 @@ specify `basicpermissions` and additional permission fields, e.g., `permissions.
 <DriveFileACLRoleList> ::= "<DriveFileACLRole>(,<DriveFileACLRole>)*"
 <DriveFileACLType> ::= anyone|domain|group|user
 <DriveFileACLTypeList> ::= "<DriveFileACLType>(,<DriveFileACLType>)*"
-<DriveFilePermission> ::=
-        anyone|anyonewithlink|
-        user:<EmailAddress>|group:<EmailAddress>|
-        domain:<DomainName>|domainwithlink:<DomainName>;<DriveFileACLRole>
 <DriveFilePermissionID> ::=
         anyone|anyonewithlink|id:<String>
 <DriveFilePermissionIDorEmail> ::=
         <DriveFilePermissionID>|<EmailAddress>
-<DriveFilePermissionList> ::=
-        "<DriveFilePermission>(,<DriveFilePermission)*"
 <DriveFilePermissionIDList> ::=
         "<DriveFilePermissionID>(,<DriveFilePermissionID>)*"
-<DriveFilePermissionEntity> ::=
-         <DriveFilePermissionList> |
+<DriveFilePermissionIDEntity> ::=
+         <DriveFilePermissionIDList> |
          (json [charset <Charset>] <JSONData>)|(json file <FileName> [charset <Charset>]) |
          <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
         See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
-<DriveFilePermissionIDEntity> ::=
-         <DriveFilePermissionIDList> |
+	<DriveFilePermission> ::=
+        anyone;<DriveFileACLRole> | 
+        anyonewithlink;<DriveFileACLRole> |
+        domain:<DomainName>;<DriveFileACLRole> |
+        domainwithlink:<DomainName>;<DriveFileACLRole> |
+        group:<EmailAddress>;<DriveFileACLRole> |
+        user:<EmailAddress>;<DriveFileACLRole>
+<DriveFilePermissionList> ::=
+        "<DriveFilePermission>(,<DriveFilePermission)*"
+<DriveFilePermissionEntity> ::=
+         <DriveFilePermissionList> |
          (json [charset <Charset>] <JSONData>)|(json file <FileName> [charset <Charset>]) |
          <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
         See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items

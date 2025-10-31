@@ -213,6 +213,7 @@ gam report usage customer [todrive <ToDriveAttribute>*]
         [skipdates <Date>[:<Date>](,<Date>[:<Date>])*] [skipdaysofweek <DayOfWeek>(,<DayOfWeek>)*]
         [fields|parameters <String>]
         [convertmbtogb]
+        (addcsvdata <FieldName> <String>)*
 ```
 Limit the time period.
 * `start <Date>` - Default value is 30 days prior to `end <Date>`
@@ -223,6 +224,9 @@ Limit the time period.
 
 Option `convertmbtogb` causes GAM to convert parameters expressed in megabytes
 (name ends with _in_mb) to gigabytes (name converted to _in_gb) with two decimal places.
+
+Add additional columns of data from the command line to the output.
+* `addcsvdata <FieldName> <String>`
 
 ### Example
 Jay provided this example.
@@ -267,6 +271,7 @@ gam report customers|customer|domain [todrive <ToDriveAttribute>*]
         [(fields|parameters <String>)|(services <CustomerServiceNameList>)]
         [noauthorizedapps]
         [convertmbtogb]
+        (addcsvdata <FieldName> <String>)*
 ```
 Specify the report date; the default is today's date.
 * `date <Date>` - A single date; there is one API call
@@ -278,6 +283,9 @@ Specify the report date; the default is today's date.
 
 Option `convertmbtogb` causes GAM to convert parameters expressed in megabytes
 (name ends with _in_mb) to gigabytes (name converted to _in_gb) with two decimal places.
+
+Add additional columns of data from the command line to the output.
+* `addcsvdata <FieldName> <String>`
 
 If no report is available for the specified date, can an earlier date be used?
 * `limitdatechanges -1' - Back up to earlier dates to find report data; this is the default.
@@ -332,6 +340,7 @@ gam report usage user [todrive]
         [skipdates <Date>[:<Date>](,<Date>[:<Date>])*] [skipdaysofweek <DayOfWeek>(,<DayOfWeek>)*]
         [fields|parameters <String>]
         [convertmbtogb]
+        (addcsvdata <FieldName> <String>)*
 ```
 Select the users for whom information is desired.
 * `user all` - All users, the default; there is one API call
@@ -349,6 +358,9 @@ Limit the time period.
 
 Option `convertmbtogb` causes GAM to convert parameters expressed in megabytes
 (name ends with _in_mb) to gigabytes (name converted to _in_gb) with two decimal places.
+
+Add additional columns of data from the command line to the output.
+* `addcsvdata <FieldName> <String>`
 
 ## User reports
 User reports are generally available up to four days before the current date.
@@ -374,6 +386,7 @@ gam report users|user [todrive <ToDriveAttribute>*]
         [aggregatebydate|aggregatebyuser [Boolean]]
         [maxresults <Number>]
         [convertmbtogb]
+        (addcsvdata <FieldName> <String>)*
 ```
 Select the users for whom information is desired.
 * `user all` - All users, the default; there is one API call
@@ -395,6 +408,16 @@ Specify the report date; the default is today's date.
 
 Option `convertmbtogb` causes GAM to convert parameters expressed in megabytes
 (name ends with _in_mb) to gigabytes (name converted to _in_gb) with two decimal places.
+
+Add additional columns of data from the command line to the output.
+* `addcsvdata <FieldName> <String>`
+
+This will be most useful when reading a CSV of user information and you want to include some of the user information,
+e.g., orgUnitPath, in the output.
+```
+gam redirect csv ./Users.csv print users fields ou
+gam redirect csv ./UserStorageInfo.csv multiprocess csv Users.csv gam report users user "~primaryEmail" parameters accounts:drive_used_quota_in_mb,accounts:gmail_used_quota_in_mb,accounts:gplus_photos_used_quota_in_mb,accounts:total_quota_in_mb,accounts:used_quota_in_mb,accounts:used_quota_in_percentage addcsvdata orgUnitPath "~orgUnitPath"
+```
 
 If no report is available for the specified date, can an earlier date be used?
 * `limitdatechanges -1' - Back up to earlier dates to find report data; this is the default.
@@ -451,6 +474,11 @@ gam report users parameters accounts:drive_used_quota_in_mb,accounts:total_quota
 Report on users total storage usage.
 ```
 gam report users parameters accounts:drive_used_quota_in_mb,accounts:gmail_used_quota_in_mb,accounts:gplus_photos_used_quota_in_mb,accounts:total_quota_in_mb,accounts:used_quota_in_mb,accounts:used_quota_in_percentage
+```
+Report on users total storage usage, include OrgUnitPath
+```
+gam redirect csv ./Users.csv print users fields ou
+gam redirect csv ./UserStorageInfo.csv multiprocess csv Users.csv gam report users user "~primaryEmail" parameters accounts:drive_used_quota_in_mb,accounts:gmail_used_quota_in_mb,accounts:gplus_photos_used_quota_in_mb,accounts:total_quota_in_mb,accounts:used_quota_in_mb,accounts:used_quota_in_percentage addcsvdata orgUnitPath "~orgUnitPath"
 ```
 Report on email activity for individual users.
 ```
