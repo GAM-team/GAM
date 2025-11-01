@@ -1524,9 +1524,7 @@ gam config csv_input_row_filter "scopeType:regex:ORG_UNIT" redirect stdout ./Upd
 ```
 
 ## Copy non-system admin roles from a source workspace to a target workspace
-This requires GAM version 7.18.01 or higher.
-
-In the source workspace to the following:
+In the source workspace do the following:
 ```
 gam redirect csv ./SourceNonSystemRoles.csv print adminroles privileges nosystemroles formatjson quotechar "'"
 ```

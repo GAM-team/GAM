@@ -487,10 +487,8 @@ Alternatively, `<FileName>` can contain the strings `#objectname#`, `#filename#`
 and `#extension#` which will be replaced by the values from the original object names to construct a complete top level name.
 For example, `targetname "#filename#.#extension#"` strips the long matter name from the original name.
 
-**In versions prior to 6.07.14, If `<FileName>` does not contain `#filename#` and there are multiple top level files with the same extension, only the
-last file with a given extension will be saved as the earlier files will be overwritten.**
-
-This is fixed in 6.07.14: the files will be named `FileName-N.ext` where `N` is `1,2,3,...`.
+If `<FileName>` does not contain `#filename#` and there are multiple top level files with the same extension,
+the files will be named `FileName-N.ext` where `N` is `1,2,3,...`.
 
 Zip files extracted from the top level Zip file will still have their long names.
 

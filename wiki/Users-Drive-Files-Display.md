@@ -494,9 +494,8 @@ an API call per file is required to get the information.
   labelsIds: <ClassificationLabelID> <ClassificationLabelID> ...
 ```
 
-Starting in version 6.27.02, you can get Drive label information without an extra API call
-if you know the `<ClassificationLabelID>`s. Add `labelinfo` to your `fields` list and use `includelabels <ClassificationLabelIDList>`
-to specify the Drive labels.
+You can get Drive label information without an extra API call if you know the `<ClassificationLabelID>`s.
+Add `labelinfo` to your `fields` list and use `includelabels <ClassificationLabelIDList>` to specify the Drive labels.
 ```
 gam user user@domain.com show fileinfo <DriveFileEntity> fields id,name,mimetype,labelinfo includelabels "mRoha85IbwCRl490E00xGLvBsSbkwIiuZ6PRNNEbbFcb"
 ```
@@ -504,7 +503,7 @@ gam user user@domain.com show fileinfo <DriveFileEntity> fields id,name,mimetype
 The `stripcrsfromname` option strips nulls, carriage returns and linefeeds from drive file names.
 Use this option if you discover filenames containing these special characters; it is not common.
 
-Starting in version 6.80.10, the option `followshortcuts [<Boolean>]` that when true and `<DriveFileEntity` is a shortcut,
+The option `followshortcuts [<Boolean>]` that when true and `<DriveFileEntity` is a shortcut,
 causes GAM to display information about the target of the shortcut rather than the shortcut itself.
 
 By default, Gam displays the information as an indented list of keys and values.
@@ -540,7 +539,7 @@ Use this option if you discover filenames containing these special characters; i
 By default, when printing file paths, all paths for a file are displayed on the same row; use `oneitemperrow` to
 have each file path displayed on a separate row.
 
-Starting in version 6.80.10, the option `followshortcuts [<Boolean>]` that when true and `<DriveFileEntity` is a shortcut,
+The option `followshortcuts [<Boolean>]` that when true and `<DriveFileEntity` is a shortcut,
 causes GAM to display path information for the target of the shortcut rather than the shortcut itself.
 
 ## Select files for Display file counts, list, tree
@@ -1197,7 +1196,7 @@ These options can be used instead of the query options to select a specific fold
 * `select <DriveFileEntity>` - All files in the selected folder and below are shown.
   * To select the root folder of My Drive, use its `<DriveFolderID>` obtained by `gam user <UserItem> show fileinfo root id`
     * `select <IDfrom Above>`
-  * Starting in version 6.22.14, you can select the root folder of My Drive with `rootid`.
+  * You can select the root folder of My Drive with `rootid`.
     * `select rootid`
 * `selectsubquery <QueryDriveFile>` - Only the files in the selected folder that match the query are shown.
 
@@ -1669,7 +1668,7 @@ There is a final row detailing files and folders in the trash; it is omitted if 
 * `depth` - Always -1
 * `path` - Trash
 
-GAM version `6.71.17` added the `depth` column that can be used to filter the depth of the folders displayed.
+The `depth` column that can be used to filter the depth of the folders displayed.
 Depth `-1` is the top level folder, depth `0` are its immediate children, depth `2` are the children of depth `1` and so forth.
 For example to limit the display to the top folder and its immediate children, use `config csv_output_row_filter depth:count<1`.
 
@@ -1738,8 +1737,6 @@ user@domain.com,Trash,Trash,True,True,1,1024,0,1,1024,0,-1,Trash
 ```
 
 ## Display files published to the web
-Ths requires version 6.80.13 or later.
-
 You can display files published to the web.
 ```
 # Get the published files

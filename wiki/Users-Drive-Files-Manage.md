@@ -225,10 +225,7 @@ If `noduplicate` is specfied, GAM will issue a warning and not perform the creat
 exists in the parent folder.
 
 By default, when files are uploaded from local content, they are created with `binary` format, i.e., the data is uploaded
-without any conversion. Legacy GAM had an option `convert` that was passed to the Drive API v2 that it used.
-* convert - Whether to convert this file to the corresponding Docs Editors format
-
-Advanced GAM uses Drive API v3 that doesn't support the `convert` option; it uses the `mimetype` argument to cause conversions.
+without any conversion; use the `mimetype` argument to cause conversions.
 * `mimetype gdoc` - Convert the uploaded content to a Google Doc; e.g., convert a Word (.docx) or text (.txt) file to a Google Doc
 * `mimetype gsheet` - Convert the uploaded content to a Google Sheet; e.g., convert an Excel (.xlsx) or CSV (.csv) file to a Google Sheet
 * `mimetype gpresentation` - Convert the uploaded content to a Google Slides; e.g., convert a PowerPoint (.pptx) file to a Google Slides
@@ -662,7 +659,7 @@ gam <UserTypeEntity> trash drivefile <DriveFileEntity> [shortcutandtarget [<Bool
 gam <UserTypeEntity> delete|del drivefile <DriveFileEntity> trash [shortcutandtarget [<Boolean>]]
 ```
 
-Starting in version 6.80.10, the  option `shortcutandtarget [<Boolean>]` that when true and `<DriveFileEntity` is a shortcut,
+The option `shortcutandtarget [<Boolean>]` that when true and `<DriveFileEntity` is a shortcut,
 causes GAM to process the shortcut and the target of the shortcut.
 
 ## Untrash files
@@ -672,7 +669,7 @@ gam <UserTypeEntity> untrash drivefile <DriveFileEntity> [shortcutandtarget [<Bo
 gam <UserTypeEntity> delete|del drivefile <DriveFileEntity> untrash [shortcutandtarget [<Boolean>]]
 ```
 
-Starting in version 6.80.10, the  option `shortcutandtarget [<Boolean>]` that when true and `<DriveFileEntity` is a shortcut,
+The  option `shortcutandtarget [<Boolean>]` that when true and `<DriveFileEntity` is a shortcut,
 causes GAM to process the shortcut and the target of the shortcut.
 
 ## Purge files
@@ -682,7 +679,7 @@ gam <UserTypeEntity> purge drivefile <DriveFileEntity> [shortcutandtarget [<Bool
 gam <UserTypeEntity> delete|del drivefile <DriveFileEntity> purge [shortcutandtarget [<Boolean>]]
 ```
 
-Starting in version 6.80.10, the  option `shortcutandtarget [<Boolean>]` that when true and `<DriveFileEntity` is a shortcut,
+The  option `shortcutandtarget [<Boolean>]` that when true and `<DriveFileEntity` is a shortcut,
 causes GAM to process the shortcut and the target of the shortcut.
 
 ## Download Google Documents as JSON

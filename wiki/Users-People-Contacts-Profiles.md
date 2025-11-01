@@ -24,16 +24,9 @@
 - [Copy User Contacts to another User](#copy-user-contacts-to-another-user)
 
 ## Notes
-As of version `6.08.00`, GAM uses the People API to manage user contacts rather than the Contacts API.
+GAM uses the People API to manage user contacts rather than the Contacts API.
 
-Most commands will work unchanged but Google has completely changed how the data is presented. If you
-have scripts that process the output from `print contacts` for example, they will have to be changed.
-
-You might want to keep an older version of GAM available so you can compare the output from the two
-versions and make adjustments as necessary.
-
-If you manage contacts in the contact group "Other Contacts", you will need to use an older version,
-as the People API has very little support for this.
+The People API has very little support for managing contacts in the contact group "Other Contacts".
 
 To use these commands you must add the `People API` to your project and authorize the appropriate scopes:
 * `Client Access`

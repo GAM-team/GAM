@@ -410,7 +410,7 @@ gam update ou csvkmd cros.csv keyfield OU datafield deviceId add croscsvdata dev
 gam <CrOSTypeEntity> update action <CrOSAction> [acknowledge_device_touch_requirement]
         [actionbatchsize <Integer>]
 ```
-As of GAM version `6.67.00`, the new API function `batchChangeStatus` replaces the old API function `action`; ChromeOS devices are now processed in batches.
+ChromeOS devices are now processed in batches.
 The batch size defaults to 10, the `actionbatchsize <Integer>` option can be used to set a batch size between 10 and 250.
 
 As deprovisioning ChromeOS devices is not reversible, you must enter `acknowledge_device_touch_requirement`

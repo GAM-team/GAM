@@ -993,11 +993,9 @@ gam <UserTypeEntity> info users
 For `info users`, unlike all other GAM commands, a `<UserTypeEntity>` value of `all users` is actually `all users_ns_susp` not `all users_ns`.
 This is a backwards compatibility issue.
 
-Starting in version `5.23.01`, the variable `quick_info_user` was added to `gam.cfg` to control how much information requiring additional API calls is displayed.
-(Prior to version `5.23.01`, assume `quick_info_user = False`.)
+The variable `quick_info_user` was added to `gam.cfg` controls how much information requiring additional API calls is displayed.
 
 `quick_info_user = False`: Gam makes additional API calls to get more information; you can selectively eliminate these calls to improve performance.
-
 * `noaliases` - Do not get alias information
 * `nobuildingnames` - Do not get building names for locations
 * `nogroups` - Do not get group membership information

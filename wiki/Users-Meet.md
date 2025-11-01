@@ -22,8 +22,6 @@
 * [Search Conference Participants](https://developers.google.com/meet/api/reference/rest/v2/conferenceRecords.participants/list)
 
 ## Introduction
-These features were added in version 6.81.00.
-
 To use these commands you must add the 'Meet API' to your project and update your service account authorization.
 ```
 gam update project

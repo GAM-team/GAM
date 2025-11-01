@@ -235,10 +235,6 @@ nv:<String>:<String>
 The first `<String>` is a Product and the second `<String>` is a SKU.
 
 ## Info User Performance
-
-In GAM versions prior 7.18.05, when you did `gam info user`, GAM would make one attempt to get the user's licenses.
-If something went wrong, you might not get the complete list.
-
 The License Manager API doesn't have a call that returns the list of licenses that a user has; you have to ask:
 ```
 Does user have license SKU 1?

@@ -9,8 +9,6 @@
 
 
 ## Introduction
-These features were added in version 7.18.00.
-
 To use these commands you add the 'Business Account Management API' to your project and update client authorization.
 ```
 gam update project

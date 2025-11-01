@@ -10,8 +10,6 @@
 - [Display Chrome Profile commands](#display-chrome-profile-commands)
 
 ## Introduction
-These features were added in version 7.01.00.
-
 To use these commands you must update your client authorization.
 ```
 gam oauth create

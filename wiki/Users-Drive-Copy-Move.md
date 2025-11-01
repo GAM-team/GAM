@@ -226,8 +226,6 @@ When a file appears more that once in the copy, the first time the file is proce
 If it is processed again (because of multiple parents within the source folder structure), a shortcut is created that points to the first copy.
 
 ### Shortcuts
-In previous versions, copying shortcuts caused an error because shortcuts can't be copied, they must be re-created.
-
 If a shortcut in the source structure points to a file/folder that is not in the source structure:
  * The shortcut is re-created to point to the original file/folder.
 
@@ -263,7 +261,6 @@ When a folder is copied, its permissions are not copied; these options control c
 of the form `option [<Boolean>]`; if `<Boolean>` is omitted, `true` is assumed.
 
 When copied, a target folder inherits the permissions of its parent folder; these options control whether/how GAM copies the existing source folder permissions.
-The default values of options introduced in version 6.14.00 are set to match the behavior of earlier versions.
 
 When `mergewithparent` is `true`:
 * `copymergewithparentfolderpermissions false` - The permissions of the source top folder are not not copied to the target folder; this is the default action.

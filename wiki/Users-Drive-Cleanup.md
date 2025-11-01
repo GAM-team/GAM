@@ -94,19 +94,10 @@ Show current drive usage.
 gam redirect stdout ./DrivefileUsage.txt user user@domain.com show drivesettings
 ```
 Get list of top level files/folders.
-
-GAM version `6.22.14` and higher:
 ```
 gam redirect csv ./TopLevelFilesFolders.csv user user@domain.com print filelist select rootid fields id,name,mimetype depth 0
 ```
-GAM version `6.22.13` and lower.
-```
-gam user user@domain.com show fileinfo root fields id
-User: user@domain.com, Show 1 Drive File/Folder
-  Drive Folder: My Drive (0AENlVEBUkz-hUkWXYZ)
-    id: 0AENlVEBUkz-hUkWXYZ
-gam redirect csv ./TopLevelFilesFolders.csv user user@domain.com print filelist select 0AENlVEBUkz-hUkWXYZ fields id,name,mimetype depth 0
-```
+
 Purge top level files/folders.
 ```
 gam redirect stdout ./PurgeTopLevelFilesFolders.txt multiprocess redirect stderr stdout csv ./TopLevelFilesFolders.csv gam user "~Owner" purge drivefile "~id"
@@ -128,7 +119,6 @@ Show updated drive usage.
 gam redirect stdout ./DrivefileUsage.txt append user user@domain.com show drivesettings
 ```
 ### Method 3
-* GAM version `6.30.09` and higher
 * Generate a list of top level files/folders that a user owns.
 * Delete them; orphans are not included
 * Generate a list of remaining file/folders (orphans).

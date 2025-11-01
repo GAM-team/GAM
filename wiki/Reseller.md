@@ -1,6 +1,5 @@
 # Reseller
 - [API documentation](#api-documentation)
-- [Notes](#notes)
 - [Manage Multiple Domains](#manage-multiple-domains)
 - [Definitions](#definitions)
 - [Manage Resold Customers](#manage-resold-customers)
@@ -11,20 +10,6 @@
 ## API documentation
 * [Reseller API - Customers](https://developers.google.com/admin-sdk/reseller/v1/reference/customers)
 * [Reseller API - Subscriptions](https://developers.google.com/admin-sdk/reseller/v1/reference/subscriptions)
-
-## Notes
-
-Updated handling of `seats` option in `gam create|update resoldsubscription` to properly assign
-the API fields `numberOfSeats` and `maximumNumberOfSeats`.
-Prior to version 6.50.00, this is how the `seats <NumberOfSeats> <MaximumNumberOfSeats>` option was processed:
-  * Plan name `ANNUAL_MONTHLY_PAY` or `ANNUAL_YEARLY_PAY`
-    * `seats <NumberOfSeats>` - `<NumberOfSeats>` was properly passed to the API
-    * `seats <NumberOfSeats> <MaximumNumberOfSeats>` - `<NumberOfSeats>` was properly passed to the API; `<MaximumNumberOfSeats>` was passed to the API which ignored it
-  * Plan name `FLEXIBLE` or `TRIAL`
-    * `seats <NumberOfSeats>` - `<NumberOfSeats>` was improperly passed to the API; an API error was generated
-    * `seats <NumberOfSeats> <MaximumNumberOfSeats>` - `<MaximumNumberOfSeats>` was properly passed to the API; `<NumberOfSeats>` was passed to the API which ignored it
-
-Now, you can still use the above option which has been corrected or you can specify `seats <Number>` which will be properly passed in the correct form to the API based on plan name.
 
 ## Manage Multiple Domains
 Thanks to Duncan Isaksen-Loxton for a script to help manage multiple domains.

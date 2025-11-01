@@ -603,8 +603,6 @@ gam redirect stdout ./AddU2SharedDriveAccess.txt multiprocess redirect stderr st
 ```
 
 ## Bulk change User1 Shared Drive access to User2
-This requires GAM version 6.79.09 or higher.
-
 Make a CSV file Users.csv with two email address columns: User,Replace
 ```
 # Get Shared Drives for all Users in CSV file
