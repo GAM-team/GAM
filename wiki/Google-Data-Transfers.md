@@ -49,7 +49,7 @@ For calendars, there is an option to indicate whether to release resources for f
 A `<TransferID>` is returned which can be used to monitor the progress of the transfer.
 
 NOTE: For calendars, the behaviour is not sufficiently defined in the API documentation.
-As of 2020-06-10, background transfers only transfer future non-private events with at least one guest/resource.
+Background transfers only transfer future non-private events with at least one guest/resource.
 
 The option `<ParameterKey> <ParameterValue>` is for future expansion.
 

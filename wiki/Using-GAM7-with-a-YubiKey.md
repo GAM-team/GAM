@@ -29,7 +29,7 @@ No, because the YubiKey generated the private key it cannot be digitally exporte
 When using domain-wide delegation with GAM7, the service account and anyone possessing the service account private key oauth2service.json file has access to the Gmail, Drive and Calendar data of ALL Workspace users in your domain. For this reason, whether using a YubiKey or not, you should take strong measures to protect the service account private key.
 
 ## Setup Steps
-1. Upgrade to at least GAM7 6.50.01.
+1 .Upgrade to the [latest version of GAM7](https://github.com/GAM-team/GAM/wiki/How-to-Update-GAM7).
 2. **If you are using a new YubiKey or don't care about the PIV app data on the YubiKey**
     1. Tell GAM7 to reset and configure the PIV app data on the YubiKey. This wipes all existing keys and configuration and then configures a private key and PIN for GAM7.
       * Single YubiKey - `gam yubikey reset_piv`

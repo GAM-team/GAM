@@ -13,10 +13,6 @@
 - [CAA Region Codes](#caa-region-codes)
 
 ## Notes
-This Wiki page was built directly from Jay Lee's Wiki page; my sincere thanks for his efforts.
-
-GAM 6.20.00 and newer can create and manage access levels which can be assigned to Workspace services for your users.
-
 To use these features you must update your project.
 ```
 gam update project

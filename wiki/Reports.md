@@ -229,7 +229,6 @@ Add additional columns of data from the command line to the output.
 * `addcsvdata <FieldName> <String>`
 
 ### Example
-Jay provided this example.
 ```
 gam report usage customer parameters meet:total_call_minutes,meet:total_meeting_minutes start_date 2020-03-01 skipdaysofweek sat,sun todrive 
 ```
