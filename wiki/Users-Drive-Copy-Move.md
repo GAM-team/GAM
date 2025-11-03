@@ -454,7 +454,7 @@ Copy the folder top level items to target Shared Drive folder, assume ID 2CY-45G
 gam redirect stdout ./CopySharedDrive.txt multiprocess redirect stderr stdout csv TopSDItems.csv gam user user@domain.com copy drivefile "~id" recursive teamdriveparentid 2CY-45G
 ```
 You can script the steps:
-```
+
 Linux/MacOS
 ```
 gam redirect csv ./TopSDItems.csv user user@domain.com print filelist select 1Bx-8W3 fields id,name,mimetype depth 0
@@ -473,6 +473,7 @@ gam redirect csv ./TopSDItems.csv user user@domain.com print filelist select 1Bx
 FOR /F "delims=" %%A IN ('gam user user@domain.com create drivefile mimetype gfolder teamdriveparentid 0AE-9ZX drivefilename "New Folder Name" returnidonly') DO (SET "taregtFolderId=%%A")
 gam redirect stdout ./CopySharedDrive.txt multiprocess redirect stderr stdout csv TopSDItems.csv gam user user@domain.com copy drivefile "~id" recursive teamdriveparentid %targetFolderId%
 ```
+
 ## Move files and folders
 ## Move My Drive folder to Shared Drive
 There are two methods for moving a folder from a My Drive to a Shared Drive:
