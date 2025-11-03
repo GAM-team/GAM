@@ -385,7 +385,7 @@ gam user user@domain.com copy drivefile root recursive teamdriveparentid <Shared
 ```
 
 ### Copy content of a Shared Drive to another Shared Drive
-Suppose you have a source Shared Drive called 0AC_1AB with multiple files and folders, and want to copy all of its content to the target Shared Drive 0AE_9ZX.
+Suppose you have a source Shared Drive with ID 0AC_1AB with multiple files and folders, and want to copy all of its content to the target Shared Drive with ID 0AE_9ZX.
 
 The following command will copy the content, files and folders inside the source drive recursively, and put them in the target drive.
 
@@ -428,6 +428,51 @@ gam user user@domain.com copy drivefile teamdriveid 0AC_1AB teamdriveparentid 0A
         copyfilenoninheritedpermissions true
 ```
 
+### Copy content of a source Shared Drive to a target Shared Drive with parallel Processing
+Suppose you have a source Shared Drive with ID 0AC_1AB with multiple files and folders, and want to copy all of its content to the target Shared Drive with ID 0AE_9ZX.
+
+Get top level items on source Shared Drive
+```
+gam redirect csv ./TopSDItems.csv user user@domain.com print filelist select 0AC_1AB fields id,name,mimetype depth 0
+```
+Copy the top level items to target Shared Drive; append desired permission options
+```
+gam redirect stdout ./CopySharedDrive.txt multiprocess redirect stderr stdout csv TopSDItems.csv gam user user@domain.com copy drivefile "~id" recursive teamdriveparentid 0AE_9ZX
+```
+
+### Copy content of a source Shared Drive folder to a target Shared Drive with parallel Processing
+Get top level items on source Shared Drive folder with ID 1BX-8W3
+```
+gam redirect csv ./TopSDItems.csv user user@domain.com print filelist select 1Bx-8W3 fields id,name,mimetype depth 0
+```
+Create a folder on target Shared Drive with ID 0AE_9ZX, replace "New Folder Name" as desired.
+```
+gam user user@domain.com create drivefile mimetype gfolder teamdriveparentid 0AE-9ZX drivefilename "New Folder Name" returnidonly
+```
+Copy the folder top level items to target Shared Drive folder, assume ID 2CY-45G was returned in previous step
+```
+gam redirect stdout ./CopySharedDrive.txt multiprocess redirect stderr stdout csv TopSDItems.csv gam user user@domain.com copy drivefile "~id" recursive teamdriveparentid 2CY-45G
+```
+You can script the steps:
+```
+Linux/MacOS
+```
+gam redirect csv ./TopSDItems.csv user user@domain.com print filelist select 1Bx-8W3 fields id,name,mimetype depth 0
+targetFolderId=$(gam user user@domain.com create drivefile mimetype gfolder teamdriveparentid 0AE-9ZX drivefilename "New Folder Name" returnidonly)
+gam redirect stdout ./CopySharedDrive.txt multiprocess redirect stderr stdout csv TopSDItems.csv gam user user@domain.com copy drivefile "~id" recursive teamdriveparentid $targetFolderId
+```
+Windows PowerShell
+```
+gam redirect csv ./TopSDItems.csv user user@domain.com print filelist select 1Bx-8W3 fields id,name,mimetype depth 0
+$targetFolderId = & gam user user@domain.com create drivefile mimetype gfolder teamdriveparentid 0AE-9ZX drivefilename "New Folder Name" returnidonly
+gam redirect stdout ./CopySharedDrive.txt multiprocess redirect stderr stdout csv TopSDItems.csv gam user user@domain.com copy drivefile "~id" recursive teamdriveparentid $targetFolderId
+```
+Windows Command Prompt
+```
+gam redirect csv ./TopSDItems.csv user user@domain.com print filelist select 1Bx-8W3 fields id,name,mimetype depth 0
+FOR /F "delims=" %%A IN ('gam user user@domain.com create drivefile mimetype gfolder teamdriveparentid 0AE-9ZX drivefilename "New Folder Name" returnidonly') DO (SET "taregtFolderId=%%A")
+gam redirect stdout ./CopySharedDrive.txt multiprocess redirect stderr stdout csv TopSDItems.csv gam user user@domain.com copy drivefile "~id" recursive teamdriveparentid %targetFolderId%
+```
 ## Move files and folders
 ## Move My Drive folder to Shared Drive
 There are two methods for moving a folder from a My Drive to a Shared Drive:
