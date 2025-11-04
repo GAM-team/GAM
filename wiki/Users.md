@@ -1343,6 +1343,7 @@ $count = & gam print users query "orgUnitPath='/Students/Middle School'" showite
 Windows Command Prompt
 for /f "delims=" %a in ('gam print users query "orgUnitPath='/Students/Middle School'" showitemcountonly') do set count=%a
 ```
+
 ## Verify domain membership
 You have a CSV file of email addresses and want to verify of the addresses are valid users in your domain.
 ```

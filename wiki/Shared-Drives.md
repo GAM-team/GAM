@@ -315,6 +315,8 @@ Linux/MacOS
 teamDriveId=$(gam create shareddrive ... returnidonly)
 Windows PowerShell
 $teamDriveId = & gam create shareddrive ... returnidonly
+Windows Command Prompt
+for /f "delims=" %a in ('gam create shareddrive ... returnidonly') do set teamDriveId=%a
 ```
 
 ## Bulk Create Shared Drives
