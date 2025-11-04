@@ -470,7 +470,7 @@ gam redirect stdout ./CopySharedDrive.txt multiprocess redirect stderr stdout cs
 Windows Command Prompt
 ```
 gam redirect csv ./TopSDItems.csv user user@domain.com print filelist select 1Bx-8W3 fields id,name,mimetype depth 0
-FOR /F "delims=" %%A IN ('gam user user@domain.com create drivefile mimetype gfolder teamdriveparentid 0AE-9ZX drivefilename "New Folder Name" returnidonly') DO (SET "taregtFolderId=%%A")
+for /f "delims=" %a in ('gam user user@domain.com create drivefile mimetype gfolder teamdriveparentid 0AE-9ZX drivefilename "New Folder Name" returnidonly') do set taregtFolderId=%a
 gam redirect stdout ./CopySharedDrive.txt multiprocess redirect stderr stdout csv TopSDItems.csv gam user user@domain.com copy drivefile "~id" recursive teamdriveparentid %targetFolderId%
 ```
 
