@@ -72,6 +72,8 @@ Linux/MacOS
 fileId=$(gam user user@domain.com create drivefileshortcut ... returnidonly)
 Windows PowerShell
 $fileId = & gam user user@domain.com create drivefileshortcut ... returnidonly
+Windows Command Prompt
+for /f "delims=" %a in ('gam user user@domain.com create drivefileshortcut ... returnidonly') do set fileId=%a
 ```
 The shortcut ID will only be valid when the return code of the command is 0; program accordingly.
 

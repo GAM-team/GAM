@@ -458,5 +458,7 @@ To retrieve the count with `showitemcountonly`:
 Linux/MacOS
 count=$(gam print cigroups showitemcountonly)
 Windows PowerShell
-count = & gam print cidgroups showitemcountonly
+$count = & gam print cigroups showitemcountonly
+Windows Command Prompt
+for /f "delims=" %a in ('gam print cigroups showitemcountonly') do set count=%a
 ```

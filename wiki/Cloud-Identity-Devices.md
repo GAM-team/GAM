@@ -272,7 +272,9 @@ To retrieve the count with `showitemcountonly`:
 Linux/MacOS
 count=$(gam print devices queries "'model:Mac'" showitemcountonly)
 Windows PowerShell
-count = & gam print devices queries "'model:Mac'" showitemcountonly
+$count = & gam print devices queries "'model:Mac'" showitemcountonly
+Windows Command Prompt
+for /f "delims=" %a in ('gam print devices queries "'model:Mac'" showitemcountonly') do set count=%a
 ```
 
 ## Approve or block device users
@@ -363,7 +365,9 @@ To retrieve the count with `showitemcountonly`:
 Linux/MacOS
 count=$(gam print deviceusers queries "'model:Mac'" showitemcountonly)
 Windows PowerShell
-count = & gam print deviceusers queries "'model:Mac'" showitemcountonly
+$count = & gam print deviceusers queries "'model:Mac'" showitemcountonly
+Windows Command Prompt
+for /f "delims=" %a in ('gam print deviceusers queries "'model:Mac'" showitemcountonly') do set count=%a
 ```
 
 

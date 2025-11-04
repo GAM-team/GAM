@@ -512,7 +512,9 @@ To retrieve the count with `showitemcountonly`:
 Linux/MacOS
 count=$(gam print resources showitemcountonly)
 Windows PowerShell
-count = & gam print resources showitemcountonly
+$count = & gam print resources showitemcountonly
+Windows Command Prompt
+for /f "delims=" %a in ('gam print resources showitemcountonly') do set count=%a
 ```
 
 ## Manage resource calendar ACLs

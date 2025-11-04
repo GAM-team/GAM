@@ -173,5 +173,7 @@ To retrieve the count with `showitemcountonly`:
 Linux/MacOS
 count=$(gam print mobile showitemcountonly)
 Windows PowerShell
-count = & gam print mobile showitemcountonly
+$count = & gam print mobile showitemcountonly
+Windows Command Prompt
+for /f "delims=" %a in ('gam print mobile showitemcountonly') do set count=%a
 ```

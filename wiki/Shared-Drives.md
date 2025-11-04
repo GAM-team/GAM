@@ -537,7 +537,9 @@ To retrieve the count with `showitemcountonly`:
 Linux/MacOS
 count=$(gam print shareddrives showitemcountonly)
 Windows PowerShell
-count = & gam print shareddrives showitemcountonly
+$count = & gam print shareddrives showitemcountonly
+Windows Command Prompt
+for /f "delims=" %a in ('gam print shareddrives showitemcountonly') do set count=%a
 ```
 
 ## Display all Shared Drives with a specific organizer
@@ -590,7 +592,9 @@ To retrieve the count with `showitemcountonly`:
 Linux/MacOS
 count=$(gam print oushareddrives showitemcountonly)
 Windows PowerShell
-count = & gam print oushareddrives showitemcountonly
+$count = & gam print oushareddrives showitemcountonly
+Windows Command Prompt
+for /f "delims=" %a in ('gam print oushareddrives showitemcountonly') do set count=%a
 ```
 
 ## Manage Shared Drive access

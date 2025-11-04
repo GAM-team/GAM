@@ -6,7 +6,7 @@ gam version
 GAM 7.28.00 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.14.0 64-bit final
-macOS Tahoe 26.0.1 x86_64
+macOS Tahoe 26.1 x86_64
 Path: /Users/Admin/bin/gam7
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
 Time: 2023-06-02T21:10:00-07:00
@@ -18,7 +18,7 @@ gam version timeoffset
 GAM 7.28.00 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.14.0 64-bit final
-macOS Tahoe 26.0.1 x86_64
+macOS Tahoe 26.1 x86_64
 Path: /Users/Admin/bin/gam7
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
 Your system time differs from www.googleapis.com by less than 1 second
@@ -30,7 +30,7 @@ gam version extended
 GAM 7.28.00 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.14.0 64-bit final
-macOS Tahoe 26.0.1 x86_64
+macOS Tahoe 26.1 x86_64
 Path: /Users/Admin/bin/gam7
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
 Time: 2023-06-02T21:10:00-07:00
@@ -89,7 +89,7 @@ gam help
 GAM 7.28.00 - https://github.com/GAM-team/GAM
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.14.0 64-bit final
-macOS Tahoe 26.0.1 x86_64
+macOS Tahoe 26.1 x86_64
 Path: /Users/Admin/bin/gam7
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
 Time: 2023-06-02T21:10:00-07:00

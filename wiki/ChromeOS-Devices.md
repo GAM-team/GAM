@@ -711,7 +711,9 @@ To retrieve the count with `showitemcountonly`:
 Linux/MacOS
 count=$(gam print cros query "sync:..2020-01-01" showitemcountonly)
 Windows PowerShell
-count = & gam print cros query "sync:..2020-01-01" showitemcountonly
+$count = & gam print cros query "sync:..2020-01-01" showitemcountonly
+Windows Command Prompt
+for /f "delims=" %a in ('gam print cros query "sync:..2020-01-01" showitemcountonly') do set count=%a
 ```
 
 ## Print ChromeOS device activity

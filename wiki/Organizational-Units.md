@@ -266,7 +266,9 @@ To retrieve the count with `showitemcountonly`:
 Linux/MacOS
 count=$(gam print orgs showitemcountonly)
 Windows PowerShell
-count = & gam print orgs showitemcountonly
+$count = & gam print orgs showitemcountonly
+Windows Command Prompt
+for /f "delims=" %a in ('gam print orgs showitemcountonly') do set count=%a
 ```
 
 ## Display indented organizational unit tree

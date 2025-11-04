@@ -554,6 +554,8 @@ Linux/MacOS
 fileId=$(gam user user@domain.com update drivefile <DriveFileEntity> copy ... returnidonly)
 Windows PowerShell
 $fileId = & gam user user@domain.com update drivefile <DriveFileEntity> copy ... returnidonly
+Windows Command Prompt
+for /f "delims=" %a in ('gam user user@domain.com update drivefile <DriveFileEntity> copy ... returnidonly') do set fileId=%a
 ```
 The file ID will only be valid when the return code of the command is 0; program accordingly.
 

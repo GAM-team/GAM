@@ -1339,7 +1339,9 @@ To retrieve the count with `showitemcountonly`:
 Linux/MacOS
 count=$(gam print users query "orgUnitPath='/Students/Middle School'" showitemcountonly)
 Windows PowerShell
-count = & gam print users query "orgUnitPath='/Students/Middle School'" showitemcountonly
+$count = & gam print users query "orgUnitPath='/Students/Middle School'" showitemcountonly
+Windows Command Prompt
+for /f "delims=" %a in ('gam print users query "orgUnitPath='/Students/Middle School'" showitemcountonly') do set count=%a
 ```
 ## Verify domain membership
 You have a CSV file of email addresses and want to verify of the addresses are valid users in your domain.

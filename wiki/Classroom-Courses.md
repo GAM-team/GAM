@@ -514,7 +514,9 @@ To retrieve the count with `showitemcountonly`:
 Linux/MacOS
 count=$(gam print courses states active showitemcountonly)
 Windows PowerShell
-count = & gam print courses states active showitemcountonly
+$count = & gam print courses states active showitemcountonly
+Windows Command Prompt
+for /f "delims=" %a in ('gam print courses states active showitemcountonly') do set count=%a
 ```
 
 ## Display course announcements

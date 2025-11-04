@@ -60,6 +60,15 @@ Display the number of domains.
 gam print|show domains
         showitemcountonly
 ```
+To retrieve the count with `showitemcountonly`:
+```
+Linux/MacOS
+count=$(gam print domains showitemcountonly)
+Windows PowerShell
+$count = & gam print domains showitemcountonly
+Windows Command Prompt
+for /f "delims=" %a in ('gam print domains showitemcountonly') do set count=%a
+```
 
 ## Create and delete domain aliases
 ```
@@ -93,4 +102,13 @@ Display the number of domain aliases.
 ```
 gam print|show domainaliases|aliasdomains
         showitemcountonly
+```
+To retrieve the count with `showitemcountonly`:
+```
+Linux/MacOS
+count=$(gam print domainaliases showitemcountonly)
+Windows PowerShell
+$count = & gam print domainaliases showitemcountonly
+Windows Command Prompt
+for /f "delims=" %a in ('gam print domainaliases showitemcountonly') do set count=%a
 ```

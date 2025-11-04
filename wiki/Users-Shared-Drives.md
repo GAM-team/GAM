@@ -283,6 +283,8 @@ Linux/MacOS
 teamDriveId=$(gam user user@domain.com create shareddrive ... returnidonly)
 Windows PowerShell
 $teamDriveId = & gam user user@domain.com create shareddrive ... returnidonly
+Windows Command Prompt
+for /f "delims=" %a in ('gam user user@domain.com create shareddrive ... returnidonly') do set teamDriveId=%a
 ```
 
 ## Bulk Create Shared Drives
@@ -425,9 +427,11 @@ The `Getting` and `Got` messages are written to stderr, the count is writtem to 
 To retrieve the count with `showitemcountonly`:
 ```
 Linux/MacOS
-count=$(gam user user@domain.com print shareddrives showitemcountonly)
+count=$(gam user user@domain.com print shareddrives ... showitemcountonly)
 Windows PowerShell
-count = & gam user user@domain.com print shareddrives showitemcountonly
+$count = & gam user user@domain.com print shareddrives ... showitemcountonly
+Windows Command Prompt
+for /f "delims=" %a in ('gam user user@domain.com print shareddrives ... showitemcountonly') do set count=%a
 ```
 ## Display Shared Drive Organizers
 The following command can be used instead of the `GetTeamDriveOrganizers.py` script.
