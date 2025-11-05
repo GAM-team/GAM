@@ -14,7 +14,7 @@
 ## API documentation
 Changes starting 2025-10-29.
 
-* [Reports API - Admin log event changes]https://support.google.com/a/answer/16601511
+* [Reports API - Admin log event changes](https://support.google.com/a/answer/16601511)
 
 These pages show event/parameter names; scroll down in the left column to: Reports.
 
