@@ -4,7 +4,7 @@
 - [Windows PowerShell](#windows-powershell)
 - [List quoting rules](#list-quoting-rules)
 - [Queries example](#queries-example)
-- [Capture command output](#capture-command-output]
+- [Capture command output](#capture-command-output)
 
 ## Linux and MacOS
 
