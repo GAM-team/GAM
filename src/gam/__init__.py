@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.28.00'
+__version__ = '7.28.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -9177,7 +9177,7 @@ def flattenJSON(topStructure, flattened=None,
 # Show a json object
 def showJSON(showName, showValue, skipObjects=None, timeObjects=None,
              simpleLists=None, dictObjectsKey=None, sortDictKeys=True):
-  def _show(objectName, objectValue, subObjectKey, level, subSkipObjects):
+  def _show(objectName, objectValue, subObjectKey, subObjectName, level, subSkipObjects):
     if objectName in subSkipObjects:
       return
     if objectName is not None:
@@ -9200,10 +9200,12 @@ def showJSON(showName, showValue, skipObjects=None, timeObjects=None,
         if isinstance(subValue, (str, bool, float, int)):
           printKeyValueList([subValue])
         else:
-          _show(None, subValue, subObjectKey, level+1, DEFAULT_SKIP_OBJECTS)
+          _show(None, subValue, subObjectKey, objectName, level+1, DEFAULT_SKIP_OBJECTS)
       if objectName is not None:
         Ind.Decrement()
     elif isinstance(objectValue, dict):
+      if not subObjectKey:
+        subObjectKey = dictObjectsKey.get(subObjectName)
       indentAfterFirst = unindentAfterLast = False
       if objectName is not None:
         printBlankLine()
@@ -9211,13 +9213,23 @@ def showJSON(showName, showValue, skipObjects=None, timeObjects=None,
       elif level > 0:
         indentAfterFirst = unindentAfterLast = True
       subObjects = sorted(objectValue) if sortDictKeys else objectValue.keys()
-      if subObjectKey and (subObjectKey in subObjects):
-        subObjects.remove(subObjectKey)
-        subObjects.insert(0, subObjectKey)
-        subObjectKey = None
+      if subObjectKey:
+        if subObjectKey in subObjects:
+          subObjects.remove(subObjectKey)
+          subObjects.insert(0, subObjectKey)
+          subObjectKey = None
+        elif subObjectName == 'permissions': # subObjectKey in displayName
+          if 'id' in objectValue:
+            if objectValue['id'] == 'anyone':
+              objectValue[subObjectKey] = 'Anyone'
+            elif objectValue['id'] == 'anyoneWithLink':
+              objectValue[subObjectKey] = 'Anyone with Link'
+            else:
+              objectValue[subObjectKey] = objectValue['id']
+            subObjects.insert(0, subObjectKey)
       for subObject in subObjects:
         if subObject not in subSkipObjects:
-          _show(subObject, objectValue[subObject], subObjectKey, level+1, DEFAULT_SKIP_OBJECTS)
+          _show(subObject, objectValue[subObject], subObjectKey, None, level+1, DEFAULT_SKIP_OBJECTS)
           if indentAfterFirst:
             Ind.Increment()
             indentAfterFirst = False
@@ -9244,7 +9256,7 @@ def showJSON(showName, showValue, skipObjects=None, timeObjects=None,
   timeObjects = timeObjects or set()
   simpleLists = simpleLists or set()
   dictObjectsKey = dictObjectsKey or {}
-  _show(showName, showValue, None, 0, DEFAULT_SKIP_OBJECTS.union(skipObjects or set()))
+  _show(showName, showValue, None, None, 0, DEFAULT_SKIP_OBJECTS.union(skipObjects or set()))
 
 class FormatJSONQuoteChar():
 

@@ -1,3 +1,8 @@
+7.28.01
+
+Updated `gam <UserTypeEntity> show fileinfo <DriveFileEntity>` to display `displayName` as the key field
+of a `permission` not `deleted`.
+
 7.28.00
 
 Added option `addcsvdata <FieldName> <String>` to `gam report [usage] customers|users`
