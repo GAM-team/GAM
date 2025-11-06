@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.28.01
+
+Updated `gam <UserTypeEntity> show fileinfo <DriveFileEntity>` to display `displayName` as the key field
+of a `permission` not `deleted`.
+
 ### 7.28.00
 
 Added option `addcsvdata <FieldName> <String>` to `gam report [usage] customers|users`
