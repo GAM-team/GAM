@@ -13,4 +13,4 @@ _Note: Chromebooks / Chrome OS devices should install GAM7 using [these instruct
     sudo apt update
     sudo apt install curl python3
 ```
-7. [How to Install Advanced GAM](How-to-Install-Advanced-GAM)
+7. [How to Install GAM7](How-to-Install-GAM7)

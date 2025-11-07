@@ -7,7 +7,7 @@ Chrome OS devices that [support Linux apps](https://support.google.com/chromeboo
     sudo apt update
     sudo apt install xz-utils
 ```
-3. [How to Install Advanced GAM](How-to-Install-Advanced-GAM)
+3. [How to Install GAM7](How-to-Install-GAM7)
 
 # Google cloud shell
 
