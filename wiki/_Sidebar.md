@@ -75,6 +75,7 @@ Client Access
 * [Calendars - Events](Calendars-Events)
 * [Chrome Auto Update Expiration Counts](Chrome-AUE-Counts)
 * [Chrome Browser Cloud Management](Chrome-Browser-Cloud-Management)
+* [Chrome Device Counts](Chrome-Device-Counts)
 * [Chrome Device Needs Attention Counts](Chrome-Needs-Attention-Counts)
 * [Chrome Installed Apps](Chrome-Installed-Apps)
 * [Chrome Policies](Chrome-Policies)
