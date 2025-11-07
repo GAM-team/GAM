@@ -3,7 +3,7 @@
 - [Definitions](#definitions)
 - [Quoting rules](#quoting-rules)
 - [Display Chrome installed app details](#display-chrome-installed-app-details)
-- [Display Chrome installed apps counts](#display-chrome-installed-apps-counts)
+- [Display Chrome installed apps](#display-chrome-installed-apps)
 - [Display Chrome devices with a specific installed application](#display-chrome-devices-with-a-specific-installed-application)
 
 ## API documentation
@@ -54,7 +54,7 @@ gam info chromeapp android|chrome|web <AppID>
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 
-## Display Chrome installed apps counts
+## Display Chrome installed apps
 ```
 gam show chromeapps
         [(ou <OrgUnitItem>)|(ou_and_children <OrgUnitItem>)|
