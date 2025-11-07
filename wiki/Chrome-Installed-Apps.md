@@ -1,4 +1,4 @@
-# Chrome Installed Apps Counts
+# Chrome Installed Apps
 - [API documentation](#api-documentation)
 - [Definitions](#definitions)
 - [Quoting rules](#quoting-rules)
