@@ -2371,6 +2371,15 @@ gam show chromeprofilecommands <ChromeProfileNameEntity>
 gam print chromeprofilecommands <ChromeProfileNameEntity> [todrive <ToDriveAttribute>*]
         [formatjson [quotechar <Character>]]
 
+# Chrome Device Counts
+
+gam show chromedevicecounts
+        [mode active|perboottype|perreleasechannel] [date <Date>]
+        [formatjson]
+gam print chromedevicecounts [todrive <ToDriveAttribute>*]
+        [mode active|perboottype|perreleasechannel] [date <Date>]
+        [formatjson [quotechar <Character>]]
+
 # Chrome Versions Counts
 
 gam show chromeversions

@@ -106,6 +106,7 @@ class GamEntity():
   CHROME_BROWSER_ENROLLMENT_TOKEN = 'cbet'
   CHROME_CHANNEL = 'chan'
   CHROME_DEVICE = 'chdv'
+  CHROME_DEVICE_COUNT = 'chdc'
   CHROME_MODEL = 'chmo'
   CHROME_NETWORK_ID = 'chni'
   CHROME_NETWORK_NAME = 'chnn'
@@ -473,6 +474,7 @@ class GamEntity():
     CHROME_BROWSER_ENROLLMENT_TOKEN: ['Chrome Browser Enrollment Tokens', 'Chrome Browser Enrollment Token'],
     CHROME_CHANNEL: ['Chrome Channels', 'Chrome Channel'],
     CHROME_DEVICE: ['Chrome Devices', 'Chrome Device'],
+    CHROME_DEVICE_COUNT: ['Chrome Device Counts', 'Chrome Device Count'],
     CHROME_MODEL: ['Chrome Models', 'Chrome Model'],
     CHROME_NETWORK_ID: ['Chrome Network IDs', 'Chrome Network ID'],
     CHROME_NETWORK_NAME: ['Chrome Network Names', 'Chrome Network Name'],

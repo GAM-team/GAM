@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.28.01'
+__version__ = '7.28.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -31918,6 +31918,65 @@ def doPrintShowChromeNeedsAttn():
         _printNeedsAttn(result)
   if csvPF:
     csvPF.writeCSVfile('Chrome Devices Needing Attention')
+
+CHROME_DEVICE_COUNTS_MODE_CHOICES = ['active', 'perboottype', 'perreleasechannel']
+CHROME_DEVICE_COUNTS_MODE_FUNCTIONS = {
+  'active': 'countActiveDevices',
+  'perboottype': 'countDevicesPerBootType',
+  'perreleasechannel': 'countDevicesPerReleaseChannel'
+  }
+CHROME_DEVICE_COUNTS_MODE_CSV_TITLE = {
+  'active': 'Chrome Active Devices',
+  'perboottype': 'Chrome Devices per Boot Type',
+  'perreleasechannel': 'Chrome Devices per Release Channel'
+  }
+
+# gam print chromedevicecounts [todrive <ToDriveAttribute>*]
+#	[mode active|perboottype|perreleasechannel] [date <Date>]
+#	[formatjson [quotechar <Character>]]
+# gam show chromedevicecounts
+#	[mode active|perboottype|perreleasechannel] [date <Date>]
+#	[formatjson]
+def doPrintShowChromeDeviceCounts():
+  cm = buildGAPIObject(API.CHROMEMANAGEMENT)
+  customerId = _getCustomersCustomerIdWithC()
+  csvPF = CSVPrintFile() if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
+  pdate = todaysDate()
+  mode = 'active'
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif myarg == 'mode':
+      mode = getChoice(CHROME_DEVICE_COUNTS_MODE_CHOICES)
+    elif myarg == 'date':
+      pdate = getYYYYMMDD(returnDateTime=True)
+    else:
+      FJQC.GetFormatJSONQuoteChar(myarg, True)
+  kwargs = {'date_day': pdate.day, 'date_month': pdate.month, 'date_year': pdate.year}
+  try:
+    counts = callGAPI(cm.customers().reports(), CHROME_DEVICE_COUNTS_MODE_FUNCTIONS[mode],
+                      throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
+                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                      customer=customerId, **kwargs)
+  except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
+    entityActionFailedWarning([Ent.CHROME_DEVICE_COUNT, None], str(e))
+    return
+  for k, v in counts.items():
+    counts[k] = int(v)
+  if not csvPF:
+    if not FJQC.formatJSON:
+      showJSON(CHROME_DEVICE_COUNTS_MODE_CSV_TITLE[mode], counts)
+    else:
+      printLine(json.dumps(cleanJSON(counts), ensure_ascii=False, sort_keys=True))
+  else:
+    row = flattenJSON(counts)
+    if not FJQC.formatJSON:
+      csvPF.WriteRowTitles(row)
+    elif csvPF.CheckRowTitles(row):
+      csvPF.WriteRowNoFilter({'JSON': json.dumps(cleanJSON(counts), ensure_ascii=False, sort_keys=True)})
+    csvPF.writeCSVfile(CHROME_DEVICE_COUNTS_MODE_CSV_TITLE[mode])
 
 CHROME_VERSIONS_TITLES = ['channel', 'system', 'deviceOsVersion']
 
@@ -78683,6 +78742,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMEAPP:	doPrintShowChromeApps,
       Cmd.ARG_CHROMEAPPDEVICES:	doPrintShowChromeAppDevices,
       Cmd.ARG_CHROMEAUES:	doPrintShowChromeAues,
+      Cmd.ARG_CHROMEDEVICECOUNTS:	doPrintShowChromeDeviceCounts,
       Cmd.ARG_CHROMEHISTORY:	doPrintShowChromeHistory,
       Cmd.ARG_CHROMENEEDSATTN:	doPrintShowChromeNeedsAttn,
       Cmd.ARG_CHROMEPOLICY:	doPrintShowChromePolicies,
@@ -78820,6 +78880,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMEAPP:	doPrintShowChromeApps,
       Cmd.ARG_CHROMEAPPDEVICES:	doPrintShowChromeAppDevices,
       Cmd.ARG_CHROMEAUES:	doPrintShowChromeAues,
+      Cmd.ARG_CHROMEDEVICECOUNTS:	doPrintShowChromeDeviceCounts,
       Cmd.ARG_CHROMEHISTORY:	doPrintShowChromeHistory,
       Cmd.ARG_CHROMENEEDSATTN:	doPrintShowChromeNeedsAttn,
       Cmd.ARG_CHROMEPOLICY:	doPrintShowChromePolicies,

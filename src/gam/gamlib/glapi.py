@@ -397,8 +397,7 @@ _CLIENT_SCOPES = [
    'api': CLOUDIDENTITY_POLICY,
    'subscopes': READONLY,
    'roByDefault': True,
-   'scope': 'https://www.googleapis.com/auth/cloud-identity.policies'
-  },
+   'scope': 'https://www.googleapis.com/auth/cloud-identity.policies'},
   {'name': 'Cloud Identity API - User Invitations',
    'api': CLOUDIDENTITY_USERINVITATIONS,
    'subscopes': READONLY,
@@ -413,7 +412,7 @@ _CLIENT_SCOPES = [
    'subscopes': [],
    'offByDefault': True,
    'scope': STORAGE_READWRITE_SCOPE},
-  {'name': 'Contacts API - Domain Shared Contacts and GAL',
+  {'name': 'Contacts API - Domain Shared Contacts',
    'api': CONTACTS,
    'subscopes': [],
    'scope': 'https://www.google.com/m8/feeds'},
