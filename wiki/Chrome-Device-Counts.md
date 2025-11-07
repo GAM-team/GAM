@@ -22,6 +22,7 @@ gam oauth create
         <Year>-<Month>-<Day> |
         (+|-)<Number>(d|w|y) |
         today
+```
 
 ## Display Chrome device counts
 ```
