@@ -31,22 +31,22 @@ gam show chromedevicecounts
         [date <Date>]
         [formatjson]
 ```
-By default, `mode` is `active'.
+By default, `mode` is `active`.
 
-By default, `date` is `today`.
+By default, `date <Date>` is `date today`.
 
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 
 ```
-gam print chromedevicecouints [todrive <ToDriveAttribute>*]
+gam print chromedevicecounts [todrive <ToDriveAttribute>*]
         [mode active|perboottype|perreleasechannel]
         [date <Date>]
         [formatjson [quotechar <Character>]]
 ```
-By default, `mode` is `active'.
+By default, `mode` is `active`.
 
-By default, `date` is `today`.
+By default, `date <Date>` is `date today`.
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.
