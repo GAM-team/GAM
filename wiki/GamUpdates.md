@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.28.03
+
+Improved commands to display Chrome device counts.
+
+* See: https://github.com/GAM-team/GAM/wiki/Chrome-Device-Counts
+
 ### 7.28.02
 
 Added commands to display Chrome device counts.

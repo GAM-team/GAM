@@ -1,6 +1,8 @@
 # Chrome Device Counts
 - [API documentation](#api-documentation)
+- [Notes](#notes)
 - [Definitions](#definitions)
+- [Count titles](#count-titles)
 - [Display Chrome device counts](#display-chrome-device-counts)
 
 ## API documentation
@@ -24,29 +26,34 @@ gam oauth create
         today
 ```
 
+## Count titles
+`active` - `sevenDaysCount,thirtyDaysCount`
+`perboottype` - `devBootTypeCount,unreportedBootTypeCount,verifiedBootTypeCount`
+`perreleasechanneel` - `betaChannelCount,canaryChannelCount,devChannelCount,ltcChannelCount,ltsChannelCount,stableChannelCount,unreportedChannelCount,unsupportedChannelCount`
+
 ## Display Chrome device counts
 ```
 gam show chromedevicecounts
-        [mode active|perboottype|perreleasechannel]
+        (mode all|active|perboottype|perreleasechannel)*
         [date <Date>]
         [formatjson]
 ```
-By default, `mode` is `active`.
+By default, `mode all` is selected
 
-By default, `date <Date>` is `date today`.
+By default, `date today` is selected.
 
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 
 ```
 gam print chromedevicecounts [todrive <ToDriveAttribute>*]
-        [mode active|perboottype|perreleasechannel]
+        (mode all|active|perboottype|perreleasechannel)*
         [date <Date>]
         [formatjson [quotechar <Character>]]
 ```
-By default, `mode` is `active`.
+By default, `mode all` is selected
 
-By default, `date <Date>` is `date today`.
+By default, `date today` is selected.
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.
