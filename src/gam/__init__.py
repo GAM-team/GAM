@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.28.02'
+__version__ = '7.28.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -31810,10 +31810,12 @@ def doPrintShowChromeAues():
         j = 0
         for aue in sorted(aues, key=lambda k: k.get('model', UNKNOWN)):
           j += 1
+          aue['count'] = int(aue['count'])
           _showAue(aue, j, jcount)
         Ind.Decrement()
       else:
         for aue in sorted(aues, key=lambda k: k.get('model', UNKNOWN)):
+          aue['count'] = int(aue['count'])
           _printAue(aue)
   if csvPF:
     csvPF.writeCSVfile('Chrome AUEs')
@@ -31907,6 +31909,8 @@ def doPrintShowChromeNeedsAttn():
                           throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
                           retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                           customer=customerId, orgUnitId=orgUnitId, readMask=','.join(CHROME_NEEDSATTN_TITLES))
+        for k, v in result.items():
+          result[k] = int(v)
         for field in CHROME_NEEDSATTN_TITLES:
           result.setdefault(field, 0)
       except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
@@ -31919,23 +31923,25 @@ def doPrintShowChromeNeedsAttn():
   if csvPF:
     csvPF.writeCSVfile('Chrome Devices Needing Attention')
 
-CHROME_DEVICE_COUNTS_MODE_CHOICES = ['active', 'perboottype', 'perreleasechannel']
+CHROME_DEVICE_COUNTS_MODE_CHOICES = ['all', 'active', 'perboottype', 'perreleasechannel']
 CHROME_DEVICE_COUNTS_MODE_FUNCTIONS = {
-  'active': 'countActiveDevices',
-  'perboottype': 'countDevicesPerBootType',
-  'perreleasechannel': 'countDevicesPerReleaseChannel'
+  'all': ['countActiveDevices', 'countDevicesPerBootType', 'countDevicesPerReleaseChannel'],
+  'active': ['countActiveDevices'],
+  'perboottype': ['countDevicesPerBootType'],
+  'perreleasechannel': ['countDevicesPerReleaseChannel']
   }
 CHROME_DEVICE_COUNTS_MODE_CSV_TITLE = {
+  'all': 'Chrome Device Counts',
   'active': 'Chrome Active Devices',
   'perboottype': 'Chrome Devices per Boot Type',
   'perreleasechannel': 'Chrome Devices per Release Channel'
   }
 
 # gam print chromedevicecounts [todrive <ToDriveAttribute>*]
-#	[mode active|perboottype|perreleasechannel] [date <Date>]
+#	(mode all|active|perboottype|perreleasechannel)* [date <Date>]
 #	[formatjson [quotechar <Character>]]
 # gam show chromedevicecounts
-#	[mode active|perboottype|perreleasechannel] [date <Date>]
+#	(mode all|active|perboottype|perreleasechannel)* [date <Date>]
 #	[formatjson]
 def doPrintShowChromeDeviceCounts():
   cm = buildGAPIObject(API.CHROMEMANAGEMENT)
@@ -31943,23 +31949,34 @@ def doPrintShowChromeDeviceCounts():
   csvPF = CSVPrintFile() if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   pdate = todaysDate()
-  mode = 'active'
+  functionList = []
+  titleMode = 'all'
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'mode':
       mode = getChoice(CHROME_DEVICE_COUNTS_MODE_CHOICES)
+      titleMode = mode if not functionList else 'all'
+      functionList.extend(CHROME_DEVICE_COUNTS_MODE_FUNCTIONS[mode])
     elif myarg == 'date':
       pdate = getYYYYMMDD(returnDateTime=True)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
+  if not functionList:
+    mode = titleMode = 'all'
+    functionList = CHROME_DEVICE_COUNTS_MODE_FUNCTIONS[mode]
   kwargs = {'date_day': pdate.day, 'date_month': pdate.month, 'date_year': pdate.year}
+  counts = {}
+  titles = []
   try:
-    counts = callGAPI(cm.customers().reports(), CHROME_DEVICE_COUNTS_MODE_FUNCTIONS[mode],
-                      throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
-                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                      customer=customerId, **kwargs)
+    for function in functionList:
+      result = callGAPI(cm.customers().reports(), function,
+                        throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
+                        retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                        customer=customerId, **kwargs)
+      counts.update(result)
+      titles.extend(result.keys())
   except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
     entityActionFailedWarning([Ent.CHROME_DEVICE_COUNT, None], str(e))
     return
@@ -31967,16 +31984,17 @@ def doPrintShowChromeDeviceCounts():
     counts[k] = int(v)
   if not csvPF:
     if not FJQC.formatJSON:
-      showJSON(CHROME_DEVICE_COUNTS_MODE_CSV_TITLE[mode], counts)
+      showJSON(CHROME_DEVICE_COUNTS_MODE_CSV_TITLE[titleMode], counts, sortDictKeys=False)
     else:
-      printLine(json.dumps(cleanJSON(counts), ensure_ascii=False, sort_keys=True))
+      printLine(json.dumps(counts, ensure_ascii=False, sort_keys=False))
   else:
+    csvPF.SetTitles(titles)
     row = flattenJSON(counts)
     if not FJQC.formatJSON:
-      csvPF.WriteRowTitles(row)
+      csvPF.WriteRow(row)
     elif csvPF.CheckRowTitles(row):
-      csvPF.WriteRowNoFilter({'JSON': json.dumps(cleanJSON(counts), ensure_ascii=False, sort_keys=True)})
-    csvPF.writeCSVfile(CHROME_DEVICE_COUNTS_MODE_CSV_TITLE[mode])
+      csvPF.WriteRowNoFilter({'JSON': json.dumps(counts, ensure_ascii=False, sort_keys=False)})
+    csvPF.writeCSVfile(CHROME_DEVICE_COUNTS_MODE_CSV_TITLE[titleMode])
 
 CHROME_VERSIONS_TITLES = ['channel', 'system', 'deviceOsVersion']
 
@@ -32104,10 +32122,12 @@ def doPrintShowChromeVersions():
         j = 0
         for version in sorted(versions, key=_getVersionKey, reverse=reverse):
           j += 1
+          version['count'] = int(version['count'])
           _showVersion(version, j, jcount)
         Ind.Decrement()
       else:
         for version in sorted(versions, key=_getVersionKey, reverse=reverse):
+          version['count'] = int(version['count'])
           _printVersion(version)
   if csvPF:
     csvPF.writeCSVfile('Chrome Versions')

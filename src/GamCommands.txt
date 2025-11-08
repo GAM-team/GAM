@@ -2232,36 +2232,6 @@ gam print browsertokens [todrive <ToDriveAttribute>*]
         [sortheaders]
         [formatjson [quotechar <Character>]]
 
-# Chrome Installed Apps Counts
-
-gam show chromeapps
-        [(ou <OrgUnitItem>)|(ou_and_children <OrgUnitItem>)|
-         (ous <OrgUnitList>)|(ous_and_children <OrgUnitList>)]
-        [filter <String>]
-        [orderby appname|apptype|installtype|numberofpermissions|totalinstallcount]
-        [formatjson]
-gam print chromeapps [todrive <ToDriveAttribute>*]
-        [(ou <OrgUnitItem>)|(ou_and_children <OrgUnitItem>)|
-         (ous <OrgUnitList>)|(ous_and_children <OrgUnitList>)]
-        [filter <String>]
-        [orderby appname|apptype|installtype|numberofpermissions|totalinstallcount]
-        [formatjson [quotechar <Character>]] [delimiter <Character>]
-
-gam show chromeappdevices
-        appid <AppID> apptype extension|app|theme|hostedapp|androidapp
-        [(ou <OrgUnitItem>)|(ou_and_children <OrgUnitItem>)|
-         (ous <OrgUnitList>)|(ous_and_children <OrgUnitList>)]
-        [start <Date>] [end <Date>]
-        [orderby deviceid|machine]
-        [formatjson]
-gam print chromeappdevices [todrive <ToDriveAttribute>*]
-        appid <AppID> apptype extension|app|theme|hostedapp|androidapp
-        [(ou <OrgUnitItem>)|(ou_and_children <OrgUnitItem>)|
-         (ous <OrgUnitList>)|(ous_and_children <OrgUnitList>)]
-        [start <Date>] [end <Date>]
-        [orderby deviceid|machine]
-        [formatjson [quotechar <Character>]]
-
 # Chrome Auto Update Expiration Counts
 
 gam print chromeaues [todrive <ToDriveAttribute>*]
@@ -2374,10 +2344,10 @@ gam print chromeprofilecommands <ChromeProfileNameEntity> [todrive <ToDriveAttri
 # Chrome Device Counts
 
 gam show chromedevicecounts
-        [mode active|perboottype|perreleasechannel] [date <Date>]
+        (mode all|active|perboottype|perreleasechannel)* [date <Date>]
         [formatjson]
 gam print chromedevicecounts [todrive <ToDriveAttribute>*]
-        [mode active|perboottype|perreleasechannel] [date <Date>]
+        (mode all|active|perboottype|perreleasechannel) [date <Date>]
         [formatjson [quotechar <Character>]]
 
 # Chrome Versions Counts
