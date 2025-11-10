@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.28.03'
+__version__ = '7.28.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -31946,7 +31946,7 @@ CHROME_DEVICE_COUNTS_MODE_CSV_TITLE = {
 def doPrintShowChromeDeviceCounts():
   cm = buildGAPIObject(API.CHROMEMANAGEMENT)
   customerId = _getCustomersCustomerIdWithC()
-  csvPF = CSVPrintFile() if Act.csvFormat() else None
+  csvPF = CSVPrintFile(['date']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   pdate = todaysDate()
   functionList = []
@@ -31966,9 +31966,10 @@ def doPrintShowChromeDeviceCounts():
   if not functionList:
     mode = titleMode = 'all'
     functionList = CHROME_DEVICE_COUNTS_MODE_FUNCTIONS[mode]
+  pfdate = pdate.strftime(YYYYMMDD_FORMAT)
   kwargs = {'date_day': pdate.day, 'date_month': pdate.month, 'date_year': pdate.year}
   counts = {}
-  titles = []
+  titles = ['date']
   try:
     for function in functionList:
       result = callGAPI(cm.customers().reports(), function,
@@ -31984,16 +31985,17 @@ def doPrintShowChromeDeviceCounts():
     counts[k] = int(v)
   if not csvPF:
     if not FJQC.formatJSON:
-      showJSON(CHROME_DEVICE_COUNTS_MODE_CSV_TITLE[titleMode], counts, sortDictKeys=False)
+      showJSON(f'{CHROME_DEVICE_COUNTS_MODE_CSV_TITLE[titleMode]} - {pfdate}', counts, sortDictKeys=False)
     else:
       printLine(json.dumps(counts, ensure_ascii=False, sort_keys=False))
   else:
     csvPF.SetTitles(titles)
-    row = flattenJSON(counts)
+    row = {'date': pfdate}
+    flattenJSON(counts, flattened=row)
     if not FJQC.formatJSON:
       csvPF.WriteRow(row)
     elif csvPF.CheckRowTitles(row):
-      csvPF.WriteRowNoFilter({'JSON': json.dumps(counts, ensure_ascii=False, sort_keys=False)})
+      csvPF.WriteRowNoFilter({'date': pfdate, 'JSON': json.dumps(counts, ensure_ascii=False, sort_keys=False)})
     csvPF.writeCSVfile(CHROME_DEVICE_COUNTS_MODE_CSV_TITLE[titleMode])
 
 CHROME_VERSIONS_TITLES = ['channel', 'system', 'deviceOsVersion']
