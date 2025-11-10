@@ -228,6 +228,17 @@ Restrict students from accessing Blocked URLs.
 ```
 gam update chromepolicy chrome.users.UrlBlocking urlBlocklist "https://socialmedia.com,https://videowebsite.com" orgunit "/Students"
 ```
+The Policy API and GAM have no ability to edit lists, you have to supply the complete list.
+```
+# Get the current policy
+gam redirect stdout ./urlBlockList.json show chromepolicies filter chrome.users.UrlBlocking orgunit "/Students" formatjson
+
+# Edit urlBlockList.json to add the new URL(s)
+{"additionalTargetKeys": [], "direct": true, "fields": [{"name": "urlBlocklist", "value": "https://socialmedia.com,https://videowebsite.com,https://nogo.com"}, {"name": "chromeInternalUrlsBlocked", "value": false}], "name": "chrome.users.UrlBlocking", "orgUnitPath": "/Students", "parentOrgUnitPath": "/"}
+
+# Update the policy
+gam update chromepolicies chrome.users.UrlBlocking json file urlBlockList.json orgunit "/Students"
+```
 For managed browsers, specify that users can only sign into managed accounts belonging to company/school domains.
 ```
 gam update chromepolicy chrome.users.SecondaryGoogleAccountSignin allowedDomainsForApps company.com,company.net orgunit "/Managed Browsers"
@@ -243,7 +254,6 @@ Allowlist the Google Translate extension for the Students OrgUnit
 ```
 gam update chromepolicy chrome.users.apps.InstallType appInstallType ALLOWED app_id chrome:aapbdbdomjkkjkaonfhkkikfgjllcleb ou "/Students"
 ```
-
 ## Delete Chrome policy
 You can delete a policy for all devices/users within an OU, users with a group or for a specific printer or application within an OU.
 
