@@ -52747,7 +52747,7 @@ def _showCalendar(calendar, j, jcount, FJQC, acls=None):
   if 'primary' in calendar:
     printKeyValueList(['Primary', calendar['primary']])
   if 'dataOwner' in calendar:
-    printKeyValueList(['Data Owner', calendar['dataOwner']])
+    printKeyValueList(['Owner', calendar['dataOwner']])
   if 'accessRole' in calendar:
     printKeyValueList(['Access Level', calendar['accessRole']])
   if 'deleted' in calendar:
