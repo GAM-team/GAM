@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.28.04'
+__version__ = '7.28.05'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -41223,6 +41223,7 @@ def _showCalendarSettings(calendar, j, jcount):
 
 CALENDAR_SETTINGS_FIELDS_CHOICE_MAP = {
   'conferenceproperties': 'conferenceProperties',
+  'dataowner': 'dataOwner',
   'description': 'description',
   'id': 'id',
   'location': 'location',
@@ -52918,25 +52919,26 @@ def _getCalendarPermissions(cal, calendar):
   return []
 
 CALENDAR_LIST_FIELDS_CHOICE_MAP = {
-  "accessrole": 'accessRole',
-  "backgroundcolor": 'backgroundColor',
-  "backgroundcolour": 'backgroundColor',
-  "colorid": 'colorId',
-  "conferenceproperties": 'conferenceProperties',
-  "defaultreminders": 'defaultReminders',
-  "deleted": 'deleted',
-  "description": 'description',
-  "foregroundcolor": 'foregroundColor',
-  "foregroundcolour": 'foregroundColor',
-  "hidden": 'hidden',
-  "id": 'id',
-  "location": 'location',
-  "notificationsettings": 'notificationSettings',
-  "primary": 'primary',
-  "selected": 'selected',
-  "summary": ['summary', 'summaryOverride'],
-  "summaryoverride": ['summary', 'summaryOverride'],
-  "timezone": 'timeZone',
+  'accessrole': 'accessRole',
+  'backgroundcolor': 'backgroundColor',
+  'backgroundcolour': 'backgroundColor',
+  'colorid': 'colorId',
+  'conferenceproperties': 'conferenceProperties',
+  'dataowner': 'dataOwner',
+  'defaultreminders': 'defaultReminders',
+  'deleted': 'deleted',
+  'description': 'description',
+  'foregroundcolor': 'foregroundColor',
+  'foregroundcolour': 'foregroundColor',
+  'hidden': 'hidden',
+  'id': 'id',
+  'location': 'location',
+  'notificationsettings': 'notificationSettings',
+  'primary': 'primary',
+  'selected': 'selected',
+  'summary': ['summary', 'summaryOverride'],
+  'summaryoverride': ['summary', 'summaryOverride'],
+  'timezone': 'timeZone',
    }
 
 # gam <UserTypeEntity> info calendars <UserCalendarEntity>
