@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.28.05'
+__version__ = '7.28.06'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -52746,6 +52746,8 @@ def _showCalendar(calendar, j, jcount, FJQC, acls=None):
   Ind.Increment()
   if 'primary' in calendar:
     printKeyValueList(['Primary', calendar['primary']])
+  if 'dataOwner' in calendar:
+    printKeyValueList(['Data Owner', calendar['dataOwner']])
   if 'accessRole' in calendar:
     printKeyValueList(['Access Level', calendar['accessRole']])
   if 'deleted' in calendar:

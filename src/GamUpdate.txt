@@ -1,4 +1,4 @@
-7.28.05
+7.28.06
 
 Updated `gam <UserTypeEntity> info|print|show calendars` and
 `gam calendars <CalendarEntity> print|show settings` to display the
