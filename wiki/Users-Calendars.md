@@ -49,6 +49,7 @@
 
 <CalendarSettingsField> ::=
         conferenceproperties|
+        dataowner|
         description|
         id|
         location|
@@ -134,6 +135,7 @@
         backgroundcolor|
         colorid|
         conferenceproperties|
+        dataowner|
         defaultreminders|
         deleted|
         description|

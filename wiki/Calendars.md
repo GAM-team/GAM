@@ -34,6 +34,7 @@ Client access works when accessing Resource calendars.
 
 <CalendarSettingsField> ::=
         conferenceproperties|
+        dataowner|
         description|
         id|
         location|

@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.28.05
+
+Updated	`gam <UserTypeEntity> info|print|show calendars` and
+`gam calendars <CalendarEntity> print|show settings` to display the
+new `dataOwner` field as described under `Additional details` below.
+
+* See: https://workspaceupdates.googleblog.com/2025/11/secondary-calendar-management-with-dedicated-owners.html
+
 ### 7.28.04
 
 Updated commands that display Chrome device counts to display the date in the output.
