@@ -14000,7 +14000,7 @@ def doReport():
     return (True, lastDate)
 
   def _computeUsedQuotaInPercentage(events):
-    if ('accounts:total_quota_in_mb' in events) and ('accounts:used_quota_in_mb' in events):
+    if ('accounts:total_quota_in_mb' in events) and (events['accounts:total_quota_in_mb'] > 0) and ('accounts:used_quota_in_mb' in events):
       events['accounts:used_quota_in_percentage'] = int(events['accounts:used_quota_in_mb']/events['accounts:total_quota_in_mb']*100)
     else:
       events['accounts:used_quota_in_percentage'] = 0
