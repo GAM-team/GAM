@@ -12,7 +12,7 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 
 ### 7.28.07
 
-Fixed bug in 'gam report users ... aggregatebydate|aggregatebyuser` where `accounts:used_quota_in_percentage` was incorrectly displayed.
+Fixed bug in `gam report users ... aggregatebydate|aggregatebyuser` where `accounts:used_quota_in_percentage` was incorrectly displayed.
 
 ### 7.28.06
 
