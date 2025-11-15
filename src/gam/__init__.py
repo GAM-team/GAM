@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.28.06'
+__version__ = '7.28.07'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -13999,6 +13999,12 @@ def doReport():
         csvPF.WriteRow(row)
     return (True, lastDate)
 
+  def _computeUsedQuotaInPercentage(events):
+    if ('accounts:total_quota_in_mb' in events) and ('accounts:used_quota_in_mb' in events):
+      events['accounts:used_quota_in_percentage'] = int(events['accounts:used_quota_in_mb']/events['accounts:total_quota_in_mb']*100)
+    else:
+      events['accounts:used_quota_in_percentage'] = 0
+
   # dynamically extend our choices with other reports Google dynamically adds
   rep = buildGAPIObject(API.REPORTS)
   dyn_choices = rep._rootDesc \
@@ -14296,6 +14302,8 @@ def doReport():
         row = {'date': usageDate}
         if addCSVData:
           row.update(addCSVData)
+        if 'accounts:used_quota_in_percentage' in events:
+          _computeUsedQuotaInPercentage(events)
         for event, count in events.items():
           if convertMbToGb and event.endswith('_in_gb'):
             count = f'{count/1024:.2f}'
@@ -14310,6 +14318,8 @@ def doReport():
           row['orgUnitPath'] = userOrgUnits.get(email, UNKNOWN)
         if addCSVData:
           row.update(addCSVData)
+        if 'accounts:used_quota_in_percentage' in events:
+          _computeUsedQuotaInPercentage(events)
         for event, count in events.items():
           if convertMbToGb and event.endswith('_in_gb'):
             count = f'{count/1024:.2f}'
@@ -17164,9 +17174,9 @@ def doPrintShowAdmins():
         admin['condition'] = 'securitygroup'
       elif admin['condition'] == NONSECURITY_GROUP_CONDITION:
         admin['condition'] = 'nonsecuritygroup'
-    if debug:
-      print('******', admin['assignedTo'], admin.get('assigneeType', 'no type'),
-            admin['assignedToField'], not typesSet or admin['assignedToField'] in typesSet)
+#    if debug:
+#      print('******', admin['assignedTo'], admin.get('assigneeType', 'no type'),
+#            admin['assignedToField'], not typesSet or admin['assignedToField'] in typesSet)
     return not typesSet or admin['assignedToField'] in typesSet
 
   cd = buildGAPIObject(API.DIRECTORY)
@@ -17174,7 +17184,8 @@ def doPrintShowAdmins():
   csvPF = CSVPrintFile(PRINT_ADMIN_TITLES) if Act.csvFormat() else None
   roleId = None
   userKey = None
-  debug = oneItemPerRow = recursive = showPrivileges = False
+#  debug = False
+  oneItemPerRow = recursive = showPrivileges = False
   typesSet = set()
   kwargs = {}
   rolePrivileges = {}
@@ -17207,8 +17218,8 @@ def doPrintShowAdmins():
       showPrivileges = True
     elif myarg == 'oneitemperrow':
       oneItemPerRow = True
-    elif myarg == 'debug':
-      debug = True
+#    elif myarg == 'debug':
+#      debug = True
     else:
       unknownArgumentExit()
   if roleId and not kwargs:

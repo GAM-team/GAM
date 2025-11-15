@@ -1,3 +1,7 @@
+7.28.07
+
+Fixed bug in 'gam report users ... aggregatebydate|aggregatebyuser` where `accounts:used_quota_in_percentage` was incorrectly displayed.
+
 7.28.06
 
 Updated `gam <UserTypeEntity> info|print|show calendars` and
