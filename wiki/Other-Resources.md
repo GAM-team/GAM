@@ -14,5 +14,10 @@ Thank you.
 * Korey Rideout - https://chatgpt.com/g/g-PTxxnVPMG-gam-assist-now-turbocharged-with-gam7
 * Paul Ogier (Taming.Tech) - GAM7 Course on Udemy https://taming.tech/GAMCourse
 * Paul Ogier (Taming.Tech) - GAM7 Tutorials https://www.youtube.com/watch?v=g9LDeyXQNLI&list=PL_dLiK09pJVhKJxZHNk9CHK0q5hkZ856w
+* Paul Ogier (Taming.Tech) - Installation videos
+  * GAM7 Windows Install - https://www.youtube.com/watch?v=l8pTF5UWz7o&list=PL_dLiK09pJVhKJxZHNk9CHK0q5hkZ856w&index=4
+  * GAM7 macOS Install - https://www.youtube.com/watch?v=eaLWpxhC91w&list=PL_dLiK09pJVhKJxZHNk9CHK0q5hkZ856w&index=5
+  * GAM7 Ubuntu Linux Install - https://www.youtube.com/watch?v=zBwhNTxGlcM&list=PL_dLiK09pJVhKJxZHNk9CHK0q5hkZ856w&index=7
+  * GAM7 ChromeOS Install - https://www.youtube.com/watch?v=BNWQh8GqvgY&list=PL_dLiK09pJVhKJxZHNk9CHK0q5hkZ856w&index=6
 * Paul Ogier (Taming.Tech) - https://taming.tech/taming-gam-a-practical-guide-to-gam-and-gamadv-xtd3/
 * Steve Larsen - https://docs.google.com/spreadsheets/d/1MzzA-u-cmoQcJnQOovCnZcEKMjvOyFhfkdFdf10X_GI/edit
