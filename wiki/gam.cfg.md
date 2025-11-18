@@ -2,6 +2,7 @@
 - [Introduction](#introduction)
 - [Variables](#variables)
 - [Multiple Computers](#multiple-computers)
+- [Separate Staff-Student Domains](#separate-staff-student-domains)
 - [Multiple Customers and Domains](#multiple-customers-and-domains)
 - [Multiple Users-Projects on One Computer](#multiple-users-projects-on-one-computer)
 
@@ -815,6 +816,26 @@ Edit `gam.cfg` on the other computer
     * cache_dir
     * config_dir
     * drive_dir
+
+## Separate Staff-Student Domains
+Suppose you have a single workspace with separate staff and student domains; e.g., school.org and students.school.org.
+You can simplifiy typing email addresses by making two sections.
+
+```
+[DEFAULT]
+customer_id = C1234567
+[staff]
+domain = school.org
+[students]
+domain = students.school.org
+```
+To issue commands about staff users, do: `gam config staff save`
+Subsequent commands can omit `@school.org` from email addresses, GAM will supply `@school.org`.
+
+To issue commands about student users, do: `gam config students save`
+Subsequent commands can omit `@students.school.org` from email addresses, GAM will supply `@students.school.org`.
+
+You can always type a complete email address if desired.
 
 ## Multiple Customers and Domains
 There are four arguments to GAM that should simplify how you use GAM with multiple clients/domains.
