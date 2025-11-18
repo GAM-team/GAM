@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.28.08
+
+Updated `gam <UserTypeEntity> print|show chatmessages` to cache the sender UID to email address
+map so that each sender UID only has to be looked up once; this improves performance.
+
 ### 7.28.07
 
 Fixed bug in `gam report users ... aggregatebydate|aggregatebyuser` where `accounts:used_quota_in_percentage` was incorrectly displayed.
