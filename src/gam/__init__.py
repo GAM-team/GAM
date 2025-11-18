@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.28.07'
+__version__ = '7.28.08'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -28051,10 +28051,14 @@ def printShowChatMembers(users):
 def doPrintShowChatMembers():
   printShowChatMembers([None])
 
-def _getChatSenderEmail(cd, sender):
+def _getChatSenderEmail(cd, sender, chatSenders):
   if sender['type'] == 'HUMAN':
     _, senderUid = sender['name'].split('/')
-    sender['email'], _ = convertUIDtoEmailAddressWithType(f'uid:{senderUid}', cd, None, emailTypes=['user'])
+    if senderUid in chatSenders:
+      sender['email'] = chatSenders[senderUid]
+    else:
+      sender['email'], _ = convertUIDtoEmailAddressWithType(f'uid:{senderUid}', cd, None, emailTypes=['user'])
+      chatSenders[senderUid] = sender['email']
 
 def trimChatMessageIfRequired(body):
   if 'text' in body:
@@ -28269,6 +28273,7 @@ def infoChatMessage(users):
       FJQC.GetFormatJSON(myarg)
   if not name:
     missingArgumentExit('name')
+  chatSenders = {}
   fields = getFieldsFromFieldsList(fieldsList)
   i, count, users = getEntityArgument(users)
   for user in users:
@@ -28280,7 +28285,7 @@ def infoChatMessage(users):
       message = callGAPI(chat.spaces().messages(), 'get',
                          throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                          name=name, fields=fields)
-      _getChatSenderEmail(cd, message['sender'])
+      _getChatSenderEmail(cd, message['sender'], chatSenders)
       if not FJQC.formatJSON:
         entityPerformAction(kvList, i, count)
       Ind.Increment()
@@ -28328,6 +28333,7 @@ def printShowChatMessages(users):
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if not parentList:
     missingArgumentExit('space')
+  chatSenders = {}
   fields = getItemFieldsFromFieldsList('messages', fieldsList)
   i, count, users = getEntityArgument(users)
   for user in users:
@@ -28361,7 +28367,7 @@ def printShowChatMessages(users):
                                  fields=fields)
         for message in messages:
           if 'sender' in message:
-            _getChatSenderEmail(cd, message['sender'])
+            _getChatSenderEmail(cd, message['sender'], chatSenders)
       except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
         exitIfChatNotConfigured(chat, kvList, str(e), i, count)
         continue
