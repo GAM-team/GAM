@@ -7,6 +7,7 @@
 - [Bulk membership changes](#bulk-membership-changes)
 - [Display course membership](#display-course-membership)
 - [Display course membership counts](#display-course-membership-counts)
+- [Display course counts for teachers-students](#display-course-counts-for-teachers-students)
 
 ## API documentation
 * [Google Classroom API](https://developers.google.com/classroom/reference/rest)
@@ -166,4 +167,25 @@ Windows PowerShell
 $count = & gam print course-participants teacher asmith states active show students showitemcountonly
 Windows Command Prompt
 for /f "delims=" %a in ('gam print course-participants teacher asmith states active show students showitemcountonly') do set count=%a
+```
+
+## Display course counts for teachers-students
+You can get a count of the number of courses a teacher or student is a participant.
+```
+gam config csv_output_header_filter profile.emailAddress redirect csv ./Teachers.csv print course-participants states active show teachers
+gam config csv_output_header_filter profile.emailAddress redirect csv ./Students.csv print course-participants states active show students
+```
+
+Download the following script: https://github.com/taers232c/GAM-Scripts3/blob/master/CountKeyValues.py
+
+Edit the script.
+```
+KEY_FIELD = 'profile.emailAddress' # Set to a column header in KeyValues.csv                                                                                          
+MIN_KEY_COUNT = 0 # 0 - Show all counts; N - Show counts >= N
+```
+
+Run the script.
+```
+python ./CountKeyValues.py Teachers.csv TeacherCounts.csv
+python ./CountKeyValues.py Students.csv StudentCounts.csv
 ```
