@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.28.10
+
+Added a command `gam print course-counts` that dsplays the count of the number of courses in which a teacher or student is a participant.
+
+* See: https://github.com/GAM-team/GAM/wiki/Classroom-Membership#display-course-counts-for-teachers-students
+
 ### 7.28.09
 
 Fixed bug in `gam print cigroups ... descriptionmatchpattern [not] <REMatchPattern>` that caused a trap.

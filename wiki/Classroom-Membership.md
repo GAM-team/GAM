@@ -172,20 +172,42 @@ for /f "delims=" %a in ('gam print course-participants teacher asmith states act
 ## Display course counts for teachers-students
 You can get a count of the number of courses in which a teacher or student is a participant.
 ```
-gam config csv_output_header_filter profile.emailAddress redirect csv ./Teachers.csv print course-participants states active show teachers
-gam config csv_output_header_filter profile.emailAddress redirect csv ./Students.csv print course-participants states active show students
+gam print course-counts students|teachers [todrive <ToDriveAttribute>*]
+        (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
+        [mincount <Integer>]
+        [formatjson [quotechar <Character>]]
 ```
+By default, the `print course-counts` command displays participant counts about all courses.
 
-Download the following script: https://github.com/taers232c/GAM-Scripts3/blob/master/CountKeyValues.py
+To get participant counts for a specific set of courses, use the following option; it can be repeated to select multiple courses.
+* `(course|class <CourseID>)*` - Display courses with the specified `<CourseID>`.
 
-Edit the script.
-```
-KEY_FIELD = 'profile.emailAddress' # Set to a column header in KeyValues.csv                                                                                          
-MIN_KEY_COUNT = 0 # 0 - Show all counts; N - Show counts >= N
-```
+To get participant counts for courses based on their having a particular participant, use the following options. Both options can be specified.
+* `teacher <UserItem>` - Display courses with the specified teacher.
+* `student <UserItem>` - Display courses with the specified student.
 
-Run the script.
+To get participant counts for courses based on their state, use the following option. This option can be combined with the `teacher` and `student` options.
+By default, all course states are selected.
+* `states <CourseStateList>` - Display courses with any of the specified states.
+
+By default, all count values are displayed, use `mincount <Integer>` to limit the display to those counts
+greater that or equal to the specified `<Integer>`.
+
+By default, Gam displays the counts as columns of fields; the following option causes the output to be in JSON format,
+* `formatjson` - Display the fields in JSON format.
+
+By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
+the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
+When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
+The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
+`quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
+
+### Example
+For teachers in all active courses, print the number of classes for which they are a participant.
 ```
-python ./CountKeyValues.py Teachers.csv TeacherCounts.csv
-python ./CountKeyValues.py Students.csv StudentCounts.csv
+gam print coursecounts teachers states active
+```
+For teachers in all active courses, print the number of classes (if it is >= 5) for which they are a participant.
+```
+gam print coursecounts teachers states active mincount 5
 ```
