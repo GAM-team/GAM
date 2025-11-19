@@ -52,11 +52,12 @@ config csv_output_row_filter "'\"accounts:used_quota_in_mb\":count>15000'"
         chrome|
         classroom|
         contextawareaccess|
-        gplus|currents|google+|
         datastudio|
         drive|doc|docs|
         gcp|cloud|
         geminiinworkspaceapps|gemini|geminiforworkspace|
+        gmail|
+        gplus|currents|google+|
         groups|group|
         groupsenterprise|enterprisegroups|
         jamboard|
