@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.28.08'
+__version__ = '7.28.09'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -34700,10 +34700,10 @@ def checkGroupMatchPatterns(groupEmail, group, matchPatterns):
         return False
     else: # field in {'name', 'displayName', 'description'}:
       if not matchp['not']:
-        if not matchp['pattern'].match(group[field]):
+        if not matchp['pattern'].match(group.get(field, '')):
           return False
       else:
-        if matchp['pattern'].match(group[field]):
+        if matchp['pattern'].match(group.get(field, '')):
           return False
   return True
 
