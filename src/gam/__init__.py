@@ -50290,6 +50290,64 @@ def doPrintCourseParticipants():
     csvPF.SetSortTitles(COURSE_PARTICIPANTS_SORT_TITLES)
   csvPF.writeCSVfile('Course Participants')
 
+COURSE_COUNTS_MEMBER_ARGUMENTS = ['students', 'teachers']
+COURSE_COUNTS_KEY_TITLE = {'students': 'Student', 'teachers': 'Teacher'}
+
+# gam print course-counts students|teachers [todrive <ToDriveAttribute>*]
+#	(course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
+#	[mincount <Integer>]
+#	[formatjson [quotechar <Character>]]
+def doPrintCourseCounts():
+  croom = buildGAPIObject(API.CLASSROOM)
+  courseSelectionParameters = _initCourseSelectionParameters()
+  courseShowProperties = _initCourseShowProperties()
+  courseShowProperties['members'] = getChoice(COURSE_COUNTS_MEMBER_ARGUMENTS)
+  keyTitle = COURSE_COUNTS_KEY_TITLE[courseShowProperties['members']]
+  csvPF = CSVPrintFile([keyTitle, 'CourseCount'])
+  FJQC = FormatJSONQuoteChar(csvPF)
+  minCount = 0
+  useOwnerAccess = GC.Values[GC.USE_COURSE_OWNER_ACCESS]
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif _getCourseSelectionParameters(myarg, courseSelectionParameters):
+      pass
+    elif myarg == 'mincount':
+      minCount = getInteger(minVal=0)
+    else:
+      FJQC.GetFormatJSONQuoteChar(myarg, False)
+  coursesInfo = _getCoursesInfo(croom, courseSelectionParameters, courseShowProperties, useOwnerAccess)
+  if not coursesInfo:
+    coursesInfo = []
+  teachersFields = 'nextPageToken,teachers(profile(emailAddress))'
+  studentsFields = 'nextPageToken,students(profile(emailAddress))'
+  courseCounts = {}
+  count = len(coursesInfo)
+  i = 0
+  for course in coursesInfo:
+    i += 1
+    courseId = course['id']
+    ocroom = _getCourseOwnerSA(croom, course, useOwnerAccess)
+    if not ocroom:
+      continue
+    _, teachers, students = _getCourseAliasesMembers(croom, ocroom, courseId, courseShowProperties, teachersFields, studentsFields, True, i, count)
+    members = teachers if courseShowProperties['members'] == 'teachers' else students
+    for member in members:
+      memberKey = member['profile'].get('emailAddress', '')
+      courseCounts.setdefault(memberKey, 0)
+      courseCounts[memberKey] += 1
+  if not FJQC.formatJSON:
+    for key, count in sorted(courseCounts.items()):
+      if count >= minCount:
+        csvPF.WriteRow({keyTitle: key, 'CourseCount': count})
+  else:
+    csvPF.SetJSONTitles(['JSON'])
+    for key, count in sorted(courseCounts.items()):
+      if count >= minCount:
+        csvPF.WriteRow({'JSON': {keyTitle: key, 'CourseCount': count}})
+  csvPF.writeCSVfile(f'{keyTitle} Course Counts')
+
 def _batchAddItemsToCourse(croom, courseId, i, count, addItems, addType):
   def _addIdToResponse(response, riItem):
     if addType == Ent.COURSE_ANNOUNCEMENT:
@@ -78802,6 +78860,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_COURSE:		doPrintCourses,
       Cmd.ARG_COURSES:		doPrintCourses,
       Cmd.ARG_COURSEANNOUNCEMENTS:	doPrintCourseAnnouncements,
+      Cmd.ARG_COURSECOUNTS:	doPrintCourseCounts,
       Cmd.ARG_COURSEMATERIALS:	doPrintCourseMaterials,
       Cmd.ARG_COURSEPARTICIPANTS:	doPrintCourseParticipants,
       Cmd.ARG_COURSESTUDENTGROUP:	doPrintCourseStudentGroups,
@@ -79128,6 +79187,7 @@ MAIN_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_CLASSIFICATIONLABELPERMISSIONS:	Cmd.ARG_DRIVELABELPERMISSION,
   Cmd.ARG_CLASS:		Cmd.ARG_COURSE,
   Cmd.ARG_CLASSES:		Cmd.ARG_COURSES,
+  Cmd.ARG_CLASSCOUNTS:		Cmd.ARG_COURSECOUNTS,
   Cmd.ARG_CLASSPARTICIPANTS:	Cmd.ARG_COURSEPARTICIPANTS,
   Cmd.ARG_CLASSROOMINVITATIONS:	Cmd.ARG_CLASSROOMINVITATION,
   Cmd.ARG_CONTACTS:		Cmd.ARG_CONTACT,

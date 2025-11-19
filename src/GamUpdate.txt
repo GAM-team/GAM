@@ -1,3 +1,9 @@
+7.28.10
+
+Added a command `gam print course-counts` that dsplays the count of the number of courses in which a teacher or student is a participant.
+
+* See: https://github.com/GAM-team/GAM/wiki/Classroom-Membership#display-course-counts-for-teachers-students
+
 7.28.09
 
 Fixed bug in `gam print cigroups ... descriptionmatchpattern [not] <REMatchPattern>` that caused a trap.

@@ -3268,6 +3268,11 @@ gam print course-participants [todrive <ToDriveAttribute>*]
         [formatjson [quotechar <Character>]]
         [showitemcountonly]
 
+gam print course-counts students|teachers [todrive <ToDriveAttribute>*]
+        (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
+        [mincount <Integer>]
+        [formatjson [quotechar <Character>]]
+
 <CourseAnnouncementFieldName> ::=
         alternatelink|
         assigneemode|
