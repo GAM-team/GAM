@@ -170,7 +170,7 @@ for /f "delims=" %a in ('gam print course-participants teacher asmith states act
 ```
 
 ## Display course counts for teachers-students
-You can get a count of the number of courses a teacher or student is a participant.
+You can get a count of the number of courses in which a teacher or student is a participant.
 ```
 gam config csv_output_header_filter profile.emailAddress redirect csv ./Teachers.csv print course-participants states active show teachers
 gam config csv_output_header_filter profile.emailAddress redirect csv ./Students.csv print course-participants states active show students
