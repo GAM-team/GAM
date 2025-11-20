@@ -565,10 +565,10 @@ timezone
         to your local timezone. If you are running GAM on a remote computer or on a
         cloud shell, "local" will mean the time at the remote/cloud shell computer,
         not your location, Use "+|-hh:mm" to specify the timezone at your location.
-	Starting with version 7.21.00 you can use a timezone name.
+	Starting with version 7.21.00 you can use a timezone name; the names are case sensitive.
         See: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
         Default: utc
-        Range: utc|z|local|(+|-hh:mm)I<ValidTimezoneName>
+        Range: utc|z|local|(+|-hh:mm)|<ValidTimezoneName>
 tls_max_version
         Allowed values: '', tlsv1_2, tlsv1.2, tlsv1_3, tlsv1.3
         The maximum TLS version to use in https connections
@@ -622,7 +622,7 @@ todrive_timeformat
         Default: '' which selects an ISO format timestamp
         Example: %Y-%m-%dT%H:%M:%S will display as 2020-07-06T17:48:54
 todrive_timezone
-        The Spreadsheet settings Timezone value.
+        The Spreadsheet settings Timezone value; the values are case sensitive.
         See: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
         Default: ''
 todrive_upload_nodata
