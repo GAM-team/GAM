@@ -260,7 +260,7 @@ The option `updatesheetprotectedranges` only applies to items in `<DriveFileEnti
     * ACLs with any role will be removed from existing protected ranges
 
 `enforceexpansiveaccess` defaults to the value of `gam.cfg/enforce_expansive_access` that controls
-the ability to delete delete inherited ACLs.
+the ability to delete inherited ACLs.
 * False - Inherited ACLs can be deleted
 * True = Inherited ACLs can not be deleted
 
@@ -307,7 +307,7 @@ gam <UserTypeEntity> delete permissions <DriveFileEntity> <DriveFilePermissionID
         [enforceexpansiveaccess [<Boolean>]]
 ```
 `enforceexpansiveaccess` defaults to the value of `gam.cfg/enforce_expansive_access` that controls
-the ability to delete delete inherited ACLs.
+the ability to delete inherited ACLs.
 * False - Inherited ACLs can be deleted
 * True = Inherited ACLs can not be deleted
 
