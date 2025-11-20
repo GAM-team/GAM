@@ -32,7 +32,6 @@
 <OrgUnitFieldName> ::=
         description|
         id|orgunitid|
-        inherit|blockinheritance|
         name|
         parentid|parentorgunitid|
         parent|parentorgunitpath|
@@ -73,18 +72,15 @@ For quoting rules, see: [List Quoting Rules](Command-Line-Parsing)
 Create, update and delete organization units.
 ```
 gam create org|ou <OrgUnitPath> [description <String>]
-        [parent <OrgUnitItem>] [inherit|(blockinheritance False)]
+        [parent <OrgUnitItem>]
         [buildpath]
 gam update org|ou <OrgUnitPath> [name <String>] [description <String>]
-        [parent <OrgUnitItem>] [inherit|(blockinheritance False)]
+        [parent <OrgUnitItem>]
 gam delete org|ou <OrgUnitPath>
 gam update orgs|ous <OrgUnitEntity> [name <String>] [description <String>]
-        [parent <OrgUnitItem>] [inherit|(blockinheritance False)]
+        [parent <OrgUnitItem>]
 gam delete orgs|ous <OrgUnitEntity>
 ```
-Inheritance specifies whether sub-OUs of the specified OU inherit its settings.
-* `inherit|blockinheritance false` - Sub-OUs inherit settings from the specified OU; this is the default
-
 ## Add users to an organizational unit
 When adding users to an OU, Gam uses a batch method to speed up processing. 
 
