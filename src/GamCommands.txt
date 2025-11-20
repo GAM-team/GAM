@@ -4451,22 +4451,21 @@ gam print mobile [todrive <ToDriveAttribute>*]
 <OrgUnitFieldName> ::=
         description|
         id|orgunitid|
-        inherit|blockinheritance|
         name|
         parentid|parentorgunitid|
         parent|parentorgunitpath|
         path|orgunitpath
 <OrgUnitFieldNameList> ::= "<OrgUnitFieldName>(,<OrgUnitFieldName>)*"
 
-gam create|add org|ou <OrgUnitPath> [description <String>] [parent <OrgUnitItem>] [inherit|(blockinheritance False)] [buildpath]
-gam update org|ou <OrgUnitItem> [name <String>] [description <String>] [parent <OrgUnitItem>] [inherit|(blockinheritance False)]
+gam create|add org|ou <OrgUnitPath> [description <String>] [parent <OrgUnitItem>] [buildpath]
+gam update org|ou <OrgUnitItem> [name <String>] [description <String>] [parent <OrgUnitItem>]
 gam update org|ou <OrgUnitItem> add|move <CrOSTypeEntity> [quickcrosmove [<Boolean>]]
 gam update org|ou <OrgUnitItem> add|move <UserTypeEntity>
 gam update org|ou <OrgUnitItem> sync <CrOSTypeEntity> [removetoou <OrgUnitItem>] [quickcrosmove [<Boolean>]]
 gam update org|ou <OrgUnitItem> sync <UserTypeEntity> [removetoou <OrgUnitItem>]
 gam delete org|ou <OrgUnitItem>
 
-gam update orgs|ous <OrgUnitEntity> [name <String>] [description <String>] [parent <OrgUnitItem>] [inherit|(blockinheritance False)]
+gam update orgs|ous <OrgUnitEntity> [name <String>] [description <String>] [parent <OrgUnitItem>]
 gam update orgs|ous <OrgUnitEntity> add|move <CrOSTypeEntity> [quickcrosmove [<Boolean>]]
 gam update orgs|ous <OrgUnitEntity> add|move <UserTypeEntity>
 gam update orgs|ous <OrgUnitEntity> sync <CrOSTypeEntity> [removetoou <OrgUnitItem>] [quickcrosmove [<Boolean>]]

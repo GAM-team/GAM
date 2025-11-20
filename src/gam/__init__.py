@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.28.10'
+__version__ = '7.28.11'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -17603,23 +17603,7 @@ def doShowTransferApps():
     Ind.Decrement()
   Ind.Decrement()
 
-def _getOrgInheritance(myarg, body):
-  if myarg == 'noinherit':
-    Cmd.Backup()
-    deprecatedArgumentExit(myarg)
-  elif myarg == 'inherit':
-    body['blockInheritance'] = False
-  elif myarg in {'blockinheritance', 'inheritanceblocked'}:
-    location = Cmd.Location()-1
-    if getBoolean():
-      Cmd.SetLocation(location)
-      deprecatedArgumentExit(myarg)
-    body['blockInheritance'] = False
-  else:
-    return False
-  return True
-
-# gam create org|ou <String> [description <String>] [parent <OrgUnitItem>] [inherit|(blockinheritance False)] [buildpath]
+# gam create org|ou <String> [description <String>] [parent <OrgUnitItem>] [buildpath]
 def doCreateOrg():
 
   def _createOrg(body, parentPath, fullPath):
@@ -17648,8 +17632,6 @@ def doCreateOrg():
       body['description'] = getStringWithCRsNLs()
     elif myarg == 'parent':
       parent = getOrgUnitItem()
-    elif _getOrgInheritance(myarg, body):
-      pass
     elif myarg == 'buildpath':
       buildPath = True
     else:
@@ -17933,8 +17915,6 @@ def _doUpdateOrgs(entityList):
           body['parentOrgUnitId'] = parent
         else:
           body['parentOrgUnitPath'] = parent
-      elif _getOrgInheritance(myarg, body):
-        pass
       else:
         unknownArgumentExit()
     i = 0
@@ -17956,7 +17936,7 @@ def _doUpdateOrgs(entityList):
       except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
         checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, orgUnitPath)
 
-# gam update orgs|ous <OrgUnitEntity> [name <String>] [description <String>] [parent <OrgUnitItem>] [inherit|(blockinheritance False)]
+# gam update orgs|ous <OrgUnitEntity> [name <String>] [description <String>] [parent <OrgUnitItem>]
 # gam update orgs|ous <OrgUnitEntity> add|move <CrosTypeEntity> [quickcrosmove [<Boolean>]]
 # gam update orgs|ous <OrgUnitEntity> add|move <UserTypeEntity>
 # gam update orgs|ous <OrgUnitEntity> sync <CrosTypeEntity> [removetoou <OrgUnitItem>] [quickcrosmove [<Boolean>]]
@@ -17964,7 +17944,7 @@ def _doUpdateOrgs(entityList):
 def doUpdateOrgs():
   _doUpdateOrgs(getEntityList(Cmd.OB_ORGUNIT_ENTITY, shlexSplit=True))
 
-# gam update org|ou <OrgUnitItem> [name <String>] [description <String>]  [parent <OrgUnitItem>] [inherit|(blockinheritance False)]
+# gam update org|ou <OrgUnitItem> [name <String>] [description <String>] [parent <OrgUnitItem>]
 # gam update org|ou <OrgUnitItem> add|move <CrosTypeEntity> [quickcrosmove [<Boolean>]]
 # gam update org|ou <OrgUnitItem> add|move <UserTypeEntity>
 # gam update org|ou <OrgUnitItem> sync <CrosTypeEntity> [removetoou <OrgUnitItem>] [quickcrosmove [<Boolean>]]
@@ -18096,9 +18076,6 @@ def doInfoOrgs():
   _doInfoOrgs(getEntityList(Cmd.OB_ORGUNIT_ENTITY, shlexSplit=True))
 
 ORG_ARGUMENT_TO_FIELD_MAP = {
-  'blockinheritance': 'blockInheritance',
-  'inheritanceblocked': 'blockInheritance',
-  'inherit': 'blockInheritance',
   'description': 'description',
   'id': 'orgUnitId',
   'name': 'name',

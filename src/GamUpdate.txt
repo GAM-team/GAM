@@ -1,3 +1,7 @@
+7.28.11
+
+Removed all options/fields referencing inheritance from `gam create|update|info|print org` as this option/field is deprecated.
+
 7.28.10
 
 Added a command `gam print course-counts` that dsplays the count of the number of courses in which a teacher or student is a participant.
