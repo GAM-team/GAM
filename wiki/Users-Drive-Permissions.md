@@ -234,7 +234,6 @@ The option `updatesheetprotectedranges` only applies to items in `<DriveFileEnti
     * ACLs with role reader or commenter will be removed from existing protected ranges
     * ACLs with role writer or higher will be added to existing protected ranges
 
-`
 `enforceexpansiveaccess` defaults to the value of `gam.cfg/enforce_expansive_access` that controls
 the ability to update inherited ACLs.
 * False - Inherited ACLs can be updated
