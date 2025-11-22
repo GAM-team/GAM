@@ -394,9 +394,9 @@ gam show projects [[admin] <EmailAddress>] [all|<ProjectIDEntity>]
 * `<EmailAddress>` - A Google Workspace admin/GCP project manager; if omitted, you will be prompted for the address
 
 Use these options to select projects.
-* `all` - All projects accessible by the administrator; this is the default
+* `all` - All projects accessible by the administrator
 * `current` - The project referenced in `client_secrets.json`
-* `gam` - Projects accessible by the administrator that were created by Gam, i.e, their project ID begins with `gam-project-`
+* `gam` - Projects accessible by the administrator that were created by Gam, i.e, their project ID begins with `gam-project-`; this is the default
 * `<ProjectID>` - A Google API project ID
 * `filter <String>` - A filter to select projects accessible by the administrator; see the API documentation
 * `states all|active|deleterequested` - Limit display to projects based on state; the default is `active`
@@ -412,9 +412,9 @@ gam print projects [[admin] <EmailAddress>] [all|<ProjectIDEntity>] [todrive <To
 * `<EmailAddress>` - A Google Workspace admin/GCP project manager; if omitted, you will be prompted for the address
 
 Use these options to select projects.
-* `all` - All projects accessible by the administrator; this is the default
+* `all` - All projects accessible by the administrator
 * `current` - The project referenced in `client_secrets.json`
-* `gam` - Projects accessible by the administrator that were created by Gam, i.e, their project ID begins with `gam-project-`
+* `gam` - Projects accessible by the administrator that were created by Gam, i.e, their project ID begins with `gam-project-`; this is the default
 * `<ProjectID>` - A Google API project ID
 * `filter <String>` - A filter to select projects accessible by the administrator; see the API documentation
 * `states all|active|deleterequested` - Limit display to projects based on state; the default is `active`
