@@ -1,3 +1,10 @@
+7.28.12
+
+Updated `gam delete project` to handle the following error:
+```
+ERROR: 400: failedPrecondition - Project not active
+```
+
 7.28.11
 
 Removed all options/fields referencing inheritance from `gam create|update|info|print org` as this option/field is deprecated.

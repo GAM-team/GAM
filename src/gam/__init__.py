@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.28.11'
+__version__ = '7.28.12'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -12068,10 +12068,10 @@ def doDeleteProject():
     projectId = project['projectId']
     try:
       callGAPI(crm.projects(), 'delete',
-               throwReasons=[GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
+               throwReasons=[GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                name=project['name'])
       entityActionPerformed([Ent.PROJECT, projectId])
-    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+    except (GAPI.forbidden, GAPI.permissionDenied, GAPI.failedPrecondition) as e:
       entityActionFailedWarning([Ent.PROJECT, projectId], str(e))
   Ind.Decrement()
 
