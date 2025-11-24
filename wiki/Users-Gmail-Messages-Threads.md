@@ -589,9 +589,9 @@ gam <UserTypeEntity> show messages|threads
          [labelids <LabelIDList>]
          [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <MessageIDEntity>)
         [labelmatchpattern <REMatchPattern>] [sendermatchpattern <REMatchPattern>]
-        [countsonly|positivecountsonly] [useronly]
+        [countsonly|positivecountsonly]
         [headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
-        [showlabels] [delimiter <Character>] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
+        [showlabels] [useronly] [delimiter <Character>] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
         [maxmessagesperthread <Number>]
         [showattachments [attachmentnamepattern <REMatchPattern>>] [noshowtextplain]]
         [saveattachments [attachmentnamepattern <REMatchPattern>>]]
@@ -601,12 +601,13 @@ gam <UserTypeEntity> print messages|threads [todrive <ToDriveAttribute>*]
          [labelids <LabelIDList>]
          [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <MessageIDEntity>)
         [labelmatchpattern <REMatchPattern>] [sendermatchpattern <REMatchPattern>]
-        [countsonly|positivecountsonly] [useronly]
+        [countsonly|positivecountsonly]
         [headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
-        [showlabels] [delimiter <Character>] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
+        [showlabels] [useronly] [delimiter <Character>] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
         [maxmessagesperthread <Number>]
         [showattachments [attachmentnamepattern <REMatchPattern>>]]
         [convertcrnl]
+        (addcsvdata <FieldName> <String>)*
 ```
 ## Display all messages
 By default, Gam displays all messages.
@@ -692,6 +693,7 @@ The `dateheaderconverttimezone [<Boolean>]>` option converts `<SMTPDateHeader>` 
 ## Print only options
 These options are valid with `print`.
 * `convertcrnl` - In the message body, convert carriage returns to `\r` and newlines to `\n`; the default value is `csv_output_convert_cr_nl` from `gam.cfg`.
+* `addcsvdata <FieldName> <String>` - Add additional columns of data from the command line to the output
 
 By default, message attachment information is not displayed.
 * `showattachments` - Display attachment filename, MIME type and size
