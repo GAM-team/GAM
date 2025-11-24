@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.28.12'
+__version__ = '7.28.13'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -73590,6 +73590,8 @@ def printShowMessagesThreads(users, entityType):
         row[f'Attachments{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{i}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}mimeType'] = attachment[1]
         row[f'Attachments{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{i}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}size'] = attachment[2]
         row[f'Attachments{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{i}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}charset'] = attachment[3]
+    if addCSVData:
+      row.update(addCSVData)
     csvPF.WriteRowTitles(row)
     if checkMax:
       parameters['messagesProcessed'] += 1
@@ -74078,7 +74080,7 @@ def printShowMessagesThreads(users, entityType):
 #	 [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <MessageIDEntity>)
 #	[labelmatchpattern <REMatchPattern>] [sendermatchpattern <REMatchPattern>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
-#	[showlabels] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
+#	[showlabels] [useronly] [delimiter <Character>] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
 #	[convertcrnl] [delimiter <Character>]
 #	[countsonly|positivecountsonly] [useronly]
 #	[[attachmentnamepattern <REMatchPattern>]
@@ -74090,8 +74092,8 @@ def printShowMessagesThreads(users, entityType):
 #	 [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <MessageIDEntity>)
 #	[labelmatchpattern <REMatchPattern>] [sendermatchpattern <REMatchPattern>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
-#	[showlabels] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
-#	[countsonly|positivecountsonly] [useronly]
+#	[showlabels] [useronly] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
+#	[countsonly|positivecountsonly]
 #	[[attachmentnamepattern <REMatchPattern>]
 #	    [showattachments [noshowtextplain]]
 #	    [saveattachments [targetfolder <FilePath>] [overwrite [<Boolean>]]]

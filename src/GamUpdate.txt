@@ -1,3 +1,8 @@
+7.28.13
+
+Added option `addcsvdata <FieldName> <String>` to `gam <UserTypeEntity> print messages`
+that adds additional columns of data to the CSV file output.
+
 7.28.12
 
 Updated `gam delete project` to handle the following error:
