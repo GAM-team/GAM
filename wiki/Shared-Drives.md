@@ -80,6 +80,15 @@
 <ColorValue> ::= <ColorName>|<ColorHex>
 ```
 ```
+<CSVFileInput> ::=
+        ((<FileName> [charset <Charset>] )|
+         (gsheet <UserGoogleSheet>)|
+         (gdoc <UserGoogleDoc>)|
+         (gcscsv <StorageBucketObjectName>)|
+         (gcsdoc <StorageBucketObjectName>))
+        [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
+        [endcsv|(fields <FieldNameList>)]
+
 <JSONData> ::= (json [charset <Charset>] <String>) | (json file <FileName> [charset <Charset>]) |
 
 <OrganizerType> ::= user|group
@@ -94,7 +103,8 @@
 <REMatchPattern> ::= <RegularExpression>
 <RESearchPattern> ::= <RegularExpression>
 <RESubstitution> ::= <String>>
-
+```
+```
 <DriveFileOrderByFieldName> ::=
         createddate|createdtime|
         folder|

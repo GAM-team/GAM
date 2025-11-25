@@ -26,6 +26,15 @@
 * [`<UserTypeEntity>`](Collections-of-Users)
 
 ```
+<CSVFileInput> ::=
+        ((<FileName> [charset <Charset>] )|
+         (gsheet <UserGoogleSheet>)|
+         (gdoc <UserGoogleDoc>)|
+         (gcscsv <StorageBucketObjectName>)|
+         (gcsdoc <StorageBucketObjectName>))
+        [warnifnodata] [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
+        [endcsv|(fields <FieldNameList>)]
+
 <RegularExpression> ::= <String>
         See: https://docs.python.org/3/library/re.html
 <REMatchPattern> ::= <RegularExpression>
@@ -38,7 +47,8 @@
 <EmailAddress> ::= <String>@<DomainName>
 <UniqueID> ::= id:<String>
 <UserItem> ::= <EmailAddress>|<UniqueID>|<String>
-
+```
+```
 <DriveFileACLRole> ::=
         manager|organizer|owner|
         contentmanager|fileorganizer|

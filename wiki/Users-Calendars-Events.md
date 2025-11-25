@@ -718,7 +718,7 @@ properly processed.
 ```
 gam <UserTypeEntity> update calattendees <UserCalendarEntity> <EventEntity> [anyorganizer]
         [<EventNotificationAttribute>] [splitupdate] [dryrun|doit]
-        (csv|csvfile <CSVFileInput>)
+        (csv|csvfile <CSVFileInput> endcsv)
         (delete <EmailAddress>)*
         (deleteentity <EmailAddressEntity>)*
         (add <EmailAddress>)*
