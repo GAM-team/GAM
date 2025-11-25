@@ -653,11 +653,13 @@ These commands are used to transfer ACLs from one Shared Drive to another.
 gam [<UserTypeEntity>] copy shareddriveacls <SharedDriveEntity> to <SharedDriveEntity>
         [showpermissionsmessages [<Boolean>]]
         [excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
+        (mappermissionsemail <EmailAddress> <EmailAddress)* [mappermissionsemailfile <CSVFileInput> endcsv]
         (mappermissionsdomain <DomainName> <DomainName>)*
         [adminaccess|asadmin]
 gam [<UserTypeEntity>] sync shareddriveacls <SharedDriveEntity> with <SharedDriveEntity>
         [showpermissionsmessages [<Boolean>]]
         [excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
+        (mappermissionsemail <EmailAddress> <EmailAddress)* [mappermissionsemailfile <CSVFileInput> endcsv]
         (mappermissionsdomain <DomainName> <DomainName>)*
         [adminaccess|asadmin]
 ```
@@ -665,8 +667,14 @@ When `excludepermissionsfromdomains <DomainNameList>` is specified, any ACL that
 
 When `includepermissionsfromdomains <DomainNameList>` is specified, only ACLs that reference a domain in `<DomainNameList>` will be copied.
 
+When `mappermissionsemail <EmailAddress> <EmailAddress>` is specifed, an ACL that references the first `<EmailAddress>` will be modified
+to reference the second `<EmailAddress>` when copied; the original ACL is not modified. The option can be repeated if multiple email addresses are to be mapped.
+
+Bulk permission email address mapping can be specified with `mappermissionsemailfile <CSVFileInput> endcsv`.
+`<CSVFileInput>` must include these columns: `sourceEmail` and `destinationEmail`.
+
 When `mappermissionsdomain <DomainName> <DomainName>` is specifed, any ACL that references the first `<DomainName>` will be modified
-to reference the second `<DonainName>` when copied; the original ACL is not modified. The option can be repeated if multiple domain names are to me mapped.
+to reference the second `<DomainName>` when copied; the original ACL is not modified. The option can be repeated if multiple domain names are to be mapped.
 
 ## Display Shared Drive access
 

@@ -10,6 +10,24 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.29.00
+
+Added options `mappermissionsemail <EmailAddress> <EmailAddress>` and ` mappermissionsemailfile <CSVFileInput> endcsv`
+to these commands:
+```
+gam [<UserTypeEntity>] copy shareddriveacls <SharedDriveEntity> to <SharedDriveEntity>
+gam [<UserTypeEntity>] sync shareddriveacls <SharedDriveEntity> with <SharedDriveEntity>
+gam <UserTypeEntity> copy drivefile <DriveFileEntity>
+gam <UserTypeEntity> move drivefile <DriveFileEntity>
+```
+When `mappermissionsemail <EmailAddress> <EmailAddress>` is specifed, an ACL that references the first `<EmailAddress>`
+in the source will be modified to reference the second `<EmailAddress>` in the destination.
+
+Bulk permission email address mapping can be specified with `mappermissionsemailfile <CSVFileInput> endcsv`.
+`<CSVFileInput>` must include these columns: `sourceEmail` and `destinationEmail`.
+
+These options will be most useful with inter-workspace Shared Drive copies and moves.
+
 ### 7.28.13
 
 Added option `addcsvdata <FieldName> <String>` to `gam <UserTypeEntity> print messages`

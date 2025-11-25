@@ -114,6 +114,7 @@ gam <UserTypeEntity> copy drivefile <DriveFileEntity>
         [copysheetprotectedrangesinheritedpermissions [<Boolean>]]
         [copysheetprotectedrangesnoninheritedpermissions [<Boolean>]]
         [excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
+        (mappermissionsemail <EmailAddress> <EmailAddress)* [mappermissionsemailfile <CSVFileInput> endcsv]
         (mappermissionsdomain <DomainName> <DomainName>)*
         [sendemailifrequired [<Boolean>]]
         [verifyorganizer [<Boolean>]]
@@ -313,8 +314,14 @@ When `excludepermissionsfromdomains <DomainNameList>` is specified, any ACL that
 
 When `includepermissionsfromdomains <DomainNameList>` is specified, only ACLs that reference a domain in `<DomainNameList>` will be copied.
 
+When `mappermissionsemail <EmailAddress> <EmailAddress>` is specifed, an ACL that references the first `<EmailAddress>` will be modified
+to reference the second `<EmailAddress>` when copied; the original ACL is not modified. The option can be repeated if multiple email addresses are to be mapped.
+
+Bulk permission email address mapping can be specified with `mappermissionsemailfile <CSVFileInput> endcsv`.
+`<CSVFileInput>` must include these columns: `sourceEmail` and `destinationEmail`.
+
 When `mappermissionsdomain <DomainName> <DomainName>` is specified, any ACL that references the first `<DomainName>` will be modified
-to reference the second `<DomainName>` when copied; the original ACL is not modified. The option can be repeated if multiple domain names are to me mapped.
+to reference the second `<DomainName>` when copied; the original ACL is not modified. The option can be repeated if multiple domain names are to be mapped.
 
 When copying an ACL that references a non Google account, an error is generated unless an email is sent to the account;
 by default, no email notifications are sent. The `sendemailifrequired` options instructs GAM to send an email notification in this case.
@@ -542,6 +549,7 @@ gam <UserTypeEntity> move drivefile <DriveFileEntity> [newfilename <DriveFileNam
         [copysubfolderinheritedpermissions [<Boolean>]]
         [copysubfoldernoninheritedpermissions never|always|syncallfolders|syncupdatedfolders]
         [excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
+        (mappermissionsemail <EmailAddress> <EmailAddress)* [mappermissionsemailfile <CSVFileInput> endcsv]
         (mappermissionsdomain <DomainName> <DomainName>)*
         [updatefilepermissions [<Boolean>]]
         [retainsourcefolders [<Boolean>]]
@@ -666,8 +674,14 @@ When `excludepermissionsfromdomains <DomainNameList>` is specified, any ACL that
 
 When `includepermissionsfromdomains <DomainNameList>` is specified, only ACLs that reference a domain in `<DomainNameList>` will be copied.
 
+When `mappermissionsemail <EmailAddress> <EmailAddress>` is specifed, an ACL that references the first `<EmailAddress>` will be modified
+to reference the second `<EmailAddress>` when copied; the original ACL is not modified. The option can be repeated if multiple email addresses are to be mapped.
+
+Bulk permission email address mapping can ge specified with `mappermissionsemailfile <CSVFileInput> endcsv`.
+`<CSVFileInput>` must include these columns: `sourceEmail` and `destinationEmail`.
+
 When `mappermissionsdomain <DomainName> <DomainName>` is specified, any ACL that references the first `<DomainName>` will be modified
-to reference the second `<DomainName>` when copied; the original ACL is not modified. The option can be repeated if multiple domain names are to me mapped.
+to reference the second `<DomainName>` when copied; the original ACL is not modified. The option can be repeated if multiple domain names are to be mapped.
 
 When copying an ACL that references a non Google account, an error is generated unless an email is sent to the account;
 by default, no email notifications are sent. The `sendemailifrequired` options instructs GAM to send an email notification in this case.
@@ -684,8 +698,14 @@ When `excludepermissionsfromdomains <DomainNameList>` is specified, any ACL that
 
 When `includepermissionsfromdomains <DomainNameList>` is specified, any ACLs that references a domain not in `<DomainNameList>` will be removed.
 
+When `mappermissionsemail <EmailAddress> <EmailAddress>` is specifed, an ACL that references the first `<EmailAddress>` will be removed;
+a new ACL with the same properties referencing the second `<EmailAddess>` will be created. The option can be repeated if multiple domain names are to be mapped.
+
+Bulk email address mapping can ge specified with `mappermissionsemailfile <CSVFileInput> endcsv`.
+`<CSVFileInput>` must include these columns: `sourceEmail` and `destinationEmail`.
+
 When `mappermissionsdomain <DomainName> <DomainName>` is specified, any ACL that references the first `<DomainName>` will be removed;
-a new ACL with the same properties referencing the second `<DomainName>` will be created. The option can be repeated if multiple domain names are to me mapped.
+a new ACL with the same properties referencing the second `<DomainName>` will be created. The option can be repeated if multiple domain names are to be mapped.
 
 When creating an ACL that references a non Google account, an error is generated unless an email is sent to the account;
 by default, no email notifications are sent. The `sendemailifrequired` options instructs GAM to send an email notification in this case.
