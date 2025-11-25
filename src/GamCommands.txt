@@ -5185,11 +5185,13 @@ gam copy shareddriveacls <SharedDriveEntity> to <SharedDriveEntity>
         [adminaccess|asadmin]
         [showpermissionsmessages [<Boolean>]]
         [excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
+        (mappermissionsemail <EmailAddress> <EmailAddress>)* [mappermissionsemailfile <CSVFileInput> endcsv]
         (mappermissionsdomain <DomainName> <DomainName>)*
 gam sync shareddriveacls <SharedDriveEntity> with <SharedDriveEntity>
         [adminaccess|asadmin]
         [showpermissionsmessages [<Boolean>]]
         [excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
+        (mappermissionsemail <EmailAddress> <EmailAddress>)* [mappermissionsemailfile <CSVFileInput> endcsv]
         (mappermissionsdomain <DomainName> <DomainName>)*
 
 gam print shareddriveacls [todrive <ToDriveAttribute>*]
@@ -5214,11 +5216,13 @@ gam <UserTypeEntity> copy shareddriveacls <SharedDriveEntity> to <SharedDriveEnt
         [adminaccess|asadmin]
         [showpermissionsmessages [<Boolean>]]
         [excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
+        (mappermissionsemail <EmailAddress> <EmailAddress>)* [mappermissionsemailfile <CSVFileInput> endcsv]
         (mappermissionsdomain <DomainName> <DomainName>)*
 gam <UserTypeEntity> sync shareddriveacls <SharedDriveEntity> with <SharedDriveEntity>
         [adminaccess|asadmin]
         [showpermissionsmessages [<Boolean>]]
         [excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
+        (mappermissionsemail <EmailAddress> <EmailAddress>)* [mappermissionsemailfile <CSVFileInput> endcsv]
         (mappermissionsdomain <DomainName> <DomainName>)*
 
 gam <UserTypeEntity> print shareddriveacls [todrive <ToDriveAttribute>*]
@@ -6808,6 +6812,7 @@ gam <UserTypeEntity> copy drivefile <DriveFileEntity>
         [copypermissionroles <DriveFileACLRoleList>]
         [copypermissiontypes <DriveFileACLTypeList>]
         [excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
+        (mappermissionsemail <EmailAddress> <EmailAddress>)* [mappermissionsemailfile <CSVFileInput> endcsv]
         (mappermissionsdomain <DomainName> <DomainName>)*
         [copysheetprotectedranges [<Boolean>]]
         [copysheetprotectedrangesinheritedpermissions [<Boolean>]]
@@ -6834,6 +6839,7 @@ gam <UserTypeEntity> move drivefile <DriveFileEntity> [newfilename <DriveFileNam
         [copysubfolderinheritedpermissions [<Boolean>]]
         [copysubfoldernoniheritedpermissions never|always|syncallfolders|syncupdatedfolders]
         [excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
+        (mappermissionsemail <EmailAddress> <EmailAddress>)* [mappermissionsemailfile <CSVFileInput> endcsv]
         (mappermissionsdomain <DomainName> <DomainName>)*
         [updatefilepermissions [<Boolean>]]
         [retainsourcefolders [<Boolean>]]

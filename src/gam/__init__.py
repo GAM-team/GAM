@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.28.13'
+__version__ = '7.29.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -61127,6 +61127,7 @@ def initCopyMoveOptions(copyCmd):
     'noCopyNonInheritedPermissions': COPY_NONINHERITED_PERMISSIONS_NEVER,
     'excludePermissionsFromDomains': set(),
     'includePermissionsFromDomains': set(),
+    'mapPermissionsEmails': {},
     'mapPermissionsDomains': {},
     'copySheetProtectedRangesInheritedPermissions': False,
     'copySheetProtectedRangesNonInheritedPermissions': COPY_NONINHERITED_PERMISSIONS_NEVER,
@@ -61203,6 +61204,18 @@ def getCopyMoveOptions(myarg, copyMoveOptions):
   elif myarg == 'includepermissionsfromdomains':
     copyMoveOptions['includePermissionsFromDomains'] = set(getString(Cmd.OB_DOMAIN_NAME_LIST).lower().replace(',', ' ').split())
     copyMoveOptions['excludePermissionsFromDomains'] = set()
+  elif myarg == 'mappermissionsemail':
+    sourceEmail = getEmailAddress(noUid=True).lower()
+    copyMoveOptions['mapPermissionsEmails'][sourceEmail] = getEmailAddress(noUid=True).lower()
+  elif myarg == 'mappermissionsemailfile':
+    csvInputLocation = Cmd.Location()
+    f, csvFile, _ = openCSVFileReader(getString(Cmd.OB_FILE_NAME))
+    if 'sourceEmail' not in csvFile.fieldnames or 'destinationEmail' not in csvFile.fieldnames:
+      Cmd.SetLocation(csvInputLocation)
+      usageErrorExit(Msg.MAP_PERMISSIONS_EMAIL_FILE_HEADERS_REQUIRED.format(myarg))
+    for row in csvFile:
+      copyMoveOptions['mapPermissionsEmails'][row['sourceEmail']] = row['destinationEmail']
+    closeFile(f)
   elif myarg == 'mappermissionsdomain':
     oldDomain = getString(Cmd.OB_DOMAIN_NAME).lower()
     copyMoveOptions['mapPermissionsDomains'][oldDomain] = getString(Cmd.OB_DOMAIN_NAME).lower()
@@ -61364,9 +61377,9 @@ def _copyPermissions(drive, user, i, count, j, jcount,
       if permissionType in {'group', 'user'}:
         atLoc = emailAddress.find('@')
         if atLoc > 0:
-          domain = emailAddress[atLoc+1:]
+          domain = emailAddress[atLoc+1:].lower()
       elif permissionType == 'domain':
-        domain = permission.get('domain', '')
+        domain = permission.get('domain', '').lower()
     if role not in copyMoveOptions['copyPermissionRoles']:
       notCopiedMessage = f'role {role} not selected'
     elif permissionType not in copyMoveOptions['copyPermissionTypes']:
@@ -61416,7 +61429,12 @@ def _copyPermissions(drive, user, i, count, j, jcount,
 
   def mapPermissionsDomains(srcPerm):
     if 'emailAddress' in srcPerm:
-      email, domain = srcPerm['emailAddress'].lower().split('@', 1)
+      sourceEmail = srcPerm['emailAddress'].lower()
+      destEmail = copyMoveOptions['mapPermissionsEmails'].get(sourceEmail, None)
+      if destEmail:
+        srcPerm['emailAddress'] = destEmail
+        return True
+      email, domain = sourceEmail.split('@', 1)
       if domain in copyMoveOptions['mapPermissionsDomains']:
         srcPerm['emailAddress'] = f"{email}@{copyMoveOptions['mapPermissionsDomains'][domain]}"
         return True
@@ -61438,7 +61456,7 @@ def _copyPermissions(drive, user, i, count, j, jcount,
     if isPermissionCopyable(kvList, permission):
       copySourcePerms[permissionId] = permission
   if copyMoveOptions[copyNonInherited] == COPY_NONINHERITED_PERMISSIONS_ALWAYS:
-    if copyMoveOptions['mapPermissionsDomains']:
+    if copyMoveOptions['mapPermissionsDomains'] or copyMoveOptions['mapPermissionsEmails']:
       for permissionId in getNonInheritedPermissions(copySourcePerms):
         mapPermissionsDomains(copySourcePerms[permissionId])
   elif copyMoveOptions[copyNonInherited] in {COPY_NONINHERITED_PERMISSIONS_SYNC_ALL_FOLDERS,
@@ -61449,7 +61467,7 @@ def _copyPermissions(drive, user, i, count, j, jcount,
     sourceNonInheritedPermIDs = getNonInheritedPermissions(copySourcePerms)
     targetNonInheritedPermIDs = getNonInheritedPermissions(targetPerms)
 # Permissions in Source only
-    if copyMoveOptions['mapPermissionsDomains']:
+    if copyMoveOptions['mapPermissionsDomains'] or copyMoveOptions['mapPermissionsEmails']:
       for permissionId in sourceNonInheritedPermIDs-targetNonInheritedPermIDs:
         mapPermissionsDomains(copySourcePerms[permissionId])
 # Permissions in Target only
@@ -61457,7 +61475,7 @@ def _copyPermissions(drive, user, i, count, j, jcount,
 # Permissions in Source and Target
     for permissionId in targetNonInheritedPermIDs&sourceNonInheritedPermIDs:
       srcPerm = copySourcePerms[permissionId]
-      if copyMoveOptions['mapPermissionsDomains'] and mapPermissionsDomains(srcPerm):
+      if (copyMoveOptions['mapPermissionsDomains'] or copyMoveOptions['mapPermissionsEmails']) and mapPermissionsDomains(srcPerm):
         deleteTargetPermIds.add(permissionId)
         continue
       tgtPerm = targetPerms[permissionId]
@@ -61838,6 +61856,7 @@ copyReturnItemMap = {
 #	[copypermissionroles <DriveFileACLRoleList>]
 #	[copypermissiontypes <DriveFileACLTypeList>]
 #	[excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
+#	(mappermissionsemail <EmailAddress> <EmailAddress>)* [mappermissionsemailfile <CSVFileInput> endcsv]
 #	(mappermissionsdomain <DomainName> <DomainName>)*
 #	[copysheetprotectedranges [<Boolean>]]
 #	[copysheetprotectedrangesinheritedpermissions [<Boolean>]]
@@ -62512,9 +62531,9 @@ def _updateMoveFilePermissions(drive, user, i, count,
       if permission['type'] in {'group', 'user'}:
         atLoc = permission.get('emailAddress', '').find('@')
         if atLoc > 0:
-          domain = permission['emailAddress'][atLoc+1:]
+          domain = permission['emailAddress'][atLoc+1:].lower()
       elif permission['type'] == 'domain':
-        domain = permission.get('domain', '')
+        domain = permission.get('domain', '').lower()
     if domain and domain in copyMoveOptions['excludePermissionsFromDomains']:
       notMovedMessage = f'domain {domain} excluded'
     elif domain and copyMoveOptions['includePermissionsFromDomains'] and domain not in copyMoveOptions['includePermissionsFromDomains']:
@@ -62530,13 +62549,24 @@ def _updateMoveFilePermissions(drive, user, i, count,
 
   def mapPermissionsDomains(kvList, permission):
     if 'emailAddress' in permission:
-      email, domain = permission['emailAddress'].lower().split('@', 1)
-      if domain in copyMoveOptions['mapPermissionsDomains']:
+      sourceEmail = permission['emailAddress'].lower()
+      destEmail = copyMoveOptions['mapPermissionsEmails'].get(sourceEmail, None)
+      if destEmail:
         deleteSourcePerms[permission['id']] = permission.copy()
         if copyMoveOptions['showPermissionMessages']:
-          notMovedMessage = f"domain {domain} mapped to {copyMoveOptions['mapPermissionsDomains'][domain]}"
+          notMovedMessage = f"email {sourceEmail} mapped to {destEmail}"
           entityActionNotPerformedWarning(kvList, notMovedMessage, 0, 0)
-        permission['emailAddress'] = f"{email}@{copyMoveOptions['mapPermissionsDomains'][domain]}"
+        permission['emailAddress'] = destEmail
+        addSourcePerms[permission['id']] = permission
+        return True
+      email, domain = sourceEmail.split('@', 1)
+      if domain in copyMoveOptions['mapPermissionsDomains']:
+        destEmail = f"{email}@{copyMoveOptions['mapPermissionsDomains'][domain]}"
+        deleteSourcePerms[permission['id']] = permission.copy()
+        if copyMoveOptions['showPermissionMessages']:
+          notMovedMessage = f"email {sourceEmail} mapped to {destEmail}"
+          entityActionNotPerformedWarning(kvList, notMovedMessage, 0, 0)
+        permission['emailAddress'] = destEmail
         addSourcePerms[permission['id']] = permission
         return True
     elif 'domain' in permission:
@@ -62561,7 +62591,7 @@ def _updateMoveFilePermissions(drive, user, i, count,
     kvList = permissionKVList(user, entityType, fileTitle, permission)
     if isPermissionDeletable(kvList, permission):
       pass
-    elif copyMoveOptions['mapPermissionsDomains']:
+    elif copyMoveOptions['mapPermissionsDomains'] or copyMoveOptions['mapPermissionsEmails']:
       mapPermissionsDomains(kvList, permission)
   action = Act.Get()
   kcount = len(deleteSourcePerms)
@@ -62661,6 +62691,7 @@ def _updateMoveFilePermissions(drive, user, i, count,
 #	[copypermissiontypes <DriveFileACLTypeList>]
 #	[synctopfoldernoniheritedpermissions [<Boolean>]] [syncsubfoldernoninheritedpermissions [<Boolean>]]
 #	[excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
+#	(mappermissionsemail <EmailAddress> <EmailAddress>)* [mappermissionsemailfile <CSVFileInput> endcsv]
 #	(mappermissionsdomain <DomainName> <DomainName>)*
 #	[updatefilepermissions [<Boolean>]]
 #	[retainsourcefolders [<Boolean>]]
@@ -68135,10 +68166,16 @@ def doPrintShowOrgunitSharedDrives():
     csvPF.writeCSVfile('OrgUnit {orgUnitPath} SharedDrives')
 
 # gam [<UserTypeEntity>] copy shareddriveacls <SharedDriveEntity> to <SharedDriveEntity>
+#	[asadmin]
+#	[showpermissionsmessages [<Boolean>]]
+#	[excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
+#	(mappermissionsemail <EmailAddress> <EmailAddress>)* [mappermissionsemailfile <CSVFileInput> endcsv]
+#	(mappermissionsdomain <DomainName> <DomainName>)*
 # gam [<UserTypeEntity>] sync shareddriveacls <SharedDriveEntity> with <SharedDriveEntity>
 #	[asadmin]
 #	[showpermissionsmessages [<Boolean>]]
 #	[excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
+#	(mappermissionsemail <EmailAddress> <EmailAddress>)* [mappermissionsemailfile <CSVFileInput> endcsv]
 #	(mappermissionsdomain <DomainName> <DomainName>)*
 def copySyncSharedDriveACLs(users, useDomainAdminAccess=False):
   copyMoveOptions = initCopyMoveOptions(True)
@@ -68166,13 +68203,15 @@ def copySyncSharedDriveACLs(users, useDomainAdminAccess=False):
     if not drive:
       continue
     if not srcFileIdEntity.get('shareddrivename'):
-      srcFileIdEntity['shareddrivename'] = _getSharedDriveNameFromId(drive, srcFileIdEntity['shareddrive']['driveId'])
+      srcFileIdEntity['shareddrivename'] = _getSharedDriveNameFromId(drive, srcFileIdEntity['shareddrive']['driveId'],
+                                                                     useDomainAdminAccess)
     if tgtFileIdEntity.get('shareddrivename'):
       if not _convertSharedDriveNameToId(drive, user, i, count, tgtFileIdEntity, useDomainAdminAccess):
         continue
       tgtFileIdEntity['shareddrive']['corpora'] = 'drive'
     else:
-      tgtFileIdEntity['shareddrivename'] = _getSharedDriveNameFromId(drive, tgtFileIdEntity['shareddrive']['driveId'])
+      tgtFileIdEntity['shareddrivename'] = _getSharedDriveNameFromId(drive, tgtFileIdEntity['shareddrive']['driveId'],
+                                                                     useDomainAdminAccess)
     statistics = _initStatistics()
     copyMoveOptions['sourceDriveId'] = srcFileIdEntity['shareddrive']['driveId']
     copyMoveOptions['destDriveId'] = tgtFileIdEntity['shareddrive']['driveId']
