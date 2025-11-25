@@ -15,6 +15,7 @@
 - [Display Shared Drive Counts](#display-shared-drive-counts)
 - [Display Shared Drive Organizers](#display-shared-drive-organizers)
 - [Manage Shared Drive access](#manage-shared-drive-access)
+- [Transfer Shared Drive access](#transfer-shared-drive-access)
 - [Display Shared Drive access](#display-shared-drive-access)
   - [Display Shared Drive access for specific Shared Drives](#display-shared-drive-access-for-specific-shared-drives)
   - [Display Shared Drive access for selected Shared Drives](#display-shared-drive-access-for-selected-shared-drives)
@@ -515,6 +516,38 @@ If you want to process all permissions, enter `pm em` to clear the default match
 When adding permissions from JSON data, permissions with `deleted` true are never processed.
 
 When deleting permissions from JSON data, permissions with role `owner` true are never processed.
+
+## Transfer Shared Drive access
+
+These commands are used to transfer ACLs from one Shared Drive to another.
+* `copy` - Copy all ACLs from the source Shared Drive to the target Shared Drive. The role of an existing ACL in the target Shared Drive will never be reduced.
+* `sync` - Add/delete/update ACLs in the target Shared Drive to match those in the source Shared Drive.
+```
+gam <UserTypeEntity> copy shareddriveacls <SharedDriveEntity> to <SharedDriveEntity>
+        [showpermissionsmessages [<Boolean>]]
+        [excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
+        (mappermissionsemail <EmailAddress> <EmailAddress)* [mappermissionsemailfile <CSVFileInput> endcsv]
+        (mappermissionsdomain <DomainName> <DomainName>)*
+        [adminaccess|asadmin]
+gam <UserTypeEntity> sync shareddriveacls <SharedDriveEntity> with <SharedDriveEntity>
+        [showpermissionsmessages [<Boolean>]]
+        [excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
+        (mappermissionsemail <EmailAddress> <EmailAddress)* [mappermissionsemailfile <CSVFileInput> endcsv]
+        (mappermissionsdomain <DomainName> <DomainName>)*
+        [adminaccess|asadmin]
+```
+When `excludepermissionsfromdomains <DomainNameList>` is specified, any ACL that references a domain in `<DomainNameList>` will not be copied.
+
+When `includepermissionsfromdomains <DomainNameList>` is specified, only ACLs that reference a domain in `<DomainNameList>` will be copied.
+
+When `mappermissionsemail <EmailAddress> <EmailAddress>` is specifed, an ACL that references the first `<EmailAddress>` will be modified
+to reference the second `<EmailAddress>` when copied; the original ACL is not modified. The option can be repeated if multiple email addresses are to be mapped.
+
+Bulk permission email address mapping can be specified with `mappermissionsemailfile <CSVFileInput> endcsv`.
+`<CSVFileInput>` must include these columns: `sourceEmail` and `destinationEmail`.
+
+When `mappermissionsdomain <DomainName> <DomainName>` is specifed, any ACL that references the first `<DomainName>` will be modified
+to reference the second `<DomainName>` when copied; the original ACL is not modified. The option can be repeated if multiple domain names are to be mapped.
 
 ## Display Shared Drive access
 
