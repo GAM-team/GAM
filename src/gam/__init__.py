@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.29.00'
+__version__ = '7.29.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -53051,7 +53051,7 @@ CALENDAR_EXCLUDE_DOMAINS = {
 
 # gam <UserTypeEntity> print calendars <UserCalendarEntity> [todrive <ToDriveAttribute>*]
 #	[primary] <CalendarSelectProperty>* [noprimary] [nogroups] [noresources] [nosystem] [nousers]
-#	[fields <CalendarFieldList>] [permissions]
+#	[fields <CalendarFieldList>] [permissions] [oneitemperrow]
 #	[formatjson [quotechar <Character>]] [delimiter <Character>]
 # gam <UserTypeEntity> show calendars <UserCalendarEntity>
 #	[primary] <CalendarSelectProperty>* [noprimary] [nogroups] [noresources] [nosystem] [nousers]
@@ -53059,7 +53059,7 @@ CALENDAR_EXCLUDE_DOMAINS = {
 #	[formatjson]
 def printShowCalendars(users):
   acls = []
-  getCalPermissions = noPrimary = primaryOnly = False
+  getCalPermissions = oneItemPerRow = noPrimary = primaryOnly = False
   excludes = set()
   excludeDomains = set()
   csvPF = CSVPrintFile(['primaryEmail', 'calendarId'], 'sortall') if Act.csvFormat() else None
@@ -53073,6 +53073,8 @@ def printShowCalendars(users):
       csvPF.GetTodriveParameters()
     elif myarg in [Cmd.ARG_ACLS, Cmd.ARG_CALENDARACLS, Cmd.ARG_PERMISSIONS]:
       getCalPermissions = True
+    elif myarg == 'oneitemperrow':
+      oneItemPerRow = True
     elif myarg == 'allcalendars':
       pass
     elif myarg == 'primary':
@@ -53148,17 +53150,35 @@ def printShowCalendars(users):
       Ind.Decrement()
     else:
       if calendars:
-        for calendar in calendars:
-          row = {'primaryEmail': user, 'calendarId': calendar['id']}
-          if getCalPermissions:
-            flattenJSON({'permissions': _getCalendarPermissions(cal, calendar)}, flattened=row)
-          flattenJSON(calendar, flattened=row, simpleLists=CALENDAR_SIMPLE_LISTS, delimiter=delimiter)
-          if not FJQC.formatJSON:
-            row.pop('id')
-            csvPF.WriteRowTitles(row)
-          elif csvPF.CheckRowTitles(row):
-            csvPF.WriteRowNoFilter({'primaryEmail': user, 'calendarId': calendar['id'],
-                                    'JSON': json.dumps(cleanJSON(calendar), ensure_ascii=False, sort_keys=True)})
+        if not getCalPermissions or not oneItemPerRow:
+          for calendar in calendars:
+            row = {'primaryEmail': user, 'calendarId': calendar['id']}
+            if getCalPermissions:
+              calPerms = _getCalendarPermissions(cal, calendar)
+              flattenJSON({'permissions': calPerms}, flattened=row)
+            flattenJSON(calendar, flattened=row, simpleLists=CALENDAR_SIMPLE_LISTS, delimiter=delimiter)
+            if not FJQC.formatJSON:
+              row.pop('id')
+              csvPF.WriteRowTitles(row)
+            elif csvPF.CheckRowTitles(row):
+              if getCalPermissions:
+                calendar.update({'permissions': calPerms})
+              csvPF.WriteRowNoFilter({'primaryEmail': user, 'calendarId': calendar['id'],
+                                      'JSON': json.dumps(cleanJSON(calendar), ensure_ascii=False, sort_keys=True)})
+        else:
+          for calendar in calendars:
+            baserow = {'primaryEmail': user, 'calendarId': calendar['id']}
+            flattenJSON(calendar, flattened=baserow, simpleLists=CALENDAR_SIMPLE_LISTS, delimiter=delimiter)
+            for permission in _getCalendarPermissions(cal, calendar):
+              row = baserow.copy()
+              flattenJSON({'permission': permission}, flattened=row)
+              if not FJQC.formatJSON:
+                row.pop('id')
+                csvPF.WriteRowTitles(row)
+              elif csvPF.CheckRowTitles(row):
+                calendar.update({'permission': permission})
+                csvPF.WriteRowNoFilter({'primaryEmail': user, 'calendarId': calendar['id'],
+                                        'JSON': json.dumps(cleanJSON(calendar), ensure_ascii=False, sort_keys=True)})
       elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
         csvPF.WriteRowNoFilter({'primaryEmail': user})
   if csvPF:
@@ -53630,7 +53650,7 @@ def emptyCalendarTrash(users):
 
 # gam <UserTypeEntity> update calattendees <UserCalendarEntity> <EventEntity> [anyorganizer]
 #	[<EventNotificationAttribute>] [splitupdate] [doit]
-#	(<CSVFileSelector>)
+#	(csv|csvfile <CSVFileInput> endcsv)
 #	(delete <EmailAddress>)*
 #	(deleteentity <EmailAddressEntity>)*
 #	(add <EmailAddress>)*

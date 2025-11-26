@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.29.01
+
+Added option `oneitemperrow` to `gam <UserTypeEntity> print calendars ... permissions` to have each of a
+calendar's permissions displayed on a separate row with all of the other calendar fields.
+
 ### 7.29.00
 
 Added options `mappermissionsemail <EmailAddress> <EmailAddress>` and ` mappermissionsemailfile <CSVFileInput> endcsv`
