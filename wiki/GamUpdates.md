@@ -15,6 +15,8 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 Added option `oneitemperrow` to `gam <UserTypeEntity> print calendars ... permissions` to have each of a
 calendar's permissions displayed on a separate row with all of the other calendar fields.
 
+Updated `gam yubikey reset_piv` to handle YubiKey firmware updates that caused an error.
+
 ### 7.29.00
 
 Added options `mappermissionsemail <EmailAddress> <EmailAddress>` and ` mappermissionsemailfile <CSVFileInput> endcsv`
