@@ -29,23 +29,32 @@ No, because the YubiKey generated the private key it cannot be digitally exporte
 When using domain-wide delegation with GAM7, the service account and anyone possessing the service account private key oauth2service.json file has access to the Gmail, Drive and Calendar data of ALL Workspace users in your domain. For this reason, whether using a YubiKey or not, you should take strong measures to protect the service account private key.
 
 ## Setup Steps
-1 .Upgrade to the [latest version of GAM7](https://github.com/GAM-team/GAM/wiki/How-to-Update-GAM7).
-2. **If you are using a new YubiKey or don't care about the PIV app data on the YubiKey**
-    1. Tell GAM7 to reset and configure the PIV app data on the YubiKey. This wipes all existing keys and configuration and then configures a private key and PIN for GAM7.
+
+1. Upgrade to the [latest version of GAM7](https://github.com/GAM-team/GAM/wiki/How-to-Update-GAM7).
+
+2. If you are using a new YubiKey or don't care about the PIV app data on the YubiKey:
+   
+    a. Tell GAM7 to reset and configure the PIV app data on the YubiKey. This wipes all existing keys and configuration and then configures a private key and PIN for GAM7.
+
       * Single YubiKey - `gam yubikey reset_piv`
+
       * Multiple YubiKeys - `gam yubikey reset_piv yubikeyserialnumber <Number>`
-    2. During the PIV reset, GAM7 will print out a PIN for the private key, record this key.
-4. **If you are already using the YubiKey and wish to preserve the PIV app data and keys**
-    1. You need to configure one of the PIV slots for a private key GAM7 can use.
+
+    b. During the PIV reset, GAM7 will print out a PIN for the private key, record this key.
+
+3. OR gf you are already using the YubiKey and wish to preserve the PIV app data and keys
+
+    a. You need to configure one of the PIV slots for a private key GAM7 can use.
       * [ykman piv keys generate](https://docs.yubico.com/software/yubikey/tools/ykman/PIV_Commands.html#ykman-piv-keys-options-command-args)
         `ykman piv keys generate -P <Text> --pin-policy ALWAYS --touch-policy NEVER --algorithm RSA2048 9a new_pubkey.txt`
       * Use `9a` for the `AUTHENTICATION` slot, `9c` for the `SIGNATURE` slot
-    2. You need to generate a certificate for that slot.
+
+    b. You need to generate a certificate for that slot.
       * [ykman piv certificates generate](https://docs.yubico.com/software/yubikey/tools/ykman/PIV_Commands.html#ykman-piv-certificates-generate-options-slot-public-key)
         `ykman piv certificates generate -P <Text> --subject "GAM Service Account" -d 36500 9a new_pubkey.txt`
       * Use `9a` for the `AUTHENTICATION` slot, `9c` for the `SIGNATURE` slot
 
-5. Now that you have a private key on your YubiKey, tell GAM7 to use that instead of the private_key stored in oauth2service.json. We can do that by rotating the key:
+4. Now that you have a private key on your YubiKey, tell GAM7 to use that instead of the private_key stored in oauth2service.json. We can do that by rotating the key:
 ```
 copy oauth2service.json to oauth2service.save
 gam create sakey yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE
@@ -58,10 +67,10 @@ copy oauth2service.json to oauth2service.yk
 copy oauth2service.save to oauth2service.json
 ```
 
-6. Now you should be able to run GAM7 commands like:
+5. Now you should be able to run GAM7 commands like:
 ```
 gam user admin@example.com check serviceaccount
 ```
 and see the YubiKey lights flash as the YubiKey interacts with GAM7 to sign the GAM7 authentication requests. If you look at the oauth2service.json file, you'll see it contains some new fields like yubikey_serial and yubikey_pin but no longer contains the private_key field where GAM7 would normally store the private key data.
 
-7. As a last step, since YubiKey-stored private keys do not need to be and should not be rotated, you can remove the service account's permissions to change it's own key. Navigate to the [Cloud Console](https://console.cloud.google.com/iam-admin/serviceaccounts) select the correct project and service account and on the Permissions tab, edit and remove the "Service Account Key Admin" permission that the service account has to itself.
+6. As a last step, since YubiKey-stored private keys do not need to be and should not be rotated, you can remove the service account's permissions to change it's own key. Navigate to the [Cloud Console](https://console.cloud.google.com/iam-admin/serviceaccounts) select the correct project and service account and on the Permissions tab, edit and remove the "Service Account Key Admin" permission that the service account has to itself.
