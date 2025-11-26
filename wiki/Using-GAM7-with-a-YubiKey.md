@@ -42,7 +42,7 @@ When using domain-wide delegation with GAM7, the service account and anyone poss
 
     b. During the PIV reset, GAM7 will print out a PIN for the private key, record this key.
 
-3. OR gf you are already using the YubiKey and wish to preserve the PIV app data and keys
+3. OR if you are already using the YubiKey and wish to preserve the PIV app data and keys
 
     a. You need to configure one of the PIV slots for a private key GAM7 can use.
       * [ykman piv keys generate](https://docs.yubico.com/software/yubikey/tools/ykman/PIV_Commands.html#ykman-piv-keys-options-command-args)

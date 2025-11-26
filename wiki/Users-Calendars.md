@@ -288,11 +288,10 @@ By default, Gam displays the information as an indented list of keys and values.
 gam <UserTypeEntity> print calendars [todrive <ToDriveAttribute>*]
          [primary] <CalendarSelectProperty>*
          [noprimary] [nogroups] [noresources] [nosystem] [nousers]
-         [fields <CalendarListFieldList>] [permissions]
+         [fields <CalendarListFieldList>] [permissions] [oneitemperrow]
          [formatjson] [delimiter <Character>] [quotechar <Character>]
 ```
 By default, information for all visible, non-deleted calendars is shown.
-* `permissions` adds permission information for user owned calendars to the output.
 * `primary` - Limits the selection to the user's primary calendar
 * `<CalendarSelectProperty>`
     * `minaccessrole <CalendarACLRole>`- Limits the selection to those calendars where the user's role is at least `<CalendarACLRole>`
@@ -303,6 +302,8 @@ By default, information for all visible, non-deleted calendars is shown.
 * `noresources` - Do not display resource calendars, email address ends in "@resource.calendar.google.com"
 * `nosystem` - Do not display system calendars, email address ends in "@group.v.calendar.google.com"
 * `nousers` - Do not display users calendars, email address ends in `domain` value from `gam.cfg`.
+* `permissions` Adds permission information for user owned calendars to the output.
+* `oneitemperrow` - Each permission is output on a separate row with all of the other calendar fields.
 
 By default, list items are separated by the `csv_output_field_delimiter' from `gam.cfg`.
 * `delimiter <Character>` - Separate list items with `<Character>`
