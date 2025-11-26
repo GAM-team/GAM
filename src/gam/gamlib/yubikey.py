@@ -19,11 +19,10 @@
 """YubiKey"""
 
 import base64
+from datetime import datetime, timedelta
 from secrets import SystemRandom
 import string
 import sys
-
-import arrow
 
 from gam import mplock
 
@@ -41,7 +40,6 @@ from ykman.piv import generate_self_signed_certificate, generate_chuid
 from yubikit.piv import DEFAULT_MANAGEMENT_KEY, \
                         InvalidPinError, \
                         KEY_TYPE, \
-                        MANAGEMENT_KEY_TYPE, \
                         PIN_POLICY, \
                         PivSession, \
                         OBJECT_ID, \
@@ -149,17 +147,17 @@ class YubiKey():
         piv.change_puk('12345678', new_puk)
         piv.change_pin('123456', new_pin)
         writeStdout(Msg.YUBIKEY_PIN_SET_TO.format(new_pin))
-        piv.authenticate(MANAGEMENT_KEY_TYPE.TDES, DEFAULT_MANAGEMENT_KEY)
+        piv.authenticate(piv.management_key_type, DEFAULT_MANAGEMENT_KEY)
         piv.verify_pin(new_pin)
         writeStdout(Msg.YUBIKEY_GENERATING_NONEXPORTABLE_PRIVATE_KEY)
         pubkey = piv.generate_key(SLOT.AUTHENTICATION,
                                   KEY_TYPE.RSA2048,
                                   PIN_POLICY.ALWAYS,
                                   TOUCH_POLICY.NEVER)
-        now = arrow.utcnow()
-        valid_to = now.shift(days=36500)
+        now = datetime.utcnow()
+        valid_to = now + timedelta(days=3650)
         subject = 'CN=GAM Created Key'
-        piv.authenticate(MANAGEMENT_KEY_TYPE.TDES, DEFAULT_MANAGEMENT_KEY)
+        piv.authenticate(piv.management_key_type, DEFAULT_MANAGEMENT_KEY)
         piv.verify_pin(new_pin)
         cert = generate_self_signed_certificate(piv,
                                                 SLOT.AUTHENTICATION,
