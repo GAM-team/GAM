@@ -528,10 +528,12 @@ When adding permissions from JSON data, permissions with `deleted` true are neve
 When deleting permissions from JSON data, permissions with role `owner` true are never processed.
 
 ## Transfer Shared Drive access
-
 These commands are used to transfer ACLs from one Shared Drive to another.
 * `copy` - Copy all ACLs from the source Shared Drive to the target Shared Drive. The role of an existing ACL in the target Shared Drive will never be reduced.
 * `sync` - Add/delete/update ACLs in the target Shared Drive to match those in the source Shared Drive.
+
+* `adminaccess|asadmin` specified - All Shared Drives must be in the same workspace as `<UserTypeEntity>`.
+* `adminaccess|asadmin` not specified - Shared Drives can be in separate workspaces if `<UserTypeEntity>` in a manager of all of them.
 ```
 gam <UserTypeEntity> copy shareddriveacls <SharedDriveEntity> to <SharedDriveEntity>
         [showpermissionsmessages [<Boolean>]]
