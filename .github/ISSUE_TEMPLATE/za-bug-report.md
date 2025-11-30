@@ -11,7 +11,7 @@ The issue tracker is for reporting product deficiencies. "How do I?" questions s
 
 Please confirm the following:
 * I have upgraded to the latest GAM release from https://github.com/GAM-team/GAM/releases and I still have this issue.
-* I am typing the command as described in the GAM Wiki at https://github.com/jay0lee/gam/wiki
+* I am typing the command as described in the GAM Wiki at https://github.com/GAM-team/GAM/wiki.
 
 Full steps to reproduce the issue:
 1.
