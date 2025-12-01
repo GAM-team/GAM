@@ -379,7 +379,7 @@ Drive files with `shareMode` `Each student will get a copy` don't seem to be abl
 
 ## Delete courses
 Classes can only be deleted when they are in the ARCHIVED state; to delete a class, you can update its state to ARCHIVED
-and then delete it or you can specify that it be archived as parot of the delete command.
+and then delete it or you can specify that it be archived as part of the delete command.
 ```
 gam delete course <CourseID> [archived]
 gam delete courses <CourseEntity> [archived]
