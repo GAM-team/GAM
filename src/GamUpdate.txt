@@ -1,3 +1,7 @@
+7.29.03
+
+Remove debugging message from `gam <UserTypeEntity> move drivefile <DriveFileEntity>`.
+
 7.29.02
 
 Fixed bug in `gam <UserTypeEntity> move drivefile <DriveFileEntity>` where the following options

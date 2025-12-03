@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.29.02'
+__version__ = '7.29.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -62692,7 +62692,6 @@ def _updateMoveFilePermissions(drive, user, i, count,
 def _recursiveUpdateMovePermissions(drive, user, i, count,
                                     fileId, fileTitle,
                                     statistics, copyMoveOptions, sourceSearchArgs):
-  print('***recursiveUpdateMovePermissions', fileTitle)
   _updateMoveFilePermissions(drive, user, i, count,
                              Ent.DRIVE_FOLDER, fileId, fileTitle,
                              statistics, STAT_FOLDER_PERMISSIONS_FAILED, copyMoveOptions)
