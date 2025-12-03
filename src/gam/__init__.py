@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.29.01'
+__version__ = '7.29.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -61468,6 +61468,7 @@ def _copyPermissions(drive, user, i, count, j, jcount,
   sourcePerms = getPermissions(fileId)
   if sourcePerms is None:
     return
+  Ind.Increment()
   copySourcePerms = {}
   deleteTargetPermIds = set()
   updateTargetPerms = {}
@@ -61483,6 +61484,7 @@ def _copyPermissions(drive, user, i, count, j, jcount,
                                              COPY_NONINHERITED_PERMISSIONS_SYNC_UPDATED_FOLDERS}:
     targetPerms = getPermissions(newFileId)
     if targetPerms is None:
+      Ind.Decrement()
       return
     sourceNonInheritedPermIDs = getNonInheritedPermissions(copySourcePerms)
     targetNonInheritedPermIDs = getNonInheritedPermissions(targetPerms)
@@ -61520,7 +61522,6 @@ def _copyPermissions(drive, user, i, count, j, jcount,
   deleteUpdateKwargs = {'useDomainAdminAccess': copyMoveOptions['useDomainAdminAccess']}
   if entityType != Ent.SHAREDDRIVE:
     deleteUpdateKwargs['enforceExpansiveAccess'] = copyMoveOptions['enforceExpansiveAccess']
-  Ind.Increment()
   action = Act.Get()
   Act.Set(Act.COPY)
   kcount = len(copySourcePerms)
@@ -62604,14 +62605,14 @@ def _updateMoveFilePermissions(drive, user, i, count,
   sourcePerms = getPermissions(fileId)
   if sourcePerms is None:
     return
-  Ind.Increment()
   deleteSourcePerms = {}
   addSourcePerms = {}
   for permissionId, permission in sourcePerms.items():
     kvList = permissionKVList(user, entityType, fileTitle, permission)
-    if isPermissionDeletable(kvList, permission):
-      pass
-    elif copyMoveOptions['mapPermissionsDomains'] or copyMoveOptions['mapPermissionsEmails']:
+    if permission.get('permissionDetails', {}).get('inherited', False):
+      continue
+    if (not isPermissionDeletable(kvList, permission) and
+        (copyMoveOptions['mapPermissionsDomains'] or copyMoveOptions['mapPermissionsEmails'])):
       mapPermissionsDomains(kvList, permission)
   action = Act.Get()
   kcount = len(deleteSourcePerms)
@@ -62638,7 +62639,6 @@ def _updateMoveFilePermissions(drive, user, i, count,
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
         userDriveServiceNotEnabledWarning(user, str(e), i, count)
         _incrStatistic(statistics, stat)
-        Ind.Decrement()
         Act.Set(action)
         return
   kcount = len(addSourcePerms)
@@ -62685,11 +62685,41 @@ def _updateMoveFilePermissions(drive, user, i, count,
         except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
           userDriveServiceNotEnabledWarning(user, str(e), i, count)
           _incrStatistic(statistics, stat)
-          Ind.Decrement()
           Act.Set(action)
           return
-    Ind.Decrement()
   Act.Set(action)
+
+def _recursiveUpdateMovePermissions(drive, user, i, count,
+                                    fileId, fileTitle,
+                                    statistics, copyMoveOptions, sourceSearchArgs):
+  print('***recursiveUpdateMovePermissions', fileTitle)
+  _updateMoveFilePermissions(drive, user, i, count,
+                             Ent.DRIVE_FOLDER, fileId, fileTitle,
+                             statistics, STAT_FOLDER_PERMISSIONS_FAILED, copyMoveOptions)
+  sourceChildren = callGAPIpages(drive.files(), 'list', 'files',
+                                 throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
+                                 retryReasons=[GAPI.UNKNOWN_ERROR],
+                                 q=WITH_PARENTS.format(fileId),
+                                 orderBy='folder desc,name,modifiedTime desc',
+                                 fields='nextPageToken,files(id,name,mimeType)',
+                                 pageSize=GC.Values[GC.DRIVE_MAX_RESULTS], **sourceSearchArgs)
+  kcount = len(sourceChildren)
+  if kcount > 0:
+    Ind.Increment()
+    k = 0
+    for child in sourceChildren:
+      k += 1
+      childId = child['id']
+      childName = child['name']
+      if child['mimeType'] == MIMETYPE_GA_FOLDER:
+        _recursiveUpdateMovePermissions(drive, user, i, count,
+                                        childId, childName,
+                                        statistics, copyMoveOptions, sourceSearchArgs)
+      else:
+        _updateMoveFilePermissions(drive, user, i, count,
+                                   Ent.DRIVE_FILE, childId, childName,
+                                   statistics, STAT_FILE_PERMISSIONS_FAILED, copyMoveOptions)
+    Ind.Decrement()
 
 # gam <UserTypeEntity> move drivefile <DriveFileEntity> [newfilename <DriveFileName>]
 #	[summary [<Boolean>]] [showpermissionsmessages [<Boolean>]]
@@ -62713,7 +62743,6 @@ def _updateMoveFilePermissions(drive, user, i, count,
 #	[excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
 #	(mappermissionsemail <EmailAddress> <EmailAddress>)* [mappermissionsemailfile <CSVFileInput> endcsv]
 #	(mappermissionsdomain <DomainName> <DomainName>)*
-#	[updatefilepermissions [<Boolean>]]
 #	[retainsourcefolders [<Boolean>]]
 #	[sendemailifrequired [<Boolean>]]
 #	[verifyorganizer [<Boolean>]]
@@ -62749,7 +62778,7 @@ def moveDriveFile(users):
                          copyFolderNonInheritedPermissions,
                          False)
       source.pop('oldparents', None)
-      return (newParentId, newParentName, True)
+      return (newParentId, newParentName, True, True)
 # Merge parent folders
     if atTop and copyMoveOptions['sourceIsMyDriveSharedDrive']:
       pass
@@ -62778,11 +62807,11 @@ def moveDriveFile(users):
                                ['copySubFolderInheritedPermissions', 'copyTopFolderInheritedPermissions'][atTop],
                                copyFolderNonInheritedPermissions,
                                False)
-            return (newFolderId, newFolderName, True)
+            return (newFolderId, newFolderName, True, True)
           entityActionFailedWarning(kvList+[Ent.DRIVE_FOLDER, newParentNameId], Msg.NOT_WRITABLE, j, jcount)
           _incrStatistic(statistics, STAT_FOLDER_NOT_WRITABLE)
           copyMoveOptions['retainSourceFolders'] = True
-          return (None, None, False)
+          return (None, None, False, False)
     elif copyMoveOptions['duplicateFolders'] == DUPLICATE_FOLDER_UNIQUE_NAME:
       newFolderName = _getUniqueFilename(newFolderName, sourceMimeType, targetChildren)
     elif copyMoveOptions['duplicateFolders'] == DUPLICATE_FOLDER_SKIP:
@@ -62793,7 +62822,7 @@ def moveDriveFile(users):
                                                              Msg.DUPLICATE, j, jcount)
         _incrStatistic(statistics, STAT_FOLDER_DUPLICATE)
         copyMoveOptions['retainSourceFolders'] = True
-        return (None, None, False)
+        return (None, None, False, False)
 # Update parents on: not retain and MD->MD, SD->MD, SD->SD
     if atTop and copyMoveOptions['sourceIsMyDriveSharedDrive']:
       pass
@@ -62822,7 +62851,7 @@ def moveDriveFile(users):
                                                    [Ent.DRIVE_FOLDER, newParentNameId, Ent.DRIVE_FOLDER, f'{newFolderName}({folderId})'],
                                                    j, jcount)
         _incrStatistic(statistics, STAT_FILE_COPIED_MOVED)
-        return (None, None, False)
+        return (None, None, False, True)
       except (GAPI.badRequest, GAPI.insufficientParentPermissions, GAPI.fileOwnerNotMemberOfTeamDrive, GAPI.fileOwnerNotMemberOfWriterDomain,
               GAPI.fileWriterTeamDriveMoveInDisabled, GAPI.targetUserRoleLimitedByLicenseRestriction,
               GAPI.cannotMoveTrashedItemIntoTeamDrive, GAPI.cannotMoveTrashedItemOutOfTeamDrive,
@@ -62832,8 +62861,8 @@ def moveDriveFile(users):
         userDriveServiceNotEnabledWarning(user, str(e), i, count)
       _incrStatistic(statistics, STAT_FILE_FAILED)
       copyMoveOptions['retainSourceFolders'] = True
-      return (None, None, False)
-# Create new  parent on: retain or MD->SD
+      return (None, None, False, False)
+# Create new parent on: retain or MD->SD
     source.pop('oldparents', None)
     body = source.copy()
     body.pop('capabilities', None)
@@ -62867,7 +62896,7 @@ def moveDriveFile(users):
                          ['copySubFolderInheritedPermissions', 'copyTopFolderInheritedPermissions'][atTop],
                          ['copySubFolderNonInheritedPermissions', 'copyTopFolderNonInheritedPermissions'][atTop],
                          True)
-      return (newFolderId, newFolderName, False)
+      return (newFolderId, newFolderName, False, True)
     except (GAPI.forbidden, GAPI.insufficientFilePermissions, GAPI.insufficientParentPermissions,
             GAPI.internalError, GAPI.storageQuotaExceeded, GAPI.teamDriveFileLimitExceeded, GAPI.teamDriveHierarchyTooDeep,
             GAPI.badRequest, GAPI.targetUserRoleLimitedByLicenseRestriction) as e:
@@ -62876,7 +62905,7 @@ def moveDriveFile(users):
       userDriveServiceNotEnabledWarning(user, str(e), i, count)
     _incrStatistic(statistics, STAT_FOLDER_FAILED)
     copyMoveOptions['retainSourceFolders'] = True
-    return (None, None, False)
+    return (None, None, False, False)
 
   def _makeMoveShortcut(drive, user, k, kcount, entityType, childId, childName, newParentId, newParentName):
     kvList = [Ent.USER, user, entityType, f'{childName}({childId})']
@@ -62926,7 +62955,7 @@ def moveDriveFile(users):
   def _moveFile(drive, user, i, count, k, kcount, entityType, childId, childName, newChildName, newParentId, newParentName, removeParents, body):
     kvList = [Ent.USER, user, entityType, f'{childName}({childId})']
     newParentNameId = f'{newParentName}({newParentId})'
-    if updateFilePermissions:
+    if updateMovePermissions:
       _updateMoveFilePermissions(drive, user, i, count,
                                  entityType, childId, childName,
                                  statistics, STAT_FILE_PERMISSIONS_FAILED, copyMoveOptions)
@@ -62971,11 +63000,17 @@ def moveDriveFile(users):
   def _recursiveFolderMove(drive, user, i, count, j, jcount,
                            source, targetChildren, newFolderName, newParentId, newParentName, mergeParentModifiedTime, atTop):
     folderId = source['id']
-    newFolderId, newFolderName, existingTargetFolder = _cloneFolderMove(drive, user, i, count, j, jcount,
-                                                                        source, targetChildren, newFolderName,
-                                                                        newParentId, newParentName, mergeParentModifiedTime,
-                                                                        statistics, copyMoveOptions, atTop)
+    newFolderId, newFolderName, existingTargetFolder, status = _cloneFolderMove(drive, user, i, count, j, jcount,
+                                                                                source, targetChildren, newFolderName,
+                                                                                newParentId, newParentName, mergeParentModifiedTime,
+                                                                                statistics, copyMoveOptions, atTop)
+    if not status:
+      return
     if newFolderId is None:
+      if updateMovePermissions:
+        _recursiveUpdateMovePermissions(drive, user, i, count,
+                                        folderId, source['name'],
+                                        statistics, copyMoveOptions, sourceSearchArgs)
       return
     movedFiles[newFolderId] = 1
     sourceChildren = callGAPIpages(drive.files(), 'list', 'files',
@@ -63062,7 +63097,7 @@ def moveDriveFile(users):
   parentBody = {}
   parentParms = initDriveFileAttributes()
   copyMoveOptions = initCopyMoveOptions(False)
-  newParentsSpecified = updateFilePermissions = False
+  newParentsSpecified = False
   movedFiles = {}
   verifyOrganizer = True
   while Cmd.ArgumentsRemaining():
@@ -63071,12 +63106,13 @@ def moveDriveFile(users):
       pass
     elif getDriveFileParentAttribute(myarg, parentParms):
       newParentsSpecified = True
-    elif myarg == 'updatefilepermissions':
-      updateFilePermissions = getBoolean()
     elif myarg == 'verifyorganizer':
       verifyOrganizer = getBoolean()
     else:
       unknownArgumentExit()
+  updateMovePermissions = (copyMoveOptions['excludePermissionsFromDomains'] or copyMoveOptions['includePermissionsFromDomains'] or
+                           copyMoveOptions['mapPermissionsDomains'] or copyMoveOptions['mapPermissionsEmails'])
+
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1

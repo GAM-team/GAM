@@ -1,7 +1,24 @@
+7.29.02
+
+Fixed bug in `gam <UserTypeEntity> move drivefile <DriveFileEntity>` where the following options
+were only applied to top level files or folders re-created in the destination. Now, domain
+and email address mappings apply to all moved files/folders.
+```
+excludepermissionsfromdomains <DomainNameList>
+includepermissionsfromdomains <DomainNameList>
+mappermissionsdomain <DomainName> <DomainName>
+mappermissionsemail <EmailAddress> <EmailAddress>
+mappermissionsemailfile <CSVFileInput> endcsv
+```
+
+Upgraded to Python 3.14.1.
+
 7.29.01
 
 Added option `oneitemperrow` to `gam <UserTypeEntity> print calendars ... permissions` to have each of a
 calendar's permissions displayed on a separate row with all of the other calendar fields.
+
+Updated `gam yubikey reset_piv` to handle YubiKey firmware updates that caused an error.
 
 7.29.00
 
