@@ -10,6 +10,21 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.29.02
+
+Fixed bug in `gam <UserTypeEntity> move drivefile <DriveFileEntity>` where the following options
+were only applied to top level files or folders re-created in the destination. Now, domain
+and email address mappings apply to all moved files/folders.
+```
+excludepermissionsfromdomains <DomainNameList>
+includepermissionsfromdomains <DomainNameList>
+mappermissionsdomain <DomainName> <DomainName>
+mappermissionsemail <EmailAddress> <EmailAddress>
+mappermissionsemailfile <CSVFileInput> endcsv
+```
+
+Upgraded to Python 3.14.1.
+
 ### 7.29.01
 
 Added option `oneitemperrow` to `gam <UserTypeEntity> print calendars ... permissions` to have each of a

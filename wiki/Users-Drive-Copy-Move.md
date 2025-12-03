@@ -561,7 +561,6 @@ gam <UserTypeEntity> move drivefile <DriveFileEntity> [newfilename <DriveFileNam
         [excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
         (mappermissionsemail <EmailAddress> <EmailAddress)* [mappermissionsemailfile <CSVFileInput> endcsv]
         (mappermissionsdomain <DomainName> <DomainName>)*
-        [updatefilepermissions [<Boolean>]]
         [retainsourcefolders [<Boolean>]]
         [sendemailifrequired [<Boolean>]]
         [verifyorganizer [<Boolean>]]
