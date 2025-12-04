@@ -9,6 +9,7 @@
 - [Create a Chrome policy image](#create-a-chrome-policy-image)
 - [Update Chrome policy](#update-chrome-policy)
 - [Delete Chrome policy](#delete-chrome-policy)
+- [Delete Chrome app](#delete-chrome-app)
 - [Display Chrome policies](#display-chrome-policies)
 - [Copy simple policies set directly in one OU to another OU](#copy-simple-policies-set-directly-in-one-ou-to-another-ou)
 - [Copy simple and complex policies set directly in one OU to another OU](#copy-simple-and-complex-policies-set-directly-in-one-ou-to-another-ou)
@@ -265,6 +266,13 @@ gam delete chromepolicy
         ((ou|orgunit <OrgUnitItem>)|(group <GroupItem>))
         [(printerid <PrinterID>)|(appid <AppID>)]
 ```
+
+## Delete Chrome app
+You can  delete an app, i.e., explicitly remove it from management. `<OrgUnitItem>` must specify where the app was added for management.
+```
+gam delete chromepolicy chrome.users.apps.InstallType ou|orgunit <OrgUnitItem> appid <AppID>
+```
+
 ## Display Chrome policies
 You can display policies for all devices/users within an OU, users with a group or for a specific printer or application within an OU.
 
