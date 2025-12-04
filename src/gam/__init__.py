@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.29.03'
+__version__ = '7.29.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -29119,6 +29119,25 @@ def doDeleteChromePolicy():
       return
   kvList = setPolicyKVList([entityType, targetName, Ent.CHROME_POLICY, ','.join(schemaNameList)], printer_id, app_id)
   updatePolicyRequests(body, targetResource, printer_id, app_id)
+  if orgUnit and app_id:
+    for request in body['requests']:
+      if request['policySchema'] == 'chrome.users.apps.InstallType':
+        # Deleting an app must be done at the Organizational Unit at which the app was explicitly added for management.
+        # When calling resolve, the field addedSourceKey contains the Organization Unit where it was added for management.
+        # In other words, delete should only be called for apps where the Organizational Unit in addedSourceKey is equal to the one in policyTargetKey.
+        # In order to delete an app (explicitly remove it from management) you should send a batchInherit request in which
+        # the policySchema is the schema for the given app type, with an asterisk (*) in place of a specific policy.
+        try:
+          result = callGAPI(cp.customers().policies(), 'resolve', 'resolvedPolicies',
+                            throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.INVALID_ARGUMENT,
+                                          GAPI.SERVICE_NOT_AVAILABLE, GAPI.QUOTA_EXCEEDED],
+                            customer=customer, body={'policySchemaFilter': request['policySchema'], 'policyTargetKey': request['policyTargetKey']})
+          if result:
+            policy = result['resolvedPolicies'][0]
+            if request['policyTargetKey']['targetResource'] == policy['addedSourceKey'].get('targetResource', ''):
+              request['policySchema'] = 'chrome.users.apps.*'
+        except (GAPI.notFound, GAPI.permissionDenied, GAPI.invalidArgument, GAPI.serviceNotAvailable, GAPI.quotaExceeded) as e:
+          continue
   try:
     callGAPI(service, function,
              throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED,
