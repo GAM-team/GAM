@@ -50,6 +50,7 @@ CLOUDIDENTITY_INBOUND_SSO = 'cloudidentityinboundsso'
 CLOUDIDENTITY_ORGUNITS = 'cloudidentityorgunits'
 CLOUDIDENTITY_ORGUNITS_BETA = 'cloudidentityorgunitsbeta'
 CLOUDIDENTITY_POLICY = 'cloudidentitypolicy'
+CLOUDIDENTITY_POLICY_BETA = 'cloudidentitypolicybeta'
 CLOUDIDENTITY_USERINVITATIONS = 'cloudidentityuserinvitations'
 CLOUDRESOURCEMANAGER = 'cloudresourcemanager'
 CONTACTS = 'contacts'
@@ -245,6 +246,7 @@ _INFO = {
   CLOUDIDENTITY_ORGUNITS: {'name': 'Cloud Identity API - OrgUnits', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_ORGUNITS_BETA: {'name': 'Cloud Identity API - OrgUnits Beta', 'version': 'v1beta1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_POLICY: {'name': 'Cloud Identity API - Policy', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
+  CLOUDIDENTITY_POLICY_BETA: {'name': 'Cloud Identity API - Policy Beta', 'version': 'v1beta1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_USERINVITATIONS: {'name': 'Cloud Identity API - User Invitations', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDRESOURCEMANAGER: {'name': 'Cloud Resource Manager API v3', 'version': 'v3', 'v2discovery': True},
   CONTACTS: {'name': 'Contacts API', 'version': 'v3', 'v2discovery': False},
@@ -397,6 +399,11 @@ _CLIENT_SCOPES = [
    'api': CLOUDIDENTITY_POLICY,
    'subscopes': READONLY,
    'roByDefault': True,
+   'scope': 'https://www.googleapis.com/auth/cloud-identity.policies'},
+  {'name': 'Cloud Identity API - Policy Beta',
+   'api': CLOUDIDENTITY_POLICY_BETA,
+   'subscopes': [],
+   'offByDefault': True,
    'scope': 'https://www.googleapis.com/auth/cloud-identity.policies'},
   {'name': 'Cloud Identity API - User Invitations',
    'api': CLOUDIDENTITY_USERINVITATIONS,

@@ -1962,6 +1962,7 @@ gam calendar <CalendarEntity> printevents <EventSelectProperty>* <EventDisplayPr
         [formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
 
 <CalendarSettingsField> ::=
+        autoacceptinvitations|
         conferenceproperties|
         description|
         id|
@@ -1971,6 +1972,7 @@ gam calendar <CalendarEntity> printevents <EventSelectProperty>* <EventDisplayPr
 <CalendarSettingsFieldList> ::= "<CalendarSettingsField>(,<CalendarSettingsField>)*"
 
 <CalendarSettings> ::=
+        (autoacceptinvitations [<Boolean>])|
         (description <String>)|
         (location <String>)|
         (summary <String>)|
@@ -1987,10 +1989,10 @@ gam calendar|calendars <CalendarEntity> modify <CalendarSettings>+
 # Chat Bot
 
 <ChatContent> ::=
-        ((text <String>)|
-         (textfile <FileName> [charset <Charset>])|
-         (gdoc <UserGoogleDoc>)|
-         (gcsdoc <StorageBucketObjectName>))
+        (text <String>)|
+        (textfile <FileName> [charset <Charset>])|
+        (gdoc <UserGoogleDoc>)|
+        (gcsdoc <StorageBucketObjectName>)
 
 <ChatMember> ::= spaces/<String>/members/<String>
 <ChatMessage> ::= spaces/<String>/messages/<String>
@@ -3201,10 +3203,10 @@ gam course <CourseID> create|add alias <CourseAlias>
 gam course <CourseID> delete alias <CourseAlias>
 
 <CourseAnnouncementContent> ::=
-        ((text <String>)|
-         (textfile <FileName> [charset <Charset>])|
-         (gdoc <UserGoogleDoc>)|
-         (gcsdoc <StorageBucketObjectName>))
+        (text <String>)|
+        (textfile <FileName> [charset <Charset>])|
+        (gdoc <UserGoogleDoc>)|
+        (gcsdoc <StorageBucketObjectName>)
 
 gam course <CourseID> create announcement
         <CourseAnnouncementContent> [scheduledtime <Time>] [state draft|published]
@@ -3575,6 +3577,12 @@ gam show domainaliases|aliasdomains
 
 # Domain - Contacts and Global Address List
 
+<ContactNoteContent> ::=
+        <String>|
+        (file|textfile <FileName> [charset <Charset>])|
+        (gdoc <UserGoogleDoc>)
+        (gcsdoc <StorageBucketObjectName>)
+         
 <ContactAttribute> ::=
         (additionalname|middlename <String>)|
         (address clear|(work|home|other|<String> ((formatted|unstructured <String>)|(streetaddress <String>)|(pobox <String>)|
@@ -3600,7 +3608,7 @@ gam show domainaliases|aliasdomains
         (mileage <String>)|
         (name <String>)|
         (nickname <String>)|
-        (note <NoteContent>)|
+        (note <ContactNoteContent>)|
         (occupation <String>)|
         (organization clear|(work|other|<String> <String> ((location <String>)|(department <String>)|(title <String>)|(jobdescription <String>)|(symbol <String>))* notprimary|primary))|
         (phone clear|(work|home|other|fax|work_fax|home_fax|other_fax|main|company_main|assistant|mobile|work_mobile|pager|work_pager|car|radio|callback|isdn|telex|tty_tdd|<String> <String> notprimary|primary))|
@@ -4728,6 +4736,7 @@ gam print resoldsubscriptions [todrive <ToDriveAttribute>*]
         (zipcode|postalcode <String>)
 
 <ResourceAttribute> ::=
+        (autoacceptinvitations [<Boolean>])|
         (addfeatures <FeatureNameList>)|
         (buildingid <BuildingID>)|
         (capacity <Number>)|
@@ -4743,6 +4752,7 @@ gam print resoldsubscriptions [todrive <ToDriveAttribute>*]
 
 <ResourceFieldName> ::=
         acls|
+        autoacceptinvitations|
         buildingid|
         calendar|
         capacity|
@@ -5668,6 +5678,11 @@ gam download storagefile <StorageBucketObjectName>
 <UserOrderByFieldName> ::=
         familyname|lastname|givenname|firstname|email
 
+<UserNoteContent> ::=
+        <String>|
+        (file|textfile|htmlfile <FileName> [charset <Charset>])|
+        (gdoc|ghtml <UserGoogleDoc>)
+         
 <UserBasicAttribute> ::=
         (archive|archived <Boolean>)|
         (changepassword|changepasswordatnextlogin <Boolean>)|
@@ -5681,9 +5696,7 @@ gam download storagefile <StorageBucketObjectName>
         (ipwhitelisted <Boolean>)|
         (language clear|<LanguageList>)|
         (lastname|familyname <String>)|
-        (note clear|([text_html|text_plain] <String>|
-                                            (file|htmlfile <FileName> [charset <Charset>])|
-                                            (gdoc|ghtml <UserGoogleDoc>)))|
+        (note clear|([text_html|text_plain] <UserNoteContent))|
         (ou|org|orgunitpath <OrgUnitPath>|<OrgUnitID>)
         (password (random [<Integer>])|(uniquerandom [<Integer>])|
                    blocklogin|
@@ -6054,6 +6067,7 @@ gam <UserTypeEntity> print backupcodes|verificationcodes [todrive <ToDriveAttrib
         (summary <String>)
 
 <CalendarSettings> ::=
+        (autoacceptinvitations [<Boolean>])|
         (description <String>)|
         (location <String>)|
         (summary <String>)|
@@ -6380,10 +6394,10 @@ gam <UserTypeEntity> print focustime|outofoffice|workinglocation
 # Users - Chat
 
 <ChatContent> ::=
-        ((text <String>)|
-         (textfile <FileName> [charset <Charset>])|
-         (gdoc <UserGoogleDoc>)|
-         (gcsdoc <StorageBucketObjectName>))
+        (text <String>)|
+        (textfile <FileName> [charset <Charset>])|
+        (gdoc <UserGoogleDoc>)|
+        (gcsdoc <StorageBucketObjectName>)
 
 <ChatMember> ::= spaces/<String>/members/<String>
 <ChatMemberList> ::= "<ChatMember>(,<ChatMember>)*"
@@ -8071,16 +8085,16 @@ gam <UserTypeEntity> check isinvitable [todrive <ToDriveAttribute>*]
 
 # Users - Keep Notes
 
-<NoteContent> ::=
-        ((text <String>)|
-         (textfile <FileName> [charset <Charset>])|
-         (gdoc <UserGoogleDoc>)|
-         (gcsdoc <StorageBucketObjectName>)|
-         <JSONData>)
+<KeepNoteContent> ::=
+        (text <String>)|
+        (textfile <FileName> [charset <Charset>])|
+        (gdoc <UserGoogleDoc>)|
+        (gcsdoc <StorageBucketObjectName>)|
+        <JSONData>
 
 gam <UserTypeEntity> create note [title <String>]
         [missingtextvalue <String>]
-        <NoteContent>
+        <KeepNoteContent>
         [copyacls [copyowneraswriter]]
         [compact|formatjson|nodetails]
 
@@ -8251,12 +8265,17 @@ gam <UserItem> print meettranscripts <MeetConferenceName> [todrive <ToDriveAttri
 
 # Users - Contacts and Profiles
 
+<BiographyContent> ::=
+        <String>|
+	(file|textfile <FileName> [charset <Charset>])|
+        (gdoc <UserGoogleDoc>)
+
 <PeopleContactAttribute> ::=
         (additionalname|middlename <String>)|
         (address clear|(work|home|other|<String> ((formatted|unstructured <String>)|(streetaddress <String>)|(pobox <String>)|
             (neighborhood <String>)|(locality <String>)|(region <String>)|(postalcode <String>)|(country <String>))* notprimary|primary))|
         (billinginfo <String>)|
-        (biography|biographies <String>|(file <FileName> [charset <Charset>])|(gdoc <UserGoogleDoc>))|
+        (biography|biographies <BiographyContent)|
         (birthday <Date>)|
         (calendar clear|(work|home|free-busy|<String> <URL> notprimary|primary))|
         (clientdata <String> <String>)|

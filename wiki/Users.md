@@ -231,6 +231,11 @@ When specifying a `<UserMultiAttribute>` you have to specify all instances; ther
 
 You can remove all instances of a `<UserMultiAttribute>` with `<UserClearAttribute>`.
 ```
+<UserNoteContent> ::=
+        <String>|
+        (file|textfile|htmlfile <FileName> [charset <Charset>])|
+        (gdoc|ghtml <UserGoogleDoc>)
+         
 <UserBasicAttribute> ::=
         (archive|archived <Boolean>)|
         (changepassword|changepasswordatnextlogin <Boolean>)|
@@ -244,9 +249,7 @@ You can remove all instances of a `<UserMultiAttribute>` with `<UserClearAttribu
         (ipwhitelisted <Boolean>)|
         (language clear|<LanguageList>)|
         (lastname|familyname <String>)|
-        (note clear|([text_html|text_plain] <String>|
-                                            (file|htmlfile <FileName> [charset <Charset>])|
-                                            (gdoc|ghtml <UserGoogleDoc>)))|
+        (note clear|([text_html|text_plain] <UserNoteContent>))|
         (org|ou|orgunitpath <OrgUnitPath>|<OrgUnitID>)
         (password (random [<Integer>])|(uniquerandom [<Integer>])|
                   blocklogin|

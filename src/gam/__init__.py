@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.29.04'
+__version__ = '7.30.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -1856,7 +1856,7 @@ def getStringOrFile(myarg, minLen=0, unescapeCRLF=False):
     if myarg in {'file', 'textfile', 'htmlfile'}:
       filename = getString(Cmd.OB_FILE_NAME)
       encoding = getCharSet()
-      return (readFile(filename, encoding=encoding), encoding, html)
+      return (readFile(setFilePath(filename, GC.INPUT_DIR), encoding=encoding), encoding, html)
     if myarg in {'gdoc', 'ghtml'}:
       f = getGDocData(myarg)
       data = f.read()
@@ -2254,7 +2254,7 @@ def getJSON(deleteFields):
     filename = getString(Cmd.OB_FILE_NAME)
     encoding = getCharSet()
     try:
-      jsonData = json.loads(readFile(filename, encoding=encoding))
+      jsonData = json.loads(readFile(setFilePath(filename, GC.INPUT_DIR), encoding=encoding))
     except (IndexError, KeyError, SyntaxError, TypeError, ValueError) as e:
       Cmd.Backup()
       usageErrorExit(Msg.JSON_ERROR.format(str(e), filename))
@@ -2906,14 +2906,13 @@ def entityModifierNewValueKeyValueActionPerformed(entityValueList, modifier, new
 def cleanFilename(filename):
   return sanitize_filename(filename, '_')
 
-def setFilePath(fileName):
-  if fileName.startswith('./') or fileName.startswith('.\\'):
-    fileName = os.path.join(os.getcwd(), fileName[2:])
-  else:
-    fileName = os.path.expanduser(fileName)
-  if not os.path.isabs(fileName):
-    fileName = os.path.join(GC.Values[GC.DRIVE_DIR], fileName)
-  return fileName
+def setFilePath(filename, cfgDir):
+  if filename.startswith('./') or filename.startswith('.\\'):
+    return os.path.join(os.getcwd(), filename[2:])
+  filename = os.path.expanduser(filename)
+  if os.path.isabs(filename):
+    return filename
+  return os.path.join(GC.Values[cfgDir], filename)
 
 def uniqueFilename(targetFolder, filetitle, overwrite, extension=None):
   filename = filetitle
@@ -3278,6 +3277,7 @@ def openCSVFileReader(filename, fieldnames=None):
     getCharSet()
   else:
     encoding = getCharSet()
+    filename = setFilePath(filename, GC.INPUT_DIR)
     f = openFile(filename, mode=DEFAULT_CSV_READ_MODE, encoding=encoding)
   if checkArgumentPresent('warnifnodata'):
     loc = f.tell()
@@ -3888,7 +3888,7 @@ def SetGlobalVariables():
 
   def _setCSVFile(fileName, mode, encoding, writeHeader, multi):
     if fileName != '-':
-      fileName = setFilePath(fileName)
+      fileName = setFilePath(fileName, GC.DRIVE_DIR)
     GM.Globals[GM.CSVFILE][GM.REDIRECT_NAME] = fileName
     GM.Globals[GM.CSVFILE][GM.REDIRECT_MODE] = mode
     GM.Globals[GM.CSVFILE][GM.REDIRECT_ENCODING] = encoding
@@ -3909,7 +3909,7 @@ def SetGlobalVariables():
       else:
         GM.Globals[stdtype][GM.REDIRECT_FD] = os.fdopen(os.dup(sys.stderr.fileno()), mode, encoding=GM.Globals[GM.SYS_ENCODING])
     else:
-      fileName = setFilePath(fileName)
+      fileName = setFilePath(fileName, GC.DRIVE_DIR)
       if multi and mode == DEFAULT_FILE_WRITE_MODE:
         deleteFile(fileName)
         mode = DEFAULT_FILE_APPEND_MODE
@@ -6815,6 +6815,7 @@ def getEntitiesFromFile(shlexSplit, returnSet=False):
   filenameLower = filename.lower()
   if filenameLower not in {'gcsv', 'gdoc', 'gcscsv', 'gcsdoc'}:
     encoding = getCharSet()
+    filename = setFilePath(filename, GC.INPUT_DIR)
     f = openFile(filename, encoding=encoding, stripUTFBOM=True)
   elif filenameLower in {'gcsv', 'gdoc'}:
     f = getGDocData(filenameLower)
@@ -7238,7 +7239,7 @@ def checkUserSuspended(cd, user, entityType=Ent.USER, i=0, count=0):
 def _addAttachmentsToMessage(message, attachments):
   for attachment in attachments:
     try:
-      attachFilename = attachment[0]
+      attachFilename = setFilePath(attachment[0], GC.INPUT_DIR)
       attachContentType, attachEncoding = mimetypes.guess_type(attachFilename)
       if attachContentType is None or attachEncoding is not None:
         attachContentType = 'application/octet-stream'
@@ -7263,7 +7264,7 @@ def _addAttachmentsToMessage(message, attachments):
 def _addEmbeddedImagesToMessage(message, embeddedImages):
   for embeddedImage in embeddedImages:
     try:
-      imageFilename = embeddedImage[0]
+      imageFilename = setFilePath(embeddedImage[0], GC.INPUT_DIR)
       imageContentType, imageEncoding = mimetypes.guess_type(imageFilename)
       if imageContentType is None or imageEncoding is not None:
         imageContentType = 'application/octet-stream'
@@ -10270,6 +10271,7 @@ def doBatch(threadBatch=False):
   filenameLower = filename.lower()
   if filenameLower not in {'gdoc', 'gcsdoc'}:
     encoding = getCharSet()
+    filename = setFilePath(filename, GC.INPUT_DIR)
     f = openFile(filename, encoding=encoding, stripUTFBOM=True)
   elif filenameLower == 'gdoc':
     f = getGDocData(filenameLower)
@@ -18500,7 +18502,7 @@ def doCheckOrgUnit():
         else:
           invalidChoiceExit(field, list(ORG_ITEMS_FIELD_MAP), True)
     elif myarg == 'filename':
-      fileName = setFilePath(getString(Cmd.OB_FILE_NAME))
+      fileName = setFilePath(getString(Cmd.OB_FILE_NAME), GC.DRIVE_DIR)
     elif myarg == 'movetoou':
       movetoouLocation = Cmd.Location()
       status, moveToOrgUnitPath, _ = checkOrgUnitPathExists(cd, getOrgUnitItem())
@@ -18517,7 +18519,7 @@ def doCheckOrgUnit():
       usageErrorExit(Msg.OU_AND_MOVETOOU_CANNOT_BE_IDENTICAL.format(orgUnitPath, moveToOrgUnitPath))
     if 'subous' in fieldsList and moveToOrgUnitPathLower.startswith(orgUnitPathLower):
       usageErrorExit(Msg.OU_SUBOUS_CANNOT_BE_MOVED_TO_MOVETOOU.format(orgUnitPath, moveToOrgUnitPath))
-    fileName = setFilePath(fileName)
+    fileName = setFilePath(fileName, GC.DRIVE_DIR)
     f = openFile(fileName, DEFAULT_FILE_WRITE_MODE)
   orgUnitItemCounts = {}
   for field in sorted(fieldsList):
@@ -29136,7 +29138,7 @@ def doDeleteChromePolicy():
             policy = result['resolvedPolicies'][0]
             if request['policyTargetKey']['targetResource'] == policy['addedSourceKey'].get('targetResource', ''):
               request['policySchema'] = 'chrome.users.apps.*'
-        except (GAPI.notFound, GAPI.permissionDenied, GAPI.invalidArgument, GAPI.serviceNotAvailable, GAPI.quotaExceeded) as e:
+        except (GAPI.notFound, GAPI.permissionDenied, GAPI.invalidArgument, GAPI.serviceNotAvailable, GAPI.quotaExceeded):
           continue
   try:
     callGAPI(service, function,
@@ -37107,6 +37109,134 @@ def _checkPoliciesWithDASA():
     systemErrorExit(USAGE_ERROR_RC,
                     Msg.COMMAND_NOT_COMPATIBLE_WITH_ENABLE_DASA.format(Act.ToPerform().lower(), Cmd.ARG_CIPOLICIES))
 
+def _getCIPolicyOrgUnitTarget(cd, myarg, groupEmail):
+  if groupEmail:
+    Cmd.Backup()
+    usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format(myarg, 'group'))
+  targetName, targetResource = _getOrgunitsOrgUnitIdPath(cd, getString(Cmd.OB_ORGUNIT_PATH))
+  return (targetName, targetResource)
+
+def _getCIPolicyGroupTarget(cd, myarg, orgUnit):
+  if orgUnit:
+    Cmd.Backup()
+    usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format(myarg, 'ou|org|orgunit'))
+  targetName = getEmailAddress(returnUIDprefix='uid:')
+  targetResource = f"groups/{convertEmailAddressToUID(targetName, cd, emailType='group')}"
+  return (targetName, targetResource)
+
+# gam create policy
+#	json <JSONData>
+#	[(ou|orgunit <OrgUnitItem>)|(group <GroupItem>)]
+# gam update policy
+#	json <JSONData>
+#	[(ou|orgunit <OrgUnitItem>)|(group <GroupItem>)]
+def doCreateUpdateCIPolicy():
+  _checkPoliciesWithDASA()
+  ci = buildGAPIObject(API.CLOUDIDENTITY_POLICY_BETA)
+  cd = buildGAPIObject(API.DIRECTORY)
+  updateCmd = Act.Get() == Act.UPDATE
+  groupEmail = orgUnit = None
+  checkArgumentPresent('json', True)
+  jsonData = getJSON(['type'])
+  if updateCmd:
+    pname = jsonData.pop('name', None)
+  else:
+    pname = 'New Policy'
+  if 'policyQuery' in jsonData:
+    jsonData['policyQuery'].pop('orgUnitPath', None)
+    jsonData['policyQuery'].pop('groupEmail', None)
+    jsonData['policyQuery'].pop('sortOrder', None)
+  if 'setting' in jsonData and 'value' in jsonData['setting']:
+    jsonData['setting']['value'].pop('createTime', None)
+    jsonData['setting']['value'].pop('updateTime', None)
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg in {'ou', 'org', 'orgunit'}:
+      orgUnit, targetResource = _getCIPolicyOrgUnitTarget(cd, myarg, groupEmail)
+      jsonData.setdefault('policyQuery', {})
+      jsonData['policyQuery'].pop('group', None)
+      jsonData['policyQuery']['orgUnit'] = targetResource
+    elif myarg == 'group':
+      groupEmail, targetResource = _getCIPolicyGroupTarget(cd, myarg, orgUnit)
+      jsonData.setdefault('policyQuery', {})
+      jsonData['policyQuery'].pop('orgUnit', None)
+      jsonData['policyQuery']['group'] = targetResource
+    else:
+      unknownArgumentExit()
+  jsonData['customer'] = _getCustomersCustomerIdWithC()
+  try:
+    if updateCmd:
+      result = callGAPI(ci.policies(), 'patch',
+                        bailOnInternalError=True,
+                        throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                        name=pname, body=jsonData)
+    else:
+      result = callGAPI(ci.policies(), 'create',
+                        bailOnInternalError=True,
+                        throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                        body=jsonData)
+    if result['done']:
+      if 'error' not in result:
+        if not updateCmd:
+          pname = result['response'].get('id', pname)
+        entityActionPerformed([Ent.POLICY, pname])
+      else:
+        entityActionFailedWarning([Ent.POLICY, pname], result['error']['message'])
+    else:
+      entityActionPerformedMessage([Ent.POLICY, pname], Msg.ACTION_IN_PROGRESS.format('delete'))
+  except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
+    entityActionFailedWarning([Ent.POLICY, pname], str(e))
+
+
+# gam delete policies <CIPolicyNameEntity>
+def doDeleteCIPolicies():
+  _checkPoliciesWithDASA()
+  ci = buildGAPIObject(API.CLOUDIDENTITY_POLICY_BETA)
+  entityList = getEntityList(Cmd.OB_CIPOLICY_NAME_ENTITY)
+  checkForExtraneousArguments()
+  i = 0
+  count = len(entityList)
+  for pname in entityList:
+    i += 1
+    if pname.startswith('policies/'):
+      try:
+        policies  = [callGAPI(ci.policies(), 'get',
+                              bailOnInternalError=True,
+                              throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                              name=pname,
+                              fields='name')]
+      except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
+        entityActionFailedWarning([Ent.POLICY, pname], str(e), i, count)
+        continue
+    else:
+      if pname.startswith('settings/'):
+        pname = pname.split('/')[1]
+      ifilter = f"setting.type.matches('{pname}')"
+      printGettingAllAccountEntities(Ent.POLICY, ifilter)
+      policies = _filterPolicies(ci, getPageMessage(), ifilter)
+    jcount = len(policies)
+    performActionNumItems(jcount, Ent.POLICY)
+    Ind.Increment()
+    j = 0
+    for policy in policies:
+      j += 1
+      pname = policy['name']
+      try:
+        result = callGAPI(ci.policies(), 'delete',
+                          bailOnInternalError=True,
+                          throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                          name=pname)
+        if result['done']:
+          if 'error' not in result:
+            entityActionPerformed([Ent.POLICY, pname], j, jcount)
+          else:
+            entityActionFailedWarning([Ent.POLICY, pname], result['error']['message'], j, jcount)
+        else:
+          entityActionPerformedMessage([Ent.POLICY, pname], Msg.ACTION_IN_PROGRESS.format('delete'), j, jcount)
+      except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
+        entityActionFailedWarning([Ent.POLICY, pname], str(e), j, jcount)
+    Ind.Decrement()
+
 # gam info policies <CIPolicyNameEntity>
 #	[nowarnings] [noappnames]
 #	[formatjson]
@@ -38851,6 +38981,7 @@ RESOURCE_CATEGORY_MAP = {
   }
 
 def _getResourceCalendarAttributes(cd, body, updateMode):
+  autoAcceptInvitations = None
   featureChanges = {'add': set(), 'remove': set()}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -38887,26 +39018,45 @@ def _getResourceCalendarAttributes(cd, body, updateMode):
       body['resourceCategory'] = getChoice(RESOURCE_CATEGORY_MAP, mapChoice=True)
     elif myarg in {'userdescription', 'uservisibledescription'}:
       body['userVisibleDescription'] = getString(Cmd.OB_STRING)
+    elif myarg == 'autoacceptinvitations':
+      autoAcceptInvitations = getBoolean()
     else:
       unknownArgumentExit()
   if ('featureInstances' in body and not body['featureInstances'] and
       not featureChanges['add'] and not featureChanges['remove']):
     body['featureInstances'] = [{}]
   if not updateMode:
-    return body
-  return body, featureChanges
+    return body, autoAcceptInvitations, None
+  return body, autoAcceptInvitations, featureChanges
+
+def updateAutoAcceptInvitations(cal, calId, autoAcceptInvitations, i=0, count=0):
+  Ind.Increment()
+  try:
+    callGAPI(cal.calendars(), 'patch',
+             throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID],
+             calendarId=calId, body={'autoAcceptInvitations': autoAcceptInvitations})
+    entityActionPerformed([Ent.CALENDAR, calId], i, count)
+  except (GAPI.notFound, GAPI.forbidden, GAPI.invalid) as e:
+    entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
+  except GAPI.notACalendarUser:
+    userCalServiceNotEnabledWarning(calId, i, count)
+  Ind.Decrement()
 
 # gam create resource <ResourceID> <Name> <ResourceAttribute>*
 def doCreateResourceCalendar():
   cd = buildGAPIObject(API.DIRECTORY)
-  body = _getResourceCalendarAttributes(cd, {'resourceId': getString(Cmd.OB_RESOURCE_ID), 'resourceName': getString(Cmd.OB_NAME)}, False)
+  body, autoAcceptInvitations, _ = _getResourceCalendarAttributes(cd, {'resourceId': getString(Cmd.OB_RESOURCE_ID), 'resourceName': getString(Cmd.OB_NAME)}, False)
+  if autoAcceptInvitations is not None:
+    cal = buildGAPIObject(API.CALENDAR)
   try:
-    callGAPI(cd.resources().calendars(), 'insert',
-             throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.SERVICE_NOT_AVAILABLE,
-                           GAPI.REQUIRED, GAPI.DUPLICATE, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
-             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-             customer=GC.Values[GC.CUSTOMER_ID], body=body, fields='')
+    result = callGAPI(cd.resources().calendars(), 'insert',
+                      throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.SERVICE_NOT_AVAILABLE,
+                                    GAPI.REQUIRED, GAPI.DUPLICATE, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
+                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                      customer=GC.Values[GC.CUSTOMER_ID], body=body, fields='resourceEmail')
     entityActionPerformed([Ent.RESOURCE_CALENDAR, body['resourceId']])
+    if autoAcceptInvitations is not None:
+      updateAutoAcceptInvitations(cal, result['resourceEmail'], autoAcceptInvitations)
   except (GAPI.invalid, GAPI.invalidInput, GAPI.serviceNotAvailable) as e:
     entityActionFailedWarning([Ent.RESOURCE_CALENDAR, body['resourceId']], str(e))
   except GAPI.required as e:
@@ -38924,17 +39074,19 @@ def doCreateResourceCalendar():
 
 def _doUpdateResourceCalendars(entityList):
   cd = buildGAPIObject(API.DIRECTORY)
-  body, featureChanges = _getResourceCalendarAttributes(cd, {}, True)
+  body, autoAcceptInvitations, featureChanges = _getResourceCalendarAttributes(cd, {}, True)
+  if autoAcceptInvitations is not None:
+    cal = buildGAPIObject(API.CALENDAR)
   i = 0
   count = len(entityList)
   for resourceId in entityList:
     i += 1
     try:
-      if featureChanges['add'] or featureChanges['remove']:
-        features = callGAPI(cd.resources().calendars(), 'get',
-                            throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE, GAPI.FORBIDDEN],
-                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                            customer=GC.Values[GC.CUSTOMER_ID], calendarResourceId=resourceId, fields='featureInstances(feature(name))')
+      if autoAcceptInvitations is not None  or featureChanges['add'] or featureChanges['remove']:
+        result = callGAPI(cd.resources().calendars(), 'get',
+                          throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE, GAPI.FORBIDDEN],
+                          retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                          customer=GC.Values[GC.CUSTOMER_ID], calendarResourceId=resourceId, fields='resourceEmail,featureInstances(feature(name))')
         bodyFeatures = body.pop('featureInstances', [])
         body['featureInstances'] = []
         featureSet = set()
@@ -38943,7 +39095,7 @@ def _doUpdateResourceCalendars(entityList):
           if featureName not in featureChanges['remove'] and featureName not in featureSet:
             body['featureInstances'].append({'feature': {'name': featureName}})
             featureSet.add(featureName)
-        for feature in features.get('featureInstances', []):
+        for feature in result.get('featureInstances', []):
           featureName = feature['feature']['name']
           if featureName not in featureChanges['remove'] and featureName not in featureSet:
             body['featureInstances'].append({'feature': {'name': featureName}})
@@ -38960,6 +39112,8 @@ def _doUpdateResourceCalendars(entityList):
                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                customer=GC.Values[GC.CUSTOMER_ID], calendarResourceId=resourceId, body=body, fields='')
       entityActionPerformed([Ent.RESOURCE_CALENDAR, resourceId], i, count)
+      if autoAcceptInvitations is not None:
+        updateAutoAcceptInvitations(cal, result['resourceEmail'], autoAcceptInvitations, i, count)
     except (GAPI.invalid, GAPI.invalidInput, GAPI.serviceNotAvailable, GAPI.required)  as e:
       entityActionFailedWarning([Ent.RESOURCE_CALENDAR, resourceId], str(e), i, count)
     except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
@@ -41171,6 +41325,7 @@ def doCalendarsPrintShowEvents(calIds):
 
 # <CalendarSettings> ::==
 #	[description <String>] [location <String>] [summary <String>] [timezone <TimeZone>]
+#	[autoacceptinvitations [<Boolean>]]
 def _getCalendarSetting(myarg, body):
   if myarg == 'description':
     body['description'] = getStringWithCRsNLs()
@@ -41180,6 +41335,8 @@ def _getCalendarSetting(myarg, body):
     body['summary'] = getString(Cmd.OB_STRING)
   elif myarg == 'timezone':
     body['timeZone'] = getString(Cmd.OB_STRING)
+  elif myarg == 'autoacceptinvitations':
+    body['autoAcceptInvitations'] = getBoolean()
   else:
     return False
   return True
@@ -41232,9 +41389,12 @@ def _showCalendarSettings(calendar, j, jcount):
     Ind.Increment()
     printKeyValueList(['AllowedConferenceSolutionTypes', ','.join(calendar.get('conferenceProperties', {}).get('allowedConferenceSolutionTypes', []))])
     Ind.Decrement()
+  if 'autoAcceptInvitations' in calendar:
+    printKeyValueList(['AutoAcceptInvitations', calendar['autoAcceptInvitations']])
   Ind.Decrement()
 
 CALENDAR_SETTINGS_FIELDS_CHOICE_MAP = {
+  'autoacceptinvitations': 'autoAcceptInvitations',
   'conferenceproperties': 'conferenceProperties',
   'dataowner': 'dataOwner',
   'description': 'description',
@@ -41719,6 +41879,26 @@ def _copyStorageObjects(objects, target_bucket, target_prefix):
   except Exception:
     ClientAPIAccessDeniedExit()
   Act.Set(action)
+
+def md5MatchesFile(filename, expected_md5, j=0, jcount=0):
+  action = Act.Get()
+  Act.Set(Act.VERIFY)
+  try:
+    f = openFile(filename, 'rb')
+    hash_md5 = hashlib.md5()
+    for chunk in iter(lambda: f.read(4096), b""):
+      hash_md5.update(chunk)
+    closeFile(f)
+    actual_hash = hash_md5.hexdigest()
+    if actual_hash == expected_md5:
+      entityActionPerformed([Ent.FILE, filename, Ent.MD5HASH, expected_md5], j, jcount)
+      Act.Set(action)
+      return True
+    entityActionFailedWarning([Ent.FILE, filename, Ent.MD5HASH, expected_md5], Msg.DOES_NOT_MATCH.format(actual_hash), j, jcount)
+    Act.Set(action)
+    return False
+  except IOError as e:
+    systemErrorExit(FILE_ERROR_RC, fileErrorMessage(filename, e))
 
 def _getCloudStorageObject(s, bucket, s_object, localFilename, expectedMd5=None, zipToStdout=False, j=0, jcount=0):
   if not zipToStdout:
@@ -42549,26 +42729,6 @@ def doPrintShowVaultExports():
               _printVaultExport(export)
   if csvPF:
     csvPF.writeCSVfile('Vault Exports')
-
-def md5MatchesFile(filename, expected_md5, j=0, jcount=0):
-  action = Act.Get()
-  Act.Set(Act.VERIFY)
-  try:
-    f = openFile(filename, 'rb')
-    hash_md5 = hashlib.md5()
-    for chunk in iter(lambda: f.read(4096), b""):
-      hash_md5.update(chunk)
-    closeFile(f)
-    actual_hash = hash_md5.hexdigest()
-    if actual_hash == expected_md5:
-      entityActionPerformed([Ent.FILE, filename, Ent.MD5HASH, expected_md5], j, jcount)
-      Act.Set(action)
-      return True
-    entityActionFailedWarning([Ent.FILE, filename, Ent.MD5HASH, expected_md5], Msg.DOES_NOT_MATCH.format(actual_hash), j, jcount)
-    Act.Set(action)
-    return False
-  except IOError as e:
-    systemErrorExit(FILE_ERROR_RC, fileErrorMessage(filename, e))
 
 # gam copy vaultexport|export <ExportItem> matter <MatterItem>
 #	[targetbucket <String>] [targetprefix <String>]
@@ -47372,7 +47532,7 @@ def doCreateInboundSSOCredential():
       if not profile:
         return
     elif myarg == 'pemfile':
-      pemData = readFile(getString(Cmd.OB_FILE_NAME))
+      pemData = readFile(setFilePath(getString(Cmd.OB_FILE_NAME), GC.INPUT_DIR))
     elif myarg == 'generatekey':
       generateKey = True
     elif myarg == 'replaceoldest':
@@ -73211,6 +73371,7 @@ def _draftImportInsertMessage(users, operation):
       filename = getString(Cmd.OB_FILE_NAME)
       if checkArgumentPresent('charset'):
         emlEncoding = getString(Cmd.OB_CHAR_SET)
+      filename = setFilePath(filename, GC.INPUT_DIR)
       msgText = readFile(filename, encoding=emlEncoding)
       emlFile = True
       internalDateSource = 'dateHeader'
@@ -76042,8 +76203,7 @@ def createSmime(users):
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'file':
-      smimefile = getString(Cmd.OB_FILE_NAME)
-      smimeData = readFile(smimefile, mode='rb')
+      smimeData = readFile(setFilePath(getString(Cmd.OB_FILE_NAME), GC.INPUT_DIR), mode='rb')
       body['pkcs12'] = base64.urlsafe_b64encode(smimeData).decode(UTF8)
     elif myarg == 'password':
       body['encryptedKeyPassword'] = getString(Cmd.OB_PASSWORD)
@@ -78124,7 +78284,7 @@ def importTasklist(users):
   filename = getString(Cmd.OB_FILE_NAME)
   encoding = getCharSet()
   try:
-    jsonData = json.loads(readFile(filename, encoding=encoding))
+    jsonData = json.loads(readFile(setFilePath(filename, GC.INPUT_DIR), encoding=encoding))
   except (IndexError, KeyError, SyntaxError, TypeError, ValueError) as e:
     Cmd.Backup()
     usageErrorExit(Msg.JSON_ERROR.format(str(e), filename))
@@ -78648,6 +78808,7 @@ MAIN_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_CHROMEPOLICYIMAGE:	doCreateChromePolicyImage,
   Cmd.ARG_CHROMEPROFILECOMMAND:	doCreateChromeProfileCommand,
   Cmd.ARG_CIGROUP:		doCreateCIGroup,
+  Cmd.ARG_CIPOLICY:		doCreateUpdateCIPolicy,
   Cmd.ARG_CONTACT:		doCreateDomainContact,
   Cmd.ARG_COURSE:		doCreateCourse,
   Cmd.ARG_COURSESTUDENTGROUP:	doCreateCourseStudentGroups,
@@ -78768,6 +78929,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMEPOLICY:	doDeleteChromePolicy,
       Cmd.ARG_CHROMEPROFILE:	doDeleteChromeProfile,
       Cmd.ARG_CIGROUP:		doDeleteCIGroups,
+      Cmd.ARG_CIPOLICY:		doDeleteCIPolicies,
       Cmd.ARG_CLASSROOMINVITATION:	doDeleteClassroomInvitations,
       Cmd.ARG_CONTACT:		doDeleteDomainContacts,
       Cmd.ARG_CONTACTPHOTO:	doDeleteDomainContactPhoto,
@@ -79161,6 +79323,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHATMESSAGE:	doUpdateChatMessage,
       Cmd.ARG_CHROMEPOLICY:	doUpdateChromePolicy,
       Cmd.ARG_CIGROUP:		doUpdateCIGroups,
+      Cmd.ARG_CIPOLICY:		doCreateUpdateCIPolicy,
       Cmd.ARG_CONTACT:		doUpdateDomainContacts,
       Cmd.ARG_CONTACTPHOTO:	doUpdateDomainContactPhoto,
       Cmd.ARG_COURSE:		doUpdateCourse,
