@@ -10,7 +10,9 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
-### Added `input_dir` directory variable to `gam.cfg` that is used to select a directory for reading files with non-absolute file names.
+### 7.30.00
+
+Added `input_dir` directory variable to `gam.cfg` that is used to select a directory for reading files with non-absolute file names.
 The default is an empty string that matches the current behavior where these files are read from the current working directory.
 This will be most useful in multiple domain situations where each domain will have distinct `drive_dir` and `input_dir` values.
 
