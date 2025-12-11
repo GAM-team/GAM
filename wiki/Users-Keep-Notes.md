@@ -40,12 +40,12 @@ gam user user@domain.com update serviceaccount
 <JSONData> ::=
         (json [charset <Charset>] <String>) | (json file <FileName> [charset <Charset>]) |
 
-<NoteContent> ::=
-        ((text <String>)|
-         (textfile <FileName> [charset <Charset>])|
-         (gdoc <UserGoogleDoc>)|
-         (gcsdoc <StorageBucketObjectName>)|
-         <JSONData>)
+<KeepNoteContent> ::=
+        (text <String>)|
+        (textfile <FileName> [charset <Charset>])|
+        (gdoc <UserGoogleDoc>)|
+        (gcsdoc <StorageBucketObjectName>)|
+        <JSONData>
 
 <NotesName> ::= notes/<String>
 <NotesNameList> ::= "<NotesName>(,<NotesName)*"
@@ -84,11 +84,11 @@ you will use wherever `<NotesName>` is required.
 ```
 gam <UserTypeEntity> create note [title <String>]
         [missingtextvalue <String>]
-        <NoteContent>
+        <KeepNoteContent>
         [copyacls [copyowneraswriter]]
         [compact|formatjson|nodetails]
 ```
-`<NoteContent>` is the note text, there are four ways to specify it:
+`<KeepNoteContent>` is the note text, there are four ways to specify it:
 * `message|textmessage|htmlmessage <String>` - Use `<String>` as the note text
 * `file|htmlfile <FileName> [charset <Charset>]` - Read the note text from `<FileName>`
 * `gdoc|ghtml <UserGoogleDoc>` - Read the note text from `<UserGoogleDoc>`

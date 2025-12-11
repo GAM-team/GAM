@@ -84,6 +84,7 @@ See [Collections of Items](Collections-of-Items)
         (zipcode|postalcode <String>)
 
 <ResourceAttribute> ::=
+        (autoacceptinvitations [<Boolean>])|
         (addfeatures <FeatureNameList>)|
         (buildingid <BuildingID>)|
         (capacity <Number>)|
@@ -99,6 +100,7 @@ See [Collections of Items](Collections-of-Items)
 
 <ResourceFieldName> ::=
         acls|
+        autoacceptinvitations|
         buildingid|
         calendar|
         capacity|

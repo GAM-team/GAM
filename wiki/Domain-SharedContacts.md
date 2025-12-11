@@ -29,11 +29,11 @@
 <UserGoogleDoc> ::=
         <EmailAddress> <DriveFileIDEntity>|<DriveFileNameEntity>|(<SharedDriveEntity> <SharedDriveFileNameEntity>)
 
-<NoteContent> ::=
-        ((<String>)|
-         (file <FileName> [charset <Charset>])|
-         (gdoc <UserGoogleDoc>)|
-         (gcsdoc <StorageBucketObjectName>))
+<ContactNoteContent> ::=
+        (<String>)|
+        (file|textfile <FileName> [charset <Charset>])|
+        (gdoc <UserGoogleDoc>)|
+        (gcsdoc <StorageBucketObjectName>)
 
 <Date> ::=
         <Year>-<Month>-<Day> |
@@ -79,7 +79,7 @@
         (mileage <String>)|
         (name <String>)|
         (nickname <String>)|
-        (note <NoteContent>)|
+        (note <ContactNoteContent>)|
         (occupation <String>)|
         (prefix <String>)|
         (priority low|normal|high)

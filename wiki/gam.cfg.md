@@ -367,6 +367,9 @@ gmail_cse_incert_dir
 gmail_cse_inkey_dir
         Directory for the Key Access Control List (KACL) wrapped private key data files used by Gmail Client Side Encryption.
         Default: Blank
+input_dir
+        Directory for <CSVFileInput>, <FileSelector>, <BatchContent> specifying non-absolute file names.
+        Default: Blank
 inter_batch_wait
         When processing items in batches, how many seconds should GAM wait between batches
         Default: 0

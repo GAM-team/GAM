@@ -27,12 +27,14 @@ Client access works when accessing Resource calendars.
         See: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 
 <CalendarSettings> ::=
+        (autoacceptinvitations [<Boolean>])|
         (description <String>)|
         (location <String>)|
         (summary <String>)|
         (timezone <TimeZone>)
 
 <CalendarSettingsField> ::=
+        autoacceptinvitations|3
         conferenceproperties|
         dataowner|
         description|

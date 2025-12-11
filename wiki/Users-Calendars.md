@@ -42,12 +42,14 @@
         editor|freebusy|freebusyreader|owner|reader|writer
 
 <CalendarSettings> ::=
+        (autoacceptinvitations [<Boolean>])|
         (description <String>)|
         (location <String>)|
         (summary <String>)|
         (timezone <TimeZone>)
 
 <CalendarSettingsField> ::=
+        autoacceptinvitations|3
         conferenceproperties|
         dataowner|
         description|
