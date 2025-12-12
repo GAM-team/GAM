@@ -67694,7 +67694,7 @@ def _getSharedDriveRestrictions(myarg, body):
   return False
 
 def _checkSharedDriveRestrictions(body):
-  if 'copyRequiresWriterPermission' in body['restrictions'] and 'downloadRestriction' in body['restrictions']:
+  if 'restrictions' in body and 'copyRequiresWriterPermission' in body['restrictions'] and 'downloadRestriction' in body['restrictions']:
     usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('copyrequireswriterpermission', 'downloadrestrictedforreaders|downloadrestrictedforwriters'))
     
 def _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci, returnIdOnly):
