@@ -774,27 +774,43 @@ The attendee changes are displayed but not processed unless `doit` is specified.
 ## Focus time events
 
 ## Manage focus time events
-You can create and delete focus time events; they can not be updated.
-To update a focus time event, delete the focus time event and recreate it.
+To update a focus time event, see: [Update calendar events](#update-calendar-events)
 ```
 gam <UserTypeEntity> create focustime
         [chatstatus available|donotdisturb]|
         [declinemode none|all|new] [declinemessage <String>]|
         [summary <String>]
-        (timerange <Time> <Time>
-        (recurrence <RRULE, EXRULE, RDATE and EXDATE line>)*
+        ((date yyyy-mm-dd)|
+         (range yyyy-mm-dd yyyy-mm-dd)|
+         (daily yyyy-mm-dd <Number>)|
+         (weekly yyyy-mm-dd <Number>)|
+         (timerange <Time> <Time> (recurrence <RRULE, EXRULE, RDATE and EXDATE line>)*))+
+        [timezone <String>]
+        (noreminders|(reminder email|popup <Number>)+)
 
 gam <UserTypeEntity> delete focustime
-        (timerange <Time> <Time>)+
+        ((date yyyy-mm-dd)|
+         (range yyyy-mm-dd yyyy-mm-dd)|
+         (daily yyyy-mm-dd <Number>)|
+         (weekly yyyy-mm-dd <Number>)|
+         (timerange <Time> <Time>))+
 ```
 
-focus time events span a time range:
+Focus time events span a time range:
+* `date yyyy-mm-dd` - A specific day
+* `range yyyy-mm-dd yyyy-mm-dd` - Every day in the range
+* `daily yyyy-mm-dd <Number>` - Every day starting on the date for `<Number>` total days
+* `weekly yyyy-mm-dd <Number>` - A day per week starting on the date for `<Number>` total weeks
 * `timerange <Time> <Time>` - A time range, may span multiple days
 
 ## Display focus time events
 ```
 gam <UserTypeEntity> show focustime
-        (timerange <Time> <Time>)+
+        ((date yyyy-mm-dd)|
+         (range yyyy-mm-dd yyyy-mm-dd)|
+         (daily yyyy-mm-dd <Number>)|
+         (weekly yyyy-mm-dd <Number>)|
+         (timerange <Time> <Time>))+
         [showdayofweek]
         [formatjson]
 ```
@@ -805,7 +821,11 @@ By default, Gam displays the information as an indented list of keys and values.
 
 ```
 gam <UserTypeEntity> print focustime
-        (timerange <Time> <Time>)+
+        ((date yyyy-mm-dd)|
+         (range yyyy-mm-dd yyyy-mm-dd)|
+         (daily yyyy-mm-dd <Number>)|
+         (weekly yyyy-mm-dd <Number>)|
+         (timerange <Time> <Time>))+
         [showdayofweek]
         [formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
 ```
@@ -825,27 +845,39 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 ## Out of office events
 
 ## Manage out of office events
-You can create and delete out of office events; they can not be updated.
-To update an out of office event, delete the out of office event and recreate it.
+To update an out of office event, see: [Update calendar events](#update-calendar-events)
 ```
 gam <UserTypeEntity> create outofoffice
         [declinemode none|all|new]
         [declinemessage <String>]
         [summary <String>]
-        (timerange <Time> <Time>
-        (recurrence <RRULE, EXRULE, RDATE and EXDATE line>)*
+        ((date yyyy-mm-dd)|
+         (range yyyy-mm-dd yyyy-mm-dd)|
+         (daily yyyy-mm-dd <Number>)|
+         (weekly yyyy-mm-dd <Number>)|
+         (timerange <Time> <Time> (recurrence <RRULE, EXRULE, RDATE and EXDATE line>)*))+
+        [timezone <String>]
+        (noreminders|(reminder email|popup <Number>)+)
 
 gam <UserTypeEntity> delete outofoffice
         (timerange <Time> <Time>)+
 ```
 
 Out of office events span a time range:
+* `date yyyy-mm-dd` - A specific day
+* `range yyyy-mm-dd yyyy-mm-dd` - Every day in the range
+* `daily yyyy-mm-dd <Number>` - Every day starting on the date for `<Number>` total days
+* `weekly yyyy-mm-dd <Number>` - A day per week starting on the date for `<Number>` total weeks
 * `timerange <Time> <Time>` - A time range, may span multiple days
 
 ## Display out of office events
 ```
 gam <UserTypeEntity> show outofoffice
-        (timerange <Time> <Time>)+
+        ((date yyyy-mm-dd)|
+         (range yyyy-mm-dd yyyy-mm-dd)|
+         (daily yyyy-mm-dd <Number>)|
+         (weekly yyyy-mm-dd <Number>)|
+         (timerange <Time> <Time>))+
         [showdayofweek]
         [formatjson]
 ```
@@ -856,6 +888,11 @@ By default, Gam displays the information as an indented list of keys and values.
 
 ```
 gam <UserTypeEntity> print outofoffice
+        ((date yyyy-mm-dd)|
+         (range yyyy-mm-dd yyyy-mm-dd)|
+         (daily yyyy-mm-dd <Number>)|
+         (weekly yyyy-mm-dd <Number>)|
+         (timerange <Time> <Time>))+
         (timerange <Time> <Time>)+
         [showdayofweek]
         [formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
@@ -888,7 +925,9 @@ gam <UserTypeEntity> create workinglocation
          (range yyyy-mm-dd yyyy-mm-dd)|
          (daily yyyy-mm-dd <Number>)|
          (weekly yyyy-mm-dd <Number>)|
-         (timerange <Time> <Time>))+
+         (timerange <Time> <Time> (recurrence <RRULE, EXRULE, RDATE and EXDATE line>)*))+
+        [timezone <String>]
+        (noreminders|(reminder email|popup <Number>)+)
 
 gam <UserTypeEntity> delete workinglocation
         ((date yyyy-mm-dd)|
