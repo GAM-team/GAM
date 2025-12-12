@@ -67693,6 +67693,10 @@ def _getSharedDriveRestrictions(myarg, body):
     return True
   return False
 
+def _checkSharedDriveRestrictions(body):
+  if 'copyRequiresWriterPermission' in body['restrictions'] and 'downloadRestriction' in body['restrictions']:
+    usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('copyrequireswriterpermission', 'downloadrestrictedforreaders|downloadrestrictedforwriters'))
+    
 def _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci, returnIdOnly):
   action = Act.Get()
   name = f'orgUnits/-/memberships/shared_drive;{driveId}'
@@ -67771,6 +67775,7 @@ def createSharedDrive(users, useDomainAdminAccess=False):
       moveToOrgUnitDelay = getInteger(minVal=0, maxVal=60)
     else:
       unknownArgumentExit()
+  _checkSharedDriveRestrictions(body)
   if csvPF:
     csvPF.SetTitles(['User', 'name', 'id'])
     if addCSVData:
@@ -67914,6 +67919,7 @@ def updateSharedDrive(users, useDomainAdminAccess=False):
       useDomainAdminAccess = True
     else:
       unknownArgumentExit()
+  _checkSharedDriveRestrictions(body)
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
