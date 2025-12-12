@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.30.00'
+__version__ = '7.30.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -40023,6 +40023,16 @@ def _getCalendarSendUpdates(myarg, parameters):
     return False
   return True
 
+def _getCalendarEventReminders(myarg, body):
+  if myarg == 'noreminders':
+    body['reminders'] = {'overrides': [], 'useDefault': False}
+  elif myarg == 'reminder':
+    body.setdefault('reminders', {'overrides': [], 'useDefault': False})
+    body['reminders']['overrides'].append(getCalendarReminder())
+  else:
+    return False
+  return True
+
 CALENDAR_MIN_COLOR_INDEX = 1
 CALENDAR_MAX_COLOR_INDEX = 24
 
@@ -40223,12 +40233,8 @@ def _getCalendarEventAttribute(myarg, body, parameters, function):
     body['colorId'] = getChoice(CALENDAR_EVENT_COLOR_MAP, mapChoice=True)
   elif myarg in {'colorindex', 'colorid', 'colourindex', 'colourid'}:
     body['colorId'] = getInteger(CALENDAR_EVENT_MIN_COLOR_INDEX, CALENDAR_EVENT_MAX_COLOR_INDEX)
-  elif myarg == 'noreminders':
-    body['reminders'] = {'overrides': [], 'useDefault': False}
-  elif myarg == 'reminder':
-    body.setdefault('reminders', {'overrides': [], 'useDefault': False})
-    body['reminders']['overrides'].append(getCalendarReminder())
-    body['reminders']['useDefault'] = False
+  elif _getCalendarEventReminders(myarg, body):
+    pass
   elif myarg == 'sequence':
     body['sequence'] = getInteger(minVal=0)
   elif myarg == 'privateproperty':
@@ -54133,6 +54139,26 @@ def printShowCalendarEvents(users):
     else:
       csvPF.writeCSVfile('Calendar Events')
 
+EVENT_AUTO_DECLINE_MODE_CHOICE_MAP = {
+  'declinenone': 'declineNone',
+  'declineallconflictinginvitations': 'declineAllConflictingInvitations',
+  'declineonlynewconflictinginvitations': 'declineOnlyNewConflictingInvitations',
+  'none': 'declineNone',
+  'all': 'declineAllConflictingInvitations',
+  'new': 'declineOnlyNewConflictingInvitations',
+  }
+
+def getStatusEventSummaryDecline(myarg, body, eventProperties):
+  if myarg == 'summary':
+    body['summary'] = getString(Cmd.OB_STRING, minLen=0)
+  elif myarg == 'declinemode':
+    body[eventProperties]['autoDeclineMode'] = getChoice(EVENT_AUTO_DECLINE_MODE_CHOICE_MAP, mapChoice=True)
+  elif myarg == 'declinemessage':
+    body[eventProperties]['declineMessage'] = getString(Cmd.OB_STRING)
+  else:
+    return False
+  return True
+
 def getStatusEventDateTime(dateType, dateList):
   if dateType == 'timerange':
     startTime = getTimeOrDeltaFromNow(returnDateTime=True)[0]
@@ -54143,46 +54169,38 @@ def getStatusEventDateTime(dateType, dateList):
     recurrence = []
     while checkArgumentPresent(['recurrence']):
       recurrence.append(getString(Cmd.OB_RECURRENCE))
-    dateList.append({'type': dateType, 'first': startTime, 'last': endTime, 'ulast': endTime, 'recurrence': recurrence})
+    dateList.append({'type': dateType, 'first': startTime, 'last': endTime,
+                     'repeats': 1, 'ulast': endTime, 'udelta': {'days': 1}, 'recurrence': recurrence})
     return
   firstDate = getYYYYMMDD(minLen=1, returnDateTime=True).replace(tzinfo=GC.Values[GC.TIMEZONE])
-  if dateType == 'range':
-    lastDate = getYYYYMMDD(minLen=1, returnDateTime=True).replace(tzinfo=GC.Values[GC.TIMEZONE])
   if dateType in {'date', 'allday'}:
     dateList.append({'type': 'date', 'first': firstDate, 'last': firstDate.shift(days=1),
-                     'ulast': firstDate.shift(days=1), 'udelta': {'days': 1}})
+                     'repeats': 1, 'ulast': firstDate.shift(days=1), 'udelta': {'days': 1}})
   elif dateType == 'range':
+    lastDate = getYYYYMMDD(minLen=1, returnDateTime=True).replace(tzinfo=GC.Values[GC.TIMEZONE])
     dateList.append({'type': dateType, 'first': firstDate, 'last': lastDate.shift(days=1),
-                     'ulast': lastDate, 'udelta': {'days': 1}})
+                     'repeats': 1, 'ulast': lastDate, 'udelta': {'days': 1}})
   elif dateType == 'daily':
     argRepeat = getInteger(minVal=1, maxVal=366)
-    dateList.append({'type': dateType, 'first': firstDate, 'last': firstDate.shift(days=argRepeat),
-                     'ulast': firstDate.shift(days=argRepeat), 'udelta': {'days': 1}})
+    dateList.append({'type': dateType, 'first': firstDate, 'last': firstDate.shift(days=1),
+                     'repeats': argRepeat, 'ulast': firstDate.shift(days=argRepeat), 'udelta': {'days': 1}})
   else: #weekly
     argRepeat = getInteger(minVal=1, maxVal=52)
     dateList.append({'type': dateType, 'first': firstDate, 'last': firstDate.shift(days=1),
-                     'pdelta': {'weeks': 1}, 'repeats': argRepeat,
-                     'ulast': firstDate.shift(weeks=argRepeat), 'udelta': {'weeks': 1}})
+                     'repeats': argRepeat, 'ulast': firstDate.shift(weeks=argRepeat), 'udelta': {'weeks': 1}})
 
-def _showCalendarStatusEvent(primaryEmail, calId, eventEntityType, event, k, kcount, FJQC):
-  if FJQC.formatJSON:
-    printLine(json.dumps(cleanJSON({'primaryEmail': primaryEmail, 'calendarId': calId, 'event': event},
-                                   timeObjects=EVENT_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
-    return
-  printEntity([eventEntityType, event['id']], k, kcount)
-  skipObjects = {'id'}
-  Ind.Increment()
-  showJSON(None, event, skipObjects, EVENT_TIME_OBJECTS)
-  Ind.Decrement()
+STATUS_EVENTS_DATETIME_CHOICES = {'date', 'allday', 'range', 'daily', 'weekly', 'timerange'}
 
-EVENT_AUTO_DECLINE_MODE_CHOICE_MAP = {
-  'declinenone': 'declineNone',
-  'declineallconflictinginvitations': 'declineAllConflictingInvitations',
-  'declineonlynewconflictinginvitations': 'declineOnlyNewConflictingInvitations',
-  'none': 'declineNone',
-  'all': 'declineAllConflictingInvitations',
-  'new': 'declineOnlyNewConflictingInvitations',
-  }
+def getStatusEventProperties(myarg, body, parameters, dateList):
+  if myarg in STATUS_EVENTS_DATETIME_CHOICES:
+    getStatusEventDateTime(myarg, dateList)
+  elif myarg == 'timezone':
+    parameters['timeZone'] = getString(Cmd.OB_STRING)
+  elif _getCalendarEventReminders(myarg, body):
+    pass
+  else:
+    return False
+  return True
 
 EVENT_CHAT_STATUS_CHOICE_MAP = {
   'available': 'available',
@@ -54193,22 +54211,16 @@ EVENT_CHAT_STATUS_CHOICE_MAP = {
 def getFocusTimeProperties(body, parameters, dateList):
   eventProperties = EVENT_TYPE_PROPERTIES_NAME_MAP[EVENT_TYPE_FOCUSTIME]
   body.update({'eventType': EVENT_TYPE_FOCUSTIME, 'summary': 'Focus time',
-               eventProperties: {'autoDeclineMode': 'declineNone', 'chatStatus': 'available', 'declineMessage': 'Declined'},
+               eventProperties: {'autoDeclineMode': 'declineNone', 'declineMessage': 'Declined', 'chatStatus': 'available'},
                'transparency':'opaque'})
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if myarg == 'summary':
-      body['summary'] = getString(Cmd.OB_STRING, minLen=0)
-    elif myarg == 'declinemode':
-      body[eventProperties]['autoDeclineMode'] = getChoice(EVENT_AUTO_DECLINE_MODE_CHOICE_MAP, mapChoice=True)
-    elif myarg == 'declinemessage':
-      body[eventProperties]['declineMessage'] = getString(Cmd.OB_STRING)
+    if getStatusEventSummaryDecline(myarg, body, eventProperties):
+      pass
+    elif getStatusEventProperties(myarg, body, parameters, dateList):
+      pass
     elif myarg == 'chatstatus':
       body[eventProperties]['chatStatus'] = getChoice(EVENT_CHAT_STATUS_CHOICE_MAP, mapChoice=True)
-    elif myarg == 'timerange':
-      getStatusEventDateTime(myarg, dateList)
-    elif myarg == 'timezone':
-      parameters['timeZone'] = getString(Cmd.OB_STRING)
     else:
       unknownArgumentExit()
 
@@ -54219,20 +54231,12 @@ def getOutOfOfficeProperties(body, parameters, dateList):
                'transparency':'opaque'})
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if myarg == 'summary':
-      body['summary'] = getString(Cmd.OB_STRING, minLen=0)
-    elif myarg == 'declinemode':
-      body[eventProperties]['autoDeclineMode'] = getChoice(EVENT_AUTO_DECLINE_MODE_CHOICE_MAP, mapChoice=True)
-    elif myarg == 'declinemessage':
-      body[eventProperties]['declineMessage'] = getString(Cmd.OB_STRING)
-    elif myarg == 'timerange':
-      getStatusEventDateTime(myarg, dateList)
-    elif myarg == 'timezone':
-      parameters['timeZone'] = getString(Cmd.OB_STRING)
+    if getStatusEventSummaryDecline(myarg, body, eventProperties):
+      pass
+    elif getStatusEventProperties(myarg, body, parameters, dateList):
+      pass
     else:
       unknownArgumentExit()
-
-STATUS_EVENTS_DATETIME_CHOICES = {'date', 'allday', 'range', 'daily', 'weekly', 'timerange'}
 
 WORKING_LOCATION_CHOICE_MAP = {
   'custom': 'customLocation',
@@ -54272,10 +54276,8 @@ def getWorkingLocationProperties(body, parameters, dateList):
           else:
             Cmd.Backup()
             break
-    elif myarg in STATUS_EVENTS_DATETIME_CHOICES:
-      getStatusEventDateTime(myarg, dateList)
-    elif myarg == 'timezone':
-      parameters['timeZone'] = getString(Cmd.OB_STRING)
+    elif getStatusEventProperties(myarg, body, parameters, dateList):
+      pass
     else:
       unknownArgumentExit()
   return location
@@ -54285,14 +54287,24 @@ def getWorkingLocationProperties(body, parameters, dateList):
 #	[declinemode none|all|new]
 #	[declinemessage <String>]
 #	[summary <String>]
-#	(timerange <Time> <Time> [recurrence <String>])+
+#	((date yyyy-mm-dd)|
+#	 (range yyyy-mm-dd yyyy-mm-dd)|
+#	 (daily yyyy-mm-dd N)|
+#	 (weekly yyyy-mm-dd N)|
+#	 (timerange <Time> <Time>) (recurrence <RRULE, EXRULE, RDATE and EXDATE line>)*)+
 #	[timezone <String>]
+#	(noreminders|(reminder email|popup <Number>)+)
 # gam <UserTypeEntity> create outofoffice
 #	[declinemode none|all|new]
 #	[declinemessage <String>]
 #	[summary <String>]
-#	(timerange <Time> <Time> [recurrence <String>])+
+#	((date yyyy-mm-dd)|
+#	 (range yyyy-mm-dd yyyy-mm-dd)|
+#	 (daily yyyy-mm-dd N)|
+#	 (weekly yyyy-mm-dd N)|
+#	 (timerange <Time> <Time>) (recurrence <RRULE, EXRULE, RDATE and EXDATE line>)*)+
 #	[timezone <String>]
+#	(noreminders|(reminder email|popup <Number>)+)
 # gam <UserTypeEntity> create workinglocation
 #	(home|
 #	 (custom <String>)|
@@ -54302,8 +54314,9 @@ def getWorkingLocationProperties(body, parameters, dateList):
 #	 (range yyyy-mm-dd yyyy-mm-dd)|
 #	 (daily yyyy-mm-dd N)|
 #	 (weekly yyyy-mm-dd N)|
-#	 (timerange <Time> <Time>))+
+#	 (timerange <Time> <Time>) (recurrence <RRULE, EXRULE, RDATE and EXDATE line>)*)+
 #	[timezone <String>]
+#	(noreminders|(reminder email|popup <Number>)+)
 def createStatusEvent(users, eventType):
   eventProperties = EVENT_TYPE_PROPERTIES_NAME_MAP[eventType]
   entityType = EVENT_TYPE_ENTITY_MAP[eventType]
@@ -54341,16 +54354,22 @@ def createStatusEvent(users, eventType):
     j = 0
     for wlDate in dateList:
       j += 1
+      kvList = timekvList if (wlDate['type'] == 'timerange' or eventType in {EVENT_TYPE_FOCUSTIME, EVENT_TYPE_OUTOFOFFICE}) else datekvList
       first = wlDate['first']
-      last = wlDate['ulast']
-      kvList = datekvList if wlDate['type'] != 'timerange' else timekvList
+      last = wlDate['last']
       kvList[1] = user
-      while first < last:
+      for _ in range(1, wlDate['repeats']+1):
         body.pop('recurrence', None)
         if wlDate['type'] != 'timerange':
-          body['start']['date'] = first.strftime(YYYYMMDD_FORMAT)
-          kvList[5] = body['start']['date']
-          body['end']['date'] = (first.shift(days=1)).strftime(YYYYMMDD_FORMAT)
+          if eventType in {EVENT_TYPE_FOCUSTIME, EVENT_TYPE_OUTOFOFFICE}:
+            body['start']['dateTime'] = ISOformatTimeStamp(first)
+            kvList[5] = body['start']['dateTime']
+            body['end']['dateTime'] = ISOformatTimeStamp(last)
+            kvList[7] = body['end']['dateTime']
+          else:
+            body['start']['date'] = first.strftime(YYYYMMDD_FORMAT)
+            kvList[5] = body['start']['date']
+            body['end']['date'] = (first.shift(days=1)).strftime(YYYYMMDD_FORMAT)
         else:
           body['start']['dateTime'] = ISOformatTimeStamp(first)
           kvList[5] = body['start']['dateTime']
@@ -54370,6 +54389,7 @@ def createStatusEvent(users, eventType):
           if wlDate['type'] == 'timerange':
             break
           first = first.shift(**wlDate['udelta'])
+          last = last.shift(**wlDate['udelta'])
         except (GAPI.forbidden, GAPI.invalid) as e:
           entityActionFailedWarning([Ent.CALENDAR, user], str(e), i, count)
           break
@@ -54428,7 +54448,7 @@ def deleteStatusEvent(users, eventType):
       last = wlDate['last']
       basekvList[1] = user
       events = []
-      for _ in range(1, wlDate.get('repeats', 1)+1):
+      for _ in range(1, wlDate['repeats']+1):
         kwargs['timeMin'] = ISOformatTimeStamp(first)
         kwargs['timeMax'] = ISOformatTimeStamp(last)
         try:
@@ -54477,6 +54497,8 @@ def deleteStatusEvent(users, eventType):
           except GAPI.notACalendarUser:
             userCalServiceNotEnabledWarning(user, i, count)
             break
+        first = first.shift(**wlDate['udelta'])
+        last = last.shift(**wlDate['udelta'])
     Ind.Decrement()
 
 def deleteFocusTime(users):
@@ -54487,6 +54509,17 @@ def deleteOutOfOffice(users):
 
 def deleteWorkingLocation(users):
   deleteStatusEvent(users, EVENT_TYPE_WORKINGLOCATION)
+
+def _showCalendarStatusEvent(primaryEmail, calId, eventEntityType, event, k, kcount, FJQC):
+  if FJQC.formatJSON:
+    printLine(json.dumps(cleanJSON({'primaryEmail': primaryEmail, 'calendarId': calId, 'event': event},
+                                   timeObjects=EVENT_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
+    return
+  printEntity([eventEntityType, event['id']], k, kcount)
+  skipObjects = {'id'}
+  Ind.Increment()
+  showJSON(None, event, skipObjects, EVENT_TIME_OBJECTS)
+  Ind.Decrement()
 
 # gam <UserTypeEntity> show focustime|outofoffice|workinglocation
 #	((date yyyy-mm-dd)|
@@ -54534,13 +54567,13 @@ def printShowStatusEvent(users, eventType):
       continue
     jcount = len(dateList)
     if not csvPF and not FJQC.formatJSON:
-      entityPerformActionNumItems([Ent.CALENDAR, user], jcount, Ent.DATE, i, count)
+      entityPerformAction([Ent.CALENDAR, user, entityType, None], i, count)
     j = 0
     for wlDate in dateList:
       j += 1
       first = wlDate['first']
       last = wlDate['last']
-      for _ in range(1, wlDate.get('repeats', 1)+1):
+      for _ in range(1, wlDate['repeats']+1):
         kwargs['timeMin'] = ISOformatTimeStamp(first)
         kwargs['timeMax'] = ISOformatTimeStamp(last)
         try:
@@ -54569,9 +54602,8 @@ def printShowStatusEvent(users, eventType):
             if showDayOfWeek:
               _getEventDaysOfWeek(event)
             _printCalendarEvent(user, calId, event, csvPF, FJQC, {})
-        if 'pdelta' in wlDate:
-          first = first.shift(**wlDate['pdelta'])
-          last = last.shift(**wlDate['pdelta'])
+        first = first.shift(**wlDate['udelta'])
+        last = last.shift(**wlDate['udelta'])
   if csvPF:
     csvPF.writeCSVfile(f'Calendar {Ent.Plural(entityType)}')
 

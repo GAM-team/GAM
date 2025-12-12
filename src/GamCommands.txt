@@ -6346,14 +6346,25 @@ gam <UserTypeEntity> create focustime
         [declinemode none|all|new]
         [declinemessage <String>]
         [summary <String>]
-        (timerange <Time> <Time> [recurrence <String>])+
+        ((date yyyy-mm-dd)|
+         (range yyyy-mm-dd yyyy-mm-dd)|
+         (daily yyyy-mm-dd N)|
+         (weekly yyyy-mm-dd N)|
+         (timerange <Time> <Time> (recurrence <RRULE, EXRULE, RDATE and EXDATE line>)*))+
+        [timezone <String>]
+        (noreminders|(reminder email|popup <Number>)+)
 
 gam <UserTypeEntity> create outofoffice
         [declinemode none|all|new]
         [declinemessage <String>]
         [summary <String>]
-        (timerange <Time> <Time> [recurrence <String>])+
+        ((date yyyy-mm-dd)|
+         (range yyyy-mm-dd yyyy-mm-dd)|
+         (daily yyyy-mm-dd N)|
+         (weekly yyyy-mm-dd N)|
+         (timerange <Time> <Time>) (recurrence <RRULE, EXRULE, RDATE and EXDATE line>)*)+
         [timezone <String>]
+        (noreminders|(reminder email|popup <Number>)+)
 
 gam <UserTypeEntity> create workinglocation
         (home|
@@ -6364,8 +6375,9 @@ gam <UserTypeEntity> create workinglocation
          (range yyyy-mm-dd yyyy-mm-dd)|
          (daily yyyy-mm-dd N)|
          (weekly yyyy-mm-dd N)|
-         (timerange <Time> <Time>))+
+         (timerange <Time> <Time>) (recurrence <RRULE, EXRULE, RDATE and EXDATE line>)*)+
         [timezone <String>]
+        (noreminders|(reminder email|popup <Number>)+)
 
 gam <UserTypeEntity> delete focustime|outofoffice|workinglocation
         ((date yyyy-mm-dd)|
