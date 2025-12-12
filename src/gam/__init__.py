@@ -2909,6 +2909,8 @@ def cleanFilename(filename):
 def setFilePath(filename, cfgDir):
   if filename.startswith('./') or filename.startswith('.\\'):
     return os.path.join(os.getcwd(), filename[2:])
+  if filename == '-':
+    return filename
   filename = os.path.expanduser(filename)
   if os.path.isabs(filename):
     return filename
@@ -3763,7 +3765,7 @@ def SetGlobalVariables():
 
   def _getCfgDirectory(sectionName, itemName):
     dirPath = os.path.expanduser(_stripStringQuotes(GM.Globals[GM.PARSER].get(sectionName, itemName)))
-    if (not dirPath) and (itemName in {GC.GMAIL_CSE_INCERT_DIR, GC.GMAIL_CSE_INKEY_DIR}):
+    if (not dirPath) and (itemName in {GC.GMAIL_CSE_INCERT_DIR, GC.GMAIL_CSE_INKEY_DIR, GC.INPUT_DIR}):
       return dirPath
     if (not dirPath) or (not os.path.isabs(dirPath) and dirPath != '.'):
       if (sectionName != configparser.DEFAULTSECT) and (GM.Globals[GM.PARSER].has_option(sectionName, itemName)):
@@ -3839,7 +3841,7 @@ def SetGlobalVariables():
     for itemName, itemEntry in GC.VAR_INFO.items():
       if itemEntry[GC.VAR_TYPE] == GC.TYPE_DIRECTORY:
         dirPath = GC.Values[itemName]
-        if (not dirPath) and (itemName in {GC.GMAIL_CSE_INCERT_DIR, GC.GMAIL_CSE_INKEY_DIR}):
+        if (not dirPath) and (itemName in {GC.GMAIL_CSE_INCERT_DIR, GC.GMAIL_CSE_INKEY_DIR, GC.INPUT_DIR}):
           return
         if (itemName != GC.CACHE_DIR or not GC.Values[GC.NO_CACHE]) and not os.path.isdir(dirPath):
           writeStderr(formatKeyValueList(WARNING_PREFIX,
