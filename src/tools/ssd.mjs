@@ -48,16 +48,16 @@ async function runSSD() {
         const runner_arch =  process.env.RUNNER_ARCH;
         if ( runner_arch === "ARM64" ) {
           console.log('Running on ARM64...');
-          await sleep(3000); // Pause execution for 3 seconds
-          await screenshot(driver, 'oob1.png');
-          await driver.sendKeys([Key.Enter]);
-          await sleep(3000); // Pause execution for 3 seconds
-          await screenshot(driver, 'oob2.png');
-          await driver.sendKeys([Key.Enter]);
-          await sleep(3000); // Pause execution for 3 seconds
-          await screenshot(driver, 'oob3.png');
-          await driver.sendKeys([Key.Escape]);
-          await screenshot(driver, 'oob6.png');
+          //await sleep(3000); // Pause execution for 3 seconds
+          //await screenshot(driver, 'oob1.png');
+          //await driver.sendKeys([Key.Enter]);
+          //await sleep(3000); // Pause execution for 3 seconds
+          //await screenshot(driver, 'oob2.png');
+          //await driver.sendKeys([Key.Enter]);
+          //await sleep(3000); // Pause execution for 3 seconds
+          //await screenshot(driver, 'oob3.png');
+          //await driver.sendKeys([Key.Escape]);
+          //await screenshot(driver, 'oob6.png');
         } else {
           console.log('NOT running on ARM64');
         }
@@ -75,11 +75,11 @@ async function runSSD() {
         const windows = await driver.getWindowHandles();
         const login_window = windows[0]
         await driver.switchWindow(login_window);
-        await screenshot(driver, 'login01.png');
+        //await screenshot(driver, 'login01.png');
         const id_value = 'jay0lee@gmail.com';
         const id_arr =  [...id_value];
         await driver.sendKeys(id_arr);
-        await screenshot(driver, 'login02.png');
+        //await screenshot(driver, 'login02.png');
         await driver.sendKeys([Key.Tab]);
         console.log('Our secret is ' + process.env.TOTP_SECRET.length + ' characters.');
         // We wait until the last possible second to generate
@@ -88,7 +88,7 @@ async function runSSD() {
         console.log('Our token is ' + otp.length + ' characters.');
         const otp_arr =  [...otp];
         await driver.sendKeys(otp_arr);
-        await screenshot(driver, 'login03.png');
+        //await screenshot(driver, 'login03.png');
         await driver.sendKeys([Key.Enter]);
 
         // TODO: it's expected that on successful login the window
