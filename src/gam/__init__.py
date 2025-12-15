@@ -23142,15 +23142,17 @@ def _processPeopleContactPhotos(users, function):
     sources = [PEOPLE_READ_SOURCES_CHOICE_MAP['domaincontact']]
   entityList, resourceNameLists, contactQuery, queriedContacts = _getPeopleContactEntityList(entityType, 1)
   if function in {'updateContactPhoto', 'getContactPhoto'}:
-    targetFolder = os.getcwd()
+    sourceFolder = targetFolder = os.getcwd()
     filenamePattern = '#contactid#.jpg'
     while Cmd.ArgumentsRemaining():
       myarg = getArgument()
       if myarg == 'drivedir':
         targetFolder = GC.Values[GC.DRIVE_DIR]
-      elif myarg in {'sourcefolder', 'targetfolder'}:
-        targetFolder = os.path.expanduser(getString(Cmd.OB_FILE_PATH))
-        if function == 'GetContactPhoto' and not os.path.isdir(targetFolder):
+      elif myarg == 'sourcefolder':
+        sourceFolder = setFilePath(getString(Cmd.OB_FILE_PATH), GC.INPUT_DIR)
+      elif myarg == 'targetfolder':
+        targetFolder = setFilePath(getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
+        if not os.path.isdir(targetFolder):
           os.makedirs(targetFolder)
       elif myarg == 'filename':
         filenamePattern = getString(Cmd.OB_FILE_NAME_PATTERN)
@@ -23211,8 +23213,8 @@ def _processPeopleContactPhotos(users, function):
         if function == 'updateContactPhoto':
           if subForContactId or subForEmail:
             filename = _makeFilenameFromPattern(resourceName)
-          filename = os.path.join(targetFolder, filename)
-          with open(os.path.expanduser(filename), 'rb') as f:
+          filename = os.path.join(sourceFolder, filename)
+          with open(filename, 'rb') as f:
             image_data = f.read()
           callGAPI(people.people(), function,
                    throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR]+GAPI.PEOPLE_ACCESS_THROW_REASONS,
@@ -24349,7 +24351,7 @@ def infoCrOSDevices(entityList):
         Cmd.Backup()
         downloadfile = formatLocalTime(getTimeOrDeltaFromNow())
     elif myarg == 'targetfolder':
-      targetFolder = os.path.expanduser(getString(Cmd.OB_FILE_PATH))
+      targetFolder = setFilePath(getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
       if not os.path.isdir(targetFolder):
         os.makedirs(targetFolder)
     elif myarg == 'showdvrsfp':
@@ -24637,7 +24639,7 @@ def getCrOSDeviceFiles(entityList):
     if myarg == 'select':
       deviceFilesEntity = getDeviceFilesEntity()
     elif myarg == 'targetfolder':
-      targetFolder = os.path.expanduser(getString(Cmd.OB_FILE_PATH))
+      targetFolder = setFilePath(getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
       if not os.path.isdir(targetFolder):
         os.makedirs(targetFolder)
     else:
@@ -26609,7 +26611,7 @@ def createChatEmoji(users):
     if myarg == 'drivedir':
       sourceFolder = GC.Values[GC.DRIVE_DIR]
     elif myarg == 'sourcefolder':
-      sourceFolder = os.path.expanduser(getString(Cmd.OB_FILE_PATH))
+      sourceFolder = setFilePath(getString(Cmd.OB_FILE_PATH), GC.INPUT_DIR)
       if not os.path.isdir(sourceFolder):
         entityDoesNotExistExit(Ent.DIRECTORY, sourceFolder)
     elif myarg == 'filename':
@@ -26623,10 +26625,7 @@ def createChatEmoji(users):
     if not chat:
       continue
     user, userName, _ = splitEmailAddressOrUID(user)
-    filename = _substituteForUser(filenamePattern, user, userName)
-    if sourceFolder is not None:
-      filename = os.path.join(sourceFolder, filename)
-    filename = os.path.expanduser(filename)
+    filename = os.path.join(sourceFolder, _substituteForUser(filenamePattern, user, userName))
     try:
       with open(filename, 'rb') as f:
         image_data = f.read()
@@ -29809,7 +29808,7 @@ def doCreateChromePolicyImage():
   parent = _getCustomersCustomerIdWithC()
   schema = getChoice(CHROME_IMAGE_SCHEMAS_MAP, mapChoice=True)
   parameters = {DFA_URL: None}
-  parameters[DFA_LOCALFILEPATH] = os.path.expanduser(getString(Cmd.OB_FILE_NAME))
+  parameters[DFA_LOCALFILEPATH] = setFilePath(getString(Cmd.OB_FILE_NAME), GC.INPUT_DIR)
   try:
     f = open(parameters[DFA_LOCALFILEPATH], 'rb')
     f.close()
@@ -41991,7 +41990,7 @@ def doDownloadCloudStorageBucket():
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'targetfolder':
-      targetFolder = os.path.expanduser(getString(Cmd.OB_FILE_PATH))
+      targetFolder = setFilePath(getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
       if not os.path.isdir(targetFolder):
         os.makedirs(targetFolder)
     else:
@@ -42030,7 +42029,7 @@ def doDownloadCloudStorageFile():
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'targetfolder':
-      targetFolder = os.path.expanduser(getString(Cmd.OB_FILE_PATH))
+      targetFolder = setFilePath(getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
       if not os.path.isdir(targetFolder):
         os.makedirs(targetFolder)
     elif myarg == 'overwrite':
@@ -42860,7 +42859,7 @@ def doDownloadVaultExport():
     elif myarg == 'targetname':
       targetName = getString(Cmd.OB_FILE_NAME)
     elif myarg == 'targetfolder':
-      targetFolder = os.path.expanduser(getString(Cmd.OB_FILE_PATH))
+      targetFolder = setFilePath(getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
       if not os.path.isdir(targetFolder):
         os.makedirs(targetFolder)
     elif myarg == 'noverify':
@@ -55752,7 +55751,7 @@ def getDriveFileCopyAttribute(myarg, body, parameters):
 def getDriveFileAttribute(myarg, body, parameters, updateCmd):
   if myarg == 'localfile':
     parameters[DFA_URL] = None
-    parameters[DFA_LOCALFILEPATH] = os.path.expanduser(getString(Cmd.OB_FILE_NAME))
+    parameters[DFA_LOCALFILEPATH] = setFilePath(getString(Cmd.OB_FILE_NAME), GC.INPUT_DIR)
     if parameters[DFA_LOCALFILEPATH] != '-':
       try:
         f = open(parameters[DFA_LOCALFILEPATH], 'rb')
@@ -63702,7 +63701,7 @@ def getDriveFile(users):
           invalidChoiceExit(exportFormat, DOCUMENT_FORMATS_MAP, True)
       defaultFormats = False
     elif myarg == 'targetfolder':
-      targetFolderPattern = os.path.expanduser(getString(Cmd.OB_FILE_PATH))
+      targetFolderPattern = setFilePath(getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
     elif myarg == 'targetname':
       targetNamePattern = getString(Cmd.OB_FILE_NAME)
       targetStdout = targetNamePattern == '-'
@@ -63914,7 +63913,7 @@ def getGoogleDocument(users):
     if myarg == 'viewmode':
       suggestionsViewMode = getChoice(SUGGESTIONS_VIEW_MODE_CHOICE_MAP, mapChoice=True)
     elif myarg == 'targetfolder':
-      targetFolderPattern = os.path.expanduser(getString(Cmd.OB_FILE_PATH))
+      targetFolderPattern = setFilePath(getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
     elif myarg == 'targetname':
       targetNamePattern = getString(Cmd.OB_FILE_NAME)
     elif myarg == 'donotfollowshortcuts':
@@ -67696,7 +67695,7 @@ def _getSharedDriveRestrictions(myarg, body):
 def _checkSharedDriveRestrictions(body):
   if 'restrictions' in body and 'copyRequiresWriterPermission' in body['restrictions'] and 'downloadRestriction' in body['restrictions']:
     usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('copyrequireswriterpermission', 'downloadrestrictedforreaders|downloadrestrictedforwriters'))
-    
+
 def _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci, returnIdOnly):
   action = Act.Get()
   name = f'orgUnits/-/memberships/shared_drive;{driveId}'
@@ -70470,7 +70469,7 @@ def updatePhoto(users):
       if myarg == 'drivedir':
         sourceFolder = GC.Values[GC.DRIVE_DIR]
       elif myarg == 'sourcefolder':
-        sourceFolder = os.path.expanduser(getString(Cmd.OB_FILE_PATH))
+        sourceFolder = setFilePath(getString(Cmd.OB_FILE_PATH), GC.INPUT_DIR)
         if not os.path.isdir(sourceFolder):
           entityDoesNotExistExit(Ent.DIRECTORY, sourceFolder)
       elif myarg == 'filename':
@@ -70521,10 +70520,9 @@ def updatePhoto(users):
         entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, filename], str(e), i, count)
         continue
     else:
-      if sourceFolder is not None:
-        filename = os.path.join(sourceFolder, filename)
+      filename = os.path.join(sourceFolder, filename)
       try:
-        with open(os.path.expanduser(filename), 'rb') as f:
+        with open(filename, 'rb') as f:
           image_data = f.read()
       except (OSError, IOError) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, filename], str(e), i, count)
@@ -70571,7 +70569,7 @@ def getPhoto(users, profileMode):
     if myarg == 'drivedir':
       targetFolder = GC.Values[GC.DRIVE_DIR]
     elif myarg == 'targetfolder':
-      targetFolder = os.path.expanduser(getString(Cmd.OB_FILE_PATH))
+      targetFolder = setFilePath(getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
       if not os.path.isdir(targetFolder):
         os.makedirs(targetFolder)
     elif myarg == 'filename':
@@ -72979,7 +72977,7 @@ def exportMessagesThreads(users, entityType):
     if _getMessageSelectParameters(myarg, parameters):
       pass
     elif myarg == 'targetfolder':
-      targetFolderPattern = os.path.expanduser(getString(Cmd.OB_FILE_PATH))
+      targetFolderPattern = setFilePath(getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
     elif myarg == 'targetname':
       targetNamePattern = getString(Cmd.OB_FILE_NAME)
     elif myarg == 'overwrite':
@@ -74136,7 +74134,7 @@ def printShowMessagesThreads(users, entityType):
     elif showMode and myarg == 'saveattachments':
       save_attachments = True
     elif showMode and myarg == 'targetfolder':
-      targetFolderPattern = os.path.expanduser(getString(Cmd.OB_FILE_PATH))
+      targetFolderPattern = setFilePath(getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
     elif showMode and myarg == 'overwrite':
       overwrite = getBoolean()
     elif showMode and myarg == 'uploadattachments':
@@ -76679,8 +76677,8 @@ def printShowCSEIdentities(users):
 #	[addidentity [<Boolean>]] [kpemail <EmailAddress>]
 #	[showpem] [showkaclsdata] [formatjson|returnidonly]
 def createCSEKeyPair(users):
-  def _getFolderPath(myarg):
-    filepath = os.path.expanduser(getString(Cmd.OB_FILE_PATH))
+  def _getFolderPath(myarg, cfgDir):
+    filepath = setFilePath(getString(Cmd.OB_FILE_PATH), cfgDir)
     if not os.path.isdir(filepath):
       entityDoesNotExistExit(Ent.DIRECTORY, f'{myarg} {filepath}')
     return filepath
@@ -76694,9 +76692,9 @@ def createCSEKeyPair(users):
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'incertdir':
-      incertdir = _getFolderPath(myarg)
+      incertdir = _getFolderPath(myarg, GC.GMAIL_CSE_INCERT_DIR)
     elif myarg == 'inkeydir':
-      inkeydir = _getFolderPath(myarg)
+      inkeydir = _getFolderPath(myarg, GC.GMAIL_CSE_INKEY_DIR)
     elif myarg == 'addidentity':
       addIdentity = getBoolean()
     elif myarg == 'kpemail':
@@ -77539,7 +77537,7 @@ def getNoteAttachments(users):
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'targetfolder':
-      targetFolderPattern = os.path.expanduser(getString(Cmd.OB_FILE_PATH))
+      targetFolderPattern = setFilePath(getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
     elif myarg == 'targetname':
       targetNamePattern = getString(Cmd.OB_FILE_NAME)
     elif myarg == 'overwrite':
