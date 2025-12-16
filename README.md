@@ -14,6 +14,14 @@ bash <(curl -s -S -L https://gam-shortn.appspot.com/gam-install)
 
 this will download GAM, install it and start setup.
 
+## Using Mise on Linux / MacOS
+
+Using [mise](https://github.com/jdx/mise), you can install GAM using a command like:
+
+```shell
+mise use -g gam@latest
+```
+
 ## Windows
 
 Download the MSI Installer from the [GitHub Releases] page. Install the MSI and you'll be prompted to setup GAM.
