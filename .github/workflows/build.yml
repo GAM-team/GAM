@@ -791,7 +791,8 @@ jobs:
 
       - name: Archive production artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # 4.6.2
-        if: (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && matrix.goal != 'test'
+        #if: (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && matrix.goal != 'test'
+        if: always()
         with:
           name: gam-binaries-${{ env.GAMOS }}-${{ env.arch }}-${{ matrix.jid }}
           path: |
