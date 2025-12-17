@@ -261,7 +261,7 @@ Client access works when accessing Resource calendars.
         (guestscanmodify <Boolean>)|
         (guestscanseeotherguests <Boolean>)|
         guestscantseeotherguests|
-        hangoutsmeet|
+        googlemeet|hangoutsmeet|
         <JSONData>|
         (jsonattendees [charset <Charset>] <String>)|
         (jsonattendees file <FileName> [charset <Charset>])|
@@ -302,7 +302,7 @@ The following attributes are equivalent:
         <EventAttribute>|
         clearattachments|
         clearattendees|
-        clearhangoutsmeet|
+        cleargooglemeet|clearhangoutsmeet|
         (clearprivateproperty <PropertyKey>)|
         clearresources|
         (clearsharedproperty <PropertyKey>)|
