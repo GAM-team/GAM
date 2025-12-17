@@ -9,7 +9,7 @@ import { TOTP } from 'totp-generator';
 
 async function screenshot(driver, filename) {
   // uncomment to save .png screenshots
-  //await driver.saveScreenshot(filename);
+  await driver.saveScreenshot(filename);
   return
 }
 
