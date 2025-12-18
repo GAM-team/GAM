@@ -41,6 +41,7 @@
 * [Move content to Shared Drives](https://support.google.com/a/answer/7374057)
 * [Shared Drive Limits](https://support.google.com/a/users/answer/7338880)
 * [Shared Drives in Org Units](https://support.google.com/a/answer/7337635)
+* [Shared Drive Restrictions](https://developers.google.com/workspace/drive/api/guides/manage-shareddrives#backward-compatibility)
 
 ## Query documentation
 * [Shared Drives Search](https://developers.google.com/drive/api/guides/search-shareddrives)
@@ -298,6 +299,10 @@ gam [<UserTypeEntity>] create shareddrive <Name>
 * `[restrictions.]<SharedDriveRestrictionsSubfieldName> <Boolean>` - Set Shared Drive Restrictions
 * `hide <Boolean>` - Set Shared Drive visibility
 
+`<SharedDriveRestrictionsSubfieldName>` `copyrequireswriterpermission` can not be used with
+`downloadrestrictedforreaders|downloadrestrictions.restrictedforreaders` or
+`downloadrestrictedforreadersdownloadrestrictions.restrictedforwriters`.
+
 If any attributes other than `themeid` are specified, GAM must create the Drive and then update the Drive attributes.
 Even though the Create API returns success, the Update API fails and reports that the Drive does not exist. 
 * `errorretries <Integer>` - Number of create/update error retries; default value 5, range 0-10
@@ -379,6 +384,10 @@ gam [<UserTypeEntity>] update shareddrive <SharedDriveEntity> [name <Name>]
 * `color` - set the Shared Drive color
 * `[restrictions.]<SharedDriveRestrictionsSubfieldName> <Boolean>` - Set Shared Drive Restrictions
 * `hidden <Boolean>` - Set Shared Drive visibility
+
+`<SharedDriveRestrictionsSubfieldName>` `copyrequireswriterpermission` can not be used with
+`downloadrestrictedforreaders|downloadrestrictions.restrictedforreaders` or
+`downloadrestrictedforreadersdownloadrestrictions.restrictedforwriters`.
 
 * `ou|org|orgunit <OrgUnitItem>` - See: https://workspaceupdates.googleblog.com/2022/05/shared-drives-in-organizational-units-open-beta.html
 

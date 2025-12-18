@@ -20,7 +20,7 @@
 ```
 gam <UserTypeEntity> update photo
 ```
-* The default file is named `#email#.#ext#` in the current working directory.
+* The default file is named `#email#.jpg` in the current working directory.
     * `#email#` will be replaced by the user's full email address
 
 ## Upload a user's photo specifying file name

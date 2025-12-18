@@ -12,6 +12,8 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 
 ### 7.30.01
 
+Fixed bug introduced in 7.30.00 that caused errors when reading CSV files.
+
 Added the following options to `gam <UserTypeEntity> create focustime|outofoffice`:
 ```
 ((date yyyy-mm-dd)|

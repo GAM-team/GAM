@@ -317,7 +317,7 @@ domain
         Default: Blank
         Environment variable: GA_DOMAIN
 drive_dir
-        Directory for get drivefile and CSV files
+        Output directory for files with non-absolute file names.
         Default: ~/Downloads
         Environment variable: GAMDRIVEDIR
 drive_max_results
@@ -368,8 +368,9 @@ gmail_cse_inkey_dir
         Directory for the Key Access Control List (KACL) wrapped private key data files used by Gmail Client Side Encryption.
         Default: Blank
 input_dir
-        Directory for <CSVFileInput>, <FileSelector>, <BatchContent> specifying non-absolute file names.
-        Default: Blank
+        Input directory for files with non-absolute file names.
+	The default 
+        Default: .
 inter_batch_wait
         When processing items in batches, how many seconds should GAM wait between batches
         Default: 0
