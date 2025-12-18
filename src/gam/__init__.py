@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.30.01'
+__version__ = '7.30.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -239,6 +239,9 @@ URL_SAFE_CHARS = ALPHANUMERIC_CHARS+'-._~'
 PASSWORD_SAFE_CHARS = ALPHANUMERIC_CHARS+'!#$%&()*-./:;<=>?@[\\]^_{|}~'
 FILENAME_SAFE_CHARS = ALPHANUMERIC_CHARS+'-_.() '
 CHAT_MESSAGEID_CHARS = string.ascii_lowercase+string.digits+'-'
+
+GOOGLE_MEETID_PATTERN = re.compile(r'^[a-z]{3}-[a-z]{4}-[a-z]{3}$')
+GOOGLE_MEETID_FORMAT_REQUIRED = 'abc-defg-hij'
 
 ADMIN_ACCESS_OPTIONS = {'adminaccess', 'asadmin'}
 OWNER_ACCESS_OPTIONS = {'owneraccess', 'asowner'}
@@ -40133,6 +40136,15 @@ def _getCalendarEventAttribute(myarg, body, parameters, function):
     body['attachments'] = []
   elif myarg in {'hangoutsmeet', 'googlemeet'}:
     body['conferenceData'] = {'createRequest': {'conferenceSolutionKey': {'type': 'hangoutsMeet'}, 'requestId': f'{str(uuid.uuid4())}'}}
+  elif myarg == 'conferencedata':
+    checkArgumentPresent(['meet'], True)
+    epLabel = getString(Cmd.OB_MEET_ID)
+    if not GOOGLE_MEETID_PATTERN.match(epLabel):
+      invalidArgumentExit(GOOGLE_MEETID_FORMAT_REQUIRED)
+    body['conferenceData'] = {"conferenceId": epLabel,
+	                      "conferenceSolution": {"key": {"type": "hangoutsMeet"}},
+	                      "entryPoints": [{"entryPointType": "video", "label": f'meet.google.com/{epLabel}',
+                                               "uri": f'https://meet.google.com/{epLabel}'}]}
   elif function == 'update' and myarg in {'clearhangoutsmeet', 'cleargooglemeet'}:
     body['conferenceData'] = None
   elif myarg == 'recurrence':

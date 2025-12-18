@@ -1,3 +1,8 @@
+7.30.02
+
+Added option `conferencedata meet <MeetID>` to `<EventAttribute>` that allows specifying
+a reference to an existing Google Meet when creating/updating a calendar event.
+
 7.30.01
 
 Fixed bug introduced in 7.30.00 that caused errors when reading CSV files.

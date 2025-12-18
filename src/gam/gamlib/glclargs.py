@@ -1278,6 +1278,7 @@ class GamCLArgs():
   OB_MATTER_ITEM = 'MatterItem'
   OB_MATTER_ITEM_LIST = 'MatterItemList'
   OB_MEET_CONFERENCE_NAME = 'MeetConferenceName'
+  OB_MEET_ID = 'MeetID'
   OB_MESSAGE_ID = 'MessageID'
   OB_MIMETYPE = 'MimeType'
   OB_MIMETYPE_LIST = 'MimeTypeList'

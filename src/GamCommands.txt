@@ -1737,13 +1737,16 @@ gam calendar <CalendarEntity> printacl [todrive <ToDriveAttribute>*]
 <AttendeeStatus> ::= accepted|declined|needsaction|tentative
 
 <EventAttribute> ::=
+        (allday <Date>)|
         (anyonecanaddself [<Boolean>])|
         (attachment <String> <URL>)|
         (attendee <EmailAddress>)|
         (attendeestatus [<AttendeeAttendance>] [<AttendeeStatus>] <EmailAddress>)|
         available|
+        (birthday <Date>)|
         (color <EventColorName>)|
         (colorindex|colorid <EventColorIndex>)|
+        (conferencedata meet <MeetID>)|
         (description <String>)|
         (end|endtime (allday <Date>)|<Time>)|
         (guestscaninviteothers <Boolean>)|
@@ -1751,7 +1754,7 @@ gam calendar <CalendarEntity> printacl [todrive <ToDriveAttribute>*]
         (guestscanmodify <Boolean>)|
         (guestscanseeotherguests <Boolean>)|
         guestscantseeotherguests|
-        hangoutsmeet|
+        googlemeet|hangoutsmeet|
         <JSONData>|
         (jsonattendees [charset <Charset>] <String>)|
         (jsonattendees file <FileName> [charset <Charset>])|
@@ -1762,7 +1765,7 @@ gam calendar <CalendarEntity> printacl [todrive <ToDriveAttribute>*]
         (privateproperty <PropertyKey> <PropertyValue>)|
         (range <Date> <Date>)|
         (recurrence <RRULE, EXRULE, RDATE and EXDATE line>)|
-        (reminder <Number> email|popup))|
+        (reminder <Number> email|popup)|
         (resource <ResourceID>)|
         (selectattendees [<AttendeeAttendance>] [<AttendeeStatus>] <UserTypeEntity>)|
         (sequence <Integer>)|
@@ -1792,7 +1795,7 @@ The following attributes are equivalent:
         <EventAttribute>|
         clearattachments|
         clearattendees|
-        clearhangoutsmeet|
+        cleargooglemeet|clearhangoutsmeet|
         (clearprivateproperty <PropertyKey>)|
         clearresources|
         (clearsharedproperty <PropertyKey>)|
@@ -1911,7 +1914,7 @@ gam calendar|calendars <CalendarEntity> empty calendartrash
         <EventOrganizerSubfieldName>|
         originalstart|originalstarttime|
         outofofficeproperties|
-        <EventOutOfOfficePropertiesSubfieldName>
+        <EventOutOfOfficePropertiesSubfieldName>|
         privatecopy|
         recurrence|
         recurringeventid|
@@ -6228,6 +6231,7 @@ gam <UserTypeEntity> transfer calendars|seccals <UserItem> [<UserCalendarEntity>
         (birthday <Date>)|
         (color <EventColorName>)|
         (colorindex|colorid <EventColorIndex>)|
+        (conferencedata meet <MeetID>)|
         (description <String>)|
         (end|endtime (allday <Date>)|<Time>)|
         (guestscaninviteothers <Boolean>)|
@@ -6235,7 +6239,7 @@ gam <UserTypeEntity> transfer calendars|seccals <UserItem> [<UserCalendarEntity>
         (guestscanmodify <Boolean>)|
         (guestscanseeotherguests <Boolean>)|
         guestscantseeotherguests|
-        hangoutsmeet|
+        googlemeet|hangoutsmeet|
         <JSONData>|
         (jsonattendees [charset <Charset>] <String>)|
         (jsonattendees file <FileName> [charset <Charset>])|
@@ -6247,6 +6251,7 @@ gam <UserTypeEntity> transfer calendars|seccals <UserItem> [<UserCalendarEntity>
         (range <Date> <Date>)|
         (recurrence <RRULE, EXRULE, RDATE and EXDATE line>)|
         (reminder <Number> email|popup)|
+        (resource <ResourceID>)|
         (selectattendees [<AttendeeAttendance>] [<AttendeeStatus>] <UserTypeEntity>)|
         (sequence <Integer>)|
         (sharedproperty <PropertyKey> <PropertyValue>)|
@@ -6275,10 +6280,12 @@ The following attributes are equivalent:
         <EventAttribute>|
         clearattachments|
         clearattendees|
-        clearhangoutsmeet|
+        cleargooglemeet|clearhangoutsmeet|
         (clearprivateproperty <PropertyKey>)|
+        clearresources|
         (clearsharedproperty <PropertyKey>)|
         (removeattendee <EmailAddress>)|
+        (removeresource <ResourceID>)|
         (replacedescription <REMatchPattern> <RESubstitution>)|
         (selectremoveattendees <UserTypeEntity>)
 
