@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.30.02
+
+Added option `conferencedata meet <MeetID>` to `<EventAttribute>` that allows specifying
+a reference to an existing Google Meet when creating/updating a calendar event.
+
+Upgraded to Python 3.14.2.
+
 ### 7.30.01
 
 Fixed bug introduced in 7.30.00 that caused errors when reading CSV files.

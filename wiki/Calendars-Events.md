@@ -78,6 +78,8 @@ Client access works when accessing Resource calendars.
         <CSVkmdSelector> | <CSVDataSelector>
         See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 <iCalUID> ::= <String>
+<MeetID> ::= <String>
+       Must match this Python Regular Expression: [a-z]{3}-[a-z]{4}-[a-z]{3}
 
 <EventAttachmentsSubfieldName> ::=
         attachments.fileid|
@@ -150,7 +152,8 @@ Client access works when accessing Resource calendars.
         endtimeunspecified|
         extendedproperties|
         eventtype|
-        <EventFocusTimePropertiesSubfieldName>
+        focustimeproperties|
+        <EventFocusTimePropertiesSubfieldName>|
         gadget|
         guestscaninviteothers|
         guestscanmodify|
@@ -164,7 +167,8 @@ Client access works when accessing Resource calendars.
         organizer|
         <EventOrganizerSubfieldName>|
         originalstart|originalstarttime|
-        <EventOutOfOfficePropertiesSubfieldName>
+        outofofficeproperties|
+        <EventOutOfOfficePropertiesSubfieldName>|
         privatecopy|
         recurrence|
         recurringeventid|
@@ -254,6 +258,7 @@ Client access works when accessing Resource calendars.
         (birthday <Date>)|
         (color <EventColorName>)|
         (colorindex|colorid <EventColorIndex>)|
+        (conferencedata meet <MeetID>)|
         (description <String>)|
         (end|endtime (allday <Date>)|<Time>)|
         (guestscaninviteothers <Boolean>)|

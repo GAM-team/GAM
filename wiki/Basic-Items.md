@@ -409,6 +409,8 @@
 <MatterItem> ::= <UniqueID>|<String>
 <MatterState> ::= open|closed|deleted
 <MeetConferenceName> ::= conferenceRecords/<String>
+<MeetID> ::= <String>
+       Must match this Python Regular Expression: [a-z]{3}-[a-z]{4}-[a-z]{3}
 <MeetSpaceName> ::= spaces/<String> | <String>
 <MessageContent> ::=
         (message|textmessage|htmlmessage <String>)|

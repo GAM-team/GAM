@@ -114,6 +114,8 @@
 <CourseState> ::= active|archived|provisioned|declined
 <CourseStateList> ::= all|"<CourseState>(,<CourseState>)*"
 <iCalUID> ::= <String>
+<MeetID> ::= <String>
+       Must match this Python Regular Expression: [a-z]{3}-[a-z]{4}-[a-z]{3}
 <ResourceID> ::= <String>
 <ResourceIDList> ::= "<ResourceID>(,<ResourceID>)*"
 <UniqueID> ::= id:<String>
@@ -215,7 +217,8 @@
         endtimeunspecified|
         extendedproperties|
         eventtype|
-        <EventFocusTimePropertiesSubfieldName>
+        focustimeproperties|
+        <EventFocusTimePropertiesSubfieldName>|
         gadget|
         guestscaninviteothers|
         guestscanmodify|
@@ -229,7 +232,8 @@
         organizer|
         <EventOrganizerSubfieldName>|
         originalstart|originalstarttime|
-        <EventOutOfOfficePropertiesSubfieldName>
+        outofofficeproperties|
+        <EventOutOfOfficePropertiesSubfieldName>|
         privatecopy|
         recurrence|
         recurringeventid|
@@ -320,6 +324,7 @@
         (birthday <Date>)|
         (color <EventColorName>)|
         (colorindex|colorid <EventColorIndex>)|
+        (conferencedata meet <MeetID>)|
         (description <String>)|
         (end|endtime (allday <Date>)|<Time>)|
         (guestscaninviteothers <Boolean>)|
