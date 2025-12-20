@@ -12,9 +12,13 @@
 - [User reports](#user-reports)
 
 ## API documentation
-Changes starting 2025-10-29.
+* [Activity Data Sources](https://support.google.com/a/answer/11482175)
 
+Changes starting 2025-10-29.
 * [Reports API - Admin log event changes](https://support.google.com/a/answer/16601511)
+
+Changes starting 2025-12-20
+* [Reports API - Admin log enhancements](https://workspaceupdates.googleblog.com/2025/12/google-workspace-audit-log-api.html)
 
 These pages show event/parameter names; scroll down in the left column to: Reports.
 
@@ -45,28 +49,41 @@ config csv_output_row_filter "'\"accounts:used_quota_in_mb\":count>15000'"
 ## Activity reports
 ```
 <ActivityApplicationName> ::=
+        accessevaluation|
         accesstransparency|access|
         admin|
+        admindataaction|
+        assignments|
         calendar|calendars|
         chat|
         chrome|
         classroom|
+        cloudsearch|
+        contacts|
         contextawareaccess|
+        datamigration|
         datastudio|
+        directorysync|
         drive|doc|docs|
         gcp|cloud|
         geminiinworkspaceapps|gemini|geminiforworkspace|
         gmail|
         gplus|currents|google+|
+        graduation|
         groups|group|
         groupsenterprise|enterprisegroups|
         jamboard|
         keep|
+        ldap|
         login|logins|
         meet|hangoutsmeet|
+        meethardware|
         mobile|devices|
+        profile|
         rules|
         saml|
+        takeout|
+        tasks|
         token|tokens|oauthtoken|
         useraccounts|
         vault
@@ -77,7 +94,7 @@ gam report <ActivityApplicationName> [todrive <ToDriveAttribute>*]
          yesterday|today|thismonth|(previousmonths <Integer>)]
         [filter <String> (filtertime<String> <Time>)*]
         [event|events <EventNameList>] [ip <String>]
-        [groupidfilter <String>]
+        [groupidfilter <String>] [resourcedetailsfilter <String>]
         [maxactivities <Number>] [maxevents <Number>] [maxresults <Number>]
         [countsonly [bydate|summary] [eventrowfilter]]
         (addcsvdata <FieldName> <String>)* [shownoactivities]
@@ -111,6 +128,12 @@ The `filtertime<String> <Time>` value replaces the string `#filtertime<String>#`
 The characters following `filtertime` can be any combination of lowercase letters and numbers. This is most useful in scripts
 where you can specify a relative date without having to change the script.
 
+Limit to those users that are a member of at least one of a list of groups.
+* `groupidfilter <String>` - Format: "id:abc123,id:xyz456"
+
+Limit based on resource details.
+* `resourcedetailsfilter <String>` - See: https://developers.google.com/workspace/admin/reports/reference/rest/v1/activities/list#query-parameters
+
 You can use `config csv_output_row_filter` to filter the events if the API filter can't produce the results you want.
 
 Limit to a list of specific events.
@@ -118,9 +141,6 @@ Limit to a list of specific events.
 
 Limit to a specific IP address.
 * `ip <String>`
-
-Limit to those users that are a member of at least one of a list of groups.
-* `groupidfilter <String>` - Format: "id:abc123,id:xyz456"
 
 Limit the total number of activites.
 * `maxactivities <Number>`

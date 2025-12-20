@@ -290,8 +290,6 @@ csv_output_timestamp_column
 csv_output_users_audit
         Gam print commands that print objects belonging to users
         don't print rows for users that don't have any of the objects.
-        The objects are: calendars, calendar ACLs, calendar events, delegates, filters,
-        forwarding addresses, sendas addresses, S/MIME certificates and tokens.
         When csv_output_users_audit is true, a placeholder row will be output with the
         user's email address; these rows will useful for auditing purposes only,
         they can not be successfuly used in a gam csv command.

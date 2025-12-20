@@ -10,6 +10,16 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.30.03
+
+Updated `gam report <ActivityApplicationName>` to reflect the changes described here:
+* See: https://workspaceupdates.googleblog.com/2025/12/google-workspace-audit-log-api.html
+
+Added option `resourcedetailsfilter <String>` to `gam report <ActivityApplicationName>` described here:
+* See: https://developers.google.com/workspace/admin/reports/reference/rest/v1/activities/list#query-parameters
+
+For `gam <UserTypeEntity> print <Objects>`, expanded the list of `<Objects>` covered by `gam.cfg csv_output_users_audit = True`.
+
 ### 7.30.02
 
 Added option `conferencedata meet <MeetID>` to `<EventAttribute>` that allows specifying
