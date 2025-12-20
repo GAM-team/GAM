@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.30.02'
+__version__ = '7.30.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -12645,8 +12645,8 @@ def doPrintShowSvcAccts():
       svcAccts = callGAPIpages(iam.projects().serviceAccounts(), 'list', 'accounts',
                                throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED],
                                name=f'projects/{projectId}')
-      jcount = len(svcAccts)
       if not csvPF:
+        jcount = len(svcAccts)
         entityPerformActionNumItems([Ent.PROJECT, projectId], jcount, Ent.SVCACCT, i, count)
         Ind.Increment()
         j = 0
@@ -13247,6 +13247,7 @@ def doWhatIs():
     return
   if not invitableCheck:
     isInvitableUser = False
+    ci = None
   else:
     isInvitableUser, ci = _getIsInvitableUser(None, email)
   if isInvitableUser:
@@ -13685,28 +13686,42 @@ REPORT_ALIASES_CHOICE_MAP = {
   }
 
 REPORT_CHOICE_MAP = {
+  'accessevaluation': 'access_evaluation',
   'accesstransparency': 'access_transparency',
   'admin': 'admin',
+  'admindataaction': 'admin_data_action',
+  'assignments': 'assignments',
   'calendar': 'calendar',
   'chat': 'chat',
   'chrome': 'chrome',
+  'classroom': 'classroom',
+  'cloudsearch': 'cloud_search',
+  'contacts': 'contacts',
   'contextawareaccess': 'context_aware_access',
   'customer': 'customer',
+  'datamigration': 'data_migration',
   'datastudio': 'data_studio',
+  'directorysync': 'directory_sync',
   'drive': 'drive',
   'gcp': 'gcp',
   'geminiinworkspaceapps': 'gemini_in_workspace_apps',
   'gmail': 'gmail',
   'gplus': 'gplus',
+  'graduation':'graduation',
   'groups': 'groups',
   'groupsenterprise': 'groups_enterprise',
   'jamboard': 'jamboard',
   'keep': 'keep',
+  'ldap': 'ldap',
   'login': 'login',
   'meet': 'meet',
+  'meethardware': 'meet_hardware',
   'mobile': 'mobile',
+  'profile': 'profile',
   'rules': 'rules',
   'saml': 'saml',
+  'takeout': 'takeout',
+  'tasks': 'tasks',
   'token': 'token',
   'usage': 'usage',
   'usageparameters': 'usageparameters',
@@ -13719,11 +13734,17 @@ REPORT_ACTIVITIES_UPPERCASE_EVENTS = {
   'access_transparency',
   'admin',
   'chrome',
+  'cloud_search',
   'context_aware_access',
+  'data_migration',
   'data_studio',
+  'directory_sync',
   'gcp',
   'jamboard',
-  'mobile'
+  'meet_hardware',
+  'mobile',
+  'profile',
+  'takeout',
   }
 
 REPORT_ACTIVITIES_TIME_OBJECTS = {'time'}
@@ -14037,7 +14058,7 @@ def doReport():
   if customerId == GC.MY_CUSTOMER:
     customerId = None
   csvPF = CSVPrintFile()
-  filters = actorIpAddress = groupIdFilter = orgUnit = orgUnitId = None
+  filters = actorIpAddress = groupIdFilter = orgUnit = orgUnitId = resourceDetailsFilter = None
   showOrgUnit = False
   parameters = set()
   parameterServices = set()
@@ -14154,6 +14175,8 @@ def doReport():
       eventRowFilter = True
     elif activityReports and myarg == 'groupidfilter':
       groupIdFilter = getString(Cmd.OB_STRING)
+    elif activityReports and myarg == 'resourcedetailsfilter':
+      resourceDetailsFilter = getString(Cmd.OB_STRING)
     elif myarg == 'addcsvdata':
       k = getString(Cmd.OB_STRING)
       addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
@@ -14438,7 +14461,7 @@ def doReport():
                                actorIpAddress=actorIpAddress, orgUnitID=orgUnitId,
                                startTime=startEndTime.startTime, endTime=startEndTime.endTime,
                                eventName=eventName, filters=filters, groupIdFilter=groupIdFilter,
-                               maxResults=maxResults)
+                               resourceDetailsFilter=resourceDetailsFilter, maxResults=maxResults)
         except GAPI.badRequest:
           if user != 'all':
             entityUnknownWarning(Ent.USER, user, i, count)
@@ -16074,8 +16097,8 @@ def printShowAnalyticItems(users, entityType):
     except GAPI.serviceNotAvailable:
       userAnalyticsServiceNotEnabledWarning(user, i, count)
       continue
-    jcount = len(results)
     if not csvPF:
+      jcount = len(results)
       if not FJQC.formatJSON:
         entityPerformActionNumItems([Ent.USER, user], jcount, entityType)
       Ind.Increment()
@@ -16091,7 +16114,7 @@ def printShowAnalyticItems(users, entityType):
           printLine(json.dumps(cleanJSON(item, timeObjects=analyticEntityMap['timeObjects']),
                                ensure_ascii=False, sort_keys=False))
       Ind.Decrement()
-    else:
+    elif results:
       for item in results:
         row = flattenJSON(item, flattened={'User': user}, timeObjects=analyticEntityMap['timeObjects'])
         if not FJQC.formatJSON:
@@ -16103,6 +16126,8 @@ def printShowAnalyticItems(users, entityType):
           row['JSON'] = json.dumps(cleanJSON(item, timeObjects=analyticEntityMap['timeObjects']),
                                    ensure_ascii=False, sort_keys=True)
           csvPF.WriteRowNoFilter(row)
+    elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+      csvPF.WriteRowNoFilter({'User': user})
   if csvPF:
     csvPF.writeCSVfile(Ent.Plural(entityType))
 
@@ -22381,11 +22406,13 @@ def _printPersonEntityList(entityType, entityList, userEntityType, user, i, coun
       if not contactQuery or localPeopleContactSelects(contactQuery, person):
         _showPerson(userEntityType, user, entityType, person, j, jcount, FJQC, parameters)
     Ind.Decrement()
-  else:
+  elif entityList:
     entityTypeName = Ent.Singular(userEntityType)
     for person in entityList:
       if not contactQuery or localPeopleContactSelects(contactQuery, person):
         _printPerson(entityTypeName, user, person, csvPF, FJQC, parameters)
+  elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+    csvPF.WriteRowNoFilter({userEntityType: user})
 
 PEOPLE_FIELDS_CHOICE_MAP = {
   'additionalname': PEOPLE_NAMES,
@@ -23701,9 +23728,9 @@ def printShowContactDelegates(users):
     except (GAPI.serviceNotAvailable, GAPI.badRequest):
       userContactDelegateServiceNotEnabledWarning(user, i, count)
       continue
-    jcount = len(delegates)
     if not csvPF:
       if not csvStyle:
+        jcount = len(delegates)
         entityPerformActionNumItems([Ent.USER, user], jcount, Ent.CONTACT_DELEGATE, i, count)
         Ind.Increment()
         j = 0
@@ -23727,17 +23754,16 @@ def printShowContactDelegates(users):
             writeStdout(f'{user},{_getDelegateName(cd, delegateEmail, delegateNames)},{delegateEmail}\n')
           else:
             writeStdout(f'{user},{delegateEmail}\n')
-    else:
-      if delegates:
-        if showNames:
-          for delegate in delegates:
-            csvPF.WriteRow({'User': user, 'delegateName': _getDelegateName(cd, delegate['email'], delegateNames),
-                            'delegateAddress': delegate['email']})
-        else:
-          for delegate in delegates:
-            csvPF.WriteRow({'User': user, 'delegateAddress': delegate['email']})
-      elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
-        csvPF.WriteRowNoFilter({'User': user})
+    elif delegates:
+      if showNames:
+        for delegate in delegates:
+          csvPF.WriteRow({'User': user, 'delegateName': _getDelegateName(cd, delegate['email'], delegateNames),
+                          'delegateAddress': delegate['email']})
+      else:
+        for delegate in delegates:
+          csvPF.WriteRow({'User': user, 'delegateAddress': delegate['email']})
+    elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+      csvPF.WriteRowNoFilter({'User': user})
   if csvPF:
     csvPF.writeCSVfile('Contact Delegates')
 
@@ -26749,10 +26775,11 @@ def printShowChatEmojis(users):
     try:
       emojis = callGAPIpages(chat.customEmojis(), 'list', 'customEmojis',
                              pageMessage=_getChatPageMessage(Ent.CHAT_EMOJI, user, i, count, pfilter),
-                             throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                             throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT,
+                                           GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                              pageSize=GC.Values[GC.CHAT_MAX_RESULTS], filter=pfilter)
-    except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+    except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.failedPrecondition) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
       continue
     except GAPI.failedPrecondition:
@@ -26768,9 +26795,11 @@ def printShowChatEmojis(users):
         j += 1
         _showChatItem(emoji, Ent.CHAT_EMOJI, FJQC, j, jcount)
       Ind.Decrement()
-    else:
+    elif emojis:
       for emoji in sorted(emojis, key=lambda k: k['emojiName']):
         _printChatItem(user, emoji, '', Ent.CHAT_EMOJI, csvPF, FJQC)
+    elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+      csvPF.WriteRowNoFilter({'User': user})
   if csvPF:
     csvPF.writeCSVfile('Chat Custom Emojis')
 
@@ -28369,9 +28398,11 @@ def printShowChatMessages(users):
             message['space']['displayName'] = parent['displayName']
           _showChatItem(message, Ent.CHAT_MESSAGE, FJQC, k, kcount)
         Ind.Decrement()
-      else:
+      elif messages:
         for message in messages:
           _printChatItem(user, message, parent, Ent.CHAT_MESSAGE, csvPF, FJQC)
+      elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+        csvPF.WriteRowNoFilter({'User': user})
   if csvPF:
     csvPF.writeCSVfile('Chat Messages')
 
@@ -28482,9 +28513,11 @@ def printShowChatEvents(users):
           event['space'] = {'name': parentName, 'displayName': parent['displayName']}
           _showChatItem(event, Ent.CHAT_EVENT, FJQC, k, kcount)
         Ind.Decrement()
-      else:
+      elif events:
         for event in events:
           _printChatItem(user, event, parent, Ent.CHAT_EVENT, csvPF, FJQC)
+      elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+        csvPF.WriteRowNoFilter({'User': user})
   if csvPF:
     csvPF.writeCSVfile('Chat Events')
 
@@ -31557,8 +31590,8 @@ def doPrintShowChromeApps():
       except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
         entityActionFailedWarning([Ent.CHROME_APP, None], str(e))
         return
-      jcount = len(apps)
       if not csvPF:
+        jcount = len(apps)
         if not FJQC.formatJSON:
           entityPerformActionNumItems([Ent.ORGANIZATIONAL_UNIT, orgUnitPath], jcount, Ent.CHROME_APP)
         Ind.Increment()
@@ -31706,8 +31739,8 @@ def doPrintShowChromeAppDevices():
       except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
         entityActionFailedWarning([Ent.CHROME_APP_DEVICE, None], str(e))
         return
-      jcount = len(devices)
       if not csvPF:
+        jcount = len(devices)
         if not FJQC.formatJSON:
           entityPerformActionNumItems([Ent.ORGANIZATIONAL_UNIT, orgUnitPath], jcount, Ent.CHROME_APP_DEVICE)
         Ind.Increment()
@@ -32135,8 +32168,8 @@ def doPrintShowChromeVersions():
       except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
         entityActionFailedWarning([Ent.CHROME_VERSION, None], str(e))
         return
-      jcount = len(versions)
       if not csvPF:
+        jcount = len(versions)
         if not FJQC.formatJSON:
           entityPerformActionNumItems([Ent.ORGANIZATIONAL_UNIT, orgUnitPath], jcount, Ent.CHROME_VERSION)
         Ind.Increment()
@@ -42725,8 +42758,8 @@ def doPrintShowVaultExports():
     else:
       warnMatterNotOpen(None, matter, matterNameId, j, jcount)
       continue
-    kcount = len(exports)
     if not csvPF:
+      kcount = len(exports)
       if not FJQC.formatJSON:
         entityPerformActionNumItems([Ent.VAULT_MATTER, matterNameId], kcount, Ent.VAULT_EXPORT, j, jcount)
       Ind.Increment()
@@ -43420,8 +43453,8 @@ def doPrintShowVaultHolds():
     else:
       warnMatterNotOpen(None, matter, matterNameId, j, jcount)
       continue
-    kcount = len(holds)
     if not csvPF:
+      kcount = len(holds)
       if not FJQC.formatJSON:
         entityPerformActionNumItems([Ent.VAULT_MATTER, matterNameId], kcount, Ent.VAULT_HOLD, j, jcount)
       Ind.Increment()
@@ -43784,8 +43817,8 @@ def doPrintShowVaultQueries():
     else:
       warnMatterNotOpen(None, matter, matterNameId, j, jcount)
       continue
-    kcount = len(queries)
     if not csvPF:
+      kcount = len(queries)
       if not FJQC.formatJSON:
         entityPerformActionNumItems([Ent.VAULT_MATTER, matterNameId], kcount, Ent.VAULT_QUERY, j, jcount)
       Ind.Increment()
@@ -48197,8 +48230,8 @@ def printShowWebResources(users):
     if not verif:
       continue
     sites = callGAPIitems(verif.webResource(), 'list', 'items')
-    jcount = len(sites)
     if not csvPF:
+      jcount = len(sites)
       entityPerformActionNumItems([Ent.USER, user], jcount, Ent.WEB_RESOURCE, i, count)
       Ind.Increment()
       j = 0
@@ -48206,10 +48239,12 @@ def printShowWebResources(users):
         j += 1
         _showSiteVerificationInfo(site, j, jcount)
       Ind.Decrement()
-    else:
+    elif sites:
       for site in sites:
         row = flattenJSON(site, flattened={'User': user})
         csvPF.WriteRowTitles(row)
+    elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+      csvPF.WriteRowNoFilter({'User': user})
   if csvPF:
     csvPF.writeCSVfile('Web Resources')
 
@@ -48234,8 +48269,8 @@ def printShowWebMasterSites(users):
                             throwReasons=[GAPI.PERMISSION_DENIED])
     except GAPI.permissionDenied as e:
       accessErrorExitNonDirectory(API.SEARCHCONSOLE, str(e))
-    jcount = len(sites)
     if not csvPF:
+      jcount = len(sites)
       entityPerformActionNumItems([Ent.USER, user], jcount, Ent.WEB_MASTERSITE, i, count)
       Ind.Increment()
       j = 0
@@ -48246,10 +48281,12 @@ def printShowWebMasterSites(users):
         printKeyValueList(['permissionLevel', site['permissionLevel']])
         Ind.Decrement()
       Ind.Decrement()
-    else:
+    elif sites:
       for site in sites:
         row = flattenJSON(site, flattened={'User': user})
         csvPF.WriteRowTitles(row)
+    elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+      csvPF.WriteRowNoFilter({'User': user})
   if csvPF:
     csvPF.writeCSVfile('Web Master Sites')
 
@@ -51513,9 +51550,9 @@ def _printShowGuardians(entityList=None):
                                                   GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
                                     retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                     studentId=studentId, invitedEmailAddress=invitedEmailAddress, states=states)
-        jcount = len(invitations)
         if not csvPF:
           if not FJQC.formatJSON:
+            jcount = len(invitations)
             entityPerformActionNumItems([Ent.STUDENT, studentId if not allStudents else 'All'], jcount, Ent.GUARDIAN_INVITATION, i, count)
             Ind.Increment()
             j = 0
@@ -51530,7 +51567,7 @@ def _printShowGuardians(entityList=None):
             Ind.Decrement()
           else:
             printLine(json.dumps(cleanJSON(invitations, timeObjects=GUARDIAN_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
-        else:
+        elif invitations:
           if not FJQC.formatJSON:
             for invitation in invitations:
               if showStudentEmails:
@@ -51541,6 +51578,8 @@ def _printShowGuardians(entityList=None):
           else:
             csvPF.WriteRow({'studentId': studentId, 'studentEmail': _getClassroomEmail(croom, classroomEmails, studentId, studentId),
                             'JSON': json.dumps(cleanJSON(invitations, timeObjects=GUARDIAN_TIME_OBJECTS), ensure_ascii=False, sort_keys=True)})
+        elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+          csvPF.WriteRowNoFilter({'studentEmail': studentId})
       if guardianClass != GUARDIAN_CLASS_INVITATIONS:
         if csvPF:
           if not allStudents:
@@ -51556,9 +51595,9 @@ def _printShowGuardians(entityList=None):
                                                 GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
                                   retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                   studentId=studentId, invitedEmailAddress=invitedEmailAddress)
-        jcount = len(guardians)
         if not csvPF:
           if not FJQC.formatJSON:
+            jcount = len(guardians)
             entityPerformActionNumItems([Ent.STUDENT, studentId if not allStudents else 'All'], jcount, Ent.GUARDIAN, i, count)
             Ind.Increment()
             j = 0
@@ -51573,7 +51612,7 @@ def _printShowGuardians(entityList=None):
             Ind.Decrement()
           else:
             printLine(json.dumps(cleanJSON(guardians), ensure_ascii=False, sort_keys=True))
-        else:
+        elif guardians:
           if not FJQC.formatJSON:
             for guardian in guardians:
               if showStudentEmails:
@@ -51584,6 +51623,8 @@ def _printShowGuardians(entityList=None):
           else:
             csvPF.WriteRowNoFilter({'studentId': studentId, 'studentEmail': _getClassroomEmail(croom, classroomEmails, studentId, studentId),
                                     'JSON': json.dumps(cleanJSON(guardians), ensure_ascii=False, sort_keys=True)})
+        elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+          csvPF.WriteRowNoFilter({'studentEmail': studentId})
     except GAPI.notFound:
       entityUnknownWarning(Ent.STUDENT, studentId, i, count)
     except (GAPI.invalidArgument, GAPI.badRequest, GAPI.forbidden, GAPI.permissionDenied) as e:
@@ -51857,11 +51898,10 @@ def printShowClassroomInvitations(users):
       printGettingAllEntityItemsForWhom(entityType, userId, i, count)
     status, invitations = _getClassroomInvitations(croom, userId, None, role, i, count)
     if status > 0:
-      jcount = len(invitations)
-      if not FJQC.formatJSON:
-        entityPerformActionNumItems([Ent.USER, userId], jcount, entityType, i, count)
       if not csvPF:
         if not FJQC.formatJSON:
+          jcount = len(invitations)
+          entityPerformActionNumItems([Ent.USER, userId], jcount, entityType, i, count)
           Ind.Increment()
           j = 0
           for invitation in invitations:
@@ -51878,7 +51918,7 @@ def printShowClassroomInvitations(users):
           Ind.Decrement()
         else:
           printLine(json.dumps(cleanJSON(invitations), ensure_ascii=False, sort_keys=True))
-      else:
+      elif invitations:
         if not FJQC.formatJSON:
           for invitation in invitations:
             invitation['courseName'] = _getCourseName(croom, courseNames, invitation['courseId'])
@@ -51887,6 +51927,8 @@ def printShowClassroomInvitations(users):
         else:
           csvPF.WriteRowNoFilter({'userEmail': userEmail,
                                   'JSON': json.dumps(cleanJSON(invitations), ensure_ascii=False, sort_keys=True)})
+      elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+        csvPF.WriteRowNoFilter({'userId' if not FJQC.formatJSON else 'userEmail':  userEmail})
   if csvPF:
     csvPF.writeCSVfile('ClassroomInvitations')
 
@@ -53334,8 +53376,8 @@ def printShowCalendars(users):
           if domain in excludeDomains:
             continue
         calendars.append(calendar)
-    jcount = len(calendars)
     if not csvPF:
+      jcount = len(calendars)
       if not FJQC.formatJSON:
         entityPerformActionNumItems([Ent.USER, user], jcount, Ent.CALENDAR, i, count)
       Ind.Increment()
@@ -53346,39 +53388,38 @@ def printShowCalendars(users):
           acls = _getCalendarPermissions(cal, calendar)
         _showCalendar(calendar, j, jcount, FJQC, acls)
       Ind.Decrement()
-    else:
-      if calendars:
-        if not getCalPermissions or not oneItemPerRow:
-          for calendar in calendars:
-            row = {'primaryEmail': user, 'calendarId': calendar['id']}
+    elif calendars:
+      if not getCalPermissions or not oneItemPerRow:
+        for calendar in calendars:
+          row = {'primaryEmail': user, 'calendarId': calendar['id']}
+          if getCalPermissions:
+            calPerms = _getCalendarPermissions(cal, calendar)
+            flattenJSON({'permissions': calPerms}, flattened=row)
+          flattenJSON(calendar, flattened=row, simpleLists=CALENDAR_SIMPLE_LISTS, delimiter=delimiter)
+          if not FJQC.formatJSON:
+            row.pop('id')
+            csvPF.WriteRowTitles(row)
+          elif csvPF.CheckRowTitles(row):
             if getCalPermissions:
-              calPerms = _getCalendarPermissions(cal, calendar)
-              flattenJSON({'permissions': calPerms}, flattened=row)
-            flattenJSON(calendar, flattened=row, simpleLists=CALENDAR_SIMPLE_LISTS, delimiter=delimiter)
+              calendar.update({'permissions': calPerms})
+            csvPF.WriteRowNoFilter({'primaryEmail': user, 'calendarId': calendar['id'],
+                                    'JSON': json.dumps(cleanJSON(calendar), ensure_ascii=False, sort_keys=True)})
+      else:
+        for calendar in calendars:
+          baserow = {'primaryEmail': user, 'calendarId': calendar['id']}
+          flattenJSON(calendar, flattened=baserow, simpleLists=CALENDAR_SIMPLE_LISTS, delimiter=delimiter)
+          for permission in _getCalendarPermissions(cal, calendar):
+            row = baserow.copy()
+            flattenJSON({'permission': permission}, flattened=row)
             if not FJQC.formatJSON:
               row.pop('id')
               csvPF.WriteRowTitles(row)
             elif csvPF.CheckRowTitles(row):
-              if getCalPermissions:
-                calendar.update({'permissions': calPerms})
+              calendar.update({'permission': permission})
               csvPF.WriteRowNoFilter({'primaryEmail': user, 'calendarId': calendar['id'],
                                       'JSON': json.dumps(cleanJSON(calendar), ensure_ascii=False, sort_keys=True)})
-        else:
-          for calendar in calendars:
-            baserow = {'primaryEmail': user, 'calendarId': calendar['id']}
-            flattenJSON(calendar, flattened=baserow, simpleLists=CALENDAR_SIMPLE_LISTS, delimiter=delimiter)
-            for permission in _getCalendarPermissions(cal, calendar):
-              row = baserow.copy()
-              flattenJSON({'permission': permission}, flattened=row)
-              if not FJQC.formatJSON:
-                row.pop('id')
-                csvPF.WriteRowTitles(row)
-              elif csvPF.CheckRowTitles(row):
-                calendar.update({'permission': permission})
-                csvPF.WriteRowNoFilter({'primaryEmail': user, 'calendarId': calendar['id'],
-                                        'JSON': json.dumps(cleanJSON(calendar), ensure_ascii=False, sort_keys=True)})
-      elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
-        csvPF.WriteRowNoFilter({'primaryEmail': user})
+    elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+      csvPF.WriteRowNoFilter({'primaryEmail': user})
   if csvPF:
     csvPF.writeCSVfile('Calendars')
 
@@ -54610,11 +54651,13 @@ def printShowStatusEvent(users, eventType):
               _getEventDaysOfWeek(event)
             _showCalendarStatusEvent(user, calId, Ent.EVENT, event, k, kcount, FJQC)
           Ind.Decrement()
-        else:
+        elif events:
           for event in events:
             if showDayOfWeek:
               _getEventDaysOfWeek(event)
             _printCalendarEvent(user, calId, event, csvPF, FJQC, {})
+        elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+          csvPF.WriteRowNoFilter({'primaryEmail': user})
         first = first.shift(**wlDate['udelta'])
         last = last.shift(**wlDate['udelta'])
   if csvPF:
@@ -54728,7 +54771,7 @@ def printShowYouTubeChannel(users):
         showJSON(None, channel, skipObjects={'id'}, timeObjects=YOUTUBE_CHANNEL_TIME_OBJECTS)
         Ind.Decrement()
       Ind.Decrement()
-    else:
+    elif channels:
       for channel in channels:
         row = {'User': user, 'id': channel['id']}
         flattenJSON(channel, flattened=row, timeObjects=YOUTUBE_CHANNEL_TIME_OBJECTS)
@@ -54739,6 +54782,8 @@ def printShowYouTubeChannel(users):
                  'JSON': json.dumps(cleanJSON(channel, timeObjects=YOUTUBE_CHANNEL_TIME_OBJECTS),
                                     ensure_ascii=False, sort_keys=True)}
           csvPF.WriteRowNoFilter(row)
+    elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+      csvPF.WriteRowNoFilter({'User': user})
   if csvPF:
     csvPF.writeCSVfile('YouTube Channels')
 
@@ -66775,6 +66820,7 @@ def infoDriveFileACLs(users, useDomainAdminAccess=False):
                               useDomainAdminAccess=useDomainAdminAccess,
                               fileId=fileId, permissionId=permissionId, fields='*', supportsAllDrives=True)
         if not FJQC.formatJSON:
+          jcount = len(permission)
           entityPerformActionNumItems([entityType, fileName], jcount, Ent.PERMITTEE)
           Ind.Increment()
           _showDriveFilePermission(permission, printKeys, timeObjects, j, jcount)
@@ -68347,7 +68393,7 @@ def printShowSharedDrives(users, useDomainAdminAccess=False):
         shareddrive = stripNonShowFields(shareddrive)
         _showSharedDrive(user, shareddrive, j, jcount, FJQC)
       Ind.Decrement()
-    else:
+    elif matchedFeed:
       for shareddrive in sorted(matchedFeed, key=lambda k: k['name']):
         shareddrive = stripNonShowFields(shareddrive)
         if FJQC.formatJSON:
@@ -68360,6 +68406,8 @@ def printShowSharedDrives(users, useDomainAdminAccess=False):
           csvPF.WriteRow(row)
         else:
           csvPF.WriteRowTitles(flattenJSON(shareddrive, flattened={'User': user}, timeObjects=SHAREDDRIVE_TIME_OBJECTS))
+    elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+      csvPF.WriteRowNoFilter({'User': user})
   if csvPF:
     csvPF.writeCSVfile('SharedDrives')
 
@@ -69135,12 +69183,14 @@ def printShowLookerStudioAssets(users):
         if asset:
           _showAsset(asset)
       Ind.Decrement()
-    else:
+    elif assets:
       for asset in assets:
         if assetIdEntity:
           asset = _getLookerStudioAssetByID(ds, user, i, count, asset['name'])
         if asset:
           _printAsset(asset, user)
+    elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+      csvPF.WriteRowNoFilter({'User': user})
   if csvPF:
     csvPF.writeCSVfile('Looker Studio Assets')
 
@@ -69329,8 +69379,12 @@ def printShowLookerStudioPermissions(users):
       assets, jcount = _getLookerStudioAssets(ds, user, i, count, parameters, assetTypes, 'nextPageToken,assets(name,title)', None)
       if assets is None:
         continue
-    if not csvPF and not FJQC.formatJSON:
-      entityPerformActionNumItems([Ent.USER, user], jcount, Ent.LOOKERSTUDIO_ASSET, i, count)
+    if not csvPF:
+      if not FJQC.formatJSON:
+        entityPerformActionNumItems([Ent.USER, user], jcount, Ent.LOOKERSTUDIO_ASSET, i, count)
+    elif jcount == 0 and GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+      csvPF.WriteRowNoFilter({'User': user})
+      continue
     j = 0
     for asset in assets:
       j += 1
@@ -69941,6 +69995,9 @@ def printShowUserGroups(users):
         entityPerformActionNumItems([Ent.USER, user], jcount, Ent.GROUP, i, count)
       else:
         entityPerformActionModifierNumItems([Ent.USER, user], Msg.MAXIMUM_OF, jcount, Ent.GROUP, i, count)
+    elif jcount == 0 and GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+      csvPF.WriteRowNoFilter({'User': user})
+      continue
     if noDetails:
       Ind.Increment()
       j = 0
@@ -71281,7 +71338,6 @@ def printShowSheetRanges(users):
                           throwReasons=GAPI.SHEETS_ACCESS_THROW_REASONS,
                           spreadsheetId=spreadsheetId, ranges=spreadsheetRanges, fields='valueRanges', **kwargs)
         valueRanges = result.get('valueRanges', [])
-        kcount = len(valueRanges)
         if not csvPF:
           if FJQC.formatJSON:
             if not valueRangesOnly:
@@ -71289,6 +71345,7 @@ def printShowSheetRanges(users):
             else:
               printLine(json.dumps(result.get('valueRanges', []), ensure_ascii=False, sort_keys=False))
             continue
+          kcount = len(valueRanges)
           entityPerformActionNumItems([Ent.USER, user, Ent.SPREADSHEET, spreadsheetId], kcount, Ent.SPREADSHEET_RANGE, j, jcount)
           Ind.Increment()
           k = 0
@@ -71297,19 +71354,18 @@ def printShowSheetRanges(users):
             printKeyValueListWithCount(['range', valueRange['range']], k, kcount)
             _showValueRange(valueRange)
           Ind.Decrement()
-        else:
-          if kcount:
-            row = flattenJSON(result, flattened={'User': user, 'spreadsheetId': spreadsheetId})
-            if not FJQC.formatJSON:
-              csvPF.WriteRowTitles(row)
-            elif csvPF.CheckRowTitles(row):
-              if not valueRangesOnly:
-                csvPF.WriteRowNoFilter({'User': user, 'spreadsheetId': spreadsheetId,
-                                        'JSON': json.dumps(result, ensure_ascii=False, sort_keys=False)})
-              else:
-                csvPF.WriteRowNoFilter({'JSON': json.dumps(result.get('valueRanges', []), ensure_ascii=False, sort_keys=False)})
-          elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
-            csvPF.WriteRowNoFilter({'User': user})
+        elif valueRanges:
+          row = flattenJSON(result, flattened={'User': user, 'spreadsheetId': spreadsheetId})
+          if not FJQC.formatJSON:
+            csvPF.WriteRowTitles(row)
+          elif csvPF.CheckRowTitles(row):
+            if not valueRangesOnly:
+              csvPF.WriteRowNoFilter({'User': user, 'spreadsheetId': spreadsheetId,
+                                      'JSON': json.dumps(result, ensure_ascii=False, sort_keys=False)})
+            else:
+              csvPF.WriteRowNoFilter({'JSON': json.dumps(result.get('valueRanges', []), ensure_ascii=False, sort_keys=False)})
+        elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+          csvPF.WriteRowNoFilter({'User': user})
       except (GAPI.notFound, GAPI.forbidden, GAPI.permissionDenied,
               GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.badRequest,
               GAPI.invalid, GAPI.invalidArgument, GAPI.failedPrecondition) as e:
@@ -71460,9 +71516,9 @@ def _printShowTokens(entityType, users):
                                               GAPI.DOMAIN_CANNOT_USE_APIS, GAPI.BAD_REQUEST,
                                               GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                                 userKey=user, fields=f'items({fields})')
-      jcount = len(results)
       if not aggregateUsersBy:
         if not csvPF:
+          jcount = len(results)
           entityPerformActionNumItems([Ent.USER, user], jcount, Ent.ACCESS_TOKEN, i, count)
           Ind.Increment()
           j = 0
@@ -71470,16 +71526,15 @@ def _printShowTokens(entityType, users):
             j += 1
             _showToken(token, tokenTitle, orderBy, j, jcount)
           Ind.Decrement()
-        else:
-          if results:
-            for token in sorted(results, key=lambda k: k[orderBy]):
-              row = {'user': user, 'scopes': delimiter.join(token.get('scopes', []))}
-              for item in token:
-                if item != 'scopes':
-                  row[item] = token.get(item, '')
-              csvPF.WriteRow(row)
-          elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
-            csvPF.WriteRowNoFilter({'user': user})
+        elif results:
+          for token in sorted(results, key=lambda k: k[orderBy]):
+            row = {'user': user, 'scopes': delimiter.join(token.get('scopes', []))}
+            for item in token:
+              if item != 'scopes':
+                row[item] = token.get(item, '')
+            csvPF.WriteRow(row)
+        elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+          csvPF.WriteRowNoFilter({'user': user})
       elif aggregateUsersBy != 'user':
         if results:
           for token in results:
@@ -74638,8 +74693,8 @@ def printShowDelegates(users):
                         throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                         userId='me')
       delegates = result.get('delegates', []) if result is not None else []
-      jcount = len(delegates)
       if not csvPF:
+        jcount = len(delegates)
         if not csvStyle:
           entityPerformActionNumItems([Ent.USER, user], jcount, Ent.DELEGATE, i, count)
           Ind.Increment()
@@ -74670,18 +74725,17 @@ def printShowDelegates(users):
               writeStdout(f'{user},{_getDelegateName(cd, delegateEmail, delegateNames)},{status},{delegateEmail}\n')
             else:
               writeStdout(f'{user},{status},{delegateEmail}\n')
-      else:
-        if delegates:
-          if showNames:
-            for delegate in delegates:
-              csvPF.WriteRow({'User': user, 'delegateName': _getDelegateName(cd, delegate['delegateEmail'], delegateNames),
-                              'delegateAddress': delegate['delegateEmail'], 'delegationStatus': delegate['verificationStatus']})
-          else:
-            for delegate in delegates:
-              csvPF.WriteRow({'User': user, 'delegateAddress': delegate['delegateEmail'],
-                              'delegationStatus': delegate['verificationStatus']})
-        elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
-          csvPF.WriteRowNoFilter({'User': user})
+      elif delegates:
+        if showNames:
+          for delegate in delegates:
+            csvPF.WriteRow({'User': user, 'delegateName': _getDelegateName(cd, delegate['delegateEmail'], delegateNames),
+                            'delegateAddress': delegate['delegateEmail'], 'delegationStatus': delegate['verificationStatus']})
+        else:
+          for delegate in delegates:
+            csvPF.WriteRow({'User': user, 'delegateAddress': delegate['delegateEmail'],
+                            'delegationStatus': delegate['verificationStatus']})
+      elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+        csvPF.WriteRowNoFilter({'User': user})
     except (GAPI.permissionDenied, GAPI.failedPrecondition) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.DELEGATE, None], str(e), i, count)
     except GAPI.serviceNotAvailable:
@@ -75031,7 +75085,7 @@ def infoFilters(users):
 # gam <UserTypeEntity> show filters [labelidsonly] [formatjson]
 def printShowFilters(users):
   labelIdsOnly = False
-  csvPF = CSVPrintFile() if Act.csvFormat() else None
+  csvPF = CSVPrintFile(['User', 'id']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -75061,8 +75115,8 @@ def printShowFilters(users):
       results = callGAPIitems(gmail.users().settings().filters(), 'list', 'filter',
                               throwReasons=GAPI.GMAIL_THROW_REASONS,
                               userId='me')
-      jcount = len(results)
       if not csvPF:
+        jcount = len(results)
         if not FJQC.formatJSON:
           entityPerformActionNumItems([Ent.USER, user], jcount, Ent.FILTER, i, count)
         Ind.Increment()
@@ -75071,17 +75125,16 @@ def printShowFilters(users):
           j += 1
           _showFilter(userFilter, j, jcount, labels, FJQC)
         Ind.Decrement()
-      else:
-        if results:
-          for userFilter in results:
-            row = _printFilter(user, userFilter, labels)
-            if FJQC.formatJSON:
-              if labels['labels']:
-                _mapFilterLabelIdsToNames(userFilter, labels)
-              row['JSON'] = json.dumps(userFilter, ensure_ascii=False, sort_keys=False)
-            csvPF.WriteRowTitles(row)
-        elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
-          csvPF.WriteRowNoFilter({'User': user})
+      elif results:
+        for userFilter in results:
+          row = _printFilter(user, userFilter, labels)
+          if FJQC.formatJSON:
+            if labels['labels']:
+              _mapFilterLabelIdsToNames(userFilter, labels)
+            row['JSON'] = json.dumps(userFilter, ensure_ascii=False, sort_keys=False)
+          csvPF.WriteRowTitles(row)
+      elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+        csvPF.WriteRowNoFilter({'User': user})
     except GAPI.serviceNotAvailable:
       userGmailServiceNotEnabledWarning(user, i, count)
   if csvPF:
@@ -75690,8 +75743,8 @@ def printShowForwardingAddresses(users):
       results = callGAPIitems(gmail.users().settings().forwardingAddresses(), 'list', 'forwardingAddresses',
                               throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.FAILED_PRECONDITION],
                               userId='me')
-      jcount = len(results)
       if not csvPF:
+        jcount = len(results)
         entityPerformActionNumItems([Ent.USER, user], jcount, Ent.FORWARDING_ADDRESS, i, count)
         Ind.Increment()
         j = 0
@@ -75699,12 +75752,11 @@ def printShowForwardingAddresses(users):
           j += 1
           _showForwardingAddress(j, jcount, forward)
         Ind.Decrement()
-      else:
-        if results:
-          for forward in results:
-            csvPF.WriteRow({'User': user, 'forwardingEmail': forward['forwardingEmail'], 'verificationStatus': forward['verificationStatus']})
-        elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
-          csvPF.WriteRowNoFilter({'User': user})
+      elif results:
+        for forward in results:
+          csvPF.WriteRow({'User': user, 'forwardingEmail': forward['forwardingEmail'], 'verificationStatus': forward['verificationStatus']})
+      elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+        csvPF.WriteRowNoFilter({'User': user})
     except GAPI.failedPrecondition as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
     except GAPI.serviceNotAvailable:
@@ -76134,8 +76186,8 @@ def printShowSendAs(users):
       results = callGAPIitems(gmail.users().settings().sendAs(), 'list', 'sendAs',
                               throwReasons=GAPI.GMAIL_THROW_REASONS,
                               userId='me')
-      jcount = len(results)
       if not csvPF:
+        jcount = len(results)
         entityPerformActionNumItems([Ent.USER, user], jcount if selection is None else 1, Ent.SENDAS_ADDRESS, i, count)
         Ind.Increment()
         j = 0
@@ -76144,29 +76196,28 @@ def printShowSendAs(users):
           if (selection is None) or (sendas.get(selection, False)):
             _showSendAs(sendas, j, jcount, sigReplyFormat, verifyOnly)
         Ind.Decrement()
-      else:
-        if results:
-          for sendas in results:
-            if (selection is None) or (sendas.get(selection, False)):
-              row = {'User': user, 'isPrimary': False}
-              for item in sendas:
-                if item != 'smtpMsa':
-                  if item == 'signature':
-                    if verifyOnly:
-                      row[item] = bool(sendas[item])
-                    elif sigReplyFormat != SIG_REPLY_COMPACT:
-                      row[item] = sendas[item]
-                    else:
-                      row[item] = sendas[item].replace('\r', '').replace('\n', '')
-                  else:
+      elif results:
+        for sendas in results:
+          if (selection is None) or (sendas.get(selection, False)):
+            row = {'User': user, 'isPrimary': False}
+            for item in sendas:
+              if item != 'smtpMsa':
+                if item == 'signature':
+                  if verifyOnly:
+                    row[item] = bool(sendas[item])
+                  elif sigReplyFormat != SIG_REPLY_COMPACT:
                     row[item] = sendas[item]
+                  else:
+                    row[item] = sendas[item].replace('\r', '').replace('\n', '')
                 else:
-                  for field in SMTPMSA_DISPLAY_FIELDS:
-                    if field in sendas[item]:
-                      row[f'smtpMsa{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{field}'] = sendas[item][field]
-              csvPF.WriteRowTitles(row)
-        elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
-          csvPF.WriteRowNoFilter({'User': user})
+                  row[item] = sendas[item]
+              else:
+                for field in SMTPMSA_DISPLAY_FIELDS:
+                  if field in sendas[item]:
+                    row[f'smtpMsa{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{field}'] = sendas[item][field]
+            csvPF.WriteRowTitles(row)
+      elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+        csvPF.WriteRowNoFilter({'User': user})
     except GAPI.serviceNotAvailable:
       userGmailServiceNotEnabledWarning(user, i, count)
   if csvPF:
@@ -76554,8 +76605,8 @@ def _printShowCSEItems(users, entityType, keyField, timeObjects):
     except GAPI.serviceNotAvailable:
       userGmailServiceNotEnabledWarning(user, i, count)
       continue
-    jcount = len(results)
     if not csvPF:
+      jcount = len(results)
       if not  FJQC.formatJSON:
         entityPerformActionNumItems([Ent.USER, user], jcount, entityType, i, count)
       j = 0
@@ -77510,7 +77561,7 @@ def printShowNotes(users):
               note.pop('permissions', None)
             _showNote(note, j, jcount, FJQC, compact)
         Ind.Decrement()
-      else:
+      elif notes:
         for note in notes:
           if showPermissions:
             _assignNoteOwner(note, user)
@@ -77527,6 +77578,8 @@ def printShowNotes(users):
               row['JSON'] = json.dumps(cleanJSON(note, timeObjects=NOTES_TIME_OBJECTS),
                                        ensure_ascii=False, sort_keys=True)
               csvPF.WriteRowNoFilter(row)
+      elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+        csvPF.WriteRowNoFilter({'User': user})
     except (GAPI.badRequest, GAPI.invalidArgument, GAPI.notFound) as e:
       entityActionFailedWarning([Ent.USER, user, Ent.NOTE, None], str(e), i, count)
     except GAPI.authError:
@@ -78316,7 +78369,7 @@ def printShowTasklists(users):
         j += 1
         _showTasklist(tasklist, j, jcount, FJQC)
       Ind.Decrement()
-    else:
+    elif tasklists:
       for tasklist in tasklists:
         row = flattenJSON(tasklist, flattened={'User': user}, skipObjects=TASKLIST_SKIP_OBJECTS, timeObjects=TASKLIST_TIME_OBJECTS)
         if not FJQC.formatJSON:
@@ -78326,6 +78379,8 @@ def printShowTasklists(users):
           row['JSON'] = json.dumps(cleanJSON(tasklist, skipObjects=TASKLIST_SKIP_OBJECTS, timeObjects=TASKLIST_TIME_OBJECTS),
                                    ensure_ascii=False, sort_keys=True)
           csvPF.WriteRowNoFilter(row)
+    elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+      csvPF.WriteRowNoFilter({'User': user})
   if csvPF:
     csvPF.writeCSVfile(CSVTitle)
 
@@ -78451,8 +78506,8 @@ def printShowTagManagerObjects(users, entityType):
       except (GAPI.badRequest, GAPI.invalid, GAPI.notFound) as e:
         entityActionFailedWarning([Ent.USER, user, entityType, kwargs['parent']], str(e), j, jcount)
         continue
-      kcount = len(results)
       if not csvPF:
+        kcount = len(results)
         if not  FJQC.formatJSON:
           entityPerformActionNumItems([Ent.USER, user], kcount, entityType, j, jcount)
         Ind.Increment()
@@ -78470,7 +78525,7 @@ def printShowTagManagerObjects(users, entityType):
           else:
             printLine(json.dumps(cleanJSON(result), ensure_ascii=False, sort_keys=True))
         Ind.Decrement()
-      else:
+      elif results:
         for result in results:
           baseRow = {'User': user}
           for tmid in parameters['idList']:
@@ -78482,6 +78537,8 @@ def printShowTagManagerObjects(users, entityType):
             row = {'User': user, parameters['name']: result[parameters['name']], 'path': result['path']}
             row['JSON'] = json.dumps(cleanJSON(result), ensure_ascii=False, sort_keys=True)
             csvPF.WriteRowNoFilter(row)
+      elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+        csvPF.WriteRowNoFilter({'User': user})
   if csvPF:
     csvPF.writeCSVfile(Ent.Plural(entityType))
 

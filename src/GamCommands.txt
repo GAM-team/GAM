@@ -4585,28 +4585,41 @@ gam report usage customer [todrive <ToDriveAttribute>*]
         [convertmbtogb]
 
 <ActivityApplicationName> ::=
+        accessevaluation|
         accesstransparency|access|
         admin|
+        admindataaction|
+        assignments|
         calendar|calendars|
         chat|
         chrome|
         classroom|
+        cloudsearch|
+        contacts|
         contextawareaccess|
+        datamigration|
         datastudio|
+        directorysync|
         drive|doc|docs|
         gcp|cloud|
         geminiinworkspaceapps|gemini|geminiforworkspace|
         gmail|
         gplus|currents|google+|
+        graduation|
         groups|group|
         groupsenterprise|enterprisegroups|
         jamboard|
         keep|
+        ldap|
         login|logins|
         meet|hangoutsmeet|
+        meethardware|
         mobile|devices|
+        profile|
         rules|
         saml|
+        takeout|
+        tasks|
         token|tokens|oauthtoken|
         useraccounts|
         vault
@@ -4617,7 +4630,7 @@ gam report <ActivityApplicationName> [todrive <ToDriveAttribute>*]
          yesterday|today|thismonth|(previousmonths <Integer>)]
         [filter <String> (filtertime<String> <Time>)*]
         [event|events <EventNameList>] [ip <String>]
-        [groupidfilter <String>]
+        [groupidfilter <String>] [resourcedetailsfilter <String>]
         [maxactivities <Number>] [maxevents <Number>] [maxresults <Number>]
         [countsonly [bydate|summary] [eventrowfilter]]
         (addcsvdata <FieldName> <String>)* [shownoactivities]
@@ -5425,7 +5438,7 @@ gam print vaultcounts [todrive <ToDriveAttributes>*]
         [wait <Integer>]
 gam print vaultcounts [todrive <ToDriveAttributes>*]
         matter <MatterItem>
-	corpus mail|groups
+        corpus mail|groups
         [scope [all_data|held_data|unprocessed_data]]
         [(accounts <EmailAddressEntity>) | (orgunit|org|ou <OrgUnitPath>) | everyone]
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>] [timezone <TimeZone>]
@@ -5587,7 +5600,7 @@ gam create vaultquery <MatterItem> [name <String>]
         [locationquery <StringList>] [peoplequery <StringList>] [minuswords <StringList>]
         [responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*] [calendarversiondate <Date>|<Time>]
         (covereddata calllogs|textmessages|voicemails)*
-	[<JSONData>]
+        [<JSONData>]
         [shownames]
         [showdetails|returnidonly|formatjson]
 
@@ -8286,7 +8299,7 @@ gam <UserItem> print meettranscripts <MeetConferenceName> [todrive <ToDriveAttri
 
 <BiographyContent> ::=
         <String>|
-	(file|textfile <FileName> [charset <Charset>])|
+        (file|textfile <FileName> [charset <Charset>])|
         (gdoc <UserGoogleDoc>)
 
 <PeopleContactAttribute> ::=
