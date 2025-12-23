@@ -120,6 +120,12 @@ Limit the time period.
 * `thismonth` - The current calendar month up to the current time
 * `previousmonths <Integer>` - A number in the range 1 to 6 indicating calendar months previous to the current month
 
+For `gam report gmail`, `start <Time>`  and `end <Time>`should both be provided, and the scan duration should not be greater than 30 days.
+GAM will supply missing values:
+* No time information provided - GAM sets `range -30d today`
+* Only `start <Time>`  provided - GAM sets `end <Time>+30d`
+* Only `end <Time>` provided - GAM sets `start <Time>-30d`
+
 Apply API filters.
 * `filter|filters <String>` - `<String>` is a comma separated list of filter expressions.
 
