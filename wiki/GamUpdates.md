@@ -10,6 +10,16 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.30.04
+
+Updated `gam report gmail` to avoid the following error when incomplete start/end time information is provided.
+```
+ERROR: Invalid request: Start time and end time should both be provided, and the scan duration should not be greater than 30 days.
+```
+* No time information provided - GAM sets `range -30d today`
+* Only `start <Time>`  provided - GAM sets `end <Time>+30d`
+* Only `end <Time>` provided - GAM sets `start <Time>-30d`
+
 ### 7.30.03
 
 Updated `gam report <ActivityApplicationName>` to reflect the changes described here:
