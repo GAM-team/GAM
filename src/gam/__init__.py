@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.30.03'
+__version__ = '7.30.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -14443,6 +14443,17 @@ def doReport():
     else:
       for eventName in eventNames:
         zeroEventCounts[eventName] = 0
+# gmail requires a start time and an end time no more than 30 days apart
+    if report == 'gmail':
+      if startEndTime.startTime is None:
+        if startEndTime.endTime is None:
+          startEndTime.endDateTime = todaysDate()
+          startEndTime.endTime = ISOformatTimeStamp(startEndTime.endDateTime)
+        startEndTime.startDateTime = startEndTime.endDateTime.shift(days=-30)
+        startEndTime.startTime = ISOformatTimeStamp(startEndTime.startDateTime)
+      elif startEndTime.endTime is None:
+        startEndTime.endDateTime = startEndTime.startDateTime.shift(days=30)
+        startEndTime.endTime = ISOformatTimeStamp(startEndTime.endDateTime)
     i = 0
     count = len(users)
     for user in users:
