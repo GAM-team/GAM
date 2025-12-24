@@ -28,6 +28,8 @@ These pages show event/parameter names; scroll down in the left column to: Repor
 
 ## Definitions
 ```
+<NumberRange> ::= <Number>|(<Number>/<Number>)
+<NumberRangeList> ::= "<NumberRange>(,<NumberRange>)*"
 <DayOfWeek> ::= mon|tue|wed|thu|fri|sat|sun
 <Time> ::=
         <Year>-<Month>-<Day>(<Space>|T)<Hour>:<Minute>:<Second>[.<MilliSeconds>](Z|(+|-(<Hour>:<Minute>))) |
@@ -94,6 +96,7 @@ gam report <ActivityApplicationName> [todrive <ToDriveAttribute>*]
          yesterday|today|thismonth|(previousmonths <Integer>)]
         [filter <String> (filtertime<String> <Time>)*]
         [event|events <EventNameList>] [ip <String>]
+        [gmaileventtypes <NumberRangeList>]
         [groupidfilter <String>] [resourcedetailsfilter <String>]
         [maxactivities <Number>] [maxevents <Number>] [maxresults <Number>]
         [countsonly [bydate|summary] [eventrowfilter]]
@@ -125,6 +128,9 @@ GAM will supply missing values:
 * No time information provided - GAM sets `range -30d today`
 * Only `start <Time>`  provided - GAM sets `end <Time>+30d`
 * Only `end <Time>` provided - GAM sets `start <Time>-30d`
+
+For `gam report gmail`, `gmaileventtypes <NumberRangeList>` can be used to limit the event types displayed.
+* See: https://developers.google.com/workspace/admin/reports/v1/appendix/activity/gmail
 
 Apply API filters.
 * `filter|filters <String>` - `<String>` is a comma separated list of filter expressions.

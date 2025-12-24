@@ -77,6 +77,7 @@
 <MimeTypeNameList> ::= "<MimeTypeName>(,<MimeTypeName>)*"
 <NamespaceList> ::= "<Namespace>(,<Namespace>)*"
 <NotesNameList> ::= "<NotesName>(,<NotesName>)*"
+<NumberRangeList> ::= "<NumberRange>(,<NumberRange>)*"
 <OrgUnitList> ::= "<OrgUnitItem>(,<OrgUnitItem>)*"
 <OtherContactsResourceNameList> ::= "<OtherContactsResourceName>(,<OtherContactsResourceName>)*"
 <PeopleResourceNameList> ::= "<PeopleResourceName>(,<PeopleResourceName>)*"

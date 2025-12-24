@@ -10,6 +10,19 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.30.05
+
+Added option `gmaileventtypes <NumberRangeList>` to `gam report gmail` that can be used to limit the event types displayed.
+```
+<NumberRange> ::= <Number>|(<Number>/<Number>)
+<NumberRangeList> ::= "<NumberRange>(,<NumberRange>)*"
+
+gam report gmail user user@domain.com gmaileventtypes 1,10/11
+```
+* See: https://developers.google.com/workspace/admin/reports/v1/appendix/activity/gmail
+
+Updated sorting of column headers in `gam report <ActivityApplicationName>`.
+
 ### 7.30.04
 
 Updated `gam report gmail` to avoid the following error when incomplete start/end time information is provided.

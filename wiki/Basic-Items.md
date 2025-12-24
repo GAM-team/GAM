@@ -426,6 +426,7 @@
         (gdoc|ghtml <UserGoogleDoc>)|
         (gcsdoc|gcshtml <StorageBucketObjectName>)
 <NumberOfSeats> ::= <Number>
+<NumberRange> ::= <Number>|(<Number>/<Number>)
 <OrgUnitID> ::= id:<String>
 <OrgUnitPath> ::= /|(/<String>)+
 <OrgUnitItem> ::= <OrgUnitID>|<OrgUnitPath>
@@ -566,11 +567,11 @@
         (tdreturnidonly [<Boolean>])|
         (tdshare <EmailAddress> commenter|reader|writer)*|
         (tdsheet (id:<Number>)|<String>)|
-        (tdsheettimestamp [<Boolean>] [tdsheettimeformat <String>])
+        (tdsheettimestamp [<Boolean>] [tdsheettimeformat <DateTimeFormat>])
         (tdsheettitle <String>)|
         (tdsubject <String>)|
         ([tdsheetdaysoffset <Number>] [tdsheethoursoffset <Number>])|
-        (tdtimestamp [<Boolean>] [tdtimeformat <String>]
+        (tdtimestamp [<Boolean>] [tdtimeformat <DateTimeFormat>]
             [tddaysoffset <Number>] [tdhoursoffset <Number>])|
         (tdtimezone <TimeZone>)|
         (tdtitle <String>)|
