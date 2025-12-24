@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.30.04'
+__version__ = '7.30.05'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -1545,6 +1545,25 @@ def getIntegerEmptyAllowed(minVal=None, maxVal=None, default=0):
       pass
     invalidArgumentExit(integerLimits(minVal, maxVal))
   return default
+
+def getNumberRangeList():
+  if Cmd.ArgumentsRemaining():
+    numberlist = []
+    for number in Cmd.Current().strip().replace(',', ' ').split():
+      if number.isdigit():
+        numberlist.append(int(number))
+      elif '/' in number:
+        lrange, urange = number.split('/', 1)
+        if lrange.isdigit() and urange.isdigit() and int(lrange) <= int(urange):
+          for n in range(int(lrange), int(urange)+1):
+            numberlist.append(n)
+        else:
+          invalidArgumentExit(Cmd.OB_NUMBER_RANGE_LIST)
+      else:
+        invalidArgumentExit(Cmd.OB_NUMBER_RANGE_LIST)
+    Cmd.Advance()
+    return sorted(numberlist)
+  missingArgumentExit(Cmd.OB_NUMBER_RANGE_LIST)
 
 SORTORDER_CHOICE_MAP = {'ascending': 'ASCENDING', 'descending': 'DESCENDING'}
 
@@ -14074,6 +14093,7 @@ def doReport():
   allVerifyUser = userKey = 'all'
   cd = orgUnit = orgUnitId = None
   userOrgUnits = {}
+  gmailEventTypes = set()
   customerReports = userReports = False
   if report == 'customer':
     customerReports = True
@@ -14177,6 +14197,8 @@ def doReport():
       groupIdFilter = getString(Cmd.OB_STRING)
     elif activityReports and myarg == 'resourcedetailsfilter':
       resourceDetailsFilter = getString(Cmd.OB_STRING)
+    elif activityReports and (report == 'gmail')  and myarg == 'gmaileventtypes':
+      gmailEventTypes = set(getNumberRangeList())
     elif myarg == 'addcsvdata':
       k = getString(Cmd.OB_STRING)
       addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
@@ -14419,6 +14441,7 @@ def doReport():
     csvPF.SetTitles('name')
     if addCSVData:
       csvPF.AddTitles(sorted(addCSVData.keys()))
+    csvPF.SetSortAllTitles()
     if select:
       pageMessage = None
       normalizeUsers = True
@@ -14506,6 +14529,19 @@ def doReport():
             purge_parameters = True
             numEvents = 0
             for event in events:
+              # filter gmail event types
+              if gmailEventTypes:
+                keepEvent = True
+                for item in event.get('parameters', []):
+                  if item['name'] == 'event_info':
+                    for parm in item.get('messageValue', {}).get('parameter', []):
+                      if parm['name'] == 'mail_event_type':
+                        if int(parm['intValue']) not in gmailEventTypes:
+                          keepEvent = False
+                        break
+                    break
+                if not keepEvent:
+                  continue
               numEvents += 1
               for item in event.get('parameters', []):
                 itemSet = set(item)

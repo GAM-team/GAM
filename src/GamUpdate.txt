@@ -1,3 +1,16 @@
+7.30.05
+
+Added option `gmaileventtypes <NumberRangeList>` to `gam report gmail` that can be used to limit the event types displayed.
+```
+<NumberRange> ::= <Number>|(<Number>/<Number>)
+<NumberRangeList> ::= "<NumberRange>(,<NumberRange>)*"
+
+gam report gmail user user@domain.com gmaileventtypes 1,10/11
+```
+* See: https://developers.google.com/workspace/admin/reports/v1/appendix/activity/gmail
+
+Updated sorting of column headers in `gam report <ActivityApplicationName>`.
+
 7.30.04
 
 Updated `gam report gmail` to avoid the following error when incomplete start/end time information is provided.

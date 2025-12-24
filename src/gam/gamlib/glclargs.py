@@ -1286,6 +1286,7 @@ class GamCLArgs():
   OB_MOBILE_ENTITY = 'MobileEntity'
   OB_NETWORK_ID = 'networkID'
   OB_NAME = 'Name'
+  OB_NUMBER_RANGE_LIST = 'NumberRangeList'
   OB_ORGANIZER_TYPE_LIST = 'OrganizerTypeList'
   OB_ORGUNIT_ENTITY = 'OrgUnitEntity'
   OB_ORGUNIT_ITEM = 'OrgUnitItem'

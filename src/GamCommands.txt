@@ -512,6 +512,8 @@ If an item contains spaces, it should be surrounded by ".
 <MatterItem> ::= <UniqueID>|<String>
 <MatterState> ::= open|closed|deleted
 <MeetConferenceName> ::= conferenceRecords/<String>
+<MeetID> ::= <String>
+       Must match this Python Regular Expression: [a-z]{3}-[a-z]{4}-[a-z]{3}
 <MeetSpaceName> ::= spaces/<String> | <String>
 <MessageContent> ::=
         (message|textmessage|htmlmessage <String>)|
@@ -527,6 +529,7 @@ If an item contains spaces, it should be surrounded by ".
         (gdoc|ghtml <UserGoogleDoc>)|
         (gcsdoc|gcshtml <StorageBucketObjectName>)
 <NumberOfSeats> ::= <Number>
+<NumberRange> ::= <Number>|(<Number>/<Number>)
 <OrgUnitID> ::= id:<String>
 <OrgUnitPath> ::= /|(/<String>)+
 <OrgUnitItem> ::= <OrgUnitID>|<OrgUnitPath>
@@ -764,6 +767,7 @@ If an item contains spaces, it should be surrounded by ".
 <MimeTypeNameList> ::= "<MimeTypeName>(,<MimeTypeName>)*"
 <NamespaceList> ::= "<Namespace>(,<Namespace>)*"
 <NotesNameList> ::= "<NotesName>(,<NotesName>)*"
+<NumberRangeList> ::= "<NumberRange>(,<NumberRange>)*"
 <OrgUnitList> ::= "<OrgUnitItem>(,<OrgUnitItem>)*"
 <OtherContactsResourceNameList> ::= "<OtherContactsResourceName>(,<OtherContactsResourceName>)*"
 <PeopleResourceNameList> ::= "<PeopleResourceName>(,<PeopleResourceName>)*"
@@ -4630,6 +4634,7 @@ gam report <ActivityApplicationName> [todrive <ToDriveAttribute>*]
          yesterday|today|thismonth|(previousmonths <Integer>)]
         [filter <String> (filtertime<String> <Time>)*]
         [event|events <EventNameList>] [ip <String>]
+        [gmaileventtypes <NumberRangeList>]
         [groupidfilter <String>] [resourcedetailsfilter <String>]
         [maxactivities <Number>] [maxevents <Number>] [maxresults <Number>]
         [countsonly [bydate|summary] [eventrowfilter]]
