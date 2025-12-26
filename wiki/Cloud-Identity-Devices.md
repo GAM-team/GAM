@@ -40,6 +40,20 @@ Use `gam user user@domain.com update serviceaccount` and make sure that the foll
 * [Filters](https://support.google.com/a/answer/7549103)
 * [Device Search Fields](https://developers.google.com/admin-sdk/directory/v1/search-operators)
 
+Use this table to filter for specific device types:
+| Device Type | Filter |
+|-------------|--------|
+| ANDROID | type:android |
+| CHROME_OS | type:chromeos |
+| GOOGLE_SYNC | type:googlesync |
+| IOS | type:ios |
+| LINUX | type:linux |
+| MAC_OS | type:mac |
+| WINDOWS | type:windows |
+```
+
+To filter for these 
+
 ## Definitions
 ```
 <AssetTag> ::= <String>
