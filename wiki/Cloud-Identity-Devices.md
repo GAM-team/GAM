@@ -52,8 +52,6 @@ Use this table to filter for specific device types:
 | WINDOWS | type:windows |
 ```
 
-To filter for these 
-
 ## Definitions
 ```
 <AssetTag> ::= <String>
