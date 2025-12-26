@@ -50,7 +50,7 @@ Use this table to filter for specific device types:
 | LINUX | type:linux |
 | MAC_OS | type:mac |
 | WINDOWS | type:windows |
-```
+
 
 ## Definitions
 ```
