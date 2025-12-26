@@ -40,9 +40,9 @@ Use `gam user user@domain.com update serviceaccount` and make sure that the foll
 * [Filters](https://support.google.com/a/answer/7549103)
 * [Device Search Fields](https://developers.google.com/admin-sdk/directory/v1/search-operators)
 
-Use this table to filter for specific device types:
-| Device Type | Filter |
-|-------------|--------|
+Use this table to filter/query for specific device types:
+| Device Type | Filter/Query |
+|-------------|--------------|
 | ANDROID | type:android |
 | CHROME_OS | type:chromeos |
 | GOOGLE_SYNC | type:googlesync |
