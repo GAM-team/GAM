@@ -112,6 +112,8 @@ For all `<ActivityApplicationNames>`, select the users for whom information is d
   * `showorgunit` - Add a column labelled `actor.orgUnitPath` to the output; an additional API call is made to get the email addresses of the users in `<OrgUnitPath>`
 * `select <UserTypeEntity>` - A selected collection of users, e.g., `select group staff@domain.com`; there is one API call per user
 
+For `<ActivityApplicationName>` `admin` and `chrome`, `orgunit|org|ou <OrgUnitPath>` does not work, use `select ou <OrgUnitPath>`.
+
 For `<ActivityApplicationName>` `admin`, use option `userisactor` to  display activities where the user executed the command that generated the activity.
 
 Limit the time period.
