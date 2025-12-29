@@ -10,6 +10,26 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.31.00
+
+Fixed bug in `gam report chrome (user <UserItem>)|(select <UserTypeEntity>)` where no activities were returned.
+`report chrome` does not use the parameter `userKey=<EmailAddress>` as do other applications but requires
+parameter `filter DEVICE_USER==<EmailAddress>`.
+
+Updated `gam report admin (user <UserItem>)|(select <UserTypeEntity>)` to use parameter `filter USER_EMAIL==<EmailAddress>`
+to display activiities affecting the user `<EmailAddress>`. Use option `userisactor` to use the parameter `userKey=<EmailAddress>`
+that displays activities where user `<EmailAddress>` executed the command that generated the activity.
+
+Fixed bug in `gam print cros|filelist|users ... (addcsvdata <FieldName> <String>)+ formatjson` where the `addcsvdata` columns
+were not displayed but the additional field values were included in the JSON data. Now, the `addcsvdata` columns
+are displayed but the additional field values are only included in the JSON data when option `includdecsvdatainjson` is specified.
+
+Added option `addcsvdata <FieldName> <String>` to `gam <UserTypeEntity> print cigroups|groups`
+that adds additional columns of data to the CSV file output.
+
+Added option `addcsvdata <FieldName> <String>` to `gam <UserTypeEntity> print cigroupmembere|group-members`
+that adds additional columns of data to the CSV file output.
+
 ### 7.30.05
 
 Added option `gmaileventtypes <NumberRangeList>` to `gam report gmail` that can be used to limit the event types displayed.

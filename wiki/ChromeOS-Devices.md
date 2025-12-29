@@ -544,7 +544,7 @@ gam print cros [todrive <ToDriveAttribute>*]
         [start <Date>] [end <Date>] [listlimit <Number>]
         [reverselists <CrOSListFieldNameList>]
         [timerangeorder ascending|descending] [showdvrsfp]
-        (addcsvdata <FieldName> <String>)*
+        (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
         [sortheaders]
         [formatjson [quotechar <Character>]]
 ```
@@ -591,8 +591,10 @@ Add additional columns of data from the command line to the output
 * `addcsvdata <FieldName> <String>`
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format:
-
 - `formatjson` - Display the fields in JSON format.
+
+If `formatjson` and `addcsvdata` are specified, the option `includecsvdatainjson` causes GAM to add the
+additional field values to the JSON data.
 
 By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
 the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
@@ -612,7 +614,7 @@ gam <CrOSTypeEntity> print cros [todrive <ToDriveAttribute>*]
         [start <Date>] [end <Date>] [listlimit <Number>]
         [reverselists <CrOSListFieldNameList>]
         [timerangeorder ascending|descending] [showdvrsfp]
-        (addcsvdata <FieldName> <String>)*
+        (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
         [sortheaders]
         [formatjson [quotechar <Character>]]
 
@@ -623,6 +625,7 @@ gam print cros [todrive <ToDriveAttribute>*] select <CrOSTypeEntity>
         [start <Date>] [end <Date>] [listlimit <Number>]
         [reverselists <CrOSListFieldNameList>]
         [timerangeorder ascending|descending] [showdvrsfp]
+        (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
         [sortheaders]
         [formatjson [quotechar <Character>]]
 ```
@@ -645,8 +648,10 @@ Add additional columns of data from the command line to the output
 * `addcsvdata <FieldName> <String>`
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format:
-
 - `formatjson` - Display the fields in JSON format.
+
+If `formatjson` and `addcsvdata` are specified, the option `includecsvdatainjson` causes GAM to add the
+additional field values to the JSON data.
 
 By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
 the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.

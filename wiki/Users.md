@@ -1058,7 +1058,7 @@ gam print users [todrive <ToDriveAttribute>*]
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
         [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
-        [showvalidcolumn] (addcsvdata <FieldName> <String>)*
+        [showvalidcolumn] (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
 ```
 
 By default, users in all domains in the account are selected; these options allow selection of subsets of users:
@@ -1084,7 +1084,7 @@ gam print users [todrive <ToDriveAttribute>*] select <UserTypeEntity>
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
         [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
-        [showvalidcolumn] (addcsvdata <FieldName> <String>)*
+        [showvalidcolumn] (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
 
 gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
         [orderby <UserOrderByFieldName> [ascending|descending]]
@@ -1098,7 +1098,7 @@ gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
         [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
-        [showvalidcolumn] (addcsvdata <FieldName> <String>)*
+        [showvalidcolumn] (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
 ```
 
 By default, Gam gets no group membership information for each user. The `groups` and `groupsincolumns`
@@ -1166,6 +1166,9 @@ Add additional columns of data from the command line to the output
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format:
 * `formatjson` - Display the fields in JSON format.
+
+If `formatjson` and `addcsvdata` are specified, the option `includecsvdatainjson` causes GAM to add the
+additional field values to the JSON data.
 
 When you perform `gam print users` with the following `todrive` options to update a sheet within a Google Sheets file:
 `tdfileid <DriveFileID> tdsheet <SheetEntity> tdupdatesheet`

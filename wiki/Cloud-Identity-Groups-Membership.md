@@ -354,6 +354,8 @@ gam print cigroup-members [todrive <ToDriveAttribute>*]
         [minimal|basic|full]
         [(recursive [noduplicates]) | |includederivedmembership] [nogroupeemail]
         [memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
+        (addcsvdata <FieldName> <String>)*
+        [formatjson [quotechar <Character>]]
 ```
 By default, the group membership of all groups in the account are displayed, these options allow selection of subsets of groups:
 * `cimember <UserItem>` - Limit display to groups that contain `<UserItem>` as a member
@@ -413,6 +415,9 @@ has in any constituent group, it is not necessarily its role in the top group.
 
 The options `recursive noduplicates` and `includederivedmembership types user` return the same list of users.
 The `includederivedmembership` option makes less API calls but doesn't show level and subgroup information.
+
+Add additional columns of data from the command line to the output
+* `addcsvdata <FieldName> <String>`
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.

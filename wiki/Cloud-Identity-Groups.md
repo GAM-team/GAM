@@ -322,6 +322,7 @@ gam print cigroups [todrive <ToDriveAttribute>*]
         [types <CIGroupMemberTypeList>]
         [memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
         [convertcrnl] [delimiter <Character>]
+        (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
         [formatjson [quotechar <Character>]]
 ```
 By default, all groups in the account are displayed, these options allow selection of subsets of groups:
@@ -385,8 +386,14 @@ Members that have met the above qualifications to be displayed can be further qu
 * `memberemaildisplaypattern <REMatchPattern>` - Members with email addresses that match `<REMatchPattern>` will be displayed; others will not be displayed
 * `memberemailskippattern <REMatchPattern>` - Members with email addresses that match `<REMatchPattern>` will not be displayed; others will be displayed
 
+Add additional columns of data from the command line to the output
+* `addcsvdata <FieldName> <String>`
+
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.
+
+If `formatjson` and `addcsvdata` are specified, the option `includecsvdatainjson` causes GAM to add the
+additional field values to the JSON data.
 
 By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
 the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.

@@ -92,6 +92,7 @@ config csv_output_row_filter "'\"accounts:used_quota_in_mb\":count>15000'"
 
 gam report <ActivityApplicationName> [todrive <ToDriveAttribute>*]
         [(user all|<UserItem>)|(orgunit|org|ou <OrgUnitPath> [showorgunit])|(select <UserTypeEntity>)]
+        [userisactor]
         [([start <Time>] [end <Time>])|(range <Time> <Time>)|
          yesterday|today|thismonth|(previousmonths <Integer>)]
         [filter <String> (filtertime<String> <Time>)*]
@@ -104,15 +105,14 @@ gam report <ActivityApplicationName> [todrive <ToDriveAttribute>*]
 ```
 Select the application with `<ActivityApplicationName>`.
 
-For all `<ActivityApplicationNames>` other than `admin`, select the users for whom information is desired.
+For all `<ActivityApplicationNames>`, select the users for whom information is desired.
 * `user all` - All users, the default; there is one API call
 * `user <UserItem>` - An individual user; there is one API call
 * `orgunit|org|ou <OrgUnitPath>` - All users in the specified OU; there is one API call
   * `showorgunit` - Add a column labelled `actor.orgUnitPath` to the output; an additional API call is made to get the email addresses of the users in `<OrgUnitPath>`
 * `select <UserTypeEntity>` - A selected collection of users, e.g., `select group staff@domain.com`; there is one API call per user
 
-For `<ActivityApplicationName>` `admin`, the users selected are the admins that executed the command, not the targeted user.
-Use `filter "USER_EMAIL==user@domain.com"` to select the targeted user.
+For `<ActivityApplicationName>` `admin`, use option `userisactor` to  display activities where the user executed the command that generated the activity.
 
 Limit the time period.
 * `start <Time>`

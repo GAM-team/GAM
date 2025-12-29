@@ -752,7 +752,7 @@ The option `showlastmodification` displays the following fields:
 `lastModifiedFileId,lastModifiedFileName,lastModifiedFileMimeType,lastModifiedFilePath,lastModifyingUser,lastModifiedTime`;
 these are for the most recently modified file.
 
-For print filecouts, add additional columns of data from the command line to the output:
+For print filecounts, add additional columns of data from the command line to the output:
 * `addcsvdata <FieldName> <String>` - Add additional columns of data from the command line to the output
 
 See [Select files for Display file counts, list, tree](#select-files-for-display-file-counts-list-tree)
@@ -1103,7 +1103,7 @@ gam <UserTypeEntity> print|show filelist [todrive <ToDriveAttribute>*]
         [showparentsidsaslist] [showpermissionslast]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])* [delimiter <Character>]
         [stripcrsfromname]
-        (addcsvdata <FieldName> <String>)*
+        (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
         [formatjson [quotechar <Character>]]
 ```
 By default, `print filelist` displays all files owned by the specified [`<UserTypeEntity>`](https://github.com/GAM-team/GAM/wiki/Collections-of-Users)
@@ -1214,7 +1214,6 @@ If no query or select is performed, use these options to get file path informati
 * `filepath|fullpath` - For files and folders, display the full path(s) to them starting at the root (My Drive)
 * `addpathstojson` - When this option and `formatjson` are specified, the path information will be included in the
 JSON data rather than as additional columns
-* `addcsvdata <FieldName> <String>` - Add additional columns of data from the command line to the output
 
 When used with `filepath` or `fullpath`, `showdepth` will display a `depth` column.
 Files/folders directly in `My Drive` are at depth 0, the depth increases by 1
@@ -1308,8 +1307,14 @@ Use the `countsrowfilter` option to have GAM to apply `config csv_output_row_fil
 The `stripcrsfromname` option strips nulls, carriage returns and linefeeds from drive file names.
 This option is special purpose and will not generally be used.
 
+Add additional columns of data from the command line to the output
+* `addcsvdata <FieldName> <String>` - Add additional columns of data from the command line to the output
+
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.
+
+If `formatjson` and `addcsvdata` are specified, the option `includecsvdatainjson` causes GAM to add the
+additional field values to the JSON data.
 
 By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
 the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.

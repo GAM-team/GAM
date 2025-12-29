@@ -626,6 +626,7 @@ gam print group-members [todrive <ToDriveAttribute>*]
         [(recursive [noduplicates])|includederivedmembership] [nogroupemail]
         [peoplelookup|(peoplelookupuser <EmailAddress>)]
         [unknownname <String>] [cachememberinfo [Boolean]]
+        (addcsvdata <FieldName> <String>)*
         [formatjson [quotechar <Character>]]
 ```
 By default, the group membership of all groups in the account are displayed, these options allow selection of subsets of groups:
@@ -732,6 +733,9 @@ The API produces inconsistent results, use with caution.
 The options `recursive noduplicates` and `includederivedmembership types user noduplicates` return the same list of users.
 The `includederivedmembership` option makes less API calls but doesn't show level and subgroup information.
 Expanding a member of type CUSTOMER may produce a large volume of data as it will display all users in your domain.
+
+Add additional columns of data from the command line to the output
+* `addcsvdata <FieldName> <String>`
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.
