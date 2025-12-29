@@ -2581,7 +2581,7 @@ gam print cros [todrive <ToDriveAttribute>*]
         [start <Date>] [end <Date>] [listlimit <Number>]
         [reverselists <CrOSListFieldNameList>]
         [timerangeorder ascending|descending] [showdvrsfp]
-        (addcsvdata <FieldName> <String>)*
+        (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
         [sortheaders]
         [formatjson [quotechar <Character>]]
         [showitemcountonly]
@@ -2595,6 +2595,7 @@ gam print cros [todrive <ToDriveAttribute>*] select <CrOSTypeEntity>
         [start <Date>] [end <Date>] [listlimit <Number>]
         [reverselists <CrOSListFieldNameList>]
         [timerangeorder ascending|descending] [showdvrsfp]
+        (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
         [sortheaders]
         [formatjson [quotechar <Character>]]
         [showitemcountonly]
@@ -2606,7 +2607,7 @@ gam <CrOSTypeEntity> print cros [todrive <ToDriveAttribute>*]
         [start <Date>] [end <Date>] [listlimit <Number>]
         [reverselists <CrOSListFieldNameList>]
         [timerangeorder ascending|descending] [showdvrsfp]
-        (addcsvdata <FieldName> <String>)*
+        (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
         [sortheaders]
         [formatjson [quotechar <Character>]]
         [showitemcountonly]
@@ -4008,6 +4009,7 @@ gam print groups [todrive <ToDriveAttribute>*]
         [types <GroupMemberTypeList>]
         [memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
         [convertcrnl] [delimiter <Character>] [sortheaders]
+        (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
         [formatjson [quotechar <Character>]]
         [showitemcountonly]
 
@@ -4049,6 +4051,7 @@ gam print group-members [todrive <ToDriveAttribute>*]
         [(recursive [noduplicates])|includederivedmembership] [nogroupemail]
         [peoplelookup|(peoplelookupuser <EmailAddress>)]
         [unknownname <String>] [cachememberinfo [Boolean]]
+        (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
         [formatjson [quotechar <Character>]]
 `gam show group-members
         [([domain|domains <DomainNameEntity>] ([member|showownedby <EmailItem>]|[(query <QueryGroup>)|(queries <QueryGroupList>)]))|
@@ -4142,6 +4145,7 @@ gam print cigroups [todrive <ToDriveAttribute>*]
         [types <CIGroupMemberTypeList>]
         [memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
         [convertcrnl] [delimiter <Character>]
+        (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
         [formatjson [quotechar <Character>]]
         [showitemcountonly]
 
@@ -4170,6 +4174,7 @@ gam print cigroup-members [todrive <ToDriveAttribute>*]
         <CIGroupMembersFieldName>* [fields <CIGroupMembersFieldNameList>]
         [minimal|basic|full]
         [(recursive [noduplicates]) | includederivedmembership] [nogroupemail]
+        (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
         [formatjson [quotechar <Character>]]
 gam show cigroup-members
         [(cimember|ciowner <UserItem>)|(cigroup <GroupItem>)|(select <GroupEntity>)]
@@ -4630,6 +4635,7 @@ gam report usage customer [todrive <ToDriveAttribute>*]
 
 gam report <ActivityApplicationName> [todrive <ToDriveAttribute>*]
         [(user all|<UserItem>)|(orgunit|org|ou <OrgUnitPath> [showorgunit])|(select <UserTypeEntity>)]
+        [userisactor]
         [([start <Time>] [end <Time>])|(range <Time> <Time>)|
          yesterday|today|thismonth|(previousmonths <Integer>)]
         [filter <String> (filtertime<String> <Time>)*]
@@ -5940,7 +5946,7 @@ gam print users [todrive <ToDriveAttribute>*]
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
         [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
-        [showvalidcolumn] (addcsvdata <FieldName> <String>)*
+        [showvalidcolumn] (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
         [showitemcountonly]
 
 Print fields for specified users.
@@ -5957,7 +5963,7 @@ gam print users [todrive <ToDriveAttribute>*] select <UserTypeEntity>
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
         [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
-        [showvalidcolumn] (addcsvdata <FieldName> <String>)*
+        [showvalidcolumn] (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
         [showitemcountonly]
 
 gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
@@ -5972,7 +5978,7 @@ gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
         [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
-        [showvalidcolumn] (addcsvdata <FieldName> <String>)*
+        [showvalidcolumn] (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
         [showitemcountonly]
 
 The first column will always be primaryEmail; the remaining field names will be sorted if allfields, basic, full or sortheaders is specified;
@@ -7530,7 +7536,7 @@ gam <UserTypeEntity> print filelist [todrive <ToDriveAttribute>*]
         [showparentsidsaslist] [showpermissionslast]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])* [delimiter <Character>]
         [stripcrsfromname]
-        (addcsvdata <FieldName> <String>)*
+        (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
         [formatjson [quotechar <Character>]]
 
 gam <UserTypeEntity> print diskusage <DriveFileEntity> [todrive <ToDriveAttribute>*]

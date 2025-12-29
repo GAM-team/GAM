@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.30.05'
+__version__ = '7.31.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -13770,6 +13770,7 @@ REPORT_ACTIVITIES_TIME_OBJECTS = {'time'}
 
 # gam report <ActivityApplictionName> [todrive <ToDriveAttribute>*]
 #	[(user all|<UserItem>)|(orgunit|org|ou <OrgUnitPath> [showorgunit])|(select <UserTypeEntity>)]
+#	[userisactor]
 #	[([start <Time>] [end <Time>])|(range <Time> <Time>)|
 #	 yesterday|today|thismonth|(previousmonths <Integer>)]
 #	[filter <String> (filtertime<String> <Time>)*]
@@ -14109,6 +14110,7 @@ def doReport():
   activityReports = not usageReports
   dataRequiredServices = set()
   addCSVData = {}
+  mapAdminUsersToFilter = True
   showNoActivities = False
   if usageReports:
     includeServices = set()
@@ -14199,6 +14201,8 @@ def doReport():
       resourceDetailsFilter = getString(Cmd.OB_STRING)
     elif activityReports and (report == 'gmail')  and myarg == 'gmaileventtypes':
       gmailEventTypes = set(getNumberRangeList())
+    elif activityReports and myarg == 'userisactor':
+      mapAdminUsersToFilter = False
     elif myarg == 'addcsvdata':
       k = getString(Cmd.OB_STRING)
       addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
@@ -14443,16 +14447,16 @@ def doReport():
       csvPF.AddTitles(sorted(addCSVData.keys()))
     csvPF.SetSortAllTitles()
     if select:
-      pageMessage = None
+      pageMessage = getPageMessage()
       normalizeUsers = True
       orgUnitId = None
     elif userKey == 'all':
       if orgUnitId:
         if showOrgUnit:
           userOrgUnits = getUserOrgUnits(cd, orgUnit, orgUnitId)
-        printGettingEntityItemForWhom(Ent.REPORT, f'users in orgUnit {orgUnit}')
+        printGettingAllEntityItemsForWhom(Ent.ACTIVITY, f'users in orgUnit {orgUnit}', query=filters)
       else:
-        printGettingEntityItemForWhom(Ent.REPORT, 'all users')
+        printGettingAllEntityItemsForWhom(Ent.ACTIVITY, 'all users', query=filters)
       pageMessage = getPageMessage()
       users = ['all']
     else:
@@ -14466,6 +14470,7 @@ def doReport():
     else:
       for eventName in eventNames:
         zeroEventCounts[eventName] = 0
+    mapUsersToFilter = False
 # gmail requires a start time and an end time no more than 30 days apart
     if report == 'gmail':
       if startEndTime.startTime is None:
@@ -14477,14 +14482,36 @@ def doReport():
       elif startEndTime.endTime is None:
         startEndTime.endDateTime = startEndTime.startDateTime.shift(days=30)
         startEndTime.endTime = ISOformatTimeStamp(startEndTime.endDateTime)
+# admin uses userKey for who executed the command, map user to filter EMAIL_USER==user
+# unless userisactor was specified
+    elif report == 'admin':
+      if mapAdminUsersToFilter:
+        if filters is None or 'USER_EMAIL==' not in filters:
+          mapUsersToFilter = True
+          if filters is None:
+            filters = 'USER_EMAIL==#user#'
+          else:
+            filters = filters+',USER_EMAIL==#user#'
+# chrome does not use userKey, map user to filter DEVICE_USER==user
+    elif report == 'chrome':
+      if filters is None or 'DEVICE_USER==' not in filters:
+        mapUsersToFilter = True
+        if filters is None:
+          filters = 'DEVICE_USER==#user#'
+        else:
+          filters = filters+',DEVICE_USER==#user#'
     i = 0
     count = len(users)
     for user in users:
       i += 1
       if normalizeUsers:
         user = normalizeEmailAddressOrUID(user)
+      pfilters = filters
       if select or user != 'all':
-        printGettingEntityItemForWhom(Ent.ACTIVITY, user, i, count)
+        if mapUsersToFilter:
+          pfilters = filters.replace('#user#', user)
+          user = 'all'
+        printGettingAllEntityItemsForWhom(Ent.ACTIVITY, user, i, count, query=pfilters)
       for eventName in eventNames:
         try:
           feed = callGAPIpages(service, 'list', 'items',
@@ -14494,7 +14521,7 @@ def doReport():
                                applicationName=report, userKey=user, customerId=customerId,
                                actorIpAddress=actorIpAddress, orgUnitID=orgUnitId,
                                startTime=startEndTime.startTime, endTime=startEndTime.endTime,
-                               eventName=eventName, filters=filters, groupIdFilter=groupIdFilter,
+                               eventName=eventName, filters=pfilters, groupIdFilter=groupIdFilter,
                                resourceDetailsFilter=resourceDetailsFilter, maxResults=maxResults)
         except GAPI.badRequest:
           if user != 'all':
@@ -24803,7 +24830,7 @@ CROS_INDEXED_TITLES = ['activeTimeRanges', 'recentUsers', 'deviceFiles',
 #	[start <Date>] [end <Date>] [listlimit <Number>]
 #	[reverselists <CrOSListFieldNameList>]
 #	[timerangeorder ascending|descending] [showdvrsfp]
-#	(addcsvdata <FieldName> <String>)*
+#	(addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
 #	[sortheaders]
 #	[formatjson [quotechar <Character>]]
 # 	[showitemcountonly]
@@ -24819,16 +24846,21 @@ def doPrintCrOSDevices(entityList=None):
         cros[field].reverse()
     if 'orgUnitId' in cros:
       cros['orgUnitId'] = f"id:{cros['orgUnitId']}"
-    if addCSVData:
-      cros.update(addCSVData)
     if FJQC.formatJSON:
       if (not csvPF.rowFilter and not csvPF.rowDropFilter) or csvPF.CheckRowTitles(flattenJSON(cros, listLimit=listLimit, timeObjects=CROS_TIME_OBJECTS)):
-        csvPF.WriteRowNoFilter({'deviceId': cros['deviceId'],
-                                'JSON': json.dumps(cleanJSON(cros, listLimit=listLimit, timeObjects=CROS_TIME_OBJECTS),
-                                                   ensure_ascii=False, sort_keys=True)})
+        row = {'deviceId': cros['deviceId']}
+        if addCSVData:
+          row.update(addCSVData)
+          if includeCSVDataInJSON:
+            cros.update(addCSVData)
+        row['JSON'] = json.dumps(cleanJSON(cros, listLimit=listLimit, timeObjects=CROS_TIME_OBJECTS),
+                                 ensure_ascii=False, sort_keys=True)
+        csvPF.WriteRowNoFilter(row)
       return
     if 'notes' in cros:
       cros['notes'] = escapeCRsNLs(cros['notes'])
+    if addCSVData:
+      cros.update(addCSVData)
     for cpuStatusReport in cros.get('cpuStatusReports', []):
       for tempInfo in cpuStatusReport.get('cpuTemperatureInfo', []):
         tempInfo['label'] = tempInfo['label'].strip()
@@ -24952,6 +24984,7 @@ def doPrintCrOSDevices(entityList=None):
   activeTimeRangesOrder = 'ASCENDING'
   showItemCountOnly = False
   addCSVData = {}
+  includeCSVDataInJSON = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -25026,6 +25059,8 @@ def doPrintCrOSDevices(entityList=None):
     elif csvPF and myarg == 'addcsvdata':
       k = getString(Cmd.OB_STRING)
       addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+    elif myarg == 'includecsvdatainjson':
+      includeCSVDataInJSON = getBoolean()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   if selectedLists:
@@ -25039,6 +25074,9 @@ def doPrintCrOSDevices(entityList=None):
   if FJQC.formatJSON:
     sortHeaders = False
     csvPF.SetJSONTitles(['deviceId', 'JSON'])
+    if addCSVData:
+      csvPF.AddJSONTitles(sorted(addCSVData.keys()))
+      csvPF.MoveJSONTitlesToEnd(['JSON'])
   substituteQueryTimes(queries, queryTimes)
   if entityList is None:
     sortRows = False
@@ -34909,8 +34947,6 @@ def addMemberInfoToRow(row, groupMembers, typesSet, memberOptions, memberDisplay
   if memberDisplayOptions['totalCount']:
     row['TotalCount'] = totalCount
 
-PRINT_GROUPS_JSON_TITLES = ['email', 'JSON']
-
 # gam print groups [todrive <ToDriveAttribute>*]
 #	[([domain|domains <DomainNameEntity>] ([member|showownedby <EmailItem>]|[(query <QueryGroup>)|(queries <QueryUserList>)]))|
 #	 (group|group_ns|group_susp <GroupItem>)|
@@ -34930,6 +34966,7 @@ PRINT_GROUPS_JSON_TITLES = ['email', 'JSON']
 #	[types <GroupMemberTypeList>]
 #	[memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
 #	[convertcrnl] [delimiter <Character>] [sortheaders]
+#	(addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
 #	[formatjson [quotechar <Character>]]
 # 	[showitemcountonly]
 def doPrintGroups():
@@ -34957,8 +34994,12 @@ def doPrintGroups():
           deprecatedKeys.append(key)
       for key in deprecatedKeys:
         groupSettings.pop(key)
+    if addCSVData:
+      row.update(addCSVData)
     if FJQC.formatJSON:
       row['email'] = groupEntity['email']
+      if addCSVData and includeCSVDataInJSON:
+        groupEntity.update(addCSVData)
       row['JSON'] = json.dumps(cleanJSON(groupEntity), ensure_ascii=False, sort_keys=True)
       if rolesSet and groupMembers is not None:
         row['JSON-members'] = json.dumps(groupMembers, ensure_ascii=False, sort_keys=True)
@@ -35118,6 +35159,8 @@ def doPrintGroups():
   deprecatedAttributesSet = set()
   ciGroups = {}
   showItemCountOnly = False
+  addCSVData = {}
+  includeCSVDataInJSON = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -35206,6 +35249,11 @@ def doPrintGroups():
       memberOptions[MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP] = True
     elif myarg == 'showitemcountonly':
       showItemCountOnly = True
+    elif myarg == 'addcsvdata':
+      k = getString(Cmd.OB_STRING)
+      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+    elif myarg == 'includecsvdatainjson':
+      includeCSVDataInJSON = getBoolean()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   if not typesSet:
@@ -35242,13 +35290,17 @@ def doPrintGroups():
     setMemberDisplayTitles(memberDisplayOptions, csvPF)
   if FJQC.formatJSON:
     sortHeaders = False
-    csvPF.SetJSONTitles(PRINT_GROUPS_JSON_TITLES)
+    if addCSVData:
+      csvPF.AddJSONTitles(sorted(addCSVData.keys()))
+    csvPF.AddJSONTitles('JSON')
     if rolesSet:
       csvPF.AddJSONTitle('JSON-members')
     if getSettings:
       csvPF.AddJSONTitle('JSON-settings')
     if getCloudIdentity:
       csvPF.AddJSONTitle('JSON-cloudIdentity')
+  elif addCSVData:
+    csvPF.AddTitles(sorted(addCSVData.keys()))
   if entitySelection is None:
     entityList = []
     for kwargsQuery in makeUserGroupDomainQueryFilters(kwargsDict):
@@ -35373,6 +35425,8 @@ def doPrintGroups():
     return
   if sortHeaders:
     sortTitles = ['email']+GROUP_INFO_PRINT_ORDER+['aliases', 'nonEditableAliases']
+    if addCSVData:
+      sortTitles.extend(sorted(addCSVData.keys()))
     if getSettings:
       sortTitles += sorted([attr[0] for attr in GROUP_SETTINGS_ATTRIBUTES.values()])
       for key in GROUP_MERGED_ATTRIBUTES_PRINT_ORDER:
@@ -35634,6 +35688,7 @@ GROUPMEMBERS_DEFAULT_FIELDS = ['group', 'type', 'role', 'id', 'status', 'email']
 #	[(recursive [noduplicates])|includederivedmembership] [nogroupemail]
 #	[peoplelookup|(peoplelookupuser <EmailAddress>)]
 #	[unknownname <String>] [cachememberinfo [Boolean]]
+#	(addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
 #	[formatjson [quotechar <Character>]]
 def doPrintGroupMembers():
   def getNameFromPeople(memberId):
@@ -35676,6 +35731,7 @@ def doPrintGroupMembers():
   memberInfo = {}
   memberNames = {}
   unknownName = UNKNOWN
+  addCSVData = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -35742,6 +35798,9 @@ def doPrintGroupMembers():
       unknownName = getString(Cmd.OB_STRING)
     elif myarg == 'cachememberinfo':
       cacheMemberInfo = getBoolean()
+    elif myarg == 'addcsvdata':
+      k = getString(Cmd.OB_STRING)
+      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   if not typesSet:
@@ -35771,10 +35830,14 @@ def doPrintGroupMembers():
     csvPF.AddTitles('name')
     csvPF.RemoveTitles([f'name{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}fullName'])
   if FJQC.formatJSON:
+    csvPF.SetJSONTitles([])
     if groupColumn:
-      csvPF.SetJSONTitles(['group', 'JSON'])
-    else:
-      csvPF.SetJSONTitles(['JSON'])
+      csvPF.AddJSONTitles(['group'])
+    if addCSVData:
+      csvPF.AddJSONTitles(sorted(addCSVData.keys()))
+    csvPF.AddJSONTitles(['JSON'])
+  elif addCSVData:
+    csvPF.AddTitles(sorted(addCSVData.keys()))
   memberOptions[MEMBEROPTION_GETDELIVERYSETTINGS] = 'delivery_settings' in fieldsList
   userFields = getFieldsFromFieldsList(userFieldsList)
   if not rolesSet:
@@ -35844,12 +35907,16 @@ def doPrintGroupMembers():
                 row['name'] = memberNames[memberId]
               mbinfo = memberInfo.get(memberId, {})
             if not FJQC.formatJSON:
+              if addCSVData:
+                row.update(addCSVData)
               csvPF.WriteRowTitles(flattenJSON(mbinfo, flattened=row))
             else:
               row.update(mbinfo)
               fjrow = {}
               if groupColumn:
                 fjrow['group'] = groupEmail
+              if addCSVData:
+                fjrow.update(addCSVData)
               fjrow['JSON'] = json.dumps(cleanJSON(row, skipObjects=USER_SKIP_OBJECTS, timeObjects=USER_TIME_OBJECTS),
                                          ensure_ascii=False, sort_keys=True)
               csvPF.WriteRowNoFilter(fjrow)
@@ -35897,11 +35964,15 @@ def doPrintGroupMembers():
               if memberOptions[MEMBEROPTION_MEMBERNAMES] and cacheMemberInfo:
                 memberNames[memberId] = unknownName
       if not FJQC.formatJSON:
+        if addCSVData:
+          row.update(addCSVData)
         csvPF.WriteRow(row)
       else:
         fjrow = {}
         if groupColumn:
           fjrow['group'] = groupEmail
+        if addCSVData:
+          fjrow.update(addCSVData)
         fjrow['JSON'] = json.dumps(cleanJSON(row, skipObjects=USER_SKIP_OBJECTS, timeObjects=USER_TIME_OBJECTS),
                                    ensure_ascii=False, sort_keys=True)
         csvPF.WriteRowNoFilter(fjrow)
@@ -37425,8 +37496,6 @@ def doPrintShowCIPolicies():
   if csvPF:
     csvPF.writeCSVfile('Policies')
 
-PRINT_CIGROUPS_JSON_TITLES = ['email', 'JSON']
-
 # gam print cigroups [todrive <ToDriveAttribute>*]
 #	[(cimember|ciowner <UserItem>)|(select <GroupEntity>)|(query <String>)]
 #	[showownedby <UserItem>]
@@ -37439,6 +37508,7 @@ PRINT_CIGROUPS_JSON_TITLES = ['email', 'JSON']
 #	[types <CIGroupMemberTypeList>]
 #	[memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
 #	[convertcrnl] [delimiter <Character>]
+#	(addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
 #	[formatjson [quotechar <Character>]]
 # 	[showitemcountonly]
 def doPrintCIGroups():
@@ -37454,8 +37524,12 @@ def doPrintCIGroups():
     if not keepName:
       groupEntity.pop('name', None)
     row = {}
+    if addCSVData:
+      row.update(addCSVData)
     if FJQC.formatJSON:
       row['email'] = groupEntity['groupKey']['id'].lower()
+      if addCSVData and includeCSVDataInJSON:
+        groupEntity.update(addCSVData)
       row['JSON'] = json.dumps(cleanJSON(groupEntity, timeObjects=CIGROUP_TIME_OBJECTS), ensure_ascii=False, sort_keys=True)
       if rolesSet and groupMembers is not None:
         row['JSON-members'] = json.dumps(groupMembers, ensure_ascii=False, sort_keys=True)
@@ -37491,6 +37565,8 @@ def doPrintCIGroups():
   entitySelection = groupMembers = memberQuery = query = showOwnedBy = None
   matchPatterns = {}
   showItemCountOnly = False
+  addCSVData = {}
+  includeCSVDataInJSON = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -37543,6 +37619,11 @@ def doPrintCIGroups():
       memberRestrictions = True
     elif myarg == 'showitemcountonly':
       showItemCountOnly = True
+    elif myarg == 'addcsvdata':
+      k = getString(Cmd.OB_STRING)
+      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+    elif myarg == 'includecsvdatainjson':
+      includeCSVDataInJSON = getBoolean()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   if not typesSet:
@@ -37567,7 +37648,9 @@ def doPrintCIGroups():
     setMemberDisplayTitles(memberDisplayOptions, csvPF)
   if FJQC.formatJSON:
     sortHeaders = False
-    csvPF.SetJSONTitles(PRINT_CIGROUPS_JSON_TITLES)
+    if addCSVData:
+      csvPF.AddJSONTitles(sorted(addCSVData.keys()))
+    csvPF.AddJSONTitles('JSON')
     if rolesSet:
       csvPF.AddJSONTitle('JSON-members')
   if memberQuery:
@@ -37894,6 +37977,7 @@ def _getCIListGroupMembersArgs(listView):
 #	<CIGroupMembersFieldName>* [fields <CIGroupMembersFieldNameList>]
 #	[minimal|basic|full]
 #	[(recursive [noduplicates])|includederivedmembership] [nogroupeemail]
+#	(addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
 #	[formatjson [quotechar <Character>]]
 def doPrintCIGroupMembers():
   ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
@@ -37912,6 +37996,7 @@ def doPrintCIGroupMembers():
   typesSet = set()
   matchPatterns = {}
   listView = 'full'
+  addCSVData = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -37954,6 +38039,9 @@ def doPrintCIGroupMembers():
       groupColumn = False
     elif myarg in {'minimal', 'basic', 'full'}:
       listView = myarg
+    elif myarg == 'addcsvdata':
+      k = getString(Cmd.OB_STRING)
+      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   if listView == 'minimal' and memberOptions[MEMBEROPTION_RECURSIVE]:
@@ -37970,10 +38058,14 @@ def doPrintCIGroupMembers():
   if memberDisplayOptions['showCategory']:
     csvPF.AddTitles('category')
   if FJQC.formatJSON:
+    csvPF.SetJSONTitles([])
     if groupColumn:
-      csvPF.SetJSONTitles(['group', 'JSON'])
-    else:
-      csvPF.SetJSONTitles(['JSON'])
+      csvPF.AddJSONTitles(['group'])
+    if addCSVData:
+      csvPF.AddJSONTitles(sorted(addCSVData.keys()))
+    csvPF.AddJSONTitles(['JSON'])
+  elif addCSVData:
+    csvPF.AddTitles(sorted(addCSVData.keys()))
   displayFieldsList = fieldsList[:]
   if 'roles' in displayFieldsList:
     displayFieldsList.remove('roles')
@@ -38033,12 +38125,16 @@ def doPrintCIGroupMembers():
         dmember.pop('type', None)
       mapCIGroupMemberFieldNames(dmember)
       if not FJQC.formatJSON:
+        if addCSVData:
+          row.update(addCSVData)
         csvPF.WriteRowTitles(flattenJSON(dmember, flattened=row, timeObjects=CIGROUPMEMBERS_TIME_OBJECTS))
       else:
         row.update(dmember)
         fjrow = {}
         if groupColumn:
           fjrow['group'] = groupEmail
+          if addCSVData:
+            fjrow.update(addCSVData)
         fjrow['JSON'] = json.dumps(cleanJSON(row, timeObjects=CIGROUPMEMBERS_TIME_OBJECTS),
                                    ensure_ascii=False, sort_keys=True)
         csvPF.WriteRowNoFilter(fjrow)
@@ -46474,7 +46570,7 @@ USERS_INDEXED_TITLES = ['addresses', 'aliases', 'nonEditableAliases', 'emails', 
 #	[convertcrnl]
 #	[issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
 # 	[showitemcountonly]
-#	[showvalidcolumn] (addcsvdata <FieldName> <String>)*
+#	[showvalidcolumn] (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
 #
 # gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
 #	[groups|groupsincolumns]
@@ -46487,7 +46583,7 @@ USERS_INDEXED_TITLES = ['addresses', 'aliases', 'nonEditableAliases', 'emails', 
 #	[convertcrnl]
 #	[issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
 # 	[showitemcountonly]
-#	[showvalidcolumn] (addcsvdata <FieldName> <String>)*
+#	[showvalidcolumn] (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
 #
 # gam print users [todrive <ToDriveAttribute>*]
 #	([domain <DomainName>] [(query <QueryUser>)|(queries <QueryUserList>)]
@@ -46495,7 +46591,7 @@ USERS_INDEXED_TITLES = ['addresses', 'aliases', 'nonEditableAliases', 'emails', 
 #	[formatjson [quotechar <Character>]] [countonly]
 #	[issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
 # 	[showitemcountonly]
-#	[showvalidcolumn] (addcsvdata <FieldName> <String>)*
+#	[showvalidcolumn] (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
 #
 # gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
 #	[formatjson [quotechar <Character>]] [countonly]
@@ -46503,15 +46599,19 @@ USERS_INDEXED_TITLES = ['addresses', 'aliases', 'nonEditableAliases', 'emails', 
 # 	[showitemcountonly]
 def doPrintUsers(entityList=None):
   def _writeUserEntity(userEntity):
-    if addCSVData:
-      userEntity.update(addCSVData)
     row = flattenJSON(userEntity, skipObjects=USER_SKIP_OBJECTS, timeObjects=USER_TIME_OBJECTS)
     if not FJQC.formatJSON:
+      if addCSVData:
+        row.update(addCSVData)
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
       row = {'primaryEmail': userEntity['primaryEmail']}
       if showValidColumn:
         row[showValidColumn] = userEntity[showValidColumn]
+      if addCSVData:
+        row.update(addCSVData)
+        if includeCSVDataInJSON:
+          userEntity.update(addCSVData)
       row['JSON'] = json.dumps(cleanJSON(userEntity, skipObjects=USER_SKIP_OBJECTS, timeObjects=USER_TIME_OBJECTS),
                                ensure_ascii=False, sort_keys=True)
       csvPF.WriteRowNoFilter(row)
@@ -46671,6 +46771,7 @@ def doPrintUsers(entityList=None):
   showValidColumn = ''
   showItemCountOnly = False
   addCSVData = {}
+  includeCSVDataInJSON = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -46749,6 +46850,8 @@ def doPrintUsers(entityList=None):
     elif myarg == 'addcsvdata':
       k = getString(Cmd.OB_STRING)
       addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+    elif myarg == 'includecsvdatainjson':
+      includeCSVDataInJSON = getBoolean()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   _, _, entityList = getEntityArgument(entityList)
@@ -46765,6 +46868,8 @@ def doPrintUsers(entityList=None):
       titles = ['primaryEmail']
       if showValidColumn:
         titles.append(showValidColumn)
+      if addCSVData:
+        titles.extend(sorted(addCSVData.keys()))
       titles.append('JSON')
       csvPF.SetJSONTitles(titles)
     else:
@@ -58392,7 +58497,7 @@ SIZE_FIELD_CHOICE_MAP = {
 #	[showparentsidsaslist] [showpermissionslast]
 #	(orderby <DriveFileOrderByFieldName> [ascending|descending])* [delimiter <Character>]
 #	[stripcrsfromname]
-#	(addcsvdata <FieldName> <String>)*
+#	(addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
 #	[formatjson [quotechar <Character>]]
 def printFileList(users):
   def _setSelectionFields():
@@ -58437,6 +58542,8 @@ def printFileList(users):
       csvPF.WriteRowTitles(flattenJSON(fileInfo, flattened=row, skipObjects=skipObjects, timeObjects=DRIVE_TIME_OBJECTS,
                                        simpleLists=simpleLists, delimiter=delimiter))
     else:
+      if addCSVData and includeCSVDataInJSON:
+        fileInfo.update(addCSVData)
       row['JSON'] = json.dumps(cleanJSON(fileInfo, skipObjects=skipObjects, timeObjects=DRIVE_TIME_OBJECTS),
                                ensure_ascii=False, sort_keys=True)
       csvPF.WriteRowTitlesJSONNoFilter(row)
@@ -58492,7 +58599,7 @@ def printFileList(users):
     if showParentsIdsAsList and 'parentsIds' in fileInfo:
       fileInfo['parents'] = len(fileInfo['parentsIds'])
     if addCSVData:
-      fileInfo.update(addCSVData)
+      row.update(addCSVData)
     if not countsOnly:
       if not oneItemPerRow or 'permissions' not in fileInfo:
         if not FJQC.formatJSON:
@@ -58505,6 +58612,8 @@ def printFileList(users):
             row['name'] = fileInfo['name']
           if 'owners' in fileInfo:
             flattenJSON({'owners': fileInfo['owners']}, flattened=row, skipObjects=skipObjects)
+          if addCSVData and includeCSVDataInJSON:
+            fileInfo.update(addCSVData)
           row['JSON'] = json.dumps(cleanJSON(fileInfo, skipObjects=skipObjects, timeObjects=DRIVE_TIME_OBJECTS),
                                    ensure_ascii=False, sort_keys=True)
           csvPF.WriteRowTitlesJSONNoFilter(row)
@@ -58634,6 +58743,7 @@ def printFileList(users):
   summaryUser = FILECOUNT_SUMMARY_USER
   summaryMimeTypeInfo = {}
   addCSVData = {}
+  includeCSVDataInJSON = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -58727,6 +58837,8 @@ def printFileList(users):
     elif myarg == 'addcsvdata':
       k = getString(Cmd.OB_STRING)
       addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+    elif myarg == 'includecsvdatainjson':
+      includeCSVDataInJSON = getBoolean()
     elif myarg == 'continueoninvalidquery':
       continueOnInvalidQuery = getBoolean()
     else:
@@ -58790,6 +58902,16 @@ def printFileList(users):
   for field in ['capabilities', 'createdTime']:
     if fields == '*' or field in DFF.fieldsList:
       shareddriveFields.append(field)
+  if addCSVData:
+    if not countsOnly:
+      csvPF.AddTitles(sorted(addCSVData.keys()))
+      csvPF.AddJSONTitles(sorted(addCSVData.keys()))
+    else:
+      csvPFco.AddTitles(sorted(addCSVData.keys()))
+      if showSize:
+        csvPFco.MoveTitlesToEnd(['Size'])
+      csvPFco.MoveTitlesToEnd(['Total'])
+      csvPFco.SetSortAllTitles()
   if filepath and not countsOnly:
     csvPF.AddTitles('paths')
     csvPF.SetFixPaths(True)
@@ -58799,15 +58921,6 @@ def printFileList(users):
     for queryTimeName, queryTimeValue in DLP.queryTimes.items():
       selectSubQuery = selectSubQuery.replace(f'#{queryTimeName}#', queryTimeValue)
     selectSubQuery = _mapDrive2QueryToDrive3(selectSubQuery)
-  if addCSVData:
-    if not countsOnly:
-      csvPF.AddTitles(sorted(addCSVData.keys()))
-    else:
-      csvPFco.AddTitles(sorted(addCSVData.keys()))
-      if showSize:
-        csvPFco.MoveTitlesToEnd(['Size'])
-      csvPFco.MoveTitlesToEnd(['Total'])
-      csvPFco.SetSortAllTitles()
   if not nodataFields:
     if DFF.fieldsList:
       if not FJQC.formatJSON:
@@ -58994,9 +59107,12 @@ def printFileList(users):
   if not countsOnly:
     if not csvPF.rows:
       setSysExitRC(NO_ENTITIES_FOUND_RC)
-    if not FJQC.formatJSON:
-      csvPF.SetSortTitles(['Owner', 'id', 'name'])
-    else:
+    sortTitles = ['Owner']
+    if addCSVData:
+      sortTitles.extend(sorted(addCSVData.keys()))
+    sortTitles.extend(['id', 'name'])
+    csvPF.SetSortTitles(sortTitles)
+    if FJQC.formatJSON:
       if 'JSON' in csvPF.JSONtitlesList:
         csvPF.MoveJSONTitlesToEnd(['JSON'])
     csvPF.writeCSVfile(f'{titlePrefix}Drive Files')
