@@ -397,5 +397,5 @@ gam update deviceuserstate <DeviceUserEntity> [clientid <String>]
         [customid <String>] [assettags clear|<AssetTagList>]
         [compliantstate|compliancestate compliant|noncompliant] [managedstate clear|managed|unmanaged]
         [healthscore very_poor|poor|neutral|good|very_good] [scorereason clear|<String>]
-        (customvalue (bool|boolean <Boolean>)|(number <Integer>)|(string <String>))*
+        (customvalue (bool|boolean <String> <Boolean>)|(number <String> <Integer>)|(string <String> <String>))*
 ```
