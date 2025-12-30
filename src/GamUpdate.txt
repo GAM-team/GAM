@@ -1,3 +1,7 @@
+7.31.01
+
+Code cleanup for `addcsvdata <FieldName> <String>`.
+
 7.31.00
 
 Fixed bug in `gam report chrome (user <UserItem>)|(select <UserTypeEntity>)` where no activities were returned.

@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.31.00'
+__version__ = '7.31.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -1893,6 +1893,10 @@ def getStringWithCRsNLsOrFile():
   if checkArgumentPresent(SORF_FILE_ARGUMENTS):
     return getStringOrFile(Cmd.Previous().strip().lower().replace('_', ''), minLen=0)
   return (unescapeCRsNLs(getString(Cmd.OB_STRING, minLen=0)), UTF8, False)
+
+def getAddCSVData(addCSVData):
+  k = getString(Cmd.OB_STRING)
+  addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
 
 def todaysDate():
   return arrow.Arrow(GM.Globals[GM.DATETIME_NOW].year, GM.Globals[GM.DATETIME_NOW].month, GM.Globals[GM.DATETIME_NOW].day,
@@ -13565,8 +13569,7 @@ def doReportUsage():
     elif myarg == 'convertmbtogb':
       convertMbToGb = True
     elif myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     else:
       unknownArgumentExit()
   if startEndTime.endDateTime is None:
@@ -14204,8 +14207,7 @@ def doReport():
     elif activityReports and myarg == 'userisactor':
       mapAdminUsersToFilter = False
     elif myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     elif activityReports and myarg == 'shownoactivities':
       showNoActivities = True
     elif not customerReports and myarg.startswith('filtertime'):
@@ -16920,8 +16922,7 @@ def doCreateUpdateAdminRoles():
     elif csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif csvPF and myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if not updateCmd and not body.get('rolePrivileges'):
@@ -17634,8 +17635,7 @@ def doPrintShowDataTransfers():
     elif myarg == 'delimiter':
       delimiter = getCharacter()
     elif csvPF and myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     else:
       unknownArgumentExit()
   try:
@@ -19270,8 +19270,7 @@ def doPrintAliases():
     elif myarg == 'suppressnoaliasrows':
       suppressNoAliasRows = True
     elif myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     elif myarg == 'delimiter':
       delimiter = getCharacter()
     else:
@@ -19469,8 +19468,7 @@ def _getCreateContactReturnOptions(parameters):
   elif parameters['csvPF'] and myarg == 'todrive':
     parameters['csvPF'].GetTodriveParameters()
   elif parameters['csvPF'] and myarg == 'addcsvdata':
-    k = getString(Cmd.OB_STRING)
-    parameters['addCSVData'][k] = getString(Cmd.OB_STRING, minLen=0)
+    getAddCSVData(parameters['addCSVData'])
   else:
     return False
   return True
@@ -25057,8 +25055,7 @@ def doPrintCrOSDevices(entityList=None):
     elif myarg == 'showitemcountonly':
       showItemCountOnly = True
     elif csvPF and myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     elif myarg == 'includecsvdatainjson':
       includeCSVDataInJSON = getBoolean()
     else:
@@ -26864,7 +26861,7 @@ def printShowChatEmojis(users):
                                            GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                              pageSize=GC.Values[GC.CHAT_MAX_RESULTS], filter=pfilter)
-    except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.failedPrecondition) as e:
+    except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
       continue
     except GAPI.failedPrecondition:
@@ -28027,8 +28024,7 @@ def printShowChatMembers(users):
     elif useAdminAccess and _getChatSpaceSearchParms(myarg, queries, queryTimes, OBY):
       pass
     elif csvPF and myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if useAdminAccess:
@@ -30938,6 +30934,9 @@ def doInfoCIDeviceUser():
       deviceUser = callGAPI(ci.devices().deviceUsers(), 'get',
                             throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                             name=name, customer=customer, fields=userFields)
+      deviceUser['client_states'] = callGAPIpages(ci.devices().deviceUsers().clientStates(), 'list', 'clientStates',
+                                                  throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                                                  parent=deviceUser['name'], customer=customer)
       if FJQC.formatJSON:
         printLine(json.dumps(cleanJSON(deviceUser, timeObjects=DEVICE_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
       else:
@@ -31039,6 +31038,7 @@ DEVICE_USER_MANAGED_STATE_CHOICE_MAP = {
   'unmanaged': 'UNMANAGED'
   }
 DEVICE_USER_CUSTOM_VALUE_TYPE_CHOICE_MAP = {
+  'clear': 'clear',
   'bool': 'boolValue',
   'boolean': 'boolValue',
   'number': 'numberValue',
@@ -31083,7 +31083,7 @@ def doInfoCIDeviceUserState():
 #	[customid <String>] [assettags clear|<AssetTagList>]
 #	[compliantstate|compliancestate compliant|noncompliant] [managedstate clear|managed|unmanaged]
 #	[healthscore verypoor|poor|neutral|good|verygood] [scorereason clear|<String>]
-#	(customvalue (bool|boolean <Boolean>)|(number <Integer>)(string <String>))*
+#	(customvalue clear|(bool|boolean <String> <Boolean>)|(number <String> <Integer>)(string <String> <String>))*
 def doUpdateCIDeviceUserState():
   setTrueCustomerId()
   entityList, ci, customer, _ = getCIDeviceUserEntity()
@@ -31094,11 +31094,6 @@ def doUpdateCIDeviceUserState():
     myarg = getArgument()
     if myarg == 'clientid':
       client_id = f'{customerID}-{getString(Cmd.OB_STRING)}'
-    elif myarg in ['assettag', 'assettags']:
-      body['assetTags'] = convertEntityToList(getString(Cmd.OB_STRING, minLen=0), shlexSplit=True)
-      if not body['assetTags'] or body['assetTags'] == ['clear']:
-        # TODO: This doesn't work to clear existing values; figure out why.
-        body['assetTags'] = [None]
     elif myarg in ['compliantstate', 'compliancestate']:
       body['complianceState'] = getChoice(DEVICE_USER_COMPLIANCE_STATE_CHOICE_MAP, mapChoice=True)
     elif myarg == 'healthscore':
@@ -31108,20 +31103,28 @@ def doUpdateCIDeviceUserState():
       if body['scoreReason'] == 'clear':
         body['scoreReason'] = None
     elif myarg == 'customid':
-      body['customId'] = getString(Cmd.OB_STRING)
-    elif myarg == 'customvalue':
-      valueType = getChoice(DEVICE_USER_CUSTOM_VALUE_TYPE_CHOICE_MAP, mapChoice=True)
-      key = getString(Cmd.OB_STRING)
-      if valueType == 'boolValue':
-        value = getBoolean()
-      elif valueType == 'numberValue':
-        value = getInteger()
-      else: # stringValue
-        value = getString(Cmd.OB_STRING)
-      body.setdefault('keyValuePairs', {})
-      body['keyValuePairs'][key] = {valueType: value}
+      body['customId'] = getString(Cmd.OB_STRING, minLen=0)
     elif myarg == 'managedstate':
       body['managed'] = getChoice(DEVICE_USER_MANAGED_STATE_CHOICE_MAP, mapChoice=True)
+    # TODO: assetTags and keyValuePairs can't be cleared; figure out why.
+    elif myarg in ['assettag', 'assettags']:
+      body['assetTags'] = convertEntityToList(getString(Cmd.OB_STRING, minLen=0), shlexSplit=True)
+      if not body['assetTags'] or body['assetTags'] == ['clear']:
+        body['assetTags'] = []
+    elif myarg == 'customvalue':
+      valueType = getChoice(DEVICE_USER_CUSTOM_VALUE_TYPE_CHOICE_MAP, mapChoice=True)
+      if valueType != 'clear':
+        key = getString(Cmd.OB_STRING)
+        if valueType == 'boolValue':
+          value = getBoolean()
+        elif valueType == 'numberValue':
+          value = getInteger()
+        else: # stringValue
+          value = getString(Cmd.OB_STRING)
+        body.setdefault('keyValuePairs', {})
+        body['keyValuePairs'][key] = {valueType: value}
+      else:
+        body['keyValuePairs'] = {}
     else:
       unknownArgumentExit()
   count = len(entityList)
@@ -35250,8 +35253,7 @@ def doPrintGroups():
     elif myarg == 'showitemcountonly':
       showItemCountOnly = True
     elif myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     elif myarg == 'includecsvdatainjson':
       includeCSVDataInJSON = getBoolean()
     else:
@@ -35799,8 +35801,7 @@ def doPrintGroupMembers():
     elif myarg == 'cachememberinfo':
       cacheMemberInfo = getBoolean()
     elif myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   if not typesSet:
@@ -37620,8 +37621,7 @@ def doPrintCIGroups():
     elif myarg == 'showitemcountonly':
       showItemCountOnly = True
     elif myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     elif myarg == 'includecsvdatainjson':
       includeCSVDataInJSON = getBoolean()
     else:
@@ -38040,8 +38040,7 @@ def doPrintCIGroupMembers():
     elif myarg in {'minimal', 'basic', 'full'}:
       listView = myarg
     elif myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   if listView == 'minimal' and memberOptions[MEMBEROPTION_RECURSIVE]:
@@ -39986,8 +39985,7 @@ def _getCalendarPrintShowACLOptions(titles):
     elif myarg == 'noselfowner':
       noSelfOwner = True
     elif csvPF and myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if csvPF:
@@ -41468,8 +41466,7 @@ def _getCalendarPrintShowEventOptions(calendarEventEntity, entityType):
     elif myarg == 'fields':
       _getEventFields(fieldsList)
     elif csvPF and myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     elif myarg == 'countsonly':
       calendarEventEntity['countsOnly'] = True
     elif myarg == 'showdayofweek':
@@ -46848,8 +46845,7 @@ def doPrintUsers(entityList=None):
     elif myarg == 'showvalidcolumn':
       showValidColumn = 'Valid'
     elif myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     elif myarg == 'includecsvdatainjson':
       includeCSVDataInJSON = getBoolean()
     else:
@@ -49731,8 +49727,7 @@ def doPrintCourses():
     elif myarg == 'showitemcountonly':
       showItemCountOnly = True
     elif myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   applyCourseItemFilter = _setApplyCourseItemFilter(courseItemFilter, None)
@@ -58835,8 +58830,7 @@ def printFileList(users):
       oneItemPerRow = True
       csvPF.RemoveIndexedTitles('permissions')
     elif myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     elif myarg == 'includecsvdatainjson':
       includeCSVDataInJSON = getBoolean()
     elif myarg == 'continueoninvalidquery':
@@ -59266,8 +59260,7 @@ def printShowFileComments(users):
     elif myarg == 'fields':
       _getCommentFields(fieldsList)
     elif csvPF and myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     elif myarg == 'countsonly':
       countsOnly = True
     elif myarg == 'positivecountsonly':
@@ -59738,8 +59731,7 @@ def printShowFileCounts(users):
     elif myarg == 'pathdelimiter':
       pathDelimiter = getCharacter()
     elif csvPF and myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     elif myarg == 'continueoninvalidquery':
       continueOnInvalidQuery = getBoolean()
     else:
@@ -59894,8 +59886,7 @@ def printShowDrivelastModifications(users):
     elif myarg == 'pathdelimiter':
       pathDelimiter = getCharacter()
     elif csvPF and myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     else:
       unknownArgumentExit()
   if not fileIdEntity:
@@ -60053,8 +60044,7 @@ def printDiskUsage(users):
     elif myarg == 'stripcrsfromname':
       stripCRsFromName = True
     elif myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     elif myarg == 'show':
       showResults = getChoice(DISKUSAGE_SHOW_CHOICES)
     elif myarg == 'noprogress':
@@ -60657,8 +60647,7 @@ def createDriveFile(users):
     elif csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif csvPF and myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     else:
       getDriveFileAttribute(myarg, body, parameters, False)
   if assignLocalName and parameters[DFA_LOCALFILENAME] and parameters[DFA_LOCALFILENAME] != '-':
@@ -60808,8 +60797,7 @@ def createDriveFolderPath(users):
     elif csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif csvPF and myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     else:
       unknownArgumentExit()
   if not driveFolderNameList:
@@ -62700,8 +62688,7 @@ def copyDriveFile(users):
     elif csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif csvPF and myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     elif myarg == 'suppressnotselectedmessages':
       suppressNotSelectedMessages = getBoolean()
     elif getDriveFileCopyAttribute(myarg, copyBody, copyParameters):
@@ -67772,8 +67759,7 @@ def doPrintShowOwnership():
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif csvPF and myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if csvPF and not FJQC.formatJSON:
@@ -67981,8 +67967,7 @@ def createSharedDrive(users, useDomainAdminAccess=False):
     elif csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif csvPF and myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     elif myarg in ADMIN_ACCESS_OPTIONS:
       useDomainAdminAccess = True
     elif myarg == 'errorretries':
@@ -68812,8 +68797,7 @@ def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
     elif myarg == 'shownopermissionsdrives':
       showNoPermissionsDrives = getChoice(SHOW_NO_PERMISSIONS_DRIVES_CHOICE_MAP, mapChoice=True)
     elif csvPF and myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if query and not useDomainAdminAccess:
@@ -74390,8 +74374,7 @@ def printShowMessagesThreads(users, entityType):
       if not dateHeaderFormat:
         dateHeaderFormat = RFC2822_TIME_FORMAT
     elif csvPF and myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     else:
       unknownArgumentExit()
   labelMatchPattern = parameters['labelMatchPattern']
@@ -75517,8 +75500,7 @@ def printShowForms(users):
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif csvPF and myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if csvPF and addCSVData:
@@ -75604,8 +75586,7 @@ def printShowFormResponses(users):
     elif myarg == 'countsonly':
       countsOnly = True
     elif csvPF and myarg == 'addcsvdata':
-      k = getString(Cmd.OB_STRING)
-      addCSVData[k] = getString(Cmd.OB_STRING, minLen=0)
+      getAddCSVData(addCSVData)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if filterTimes and frfilter is not None:
