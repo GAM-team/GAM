@@ -382,7 +382,6 @@ Windows Command Prompt
 for /f "delims=" %a in ('gam print deviceusers queries "'model:Mac'" showitemcountonly') do set count=%a
 ```
 
-
 ## Display device user client state
 ```
 gam info deviceuserstate <DeviceUserEntity> [clientid <String>] 
@@ -391,11 +390,11 @@ gam info deviceuserstate <DeviceUserEntity> [clientid <String>]
 ## Update device user client state
 The API that supports this command is in beta mode. In particular, setting `assettags` and `customvalues`
 works if you set the values once; each additional time you set values they are added to the existing values
-and they is no way at the moment to clear values.
+and the `clear` option does not work to clear values.
 ```
 gam update deviceuserstate <DeviceUserEntity> [clientid <String>] 
         [customid <String>] [assettags clear|<AssetTagList>]
         [compliantstate|compliancestate compliant|noncompliant] [managedstate clear|managed|unmanaged]
         [healthscore very_poor|poor|neutral|good|very_good] [scorereason clear|<String>]
-        (customvalue (bool|boolean <String> <Boolean>)|(number <String> <Integer>)|(string <String> <String>))*
+        (customvalue clear|(bool|boolean <String> <Boolean>)|(number <String> <Integer>)|(string <String> <String>))*
 ```

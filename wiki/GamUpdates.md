@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.31.01
+
+Code cleanup for `addcsvdata <FieldName> <String>`.
+
 ### 7.31.00
 
 Fixed bug in `gam report chrome (user <UserItem>)|(select <UserTypeEntity>)` where no activities were returned.
