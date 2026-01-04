@@ -782,8 +782,10 @@ Create a new Service Account private key; all existing private keys remain valid
 The `oauth2service.json` file is updated with the new private key.
 
 This command requires that the current Service Account private key is valid, if you get the following error:
-```ERROR: 401: authError - Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential.
-See https://developers.google.com/identity/sign-in/web/devconsole-project.```
+```
+ERROR: 401: authError - Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential.
+See https://developers.google.com/identity/sign-in/web/devconsole-project.
+```
 see: [Upload a Service Account key to a service account without a valid private key](#upload-a-service-account-key-to-a-service-account-without-a-valid-private-key)
 
 Keep a good record of where each Service Account key is used as the keys themselves do not record this information.
@@ -815,8 +817,10 @@ this `oauth2service.json` file to other users, you must redistribute the updated
 in the distributed copies has been revoked.
 
 This command requires that the current Service Account private key is valid, if you get the following error:
-```ERROR: 401: authError - Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential.
-See https://developers.google.com/identity/sign-in/web/devconsole-project.```
+```
+ERROR: 401: authError - Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential.
+See https://developers.google.com/identity/sign-in/web/devconsole-project.
+```
 see: [Upload a Service Account key to a service account without a valid private key](#upload-a-service-account-key-to-a-service-account-without-a-valid-private-key)
 
 The two forms of the command are equivalent; the second form is used by Legacy GAM.
@@ -839,8 +843,10 @@ in the distributed copies has been revoked.
 This command can be used if your Service Account keys have been compromised; all existing private keys are revoked.
 
 This command requires that the current Service Account private key is valid, if you get the following error:
-```ERROR: 401: authError - Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential.
-See https://developers.google.com/identity/sign-in/web/devconsole-project.```
+```
+ERROR: 401: authError - Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential.
+See https://developers.google.com/identity/sign-in/web/devconsole-project.
+```
 see: [Upload a Service Account key to a service account without a valid private key](#upload-a-service-account-key-to-a-service-account-without-a-valid-private-key)
 
 The two forms of the command are equivalent; the second form is used by Legacy GAM.
@@ -860,8 +866,10 @@ delete a service account key for a distributed copy of an `oauth2service.json` f
 that user's service account access.
 
 This command requires that the current Service Account private key is valid, if you get the following error:
-```ERROR: 401: authError - Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential.
-See https://developers.google.com/identity/sign-in/web/devconsole-project.```
+```
+ERROR: 401: authError - Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential.
+See https://developers.google.com/identity/sign-in/web/devconsole-project.
+```
 see: [Upload a Service Account key to a service account without a valid private key](#upload-a-service-account-key-to-a-service-account-without-a-valid-private-key)
 
 You can disable your current Service Account key if you specify the `doit` argument. This is your
