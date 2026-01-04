@@ -30,7 +30,7 @@
   - [Update an existing Service Account key](#update-an-existing-service-account-key)
   - [Replace all existing Service Account keys](#replace-all-existing-service-account-keys)
   - [Delete Service Account keys](#delete-service-account-keys)
-  - [Upload a Service Account key to a service account with no keys](#upload-a-service-account-key-to-a-service-account-with-no-keys)
+  - [Upload a Service Account key to a service account without a valid private key](#upload-a-service-account-key-to-a-service-account-without-a-valid-private-key)
   - [Display Service Account keys](#display-service-account-keys)
 - [Manage Service Account access](#manage-service-account-access)
   - [Full Service Account access](#full-service-account-access)
@@ -781,6 +781,11 @@ Here are some sample values:
 Create a new Service Account private key; all existing private keys remain valid.
 The `oauth2service.json` file is updated with the new private key.
 
+This command requires that the current Service Account private key is valid, if you get the following error:
+```ERROR: 401: authError - Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential.
+See https://developers.google.com/identity/sign-in/web/devconsole-project.```
+see: [Upload a Service Account key to a service account without a valid private key](#upload-a-service-account-key-to-a-service-account-without-a-valid-private-key)
+
 Keep a good record of where each Service Account key is used as the keys themselves do not record this information.
 
 The two forms of the command are equivalent; the second form is used by Legacy GAM.
@@ -809,6 +814,11 @@ The `oauth2service.json` file is updated with the new private key. If you had pr
 this `oauth2service.json` file to other users, you must redistribute the updated file as the private key
 in the distributed copies has been revoked.
 
+This command requires that the current Service Account private key is valid, if you get the following error:
+```ERROR: 401: authError - Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential.
+See https://developers.google.com/identity/sign-in/web/devconsole-project.```
+see: [Upload a Service Account key to a service account without a valid private key](#upload-a-service-account-key-to-a-service-account-without-a-valid-private-key)
+
 The two forms of the command are equivalent; the second form is used by Legacy GAM.
 ```
 gam update sakey
@@ -828,6 +838,11 @@ in the distributed copies has been revoked.
 
 This command can be used if your Service Account keys have been compromised; all existing private keys are revoked.
 
+This command requires that the current Service Account private key is valid, if you get the following error:
+```ERROR: 401: authError - Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential.
+See https://developers.google.com/identity/sign-in/web/devconsole-project.```
+see: [Upload a Service Account key to a service account without a valid private key](#upload-a-service-account-key-to-a-service-account-without-a-valid-private-key)
+
 The two forms of the command are equivalent; the second form is used by Legacy GAM.
 ```
 gam replace sakeys
@@ -844,13 +859,18 @@ You can delete Service Accounts keys thus revoking access for that key. Generall
 delete a service account key for a distributed copy of an `oauth2service.json` file to disable
 that user's service account access.
 
+This command requires that the current Service Account private key is valid, if you get the following error:
+```ERROR: 401: authError - Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential.
+See https://developers.google.com/identity/sign-in/web/devconsole-project.```
+see: [Upload a Service Account key to a service account without a valid private key](#upload-a-service-account-key-to-a-service-account-without-a-valid-private-key)
+
 You can disable your current Service Account key if you specify the `doit` argument. This is your
 acknowledgement that you will have to manually create a new Service Account key in the Developer's Console
 or upload a new key with the `gam upload sakey` command.
 ```
 gam delete sakeys <ServiceAccountKeyList>+ [doit]
 ```
-## Upload a Service Account key to a service account with no keys
+## Upload a Service Account key to a service account without a valid private key
 There are two cases where you will use this command:
 * Your workspace is configured to disable service account private key uploads and you are creating a project.
 * All of your service account keys have been deleted, either manually or with the `gam delete sakeys` command.
