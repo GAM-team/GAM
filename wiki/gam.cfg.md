@@ -502,9 +502,9 @@ print_cros_ous_and_children
         This allows predefining the list of org units so they don't have to be specified in each command.
         Default: Blank
 process_wait_limit
-        When processing batch/CSV files, how long (in seconds) GAM should wait for all batch|csv processes
-        to complete after all have been started. If the limit is reached, GAM terminates any
-        remaining processes.
+        When processing batch/CSV files, how long (in seconds) GAM should wait for all
+        batch|csv processes to complete after all have been started.
+        If the limit is reached, GAM terminates any remaining processes.
         Default: 0: no limit
         Range: 0 - Unlimited
 quick_cros_move
