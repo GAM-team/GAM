@@ -276,7 +276,8 @@ csv_output_row_limit
         Default: 0
 csv_output_sort_headers
         A list of column headers that causes GAM to sort CSV output rows by those headers.
-        The column headers are case insensitive and if column header does not appear in the CSV output, it is ignored.
+        The column headers are case insensitive and if column header does not appear in the CSV output,
+        it is ignored.
         Default: Blank
 csv_output_subfield_delimiter
         Character used to delimit fields and subfields in headers when writing CSV files;
@@ -341,7 +342,8 @@ enable_dasa
         customer_id may not be set to my_customer
         Signal file: OldGamPath/enabledasa.txt
 enforce_expansive_access
-        The default value for option `enforceexpansiveaccess` in all commands that delete or update drive file ACLs/permissions.
+        The default value for option `enforceexpansiveaccess` in all commands that delete or update
+        drive file ACLs/permissions.
         gam <UserTypeEntity> delete permissions
         gam <UserTypeEntity> delete drivefileacl
         gam <UserTypeEntity> update drivefileacl
@@ -363,7 +365,8 @@ gmail_cse_incert_dir
         Directory for the S/MIME certificate files used by Gmail Client Side Encryption.
         Default: Blank
 gmail_cse_inkey_dir
-        Directory for the Key Access Control List (KACL) wrapped private key data files used by Gmail Client Side Encryption.
+        Directory for the Key Access Control List (KACL) wrapped private key data files used by
+        Gmail Client Side Encryption.
         Default: Blank
 input_dir
         Input directory for files with non-absolute file names.
@@ -380,7 +383,8 @@ license_max_results
         Range: 10 - 1000
 license_skus
         A comma separated list of license SKUs; when getting licenses, only these SKUs will be processed.
-        Each item in the list can be a <SKUID> which will be validated or <ProductID>/<SKUID> which will not
+        Each item in the list can be a <SKUID> which will be validated or
+        a <ProductID>/<SKUID> which will not be validated.
         Default: Blank
 meet_v2_beta
         Enable/disable use of Meet API v2 beta for additional Chat Space parameters.
@@ -498,8 +502,9 @@ print_cros_ous_and_children
         This allows predefining the list of org units so they don't have to be specified in each command.
         Default: Blank
 process_wait_limit
-        When processing batch/CSV files, how long (in seconds) GAM should wait for all batch|csv processes to complete
-        after all have been started. If the limit is reached, GAM terminates any remaining processes.
+        When processing batch/CSV files, how long (in seconds) GAM should wait for all batch|csv processes
+        to complete after all have been started. If the limit is reached, GAM terminates any
+        remaining processes.
         Default: 0: no limit
         Range: 0 - Unlimited
 quick_cros_move
@@ -580,10 +585,12 @@ tls_min_version
         The minimum TLS version to use in https connections
         Default: ''
 todrive_clearfilter
-        Enable/disable clearing the spreadsheet basic filter when uploading data to an existing sheet in an existing file.
+        Enable/disable clearing the spreadsheet basic filter when uploading data to an existing sheet in
+        an existing file.
         Default: False
 todrive_clientaccess
-        Enable/disable use of client access rather than service account access when uploading files with todrive
+        Enable/disable use of client access rather than service account access when uploading files
+        with todrive
         Default: False
 todrive_conversion
         Enable/disable conversion of CSV files to Google Sheets when todrive is specified
@@ -634,8 +641,9 @@ todrive_user
         Email address of user to receive CSV files when todrive is specified
         Default: '' which becomes admin user in admin_email or address from oauth2.txt
 truncate_client_id
-        Prior to version 6.74.00, GAM stripped '.apps.googleusercontent.com' from the client_id in oauth2.txt
-        and passed the truncated value in API calls; this is no longer performed unless truncate_client_id is true
+        Prior to version 6.74.00, GAM stripped '.apps.googleusercontent.com' from the client_id
+        in oauth2.txt and passed the truncated value in API calls; this is no longer performed
+        unless truncate_client_id is true
         Default: False
 update_cros_ou_with_id
         Update the OU of a Chromebook with the OU ID rather than the OU path.
