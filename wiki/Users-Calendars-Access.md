@@ -145,40 +145,8 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 ## Transfer calendar ownership
 
 You can transfer ownership of calendars from one user to another; only non-primary calendars owned by the source user can be transferred.
-```
-gam <UserTypeEntity> transfer calendars|seccals <UserItem> [<UserCalendarEntity>]
-        [keepuser | (retainrole <CalendarACLRole>)] [sendnotifications <Boolean>]
-        [noretentionmessages]
-        [<CalendarSettings>] [append description|location|summary] [noupdatemessages]
-        [deletefromoldowner] [addtonewowner <CalendarAttribute>*] [nolistmessages]
-```
-If `<UserCalendarEntity>` is not specified, all of a user's owned secondary calendars will be transferrdd.
 
-By default, the users in `<UserTypeEntity>` retain no role in the transferred calendars.
-* `keepuser` - The users in `<UserTypeEntity>` retain their ownership.
-* `retainrole <CalendarACLRole>` - The users in `<UserTypeEntity>` retain the specified role.
-* `noretentionmessages` - Suppress the original owner role retention messages.
+This capability is no longer available, see: https://developers.google.com/workspace/calendar/release-notes#October_27_2025
 
-By default, when you add or update a calendar ACL, a notification is sent to the affected users; use `sendnotifications false` to suppress sending the notifications.
+Data ownership can be transferred in the Google Calendar UI.
 
-You can update calendar settings as part of the transfer. In description, location and summary, #email#, #user# and #username# will be replaced
-by the original owner's full email address or just the name portion; #timestamp# will be replaced by the current date and time.
-* `<CalendarSettings>` - The value specified will replace the existing value.
-* `append description|location|summary` - The specified <CalendarSettings> value will be appended to the existing value.
-* `noupdatemessages` - Suppress the settings update messages.
-
-You can manipulate the old and new owner's calendar lists.
-* `deletefromoldowner` - Delete the calendar from the old owner's calendar list
-* `addtonewowner <CalendarAttribute>*` - Add the calendar to the new owner's calendar list; optionally specify attributes
-* `nolistmessages` - Suppress the calendar list add/delete messages.
-
-### Example
-Transfer a secondary calendar from oldowner to newowner. Remove the calendar from the old owner's calendar list and add to the new owner's  calendar list.
-```
-gam user oldowner@domain.com transfer calendars newowner@domain.com c_aaa123zzz@group.calendar.google.com removefromoldowner addtonewowner
-```
-
-Transfer ownership of all non-primary calendars from oldowner to newowner; append a message to the calendar description noting the old owner and the time of transfer.
-```
-gam user oldowner@domain.com transfer calendars newowner@domain.com minaccessrole owner description "(Transferred from #user# on #timestamp#)" append description
-```
