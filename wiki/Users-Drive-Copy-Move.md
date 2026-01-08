@@ -100,7 +100,12 @@ gam <UserTypeEntity> copy drivefile <DriveFileEntity>
         [skipids <DriveFileEntity>]
         [copysubfiles [<Boolean>]] [filenamematchpattern <REMatchPattern>]
              [filemimetype [not] <MimeTypeList>]
-        [copysubfilesownedby any|me|others]
+        [copysubfilesownedby
+            any|me|others|
+            users <EmailAddressList>|
+            notusers <EmailAddressList>|
+            regex <REMatchPattern>|
+            notregex <REMatchPattern>]
         [copysubfolders [<Boolean>]] [foldernamematchpattern <REMatchPattern>]
         [copysubshortcuts [<Boolean>]] [shortcutnamematchpattern <REMatchPattern>]
         [duplicatefiles overwriteolder|overwriteall|duplicatename|uniquename|skip]
@@ -188,9 +193,13 @@ You can specify `<REMatchPattern>` patterns that limit the items copied based on
 * `shortcutnamematchpattern <REMatchPattern>` - Only shortcuts whose name matches `<REMatchPattern>` are copied
 
 ### By default, when copying sub files, all files, regardless of ownership, are copied.
-* `copysubfilesownedby any` - All files, regardless of ownership, are copied.
+* `copysubfilesownedby any` - All files, regardless of ownership, are copied; this is the default.
 * `copysubfilesownedby me` - Only files owned by `<UserTypeEntity>`  are copied.
 * `copysubfilesownedby others` - Only files not owned by `<UserTypeEntity>`  are copied.
+* `copysubfilesownedby users <EmailAddressList>` - Only files owned by users in `<EmailAddressList>` are copied.
+* `copysubfilesownedby notusers <EmailAddressList>` - Only files not owned by users in `<EmailAddressList>` are copied.
+* `copysubfilesownedby regex <REMatchPattern>` - Only files owned by users whose email addresses match `<REMatchPattern>` are copied.
+* `copysubfilesownedby notregex <REMatchPattern>` - Only files owned by users whose email addresses do not match `<REMatchPattern>` are copied.
 
 ### Specify a new name for the file/folder
 * `newfilename <DriveFileName>` - The copied file/folder will be named `<DriveFileName>`

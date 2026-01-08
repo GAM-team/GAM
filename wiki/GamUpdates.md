@@ -10,6 +10,15 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.31.02
+
+Added the following options to `gam <UserTypeEntity> copy drivefile`
+to limit copying to those files owned by selected users.
+* `copysubfilesownedby users <EmailAddressList>` - Only files owned by users in `<EmailAddressList>` are copied.
+* `copysubfilesownedby notusers <EmailAddressList>` - Only files not owned by users in `<EmailAddressList>` are copied.
+* `copysubfilesownedby regex <REMatchPattern>` - Only files owned by users whose email addresses match `<REMatchPattern>` are copied.
+* `copysubfilesownedby notregex <REMatchPattern>` - Only files owned by users whose email addresses do not match `<REMatchPattern>` are copied.
+
 ### 7.31.01
 
 Code cleanup for `addcsvdata <FieldName> <String>`.
