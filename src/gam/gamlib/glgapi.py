@@ -179,6 +179,7 @@ TEAMDRIVES_SHARING_RESTRICTION_NOT_ALLOWED = 'teamDrivesSharingRestrictionNotAll
 TEAMDRIVES_SHORTCUT_FILE_NOT_SUPPORTED = 'teamDrivesShortcutFileNotSupported'
 TIME_RANGE_EMPTY = 'timeRangeEmpty'
 TRANSIENT_ERROR = 'transientError'
+UNIMPLEMENTED_ERROR = 'unimplementedError'
 UNKNOWN_ERROR = 'unknownError'
 UNSUPPORTED_LANGUAGE_CODE = 'unsupportedLanguageCode'
 UNSUPPORTED_SUPERVISED_ACCOUNT = 'unsupportedSupervisedAccount'
@@ -671,6 +672,8 @@ class timeRangeEmpty(Exception):
   pass
 class transientError(Exception):
   pass
+class unimplementedError(Exception):
+  pass
 class unknownError(Exception):
   pass
 class unsupportedLanguageCode(Exception):
@@ -843,6 +846,7 @@ REASON_EXCEPTION_MAP = {
   TEAMDRIVES_SHORTCUT_FILE_NOT_SUPPORTED: teamDrivesShortcutFileNotSupported,
   TIME_RANGE_EMPTY: timeRangeEmpty,
   TRANSIENT_ERROR: transientError,
+  UNIMPLEMENTED_ERROR: unimplementedError,
   UNKNOWN_ERROR: unknownError,
   UNSUPPORTED_LANGUAGE_CODE: unsupportedLanguageCode,
   UNSUPPORTED_SUPERVISED_ACCOUNT: unsupportedSupervisedAccount,

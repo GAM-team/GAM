@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.31.01'
+__version__ = '7.31.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -5307,6 +5307,9 @@ def checkGAPIError(e, softErrors=False, retryOnHttpError=False, mapNotFound=True
         error = makeErrorDict(http_status, GAPI.FIELD_IN_USE, message)
       elif status == 'INTERNAL':
         error = makeErrorDict(http_status, GAPI.INTERNAL_ERROR, message)
+    elif http_status == 501:
+      if status == 'UNIMPLEMENTED':
+        error = makeErrorDict(http_status, GAPI.UNIMPLEMENTED_ERROR, message)
     elif http_status == 502:
       if 'bad gateway' in lmessage:
         error = makeErrorDict(http_status, GAPI.BAD_GATEWAY, message)
@@ -37297,14 +37300,16 @@ def doCreateUpdateCIPolicy():
   if updateCmd:
     pname = jsonData.pop('name', None)
   else:
+    jsonData.pop('name', None)
     pname = 'New Policy'
   if 'policyQuery' in jsonData:
     jsonData['policyQuery'].pop('orgUnitPath', None)
     jsonData['policyQuery'].pop('groupEmail', None)
     jsonData['policyQuery'].pop('sortOrder', None)
-  if 'setting' in jsonData and 'value' in jsonData['setting']:
-    jsonData['setting']['value'].pop('createTime', None)
-    jsonData['setting']['value'].pop('updateTime', None)
+  if 'setting' in jsonData:
+    if 'value' in jsonData['setting']:
+      jsonData['setting']['value'].pop('createTime', None)
+      jsonData['setting']['value'].pop('updateTime', None)
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg in {'ou', 'org', 'orgunit'}:
@@ -37324,12 +37329,15 @@ def doCreateUpdateCIPolicy():
     if updateCmd:
       result = callGAPI(ci.policies(), 'patch',
                         bailOnInternalError=True,
-                        throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                        throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.UNIMPLEMENTED_ERROR,
+                                      GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+
                         name=pname, body=jsonData)
     else:
       result = callGAPI(ci.policies(), 'create',
                         bailOnInternalError=True,
-                        throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                        throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.UNIMPLEMENTED_ERROR,
+                                      GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
                         body=jsonData)
     if result['done']:
       if 'error' not in result:
@@ -37340,7 +37348,8 @@ def doCreateUpdateCIPolicy():
         entityActionFailedWarning([Ent.POLICY, pname], result['error']['message'])
     else:
       entityActionPerformedMessage([Ent.POLICY, pname], Msg.ACTION_IN_PROGRESS.format('delete'))
-  except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
+  except (GAPI.invalid, GAPI.invalidArgument, GAPI.unimplementedError,
+          GAPI.notFound, GAPI.permissionDenied, GAPI.internalError) as e:
     entityActionFailedWarning([Ent.POLICY, pname], str(e))
 
 
@@ -37358,10 +37367,10 @@ def doDeleteCIPolicies():
       try:
         policies  = [callGAPI(ci.policies(), 'get',
                               bailOnInternalError=True,
-                              throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
-                              name=pname,
-                              fields='name')]
-      except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
+                              throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT,
+                                            GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                              name=pname, fields='name')]
+      except (GAPI.invalid, GAPI.invalidArgument, GAPI.notFound, GAPI.permissionDenied, GAPI.internalError) as e:
         entityActionFailedWarning([Ent.POLICY, pname], str(e), i, count)
         continue
     else:
@@ -37380,7 +37389,8 @@ def doDeleteCIPolicies():
       try:
         result = callGAPI(ci.policies(), 'delete',
                           bailOnInternalError=True,
-                          throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                          throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT,
+                                        GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
                           name=pname)
         if result['done']:
           if 'error' not in result:
@@ -37389,7 +37399,7 @@ def doDeleteCIPolicies():
             entityActionFailedWarning([Ent.POLICY, pname], result['error']['message'], j, jcount)
         else:
           entityActionPerformedMessage([Ent.POLICY, pname], Msg.ACTION_IN_PROGRESS.format('delete'), j, jcount)
-      except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
+      except (GAPI.invalid, GAPI.invalidArgument, GAPI.notFound, GAPI.permissionDenied, GAPI.internalError) as e:
         entityActionFailedWarning([Ent.POLICY, pname], str(e), j, jcount)
     Ind.Decrement()
 
@@ -37421,10 +37431,10 @@ def doInfoCIPolicies():
       try:
         policies  = [callGAPI(ci.policies(), 'get',
                               bailOnInternalError=True,
-                              throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
-                              name=pname,
-                              fields='name,policyQuery(group,orgUnit,sortOrder),type,setting')]
-      except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
+                              throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT,
+                                            GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                              name=pname, fields='name,policyQuery(group,orgUnit,sortOrder),type,setting')]
+      except (GAPI.invalid, GAPI.invalidArgument, GAPI.notFound, GAPI.permissionDenied, GAPI.internalError) as e:
         entityActionFailedWarning([Ent.POLICY, pname], str(e), i, count)
         continue
     else:
@@ -61579,7 +61589,7 @@ def initCopyMoveOptions(copyCmd):
     'shortcutNameMatchPattern': None,
     'fileMimeTypes': set(),
     'notMimeTypes': False,
-    'copySubFilesOwnedBy': None,
+    'copySubFilesOwnedBy': {},
     'copyPermissionRoles': set(DRIVEFILE_ACL_ROLES_MAP.values()),
     'copyPermissionTypes': set(DRIVEFILE_ACL_PERMISSION_TYPES),
     }
@@ -61597,6 +61607,16 @@ DUPLICATE_FOLDER_CHOICES = {
   'uniquename': DUPLICATE_FOLDER_UNIQUE_NAME,
   'skip': DUPLICATE_FOLDER_SKIP,
   }
+
+COPY_OWNED_BY_CHOICE_MAP = {
+  'any': {},
+  'me': {'mode': 'bool', 'value': True},
+  'others': {'mode': 'bool', 'value': False},
+  'users': {'mode': 'users', 'value': set()},
+  'notusers': {'mode': 'notusers', 'value': set()},
+  'regex': {'mode': 'regex', 'value': ''},
+  'notregex': {'mode': 'notregex', 'value': ''}
+}
 
 def getCopyMoveOptions(myarg, copyMoveOptions):
 # Copy/Move arguments
@@ -61726,7 +61746,12 @@ def getCopyMoveOptions(myarg, copyMoveOptions):
         for mimeType in getString(Cmd.OB_MIMETYPE_LIST).lower().replace(',', ' ').split():
           copyMoveOptions['fileMimeTypes'].add(validateMimeType(mimeType))
       elif myarg == 'copysubfilesownedby':
-        copyMoveOptions['copySubFilesOwnedBy'] = getChoice(SHOW_OWNED_BY_CHOICE_MAP, mapChoice=True)
+        copyMoveOptions['copySubFilesOwnedBy'] = getChoice(COPY_OWNED_BY_CHOICE_MAP, mapChoice=True)
+        if copyMoveOptions['copySubFilesOwnedBy']:
+          if copyMoveOptions['copySubFilesOwnedBy']['mode'] in {'users', 'notusers'}:
+            copyMoveOptions['copySubFilesOwnedBy']['value'] = set(getString(Cmd.OB_EMAIL_ADDRESS_LIST).replace(',', ' ').lower().split())
+          elif copyMoveOptions['copySubFilesOwnedBy']['mode'] in {'regex', 'notregex'}:
+            copyMoveOptions['copySubFilesOwnedBy']['value'] = getREPattern(re.IGNORECASE)
       else:
         return False
   return True
@@ -62277,6 +62302,12 @@ copyReturnItemMap = {
 #	<DriveFileCopyAttribute>*
 #	[skipids <DriveFileEntity>]
 #	[copysubfiles [<Boolean>]] [filenamematchpattern <REMatchPattern>] [filemimetype [not] <MimeTypeList>]
+#	[copysubfilesownedby
+#	    any|me|others|
+#	    users <EmailAddressList>|
+#	    notusers <EmailAddressList>|
+#	    regex <REMatchPattern>|
+#	    notregex <REMatchPattern>]
 #	[copysubfolders [<Boolean>]] [foldernamematchpattern <REMatchPattern>]
 #	[copysubshortcuts [<Boolean>]] [shortcutnamematchpattern <REMatchPattern>]
 #	[duplicatefiles overwriteolder|overwriteall|duplicatename|uniquename|skip]
@@ -62489,9 +62520,28 @@ def copyDriveFile(users):
     else:
       if not copyMoveOptions['copySubFiles']:
         return False
-      if copyMoveOptions['copySubFilesOwnedBy'] is not None:
-        if child.get('driveId', None) is None and child.get('ownedByMe', False) != copyMoveOptions['copySubFilesOwnedBy']:
-          return False
+      if copyMoveOptions['copySubFilesOwnedBy'] and child.get('driveId', None) is None:
+        if copyMoveOptions['copySubFilesOwnedBy']['mode'] == 'bool':
+          if child.get('ownedByMe', False) != copyMoveOptions['copySubFilesOwnedBy']['value']:
+            return False
+        else:
+          childOwner = child.get('owners', [])
+          if childOwner:
+            childOwner = childOwner[0].get('emailAddress', '').lower()
+          else:
+            childOwner = ''
+          if copyMoveOptions['copySubFilesOwnedBy']['mode'] == 'users':
+            if childOwner not in copyMoveOptions['copySubFilesOwnedBy']['value']:
+              return False
+          elif copyMoveOptions['copySubFilesOwnedBy']['mode'] == 'notusers':
+            if childOwner in copyMoveOptions['copySubFilesOwnedBy']['value']:
+              return False
+          elif copyMoveOptions['copySubFilesOwnedBy']['mode'] == 'regex':
+            if not copyMoveOptions['copySubFilesOwnedBy']['value'].match(childOwner):
+              return False
+          else: # elif copyMoveOptions['copySubFilesOwnedBy']['mode'] == 'notregex':
+            if copyMoveOptions['copySubFilesOwnedBy']['value'].match(childOwner):
+              return False
       if copyMoveOptions['fileMimeTypes']:
         if not copyMoveOptions['notMimeTypes']:
           if childMimeType not in copyMoveOptions['fileMimeTypes']:
@@ -62524,7 +62574,7 @@ def copyDriveFile(users):
                                    orderBy='folder desc,name,modifiedTime desc',
                                    fields='nextPageToken,files(id,name,parents,appProperties,capabilities,contentHints,copyRequiresWriterPermission,'\
                                      'description,folderColorRgb,mimeType,modifiedTime,ownedByMe,properties,starred,driveId,trashed,viewedByMeTime,writersCanShare,'\
-                                     'shortcutDetails(targetId,targetMimeType))',
+                                     'shortcutDetails(targetId,targetMimeType),owners(emailAddress))',
                                    pageSize=GC.Values[GC.DRIVE_MAX_RESULTS], **sourceSearchArgs)
     kcount = len(sourceChildren)
     if kcount > 0:
@@ -62559,6 +62609,7 @@ def copyDriveFile(users):
             entityActionNotPerformedWarning(kvList, Msg.NOT_SELECTED, k, kcount)
           continue
         child.pop('ownedByMe', None)
+        child.pop('owners', None)
         trashed = child.pop('trashed', False)
         if (childId == newFolderId) or (excludeTrashed and trashed):
           entityActionNotPerformedWarning(kvList,

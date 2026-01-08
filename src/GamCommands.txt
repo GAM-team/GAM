@@ -6848,7 +6848,12 @@ gam <UserTypeEntity> copy drivefile <DriveFileEntity>
         [skipids <DriveFileEntity>]
         [copysubfiles [<Boolean>]] [filenamematchpattern <REMatchPattern>]
              [filemimetype [not] <MimeTypeList>]
-        [copysubfilesownedby any|me|others]
+        [copysubfilesownedby
+            any|me|others|
+            users <EmailAddressList>|
+            notusers <EmailAddressList>|
+            regex <REMatchPattern>|
+            notregex <REMatchPattern>]
         [copysubfolders [<Boolean>]] [foldernamematchpattern <REMatchPattern>]
         [copysubshortcuts [<Boolean>]] [shortcutnamematchpattern <REMatchPattern>]
         [duplicatefiles overwriteolder|overwriteall|duplicatename|uniquename|skip]
