@@ -56,6 +56,7 @@ CANNOT_SHARE_GROUPS_WITHLINK = 'cannotShareGroupsWithLink'
 CANNOT_SHARE_USERS_WITHLINK = 'cannotShareUsersWithLink'
 CANNOT_SHARE_TEAMDRIVE_TOPFOLDER_WITH_ANYONEORDOMAINS = 'cannotShareTeamDriveTopFolderWithAnyoneOrDomains'
 CANNOT_SHARE_TEAMDRIVE_WITH_NONGOOGLE_ACCOUNTS = 'cannotShareTeamDriveWithNonGoogleAccounts'
+CANNOT_UNSUBSCRIBE_FROM_OWNED_CALENDAR = 'cannotUnsubscribeFromOwnedCalendar'
 CANNOT_UPDATE_PERMISSION = 'cannotUpdatePermission'
 CONDITION_NOT_MET = 'conditionNotMet'
 CONFLICT = 'conflict'
@@ -435,6 +436,8 @@ class cannotShareTeamDriveTopFolderWithAnyoneOrDomains(Exception):
   pass
 class cannotShareTeamDriveWithNonGoogleAccounts(Exception):
   pass
+class cannotUnsubscribeFromOwnedCalendar(Exception):
+  pass
 class cannotUpdatePermission(Exception):
   pass
 class conditionNotMet(Exception):
@@ -730,6 +733,7 @@ REASON_EXCEPTION_MAP = {
   CANNOT_SHARE_USERS_WITHLINK: cannotShareUsersWithLink,
   CANNOT_SHARE_TEAMDRIVE_TOPFOLDER_WITH_ANYONEORDOMAINS: cannotShareTeamDriveTopFolderWithAnyoneOrDomains,
   CANNOT_SHARE_TEAMDRIVE_WITH_NONGOOGLE_ACCOUNTS: cannotShareTeamDriveWithNonGoogleAccounts,
+  CANNOT_UNSUBSCRIBE_FROM_OWNED_CALENDAR: cannotUnsubscribeFromOwnedCalendar,
   CANNOT_UPDATE_PERMISSION: cannotUpdatePermission,
   CONDITION_NOT_MET: conditionNotMet,
   CONFLICT: conflict,

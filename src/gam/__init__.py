@@ -53237,11 +53237,13 @@ def _processCalendarList(user, i, count, calId, j, jcount, cal, function, **kwar
   try:
     callGAPI(cal.calendarList(), function,
              throwReasons=[GAPI.NOT_FOUND, GAPI.DUPLICATE, GAPI.UNKNOWN_ERROR,
-                           GAPI.CANNOT_CHANGE_OWN_ACL, GAPI.CANNOT_CHANGE_OWN_PRIMARY_SUBSCRIPTION],
+                           GAPI.CANNOT_CHANGE_OWN_ACL, GAPI.CANNOT_CHANGE_OWN_PRIMARY_SUBSCRIPTION,
+                           GAPI.CANNOT_UNSUBSCRIBE_FROM_OWNED_CALENDAR],
              **kwargs)
     entityActionPerformed([Ent.USER, user, Ent.CALENDAR, calId], j, jcount)
   except (GAPI.notFound, GAPI.duplicate, GAPI.unknownError, GAPI.serviceNotAvailable,
-          GAPI.cannotChangeOwnAcl, GAPI.cannotChangeOwnPrimarySubscription) as e:
+          GAPI.cannotChangeOwnAcl, GAPI.cannotChangeOwnPrimarySubscription,
+          GAPI.cannotUnsubscribeFromOwnedCalendar) as e:
     entityActionFailedWarning([Ent.USER, user, Ent.CALENDAR, calId], str(e), j, jcount)
   except GAPI.notACalendarUser:
     userCalServiceNotEnabledWarning(user, i, count)
