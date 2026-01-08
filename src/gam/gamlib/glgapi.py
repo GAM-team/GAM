@@ -42,6 +42,7 @@ CANNOT_DELETE_PERMISSION = 'cannotDeletePermission'
 CANNOT_DELETE_PRIMARY_CALENDAR = 'cannotDeletePrimaryCalendar'
 CANNOT_DELETE_PRIMARY_SENDAS = 'cannotDeletePrimarySendAs'
 CANNOT_DELETE_RESOURCE_WITH_CHILDREN = 'cannotDeleteResourceWithChildren'
+CANNOT_MODIFY_ACL_OF_CALENDAR_OWNER = 'cannotModifyAclOfCalendarOwner'
 CANNOT_MODIFY_INHERITED_PERMISSION = 'cannotModifyInheritedPermission'
 CANNOT_MODIFY_INHERITED_TEAMDRIVE_PERMISSION = 'cannotModifyInheritedTeamDrivePermission'
 CANNOT_MODIFY_RESTRICTED_LABEL = 'cannotModifyRestrictedLabel'
@@ -406,6 +407,8 @@ class cannotDeletePrimarySendAs(Exception):
   pass
 class cannotDeleteResourceWithChildren(Exception):
   pass
+class cannotModifyAclOfCalendarOwner(Exception):
+  pass
 class cannotModifyInheritedPermission(Exception):
   pass
 class cannotModifyInheritedTeamDrivePermission(Exception):
@@ -713,6 +716,7 @@ REASON_EXCEPTION_MAP = {
   CANNOT_DELETE_PRIMARY_CALENDAR: cannotDeletePrimaryCalendar,
   CANNOT_DELETE_PRIMARY_SENDAS: cannotDeletePrimarySendAs,
   CANNOT_DELETE_RESOURCE_WITH_CHILDREN: cannotDeleteResourceWithChildren,
+  CANNOT_MODIFY_ACL_OF_CALENDAR_OWNER: cannotModifyAclOfCalendarOwner,
   CANNOT_MODIFY_INHERITED_PERMISSION: cannotModifyInheritedPermission,
   CANNOT_MODIFY_INHERITED_TEAMDRIVE_PERMISSION: cannotModifyInheritedTeamDrivePermission,
   CANNOT_MODIFY_RESTRICTED_LABEL: cannotModifyRestrictedLabel,

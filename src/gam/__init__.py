@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.31.02'
+__version__ = '7.31.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -39774,7 +39774,8 @@ def _processCalendarACLs(cal, function, entityType, calId, j, jcount, k, kcount,
   try:
     callGAPI(cal.acl(), function,
              throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_PARAMETER, GAPI.INVALID_SCOPE_VALUE,
-                           GAPI.ILLEGAL_ACCESS_ROLE_FOR_DEFAULT, GAPI.CANNOT_CHANGE_OWN_ACL, GAPI.CANNOT_CHANGE_OWNER_ACL,
+                           GAPI.ILLEGAL_ACCESS_ROLE_FOR_DEFAULT, GAPI.CANNOT_CHANGE_OWN_ACL,
+                           GAPI.CANNOT_CHANGE_OWNER_ACL, GAPI.CANNOT_MODIFY_ACL_OF_CALENDAR_OWNER,
                            GAPI.FORBIDDEN, GAPI.AUTH_ERROR, GAPI.CONDITION_NOT_MET],
              calendarId=calId, **kwargs)
     entityActionPerformed([entityType, calId, Ent.CALENDAR_ACL, formatACLScopeRole(ruleId, role)], k, kcount)
@@ -39785,7 +39786,8 @@ def _processCalendarACLs(cal, function, entityType, calId, j, jcount, k, kcount,
     else:
       entityActionFailedWarning([entityType, calId, Ent.CALENDAR_ACL, formatACLScopeRole(ruleId, role)], str(e), k, kcount)
   except (GAPI.invalid, GAPI.invalidParameter, GAPI.invalidScopeValue,
-          GAPI.illegalAccessRoleForDefault, GAPI.cannotChangeOwnAcl, GAPI.cannotChangeOwnerAcl,
+          GAPI.illegalAccessRoleForDefault, GAPI.cannotChangeOwnAcl,
+          GAPI.cannotChangeOwnerAcl, GAPI.cannotModifyAclOfCalendarOwner,
           GAPI.forbidden, GAPI.authError, GAPI.conditionNotMet) as e:
     entityActionFailedWarning([entityType, calId, Ent.CALENDAR_ACL, formatACLScopeRole(ruleId, role)], str(e), k, kcount)
   return result
@@ -53728,197 +53730,16 @@ def printShowCalendarACLs(users):
   if csvPF:
     csvPF.writeCSVfile('Calendar ACLs')
 
-TRANSFER_CALENDAR_APPEND_FIELDS = ['description', 'location', 'summary']
-
 # gam <UserTypeEntity> transfer calendars|seccals <UserItem> [<UserCalendarEntity>]
 #	[keepuser | (retainrole <CalendarACLRole>)] [sendnotifications <Boolean>] [noretentionmessages]
 #	<CalendarSettings>* [append description|location|summary] [noupdatemessages]
 #	[deletefromoldowner] [addtonewowner <CalendarAttribute>*] [nolistmessages]
 def transferCalendars(users):
-  targetUser = getEmailAddress()
-  calendarEntity = getUserCalendarEntity(noSelectionKwargs={'minAccessRole': 'owner', 'showHidden': True})
-  notAllowedForbidden = Msg.FORBIDDEN if (not calendarEntity['all']) and (not calendarEntity.get('kwargs', {}).get('minAccessRole', '') == 'owner') else Msg.NOT_ALLOWED
-  retainRoleBody = {'role': 'none'}
-  sendNotifications = showListMessages = showRetentionMessages = showUpdateMessages = True
-  updateBody = {}
-  appendFieldsList = []
-  addToNewOwner = deleteFromOldOwner = False
-  targetListBody = {'selected': True, 'hidden': False}
-  while Cmd.ArgumentsRemaining():
-    myarg = getArgument()
-    if myarg == 'keepuser':
-      retainRoleBody['role'] = 'owner'
-    elif myarg == 'retainrole':
-      retainRoleBody['role'] = getChoice(CALENDAR_ACL_ROLES_MAP, mapChoice=True)
-    elif myarg == 'sendnotifications':
-      sendNotifications = getBoolean()
-    elif _getCalendarSetting(myarg, updateBody):
-      pass
-    elif myarg == 'append':
-      for field in _getFieldsList():
-        if field in TRANSFER_CALENDAR_APPEND_FIELDS:
-          appendFieldsList.append(field)
-        else:
-          invalidChoiceExit(field, TRANSFER_CALENDAR_APPEND_FIELDS, True)
-    elif myarg == 'nolistmessages':
-      showListMessages = False
-    elif myarg == 'noretentionmessages':
-      showRetentionMessages = False
-    elif myarg == 'noupdatemessages':
-      showUpdateMessages = False
-    elif myarg == 'deletefromoldowner':
-      deleteFromOldOwner = True
-    elif myarg == 'addtonewowner':
-      addToNewOwner = True
-      _getCalendarAttributes(targetListBody, returnOnUnknownArgument=True)
-    else:
-      unknownArgumentExit()
-  targetUser, targetCal = validateCalendar(targetUser, noClientAccess=True)
-  if not targetCal:
-    return
-  colorRgbFormat = 'backgroundColor' in targetListBody or 'foregroundColor' in targetListBody
-  if 'summaryOverride' in targetListBody and 'summary' not in updateBody:
-    updateBody['summary'] = targetListBody.pop('summaryOverride')
-  if updateBody:
-    timestamp = currentISOformatTimeStamp('seconds')
-    appendFields = ','.join(set(appendFieldsList))
-  targetRoleBody = {'role': 'owner', 'scope': {'type': 'user', 'value': targetUser}}
-  i, count, users = getEntityArgument(users)
-  for user in users:
-    i += 1
-    Act.Set(Act.TRANSFER_OWNERSHIP)
-    user, sourceCal, calIds, jcount = _validateUserGetCalendarIds(user, i, count, calendarEntity, secondaryCalendarsOnly=True)
-    if jcount == 0:
-      continue
-    if updateBody:
-      userName, domain = splitEmailAddress(user)
-      for field in updateBody:
-        updateBody[field] = _substituteForUser(updateBody[field], user, userName)
-        updateBody[field] = updateBody[field].replace('#domain#', domain)
-        updateBody[field] = updateBody[field].replace('#timestamp#', timestamp)
-    sourceRuleId = f'user:{user}'
-    Ind.Increment()
-    j = 0
-    for calId in calIds:
-      j += 1
-      Act.Set(Act.TRANSFER_OWNERSHIP)
-      if calId.find('@group.calendar.google.com') == -1:
-        entityActionNotPerformedWarning([Ent.CALENDAR, calId], notAllowedForbidden, j, jcount)
-        continue
-      try:
-        callGAPI(sourceCal.acl(), 'insert',
-                 throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID, GAPI.FORBIDDEN, GAPI.REQUIRED_ACCESS_LEVEL],
-                 calendarId=calId, body=targetRoleBody, sendNotifications=sendNotifications, fields='')
-        entityModifierNewValueItemValueListActionPerformed([Ent.CALENDAR, calId], Act.MODIFIER_TO, None, [Ent.USER, targetUser], j, jcount)
-      except (GAPI.forbidden, GAPI.requiredAccessLevel) as e:
-        entityActionFailedWarning([Ent.USER, user, Ent.CALENDAR, calId], str(e), j, jcount)
-        continue
-      except (GAPI.notFound, GAPI.invalid):
-        entityUnknownWarning(Ent.CALENDAR, calId, j, jcount)
-        continue
-      except GAPI.notACalendarUser:
-        userCalServiceNotEnabledWarning(user, i, count)
-        break
-      if updateBody:
-        Act.Set(Act.UPDATE)
-        try:
-          if appendFields:
-            body = callGAPI(targetCal.calendars(), 'get',
-                            throwReasons=GAPI.CALENDAR_THROW_REASONS+GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN],
-                            calendarId=calId, fields=appendFields)
-            for field in appendFieldsList:
-              if field in updateBody:
-                if field in body:
-                  body[field] += updateBody[field]
-                else:
-                  body[field] = updateBody[field]
-          else:
-            body = {}
-          for field, updateField in updateBody.items():
-            if field not in appendFieldsList:
-              body[field] = updateField
-          callGAPI(targetCal.calendars(), 'patch',
-                   throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN],
-                   calendarId=calId, body=body)
-          if showUpdateMessages:
-            entityActionPerformed([Ent.CALENDAR, calId], j, jcount)
-        except (GAPI.notFound) as e:
-          entityActionFailedWarning([Ent.CALENDAR, calId], str(e), j, jcount)
-        except GAPI.notACalendarUser:
-          userCalServiceNotEnabledWarning(targetUser, i, count)
-          break
-      if addToNewOwner:
-        Act.Set(Act.ADD)
-        targetListBody['id'] = calId
-        try:
-          callGAPI(targetCal.calendarList(), 'insert',
-                   throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.DUPLICATE, GAPI.UNKNOWN_ERROR,
-                                                             GAPI.CANNOT_CHANGE_OWN_ACL, GAPI.CANNOT_CHANGE_OWN_PRIMARY_SUBSCRIPTION],
-                   body=targetListBody, colorRgbFormat=colorRgbFormat, fields='')
-          if showListMessages:
-            entityModifierNewValueItemValueListActionPerformed([Ent.CALENDAR, calId], Act.MODIFIER_TO, None, [Ent.USER, targetUser], j, jcount)
-        except (GAPI.notFound, GAPI.duplicate, GAPI.unknownError,
-                GAPI.cannotChangeOwnAcl, GAPI.cannotChangeOwnPrimarySubscription) as e:
-          entityActionFailedWarning([Ent.CALENDAR, calId], str(e), j, jcount)
-        except GAPI.notACalendarUser:
-          userCalServiceNotEnabledWarning(targetUser, i, count)
-          break
-      Act.Set(Act.RETAIN)
-      if retainRoleBody['role'] == 'owner':
-        if showRetentionMessages:
-          entityActionPerformed([Ent.CALENDAR, calId, Ent.CALENDAR_ACL, formatACLScopeRole(sourceRuleId, retainRoleBody['role'])], j, jcount)
-      elif retainRoleBody['role'] != 'none':
-        try:
-          callGAPI(targetCal.acl(), 'patch',
-                   throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_PARAMETER,
-                                                             GAPI.INVALID_SCOPE_VALUE, GAPI.ILLEGAL_ACCESS_ROLE_FOR_DEFAULT,
-                                                             GAPI.CANNOT_CHANGE_OWN_ACL, GAPI.CANNOT_CHANGE_OWNER_ACL, GAPI.FORBIDDEN],
-                   calendarId=calId, ruleId=sourceRuleId, body=retainRoleBody, sendNotifications=sendNotifications, fields='')
-          if showRetentionMessages:
-            entityActionPerformed([Ent.CALENDAR, calId, Ent.CALENDAR_ACL, formatACLScopeRole(sourceRuleId, retainRoleBody['role'])], j, jcount)
-        except GAPI.notFound as e:
-          if not checkCalendarExists(targetCal, calId, i, count):
-            entityUnknownWarning(Ent.CALENDAR, calId, j, jcount)
-          else:
-            entityActionFailedWarning([Ent.CALENDAR, calId, Ent.CALENDAR_ACL, formatACLScopeRole(sourceRuleId, retainRoleBody['role'])], str(e), j, jcount)
-        except (GAPI.invalid, GAPI.invalidParameter, GAPI.invalidScopeValue, GAPI.illegalAccessRoleForDefault, GAPI.forbidden, GAPI.cannotChangeOwnAcl, GAPI.cannotChangeOwnerAcl) as e:
-          entityActionFailedWarning([Ent.CALENDAR, calId, Ent.CALENDAR_ACL, formatACLScopeRole(sourceRuleId, retainRoleBody['role'])], str(e), j, jcount)
-        except GAPI.notACalendarUser:
-          userCalServiceNotEnabledWarning(targetUser, i, count)
-          break
-      else:
-        try:
-          callGAPI(targetCal.acl(), 'delete',
-                   throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID],
-                   calendarId=calId, ruleId=sourceRuleId)
-          if showRetentionMessages:
-            entityActionPerformed([Ent.CALENDAR, calId, Ent.CALENDAR_ACL, formatACLScopeRole(sourceRuleId, retainRoleBody['role'])], j, jcount)
-        except (GAPI.notFound, GAPI.invalid):
-          entityUnknownWarning(Ent.CALENDAR, calId, j, jcount)
-        except GAPI.notACalendarUser:
-          userCalServiceNotEnabledWarning(targetUser, i, count)
-          break
-      if deleteFromOldOwner:
-        Act.Set(Act.DELETE)
-        try:
-          callGAPI(sourceCal.calendarList(), 'delete',
-                   throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.DUPLICATE, GAPI.UNKNOWN_ERROR,
-                                                             GAPI.CANNOT_CHANGE_OWN_ACL, GAPI.CANNOT_CHANGE_OWN_PRIMARY_SUBSCRIPTION],
-                   calendarId=calId)
-          entityModifierNewValueItemValueListActionPerformed([Ent.CALENDAR, calId], Act.MODIFIER_FROM, None, [Ent.USER, user], j, jcount)
-        except GAPI.notFound as e:
-          if retainRoleBody['role'] == 'none':
-            if showListMessages:
-              entityModifierNewValueItemValueListActionPerformed([Ent.CALENDAR, calId], Act.MODIFIER_FROM, None, [Ent.USER, user], j, jcount)
-          else:
-            entityActionFailedWarning([Ent.CALENDAR, calId], str(e), j, jcount)
-        except (GAPI.duplicate, GAPI.unknownError,
-                GAPI.cannotChangeOwnAcl, GAPI.cannotChangeOwnPrimarySubscription) as e:
-          entityActionFailedWarning([Ent.CALENDAR, calId], str(e), j, jcount)
-        except GAPI.notACalendarUser:
-          userCalServiceNotEnabledWarning(user, i, count)
-          break
-    Ind.Decrement()
+  errMsg = ''' Due to the following Calendar API update, the `gam <UserTypeEntity> transfer calendars` command has been removed.
+* See: https://developers.google.com/workspace/calendar/release-notes#October_27_2025
+Data ownership can be transferred in the Google Calendar UI.
+'''
+  systemErrorExit(ACTION_FAILED_RC, errMsg)
 
 def _createImportCalendarEvent(users, function):
   calendarEntity = getUserCalendarEntity()
