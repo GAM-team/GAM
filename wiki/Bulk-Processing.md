@@ -38,6 +38,7 @@ Batch files can contain the following types of lines:
 * Blank lines - Ignored
 * \# Comment line - Ignored
 * gam \<GAMArgumentList\> - Execute a GAM command 
+  * File path arguments in \<GAMArgumentList\> should be enclosed in \"
 * commit-batch
   * GAM waits for all running GAM commands to complete
   * GAM continues
