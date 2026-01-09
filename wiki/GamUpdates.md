@@ -12,6 +12,8 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 
 ### 7.31.04
 
+Fixed bug in `gam report admin|chrome` that caused to events to not be displayed.
+
 Updated `gam <UserTypeEntity> print|show messages|threads ... query <QueryGmail>` to display the query.
 
 ### 7.31.03
