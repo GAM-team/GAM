@@ -1,3 +1,7 @@
+7.31.04
+
+Updated `gam <UserTypeEntity> print|show messages|threads ... query <QueryGmail>` to display the query.
+
 7.31.03
 
 Due to the following Calendar API update, the `gam <UserTypeEntity> transfer calendars` command has been removed.

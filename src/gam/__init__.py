@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.31.03'
+__version__ = '7.31.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -72632,7 +72632,12 @@ LABEL_QUERY_REPLACEMENT_CHARACTERS = ' &()"|{}/'
 
 def _getMessageSelectParameters(myarg, parameters):
   if myarg == 'query':
-    parameters['query'] += f' ({getString(Cmd.OB_QUERY)})'
+    if parameters['query']:
+      if parameters['labelGroupOpen']:
+        parameters['query'] += ')'
+        parameters['labelGroupOpen'] = False
+      parameters['query'] += ' '
+    parameters['query'] += f'({getString(Cmd.OB_QUERY)})'
   elif myarg.startswith('querytime'):
     parameters['queryTimes'][myarg] = getDateOrDeltaFromNow().replace('-', '/')
   elif myarg == 'matchlabel':
@@ -72641,17 +72646,21 @@ def _getMessageSelectParameters(myarg, parameters):
     for c in labelTemp:
       labelName += c if c not in LABEL_QUERY_REPLACEMENT_CHARACTERS else '-'
     if not parameters['labelGroupOpen']:
+      if parameters['query']:
+        parameters['query'] += ' '
       parameters['query'] += '('
       parameters['labelGroupOpen'] = True
-    parameters['query'] += f' label:{labelName}'
+    else:
+      parameters['query'] += ' '
+    parameters['query'] += f'label:{labelName}'
   elif myarg in {'or', 'and'}:
     parameters['prevLabelOp'] = parameters['currLabelOp']
     parameters['currLabelOp'] = myarg
     if parameters['labelGroupOpen'] and parameters['currLabelOp'] != parameters['prevLabelOp']:
       parameters['query'] += ')'
       parameters['labelGroupOpen'] = False
-    if parameters['currLabelOp'] == 'or':
-      parameters['query'] += ' OR '
+    if parameters['currLabelOp'] == 'or' and parameters['query']:
+      parameters['query'] += ' OR'
   elif myarg == 'labelmatchpattern':
     parameters['labelMatchPattern'] = getREPattern(re.IGNORECASE)
   elif myarg == 'sendermatchpattern':
@@ -72755,7 +72764,7 @@ def archiveMessages(users):
     service = gmail.users().messages()
     try:
       if parameters['messageEntity'] is None:
-        printGettingAllEntityItemsForWhom(entityType, user, i, count)
+        printGettingAllEntityItemsForWhom(entityType, user, i, count, query=parameters['query'])
         listResult = callGAPIpages(service, 'list', parameters['listType'],
                                    pageMessage=getPageMessageForWhom(), maxItems=parameters['maxItems'],
                                    throwReasons=GAPI.GMAIL_THROW_REASONS+GAPI.GMAIL_LIST_THROW_REASONS,
@@ -72948,7 +72957,7 @@ def _processMessagesThreads(users, entityType):
         continue
     try:
       if parameters['messageEntity'] is None:
-        printGettingAllEntityItemsForWhom(Ent.MESSAGE, user, i, count)
+        printGettingAllEntityItemsForWhom(Ent.MESSAGE, user, i, count, query=parameters['query'])
         listResult = callGAPIpages(service, 'list', parameters['listType'],
                                    pageMessage=getPageMessageForWhom(), maxItems=parameters['maxItems'],
                                    throwReasons=GAPI.GMAIL_THROW_REASONS+GAPI.GMAIL_LIST_THROW_REASONS,
@@ -73087,7 +73096,7 @@ def exportMessagesThreads(users, entityType):
     service = gmail.users().messages() if entityType == Ent.MESSAGE else gmail.users().threads()
     try:
       if parameters['messageEntity'] is None:
-        printGettingAllEntityItemsForWhom(entityType, user, i, count)
+        printGettingAllEntityItemsForWhom(entityType, user, i, count, query=parameters['query'])
         listResult = callGAPIpages(service, 'list', parameters['listType'],
                                    pageMessage=getPageMessageForWhom(), maxItems=parameters['maxItems'],
                                    throwReasons=GAPI.GMAIL_THROW_REASONS+GAPI.GMAIL_LIST_THROW_REASONS,
@@ -73223,7 +73232,7 @@ def forwardMessagesThreads(users, entityType):
     service = gmail.users().messages() if entityType == Ent.MESSAGE else gmail.users().threads()
     if parameters['messageEntity'] is None:
       try:
-        printGettingAllEntityItemsForWhom(entityType, user, i, count)
+        printGettingAllEntityItemsForWhom(entityType, user, i, count, query=parameters['query'])
         listResult = callGAPIpages(service, 'list', parameters['listType'],
                                    pageMessage=getPageMessageForWhom(), maxItems=parameters['maxItems'],
                                    throwReasons=GAPI.GMAIL_THROW_REASONS+GAPI.GMAIL_LIST_THROW_REASONS,
@@ -74331,7 +74340,7 @@ def printShowMessagesThreads(users, entityType):
         os.makedirs(targetFolder)
     try:
       if parameters['messageEntity'] is None:
-        printGettingAllEntityItemsForWhom(entityType, user, i, count)
+        printGettingAllEntityItemsForWhom(entityType, user, i, count, query=parameters['query'])
         listResult = callGAPIpages(service, 'list', parameters['listType'],
                                    pageMessage=getPageMessageForWhom(), maxItems=parameters['maxItems'],
                                    throwReasons=GAPI.GMAIL_THROW_REASONS+GAPI.GMAIL_LIST_THROW_REASONS,
