@@ -14476,6 +14476,7 @@ def doReport():
       for eventName in eventNames:
         zeroEventCounts[eventName] = 0
     mapUsersToFilter = False
+    count = len(users)
 # gmail requires a start time and an end time no more than 30 days apart
     if report == 'gmail':
       if startEndTime.startTime is None:
@@ -14491,32 +14492,34 @@ def doReport():
 # unless userisactor was specified
     elif report == 'admin':
       if mapAdminUsersToFilter:
-        if filters is None or 'USER_EMAIL==' not in filters:
-          mapUsersToFilter = True
+        if select or count != 1 or users[0] != 'all':
           if filters is None:
+            mapUsersToFilter = True
             filters = 'USER_EMAIL==#user#'
-          else:
+          elif  'USER_EMAIL==' not in filters:
+            mapUsersToFilter = True
             filters = filters+',USER_EMAIL==#user#'
 # chrome does not use userKey, map user to filter DEVICE_USER==user
     elif report == 'chrome':
-      if filters is None or 'DEVICE_USER==' not in filters:
-        mapUsersToFilter = True
+      if select or count != 1 or users[0] != 'all':
         if filters is None:
+          mapUsersToFilter = True
           filters = 'DEVICE_USER==#user#'
-        else:
+        elif 'DEVICE_USER==' not in filters:
+          mapUsersToFilter = True
           filters = filters+',DEVICE_USER==#user#'
     i = 0
-    count = len(users)
     for user in users:
       i += 1
       if normalizeUsers:
         user = normalizeEmailAddressOrUID(user)
       pfilters = filters
       if select or user != 'all':
+        puser = user
         if mapUsersToFilter:
           pfilters = filters.replace('#user#', user)
           user = 'all'
-        printGettingAllEntityItemsForWhom(Ent.ACTIVITY, user, i, count, query=pfilters)
+        printGettingAllEntityItemsForWhom(Ent.ACTIVITY, puser, i, count, query=pfilters)
       for eventName in eventNames:
         try:
           feed = callGAPIpages(service, 'list', 'items',
