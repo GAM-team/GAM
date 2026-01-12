@@ -855,7 +855,7 @@ it's how you quickly switch from from one client to another.
 
 The arguments are optional, must appear in this order and must be the first arguments before any other GAM arguments.
 ```
-select <Section> [save] [verify]
+select <Section> [save] [verify [variables <RESearchPattern>]]
         Use <Section> from gam.cfg for the current GAM command.
         <Section> is case-sensitive except for DEFAULT which is case-insensitive.
     save
@@ -863,6 +863,7 @@ select <Section> [save] [verify]
         Write configuration data to gam.cfg
     verify
         Print the variable values for the current section
+        Use `variables <RESearchPattern>` to display variables with names selected by `<RESearchPattern>`
         Values are determined in this order: Current section, DEFAULT section, Program default
 ```
 Display all of the sections in gam.cfg and mark the currently selected section with a *.
@@ -871,7 +872,7 @@ showsections
 ```
 The config argument is used to set selected variables in gam.cfg via the command line.
 ```
-config [<VariableName> [=] <Value>]* [save] [verify]
+config [<VariableName> [=] <Value>]* [save] [verify [variables <RESearchPattern>]]
     <VariableName> [=] <Value>
         Set <VariableName> = <Value> in the current section
         All <VariableNames> except section are allowed.
@@ -880,6 +881,7 @@ config [<VariableName> [=] <Value>]* [save] [verify]
         Write configuration data to gam.cfg
     verify
         Print the variable values for the current section
+        Use `variables <RESearchPattern>` to display variables with names selected by `<RESearchPattern>`
         Values are determined in this order: Current section, DEFAULT section, Program default
 
 redirect csv <FileName> [multiprocess] [append] [noheader] [charset <Charset>] [columndelimiter <Character>]

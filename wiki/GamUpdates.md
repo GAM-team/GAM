@@ -10,6 +10,26 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.31.05
+
+Added option `variables <RESearchPattern>` to `gam select section <SectionName> verify` and `gam config verify`
+that causes GAM to only display variables with names selected by `<RESearchPattern>`.
+```
+gam select School verify variables "^(customer|domain)"
+Section: School
+  customer_id = C03abc123
+  domain = school.edu
+
+gam config verify variables  'dir'
+Section: DEFAULT
+  cache_dir = ~/GamConfig/gamcache ; /Users/gamteam/GamConfig/gamcache
+  config_dir = ~/GamConfig ; /Users/gamteam/GamConfig
+  drive_dir = ~/GamWork ; /Users/gamteam/GamWork
+  gmail_cse_incert_dir = ~/GmailCSE/Certs ; /Users/gamteam/GmailCSE/Certs
+  gmail_cse_inkey_dir = ~/GmailCSE/Keys ; /Users/gamteam/GmailCSE/Keys
+  input_dir = .
+```
+
 ### 7.31.04
 
 Fixed bug in `gam report admin|chrome` that caused to events to not be displayed.

@@ -27,12 +27,13 @@ gam [<Select>] [showsections] [<SelectOutputFilter>|<SelectInputFilter>] [<Confi
 Select a section from gam.cfg and process a GAM command using values from that section.
 ```
 <Select> ::=
-        select <Section> [save] [verify]
+        select <Section> [save] [verify [variables <RESearchPattern>]]
 ```
 - `save`
   - Set `section = <Section>` in the `[DEFAULT]` section and write configuration data to gam.cfg
 - `verify`
   - Print the variable values for the selected section
+  - Use `variables <RESearchPattern>` to display variables with names selected by `<RESearchPattern>`
   - Values are determined in this order: Selected section, DEFAULT section, Program default
 
 If you enter `gam select <SectionName>` and nothing else on the command line,
@@ -80,7 +81,7 @@ Set variables in gam.cfg.
 
 ```
 <Config> ::=
-        config (<VariableName> [=] <Value>)* [save] [verify]
+        config (<VariableName> [=] <Value>)* [save] [verify [variables <RESearchPattern>]]
 ```
 - `<VariableName> [=] <Value>`
   - Set `<VariableName> = <Value>` in the current section
@@ -90,6 +91,7 @@ Set variables in gam.cfg.
   - Write configuration data to gam.cfg
 - `verify`
   - Print the variable values for the current section
+  - Use `variables <RESearchPattern>` to display variables with names selected by `<RESearchPattern>`
   - Values are determined in this order: Current section, DEFAULT section, Program default
 
 You can prefix `<Config>` with `<Select>` to set a variable in a particular section.
