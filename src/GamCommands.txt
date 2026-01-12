@@ -1290,11 +1290,12 @@ Specify a collection of items by directly specifying them; the item type is dete
 
 ## Select a section from gam.cfg and process a GAM command using values from that section
 <Select> ::=
-        select <Section> [save] [verify]
+        select <Section> [save] [verify [variables <RESearchPattern>]]
 save
     Set section = <Section> in the [DEFAULT] section and write configuration data to gam.cfg
 verify
     Print the variable values for the selected section
+    Use `variables <RESearchPattern>` to display variables with names selected by `<RESearchPattern>`
     Values are determined in this order: Selected section, DEFAULT section, Program default
 
 ## Display all of the sections in gam.cfg and mark the currently selected section with a *.
@@ -1318,7 +1319,7 @@ csv_input_row_drop_filter, csv_input_row_drop_filter_mode and csv_input_row_limi
 ## Set variables in gam.cfg.
 
 <Config> ::=
-        config (<VariableName> [=] <Value>)* [save] [verify]
+        config (<VariableName> [=] <Value>)* [save] [verify [variables <RESearchPattern>]]
 <VariableName> [=] <Value>
     Set <VariableName> = <Value> in the current section
     All <VariableNames> except section are allowed.
@@ -1327,6 +1328,7 @@ save
     Write configuration data to gam.cfg
 verify
     Print the variable values for the current section
+    Use `variables <RESearchPattern>` to display variables with names selected by `<RESearchPattern>`.
     Values are determined in this order: Current section, DEFAULT section, Program default
 
 ## Terminate processing of a CSV or batch file when one of the subprocesses returns a matching return code.

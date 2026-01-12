@@ -3,7 +3,7 @@
 #
 # GAM7
 #
-# Copyright 2025, All Rights Reserved.
+# Copyright 2026, All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.31.04'
+__version__ = '7.31.05'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -3831,9 +3831,12 @@ def SetGlobalVariables():
       stderrErrorMsg(fileErrorMessage(fileName, e, Ent.CONFIG_FILE))
 
   def _verifyValues(sectionName, inputFilterSectionName, outputFilterSectionName):
+    itemNamePattern = getREPattern() if checkArgumentPresent('variables') else None
     printKeyValueList([Ent.Singular(Ent.SECTION), sectionName]) # Do not use printEntity
     Ind.Increment()
     for itemName, itemEntry in GC.VAR_INFO.items():
+      if itemNamePattern and not itemNamePattern.search(itemName):
+        continue
       sectName = sectionName
       if itemName in GC.CSV_INPUT_ROW_FILTER_ITEMS:
         if inputFilterSectionName:
@@ -4014,7 +4017,7 @@ def SetGlobalVariables():
       usageErrorExit(formatKeyValueList('', [EV_GAMCFGSECTION, sectionName, 'select', Msg.NOT_ALLOWED], ''))
   else:
     sectionName = _getCfgSection(configparser.DEFAULTSECT, GC.SECTION)
-# select <SectionName> [save] [verify]
+# select <SectionName> [save] [verify [variables <RESearchPattern>]]
     if checkArgumentPresent(Cmd.SELECT_CMD):
       sectionName = _selectSection()
       GM.Globals[GM.SECTION] = sectionName # Save section for inner gams
@@ -4065,7 +4068,7 @@ def SetGlobalVariables():
     if GM.Globals[GM.PARSER].has_option(section, GC.CMDLOG_MAX__BACKUPS):
       GM.Globals[GM.PARSER].set(section, GC.CMDLOG_MAX_BACKUPS, GM.Globals[GM.PARSER].get(section, GC.CMDLOG_MAX__BACKUPS))
       GM.Globals[GM.PARSER].remove_option(section, GC.CMDLOG_MAX__BACKUPS)
-# config (<VariableName> [=] <Value>)* [save] [verify]
+# config (<VariableName> [=] <Value>)* [save] [verify [variables <RESearchPattern>]]
   if checkArgumentPresent(Cmd.CONFIG_CMD):
     while Cmd.ArgumentsRemaining():
       if checkArgumentPresent('save'):
