@@ -1,6 +1,7 @@
 # GAM Configuration
 - [Introduction](#introduction)
 - [Variables](#variables)
+- [Set configuration variables](#set-configuration-variables)
 - [Multiple Computers](#multiple-computers)
 - [Separate Staff-Student Domains](#separate-staff-student-domains)
 - [Multiple Customers and Domains](#multiple-customers-and-domains)
@@ -681,7 +682,7 @@ user_service_account_access_only
 ```
 This is sample output:
 ```
-$gam select default verify.
+$gam select default verify
 Config File: /Users/admin/.gam/gam.cfg, Initialized
 Section: DEFAULT
   activity_max_results = 100
@@ -806,6 +807,33 @@ Section: DEFAULT
   use_projectid_as_name = false
   user_max_results = 500
   user_service_account_access_only = false
+```
+
+## Set configuration variables
+You can set variables in gam.cfg with an editor or from the command line with GAM.
+
+```
+<Config> ::=
+        config (<VariableName> [=] <Value>)* [save] [verify [variables <RESearchPattern>]]
+```
+- `<VariableName> [=] <Value>`
+  - Set `<VariableName> = <Value>` in the current section
+  - All `<VariableNames>` except section are allowed.
+  - The `=` is optional but must be surrounded by spaces if included.
+- `save`
+  - Write configuration data to gam.cfg
+- `verify`
+  - Print the variable values for the current section
+  - Use `variables <RESearchPattern>` to display variables with names selected by `<RESearchPattern>`
+  - Values are determined in this order: Current section, DEFAULT section, Program default
+
+You can prefix `<Config>` with `<Select>` to set a variable in a particular section.
+* `select default <Config>` - Set a variable in the `DEFAULT` section
+* `select xyz <Config>` - Set a variable in the `xyz` section
+
+For example, to set yiur workspace Customer ID and domain name:
+```
+gam config customer_id C0123abc domain mydomain.org save
 ```
 
 ## Multiple Computers
