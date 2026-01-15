@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.31.05'
+__version__ = '7.31.06'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 #pylint: disable=wrong-import-position
@@ -26640,6 +26640,13 @@ def buildChatServiceObject(api=API.CHAT, user=None, i=0, count=0, entityTypeList
     kvList.extend(entityTypeList)
   return user, chat, kvList
 
+def _getChatPageMessage(entityType, user, i, count, pfilter, useAdminAccess=False):
+  if user is not None:
+    printGettingAllEntityItemsForWhom(entityType, user if not useAdminAccess else f'{user}(asadmin)', i, count, pfilter)
+    return getPageMessageForWhom()
+  printGettingAllAccountEntities(entityType, pfilter)
+  return getPageMessage()
+
 def setupChatURL(chat):
   return f'https://console.cloud.google.com/apis/api/chat.googleapis.com/hangouts-chat?project={chat._http.credentials.project_id}'
 
@@ -27109,7 +27116,7 @@ CHAT_UPDATE_SPACE_PERMISSIONS_MAP = {
 #	[useatmentionall owners|managers|members]
 #	[manageapps owners|managers|members]
 #	[managewebhooks owners|managers|members]
-2#	[replymessages owners|managers|members]
+#	[replymessages owners|managers|members]
 #	[formatjson]
 def updateChatSpace(users):
   FJQC = FormatJSONQuoteChar()
@@ -27277,13 +27284,6 @@ def infoChatSpaceDM(users):
   cd = buildGAPIObject(API.DIRECTORY)
   name = convertEmailAddressToUID(getEmailAddress(returnUIDprefix='uid:'), cd, 'user')
   infoChatSpace(users, f'users/{name}')
-
-def _getChatPageMessage(entityType, user, i, count, pfilter, useAdminAccess=False):
-  if user is not None:
-    printGettingAllEntityItemsForWhom(entityType, user if not useAdminAccess else f'{user}(asadmin)', i, count, pfilter)
-    return getPageMessageForWhom()
-  printGettingAllAccountEntities(entityType, pfilter)
-  return getPageMessage()
 
 def _getChatSpaceListParms(myarg, kwargs):
   if myarg in {'type', 'types'}:
@@ -40917,7 +40917,7 @@ def doCalendarsUpdateEventsOld(calIds):
   _updateCalendarEvents(None, None, None, calIds, len(calIds), calendarEventEntity, body, parameters)
 
 def _getCalendarDeleteEventOptions(calendarEventEntity=None):
-  parameters = {'sendUpdates': 'none', 'doIt': False}
+  parameters = {'sendUpdates': 'none', 'doIt': False, 'batch_size': 0}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if _getCalendarSendUpdates(myarg, parameters):
@@ -40926,11 +40926,22 @@ def _getCalendarDeleteEventOptions(calendarEventEntity=None):
       calendarEventEntity['list'].append(getString(Cmd.OB_EVENT_ID))
     elif myarg == 'doit':
       parameters['doIt'] = True
+    elif myarg == 'batchsize':
+      parameters['batch_size'] = getInteger(minVal=0, maxVal=1000)
     else:
       unknownArgumentExit()
   return parameters
 
 def _deleteCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEntity, parameters):
+  def _callbackDeleteEvents(request_id, _, exception):
+    ri = request_id.splitlines()
+    if exception is None:
+      entityActionPerformed([Ent.CALENDAR, ri[RI_ENTITY], Ent.EVENT, ri[RI_ITEM]], int(ri[RI_J]), int(ri[RI_JCOUNT]))
+    else:
+      http_status, reason, message = checkGAPIError(exception)
+      errMsg = getHTTPError({}, http_status, reason, message)
+      entityActionFailedWarning([Ent.CALENDAR, ri[RI_ENTITY], Ent.EVENT, ri[RI_ITEM]], errMsg, int(ri[RI_J]), int(ri[RI_JCOUNT]))
+
   i = 0
   for calId in calIds:
     i += 1
@@ -40938,34 +40949,55 @@ def _deleteCalendarEvents(origUser, user, origCal, calIds, count, calendarEventE
     if jcount == 0:
       continue
     Ind.Increment()
-    j = 0
-    for eventId in calEventIds:
-      j += 1
-      try:
-        callGAPI(cal.events(), 'delete',
-                 throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.DELETED, GAPI.FORBIDDEN,
-                                                           GAPI.INVALID, GAPI.REQUIRED, GAPI.REQUIRED_ACCESS_LEVEL],
-                 calendarId=calId, eventId=eventId, sendUpdates=parameters['sendUpdates'])
-        entityActionPerformed([Ent.CALENDAR, calId, Ent.EVENT, eventId], j, jcount)
-      except (GAPI.notFound, GAPI.deleted) as e:
-        if not checkCalendarExists(cal, calId, i, count):
-          entityUnknownWarning(Ent.CALENDAR, calId, i, count)
+    if parameters['batch_size'] == 0:
+      j = 0
+      for eventId in calEventIds:
+        j += 1
+        try:
+          callGAPI(cal.events(), 'delete',
+                   throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.DELETED, GAPI.FORBIDDEN,
+                                                             GAPI.INVALID, GAPI.REQUIRED, GAPI.REQUIRED_ACCESS_LEVEL],
+                   calendarId=calId, eventId=eventId, sendUpdates=parameters['sendUpdates'])
+          entityActionPerformed([Ent.CALENDAR, calId, Ent.EVENT, eventId], j, jcount)
+        except (GAPI.notFound, GAPI.deleted) as e:
+          if not checkCalendarExists(cal, calId, i, count):
+            entityUnknownWarning(Ent.CALENDAR, calId, i, count)
+            break
+          entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
+        except (GAPI.forbidden, GAPI.invalid, GAPI.required, GAPI.requiredAccessLevel) as e:
+          entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
+        except GAPI.notACalendarUser:
+          userCalServiceNotEnabledWarning(calId, i, count)
           break
-        entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
-      except (GAPI.forbidden, GAPI.invalid, GAPI.required, GAPI.requiredAccessLevel) as e:
-        entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
-      except GAPI.notACalendarUser:
-        userCalServiceNotEnabledWarning(calId, i, count)
-        break
+    else:
+      svcargs = dict([('calendarId', calId), ('eventId', None), ('sendUpdates', parameters['sendUpdates'])]+GM.Globals[GM.EXTRA_ARGS_LIST])
+      method = getattr(cal.events(), 'delete')
+      dbatch = cal.new_batch_http_request(callback=_callbackDeleteEvents)
+      bcount = 0
+      j = 0
+      for eventId in calEventIds:
+        j += 1
+        svcparms = svcargs.copy()
+        svcparms['eventId'] = eventId
+        dbatch.add(method(**svcparms), request_id=batchRequestID(calId, i, count, j, jcount, svcparms['eventId']))
+        bcount += 1
+        if bcount >= parameters['batch_size']:
+          executeBatch(dbatch)
+          dbatch = cal.new_batch_http_request(callback=_callbackDeleteEvents)
+          bcount = 0
+      if bcount > 0:
+        dbatch.execute()
     Ind.Decrement()
 
-# gam calendars <CalendarEntity> delete event <EventEntity> [doit] [<EventNotificationAttribute>]
+# gam calendars <CalendarEntity> delete event <EventEntity>
+#	[batchsize <Integer>] [doit] [<EventNotificationAttribute>]
 def doCalendarsDeleteEvents(calIds):
   calendarEventEntity = getCalendarEventEntity()
   parameters = _getCalendarDeleteEventOptions()
   _deleteCalendarEvents(None, None, None, calIds, len(calIds), calendarEventEntity, parameters)
 
-# gam calendar <CalendarEntity> deleteevent (id|eventid <EventID>)+ [doit] [<EventNotificationAttribute>]
+# gam calendar <CalendarEntity> deleteevent (id|eventid <EventID>)+
+#	[batchsize <Integer>] [doit] [<EventNotificationAttribute>]
 def doCalendarsDeleteEventsOld(calIds):
   calendarEventEntity = initCalendarEventEntity()
   parameters = _getCalendarDeleteEventOptions(calendarEventEntity)
@@ -41004,7 +41036,7 @@ def _moveCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEnt
       try:
         callGAPI(cal.events(), 'move',
                  throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.REQUIRED_ACCESS_LEVEL,
-                                                           GAPI.INVALID, GAPI.BAD_REQUEST,
+                                                           GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.EVENT_TYPE_RESTRICTION,
                                                            GAPI.CANNOT_CHANGE_ORGANIZER, GAPI.CANNOT_CHANGE_ORGANIZER_OF_INSTANCE],
                  calendarId=calId, eventId=eventId, destination=newCalId, sendUpdates=parameters['sendUpdates'], fields='')
         entityModifierNewValueActionPerformed(kvListEvent, Act.MODIFIER_TO, f'{Ent.Singular(Ent.CALENDAR)}: {newCalId}', j, jcount)
@@ -41016,7 +41048,7 @@ def _moveCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEnt
       except GAPI.requiredAccessLevel:
 # Correct "You need to have reader access to this calendar." to "Writer access required to both calendars."
         entityActionFailedWarning(kvListEventNewCal, Msg.WRITER_ACCESS_REQUIRED_TO_BOTH_CALENDARS, j, jcount)
-      except (GAPI.forbidden, GAPI.invalid, GAPI.badRequest,
+      except (GAPI.forbidden, GAPI.invalid, GAPI.badRequest, GAPI.eventTypeRestriction,
               GAPI.cannotChangeOrganizer, GAPI.cannotChangeOrganizerOfInstance) as e:
         entityActionFailedWarning(kvListEventNewCal, str(e), j, jcount)
       except GAPI.notACalendarUser:
@@ -41079,7 +41111,8 @@ def _purgeCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEn
     except GAPI.notACalendarUser:
       userCalServiceNotEnabledWarning(calId, i, count)
 
-# gam calendars <CalendarEntity> purge event <EventEntity> [doit] [<EventNotificationAttribute>]
+# gam calendars <CalendarEntity> purge event <EventEntity>
+#	[batchsize <Integer>] [doit] [<EventNotificationAttribute>]
 def doCalendarsPurgeEvents(calIds):
   calendarEventEntity = getCalendarEventEntity()
   parameters = _getCalendarDeleteEventOptions()
@@ -41139,7 +41172,7 @@ def _emptyCalendarTrash(user, origCal, calIds, count):
       entityPerformActionNumItems([Ent.CALENDAR, calId], jcount, Ent.TRASHED_EVENT, i, count)
       Ind.Increment()
     if jcount > 0:
-      _purgeCalendarEvents(user, user, cal, [calId], 1, calendarEventEntity, {'sendUpdates': 'none', 'doIt': True}, True)
+      _purgeCalendarEvents(user, user, cal, [calId], 1, calendarEventEntity, {'sendUpdates': 'none', 'doIt': True, 'batch_size': 0}, True)
     if not user:
       Ind.Decrement()
 
@@ -53792,7 +53825,8 @@ def updateCalendarEvents(users):
     _updateCalendarEvents(origUser, user, cal, calIds, jcount, calendarEventEntity, body, parameters)
     Ind.Decrement()
 
-# gam <UserTypeEntity> delete events <UserCalendarEntity> <EventEntity> [doit] [<EventNotificationAttribute>]
+# gam <UserTypeEntity> delete events <UserCalendarEntity> <EventEntity>
+#	[batchsize <Integer>] [doit] [<EventNotificationAttribute>]
 def deleteCalendarEvents(users):
   calendarEntity = getUserCalendarEntity()
   calendarEventEntity = getCalendarEventEntity()
@@ -53808,7 +53842,8 @@ def deleteCalendarEvents(users):
     _deleteCalendarEvents(origUser, user, cal, calIds, jcount, calendarEventEntity, parameters)
     Ind.Decrement()
 
-# gam <UserTypeEntity> purge events <UserCalendarEntity> <EventEntity> [doit] [<EventNotificationAttribute>]
+# gam <UserTypeEntity> purge events <UserCalendarEntity> <EventEntity>
+#	[batchsize <Integer>] [doit] [<EventNotificationAttribute>]
 def purgeCalendarEvents(users):
   calendarEntity = getUserCalendarEntity()
   calendarEventEntity = getCalendarEventEntity()

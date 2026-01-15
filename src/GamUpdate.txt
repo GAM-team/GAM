@@ -1,3 +1,9 @@
+7.31.06
+
+Added option `batchsize <Integer>` to `gam calendar <CalendarEntity> delete|purge events` and
+`gam <UserTypeEntity> delete|purge events <UserCalendarEntity>` that causes GAM to delete events
+with batch API calls rather than with individual API calls.
+
 7.31.05
 
 Added option `variables <RESearchPattern>` to `gam select section <SectionName> verify` and `gam config verify`
