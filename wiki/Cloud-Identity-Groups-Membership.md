@@ -349,6 +349,7 @@ gam print cigroup-members [todrive <ToDriveAttribute>*]
         [emailmatchpattern [not] <REMatchPattern>] [namematchpattern [not] <REMatchPattern>]
         [descriptionmatchpattern [not] <REMatchPattern>]
         [roles <GroupRoleList>] [members] [managers] [owners]
+        [internal] [internaldomains <DomainNameList>] [external]
         [types <CIGroupMemberTypeList>]
         <CIGroupMembersFieldName>* [fields <CIGroupMembersFieldNameList>]
         [minimal|basic|full]
@@ -379,6 +380,12 @@ By default, all members, managers and owners in the group are displayed; these o
 
 By default, all types of members (cbcmbrowser, chromeosdevice, customer, group, serviceaccount, user) in the group are displayed; this option modifies that behavior:
 * `types <CIGroupMemberTypeList>` - Display specified types
+
+By default, when listing group members, GAM does not take the domain of the member into account.
+* `internal internaldomains <DomainNameList>` - Display members whose domain is in `<DomainNameList>`
+* `external internaldomains <DomainNameList>` - Display members whose domain is not in `<DomainNameList>`
+* `internal external internaldomains <DomainNameList>` - Display all members, indicate their category: internal or external
+* `internaldomains <DomainNameList>` - Defaults to value of `domain` in `gam.cfg`
 
 By default, members that are groups are displayed as a single entry of type GROUP; this option recursively expands group members to display their user members.
 * `recursive` - Recursively expand group members
