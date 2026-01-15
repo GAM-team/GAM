@@ -41,6 +41,10 @@
 <RESearchPattern> ::= <RegularExpression>
 <RESubstitution> ::= <String>>
 
+<MimeTypeName> ::= application|audio|font|image|message|model|multipart|text|video
+<MimeType> ::= <MimeTypeName>/<String>
+<MimeTypeList> ::= "<MimeType>(,<MimeType>)*"
+
 <CorporaAttribute> ::= allteamdrives|domain|onlyteamdrives|user
 <DomainName> ::= <String>(.<String>)+
 <DomainNameList> ::= "<DomainName>(,<DomainName>)*"

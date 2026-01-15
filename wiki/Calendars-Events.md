@@ -516,10 +516,15 @@ Use `jsonattendees file ./attendees.json` in `create/update event`.
 
 ## Delete selected calendar events
 ```
-gam calendar <CalendarEntity> delete events [<EventEntity>] [doit] [<EventNotificationAttribute>]
-gam calendar <CalendarEntity> purge events [<EventEntity>] [doit] [<EventNotificationAttribute>]
+gam calendar <CalendarEntity> delete events [<EventEntity>]
+        [batchsize <Integer>] [doit] [<EventNotificationAttribute>]
+gam calendar <CalendarEntity> purge events [<EventEntity>]
+        [batchsize <Integer>] [doit] [<EventNotificationAttribute>]
 ```
 If `<EventEntity>` is not specified, all events in `<CalendarEntity>` are selected. This is not typically used.
+
+By default, each event is deleted in a separate API call, use `batchsize` with an integer between 1 and 1000
+to delete the events in batches.
 
 No events are deleted unless you specify the `doit` option; omit `doit` to verify that you properly selected the events to delete.
 

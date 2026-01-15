@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.31.06
+
+Added option `batchsize <Integer>` to `gam calendar <CalendarEntity> delete|purge events` and
+`gam <UserTypeEntity> delete|purge events <UserCalendarEntity>` that causes GAM to delete events
+with batch API calls rather than with individual API calls.
+
 ### 7.31.05
 
 Added option `variables <RESearchPattern>` to `gam select section <SectionName> verify` and `gam config verify`
