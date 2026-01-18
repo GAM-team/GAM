@@ -431,14 +431,14 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
 ## Manage Chat Users Sections
-### Create a user`s chat section
+### Create a user's chat section
 ```
 gam <UserTypeEntity> create chatsection
         displayname <String>
         [formatjson|returnidonly]
 ```
 
-### Update a user`s chat section
+### Update a user's chat section
 gam <UserTypeEntity> update chatsection <ChatSection>
         [displayname <String>]
         [(sortorder <Integer>)|(position start|end)]
