@@ -7,10 +7,10 @@
 - [Chat Space Permissions](#chat-space-permissions)
 - [Manage Chat Spaces](#manage-chat-spaces)
 - [Display Chat Spaces](#display-chat-spaces)
-- [Manage Chat Users Sections](#manage-chat-users-sections)
-- [Display Chat Users Sections](#display-chat-users-sections)
-- [Manage Chat Users Sections Items](#manage-chat-users-sections-items)
-- [Display Chat Users Sections Items](#display-chat-users-sections-items)
+- [Manage Chat User Sections](#manage-chat-user-sections)
+- [Display Chat User Sections](#display-chat-user-sections)
+- [Manage Chat User Sections Items](#manage-chat-user-sections-items)
+- [Display Chat User Sections Items](#display-chat-user-sections-items)
 - [UI API member role mapping](#ui-api-mwmber-role-mapping)
 - [Manage Chat Members](#manage-chat-members)
 - [Display Chat Members](#display-chat-members)
@@ -34,10 +34,10 @@ gam user user@domain.com update serviceaccount
 [*]  8)  Chat API - Spaces Admin (supports readonly)
 [*]  9)  Chat API - Spaces Delete
 [*] 10)  Chat API - Spaces Delete Admin
-[*] 11)  Chat API - Users Sections (supports readonly)
+[*] 11)  Chat API - User Sections (supports readonly)
 
 ```
-`Chat API - Users Sections` is in Developer preview.
+`Chat API - User Sections` is in Developer Preview.
 
 Added `use_chat_admin_access` Boolean variable to `gam.cfg`. 
 ```
@@ -67,7 +67,7 @@ Google requires that you have a Chat Bot configured in order to use the Chat API
 * [Chat API - Members](https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.members/list)
 * [Chat API - Messages](https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.messages/list)
 * [Chat API - Events](https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.spaceEvents/list)
-* [Chat API - Users Sections](https://developers.google.com/workspace/chat/api/reference/rest/v1/users.sections)
+* [Chat API - User Sections](https://developers.google.com/workspace/chat/api/reference/rest/v1/users.sections)
 * [Apps in Google Chat](https://support.google.com/chat/answer/7655820)
 * [Manage customemoji permissions](https://support.google.com/a/answer/12850085)
 * [Manage Spaces in Admin Console](https://support.google.com/a/answer/13369245)
@@ -104,6 +104,8 @@ Google requires that you have a Chat Bot configured in order to use the Chat API
 <ChatMember> ::= spaces/<String>/members/<String>
 <ChatMemberList> ::= "<ChatMember>(,<ChatMember>)*"
 <ChatMessage> ::= spaces/<String>/messages/<String>
+<ChatSection> ::= users/<String>/sections/<String> | sections/<String> | section <String>
+<ChatSectionItem> ::= users/<String>/sections/<String>/items/<String> | sections/<String>/items/<String>
 <ChatSpace> ::= spaces/<String> | space <String> | space spaces/<String>
 <ChatThread> ::= spaces/<String>/threads/<String>
 <ChatSpaceType> ::=
@@ -430,7 +432,7 @@ When using the `formatjson` option, double quotes are used extensively in the da
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
-## Manage Chat Users Sections
+## Manage Chat User Sections
 ### Create a user's chat section
 ```
 gam <UserTypeEntity> create chatsection
@@ -451,7 +453,7 @@ gam <UserTypeEntity> update chatsection <ChatSection>
 gam <UserTypeEntity> delete chatsection <ChatSection>
 ```
 
-## Display Chat Users Sections
+## Display Chat User Sections
 ### Display information about all of a user's chat sections
 ```
 gam <UserTypeEntity> show chatsections
@@ -472,13 +474,13 @@ When using the `formatjson` option, double quotes are used extensively in the da
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
-## Manage Chat Users Section Items
+## Manage Chat User Section Items
 ### Move a user's chat section item to a different chat section
 ```
 gam <UserTypeEntity> move chatsectionitem <ChatSectionItem> to <ChatSection>
 ```
 
-## Display Chat Users Section Items
+## Display Chat User Section Items
 ### Display information about a user's chat section items
 ```
 gam <UserTypeEntity> show chatsectionitems <ChatSection>
