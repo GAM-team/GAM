@@ -439,6 +439,7 @@ gam <UserTypeEntity> create chatsection
 ```
 
 ### Update a user's chat section
+```
 gam <UserTypeEntity> update chatsection <ChatSection>
         [displayname <String>]
         [(sortorder <Integer>)|(position start|end)]
