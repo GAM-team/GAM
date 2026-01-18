@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2025 Ross Scroggs All Rights Reserved.
+# Copyright (C) 2026 Ross Scroggs All Rights Reserved.
 #
 # All Rights Reserved.
 #
@@ -97,6 +97,8 @@ class GamEntity():
   CHAT_MESSAGE = 'chms'
   CHAT_MESSAGE_ID = 'chmi'
   CHAT_OWNER_USER = 'chou'
+  CHAT_SECTION = 'chse'
+  CHAT_SECTION_ITEM = 'chsi'
   CHAT_SPACE = 'chsp'
   CHAT_THREAD = 'chth'
   CHILD_ORGANIZATIONAL_UNIT = 'corg'
@@ -465,6 +467,8 @@ class GamEntity():
     CHAT_MEMBER_GROUP: ['Chat Group Members', 'Chat Group Member'],
     CHAT_MEMBER_USER: ['Chat User Members', 'Chat User Member'],
     CHAT_OWNER_USER: ['Chat User Owners', 'Chat User Owner'],
+    CHAT_SECTION: ['Chat Sections', 'Chat Section'],
+    CHAT_SECTION_ITEM: ['Chat Section Items', 'Chat Section Item'],
     CHAT_SPACE: ['Chat Spaces', 'Chat Space'],
     CHAT_THREAD: ['Chat Threads', 'Chat Thread'],
     CHILD_ORGANIZATIONAL_UNIT: ['Child Organizational Units', 'Child Organizational Unit'],

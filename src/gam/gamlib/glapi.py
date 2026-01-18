@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2025 Ross Scroggs All Rights Reserved.
+# Copyright (C) 2026 Ross Scroggs All Rights Reserved.
 #
 # All Rights Reserved.
 #
@@ -32,6 +32,7 @@ CHAT_EVENTS = 'chatevents'
 CHAT_MEMBERSHIPS = 'chatmemberships'
 CHAT_MEMBERSHIPS_ADMIN = 'chatmembershipsadmin'
 CHAT_MESSAGES = 'chatmessages'
+CHAT_SECTIONS = 'chatsections'
 CHAT_SPACES = 'chatspaces'
 CHAT_SPACES_ADMIN = 'chatspacesadmin'
 CHAT_SPACES_DELETE = 'chatspacesdelete'
@@ -229,6 +230,7 @@ _INFO = {
   CHAT_MEMBERSHIPS: {'name': 'Chat API - Memberships', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},
   CHAT_MEMBERSHIPS_ADMIN: {'name': 'Chat API - Memberships Admin', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},
   CHAT_MESSAGES: {'name': 'Chat API - Messages', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},
+  CHAT_SECTIONS: {'name': 'Chat API - Users Sections', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},
   CHAT_SPACES: {'name': 'Chat API - Spaces', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},
   CHAT_SPACES_ADMIN: {'name': 'Chat API - Spaces Admin', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},
   CHAT_SPACES_DELETE: {'name': 'Chat API - Spaces Delete', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},
@@ -594,6 +596,10 @@ _SVCACCT_SCOPES = [
    'api': CHAT_MESSAGES,
    'subscopes': READONLY,
    'scope': 'https://www.googleapis.com/auth/chat.messages'},
+  {'name': 'Chat API - Users Sections',
+   'api': CHAT_SECTIONS,
+   'subscopes': READONLY,
+   'scope': 'https://www.googleapis.com/auth/chat.users.sections'},
   {'name': 'Chat API - Spaces',
    'api': CHAT_SPACES,
    'subscopes': READONLY,

@@ -386,6 +386,8 @@ If an item contains spaces, it should be surrounded by ".
 <ChatEmoji> ::= emojiname <ChatEmojiName> | customemojis/<String>
 <ChatMember> ::= spaces/<String>/members/<String>
 <ChatMessage> ::= spaces/<String>/messages/<String>
+<ChatSection> ::= users/<String>/sections/<String> | sections/<String> | section <String>
+<ChatSectionItem> ::= users/<String>/sections/<String>/items/<String> | sections/<String>/items/<String>
 <ChatSpace> ::= spaces/<String> | space <String> | space spaces/<String>
 <ChatThread> ::= spaces/<String>/threads/<String>
 <ChromeProfilePermanentID> ::= <String>
@@ -1953,7 +1955,7 @@ gam calendar|calendars <CalendarEntity> show events [<EventEntity>] <EventDispla
         [fields <EventFieldNameList>] [showdayofweek]
         [countsonly|formatjson]
 gam calendar|calendars <CalendarEntity> print events [<EventEntity>] <EventDisplayProperty>*
-        [fields <EventFieldNameList>] [showdayofweek]
+        [fields <EventFieldNameList>] [showdayofweek] [attendeeslist]
         (addcsvdata <FieldName> <String>)*
         [eventrowfilter]
         [countsonly|(formatjson [quotechar <Character>])] [todrive <ToDriveAttribute>*]
@@ -2469,10 +2471,14 @@ gam <CrOSTypeEntity> update action <CrOSAction> [acknowledge_device_touch_requir
         wipe_users|
         take_a_screenshot
 
-gam issuecommand cros <CrOSEntity> command <CrOSCommand> [times_to_check_status <Integer>] [doit]
-gam <CrOSTypeEntity> issuecommand command <CrOSCommand> [times_to_check_status <Integer>] [doit]
-gam getcommand cros <CrOSEntity> commandid <CommandID> [times_to_check_status <Integer>]
-gam <CrOSTypeEntity> getcommand commandid <CommandID> [times_to_check_status <Integer>]
+gam issuecommand cros <CrOSEntity> command <CrOSCommand>
+        [times_to_check_status <Integer>] [csv] [doit]
+gam <CrOSTypeEntity> issuecommand command <CrOSCommand>
+        [times_to_check_status <Integer>] [csv] [doit]
+gam getcommand cros <CrOSEntity> commandid <CommandID>
+        [times_to_check_status <Integer>] [csv]
+gam <CrOSTypeEntity> getcommand commandid <CommandID>
+        [times_to_check_status <Integer>] [csv]
 
 <CrOSAttribute> ::=
         (asset|assetid|tag <String>)|
@@ -3989,7 +3995,7 @@ gam info group|groups <GroupEntity>
         [basic] <GroupFieldName>* [fields <GroupFieldNameList>] [nodeprecated]
         [ciallfields|(cifields <CIGroupFieldNameList>)]
         [members] [managers] [owners]
-        [internal] [internaldomains <DomainNameList>] [external]
+        [internal] [internaldomains all|primary|<DomainNameList>] [external]
         [notsuspended|suspended] [notarchived|archived]
         [types <GroupMemberTypeList>]
         [memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
@@ -4007,7 +4013,7 @@ gam print groups [todrive <ToDriveAttribute>*]
         [nodeprecated]
         [roles <GroupRoleList>]
         [members|memberscount] [managers|managerscount] [owners|ownerscount] [totalcount] [countsonly]
-        [internal] [internaldomains <DomainNameList>] [external]
+        [internal] [internaldomains all|primary|<DomainNameList>] [external]
         [includederivedmembership]
         [notsuspended|suspended] [notarchived|archived]
         [types <GroupMemberTypeList>]
@@ -4044,7 +4050,8 @@ gam print group-members [todrive <ToDriveAttribute>*]
         [descriptionmatchpattern [not] <REMatchPattern>]
         [admincreatedmatch <Boolean>]
         [roles <GroupRoleList>] [members] [managers] [owners]
-        [internal] [internaldomains <DomainNameList>] [external]
+        [internal] [internaldomains all|primary|<DomainNameList>] [external]
+        [showallowexternal [<Boolean>]] [verifyallowexternal [<Boolean>]]
         [membernames] [showdeliverysettings]
         <MembersFieldName>* [fields <MembersFieldNameList>]
         [notsuspended|suspended] [notarchived|archived]
@@ -4057,7 +4064,7 @@ gam print group-members [todrive <ToDriveAttribute>*]
         [unknownname <String>] [cachememberinfo [Boolean]]
         (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
         [formatjson [quotechar <Character>]]
-`gam show group-members
+gam show group-members
         [([domain|domains <DomainNameEntity>] ([member|showownedby <EmailItem>]|[(query <QueryGroup>)|(queries <QueryGroupList>)]))|
          (group|group_ns|group_susp <GroupItem>)|
          (select <GroupEntity>)]
@@ -4065,7 +4072,7 @@ gam print group-members [todrive <ToDriveAttribute>*]
         [descriptionmatchpattern [not] <REMatchPattern>]
         [admincreatedmatch <Boolean>]
         [roles <GroupRoleList>] [members] [managers] [owners] [depth <Number>]
-        [internal] [internaldomains <DomainNameList>] [external]
+        [internal] [internaldomains all|primary|<DomainNameList>] [external]
         [notsuspended|suspended] [notarchived|archived]
         [types <GroupMemberTypeList>]
         [memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
@@ -4133,7 +4140,7 @@ gam info cigroups <GroupEntity>
         [nosecurity|nosecuritysettings]
         [allfields|<CIGroupFieldName>*|(fields <CIGroupFieldNameList>)]
         [roles <GroupRoleList>] [members] [managers] [owners]
-        [internal] [internaldomains <DomainNameList>] [external]
+        [internal] [internaldomains all|primary|<DomainNameList>] [external]
         [types <CIGroupMemberTypeList>]
         [memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
         [formatjson]
@@ -4145,7 +4152,7 @@ gam print cigroups [todrive <ToDriveAttribute>*]
         [basic|allfields|(<CIGroupFieldName>* [fields <CIGroupFieldNameList>])]
         [roles <GroupRoleList>] [memberrestrictions]
         [members|memberscount] [managers|managerscount] [owners|ownerscount] [totalcount] [countsonly]
-        [internal] [internaldomains <DomainNameList>] [external]
+        [internal] [internaldomains all|primary|<DomainNameList>] [external]
         [types <CIGroupMemberTypeList>]
         [memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
         [convertcrnl] [delimiter <Character>]
@@ -4173,6 +4180,8 @@ gam print cigroup-members [todrive <ToDriveAttribute>*]
         [emailmatchpattern [not] <REMatchPattern>] [namematchpattern [not] <REMatchPattern>]
         [descriptionmatchpattern [not] <REMatchPattern>]
         [roles <GroupRoleList>] [members] [managers] [owners]
+        [internal] [internaldomains all|primary|<DomainNameList>] [external]
+        [showallowexternal [<Boolean>]] [verifyallowexternal [<Boolean>]]
         [types <CIGroupMemberTypeList>]
         [memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
         <CIGroupMembersFieldName>* [fields <CIGroupMembersFieldNameList>]
@@ -4186,6 +4195,7 @@ gam show cigroup-members
         [emailmatchpattern [not] <REMatchPattern>] [namematchpattern [not] <REMatchPattern>]
         [descriptionmatchpattern [not] <REMatchPattern>]
         [roles <GroupRoleList>] [members] [managers] [owners]
+        [internal] [internaldomains all|primary|<DomainNameList>] [external]
         [types <CIGroupMemberTypeList>]
         [memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
         [minimal|basic|full]
@@ -6358,7 +6368,7 @@ gam <UserTypeEntity> show events <UserCalendarEntity> [<EventEntity>] <EventDisp
         [fields <EventFieldNameList>] [showdayofweek]
         [countsonly|formatjson]
 gam <UserTypeEntity> print events <UserCalendarEntity> [<EventEntity>] <EventDisplayProperty>*
-        [fields <EventFieldNameList>] [showdayofweek]
+        [fields <EventFieldNameList>] [showdayofweek] [attendeeslist]
         [eventrowfilter]]
         [countsonly|(formatjson [quotechar <Character>])] [todrive <ToDriveAttribute>*]
 
@@ -6541,6 +6551,24 @@ gam <UserItem> print chatspaces asadmin [todrive <ToDriveAttribute>*]
         [query <String>] [querytime<String> <Time>]
         [orderby <ChatSpaceAdminOrderByFieldName> [ascending|descending]]
         [fields <ChatSpaceFieldNameList>] [showaccessssettings]
+        [formatjson [quotechar <Character>]]
+
+gam <UserTypeEntity> create chatsection
+        displayname <String>
+        [formatjson|returnidonly]
+gam <UserTypeEntity> update chatsection <ChatSection>
+        [displayname <String>]
+        [(sortorder <Integer>)|(position start|end)]
+        [formatjson]
+gam <UserTypeEntity> delete chatsection <ChatSection>
+gam <UserTypeEntity> show chatsections
+        [formatjson]
+gam <UserTypeEntity> print chatsections [todrive <ToDriveAttribute>*]
+        [formatjson [quotechar <Character>]]
+gam <UserTypeEntity> move chatsectionitem <ChatSectionItem> to <ChatSection>
+gam <UserTypeEntity> show chatsectionitems <ChatSection>
+        [formatjson]
+gam <UserTypeEntity> print chatsectionitems  <ChatSection> [todrive <ToDriveAttribute>*]
         [formatjson [quotechar <Character>]]
 
 gam <UserTypeEntity> create chatmember <ChatSpace>
@@ -6853,7 +6881,7 @@ gam <UserTypeEntity> copy drivefile <DriveFileEntity>
         <DriveFileCopyAttribute>*
         [skipids <DriveFileEntity>]
         [copysubfiles [<Boolean>]] [filenamematchpattern <REMatchPattern>]
-             [filemimetype [not] <MimeTypeList>]
+             [filemimetype [not] <MimeTypeList>] [filemimetype category <MimeTypeNameList>]
         [copysubfilesownedby
             any|me|others|
             users <EmailAddressList>|
@@ -7475,11 +7503,11 @@ gam <UserTypeEntity> show filecounts
 
 gam <UserTypeEntity> print filesharecounts [todrive <ToDriveAttribute>*]
         [excludetrashed]
-        [internaldomains <DomainNameList>]
+        [internaldomains all|primary|<DomainNameList>]
         [summary none|only|plus] [summaryuser <String>]
 gam <UserTypeEntity> show filesharecounts
         [excludetrashed]
-        [internaldomains <DomainNameList>]
+        [internaldomains all|primary|<DomainNameList>]
         [summary none|only|plus] [summaryuser <String>]
 
 <FileTreeFieldName> ::=

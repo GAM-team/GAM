@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2025 Ross Scroggs All Rights Reserved.
+# Copyright (C) 2026 Ross Scroggs All Rights Reserved.
 #
 # All Rights Reserved.
 #
@@ -751,6 +751,10 @@ class GamCLArgs():
   ARG_CHATMEMBERS = 'chatmembers'
   ARG_CHATMESSAGE = 'chatmessage'
   ARG_CHATMESSAGES = 'chatmessages'
+  ARG_CHATSECTION = 'chatsection'
+  ARG_CHATSECTIONS = 'chatsections'
+  ARG_CHATSECTIONITEM = 'chatsectionitem'
+  ARG_CHATSECTIONITEMS = 'chatsectionitems'
   ARG_CHATSPACE = 'chatspace'
   ARG_CHATSPACES = 'chatspaces'
   ARG_CHATSPACEDM = 'chatspacedm'
@@ -1157,6 +1161,7 @@ class GamCLArgs():
   OB_CHAT_MEMBER = 'ChatMember'
   OB_CHAT_MESSAGE = 'ChatMessage'
   OB_CHAT_MESSAGE_ID = 'ChatMessageID'
+  OB_CHAT_SECTION = 'ChatSection'
   OB_CHAT_SPACE = 'ChatSpace'
   OB_CHAT_SPACE_LIST = 'ChatSpaceList'
   OB_CHAT_THREAD = 'ChatThread'
