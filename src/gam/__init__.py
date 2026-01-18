@@ -27201,7 +27201,9 @@ def printShowChatSectionItems(users):
         space = callGAPI(chatsp.spaces(), 'get',
                          throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                          name=sectionItem['space'], fields='displayName,spaceType')
-        sectionItem['spaceDetails'] = {'displayName': space['displayName'], 'spaceType': space['spaceType']}
+        sectionItem['spaceDetails'] = {'spaceType': space['spaceType']}
+        if 'displayName' in space:
+          sectionItem['spaceDetails']['displayName'] = space['displayName']
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.internalError, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
       continue
