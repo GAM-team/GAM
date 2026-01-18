@@ -595,7 +595,7 @@ By default, Gam displays event details, use `countsonly` to display only the num
 
 ```
 gam calendar <CalendarEntity> print events [<EventEntity>] <EventDisplayProperty>*
-        [fields <EventFieldNameList>] [showdayofweek]
+        [fields <EventFieldNameList>] [showdayofweek] [attendeeslist]
         (addcsvdata <FieldName> <String>)*
         [eventrowfilter]
         [countsonly|(formatjson [quotechar <Character>])] [todrive <ToDriveAttribute>*]
@@ -608,6 +608,10 @@ option `singleevents` to display all instances of a recurring event.
 `<EventDisplayProperty> orderby starttime` is only valid with `<EventSelectProperty> singleevents`.
 
 `showdayofweek` displays columns `start.dayOfWeek` and `end.dayOfWeek` when event start and end times are displayed.
+
+By default, each attendee is displayed in a separate column; `attendeeslist` causes GAM to display
+the attendee email addresses in a single column `attendeesList`; no attendee details are displayed.
+The email addresses are separated by `csv_output_field_delimiter` from `gam.cfg`.
 
 Add additional columns of data from the command line to the output after the calendarId.
 * `addcsvdata <FieldName> <String>`

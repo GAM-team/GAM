@@ -283,6 +283,8 @@
 <ChatEmoji> ::= emojiname <ChatEmojiName> | customemojis/<String>
 <ChatMember> ::= spaces/<String>/members/<String>
 <ChatMessage> ::= spaces/<String>/messages/<String>
+<ChatSection> ::= users/<String>/sections/<String> | sections/<String> | section <String>
+<ChatSectionItem> ::= users/<String>/sections/<String>/items/<String> | sections/<String>/items/<String>
 <ChatSpace> ::= spaces/<String> | space <String> | space spaces/<String>
 <ChatThread> ::= spaces/<String>/threads/<String>
 <ChromeProfilePermanentID> ::= <String>

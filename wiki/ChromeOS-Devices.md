@@ -445,12 +445,19 @@ is configurable from 0 to some large number. If the status reaches `EXPIRED`, `C
         wipe_users|
         take_a_screenshot
 
-gam <CrOSTypeEntity> issuecommand command <CrOSCommand> [times_to_check_status <Integer>] [doit]
+gam <CrOSTypeEntity> issuecommand command <CrOSCommand>
+        [times_to_check_status <Integer>] [csv] [doit]
 ```
+By default, when a Chrome command is issued, GAM outputs details of the command status as indented keywords and values.
+* `csv` - Output the details in CSV format.
+
 If the final status is not reached before GAM exits, you can issue the following commands to continue checking the status.
 ```
-gam <CrOSTypeEntity> getcommand commandid <CommandID> [times_to_check_status <Integer>]
+gam <CrOSTypeEntity> getcommand commandid <CommandID>
+        [times_to_check_status <Integer>] [csv]
 ```
+By default, when a Chrome command status is read, GAM outputs details of the command status as indented keywords and values.
+* `csv` - Output the details in CSV format.
 
 ### Action Examples
 Remove user profile data from the device; the device will remain enrolled and connected.

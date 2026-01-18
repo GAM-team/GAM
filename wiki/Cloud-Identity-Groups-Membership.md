@@ -13,7 +13,7 @@
 - [Display user group member options](#display-user-group-member-options)
 - [Display group membership in CSV format](#display-group-membership-in-csv-format)
 - [Display group membership in hierarchical format](#display-group-membership-in-hierarchical-format)
-
+- [Display external users in groups with allowExternalMembers=False](#Display-external-users-in-groups-with-allowExternalMembers-False)
 ## API documentation
 * [Cloud Identity Groups Overview](https://cloud.google.com/identity/docs/groups)
 * [Cloud Identity Groups API - Groups](https://cloud.google.com/identity/docs/reference/rest/v1/groups)
@@ -349,7 +349,8 @@ gam print cigroup-members [todrive <ToDriveAttribute>*]
         [emailmatchpattern [not] <REMatchPattern>] [namematchpattern [not] <REMatchPattern>]
         [descriptionmatchpattern [not] <REMatchPattern>]
         [roles <GroupRoleList>] [members] [managers] [owners]
-        [internal] [internaldomains <DomainNameList>] [external]
+        [internal] [internaldomains all|primary|<DomainNameList>] [external]
+        [verifyallowexternal [<Boolean>]]
         [types <CIGroupMemberTypeList>]
         <CIGroupMembersFieldName>* [fields <CIGroupMembersFieldNameList>]
         [minimal|basic|full]
@@ -381,11 +382,23 @@ By default, all members, managers and owners in the group are displayed; these o
 By default, all types of members (cbcmbrowser, chromeosdevice, customer, group, serviceaccount, user) in the group are displayed; this option modifies that behavior:
 * `types <CIGroupMemberTypeList>` - Display specified types
 
+Which domains are considered internal domains:
+  * `internaldomains all` - All of your workspace domains; this is the default
+  * `internaldomains primary` - Your workspace primary domain
+  * `internaldomains <DomainNameList>` - A list of domain names
+
 By default, when listing group members, GAM does not take the domain of the member into account.
-* `internal internaldomains <DomainNameList>` - Display members whose domain is in `<DomainNameList>`
-* `external internaldomains <DomainNameList>` - Display members whose domain is not in `<DomainNameList>`
-* `internal external internaldomains <DomainNameList>` - Display all members, indicate their category: internal or external
-* `internaldomains <DomainNameList>` - Defaults to value of `domain` in `gam.cfg`
+* `internal` - Display members whose domain matches a value in `internaldomains`
+* `external` - Display members whose domain does not match value in `internaldomains`
+* `internal external` - Display all members, indicate their category: `internal` or `external`
+
+Members without an email address, e.g. `customer`, `chrome-os-device` and `cbcm-browser` are considered `internal`.
+
+When the `internal` or `external` options are specified, GAM adds the  column `allowExternalMembers`
+that shows that setting for the group and adds the column `category` that shows whether the member
+is `external` or `internal`.
+
+The option `verifyallowexternal` causes GAM to only display `external` users in groups with `allowExternalMembers=False'.
 
 By default, members that are groups are displayed as a single entry of type GROUP; this option recursively expands group members to display their user members.
 * `recursive` - Recursively expand group members
@@ -442,9 +455,10 @@ gam show cigroup-members
         [emailmatchpattern [not] <REMatchPattern>] [namematchpattern [not] <REMatchPattern>]
         [descriptionmatchpattern [not] <REMatchPattern>]
         [roles <GroupRoleList>] [members] [managers] [owners]
+        [internal] [internaldomains all|primary|<DomainNameList>] [external]
         [types <CIGroupMemberTypeList>]
-        [memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
         [minimal|basic|full]
+        [memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
         [(depth <Number>) | includederivedmembership]
 ```
 By default, the group membership of all groups in the account are displayed, these options allow selection of subsets of groups:
@@ -469,6 +483,18 @@ By default, all members, managers and owners in the group are displayed; these o
 
 By default, all types of members (cbcmbrowser, chromeosdevice, customer, group, serviceaccount, user) in the group are displayed; this option modifies that behavior:
 * `types <CIGroupMemberTypeList>` - Display specified types
+
+Which domains are considered internal domains:
+  * `internaldomains all` - All of your workspace domains; this is the default
+  * `internaldomains primary` - Your workspace primary domain
+  * `internaldomains <DomainNameList>` - A list of domain names
+
+By default, when listing group members, GAM does not take the domain of the member into account.
+* `internal` - Display members whose domain matches a value in `internaldomains`
+* `external` - Display members whose domain does not match value in `internaldomains`
+* `internal external` - Display all members, indicate their category: `internal` or `external`
+
+Members without an email address, e.g. `customer`, `chrome-os-device` and `cbcm-browser` are considered `internal`.
 
 Members that have met the above qualifications to be displayed can be further qualifed by their email address.
 * `memberemaildisplaypattern <REMatchPattern>` - Members with email addresses that match `<REMatchPattern>` will be displayed; others will not be displayed
@@ -507,3 +533,7 @@ To show the structure of all groups you can do the following; it will be time co
 ```
 gam redirect stdout ./groups.txt show cigroup-members types group
 ```
+
+## Display external users in groups with allowExternalMembers=False
+When printing  group membership, the option `verifyallowexternal` causes
+GAM to only display external users in groups with `allowExternalMembers=False'.

@@ -880,11 +880,11 @@ Print or show the share type counts of a user's files. These fields are displaye
 ```
 gam <UserTypeEntity> print filesharecounts [todrive <ToDriveAttribute>*]
         [excludetrashed]
-        [internaldomains <DomainNameList>]
+        [internaldomains all|primary|<DomainNameList>]
         [summary none|only|plus] [summaryuser <String>]
 gam <UserTypeEntity> show filesharecounts
         [excludetrashed]
-        [internaldomains <DomainNameList>]
+        [internaldomains all|primary|<DomainNameList>]
         [summary none|only|plus] [summaryuser <String>]
 ```
 
@@ -892,8 +892,10 @@ By default, print|show filesharecounts displays share type counts of all files o
 
 Use the `excludetrashed` option to suppress counting files in the trash.
 
-By default, `internaldomains <DomainNameList>` defaults to your primary domain; if you have other domains that
-you consider internal, list all of them in `<DomainNameList>`.
+Which domains are considered internal domains:
+  * `internaldomains all` - All of your workspace domains; this is the default
+  * `internaldomains primary` - Your workspace primary domain
+  * `internaldomains <DomainNameList>` - A list of domain names
 
 By default, share type counts for individual users are displayed; the `summary` option offers alternatives
 that can display a summarization of share type counts across all users specified in the command.

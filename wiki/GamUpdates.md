@@ -10,6 +10,43 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.32.00
+
+Added option `verifyallowexternal` to `gam print cigroup-members|group-members` that causes
+GAM to only display external members in groups with `allowExternalMembers=False'.
+This option can be used to help verify that internal-only groups don't have external members.
+
+Updated option `internaldomains` for the following commands:
+```
+gam info|print groups
+gam print|show group-members
+gam info|print cigroups
+gam print|show cigroup-members
+gam <UserTypeEntity> print|show filesharecounts
+```
+Which domains are considered internal domains:
+  * `internaldomains all` - All of your workspace domains; this is the default
+  * `internaldomains primary` - Your workspace primary domain
+  * `internaldomains <DomainNameList>` - A list of domain names
+
+Added option `csv` to `gam <CrOSTypeEntity> issuecommand command <CrOSCommand>`
+and `gam <CrOSTypeEntity> getcommand commandid <CommandID>` so that command details are displayed in CSV format.
+This can be used to log commands issued to devices and then monitor the results.
+
+Added option `filemimetype category <MimeTypeNameList>` to `gam <UserTypeEntity> copy drivefile` to support
+copying of files based on their MimeType category.
+
+Added option `attendeeslist` to `gam calendars <CalendarEntity> print events` and `gam <UserTypeEntity> print events`
+that causes GAM to display the attendee email addresses in a single column `attendeesList`; no attendee details
+are displayed. The email addresses are separated by `csv_output_field_delimiter` from `gam.cfg`.
+
+Fixed bug in `gam sendemail ... replyto <EmailAddress>` that caused a message delivery error if
+`<EmailAddress>` did not include a domain name.
+
+Added support for users's chat sections.
+* See: https://github.com/GAM-team/GAM/wiki/Users-Chat#manage-chat-users-sections
+* This is in Deveoper Preview; you must have a `developer_preview_api_key` in `gam.cfg` to use these commands.
+
 ### 7.31.06
 
 Added option `batchsize <Integer>` to `gam calendar <CalendarEntity> delete|purge events` and
@@ -2925,7 +2962,7 @@ Added option `showmimetype category <MimeTypeNameList>` to `gam <UserTypeEntity>
 <MimeTypeName> ::= application|audio|font|image|message|model|multipart|text|video
 <MimeTypeNameList> ::= "<MimeTypeName>(,<MimeTypeName>)*"
 
-gam user user@domain.com print filelist fields id,name,mimetype showmimetype prefixes audio,video
+gam user user@domain.com print filelist fields id,name,mimetype showmimetype category audio,video
 ```
 
 ### 6.71.11

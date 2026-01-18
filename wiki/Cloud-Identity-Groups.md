@@ -267,7 +267,7 @@ gam info cigroups <GroupEntity>
         [nosecurity|nosecuritysettings]
         [allfields|<CIGroupFieldName>*|(fields <CIGroupFieldNameList>)]
         [roles <GroupRoleList>] [members] [managers] [owners]
-        [internal] [internaldomains <DomainNameList>] [external]
+        [internal] [internaldomains all|primary|<DomainNameList>] [external]
         [types <CIGroupMemberTypeList>]
         [memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
         [formatjson]
@@ -283,13 +283,17 @@ By default, all direct members, managers and owners in the group are displayed; 
 By default, when displaying members from a group, all types of members (customer, group, serviceaccount, user) in the group are displayed; this option modifies that behavior:
 * `types <CIGroupMemberTypeList>` - Display specified types
 
-By default, when listing group members, GAM does not take the domain of the member into account.
-* `internal internaldomains <DomainNameList>` - Display members whose domain is in `<DomainNameList>`
-* `external internaldomains <DomainNameList>` - Display members whose domain is not in `<DomainNameList>`
-* `internal external internaldomains <DomainNameList>` - Display all members, indicate their category: internal or external
-* `internaldomains <DomainNameList>` - Defaults to value of `domain` in `gam.cfg`
+Which domains are considered internal domains:
+  * `internaldomains all` - All of your workspace domains; this is the default
+  * `internaldomains primary` - Your workspace primary domain
+  * `internaldomains <DomainNameList>` - A list of domain names
 
-Members without an email address, e.g. `customer`, `chrome-os-device` and `cbcm-browser` are considered internal.
+By default, when listing group members, GAM does not take the domain of the member into account.
+* `internal` - Display members whose domain matches a value in `internaldomains`
+* `external` - Display members whose domain does not match value in `internaldomains`
+* `internal external` - Display all members, indicate their category: `internal` or `external`
+
+Members without an email address, e.g. `customer`, `chrome-os-device` and `cbcm-browser` are considered `internal`.
 
 Members that have met the above qualifications to be displayed can be further qualifed by their email address.
 * `memberemaildisplaypattern <REMatchPattern>` - Members with email addresses that match `<REMatchPattern>` will be displayed; others will not be displayed
@@ -317,7 +321,7 @@ gam print cigroups [todrive <ToDriveAttribute>*]
         [descriptionmatchpattern [not] <REMatchPattern>]
         [basic|allfields|(<CIGroupFieldName>* [fields <CIGroupFieldNameList>])]
         [roles <GroupRoleList>] [memberrestrictions]
-        [internal] [internaldomains <DomainNameList>] [external]
+        [internal] [internaldomains all|primary|<DomainNameList>] [external]
         [members|memberscount] [managers|managerscount] [owners|ownerscount] [totalcount] [countsonly]
         [types <CIGroupMemberTypeList>]
         [memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
@@ -374,13 +378,20 @@ By default, no members, managers or owners in the group are displayed; these opt
 By default, when displaying members from a group, all types of members (customer, group, serviceaccount, user) in the group are displayed; this option modifies that behavior:
 * `types <CIGroupMemberTypeList>` - Display specified types
 
-By default, when listing group members, GAM does not take the domain of the member into account.
-* `internal internaldomains <DomainNameList>` - Display members whose domain is in `<DomainNameList>`
-* `external internaldomains <DomainNameList>` - Display members whose domain is not in `<DomainNameList>`
-* `internal external internaldomains <DomainNameList>` - Display all members, indicate their category: internal or external
-* `internaldomains <DomainNameList>` - Defaults to value of `domain` in `gam.cfg`
+Which domains are considered internal domains:
+  * `internaldomains all` - All of your workspace domains; this is the default
+  * `internaldomains primary` - Your workspace primary domain
+  * `internaldomains <DomainNameList>` - A list of domain names
 
-Members without an email address, e.g. `customer`, `chrome-os-device` and `cbcm-browser` are considered internal.
+By default, when listing group members, GAM does not take the domain of the member into account.
+* `internal` - Display members whose domain matches a value in `internaldomains`
+* `external` - Display members whose domain does not match value in `internaldomains`
+* `internal external` - Display all members, indicate their category: `internal` or `external`
+
+When the `internal` or `external` options are specified, GAM adds the  column `allowExternalMembers`
+that shows that setting for the group.
+
+Members without an email address, e.g. `customer`, `chrome-os-device` and `cbcm-browser` are considered `internal`.
 
 Members that have met the above qualifications to be displayed can be further qualifed by their email address.
 * `memberemaildisplaypattern <REMatchPattern>` - Members with email addresses that match `<REMatchPattern>` will be displayed; others will not be displayed

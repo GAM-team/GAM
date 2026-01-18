@@ -42,6 +42,7 @@
 <RESubstitution> ::= <String>>
 
 <MimeTypeName> ::= application|audio|font|image|message|model|multipart|text|video
+<MimeTypeNameList> ::= "<MimeTypeName>(,<MimeTypeName>)*"
 <MimeType> ::= <MimeTypeName>/<String>
 <MimeTypeList> ::= "<MimeType>(,<MimeType>)*"
 
@@ -103,7 +104,7 @@ gam <UserTypeEntity> copy drivefile <DriveFileEntity>
         <DriveFileCopyAttribute>*
         [skipids <DriveFileEntity>]
         [copysubfiles [<Boolean>]] [filenamematchpattern <REMatchPattern>]
-             [filemimetype [not] <MimeTypeList>]
+             [filemimetype [not] <MimeTypeList>] [filemimetype category <MimeTypeNameList>]
         [copysubfilesownedby
             any|me|others|
             users <EmailAddressList>|
@@ -189,6 +190,7 @@ By default, GAM displays a message referencing files and folders not selected fo
 You can specify restrictions on the MIME types to be copied.
 * `filemimetypes <MimeTypeList>` - Copy sub files with the specified MIME types
 * `filemimetypes not <MimeTypeList>` - Copy sub files with MIME types other than those specified 
+* `filemimetypes category <MimeTypeNameList>` - Copy sub files with the specified MIME type categories
 
 ### By default, when copying sub files, folders and shortcuts, all are copied.
 You can specify `<REMatchPattern>` patterns that limit the items copied based on their name.

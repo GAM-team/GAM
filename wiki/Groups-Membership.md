@@ -615,7 +615,7 @@ gam print group-members [todrive <ToDriveAttribute>*]
         [descriptionmatchpattern [not] <REMatchPattern>]
         [admincreatedmatch <Boolean>]
         [roles <GroupRoleList>] [members] [managers] [owners]
-        [internal] [internaldomains <DomainNameList>] [external]
+        [internal] [internaldomains all|primary|<DomainNameList>] [external]
         [membernames] [showdeliverysettings]
         <MembersFieldName>* [fields <MembersFieldNameList>]
         [notsuspended|suspended] [notarchived|archived]
@@ -682,13 +682,21 @@ By default, when displaying members from a group, all members, whether suspended
 * `notsuspended archived` - Only include archived members, this is not common but allows creating groups that allow easy identification of archived users
 * `suspended notarchived` - Only include suspended members, this is not common but allows creating groups that allow easy identification of suspended users
 
-By default, when listing group members, GAM does not take the domain of the member into account.
-* `internal internaldomains <DomainNameList>` - Display members whose domain is in `<DomainNameList>`
-* `external internaldomains <DomainNameList>` - Display members whose domain is not in `<DomainNameList>`
-* `internal external internaldomains <DomainNameList>` - Display all members, indicate their category: internal or external
-* `internaldomains <DomainNameList>` - Defaults to value of `domain` in `gam.cfg`
+Which domains are considered internal domains:
+  * `internaldomains all` - All of your workspace domains; this is the default
+  * `internaldomains primary` - Your workspace primary domain
+  * `internaldomains <DomainNameList>` - A list of domain names
 
-Members without an email address, e.g. `customer`, are considered internal.
+By default, when listing group members, GAM does not take the domain of the member into account.
+* `internal` - Display members whose domain matches a value in `internaldomains`
+* `external` - Display members whose domain does not match value in `internaldomains`
+* `internal external` - Display all members, indicate their category: `internal` or `external`
+
+Members without an email address, e.g. `customer`, are considered `internal`.
+
+When the `internal` or `external` options are specified, GAM adds the  column `allowExternalMembers`
+that shows that setting for the group and adds the column `category` that shows whether the member
+is `external` or `internal`.
 
 Members that have met the above qualifications to be displayed can be further qualifed by their email address.
 * `memberemaildisplaypattern <REMatchPattern>` - Members with email addresses that match `<REMatchPattern>` will be displayed; others will not be displayed
@@ -756,7 +764,7 @@ gam show group-members
         [descriptionmatchpattern [not] <REMatchPattern>]
         [admincreatedmatch <Boolean>]
         [roles <GroupRoleList>] [members] [managers] [owners] [depth <Number>]
-        [internal] [internaldomains <DomainNameList>] [external]
+        [internal] [internaldomains all|primary|<DomainNameList>] [external]
         [notsuspended|suspended] [notarchived|archived]
         [types <GroupMemberTypeList>]
         [memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
@@ -809,232 +817,17 @@ By default, when displaying members from a group, all members, whether suspended
 By default, all types of members (customer, group, user) in the group are displayed; this option modifies that behavior:
 * `types <GroupMemberTypeList>` - Display specified types
 
-By default, when listing group members, GAM does not take the domain of the member into account.
-* `internal internaldomains <DomainNameList>` - Display members whose domain is in `<DomainNameList>`
-* `external internaldomains <DomainNameList>` - Display members whose domain is not in `<DomainNameList>`
-* `internal external internaldomains <DomainNameList>` - Display all members, indicate their category: internal or external
-* `internaldomains <DomainNameList>` - Defaults to value of `domain` in `gam.cfg`
-
-Members without an email address, e.g. `customer`, are considered internal.
-
-Members that have met the above qualifications to be displayed can be further qualifed by their email address.
-* `memberemaildisplaypattern <REMatchPattern>` - Members with email addresses that match `<REMatchPattern>` will be displayed; others will not be displayed
-* `memberemailskippattern <REMatchPattern>` - Members with email addresses that match `<REMatchPattern>` will not be displayed; others will be displayed
-
-By default, members of type GROUP are recursively expanded to show their constituent members. (Members of
-type CUSTOMER are not expanded.) The `depth <Number>` argument controls the depth to which nested groups are displayed.
-* `depth -1` - all groups in the selected group and below are displayed; this is the default.
-* `depth 0` - the groups within a selected group are displayed, no descendants are displayed.
-* `depth N` - the groups within the selected group and those groups N levels below the selected group are displayed.
-
-The `includederivedmembership` option causes the API to expand type GROUP and type CUSTOMER
-members to display their constituent members while still displaying the original member.
-
-The options `types user` and `includederivedmembership types user` return the same list of users.
-The `includederivedmembership` option makes less API calls but doesn't show hierarchy.
-Expanding a member of type CUSTOMER may produce a large volume of data as it will display all users in your domain.
-
-### Display group structure
-To see a group's structure of nested groups use the `type group` option.
-```
-$ gam show group-members group testgroup5 types group
-Group: testgroup5@domain.com
-  MEMBER, GROUP, testgroup1@domain.com, ACTIVE
-    MEMBER, GROUP, testgroup2@domain.com, ACTIVE
-  MEMBER, GROUP, testgroup3@domain.com, ACTIVE
-    MEMBER, GROUP, testgroup2@domain.com, ACTIVE
-    MEMBER, GROUP, testgroup4@domain.com, ACTIVE
-```
-To show the structure of all groups you can do the following; it will be time consuming for a large number of groups.
-```
-gam redirect stdout ./groups.txt show group-members types group
-```
-
-### Examples
-#### Print a CSV of all members of a group regardless of role, all fields
-```
-gam print group-members <GroupEntity>
-```
-#### Print a CSV containing all managers emails
-```
-gam print group-members <GroupEntity> role manager fields email
-```
-#### Print a CSV output of all members and their emails only
-```
-gam print group-members <GroupEntity> role member fields email
-```
-#### Display group owners in your domain, but excluding groups where the email starts with a 4 digit code
-```
-gam print group-members domain <Your Domain> emailmatchpattern not '^1234.*' roles owners
-```
-
-
-These options further limit the list of groups selected above:
-* `emailmatchpattern <REMatchPattern>` - Limit display to groups whose email address matches `<REMatchPattern>`
-* `emailmatchpattern not <REMatchPattern>` - Limit display to groups whose email address does not match `<REMatchPattern>`
-* `namematchpattern <REMatchPattern>` - Limit display to groups whose name matches `<REMatchPattern>`
-* `namematchpattern not <REMatchPattern>` - Limit display to groups whose name does not match `<REMatchPattern>`
-* `descriptionmatchpattern <REMatchPattern>` - Limit display to groups whose description matches `<REMatchPattern>`
-* `descriptionmatchpattern not <REMatchPattern>` - Limit display to groups whose description does not match `<REMatchPattern>`
-* `admincreatedmatch True` - Limit display to groups created by administrators
-* `admincreatedmatch False` - Limit display to groups created by users
-
-By default, all members, managers and owners in the group are displayed; these options modify that behavior:
-* `roles <GroupRoleList>` - Display specified roles
-* `members` - Display members
-* `managers` - Display managers
-* `owners` - Display owners
-
-By default, all types of members (customer, group, user) in the group are displayed; this option modifies that behavior:
-* `types <GroupMemberTypeList>` - Display specified types
-
-By default, members that are groups are displayed as a single entry of type GROUP; this option recursively expands group members to display their user members.
-* `recursive` - Recursively expand group members
-
-When `recursive` is specified, the default is to only display type user members; this option modifies those behaviors:
-* `types <GroupMemberTypeList>` - Display specified types
-
-By default, when displaying members from a group, all members, whether suspended/archived or not, are included.
-* `notsuspended` - Display only non-suspended members
-* `suspended` - Display only suspended members
-* `notarchived` - Do not include archived members
-* `archived` - Only include archived members, this is not common but allows creating groups that allow easy identification of archived users
-* `notsuspended notarchived` - Do not include suspended and archived members
-* `suspended archived` - Include only suspended or archived members
-* `notsuspended archived` - Only include archived members, this is not common but allows creating groups that allow easy identification of archived users
-* `suspended notarchived` - Only include suspended members, this is not common but allows creating groups that allow easy identification of suspended users
+Which domains are considered internal domains:
+  * `internaldomains all` - All of your workspace domains; this is the default
+  * `internaldomains primary` - Your workspace primary domain
+  * `internaldomains <DomainNameList>` - A list of domain names
 
 By default, when listing group members, GAM does not take the domain of the member into account.
-* `internal internaldomains <DomainNameList>` - Display members whose domain is in `<DomainNameList>`
-* `external internaldomains <DomainNameList>` - Display members whose domain is not in `<DomainNameList>`
-* `internal external internaldomains <DomainNameList>` - Display all members, indicate their category: internal or external
-* `internaldomains <DomainNameList>` - Defaults to value of `domain` in `gam.cfg`
+* `internal` - Display members whose domain matches a value in `internaldomains`
+* `external` - Display members whose domain does not match value in `internaldomains`
+* `internal external` - Display all members, indicate their category: `internal` or `external`
 
-Members without an email address, e.g. `customer`, are considered internal.
-
-Members that have met the above qualifications to be displayed can be further qualifed by their email address.
-* `memberemaildisplaypattern <REMatchPattern>` - Members with email addresses that match `<REMatchPattern>` will be displayed; others will not be displayed
-* `memberemailskippattern <REMatchPattern>` - Members with email addresses that match `<REMatchPattern>` will not be displayed; others will be displayed
-
-By default, the ID, role, email address, type and status of each member are displayed along with the group email address;
-these options specify which fields to display:
-* `membernames` - Display members full name; an additional API call per member is required
-* `showdeliverysettings` - Display delivery settings; an additional API call per member is required
-* `<MembersFieldName>*` - Individual field names
-* `fields <MembersFieldNameList>` - A comma separated list of field names
-    * `delivery|deliverysettings` - Specify this field to get delivery information; an additional API call per member is required
-
-For members that are users, you can specify additional information to display; an additional API call per member is required
-* `userfields <UserFieldNameList>` - Display specific user fields
-* `allschemas|(schemas|custom|customschemas <SchemaNameList>)` - Display all or specific custom schema values
-
-The additional API calls can be reduced with the `cachememberinfo` option; a single API call is made for each user/group
-and the data is cached to eliminate to need to repeat the API call; this consumes more memory but dramatically reduces the number of API calls.
-
-If member names are requested, names are not available for users not in the domain; you can request that GAM use the People API to retrieve
-names for these users. Names are not retrieved in all cases and success is dependent on what user is used to perform the retrievals.
-* `peoplelookup` - Use the administrator named in oauth2.txt to perform the retrievals
-* `peoplelookupuser <EmailAddress>` - Use `<EmailAddress>` to perform the retrievals
-
-By default, when `membernames` is specified, GAM displays `Unknown` for members whose names can not be determined.
-Use `unknownname <String>` to specify an alternative value.
-
-By default, the group email address is always shown, you can suppress it with the `nogroupemail` option.
-
-The `recursive` option adds two columns, level and subgroup, to the output:
-* `level` - At what level of the expansion does the user appear; level 0 is the top level
-* `subgroup` - The group that contained the user
-
-Displaying membership of multiple groups or recursive expansion may result in multiple instances of the same user being displayed; these multiple instances can be reduced to one entry.
-* `noduplicates` - Reduce multiple instances of the same user to the first instance
-
-The `includederivedmembership` option is an alternative to `recursive`; it causes the API to expand type GROUP and type CUSTOMER
-members to display their constituent members while still displaying the original member.
-The API produces inconsistent results, use with caution.
-
-The options `recursive noduplicates` and `includederivedmembership types user noduplicates` return the same list of users.
-The `includederivedmembership` option makes less API calls but doesn't show level and subgroup information.
-Expanding a member of type CUSTOMER may produce a large volume of data as it will display all users in your domain.
-
-By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
-* `formatjson` - Display the fields in JSON format.
-
-By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
-the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
-When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
-The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
-`quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
-
-## Display group membership in hierarchical format
-```
-gam show group-members
-        [([domain|domains <DomainNameEntity>] ([member|showownedby <EmailItem>]|[(query <QueryGroup>)|(queries <QueryGroupList>)]))|
-         (group|group_ns|group_susp <GroupItem>)|
-         (select <GroupEntity>)]
-        [emailmatchpattern [not] <REMatchPattern>] [namematchpattern [not] <REMatchPattern>]
-        [descriptionmatchpattern [not] <REMatchPattern>]
-        [admincreatedmatch <Boolean>]
-        [roles <GroupRoleList>] [members] [managers] [owners] [depth <Number>]
-        [internal] [internaldomains <DomainNameList>] [external]
-        [notsuspended|suspended] [notarchived|archived]
-        [types <GroupMemberTypeList>]
-        [memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
-        [includederivedmembership]
-```
-By default, the group membership of all groups in the account are displayed, these options allow selection of subsets of groups:
-* `domain|domains <DomainNameEntity>` - Limit display to groups in the domains specified by `<DomainNameEntity>`
-  * You can predefine this list with the `print_agu_domains` variable in `gam.cfg`.
-* `member <EmailItem>` - Limit display to groups that contain `<EmailItem>` as a member; mutually exclusive with `query <QueryGroup>`
-* `showownedby <EmailItem>` - Limit display to groups that contain `<EmailItem>` as an owner; mutually exclusive with `query <QueryGroup>`
-* `(query <QueryGroup>)|(queries <QueryGroupList>)` - Limit groups to those that match a query; each query is run against each domain
-* `group <GroupItem>` - Limit display to the single group `<GroupItem>`
-* `group_ns <GroupItem>` - Limit display to the single group `<GroupItem>`, display non-suspended members
-* `group_susp <GroupItem>` - Limit display to the single group `<GroupItem>`, display suspended members
-* `select <GroupEntity>` - Limit display to the groups specified in `<GroupEntity>`
-* `showownedby <UserItem>` - Limit display to groups owned by `<UserItem>`
-
-When using `query <QueryGroup>` with the `name:{PREFIX}*` query, `PREFIX` must contain at least three characters.
-
-You can identify groups with the `All users in the organization` member with:
-* `query "memberKey=<CustomerID>"`
-* `member id:<CustomerID>`
-
-These options further limit the list of groups selected above:
-* `emailmatchpattern <REMatchPattern>` - Limit display to groups whose email address matches `<REMatchPattern>`
-* `emailmatchpattern not <REMatchPattern>` - Limit display to groups whose email address does not match `<REMatchPattern>`
-* `namematchpattern <REMatchPattern>` - Limit display to groups whose name matches `<REMatchPattern>`
-* `namematchpattern not <REMatchPattern>` - Limit display to groups whose name does not match `<REMatchPattern>`
-* `descriptionmatchpattern <REMatchPattern>` - Limit display to groups whose description matches `<REMatchPattern>`
-* `descriptionmatchpattern not <REMatchPattern>` - Limit display to groups whose description does not match `<REMatchPattern>`
-* `admincreatedmatch True` - Limit display to groups created by administrators
-* `admincreatedmatch False` - Limit display to groups created by users
-
-By default, all members, managers and owners in the group are displayed; these options modify that behavior:
-* `roles <GroupRoleList>` - Display specified roles
-* `members` - Display members
-* `managers` - Display managers
-* `owners` - Display owners
-
-By default, when displaying members from a group, all members, whether suspended/archived or not, are included.
-* `notsuspended` - Display only non-suspended members
-* `suspended` - Display only suspended members
-* `notarchived` - Do not include archived members
-* `archived` - Only include archived members, this is not common but allows creating groups that allow easy identification of archived users
-* `notsuspended notarchived` - Do not include suspended and archived members
-* `suspended archived` - Include only suspended or archived members
-* `notsuspended archived` - Only include archived members, this is not common but allows creating groups that allow easy identification of archived users
-* `suspended notarchived` - Only include suspended members, this is not common but allows creating groups that allow easy identification of suspended users
-
-By default, all types of members (customer, group, user) in the group are displayed; this option modifies that behavior:
-* `types <GroupMemberTypeList>` - Display specified types
-
-By default, when listing group members, GAM does not take the domain of the member into account.
-* `internal internaldomains <DomainNameList>` - Display members whose domain is in `<DomainNameList>`
-* `external internaldomains <DomainNameList>` - Display members whose domain is not in `<DomainNameList>`
-* `internal external internaldomains <DomainNameList>` - Display all members, indicate their category: internal or external
-* `internaldomains <DomainNameList>` - Defaults to value of `domain` in `gam.cfg`
-
-Members without an email address, e.g. `customer`, are considered internal.
+Members without an email address, e.g. `customer`, are considered `internal`.
 
 Members that have met the above qualifications to be displayed can be further qualifed by their email address.
 * `memberemaildisplaypattern <REMatchPattern>` - Members with email addresses that match `<REMatchPattern>` will be displayed; others will not be displayed
