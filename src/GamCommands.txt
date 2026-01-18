@@ -6567,8 +6567,10 @@ gam <UserTypeEntity> print chatsections [todrive <ToDriveAttribute>*]
         [formatjson [quotechar <Character>]]
 gam <UserTypeEntity> move chatsectionitem <ChatSectionItem> to <ChatSection>
 gam <UserTypeEntity> show chatsectionitems <ChatSection>
+        [space <ChatSpace>]
         [formatjson]
 gam <UserTypeEntity> print chatsectionitems  <ChatSection> [todrive <ToDriveAttribute>*]
+        [space <ChatSpace>]
         [formatjson [quotechar <Character>]]
 
 gam <UserTypeEntity> create chatmember <ChatSpace>

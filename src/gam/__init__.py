@@ -27163,17 +27163,23 @@ def moveShowChatSectionItem(users):
       continue
 
 # gam <UserTypeEntity> show chatsectionitems <ChatSection>
+#	[space <ChatSpace>]
 #	[formatjson]
 # gam <UserTypeEntity> print chatsectionitems  <ChatSection> [todrive <ToDriveAttribute>*]
+#	[space <ChatSpace>]
 #	[formatjson [quotechar <Character>]]
 def printShowChatSectionItems(users):
-  csvPF = CSVPrintFile(['User', 'name'])  if Act.csvFormat() else None
+  cd = buildGAPIObject(API.DIRECTORY)
+  csvPF = CSVPrintFile(['User', 'name', 'space'])  if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   name = getChatSectionName()
+  kwargs = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
+    elif myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
+      kwargs['filter'] = f'space = {getSpaceName(myarg)}'
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   i, count, users = getEntityArgument(users)
@@ -27184,6 +27190,9 @@ def printShowChatSectionItems(users):
       continue
     _, chatsp, _ = buildChatServiceObject(API.CHAT_SPACES, user, i, count)
     if not chatsp:
+      continue
+    _, chatme, _ = buildChatServiceObject(API.CHAT_MEMBERSHIPS, user, i, count)
+    if not chatme:
       continue
     pname = name
     if not pname.startswith('users/'):
@@ -27196,13 +27205,26 @@ def printShowChatSectionItems(users):
                                    throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR,
                                                  GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                                    retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                                   parent=pname, pageSize=GC.Values[GC.CHAT_MAX_RESULTS])
+                                   parent=pname, pageSize=GC.Values[GC.CHAT_MAX_RESULTS], **kwargs)
       for sectionItem in sectionItems:
         space = callGAPI(chatsp.spaces(), 'get',
-                         throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
+                         bailOnInternalError=True,
+                         throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR,
+                                       GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
+                         retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                          name=sectionItem['space'], fields='displayName,spaceType')
         sectionItem['spaceDetails'] = {'spaceType': space['spaceType']}
-        if 'displayName' in space:
+        if space['spaceType'] == 'DIRECT_MESSAGE':
+          members = callGAPIitems(chatme.spaces().members(), 'list', 'memberships',
+                                  bailOnInternalError=True,
+                                  throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR,
+                                                GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
+                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                                  parent=sectionItem['space'], fields='memberships(member)')
+          for member in members:
+            _getChatMemberEmail(cd, member)
+          sectionItem['spaceDetails']['members'] = ' '.join([member['member']['email'] for member in members])
+        elif 'displayName' in space:
           sectionItem['spaceDetails']['displayName'] = space['displayName']
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.internalError, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
