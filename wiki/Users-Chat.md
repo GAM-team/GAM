@@ -7,6 +7,10 @@
 - [Chat Space Permissions](#chat-space-permissions)
 - [Manage Chat Spaces](#manage-chat-spaces)
 - [Display Chat Spaces](#display-chat-spaces)
+- [Manage Chat Users Sections](#manage-chat-users-sections)
+- [Display Chat Users Sections](#display-chat-users-sections)
+- [Manage Chat Users Sections Items](#manage-chat-users-sections-items)
+- [Display Chat Users Sections Items](#display-chat-users-sections-items)
 - [UI API member role mapping](#ui-api-mwmber-role-mapping)
 - [Manage Chat Members](#manage-chat-members)
 - [Display Chat Members](#display-chat-members)
@@ -30,7 +34,10 @@ gam user user@domain.com update serviceaccount
 [*]  8)  Chat API - Spaces Admin (supports readonly)
 [*]  9)  Chat API - Spaces Delete
 [*] 10)  Chat API - Spaces Delete Admin
+[*] 11)  Chat API - Users Sections (supports readonly)
+
 ```
+`Chat API - Users Sections` is in Developer preview.
 
 Added `use_chat_admin_access` Boolean variable to `gam.cfg`. 
 ```
@@ -60,6 +67,7 @@ Google requires that you have a Chat Bot configured in order to use the Chat API
 * [Chat API - Members](https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.members/list)
 * [Chat API - Messages](https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.messages/list)
 * [Chat API - Events](https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.spaceEvents/list)
+* [Chat API - Users Sections](https://developers.google.com/workspace/chat/api/reference/rest/v1/users.sections)
 * [Apps in Google Chat](https://support.google.com/chat/answer/7655820)
 * [Manage customemoji permissions](https://support.google.com/a/answer/12850085)
 * [Manage Spaces in Admin Console](https://support.google.com/a/answer/13369245)
@@ -413,6 +421,74 @@ When listing Chat Spaces, the Chat API does not return the `accessSettings` fiel
 add `showaccesssettings` to the command. This requires an additional Chat API call per chat space of type `SPACE`
 to get the `accessSettings` field.
 
+By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
+* `formatjson` - Display the fields in JSON format.
+
+By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
+the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
+When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
+The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
+`quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
+
+## Manage Chat Users Sections
+### Create a user`s chat section
+```
+gam <UserTypeEntity> create chatsection
+        displayname <String>
+        [formatjson|returnidonly]
+```
+
+### Update a user`s chat section
+gam <UserTypeEntity> update chatsection <ChatSection>
+        [displayname <String>]
+        [(sortorder <Integer>)|(position start|end)]
+        [formatjson]
+```
+
+### Delete a user's chat section
+```
+gam <UserTypeEntity> delete chatsection <ChatSection>
+```
+
+## Display Chat Users Sections
+### Display information about all of a user's chat sections
+```
+gam <UserTypeEntity> show chatsections
+        [formatjson]
+```
+By default, Gam displays the information as an indented list of keys and values.
+* `formatjson` - Display the fields in JSON format.
+```
+gam <UserTypeEntity> print chatsections [todrive <ToDriveAttribute>*]
+        [formatjson [quotechar <Character>]]
+```
+By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
+* `formatjson` - Display the fields in JSON format.
+
+By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
+the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
+When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
+The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
+`quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
+
+## Manage Chat Users Section Items
+### Move a user's chat section item to a different chat section
+```
+gam <UserTypeEntity> move chatsectionitem <ChatSectionItem> to <ChatSection>
+```
+
+## Display Chat Users Section Items
+### Display information about a user's chat section items
+```
+gam <UserTypeEntity> show chatsectionitems <ChatSection>
+        [formatjson]
+```
+By default, Gam displays the information as an indented list of keys and values.
+* `formatjson` - Display the fields in JSON format.
+```
+gam <UserTypeEntity> print chatsectionitems  <ChatSection> [todrive <ToDriveAttribute>*]
+        [formatjson [quotechar <Character>]]
+```
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.
 
