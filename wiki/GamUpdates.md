@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.32.01
+
+Added option `(addcsvdata <FieldName> <String>)*` to `gam <CrOSTypeEntity> issuecommand command <CrOSCommand> csv`
+and `gam <CrOSTypeEntity> getcommand commandid <CommandID> csv` that adds additional columns of data to the CSV file output.
+* See: https://github.com/GAM-team/GAM/wiki/ChromeOS-Devices#bulk-action-example
+
 ### 7.32.00
 
 Added option `verifyallowexternal` to `gam print cigroup-members|group-members` that causes

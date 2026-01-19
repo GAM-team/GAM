@@ -510,11 +510,11 @@ Replace `user@domain.com` with the email address of the Google Sheet owner.
 
 Issue the commands from the Commands tab and write the results to the Results tab; copy the `serialNumber` to the Results tab.
 ```
-gam config num_threads 20 redirect csv - multiprocess todrive tduser user@domain.com tdfileID <SheetFileID> tdsheet id:<ResultsTabID> tdupdatesheet tdretaintitle redirect stderr - multiprocess csv gsheet user@domain.com <SheetFileID> id:<CommandsTabID> gam cros_sn "~serialNumber" issuecommand command "~command" doit csv addcsvdata serialNumber "~serialNumber"
+gam config num_threads 20 redirect csv - multiprocess sortheaders serialNumber todrive tduser user@domain.com tdfileID <SheetFileID> tdsheet id:<ResultsTabID> tdupdatesheet tdretaintitle redirect stderr - multiprocess csv gsheet user@domain.com <SheetFileID> id:<CommandsTabID> gam cros_sn "~serialNumber" issuecommand command "~command" doit csv addcsvdata serialNumber "~serialNumber"
 ```
 Monitor the results by reading and updating the results from/to the Results tab; copy the `serialNumber` to the Results tab.
 ```
-gam config num_threads 20 redirect csv - multiprocess todrive tduser user@domain.com tdfileID <SheetFileID> tdsheet id:<ResultsTabID> tdupdatesheet tdretaintitle redirect stderr - multiprocess csv gsheet user@domain.com <SheetFileID> id:<ResultsTabID> gam cros "~deviceId" getcommand commandid "~commandId" csv addcsvdata serialNumber "~serialNumber"
+gam config num_threads 20 redirect csv - multiprocess sortheaders serialNumber todrive tduser user@domain.com tdfileID <SheetFileID> tdsheet id:<ResultsTabID> tdupdatesheet tdretaintitle redirect stderr - multiprocess csv gsheet user@domain.com <SheetFileID> id:<ResultsTabID> gam cros "~deviceId" getcommand commandid "~commandId" csv addcsvdata serialNumber "~serialNumber"
 ```
 
 ## ChromeOS device lists
