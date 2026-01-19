@@ -14,6 +14,7 @@
 - [Action ChromeOS devices](#action-chromeos-devices)
 - [Send remote commands to ChromeOS devices](#send-remote-commands-to-chromeos-devices)
   - [Action Examples](#action-examples)
+  - [Bulk Action Example](#bulk-action-example)
 - [ChromeOS device lists](#chromeos-device-lists)
 - [Display information about ChromeOS devices](#display-information-about-chromeos-devices)
 - [Print ChromeOS devices](#print-chromeos-devices)
@@ -483,6 +484,37 @@ Use `wipe_users` if that's going to create too much work for you.
 ```
 gam cros_ou /StudentCarts issuecommand command remote_powerwash times_to_check_status 0 doit
 ```
+
+### Bulk Action example
+Assume a Google Sheet with two tabs: Commands and Results
+The Commands tab has at least two columns: serialNumber and command
+```
+serialNumber,command
+abc123def123,reboot
+abc123def456,remote_powerwash
+abc123def789,wipe_users
+```
+Here is the URL for the Commands tab
+```
+https://docs.google.com/spreadsheets/d/12349lNWvZwz_sdCilShBuon7W6Jnf7I_LgtORJhwxyz/edit?gid=1588227640#gid=1588227640
+<SheetFileID> = 12349lNWvZwz_sdCilShBuon7W6Jnf7I_LgtORJhwxyz
+<CommandTabID> = 1588227640
+Here is the URL for the Commands tab
+https://docs.google.com/spreadsheets/d/12349lNWvZwz_sdCilShBuon7W6Jnf7I_LgtORJhwxyz/edit?gid=2102420937#gid=2102420937
+<SheetFileID> = 12349lNWvZwz_sdCilShBuon7W6Jnf7I_LgtORJhwxyz
+<ResultsTabID> = 2102420937
+```
+Replace user@domain.com with the email address of the Google Sheet owner.
+
+Issue the commands from the Commands tab and write the results to the Results tab; copy the `serialNumber` to the Results tab.
+```
+gam config num_threads 20 redirect csv - multiprocess todrive tduser user@domain.com tdfileID <SheetFileID> tdsheet id:<ResultsTabID> tdupdatesheet tdretaintitle redirect stderr - multiprocess csv gsheet user@domain.com <SheetFileID> id:<CommandsTabID> gam cros_sn "~serialNumber" issuecommand command "~command" doit csv addcsvdata serialNumber "~serialNumber"
+```
+Monitor the results by reading and updating the results from/to the Results tab; copy the `serialNumber` to the Results tab.
+```
+gam config num_threads 20 redirect csv - multiprocess todrive tduser user@domain.com tdfileID <SheetFileID> tdsheet id:<ResultsTabID> tdupdatesheet tdretaintitle redirect stderr - multiprocess csv gsheet user@domain.com <SheetFileID> id:<ResultsTabID> gam cros "~deviceId" getcommand commandid "~commandId" csv addcsvdata serialNumber "~serialNumber"
+```
+
 ## ChromeOS device lists
 ChromeOS devices have lists of data: `<CrOSListFieldName>`, `<CrOSActivityListFieldName>`, `<CrOSTelemetryListFieldName>`.
 All lists except `recentusers` are in ascending order (oldest to newest). As these lists can contain many entries,
