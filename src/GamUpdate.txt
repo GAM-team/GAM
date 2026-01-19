@@ -1,3 +1,9 @@
+7.32.01
+
+Added option `(addcsvdata <FieldName> <String>)*` to `gam <CrOSTypeEntity> issuecommand command <CrOSCommand> csv`
+and `gam <CrOSTypeEntity> getcommand commandid <CommandID> csv` that adds additional columns of data to the CSV file output.
+* See: https://github.com/GAM-team/GAM/wiki/ChromeOS-Devices#bulk-action-example
+
 7.32.00
 
 Added option `verifyallowexternal` to `gam print cigroup-members|group-members` that causes
@@ -33,7 +39,7 @@ Fixed bug in `gam sendemail ... replyto <EmailAddress>` that caused a message de
 
 Added support for users's chat sections.
 * See: https://github.com/GAM-team/GAM/wiki/Users-Chat#manage-chat-users-sections
-* This is in Deveoper Preview.
+* This is in Deveoper Preview; you must have a `developer_preview_api_key` in `gam.cfg` to use these commands.
 
 7.31.06
 

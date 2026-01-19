@@ -2472,13 +2472,17 @@ gam <CrOSTypeEntity> update action <CrOSAction> [acknowledge_device_touch_requir
         take_a_screenshot
 
 gam issuecommand cros <CrOSEntity> command <CrOSCommand>
-        [times_to_check_status <Integer>] [csv] [doit]
+        [times_to_check_status <Integer>] [doit]
+        [csv (addcsvdata <FieldName> <String>)*]
 gam <CrOSTypeEntity> issuecommand command <CrOSCommand>
-        [times_to_check_status <Integer>] [csv] [doit]
+        [times_to_check_status <Integer>] [doit]
+        [csv (addcsvdata <FieldName> <String>)*]
 gam getcommand cros <CrOSEntity> commandid <CommandID>
-        [times_to_check_status <Integer>] [csv]
+        [times_to_check_status <Integer>]
+        [csv (addcsvdata <FieldName> <String>)*]
 gam <CrOSTypeEntity> getcommand commandid <CommandID>
-        [times_to_check_status <Integer>] [csv]
+        [times_to_check_status <Integer>]
+        [csv (addcsvdata <FieldName> <String>)*]
 
 <CrOSAttribute> ::=
         (asset|assetid|tag <String>)|

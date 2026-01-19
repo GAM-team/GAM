@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.32.00'
+__version__ = '7.32.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -24022,7 +24022,7 @@ CROS_KIOSK_COMMANDS = {'REBOOT', 'SET_VOLUME', 'TAKE_A_SCREENSHOT'}
 CROS_COMMAND_FINAL_STATES = {'EXPIRED', 'CANCELLED', 'EXECUTED_BY_CLIENT'}
 CROS_COMMAND_TIME_OBJECTS = {'executeTime', 'issueTime', 'commandExpireTime'}
 
-def displayCrOSCommandResult(cd, deviceId, commandId, checkResultRetries, i, count, csvPF=None):
+def displayCrOSCommandResult(cd, deviceId, commandId, checkResultRetries, i, count, csvPF, addCSVData):
   Ind.Increment()
   try:
     for _ in range(0, checkResultRetries):
@@ -24032,6 +24032,8 @@ def displayCrOSCommandResult(cd, deviceId, commandId, checkResultRetries, i, cou
                         customerId=GC.Values[GC.CUSTOMER_ID], deviceId=deviceId, commandId=commandId)
       if csvPF:
         result['deviceId'] = deviceId
+        if addCSVData:
+          result.update(addCSVData)
         csvPF.WriteRowTitles(flattenJSON(result, timeObjects=CROS_COMMAND_TIME_OBJECTS))
         return
       showJSON(None, result, timeObjects=CROS_COMMAND_TIME_OBJECTS)
@@ -24042,11 +24044,21 @@ def displayCrOSCommandResult(cd, deviceId, commandId, checkResultRetries, i, cou
     entityActionFailedWarning([Ent.CROS_DEVICE, deviceId, Ent.COMMAND_ID, commandId], str(e), i, count)
   Ind.Decrement()
 
+def writeCrOSCommandResults(csvPF, addCSVData):
+  sortTitles = ['deviceId']
+  if addCSVData:
+    sortTitles.extend(sorted(addCSVData.keys()))
+  sortTitles.append('commandId')
+  csvPF.SetSortTitles(sortTitles)
+  csvPF.writeCSVfile('CrOS Commands')
+
 # gam <CrOSTypeEntity> issuecommand command <CrOSCommand>
-#	[times_to_check_status <Integer>] [csv] [doit]
+#	[times_to_check_status <Integer>] [doit]
+#	[csv (addcsvdata <FieldName> <String>)*]
 def issueCommandCrOSDevices(entityList):
   cd = buildGAPIObject(API.DIRECTORY)
   csvPF = None
+  addCSVData = {}
   body = {}
   checkResultRetries = 1
   doit = False
@@ -24059,7 +24071,9 @@ def issueCommandCrOSDevices(entityList):
     elif myarg == 'timestocheckstatus':
       checkResultRetries = getInteger(minVal=0)
     elif myarg == 'csv':
-      csvPF = CSVPrintFile(['deviceId'], 'sortall')
+      csvPF = CSVPrintFile(['deviceId'])
+    elif csvPF and myarg == 'addcsvdata':
+      getAddCSVData(addCSVData)
     elif myarg == 'doit':
       doit = True
     else:
@@ -24078,7 +24092,7 @@ def issueCommandCrOSDevices(entityList):
                         customerId=GC.Values[GC.CUSTOMER_ID], deviceId=deviceId, body=body)
       commandId = result.get('commandId')
       entityActionPerformed([Ent.CROS_DEVICE, deviceId, Ent.ACTION, body['commandType'], Ent.COMMAND_ID, commandId], i, count)
-      displayCrOSCommandResult(cd, deviceId, commandId, checkResultRetries, i, count, csvPF)
+      displayCrOSCommandResult(cd, deviceId, commandId, checkResultRetries, i, count, csvPF, addCSVData)
     except GAPI.invalidArgument as e:
       errMsg = str(e)
       if body['commandType'] in CROS_KIOSK_COMMANDS:
@@ -24087,18 +24101,21 @@ def issueCommandCrOSDevices(entityList):
     except GAPI.notFound as e:
       entityActionFailedWarning([Ent.CROS_DEVICE, deviceId], str(e), i, count)
   if csvPF:
-    csvPF.writeCSVfile('CrOS Commands')
+    writeCrOSCommandResults(csvPF, addCSVData)
 
 # gam issuecommand <CrOSEntity> command <CrOSCommand>
-#	[times_to_check_status <Integer>] [csv] [doit]
+#	[times_to_check_status <Integer>] [doit]
+#	[csv (addcsvdata <FieldName> <String>)*]
 def doIssueCommandCrOSDevices():
   issueCommandCrOSDevices(getCrOSDeviceEntity())
 
 # gam <CrOSTypeEntity> getcommand commandid <CommandID>
 #	[times_to_check_status <Integer>] [csv]
+#	[csv (addcsvdata <FieldName> <String>)*]
 def getCommandResultCrOSDevices(entityList):
   cd = buildGAPIObject(API.DIRECTORY)
   csvPF = None
+  addCSVData = {}
   commandId = ''
   checkResultRetries = 1
   while Cmd.ArgumentsRemaining():
@@ -24108,7 +24125,9 @@ def getCommandResultCrOSDevices(entityList):
     elif myarg == 'timestocheckstatus':
       checkResultRetries = getInteger(minVal=0)
     elif myarg == 'csv':
-      csvPF = CSVPrintFile(['deviceId'], 'sortall')
+      csvPF = CSVPrintFile(['deviceId'])
+    elif csvPF and myarg == 'addcsvdata':
+      getAddCSVData(addCSVData)
     else:
       unknownArgumentExit()
   if not commandId:
@@ -24117,12 +24136,13 @@ def getCommandResultCrOSDevices(entityList):
   for deviceId in entityList:
     i += 1
     printEntity([Ent.CROS_DEVICE, deviceId, Ent.COMMAND_ID, commandId], i, count)
-    displayCrOSCommandResult(cd, deviceId, commandId, checkResultRetries, i, count, csvPF)
+    displayCrOSCommandResult(cd, deviceId, commandId, checkResultRetries, i, count, csvPF, addCSVData)
   if csvPF:
-    csvPF.writeCSVfile('CrOS Commands')
+    writeCrOSCommandResults(csvPF, addCSVData)
 
 # gam getcommand <CrOSEntity> commandid <CommandID>
 #	[times_to_check_status <Integer>] [csv]
+#	[csv (addcsvdata <FieldName> <String>)*]
 def doGetCommandResultCrOSDevices():
   getCommandResultCrOSDevices(getCrOSDeviceEntity())
 
