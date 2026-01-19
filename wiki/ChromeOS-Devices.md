@@ -486,6 +486,8 @@ gam cros_ou /StudentCarts issuecommand command remote_powerwash times_to_check_s
 ```
 
 ### Bulk Action example
+You want to issue commands to many ChromeOS devices and monitor the results.
+
 Assume a Google Sheet with two tabs: Commands and Results
 The Commands tab has at least two columns: serialNumber and command
 ```
@@ -496,15 +498,15 @@ abc123def789,wipe_users
 ```
 Here is the URL for the Commands tab
 ```
-https://docs.google.com/spreadsheets/d/12349lNWvZwz_sdCilShBuon7W6Jnf7I_LgtORJhwxyz/edit?gid=1588227640#gid=1588227640
-<SheetFileID> = 12349lNWvZwz_sdCilShBuon7W6Jnf7I_LgtORJhwxyz
+https://docs.google.com/spreadsheets/d/12349lNWvZwzJhwxyz/edit?gid=1588227640#gid=1588227640
+<SheetFileID> = 12349lNWvZwzJhwxyz
 <CommandTabID> = 1588227640
 Here is the URL for the Commands tab
-https://docs.google.com/spreadsheets/d/12349lNWvZwz_sdCilShBuon7W6Jnf7I_LgtORJhwxyz/edit?gid=2102420937#gid=2102420937
-<SheetFileID> = 12349lNWvZwz_sdCilShBuon7W6Jnf7I_LgtORJhwxyz
+https://docs.google.com/spreadsheets/d/12349lNWvZwzJhwxyz/edit?gid=2102420937#gid=2102420937
+<SheetFileID> = 12349lNWvZwzJhwxyz
 <ResultsTabID> = 2102420937
 ```
-Replace user@domain.com with the email address of the Google Sheet owner.
+Replace `user@domain.com` with the email address of the Google Sheet owner.
 
 Issue the commands from the Commands tab and write the results to the Results tab; copy the `serialNumber` to the Results tab.
 ```
