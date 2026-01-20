@@ -125,7 +125,7 @@ Limit the time period.
 * `thismonth` - The current calendar month up to the current time
 * `previousmonths <Integer>` - A number in the range 1 to 6 indicating calendar months previous to the current month
 
-For `gam report gmail`, `start <Time>`  and `end <Time>`should both be provided, and the scan duration should not be greater than 30 days.
+For `gam report gmail`, `start <Time>` and `end <Time>` should both be provided, and the scan duration should not be greater than 30 days.
 GAM will supply missing values:
 * No time information provided - GAM sets `range -30d today`
 * Only `start <Time>`  provided - GAM sets `end <Time>+30d`
@@ -133,6 +133,11 @@ GAM will supply missing values:
 
 For `gam report gmail`, `gmaileventtypes <NumberRangeList>` can be used to limit the event types displayed.
 * See: https://developers.google.com/workspace/admin/reports/v1/appendix/activity/gmail
+
+You can use the following filter to select a specific event; replace `X` with your desired value.
+```
+filter "event_info.mail_event_type==X"
+```
 
 Apply API filters.
 * `filter|filters <String>` - `<String>` is a comma separated list of filter expressions.
