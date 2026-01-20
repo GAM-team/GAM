@@ -516,6 +516,7 @@ Monitor the results by reading and updating the results from/to the Results tab;
 ```
 gam config num_threads 20 redirect csv - multiprocess sortheaders serialNumber todrive tduser user@domain.com tdfileID <SheetFileID> tdsheet id:<ResultsTabID> tdupdatesheet tdretaintitle redirect stderr - multiprocess csv gsheet user@domain.com <SheetFileID> id:<ResultsTabID> gam cros "~deviceId" getcommand commandid "~commandId" csv addcsvdata serialNumber "~serialNumber"
 ```
+You can use additional `addcsvdata` options to copy device identifying information from the source to the destination.
 
 ## ChromeOS device lists
 ChromeOS devices have lists of data: `<CrOSListFieldName>`, `<CrOSActivityListFieldName>`, `<CrOSTelemetryListFieldName>`.
