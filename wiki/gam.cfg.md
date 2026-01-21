@@ -463,6 +463,10 @@ oauth2_txt
         Path to oauth2.txt
         Default: GamConfigDir/oauth2.txt
         Environment variable: OAUTHFILE
+oauth2_txt_lock_mode
+        Allowed values: 644, 664, 666
+        File permissions for oauth2.txt.lock
+        Default: 644
 oauth2service_json
         Path to oauth2service.json
         Default: GamConfigDir/oauth2service.json

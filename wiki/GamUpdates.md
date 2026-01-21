@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.32.02
+
+Added variable `oauth2_txt_lock_mode` to `gam.cfg`, the default is 644 and valid values are: 644, 664, 666.
+This value is used to set the file permissions on the `oauth2.txt.lock` file. In very special cases where
+daemon processes, e.g. Apache/httpd, are running GAM, the value 666 may have to be used.
+
 ### 7.32.01
 
 Added option `(addcsvdata <FieldName> <String>)*` to `gam <CrOSTypeEntity> issuecommand command <CrOSCommand> csv`
