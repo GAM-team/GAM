@@ -13,7 +13,7 @@
 - [Display user group member options](#display-user-group-member-options)
 - [Display group membership in CSV format](#display-group-membership-in-csv-format)
 - [Display group membership in hierarchical format](#display-group-membership-in-hierarchical-format)
-- [Display external users in groups with allowExternalMembers=False](#Display-external-users-in-groups-with-allowExternalMembers-False)
+- [Display external users in groups with allowExternalMembers=False](#display-external-users-in-groups-with-allowexternalmembers-false)
 ## API documentation
 * [Cloud Identity Groups Overview](https://cloud.google.com/identity/docs/groups)
 * [Cloud Identity Groups API - Groups](https://cloud.google.com/identity/docs/reference/rest/v1/groups)
@@ -536,4 +536,4 @@ gam redirect stdout ./groups.txt show cigroup-members types group
 
 ## Display external users in groups with allowExternalMembers=False
 When printing  group membership, the option `verifyallowexternal` causes
-GAM to only display external users in groups with `allowExternalMembers=False'.
+GAM to only display external users in groups with `allowExternalMembers=False`.
