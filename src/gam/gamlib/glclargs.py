@@ -928,6 +928,8 @@ class GamCLArgs():
   ARG_GUARDIANINVITE = 'guardianinvite'
   ARG_GUARDIANINVITATION = 'guardianinvitation'
   ARG_GUARDIANINVITATIONS = 'guardianinvitations'
+  ARG_GUESTUSER = 'guestuser'
+  ARG_GUESTUSERS = 'guestusers'
   ARG_HOLD = 'hold'
   ARG_HOLDS = 'holds'
   ARG_IMAP = 'imap'

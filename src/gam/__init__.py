@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.32.01'
+__version__ = '7.32.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -4748,7 +4748,7 @@ def getClientCredentials(forceRefresh=False, forceWrite=False, filename=None, ap
   """Gets OAuth2 credentials which are guaranteed to be fresh and valid.
      Locks during read and possible write so that only one process will
      attempt refresh/write when running in parallel. """
-  lock = FileLock(GM.Globals[GM.OAUTH2_TXT_LOCK])
+  lock = FileLock(GM.Globals[GM.OAUTH2_TXT_LOCK], mode=GC.Values[GC.OAUTH2_TXT_LOCK_MODE])
   with lock:
     writeCreds, credentials = getOauth2TxtCredentials(api=api, noDASA=noDASA, refreshOnly=refreshOnly, noScopes=noScopes)
     if not credentials:
@@ -10760,7 +10760,7 @@ Continue to authorization by entering a 'c'
   menu = oauth2_menu % tuple(range(numScopes))
   selectedScopes = ['*'] * numScopes
   if currentScopes is None and clientAccess:
-    lock = FileLock(GM.Globals[GM.OAUTH2_TXT_LOCK])
+    lock = FileLock(GM.Globals[GM.OAUTH2_TXT_LOCK], mode=GC.Values[GC.OAUTH2_TXT_LOCK_MODE])
     with lock:
       _, credentials = getOauth2TxtCredentials(exitOnError=False)
       if credentials and credentials.scopes is not None:
@@ -11258,7 +11258,7 @@ def doOAuthRequest(currentScopes, login_hint, verifyScopes=False):
     access_type='offline',
     login_hint=login_hint,
     open_browser=not GC.Values[GC.NO_BROWSER])
-  lock = FileLock(GM.Globals[GM.OAUTH2_TXT_LOCK])
+  lock = FileLock(GM.Globals[GM.OAUTH2_TXT_LOCK], mode=GC.Values[GC.OAUTH2_TXT_LOCK_MODE])
   with lock:
     writeClientCredentials(credentials, GC.Values[GC.OAUTH2_TXT])
   entityActionPerformed([Ent.OAUTH2_TXT_FILE, GC.Values[GC.OAUTH2_TXT]])
@@ -11308,7 +11308,7 @@ def exitIfNoOauth2Txt():
 def doOAuthDelete():
   checkForExtraneousArguments()
   exitIfNoOauth2Txt()
-  lock = FileLock(GM.Globals[GM.OAUTH2_TXT_LOCK], timeout=10)
+  lock = FileLock(GM.Globals[GM.OAUTH2_TXT_LOCK], mode=GC.Values[GC.OAUTH2_TXT_LOCK_MODE], timeout=10)
   with lock:
     _, credentials = getOauth2TxtCredentials(noScopes=True)
     if not credentials:
@@ -11392,7 +11392,7 @@ def doOAuthUpdate():
     login_hint = getEmailAddress(noUid=True, optional=True)
   checkForExtraneousArguments()
   exitIfNoOauth2Txt()
-  lock = FileLock(GM.Globals[GM.OAUTH2_TXT_LOCK])
+  lock = FileLock(GM.Globals[GM.OAUTH2_TXT_LOCK], mode=GC.Values[GC.OAUTH2_TXT_LOCK_MODE])
   with lock:
     jsonData = readFile(GC.Values[GC.OAUTH2_TXT], continueOnError=True, displayError=False)
   if not jsonData:
@@ -45905,6 +45905,20 @@ def verifyUserPrimaryEmail(cd, user, createIfNotFound, i, count):
   entityUnknownWarning(Ent.USER, user, i, count)
   return False
 
+# gam create guestuser <EmailAddress>
+def doCreateGuestUser():
+  cd = buildGAPIObject(API.DIRECTORY)
+  body = {'primaryGuestEmail':  getEmailAddress(noUid=True),
+          'customer': GC.Values[GC.CUSTOMER_ID]}
+  checkForExtraneousArguments()
+  try:
+    result = callGAPI(cd.users(), 'createGuest',
+                      throwReasons=[GAPI.FAILED_PRECONDITION],
+                      body=body)
+    entityActionPerformed([Ent.GUEST_USER, result['primaryGuestEmail']])
+  except (GAPI.failedPrecondition) as e:
+    entityActionFailedExit([Ent.GUEST_USER, body['primaryGuestEmail']], str(e))
+
 # gam <UserTypeEntity> update user <UserAttribute>*
 #	[verifynotinvitable|alwaysevict] [noactionifalias]
 #	[updateprimaryemail <RESEarchPattern> <RESubstitution>]
@@ -79485,6 +79499,7 @@ MAIN_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_GROUP:		doCreateGroup,
   Cmd.ARG_GUARDIAN:		doInviteGuardian,
   Cmd.ARG_GUARDIANINVITATION:	doInviteGuardian,
+  Cmd.ARG_GUESTUSER:		doCreateGuestUser,
   Cmd.ARG_INBOUNDSSOASSIGNMENT:	doCreateInboundSSOAssignment,
   Cmd.ARG_INBOUNDSSOCREDENTIAL:	doCreateInboundSSOCredential,
   Cmd.ARG_INBOUNDSSOPROFILE:	doCreateInboundSSOProfile,
@@ -81218,6 +81233,7 @@ USER_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_GUARDIANINVITATIONS:	Cmd.ARG_GUARDIANINVITATION,
   Cmd.ARG_GUARDIANINVITE:	Cmd.ARG_GUARDIANINVITATION,
   Cmd.ARG_GUARDIANS:		Cmd.ARG_GUARDIAN,
+  Cmd.ARG_GUESTUSERS:		Cmd.ARG_GUESTUSER,
   Cmd.ARG_HOLD:			Cmd.ARG_VAULTHOLD,
   Cmd.ARG_HOLDS:		Cmd.ARG_VAULTHOLD,
   Cmd.ARG_IMAP4:		Cmd.ARG_IMAP,

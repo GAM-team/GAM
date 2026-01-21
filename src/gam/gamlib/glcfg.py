@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2025 Ross Scroggs All Rights Reserved.
+# Copyright (C) 2026 Ross Scroggs All Rights Reserved.
 #
 # All Rights Reserved.
 #
@@ -218,6 +218,8 @@ NUM_TBATCH_THREADS = 'num_tbatch_threads'
 NUM_THREADS = 'num_threads'
 # Path to oauth2.txt
 OAUTH2_TXT = 'oauth2_txt'
+# File permissions for oauth2.txt.lock
+OAUTH2_TXT_LOCK_MODE = 'oauth2_txt_lock_mode'
 # Path to oauth2service.json
 OAUTH2SERVICE_JSON = 'oauth2service_json'
 # Output date format, empty defalts to ISOFormat
@@ -416,6 +418,7 @@ Defaults = {
   NUM_TBATCH_THREADS: '2',
   NUM_THREADS: '5',
   OAUTH2_TXT: FN_OAUTH2_TXT,
+  OAUTH2_TXT_LOCK_MODE: '644',
   OAUTH2SERVICE_JSON: FN_OAUTH2SERVICE_JSON,
   OUTPUT_DATEFORMAT: '',
   OUTPUT_TIMEFORMAT: '',
@@ -587,6 +590,7 @@ VAR_INFO = {
   NUM_TBATCH_THREADS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 1000)},
   NUM_THREADS: {VAR_TYPE: TYPE_INTEGER, VAR_ENVVAR: 'GAM_THREADS', VAR_LIMITS: (1, 1000)},
   OAUTH2_TXT: {VAR_TYPE: TYPE_FILE, VAR_ENVVAR: 'OAUTHFILE', VAR_ACCESS: os.R_OK | os.W_OK},
+  OAUTH2_TXT_LOCK_MODE: {VAR_TYPE: TYPE_CHOICE, VAR_CHOICES: {'644': 0o644, '664': 0o664, '666': 0o666}},
   OAUTH2SERVICE_JSON: {VAR_TYPE: TYPE_FILE, VAR_ENVVAR: 'OAUTHSERVICEFILE', VAR_ACCESS: os.R_OK | os.W_OK},
   OUTPUT_DATEFORMAT: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
   OUTPUT_TIMEFORMAT: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},

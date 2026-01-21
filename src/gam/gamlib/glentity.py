@@ -253,6 +253,7 @@ class GamEntity():
   GUARDIAN = 'guar'
   GUARDIAN_INVITATION = 'gari'
   GUARDIAN_AND_INVITATION = 'gani'
+  GUEST_USER = 'gstu'
   IAM_POLICY = 'iamp'
   IMAP_ENABLED = 'imap'
   INBOUND_SSO_ASSIGNMENT = 'insa'
@@ -358,7 +359,7 @@ class GamEntity():
   SNIPPETS_ENABLED = 'snip'
   SSO_KEY = 'ssok'
   SSO_SETTINGS = 'ssos'
-  SOURCE_USER = 'src'
+  SOURCE_USER = 'srcu'
   SPREADSHEET = 'sprd'
   SPREADSHEET_RANGE = 'ssrn'
   START_TIME = 'strt'
@@ -620,6 +621,7 @@ class GamEntity():
     GROUP_MEMBERSHIP_TREE: ['Group Membership Trees', 'Group Membership Tree'],
     GROUP_SETTINGS: ['Group Settings', 'Group Settings'],
     GROUP_TREE: ['Group Trees', 'Group Tree'],
+    GUEST_USER: ['Guest Users', 'Guest User'],
     GUARDIAN: ['Guardians', 'Guardian'],
     GUARDIAN_INVITATION: ['Guardian Invitations', 'Guardian Invitation'],
     GUARDIAN_AND_INVITATION: ['Guardians and Invitations', 'Guardian and Invitation'],
