@@ -6,7 +6,6 @@ Thank you.
 
 * Amado Tejada - https://github.com/amadotejada/GAMpass
 * Brecht Sannen - https://gcloud.devoteam.com/blog/what-is-google-apps-manager-gam/
-* Code Wiki - https://codewiki.google/github.com/gam-team/gam
 * Gabriel Clifton - https://docs.google.com/document/d/1p32QOBTr89GaG7RfCafSbFuhlUQ9r3qBM_666E0xvQM/edit
 * Goldy Arora - https://www.goldyarora.com/license-notifier/
 * Iain Macleod - https://docs.google.com/document/d/1QxWAPdhROcx70OXLpSD9Trh3vs-nJKSMiaMZCTwOOTg/edit?pli=1#heading=h.2a2azzpy36k0
