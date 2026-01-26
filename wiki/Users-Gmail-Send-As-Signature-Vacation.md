@@ -116,7 +116,7 @@ gam <UserTypeEntity> show sendas [compact|format|html]
 ```
 
 These are the output formatting options:
-* `compact` - Escape carriage returns as \r and newlines as \n in original HTML; this format produces output that can be used as input to GAM
+* `compact` - Escape carriage returns as \r and newlines as \n in original HTML
 * `format` - Strip HTML keywords leaving basic printable information
 * `html` - Show original HTML; this is the default option; the output is human readable but cannot be used as input to GAM
 
@@ -184,12 +184,13 @@ If you have a current default signature, the API will update that, but if you de
 ## Display signature
 ### Display the signature as an indented list of keys and values.
 ```
-gam <UserTypeEntity> show signature|sig [compact|format|html]
+gam <UserTypeEntity> show signature|sig [compact|format|html|template]
         [primary|default] [verifyonly]
 ```
 
 These are the output formatting options:
-* `compact` - Escape carriage returns as \r and newlines as \n in original HTML; this format produces output that can be used as input to GAM
+* `template` - Escape carriage returns as \r and newlines as \n in original HTML; this format produces output that can be used as input to GAM
+* `compact` - Escape carriage returns as \r and newlines as \n in original HTML
 * `format` - Strip HTML keywords leaving basic printable information
 * `html` - Show original HTML; this is the default option; the output is human readable but cannot be used an input to GAM
 
@@ -295,19 +296,10 @@ Use text like `{FirstName}` and `{Email}` in the locations where the actual valu
 
 Once you're created the template signature, do the following:
 ```
-$ gam user testuser@domain.com show signature compact > SimpleSig.html
-$ more SimpleSig.html
-SendAs Address: <testuser@domain.com>
-  IsPrimary: True
-  Default: True
-  Signature: <div dir="ltr">--<div>Name: {FirstName} {LastName}<div>Phone: {Phone}</div><div>Email: {Email}</div></div><div><br></div><div>Company Name</div><div>Company Address</div><div><br></div></div>\n
-```
-Edit SimpleSig.html and delete all text from `SendAs ` through `Signature: `.
-The result should be:
-```
+$ gam redirect stdout ./SigTemplate.html user testuser@domain.com show signature template
+$ more SigTemplate.html
 <div dir="ltr">--<div>Name: {FirstName} {LastName}<div>Phone: {Phone}</div><div>Email: {Email}</div></div><div><br></div><div>Company Name</div><div>Company Address</div><div><br></div></div>\n
 ```
-
 This is a sample Users.csv file.
 ```
 email,first,last,phone
@@ -317,5 +309,5 @@ mjones@domain.com,Mary,Jones,510-555-1212 x 456
 
 This command will update the user's signatures.
 ```
-gam csv Users.csv gam user "~email" signature htmlfile SimpleSig.html replace FirstName "~first"  replace LastName "~last" replace Phone "~phone" replace Email "~email"
+gam csv Users.csv gam user "~email" signature htmlfile SigTemplate.html replace FirstName "~first"  replace LastName "~last" replace Phone "~phone" replace Email "~email"
 ```
