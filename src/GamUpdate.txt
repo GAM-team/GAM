@@ -1,3 +1,13 @@
+7.32.03
+
+Added option `template` as an additional formating option for `gam <UserTypeEntity> show signature`
+that displays just the HTML data; this simplifies capturing the data for use as input to GAM.
+```
+$ gam redirect stdout ./SigTemplate.html user user@domain.com show signature template
+$ more SigTemplate.html
+<div dir="ltr"><div dir="ltr"><div dir="ltr"><p style="margin:0px;font-size-adjust:none;font-stretch:normal;font-size:12px;line-height:normal;font-family:Monaco;color:rgb(0,0,0)"><span style="background-color:rgb(82,208,206)">{RT}Email: {Email}{/RT}</span></p><p style="margin:0px;font-size-adjust:none;font-stretch:normal;font-size:12px;line-height:normal;font-family:Monaco;color:rgb(0,0,0)"><span style="background-color:rgb(82,208,206)">{RT}Phone: {Phone}{/RT}</span></p><p style="margin:0px;font-size-adjust:none;font-stretch:normal;font-size:12px;line-height:normal;font-family:Monaco;color:rgb(0,0,0)"><span style="background-color:rgb(82,208,206)">{RT}Mobile: {Mobile}{/RT}</span></p></div><br></div>\n</div>
+```
+
 7.32.02
 
 Added variable `oauth2_txt_lock_mode` to `gam.cfg`, the default is 644 and valid values are: 644, 664, 666.

@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.32.02'
+__version__ = '7.32.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -76524,10 +76524,14 @@ def printShowLanguage(users):
 SIG_REPLY_HTML = 0
 SIG_REPLY_COMPACT = 1
 SIG_REPLY_FORMAT = 2
+SIG_REPLY_TEMPLATE = 3 # Does not go in MAP
 SIG_REPLY_OPTIONS_MAP = {'html': SIG_REPLY_HTML, 'compact': SIG_REPLY_COMPACT, 'format': SIG_REPLY_FORMAT}
 SMTPMSA_DISPLAY_FIELDS = ['host', 'port', 'securityMode']
 
 def _showSendAs(result, j, jcount, sigReplyFormat, verifyOnly=False):
+  if sigReplyFormat == SIG_REPLY_TEMPLATE:
+    writeStdout(f"{escapeCRsNLs(result.get('signature', 'None'))}\n")
+    return
   if result['displayName']:
     printEntity([Ent.SENDAS_ADDRESS, f'{result["displayName"]} <{result["sendAsEmail"]}>'], j, jcount)
   else:
@@ -76792,7 +76796,7 @@ def printShowSendAs(users):
 
 # gam <UserTypeEntity> print signature [compact]
 #	[primary] [verifyonly] [todrive <ToDriveAttribute>*]
-# gam <UserTypeEntity> show signature|sig [compact|format|html]
+# gam <UserTypeEntity> show signature|sig [compact|format|html|template]
 #	[primary] [verifyonly]
 def printShowSignature(users):
   csvPF = CSVPrintFile(['User', 'displayName', 'sendAsEmail', 'replyToAddress',
@@ -76813,6 +76817,8 @@ def printShowSignature(users):
       verifyOnly = True
     elif (not csvPF and myarg in SIG_REPLY_OPTIONS_MAP) or (csvPF and myarg == 'compact'):
       sigReplyFormat = SIG_REPLY_OPTIONS_MAP[myarg]
+    elif not csvPF and myarg == 'template':
+      sigReplyFormat = SIG_REPLY_TEMPLATE
     else:
       unknownArgumentExit()
   i, count, users = getEntityArgument(users)

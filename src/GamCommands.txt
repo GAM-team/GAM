@@ -8040,7 +8040,7 @@ gam <UserTypeEntity> signature|sig
         [html [<Boolean>]] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
         [name <String>]
         [primary]
-gam <UserTypeEntity> show signature|sig [compact|format|html]
+gam <UserTypeEntity> show signature|sig [compact|format|html|template]
         [primary|default] [verifyonly]
 gam <UserTypeEntity> print signature [compact]
         [primary|default] [verifyonly] [todrive <ToDriveAttribute>*]
