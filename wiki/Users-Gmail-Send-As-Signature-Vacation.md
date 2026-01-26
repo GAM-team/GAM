@@ -311,3 +311,18 @@ This command will update the user's signatures.
 ```
 gam csv Users.csv gam user "~email" signature htmlfile SigTemplate.html replace FirstName "~first"  replace LastName "~last" replace Phone "~phone" replace Email "~email"
 ```
+
+You can also do the update with user attributes:
+
+This is a sample Users.csv file.
+
+```
+email
+bsmith@domain.com
+mjones@domain.com
+```
+
+This command will update the user's signatures.
+```
+gam csv Users.csv gam user "~email" signature htmlfile SigTemplate.html replace FirstName field:name.givenname replace LastName field:name.familyname replace Phone field:phone.value.type.work replace Email field:email.primaryemail
+```
