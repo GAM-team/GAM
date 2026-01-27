@@ -2,6 +2,8 @@
 
 Support for student groups in Google Classroom no longer requires Developer Preview membership.
 
+Upgraded to OpenSSL 3.6.1.
+
 7.32.03
 
 Added option `template` as an additional formating option for `gam <UserTypeEntity> show signature`
