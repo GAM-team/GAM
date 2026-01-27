@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.32.03'
+__version__ = '7.32.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -4820,7 +4820,7 @@ def getService(api, httpObj):
     triesLimit = 3
     for n in range(1, triesLimit+1):
       try:
-        if api not in {API.CHAT, API.CLASSROOM} or not GC.Values[GC.DEVELOPER_PREVIEW_API_KEY]:
+        if api not in {API.CHAT} or not GC.Values[GC.DEVELOPER_PREVIEW_API_KEY]:
           discoveryServiceUrl = DISCOVERY_URIS[v2discovery]
         else:
           discoveryServiceUrl = DEVELOPER_PREVIEW_DISCOVERY_URI
@@ -52846,7 +52846,6 @@ def doCreateCourseStudentGroups():
                                 throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE, GAPI.NOT_IMPLEMENTED,
                                               GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                                previewVersion='V1_20250630_PREVIEW',
                                 **kwargs)
         kvList[-1] = f"{studentGroup['title']}({studentGroup['id']})"
         if not csvPF:
@@ -52893,7 +52892,6 @@ def doUpdateCourseStudentGroups():
                             throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE, GAPI.NOT_IMPLEMENTED,
                                           GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                            previewVersion='V1_20250630_PREVIEW',
                             **kwargs)
     kvList[-1] = f"{studentGroup['title']}({studentGroup['id']})"
     entityActionPerformed(kvList)
@@ -52927,7 +52925,6 @@ def doDeleteCourseStudentGroups():
                throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE, GAPI.NOT_IMPLEMENTED,
                              GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-               previewVersion='V1_20250630_PREVIEW',
                **kwargs)
       entityActionPerformed(kvList, i, count)
     except GAPI.notFound as e:
@@ -52972,7 +52969,6 @@ def doClearCourseStudentGroups():
                                     throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE, GAPI.NOT_IMPLEMENTED,
                                                   GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                                     retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                                    previewVersion='V1_20250630_PREVIEW',
                                     courseId=courseId)
     except GAPI.notFound as e:
       entityActionFailedWarning([Ent.COURSE, courseId], str(e))
@@ -52993,7 +52989,6 @@ def doClearCourseStudentGroups():
                  throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE, GAPI.NOT_IMPLEMENTED,
                                GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                 previewVersion='V1_20250630_PREVIEW',
                  **kwargs)
         entityActionPerformed(kvList, j, jcount)
       except GAPI.notFound as e:
@@ -53067,7 +53062,6 @@ def doPrintCourseStudentGroups(showMembers=False):
                                     throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE, GAPI.NOT_IMPLEMENTED,
                                                   GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                                     retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                                    previewVersion='V1_20250630_PREVIEW',
                                     courseId=courseId)
     except GAPI.notFound as e:
       entityActionFailedWarning([Ent.COURSE, courseId], str(e))
@@ -53102,7 +53096,6 @@ def doPrintCourseStudentGroups(showMembers=False):
                                  throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE,
                                                GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                                 previewVersion='V1_20250630_PREVIEW',
                                  courseId=courseId, studentGroupId=studentGroupId)
         if showItemCountOnly:
           itemCount += len(students)
@@ -53170,7 +53163,6 @@ def doProcessCourseStudentGroupMembers():
                            throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE,
                                          GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                           previewVersion='V1_20250630_PREVIEW',
                            courseId=courseId, studentGroupId=studentGroupId)
     except GAPI.notFound as e:
       entityActionFailedWarning([Ent.COURSE, courseId, Ent.COURSE_STUDENTGROUP, studentGroupId], str(e))
@@ -53206,7 +53198,6 @@ def doProcessCourseStudentGroupMembers():
                              GAPI.SERVICE_NOT_AVAILABLE, GAPI.NOT_IMPLEMENTED,
                              GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-               previewVersion='V1_20250630_PREVIEW',
                **kwargs)
       entityActionPerformed(kvList, i, count)
     except (GAPI.alreadyExists, GAPI.notFound) as e:
