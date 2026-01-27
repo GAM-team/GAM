@@ -12,33 +12,8 @@
 - [Display student group membership counts](#display-student-group-membership-counts)
 
 ## Notes
-These commands wera added in version 7.20.00.
-
-To use these commands your project must be enrolled the Developer Preview program.
-* https://developers.google.com/workspace/preview
-
-You will need your GAM project number.
-* Login as an existing super admin at console.cloud.google.com
-* In the upper left click the three lines to the left of Google Cloud and select IAM & Admin
-* Under IAM & Admin select IAM
-* Click in the box to the right of Google Cloud
-* Click the three dots at the right and select Manage Resources
-* Click the three dots at the end of the line for your GAM project
-* Click Settings
-* You will see the Project number; save it
-
-You will need an API key
-* In the upper left click the three lines to the left of Google Cloud and select APIs & Services
-* Under APIs & Services select Credentials
-* If you already have an API key, click Show key at the end of the line and save the value
-* If you don't have an API key, click +Credentials and select API key
-* Save the displayed API key
-* Click close
-
-Issue the following GAM command:
-`gam config developer_preview_api_key <API Key Value> save`
-
-Once you get an email from Google saying that your project has been registered you can use these commands.
+These commands were added in version 7.20.00 and required enrollment in the Developer Preview program.
+As of 7.32.04 Developer Preview enrollment is no longer required.
 
 ## API documentation
 * [Google Classroom API](https://developers.google.com/classroom/reference/rest)
