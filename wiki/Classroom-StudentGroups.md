@@ -97,7 +97,7 @@ gam clear course-studentgroups
         (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
 ```
 
-When creating student groups, the API does not check for duplicate titles; you can have multiple student grpups
+When creating student groups, the API does not check for duplicate titles; you can have multiple student groups
 with the same title; they will have unique `<StudentGroupID>s`.
 
 The `update|delete course-studentgroups` commands manage a specific course.
