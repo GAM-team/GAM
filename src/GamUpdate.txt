@@ -1,3 +1,24 @@
+7.32.05
+
+Fixed bug in `gam <UserTypeEntity> print messages|threads ... headers <SMTPHeaderList>` where
+headers other than those specified in `<SMTPHeaderList>` were displayed.
+
+Updated `gam info users <UserTypeEntity>` to display the following data when the Licensing API
+does not return data due to quota limits. Previously, no License data was displayed and
+there was no way to know if it was omitted due to API quota limits vs the user has no license?
+```
+  Licenses: (1)
+    Not available/incomplete
+```
+If a user has no licenses, this will be displayed.
+```
+  Licenses: (0)
+```
+
+You should use `license_skus = <SKUIDList>` in `gam.cfg` to list all of the licensing SKUs
+used in your workspace. Without this list, GAM has to make 70+ API calls to get the licenses
+for a user; this can cause quota limit errors.
+
 7.32.04
 
 Support for student groups in Google Classroom no longer requires Developer Preview membership.

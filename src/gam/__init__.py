@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.32.04'
+__version__ = '7.32.05'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -46398,6 +46398,7 @@ def getUserLicenses(lic, user, skus):
     if sku_calls:
       if try_count >= 5:
         # give up and return what we have
+        licenses.append('Not available/incomplete')
         return licenses
       time.sleep(5)
   return licenses
@@ -47050,7 +47051,7 @@ def infoUsers(entityList):
           if max(seen_group_count.values()) > 1:
             printLine(f'{Ind.Spaces()}* {Msg.USER_HAS_MULTIPLE_DIRECT_OR_INHERITED_MEMBERSHIPS_IN_GROUP}')
           Ind.Decrement()
-      if licenses:
+      if getLicenses:
         printEntitiesCount(Ent.LICENSE, licenses)
         Ind.Increment()
         for u_license in licenses:
@@ -74818,7 +74819,10 @@ def printShowMessagesThreads(users, entityType):
       csvPF.SetTitles(sortTitles)
     else:
       sortTitles = ['User', 'threadId', 'id']
-      sortTitles.extend(defaultHeaders)
+      if show_all_headers:
+        sortTitles.extend(defaultHeaders)
+      elif headersToShow:
+        sortTitles.extend([SMTP_HEADERS_MAP.get(header, header) for header in headersToShow])
       if show_size:
         sortTitles.append('SizeEstimate')
       if show_labels:
