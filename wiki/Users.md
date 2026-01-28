@@ -1018,6 +1018,10 @@ These existing options enable the display of additional information.
 * `(products|product <ProductIDList>)|(skus|sku <SKUIDList>)` - Display license information for a selected list of products/SKUs.
 * `schemas|custom|customschemas <SchemaNameList>` - Display all fields or selected fields of the specified custom schemas
 
+You can use `license_skus = <SKUIDList>` in `gam.cfg` to list all of the licensing SKUs
+used in your workspace. Without this list or the `products|skus` options from above,
+GAM has to make 70+ API calls to get the licenses for a user; this can cause quota limit errors.
+
 By default, Gam displays fields that only an adminstrator can view.
 * `userview` - Only display fields that other users in the domain can view.
 
