@@ -1,4 +1,4 @@
-# Users - Calendars
+ Users - Calendars
 - [API documentation](#api-documentation)
 - [Definitions](#definitions)
 - [Calendar colors](#calendar-colors)
@@ -74,8 +74,8 @@
           [coursestates <CourseStateList>])|
         (resource <ResourceID>)|
         (resources <ResourceIDList>)|
-        ((calendars <CalendarList>) | <FileSelector> | <CSVFileSelector> |
-                                      <CSVkmdSelector> | <CSVDataSelector>)
+        (calendars <CalendarList> | <FileSelector> | <CSVFileSelector> |
+                                    <CSVkmdSelector> | <CSVDataSelector>)
         See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 
 <UserCalendarEntity> ::=
@@ -90,8 +90,8 @@
           [coursestates <CourseStateList>])|
         (resource <ResourceID>)|
         (resources <ResourceIDList>)|
-        ((calendars <CalendarList>) | <FileSelector> | <CSVFileSelector> |
-                                      <CSVkmdSelector> | <CSVDataSelector>)|
+        (calendars <CalendarList> | <FileSelector> | <CSVFileSelector> |
+                                    <CSVkmdSelector> | <CSVDataSelector>)|
         <CalendarSelectProperty>*
         See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 
