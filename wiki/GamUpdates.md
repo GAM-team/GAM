@@ -13,7 +13,7 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 ### 7.32.06
 
 Added options to `gam <UserTypeEntity> copy drivefile ... copysubfiles` to limit copying
-of files whose `modifiedTime` meets specified requirements.
+to files whose `modifiedTime` meets specified requirements.
   * `start|starttime <Date>|<Time>` - If specified, `modifiedTime` must be >= the value
   * `end|endtime <Date>|<Time>` - If specified, `modifiedTime` must be <= the value
   * `range <Date>|<Time> <Date>|<Time>` - first value <= `modifiedTime` <= second value
