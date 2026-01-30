@@ -3,7 +3,7 @@
 Print the current version of Gam with details
 ```
 gam version
-GAM 7.32.05 - https://github.com/GAM-team/GAM - pyinstaller
+GAM 7.32.06 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.14.2 64-bit final
 macOS Tahoe 26.2 x86_64
@@ -15,7 +15,7 @@ Time: 2025-12-23T13:57:00-08:00
 Print the current version of Gam with details and time offset information
 ```
 gam version timeoffset
-GAM 7.32.05 - https://github.com/GAM-team/GAM - pyinstaller
+GAM 7.32.06 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.14.2 64-bit final
 macOS Tahoe 26.2 x86_64
@@ -27,7 +27,7 @@ Your system time differs from www.googleapis.com by less than 1 second
 Print the current version of Gam with extended details and SSL information
 ```
 gam version extended
-GAM 7.32.05 - https://github.com/GAM-team/GAM - pyinstaller
+GAM 7.32.06 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.14.2 64-bit final
 macOS Tahoe 26.2 x86_64
@@ -35,7 +35,7 @@ Path: /Users/Admin/bin/gam7
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
 Time: 2025-12-23T13:57:00-08:00
 Your system time differs from admin.googleapis.com by less than 1 second
-OpenSSL 3.5.3 16 Sep 2025
+OpenSSL 3.6.1 27 Jan 2026
 arrow 1.3.0
 chardet 5.2.0
 cryptography 46.0.1
@@ -68,7 +68,7 @@ MacOS High Sierra 10.13.6 x86_64
 Path: /Users/Admin/bin/gam7
 Version Check:
   Current: 5.35.08
-   Latest: 7.32.05
+   Latest: 7.32.06
 echo $?
 1
 ```
@@ -76,7 +76,7 @@ echo $?
 Print the current version number without details
 ```
 gam version simple
-7.32.05
+7.32.06
 ```
 In Linux/MacOS you can do:
 ```
@@ -86,7 +86,7 @@ echo $VER
 Print the current version of Gam and address of this Wiki
 ```
 gam help
-GAM 7.32.05 - https://github.com/GAM-team/GAM
+GAM 7.32.06 - https://github.com/GAM-team/GAM
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.14.2 64-bit final
 macOS Tahoe 26.2 x86_64

@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.32.06
+
+Added options to `gam <UserTypeEntity> copy drivefile ... copysubfiles` to limit copying
+of files whose `modifiedTime` meets specified requirements.
+  * `start|starttime <Date>|<Time>` - If specified, `modifiedTime` must be >= the value
+  * `end|endtime <Date>|<Time>` - If specified, `modifiedTime` must be <= the value
+  * `range <Date>|<Time> <Date>|<Time>` - first value <= `modifiedTime` <= second value
+
 ### 7.32.05
 
 Fixed bug in `gam <UserTypeEntity> print messages|threads ... headers <SMTPHeaderList>` where

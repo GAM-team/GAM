@@ -111,6 +111,7 @@ gam <UserTypeEntity> copy drivefile <DriveFileEntity>
             notusers <EmailAddressList>|
             regex <REMatchPattern>|
             notregex <REMatchPattern>]
+        [([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date>|<Time>)]|
         [copysubfolders [<Boolean>]] [foldernamematchpattern <REMatchPattern>]
         [copysubshortcuts [<Boolean>]] [shortcutnamematchpattern <REMatchPattern>]
         [duplicatefiles overwriteolder|overwriteall|duplicatename|uniquename|skip]
@@ -182,15 +183,17 @@ You can specify whether sub files, folders and shortcuts are copied. If sub fold
 * `copysubshortcuts false` - Sub shortcuts are not copied
 * `copysubshortcuts [true]` - Sub shortcuts are copied; this is the default
 
-By default, GAM displays a message referencing files and folders not selected for copying by the options above.
-* `suppressnotselectedmessages false` - Do not suppress these messages; this is the default
-* `suppressnotselectedmessages [true]` - Suppress these messages
-
 ### By default, when copying sub files, all files, regardless of MIME type, are copied.
 You can specify restrictions on the MIME types to be copied.
 * `filemimetypes <MimeTypeList>` - Copy sub files with the specified MIME types
 * `filemimetypes not <MimeTypeList>` - Copy sub files with MIME types other than those specified 
 * `filemimetypes category <MimeTypeNameList>` - Copy sub files with the specified MIME type categories
+
+### By default, when copying sub files, all files, regardless of their `modifiedTime`, are copied.
+You can specify restrictions on the `modifiedTime` to be copied.
+* `start|starttime <Date>|<Time>` - If specified, `modifiedTime` must be >= the value
+* `end|endtime <Date>|<Time>` - If specified, `modifiedTime` must be <= the value
+* `range <Date>|<Time> <Date>|<Time>` - first value <= `modifiedTime` <= second value
 
 ### By default, when copying sub files, folders and shortcuts, all are copied.
 You can specify `<REMatchPattern>` patterns that limit the items copied based on their name.
@@ -206,6 +209,10 @@ You can specify `<REMatchPattern>` patterns that limit the items copied based on
 * `copysubfilesownedby notusers <EmailAddressList>` - Only files not owned by users in `<EmailAddressList>` are copied.
 * `copysubfilesownedby regex <REMatchPattern>` - Only files owned by users whose email addresses match `<REMatchPattern>` are copied.
 * `copysubfilesownedby notregex <REMatchPattern>` - Only files owned by users whose email addresses do not match `<REMatchPattern>` are copied.
+
+### By default, GAM displays a message referencing files and folders not selected for copying by the options above.
+* `suppressnotselectedmessages false` - Do not suppress these messages; this is the default
+* `suppressnotselectedmessages [true]` - Suppress these messages
 
 ### Specify a new name for the file/folder
 * `newfilename <DriveFileName>` - The copied file/folder will be named `<DriveFileName>`
