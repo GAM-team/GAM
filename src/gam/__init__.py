@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.32.05'
+__version__ = '7.32.06'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -61954,6 +61954,8 @@ def initCopyMoveOptions(copyCmd):
     'copySubFilesOwnedBy': {},
     'copyPermissionRoles': set(DRIVEFILE_ACL_ROLES_MAP.values()),
     'copyPermissionTypes': set(DRIVEFILE_ACL_PERMISSION_TYPES),
+    'checkModifiedTime': False,
+    'startEndTime': StartEndTime(),
     }
 
 DUPLICATE_FILE_CHOICES = {
@@ -62112,6 +62114,9 @@ def getCopyMoveOptions(myarg, copyMoveOptions):
             copyMoveOptions['copySubFilesOwnedBy']['value'] = set(getString(Cmd.OB_EMAIL_ADDRESS_LIST).replace(',', ' ').lower().split())
           elif copyMoveOptions['copySubFilesOwnedBy']['mode'] in {'regex', 'notregex'}:
             copyMoveOptions['copySubFilesOwnedBy']['value'] = getREPattern(re.IGNORECASE)
+      elif myarg in {'start', 'starttime', 'end', 'endtime', 'range'}:
+        copyMoveOptions['startEndTime'].Get(myarg)
+        copyMoveOptions['checkModifiedTime'] = True
       else:
         return False
   return True
@@ -62668,6 +62673,7 @@ copyReturnItemMap = {
 #	    notusers <EmailAddressList>|
 #	    regex <REMatchPattern>|
 #	    notregex <REMatchPattern>]
+#	[([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date>|<Time>)]|
 #	[copysubfolders [<Boolean>]] [foldernamematchpattern <REMatchPattern>]
 #	[copysubshortcuts [<Boolean>]] [shortcutnamematchpattern <REMatchPattern>]
 #	[duplicatefiles overwriteolder|overwriteall|duplicatename|uniquename|skip]
@@ -62904,6 +62910,14 @@ def copyDriveFile(users):
               return False
       if not copyMoveOptions['mimeTypeCheck'].Check(childMimeType):
         return False
+      if copyMoveOptions['checkModifiedTime']:
+        childModifiedTime = child.get('modifiedTime', None)
+        if not childModifiedTime:
+          return False
+        childModifiedTime = formatLocalTime(childModifiedTime)
+        if ((copyMoveOptions['startEndTime'].startTime is not None and childModifiedTime < copyMoveOptions['startEndTime'].startTime) or
+            (copyMoveOptions['startEndTime'].endTime is not None and childModifiedTime > copyMoveOptions['startEndTime'].endTime)):
+          return False
       nameMatchPattern = copyMoveOptions['fileNameMatchPattern']
     return not nameMatchPattern or nameMatchPattern.match(childName)
 

@@ -6888,6 +6888,7 @@ gam <UserTypeEntity> copy drivefile <DriveFileEntity>
         [skipids <DriveFileEntity>]
         [copysubfiles [<Boolean>]] [filenamematchpattern <REMatchPattern>]
              [filemimetype [not] <MimeTypeList>] [filemimetype category <MimeTypeNameList>]
+        [([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date>|<Time>)]|
         [copysubfilesownedby
             any|me|others|
             users <EmailAddressList>|
