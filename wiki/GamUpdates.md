@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.32.07
+
+Added option `includepermissionsforview published` to `gam <UserTypeEntity> print filelist` and
+`gam <UserTypeEntity> show fileinfo`. From the Drive API documentation:
+```
+Specifies which additional view's permissions to include in the response. Only published is supported.
+```
+
 ### 7.32.06
 
 Added options to `gam <UserTypeEntity> copy drivefile ... copysubfiles` to limit copying

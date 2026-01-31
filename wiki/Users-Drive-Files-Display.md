@@ -430,6 +430,7 @@ gam <UserTypeEntity> show fileinfo <DriveFileEntity>
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [showdrivename] [showshareddrivepermissions]
         [(showlabels details|ids)|(includelabels <ClassificationLabelIDList>)]
+        [includepermissionsforview published]
         [showparentsidsaslist] [followshortcuts [<Boolean>]]
         [stripcrsfromname]
         [formatjson]
@@ -440,6 +441,7 @@ gam <UserTypeEntity> info drivefile <DriveFileEntity>
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [showdrivename] [showshareddrivepermissions]
         [(showlabels details|ids)|(includelabels <ClassificationLabelIDList>)]
+        [includepermissionsforview published]
         [showparentsidsaslist] [followshortcuts [<Boolean>]]
         [stripcrsfromname]
         [formatjson]
@@ -1102,6 +1104,7 @@ gam <UserTypeEntity> print|show filelist [todrive <ToDriveAttribute>*]
         [allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
         [showdrivename] [showshareddrivepermissions]
         [(showlabels details|ids)|(includelabels <ClassificationLabelIDList>)]
+        [includepermissionsforview published]
         [showparentsidsaslist] [showpermissionslast]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])* [delimiter <Character>]
         [stripcrsfromname]
