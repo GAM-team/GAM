@@ -535,6 +535,9 @@ gam redirect stdout ./groups.txt show cigroup-members types group
 ```
 
 ## Manage external users in groups with allowExternalMembers False
+
+* See: https://support.google.com/a/answer/16778447
+
 Get external members of groups with allowExternalMembers = False
 ```
 gam redirect csv ./ExternalMembersGroupsWithAEMFalse.csv print cigroup-members verifyallowexternal
