@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.32.06'
+__version__ = '7.32.07'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -2308,10 +2308,10 @@ def getMatchSkipFields(fieldNames):
 
 def checkMatchSkipFields(row, fieldnames, matchFields, skipFields):
   for matchField, matchPattern in matchFields.items():
-    if (matchField not in row) or not matchPattern.search(row[matchField]):
+    if (matchField not in row) or not matchPattern.search(str(row[matchField])):
       return False
   for skipField, matchPattern in skipFields.items():
-    if (skipField in row) and matchPattern.search(row[skipField]):
+    if (skipField in row) and matchPattern.search(str(row[skipField])):
       return False
   if fieldnames and (GC.Values[GC.CSV_INPUT_ROW_FILTER] or GC.Values[GC.CSV_INPUT_ROW_DROP_FILTER]):
     return RowFilterMatch(row, fieldnames,
@@ -57294,6 +57294,31 @@ FILEPATH_FIELDS = ','.join(FILEPATH_FIELDS_TITLES)
 
 DRIVE_TIME_OBJECTS = {'createdTime', 'viewedByMeTime', 'modifiedByMeTime', 'modifiedTime', 'restrictionTime', 'sharedWithMeTime', 'trashedTime'}
 
+def _getIncludeLabels(includeLabels):
+  labelIds = getEntityList(Cmd.OB_CLASSIFICATION_LABEL_ID, shlexSplit=True)
+  for labelId in labelIds:
+    includeLabels.add(normalizeDriveLabelID(labelId))
+
+def _finalizeIncludeLabels(includeLabels):
+  if includeLabels:
+    return ','.join(includeLabels)
+  return None
+
+DRIVEFILE_PERMISSIONS_FOR_VIEW_CHOICES = ['published']
+
+def _getIncludePermissionsForView(includePermissionsForView):
+  ipfwList = getEntityList(Cmd.OB_STRING_LIST)
+  for ipfw in ipfwList:
+    if ipfw in DRIVEFILE_PERMISSIONS_FOR_VIEW_CHOICES:
+      includePermissionsForView.add(ipfw)
+    else:
+      invalidChoiceExit(ipfw, DRIVEFILE_PERMISSIONS_FOR_VIEW_CHOICES, True)
+
+def _finalizeIncludePermissionsForView(includePermissionsForView):
+  if includePermissionsForView:
+    return ','.join(includePermissionsForView)
+  return None
+
 def _getDriveFieldSubField(field, fieldsList, parentsSubFields):
   field, subField = field.split('.', 1)
   if field in DRIVE_SUBFIELDS_CHOICE_MAP:
@@ -57320,7 +57345,8 @@ class DriveFileFields():
     self.allFields = False
     self.OBY = OrderBy(DRIVEFILE_ORDERBY_CHOICE_MAP)
     self.fieldsList = []
-    self.includeLabels = []
+    self.includeLabels = set()
+    self.includePermissionsForView = set()
     self.parentsSubFields = {'id': False, 'isRoot': False, 'rootFolderId': None}
 
   def SetAllParentsSubFields(self):
@@ -57354,9 +57380,9 @@ class DriveFileFields():
         else:
           _getDriveFieldSubField(field, self.fieldsList, self.parentsSubFields)
     elif myarg == 'includelabels':
-      labelIds = getEntityList(Cmd.OB_CLASSIFICATION_LABEL_ID, shlexSplit=True)
-      for labelId in labelIds:
-        self.includeLabels.append(normalizeDriveLabelID(labelId))
+      _getIncludeLabels(self.includeLabels)
+    elif myarg == 'includepermissionsforview':
+      _getIncludePermissionsForView(self.includePermissionsForView)
     elif myarg.find('.') != -1:
       _getDriveFieldSubField(myarg, self.fieldsList, self.parentsSubFields)
     elif myarg == 'orderby':
@@ -57416,6 +57442,7 @@ def _formatFileDriveLabels(showLabels, labels, result, printMode, delimiter):
 #	(orderby <DriveFileOrderByFieldName> [ascending|descending])*
 #	[showdrivename] [showshareddrivepermissions]
 #	[(showlabels details|ids)|(includelabels <DriveLabelIDList>)]
+#	[includepermissionsforview published]
 #	[showparentsidsaslist] [followshortcuts [<Boolean>]]
 #	[stripcrsfromname] [formatjson]
 # gam <UserTypeEntity> show fileinfo <DriveFileEntity>
@@ -57425,6 +57452,7 @@ def _formatFileDriveLabels(showLabels, labels, result, printMode, delimiter):
 #	(orderby <DriveFileOrderByFieldName> [ascending|descending])*
 #	[showdrivename] [showshareddrivepermissions]
 #	[(showlabels details|ids)|(includelabels <DriveLabelIDList>)]
+#	[includepermissionsforview published]
 #	[showparentsidsaslist] [followshortcuts [<Boolean>]]
 #	[stripcrsfromname] [formatjson]
 def showFileInfo(users):
@@ -57487,7 +57515,8 @@ def showFileInfo(users):
     DFF.SetAllParentsSubFields()
     skipObjects = skipObjects.union(DEFAULT_SKIP_OBJECTS)
     showNoParents = True
-  includeLabels = ','.join(DFF.includeLabels)
+  includeLabels = _finalizeIncludeLabels(DFF.includeLabels)
+  includePermissionsForView = _finalizeIncludePermissionsForView(DFF.includePermissionsForView)
   pathFields = FILEPATH_FIELDS
   i, count, users = getEntityArgument(users)
   for user in users:
@@ -57526,12 +57555,14 @@ def showFileInfo(users):
       try:
         result = callGAPI(drive.files(), 'get',
                           throwReasons=GAPI.DRIVE_GET_THROW_REASONS+[GAPI.INVALID],
-                          fileId=fileId, includeLabels=includeLabels, fields=fields, supportsAllDrives=True)
+                          fileId=fileId, includeLabels=includeLabels, includePermissionsForView=includePermissionsForView,
+                          fields=fields, supportsAllDrives=True)
         if followShortcuts and result['mimeType'] == MIMETYPE_GA_SHORTCUT:
           fileId = result['shortcutDetails']['targetId']
           result = callGAPI(drive.files(), 'get',
                             throwReasons=GAPI.DRIVE_GET_THROW_REASONS+[GAPI.INVALID],
-                            fileId=fileId, includeLabels=includeLabels, fields=fields, supportsAllDrives=True)
+                            fileId=fileId, includeLabels=includeLabels, includePermissionsForView=includePermissionsForView,
+                            fields=fields, supportsAllDrives=True)
         if stripCRsFromName:
           result['name'] = _stripControlCharsFromName(result['name'])
         driveId = result.get('driveId')
@@ -58859,6 +58890,7 @@ SIZE_FIELD_CHOICE_MAP = {
 #	[allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
 #	[showdrivename] [showshareddrivepermissions]
 #	(showlabels details|ids)|(includelabels <DriveLabelIDList>)]
+#	[includepermissionsforview published]
 #	[showparentsidsaslist] [showpermissionslast]
 #	(orderby <DriveFileOrderByFieldName> [ascending|descending])* [delimiter <Character>]
 #	[stripcrsfromname]
@@ -59039,7 +59071,8 @@ def printFileList(users):
                                throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID_QUERY, GAPI.INVALID,
                                                                            GAPI.BAD_REQUEST],
                                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS+[GAPI.UNKNOWN_ERROR],
-                               q=q, orderBy=DFF.orderBy, includeLabels=includeLabels, fields=pagesFields,
+                               q=q, orderBy=DFF.orderBy, includeLabels=includeLabels, includePermissionsForView=includePermissionsForView,
+                               fields=pagesFields,
                                pageSize=GC.Values[GC.DRIVE_MAX_RESULTS], includeItemsFromAllDrives=True, supportsAllDrives=True)
       for childEntryInfo in children:
         childFileId = childEntryInfo['id']
@@ -59056,8 +59089,12 @@ def printFileList(users):
           _printFileInfo(drive, user, childEntryInfo.copy(), stripCRsFromName)
         if childEntryInfo['mimeType'] == MIMETYPE_GA_FOLDER and (maxdepth == -1 or depth < maxdepth):
           _printChildDriveFolderContents(drive, childEntryInfo, user, i, count, depth+1)
-    except (GAPI.invalidQuery, GAPI.invalid, GAPI.badRequest):
-      entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE, None], invalidQuery(selectSubQuery), i, count)
+    except (GAPI.invalidQuery, GAPI.invalid, GAPI.badRequest) as e:
+      errMsg = str(e)
+      if 'Invalid field selection' in errMsg or "Only a 'published' value is supported." in errMsg:
+        entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, None], errMsg, i, count)
+      else:
+        entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE, None], invalidQuery(selectSubQuery), i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
       userDriveServiceNotEnabledWarning(user, str(e), i, count)
 
@@ -59279,7 +59316,8 @@ def printFileList(users):
   if filepath and not countsOnly:
     csvPF.AddTitles('paths')
     csvPF.SetFixPaths(True)
-  includeLabels = ','.join(DFF.includeLabels)
+  includeLabels = _finalizeIncludeLabels(DFF.includeLabels)
+  includePermissionsForView = _finalizeIncludePermissionsForView(DFF.includePermissionsForView)
   csvPF.RemoveTitles(['capabilities'])
   if DLP.queryTimes and selectSubQuery:
     for queryTimeName, queryTimeValue in DLP.queryTimes.items():
@@ -59352,7 +59390,8 @@ def printFileList(users):
                                                                           GAPI.BAD_REQUEST, GAPI.FILE_NOT_FOUND,
                                                                           GAPI.NOT_FOUND, GAPI.TEAMDRIVE_MEMBERSHIP_REQUIRED],
                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS+[GAPI.UNKNOWN_ERROR],
-                              q=DLP.fileIdEntity['query'], orderBy=DFF.orderBy, includeLabels=includeLabels,
+                              q=DLP.fileIdEntity['query'], orderBy=DFF.orderBy,
+                              includeLabels=includeLabels, includePermissionsForView=includePermissionsForView,
                               fields=pagesFields, pageSize=GC.Values[GC.DRIVE_MAX_RESULTS], **btkwargs)
         for files in feed:
           if showLabels is not None:
@@ -59383,7 +59422,7 @@ def printFileList(users):
         DLP.GetLocationFileIdsFromTree(fileTree, fileIdEntity)
       except (GAPI.invalidQuery, GAPI.invalid, GAPI.badRequest) as e:
         errMsg = str(e)
-        if 'Invalid field selection' in errMsg:
+        if 'Invalid field selection' in errMsg or "Only a 'published' value is supported." in errMsg:
           entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, None], errMsg, i, count)
           break
         entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, None], invalidQuery(DLP.fileIdEntity['query']), i, count)
@@ -59415,8 +59454,9 @@ def printFileList(users):
       else:
         try:
           fileEntryInfo = callGAPI(drive.files(), 'get',
-                                   throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
-                                   fileId=fileId, includeLabels=includeLabels, fields=fields, supportsAllDrives=True)
+                                   throwReasons=GAPI.DRIVE_GET_THROW_REASONS+[GAPI.INVALID],
+                                   fileId=fileId, includeLabels=includeLabels, includePermissionsForView=includePermissionsForView,
+                                   fields=fields, supportsAllDrives=True)
           if stripCRsFromName:
             fileEntryInfo['name'] = _stripControlCharsFromName(fileEntryInfo['name'])
           if showLabels is not None:
@@ -59427,6 +59467,9 @@ def printFileList(users):
             _formatFileDriveLabels(showLabels, labels, fileEntryInfo, True, delimiter)
           if filepath:
             fileTree[fileId] = {'info': fileEntryInfo}
+        except GAPI.invalid as e:
+          entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, fileId], str(e), j, jcount)
+          continue
         except GAPI.fileNotFound:
           entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, fileId], Msg.NOT_FOUND, j, jcount)
           continue
@@ -67410,8 +67453,6 @@ def infoDriveFileACLs(users, useDomainAdminAccess=False):
 def doInfoDriveFileACLs():
   infoDriveFileACLs([_getAdminEmail()], True)
 
-DRIVEFILE_PERMISSIONS_FOR_VIEW_CHOICES = ['published']
-
 def getDriveFilePermissionsFields(myarg, fieldsList):
   if myarg in DRIVE_PERMISSIONS_SUBFIELDS_CHOICE_MAP:
     fieldsList.append(DRIVE_PERMISSIONS_SUBFIELDS_CHOICE_MAP[myarg])
@@ -67466,7 +67507,7 @@ def printShowDriveFileACLs(users, useDomainAdminAccess=False):
   addTitle = None
   roles = set()
   oneItemPerRow = pmselect = showTitles = False
-  includePermissionsForView = None
+  includePermissionsForView = set()
   fieldsList = []
   OBY = OrderBy(DRIVEFILE_ORDERBY_CHOICE_MAP)
   PM = PermissionMatch()
@@ -67501,13 +67542,14 @@ def printShowDriveFileACLs(users, useDomainAdminAccess=False):
     elif PM.ProcessArgument(myarg):
       pass
     elif myarg == 'includepermissionsforview':
-      includePermissionsForView = getChoice(DRIVEFILE_PERMISSIONS_FOR_VIEW_CHOICES)
+      _getIncludePermissionsForView(includePermissionsForView)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   _checkFileIdEntityDomainAccess(fileIdEntity, useDomainAdminAccess)
   if fieldsList:
     if roles:
       fieldsList.append('role')
+  includePermissionsForView = _finalizeIncludePermissionsForView(includePermissionsForView)
   fields = getItemFieldsFromFieldsList('permissions', fieldsList, True)
   printKeys, timeObjects = _getDriveFileACLPrintKeysTimeObjects()
   i, count, users = getEntityArgument(users)

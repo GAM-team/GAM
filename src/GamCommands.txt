@@ -6974,6 +6974,7 @@ gam <UserTypeEntity> info drivefile <DriveFileEntity>
         [returnidonly]
         [filepath|fullpath] [folderpathonly [<Boolean>]] [pathdelimiter <Character>]
         [allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
+        [includepermissionsforview published]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [showdrivename] [showshareddrivepermissions]
         [(showlabels details|ids)|(includelabels <ClassificationLabelIDList>)]
@@ -7457,6 +7458,7 @@ gam <UserTypeEntity> show fileinfo <DriveFileEntity>
         [returnidonly]
         [filepath|fullpath] [folderpathonly [<Boolean>]] [pathdelimiter <Character>]
         [allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
+        [includepermissionsforview published]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [showdrivename] [showshareddrivepermissions]
         [(showlabels details|ids)|(includelabels <ClassificationLabelIDList>)]
@@ -7570,6 +7572,7 @@ gam <UserTypeEntity> print filelist [todrive <ToDriveAttribute>*]
         [sizefield quotabytesused|size] [minimumfilesize <Integer>] [maximumfilesize <Integer>]
         [filenamematchpattern <REMatchPattern>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>] [pmfilter] [oneitemperrow]
+        [includepermissionsforview published]
         [excludetrashed]
         [maxfiles <Integer>] [nodataheaders <String>]
         [countsonly [summary none|only|plus] [summaryuser <String>]
