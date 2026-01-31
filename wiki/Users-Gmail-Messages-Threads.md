@@ -404,7 +404,7 @@ Messages are archived to the group specified by `<GroupItem>`.
 ### Archive a selected set of messages
 * `((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+` - Criteria to select messages
 * `labelids <LabelIDList>` - Select messages with labels that match all of the specified label IDs.
-* `max_to_archive` - Limit the number of messages that will be archived; use a value of 0 for no limit
+* `max_to_archive  <Number>` - Limit the number of messages that will be archived; use a value of 0 for no limit
 * `doit` - No messages are archived unless you specify `doit`. By not specifying `doit`, you can preview the messages selected to verify that the results match your expectations.
 
 When `matchlabel <LabelName>` is specified, the following characters are replaced with a `-` in the generated query.
@@ -412,8 +412,8 @@ When `matchlabel <LabelName>` is specified, the following characters are replace
  &()"|{}/
 ```
 
-By default, Gam fetches all matching messages from Google and then processes only `max_to_archive` of them.
-To speed up fetching, specify `quick` and only `max_to_archive` of the matching messages will be fetched.
+By default, Gam fetches all matching messages from Google and then archives only `max_to_archive <Number>` of them.
+To speed up fetching, specify `quick` and only `max_to_archive <Number>` of the matching messages will be fetched.
 You must still specify `doit` to perform the operation.
 
 By default, the command results are displayed as indented keys and values. Use the `csv` option
@@ -447,6 +447,9 @@ gam <UserTypeEntity> export thread|threads
         [targetfolder <FilePath>] [targetname <FileName>] [overwrite [<Boolean>]]
 ```
 
+By default, Gam fetches all matching messages from Google and then exports only `max_to_export <Number>` of them.
+To speed up fetching, specify `quick` and only `max_to_export <Number>` of the matching messages will be fetched.
+
 By default, when exporting a message, it is downloaded to the directory specified in `gam.cfg/drive_dir`.
 * `targetfolder <FilePath>` - Specify an alternate location for the downloaded file.
 
@@ -476,6 +479,9 @@ gam <UserTypeEntity> forward thread|threads recipient|to <RecipientEntity>
          [quick|notquick] [doit] [max_to_forward <Number>])|(ids <ThreadIDEntity>)
          [subject <String>] [addorigfieldstosubject]
 ```
+
+By default, Gam fetches all matching messages from Google and then forwards only `max_to_forward <Number>` of them.
+To speed up fetching, specify `quick` and only `max_to_forwrd <Number>` of the matching messages will be fetched.
 
 By default, the message subject has `Fwd: ` prepended; use `subject <String>` to specify a new subject.
 
@@ -538,7 +544,7 @@ user@domain.com,18e9fc58c5491f4c,Deleted,
 ### Manage a selected set of messages
 * `((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+` - Criteria to select messages
 * `labelids <LabelIDList>` - Select messages with labels that match all of the specified label IDs.
-* `max_to_xxx` - Limit the number of messages that will be processed; use a value of 0 for no limit
+* `max_to_xxx <Number>` - Limit the number of messages that will be processed; use a value of 0 for no limit
 * `doit` - No messages are processed unless you specify `doit`. By not specifying `doit`, you can preview the messages selected to verify that the results match your expectations.
 
 When `matchlabel <LabelName>` is specified, the following characters are replaced with a `-` in the generated query.
@@ -546,8 +552,8 @@ When `matchlabel <LabelName>` is specified, the following characters are replace
  &()"|{}/
 ```
 
-By default, Gam fetches all matching messages from Google and then processes only `max_to_process` of them.
-To speed up fetching, specify `quick` and only `max_to_process` of the matching messages will be fetched.
+By default, Gam fetches all matching messages from Google and then processes only `max_to_process <Number>` of them.
+To speed up fetching, specify `quick` and only `max_to_process <Number>` of the matching messages will be fetched.
 You must still specify `doit` to perform the operation.
 
 ## Delete messages by Message-Id
@@ -611,7 +617,7 @@ gam <UserTypeEntity> print messages|threads [todrive <ToDriveAttribute>*]
 ```
 ## Display all messages
 By default, Gam displays all messages.
-* `max_to_xxx` - Limit the number of messages that will be displayed
+* `max_to_print|max_to_show <Number>` - Limit the number of messages that will be displayed
 * `includespamtrash` - Include messages in the Spam and Trash folders
 
 By default, all messages in a thread are displayed with `print|show threads`.
@@ -627,7 +633,7 @@ gam user user@domain.com print|show threads maxmessagesperthread 1
 ## Display a selected set of messages
 * `((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+` - Criteria to select messages
 * `labelids <LabelIDList>` - Select messages with labels that match all of the specified label IDs.
-* `max_to_xxx` - Limit the number of messages that will be displayed
+* `max_to_print|max_to_show <Number>` - Limit the number of messages that will be displayed
 * `includespamtrash` - Include messages in the Spam and Trash folders
 * `labelmatchpattern <REMatchPattern>` - Only display messages with some label that matches `<REMatchPattern>`
   * `labelmatchpattern xyz` - Label must start with xyz
@@ -641,8 +647,8 @@ When `matchlabel <LabelName>` is specified, the following characters are replace
  &()"|{}/
 ```
 
-By default, Gam fetches only `max_to_process` matching messages from Google and then displays them.
-To see how many messages actually match, specify `notquick` and all matching messages will be fetched; only `max_to_process` of them will be displayed.
+By default, Gam fetches only `max_to_process <Number>` matching messages from Google and then displays them.
+To see how many messages actually match, specify `notquick` and all matching messages will be fetched; only `max_to_process <Number>` of them will be displayed.
 
 ### Difference between `From` and `Sender` headers
 The `From` header specifies the author of the message, that is,
