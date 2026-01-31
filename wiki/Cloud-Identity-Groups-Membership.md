@@ -548,6 +548,7 @@ gam redirect stdout ./UpdateGroupsWithAEMFalseToAEMTrue.txt redirect stderr stdo
 ```
 
 Update all groups to allowExternalMembers = True
+**Caution, be sure that this is what you want**
 ```
 gam redirect stdout ./UpdateGroupsWithAEMFalseToEMTrue.txt redirect stderr stdout update group csvkmd ExternalMembersGroupsWithAEMFalse.csv keyfield group allowexternalmembers true
 ```
@@ -560,7 +561,8 @@ Delete selected external members from groups with allowExternalMembers = False
 gam redirect csv ./DeletedMembersFromGroupsWithAEMFalse.csv redirect stdout ./DeleteMembersFromGroupsWithAEMFalse.txt redirect stderr stdout update group csvkmd ExternalMembersGroupsWithAEMFalse.csv keyfield group matchfield delete x datafield email delete preview actioncsv csvdata email
 ```
 
-Delete all external members from groups with allowExternalMembers = False *Caution*
+Delete all external members from groups with allowExternalMembers = False
+**Caution, be sure that this is what you want**
 * The `preview` option let's you verify what external members are to be deleted, remove it to do the deletions
 ```
 gam redirect csv ./DeletedMembersFromGroupsWithAEMFalse.csv redirect stdout ./DeleteMembersFromGroupsWithAEMFalse.txt redirect stderr stdout update group csvkmd ExternalMembersGroupsWithAEMFalse.csv keyfield group datafield email delete preview actioncsv csvdata email
