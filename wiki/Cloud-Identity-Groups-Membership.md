@@ -13,7 +13,7 @@
 - [Display user group member options](#display-user-group-member-options)
 - [Display group membership in CSV format](#display-group-membership-in-csv-format)
 - [Display group membership in hierarchical format](#display-group-membership-in-hierarchical-format)
-- [Display external users in groups with allowExternalMembers False](#display-external-users-in-groups-with-allowexternalmembers-false)
+- [Manage external users in groups with allowExternalMembers False](#manage-external-users-in-groups-with-allowexternalmembers-false)
 ## API documentation
 * [Cloud Identity Groups Overview](https://cloud.google.com/identity/docs/groups)
 * [Cloud Identity Groups API - Groups](https://cloud.google.com/identity/docs/reference/rest/v1/groups)
@@ -534,6 +534,35 @@ To show the structure of all groups you can do the following; it will be time co
 gam redirect stdout ./groups.txt show cigroup-members types group
 ```
 
-## Display external users in groups with allowExternalMembers False
-When printing  group membership, the option `verifyallowexternal` causes
-GAM to only display external users in groups with `allowExternalMembers=False`.
+## Manage external users in groups with allowExternalMembers False
+Get external members of groups with allowExternalMembers = False
+```
+gam redirect csv ./ExternalMembersGroupsWithAEMFalse.csv print cigroup-members verifyallowexternal
+```
+
+Update selected groups to allowExternalMembers = True
+* Add a column labelled `update` to ExternalMembersGroupsWithAEMFalse.csv
+* For groups to be updated, add an x to the `update` column for any member of the group to be updated
+```
+gam redirect stdout ./UpdateGroupsWithAEMFalseToAEMTrue.txt redirect stderr stdout update group csvkmd ExternalMembersGroupsWithAEMFalse.csv keyfield group matchfield update x allowexternalmembers true
+```
+
+Update all groups to allowExternalMembers = True
+```
+gam redirect stdout ./UpdateGroupsWithAEMFalseToEMTrue.txt redirect stderr stdout update group csvkmd ExternalMembersGroupsWithAEMFalse.csv keyfield group allowexternalmembers true
+```
+
+Delete selected external members from groups with allowExternalMembers = False
+* Add a column labelled `delete` to ExternalMembersGroupsWithAEMFalse.csv
+* For exernal members to be deleted, add an x to the `delete` column
+* The `preview` option let's you verify what external members are to be deleted, remove it to do the deletions
+```
+gam redirect csv ./DeletedMembersFromGroupsWithAEMFalse.csv redirect stdout ./DeleteMembersFromGroupsWithAEMFalse.txt redirect stderr stdout update group csvkmd ExternalMembersGroupsWithAEMFalse.csv keyfield group matchfield delete x datafield email delete preview actioncsv csvdata email
+```
+
+Delete all external members from groups with allowExternalMembers = False *Caution*
+* The `preview` option let's you verify what external members are to be deleted, remove it to do the deletions
+```
+gam redirect csv ./DeletedMembersFromGroupsWithAEMFalse.csv redirect stdout ./DeleteMembersFromGroupsWithAEMFalse.txt redirect stderr stdout update group csvkmd ExternalMembersGroupsWithAEMFalse.csv keyfield group datafield email delete preview actioncsv csvdata email
+```
+
