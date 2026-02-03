@@ -311,12 +311,14 @@ developer_preview_apis
         A comma separated list of APIs requiring a Developer Preview key.
         Default: Blank
         Valid values:
-            accesscontextmanager,admin,alertcenter,analyticsadmin,calendar-json,cbcm,chat,chromemanagement,chromepolicy,
-            classroom,cloudchannel,cloudidentity,cloudresourcemanager,contactdelegation,contacts,datastudio,docs,drive,
-            driveactivity,drivelabels,email-audit,forms,gmail,groupsmigration,groupssettings,iam,iamcredentials,keep,
-            licensing,meet,mybusinessaccountmanagement,oauth2,orgpolicy,people,pubsub,reseller,searchconsole,
-            serviceaccountlookup,servicemanagement,serviceusage,sheets,siteVerification,storage,tagmanager,tasks,vault,
-            versionhistory,youtube
+            accesscontextmanager,admin,alertcenter,analyticsadmin,calendar-json,cbcm,chat,
+            chromemanagement,chromepolicy,classroom,cloudchannel,cloudidentity,
+            cloudresourcemanager,contactdelegation,contacts,datastudio,docs,drive,
+            driveactivity,drivelabels,email-audit,forms,gmail,groupsmigration,groupssettings,
+            iam,iamcredentials,keep,licensing,meet,mybusinessaccountmanagement,oauth2,
+            orgpolicy,people,pubsub,reseller,searchconsole,serviceaccountlookup,
+            servicemanagement,serviceusage,sheets,siteVerification,storage,tagmanager,tasks,
+            vault,versionhistory,youtube
 developer_preview_api_key
         A Developer Preview API key that is passed to all API calls for APIs in developer_preview_apis
         Default: Blank
