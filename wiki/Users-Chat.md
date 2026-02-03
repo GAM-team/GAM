@@ -37,7 +37,9 @@ gam user user@domain.com update serviceaccount
 [*] 11)  Chat API - User Sections (supports readonly)
 
 ```
-`Chat API - User Sections` is in Developer Preview; you must have a `developer_preview_api_key` in `gam.cfg` to use these commands.
+`Chat API - User Sections` is in Developer Preview; you must have a the following variables set in `gam.cfg` to use these commands.
+* `developer_preview_apis = chat`
+* `developer_preview_api_key = <String>`
 
 Added `use_chat_admin_access` Boolean variable to `gam.cfg`. 
 ```

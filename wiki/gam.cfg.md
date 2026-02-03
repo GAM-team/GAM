@@ -307,6 +307,19 @@ debug_level
 debug_redaction
         Enable/disable redaction of sensitive data from API debugging output
         Default: True
+developer_preview_apis
+        A comma separated list of APIs requiring a Developer Preview key.
+        Default: Blank
+        Valid values:
+            accesscontextmanager,admin,alertcenter,analyticsadmin,calendar-json,cbcm,chat,chromemanagement,chromepolicy,
+            classroom,cloudchannel,cloudidentity,cloudresourcemanager,contactdelegation,contacts,datastudio,docs,drive,
+            driveactivity,drivelabels,email-audit,forms,gmail,groupsmigration,groupssettings,iam,iamcredentials,keep,
+            licensing,meet,mybusinessaccountmanagement,oauth2,orgpolicy,people,pubsub,reseller,searchconsole,
+            serviceaccountlookup,servicemanagement,serviceusage,sheets,siteVerification,storage,tagmanager,tasks,vault,
+            versionhistory,youtube
+developer_preview_api_key
+        A Developer Preview API key that is passed to all API calls for APIs in developer_preview_apis
+        Default: Blank
 device_max_results
         When retrieving lists of ChromeOS devices from API,
         how many should be retrieved in each API call
@@ -325,13 +338,6 @@ drive_max_results
         how many should be retrieved in each API call
         Default: 1000
         Range: 1 - 1000
-drive_v3_beta
-        Enable/disable use of Drive API v3 beta for Limited Folder Access testing
-        Default: False
-drive_v3_native_names
-        Enable/disable use of Drive API v3 native column names
-        in all gam print/show commands related to Google Drive
-        Default: True
 email_batch_size
         When archiving, printing, showing, trashing, untrashing, marking as spam Gmail messages.
         how many should be processed in each batch
@@ -371,7 +377,7 @@ gmail_cse_inkey_dir
         Default: Blank
 input_dir
         Input directory for files with non-absolute file names.
-	The default 
+        The default is the current working directory.
         Default: .
 inter_batch_wait
         When processing items in batches, how many seconds should GAM wait between batches
@@ -387,9 +393,6 @@ license_skus
         Each item in the list can be a <SKUID> which will be validated or
         a <ProductID>/<SKUID> which will not be validated.
         Default: Blank
-meet_v2_beta
-        Enable/disable use of Meet API v2 beta for additional Chat Space parameters.
-        Default: False
 member_max_results
         When retrieving lists of Google Group members from API,
         how many should be retrieved in each API call
@@ -404,7 +407,7 @@ member_max_results_ci_basic
 member_max_results_ci_full
         When retrieving lists of Cloud Identity Group members from API
         with either the basic or full options,
-	how many should be retrieved in each API call
+        how many should be retrieved in each API call
         Default: 500
         Range: 1 - 500
 message_batch_size
@@ -577,7 +580,7 @@ timezone
         to your local timezone. If you are running GAM on a remote computer or on a
         cloud shell, "local" will mean the time at the remote/cloud shell computer,
         not your location, Use "+|-hh:mm" to specify the timezone at your location.
-	Starting with version 7.21.00 you can use a timezone name; the names are case sensitive.
+        Starting with version 7.21.00 you can use a timezone name; the names are case sensitive.
         See: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
         Default: utc
         Range: utc|z|local|(+|-hh:mm)|<ValidTimezoneName>
@@ -937,7 +940,7 @@ Edit gam.cfg to set up additional clients; it should look like this when complet
 activity_max_results = 100
 admin_email = ''
 api_calls_rate_check = false
-api_calls_rate_limit = 1000
+api_calls_rate_limit = 100
 api_calls_tries_limit = 10
 auto_batch_min = 0
 bail_on_internal_error_tries = 2
@@ -947,55 +950,74 @@ cache_dir = /Users/admin/.gam/gamcache
 cache_discovery_only = true
 channel_customer_id = ''
 charset = utf-8
-cmdlog = ''
-cmdlog_max_backups = 5
-cmdlog_max_kilo_bytes = 1000
+chat_max_results = 100
 classroom_max_results = 0
 client_secrets_json = client_secrets.json
 clock_skew_in_seconds = 10
+cmdlog = ''
+cmdlog_max_backups = 5
+cmdlog_max_kilo_bytes = 1000
 config_dir = /Users/admin/.gam
 contact_max_results = 100
 csv_input_column_delimiter = ,
 csv_input_no_escape_char = true
 csv_input_quote_char = '"'
 csv_input_row_drop_filter = ''
+csv_input_row_drop_filter_mode = anymatch
 csv_input_row_filter = ''
+csv_input_row_filter_mode = allmatch
+csv_input_row_limit = 0
 csv_output_column_delimiter = ,
 csv_output_convert_cr_nl = false
 csv_output_field_delimiter = ' '
 csv_output_header_drop_filter = ''
 csv_output_header_filter = ''
 csv_output_header_force = ''
+csv_output_header_order = ''
 csv_output_line_terminator = lf
 csv_output_no_escape_char = false
 csv_output_quote_char = '"'
-csv_output_row_drop_filter = 
+csv_output_row_drop_filter = ''
+csv_output_row_drop_filter_mode = anymatch
 csv_output_row_filter = ''
+csv_output_row_filter_mode = allmatch
+csv_output_row_limit = 0
+csv_output_sort_headers = ''
 csv_output_subfield_delimiter = '.'
 csv_output_timestamp_column = ''
 csv_output_users_audit = false
 customer_id = my_customer
 debug_level = 0
+debug_redaction = true
+developer_preview_api_key = ''
+developer_preview_apis = ''
 device_max_results = 200
-domain = 
+domain = ''
 drive_dir = /Users/admin/Downloads
 drive_max_results = 1000
-drive_v3_native_names = true
-email_batch_size = 100
+email_batch_size = 50
 enable_dasa = false
+enable_gcloud_reauth = false
+enforce_expansive_access = true
 event_max_results = 250
-extra_args =
+extra_args = ''
+gmail_cse_incert_dir = ''
+gmail_cse_inkey_dir = ''
+input_dir = .
 inter_batch_wait = 0
 license_max_results = 100
-license_sku = ''
+license_skus = ''
 member_max_results = 200
+member_max_results_ci_basic = 1000
+member_max_results_ci_full = 500
 message_batch_size = 50
-message_max_results = 1000
+message_max_results = 500
 mobile_max_results = 100
 multiprocess_pool_limit = 0
 never_time = Never
 no_browser = false
 no_cache = false
+no_short_urls = true
 no_update_check = true
 no_verify_ssl = false
 num_tbatch_threads = 2
@@ -1009,9 +1031,10 @@ print_agu_domains = ''
 print_cros_ous = ''
 print_cros_ous_and_children = ''
 process_wait_limit = 0
-quick_cros_move = False
-quick_info_user = False
+quick_cros_move = false
+quick_info_user = false
 reseller_id = ''
+retry_api_service_not_available = false
 section =
 show_api_calls_retry_data = false
 show_commands = false
@@ -1026,26 +1049,28 @@ smtp_password = ''
 smtp_username = ''
 timezone = utc
 tls_max_version = ''
-tls_min_version = 'TLSv1_2'
+tls_min_version = 'TLSv1_3'
 todrive_clearfilter = false
 todrive_clientaccess = false
 todrive_conversion = true
 todrive_localcopy = false
 todrive_locale = ''
+todrive_no_escape_char = true
 todrive_nobrowser = false
 todrive_noemail = true
-todrive_no_escape_char = true
 todrive_parent = root
 todrive_sheet_timeformat = ''
 todrive_sheet_timestamp = false
+todrive_timeformat = ''
 todrive_timestamp = false
 todrive_timezone = ''
 todrive_upload_nodata = true
 todrive_user = ''
 truncate_client_id = false
 update_cros_ou_with_id = false
+use_chat_admin_access = false
+use_course_owner_access = false
 use_projectid_as_name = false
-
 user_max_results = 500
 user_service_account_access_only = false
 

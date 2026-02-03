@@ -252,7 +252,7 @@ writes the credentials into the file oauth2.txt.
 admin@server:/Users/admin$ rm -f /Users/admin/GAMConfig/oauth2.txt
 admin@server:/Users/admin$ gam version
 WARNING: Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, Item: oauth2_txt, Value: /Users/admin/GAMConfig/oauth2.txt, Not Found
-GAM 7.32.07 - https://github.com/GAM-team/GAM - pyinstaller
+GAM 7.33.00 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.14.2 64-bit final
 macOS Tahoe 26.2 x86_64
@@ -550,6 +550,7 @@ Section: DEFAULT
   cache_discovery_only = true
   channel_customer_id = ''
   charset = utf-8
+  chat_max_results = 100
   classroom_max_results = 0
   client_secrets_json = client_secrets.json ; /Users/admin/GAMConfig/client_secrets.json
   clock_skew_in_seconds = 10
@@ -559,6 +560,7 @@ Section: DEFAULT
   config_dir = /Users/admin/GAMConfig
   contact_max_results = 100
   csv_input_column_delimiter = ,
+  csv_input_no_escape_char = true
   csv_input_quote_char = '"'
   csv_input_row_drop_filter = ''
   csv_input_row_drop_filter_mode = anymatch
@@ -571,32 +573,47 @@ Section: DEFAULT
   csv_output_header_drop_filter = ''
   csv_output_header_filter = ''
   csv_output_header_force = ''
+  csv_output_header_order = ''
   csv_output_line_terminator = lf
+  csv_output_no_escape_char = false
   csv_output_quote_char = '"'
   csv_output_row_drop_filter = ''
   csv_output_row_drop_filter_mode = anymatch
   csv_output_row_filter = ''
   csv_output_row_filter_mode = allmatch
   csv_output_row_limit = 0
+  csv_output_sort_headers = ''
   csv_output_subfield_delimiter = '.'
   csv_output_timestamp_column = ''
   csv_output_users_audit = false
   customer_id = C01234567
   debug_level = 0
+  debug_redaction = true
+  developer_preview_api_key = ''
+  developer_preview_apis = ''
   device_max_results = 200
   domain = domain.com
   drive_dir = /Users/admin/GAMWork
   drive_max_results = 1000
-  drive_v3_native_names = true
   email_batch_size = 50
+  enable_dasa = false
+  enable_gcloud_reauth = false
+  enforce_expansive_access = true
   event_max_results = 250
   extra_args = ''
+  gmail_cse_incert_dir = ''
+  gmail_cse_inkey_dir = ''
+  input_dir = .
   inter_batch_wait = 0
   license_max_results = 100
   license_skus = ''
   member_max_results = 200
+  member_max_results_ci_basic = 1000
+  member_max_results_ci_full = 500
   message_batch_size = 50
   message_max_results = 500
+  mobile_max_results = 100
+  multiprocess_pool_limit = 0
   never_time = Never
   no_browser = false
   no_cache = false
@@ -606,13 +623,15 @@ Section: DEFAULT
   num_threads = 5
   oauth2_txt = oauth2.txt ; /Users/admin/GAMConfig/oauth2.txt
   oauth2service_json = oauth2service.json ; /Users/admin/GAMConfig/oauth2service.json
+  output_dateformat = ''
+  output_timeformat = ''
   people_max_results = 100
   print_agu_domains = ''
   print_cros_ous = ''
   print_cros_ous_and_children = ''
   process_wait_limit = 0
   quick_cros_move = false
-  quick_info_user = False
+  quick_info_user = false
   reseller_id = ''
   retry_api_service_not_available = false
   section = ''
@@ -629,12 +648,13 @@ Section: DEFAULT
   smtp_username = ''
   timezone = local
   tls_max_version = ''
-  tls_min_version = 'TLSv1_2'
+  tls_min_version = 'TLSv1_3'
   todrive_clearfilter = false
   todrive_clientaccess = false
   todrive_conversion = true
   todrive_localcopy = false
   todrive_locale = ''
+  todrive_no_escape_char = true
   todrive_nobrowser = false
   todrive_noemail = true
   todrive_parent = root
@@ -647,6 +667,8 @@ Section: DEFAULT
   todrive_user = ''
   truncate_client_id = false
   update_cros_ou_with_id = false
+  use_chat_admin_access = false
+  use_course_owner_access = false
   use_projectid_as_name = false
   user_max_results = 500
   user_service_account_access_only = false
@@ -751,6 +773,7 @@ Section: DEFAULT
   cache_discovery_only = true
   channel_customer_id = ''
   charset = utf-8
+  chat_max_results = 100
   classroom_max_results = 0
   client_secrets_json = client_secrets.json ; C:\GAMConfig\client_secrets.json
   clock_skew_in_seconds = 10
@@ -760,6 +783,7 @@ Section: DEFAULT
   config_dir = C:\GAMConfig
   contact_max_results = 100
   csv_input_column_delimiter = ,
+  csv_input_no_escape_char = true
   csv_input_quote_char = '"'
   csv_input_row_drop_filter = ''
   csv_input_row_drop_filter_mode = anymatch
@@ -772,32 +796,47 @@ Section: DEFAULT
   csv_output_header_drop_filter = ''
   csv_output_header_filter = ''
   csv_output_header_force = ''
+  csv_output_header_order = ''
   csv_output_line_terminator = lf
+  csv_output_no_escape_char = false
   csv_output_quote_char = '"'
   csv_output_row_drop_filter = ''
   csv_output_row_drop_filter_mode = anymatch
   csv_output_row_filter = ''
   csv_output_row_filter_mode = allmatch
   csv_output_row_limit = 0
+  csv_output_sort_headers = ''
   csv_output_subfield_delimiter = '.'
   csv_output_timestamp_column = ''
   csv_output_users_audit = false
   customer_id = my_customer
   debug_level = 0
+  debug_redaction = true
+  developer_preview_api_key = ''
+  developer_preview_apis = ''
   device_max_results = 200
   domain = ''
   drive_dir = C:\GAMWork
   drive_max_results = 1000
-  drive_v3_native_names = true
   email_batch_size = 50
+  enable_dasa = false
+  enable_gcloud_reauth = false
+  enforce_expansive_access = true
   event_max_results = 250
   extra_args = ''
+  gmail_cse_incert_dir = ''
+  gmail_cse_inkey_dir = ''
+  input_dir = .
   inter_batch_wait = 0
   license_max_results = 100
   license_skus = ''
   member_max_results = 200
+  member_max_results_ci_basic = 1000
+  member_max_results_ci_full = 500
   message_batch_size = 50
   message_max_results = 500
+  mobile_max_results = 100
+  multiprocess_pool_limit = 0
   never_time = Never
   no_browser = false
   no_cache = false
@@ -807,13 +846,15 @@ Section: DEFAULT
   num_threads = 5
   oauth2_txt = oauth2.txt ; C:\GAMConfig\oauth2.txt
   oauth2service_json = oauth2service.json ; C:\GAMConfig\oauth2service.json
+  output_dateformat = ''
+  output_timeformat = ''
   people_max_results = 100
   print_agu_domains = ''
   print_cros_ous = ''
   print_cros_ous_and_children = ''
   process_wait_limit = 0
   quick_cros_move = false
-  quick_info_user = False
+  quick_info_user = false
   reseller_id = ''
   retry_api_service_not_available = false
   section = ''
@@ -830,12 +871,13 @@ Section: DEFAULT
   smtp_username = ''
   timezone = utc
   tls_max_version = ''
-  tls_min_version = 'TLSv1_2'
+  tls_min_version = 'TLSv1_3'
   todrive_clearfilter = false
   todrive_clientaccess = false
   todrive_conversion = true
   todrive_localcopy = false
   todrive_locale = ''
+  todrive_no_escape_char = true
   todrive_nobrowser = false
   todrive_noemail = true
   todrive_parent = root
@@ -848,6 +890,8 @@ Section: DEFAULT
   todrive_user = ''
   truncate_client_id = false
   update_cros_ou_with_id = false
+  use_chat_admin_access = false
+  use_course_owner_access = false
   use_projectid_as_name = false
   user_max_results = 500
   user_service_account_access_only = false
@@ -990,7 +1034,7 @@ writes the credentials into the file oauth2.txt.
 C:\>del C:\GAMConfig\oauth2.txt
 C:\>gam version
 WARNING: Config File: C:\GAMConfig\gam.cfg, Section: DEFAULT, Item: oauth2_txt, Value: C:\GAMConfig\oauth2.txt, Not Found
-GAM 7.32.07 - https://github.com/GAM-team/GAM - pythonsource
+GAM 7.33.00 - https://github.com/GAM-team/GAM - pythonsource
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.14.2 64-bit final
 Windows 11 10.0.26200 AMD64
@@ -1289,6 +1333,7 @@ Section: DEFAULT
   cache_discovery_only = true
   channel_customer_id = ''
   charset = utf-8
+  chat_max_results = 100
   classroom_max_results = 0
   client_secrets_json = client_secrets.json ; C:\GAMConfig\client_secrets.json
   clock_skew_in_seconds = 10
@@ -1298,6 +1343,7 @@ Section: DEFAULT
   config_dir = C:\GAMConfig
   contact_max_results = 100
   csv_input_column_delimiter = ,
+  csv_input_no_escape_char = true
   csv_input_quote_char = '"'
   csv_input_row_drop_filter = ''
   csv_input_row_drop_filter_mode = anymatch
@@ -1310,32 +1356,47 @@ Section: DEFAULT
   csv_output_header_drop_filter = ''
   csv_output_header_filter = ''
   csv_output_header_force = ''
+  csv_output_header_order = ''
   csv_output_line_terminator = lf
+  csv_output_no_escape_char = false
   csv_output_quote_char = '"'
   csv_output_row_drop_filter = ''
   csv_output_row_drop_filter_mode = anymatch
   csv_output_row_filter = ''
   csv_output_row_filter_mode = allmatch
   csv_output_row_limit = 0
+  csv_output_sort_headers = ''
   csv_output_subfield_delimiter = '.'
   csv_output_timestamp_column = ''
   csv_output_users_audit = false
   customer_id = C01234567
   debug_level = 0
+  debug_redaction = true
+  developer_preview_api_key = ''
+  developer_preview_apis = ''
   device_max_results = 200
   domain = domain.com
   drive_dir = C:\GAMWork
   drive_max_results = 1000
-  drive_v3_native_names = true
   email_batch_size = 50
+  enable_dasa = false
+  enable_gcloud_reauth = false
+  enforce_expansive_access = true
   event_max_results = 250
   extra_args = ''
+  gmail_cse_incert_dir = ''
+  gmail_cse_inkey_dir = ''
+  input_dir = .
   inter_batch_wait = 0
   license_max_results = 100
   license_skus = ''
   member_max_results = 200
+  member_max_results_ci_basic = 1000
+  member_max_results_ci_full = 500
   message_batch_size = 50
   message_max_results = 500
+  mobile_max_results = 100
+  multiprocess_pool_limit = 0
   never_time = Never
   no_browser = false
   no_cache = false
@@ -1353,7 +1414,7 @@ Section: DEFAULT
   print_cros_ous_and_children = ''
   process_wait_limit = 0
   quick_cros_move = false
-  quick_info_user = False
+  quick_info_user = false
   reseller_id = ''
   retry_api_service_not_available = false
   section = ''
@@ -1370,12 +1431,13 @@ Section: DEFAULT
   smtp_username = ''
   timezone = local
   tls_max_version = ''
-  tls_min_version = 'TLSv1_2'
+  tls_min_version = 'TLSv1_3'
   todrive_clearfilter = false
   todrive_clientaccess = false
   todrive_conversion = true
   todrive_localcopy = false
   todrive_locale = ''
+  todrive_no_escape_char = true
   todrive_nobrowser = false
   todrive_noemail = true
   todrive_parent = root
@@ -1388,6 +1450,8 @@ Section: DEFAULT
   todrive_user = ''
   truncate_client_id = false
   update_cros_ou_with_id = false
+  use_chat_admin_access = false
+  use_course_owner_access = false
   use_projectid_as_name = false
   user_max_results = 500
   user_service_account_access_only = false

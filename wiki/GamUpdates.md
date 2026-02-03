@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.33.00
+
+Added variable `developer_preview_apis` to `gam.cfg` that is a comma separated list of APIs requiring a Developer Preview key.
+Currently, `chat` is the only API that requires a Developer Preview key; it is required for the User Sections commands.
+* See: https://github.com/GAM-team/GAM/wiki/Users-Chat#introduction
+* See: https://github.com/GAM-team/GAM/wiki/Users-Chat#manage-chat-user-sections
+
 ### 7.32.07
 
 Added option `includepermissionsforview published` to `gam <UserTypeEntity> print filelist` and
