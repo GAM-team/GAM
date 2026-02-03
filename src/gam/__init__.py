@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.32.07'
+__version__ = '7.33.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -3752,6 +3752,15 @@ def SetGlobalVariables():
       if (productId, sku) not in GM.Globals[GM.LICENSE_SKUS]:
         GM.Globals[GM.LICENSE_SKUS].append((productId, sku))
 
+  def _validateDeveloperPreviewAPIs(sectionName, itemName, apiList):
+    GM.Globals[GM.DEVELOPER_PREVIEW_APIS] = set()
+    validAPIs = API.getAPIsList()
+    for api in apiList.split(','):
+      if api in validAPIs:
+        GM.Globals[GM.DEVELOPER_PREVIEW_APIS].add(api)
+      else:
+        _printValueError(sectionName, itemName, api, f'{Msg.EXPECTED}: {",".join(sorted(validAPIs))}')
+
   def _getCfgString(sectionName, itemName):
     value = _stripStringQuotes(GM.Globals[GM.PARSER].get(sectionName, itemName))
     if itemName == GC.DOMAIN:
@@ -3760,6 +3769,8 @@ def SetGlobalVariables():
     if ((minLen is None) or (len(value) >= minLen)) and ((maxLen is None) or (len(value) <= maxLen)):
       if itemName == GC.LICENSE_SKUS and value:
         _validateLicenseSKUs(sectionName, itemName, value)
+      elif itemName == GC.DEVELOPER_PREVIEW_APIS and value:
+        _validateDeveloperPreviewAPIs(sectionName, itemName, value.lower())
       return value
     _printValueError(sectionName, itemName, f'"{value}"', f'{Msg.EXPECTED}: {integerLimits(minLen, maxLen, Msg.STRING_LENGTH)}')
     return ''
@@ -4820,11 +4831,12 @@ def getService(api, httpObj):
     triesLimit = 3
     for n in range(1, triesLimit+1):
       try:
-        if api not in {API.CHAT} or not GC.Values[GC.DEVELOPER_PREVIEW_API_KEY]:
+        if api not in GM.Globals[GM.DEVELOPER_PREVIEW_APIS] or not GC.Values[GC.DEVELOPER_PREVIEW_API_KEY]:
           discoveryServiceUrl = DISCOVERY_URIS[v2discovery]
+          developerKey = ''
         else:
           discoveryServiceUrl = DEVELOPER_PREVIEW_DISCOVERY_URI
-        developerKey = GC.Values[GC.DEVELOPER_PREVIEW_API_KEY]
+          developerKey = GC.Values[GC.DEVELOPER_PREVIEW_API_KEY]
         service = googleapiclient.discovery.build(api, version, http=httpObj, cache_discovery=False,
                                                   discoveryServiceUrl=discoveryServiceUrl, developerKey=developerKey, static_discovery=False)
         GM.Globals[GM.CURRENT_API_SERVICES].setdefault(api, {})
@@ -27063,6 +27075,8 @@ def createUpdateChatSection(users):
     except GAPI.failedPrecondition:
       userChatServiceNotEnabledWarning(user, i, count)
       continue
+    except AttributeError:
+      systemErrorExit(GOOGLE_API_ERROR_RC, Msg.DEVELOPER_PREVIEW_REQUIRED)
 
 # gam <UserTypeEntity> delete chatsection <ChatSection>
 def deleteChatSection(users):
@@ -27093,6 +27107,8 @@ def deleteChatSection(users):
     except GAPI.failedPrecondition:
       userChatServiceNotEnabledWarning(user, i, count)
       continue
+    except AttributeError:
+      systemErrorExit(GOOGLE_API_ERROR_RC, Msg.DEVELOPER_PREVIEW_REQUIRED)
 
 # gam <UserTypeEntity> show chatsections
 #	[formatjson]
@@ -27127,6 +27143,8 @@ def printShowChatSections(users):
     except GAPI.failedPrecondition:
       userChatServiceNotEnabledWarning(user, i, count)
       continue
+    except AttributeError:
+      systemErrorExit(GOOGLE_API_ERROR_RC, Msg.DEVELOPER_PREVIEW_REQUIRED)
     jcount = len(sections)
     if jcount == 0:
       setSysExitRC(NO_ENTITIES_FOUND_RC)
@@ -27181,6 +27199,8 @@ def moveShowChatSectionItem(users):
     except GAPI.failedPrecondition:
       userChatServiceNotEnabledWarning(user, i, count)
       continue
+    except AttributeError:
+      systemErrorExit(GOOGLE_API_ERROR_RC, Msg.DEVELOPER_PREVIEW_REQUIRED)
 
 # gam <UserTypeEntity> show chatsectionitems <ChatSection>
 #	[space <ChatSpace>]
@@ -27252,6 +27272,8 @@ def printShowChatSectionItems(users):
     except GAPI.failedPrecondition:
       userChatServiceNotEnabledWarning(user, i, count)
       continue
+    except AttributeError:
+      systemErrorExit(GOOGLE_API_ERROR_RC, Msg.DEVELOPER_PREVIEW_REQUIRED)
     jcount = len(sectionItems)
     if jcount == 0:
       setSysExitRC(NO_ENTITIES_FOUND_RC)

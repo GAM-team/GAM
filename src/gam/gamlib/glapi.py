@@ -812,6 +812,12 @@ def getVersion(api):
   api = _INFO[api].get('mappedAPI', api)
   return (api, version, v2discovery)
 
+def getAPIsList():
+  apisList = set()
+  for api, value in _INFO.items():
+    apisList.add(value.get('mappedAPI', api))
+  return apisList
+
 def getClientScopesSet(api):
   return {scope['scope'] for scope in _CLIENT_SCOPES if scope['api'] == api}
 

@@ -111,6 +111,8 @@ DEBUG_LEVEL = 'dbgl'
 DEBUG_REDACTION = 'dbrd'
 # Decoded ID token
 DECODED_ID_TOKEN = 'didt'
+# Developer Preview APIs
+DEVELOPER_PREVIEW_APIS = 'dapi'
 # Index of start of <UserTypeEntity> in command line
 ENTITY_CL_DELAY_START = 'ecld'
 ENTITY_CL_START = 'ecls'
@@ -267,6 +269,7 @@ Globals = {
   DEBUG_LEVEL: 0,
   DEBUG_REDACTION: True,
   DECODED_ID_TOKEN: None,
+  DEVELOPER_PREVIEW_APIS: set(),
   ENTITY_CL_DELAY_START: 1,
   ENTITY_CL_START: 1,
   EXTRA_ARGS_LIST: [],
