@@ -586,6 +586,9 @@ Getting all Groups for testuser1@domain.com (1/2)
 Getting all Groups for testuser2@domain.com (2/2)
 User,Groups,GroupsList
 testuser2@domain.com,0,
+
+# Get group membership for all users
+$ gam config auto_batch_min 1 num_threads 10 redirect csv ./UsersGroups.csv multiprocess sortheaders User,Group redirect stderr - multiprocess all users print groups  
 ```
 ### Display groups and their parents
 Display a user's groups and their parents as an indented list.

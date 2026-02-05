@@ -10,6 +10,18 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.33.01
+
+Added option `shownopolicy` to `gam print chromepolicies` that will display output like the following
+if no policies apply to the selected OU or group.
+```
+gam print chromepolicies ou /Test appid chrome:emidddocikgklceeeifefomdnbkldhng namespace chrome.users.apps shownopolicy 
+Getting all Chrome Policies that match query (chrome.users.apps.*) for /Test
+Got 0 Chrome Policies that matched query (chrome.users.apps.*) for /Test...
+name,orgUnitPath,parentOrgUnitPath,direct,appId
+noPolicy,/Test,/,False,chrome:emidddocikgklceeeifefomdnbkldhng
+```
+
 ### 7.33.00
 
 Added variable `developer_preview_apis` to `gam.cfg` that is a comma separated list of APIs requiring a Developer Preview key.

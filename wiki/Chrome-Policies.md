@@ -282,10 +282,11 @@ gam show chromepolicies
         ((ou|orgunit <OrgUnitItem> [show all|direct|inherited])|(group <GroupItem>))
         [(printerid <PrinterID>)|(appid <AppID>)]
         [filter <StringList>] [namespace <NamespaceList>]
+        [show all|direct|inherited]
         [formatjson]
 ```
 By default, all Chrome policies for the OU or group are displayed.
-* `filter <String>` - Display policies based on fields like its resource name, description and additionalTargetKeyNames.
+* `filter <StringList>` - Display policies based on fields like its resource name, description and additionalTargetKeyNames.
 * `show all` - For OUs, display policies regardless of where set; this is the default
 * `show direct` - For OUs, display policies set directly in the OU
 * `show inherited` - For OUs, display policies set in a parent OU
@@ -329,14 +330,24 @@ By default, Gam displays the information as an indented list of keys and values.
 gam print chromepolicies [todrive <ToDriveAttribute>*]
         ((ou|orgunit <OrgUnitItem> [show all|direct|inherited])|(group <GroupItem>))
         [(printerid <PrinterID>)|(appid <AppID>)]
-        [filter <String>] [namespace <NamespaceList>]
+        [filter <StringList>] [namespace <NamespaceList>]
+        [show all|direct|inherited] [shownopolicy]
         [[formatjson [quotechar <Character>]]
 ```
 By default, all Chrome policies for the OU or group are displayed.
-* `filter <String>` - Display policies based on fields like its resource name, description and additionalTargetKeyNames.
+* `filter <StringList>` - Display policies based on fields like its resource name, description and additionalTargetKeyNames.
 * `show all` - For OUs, display policies regardless of where set; this is the default
 * `show direct` - For OUs, display policies set directly in the OU
 * `show inherited` - For OUs, display policies set in a parent OU
+
+Use option `shownopolicy` to display output like the following if no policies apply to the OU or group.
+```
+gam print chromepolicies ou /Test appid chrome:emidddocikgklceeeifefomdnbkldhng namespace chrome.users.apps shownopolicy 
+Getting all Chrome Policies that match query (chrome.users.apps.*) for /Test
+Got 0 Chrome Policies that matched query (chrome.users.apps.*) for /Test...
+name,orgUnitPath,parentOrgUnitPath,direct,appId
+noPolicy,/Test,/,False,chrome:emidddocikgklceeeifefomdnbkldhng
+```
 
 These are the default namespaces; use `namespace <NamespaceList>` to override.
 * `default`
