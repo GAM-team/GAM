@@ -2789,21 +2789,23 @@ gam create chromepolicyimage <ChromePolicyImageSchemaName> <FileName>
 
 gam update chromepolicy [convertcrnl]
         (<SchemaName> ((<Field> <Value>)+ | <JSONData>))+
-        ((ou|orgunit <OrgUnitItem>)|(cigroup <GroupItem>))
+        ((ou|orgunit <OrgUnitItem>)|(group <GroupItem>))
         [(printerid <PrinterID>)|(appid <AppID>)]
 gam delete chromepolicy
         (<SchemaName> [<JSONData>])+
-        ((ou|orgunit <OrgUnitItem>)|(cigroup <GroupItem>))
+        ((ou|orgunit <OrgUnitItem>)|(group <GroupItem>))
         [(printerid <PrinterID>)|(appid <AppID>)]
 gam show chromepolicies
-        ((ou|orgunit <OrgUnitItem> [show all|direct|inherited])|(cigroup <GroupItem>))
+        ((ou|orgunit <OrgUnitItem> [show all|direct|inherited])|(group <GroupItem>))
         [(printerid <PrinterID>)|(appid <AppID>)]
         (filter <StringList>)* (namespace <NamespaceList>)*
+        [show all|direct|inherited]
         [formatjson]
 gam print chromepolicies [todrive <ToDriveAttribute>*]
-        ((ou|orgunit <OrgUnitItem> [show all|direct|inherited])|(cigroup <GroupItem>))
+        ((ou|orgunit <OrgUnitItem> [show all|direct|inherited])|(group <GroupItem>))
         [(printerid <PrinterID>)|(appid <AppID>)]
         (filter <StringList>)* (namespace <NamespaceList>)*
+        [show all|direct|inherited] [shownopolicy]
         [[formatjson [quotechar <Character>]]
 
 <ChromePolicySchemaFieldName> ::=

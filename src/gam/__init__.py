@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.33.00'
+__version__ = '7.33.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -30089,7 +30089,7 @@ CHROME_POLICY_SHOW_CHOICE_MAP = {
 #	((ou|orgunit <OrgUnitItem>)|(group <GroupItem>))
 #	[(printerid <PrinterID>)|(appid <AppID>)]
 #	(filter <StringList>)* (namespace <NamespaceList>)*
-#	[show all|direct|inherited]
+#	[show all|direct|inherited] [shownopolicy]
 #	[[formatjson [quotechar <Character>]]
 def doPrintShowChromePolicies():
   def normalizedPolicy(policy):
@@ -30160,25 +30160,54 @@ def doPrintShowChromePolicies():
       showJSON(None, policy, sortDictKeys=False)
       Ind.Decrement()
 
+  def _printPolicyRow(policy):
+    row = flattenJSON(policy)
+    if not FJQC.formatJSON:
+      csvPF.WriteRowTitles(row)
+    elif (not csvPF.rowFilter and not csvPF.rowDropFilter) or csvPF.CheckRowTitles(row):
+      if entityType == Ent.ORGANIZATIONAL_UNIT:
+        csvPF.WriteRowNoFilter({'name': policy['name'],
+                                'orgUnitPath': policy['orgUnitPath'],
+                                'parentOrgUnitPath': policy['parentOrgUnitPath'],
+                                'direct': policy['direct'],
+                                'JSON': json.dumps(cleanJSON(policy),
+                                                   ensure_ascii=False, sort_keys=True)})
+      else:
+        csvPF.WriteRowNoFilter({'name': policy['name'],
+                                'group': policy['group'],
+                                'JSON': json.dumps(cleanJSON(policy),
+                                                   ensure_ascii=False, sort_keys=True)})
+
+
   def _printPolicy(policy):
+    nonlocal policiesShown
     policy = normalizedPolicy(policy)
     if (entityType == Ent.GROUP) or showPolicies in (CHROME_POLICY_SHOW_ALL, policy['direct']):
-      row = flattenJSON(policy)
-      if not FJQC.formatJSON:
-        csvPF.WriteRowTitles(row)
-      elif (not csvPF.rowFilter and not csvPF.rowDropFilter) or csvPF.CheckRowTitles(row):
-        if entityType == Ent.ORGANIZATIONAL_UNIT:
-          csvPF.WriteRowNoFilter({'name': policy['name'],
-                                  'orgUnitPath': policy['orgUnitPath'],
-                                  'parentOrgUnitPath': policy['parentOrgUnitPath'],
-                                  'direct': policy['direct'],
-                                  'JSON': json.dumps(cleanJSON(policy),
-                                                     ensure_ascii=False, sort_keys=True)})
-        else:
-          csvPF.WriteRowNoFilter({'name': policy['name'],
-                                  'group': policy['group'],
-                                  'JSON': json.dumps(cleanJSON(policy),
-                                                     ensure_ascii=False, sort_keys=True)})
+      policiesShown += 1
+      _printPolicyRow(policy)
+
+  def _printNoPolicy():
+    nonlocal targetName
+    policy = {'name': 'noPolicy'}
+    if app_id:
+      policy['appId'] = app_id
+    elif printer_id:
+      policy['printerId'] = printer_id
+    if entityType == Ent.ORGANIZATIONAL_UNIT:
+      policy['orgUnitPath'] = targetName
+      if targetName == '/':
+        policy['parentOrgUnitPath'] = '/'
+      else:
+        targetName = makeOrgUnitPathRelative(targetName)
+        policy['parentOrgUnitPath'] = callGAPI(cd.orgunits(), 'get',
+                                               throwReasons=GAPI.ORGUNIT_GET_THROW_REASONS,
+                                               customerId=GC.Values[GC.CUSTOMER_ID],
+                                               orgUnitPath=encodeOrgUnitPath(targetName),
+                                               fields='parentOrgUnitPath')['parentOrgUnitPath']
+      policy['direct'] = False
+    else:
+      policy['group'] = targetName
+    _printPolicyRow(policy)
 
   cp = buildGAPIObject(API.CHROMEPOLICY)
   cd = buildGAPIObject(API.DIRECTORY)
@@ -30190,6 +30219,8 @@ def doPrintShowChromePolicies():
   app_id = groupEmail = orgUnit = printer_id = targetResource = None
   showPolicies = CHROME_POLICY_SHOW_ALL
   psFilters = []
+  showNoPolicy = False
+  policiesShown = 0
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -30213,6 +30244,8 @@ def doPrintShowChromePolicies():
           psFilters.append(f'{psFilter}.*')
     elif myarg == 'show':
       showPolicies = getChoice(CHROME_POLICY_SHOW_CHOICE_MAP, mapChoice=True)
+    elif csvPF and myarg == 'shownopolicy':
+      showNoPolicy = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   checkPolicyArgs(targetResource, printer_id, app_id)
@@ -30302,7 +30335,8 @@ def doPrintShowChromePolicies():
   else:
     for policy in policies:
       _printPolicy(policy)
-  if csvPF:
+    if showNoPolicy and policiesShown == 0:
+      _printNoPolicy()
     csvPF.writeCSVfile(f'Chrome Policies - {targetName}')
 
 CHROME_IMAGE_SCHEMAS_MAP = {
