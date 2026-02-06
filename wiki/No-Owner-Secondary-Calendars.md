@@ -27,7 +27,7 @@ You can add an owner.
 ```
 gam config num_threads 10 redirect stdout ./Add_NOSC_Owner.txt multiprocess redirect stderr stdout csv NoOwnerSecCals.csv gam calendar "~Secondary calendar email" add acls owner admin@domain.com
 ```
-# After inspecting NOSC_Summary.csv, you can delete the calendars if desired.
+After inspecting NOSC_Summary.csv, you can delete the calendars if desired.
 * Replace `admin@domain.com` with the super admin from: `gam aouth info`
 ```
 gam config num_threads 10 redirect stdout ./Delete_NOSC.txt multiprocess redirect stderr stdout csv NoOwnerSecCals.csv gam user admin@domain.com remove calendar "~Secondary calendar email"
