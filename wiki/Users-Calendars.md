@@ -101,6 +101,7 @@
         defaulteventlength|
         format24hourtime|
         hideinvitations|
+        hideinvitationssetting|
         hideweekends|
         locale|
         remindonrespondedeventsonly|
