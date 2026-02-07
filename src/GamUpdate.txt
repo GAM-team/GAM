@@ -1,3 +1,8 @@
+7.33.02
+
+Added `hideinvitationssetting` to `<UserCalendarSettingsField>` used by
+`gam <UserTypeEntity> print|show calsettings`.
+
 7.33.01
 
 Added option `shownopolicy` to `gam print chromepolicies` that will display output like the following

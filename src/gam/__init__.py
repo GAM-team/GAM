@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.33.01'
+__version__ = '7.33.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -54181,6 +54181,7 @@ USER_CALENDAR_SETTINGS_FIELDS_CHOICE_MAP = {
   'defaulteventlength': 'defaultEventLength',
   'format24hourtime': 'format24HourTime',
   'hideinvitations': 'hideInvitations',
+  'hideinvitationssetting': 'hideInvitationsSetting',
   'hideweekends': 'hideWeekends',
   'locale': 'locale',
   'remindonrespondedeventsonly': 'remindOnRespondedEventsOnly',
