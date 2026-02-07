@@ -3,7 +3,8 @@
 - [API documentation](#api-documentation)
 - [Definitions](#definitions)
 - [Aliases](#aliases)
-- [Delegation Notification](#delegation-notification)
+- [Delegator Banner](#delegator-banner)
+- [Delegate Notification](#delegate-notification)
 - [Create Gmail delegates](#create-gmail-delegates)
 - [Delete Gmail delegates](#delete-gmail-delegates)
 - [Update Gmail delegates](#update-gmail-delegates)
@@ -57,7 +58,13 @@ The `convertalias` option causes GAM to make an extra API call per user in `<Use
 to convert aliases to primary email addresses. If you know that all of the email addresses
 in `<UserEntity>` are primary, you can omit `convertalias` and avoid the extra API calls.
 
-## Delegation Notification
+## Delegator Banner
+When creating a delegate, the following banner is displayed in the delegator's Gmail inbox, it can not be suppressed.
+```
+<Delegate> now has delegated access to your account. This notice will end in 7 days.
+```
+
+## Delegate Notification
 When creating a delegate, you can send a message to the delegate.
 ```
 [notify [<Boolean>]
