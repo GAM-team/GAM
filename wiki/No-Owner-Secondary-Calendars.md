@@ -7,7 +7,7 @@ Save the CSV file that Google sent you as NoOwnerSecCals.csv
 Get calendar description and summary for non-owned secondary calendars.
 * There will be one row per calendar.
 ```
-gam config num_threads 10 redirect csv ./NOSC_Details.csv multiprocess redirect stderr - multiprocess csv NoOwnerSecCals.csv gam calendar "~Secondary calendar email" print settings fields description,summary
+gam config num_threads 10 csv_output_header_force "calendarId,description,summary" redirect csv ./NOSC_Details.csv multiprocess redirect stderr - multiprocess csv NoOwnerSecCals.csv gam calendar "~Secondary calendar email" print settings fields description,summary
 ```
 
 Get event counts for non-owned secondary calendars.
