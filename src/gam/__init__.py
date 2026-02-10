@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.33.02'
+__version__ = '7.33.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -1331,6 +1331,8 @@ def validateEmailAddressOrUID(emailAddressOrUID, checkPeople=True, ciGroupsAPI=F
     return emailAddressOrUID
   return emailAddressOrUID.find('@') != 0 and emailAddressOrUID.count('@') <= 1
 
+NAME_EMAIL_ADDRESS_PATTERN = re.compile(r'^(.*)<(.+)>$')
+
 # Normalize user/group email address/uid
 # uid:12345abc -> 12345abc
 # foo -> foo@domain
@@ -1349,6 +1351,10 @@ def normalizeEmailAddressOrUID(emailAddressOrUID, noUid=False, checkForCustomerI
       return cg.group(1)
   if ciGroupsAPI and emailAddressOrUID.startswith('groups/'):
     return emailAddressOrUID
+  if emailAddressOrUID.find('<') >= 0:
+    match = NAME_EMAIL_ADDRESS_PATTERN.match(emailAddressOrUID)
+    if match:
+      emailAddressOrUID = match.group(2)
   atLoc = emailAddressOrUID.find('@')
   if atLoc == 0:
     return emailAddressOrUID[1:].lower() if not noLower else emailAddressOrUID[1:]
@@ -4147,7 +4153,7 @@ def SetGlobalVariables():
       GC.Values[itemName] = _getCfgPassword(sectionName, itemName)
     elif varType == GC.TYPE_STRING:
       GC.Values[itemName] = _getCfgString(sectionName, itemName)
-    elif varType in {GC.TYPE_STRINGLIST, GC.TYPE_HEADERFORCE, GC.TYPE_HEADERORDER}:
+    elif varType in {GC.TYPE_STRINGLIST, GC.TYPE_HEADERFORCEREQUIRED, GC.TYPE_HEADERORDER}:
       GC.Values[itemName] = _getCfgStringList(sectionName, itemName)
     elif varType == GC.TYPE_FILE:
       GC.Values[itemName] = _getCfgFile(sectionName, itemName)
@@ -4290,7 +4296,7 @@ def SetGlobalVariables():
   if GM.Globals[GM.PID] == 0:
     for itemName, itemEntry in sorted(GC.VAR_INFO.items()):
       varType = itemEntry[GC.VAR_TYPE]
-      if varType in {GC.TYPE_HEADERFILTER, GC.TYPE_HEADERFORCE, GC.TYPE_HEADERORDER, GC.TYPE_ROWFILTER}:
+      if varType in {GC.TYPE_HEADERFILTER, GC.TYPE_HEADERFORCEREQUIRED, GC.TYPE_HEADERORDER, GC.TYPE_ROWFILTER}:
         GM.Globals[GM.PARSER].set(sectionName, itemName, '')
       elif (varType == GC.TYPE_INTEGER) and itemName in {GC.CSV_INPUT_ROW_LIMIT, GC.CSV_OUTPUT_ROW_LIMIT}:
         GM.Globals[GM.PARSER].set(sectionName, itemName, '0')
@@ -7328,8 +7334,6 @@ def _addEmbeddedImagesToMessage(message, embeddedImages):
     except (IOError, UnicodeDecodeError) as e:
       usageErrorExit(f'{imageFilename}: {str(e)}')
 
-NAME_EMAIL_ADDRESS_PATTERN = re.compile(r'^.*<(.+)>$')
-
 # Send an email
 def send_email(msgSubject, msgBody, msgTo, i=0, count=0, clientAccess=False, msgFrom=None, msgReplyTo=None,
                html=False, charset=UTF8, attachments=None, embeddedImages=None,
@@ -7351,8 +7355,11 @@ def send_email(msgSubject, msgBody, msgTo, i=0, count=0, clientAccess=False, msg
   def cleanAddr(emailAddr):
     match = NAME_EMAIL_ADDRESS_PATTERN.match(emailAddr)
     if match:
-      return match.group(1)
-    return emailAddr
+      emailName = match.group(1)
+      emailAddr = normalizeEmailAddressOrUID(match.group(2), noUid=True, noLower=True)
+      return (f'{emailName} <{emailAddr}>', emailAddr)
+    emailAddr = normalizeEmailAddressOrUID(emailAddr, noUid=True, noLower=True)
+    return (emailAddr, emailAddr)
 
   if msgFrom is None:
     msgFrom = _getAdminEmail()
@@ -7372,9 +7379,9 @@ def send_email(msgSubject, msgBody, msgTo, i=0, count=0, clientAccess=False, msg
     if embeddedImages:
       _addEmbeddedImagesToMessage(message, embeddedImages)
   message['Subject'] = msgSubject
-  message['From'] = normalizeEmailAddressOrUID(cleanAddr(msgFrom), noUid=True, noLower=True)
+  message['From'], msgFromAddr = cleanAddr(msgFrom)
   if msgReplyTo is not None:
-    message['Reply-To'] = normalizeEmailAddressOrUID(cleanAddr(msgReplyTo), noUid=True, noLower=True)
+    message['Reply-To'], _ = cleanAddr(msgReplyTo)
   if ccRecipients:
     message['Cc'] = ccRecipients.lower()
   if bccRecipients:
@@ -7384,8 +7391,8 @@ def send_email(msgSubject, msgBody, msgTo, i=0, count=0, clientAccess=False, msg
       if header not in {'Subject', 'From', 'To', 'Reply-To', 'Cc', 'Bcc'}:
         message[header] = value
   if mailBox is None:
-    mailBox = msgFrom
-  mailBoxAddr = normalizeEmailAddressOrUID(cleanAddr(mailBox), noUid=True, noLower=True)
+    mailBox = msgFromAddr
+  _, mailBoxAddr = cleanAddr(mailBox)
   action = Act.Get()
   Act.Set(Act.SENDEMAIL)
   if not GC.Values[GC.SMTP_HOST]:

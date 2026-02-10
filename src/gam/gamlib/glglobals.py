@@ -69,6 +69,8 @@ CSV_OUTPUT_HEADER_FILTER = 'cohf'
 CSV_OUTPUT_HEADER_FORCE = 'cofh'
 # Order output column headers
 CSV_OUTPUT_HEADER_ORDER = 'coho'
+# Required output column headers
+CSV_OUTPUT_HEADER_REQUIRED = 'corh'
 # No escape character in CSV output file
 CSV_OUTPUT_NO_ESCAPE_CHAR = 'cone'
 # Quote character in CSV output file
@@ -248,6 +250,7 @@ Globals = {
   CSV_OUTPUT_HEADER_FILTER: [],
   CSV_OUTPUT_HEADER_FORCE: [],
   CSV_OUTPUT_HEADER_ORDER: [],
+#  CSV_OUTPUT_HEADER_REQUIRED: [],
   CSV_OUTPUT_NO_ESCAPE_CHAR: None,
   CSV_OUTPUT_QUOTE_CHAR: None,
   CSV_OUTPUT_ROW_DROP_FILTER: [],

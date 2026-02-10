@@ -1,3 +1,8 @@
+7.33.03
+
+Fixed bug in `gam [<UserTypeEntity>] sendemail ... from <EmailAddress> replyto <EmailAddress>`
+where an `<EmailAddress>` of the form `Text <user@domain.com>` had the `Text` removed.
+
 7.33.02
 
 Added `hideinvitationssetting` to `<UserCalendarSettingsField>` used by
