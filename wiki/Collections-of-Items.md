@@ -319,6 +319,8 @@ Data fields identified in a `csvkmd` argument.
         (select <ProjectIDList> | <FileSelector> | <CSVFileSelector>)
 <PrinterIDEntity> ::=
         <PrinterIDList> | <FileSelector> | <CSVFileSelector>
+<QueryDriveFile> :: = <String> See: https://developers.google.com/workspace/drive/api/guides/search-files
+<QuerySharedDrive> ::= <String> See: https://developers.google.com/workspace/drive/api/guides/search-shareddrives
 <RecipientEntity> ::=
         <EmailAddressEntity> | (select <UserTypeEntity>)
 <ResourceEntity> ::=
@@ -329,22 +331,22 @@ Data fields identified in a `csvkmd` argument.
         <SerialNumberList> | <FileSelector> | <CSVFileSelector>
 <SharedDriveIDEntity> ::=
         <DriveFileItem> |
-        (teamdriveid <DriveFileItem>) | (teamdriveid:<DriveFileItem>)
+        (shareddriveid <DriveFileItem>) | (shareddriveid:<DriveFileItem>)
 <SharedDriveNameEntity> ::=
-        (teamdrive <SharedDriveName>) | (teamdrive:<SharedDriveName>)
+        (shareddrive <SharedDriveName>) | (shareddrive:<SharedDriveName>)
 <SharedDriveEntity> ::=
         <SharedDriveIDEntity> |
         <SharedDriveNameEntity>
 <SharedDriveAdminQueryEntity> ::=
-        (teamdriveadminquery <QueryTeamDrive>) | (teamdriveadminquery:<QueryTeamDrive>)
+        (shareddriveadminquery <QuerySharedDrive>) | (shareddriveadminquery:<QuerySharedDrive>)
 <SharedDriveEntityAdmin> ::=
         <SharedDriveIDEntity> |
         <SharedDriveNameEntity>|
         <SharedDriveAdminQueryEntity>
 <SharedDriveFileNameEntity> ::=
-        (teamdrivefilename <DriveFileName>) | (teamdrivefilename:<DriveFileName>)
+        (shareddrivefilename <DriveFileName>) | (shareddrivefilename:<DriveFileName>)
 <SharedDriveFileQueryEntity> ::=
-        (teamdrivequery <QueryDriveFile>) | (teamdrivequery:<QueryDriveFile>)
+        (shareddrivequery <QueryDriveFile>) | (shareddrivequery:<QueryDriveFile>)
 <SharedDriveFileQueryShortcut> ::=
         all_files | all_folders | all_google_files | all_non_google_files | all_items
 <SiteACLScopeEntity> ::=

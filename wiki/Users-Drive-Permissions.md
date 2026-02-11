@@ -357,8 +357,8 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 
 For example, to get the ACLs for your Team Drives with the Team Drive name included in the output:
 ```
-gam redirect csv ./TeamDrives.csv print teamdrives
-gam redirect csv ./TeamDriveACLs.csv multiprocess csv ./TeamDrives.csv gam print drivefileacls teamdriveid "~id" addtitle "~name" fields id,domain,emailaddress,role,type,deleted
+gam redirect csv ./SharedDrives.csv print shareddrives
+gam redirect csv ./SharedDriveACLs.csv multiprocess csv ./SharedDrives.csv gam print drivefileacls shareddriveid "~id" addtitle "~name" fields id,domain,emailaddress,role,type,deleted
 ```
 
 ## Delete all ACLs except owner from a file

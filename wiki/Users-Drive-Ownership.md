@@ -30,13 +30,13 @@
         (parentid <DriveFolderID>)|
         (parentname <DriveFolderName>)|
         (anyownerparentname <DriveFolderName>)|
-        (teamdriveparentid <DriveFolderID>)|
-        (teamdriveparent <SharedDriveName>)|
-        (teamdriveparentid <SharedDriveID> teamdriveparentname <DriveFolderName>)|
-        (teamdriveparent <SharedDriveName> teamdriveparentname <DriveFolderName>))|
-        (teamdriveparentid <DriveFolderID>)|(teamdriveparent <SharedDriveName>)|
-        (teamdriveparentid <SharedDriveID> teamdriveparentname <DriveFolderName>)|
-        (teamdriveparent <SharedDriveName> teamdriveparentname <DriveFolderName>)
+        (shareddriveparentid <DriveFolderID>)|
+        (shareddriveparent <SharedDriveName>)|
+        (shareddriveparentid <SharedDriveID> shareddriveparentname <DriveFolderName>)|
+        (shareddriveparent <SharedDriveName> shareddriveparentname <DriveFolderName>))|
+        (shareddriveparentid <DriveFolderID>)|(shareddriveparent <SharedDriveName>)|
+        (shareddriveparentid <SharedDriveID> shareddriveparentname <DriveFolderName>)|
+        (shareddriveparent <SharedDriveName> shareddriveparentname <DriveFolderName>)
 
 <DriveOrderByFieldName> ::=
         createddate|createdtime|

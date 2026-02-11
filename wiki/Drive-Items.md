@@ -27,13 +27,13 @@
         (anydrivefilename <DriveFileName>) | (anydrivefilename:<DriveFileName>)
 <SharedDriveIDEntity> ::=
         <DriveFileItem> |
-        (teamdriveid <DriveFileItem>) | (teamdriveid:<DriveFileItem>)
+        (shareddriveid <DriveFileItem>) | (shareddriveid:<DriveFileItem>)
 <SharedDriveName> ::= <String>
 <SharedDriveNameEntity> ::=
-        (teamdrive <SharedDriveName>) | (teamdrive:<SharedDriveName>)
+        (shareddrive <SharedDriveName>) | (shareddrive:<SharedDriveName>)
 <SharedDriveEntity> ::=
         <SharedDriveIDEntity> |
         <SharedDriveNameEntity>
 <SharedDriveFileNameEntity> ::=
-        (teamdrivefilename <DriveFileName>) | (teamdrivefilename:<DriveFileName>)
+        (shareddrivefilename <DriveFileName>) | (shareddrivefilename:<DriveFileName>)
 ```

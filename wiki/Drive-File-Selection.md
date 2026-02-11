@@ -49,7 +49,8 @@
 <DriveFolderID> ::= <String>
 <DriveFolderIDList> ::= "<DriveFolderID>(,<DriveFolderID>)*"
 <DriveFolderName> ::= <String>
-<QueryDriveFile> :: = <String> See: https://developers.google.com/drive/api/v3/search-files
+<QueryDriveFile> :: = <String> See: https://developers.google.com/workspace/drive/api/guides/search-files
+<QuerySharedDrive> ::= <String> See: https://developers.google.com/workspace/drive/api/guides/search-shareddrives
 <DriveFileQueryEntity> ::= 
         (query <QueryDriveFile>) | (query:<QueryDriveFile>)
 <DriveFileQueryShortcut> ::=
@@ -90,15 +91,15 @@
 
 <SharedDriveID> ::= <String>
 <SharedDriveName> ::= <String>
-<SharedDriveIDEntity> ::= (teamdriveid <SharedDriveID>) | (teamdriveid:<SharedDriveID>)
-<SharedDriveNameEntity> ::= (teamdrive <SharedDriveName>) | (teamdrive:<SharedDriveName>)
-<SharedDriveFileNameEntity> ::= (teamdrivefilename <DriveFileName>) | (teamdrivefilename:<DriveFileName>)
+<SharedDriveIDEntity> ::= (shareddriveid <SharedDriveID>) | (shareddriveid:<SharedDriveID>)
+<SharedDriveNameEntity> ::= (shareddrive <SharedDriveName>) | (shareddrive:<SharedDriveName>)
+<SharedDriveFileNameEntity> ::= (shareddrivefilename <DriveFileName>) | (shareddrivefilename:<DriveFileName>)
 
 <SharedDriveEntity> ::=
         <SharedDriveIDEntity> |
         <SharedDriveNameEntity>
 <SharedDriveAdminQueryEntity> ::=
-        (teamdriveadminquery <QueryTeamDrive>) | (teamdriveadminquery:<QueryTeamDrive>)
+        (shareddriveadminquery <QuerySharedDrive>) | (shareddriveadminquery:<QuerySharedDrive>)
 <SharedDriveFileQueryEntity> ::= 
         (query <QueryDriveFile>) | (query:<QueryDriveFile>)
 <SharedDriveFileQueryShortcut> ::=
@@ -335,13 +336,13 @@ Select a Shared Drive file by giving its unique ID.
 ```
 <SharedDriveIDEntity> ::=
         <DriveFileItem> |
-        (teamdriveid <DriveFileItem>) | (teamdriveid:<DriveFileItem>)
+        (shareddriveid <DriveFileItem>) | (shareddriveid:<DriveFileItem>)
 ```
 ### Examples
 ```
 gam user testuser show fileinfo 1234ABCD
 gam user testuser show fileinfo id 1234ABCD
-gam user testuser show fileinfo teamdriveid 1234ABCD
+gam user testuser show fileinfo shareddriveid 1234ABCD
 ```
 ## Select Shared Drive file by name
 If you have the name, a search must be performed to find the ID that matches the name.
@@ -350,16 +351,16 @@ You must specify the Shared Drive, either by ID or name, and the name of the fil
 Remember, searching for a file by name may return several file IDs if you have multiple files with the same name.
 ```
 <SharedDriveIDEntity> ::=
-        (teamdriveid <DriveFileItem>) | (teamdriveid:<DriveFileItem>)
+        (shareddriveid <DriveFileItem>) | (shareddriveid:<DriveFileItem>)
 <SharedDriveNameEntity> ::=
-        (teamdrive <SharedDriveName>) | (teamdrive:<SharedDriveName>)
+        (shareddrive <SharedDriveName>) | (shareddrive:<SharedDriveName>)
 <SharedDriveFileNameEntity> ::=
-        (teamdrivefilename <DriveFileName>) | (teamdrivefilename:<DriveFileName>)
+        (shareddrivefilename <DriveFileName>) | (shareddrivefilename:<DriveFileName>)
 ```
 ### Examples
 ```
-gam user testuser show fileinfo teamdriveid 1234ABCD teamdrivefilename  "Test File"
-gam user testuser show fileinfo teamdrive "Shared Drive 1"  teamdrivefilename "Test File"
+gam user testuser show fileinfo shareddriveid 1234ABCD shareddrivefilename  "Test File"
+gam user testuser show fileinfo shareddrive "Shared Drive 1"  shareddrivefilename "Test File"
 ```
 ## Select Shared Drive file by query
 You can use a query to find a file ID. You perform the query on all Shared Drives or a specific Shared Drive.
@@ -367,7 +368,7 @@ You can use a query to find a file ID. You perform the query on all Shared Drive
 See: [Drive Query](https://developers.google.com/drive/api/v3/search-files)
 ```
 <SharedDriveFileQueryEntity> ::=
-        (teamdrivequery <QueryDriveFile>) | (teamdrivequery:<QueryDriveFile>)
+        (shareddrivequery <QueryDriveFile>) | (shareddrivequery:<QueryDriveFile>)
 <SharedDriveFileQueryShortcut> ::=
         all_files | all_folders | all_google_files | all_non_google_files | all_items
 ```
@@ -380,32 +381,32 @@ Keyword to query mappings for `<DriveFileQueryShortcut>`:
 
 ### Examples
 ```
-gam user testuser show fileinfo teamdrivequery "name='Test File'"
-gam user testuser show fileinfo teamdriveid 1234ABCD teamdrivequery "name='Test File'"
-gam user testuser show fileinfo teamdrive teamdrive "Shared Drive 1" teamdrivequery "name='Test File'"
-gam user testuser show fileinfo teamdriveid 1234ABCD all_non_google_files
+gam user testuser show fileinfo shareddrivequery "name='Test File'"
+gam user testuser show fileinfo shareddriveid 1234ABCD shareddrivequery "name='Test File'"
+gam user testuser show fileinfo shareddrive shareddrive "Shared Drive 1" shareddrivequery "name='Test File'"
+gam user testuser show fileinfo shareddriveid 1234ABCD all_non_google_files
 ```
 ## Select root folder of a Shared Drive by ID
 The root folder of a Shared Drive is a folder, you select it by giving its unique ID.
 ```
 <SharedDriveIDEntity> ::=
         <DriveFileItem> |
-        (teamdriveid <DriveFileItem>) | (teamdriveid:<DriveFileItem>)
+        (shareddriveid <DriveFileItem>) | (shareddriveid:<DriveFileItem>)
 ```
 ### Examples
 ```
 gam user testuser show fileinfo 1234ABCD
-gam user testuser show fileinfo teamdriveid 1234ABCD
+gam user testuser show fileinfo shareddriveid 1234ABCD
 
 ```
 ## Select root folder of a Shared Drive by name
 If you have a Shared Drive name, a search must be performed to find the ID that matches the name.
 ```
 <SharedDriveNameEntity> ::=
-        (teamdrive <SharedDriveName>) | (teamdrive:<SharedDriveName>)
+        (shareddrive <SharedDriveName>) | (shareddrive:<SharedDriveName>)
 ```
 ### Examples
 ```
-gam user testuser show fileinfo teamdrive "Shared Drive 1"
+gam user testuser show fileinfo shareddrive "Shared Drive 1"
 
 ```

@@ -18,8 +18,8 @@
 <SharedDriveID> ::= <String>
 <SharedDriveName> ::= <String>
 <SharedDriveEntity> ::=
-        <SharedDriveID>|(teamdriveid <SharedDriveID>)|(teamdriveid:<SharedDriveID>)|
-        (teamdrive <SharedDriveName>)|(teamdrive:<SharedDriveName>)
+        <SharedDriveID>|(shareddriveid <SharedDriveID>)|(shareddriveid:<SharedDriveID>)|
+        (shareddrive <SharedDriveName>)|(shareddrive:<SharedDriveName>)
 ```
 ## Display empty folders
 ```

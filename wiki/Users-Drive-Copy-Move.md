@@ -68,10 +68,10 @@
         (parentid <DriveFolderID>)|
         (parentname <DriveFolderName>)|
         (anyownerparentname <DriveFolderName>)|
-        (teamdriveparentid <DriveFolderID>)|
-        (teamdriveparent <SharedDriveName>)|
-        (teamdriveparentid <SharedDriveID> teamdriveparentname <DriveFolderName>)|
-        (teamdriveparent <SharedDriveName> teamdriveparentname <DriveFolderName>)
+        (shareddriveparentid <DriveFolderID>)|
+        (shareddriveparent <SharedDriveName>)|
+        (shareddriveparentid <SharedDriveID> shareddriveparentname <DriveFolderName>)|
+        (shareddriveparent <SharedDriveName> shareddriveparentname <DriveFolderName>)
 
 <DriveFileCopyAttribute> ::=
         (contentrestrictions readonly false)|
@@ -231,10 +231,10 @@ and "Template" is replaced by "NewCustomer" in all copied sub files and folders
 * `parentid <DriveFolderID>` - The target folder is identified by `<DriveFolderID>` which must be writable by `<UserTypeEntity>`.
 * `parentname <DriveFolderName>` - A search is performed for a folder named `<DriveFolderName>` owned by `<UserTypeEntity>`.
 * `anyownerparentname <DriveFolderName>` - A search is performed for a folder named `<DriveFolderName>` owned by any user but must be writable by `<UserTypeEntity>`.
-* `teamdriveparentid <DriveFolderID>` - Shared Drive folder ID; when used alone, this indicates a specific Shared Drive folder.
-* `teamdriveparent <SharedDriveName>` - Shared Drive name; when used alone, this indicates the root level of the Shared Drive.
-* `teamdriveparentid <SharedDriveID> teamdriveparentname <DriveFolderName>` - A Shared Drive ID and a folder name  on that Shared Drive.
-* `teamdriveparent <SharedDriveName> teamdriveparentname <DriveFolderName>` - A Shared Drive name and a folder name on that Shared Drive.
+* `shareddriveparentid <DriveFolderID>` - Shared Drive folder ID; when used alone, this indicates a specific Shared Drive folder.
+* `shareddriveparent <SharedDriveName>` - Shared Drive name; when used alone, this indicates the root level of the Shared Drive.
+* `shareddriveparentid <SharedDriveID> shareddriveparentname <DriveFolderName>` - A Shared Drive ID and a folder name  on that Shared Drive.
+* `shareddriveparent <SharedDriveName> shareddriveparentname <DriveFolderName>` - A Shared Drive name and a folder name on that Shared Drive.
 * If none of the parent options are specified, the copied file/folder will be located in the source folder.
 
 ### Duplicate files
@@ -414,15 +414,15 @@ Specify the target location on the Shared Drive, either the ID of the Shared Dri
 
 Files/folders in root of My Drive will be merged into `<DriveFolderID>`
 ```
-gam user user@domain.com copy drivefile root recursive teamdriveparentid <DriveFolderID> mergewithparent true
+gam user user@domain.com copy drivefile root recursive shareddriveparentid <DriveFolderID> mergewithparent true
 ```
 Files/folders in root of My Drive will be in a new folder named `My Drive` created in `<DriveFolderID>`
 ```
-gam user user@domain.com copy drivefile root recursive teamdriveparentid <DriveFolderID> mergewithparent false
+gam user user@domain.com copy drivefile root recursive shareddriveparentid <DriveFolderID> mergewithparent false
 ```
 Files/folders in root of My Drive will be in a new folder named `<String>` created in `<DriveFolderID>`
 ```
-gam user user@domain.com copy drivefile root recursive teamdriveparentid <SharedDriveID> mergewithparent false newfilename <String>
+gam user user@domain.com copy drivefile root recursive shareddriveparentid <SharedDriveID> mergewithparent false newfilename <String>
 ```
 
 ### Copy content of a Shared Drive to another Shared Drive
@@ -438,7 +438,7 @@ The example is assuming that the target drive is empty.
 * Non-inherited sub folder permissions are copied.
 * Non-inherited file permissions are copied.
 ```
-gam user user@domain.com copy drivefile teamdriveid 0AC_1AB teamdriveparentid 0AE_9ZX mergewithparent recursive
+gam user user@domain.com copy drivefile shareddriveid 0AC_1AB shareddriveparentid 0AE_9ZX mergewithparent recursive
         copymergewithparentfolderpermissions true
         copytopfolderinheritedpermissions false
         copytopfoldernoninheritedpermissions always
@@ -458,7 +458,7 @@ Suppose that the source drive has been updated and you want to refresh the targe
 * Non-inherited file permissions are copied.
 * Files and folders that have been deleted from the source drive will remain on the target drive
 ```
-gam user user@domain.com copy drivefile teamdriveid 0AC_1AB teamdriveparentid 0AE_9ZX mergewithparent recursive
+gam user user@domain.com copy drivefile shareddriveid 0AC_1AB shareddriveparentid 0AE_9ZX mergewithparent recursive
         copymergewithparentfolderpermissions true
         copytopfolderinheritedpermissions false
         copytopfoldernoninheritedpermissions syncallfolders
@@ -478,7 +478,7 @@ gam redirect csv ./TopSDItems.csv user user@domain.com print filelist select 0AC
 ```
 Copy the top level items to target Shared Drive; append desired permission options
 ```
-gam redirect stdout ./CopySharedDrive.txt multiprocess redirect stderr stdout csv TopSDItems.csv gam user user@domain.com copy drivefile "~id" recursive teamdriveparentid 0AE_9ZX
+gam redirect stdout ./CopySharedDrive.txt multiprocess redirect stderr stdout csv TopSDItems.csv gam user user@domain.com copy drivefile "~id" recursive shareddriveparentid 0AE_9ZX
 ```
 
 ### Copy content of a source Shared Drive folder to a target Shared Drive with parallel Processing
@@ -488,31 +488,31 @@ gam redirect csv ./TopSDItems.csv user user@domain.com print filelist select 1Bx
 ```
 Create a folder on target Shared Drive with ID 0AE_9ZX, replace "New Folder Name" as desired.
 ```
-gam user user@domain.com create drivefile mimetype gfolder teamdriveparentid 0AE-9ZX drivefilename "New Folder Name" returnidonly
+gam user user@domain.com create drivefile mimetype gfolder shareddriveparentid 0AE-9ZX drivefilename "New Folder Name" returnidonly
 ```
 Copy the folder top level items to target Shared Drive folder, assume ID 2CY-45G was returned in previous step
 ```
-gam redirect stdout ./CopySharedDrive.txt multiprocess redirect stderr stdout csv TopSDItems.csv gam user user@domain.com copy drivefile "~id" recursive teamdriveparentid 2CY-45G
+gam redirect stdout ./CopySharedDrive.txt multiprocess redirect stderr stdout csv TopSDItems.csv gam user user@domain.com copy drivefile "~id" recursive shareddriveparentid 2CY-45G
 ```
 You can script the steps:
 
 Linux/MacOS
 ```
 gam redirect csv ./TopSDItems.csv user user@domain.com print filelist select 1Bx-8W3 fields id,name,mimetype depth 0
-targetFolderId=$(gam user user@domain.com create drivefile mimetype gfolder teamdriveparentid 0AE-9ZX drivefilename "New Folder Name" returnidonly)
-gam redirect stdout ./CopySharedDrive.txt multiprocess redirect stderr stdout csv TopSDItems.csv gam user user@domain.com copy drivefile "~id" recursive teamdriveparentid $targetFolderId
+targetFolderId=$(gam user user@domain.com create drivefile mimetype gfolder shareddriveparentid 0AE-9ZX drivefilename "New Folder Name" returnidonly)
+gam redirect stdout ./CopySharedDrive.txt multiprocess redirect stderr stdout csv TopSDItems.csv gam user user@domain.com copy drivefile "~id" recursive shareddriveparentid $targetFolderId
 ```
 Windows PowerShell
 ```
 gam redirect csv ./TopSDItems.csv user user@domain.com print filelist select 1Bx-8W3 fields id,name,mimetype depth 0
-$targetFolderId = & gam user user@domain.com create drivefile mimetype gfolder teamdriveparentid 0AE-9ZX drivefilename "New Folder Name" returnidonly
-gam redirect stdout ./CopySharedDrive.txt multiprocess redirect stderr stdout csv TopSDItems.csv gam user user@domain.com copy drivefile "~id" recursive teamdriveparentid $targetFolderId
+$targetFolderId = & gam user user@domain.com create drivefile mimetype gfolder shareddriveparentid 0AE-9ZX drivefilename "New Folder Name" returnidonly
+gam redirect stdout ./CopySharedDrive.txt multiprocess redirect stderr stdout csv TopSDItems.csv gam user user@domain.com copy drivefile "~id" recursive shareddriveparentid $targetFolderId
 ```
 Windows Command Prompt
 ```
 gam redirect csv ./TopSDItems.csv user user@domain.com print filelist select 1Bx-8W3 fields id,name,mimetype depth 0
-for /f "delims=" %a in ('gam user user@domain.com create drivefile mimetype gfolder teamdriveparentid 0AE-9ZX drivefilename "New Folder Name" returnidonly') do set taregtFolderId=%a
-gam redirect stdout ./CopySharedDrive.txt multiprocess redirect stderr stdout csv TopSDItems.csv gam user user@domain.com copy drivefile "~id" recursive teamdriveparentid %targetFolderId%
+for /f "delims=" %a in ('gam user user@domain.com create drivefile mimetype gfolder shareddriveparentid 0AE-9ZX drivefilename "New Folder Name" returnidonly') do set taregtFolderId=%a
+gam redirect stdout ./CopySharedDrive.txt multiprocess redirect stderr stdout csv TopSDItems.csv gam user user@domain.com copy drivefile "~id" recursive shareddriveparentid %targetFolderId%
 ```
 
 ## Move files and folders
@@ -614,10 +614,10 @@ This is the default mode.
 * `parentid <DriveFolderID>` - The target folder is identified by `<DriveFolderID>` which must be writable by `<UserTypeEntity>`.
 * `parentname <DriveFolderName>` - A search is performed for a folder named `<DriveFolderName>` owned by `<UserTypeEntity>`.
 * `anyownerparentname <DriveFolderName>` - A search is performed for a folder named `<DriveFolderName>` owned by any user but must be writable by `<UserTypeEntity>`.
-* `teamdriveparentid <DriveFolderID>` - Shared Drive folder ID; when used alone, this indicates a specific Shared Drive folder.
-* `teamdriveparent <SharedDriveName>` - Shared Drive name; when used alone, this indicates the root level of the Shared Drive.
-* `teamdriveparentid <SharedDriveID> teamdriveparentname <DriveFolderName>` - A Shared Drive ID and a folder name  on that Shared Drive.
-* `teamdriveparent <SharedDriveName> teamdriveparentname <DriveFolderName>` - A Shared Drive name and a folder name on that Shared Drive.
+* `shareddriveparentid <DriveFolderID>` - Shared Drive folder ID; when used alone, this indicates a specific Shared Drive folder.
+* `shareddriveparent <SharedDriveName>` - Shared Drive name; when used alone, this indicates the root level of the Shared Drive.
+* `shareddriveparentid <SharedDriveID> shareddriveparentname <DriveFolderName>` - A Shared Drive ID and a folder name  on that Shared Drive.
+* `shareddriveparent <SharedDriveName> shareddriveparentname <DriveFolderName>` - A Shared Drive name and a folder name on that Shared Drive.
 * If none of the parent options are specified, the moved file/folder will be located in the source folder.
 
 ### Duplicate files
@@ -761,14 +761,14 @@ The following command will change the parents of the top level files and folders
 
 * No permissions are processed.
 ```
-gam user user@domain.com move drivefile teamdriveid 0AC_1AB teamdriveparentid 0AE_9ZX mergewithparent 
+gam user user@domain.com move drivefile shareddriveid 0AC_1AB shareddriveparentid 0AE_9ZX mergewithparent 
 ```
 
 If you want the source Shared Drive with ID 0AC_1AB to be contained in a top level folder of the target Shared Drive with ID 0AE_9ZX, omit the `mergewithparent` argument.
 The folder on the target Shared Drive will have the same name as the name of the source Shared Drive; use the `newfilename <DriveFileName>` to use a different name.
 ```
-gam user user@domain.com move drivefile teamdriveid 0AC_1AB teamdriveparentid 0AE_9ZX
-gam user user@domain.com move drivefile teamdriveid 0AC_1AB teamdriveparentid 0AE_9ZX newfilename "Copy of source Shared Drive"
+gam user user@domain.com move drivefile shareddriveid 0AC_1AB shareddriveparentid 0AE_9ZX
+gam user user@domain.com move drivefile shareddriveid 0AC_1AB shareddriveparentid 0AE_9ZX newfilename "Copy of source Shared Drive"
 ```
 
 ### Inter-workspace moves
@@ -778,7 +778,7 @@ Due to a restructuring, you want to move data from Shared Drive A in domaina.com
 * `user@domaina.com` is a manager of both Shared Drives.
 
 ```
-$ gam user user@domaina move drivefile teamdriveid <SharedDriveAID> teamdriveparentid <SharedDriveBID> mergewithparent
+$ gam user user@domaina move drivefile shareddriveid <SharedDriveAID> shareddriveparentid <SharedDriveBID> mergewithparent
 User: user@domaina.com, Move 1 Drive File/Folder
   User: user@domaina.com, Drive Folder: Shared Drive A(<SharedDriveAID>), Move(Merge) contents with Drive Folder: Shared Drive B(<SharedDriveBID>)
     User: user@domaina.com, Drive File: Filename(<FileID>), Move Failed: Bad Request. User message: "shareOutNotPermitted"
@@ -794,13 +794,13 @@ The following command will change the parents of the top level files and folders
 
 * No permissions are processed.
 ```
-gam user user@domain.com move drivefile teamdriveid 0AC_1AB parentid root mergewithparent 
+gam user user@domain.com move drivefile shareddriveid 0AC_1AB parentid root mergewithparent 
 ```
 
 If you want the contents of Shared Drive with ID 0AC_1AB to be contained in a top level folder of the My Drive, omit the `mergewithparent` argument.
 The folder on the My Drive will have the same name as the name of the Shared Drive; use the `newfilename <DriveFileName>` to use a different name.
 ```
-gam user user@domain.com move drivefile teamdriveid 0AC_1AB parentid root
-gam user user@domain.com move drivefile teamdriveid 0AC_1AB parentid root newfilename "Copy of Shared Drive"
+gam user user@domain.com move drivefile shareddriveid 0AC_1AB parentid root
+gam user user@domain.com move drivefile shareddriveid 0AC_1AB parentid root newfilename "Copy of Shared Drive"
 ```
 

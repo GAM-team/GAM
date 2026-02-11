@@ -148,6 +148,8 @@
          <CSVkmdSelector> |
          <CSVDataSelector>
 
+<QuerySharedDrive> ::= <String> See: https://developers.google.com/workspace/drive/api/guides/search-shareddrives
+
 <SharedDriveACLRole> ::=
         manager|organizer|owner|
         contentmanager|fileorganizer|
@@ -159,8 +161,8 @@
 <SharedDriveName> ::= <String>
 <SharedDriveEntity> ::=
         <SharedDriveID>|
-        (teamdriveid <SharedDriveID>)|(teamdriveid:<SharedDriveID>)|
-        (teamdrive <SharedDriveName>)|(teamdrive:<SharedDriveName>)
+        (shareddriveid <SharedDriveID>)|(shareddriveid:<SharedDriveID>)|
+        (shareddrive <SharedDriveName>)|(shareddrive:<SharedDriveName>)
 
 <SharedDriveFieldName> ::=
         backgroundimagefile|
@@ -174,10 +176,10 @@
         themeid
 <SharedDriveFieldNameList> ::= "<SharedDriveFieldName>(,<SharedDriveFieldName>)*"
 
-<SharedDriveIDEntity> ::= (teamdriveid <DriveFileItem>) | (teamdriveid:<DriveFileItem>)
-<SharedDriveNameEntity> ::= (teamdrive <SharedDriveName>) | (teamdrive:<SharedDriveName>)
-<SharedDriveFileNameEntity> ::= (teamdrivefilename <DriveFileName>) | (teamdrivefilename:<DriveFileName>)
-<SharedDriveFileQueryEntity> ::= (teamdrivequery <QueryDriveFile>) | (teamdrivequery:<QueryDriveFile>)
+<SharedDriveIDEntity> ::= (shareddriveid <DriveFileItem>) | (shareddriveid:<DriveFileItem>)
+<SharedDriveNameEntity> ::= (shareddrive <SharedDriveName>) | (shareddrive:<SharedDriveName>)
+<SharedDriveFileNameEntity> ::= (shareddrivefilename <DriveFileName>) | (shareddrivefilename:<DriveFileName>)
+<SharedDriveFileQueryEntity> ::= (shareddrivequery <QueryDriveFile>) | (shareddrivequery:<QueryDriveFile>)
 <SharedDriveFileQueryShortcut> ::=
         all_files | all_folders | all_google_files | all_non_google_files | all_items
 
@@ -291,11 +293,11 @@ When either of these options is chosen, no infomation about Shared Drive restric
 To retrieve the Shared Drive ID with `returnidonly`:
 ```
 Linux/MacOS
-teamDriveId=$(gam user user@domain.com create shareddrive ... returnidonly)
+shareddriveId=$(gam user user@domain.com create shareddrive ... returnidonly)
 Windows PowerShell
-$teamDriveId = & gam user user@domain.com create shareddrive ... returnidonly
+$shareddriveId = & gam user user@domain.com create shareddrive ... returnidonly
 Windows Command Prompt
-for /f "delims=" %a in ('gam user user@domain.com create shareddrive ... returnidonly') do set teamDriveId=%a
+for /f "delims=" %a in ('gam user user@domain.com create shareddrive ... returnidonly') do set shareddriveId=%a
 ```
 
 ## Bulk Create Shared Drives
@@ -417,12 +419,12 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 Display the number of Shared Drives.
 ```
 gam <UserTypeEntity> show|print shareddrives
-        [teamdriveadminquery|query <QueryTeamDrive>]
+        [shareddriveadminquery|query <QuerySharedDrive>]
         [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         showitemcountonly
 ```
 By default, all Shared Drives are counted; use the following options to select a subset of Shared Drives:
-* `teamdriveadminquery|query <QueryTeamDrive>` - Use a query to select Shared Drives
+* `shareddriveadminquery|query <QuerySharedDrive>` - Use a query to select Shared Drives
 * `matchname <REMatchPattern>` - Retrieve Shared Drives with names that match a pattern.
 * `orgunit|org|ou <OrgUnitPath>` - Only Shared Drives in the specified Org Unit are selected
 
@@ -466,7 +468,7 @@ Options `shareddriveadminquery|query` and `shareddrives|teamdrives` are mutually
 Options `shareddriveadminquery|query` and `orgunit|org|ou` require `adminaccess|asadmin`.
 
 By default, organizers for all Shared Drives are displayed; use the following options to select a subset of Shared Drives:
-* `teamdriveadminquery|query <QueryTeamDrive>` - Use a query to select Shared Drives
+* `shareddriveadminquery|query <QueryTeamDrive>` - Use a query to select Shared Drives
 * `shareddrives|teamdrives <SharedDriveIDList>` - Select the Shared Drive IDs specified in `<SharedDriveIDList>`
 * `shareddrives|teamdrives select <FileSelector>|<CSVFileSelector>` - Select the Shared Drive IDs specified in `<FileSelector>|<CSVFileSelector>`
 * `orgunit|org|ou <OrgUnitPath>` - Only Shared Drives in the specified Org Unit are selected
@@ -486,7 +488,7 @@ To select organizers from any domain, use: `domainlist ""`
 
 For example, to get a single user organizer from your domain for all Shared Drives including no organizer drives:
 ```
-gam redirect csv ./TeamDriveOrganizers.csv print shareddriveorganizers
+gam redirect csv ./ShareddriveOrganizers.csv print shareddriveorganizers
 ```
 
 ## Manage Shared Drive access
@@ -596,14 +598,14 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 ## Display Shared Drive access for selected Shared Drives
 ```
 gam <UserTypeEntity> show shareddriveacls
-        adminaccess [teamdriveadminquery|query <QueryTeamDrive>]
+        adminaccess [shareddriveadminquery|query <QuerySharedDrive>]
         [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         [user|group <EmailAddress> [checkgroups]] (role|roles <SharedDriveACLRoleList>)*
         <PermissionMatch>* [<PermissionMatchAction>] [pmselect]
         [oneitemperrow] [<DrivePermissionsFieldName>*|(fields <DrivePermissionsFieldNameList>)]
         [formatjson [quotechar <Character>]]
 gam <UserTypeEntity> print shareddriveacls [todrive <ToDriveAttribute>*]
-        adminaccess [teamdriveadminquery|query <QueryTeamDrive>]
+        adminaccess [shareddriveadminquery|query <QuerySharedDrive>]
 	[matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         [user|group <EmailAddress> [checkgroups]] (role|roles <SharedDriveACLRoleList>)*
         <PermissionMatch>* [<PermissionMatchAction>] [pmselect]
@@ -615,7 +617,7 @@ Shared Drives in the workspace, `<UserTypeEntity>` should specify a super admin 
 option shoud be used.
 
 By default, all Shared Drives are displayed; use the following options to select a subset of Shared Drives:
-* `teamdriveadminquery|query <QueryTeamDrive>` - Use a query to select Shared Drives
+* `shareddriveadminquery|query <QuerySharedDrive>` - Use a query to select Shared Drives
 * `matchname <REMatchPattern>` - Retrieve Shared Drives with names that match a pattern.
 * `orgunit|org|ou <OrgUnitPath>` - Only Shared Drives in the specified Org Unit are selected
 * `<PermissionMatch>* [<PermissionMatchAction>] pmselect` - Use permission matching to select Shared Drives

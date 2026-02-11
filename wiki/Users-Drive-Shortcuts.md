@@ -26,10 +26,10 @@
         (parentid <DriveFolderID>)|
         (parentname <DriveFolderName>)|
         (anyownerparentname <DriveFolderName>)|
-        (teamdriveparentid <DriveFolderID>)|
-        (teamdriveparent <SharedDriveName>)|
-        (teamdriveparentid <SharedDriveID> teamdriveparentname <DriveFolderName>)|
-        (teamdriveparent <SharedDriveName> teamdriveparentname <DriveFolderName>)
+        (shareddriveparentid <DriveFolderID>)|
+        (shareddriveparent <SharedDriveName>)|
+        (shareddriveparentid <SharedDriveID> shareddriveparentname <DriveFolderName>)|
+        (shareddriveparent <SharedDriveName> shareddriveparentname <DriveFolderName>)
 
 ```
 ## Create shortcuts
@@ -48,10 +48,10 @@ There are two modes of operaton:
   * `parentid <DriveFolderID>` - Folder ID.
   * `parentname <DriveFolderName>` - Folder name; the folder must be owned by `<UserTypeEntity>`.
   * `anyownerparentname <DriveFolderName>` - Folder name; the folder can be owned by any user, `<UserTypeEntity>` must be able to write to the folder.
-  * `teamdriveparentid <DriveFolderID>` - Shared Drive folder ID; when used alone, this indicates a specfic Shared Drive folder.
-  * `teamdriveparent <SharedDriveName>` - Shared Drive name; when used alone, this indicates the root level of the Shared Drive.
-  * `teamdriveparentid <SharedDriveID> teamdriveparentname <DriveFolderName>` - A Shared Drive ID and a folder name  on that Shared Drive.
-  * `teamdriveparent <SharedDriveName> teamdriveparentname <DriveFolderName>` - A Shared Drive name and a folder name on that Shared Drive.
+  * `shareddriveparentid <DriveFolderID>` - Shared Drive folder ID; when used alone, this indicates a specfic Shared Drive folder.
+  * `shareddriveparent <SharedDriveName>` - Shared Drive name; when used alone, this indicates the root level of the Shared Drive.
+  * `shareddriveparentid <SharedDriveID> shareddriveparentname <DriveFolderName>` - A Shared Drive ID and a folder name  on that Shared Drive.
+  * `shareddriveparent <SharedDriveName> shareddriveparentname <DriveFolderName>` - A Shared Drive name and a folder name on that Shared Drive.
 * `convertparents` - Convert all but the last parent reference in `<DriveFileEntity>` to shortcuts. My testing shows that as parents are added to a file, they are added to the front of the parents list; thus, the last parent is the original parent.
 
 If neither `<DriveFileParentAttribute>` nor `convertparents` are specified, the shortcut is placed in the root folder (My Drive).
@@ -142,6 +142,6 @@ gam csv Shortcuts.csv matchfield code 4 gam user "~owner" create drivefileshortc
 
 ## Check shortcut validity on Shared Drives
 ```
-gam redirect csv ./TDShortcuts.csv user organizer@domain.com print filelist select teamdriveid <SharedDriveID> showmimetype gshortcut fields id
+gam redirect csv ./TDShortcuts.csv user organizer@domain.com print filelist select shareddriveid <SharedDriveID> showmimetype gshortcut fields id
 gam redirect csv ./Shortcuts.csv user organizer@domain.com check drivefileshortcut csvfile TDShortcuts.csv:id csv
 ```

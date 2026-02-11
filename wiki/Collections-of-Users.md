@@ -114,9 +114,9 @@ ous_and_children_na_ns
         (anydrivefilename <DriveFileName>)|(anydrivefilename:<DriveFileName>)
 <SharedDriveID> ::= <String>
 <SharedDriveName> ::= <String>
-<SharedDriveIDEntity> ::= (teamdriveid <DriveFileItem>) | (teamdriveid:<DriveFileItem>)
-<SharedDriveNameEntity> ::= (teamdrive <SharedDriveName>) | (teamdrive:<SharedDriveName>)
-<SharedDriveFileNameEntity> ::= (teamdrivefilename <DriveFileName>) | (teamdrivefilename:<DriveFileName>)
+<SharedDriveIDEntity> ::= (shareddriveid <DriveFileItem>) | (shareddriveid:<DriveFileItem>)
+<SharedDriveNameEntity> ::= (shareddrive <SharedDriveName>) | (shareddrive:<SharedDriveName>)
+<SharedDriveFileNameEntity> ::= (shareddrivefilename <DriveFileName>) | (shareddrivefilename:<DriveFileName>)
 <SharedDriveEntity> ::=
         <SharedDriveIDEntity> |
         <SharedDriveNameEntity>

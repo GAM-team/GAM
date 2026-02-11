@@ -65,9 +65,9 @@
 
 <SharedDriveID> ::= <String>
 <SharedDriveName> ::= <String>
-<SharedDriveIDEntity> ::= (teamdriveid <SharedDriveID>) | (teamdriveid:<SharedDriveID>)
-<SharedDriveNameEntity> ::= (teamdrive <SharedDriveName>) | (teamdrive:<SharedDriveName>)
-<SharedDriveFileNameEntity> ::= (teamdrivefilename <DriveFileName>) | (teamdrivefilename:<DriveFileName>)
+<SharedDriveIDEntity> ::= (shareddriveid <SharedDriveID>) | (shareddriveid:<SharedDriveID>)
+<SharedDriveNameEntity> ::= (shareddrive <SharedDriveName>) | (shareddrive:<SharedDriveName>)
+<SharedDriveFileNameEntity> ::= (shareddrivefilename <DriveFileName>) | (shareddrivefilename:<DriveFileName>)
 
 <SharedDriveEntity> ::=
         <SharedDriveIDEntity> |
@@ -315,8 +315,8 @@
         size|
         spaces|
         starred|
-        teamdriveid|
-        teamdrivename|
+        shareddriveid|
+        shareddrivename|
         thumbnaillink|
         thumbnailversion|
         title|

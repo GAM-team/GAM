@@ -171,7 +171,7 @@
         withlink
 <DrivePermissionsFieldNameList> ::= "<DrivePermissionsFieldName>(,<DrivePermissionsFieldName>)*"
 
-<QueryTeamDrive> ::= <String> See: https://developers.google.com/drive/api/v3/search-parameters
+<QuerySharedDrive> ::= <String> See: https://developers.google.com/workspace/drive/api/guides/search-shareddrives
 <SharedDriveACLRole> ::=
         manager|organizer|owner|
         contentmanager|fileorganizer|
@@ -183,8 +183,8 @@
 <SharedDriveName> ::= <String>
 <SharedDriveEntity> ::=
         <SharedDriveID>|
-        (teamdriveid <SharedDriveID>)|(teamdriveid:<SharedDriveID>)|
-        (teamdrive <SharedDriveName>)|(teamdrive:<SharedDriveName>)
+        (shareddriveid <SharedDriveID>)|(shareddriveid:<SharedDriveID>)|
+        (shareddrive <SharedDriveName>)|(shareddrive:<SharedDriveName>)
 
 <SharedDriveFieldName> ::=
         backgroundimagefile|
@@ -199,11 +199,11 @@
 <SharedDriveFieldNameList> ::= "<SharedDriveFieldName>(,<SharedDriveFieldName>)*"
 
 <SharedDriveIDEntity> ::=
-        <DriveFileItem>|(teamdriveid <DriveFileItem>)|(teamdriveid:<DriveFileItem>)
+        <DriveFileItem>|(shareddriveid <DriveFileItem>)|(shareddriveid:<DriveFileItem>)
 <SharedDriveNameEntity> ::=
-        (teamdrive <SharedDriveName>)|(teamdrive:<SharedDriveName>)
+        (shareddrive <SharedDriveName>)|(shareddrive:<SharedDriveName>)
 <SharedDriveAdminQueryEntity> ::=
-        (teamdriveadminquery <QueryTeamDrive>)|(teamdriveadminquery:<QueryTeamDrive>)
+        (shareddriveadminquery <QuerySharedDrive>)|(shareddriveadminquery:<QuerySharedDrive>)
 
 <SharedDriveEntityAdmin> ::=
         <SharedDriveIDEntity> |
@@ -327,11 +327,11 @@ When either of these options is chosen, no infomation about Shared Drive restric
 To retrieve the Shared Drive ID with `returnidonly`:
 ```
 Linux/MacOS
-teamDriveId=$(gam create shareddrive ... returnidonly)
+shareddriveId=$(gam create shareddrive ... returnidonly)
 Windows PowerShell
-$teamDriveId = & gam create shareddrive ... returnidonly
+$shareddriveId = & gam create shareddrive ... returnidonly
 Windows Command Prompt
-for /f "delims=" %a in ('gam create shareddrive ... returnidonly') do set teamDriveId=%a
+for /f "delims=" %a in ('gam create shareddrive ... returnidonly') do set shareddriveId=%a
 ```
 
 ## Bulk Create Shared Drives
@@ -422,14 +422,14 @@ By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 ```
 gam [<UserTypeEntity>] show shareddrives
-        [adminaccess|asadmin] [teamdriveadminquery|query <QueryTeamDrive>]
+        [adminaccess|asadmin] [shareddriveadminquery|query <QuerySharedDrive>]
         [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         [fields <SharedDriveFieldNameList>]
         [showwebviewlink text|hyperlink]
         [formatjson]
 ```
 By default, all Shared Drives are displayed; use the following options to select a subset of Shared Drives:
-* `teamdriveadminquery|query <QueryTeamDrive>` - Use a query to select Shared Drives
+* `shareddriveadminquery|query <QuerySharedDrive>` - Use a query to select Shared Drives
 * `matchname <REMatchPattern>` - Retrieve Shared Drives with names that match a pattern.
 * `orgunit|org|ou <OrgUnitPath>` - Only Shared Drives in the specified Org Unit are selected
 
@@ -441,14 +441,14 @@ By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 ```
 gam [<UserTypeEntity>] print shareddrives [todrive <ToDriveAttribute>*]
-        [adminaccess|asadmin] [teamdriveadminquery|query <QueryTeamDrive>]
+        [adminaccess|asadmin] [shareddriveadminquery|query <QuerySharedDrive>]
         [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         [fields <SharedDriveFieldNameList>]
         [showwebviewlink text|hyperlink]
         [formatjson [quotechar <Character>]]
 ```
 By default, all Shared Drives are displayed; use the following options to select a subset of Shared Drives:
-* `teamdriveadminquery|query <QueryTeamDrive>` - Use a query to select Shared Drives
+* `shareddriveadminquery|query <QuerySharedDrive>` - Use a query to select Shared Drives
 * `matchname <REMatchPattern>` - Retrieve Shared Drives with names that match a pattern.
 * `orgunit|org|ou <OrgUnitPath>` - Only Shared Drives in the specified Org Unit are selected
 
@@ -498,7 +498,7 @@ Options `shareddriveadminquery|query` and `shareddrives|teamdrives` are mutually
 Options `shareddriveadminquery|query` and `orgunit|org|ou` require `adminaccess|asadmin`.
 
 By default, organizers for all Shared Drives are displayed; use the following options to select a subset of Shared Drives:
-* `teamdriveadminquery|query <QueryTeamDrive>` - Use a query to select Shared Drives
+* `shareddriveadminquery|query <QuerySharedDrive>` - Use a query to select Shared Drives
 * `shareddrives|teamdrives <SharedDriveIDList>` - Select the Shared Drive IDs specified in `<SharedDriveIDList>`
 * `shareddrives|teamdrives select <FileSelector>|<CSVFileSelector>` - Select the Shared Drive IDs specified in `<FileSelector>|<CSVFileSelector>`
 * `orgunit|org|ou <OrgUnitPath>` - Only Shared Drives in the specified Org Unit are selected
@@ -535,12 +535,12 @@ gam print shareddrives query "organizerCount = 0"
 Display the number of Shared Drives.
 ```
 gam [<UserTypeEntity>] show|print shareddrives
-        [adminaccess|asadmin] [teamdriveadminquery|query <QueryTeamDrive>]
+        [adminaccess|asadmin] [shareddriveadminquery|query <QuerySharedDrive>]
         [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         showitemcountonly
 ```
 By default, all Shared Drives are counted; use the following options to select a subset of Shared Drives:
-* `teamdriveadminquery|query <QueryTeamDrive>` - Use a query to select Shared Drives
+* `shareddriveadminquery|query <QuerySharedDrive>` - Use a query to select Shared Drives
 * `matchname <REMatchPattern>` - Retrieve Shared Drives with names that match a pattern.
 * `orgunit|org|ou <OrgUnitPath>` - Only Shared Drives in the specified Org Unit are selected
 
@@ -758,7 +758,7 @@ gam config csv_output_header_drop_filter "User,createdTime,permission.photoLink,
 ## Display Shared Drive access for selected Shared Drives
 ```
 gam [<UserTypeEntity>] show shareddriveacls
-        [adminaccess|asadmin] [teamdriveadminquery|query <QueryTeamDrive>]
+        [adminaccess|asadmin] [shareddriveadminquery|query <QuerySharedDrive>]
         [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         [user|group <EmailAddress> [checkgroups]] (role|roles <SharedDriveACLRoleList>)*
         <PermissionMatch>* [<PermissionMatchAction>] [pmselect]
@@ -767,7 +767,7 @@ gam [<UserTypeEntity>] show shareddriveacls
         [formatjson]
 
 gam [<UserTypeEntity>] print shareddriveacls [todrive <ToDriveAttribute>*]
-        [adminaccess|asadmin] [teamdriveadminquery|query <QueryTeamDrive>]
+        [adminaccess|asadmin] [shareddriveadminquery|query <QuerySharedDrive>]
         [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         [user|group <EmailAddress> [checkgroups]] (role|roles <SharedDriveACLRoleList>)*
         <PermissionMatch>* [<PermissionMatchAction>] [pmselect]
@@ -777,7 +777,7 @@ gam [<UserTypeEntity>] print shareddriveacls [todrive <ToDriveAttribute>*]
 
 ```
 By default, all Shared Drives are displayed; use the following options to select a subset of Shared Drives:
-* `teamdriveadminquery|query <QueryTeamDrive>` - Use a query to select Shared Drives
+* `shareddriveadminquery|query <QuerySharedDrive>` - Use a query to select Shared Drives
 * `matchname <REMatchPattern>` - Retrieve Shared Drives with names that match a pattern.
 * `orgunit|org|ou <OrgUnitPath>` - Only Shared Drives in the specified Org Unit are selected
 * `<PermissionMatch>* [<PermissionMatchAction>] pmselect` -  Use permission matching to select Shared Drives; all ACLs are displayed for the selected Shared Drives
@@ -927,12 +927,12 @@ gam redirect stdout ./DeleteSharedDrives.txt multiprocess redirect stderr stdout
 ## Delete old empty Shared Drives
 ```
 # Get a list of Shared Drives organizers for Shared Drives created before one year ago; alter date<-1y as required.
-gam config csv_output_row_filter "createdTime:date<-1y" redirect csv ./TeamDriveOrganizers.csv print shareddriveorganizers domainlist mydomain.com includetypes user oneorganizer shownoorganizerdrives
+gam config csv_output_row_filter "createdTime:date<-1y" redirect csv ./ShareddriveOrganizers.csv print shareddriveorganizers domainlist mydomain.com includetypes user oneorganizer shownoorganizerdrives
 
 # Inspect shareddriveOrganizers.csv, you'll have to deal with Shared Drives with no organizer/manager
 
 # Get old empty Shared Drives
-gam config num_threads 10 csv_input_row_filter "organizers:regex:^.+$" csv_output_row_filter "Total:count=0" redirect csv ./OldEmptySharedDrives.csv multiprocess redirect stderr - multiprocess csv ./TeamDriveOrganizers.csv gam user "~organizers" print filecounts select shareddriveid "~id" showsize
+gam config num_threads 10 csv_input_row_filter "organizers:regex:^.+$" csv_output_row_filter "Total:count=0" redirect csv ./OldEmptySharedDrives.csv multiprocess redirect stderr - multiprocess csv ./ShareddriveOrganizers.csv gam user "~organizers" print filecounts select shareddriveid "~id" showsize
 
 # Inspect OldEmptySharedDrives.csv, if you're confident of the results, proceed
 

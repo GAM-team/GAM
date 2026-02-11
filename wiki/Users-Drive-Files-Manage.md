@@ -149,10 +149,10 @@
         (parentid <DriveFolderID>)|
         (parentname <DriveFolderName>)|
         (anyownerparentname <DriveFolderName>)|
-        (teamdriveparentid <DriveFolderID>)|
-        (teamdriveparent <SharedDriveName>)|
-        (teamdriveparentid <SharedDriveID> teamdriveparentname <DriveFolderName>)|
-        (teamdriveparent <SharedDriveName> teamdriveparentname <DriveFolderName>)
+        (shareddriveparentid <DriveFolderID>)|
+        (shareddriveparent <SharedDriveName>)|
+        (shareddriveparentid <SharedDriveID> shareddriveparentname <DriveFolderName>)|
+        (shareddriveparent <SharedDriveName> shareddriveparentname <DriveFolderName>)
 
 <DriveFileCreateAttribute> ::=
         <DriveFileAttribute>|
@@ -196,10 +196,10 @@ You can specify where the new file is to be located:
 * `parentid <DriveFolderID>` - Folder ID.
 * `parentname <DriveFolderName>` - Folder name; the folder must be owned by `<UserTypeEntity>`.
 * `anyownerparentname <DriveFolderName>` - Folder name; the folder can be owned by any user, `<UserTypeEntity>` must be able to write to the folder.
-* `teamdriveparentid <DriveFolderID>` - Shared Drive folder ID; when used alone, this indicates a specfic Shared Drive folder.
-* `teamdriveparent <SharedDriveName>` - Shared Drive name; when used alone, this indicates the root level of the Shared Drive.
-* `teamdriveparentid <SharedDriveID> teamdriveparentname <DriveFolderName>` - A Shared Drive ID and a folder name  on that Shared Drive.
-* `teamdriveparent <SharedDriveName> teamdriveparentname <DriveFolderName>` - A Shared Drive name and a folder name on that Shared Drive.
+* `shareddriveparentid <DriveFolderID>` - Shared Drive folder ID; when used alone, this indicates a specfic Shared Drive folder.
+* `shareddriveparent <SharedDriveName>` - Shared Drive name; when used alone, this indicates the root level of the Shared Drive.
+* `shareddriveparentid <SharedDriveID> shareddriveparentname <DriveFolderName>` - A Shared Drive ID and a folder name  on that Shared Drive.
+* `shareddriveparent <SharedDriveName> shareddriveparentname <DriveFolderName>` - A Shared Drive name and a folder name on that Shared Drive.
 * If none of the parent options are specified, the parent folder is the root folder.
 
 By default, Google assigns the current time to the attributes `createdTime` and `modifiedTime`; you can assign your own values
@@ -290,7 +290,7 @@ This will create a three column CSV file SharedDriveNamesIDs.csv with columns: U
 You are building student folders on a Shared Drive as an admin and want to add ACLs to the folders
 allowing the student write access and you want a shortcut on the student's My Drive pointing to the folder.
 By adding the student's primary email address to the CSV output, it can be used in subsequent commands.
-Sustitute for admin@domain.com and `<TeamDriveID>`.
+Sustitute for admin@domain.com and `<SharedDriveID>`.
 ```
 Students.csv
 primaryEmail,Name
@@ -299,7 +299,7 @@ mary@domain.com, Mary Smith
 ...
 
 # Create the student folders on the Shared Drive
-gam redirect csv ./StudentFolders.csv multiprocess csv Students.csv gam user admin@domain.com create drivefile mimetype gfolder drivefilename "~~Name~~ Digital Portfolio" parentid <TeamDriveID> csv addcsvdata primaryEmail "~primaryEmail"
+gam redirect csv ./StudentFolders.csv multiprocess csv Students.csv gam user admin@domain.com create drivefile mimetype gfolder drivefilename "~~Name~~ Digital Portfolio" parentid <SharedDriveID> csv addcsvdata primaryEmail "~primaryEmail"
 # Add ACLs granting the students write access to their folders; "~User" refers to admin@domain.com
 gam csv StudentFolders.csv gam user "~User" add drivefileacl "~id" user "~primaryEmail" role fileorganizer
 # Add a shortcut to the folder on the student's My Drive
@@ -389,7 +389,7 @@ User: user@domain.com, Drive Folder Path:, Create
 
 Build in a Shared Drive Folder
 ```
-gam user user@domain.com create drivefolderpath path "Top Folder/Middle Folder/Bottom Folder/Sub Folder" teamdriveparent "TS Shared Drive" teamdriveparentname "TS SD6 Folder"
+gam user user@domain.com create drivefolderpath path "Top Folder/Middle Folder/Bottom Folder/Sub Folder" shareddriveparent "TS Shared Drive" shareddriveparentname "TS SD6 Folder"
 Getting all Drive Files/Folders that match query (mimeType = 'application/vnd.google-apps.folder' and name = 'TS SD6 Folder' and trashed = false) for user@domain.com
 Got 1 Drive File/Folder that matched query (mimeType = 'application/vnd.google-apps.folder' and name = 'TS SD6 Folder' and trashed = false) for user@domain.com...
 User: user@domain.com, Drive Folder Path:, Create
@@ -495,10 +495,10 @@ You can change where the new file is to be located; this removes all other paren
 * `parentid <DriveFolderID>` - Folder ID.
 * `parentname <DriveFolderName>` - Folder name; the folder must be owned by `<UserTypeEntity>`.
 * `anyownerparentname <DriveFolderName>` - Folder name; the folder can be owned by any user, `<UserTypeEntity>` must be able to write to the folder.
-* `teamdriveparentid <DriveFolderID>` - Shared Drive folder ID; when used alone, this indicates a specfic Shared Drive folder.
-* `teamdriveparent <SharedDriveName>` - Shared Drive name; when used alone, this indicates the root level of the Shared Drive.
-* `teamdriveparentid <SharedDriveID> teamdriveparentname <DriveFolderName>` - A Shared Drive ID and a folder name  on that Shared Drive.
-* `teamdriveparent <SharedDriveName> teamdriveparentname <DriveFolderName>` - A Shared Drive name and a folder name on that Shared Drive.
+* `shareddriveparentid <DriveFolderID>` - Shared Drive folder ID; when used alone, this indicates a specfic Shared Drive folder.
+* `shareddriveparent <SharedDriveName>` - Shared Drive name; when used alone, this indicates the root level of the Shared Drive.
+* `shareddriveparentid <SharedDriveID> shareddriveparentname <DriveFolderName>` - A Shared Drive ID and a folder name  on that Shared Drive.
+* `shareddriveparent <SharedDriveName> shareddriveparentname <DriveFolderName>` - A Shared Drive name and a folder name on that Shared Drive.
 
 You can add/remove parent folders without affecting other parent folders.
 * `addparents|removeparents <DriveFolderIDList>` - Specify the parent folders by ID.
