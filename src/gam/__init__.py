@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.33.03'
+__version__ = '7.34.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -4177,6 +4177,7 @@ def SetGlobalVariables():
       GC.Values[GC.CSV_OUTPUT_HEADER_FILTER] = _getCfgHeaderFilter(outputFilterSectionName, GC.CSV_OUTPUT_HEADER_FILTER)
     GC.Values[GC.CSV_OUTPUT_HEADER_DROP_FILTER] = _getCfgHeaderFilter(outputFilterSectionName, GC.CSV_OUTPUT_HEADER_DROP_FILTER)
     GC.Values[GC.CSV_OUTPUT_HEADER_ORDER] = _getCfgStringList(outputFilterSectionName, GC.CSV_OUTPUT_HEADER_ORDER)
+    GC.Values[GC.CSV_OUTPUT_HEADER_REQUIRED] = _getCfgStringList(outputFilterSectionName, GC.CSV_OUTPUT_HEADER_REQUIRED)
     GC.Values[GC.CSV_OUTPUT_ROW_FILTER] = _getCfgRowFilter(outputFilterSectionName, GC.CSV_OUTPUT_ROW_FILTER)
     GC.Values[GC.CSV_OUTPUT_ROW_FILTER_MODE] = _getCfgChoice(outputFilterSectionName, GC.CSV_OUTPUT_ROW_FILTER_MODE)
     GC.Values[GC.CSV_OUTPUT_ROW_DROP_FILTER] = _getCfgRowFilter(outputFilterSectionName, GC.CSV_OUTPUT_ROW_DROP_FILTER)
@@ -4311,6 +4312,8 @@ def SetGlobalVariables():
       GC.Values[GC.CSV_OUTPUT_HEADER_FORCE] = GM.Globals[GM.CSV_OUTPUT_HEADER_FORCE][:]
     if not GC.Values[GC.CSV_OUTPUT_HEADER_ORDER]:
       GC.Values[GC.CSV_OUTPUT_HEADER_ORDER] = GM.Globals[GM.CSV_OUTPUT_HEADER_ORDER][:]
+    if not GC.Values[GC.CSV_OUTPUT_HEADER_REQUIRED]:
+      GC.Values[GC.CSV_OUTPUT_HEADER_REQUIRED] = GM.Globals[GM.CSV_OUTPUT_HEADER_REQUIRED][:]
     if not GC.Values[GC.CSV_OUTPUT_ROW_FILTER]:
       GC.Values[GC.CSV_OUTPUT_ROW_FILTER] = GM.Globals[GM.CSV_OUTPUT_ROW_FILTER][:]
       GC.Values[GC.CSV_OUTPUT_ROW_FILTER_MODE] = GM.Globals[GM.CSV_OUTPUT_ROW_FILTER_MODE]
@@ -6084,7 +6087,7 @@ def _checkMemberCategory(member, memberDisplayOptions):
   if memberDisplayOptions['showCategory']:
     member['category'] = category
   if memberDisplayOptions['checkCategory']:
-    return True if memberDisplayOptions[category] else False
+    return bool(memberDisplayOptions[category])
   return True
 
 def _checkCIMemberCategory(member, memberDisplayOptions):
@@ -6097,7 +6100,7 @@ def _checkCIMemberCategory(member, memberDisplayOptions):
   if memberDisplayOptions['showCategory']:
     member['category'] = category
   if memberDisplayOptions['checkCategory']:
-    return True if memberDisplayOptions[category] else False
+    return bool(memberDisplayOptions[category])
   return True
 
 def getCIGroupMemberRoleFixType(member):
@@ -7922,6 +7925,7 @@ class CSVPrintFile():
     self.JSONtitlesList = []
     self.sortHeaders = []
     self.SetHeaderForce(GC.Values[GC.CSV_OUTPUT_HEADER_FORCE])
+    self.SetHeaderRequired(GC.Values[GC.CSV_OUTPUT_HEADER_REQUIRED])
     if not self.headerForce and titles is not None:
       self.SetTitles(titles)
       self.SetJSONTitles(titles)
@@ -8638,6 +8642,9 @@ class CSVPrintFile():
     self.SetTitles(headerForce)
     self.SetJSONTitles(headerForce)
 
+  def SetHeaderRequired(self, headerRequired):
+    self.headerRequired = headerRequired
+
   def SetHeaderOrder(self, headerOrder):
     self.headerOrder = headerOrder
 
@@ -9081,6 +9088,8 @@ class CSVPrintFile():
       extrasaction = 'raise'
     if not self.formatJSON:
       if not self.headerForce:
+        if self.headerRequired:
+          self.AddTitles(self.headerRequired)
         self.SortTitles()
         self.SortIndexedTitles(self.titlesList)
         if self.fixPaths:
@@ -9098,6 +9107,17 @@ class CSVPrintFile():
       titlesList = self.titlesList
     else:
       if not self.headerForce:
+        if self.headerRequired:
+          for i, v in enumerate(self.JSONtitlesList):
+            if v.startswith('JSON'):
+              j = i
+              for title in self.headerRequired:
+                self.JSONtitlesList.insert(j, title)
+                self.JSONtitlesSet.add(title)
+                j += 1
+              break
+          else:
+            self.AddJSONTitles(self.headerRequired)
         if self.fixPaths:
           self.FixPathsTitles(self.JSONtitlesList)
         if not self.rows and self.nodataFields is not None:
@@ -9907,7 +9927,7 @@ def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout,
                            csvColumnDelimiter, csvNoEscapeChar, csvQuoteChar,
                            csvSortHeaders, csvTimestampColumn,
                            csvHeaderFilter, csvHeaderDropFilter,
-                           csvHeaderForce, csvHeaderOrder,
+                           csvHeaderForce, csvHeaderOrder, csvHeaderRequired,
                            csvRowFilter, csvRowFilterMode, csvRowDropFilter, csvRowDropFilterMode,
                            csvRowLimit,
                            showGettings, showGettingsGotNL,
@@ -9932,6 +9952,7 @@ def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout,
     GM.Globals[GM.CSV_OUTPUT_HEADER_FILTER] = csvHeaderFilter[:]
     GM.Globals[GM.CSV_OUTPUT_HEADER_FORCE] = csvHeaderForce[:]
     GM.Globals[GM.CSV_OUTPUT_HEADER_ORDER] = csvHeaderOrder[:]
+    GM.Globals[GM.CSV_OUTPUT_HEADER_REQUIRED] = csvHeaderRequired[:]
     GM.Globals[GM.CSV_OUTPUT_QUOTE_CHAR] = csvQuoteChar
     GM.Globals[GM.CSV_OUTPUT_ROW_DROP_FILTER] = csvRowDropFilter[:]
     GM.Globals[GM.CSV_OUTPUT_ROW_DROP_FILTER_MODE] = csvRowDropFilterMode
@@ -10156,6 +10177,7 @@ def MultiprocessGAMCommands(items, showCmds):
                                                   GC.Values[GC.CSV_OUTPUT_HEADER_DROP_FILTER],
                                                   GC.Values[GC.CSV_OUTPUT_HEADER_FORCE],
                                                   GC.Values[GC.CSV_OUTPUT_HEADER_ORDER],
+                                                  GC.Values[GC.CSV_OUTPUT_HEADER_REQUIRED],
                                                   GC.Values[GC.CSV_OUTPUT_ROW_FILTER],
                                                   GC.Values[GC.CSV_OUTPUT_ROW_FILTER_MODE],
                                                   GC.Values[GC.CSV_OUTPUT_ROW_DROP_FILTER],
@@ -34846,13 +34868,14 @@ def finalizeInternalDomains(cd, internalDomains):
   return internalDomains
 
 def finalizeIPSGMGroupRolesMemberDisplayOptions(cd, memberDisplayOptions, verifyAllowExternal):
-  memberDisplayOptions['internalDomains'] = finalizeInternalDomains(cd, memberDisplayOptions['internalDomains'])
   if verifyAllowExternal:
     memberDisplayOptions['external'] = memberDisplayOptions['checkCategory'] = memberDisplayOptions['showCategory'] = True
     memberDisplayOptions['internal'] = False
   if memberDisplayOptions['showCategory']:
     memberDisplayOptions['gs'] = buildGAPIObject(API.GROUPSSETTINGS)
   memberDisplayOptions['checkShowCategory'] = memberDisplayOptions['checkCategory'] or memberDisplayOptions['showCategory']
+  if memberDisplayOptions['checkShowCategory']:
+    memberDisplayOptions['internalDomains'] = finalizeInternalDomains(cd, memberDisplayOptions['internalDomains'])
   return memberDisplayOptions['showCategory'], memberDisplayOptions['checkShowCategory']
 
 GROUP_FIELDS_CHOICE_MAP = {
