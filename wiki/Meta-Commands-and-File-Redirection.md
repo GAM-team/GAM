@@ -56,6 +56,7 @@ The only `<VariableNames>` recognized in this `<Section>` are:
 * `csv_output_header_drop_filter`
 * `csv_output_header_force`
 * `csv_output_header_order`
+* `csv_output_header_required`
 * `csv_output_row_filter`
 * `csv_output_row_filter_mode`
 * `csv_output_row_drop_filter`

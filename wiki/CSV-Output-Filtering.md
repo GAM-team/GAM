@@ -14,8 +14,9 @@
 There are seven values in `gam.cfg` that can be used to filter the output from `gam print` commands.
 * `csv_output_header_filter` - A list of `<RegularExpressions>` used to select specific column headers to include
 * `csv_output_header_drop_filter` - A list of `<RegularExpressions>` used to select specific column headers to exclude
-* `csv_output_header_force` - A list of <Strings> used to specify the exact column headers to include
-* `csv_output_header_order` - A list of <Strings> used to specify the column header order; any headers in the file but not in the list will appear after the headers in the list.
+* `csv_output_header_force` - A list of `<Strings>` used to specify the exact column headers to include
+* `csv_output_header_order` - A list of `<Strings>` used to specify the column header order; any headers in the file but not in the list will appear after the header* `csv_output_header_required` - A list of `<Strings>` used to specify column headers that are included even if the print command doesn't return them
+s in the list.
 * `csv_output_row_filter` - A list or JSON dictionary used to include specific rows based on column values
 * `csv_output_row_drop_filter` - A list or JSON dictionary used to exclude specific rows based on column values
 * `csv_output_row_limit` - A limit on the number of rows written

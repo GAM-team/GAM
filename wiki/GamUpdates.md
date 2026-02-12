@@ -10,6 +10,23 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.34.00
+
+Added variable `csv_output_header_required` to `gam.cfg` that is a comma separated list of `<Strings>`
+that are required to be in the list of column headers in the CSV file written by a gam print command.
+This will typically be used to specify headers that are required in subsequent commands that process
+the CSV file even if the API didn't return any data for those columns.
+
+Updated the following commands to not require the `Directory API - Domains` scope
+unless the `internal` or `external` options are used to request the member category.
+```
+gam info|print groups
+gam print|show group-members
+gam info|print cigroups
+gam print|show cigroup-members
+gam <UserTypeEntity> print|show filesharecounts
+```
+
 ### 7.33.03
 
 Fixed bug in `gam [<UserTypeEntity>] sendemail ... from <EmailAddress> replyto <EmailAddress>`

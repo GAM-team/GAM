@@ -232,6 +232,11 @@ csv_output_header_order
         Any headers in the file but not in the list will appear after
         the headers in the list
         Default: ''
+csv_output_header_required
+        A list of <Strings> used to specify  column headers
+        for inclusion in the CSV file written by a gam print command
+        even if the API didn't return any data for those columns.
+        Default: ''
 csv_output_line_terminator
         Allowed values: cr, lf, crlf
         Designates character(s) used to terminate the lines of a CSV file.
@@ -730,6 +735,8 @@ Section: DEFAULT
   csv_output_header_drop_filter = ''
   csv_output_header_filter = ''
   csv_output_header_force = ''
+  csv_output_header_order = ''
+  csv_output_header_required = ''
   csv_output_line_terminator = lf
   csv_output_no_escape_char = false
   csv_output_quote_char = '"'
@@ -976,6 +983,7 @@ csv_output_header_drop_filter = ''
 csv_output_header_filter = ''
 csv_output_header_force = ''
 csv_output_header_order = ''
+csv_output_header_required = ''
 csv_output_line_terminator = lf
 csv_output_no_escape_char = false
 csv_output_quote_char = '"'
