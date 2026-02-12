@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.34.01
+
+Updated `gam create|update adminrole` to handle the following errors:
+```
+ERROR: 400: invalid - Invalid Role privileges
+ERROR: 400: required - Required parameter: [resource.privileges[n].service_id]
+```
+
 ### 7.34.00
 
 Added variable `csv_output_header_required` to `gam.cfg` that is a comma separated list of `<Strings>`
