@@ -1,3 +1,11 @@
+7.34.01
+
+Updated `gam create|update adminrole` to handle the following errors:
+```
+ERROR: 400: invalid - Invalid Role privileges
+ERROR: 400: required - Required parameter: [resource.privileges[n].service_id]
+```
+
 7.34.00
 
 Added variable `csv_output_header_required` to `gam.cfg` that is a comma separated list of `<Strings>`

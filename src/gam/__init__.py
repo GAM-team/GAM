@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.34.00'
+__version__ = '7.34.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -16992,12 +16992,13 @@ def doCreateUpdateAdminRoles():
     if not updateCmd:
       result = callGAPI(cd.roles(), 'insert',
                         throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND,
-                                      GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED]+[GAPI.DUPLICATE],
+                                      GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED]+[GAPI.DUPLICATE, GAPI.INVALID, GAPI.REQUIRED],
                         customer=GC.Values[GC.CUSTOMER_ID], body=body, fields=fieldsList)
     else:
       result = callGAPI(cd.roles(), 'patch',
                         throwReasons=[GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND,
-                                      GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED]+[GAPI.NOT_FOUND, GAPI.FAILED_PRECONDITION, GAPI.CONFLICT],
+                                      GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED]+[GAPI.NOT_FOUND, GAPI.FAILED_PRECONDITION,
+                                                                               GAPI.CONFLICT, GAPI.INVALID, GAPI.REQUIRED],
                         customer=GC.Values[GC.CUSTOMER_ID], roleId=roleId, body=body, fields=fieldsList)
     if not csvPF:
       entityActionPerformed([Ent.ADMIN_ROLE, f"{result['roleName']}({result['roleId']})"])
@@ -17015,7 +17016,7 @@ def doCreateUpdateAdminRoles():
           row.update(addCSVData)
         row['JSON'] = json.dumps(cleanJSON(result), ensure_ascii=False, sort_keys=True)
         csvPF.WriteRowNoFilter(row)
-  except GAPI.duplicate as e:
+  except (GAPI.duplicate, GAPI.invalid, GAPI.required) as e:
     entityActionFailedWarning([Ent.ADMIN_ROLE, f"{body['roleName']}"], str(e))
   except (GAPI.notFound, GAPI.failedPrecondition, GAPI.conflict) as e:
     entityActionFailedWarning([Ent.ADMIN_ROLE, roleId], str(e))
