@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.34.02
+
+Updated GAM to prevent errors like the following:
+```
+ERROR: Unable to find the server at oauth2.googleapis.com
+ERROR: Unable to find the server at gmail.googleapis.com
+```
+
 ### 7.34.01
 
 Updated `gam create|update adminrole` to handle the following errors:
