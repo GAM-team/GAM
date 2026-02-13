@@ -91,7 +91,7 @@ jobs:
             freethreaded: false
             goal: build
             name: Build Arm MacOS 26
-          - os: windows-2025
+          - os: windows-2025-vs2026
             jid: 12
             freethreaded: false
             goal: build
