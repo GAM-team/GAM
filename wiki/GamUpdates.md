@@ -17,6 +17,9 @@ Updated GAM to prevent errors like the following:
 ERROR: Unable to find the server at oauth2.googleapis.com
 ERROR: Unable to find the server at gmail.googleapis.com
 ```
+If you experience any unexpected errors, post a message to:
+* The GAM Discussion Forum (google-apps-manager@googlegroups.com)
+* The GAM Public Chat Room (https://chat.google.com/app/chat/AAAA4BULhWo)
 
 ### 7.34.01
 
