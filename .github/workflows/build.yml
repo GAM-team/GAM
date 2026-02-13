@@ -507,6 +507,8 @@ jobs:
           "$PYTHON" -m pip list
 
       - name: Install pip requirements
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           echo "before anything..."
           "$PYTHON" -m pip list
