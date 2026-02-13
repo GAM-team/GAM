@@ -15,6 +15,7 @@
 - [Remove domainCanFind-domainWithLink ACLs for internal domain](#remove-domaincanfind-domainwithlink-acls-for-internal-domain)
 - [Remove My Drive ACLs for external domains](#remove-my-drive-acls-for-external-domains)
 - [Remove anyoneCanFind-anyoneWithLink ACLs](#remove-anyonecanfind-anyonewithlink-acls)
+- [Target Audiences](#target-audiences)
 
 ## API documentation
 * [Drive API - Permissions](https://developers.google.com/drive/api/v3/reference/permissions)
@@ -143,6 +144,7 @@ specify `basicpermissions` and additional permission fields, e.g., `permissions.
          <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
         See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 ```
+
 ## GUI API permission name mapping
 
 | GUI setting | API setting |
@@ -615,4 +617,52 @@ gam config num_threads 20 csv_input_row_filter "organizers:regex:^.+$" redirect 
 Delete those Shared Drive ACLs.
 ```
 gam config num_threads 20 redirect stdout ./DeleteSharedDriveShares.txt multiprocess redirect stderr stdout csv SharedDriveShares.csv gam user "~Owner" delete drivefileacl "~id" "id:~~permission.id~~"
+```
+
+## Target Audiences
+
+* See: https://support.google.com/a/answer/9934697
+
+You can manage target audiences in the admin console at Directory/Target audiences.
+If you click on a target audience the URL will look like this: `https://admin.google.com/ac/targetaudiences/02xcytpi0xrdqxi`
+
+You can add this target audience to a file with:
+```
+gam user user@domain.com create drivefileacl <DriveFileID> domain 02xcytpi0xrdqxi.audience.googledomains.com role reader
+User: user@domain.com, Add 1 Drive File/Folder ACL
+  User: user@domain.com, Drive File/Folder ID: <DriveFileID>, Permission ID: 02xcytpi0xrdqxi.audience.googledomains.com, Added
+  Test Audience
+    id: 02897912034288871303
+    type: domain
+    domain: 02xcytpi0xrdqxi.audience.googledomains.com
+    role: reader
+    permissionDetails:
+      role: reader
+        type: file
+        inherited: False
+    allowFileDiscovery: False
+```
+
+You can update the target audience role with:
+```
+gam user user@domain.com update drivefileacl <DriveFileID> id:02897912034288871303 role writer                  
+User: ross@s.jaylee.us, Update 1 Drive File/Folder ACL
+  User: user@domain.com, Drive File/Folder ID: <DriveFileID>, Permission ID: 02897912034288871303, Updated
+  Test Audience
+    id: 02897912034288871303
+    type: domain
+    domain: 02xcytpi0xrdqxi.audience.googledomains.com
+    role: writer
+    permissionDetails:
+      role: writer
+        type: file
+        inherited: False
+    allowFileDiscovery: False
+```
+
+You can delete the target audience from a file with:
+```
+gam user user@domain.com delete drivefileacl <DriveFileID> id:02897912034288871303
+User: user@domain.com, Delete 1 Drive File/Folder ACL
+  User: user@domaincom, Drive File/Folder ID: <DriveFileID>, Permission ID: 02897912034288871303, Deleted
 ```
