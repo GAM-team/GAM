@@ -1,3 +1,11 @@
+7.34.02
+
+Updated GAM to prevent errors like the following:
+```
+ERROR: Unable to find the server at oauth2.googleapis.com
+ERROR: Unable to find the server at gmail.googleapis.com
+```
+
 7.34.01
 
 Updated `gam create|update adminrole` to handle the following errors:

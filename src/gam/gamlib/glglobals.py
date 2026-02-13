@@ -129,6 +129,8 @@ GAM_CFG_SECTION_NAME = 'gcsn'
 GAM_PATH = 'gpth'
 # Python source, PyInstaller or StaticX?
 GAM_TYPE = 'gtyp'
+# Shared Service Account HTTP Object
+HTTP_OBJECT = 'http'
 # Length of last Got message
 LAST_GOT_MSG_LEN = 'lgml'
 # License SKUs
@@ -282,6 +284,7 @@ Globals = {
   GAM_CFG_SECTION_NAME: '',
   GAM_PATH: '.',
   GAM_TYPE: '',
+  HTTP_OBJECT: None,
   LAST_GOT_MSG_LEN: 0,
   LICENSE_SKUS: [],
   MAKE_BUILDING_ID_NAME_MAP: True,

@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.34.01'
+__version__ = '7.34.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -5713,7 +5713,9 @@ def chooseSaAPI(api1, api2):
 
 def buildGAPIServiceObject(api, user, i=0, count=0, displayError=True):
   userEmail = getSaUser(user)
-  httpObj = getHttpObj(cache=GM.Globals[GM.CACHE_DIR])
+  if GM.Globals[GM.HTTP_OBJECT] is None:
+    GM.Globals[GM.HTTP_OBJECT] = getHttpObj(cache=GM.Globals[GM.CACHE_DIR])
+  httpObj = GM.Globals[GM.HTTP_OBJECT]
   service = getService(api, httpObj)
   credentials = getSvcAcctCredentials(api, userEmail)
   request = transportCreateRequest(httpObj)
