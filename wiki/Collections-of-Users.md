@@ -327,7 +327,7 @@ Use these options to select users for GAM commands.
     * `ou_arch` - Archived users
     * `ou_ns` - Non-suspended users
     * `ou_susp` - Suspended users
-    * `ou_na_ns` - Non-archived and nn-suspended users
+    * `ou_na_ns` - Non-archived and non-suspended users
 
 ## Users in the Organization Unit `<OrgUnitItem>` and all of its sub Organization Units
 * `ou_and_children|ou_and_children_na|ou_and_children_arch|ou_and_children_ns|ou_and_children_susp|ou_and_children_na_ns <OrgUnitItem>`
@@ -336,7 +336,7 @@ Use these options to select users for GAM commands.
     * `ou_and_children_arch` - Archived users
     * `ou_and_children_ns` - Non-suspended users
     * `ou_and_children_susp` - Suspended users
-    * `ou_and_children_na_ns` - Non-archived and nn-suspended users
+    * `ou_and_children_na_ns` - Non-archived and non-suspended users
 
 ## Users directly in the Organization Units `<OrgUnitList>`
 * `ous|ous_na|ous_arch|ous_ns|ous_susp|ous_na_ns <OrgUnitList>` - Users directly in the Organization Units `<OrgUnitList>`
@@ -345,7 +345,7 @@ Use these options to select users for GAM commands.
     * `ous_arch` - Archived users
     * `ous_ns` - Non-suspended users
     * `ous_susp` - Suspended users
-    * `ous_na_ns` - Non-archived and nn-suspended users
+    * `ous_na_ns` - Non-archived and non-suspended users
 
 `<OrgUnitList>` may require special quoting based on whether the OUs contain spaces, commas or single quotes.
 

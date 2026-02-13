@@ -646,7 +646,7 @@ User: user@domain.com, Add 1 Drive File/Folder ACL
 You can update the target audience role with:
 ```
 gam user user@domain.com update drivefileacl <DriveFileID> id:02897912034288871303 role writer                  
-User: ross@s.jaylee.us, Update 1 Drive File/Folder ACL
+User: user@domain,com, Update 1 Drive File/Folder ACL
   User: user@domain.com, Drive File/Folder ID: <DriveFileID>, Permission ID: 02897912034288871303, Updated
   Test Audience
     id: 02897912034288871303
