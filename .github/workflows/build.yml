@@ -517,6 +517,12 @@ jobs:
           echo "--pip debug verbose--"
           "$PYTHON" -m pip debug --verbose
           echo "--------"
+          elif ([ "${RUNNER_OS}" == "Windows" ] && [ "$RUNNER_ARCH" == "ARM64" ]); then
+            # custom cryptography wheel for win arm64 since the project doesn't provide one:
+            # https://github.com/pyca/cryptography/issues/14293
+            gh release download --repo "jay0lee/cryptography-wheels" --pattern "*win_arm64.whl" --clobber --output cryptography-win_arm64.whl
+            "$PYTHON" -m pip install cryptography-win_arm64.whl
+          fi
           "$PYTHON" -m pip install -vvv --upgrade ..[yubikey]
           echo "after everything..."
           "$PYTHON" -m pip list
