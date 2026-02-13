@@ -91,7 +91,7 @@ jobs:
             freethreaded: false
             goal: build
             name: Build Arm MacOS 26
-          - os: windows-2025
+          - os: windows-2025-vs2026
             jid: 12
             freethreaded: false
             goal: build
@@ -517,6 +517,12 @@ jobs:
           echo "--pip debug verbose--"
           "$PYTHON" -m pip debug --verbose
           echo "--------"
+          if ([ "$RUNNER_OS" == "Windows" ] && [ "$RUNNER_ARCH" == "ARM64" ]); then
+            # custom cryptography wheel for win arm64 since the project doesn't provide one:
+            # https://github.com/pyca/cryptography/issues/14293
+            gh release download --repo "jay0lee/cryptography-wheels" --pattern "*win_arm64.whl" --clobber --output cryptography-win_arm64.whl
+            "$PYTHON" -m pip install cryptography-win_arm64.whl
+          fi
           "$PYTHON" -m pip install -vvv --upgrade ..[yubikey]
           echo "after everything..."
           "$PYTHON" -m pip list
@@ -625,13 +631,19 @@ jobs:
       - name: MacOS send GAM binary for Apple notarization
         if: runner.os == 'macOS'
         env:
-          ASP_NOTARIZE: ${{ secrets.ASP_NOTARIZE }}
+          APPLE_KEY: ${{ secrets.APPLE_KEY }}
+          APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+          APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
         run: |
           # Apple wants some kind of "package" submitted so just add gam to a .zip
           # name it something we can track and link in Apple's notarize process
           zipfilename="./gam-${RUNNER_ARCH}-${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}.zip"
           zip -r "$zipfilename" "$gampath"
-          xcrun notarytool submit --apple-id "jay0lee@gmail.com" --password "$ASP_NOTARIZE" --team-id GZ85H2DRLM "$zipfilename"
+          export KEY_FILE="$(mktemp).p8"
+          trap 'rm -f "$KEY_FILE"' EXIT
+          echo "$APPLE_KEY" > "$KEY_FILE"
+          xcrun notarytool submit "$zipfilename" --key "$KEY_FILE" --key-id "$APPLE_KEY_ID" --issuer "$APPLE_ISSUER_ID"
+          rm -v "$KEY_FILE"
           rm -v "$zipfilename"
 
       - name: Basic Tests all jobs
@@ -669,10 +681,9 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          #$url = "https://files.certum.eu/software/SimplySignDesktop/Windows/9.3.2.67/SimplySignDesktop-9.3.2.67-64-bit-en.msi"
-          #$file = "SimplySignDesktop-9.3.2.67-64-bit-en.msi"
-          $url = "https://files.certum.eu/software/SimplySignDesktop/Windows/9.3.4.72/SimplySignDesktop-9.3.4.72-64-bit-en.msi"
-          $file = "SimplySignDesktop-9.3.4.72-64-bit-en.msi"
+          #$url = "https://files.certum.eu/software/SimplySignDesktop/Windows/9.3.4.72/SimplySignDesktop-9.3.4.72-64-bit-en.msi"
+          $url = "https://www.files.certum.eu/software/SimplySignDesktop/Windows/9.4.0.84/SimplySignDesktop-9.4.0.84-64-bit-en.msi"
+          $file = "SimplySignDesktop.msi"
           Invoke-WebRequest $url -OutFile $file
           $log = "install.log" 
           $procMain = Start-Process "msiexec" "/i `"$file`" /qn /l*! `"$log`"" -NoNewWindow -PassThru
