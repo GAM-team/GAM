@@ -646,7 +646,7 @@ User: user@domain.com, Add 1 Drive File/Folder ACL
 You can update the target audience role with:
 ```
 gam user user@domain.com update drivefileacl <DriveFileID> id:02897912034288871303 role writer                  
-User: user@domain,com, Update 1 Drive File/Folder ACL
+User: user@domain.com, Update 1 Drive File/Folder ACL
   User: user@domain.com, Drive File/Folder ID: <DriveFileID>, Permission ID: 02897912034288871303, Updated
   Test Audience
     id: 02897912034288871303
@@ -664,5 +664,5 @@ You can delete the target audience from a file with:
 ```
 gam user user@domain.com delete drivefileacl <DriveFileID> id:02897912034288871303
 User: user@domain.com, Delete 1 Drive File/Folder ACL
-  User: user@domaincom, Drive File/Folder ID: <DriveFileID>, Permission ID: 02897912034288871303, Deleted
+  User: user@domain.com, Drive File/Folder ID: <DriveFileID>, Permission ID: 02897912034288871303, Deleted
 ```
