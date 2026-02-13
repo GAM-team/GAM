@@ -625,7 +625,9 @@ jobs:
       - name: MacOS send GAM binary for Apple notarization
         if: runner.os == 'macOS'
         env:
-          ASP_NOTARIZE: ${{ secrets.ASP_NOTARIZE }}
+          APPLE_KEY: ${{ secrets.APPLE_KEY }}
+          APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+          APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
         run: |
           # Apple wants some kind of "package" submitted so just add gam to a .zip
           # name it something we can track and link in Apple's notarize process
