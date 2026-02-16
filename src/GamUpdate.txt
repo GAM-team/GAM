@@ -1,3 +1,12 @@
+7.34.03
+
+Updated to Python 3.14.3
+
+Updated Cryptography to 46.0.5
+
+Updated `gam course <CourseID> create student|teacher <EmailAddress>` error message when
+`<EmailAddress>` is not in a trusted domain to remove suggestion about creating an invitation.
+
 7.34.02
 
 Updated GAM to prevent errors like the following:
@@ -5,6 +14,10 @@ Updated GAM to prevent errors like the following:
 ERROR: Unable to find the server at oauth2.googleapis.com
 ERROR: Unable to find the server at gmail.googleapis.com
 ```
+
+If you experience any unexpected errors, post a message to:
+* The GAM Discussion Forum (google-apps-manager@googlegroups.com)
+* The GAM Public Chat Room (https://chat.google.com/app/chat/AAAA4BULhWo)
 
 7.34.01
 

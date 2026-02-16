@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.34.02'
+__version__ = '7.34.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -51391,8 +51391,6 @@ def _batchAddItemsToCourse(croom, courseId, i, count, addItems, addType):
           errMsg = getPhraseDNEorSNA(riItem)
         else:
           errMsg = getHTTPError(_ADD_PART_REASON_TO_MESSAGE_MAP, http_status, reason, message)
-          if (reason == GAPI.PERMISSION_DENIED) and (addType in {Ent.STUDENT, Ent.TEACHER}) and ('CannotDirectAddUser' in errMsg):
-            errMsg += f' Add external user with: gam user {riItem} create classroominvitation courses {ri[RI_ENTITY]} addType {Ent.Singular(addType)}'
         entityActionFailedWarning([Ent.COURSE, ri[RI_ENTITY], addType, riItem], errMsg, int(ri[RI_J]), int(ri[RI_JCOUNT]))
         return
       waitOnFailure(1, 10, reason, message)
