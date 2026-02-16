@@ -10,6 +10,16 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.34.03
+
+Updated to Python 3.14.3
+
+Updated Cryptography to 46.0.5
+
+Updated `gam course <CourseID> create student|teacher <EmailAddress>` error message when
+`<EmailAddress>` is not in a trusted domain to remove suggestion about creating an invitation.
+
+
 ### 7.34.02
 
 Updated GAM to prevent errors like the following:

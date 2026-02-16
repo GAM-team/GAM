@@ -9,30 +9,30 @@ and all necessary authentications.
 
 ## Linux and MacOS and Google Cloud Shell
 
-In these examples, your Google Super admin is shown as admin@domain.com; replace with the
+In these examples, your Google Super admin is shown as gamteam@domain.com; replace with the
 actual email adddress.
 
-In these examples, the user home folder is shown as /Users/admin; adjust according to your
+In these examples, the user home folder is shown as /Users/gamteam; adjust according to your
 specific situation; e.g., /home/administrator.
 
-This example assumes that GAM7 has been installed in /Users/admin/bin/gam7.
+This example assumes that GAM7 has been installed in /Users/gamteam/bin/gam7.
 If you've installed GAM7 in another directory, substitute that value in the directions.
 
 ### Set a configuration directory
 
-The default GAM configuration directory is /Users/admin/.gam; for more flexibility you
+The default GAM configuration directory is /Users/gamteam/.gam; for more flexibility you
 probably want to select a non-hidden location. This example assumes that the GAM
-configuration directory will be /Users/admin/GAMConfig; If you've chosen another directory,
+configuration directory will be /Users/gamteam/GAMConfig; If you've chosen another directory,
 substitute that value in the directions.
 
 Make the directory:
 ```
-admin@server:/Users/admin$ mkdir -p /Users/admin/GAMConfig
+gamteam@server:/Users/gamteam$ mkdir -p /Users/gamteam/GAMConfig
 ```
 
 Add the following line:
 ```
-export GAMCFGDIR="/Users/admin/GAMConfig"
+export GAMCFGDIR="/Users/gamteam/GAMConfig"
 ```
 to one of these files based on your shell:
 ```
@@ -44,34 +44,34 @@ to one of these files based on your shell:
 
 Issue the following command replacing `<Filename>` with the name of the file you edited:
 ```
-admin@server:/Users/admin$ source <Filename>
+gamteam@server:/Users/gamteam$ source <Filename>
 ```
 
 You need to make sure the GAM configuration directory actually exists. Test that like this:
 ```
-admin@server:/Users/admin$ ls -l $GAMCFGDIR
+gamteam@server:/Users/gamteam$ ls -l $GAMCFGDIR
 ```
 
 ### Set a working directory
 
 You should establish a GAM working directory; you will store your GAM related
 data in this folder and execute GAM commands from this folder. You should not use
-/Users/admin/bin/gam7 or /Users/admin/GAMConfig for this purpose.
-This example assumes that the GAM working directory will be /Users/admin/GAMWork; If you've chosen
+/Users/gamteam/bin/gam7 or /Users/gamteam/GAMConfig for this purpose.
+This example assumes that the GAM working directory will be /Users/gamteam/GAMWork; If you've chosen
 another directory, substitute that value in the directions.
 
 Make the directory:
 ```
-admin@server:/Users/admin$ mkdir -p /Users/admin/GAMWork
+gamteam@server:/Users/gamteam$ mkdir -p /Users/gamteam/GAMWork
 ```
 
 ### Set an alias
-You should set an alias to point to /Users/admin/bin/gam7/gam so you can operate from the /Users/admin/GAMWork directory.
+You should set an alias to point to /Users/gamteam/bin/gam7/gam so you can operate from the /Users/gamteam/GAMWork directory.
 Aliases aren't available in scripts, so you may want to set a symlink instead, see below.
 
 Add the following line:
 ```
-alias gam="/Users/admin/bin/gam7/gam"
+alias gam="/Users/gamteam/bin/gam7/gam"
 ```
 to one of these files based on your shell:
 ```
@@ -84,48 +84,48 @@ to one of these files based on your shell:
 
 Issue the following command replacing `<Filename>` with the name of the file you edited:
 ```
-admin@server:/Users/admin$ source <Filename>
+gamteam@server:/Users/gamteam$ source <Filename>
 ```
 
 ### Set a symlink
 Set a symlink in `/usr/local/bin` (or some other location on $PATH) to point to GAM. 
 ```
-admin@server:/Users/admin$ ln -s "/Users/admin/bin/gam7/gam" /usr/local/bin/gam
+gamteam@server:/Users/gamteam$ ln -s "/Users/gamteam/bin/gam7/gam" /usr/local/bin/gam
 ```
 
 ### Initialize GAM7; this should be the first GAM7 command executed.
 ```
-admin@server:/Users/admin$ gam config drive_dir /Users/admin/GAMWork verify
-Created: /Users/admin/GAMConfig
-Created: /Users/admin/GAMConfig/gamcache
-Config File: /Users/admin/GAMConfig/gam.cfg, Initialized
+gamteam@server:/Users/gamteam$ gam config drive_dir /Users/gamteam/GAMWork verify
+Created: /Users/gamteam/GAMConfig
+Created: /Users/gamteam/GAMConfig/gamcache
+Config File: /Users/gamteam/GAMConfig/gam.cfg, Initialized
 Section: DEFAULT
   ...
-  cache_dir = /Users/admin/GAMConfig/gamcache
+  cache_dir = /Users/gamteam/GAMConfig/gamcache
   ...
-  config_dir = /Users/admin/GAMConfig
+  config_dir = /Users/gamteam/GAMConfig
   ...
-  drive_dir = /Users/admin/GAMWork
+  drive_dir = /Users/gamteam/GAMWork
   ...
 
-admin@server:/Users/admin$
+gamteam@server:/Users/gamteam$
 ```
 ### Verify initialization, this was a successful installation.
 ```
-admin@server:/Users/admin$ ls -l $GAMCFGDIR
+gamteam@server:/Users/gamteam$ ls -l $GAMCFGDIR
 total 48
 -rw-r-----+ 1 admin  staff  1069 Mar  3 09:23 gam.cfg
 drwxr-x---+ 2 admin  staff    68 Mar  3 09:23 gamcache
 -rw-rw-rw-+ 1 admin  staff     0 Mar  3 09:23 oauth2.txt.lock
-admin@server:/Users/admin$ 
+gamteam@server:/Users/gamteam$ 
 ```
 ### Create your project with local browser
 ```
-admin@server:/Users/admin$ gam create project
-WARNING: Config File: /Users/admin/GAMConfig/gam.cfg, Item: client_secrets_json, Value: /Users/admin/GAMConfig/client_secrets.json, Not Found
-WARNING: Config File: /Users/admin/GAMConfig/gam.cfg, Item: oauth2service_json, Value: /Users/admin/GAMConfig/oauth2service.json, Not Found
+gamteam@server:/Users/gamteam$ gam create project
+WARNING: Config File: /Users/gamteam/GAMConfig/gam.cfg, Item: client_secrets_json, Value: /Users/gamteam/GAMConfig/client_secrets.json, Not Found
+WARNING: Config File: /Users/gamteam/GAMConfig/gam.cfg, Item: oauth2service_json, Value: /Users/gamteam/GAMConfig/oauth2service.json, Not Found
 
-Enter your Google Workspace admin or GCP project manager email address authorized to manage project(s) admin@domain.com
+Enter your Google Workspace admin or GCP project manager email address authorized to manage project(s) gamteam@domain.com
 
 Your browser has been opened to visit:
 
@@ -167,7 +167,7 @@ Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-p
 Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Extracting public certificate
 Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Done generating private key and public certificate
 Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Service Account Key: SVCACCTKEY, Uploaded
-Service Account OAuth2 File: /Users/admin/GAMConfig/oauth2service.json, Service Account Key: SVCACCTKEY, Updated
+Service Account OAuth2 File: /Users/gamteam/GAMConfig/oauth2service.json, Service Account Key: SVCACCTKEY, Updated
 Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Has rights to rotate own private key
 Please go to:
 
@@ -185,16 +185,16 @@ Enter your Client Secret: CLIENTSECRET
 6. Go back to your browser and click OK to close the "OAuth client" popup if it's still open.
 That's it! Your GAM Project is created and ready to use.
 
-admin@server:/Users/admin$ 
+gamteam@server:/Users/gamteam$ 
 ```
 ### Create your project without local browser (Google Cloud Shell for instance)
 ```
-admin@server:/Users/admin$ gam config no_browser true save
-admin@server:/Users/admin$ gam create project
-WARNING: Config File: /Users/admin/GAMConfig/gam.cfg, Item: client_secrets_json, Value: /Users/admin/GAMConfig/client_secrets.json, Not Found
-WARNING: Config File: /Users/admin/GAMConfig/gam.cfg, Item: oauth2service_json, Value: /Users/admin/GAMConfig/oauth2service.json, Not Found
+gamteam@server:/Users/gamteam$ gam config no_browser true save
+gamteam@server:/Users/gamteam$ gam create project
+WARNING: Config File: /Users/gamteam/GAMConfig/gam.cfg, Item: client_secrets_json, Value: /Users/gamteam/GAMConfig/client_secrets.json, Not Found
+WARNING: Config File: /Users/gamteam/GAMConfig/gam.cfg, Item: oauth2service_json, Value: /Users/gamteam/GAMConfig/oauth2service.json, Not Found
 
-Enter your Google Workspace admin or GCP project manager email address authorized to manage project(s) admin@domain.com
+Enter your Google Workspace admin or GCP project manager email address authorized to manage project(s) gamteam@domain.com
 
 Go to the following link in a browser on other computer:
 
@@ -235,7 +235,7 @@ Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-p
 Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Extracting public certificate
 Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Done generating private key and public certificate
 Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Service Account Key: SVCACCTKEY, Uploaded
-Service Account OAuth2 File: /Users/admin/GAMConfig/oauth2service.json, Service Account Key: SVCACCTKEY, Updated
+Service Account OAuth2 File: /Users/gamteam/GAMConfig/oauth2service.json, Service Account Key: SVCACCTKEY, Updated
 Project: gam-project-abc-def-ghi, Service Account: gam-project-abc-def-ghi@gam-project-abc-def-ghi.iam.gserviceaccount.com, Has rights to rotate own private key
 Please go to:
 
@@ -253,7 +253,7 @@ Enter your Client Secret: CLIENTSECRET
 6. Go back to your browser and click OK to close the "OAuth client" popup if it's still open.
 That's it! Your GAM Project is created and ready to use.
 
-admin@server:/Users/admin$ 
+gamteam@server:/Users/gamteam$ 
 ```
 ### Enable GAM7 client access
 
@@ -261,7 +261,7 @@ You select a list of scopes, GAM uses a browser to get final authorization from 
 writes the credentials into the file oauth2.txt.
 
 ```
-admin@server:/Users/admin$ gam oauth create
+gamteam@server:/Users/gamteam$ gam oauth create
 
 [*]  0)  Calendar API (supports readonly)
 [*]  1)  Chrome Browser Cloud Management API (supports readonly)
@@ -328,7 +328,7 @@ Continue to authorization by entering a 'c'
 
 Please enter 0-50[a|r] or s|u|e|c: c
 
-Enter your Google Workspace admin email address? admin@domain.com
+Enter your Google Workspace admin email address? gamteam@domain.com
 
 Go to the following link in a browser on this computer or on another computer:
 
@@ -340,16 +340,16 @@ click the Allow button, paste "Unable to connect" URL from other computer (only 
 Enter verification code or paste "Unable to connect" URL from other computer (only URL data up to &scope required):
 
 The authentication flow has completed.
-Client OAuth2 File: /Users/admin/GAMConfig/oauth2.txt, Created
+Client OAuth2 File: /Users/gamteam/GAMConfig/oauth2.txt, Created
 
-admin@server:/Users/admin$ 
+gamteam@server:/Users/gamteam$ 
 ```
 
 If clicking on the link in the instructions does not work (i.e. you get a 404 or 400 error message, instead of something about 'unable to connect') the URL in the link is too long. Most likely, you have selected all scopes. Try again with fewer scopes until it works. (there is no harm in repeatedly trying)
 
 ### Enable GAM7 service account access.
 ```
-admin@server:/Users/admin$ gam user admin@domain.com update serviceaccount
+gamteam@server:/Users/gamteam$ gam user gamteam@domain.com update serviceaccount
 [*]  0)  AlertCenter API
 [*]  1)  Analytics API - read only
 [*]  2)  Analytics Admin API - read only
@@ -413,7 +413,7 @@ Service Account Private Key Authentication
   Authentication                                                            PASS
 Service Account Private Key age; Google recommends rotating keys on a routine basis
   Service Account Private Key age: 1 day                                    WARN
-Domain-wide Delegation authentication:, User: admin@domain.com, Scopes: 38
+Domain-wide Delegation authentication:, User: gamteam@domain.com, Scopes: 38
   https://mail.google.com/                                                  FAIL (1/38)
   https://sites.google.com/feeds                                            FAIL (2/38)
   https://www.googleapis.com/auth/analytics.readonly                        FAIL (3/38)
@@ -464,7 +464,7 @@ Click AUTHORIZE
 When the box closes you're done
 After authorizing it may take some time for this test to pass so wait a few moments and then try this command again.
 
-admin@server:/Users/admin$
+gamteam@server:/Users/gamteam$
 ```
 The link shown in the error message should take you directly to the authorization screen.
 If not, make sure that you are logged in as a domain admin, then re-enter the link.
@@ -474,14 +474,14 @@ If not, make sure that you are logged in as a domain admin, then re-enter the li
 Wait a moment and then perform the following command; it it still fails, wait a bit longer, it can sometimes take serveral minutes
 for the authorization to complete.
 ```
-admin@server:/Users/admin$ gam user admin@domain.com check serviceaccount
+gamteam@server:/Users/gamteam$ gam user gamteam@domain.com check serviceaccount
 System time status
   Your system time differs from admin.googleapis.com by less than 1 second  PASS
 Service Account Private Key Authentication
   Authentication                                                            PASS
 Service Account Private Key age; Google recommends rotating keys on a routine basis
   Service Account Private Key age: 1 day                                    WARN
-Domain-wide Delegation authentication:, User: admin@domain.com, Scopes: 38
+Domain-wide Delegation authentication:, User: gamteam@domain.com, Scopes: 38
   https://mail.google.com/                                                  PASS (1/38)
   https://sites.google.com/feeds                                            PASS (2/38)
   https://www.googleapis.com/auth/analytics.readonly                        PASS (3/38)
@@ -524,14 +524,14 @@ All scopes PASSED!
 
 Service Account Client name: SVCACCTID is fully authorized.
 
-admin@server:/Users/admin$ 
+gamteam@server:/Users/gamteam$ 
 ```
 ### Update gam.cfg with some basic values
 * `customer_id` - Having this data keeps Gam from having to make extra API calls
 * `domain` - This allows you to omit the domain portion of email addresses
 * `timezone local` - Gam will convert all UTC times to your local timezone
 ```
-admin@server:/Users/admin$ gam info domain
+gamteam@server:/Users/gamteam$ gam info domain
 Customer ID: C01234567
 Primary Domain: domain.com
 Customer Creation Time: 2007-06-06T15:47:55.444Z
@@ -539,8 +539,8 @@ Primary Domain Verified: True
 Default Language: en
 ...
 
-admin@server:/Users/admin$ gam config customer_id C01234567 domain domain.com timezone local save verify
-Config File: /Users/admin/GAMConfig/gam.cfg, Saved
+gamteam@server:/Users/gamteam$ gam config customer_id C01234567 domain domain.com timezone local save verify
+Config File: /Users/gamteam/GAMConfig/gam.cfg, Saved
 Section: DEFAULT
   ...
   customer_id = C01234567
@@ -550,12 +550,12 @@ Section: DEFAULT
   timezone = local
   ...
 
-admin@server:/Users/admin$
+gamteam@server:/Users/gamteam$
 ```
 
 ## Windows
 
-In these examples, your Google Super admin is shown as admin@domain.com; replace with the
+In these examples, your Google Super admin is shown as gamteam@domain.com; replace with the
 actual email adddress.
 
 This example assumes that GAM7 has been installed in C:\GAM7; if you've installed
@@ -645,7 +645,7 @@ C:\>gam create project
 WARNING: Config File: C:\GAMConfig\gam.cfg, Item: client_secrets_json, Value: C:\GAMConfig\client_secrets.json, Not Found
 WARNING: Config File: C:\GAMConfig\gam.cfg, Item: oauth2service_json, Value: C:\GAMConfig\oauth2service.json, Not Found
 
-Enter your Google Workspace admin or GCP project manager email address authorized to manage project(s) admin@domain.com
+Enter your Google Workspace admin or GCP project manager email address authorized to manage project(s) gamteam@domain.com
 
 Your browser has been opened to visit:
 
@@ -714,7 +714,7 @@ C:\>gam create project
 WARNING: Config File: C:\GAMConfig\gam.cfg, Item: client_secrets_json, Value: C:\GAMConfig\client_secrets.json, Not Found
 WARNING: Config File: C:\GAMConfig\gam.cfg, Item: oauth2service_json, Value: C:\GAMConfig\oauth2service.json, Not Found
 
-Enter your Google Workspace admin or GCP project manager email address authorized to manage project(s) admin@domain.com
+Enter your Google Workspace admin or GCP project manager email address authorized to manage project(s) gamteam@domain.com
 
 Go to the following link in a browser on other computer:
 
@@ -848,7 +848,7 @@ Continue to authorization by entering a 'c'
 
 Please enter 0-50[a|r] or s|u|e|c: c
 
-Enter your Google Workspace admin email address? admin@domain.com
+Enter your Google Workspace admin email address? gamteam@domain.com
 
 Go to the following link in a browser on this computer or on another computer:
 
@@ -866,7 +866,7 @@ C:\>
 ```
 ### Enable GAM7 service account access.
 ```
-C:\>gam user admin@domain.com update serviceaccount
+C:\>gam user gamteam@domain.com update serviceaccount
 [*]  0)  AlertCenter API
 [*]  1)  Analytics API - read only
 [*]  2)  Analytics Admin API - read only
@@ -930,7 +930,7 @@ Service Account Private Key Authentication
   Authentication                                                            PASS
 Service Account Private Key age; Google recommends rotating keys on a routine basis
   Service Account Private Key age: 1 day                                    WARN
-Domain-wide Delegation authentication:, User: admin@domain.com, Scopes: 38
+Domain-wide Delegation authentication:, User: gamteam@domain.com, Scopes: 38
   https://mail.google.com/                                                  FAIL (1/38)
   https://sites.google.com/feeds                                            FAIL (2/38)
   https://www.googleapis.com/auth/analytics.readonly                        FAIL (3/38)
@@ -991,14 +991,14 @@ If not, make sure that you are logged in as a domain admin, then re-enter the li
 Wait a moment and then perform the following command; it it still fails, wait a bit longer, it can sometimes take serveral minutes
 for the authorization to complete.
 ```
-C:\>gam user admin@domain.com check serviceaccount
+C:\>gam user gamteam@domain.com check serviceaccount
 System time status
   Your system time differs from admin.googleapis.com by less than 1 second  PASS
 Service Account Private Key Authentication
   Authentication                                                            PASS
 Service Account Private Key age; Google recommends rotating keys on a routine basis
   Service Account Private Key age: 1 day                                    WARN
-Domain-wide Delegation authentication:, User: admin@domain.com, Scopes: 38
+Domain-wide Delegation authentication:, User: gamteam@domain.com, Scopes: 38
   https://mail.google.com/                                                  PASS (1/38)
   https://sites.google.com/feeds                                            PASS (2/38)
   https://www.googleapis.com/auth/analytics.readonly                        PASS (3/38)
