@@ -14,11 +14,11 @@
 ## API documentation
 * [Activity Data Sources](https://support.google.com/a/answer/11482175)
 
-Changes starting 2025-10-29.
-* [Reports API - Admin log event changes](https://support.google.com/a/answer/16601511)
-
 Changes starting 2025-12-20
 * [Reports API - Admin log enhancements](https://workspaceupdates.googleblog.com/2025/12/google-workspace-audit-log-api.html)
+
+Changes starting 2026-02-17.
+* [Reports API - Admin log event changes](https://support.google.com/a/answer/16601511)
 
 These pages show event/parameter names:
 * [Reports API - Admin Activities](https://developers.google.com/workspace/admin/reports/v1/appendix/activity/admin-event-names)
