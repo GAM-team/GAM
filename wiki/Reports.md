@@ -21,6 +21,7 @@ Changes starting 2025-12-20
 * [Reports API - Admin log enhancements](https://workspaceupdates.googleblog.com/2025/12/google-workspace-audit-log-api.html)
 
 These pages show event/parameter names:
+* [Reports API - Admin Activities](https://developers.google.com/workspace/admin/reports/v1/appendix/activity/admin-event-names)
 * [Reports API - Activities](https://developers.google.com/workspace/admin/reports/v1/appendix/activity/access-transparency)
 * [Reports API - Customer Usage](https://developers.google.com/workspace/admin/reports/v1/appendix/usage/customer)
 * [Reports API - User Usage](https://developers.google.com/workspace/admin/reports/v1/appendix/usage/user)
