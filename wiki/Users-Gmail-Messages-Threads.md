@@ -404,7 +404,7 @@ Messages are archived to the group specified by `<GroupItem>`.
 ### Archive a selected set of messages
 * `((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+` - Criteria to select messages
 * `labelids <LabelIDList>` - Select messages with labels that match all of the specified label IDs.
-* `max_to_archive  <Number>` - Limit the number of messages that will be archived; use a value of 0 for no limit
+* `max_to_archive <Number>` - Limit the number of messages that will be archived; use a value of 0 for no limit
 * `doit` - No messages are archived unless you specify `doit`. By not specifying `doit`, you can preview the messages selected to verify that the results match your expectations.
 
 When `matchlabel <LabelName>` is specified, the following characters are replaced with a `-` in the generated query.
@@ -429,8 +429,6 @@ User,id,action,error
 user@domain.com,18e9fc6581b9acab,Archived,
 user@domain.com,18e9fc58c5491f4c,Archived,
 ```
-
-See below for message selection.
 
 ## Export messages/threads
 Export messages in EML format.
@@ -464,7 +462,18 @@ By default, when exporting a message, an existing local file will not be overwri
 * `overwrite true` - Overwite an existing file
 * `overwrite false` - Do not overwite an existing file; add a numeric prefix and create a new file
 
-See below for message selection.
+### Export a specific set of messages
+* `ids <MessageIDEntity>` - A list of message ids
+
+### Export a selected set of messages
+* `((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+` - Criteria to select messages
+* `labelids <LabelIDList>` - Select messages with labels that match all of the specified label IDs.
+* `max_to_export <Number>` - Limit the number of messages that will be exported; use a value of 0 for no limit
+
+When `matchlabel <LabelName>` is specified, the following characters are replaced with a `-` in the generated query.
+```
+ &()"|{}/
+```
 
 ## Forward messages/threads
 ```
@@ -492,7 +501,19 @@ If `addorigfieldstosubject` is specified, GAM appends the original `from`, `to` 
 Fwd: Ross to TestUser (Original From: Ross Scroggs <ross.scroggs@gmail.com> To: testuser@domain.com Date: Thu, 23 Nov 2023 07:01:59 -0800)
 ```
 
-See below for message selection.
+### Forward a specific set of messages
+* `ids <MessageIDEntity>` - A list of message ids
+
+### Forward a selected set of messages
+* `((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+` - Criteria to select messages
+* `labelids <LabelIDList>` - Select messages with labels that match all of the specified label IDs.
+* `max_to_forward <Number>` - Limit the number of messages that will be forwarded; use a value of 0 for no limit
+* `doit` - No messages are processed unless you specify `doit`. By not specifying `doit`, you can preview the messages selected to verify that the results match your expectations.
+
+When `matchlabel <LabelName>` is specified, the following characters are replaced with a `-` in the generated query.
+```
+ &()"|{}/
+```
 
 ## Manage messages/threads
 ```
