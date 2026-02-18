@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.34.03'
+__version__ = '7.34.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -66781,6 +66781,29 @@ def _checkFileIdEntityDomainAccess(fileIdEntity, useDomainAdminAccess):
 #	[sendemail|sendnotification] [emailmessage <String>]
 #	[showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
 def createDriveFileACL(users, useDomainAdminAccess=False):
+  def _showResult(permission, showAction):
+    if updateSheetProtectedRanges and mimeType == MIMETYPE_GA_SPREADSHEET:
+      _updateSheetProtectedRangesACLchange(sheet, user, i, count, j, jcount, fileId, fileName, True, permission)
+    if csvPF:
+      baserow = {'Owner': user, 'id': fileId}
+      if showTitles:
+        baserow['name'] = fileName
+      row = baserow.copy()
+      _mapDrivePermissionNames(permission)
+      flattenJSON({'permission': permission}, flattened=row, timeObjects=timeObjects)
+      if not FJQC.formatJSON:
+        csvPF.WriteRowTitles(row)
+      elif csvPF.CheckRowTitles(row):
+        row = baserow.copy()
+        row['JSON'] = json.dumps(cleanJSON({'permission': permission}, timeObjects=timeObjects),
+                                 ensure_ascii=False, sort_keys=True)
+        csvPF.WriteRowNoFilter(row)
+    else:
+      if showAction:
+        entityActionPerformed([Ent.USER, user, entityType, fileName, Ent.PERMISSION_ID, permissionId], j, jcount)
+      if showDetails:
+        _showDriveFilePermission(permission, printKeys, timeObjects)
+
   moveToNewOwnersRoot = False
   sendNotificationEmail = showTitles = _transferOwnership = updateSheetProtectedRanges = False
   roleLocation = withLinkLocation = expirationLocation = None
@@ -66890,35 +66913,30 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
               _, sheet = buildGAPIServiceObject(API.SHEETS, user, i, count)
               if not sheet:
                 break
-        permission = callGAPI(drive.permissions(), 'create',
-                              bailOnInternalError=True,
-                              throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+GAPI.DRIVE3_CREATE_ACL_THROW_REASONS+[GAPI.FILE_NEVER_WRITABLE],
-                              moveToNewOwnersRoot=moveToNewOwnersRoot,
-                              useDomainAdminAccess=useDomainAdminAccess,
-                              fileId=fileId, sendNotificationEmail=sendNotificationEmail, emailMessage=emailMessage,
-                              transferOwnership=_transferOwnership, body=body, fields='*', supportsAllDrives=True)
-        if updateSheetProtectedRanges and mimeType == MIMETYPE_GA_SPREADSHEET:
-          _updateSheetProtectedRangesACLchange(sheet, user, i, count, j, jcount, fileId, fileName, True, permission)
-        if csvPF:
-          baserow = {'Owner': user, 'id': fileId}
-          if showTitles:
-            baserow['name'] = fileName
-          row = baserow.copy()
-          _mapDrivePermissionNames(permission)
-          flattenJSON({'permission': permission}, flattened=row, timeObjects=timeObjects)
-          if not FJQC.formatJSON:
-            csvPF.WriteRowTitles(row)
-          elif csvPF.CheckRowTitles(row):
-            row = baserow.copy()
-            row['JSON'] = json.dumps(cleanJSON({'permission': permission}, timeObjects=timeObjects),
-                                     ensure_ascii=False, sort_keys=True)
-            csvPF.WriteRowNoFilter(row)
-        else:
-          entityActionPerformed([Ent.USER, user, entityType, fileName, Ent.PERMISSION_ID, permissionId], j, jcount)
-          if showDetails:
-            _showDriveFilePermission(permission, printKeys, timeObjects)
+        try:
+          permission = callGAPI(drive.permissions(), 'create',
+                                bailOnInternalError=True,
+                                throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+GAPI.DRIVE3_CREATE_ACL_THROW_REASONS+[GAPI.FILE_NEVER_WRITABLE],
+                                moveToNewOwnersRoot=moveToNewOwnersRoot,
+                                useDomainAdminAccess=useDomainAdminAccess,
+                                fileId=fileId, sendNotificationEmail=sendNotificationEmail, emailMessage=emailMessage,
+                                transferOwnership=_transferOwnership, body=body, fields='*', supportsAllDrives=True)
+          _showResult(permission, True)
+        except GAPI.invalidSharingRequest  as e:
+          errMsg = str(e)
+          if ('successfully shared but emails could not be sent' not in errMsg) or ('emailAddress' not in body):
+            entityActionFailedWarning([Ent.USER, user, entityType, fileName, Ent.PERMISSION_ID, permissionId], errMsg, j, jcount)
+          else:
+            if not csvPF:
+              entityActionPerformedMessage([Ent.USER, user, entityType, fileName, Ent.PERMISSION_ID, permissionId], errMsg, j, jcount)
+            tempPermId = getPermissionIdForEmail(user, i, count, body['emailAddress'])
+            permission = callGAPI(drive.permissions(), 'get',
+                                  throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.BAD_REQUEST, GAPI.PERMISSION_NOT_FOUND, GAPI.INSUFFICIENT_ADMINISTRATOR_PRIVILEGES],
+                                  useDomainAdminAccess=useDomainAdminAccess,
+                                  fileId=fileId, permissionId=tempPermId, fields='*', supportsAllDrives=True)
+            _showResult(permission, False)
       except (GAPI.badRequest, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
-              GAPI.cannotSetExpiration, GAPI.cannotSetExpirationOnAnyoneOrDomain,
+              GAPI.permissionNotFound, GAPI.cannotSetExpiration, GAPI.cannotSetExpirationOnAnyoneOrDomain,
               GAPI.expirationDateNotAllowedForSharedDriveMembers, GAPI.expirationDatesMustBeInTheFuture,
               GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.ownershipChangeAcrossDomainNotPermitted,
               GAPI.teamDriveDomainUsersOnlyRestriction, GAPI.teamDriveTeamMembersOnlyRestriction,
@@ -66932,7 +66950,7 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
               GAPI.fileOrganizerOnNonTeamDriveNotSupported,
               GAPI.cannotModifyInheritedPermission,
               GAPI.teamDrivesFolderSharingNotSupported, GAPI.invalidLinkVisibility,
-              GAPI.invalidSharingRequest, GAPI.fileNeverWritable, GAPI.abusiveContentRestriction) as e:
+              GAPI.fileNeverWritable, GAPI.abusiveContentRestriction) as e:
         entityActionFailedWarning([Ent.USER, user, entityType, fileName, Ent.PERMISSION_ID, permissionId], str(e), j, jcount)
       except GAPI.notFound as e:
         entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE, fileName], str(e), j, jcount)
@@ -66951,6 +66969,29 @@ def doCreateDriveFileACL():
 #	[updatesheetprotectedranges [<Boolean>]] [enforceexpansiveaccess [<Boolean>]]
 #	[showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
 def updateDriveFileACLs(users, useDomainAdminAccess=False):
+  def _showResult(permission, showAction):
+    if updateSheetProtectedRanges and mimeType == MIMETYPE_GA_SPREADSHEET:
+      _updateSheetProtectedRangesACLchange(sheet, user, i, count, j, jcount, fileId, fileName, True, permission)
+    if csvPF:
+      baserow = {'Owner': user, 'id': fileId}
+      if showTitles:
+        baserow['name'] = fileName
+      row = baserow.copy()
+      _mapDrivePermissionNames(permission)
+      flattenJSON({'permission': permission}, flattened=row, timeObjects=timeObjects)
+      if not FJQC.formatJSON:
+        csvPF.WriteRowTitles(row)
+      elif csvPF.CheckRowTitles(row):
+        row = baserow.copy()
+        row['JSON'] = json.dumps(cleanJSON({'permission': permission}, timeObjects=timeObjects),
+                                 ensure_ascii=False, sort_keys=True)
+        csvPF.WriteRowNoFilter(row)
+    else:
+      if showAction:
+        entityActionPerformed([Ent.USER, user, entityType, fileName, Ent.PERMISSION_ID, permissionId], j, jcount)
+      if showDetails:
+        _showDriveFilePermission(permission, printKeys, timeObjects)
+
   fileIdEntity = getDriveFileEntity()
   isEmail, permissionId = getPermissionId()
   enforceExpansiveAccess = GC.Values[GC.ENFORCE_EXPANSIVE_ACCESS]
@@ -67030,26 +67071,7 @@ def updateDriveFileACLs(users, useDomainAdminAccess=False):
                               useDomainAdminAccess=useDomainAdminAccess, enforceExpansiveAccess=enforceExpansiveAccess,
                               fileId=fileId, permissionId=permissionId, removeExpiration=removeExpiration,
                               transferOwnership=body.get('role', '') == 'owner', body=body, fields='*', supportsAllDrives=True)
-        if updateSheetProtectedRanges and mimeType == MIMETYPE_GA_SPREADSHEET:
-          _updateSheetProtectedRangesACLchange(sheet, user, i, count, j, jcount, fileId, fileName, True, permission)
-        if csvPF:
-          baserow = {'Owner': user, 'id': fileId}
-          if showTitles:
-            baserow['name'] = fileName
-          row = baserow.copy()
-          _mapDrivePermissionNames(permission)
-          flattenJSON({'permission': permission}, flattened=row, timeObjects=timeObjects)
-          if not FJQC.formatJSON:
-            csvPF.WriteRowTitles(row)
-          elif csvPF.CheckRowTitles(row):
-            row = baserow.copy()
-            row['JSON'] = json.dumps(cleanJSON({'permission': permission}, timeObjects=timeObjects),
-                                     ensure_ascii=False, sort_keys=True)
-            csvPF.WriteRowNoFilter(row)
-        else:
-          entityActionPerformed([Ent.USER, user, entityType, fileName, Ent.PERMISSION_ID, permissionId], j, jcount)
-          if showDetails:
-            _showDriveFilePermission(permission, printKeys, timeObjects)
+        _showResult(permission, True)
       except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.unknownError,
               GAPI.cannotSetExpiration, GAPI.cannotSetExpirationOnAnyoneOrDomain,
               GAPI.expirationDateNotAllowedForSharedDriveMembers, GAPI.expirationDatesMustBeInTheFuture,

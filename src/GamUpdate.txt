@@ -1,3 +1,37 @@
+7.34.04
+
+Updated `gam <UserTypeEntity> create drivefileacl <DriveFileEntity> user <UserItem> role owner` to better
+handle the case where the current owner of a file is suspended. Previously, the command was displayed as an error
+even though the ownership was changed.
+```
+gam user currentowner@domain.com add drivefileacl <DriveFileID> user newowner@domain.com role owner 
+User: currentowner@domain.com, Add 1 Drive File/Folder ACL
+  User: currentowner@domain.com, Drive File/Folder ID: <DriveFileID>, Permission ID: newowner@domain.com, Add Failed: Sorry, the items were successfully shared but emails could not be sent to newowner@domain.com.
+```
+
+Now the command is displayed as a success with a note indicating that the ownership change email was not sent.
+```
+gam user currentowner@domain.com add drivefileacl <DriveFileID> user newowner@domain.com role owner
+User: currentowner@domain.com, Add 1 Drive File/Folder ACL
+  User: currentowner@domain.com, Drive File/Folder ID: <DriveFileID>, Permission ID: newowner@domain.com, Added: Sorry, the items were successfully shared but emails could not be sent to newowner@domain.com.
+  New Owner
+    id: 10834698115409747890
+    type: user
+    emailAddress: newowner@domain.com
+    domain: domain.com
+    role: owner
+    permissionDetails:
+      role: writer
+        type: file
+        inherited: True
+        inheritedFrom: Unknown
+      role: owner
+        type: file
+        inherited: False
+    deleted: False
+    pendingOwner: False
+```
+
 7.34.03
 
 Updated to Python 3.14.3
