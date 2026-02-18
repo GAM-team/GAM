@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.34.04'
+__version__ = '7.34.05'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -13829,7 +13829,9 @@ REPORT_ACTIVITIES_TIME_OBJECTS = {'time'}
 #	 yesterday|today|thismonth|(previousmonths <Integer>)]
 #	[filter <String> (filtertime<String> <Time>)*]
 #	[event|events <EventNameList>] [ip <String>]
-#	[groupidfilter <String>]
+#	[gmaileventtypes <NumberRangeList>]
+#	[groupidfilter <String>] [resourcedetailsfilter <String>]
+#	[notimesort]
 #	[maxactivities <Number>] [maxevents <Number>] [maxresults <Number>]
 #	[countsonly [bydate|summary] [eventrowfilter]]
 #	(addcsvdata <FieldName> <String>)* [shownoactivities]
@@ -14144,6 +14146,7 @@ def doReport():
   maxResults = 1000
   aggregateByDate = aggregateByUser = convertMbToGb = countsOnly = countsByDate = countsSummary = \
     eventRowFilter = exitUserLoop = noAuthorizedApps = normalizeUsers = select = userCustomerRange = False
+  sortAllTimes = True
   limitDateChanges = -1
   allVerifyUser = userKey = 'all'
   cd = orgUnit = orgUnitId = None
@@ -14241,6 +14244,8 @@ def doReport():
           eventNames.append(event)
     elif activityReports and myarg == 'ip':
       actorIpAddress = getString(Cmd.OB_STRING)
+    elif activityReports and myarg == 'notimesort':
+      sortAllTimes = False
     elif activityReports and myarg == 'countsonly':
       countsOnly = True
     elif activityReports and myarg == 'bydate':
@@ -14706,6 +14711,8 @@ def doReport():
         if addCSVData:
           row.update(addCSVData)
         csvPF.WriteRowTitles(row)
+      elif sortAllTimes:
+        csvPF.SortRows('id.time', True)
     else:
       if eventRowFilter:
         csvPF.SetRowFilter([], GC.Values[GC.CSV_OUTPUT_ROW_FILTER_MODE])

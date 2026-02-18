@@ -1,3 +1,9 @@
+7.34.05
+
+Updated `gam report <ActivityApplictionName>` to perform a reverse chronological sort
+on all rows across multiple users and/or event names; this is consistent with the behavior
+in the Admin console. Use option `notimesort` to suppress this sort.
+
 7.34.04
 
 Updated `gam <UserTypeEntity> create drivefileacl <DriveFileEntity> user <UserItem> role owner` to better
