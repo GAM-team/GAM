@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.34.05
+
+Updated `gam report <ActivityApplictionName>` to perform a reverse chronological sort
+on all rows across multiple users and/or event names; this is consistent with the behavior
+in the Admin console. Use option `notimesort` to suppress this sort.
+
 ### 7.34.04
 
 Updated `gam <UserTypeEntity> create drivefileacl <DriveFileEntity> user <UserItem> role owner` to better

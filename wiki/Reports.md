@@ -99,6 +99,7 @@ gam report <ActivityApplicationName> [todrive <ToDriveAttribute>*]
         [event|events <EventNameList>] [ip <String>]
         [gmaileventtypes <NumberRangeList>]
         [groupidfilter <String>] [resourcedetailsfilter <String>]
+        [notimesort]
         [maxactivities <Number>] [maxevents <Number>] [maxresults <Number>]
         [countsonly [bydate|summary] [eventrowfilter]]
         (addcsvdata <FieldName> <String>)* [shownoactivities]
@@ -175,6 +176,9 @@ show the most recent activity/event; this can be useful when reporting drive act
 
 Add additional columns of data from the command line to the output.
 * `addcsvdata <FieldName> <String>`
+
+By default, a reverse chronological sort is performed on all rows across multiple users and/or event names;
+this is consistent with the behavior in the Admin console. Use option `notimesort` to suppress this sort.
 
 Display a row with a key value of `NoActivities` when there are no activities to report.
 * `shownoactivities`
