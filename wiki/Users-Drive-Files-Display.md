@@ -619,8 +619,10 @@ This option is not available for `print|show filetree`.
 ```
 ((query <QueryDriveFile>) | (fullquery <QueryDriveFile>) | <DriveFileQueryShortcut>) (querytime<String> <Time>)*
 ```
+GAM initializes the query to `'me' in owners`.
+
 * `query "xxx"` - ` and xxx` is appended to the current query; you can repeat the query argument to build up a longer query.
-* `fullquery "xxx"` - The query is set to `xxx` eliminating the initial `'me' in owners`.
+* `fullquery "xxx"` - The query is set to `xxx` eliminating the initial `'me' in owners`. You must also use `showownedby any|others` as desired.
 * `<DriveFileQueryShortcut>` - Predefined queries
 
 Use the `querytime<String> <Time>` option to allow times, usually relative, to be substituted into the `query <QueryDriveFile>` option.
