@@ -10,6 +10,26 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### - 7.34.06
+
+Added option `copyfolderpermissions [<Boolean>]` to `gam <UserTypeEntity> copy|move drivefile`.
+
+When `copyfolderpermissions false` is specified, no folder permissions are copied; this simplifies
+disabling all folder permission copying.
+
+When not specified or `copyfolderpermissions [true]` is specified, folder permissions are copied based on the following options:
+```
+copymergewithparentfolderpermissions [<Boolean>]
+copymergedtopfolderpermissions [<Boolean>]
+copytopfolderpermissions [<Boolean>]
+copytopfolderiheritedpermissions [<Boolean>]
+copytopfoldernoniheritedpermissions never|always|syncallfolders|syncupdatedfolders
+copymergedsubfolderpermissions [<Boolean>]
+copysubfolderpermissions [<Boolean>]
+copysubfolderinheritedpermissions [<Boolean>]
+copysubfoldernoniheritedpermissions never|always|syncallfolders|syncupdatedfolders
+```
+
 ### 7.34.05
 
 Updated `gam report <ActivityApplictionName>` to perform a reverse chronological sort

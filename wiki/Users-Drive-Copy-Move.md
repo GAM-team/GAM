@@ -120,6 +120,7 @@ gam <UserTypeEntity> copy drivefile <DriveFileEntity>
         [copyfilepermissions [<Boolean>]]
         [copyfileinheritedpermissions [<Boolean>]
         [copyfilenoninheritedpermissions [<Boolean>]
+        [copyfolderpermissions [<Boolean>]]
         [copymergewithparentfolderpermissions [<Boolean>]]
         [copymergedtopfolderpermissions [<Boolean>]]
         [copytopfolderpermissions [<Boolean>]]
@@ -294,6 +295,8 @@ When a folder is copied, its permissions are not copied; these options control c
 of the form `option [<Boolean>]`; if `<Boolean>` is omitted, `true` is assumed.
 
 When copied, a target folder inherits the permissions of its parent folder; these options control whether/how GAM copies the existing source folder permissions.
+* `copyfolderpermissions false` - The permissions of the source folders are not copied to the target folder.
+* `copyfolderpermissions true` - The permissions of the source folders are copied to the target folder based on the following options; this is the default action.
 
 When `mergewithparent` is `true`:
 * `copymergewithparentfolderpermissions false` - The permissions of the source top folder are not not copied to the target folder; this is the default action.
@@ -571,6 +574,7 @@ gam <UserTypeEntity> move drivefile <DriveFileEntity> [newfilename <DriveFileNam
         [createshortcutsfornonmovablefiles [<Boolean>]]
         [duplicatefiles overwriteolder|overwriteall|duplicatename|uniquename|skip]
         [duplicatefolders merge|duplicatename|uniquename|skip]
+        [copyfolderpermissions [<Boolean>]]
         [copymergewithparentfolderpermissions [<Boolean>]]
         [copymergedtopfolderpermissions [<Boolean>]]
         [copytopfolderpermissions [<Boolean>]]
@@ -660,6 +664,8 @@ When a folder is moved by recreating it, its permissions are not copied by the D
 For options of the form `option [<Boolean>]`; if `<Boolean>` is omitted, `true` is assumed.
 
 When recreated, a target folder inherits the permissions of its parent folder; these options control whether/how GAM copies the existing source folder permissions;
+* `copyfolderpermissions false` - The permissions of the source folders are not copied to the target folder.
+* `copyfolderpermissions true` - The permissions of the source folders are copied to the target folder based on the following options; this is the default action.
 
 When `mergewithparent` is `true`:
 * `copymergewithparentfolderpermissions false` - The permissions of the source top folder are not not copied to the target folder; this is the default action.
