@@ -1,3 +1,23 @@
+7.34.06
+
+Added option `copyfolderpermissions [<Boolean>]` to `gam <UserTypeEntity> copy|move drivefile`.
+
+When `copyfolderpermissions false` is specified, no folder permissions are copied; this simplifies
+disabling all folder permission copying.
+
+When not specified or `copyfolderpermissions [true]` is specified, folder permissions are copied based on the following options:
+```
+copymergewithparentfolderpermissions [<Boolean>]
+copymergedtopfolderpermissions [<Boolean>]
+copytopfolderpermissions [<Boolean>]
+copytopfolderiheritedpermissions [<Boolean>]
+copytopfoldernoniheritedpermissions never|always|syncallfolders|syncupdatedfolders
+copymergedsubfolderpermissions [<Boolean>]
+copysubfolderpermissions [<Boolean>]
+copysubfolderinheritedpermissions [<Boolean>]
+copysubfoldernoniheritedpermissions never|always|syncallfolders|syncupdatedfolders
+```
+
 7.34.05
 
 Updated `gam report <ActivityApplictionName>` to perform a reverse chronological sort

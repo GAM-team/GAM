@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.34.05'
+__version__ = '7.34.06'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -37831,7 +37831,7 @@ def doCreateUpdateCIPolicy():
   updateCmd = Act.Get() == Act.UPDATE
   groupEmail = orgUnit = None
   checkArgumentPresent('json', True)
-  jsonData = getJSON(['type'])
+  jsonData = getJSON(['customer', 'type'])
   if updateCmd:
     pname = jsonData.pop('name', None)
   else:
@@ -62065,6 +62065,7 @@ def initCopyMoveOptions(copyCmd):
     'copyFilePermissions': False,
     'copyFileInheritedPermissions': True,
     'copyFileNonInheritedPermissions': COPY_NONINHERITED_PERMISSIONS_ALWAYS,
+    'copyFolderPermissions': True,
     'copyMergeWithParentFolderPermissions': False,
     'copyMergedTopFolderPermissions': copyCmd,
     'copyMergedSubFolderPermissions': copyCmd,
@@ -62142,6 +62143,8 @@ def getCopyMoveOptions(myarg, copyMoveOptions):
     copyMoveOptions['duplicateFiles'] = getChoice(DUPLICATE_FILE_CHOICES, mapChoice=True)
   elif myarg == 'duplicatefolders':
     copyMoveOptions['duplicateFolders'] = getChoice(DUPLICATE_FOLDER_CHOICES, mapChoice=True)
+  elif myarg == 'copyfolderpermissions':
+    copyMoveOptions['copyFolderPermissions'] = getBoolean()
   elif myarg == 'copymergewithparentfolderpermissions':
     copyMoveOptions['copyMergeWithParentFolderPermissions'] = getBoolean()
   elif myarg == 'copymergedtopfolderpermissions':
@@ -62820,6 +62823,7 @@ copyReturnItemMap = {
 #	[copyfilepermissions [<Boolean>]]
 #	[copyfileinheritedpermissions [<Boolean>]
 #	[copyfilenoninheritedpermissions [<Boolean>]
+#	[copyfolderpermissions [<Boolean>]]
 #	[copymergewithparentfolderpermissions [<Boolean>]]
 #	[copymergedtopfolderpermissions [<Boolean>]]
 #	[copytopfolderpermissions [<Boolean>]]
@@ -62867,7 +62871,8 @@ def copyDriveFile(users):
         _writeCSVData(user, folderName, folderId, newParentName, newParentId, MIMETYPE_GA_FOLDER)
       Act.Set(action)
       _incrStatistic(statistics, STAT_FOLDER_MERGED)
-      if (copyMoveOptions['copyMergeWithParentFolderPermissions'] and
+      if (copyMoveOptions['copyFolderPermissions'] and
+          copyMoveOptions['copyMergeWithParentFolderPermissions'] and
           copyMoveOptions['destParentType'] != DEST_PARENT_MYDRIVE_ROOT):
         copyFolderNonInheritedPermissions =\
             _getCopyFolderNonInheritedPermissions(copyMoveOptions,
@@ -62897,7 +62902,8 @@ def copyDriveFile(users):
               _writeCSVData(user, folderName, folderId, newFolderName, newFolderId, MIMETYPE_GA_FOLDER)
             Act.Set(action)
             _incrStatistic(statistics, STAT_FOLDER_MERGED)
-            if (copyMoveOptions[['copyMergedSubFolderPermissions', 'copyMergedTopFolderPermissions'][atTop]] and
+            if (copyMoveOptions['copyFolderPermissions'] and
+                copyMoveOptions[['copyMergedSubFolderPermissions', 'copyMergedTopFolderPermissions'][atTop]] and
                 (not atTop or copyMoveOptions['destParentType'] != DEST_PARENT_MYDRIVE_ROOT)):
               copyFolderNonInheritedPermissions =\
                   _getCopyFolderNonInheritedPermissions(copyMoveOptions,
@@ -62949,7 +62955,8 @@ def copyDriveFile(users):
       else:
         _writeCSVData(user, folderName, folderId, newFolderName, newFolderId, body['mimeType'])
       _incrStatistic(statistics, STAT_FOLDER_COPIED_MOVED)
-      if copyMoveOptions[['copySubFolderPermissions', 'copyTopFolderPermissions'][atTop]]:
+      if (copyMoveOptions['copyFolderPermissions'] and
+          copyMoveOptions[['copySubFolderPermissions', 'copyTopFolderPermissions'][atTop]]):
         _copyPermissions(drive, user, i, count, j, jcount,
                          Ent.DRIVE_FOLDER, folderId, folderName, newFolderId, newFolderName,
                          statistics, STAT_FOLDER_PERMISSIONS_FAILED,
@@ -63704,6 +63711,7 @@ def _recursiveUpdateMovePermissions(drive, user, i, count,
 #	[createshortcutsfornonmovablefiles [<Boolean>]]
 #	[duplicatefiles overwriteolder|overwriteall|duplicatename|uniquename|skip]
 #	[duplicatefolders merge|duplicatename|uniquename|skip]
+#	[copyfolderpermissions [<Boolean>]]
 #	[copymergewithparentfolderpermissions [<Boolean>]]
 #	[copymergedtopfolderpermissions [<Boolean>]]
 #	[copytopfolderpermissions [<Boolean>]]
@@ -63740,7 +63748,8 @@ def moveDriveFile(users):
       entityPerformActionModifierItemValueList(kvList, Act.MODIFIER_CONTENTS_WITH, [Ent.DRIVE_FOLDER, newParentNameId], j, jcount)
       Act.Set(action)
       _incrStatistic(statistics, STAT_FOLDER_MERGED)
-      if (copyMoveOptions['copyMergeWithParentFolderPermissions'] and
+      if (copyMoveOptions['copyFolderPermissions'] and
+          copyMoveOptions['copyMergeWithParentFolderPermissions'] and
           copyMoveOptions['destParentType'] != DEST_PARENT_MYDRIVE_ROOT):
         copyFolderNonInheritedPermissions =\
             _getCopyFolderNonInheritedPermissions(copyMoveOptions,
@@ -63770,7 +63779,8 @@ def moveDriveFile(users):
             entityModifierItemValueListActionPerformed(kvList, Act.MODIFIER_CONTENTS_WITH, [Ent.DRIVE_FOLDER, f'{newFolderName}({newFolderId})'], j, jcount)
             Act.Set(action)
             _incrStatistic(statistics, STAT_FOLDER_MERGED)
-            if (copyMoveOptions[['copyMergedSubFolderPermissions', 'copyMergedTopFolderPermissions'][atTop]] and
+            if (copyMoveOptions['copyFolderPermissions'] and
+                copyMoveOptions[['copyMergedSubFolderPermissions', 'copyMergedTopFolderPermissions'][atTop]] and
                 (not atTop or copyMoveOptions['destParentType'] != DEST_PARENT_MYDRIVE_ROOT)):
               copyFolderNonInheritedPermissions =\
                   _getCopyFolderNonInheritedPermissions(copyMoveOptions,
@@ -63864,7 +63874,8 @@ def moveDriveFile(users):
                                                  j, jcount)
       Act.Set(action)
       _incrStatistic(statistics, STAT_FOLDER_COPIED_MOVED)
-      if copyMoveOptions[['copySubFolderPermissions', 'copyTopFolderPermissions'][atTop]]:
+      if (copyMoveOptions['copyFolderPermissions'] and
+          copyMoveOptions[['copySubFolderPermissions', 'copyTopFolderPermissions'][atTop]]):
         _copyPermissions(drive, user, i, count, j, jcount,
                          Ent.DRIVE_FOLDER, folderId, folderName, newFolderId, newFolderName,
                          statistics, STAT_FOLDER_PERMISSIONS_FAILED,
