@@ -46011,7 +46011,10 @@ def doCreateGuestUser():
     result = callGAPI(cd.users(), 'createGuest',
                       throwReasons=[GAPI.FAILED_PRECONDITION],
                       body=body)
-    entityActionPerformed([Ent.GUEST_USER, result['primaryGuestEmail']])
+    entityActionPerformed([Ent.GUEST_USER, body['primaryGuestEmail']])
+    Ind.Increment()
+    showJSON(None, result)
+    Ind.Decrement()
   except (GAPI.failedPrecondition) as e:
     entityActionFailedExit([Ent.GUEST_USER, body['primaryGuestEmail']], str(e))
 

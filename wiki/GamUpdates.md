@@ -12,6 +12,12 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 
 ### 7.34.07
 
+Added the following command to create a guest user.
+* See: https://support.google.com/a/answer/16558545?hl=en
+```
+gam create guestuser <EmailAddress>
+```
+
 Added the following items to `<UserFieldName>`:
 * `guestaccountinfo` - Additional guest-related metadata fields
 * `isguestuser` - Indicates if the inserted user is a guest
