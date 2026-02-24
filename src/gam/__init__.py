@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.34.06'
+__version__ = '7.34.07'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -46624,8 +46624,9 @@ USER_FIELDS_CHOICE_MAP = {
   'firstname': 'name.givenName',
   'fullname': 'name.fullName',
   'gal': 'includeInGlobalAddressList',
-  'givenname': 'name.givenName',
   'gender': ['gender.type', 'gender.customGender', 'gender.addressMeAs'],
+  'givenname': 'name.givenName',
+  'guestaccountinfo': 'guestAccountInfo',
   'id': 'id',
   'im': 'ims',
   'ims': 'ims',
@@ -46635,6 +46636,7 @@ USER_FIELDS_CHOICE_MAP = {
   'isdelegatedadmin': ['isAdmin', 'isDelegatedAdmin'],
   'isenforcedin2sv': 'isEnforcedIn2Sv',
   'isenrolledin2sv': 'isEnrolledIn2Sv',
+  'isguestuser': 'isGuestUser',
   'is2svenforced': 'isEnforcedIn2Sv',
   'is2svenrolled': 'isEnrolledIn2Sv',
   'ismailboxsetup': 'isMailboxSetup',

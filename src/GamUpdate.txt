@@ -1,3 +1,9 @@
+7.34.07
+
+Added the following items to `<UserFieldName>`:
+* `guestaccountinfo` - Additional guest-related metadata fields
+* `isguestuser` - Indicates if the inserted user is a guest
+
 7.34.06
 
 Added option `copyfolderpermissions [<Boolean>]` to `gam <UserTypeEntity> copy|move drivefile`.
