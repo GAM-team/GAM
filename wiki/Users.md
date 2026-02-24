@@ -40,6 +40,7 @@
 - [Print user list](#print-user-list)
 - [Display user counts](#display-user-counts)
 - [Verify domain membership](#verify-domain-membership)
+- [Guest Users](#guest-users)
 
 ## API documentation
 * [Directory API - Users](https://developers.google.com/admin-sdk/directory/reference/rest/v1/users)
@@ -1385,4 +1386,10 @@ primaryEmail,id,Valid,name
 testuser1@domain.com,118080758787650801331,True,Test User 1
 testuserxxx@domain.com,,False,Test User XXX
 testuser2@domain.com,107344800159717682514,True,Test User 2
+```
+
+## Guest Users
+* See: https://support.google.com/a/answer/16558545
+```
+gam create guestuser <EmailAddress>
 ```
