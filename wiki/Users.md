@@ -1393,3 +1393,5 @@ testuser2@domain.com,107344800159717682514,True,Test User 2
 ```
 gam create guestuser <EmailAddress>
 ```
+
+Guest users are in the OU "/Workspace guests".
