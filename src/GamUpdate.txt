@@ -1,7 +1,19 @@
+7.34.09
+
+Updated `gam <UserTypeEntity> update photo` to delete the user's existing photo
+before performing the update as the API update will succeed but not replace a user's existing self-set photo.
+
+7.34.08
+
+Rebuild to avoid the following error:
+```
+requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (6.0.0.post1)/charset_normalizer (3.4.4) doesn't match a supported version!
+```
+
 7.34.07
 
 Added the following command to create a guest user.
-* See: https://support.google.com/a/answer/16558545?hl=en
+* See: https://support.google.com/a/answer/16558545
 ```
 gam create guestuser <EmailAddress>
 ```

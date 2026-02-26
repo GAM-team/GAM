@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.34.08'
+__version__ = '7.34.09'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -46009,13 +46009,13 @@ def doCreateGuestUser():
   checkForExtraneousArguments()
   try:
     result = callGAPI(cd.users(), 'createGuest',
-                      throwReasons=[GAPI.FAILED_PRECONDITION],
+                      throwReasons=[GAPI.FAILED_PRECONDITION, GAPI.INVALID_ARGUMENT],
                       body=body)
     entityActionPerformed([Ent.GUEST_USER, body['primaryGuestEmail']])
     Ind.Increment()
     showJSON(None, result)
     Ind.Decrement()
-  except (GAPI.failedPrecondition) as e:
+  except (GAPI.failedPrecondition, GAPI.invalidArgument) as e:
     entityActionFailedExit([Ent.GUEST_USER, body['primaryGuestEmail']], str(e))
 
 # gam <UserTypeEntity> update user <UserAttribute>*
@@ -71340,6 +71340,13 @@ def updatePhoto(users):
         continue
     body = {'photoData': base64.urlsafe_b64encode(image_data).decode(UTF8)}
     try:
+      try:
+        callGAPI(cd.users().photos(), 'delete',
+                 bailOnInternalError=True,
+                 throwReasons=[GAPI.USER_NOT_FOUND, GAPI.FORBIDDEN, GAPI.PHOTO_NOT_FOUND, GAPI.INTERNAL_ERROR],
+                 userKey=user)
+      except (GAPI.photoNotFound, GAPI.internalError) as e:
+        pass
       callGAPI(cd.users().photos(), 'update',
                throwReasons=[GAPI.USER_NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID_INPUT, GAPI.CONDITION_NOT_MET],
                userKey=user, body=body, fields='')
