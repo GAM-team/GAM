@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.34.09
+
+Updated `gam <UserTypeEntity> update photo` to delete the user's existing photo
+before performing the update as the API update will succeed but not replace a user's existing self-set photo.
+
 ### 7.34.08
 
 Rebuild to avoid the following error:
