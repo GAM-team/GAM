@@ -1,5 +1,6 @@
 # Users - Photo
 - [API documentation](#api-documentation)
+- [Notes](#notes)
 - [Definitions](#definitions)
 - [Upload a user's photo from a default file](#upload-a-users-photo-from-a-default-file)
 - [Upload a user's photo specifying file name](#upload-a-users-photo-specifying-file-name)
@@ -12,6 +13,10 @@
 
 ## API documentation
 * [Directory API - Users Photos](https://developers.google.com/admin-sdk/directory/reference/rest/v1/users.photos)
+
+## Notes
+As of version 7.34.09, `gam <UserTypeEntity> update photo` was updated to delete the user's existing photo
+before performing the update as the API update will succeed but not replace a user's existing self-set photo.
 
 ## Definitions
 * [`<DriveFileEntity>`](Drive-File-Selection)
