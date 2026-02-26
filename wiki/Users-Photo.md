@@ -7,6 +7,7 @@
 - [Upload a user's photo specifying a Google Drive owner and file name](#upload-a-users-photo-specifying-a-google-drive-owner-and-file-name)
 - [Download a user's photo](#download-a-users-photo)
 - [Delete a user's photo](#delete-a-users-photo)
+- [Update photo fails to change user's photo](update-photo-fails-to-change-users-photo)
 - [Download a user's profile photo](Users-Profile-Photo)
 
 ## API documentation
@@ -81,3 +82,6 @@ By default, the Base64 encoded data is dumped to stdout.
 ```
 gam <UserTypeEntity> delete|del photo
 ```
+## Update photo fails to change user's photo
+If you use `gam <UserTypeEntity> update photo ...` to change a user's photo and the command succeeds
+but the photo doesn't change, use `gam <UserTypeEntity> delete photo` first and the do the update.
