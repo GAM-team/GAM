@@ -85,4 +85,4 @@ gam <UserTypeEntity> delete|del photo
 
 ## Update photo fails to change user's photo
 If you use `gam <UserTypeEntity> update photo ...` to change a user's photo and the command succeeds
-but the photo doesn't change, use `gam <UserTypeEntity> delete photo` first and the do the update.
+but the photo doesn't change, use `gam <UserTypeEntity> delete photo` first and then do the update.
