@@ -471,7 +471,7 @@ jobs:
 
       - name: Run Python
         run: |
-          "${PYTHON}" -V
+          "${PYTHON}" -VV
           "${PYTHON}" -c "import ssl; print(f'Using {ssl.OPENSSL_VERSION}')"
 
       - name: Create and use Python venv
