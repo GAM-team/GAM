@@ -1,3 +1,7 @@
+7.34.10
+
+Fixed bug where `formatjson quotechar <Character>` on the command line did not override `redirect csv <FileName> multiprocess quotechar <Character>`.
+
 7.34.09
 
 Updated `gam <UserTypeEntity> update photo` to delete the user's existing photo

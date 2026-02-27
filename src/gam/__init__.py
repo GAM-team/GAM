@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.34.09'
+__version__ = '7.34.10'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -9725,8 +9725,6 @@ def CSVFileQueueHandler(mpQueue, mpQueueStdout, mpQueueStderr, csvPF, datetimeNo
   GC.Values[GC.TIMEZONE] = tzinfo
   GC.Values[GC.OUTPUT_TIMEFORMAT] = output_timeformat
   clearRowFilters = False
-#  if sys.platform.startswith('win'):
-#    signal.signal(signal.SIGINT, signal.SIG_IGN)
   if multiprocessing.get_start_method() != 'fork':
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     Cmd = glclargs.GamCLArgs()
@@ -9776,7 +9774,7 @@ def CSVFileQueueHandler(mpQueue, mpQueueStdout, mpQueueStderr, csvPF, datetimeNo
       GC.Values = dataItem
       csvPF.SetColumnDelimiter(GC.Values[GC.CSV_OUTPUT_COLUMN_DELIMITER])
       csvPF.SetNoEscapeChar(GC.Values[GC.CSV_OUTPUT_NO_ESCAPE_CHAR])
-      csvPF.SetQuoteChar(GC.Values[GC.CSV_OUTPUT_QUOTE_CHAR])
+#      csvPF.SetQuoteChar(GC.Values[GC.CSV_OUTPUT_QUOTE_CHAR])
       csvPF.SetSortHeaders(GC.Values[GC.CSV_OUTPUT_SORT_HEADERS])
       csvPF.SetTimestampColumn(GC.Values[GC.CSV_OUTPUT_TIMESTAMP_COLUMN])
       csvPF.SetHeaderFilter(GC.Values[GC.CSV_OUTPUT_HEADER_FILTER])
@@ -9843,8 +9841,6 @@ def StdQueueHandler(mpQueue, stdtype, gmGlobals, gcValues):
     except IOError as e:
       systemErrorExit(FILE_ERROR_RC, fdErrorMessage(fd, GM.Globals[stdtype][GM.REDIRECT_NAME], e))
 
-#  if sys.platform.startswith('win'):
-#    signal.signal(signal.SIGINT, signal.SIG_IGN)
   if multiprocessing.get_start_method() != 'fork':
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     GM.Globals = gmGlobals.copy()
@@ -9938,7 +9934,6 @@ def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout,
 
   with mplock:
     initializeLogging()
-#    if sys.platform.startswith('win'):
     if multiprocessing.get_start_method() != 'fork':
       signal.signal(signal.SIGINT, signal.SIG_IGN)
     GM.Globals[GM.API_CALLS_RETRY_DATA] = {}
