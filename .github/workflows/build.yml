@@ -806,7 +806,7 @@ jobs:
 
       - name: Archive tar.xz artifacts
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # 7.0.0
-        if: always()
+        if: runner.os != 'Windows'
         with:
           archive: false
           if-no-files-found: ignore
@@ -815,7 +815,7 @@ jobs:
 
       - name: Archive zip artifacts
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # 7.0.0
-        if: always()
+        if: runner.os == 'Windows'
         with:
           archive: false
           if-no-files-found: ignore
@@ -824,7 +824,7 @@ jobs:
 
       - name: Archive msi artifacts
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # 7.0.0
-        if: always()
+        if: runner.os == 'Windows'
         with:
           archive: false
           if-no-files-found: ignore
