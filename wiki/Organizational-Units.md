@@ -1,7 +1,7 @@
 # Organizational Units
 - [API documentation](#api-documentation)
 - [Definitions](#definitions)
-- [Special character issues](#special-character-issues]
+- [Special character issues](#special-character-issues)
 - [Special quoting](#special-quoting)
 - [Manage organizational units](#manage-organizational-units)
 - [Add users to an organizational unit](#add-users-to-an-organizational-unit)
