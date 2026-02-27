@@ -134,7 +134,7 @@ jobs:
 
     steps:
 
-      - uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
           fetch-depth: 0
@@ -148,7 +148,7 @@ jobs:
 
       - name: Cache multiple paths
         if: matrix.goal == 'build'
-        uses: actions/cache@638ed79f9dc94c1de1baef91bcab5edaa19451f4 # v4.2.4
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         id: cache-python-ssl
         with:
           path: |
@@ -163,7 +163,7 @@ jobs:
 
       - name: Use pre-compiled Python for testing
         if: matrix.python != ''
-        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ matrix.python }}
           allow-prereleases: true
@@ -247,7 +247,7 @@ jobs:
 
       - name: MacOS import developer certificates for signing
         if: runner.os == 'macOS'
-        uses: apple-actions/import-codesign-certs@11e1bb2d3771ad8ffa8459dfe527bc26b2dd4b62 # v5.0.3
+        uses: apple-actions/import-codesign-certs@b610f78488812c1e56b20e6df63ec42d833f2d14 # v6.0.0
         with:
           p12-file-base64: ${{ secrets.CERTIFICATES_P12 }}
           p12-password: ${{ secrets.CERTIFICATES_P12_PASSWORD }}
@@ -732,7 +732,7 @@ jobs:
           $gam create signjwtserviceaccount
 
       - name: Attest gam executable was generated from this Action
-        uses: actions/attest-build-provenance@0b6e9809265278d02c58acf52849a95818a5a306 # v3.0.0
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
         if: matrix.goal == 'build'
         with:
           subject-path: ${{ env.gam }}
@@ -796,7 +796,7 @@ jobs:
           & 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe' verify /pa /v "$env:MSI_FILENAME"
 
       - name: Attest that gam package files were generated from this Action
-        uses: actions/attest-build-provenance@0b6e9809265278d02c58acf52849a95818a5a306 # v3.0.0
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
         if: (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && matrix.goal == 'build'
         with:
           subject-path: |
@@ -805,11 +805,11 @@ jobs:
             gam*.msi
 
       - name: Archive production artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # 4.6.2
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # 7.0.0
         #if: (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && matrix.goal != 'test'
         if: always()
         with:
-          name: gam-binaries-${{ env.GAMOS }}-${{ env.arch }}-${{ matrix.jid }}
+          archive: false
           path: |
             gam*.tar.xz
             gam*.zip
@@ -1057,9 +1057,9 @@ jobs:
       packages: write
     steps:
       - name: Merge Artifacts
-        uses: actions/upload-artifact/merge@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # 7.0.0
         with:
-          name: gam-binaries
+          archive: false
           pattern: gam-binaries-*
 
   publish:
@@ -1073,13 +1073,13 @@ jobs:
 
     steps:
 
-      - uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
           fetch-depth: 0
 
       - name: Download artifacts
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # 5.0.0
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
 
       - name: VirusTotal Scan
         uses: crazy-max/ghaction-virustotal@d34968c958ae283fe976efed637081b9f9dcf74f # 4.2.0
@@ -1096,7 +1096,7 @@ jobs:
           echo "dateversion=${dateversion}" >> $GITHUB_OUTPUT
 
       - name: Publish draft release
-        uses: softprops/action-gh-release@6cbd405e2c4e67a21c47fa9e383d020e4e28b836 # v2.3.3
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
         with:
           draft: true
           prerelease: false
