@@ -1,6 +1,7 @@
 # Organizational Units
 - [API documentation](#api-documentation)
 - [Definitions](#definitions)
+- [Special character issues](#special-character-issues]
 - [Special quoting](#special-quoting)
 - [Manage organizational units](#manage-organizational-units)
 - [Add users to an organizational unit](#add-users-to-an-organizational-unit)
@@ -49,6 +50,15 @@ For `<OrgUnitEntity>`, see: [Collections of Items](Collections-of-Items)
 For `<UserTypeEntity>`, see: [Collections of Users](Collections-Of-Users)
 
 For `<CrOSTypeEntity>`, see: [Collections of ChromeOS Devices](Collections-of-ChromeOS-Devices)
+
+## Special character issues
+If an organizational unit name contains a `#` or a `+`, these commands will not work due to a bug
+that Google does not plan to fix.
+```
+gam update org|ou <OrgUnitPath>
+gam delete org|ou <OrgUnitPath>
+gam info org|ou <OrgUnitPath>
+```
 
 ## Special quoting
 You specify a single organizational unit with `org <OrgUnitPath>` and a list of organizationsl units with `orgs <OrgUnitList>`.
