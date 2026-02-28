@@ -10,7 +10,7 @@ OPTIONS:
    -d      Directory where gam folder will be installed. Default is \$HOME/bin/
    -a      Architecture to install (x86_64, arm64). Default is to detect your arch with "uname -m".
    -o      OS we are running (linux, macos). Default is to detect your OS with "uname -s".
-   -b      OS version. Default is to detect on MacOS and Linux.
+   -b      OS version. Default is to detect on macOS and Linux.
    -l      Just upgrade GAM to latest version. Skips project creation and auth.
    -p      Profile update (true, false). Should script add gam command to environment. Default is true.
    -u      Admin user email address to use with GAM. Default is to prompt.
@@ -247,7 +247,7 @@ case $gamos in
         archgrep="-arm64\|-aarch64"
         ;;
       *)
-        echo_red "ERROR: this installer currently only supports x86_64 and arm64 MacOS. Looks like you're running on ${gamarch}. Exiting."
+        echo_red "ERROR: this installer currently only supports x86_64 and arm64 macOS. Looks like you're running on ${gamarch}. Exiting."
         exit
 	;;
     esac
@@ -256,19 +256,19 @@ case $gamos in
     versionless_urls=$(echo -e "$gam_macos_urls" | \
                        grep -e "-macos-")
     if [ "$versionless_urls" == "" ]; then
-        # versions after 7.00.38 include MacOS version info
+        # versions after 7.00.38 include macOS version info
         gam_macos_vers=$(echo -e "$gam_macos_urls" | \
                          grep --only-matching -e '-macos[0-9\.]*' | \
                          cut -c 7-10)
         for gam_mac_ver in $gam_macos_vers; do
             if version_gt $currentversion $gam_mac_ver; then
                 download_url=$(echo -e "$gam_macos_urls" | grep "$gam_mac_ver")
-                echo_green "You are running MacOS ${currentversion} Using GAM compiled against ${gam_mac_ver}"
+                echo_green "You are running macOS ${currentversion} Using GAM compiled against ${gam_mac_ver}"
                 break
             fi
             done
         if [ -z ${download_url+x} ]; then
-	    echo_red "Sorry, you are running MacOS ${osversion} but GAM on ${gamarch} requires MacOS ${gam_mac_ver} or newer. Exiting."
+	    echo_red "Sorry, you are running macOS ${osversion} but GAM on ${gamarch} requires macOS ${gam_mac_ver} or newer. Exiting."
             exit
 	fi
     else
@@ -283,13 +283,13 @@ case $gamos in
         esac
         download_url=$(echo -e "$download_urls" | grep -e $archgrep)
         if version_gt "$osversion" "$minimum_version"; then
-            echo_green "You are running MacOS ${osversion}, good. Downloading GAM from ${download_url}."
+            echo_green "You are running macOS ${osversion}, good. Downloading GAM from ${download_url}."
         else
-          echo_red "Sorry, you are running MacOS ${osversion} but GAM on ${gamarch} requires MacOS ${minimum_version}. Exiting."
+          echo_red "Sorry, you are running macOS ${osversion} but GAM on ${gamarch} requires macOS ${minimum_version}. Exiting."
           exit
         fi 
         if [ -z ${download_url+x} ]; then
-          echo_red "Sorry, you are running MacOS ${currentversion} but GAM on ${gamarch} requires MacOS ${minimum_version}. Exiting."
+          echo_red "Sorry, you are running macOS ${currentversion} but GAM on ${gamarch} requires macOS ${minimum_version}. Exiting."
           exit
         fi
     fi
@@ -302,7 +302,7 @@ case $gamos in
                    grep ".zip")
     ;;
   *)
-    echo_red "Sorry, this installer currently only supports Linux and MacOS. Looks like you're running on ${gamos}. Exiting."
+    echo_red "Sorry, this installer currently only supports Linux and macOS. Looks like you're running on ${gamos}. Exiting."
     exit
     ;;
 esac
@@ -368,18 +368,15 @@ if [ "$upgrade_only" = true ]; then
   exit
 fi
 
-# Set config command
-#config_cmd="config no_browser false"
-
 while true; do
-  read -p "Can you run a full browser on this machine? (usually Y for MacOS, N for Linux if you SSH into this machine) " yn
+  read -p "Can you run a full browser on this machine? (usually Y for macOS, N for Linux if you SSH into this machine) " yn
   case $yn in
     [Yy]*)
+      "$target_gam" config no_browser false save
       break
       ;;
     [Nn]*)
-#      config_cmd="config no_browser true"
-      touch "$target_folder/nobrowser.txt" > /dev/null 2>&1
+      "$target_gam" config no_browser true save
       break
       ;;
     *)
@@ -397,7 +394,6 @@ while true; do
       if [ "$adminuser" == "" ]; then
         read -p "Please enter your Google Workspace admin email address: " adminuser
       fi
-#      "$target_gam" $config_cmd create project $adminuser
       "$target_gam" create project $adminuser
       rc=$?
       if (( $rc == 0 )); then
@@ -423,7 +419,6 @@ while $project_created; do
   read -p "Are you ready to authorize GAM to perform Google Workspace management operations as your admin account? (yes or no) " yn
   case $yn in
     [Yy]*)
-#      "$target_gam" $config_cmd oauth create $adminuser
       "$target_gam" oauth create $adminuser
       rc=$?
       if (( $rc == 0 )); then
@@ -453,7 +448,6 @@ while $admin_authorized; do
         read -p "Please enter the email address of a regular Google Workspace user: " regularuser
       fi
       echo_yellow "Great! Checking service account scopes.This will fail the first time. Follow the steps to authorize and retry. It can take a few minutes for scopes to PASS after they've been authorized in the admin console."
-#      "$target_gam" $config_cmd user $regularuser check serviceaccount
       "$target_gam" user $regularuser check serviceaccount
       rc=$?
       if (( $rc == 0 )); then
@@ -475,7 +469,6 @@ while $admin_authorized; do
 done
 
 echo_green "Here's information about your new GAM installation:"
-#"$target_gam" $config_cmd save version extended
 "$target_gam" version extended
 rc=$?
 if (( $rc != 0 )); then

@@ -1,3 +1,10 @@
+7.34.11
+
+Updated gam-install.sh script for macOS/Linux to properly config GAM when the answer to the following question is No.
+```
+Can you run a full browser on this machine? (usually Y for macOS, N for Linux if you SSH into this machine)
+```
+
 7.34.10
 
 Fixed bug where `formatjson quotechar <Character>` on the command line did not override `redirect csv <FileName> multiprocess quotechar <Character>`.
@@ -1527,7 +1534,7 @@ Re-run the command specify a new service account name with: saname <ServiceAccou
 
 Native support for Windows 11 Arm-based devices.
 
-Renamed some MacOS and Linux binary installer files to align on terminology. Everything is "arm64" now, no "aarch64".
+Renamed some macOS and Linux binary installer files to align on terminology. Everything is "arm64" now, no "aarch64".
 
 7.06.05
 
@@ -2136,7 +2143,7 @@ for `[R] 35)  Meet API (supports readonly)` as it is a special case.
 
 7.00.39
 
-Supported MacOS versions are now in the download filename.
+Supported macOS versions are now in the download filename.
 
 Minor code fixes.
 
@@ -3939,11 +3946,11 @@ See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Files-Display#fil
 
 6.65.12
 
-Additional updates on MacOS when a `gam csv` command is interrupted with a contol-C.
+Additional updates on macOS when a `gam csv` command is interrupted with a contol-C.
 
 6.65.11
 
-Updated multiprocessing to handle the following error that occurs on MacOS when a `gam csv` command
+Updated multiprocessing to handle the following error that occurs on macOS when a `gam csv` command
 is interrupted with a contol-C.
 ```
 multiprocessing/resource_tracker.py:224: UserWarning: resource_tracker: There appear to be N leaked semaphore objects to clean up at shutdown
@@ -6104,7 +6111,7 @@ Improved code for `gam [<UserTypeEntity>] create teamdrive <Name> ou <OrgUnitIte
 
 6.29.04
 
-Updated multiprocessing on MacOS to use `spawn` instead of `fork` when starting subprocesses
+Updated multiprocessing on macOS to use `spawn` instead of `fork` when starting subprocesses
 as `fork` was unreliable when large numbers (>20) of threads were used; subprocesses would
 hang and never complete.
 
@@ -6226,7 +6233,7 @@ then filters the list to only those in `<PeopleContactGroupItem>`; quota limits 
 
 6.28.03
 
-Build MacOS x86_64 and arm64 executables.
+Build macOS x86_64 and arm64 executables.
 
 6.28.02
 
@@ -6573,7 +6580,7 @@ Added command that allows checking if a user is a member of specific groups and 
 
 6.26.00
 
-Build MacOS universal version.
+Build macOS universal version.
 
 * Upgraded to OpenSSL 3.0.5 where possible.
 
@@ -11415,7 +11422,7 @@ ID of the created Team Drive as output. This will be useful in scripts that crea
 want to perform subsequent GAM command on the Team Drive. This ID will only be valid when the return code
 of the command is 0; program accordingly.
 ```
-Linux/MacOS
+Linux/macOS
 teamDriveId=`gam user user@domain.com create teamdrive ... returnidonly`
 Windows PowerShell
 $teamDriveId = & gam user user@domain.com create teamdrive ... returnidonly`
@@ -11507,7 +11514,7 @@ file ID of the created file as output. This will be useful in scripts that creat
 want to perform subsequent GAM command on the file. This file ID will only be valid when the return code
 of the command is 0; program accordingly.
 ```
-Linux/MacOS
+Linux/macOS
 fileId=`gam user user@domain.com create drivefile ... returnidonly`
 Windows PowerShell
 $fileId = & gam user user@domain.com create drivefile ... returnidonly`
@@ -15590,7 +15597,7 @@ gam print group-members [todrive [<ToDriveAttribute>]]
 
 4.55.44
 
-Improve MacOS version of GAM's use of OpenSSL 1.0.2n.
+Improve macOS version of GAM's use of OpenSSL 1.0.2n.
 Recode pyinstaller .spec files.
 
 4.55.43
@@ -15617,7 +15624,7 @@ Fixed bug that made some gam print commands throw an exception.
 
 4.55.40
 
-Update MacOS version of GAM to use OpenSSL 1.0.2n.
+Update macOS version of GAM to use OpenSSL 1.0.2n.
 
 4.55.39
 
@@ -18443,7 +18450,7 @@ Changed gam info user formatjson to show licenses in SKU ID (SKU Display Name) f
 4.42.00
 
 Fixed problem where control-C was not recognized when multiple processes were running via gam batch/csv.
-Gam terminates cleanly on Linux/MacOS when you hit control-C in this situation; on Windows exceptions are
+Gam terminates cleanly on Linux/macOS when you hit control-C in this situation; on Windows exceptions are
 thrown but Gam does terminate.
 
 4.41.08
