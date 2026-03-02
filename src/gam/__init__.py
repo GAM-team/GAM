@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.34.12'
+__version__ = '7.34.13'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -4688,7 +4688,7 @@ def writeClientCredentials(creds, filename):
   if filename != '-':
     writeFile(filename, json.dumps(creds_data, indent=2, sort_keys=True)+'\n')
   else:
-    writeStdout(json.dumps(creds_data, ensure_ascii=False, sort_keys=True, indent=2)+'\n')
+    writeStdout(json.dumps(creds_data, ensure_ascii=False, indent=2, sort_keys=True)+'\n')
 
 URL_SHORTENER_ENDPOINT = 'https://gam-shortn.appspot.com/create'
 
@@ -12475,7 +12475,7 @@ def checkServiceAccount(users):
       saScopes[API.DRIVE2] = saScopes[API.DRIVE3]
     GM.Globals[GM.OAUTH2SERVICE_JSON_DATA][API.OAUTH2SA_SCOPES] = saScopes
     writeFile(GC.Values[GC.OAUTH2SERVICE_JSON],
-              json.dumps(GM.Globals[GM.OAUTH2SERVICE_JSON_DATA], ensure_ascii=False, sort_keys=True, indent=2),
+              json.dumps(GM.Globals[GM.OAUTH2SERVICE_JSON_DATA], ensure_ascii=False, indent=2, sort_keys=True),
               continueOnError=False)
   checkScopes = sorted(checkScopesSet)
   jcount = len(checkScopes)
@@ -12962,7 +12962,7 @@ def doProcessSvcAcctKeys(mode=None, iam=None, projectId=None, clientEmail=None, 
     except (IndexError, KeyError, SyntaxError, TypeError, ValueError) as e:
       invalidOauth2serviceJsonExit(str(e))
     GM.Globals[GM.OAUTH2SERVICE_JSON_DATA][API.OAUTH2SA_SCOPES] = GM.Globals[GM.SVCACCT_SCOPES]
-    oauth2service_data = json.dumps(GM.Globals[GM.OAUTH2SERVICE_JSON_DATA], ensure_ascii=False, sort_keys=True, indent=2)
+    oauth2service_data = json.dumps(GM.Globals[GM.OAUTH2SERVICE_JSON_DATA], ensure_ascii=False, indent=2, sort_keys=True)
   writeFile(GC.Values[GC.OAUTH2SERVICE_JSON], oauth2service_data, continueOnError=False)
   Act.Set(Act.UPDATE)
   entityActionPerformed([Ent.OAUTH2SERVICE_JSON_FILE, GC.Values[GC.OAUTH2SERVICE_JSON],
@@ -13128,7 +13128,7 @@ def doCreateGCPServiceAccount():
   except GAPI.invalid as e:
     systemErrorExit(API_ACCESS_DENIED_RC, str(e))
   sa_info['client_id'] = token_info['issued_to']
-  sa_output = json.dumps(sa_info, ensure_ascii=False, sort_keys=True, indent=2)
+  sa_output = json.dumps(sa_info, ensure_ascii=False, indent=2, sort_keys=True)
   writeStdout(f'Writing SignJWT service account data:\n\n{sa_output}\n')
   writeFile(GC.Values[GC.OAUTH2SERVICE_JSON], sa_output, continueOnError=False)
 
@@ -37774,8 +37774,7 @@ def _cleanPolicy(policy, add_warnings, no_appnames,
 def _showPolicy(policy, FJQC, i=0, count=0):
   if FJQC is not None and FJQC.formatJSON:
     printLine(json.dumps(cleanJSON(policy, timeObjects=CIPOLICY_TIME_OBJECTS),
-                         ensure_ascii=False,
-                         sort_keys=True))
+                         ensure_ascii=False, sort_keys=True))
     return
   printEntity([Ent.POLICY, policy['name']], i, count)
   Ind.Increment()
@@ -37788,10 +37787,11 @@ def _showPolicies(policies, FJQC, add_warnings, no_appnames,
                   groupEmailPattern, orgUnitPathPattern,
                   cd, groups_ci):
   count = len(policies)
-  if groupEmailPattern is None and orgUnitPathPattern is None:
-    performActionNumItems(count, Ent.POLICY)
-  else:
-    performActionModifierNumItems(Msg.MAXIMUM_OF, count, Ent.POLICY)
+  if FJQC is None or not FJQC.formatJSON:
+    if groupEmailPattern is None and orgUnitPathPattern is None:
+      performActionNumItems(count, Ent.POLICY)
+    else:
+      performActionModifierNumItems(Msg.MAXIMUM_OF, count, Ent.POLICY)
   Ind.Increment()
   i = 0
   for policy in policies:
@@ -38002,8 +38002,7 @@ def doPrintShowCIPolicies():
     elif csvPF.CheckRowTitles(row):
       csvPF.WriteRowNoFilter({'name': policy['name'],
                               'JSON': json.dumps(cleanJSON(policy, timeObjects=CIPOLICY_TIME_OBJECTS),
-                                                 ensure_ascii=False,
-                                                 sort_keys=True)})
+                                                 ensure_ascii=False, sort_keys=True)})
 
   _checkPoliciesWithDASA()
   ci = buildGAPIObject(API.CLOUDIDENTITY_POLICY)
@@ -39640,8 +39639,7 @@ def doPrintShowBuildings():
       else:
         if (not csvPF.rowFilter and not csvPF.rowDropFilter) or csvPF.CheckRowTitles(row):
           csvPF.WriteRowNoFilter({'buildingId': building['buildingId'],
-                                  'JSON': json.dumps(cleanJSON(building),
-                                                     ensure_ascii=False, sort_keys=True)})
+                                  'JSON': json.dumps(cleanJSON(building), ensure_ascii=False, sort_keys=True)})
   if csvPF:
     csvPF.writeCSVfile('Buildings')
 
@@ -40549,8 +40547,8 @@ def _printShowCalendarACLs(cal, user, entityType, calId, i, count, csvPF, FJQC, 
           if not FJQC.formatJSON:
             csvPF.WriteRowTitles(row)
           elif csvPF.CheckRowTitles(row):
-            row = {'calendarId': calId, 'JSON': json.dumps(cleanJSON(rule),
-                                                           ensure_ascii=False, sort_keys=False)}
+            row = {'calendarId': calId,
+                   'JSON': json.dumps(cleanJSON(rule), ensure_ascii=False, sort_keys=False)}
             if user:
               row['primaryEmail'] = user
             if addCSVData:
@@ -40569,8 +40567,8 @@ def _printShowCalendarACLs(cal, user, entityType, calId, i, count, csvPF, FJQC, 
         if not FJQC.formatJSON:
           csvPF.WriteRowTitles(row)
         elif csvPF.CheckRowTitles(row):
-          row = {'resourceId': user, 'resourceEmail': calId, 'JSON': json.dumps(cleanJSON(rule),
-                                                                                ensure_ascii=False, sort_keys=False)}
+          row = {'resourceId': user, 'resourceEmail': calId,
+                 'JSON': json.dumps(cleanJSON(rule), ensure_ascii=False, sort_keys=False)}
           if addCSVData:
             row.update(addCSVData)
           csvPF.WriteRowNoFilter(row)
@@ -48327,8 +48325,7 @@ def doPrintShowInboundSSOProfiles():
         csvPF.WriteRowTitles(row)
       elif csvPF.CheckRowTitles(row):
         csvPF.WriteRowNoFilter({'name': profile['name'],
-                                'JSON': json.dumps(cleanJSON(profile),
-                                                   ensure_ascii=False, sort_keys=True)})
+                                'JSON': json.dumps(cleanJSON(profile), ensure_ascii=False, sort_keys=True)})
   if csvPF:
     csvPF.writeCSVfile('Inbound SSO Profiles')
 
@@ -48809,8 +48806,7 @@ def doPrintShowInboundSSOAssignments():
         csvPF.WriteRowTitles(row)
       elif csvPF.CheckRowTitles(row):
         csvPF.WriteRowNoFilter({'name': assignment['name'],
-                                'JSON': json.dumps(cleanJSON(assignment),
-                                                   ensure_ascii=False, sort_keys=True)})
+                                'JSON': json.dumps(cleanJSON(assignment), ensure_ascii=False, sort_keys=True)})
   if csvPF:
     csvPF.writeCSVfile('Inbound SSO Assignments')
 
@@ -68177,8 +68173,7 @@ def printShowDriveLabelPermissions(users, useAdminAccess=False):
               csvPF.WriteRowTitles(row)
             elif csvPF.CheckRowTitles(row):
               row = {'User': user, 'name': labelperm['name']}
-              row['JSON'] = json.dumps(cleanJSON(labelperm),
-                                       ensure_ascii=False, sort_keys=True)
+              row['JSON'] = json.dumps(cleanJSON(labelperm), ensure_ascii=False, sort_keys=True)
               csvPF.WriteRowNoFilter(row)
       except (GAPI.permissionDenied, GAPI.notFound) as e:
         entityActionFailedWarning(kvList, str(e), j, jcount)
@@ -70914,8 +70909,7 @@ def printShowGroupTree(users):
             row = {'User': user, 'Group': groupEmail, 'Name': group['name']}
             if rolesSet:
               row['Role'] = role
-            row['JSON'] = json.dumps(cleanJSON(groupInfo),
-                                     ensure_ascii=False, sort_keys=True)
+            row['JSON'] = json.dumps(cleanJSON(groupInfo), ensure_ascii=False, sort_keys=True)
             csvPF.WriteRowNoFilter(row)
     Ind.Decrement()
   if csvPF:
@@ -78644,7 +78638,8 @@ def _showTask(tasklist, task, j=0, jcount=0, FJQC=None, compact=False):
   task['tasklistId'] = tasklist
   task['taskId'] = f"{tasklist}/{task['id']}"
   if FJQC is not None and FJQC.formatJSON:
-    printLine(json.dumps(cleanJSON(task, skipObjects=TASK_SKIP_OBJECTS, timeObjects=TASK_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
+    printLine(json.dumps(cleanJSON(task, skipObjects=TASK_SKIP_OBJECTS, timeObjects=TASK_TIME_OBJECTS),
+                         ensure_ascii=False, sort_keys=True))
     return
   printEntity([Ent.TASK, task['taskId']], j, jcount)
   Ind.Increment()
@@ -78988,7 +78983,8 @@ TASKLIST_TIME_OBJECTS = ['updated']
 
 def _showTasklist(tasklist, j=0, jcount=0, FJQC=None):
   if FJQC is not None and FJQC.formatJSON:
-    printLine(json.dumps(cleanJSON(tasklist, skipObjects=TASKLIST_SKIP_OBJECTS, timeObjects=TASKLIST_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
+    printLine(json.dumps(cleanJSON(tasklist, skipObjects=TASKLIST_SKIP_OBJECTS, timeObjects=TASKLIST_TIME_OBJECTS),
+                         ensure_ascii=False, sort_keys=True))
     return
   printEntity([Ent.TASKLIST, tasklist['id']], j, jcount)
   Ind.Increment()
