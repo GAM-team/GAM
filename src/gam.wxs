@@ -8,7 +8,7 @@
       Manufacturer="GAM Team - google-apps-manager@googlegroups.com"
       UpgradeCode="D86B52B2-EFE9-4F9D-8BA3-9D84B9B2D319">
     <Package
-        InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+        InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
 
     <MajorUpgrade
         DowngradeErrorMessage=
