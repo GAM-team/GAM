@@ -814,7 +814,7 @@ jobs:
           subject-path: |
             gam*.tar.xz
             gam*.zip
-            gam-*.exe
+            Output/gam-*.exe
         #    gam*.msi
 
       - name: Archive tar.xz artifacts
@@ -842,7 +842,7 @@ jobs:
           archive: false
           if-no-files-found: ignore
           path: |
-            gam-*.exe
+            Output/gam-*.exe
 
       - name: Basic Tests build jobs only
         if: matrix.goal != 'test' && steps.cache-python-ssl.outputs.cache-hit != 'true'
