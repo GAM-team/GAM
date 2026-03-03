@@ -772,33 +772,39 @@ jobs:
           GAM_ARCHIVE="${GITHUB_WORKSPACE}/gam-${GAMVERSION}-windows-${arch}.zip"
           /c/Program\ Files/7-Zip/7z.exe a -tzip "$GAM_ARCHIVE" gam7 "-xr@${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" -bb3
 
-      - name: Windows package MSI
+      - name: Windows package exe with Inno Setup
         if: runner.os == 'Windows' && matrix.goal != 'test'
         run: |
-          export MSI_FILENAME="${GITHUB_WORKSPACE}/gam-${GAMVERSION}-windows-${arch}.msi"
-          # auto-generate a lib.wxs based on the files PyInstaller created for the lib/ directory
-          /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/heat.exe dir "${gampath}/lib" -ke -srd -cg Lib -gg -dr lib -directoryid lib -out lib.wxs
-          $PYTHON tools/gen-wix-xml-filelist.py lib.wxs
-          echo "-- begin lib.wxs --"
-          cat lib.wxs
-          echo "-- end lib.wxs --"
-          /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/candle.exe -arch "${WIX_ARCH}" gam.wxs lib.wxs
-          /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/WixUIExtension.dll gam.wixobj lib.wixobj -b "${gampath}/lib" -o "$MSI_FILENAME" || true;
-          rm -v -f *.wixpdb
-          rm -v -f *.wixobj
-          echo "MSI_FILENAME=${MSI_FILENAME}" >> $GITHUB_ENV
+          choco install innosetup
+          iscc /S"gamsigntool='C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe' verify /pa /v $f" gam.iss
+        
+      #- name: Windows package MSI
+      #  if: runner.os == 'Windows' && matrix.goal != 'test'
+      #  run: |
+      #    export MSI_FILENAME="${GITHUB_WORKSPACE}/gam-${GAMVERSION}-windows-${arch}.msi"
+      #    # auto-generate a lib.wxs based on the files PyInstaller created for the lib/ directory
+      #    /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/heat.exe dir "${gampath}/lib" -ke -srd -cg Lib -gg -dr lib -directoryid lib -out lib.wxs
+      #    $PYTHON tools/gen-wix-xml-filelist.py lib.wxs
+      #    echo "-- begin lib.wxs --"
+      #    cat lib.wxs
+      #    echo "-- end lib.wxs --"
+      #    /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/candle.exe -arch "${WIX_ARCH}" gam.wxs lib.wxs
+      #    /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/WixUIExtension.dll gam.wixobj lib.wixobj -b "${gampath}/lib" -o "$MSI_FILENAME" || true;
+      #    rm -v -f *.wixpdb
+      #    rm -v -f *.wixobj
+      #    echo "MSI_FILENAME=${MSI_FILENAME}" >> $GITHUB_ENV
 
-      - name: Sign GAM MSI
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          write-Host "Signing ${env:MSI_FILENAME}...."
+      #- name: Sign GAM MSI
+      #  if: runner.os == 'Windows'
+      #  shell: pwsh
+      #  run: |
+      #    write-Host "Signing ${env:MSI_FILENAME}...."
           # Always explicitely use x64 version os signtool.exe, arm64 version apparently can't
           # see Certum certs since SimplySignDesktop is x64-only today.
-          Start-Process -Wait -NoNewWindow -ErrorAction Continue -FilePath 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe'  -ArgumentList "sign", "/sha1", "$env:WINDOWS_CODESIGN_CERT_HASH", "/tr", "http://time.certum.pl", "/td", "SHA256", "/fd", "SHA256", "/v", "$env:MSI_FILENAME"
-          write-Host "Verifying signature of ${env:MSI_FILENAME}...."
-          # verify signature. If we failed to sign we should fail to verify and die.
-          & 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe' verify /pa /v "$env:MSI_FILENAME"
+      #    Start-Process -Wait -NoNewWindow -ErrorAction Continue -FilePath 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe'  -ArgumentList "sign", "/sha1", "$env:WINDOWS_CODESIGN_CERT_HASH", "/tr", "http://time.certum.pl", "/td", "SHA256", "/fd", "SHA256", "/v", "$env:MSI_FILENAME"
+      #    write-Host "Verifying signature of ${env:MSI_FILENAME}...."
+      #    # verify signature. If we failed to sign we should fail to verify and die.
+      #    & 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe' verify /pa /v "$env:MSI_FILENAME"
 
       - name: Attest that gam package files were generated from this Action
         uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
@@ -807,7 +813,8 @@ jobs:
           subject-path: |
             gam*.tar.xz
             gam*.zip
-            gam*.msi
+            gam-*.exe
+        #    gam*.msi
 
       - name: Archive tar.xz artifacts
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # 7.0.0
@@ -827,14 +834,14 @@ jobs:
           path: |
             gam*.zip
 
-      - name: Archive msi artifacts
+      - name: Archive exe artifacts
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # 7.0.0
         if: runner.os == 'Windows'
         with:
           archive: false
           if-no-files-found: ignore
           path: |
-            gam*.msi
+            gam-*.exe
 
       - name: Basic Tests build jobs only
         if: matrix.goal != 'test' && steps.cache-python-ssl.outputs.cache-hit != 'true'
