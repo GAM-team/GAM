@@ -776,7 +776,8 @@ jobs:
         if: runner.os == 'Windows' && matrix.goal != 'test'
         run: |
           choco install innosetup
-          iscc /S"gamsigntool='C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe' verify /pa /v \"\$f\"" gam.iss
+          export signtool="C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe"
+          iscc /S"gamsigntool=$signtool verify /pa /v \"\$f\"" gam.iss
         
       #- name: Windows package MSI
       #  if: runner.os == 'Windows' && matrix.goal != 'test'
