@@ -9534,6 +9534,9 @@ def doCheckConnection():
       writeStdout(f'{not_okay}\n    Connection reset by peer. {gen_firewall}\n')
     except httplib2.error.ServerNotFoundError:
       writeStdout(f'{not_okay}\n    Failed to find server. Your DNS is probably misconfigured.\n')
+    except ssl.SSLCertVerificationError as e:
+      # e.verify_message contains the specific OpenSSL error string
+      writeStdout(f'{not_okay}\n    Certificate verification failed: {e.verify_message}\n    If you are behind a firewall / proxy server that does TLS / SSL inspection you may need to point GAM at your certificate authority file by setting cacerts_pem = /path/to/your/certauth.pem in gam.cfg.\n') 
     except ssl.SSLError as e:
       if e.reason == 'SSLV3_ALERT_HANDSHAKE_FAILURE':
         writeStdout(f'{not_okay}\n    GAM expects to connect with TLS 1.3 or newer and that failed. If your firewall / proxy server is not compatible with TLS 1.3 then you can tell GAM to allow TLS 1.2 by setting tls_min_version = TLSv1.2 in gam.cfg.\n')
