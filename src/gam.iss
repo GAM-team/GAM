@@ -30,11 +30,11 @@ SolidCompression=yes
 #if RunnerArch == "ARM64" || RunnerArch == "arm64"
   ArchitecturesAllowed=arm64
   ArchitecturesInstallIn64BitMode=arm64
-  OutputBaseFilename=gam-setup-{#AppVersion}-windows-arm64
+  OutputBaseFilename=gam-{#AppVersion}-windows-arm64
 #else
-  ArchitecturesAllowed=x64
-  ArchitecturesInstallIn64BitMode=x64
-  OutputBaseFilename=gam-setup-{#AppVersion}-windows-x86_64
+  ArchitecturesAllowed=x64compatible
+  ArchitecturesInstallIn64BitMode=x64compatible
+  OutputBaseFilename=gam-{#AppVersion}-windows-x86_64
 #endif
 
 [Messages]
