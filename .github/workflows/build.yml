@@ -778,7 +778,7 @@ jobs:
           choco install innosetup
           export signtool="C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe"
           iscc /S"gamsigntool=$signtool sign /sha1 $WINDOWS_CODESIGN_CERT_HASH /tr http://time.certum.pl /td SHA256 /fd SHA256 /v \$f" gam.iss
-          mv -v Output/*.exe .
+          mv -v Output/*.exe "${gampath}/.."
         
       #- name: Windows package MSI
       #  if: runner.os == 'Windows' && matrix.goal != 'test'
