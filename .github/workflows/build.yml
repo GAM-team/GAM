@@ -758,10 +758,10 @@ jobs:
           echo "GAM Archive ${GAM_ARCHIVE}"
           tar -C "${gampath}/.." --create --verbose --exclude-from "${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" --file $GAM_ARCHIVE --xz gam7
 
-      - name: Install Wix on Win ARM64
-        if: runner.os == 'Windows' && runner.arch == 'ARM64'
-        run: |
-          choco install wixtoolset
+     # - name: Install Wix on Win ARM64
+     #   if: runner.os == 'Windows' && runner.arch == 'ARM64'
+     #   run: |
+     #     choco install wixtoolset
 
       - name: Windows package zip
         if: runner.os == 'Windows' && matrix.goal != 'test'
@@ -776,7 +776,7 @@ jobs:
         if: runner.os == 'Windows' && matrix.goal != 'test'
         run: |
           choco install innosetup
-          iscc /S"gamsigntool='C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe' verify /pa /v $f" gam.iss
+          iscc /S"gamsigntool='C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe' verify /pa /v \"\$f\"" gam.iss
         
       #- name: Windows package MSI
       #  if: runner.os == 'Windows' && matrix.goal != 'test'
