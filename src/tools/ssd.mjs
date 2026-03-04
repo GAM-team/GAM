@@ -28,24 +28,10 @@ async function executeCommand(command) {
   }
 }
 
-// NEW: Helper function replacing the deprecated driver.sendKeys()
 async function performKeys(driver, keysArray) {
-  const actions = [];
-  
-  // Map every key stroke to a sequential down/up action
-  for (const key of keysArray) {
-    actions.push({ type: 'keyDown', value: key });
-    actions.push({ type: 'keyUp', value: key });
-  }
-  
-  await driver.performActions([{
-    type: 'key',
-    id: 'keyboard',
-    actions: actions
-  }]);
-  
-  // Release actions state so modifier keys don't accidentally stick 
-  await driver.releaseActions();
+  // WinAppDriver doesn't support W3C Actions for keys.
+  // We are forced to use the deprecated method. 
+  await driver.sendKeys(keysArray);
 }
 
 async function runSSD() {
