@@ -667,28 +667,28 @@ jobs:
           echo "GAM Version ${GAMVERSION}"
           echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
 
-      - name: Install WinAppDriver
+#      - name: Install WinAppDriver
+#        if: runner.os == 'Windows'
+#        run: |
+#          choco install -y winappdriver
+
+#      - name: Enabled dev mode for WinAppDriver
+#        if: runner.os == 'Windows'
+#        shell: cmd
+#        run : |
+#         reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" /t REG_DWORD /f /v "AllowDevelopmentWithoutDevLicense" /d "1"
+
+      - name: Install totp tools
         if: runner.os == 'Windows'
         run: |
-          choco install -y winappdriver
-
-      - name: Enabled dev mode for WinAppDriver
-        if: runner.os == 'Windows'
-        shell: cmd
-        run : |
-         reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" /t REG_DWORD /f /v "AllowDevelopmentWithoutDevLicense" /d "1"
-
-      - name: Install appium and totp tools
-        if: runner.os == 'Windows'
-        run: |
-          echo "Installing appium..."
-          npm install -g appium
+          #echo "Installing appium..."
+          #npm install -g appium
           echo "Installing totp-generator..."
           npm install "totp-generator"
-          echo "Installing wdio..."
-          npm install @wdio/cli
-          echo "Installing appium win driver..."
-          appium driver install windows
+#          echo "Installing wdio..."
+#          npm install @wdio/cli
+#          echo "Installing appium win driver..."
+#          appium driver install windows
 
       - name: Install Certum MSI
         if: runner.os == 'Windows'
@@ -711,12 +711,12 @@ jobs:
           TOTP_SECRET: ${{ secrets.TOTP_SECRET }}
         run: |
           # disable win private firewall that interferes with appium server
-          Set-NetFirewallProfile -Profile Private -Enabled False
-          $appiumCmd = Get-Command appium
-          $appiumPath = $appiumCmd.Path
-          Start-Process -Filepath "powershell.exe" -ArgumentList "-File", $appiumPath, "--address", "127.0.0.1", "--log-level", "error"
-          Start-Sleep -Seconds 10
-          write-host "appium started"
+          #Set-NetFirewallProfile -Profile Private -Enabled False
+          #$appiumCmd = Get-Command appium
+          #$appiumPath = $appiumCmd.Path
+          #Start-Process -Filepath "powershell.exe" -ArgumentList "-File", $appiumPath, "--address", "127.0.0.1", "--log-level", "error"
+          #Start-Sleep -Seconds 10
+          #write-host "appium started"
           write-host "running SimplySignDesktop login..."
           node tools/ssd.mjs --log-level warn
           write-host "sleeping during login..."
