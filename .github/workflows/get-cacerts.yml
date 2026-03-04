@@ -17,7 +17,7 @@ defaults:
 
 jobs:
   check-certs:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v5.0.0
         with:
@@ -32,7 +32,7 @@ jobs:
 
       - name: Generate GAM-specific bundle with LE + Google roots
         run: |
-          OUTPUT_FILE="cacerts.pem.pem"
+          OUTPUT_FILE="cacerts.pem"
           > "$OUTPUT_FILE"
 
           process_cert() {
@@ -61,12 +61,12 @@ jobs:
             rm "$tmp_cert"
             }
 
-          echo "#"
-          echo "# This is a custom certificate authority bundle for GAM"
-          echo "# It's composed of Let's Encrypt Root CAs and Google's"
-          echo "# certificate bundle. This should be the minimal list of"
-          echo "# CAs required to talk to Google and Github."
-          echo""
+          echo "#" >> "$OUTPUT_FILE"
+          echo "# This is a custom certificate authority bundle for GAM" >> "$OUTPUT_FILE"
+          echo "# It's composed of Let's Encrypt Root CAs and Google's" >> "$OUTPUT_FILE"
+          echo "# certificate bundle. This should be the minimal list of" >> "$OUTPUT_FILE"
+          echo "# CAs required to talk to Google and Github." >> "$OUTPUT_FILE"
+          echo"" >> "$OUTPUT_FILE"
           echo "Processing Let's Encrypt ISRG Root X1..."
           process_cert "https://letsencrypt.org/certs/isrgrootx1.pem" "Let's Encrypt" "ISRG Root X1"
           echo "Processing Let's Encrypt ISRG Root X2..."
