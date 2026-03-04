@@ -678,13 +678,13 @@ jobs:
 #        run : |
 #         reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" /t REG_DWORD /f /v "AllowDevelopmentWithoutDevLicense" /d "1"
 
-      - name: Install totp tools
+      - name: Install NPM deps
         if: runner.os == 'Windows'
         run: |
           #echo "Installing appium..."
           #npm install -g appium
-          echo "Installing totp-generator..."
-          npm install "totp-generator"
+          echo "Installing totp-generator and screenshot..."
+          npm install totp-generator screenshot-desktop
 #          echo "Installing wdio..."
 #          npm install @wdio/cli
 #          echo "Installing appium win driver..."
