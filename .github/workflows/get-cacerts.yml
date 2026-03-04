@@ -30,9 +30,51 @@ jobs:
           echo "Current hash is: ${CURRENT_HASH}"
           echo "CURRENT_HASH=${CURRENT_HASH}" >> $GITHUB_ENV
 
-      - name: Get latest cacerts.pem file from Google
+      - name: Generate GAM-specific bundle with LE + Google roots
         run: |
-          curl -o ./cacerts.pem -vvvv https://pki.goog/roots.pem
+          OUTPUT_FILE="cacerts.pem.pem"
+          > "$OUTPUT_FILE"
+
+          process_cert() {
+            local url="$1"
+            local op_ca="$2"
+            local label="$3"
+            local tmp_cert=$(mktemp)
+            curl "$url" > "$tmp_cert"
+            local issuer=$(openssl x509 -noout -issuer -in "$tmp_cert" | sed -e 's/^issuer= *//')
+            local subject=$(openssl x509 -noout -subject -in "$tmp_cert" | sed -e 's/^subject= *//')
+            local serial_hex=$(openssl x509 -noout -serial -in "$tmp_cert" | sed -e 's/^serial=//')
+            local serial_dec=$(python3 -c "print(int('$serial_hex', 16))")
+            local md5=$(openssl x509 -noout -fingerprint -md5 -in "$tmp_cert" | sed -e 's/.*=//' | tr '[:upper:]' '[:lower:]')
+            local sha1=$(openssl x509 -noout -fingerprint -sha1 -in "$tmp_cert" | sed -e 's/.*=//' | tr '[:upper:]' '[:lower:]')
+            local sha256=$(openssl x509 -noout -fingerprint -sha256 -in "$tmp_cert" | sed -e 's/.*=//' | tr '[:upper:]' '[:lower:]')
+            echo "# Operating CA: $op_ca" >> "$OUTPUT_FILE"
+            echo "# Issuer: $issuer" >> "$OUTPUT_FILE"
+            echo "# Subject: $subject" >> "$OUTPUT_FILE"
+            echo "# Label: \"$label\"" >> "$OUTPUT_FILE"
+            echo "# Serial: $serial_dec" >> "$OUTPUT_FILE"
+            echo "# MD5 Fingerprint: $md5" >> "$OUTPUT_FILE"
+            echo "# SHA1 Fingerprint: $sha1" >> "$OUTPUT_FILE"
+            echo "# SHA256 Fingerprint: $sha256" >> "$OUTPUT_FILE"
+            cat "$tmp_cert" >> "$OUTPUT_FILE"
+            echo "" >> "$OUTPUT_FILE"
+            rm "$tmp_cert"
+            }
+
+          echo "#"
+          echo "# This is a custom certificate authority bundle for GAM"
+          echo "# It's composed of Let's Encrypt Root CAs and Google's"
+          echo "# certificate bundle. This should be the minimal list of"
+          echo "# CAs required to talk to Google and Github."
+          echo""
+          echo "Processing Let's Encrypt ISRG Root X1..."
+          process_cert "https://letsencrypt.org/certs/isrgrootx1.pem" "Let's Encrypt" "ISRG Root X1"
+          echo "Processing Let's Encrypt ISRG Root X2..."
+          process_cert "https://letsencrypt.org/certs/isrg-root-x2.pem" "Let's Encrypt" "ISRG Root X2"
+
+          echo "Appending Google's roots.pem..."
+          curl -s https://pki.goog/roots.pem >> "$OUTPUT_FILE"
+          echo "Done! The new bundle has been saved to $OUTPUT_FILE."
 
       - name: Compare hashes
         run: |
