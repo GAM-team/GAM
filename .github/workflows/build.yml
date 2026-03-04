@@ -722,6 +722,15 @@ jobs:
           write-host "sleeping during login..."
           Start-Sleep 10
 
+      - name: Archive png artifacts
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # 7.0.0
+        if: runner.os == 'Windows'
+        with:
+          archive: true
+          if-no-files-found: ignore
+          path: |
+            *.png
+
       - name: Sign gam.exe
         if: runner.os == 'Windows'
         shell: pwsh
@@ -852,15 +861,6 @@ jobs:
           if-no-files-found: ignore
           path: |
             gam*.exe
-
-      - name: Archive png artifacts
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # 7.0.0
-        if: runner.os == 'Windows'
-        with:
-          archive: true
-          if-no-files-found: ignore
-          path: |
-            *.png
 
       - name: Basic Tests build jobs only
         if: matrix.goal != 'test' && steps.cache-python-ssl.outputs.cache-hit != 'true'
