@@ -1,7 +1,7 @@
 // Node.js script to launch Simply Sign Desktop app and log a user in
 // using native Windows keystrokes and native PowerShell screenshots.
 
-import { exec, execSync } from 'child_process';
+import { execSync, spawn } from 'child_process';
 import { TOTP } from 'totp-generator';
 
 function sleep(ms) {
@@ -14,7 +14,7 @@ function sendKeys(keys) {
   execSync(`powershell -Command "${script}"`);
 }
 
-// NEW: Native PowerShell Screen Capture
+// Native PowerShell Screen Capture
 function takeScreenshot(filename) {
   const psScript = `
     Add-Type -AssemblyName System.Windows.Forms;
@@ -33,13 +33,20 @@ function takeScreenshot(filename) {
   }
 }
 
+// Fire and forget application launcher
+function launchSSD() {
+    const child = spawn('C:\\Program Files\\Certum\\SimplySign Desktop\\SimplySignDesktop.exe', [], {
+        detached: true,       // Run in a separate process group
+        stdio: 'ignore'       // Disconnect standard input/output
+    });
+    child.unref();            // Tell Node.js not to wait for this process to exit
+}
+
 async function runSSD() {
     console.log('Launching SimplySign Desktop...');
     
-    // Launch the application.
-    exec('"C:\\Program Files\\Certum\\SimplySign Desktop\\SimplySignDesktop.exe"', (error) => {
-        if (error) console.error(`exec error: ${error}`);
-    });
+    // Launch the application detached.
+    launchSSD();
 
     // 1. Handle ARM64 Out-Of-Box experience
     const runner_arch = process.env.RUNNER_ARCH;
@@ -59,7 +66,7 @@ async function runSSD() {
         takeScreenshot('oob6.png');
         
         // Re-execute SSD to open login dialog
-        exec('"C:\\Program Files\\Certum\\SimplySign Desktop\\SimplySignDesktop.exe"');
+        launchSSD();
     } else {
         console.log('NOT running on ARM64');
     }
@@ -110,6 +117,8 @@ async function runSSD() {
     takeScreenshot('login11.png');
     await sleep(500);
     takeScreenshot('login12.png');
+    
+    console.log('Exiting script, leaving SimplySign running in background.');
 }
 
 runSSD();
