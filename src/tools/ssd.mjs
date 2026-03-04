@@ -4,6 +4,7 @@
 import { execSync, spawn } from 'child_process';
 import { TOTP } from 'totp-generator';
 import path from 'path';
+import fs from 'fs'; // NEW: Added file system module for verification
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -124,6 +125,20 @@ async function runSSD() {
     takeScreenshot('login12.png');
     
     console.log('Exiting script, leaving SimplySign running in background.');
+
+    // NEW: Verification block to list all PNGs in the workspace
+    console.log('\n--- Screenshot Verification ---');
+    const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
+    try {
+        const files = fs.readdirSync(workspace);
+        const pngFiles = files.filter(f => f.endsWith('.png'));
+        console.log(`Target Directory: ${workspace}`);
+        console.log(`Found ${pngFiles.length} .png files:`);
+        pngFiles.forEach(f => console.log(` - ${f}`));
+    } catch (err) {
+        console.error(`Error reading directory ${workspace}:`, err.message);
+    }
+    console.log('-------------------------------\n');
 }
 
 runSSD();
