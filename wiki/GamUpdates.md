@@ -18,6 +18,8 @@ Checking raw.githubusercontent.com (185.199.110.133) (2)...                     
     Certificate verification failed. If you are behind a firewall / proxy server that does TLS / SSL inspection you may need to point GAM at your certificate authority file by setting cacerts_pem = /path/to/your/certauth.pem in gam.cfg.
 ```
 
+If you have customized cacerts.pem, update your version with the `Operating CA: Let's Encrypt` values from the GAM default version.
+
 ### 7.34.13
 
 Fixed bug in `gam info policies <CIPolicyNameEntity> ... formatjson` where extraneous line
