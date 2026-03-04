@@ -61,13 +61,13 @@ async function runSSD() {
         await takeScreenshot('oob3.png');
         sendKeys('{ESC}');
         await takeScreenshot('oob6.png');
-        
-        // Re-execute SSD to open login dialog
-        launchSSD();
     } else {
         console.log('NOT running on ARM64');
     }
 
+    // Re-execute SSD to open login dialog
+    launchSSD();
+    launchSSD();
     await sleep(3000);
 
     // 2. Login Flow
