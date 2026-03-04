@@ -709,16 +709,14 @@ jobs:
           } else {
               Write-Host "Explorer is already running."
           }
-          
           # NEW: Starting Explorer triggers Windows Startup apps, including OneDrive. 
           # We must kill it again to ensure the SimplySign login window gets focus.
           Write-Host "Suppressing post-Explorer OneDrive popups..."
           Stop-Process -Name "OneDrive" -Force -ErrorAction SilentlyContinue
-          
           # Nuke it from the current user's startup registry so it stays dead
           reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "OneDrive" /f 2>&1 | Out-Null
-          
           Write-Host "Desktop initialized and OneDrive suppressed."
+
       - name: Install NPM deps
         if: runner.os == 'Windows'
         run: |
