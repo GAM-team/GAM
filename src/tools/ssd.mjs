@@ -1,10 +1,11 @@
 // Node.js script to launch Simply Sign Desktop app and log a user in
-// using native Windows keystrokes and native PowerShell screenshots.
+// using native Windows keystrokes and screenshot-desktop for reliable CI imaging.
 
 import { execSync, spawn } from 'child_process';
 import { TOTP } from 'totp-generator';
 import path from 'path';
-import fs from 'fs'; // NEW: Added file system module for verification
+import fs from 'fs';
+import screenshot from 'screenshot-desktop';
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -16,23 +17,13 @@ function sendKeys(keys) {
   execSync(`powershell -Command "${script}"`);
 }
 
-// Native PowerShell Screen Capture (Saved to GITHUB_WORKSPACE)
-function takeScreenshot(filename) {
-  // Default to the GitHub workspace, or use the current directory if running locally
+// Reliable Screen Capture using screenshot-desktop
+async function takeScreenshot(filename) {
   const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
   const fullPath = path.join(workspace, filename);
 
-  const psScript = `
-    Add-Type -AssemblyName System.Windows.Forms;
-    Add-Type -AssemblyName System.Drawing;
-    $Screen = [System.Windows.Forms.SystemInformation]::VirtualScreen;
-    $bitmap = New-Object System.Drawing.Bitmap $Screen.Width, $Screen.Height;
-    $graphic = [System.Drawing.Graphics]::FromImage($bitmap);
-    $graphic.CopyFromScreen($Screen.Left, $Screen.Top, 0, 0, $bitmap.Size);
-    $bitmap.Save('${fullPath}');
-  `;
   try {
-    execSync(`powershell -Command "${psScript}"`);
+    await screenshot({ filename: fullPath });
     console.log(`Saved screenshot: ${fullPath}`);
   } catch (err) {
     console.error(`Failed to save screenshot ${fullPath}:`, err.message);
@@ -59,17 +50,17 @@ async function runSSD() {
     if (runner_arch === "ARM64") {
         console.log('Running on ARM64...');
         await sleep(3000);
-        takeScreenshot('oob1.png');
+        await takeScreenshot('oob1.png');
         sendKeys('{ENTER}');
         
         await sleep(3000);
-        takeScreenshot('oob2.png');
+        await takeScreenshot('oob2.png');
         sendKeys('{ENTER}');
         
         await sleep(3000);
-        takeScreenshot('oob3.png');
+        await takeScreenshot('oob3.png');
         sendKeys('{ESC}');
-        takeScreenshot('oob6.png');
+        await takeScreenshot('oob6.png');
         
         // Re-execute SSD to open login dialog
         launchSSD();
@@ -80,13 +71,13 @@ async function runSSD() {
     await sleep(3000);
 
     // 2. Login Flow
-    takeScreenshot('login01.png');
+    await takeScreenshot('login01.png');
     console.log('Typing credentials...');
     
     // Type Email
     sendKeys('jay0lee@gmail.com');
     await sleep(500); 
-    takeScreenshot('login02.png');
+    await takeScreenshot('login02.png');
     
     // Tab to next field
     sendKeys('{TAB}');
@@ -99,34 +90,34 @@ async function runSSD() {
     
     sendKeys(otp);
     await sleep(500);
-    takeScreenshot('login03.png');
+    await takeScreenshot('login03.png');
 
     // Submit
     sendKeys('{ENTER}');
     console.log('Login sequence complete.');
     
     // Screenshot cascade to monitor the window closing
-    takeScreenshot('login04.png');
+    await takeScreenshot('login04.png');
     await sleep(500);
-    takeScreenshot('login05.png');
+    await takeScreenshot('login05.png');
     await sleep(500);
-    takeScreenshot('login06.png');
+    await takeScreenshot('login06.png');
     await sleep(500);
-    takeScreenshot('login07.png');
+    await takeScreenshot('login07.png');
     await sleep(500);
-    takeScreenshot('login08.png');
+    await takeScreenshot('login08.png');
     await sleep(500);
-    takeScreenshot('login09.png');
+    await takeScreenshot('login09.png');
     await sleep(500);
-    takeScreenshot('login10.png');
+    await takeScreenshot('login10.png');
     await sleep(500);
-    takeScreenshot('login11.png');
+    await takeScreenshot('login11.png');
     await sleep(500);
-    takeScreenshot('login12.png');
+    await takeScreenshot('login12.png');
     
     console.log('Exiting script, leaving SimplySign running in background.');
 
-    // NEW: Verification block to list all PNGs in the workspace
+    // Verification block to list all PNGs in the workspace
     console.log('\n--- Screenshot Verification ---');
     const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
     try {
