@@ -727,6 +727,7 @@ jobs:
         if: runner.os == 'Windows'
         with:
           archive: true
+          name: images-${{ matrix.os }}
           if-no-files-found: ignore
           path: |
             *.png
