@@ -9515,7 +9515,14 @@ def inspect_untrusted_cert(url):
                 cert = x509.load_der_x509_certificate(der_cert, default_backend())
                 issuer = cert.issuer.rfc4514_string()
                 subject = cert.subject.rfc4514_string()
-                return f"Untrusted Issuer: {issuer}\n    Server Subject: {subject}"
+                try:
+                    san_ext = cert.extensions.get_extension_for_oid(x509.oid.ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
+                    # Loop through the list of SANs (DNS names, IP addresses, etc.)
+                    sans = [str(name.value) for name in san_ext.value]
+                    san_str = ", ".join(sans)
+                except x509.ExtensionNotFound:
+                    san_str = "None"
+                return f"Untrusted Issuer: {issuer}\n    Server Subject: {subject}\n    SANs: {san_str}"
     except Exception as e:
         return f"Failed to retrieve diagnostic certificate: {e}"
 
