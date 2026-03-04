@@ -12,9 +12,9 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 
 ### 7.35.00
 
-Windows `gam-7.xx.yy-x86_64.msi` has been replaced with `gam-7.xx.yy-x86_64.exe`.
+Windows `gam-7.wx.yz-x86_64.msi` has been replaced with `gam-7.wx.yz-x86_64.exe`.
 
-Windows `gam-7.xx.yy-arm64.msi` has been replaced with `gam-7.xx.yy-arm64.exe`.
+Windows `gam-7.wx.yz-arm64.msi` has been replaced with `gam-7.wx.yz-arm64.exe`.
 
 Updated cacerts.pem to avoid to following error in `gam checkconn`.
 ```
