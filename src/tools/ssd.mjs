@@ -28,6 +28,26 @@ async function executeCommand(command) {
   }
 }
 
+// NEW: Helper function replacing the deprecated driver.sendKeys()
+async function performKeys(driver, keysArray) {
+  const actions = [];
+  
+  // Map every key stroke to a sequential down/up action
+  for (const key of keysArray) {
+    actions.push({ type: 'keyDown', value: key });
+    actions.push({ type: 'keyUp', value: key });
+  }
+  
+  await driver.performActions([{
+    type: 'key',
+    id: 'keyboard',
+    actions: actions
+  }]);
+  
+  // Release actions state so modifier keys don't accidentally stick 
+  await driver.releaseActions();
+}
+
 async function runSSD() {
     const opts = {
         port: 4723,
@@ -50,13 +70,13 @@ async function runSSD() {
           console.log('Running on ARM64...');
           await sleep(3000); // Pause execution for 3 seconds
           await screenshot(driver, 'oob1.png');
-          await driver.sendKeys([Key.Enter]);
+          await performKeys(driver, [Key.Enter]);
           await sleep(3000); // Pause execution for 3 seconds
           await screenshot(driver, 'oob2.png');
-          await driver.sendKeys([Key.Enter]);
+          await performKeys(driver, [Key.Enter]);
           await sleep(3000); // Pause execution for 3 seconds
           await screenshot(driver, 'oob3.png');
-          await driver.sendKeys([Key.Escape]);
+          await performKeys(driver, [Key.Escape]);
           await screenshot(driver, 'oob6.png');
         } else {
           console.log('NOT running on ARM64');
@@ -78,18 +98,25 @@ async function runSSD() {
         await screenshot(driver, 'login01.png');
         const id_value = 'jay0lee@gmail.com';
         const id_arr =  [...id_value];
-        await driver.sendKeys(id_arr);
+        
+        // Using the new helper for string arrays
+        await performKeys(driver, id_arr);
         await screenshot(driver, 'login02.png');
-        await driver.sendKeys([Key.Tab]);
+        
+        await performKeys(driver, [Key.Tab]);
+        
         console.log('Our secret is ' + process.env.TOTP_SECRET.length + ' characters.');
         // We wait until the last possible second to generate
         // our TOTP to ensure it's still valid.
         const { otp } = await TOTP.generate(process.env.TOTP_SECRET, {algorithm: 'SHA-256'});
         console.log('Our token is ' + otp.length + ' characters.');
         const otp_arr =  [...otp];
-        await driver.sendKeys(otp_arr);
+        
+        // Using the new helper for the OTP string array
+        await performKeys(driver, otp_arr);
         await screenshot(driver, 'login03.png');
-        await driver.sendKeys([Key.Enter]);
+        
+        await performKeys(driver, [Key.Enter]);
 
         // TODO: it's expected that on successful login the window
         // will close and these screenshots will error out. Figure
