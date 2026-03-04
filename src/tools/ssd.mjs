@@ -3,6 +3,7 @@
 
 import { execSync, spawn } from 'child_process';
 import { TOTP } from 'totp-generator';
+import path from 'path';
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -14,8 +15,12 @@ function sendKeys(keys) {
   execSync(`powershell -Command "${script}"`);
 }
 
-// Native PowerShell Screen Capture
+// Native PowerShell Screen Capture (Saved to GITHUB_WORKSPACE)
 function takeScreenshot(filename) {
+  // Default to the GitHub workspace, or use the current directory if running locally
+  const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
+  const fullPath = path.join(workspace, filename);
+
   const psScript = `
     Add-Type -AssemblyName System.Windows.Forms;
     Add-Type -AssemblyName System.Drawing;
@@ -23,23 +28,23 @@ function takeScreenshot(filename) {
     $bitmap = New-Object System.Drawing.Bitmap $Screen.Width, $Screen.Height;
     $graphic = [System.Drawing.Graphics]::FromImage($bitmap);
     $graphic.CopyFromScreen($Screen.Left, $Screen.Top, 0, 0, $bitmap.Size);
-    $bitmap.Save('${filename}');
+    $bitmap.Save('${fullPath}');
   `;
   try {
     execSync(`powershell -Command "${psScript}"`);
-    console.log(`Saved screenshot: ${filename}`);
+    console.log(`Saved screenshot: ${fullPath}`);
   } catch (err) {
-    console.error(`Failed to save screenshot ${filename}:`, err.message);
+    console.error(`Failed to save screenshot ${fullPath}:`, err.message);
   }
 }
 
 // Fire and forget application launcher
 function launchSSD() {
     const child = spawn('C:\\Program Files\\Certum\\SimplySign Desktop\\SimplySignDesktop.exe', [], {
-        detached: true,       // Run in a separate process group
-        stdio: 'ignore'       // Disconnect standard input/output
+        detached: true,       
+        stdio: 'ignore'       
     });
-    child.unref();            // Tell Node.js not to wait for this process to exit
+    child.unref();            
 }
 
 async function runSSD() {
@@ -99,7 +104,7 @@ async function runSSD() {
     sendKeys('{ENTER}');
     console.log('Login sequence complete.');
     
-    // Original screenshot cascade to monitor the window closing
+    // Screenshot cascade to monitor the window closing
     takeScreenshot('login04.png');
     await sleep(500);
     takeScreenshot('login05.png');
