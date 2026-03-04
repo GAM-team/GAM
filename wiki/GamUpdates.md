@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.35.00
+
+Updated cacerts.pem to avoid to following error in `gam checkconn`.
+```
+Checking raw.githubusercontent.com (185.199.110.133) (2)...                                         ERROR
+    Certificate verification failed. If you are behind a firewall / proxy server that does TLS / SSL inspection you may need to point GAM at your certificate authority file by setting cacerts_pem = /path/to/your/certauth.pem in gam.cfg.
+```
+
 ### 7.34.13
 
 Fixed bug in `gam info policies <CIPolicyNameEntity> ... formatjson` where extraneous line
