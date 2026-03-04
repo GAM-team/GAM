@@ -696,6 +696,29 @@ jobs:
           Start-Sleep -Seconds 5
           Write-Host "OneDrive eradicated."
 
+      - name: Initialize Windows Desktop Shell
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Write-Host "Checking for Windows Explorer shell..."
+          if (-not (Get-Process -Name explorer -ErrorAction SilentlyContinue)) {
+              Write-Host "Explorer not found. Booting the desktop shell..."
+              Start-Process explorer.exe
+              # Give the desktop a few seconds to fully render the taskbar
+              Start-Sleep -Seconds 10 
+          } else {
+              Write-Host "Explorer is already running."
+          }
+          
+          # NEW: Starting Explorer triggers Windows Startup apps, including OneDrive. 
+          # We must kill it again to ensure the SimplySign login window gets focus.
+          Write-Host "Suppressing post-Explorer OneDrive popups..."
+          Stop-Process -Name "OneDrive" -Force -ErrorAction SilentlyContinue
+          
+          # Nuke it from the current user's startup registry so it stays dead
+          reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "OneDrive" /f 2>&1 | Out-Null
+          
+          Write-Host "Desktop initialized and OneDrive suppressed."
       - name: Install NPM deps
         if: runner.os == 'Windows'
         run: |
