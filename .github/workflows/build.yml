@@ -678,6 +678,24 @@ jobs:
 #        run : |
 #         reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" /t REG_DWORD /f /v "AllowDevelopmentWithoutDevLicense" /d "1"
 
+      - name: Nuke OneDrive (Prevent UI Interference)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Write-Host "Killing OneDrive process..."
+          Stop-Process -Name "OneDrive" -Force -ErrorAction SilentlyContinue
+          Write-Host "Uninstalling OneDrive..."
+          $setup64 = "$env:SystemRoot\SysWOW64\OneDriveSetup.exe"
+          $setup32 = "$env:SystemRoot\System32\OneDriveSetup.exe"
+          if (Test-Path $setup64) {
+              Start-Process -FilePath $setup64 -ArgumentList "/uninstall" -Wait -NoNewWindow
+          } elseif (Test-Path $setup32) {
+              Start-Process -FilePath $setup32 -ArgumentList "/uninstall" -Wait -NoNewWindow
+          }
+          # Give the OS a moment to clean up the UI before moving on
+          Start-Sleep -Seconds 5
+          Write-Host "OneDrive eradicated."
+
       - name: Install NPM deps
         if: runner.os == 'Windows'
         run: |
