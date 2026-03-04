@@ -25,41 +25,41 @@ start a new terminal session and reissue the command from above.
 ## Executable, Manual
 
 * Executable Archive, Manual, Linux/Google Cloud Shell
-  - `gam-7.wx.yz-linux-x86_64-glibc2.36.tar.xz`
+  - `gam-7.wx.yz-linux-x86_64-glibc2.35.tar.xz`
   - `gam-7.wx.yz-linux-x86_64-glibc2.39.tar.xz`
   - `gam-7.wx.yz-linux-x86_64-legacy.tar.xz`
   - Download the archive, extract the contents into some directory.
   - Start a terminal session.
 
 * Executable Archive, Manual, Raspberry Pi/ChromeOS ARM devices
-  - `gam-7.wx.yz-linux-arm64-glibc2.36.tar.xz`
+  - `gam-7.wx.yz-linux-arm64-glibc2.35.tar.xz`
   - `gam-7.wx.yz-linux-arm64-glibc2.39.tar.xz`
   - `gam-7.wx.yz-linux-arm64-legacy.tar.xz`
   - Download the archive, extract the contents into some directory.
   - Start a terminal session.
 
 * Executable Archive, Manual, Mac OS versions Sonoma, Sequoia - M1/M2
-  - `gam-7.wx.yz-macos14.7-arm64.tar.xz`
+  - `gam-7.wx.yz-macos14.8-arm64.tar.xz`
   - Download the archive, extract the contents into some directory.
   - Start a terminal session.
 
 * Executable Archive, Manual, Mac OS versions Sequoia - M2/M3
-  - `gam-7.wx.yz-macos15.6-arm64.tar.xz`
-  - Download the archive, extract the contents into some directory.
-  - Start a terminal session.
-
-* Executable Archive, Manual, Mac OS versions Tahoe - M2/M3/M4
-  - `gam-7.wx.yz-macos26.0-arm64.tar.xz`
-  - Download the archive, extract the contents into some directory.
-  - Start a terminal session.
-
-* Executable Archive, Manual, Mac OS, versions Ventura, Sonoma - Intel
-  - `gam-7.wx.yz-macos13.7-x86_64.tar.xz`
+  - `gam-7.wx.yz-macos15.7-arm64.tar.xz`
   - Download the archive, extract the contents into some directory.
   - Start a terminal session.
 
 * Executable Archive, Manual, Mac OS, versions Sequoia, Tahoe - Intel
-  - `gam-7.wx.yz-macos15.6-x86_64.tar.xz`
+  - `gam-7.wx.yz-macos15.7-x86_64.tar.xz`
+  - Download the archive, extract the contents into some directory.
+  - Start a terminal session.
+
+* Executable Archive, Manual, Mac OS versions Tahoe - M2/M3/M4
+  - `gam-7.wx.yz-macos26.3-arm64.tar.xz`
+  - Download the archive, extract the contents into some directory.
+  - Start a terminal session.
+
+* Executable Archive, Manual, Mac OS versions Tahoe - Intel
+  - `gam-7.wx.yz-macos26.3-x86_64.tar.xz`
   - Download the archive, extract the contents into some directory.
   - Start a terminal session.
 
@@ -69,7 +69,7 @@ start a new terminal session and reissue the command from above.
   - Start a Command Prompt/PowerShell session.
 
 * Executable Installer, Manual, Windows 64 bit
-  - `gam-7.wx.yz-windows-x86_64.msi`
+  - `gam-7.wx.yz-windows-x86_64.exe`
   - Download the installer and run it.
   - Start a Command Prompt/PowerShell session.
 
@@ -79,7 +79,7 @@ start a new terminal session and reissue the command from above.
   - Start a Command Prompt/PowerShell session.
 
 * Executable Installer, Manual, Windows 11 ARM
-  - `gam-7.wx.yz-windows-arm64.msi`
+  - `gam-7.wx.yz-windows-arm64.exe`
   - Download the installer and run it.
   - Start a Command Prompt/PowerShell session.
 

@@ -129,7 +129,7 @@ See: [Downloads-Installs-GAM7](Downloads-Installs-GAM7)
 ### Update to latest version, use current path `C:\GAMADV-XTD3`.
 You don't have to update path or scripts.
 * Executable Installer, Manual, Windows 64 bit
-  - `gam-7.wx.yz-windows-x86_64.msi`
+  - `gam-7.wx.yz-windows-x86_64.exe`
   - Download the installer and run it. When prompted for the Destination Foler, enter `C:\GAMADV-XTD3`.
 * Executable Archive, Manual, Windows 64 bit
   - `gam-7.wx.yz-windows-x86_64.zip`
@@ -139,7 +139,7 @@ Your update is complete.
 
 ### Update to latest version, use new path `C:\GAM7`.
 * Executable Installer, Manual, Windows 64 bit
-  - `gam-7.wx.yz-windows-x86_64.msi`
+  - `gam-7.wx.yz-windows-x86_64.exe`
   - Download the installer and run it.
   - Start a Command Prompt/PowerShell session.
 * Executable Archive, Manual, Windows 64 bit
