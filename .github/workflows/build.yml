@@ -263,6 +263,33 @@ jobs:
           p12-file-base64: ${{ secrets.CERTIFICATES_P12 }}
           p12-password: ${{ secrets.CERTIFICATES_P12_PASSWORD }}
 
+      - name: Update Visual Studio
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Write-Host "Locating current Visual Studio installation..."
+          $vswherePath = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe"
+          $installerPath = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe"
+          # Dynamically grab the latest installed version (2022, 2025, etc.)
+          $vsPath = & $vswherePath -latest -products * -property installationPath
+          if (-not $vsPath) {
+              Write-Error "Could not locate Visual Studio installation."
+              exit 1
+          }
+          Write-Host "Found Visual Studio at: $vsPath"
+          Write-Host "Applying updates silently via local installer..."
+          # Use the built-in local installer instead of a hardcoded internet download
+          $arguments = "update --installPath `"$vsPath`" --quiet --wait --norestart"
+          $process = Start-Process -FilePath $installerPath -ArgumentList $arguments -Wait -PassThru
+          if ($process.ExitCode -eq 0) {
+              Write-Host "Visual Studio updated successfully."
+          } elseif ($process.ExitCode -eq 3010) {
+              Write-Host "Visual Studio updated successfully (Reboot requested but ignored)."
+          } else {
+              Write-Error "Visual Studio update failed with exit code $($process.ExitCode)."
+              exit $process.ExitCode
+          }
+
       - name: Windows Configure VCode
         uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
         if: runner.os == 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
