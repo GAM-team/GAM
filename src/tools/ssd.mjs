@@ -51,65 +51,41 @@ function launchSSD() {
 }
 
 async function runSSD() {
-    minimizeAllWindows()
-    await sleep(5000)
-    minimizeAllWindows()
-    await sleep(5000)
-  
-    console.log('Launching SimplySign Desktop...');
-    
-    // Launch the application detached.
-    launchSSD();
-
-    // 1. Handle ARM64 Out-Of-Box experience
-    const runner_arch = process.env.RUNNER_ARCH;
-    if (runner_arch === "ARM64") {
-        console.log('Running on ARM64...');
-        await sleep(3000);
-        await takeScreenshot('oob1.png');
-        sendKeys('{ENTER}');
-        
-        await sleep(3000);
-        await takeScreenshot('oob2.png');
-        sendKeys('{ENTER}');
-        
-        await sleep(3000);
-        await takeScreenshot('oob3.png');
-        sendKeys('{ESC}');
-        await takeScreenshot('oob6.png');
-
-        // Try dismissing OneDrive also
-        await sleep(3000);
-        sendKeys('{TAB}');
-        await takeScreenshot('oob7.png');
-
-        await sleep(3000);
-        sendKeys('{TAB}');
-        await takeScreenshot('oob8.png');
-
-        await sleep(3000);
-        sendKeys('{TAB}');
-        await takeScreenshot('oob9.png');
-
-        await sleep(3000);
-        sendKeys('{ENTER}');
-        await takeScreenshot('oob10.png');
-    } else {
-        console.log('NOT running on ARM64');
-    }
+    await takeScreenshot('001.png');
+    minimizeAllWindows();
+    await sleep(2000);
+    await takeScreenshot('002.png');
+    sendKeys('{ESC}');
+    await sleep(2000);
+    await takeScreenshot('003.png');
+    sendKeys('{ESC}');
+    await sleep(2000);
+    await takeScreenshot('004.png');
+    sendKeys('{ESC}');
+    await sleep(2000);
+    await takeScreenshot('005.png');
+    sendKeys('%{F4}');
+    await sleep(2000);
+    await takeScreenshot('006.png');
+    sendKeys('%{F4}');
+    await sleep(2000);
+    await takeScreenshot('007.png');
 
     // Re-execute SSD to open login dialog
     launchSSD();
     await sleep(3000);
+    await takeScreenshot('008.png');
+    launchSSD();
+    await sleep(3000);
+    await takeScreenshot('009.png');
 
     // 2. Login Flow
-    await takeScreenshot('login01.png');
     console.log('Typing credentials...');
     
     // Type Email
     sendKeys('jay0lee@gmail.com');
     await sleep(500); 
-    await takeScreenshot('login02.png');
+    await takeScreenshot('010.png');
     
     // Tab to next field
     sendKeys('{TAB}');
@@ -122,30 +98,20 @@ async function runSSD() {
     
     sendKeys(otp);
     await sleep(500);
-    await takeScreenshot('login03.png');
+    await takeScreenshot('011.png');
 
     // Submit
     sendKeys('{ENTER}');
     console.log('Login sequence complete.');
     
     // Screenshot cascade to monitor the window closing
-    await takeScreenshot('login04.png');
+    await takeScreenshot('012.png');
     await sleep(500);
-    await takeScreenshot('login05.png');
+    await takeScreenshot('013.png');
     await sleep(500);
-    await takeScreenshot('login06.png');
+    await takeScreenshot('014.png');
     await sleep(500);
-    await takeScreenshot('login07.png');
-    await sleep(500);
-    await takeScreenshot('login08.png');
-    await sleep(500);
-    await takeScreenshot('login09.png');
-    await sleep(500);
-    await takeScreenshot('login10.png');
-    await sleep(500);
-    await takeScreenshot('login11.png');
-    await sleep(500);
-    await takeScreenshot('login12.png');
+
     
     console.log('Exiting script, leaving SimplySign running in background.');
 
