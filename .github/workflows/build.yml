@@ -667,28 +667,67 @@ jobs:
           echo "GAM Version ${GAMVERSION}"
           echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
 
-      - name: Install WinAppDriver
+#      - name: Install WinAppDriver
+#        if: runner.os == 'Windows'
+#        run: |
+#          choco install -y winappdriver
+
+#      - name: Enabled dev mode for WinAppDriver
+#        if: runner.os == 'Windows'
+#        shell: cmd
+#        run : |
+#         reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" /t REG_DWORD /f /v "AllowDevelopmentWithoutDevLicense" /d "1"
+
+      - name: Nuke OneDrive (Prevent UI Interference)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Write-Host "Killing OneDrive process..."
+          Stop-Process -Name "OneDrive" -Force -ErrorAction SilentlyContinue
+          Write-Host "Uninstalling OneDrive..."
+          $setup64 = "$env:SystemRoot\SysWOW64\OneDriveSetup.exe"
+          $setup32 = "$env:SystemRoot\System32\OneDriveSetup.exe"
+          if (Test-Path $setup64) {
+              Start-Process -FilePath $setup64 -ArgumentList "/uninstall" -Wait -NoNewWindow
+          } elseif (Test-Path $setup32) {
+              Start-Process -FilePath $setup32 -ArgumentList "/uninstall" -Wait -NoNewWindow
+          }
+          # Give the OS a moment to clean up the UI before moving on
+          Start-Sleep -Seconds 5
+          Write-Host "OneDrive eradicated."
+
+      - name: Initialize Windows Desktop Shell
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Write-Host "Checking for Windows Explorer shell..."
+          if (-not (Get-Process -Name explorer -ErrorAction SilentlyContinue)) {
+              Write-Host "Explorer not found. Booting the desktop shell..."
+              Start-Process explorer.exe
+              # Give the desktop a few seconds to fully render the taskbar
+              Start-Sleep -Seconds 10 
+          } else {
+              Write-Host "Explorer is already running."
+          }
+          Write-Host "Suppressing post-Explorer OneDrive popups..."
+          # SAFE KILL: Only attempts to stop OneDrive if it is actually running
+          Get-Process -Name "OneDrive" -ErrorAction SilentlyContinue | Stop-Process -Force
+          # SAFE REGISTRY DELETE: Uses native PowerShell instead of reg.exe
+          Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "OneDrive" -ErrorAction SilentlyContinue
+          Write-Host "Desktop initialized and OneDrive suppressed."
+          exit 0
+
+      - name: Install NPM deps
         if: runner.os == 'Windows'
         run: |
-          choco install -y winappdriver
-
-      - name: Enabled dev mode for WinAppDriver
-        if: runner.os == 'Windows'
-        shell: cmd
-        run : |
-         reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" /t REG_DWORD /f /v "AllowDevelopmentWithoutDevLicense" /d "1"
-
-      - name: Install appium and totp tools
-        if: runner.os == 'Windows'
-        run: |
-          echo "Installing appium..."
-          npm install -g appium
-          echo "Installing totp-generator..."
-          npm install "totp-generator"
-          echo "Installing wdio..."
-          npm install @wdio/cli
-          echo "Installing appium win driver..."
-          appium driver install windows
+          #echo "Installing appium..."
+          #npm install -g appium
+          echo "Installing totp-generator and screenshot..."
+          npm install totp-generator screenshot-desktop
+#          echo "Installing wdio..."
+#          npm install @wdio/cli
+#          echo "Installing appium win driver..."
+#          appium driver install windows
 
       - name: Install Certum MSI
         if: runner.os == 'Windows'
@@ -711,16 +750,26 @@ jobs:
           TOTP_SECRET: ${{ secrets.TOTP_SECRET }}
         run: |
           # disable win private firewall that interferes with appium server
-          Set-NetFirewallProfile -Profile Private -Enabled False
-          $appiumCmd = Get-Command appium
-          $appiumPath = $appiumCmd.Path
-          Start-Process -Filepath "powershell.exe" -ArgumentList "-File", $appiumPath, "--address", "127.0.0.1", "--log-level", "error"
-          Start-Sleep -Seconds 10
-          write-host "appium started"
+          #Set-NetFirewallProfile -Profile Private -Enabled False
+          #$appiumCmd = Get-Command appium
+          #$appiumPath = $appiumCmd.Path
+          #Start-Process -Filepath "powershell.exe" -ArgumentList "-File", $appiumPath, "--address", "127.0.0.1", "--log-level", "error"
+          #Start-Sleep -Seconds 10
+          #write-host "appium started"
           write-host "running SimplySignDesktop login..."
           node tools/ssd.mjs --log-level warn
           write-host "sleeping during login..."
           Start-Sleep 10
+
+      - name: Archive png artifacts
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # 7.0.0
+        if: runner.os == 'Windows'
+        with:
+          archive: true
+          name: images-${{ matrix.os }}
+          if-no-files-found: ignore
+          path: |
+            *.png
 
       - name: Sign gam.exe
         if: runner.os == 'Windows'

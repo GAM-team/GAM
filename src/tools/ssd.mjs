@@ -1,128 +1,133 @@
-// Node.js script that implements an Appium client which will launch
-// Simply Sign Desktop app and log a user in. Once logged in it should
-// be possible to use tools like signtool.exe to sign Windows EXE/MSI files
-// with the Certum certificate.
+// Node.js script to launch Simply Sign Desktop app and log a user in
+// using native Windows keystrokes and screenshot-desktop for reliable CI imaging.
 
-import { Key, remote } from 'webdriverio';
-import { exec } from 'child_process';
+import { execSync, spawn } from 'child_process';
 import { TOTP } from 'totp-generator';
-
-async function screenshot(driver, filename) {
-  // uncomment to save .png screenshots
-  await driver.saveScreenshot(filename);
-  return
-}
+import path from 'path';
+import fs from 'fs';
+import screenshot from 'screenshot-desktop';
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function executeCommand(command) {
+// Native PowerShell Keystroke Sender
+function sendKeys(keys) {
+  const script = `$wshell = New-Object -ComObject wscript.shell; $wshell.SendKeys('${keys}')`;
+  execSync(`powershell -Command "${script}"`);
+}
+
+// Native PowerShell Desktop Clear
+function minimizeAllWindows() {
+  console.log('Minimizing all rogue background windows...');
+  const script = `$shell = New-Object -ComObject "Shell.Application"; $shell.MinimizeAll()`;
   try {
-    let { stdout, stderr } = await exec(command);
-    return stdout;
-  } catch (error) {
-    console.error(`Error executing command: ${command}`);
-    console.error(`Error details: ${error}`);
-    throw error; 
+    execSync(`powershell -Command "${script}"`);
+  } catch (err) {
+    console.log('Minimize command failed silently.');
   }
 }
 
+// Reliable Screen Capture using screenshot-desktop
+async function takeScreenshot(filename) {
+  const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
+  const fullPath = path.join(workspace, filename);
+
+  try {
+    await screenshot({ filename: fullPath });
+    console.log(`Saved screenshot: ${fullPath}`);
+  } catch (err) {
+    console.error(`Failed to save screenshot ${fullPath}:`, err.message);
+  }
+}
+
+// Fire and forget application launcher
+function launchSSD() {
+    const child = spawn('C:\\Program Files\\Certum\\SimplySign Desktop\\SimplySignDesktop.exe', [], {
+        detached: true,       
+        stdio: 'ignore'       
+    });
+    child.unref();            
+}
+
 async function runSSD() {
-    const opts = {
-        port: 4723,
-        logLevel: "silent",
-        capabilities: {
-            platformName: "Windows",
-            "appium:app": "C:\\Program Files\\Certum\\SimplySign Desktop\\SimplySignDesktop.exe",
-            "appium:automationName": "Windows",
-        },
-    };
+    await takeScreenshot('001.png');
+    minimizeAllWindows();
+    await sleep(2000);
+    await takeScreenshot('002.png');
+    sendKeys('{ESC}');
+    await sleep(2000);
+    await takeScreenshot('003.png');
+    //sendKeys('{ESC}');
+    //await sleep(2000);
+    //await takeScreenshot('004.png');
+    //sendKeys('{ESC}');
+    //await sleep(2000);
+    //await takeScreenshot('005.png');
+    //sendKeys('%{F4}');
+    //await sleep(2000);
+    //await takeScreenshot('006.png');
+    //sendKeys('%{F4}');
+    //await sleep(2000);
+    //await takeScreenshot('007.png');
 
-    let driver;
+    // Re-execute SSD to open login dialog
+    launchSSD();
+    await sleep(3000);
+    await takeScreenshot('008.png');
+    launchSSD();
+    await sleep(3000);
+    await takeScreenshot('009.png');
+
+    // 2. Login Flow
+    console.log('Typing credentials...');
+    
+    // Type Email
+    sendKeys('jay0lee@gmail.com');
+    await sleep(500); 
+    await takeScreenshot('010.png');
+    
+    // Tab to next field
+    sendKeys('{TAB}');
+    await sleep(500);
+
+    // Generate and type TOTP
+    console.log(`Our secret is ${process.env.TOTP_SECRET.length} characters.`);
+    const { otp } = await TOTP.generate(process.env.TOTP_SECRET, {algorithm: 'SHA-256'});
+    console.log(`Our token is ${otp.length} characters.`);
+    
+    sendKeys(otp);
+    await sleep(500);
+    await takeScreenshot('011.png');
+
+    // Submit
+    sendKeys('{ENTER}');
+    console.log('Login sequence complete.');
+    
+    // Screenshot cascade to monitor the window closing
+    await takeScreenshot('012.png');
+    await sleep(500);
+    await takeScreenshot('013.png');
+    await sleep(500);
+    await takeScreenshot('014.png');
+    await sleep(500);
+
+    
+    console.log('Exiting script, leaving SimplySign running in background.');
+
+    // Verification block to list all PNGs in the workspace
+    console.log('\n--- Screenshot Verification ---');
+    const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
     try {
-        driver = await remote(opts);
-        
-        // Github Actions Win ARM64 is stuck on a OOB screen that steals focus
-        // These enter / escapes should dismiss it.
-        const runner_arch =  process.env.RUNNER_ARCH;
-        if ( runner_arch === "ARM64" ) {
-          console.log('Running on ARM64...');
-          await sleep(3000); // Pause execution for 3 seconds
-          await screenshot(driver, 'oob1.png');
-          await driver.sendKeys([Key.Enter]);
-          await sleep(3000); // Pause execution for 3 seconds
-          await screenshot(driver, 'oob2.png');
-          await driver.sendKeys([Key.Enter]);
-          await sleep(3000); // Pause execution for 3 seconds
-          await screenshot(driver, 'oob3.png');
-          await driver.sendKeys([Key.Escape]);
-          await screenshot(driver, 'oob6.png');
-        } else {
-          console.log('NOT running on ARM64');
-        }
-
-        //  Execute SSD again to open login dialog
-        exec('"C:\\Program Files\\Certum\\SimplySign Desktop\\SimplySignDesktop.exe"', (error, stdout, stderr) => {
-          if (error) {
-            console.error(`exec error: ${error}`);
-            return;
-          }
-        });
-        await sleep(3000);
-
-        // Login
-        const windows = await driver.getWindowHandles();
-        const login_window = windows[0]
-        await driver.switchWindow(login_window);
-        await screenshot(driver, 'login01.png');
-        const id_value = 'jay0lee@gmail.com';
-        const id_arr =  [...id_value];
-        await driver.sendKeys(id_arr);
-        await screenshot(driver, 'login02.png');
-        await driver.sendKeys([Key.Tab]);
-        console.log('Our secret is ' + process.env.TOTP_SECRET.length + ' characters.');
-        // We wait until the last possible second to generate
-        // our TOTP to ensure it's still valid.
-        const { otp } = await TOTP.generate(process.env.TOTP_SECRET, {algorithm: 'SHA-256'});
-        console.log('Our token is ' + otp.length + ' characters.');
-        const otp_arr =  [...otp];
-        await driver.sendKeys(otp_arr);
-        await screenshot(driver, 'login03.png');
-        await driver.sendKeys([Key.Enter]);
-
-        // TODO: it's expected that on successful login the window
-        // will close and these screenshots will error out. Figure
-        // out how to handle that gracefully.
-        await screenshot(driver, 'login04.png');
-        await sleep(500);
-        await screenshot(driver, 'login05.png');
-        await sleep(500);
-        await screenshot(driver, 'login06.png');
-        await sleep(500);
-        await screenshot(driver, 'login07.png');
-        await sleep(500);
-        await screenshot(driver, 'login08.png');
-        await sleep(500);
-        await screenshot(driver, 'login09.png');
-        await sleep(500);
-        await screenshot(driver, 'login10.png');
-        await sleep(500);
-        await screenshot(driver, 'login11.png');
-        await sleep(500);
-        await screenshot(driver, 'login12.png');
-
-    } catch (error) {
-        console.error(error);
-        //console.error("Error during Appium run:");
+        const files = fs.readdirSync(workspace);
+        const pngFiles = files.filter(f => f.endsWith('.png'));
+        console.log(`Target Directory: ${workspace}`);
+        console.log(`Found ${pngFiles.length} .png files:`);
+        pngFiles.forEach(f => console.log(` - ${f}`));
+    } catch (err) {
+        console.error(`Error reading directory ${workspace}:`, err.message);
     }
-
-    // INTENTIONAL Keep driver open so tray icon for Certum doesn't close
-    // finally {
-    //    if (driver) {
-    //        await driver.deleteSession(); // Close the Appium session
-    //    }
-    //}
+    console.log('-------------------------------\n');
 }
 
 runSSD();
