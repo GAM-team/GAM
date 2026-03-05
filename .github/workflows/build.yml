@@ -302,7 +302,7 @@ jobs:
             fi
             PYEXTERNALS_PATH=$(cygpath -u "${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_ARCH}")
             LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${PYEXTERNALS_PATH}"
-            echo "PYTHON=${PYTHON_INSTALL_PATH}/bin/python.exe" >> $GITHUB_ENV
+            echo "PYTHON=${PYTHON_INSTALL_PATH}\bin\python.exe" >> $GITHUB_ENV
             echo "WIX_ARCH=${WIX_ARCH}" >> $GITHUB_ENV
           fi
           echo "We'll run make with: ${MAKEOPT}"
@@ -463,6 +463,8 @@ jobs:
             PCBuild\build.bat -c Release -p $env:arch
           }
           .\python.bat PC\layout --precompile --preset-default --copy "${GITHUB_WORKSPACE}\bin\python"
+          Get-ChildItem -Path "${GITHUB_WORKSPACE}\bin\python" -Recurse -File
+          Get-ChildItem -Path "$PYTHON_INSTALL_PATH" -Recurse -File
 
       - name: Mac/Linux Build Python
         if: matrix.goal == 'build' && runner.os != 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
