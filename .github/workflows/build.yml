@@ -462,8 +462,7 @@ jobs:
             # causes 10-20% slowdown in Python
             PCBuild\build.bat -c Release -p $env:arch
           }
-          .\python.bat PC\layout --precompile --preset-default --copy "${GITHUB_WORKSPACE}\bin\python"
-          Get-ChildItem -Path "${GITHUB_WORKSPACE}\bin\python" -Recurse -File
+          .\python.bat PC\layout --precompile --preset-default --copy "$PYTHON_INSTALL_PATH"
           Get-ChildItem -Path "$PYTHON_INSTALL_PATH" -Recurse -File
 
       - name: Mac/Linux Build Python
