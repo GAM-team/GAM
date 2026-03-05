@@ -456,13 +456,14 @@ jobs:
           Copy-Item -Path "${env:GITHUB_WORKSPACE}\src\tools\openssl.props" -Destination PCBuild\ -Verbose
           if (${env:RUNNER_ARCH} -eq "X64") {
             $env:arch = "x64"
-            PCBuild\build.bat -c Release -p $env:arch --pgo
+            #PCBuild\build.bat -c Release -p $env:arch --pgo
           } elseif (${env:RUNNER_ARCH} -eq "ARM64") {
             $env:arch =  "ARM64"
             # TODO: figure out why Windows ARM64 isn't compat with PGO optimiazation
             # causes 10-20% slowdown in Python
-            PCBuild\build.bat -c Release -p $env:arch
+            #PCBuild\build.bat -c Release -p $env:arch
           }
+          PCBuild\build.bat -c Release -p $env:arch --pgo
           .\python.bat PC\layout --precompile --preset-default --copy $env:PS_PYTHON_INSTALL_PATH
           Get-ChildItem -Path $env:PS_PYTHON_INSTALL_PATH -File
 
