@@ -5,7 +5,6 @@ import { execSync, spawn } from 'child_process';
 import { TOTP } from 'totp-generator';
 import path from 'path';
 import fs from 'fs';
-import screenshot from 'screenshot-desktop';
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -28,13 +27,28 @@ function minimizeAllWindows() {
   }
 }
 
-// Reliable Screen Capture using screenshot-desktop
 async function takeScreenshot(filename) {
   const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
   const fullPath = path.join(workspace, filename);
 
+  const psScript = `
+    Add-Type -AssemblyName System.Windows.Forms;
+    Add-Type -AssemblyName System.Drawing;
+    $Screen = [System.Windows.Forms.SystemInformation]::VirtualScreen;
+    
+    if ($Screen.Width -eq 0 -or $Screen.Height -eq 0) {
+        Write-Error "Screen dimensions are 0x0. Desktop not fully initialized.";
+        exit 1;
+    }
+    
+    $bitmap = New-Object System.Drawing.Bitmap $Screen.Width, $Screen.Height;
+    $graphic = [System.Drawing.Graphics]::FromImage($bitmap);
+    $graphic.CopyFromScreen($Screen.Left, $Screen.Top, 0, 0, $bitmap.Size);
+    $bitmap.Save('${fullPath}');
+  `;
+  
   try {
-    await screenshot({ filename: fullPath });
+    execSync(`powershell -Command "${psScript}"`);
     console.log(`Saved screenshot: ${fullPath}`);
   } catch (err) {
     console.error(`Failed to save screenshot ${fullPath}:`, err.message);
