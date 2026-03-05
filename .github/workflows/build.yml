@@ -270,15 +270,11 @@ jobs:
           Write-Host "Locating current Visual Studio installation..."
           $vswherePath = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe"
           $installerPath = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe"
-          # Dynamically grab the latest installed version (2022, 2025, etc.)
           $vsPath = & $vswherePath -latest -products * -property installationPath
-          if (-not $vsPath) {
-              Write-Error "Could not locate Visual Studio installation."
-              exit 1
-          }
+          if (-not $vsPath) { Write-Error "Could not locate Visual Studio installation."; exit 1 }
           Write-Host "Found Visual Studio at: $vsPath"
-          Write-Host "Applying updates via local installer..."
-          $arguments = "update --installPath `"$vsPath`" --norestart"
+          Write-Host "Applying updates silently via local installer..."
+          $arguments = "update --installPath `"$vsPath`" --quiet --norestart"
           $process = Start-Process -FilePath $installerPath -ArgumentList $arguments -Wait -PassThru
           if ($process.ExitCode -eq 0) {
               Write-Host "Visual Studio updated successfully."
@@ -286,6 +282,16 @@ jobs:
               Write-Host "Visual Studio updated successfully (Reboot requested but ignored)."
           } else {
               Write-Error "Visual Studio update failed with exit code $($process.ExitCode)."
+              Write-Host "========== BEGIN INSTALLER ERROR LOG =========="
+              $logFile = Get-ChildItem -Path $env:TEMP -Filter "dd_setup_*.log" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+              if ($logFile) {
+                  Write-Host "Dumping error details from: $($logFile.FullName)"
+                  Write-Host "-----------------------------------------------"
+                  Get-Content -Path $logFile.FullName -Tail 75
+              } else {
+                  Write-Host "No dd_setup log file could be found in $env:TEMP."
+              }
+              Write-Host "=========== END INSTALLER ERROR LOG ==========="
               exit $process.ExitCode
           }
 
