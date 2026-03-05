@@ -58,18 +58,18 @@ async function runSSD() {
     sendKeys('{ESC}');
     await sleep(2000);
     await takeScreenshot('003.png');
-    sendKeys('{ESC}');
-    await sleep(2000);
-    await takeScreenshot('004.png');
-    sendKeys('{ESC}');
-    await sleep(2000);
-    await takeScreenshot('005.png');
-    sendKeys('%{F4}');
-    await sleep(2000);
-    await takeScreenshot('006.png');
-    sendKeys('%{F4}');
-    await sleep(2000);
-    await takeScreenshot('007.png');
+    //sendKeys('{ESC}');
+    //await sleep(2000);
+    //await takeScreenshot('004.png');
+    //sendKeys('{ESC}');
+    //await sleep(2000);
+    //await takeScreenshot('005.png');
+    //sendKeys('%{F4}');
+    //await sleep(2000);
+    //await takeScreenshot('006.png');
+    //sendKeys('%{F4}');
+    //await sleep(2000);
+    //await takeScreenshot('007.png');
 
     // Re-execute SSD to open login dialog
     launchSSD();
