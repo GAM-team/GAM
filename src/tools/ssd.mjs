@@ -61,12 +61,28 @@ async function runSSD() {
         await takeScreenshot('oob3.png');
         sendKeys('{ESC}');
         await takeScreenshot('oob6.png');
+
+        // Try dismissing OneDrive also
+        await sleep(3000);
+        sendKeys('{TAB}');
+        await takeScreenshot('oob7.png');
+
+        await sleep(3000);
+        sendKeys('{TAB}');
+        await takeScreenshot('oob8.png');
+
+        await sleep(3000);
+        sendKeys('{TAB}');
+        await takeScreenshot('oob9.png');
+
+        await sleep(3000);
+        sendKeys('{ENTER}');
+        await takeScreenshot('oob10.png');
     } else {
         console.log('NOT running on ARM64');
     }
 
     // Re-execute SSD to open login dialog
-    launchSSD();
     launchSSD();
     await sleep(3000);
 
