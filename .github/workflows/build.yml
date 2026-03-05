@@ -302,7 +302,7 @@ jobs:
             fi
             PYEXTERNALS_PATH=$(cygpath -u "${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_ARCH}")
             LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${PYEXTERNALS_PATH}"
-            echo "PYTHON=${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_ARCH}/python.exe" >> $GITHUB_ENV
+            echo "PYTHON=${PYTHON_INSTALL_PATH}/bin/python.exe" >> $GITHUB_ENV
             echo "WIX_ARCH=${WIX_ARCH}" >> $GITHUB_ENV
           fi
           echo "We'll run make with: ${MAKEOPT}"
@@ -446,7 +446,7 @@ jobs:
           pip install --upgrade sphinx
           sphinx-build --version
 
-      - name: Windows Config/Build Python
+      - name: Windows Config/Build/Install Python
         if: matrix.goal == 'build' && runner.os == 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         shell: powershell
         run: |
@@ -462,6 +462,7 @@ jobs:
             # causes 10-20% slowdown in Python
             PCBuild\build.bat -c Release -p $env:arch
           }
+          .\python.bat PC\layout --precompile --preset-default --copy "${GITHUB_WORKSPACE}\bin\python"
 
       - name: Mac/Linux Build Python
         if: matrix.goal == 'build' && runner.os != 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
@@ -1177,11 +1178,12 @@ jobs:
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         working-directory: ${{ github.workspace }}
         run: |
-          if [[ "${RUNNER_OS}" == "Windows" ]]; then
-            tar_folders="src/cpython/ bin/ssl"
-          else
-            tar_folders="bin/"
-          fi
+          #if [[ "${RUNNER_OS}" == "Windows" ]]; then
+          #  tar_folders="src/cpython/ bin/ssl"
+          #else
+          #  tar_folders="bin/"
+          #fi
+          tar_folders="bin/"
           echo '.git*' > ./excludes.txt
           tar cJvvf cache.tar.xz --exclude-from=excludes.txt $tar_folders
 
