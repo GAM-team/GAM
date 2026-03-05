@@ -670,35 +670,6 @@ jobs:
           echo "GAM Version ${GAMVERSION}"
           echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
 
-#      - name: Install WinAppDriver
-#        if: runner.os == 'Windows'
-#        run: |
-#          choco install -y winappdriver
-
-#      - name: Enabled dev mode for WinAppDriver
-#        if: runner.os == 'Windows'
-#        shell: cmd
-#        run : |
-#         reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" /t REG_DWORD /f /v "AllowDevelopmentWithoutDevLicense" /d "1"
-
-      - name: Nuke OneDrive (Prevent UI Interference)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          Write-Host "Killing OneDrive process..."
-          Stop-Process -Name "OneDrive" -Force -ErrorAction SilentlyContinue
-          Write-Host "Uninstalling OneDrive..."
-          $setup64 = "$env:SystemRoot\SysWOW64\OneDriveSetup.exe"
-          $setup32 = "$env:SystemRoot\System32\OneDriveSetup.exe"
-          if (Test-Path $setup64) {
-              Start-Process -FilePath $setup64 -ArgumentList "/uninstall" -Wait -NoNewWindow
-          } elseif (Test-Path $setup32) {
-              Start-Process -FilePath $setup32 -ArgumentList "/uninstall" -Wait -NoNewWindow
-          }
-          # Give the OS a moment to clean up the UI before moving on
-          Start-Sleep -Seconds 5
-          Write-Host "OneDrive eradicated."
-
       - name: Initialize Windows Desktop Shell
         if: runner.os == 'Windows'
         shell: pwsh
@@ -712,25 +683,14 @@ jobs:
           } else {
               Write-Host "Explorer is already running."
           }
-          Write-Host "Suppressing post-Explorer OneDrive popups..."
-          # SAFE KILL: Only attempts to stop OneDrive if it is actually running
-          Get-Process -Name "OneDrive" -ErrorAction SilentlyContinue | Stop-Process -Force
-          # SAFE REGISTRY DELETE: Uses native PowerShell instead of reg.exe
-          Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "OneDrive" -ErrorAction SilentlyContinue
-          Write-Host "Desktop initialized and OneDrive suppressed."
-          exit 0
 
       - name: Install NPM deps
         if: runner.os == 'Windows'
         run: |
           #echo "Installing appium..."
           #npm install -g appium
-          echo "Installing totp-generator and screenshot..."
-          npm install totp-generator screenshot-desktop
-#          echo "Installing wdio..."
-#          npm install @wdio/cli
-#          echo "Installing appium win driver..."
-#          appium driver install windows
+          echo "Installing totp-generator..."
+          npm install totp-generator
 
       - name: Install Certum MSI
         if: runner.os == 'Windows'
@@ -752,13 +712,6 @@ jobs:
         env:
           TOTP_SECRET: ${{ secrets.TOTP_SECRET }}
         run: |
-          # disable win private firewall that interferes with appium server
-          #Set-NetFirewallProfile -Profile Private -Enabled False
-          #$appiumCmd = Get-Command appium
-          #$appiumPath = $appiumCmd.Path
-          #Start-Process -Filepath "powershell.exe" -ArgumentList "-File", $appiumPath, "--address", "127.0.0.1", "--log-level", "error"
-          #Start-Sleep -Seconds 10
-          #write-host "appium started"
           write-host "running SimplySignDesktop login..."
           node tools/ssd.mjs --log-level warn
           write-host "sleeping during login..."
@@ -816,11 +769,6 @@ jobs:
           echo "GAM Archive ${GAM_ARCHIVE}"
           tar -C "${gampath}/.." --create --verbose --exclude-from "${GITHUB_WORKSPACE}/.github/actions/package_exclusions.txt" --file $GAM_ARCHIVE --xz gam7
 
-     # - name: Install Wix on Win ARM64
-     #   if: runner.os == 'Windows' && runner.arch == 'ARM64'
-     #   run: |
-     #     choco install wixtoolset
-
       - name: Windows package zip
         if: runner.os == 'Windows' && matrix.goal != 'test'
         run: |
@@ -839,34 +787,6 @@ jobs:
             /S"gamsigntool=$signtool sign /sha1 $WINDOWS_CODESIGN_CERT_HASH /tr http://time.certum.pl /td SHA256 /fd SHA256 /v \$f" \
             /O"$GITHUB_WORKSPACE" \
             gam.iss
-
-      #- name: Windows package MSI
-      #  if: runner.os == 'Windows' && matrix.goal != 'test'
-      #  run: |
-      #    export MSI_FILENAME="${GITHUB_WORKSPACE}/gam-${GAMVERSION}-windows-${arch}.msi"
-      #    # auto-generate a lib.wxs based on the files PyInstaller created for the lib/ directory
-      #    /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/heat.exe dir "${gampath}/lib" -ke -srd -cg Lib -gg -dr lib -directoryid lib -out lib.wxs
-      #    $PYTHON tools/gen-wix-xml-filelist.py lib.wxs
-      #    echo "-- begin lib.wxs --"
-      #    cat lib.wxs
-      #    echo "-- end lib.wxs --"
-      #    /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/candle.exe -arch "${WIX_ARCH}" gam.wxs lib.wxs
-      #    /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/light.exe -ext /c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.14/bin/WixUIExtension.dll gam.wixobj lib.wixobj -b "${gampath}/lib" -o "$MSI_FILENAME" || true;
-      #    rm -v -f *.wixpdb
-      #    rm -v -f *.wixobj
-      #    echo "MSI_FILENAME=${MSI_FILENAME}" >> $GITHUB_ENV
-
-      #- name: Sign GAM MSI
-      #  if: runner.os == 'Windows'
-      #  shell: pwsh
-      #  run: |
-      #    write-Host "Signing ${env:MSI_FILENAME}...."
-          # Always explicitely use x64 version os signtool.exe, arm64 version apparently can't
-          # see Certum certs since SimplySignDesktop is x64-only today.
-      #    Start-Process -Wait -NoNewWindow -ErrorAction Continue -FilePath 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe'  -ArgumentList "sign", "/sha1", "$env:WINDOWS_CODESIGN_CERT_HASH", "/tr", "http://time.certum.pl", "/td", "SHA256", "/fd", "SHA256", "/v", "$env:MSI_FILENAME"
-      #    write-Host "Verifying signature of ${env:MSI_FILENAME}...."
-      #    # verify signature. If we failed to sign we should fail to verify and die.
-      #    & 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe' verify /pa /v "$env:MSI_FILENAME"
 
       - name: Attest that gam package files were generated from this Action
         uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
