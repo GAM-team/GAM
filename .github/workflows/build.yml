@@ -304,6 +304,7 @@ jobs:
             LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${PYEXTERNALS_PATH}"
             echo "PYTHON=${PYTHON_INSTALL_PATH}\bin\python.exe" >> $GITHUB_ENV
             echo "WIX_ARCH=${WIX_ARCH}" >> $GITHUB_ENV
+            echo "PS_PYTHON_INSTALL_PATH=$(cypath -w $PYTHON_INSTALL_PATH)" >> $GITHUB_ENV
           fi
           echo "We'll run make with: ${MAKEOPT}"
           echo "staticx=${staticx}" >> $GITHUB_ENV
@@ -462,8 +463,8 @@ jobs:
             # causes 10-20% slowdown in Python
             PCBuild\build.bat -c Release -p $env:arch
           }
-          .\python.bat PC\layout --precompile --preset-default --copy "$PYTHON_INSTALL_PATH"
-          Get-ChildItem -Path "$PYTHON_INSTALL_PATH" -Recurse -File
+          .\python.bat PC\layout --precompile --preset-default --copy "$PS_PYTHON_INSTALL_PATH"
+          Get-ChildItem -Path "$PS_PYTHON_INSTALL_PATH" -File
 
       - name: Mac/Linux Build Python
         if: matrix.goal == 'build' && runner.os != 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
