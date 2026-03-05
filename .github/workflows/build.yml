@@ -277,8 +277,8 @@ jobs:
               exit 1
           }
           Write-Host "Found Visual Studio at: $vsPath"
-          Write-Host "Applying updates silently via local installer..."
-          $arguments = "update --installPath `"$vsPath`" --quiet --norestart"
+          Write-Host "Applying updates via local installer..."
+          $arguments = "update --installPath `"$vsPath`" --norestart"
           $process = Start-Process -FilePath $installerPath -ArgumentList $arguments -Wait -PassThru
           if ($process.ExitCode -eq 0) {
               Write-Host "Visual Studio updated successfully."
