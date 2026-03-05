@@ -463,8 +463,8 @@ jobs:
             # causes 10-20% slowdown in Python
             PCBuild\build.bat -c Release -p $env:arch
           }
-          .\python.bat PC\layout --precompile --preset-default --copy "$PS_PYTHON_INSTALL_PATH"
-          Get-ChildItem -Path "$PS_PYTHON_INSTALL_PATH" -File
+          .\python.bat PC\layout --precompile --preset-default --copy $env:PS_PYTHON_INSTALL_PATH
+          Get-ChildItem -Path $env:PS_PYTHON_INSTALL_PATH -File
 
       - name: Mac/Linux Build Python
         if: matrix.goal == 'build' && runner.os != 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
