@@ -278,8 +278,7 @@ jobs:
           }
           Write-Host "Found Visual Studio at: $vsPath"
           Write-Host "Applying updates silently via local installer..."
-          # Use the built-in local installer instead of a hardcoded internet download
-          $arguments = "update --installPath `"$vsPath`" --quiet --wait --norestart"
+          $arguments = "update --installPath `"$vsPath`" --quiet --norestart"
           $process = Start-Process -FilePath $installerPath -ArgumentList $arguments -Wait -PassThru
           if ($process.ExitCode -eq 0) {
               Write-Host "Visual Studio updated successfully."
