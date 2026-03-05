@@ -255,7 +255,7 @@ WARNING: Config File: /Users/gamteam/GAMConfig/gam.cfg, Section: DEFAULT, Item: 
 GAM 7.35.00 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.14.3 64-bit final
-macOS Tahoe 26.3 arm64
+macOS Tahoe 26.3.1 arm64
 Path: /Users/gamteam/bin/gam7
 Config File: /Users/gamteam/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
 
