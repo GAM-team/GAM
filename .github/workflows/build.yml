@@ -272,14 +272,15 @@ jobs:
           $installerPath = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe"
           $vsPath = & $vswherePath -latest -products * -property installationPath
           if (-not $vsPath) { Write-Error "Could not locate Visual Studio installation."; exit 1 }
-          Write-Host "Found Visual Studio at: $vsPath"
+          $verBefore = & $vswherePath -latest -products * -property installationVersion
+          Write-Host "Found Visual Studio at: $vsPath (Version: $verBefore)"
           Write-Host "Applying updates silently via local installer..."
           $arguments = "update --installPath `"$vsPath`" --quiet --norestart"
           $process = Start-Process -FilePath $installerPath -ArgumentList $arguments -Wait -PassThru
-          if ($process.ExitCode -eq 0) {
-              Write-Host "Visual Studio updated successfully."
-          } elseif ($process.ExitCode -eq 3010) {
-              Write-Host "Visual Studio updated successfully (Reboot requested but ignored)."
+          if ($process.ExitCode -eq 0 -or $process.ExitCode -eq 3010) {
+              $verAfter = & $vswherePath -latest -products * -property installationVersion
+              Write-Host "Visual Studio updated successfully. (Exit Code: $($process.ExitCode))"
+              Write-Host "Version upgraded from $verBefore to $verAfter"
           } else {
               Write-Error "Visual Studio update failed with exit code $($process.ExitCode)."
               Write-Host "========== BEGIN INSTALLER ERROR LOG =========="
@@ -294,7 +295,6 @@ jobs:
               Write-Host "=========== END INSTALLER ERROR LOG ==========="
               exit $process.ExitCode
           }
-
       - name: Windows Configure VCode
         uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
         if: runner.os == 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
