@@ -17,6 +17,17 @@ function sendKeys(keys) {
   execSync(`powershell -Command "${script}"`);
 }
 
+// Native PowerShell Desktop Clear
+function minimizeAllWindows() {
+  console.log('Minimizing all rogue background windows...');
+  const script = `$shell = New-Object -ComObject "Shell.Application"; $shell.MinimizeAll()`;
+  try {
+    execSync(`powershell -Command "${script}"`);
+  } catch (err) {
+    console.log('Minimize command failed silently.');
+  }
+}
+
 // Reliable Screen Capture using screenshot-desktop
 async function takeScreenshot(filename) {
   const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
@@ -40,6 +51,11 @@ function launchSSD() {
 }
 
 async function runSSD() {
+    minimizeAllWindows()
+    await sleep(5000)
+    minimizeAllWindows()
+    await sleep(5000)
+  
     console.log('Launching SimplySign Desktop...');
     
     // Launch the application detached.
