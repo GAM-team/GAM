@@ -302,7 +302,7 @@ jobs:
             fi
             PYEXTERNALS_PATH=$(cygpath -u "${PYTHON_SOURCE_PATH}/PCbuild/${PYEXTERNALS_ARCH}")
             LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${PYEXTERNALS_PATH}"
-            echo "PYTHON=${PYTHON_INSTALL_PATH}\bin\python.exe" >> $GITHUB_ENV
+            echo "PYTHON=${PYTHON_INSTALL_PATH}\python.exe" >> $GITHUB_ENV
             echo "WIX_ARCH=${WIX_ARCH}" >> $GITHUB_ENV
             echo "PS_PYTHON_INSTALL_PATH=$(cygpath -w $PYTHON_INSTALL_PATH)" >> $GITHUB_ENV
           fi
