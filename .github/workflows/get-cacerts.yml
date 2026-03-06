@@ -1,14 +1,9 @@
 name: Check for Google Root CA Updates
 
 on:
-  push:
-    paths-ignore:
-      - 'wiki/**'
-  pull_request:
-    paths-ignore:
-      - 'wiki/**'
   schedule:
     - cron: '23 23 * * *'
+  workflow_dispatch:
 
 defaults:
   run:
@@ -19,7 +14,7 @@ jobs:
   check-certs:
     runs-on: ubuntu-slim
     steps:
-      - uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
           fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
@@ -93,6 +88,6 @@ jobs:
           git diff --quiet && git diff --staged --quiet || git commit -am '[ci skip] Updated cacerts.pem'
 
       - name: Push changes
-        uses: ad-m/github-push-action@master
+        uses: ad-m/github-push-action@77c5b412c50b723d2a4fbc6d71fb5723bcd439aa
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }} 
