@@ -1,10 +1,26 @@
+7.35.01
+
+The following commands have been updated to not verify the existence of `gam.cfg` credentials files
+as the WARNING messages about the missing files can be confusing to new users setting up GAM.
+```
+gam checkconn
+gam oauth|oauth2
+gam version
+```
+
 7.35.00
+
+Windows `gam-7.wx.yz-x86_64.msi` has been replaced with `gam-7.wx.yz-x86_64.exe`.
+
+Windows `gam-7.wx.yz-arm64.msi` has been replaced with `gam-7.wx.yz-arm64.exe`.
 
 Updated cacerts.pem to avoid to following error in `gam checkconn`.
 ```
 Checking raw.githubusercontent.com (185.199.110.133) (2)...                                         ERROR
     Certificate verification failed. If you are behind a firewall / proxy server that does TLS / SSL inspection you may need to point GAM at your certificate authority file by setting cacerts_pem = /path/to/your/certauth.pem in gam.cfg.
 ```
+
+If you have customized cacerts.pem, update your version with the `Operating CA: Let's Encrypt` values from the GAM default version.
 
 7.34.13
 
@@ -6491,7 +6507,7 @@ This addresses the following issue:
 Updated `gam <UserTypeEntity> add|delete|update|print|show datastudiopermissions` to display an appropriate
 error message, `The caller does not have permission`, when the user doesn't have permission to execute the command.
 Previously, the following incorrect error message was displayed:
-`ERROR: Data Studio API not enabled. Please run "gam update project" and "gam user user@domain.com check serviceaccount"`
+`ERROR: Data Studio API not enabled. Please run "gam update project" and "gam user user@domain.com update serviceaccount"`
 
 6.26.14
 
@@ -6773,7 +6789,7 @@ and display drive labels on files. Please test/experiment and report any issues.
 To use these commands you must add the 'Drive Labels API' to your project and update your service account authorization.
 ```
 gam update project
-gam user user@domain.com check serviceaccount
+gam user user@domain.com update serviceaccount
 ```
 Supported editions for this feature: Business Standard and Business Plus; Enterprise; Education Standard and Education Plus; G Suite Business; Essentials.
 
@@ -6971,7 +6987,7 @@ ERROR: 403: permissionDenied - Google Forms API has not been used in project XXX
 ```
 is replaced with
 ```
-ERROR: Forms API not enabled. Please run "gam update project" and "gam user user@domain.com check serviceaccount"
+ERROR: Forms API not enabled. Please run "gam update project" and "gam user user@domain.com update serviceaccount"
 ```
 
 6.23.00
@@ -9329,7 +9345,7 @@ To use this feature you must add the `People API` to your project and authorize 
 * `People API - Other Contacts - read only`: https://www.googleapis.com/auth/contacts.other.readonly
 ```
 gam update project
-gam user user@domain.com check serviceaccount
+gam user user@domain.com update serviceaccount
 ```
 
 Added commands to display user's contact groups using the People API.
@@ -9370,7 +9386,7 @@ To use these features you must add the `People API` to your project and authoriz
 ```
 gam update project
 gam oauth create
-gam user user@domain.com check serviceaccount
+gam user user@domain.com update serviceaccount
 ```
 
 Following Jay's lead, added new license SKU `Cloud Search`.
@@ -9409,7 +9425,7 @@ Added commands to display Data Studio assets and display/manage Data Studio perm
 To use these commands you must add the `Data Studio API` to your project and update your service account authorization.
 ```
 gam update project
-gam user user@domain.com check serviceaccount
+gam user user@domain.com update serviceaccount
 ```
 This is a first release from me, experiment and use with caution.
 
@@ -10452,7 +10468,7 @@ Added commands to support the new Device Management API.
 
 To use these commands you must update your service account authorization.
 ```
-gam user user@domain.com check serviceaccount
+gam user user@domain.com update serviceaccount
 ```
 
 In the following places a Google Admin email address is required; by default the admin email address in `oauth2.txt` is used.

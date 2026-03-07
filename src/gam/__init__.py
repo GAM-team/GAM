@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.35.00'
+__version__ = '7.35.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -4349,7 +4349,8 @@ def SetGlobalVariables():
 # warn if the json files are missing and return True
   if (Cmd.Location() == 1) or (Cmd.ArgumentsRemaining()):
     _chkCfgDirectories(sectionName)
-    _chkCfgFiles(sectionName)
+    if not Cmd.PeekArgumentPresent(['checkconn', 'checkconnection', 'comment', 'oauth', 'oauth2', 'version']):
+      _chkCfgFiles(sectionName)
     if status['errors']:
       sys.exit(CONFIG_ERROR_RC)
     if GC.Values[GC.NO_CACHE]:
