@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.35.01'
+__version__ = '7.35.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -204,11 +204,13 @@ ERROR_PREFIX = ERROR+': '
 WARNING = 'WARNING'
 WARNING_PREFIX = WARNING+': '
 ONE_KILO_10_BYTES = 1000
-ONE_MEGA_10_BYTES = 1000000
-ONE_GIGA_10_BYTES = 1000000000
+ONE_MEGA_10_BYTES = ONE_KILO_10_BYTES*ONE_KILO_10_BYTES
+ONE_GIGA_10_BYTES = ONE_KILO_10_BYTES*ONE_MEGA_10_BYTES
+ONE_TERA_10_BYTES = ONE_KILO_10_BYTES*ONE_GIGA_10_BYTES
 ONE_KILO_BYTES = 1024
-ONE_MEGA_BYTES = 1048576
-ONE_GIGA_BYTES = 1073741824
+ONE_MEGA_BYTES = ONE_KILO_BYTES*ONE_KILO_BYTES
+ONE_GIGA_BYTES = ONE_KILO_BYTES*ONE_MEGA_BYTES
+ONE_TERA_BYTES = ONE_KILO_BYTES*ONE_GIGA_BYTES
 DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 SECONDS_PER_MINUTE = 60
 SECONDS_PER_HOUR = 3600
@@ -2382,16 +2384,18 @@ def splitEmailAddress(emailAddress):
     return (emailAddress.lower(), GC.Values[GC.DOMAIN])
   return (emailAddress[:atLoc].lower(), emailAddress[atLoc+1:].lower())
 
-def formatFileSize(fileSize):
-  if fileSize == 0:
-    return '0kb'
-  if fileSize < ONE_KILO_10_BYTES:
-    return '1kb'
-  if fileSize < ONE_MEGA_10_BYTES:
-    return f'{fileSize//ONE_KILO_10_BYTES}kb'
-  if fileSize < ONE_GIGA_10_BYTES:
-    return f'{fileSize//ONE_MEGA_10_BYTES}mb'
-  return f'{fileSize//ONE_GIGA_10_BYTES}gb'
+def formatFileSize(size):
+  if size == 0:
+    return '0 KB'
+  if size < ONE_KILO_10_BYTES:
+    return '1 KB'
+  if size < ONE_MEGA_10_BYTES:
+    return f'{size/ONE_KILO_10_BYTES:.2f} KB'
+  if size < ONE_GIGA_10_BYTES:
+    return f'{size/ONE_MEGA_10_BYTES:.2f} MB'
+  if size < ONE_TERA_10_BYTES:
+    return f'{size/ONE_GIGA_10_BYTES:.2f} GB'
+  return f'{size/ONE_TERA_10_BYTES:.2f} TB'
 
 def formatLocalTime(dateTimeStr):
   if dateTimeStr in {NEVER_TIME, NEVER_TIME_NOMS}:
@@ -59016,7 +59020,7 @@ SIZE_FIELD_CHOICE_MAP = {
 #	[excludetrashed]
 #	[maxfiles <Integer>] [nodataheaders <String>]
 #	[countsonly [summary none|only|plus] [summaryuser <String>]
-#		    [showsource] [showsize] [showmimetypesize]]
+#		    [showsource] [showsize|showsizeunits] [showmimetypesize]]
 #	[countsrowfilter]
 #	[filepath|fullpath [folderpathonly [<Boolean>]] [pathdelimiter <Character>] [addpathstojson] [showdepth]] [buildtree]
 #	[allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
@@ -59240,7 +59244,7 @@ def printFileList(users):
       row['Source'] = sourceId
       row['Name'] = sourceName
     if showSize:
-      row['Size'] = sizeTotal
+      row['Size'] = sizeTotal if not showSizeUnits else formatFileSize(sizeTotal)
     if addCSVData:
       row.update(addCSVData)
     for mimeType, mtinfo in sorted(mimeTypeInfo.items()):
@@ -59257,7 +59261,7 @@ def printFileList(users):
   FJQC = FormatJSONQuoteChar(csvPF)
   addPathsToJSON = continueOnInvalidQuery = countsRowFilter = buildTree = countsOnly = filepath = fullpath = folderPathOnly = \
     getPermissionsForSharedDrives = mimeTypeInQuery = noRecursion = oneItemPerRow = stripCRsFromName = \
-    showParentsIdsAsList = showDepth = showParent = showSize = showMimeTypeSize = showSource = False
+    showParentsIdsAsList = showDepth = showParent = showSize = showSizeUnits = showMimeTypeSize = showSource = False
   sizeField = 'quotaBytesUsed'
   pathDelimiter = '/'
   pmselect = True
@@ -59336,7 +59340,7 @@ def printFileList(users):
         else:
           csvPFco.SetTitles(['Owner', 'Source', 'Name', 'Total', 'Size'])
         csvPFco.SetSortAllTitles()
-    elif myarg in {'showsize', 'showmimetypesize'}:
+    elif myarg in {'showsizeunits', 'showsize', 'showmimetypesize'}:
       showSize = True
       if countsOnly:
         if not showSource:
@@ -59344,7 +59348,9 @@ def printFileList(users):
         else:
           csvPFco.SetTitles(['Owner', 'Source', 'Name', 'Total', 'Size'])
         csvPFco.SetSortAllTitles()
-        if myarg == 'showmimetypesize':
+        if myarg == 'showsizeunits':
+          showSizeUnits = True
+        elif myarg == 'showmimetypesize':
           showMimeTypeSize = True
     elif myarg == 'sizefield':
       sizeField = getChoice(SIZE_FIELD_CHOICE_MAP, mapChoice=True)
@@ -60151,7 +60157,7 @@ def _updateLastModificationRow(row, lastModification):
 #	[filenamematchpattern <REMatchPattern>]
 #	<PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
 #	[excludetrashed] (addcsvdata <FieldName> <String>)*
-#	[showsize] [showmimetypesize]
+#	[showsize|showsizeunits] [showmimetypesize]
 #	[showlastmodification] [pathdelimiter <Character>]
 #	(addcsvdata <FieldName> <String>)*
 #	[summary none|only|plus] [summaryuser <String>]
@@ -60166,7 +60172,7 @@ def _updateLastModificationRow(row, lastModification):
 #	[filenamematchpattern <REMatchPattern>]
 #	<PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
 #	[excludetrashed]
-#	[showsize] [showmimetypesize]
+#	[showsize|showsizeunits] [showmimetypesize]
 #	[showlastmodification] [pathdelimiter <Character>]
 #	[summary none|only|plus] [summaryuser <String>]
 def printShowFileCounts(users):
@@ -60206,7 +60212,7 @@ def printShowFileCounts(users):
         kvList = [Ent.USER, user]
       dataList = [Ent.Choose(Ent.DRIVE_FILE_OR_FOLDER, countTotal), countTotal]
       if showSize:
-        dataList.extend([Ent.Singular(Ent.SIZE), sizeTotal])
+        dataList.extend([Ent.Singular(Ent.SIZE), sizeTotal if not showSizeUnits else formatFileSize(sizeTotal)])
       if sharedDriveId:
         dataList.extend(['Item cap', f"{countTotal/SHARED_DRIVE_MAX_FILES_FOLDERS:.2%}"])
       printEntityKVList(kvList, dataList, i, count)
@@ -60225,7 +60231,7 @@ def printShowFileCounts(users):
       else:
         row = {'User': user, 'Total': countTotal}
       if showSize:
-        row['Size'] = sizeTotal
+        row['Size'] = sizeTotal if not showSizeUnits else formatFileSize(sizeTotal)
       if showLastModification:
         _updateLastModificationRow(row, lastModification)
       if addCSVData:
@@ -60243,7 +60249,7 @@ def printShowFileCounts(users):
   DLP = DriveListParameters({'allowChoose': False, 'allowCorpora': True, 'allowQuery': True, 'mimeTypeInQuery': True})
   pathDelimiter = '/'
   sharedDriveId = sharedDriveName = ''
-  continueOnInvalidQuery = showSize = showLastModification = showMimeTypeSize = False
+  continueOnInvalidQuery = showSize = showSizeUnits = showLastModification = showMimeTypeSize = False
   sizeField = 'quotaBytesUsed'
   summary = FILECOUNT_SUMMARY_NONE
   summaryUser = FILECOUNT_SUMMARY_USER
@@ -60263,6 +60269,8 @@ def printShowFileCounts(users):
       fileIdEntity = getSharedDriveEntity()
     elif myarg == 'showsize':
       showSize = True
+    elif myarg == 'showsizeunits':
+      showSizeUnits = showSize = True
     elif myarg == 'sizefield':
       sizeField = getChoice(SIZE_FIELD_CHOICE_MAP, mapChoice=True)
     elif myarg == 'showlastmodification':
