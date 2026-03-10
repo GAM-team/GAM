@@ -719,7 +719,7 @@ gam <UserTypeEntity> print filecounts [todrive <ToDriveAttribute>*]
         [filenamematchpattern <REMatchPattern>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
         [excludetrashed]
-        [showsize|showsizeunits] [showmimetypesize]
+        [showsize] [showsizeunits] [showmimetypesize]
         [showlastmodification] [pathdelimiter <Character>]
         (addcsvdata <FieldName> <String>)*
         [summary none|only|plus] [summaryuser <String>]
@@ -735,7 +735,7 @@ gam <UserTypeEntity> show filecounts
         [filenamematchpattern <REMatchPattern>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
         [excludetrashed]
-        [showsize|showsizeunits] [showmimetypesize]
+        [showsize] [showsizeunits] [showmimetypesize]
         [showlastmodification] [pathdelimiter <Character>]
         [summary none|only|plus] [summaryuser <String>]
 ```
@@ -749,8 +749,10 @@ When `continueoninvalidquery` is true, GAM prints an error message and proceeds 
 as it does now. Of course, if the query really is invalid, you will get the message for every user.
 
 The `showsize` option displays the total size (in bytes) of the files counted; e.g., `31549200951`.
+With `print filecounts`, this will be in a column labelled `Size`.
 
 The `showsizeunits` option displays the total size of the files counted with two decimal places and units; e.g., `31.55 GB`.
+With `print filecounts`, this will be in a column labelled `SizeUnits`.
 
 The `showmimetypesize` option displays the total size (in bytes) of each MIME type counted.
 
@@ -1102,7 +1104,7 @@ gam <UserTypeEntity> print|show filelist [todrive <ToDriveAttribute>*]
         [excludetrashed]
         [maxfiles <Integer>] [nodataheaders <String>]
         [countsonly [summary none|only|plus] [summaryuser <String>]
-                    [showsource] [showsize|showsizeunits] [showmimetypesize]]
+                    [showsource] [showsize] [showsizeunits] [showmimetypesize]]
         [countsrowfilter]
         [filepath|fullpath [folderpathonly [<Boolean>]] [pathdelimiter <Character>] [addpathstojson] [showdepth]] [buildtree]
         [allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
@@ -1308,7 +1310,7 @@ The `countsonly` suboption `showsource` adds additional columns `Source` and `Na
 
 The `countsonly` suboption `showsize` adds an additional column `Size` that indicates the total size (in bytes) of the files represented on the row; e.g., `31549200951`.
 
-The `countsonly` suboption `showsizeunits` adds an additional column `Size` that indicates the total size of the files represented on the row with two decimal places and units; e.g., `31.55 GB`.
+The `countsonly` suboption `showsizeunits` adds an additional column `SizeUnits` that indicates the total size of the files represented on the row with two decimal places and units; e.g., `31.55 GB`.
 
 The `countsonly` suboption `showmimetypesize` adds additional columns `<MimeType>:Size` that indicate the total size (in bytes) of each MIME type.
 
