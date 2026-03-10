@@ -14,6 +14,7 @@
   - [Change Shared Drive visibility](#change-shared-drive-visibility)
 - [Display Shared Drives](#display-shared-drives)
 - [Display Shared Drive Counts](#display-shared-drive-counts)
+- [Display Shared Drive Storage Info](#display-shared-drive-storage-info)
 - [Display List of Shared Drives in an Organizational Unit](#display-list-of-shared-drives-in-an-organizational-unit)
 - [Display Count of Shared Drives in an Organizational Unit](#display-count-of-shared-drives-in-an-organizational-unit)
 - [Display Shared Drive Organizers](#display-shared-drive-organizers)
@@ -561,6 +562,21 @@ Windows PowerShell
 $count = & gam print shareddrives showitemcountonly
 Windows Command Prompt
 for /f "delims=" %a in ('gam print shareddrives showitemcountonly') do set count=%a
+```
+
+## Display Shared Drive Storage Info
+
+Get a list of Shared Drives/organizers.
+```
+gam redirect csv ./SharedDriveOrganizers.csv print shareddriveorganizers includefileorganizers
+```
+Get SharedDrive Drive file count and storage info; use one of the following for size information:
+* `showsize` - 31549200951 - This is a byte count
+* `showsizeunits` - 31.55 GB - This is as shown in the Admin console
+```
+gam config csv_output_header_filter "id,name,Total,Size,Item cap" csv_input_row_filter "organizers:regex:^.+$"
+  redirect csv ./SharedDriveStorageInfo.csv multiprocess redirect stderr - multiprocess
+  csv ./SharedDriveOrganizers.csv gam user "~organizers" print filecounts select shareddriveid "~id" showsizeunits
 ```
 
 ## Display all Shared Drives with a specific organizer
