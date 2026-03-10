@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.35.02
+
+Added option `showsizeunits` to `gam gam <UserTypeEntity> print filelist|filecounts` as an alternative to option `showsize`.
+* `showsize` - 31549200951 - This is a byte count
+* `showsizeunits' - 31.55 GB - This is as shown in the Admin console
+
 ### 7.35.01
 
 The following commands have been updated to not verify the existence of `gam.cfg` credentials files

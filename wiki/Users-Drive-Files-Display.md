@@ -405,7 +405,7 @@ quotaBytesUsed - The number of storage quota bytes used by the file.
 size - Size in bytes of blobs and first party editor files.
 ```
 Previously, GAM used the `size` field when totaling file sizes, it now uses the `quotaBytesUsed` field.
-The option `sizefield quotabytesused|size` allows you to select which field to use.
+The option `sizefield quotabytesused|size` allows you to select which field to use; `quotabytesused` is the default.
 
 For most MIME types, the values are the same; for the following MIME types, `quotabytesused` is larger.
 ```
@@ -719,7 +719,7 @@ gam <UserTypeEntity> print filecounts [todrive <ToDriveAttribute>*]
         [filenamematchpattern <REMatchPattern>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
         [excludetrashed]
-        [showsize] [showmimetypesize]
+        [showsize|showsizeunits] [showmimetypesize]
         [showlastmodification] [pathdelimiter <Character>]
         (addcsvdata <FieldName> <String>)*
         [summary none|only|plus] [summaryuser <String>]
@@ -735,7 +735,7 @@ gam <UserTypeEntity> show filecounts
         [filenamematchpattern <REMatchPattern>]
         <PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
         [excludetrashed]
-        [showsize] [showmimetypesize]
+        [showsize|showsizeunits] [showmimetypesize]
         [showlastmodification] [pathdelimiter <Character>]
         [summary none|only|plus] [summaryuser <String>]
 ```
@@ -748,7 +748,9 @@ saying that the query is invalid when, in fact, it is but the user does not have
 When `continueoninvalidquery` is true, GAM prints an error message and proceeds to the next user rather that terminating
 as it does now. Of course, if the query really is invalid, you will get the message for every user.
 
-The `showsize` option displays the total size (in bytes) of the files counted.
+The `showsize` option displays the total size (in bytes) of the files counted; e.g., `31549200951`.
+
+The `showsizeunits` option displays the total size of the files counted with two decimal places and units; e.g., `31.55 GB`.
 
 The `showmimetypesize` option displays the total size (in bytes) of each MIME type counted.
 
@@ -1100,7 +1102,7 @@ gam <UserTypeEntity> print|show filelist [todrive <ToDriveAttribute>*]
         [excludetrashed]
         [maxfiles <Integer>] [nodataheaders <String>]
         [countsonly [summary none|only|plus] [summaryuser <String>]
-                    [showsource] [showsize] [showmimetypesize]]
+                    [showsource] [showsize|showsizeunits] [showmimetypesize]]
         [countsrowfilter]
         [filepath|fullpath [folderpathonly [<Boolean>]] [pathdelimiter <Character>] [addpathstojson] [showdepth]] [buildtree]
         [allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
@@ -1304,7 +1306,9 @@ The `summaryuser <String>` option  replaces the default summary user `Summary` w
 
 The `countsonly` suboption `showsource` adds additional columns `Source` and `Name` that identify the top level folder ID and Name from which the counts are derived.
 
-The `countsonly` suboption `showsize` adds an additional column `Size` that indicates the total size (in bytes) of the files represented on the row.
+The `countsonly` suboption `showsize` adds an additional column `Size` that indicates the total size (in bytes) of the files represented on the row; e.g., `31549200951`.
+
+The `countsonly` suboption `showsizeunits` adds an additional column `Size` that indicates the total size of the files represented on the row with two decimal places and units; e.g., `31.55 GB`.
 
 The `countsonly` suboption `showmimetypesize` adds additional columns `<MimeType>:Size` that indicate the total size (in bytes) of each MIME type.
 
