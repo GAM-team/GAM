@@ -1,8 +1,16 @@
+7.35.03
+
+Updated `gam <UserTypeEntity> print filelist|filecounts` to handle options `showsize` and `showsizeunits` as independent options.
+* `showsize` - Display a column `Size` with a byte count
+* `showsizeunits` - Display a column `SizeUnits` with a formatted size with units
+
+If you select both options, you can sort multiple rows using the `Size` column.
+
 7.35.02
 
 Added option `showsizeunits` to `gam gam <UserTypeEntity> print filelist|filecounts` as an alternative to option `showsize`.
 * `showsize` - 31549200951 - This is a byte count
-* `showsizeunits' - 31.55 GB - This is as shown in the Admin console
+* `showsizeunits` - 31.55 GB - This is as shown in the Admin console
 
 7.35.01
 

@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.35.02'
+__version__ = '7.35.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -9505,31 +9505,31 @@ def getOSPlatform():
   return f'{myos} {pltfrm}'
 
 def inspect_untrusted_cert(url):
-    """Bypasses validation momentarily to extract the untrusted Issuer."""
-    parsed = urlparse(url if '://' in url else f'https://{url}')
-    host = parsed.hostname
-    port = parsed.port or 443
-    # Create an unverified context purely for diagnostic extraction
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
-    try:
-        with socket.create_connection((host, port), timeout=5) as sock:
-            with ctx.wrap_socket(sock, server_hostname=host) as ssock:
-                der_cert = ssock.getpeercert(binary_form=True)
-                cert = x509.load_der_x509_certificate(der_cert, default_backend())
-                issuer = cert.issuer.rfc4514_string()
-                subject = cert.subject.rfc4514_string()
-                try:
-                    san_ext = cert.extensions.get_extension_for_oid(x509.oid.ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
-                    # Loop through the list of SANs (DNS names, IP addresses, etc.)
-                    sans = [str(name.value) for name in san_ext.value]
-                    san_str = ", ".join(sans)
-                except x509.ExtensionNotFound:
-                    san_str = "None"
-                return f"Untrusted Issuer: {issuer}\n    Server Subject: {subject}\n    SANs: {san_str}"
-    except Exception as e:
-        return f"Failed to retrieve diagnostic certificate: {e}"
+  """Bypasses validation momentarily to extract the untrusted Issuer."""
+  parsed = urlparse(url if '://' in url else f'https://{url}')
+  host = parsed.hostname
+  port = parsed.port or 443
+  # Create an unverified context purely for diagnostic extraction
+  ctx = ssl.create_default_context()
+  ctx.check_hostname = False
+  ctx.verify_mode = ssl.CERT_NONE
+  try:
+    with socket.create_connection((host, port), timeout=5) as sock:
+      with ctx.wrap_socket(sock, server_hostname=host) as ssock:
+        der_cert = ssock.getpeercert(binary_form=True)
+        cert = x509.load_der_x509_certificate(der_cert, default_backend())
+        issuer = cert.issuer.rfc4514_string()
+        subject = cert.subject.rfc4514_string()
+        try:
+          san_ext = cert.extensions.get_extension_for_oid(x509.oid.ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
+          # Loop through the list of SANs (DNS names, IP addresses, etc.)
+          sans = [str(name.value) for name in san_ext.value]
+          san_str = ", ".join(sans)
+        except x509.ExtensionNotFound:
+          san_str = "None"
+        return f"Untrusted Issuer: {issuer}\n    Server Subject: {subject}\n    SANs: {san_str}"
+  except Exception as e:
+    return f"Failed to retrieve diagnostic certificate: {e}"
 
 # gam checkconnection
 def doCheckConnection():
@@ -9569,7 +9569,7 @@ def doCheckConnection():
     except ssl.SSLCertVerificationError as e:
       diag_info = inspect_untrusted_cert(host)
       # e.verify_message contains the specific OpenSSL error string
-      writeStdout(f'{not_okay}\n    Certificate verification failed: {e.verify_message}\n    Diagnostic Info:\n   {diag_info}\nIf you are behind a firewall / proxy server that does TLS / SSL inspection you may need to point GAM at your certificate authority file by setting cacerts_pem = /path/to/your/certauth.pem in gam.cfg.\n') 
+      writeStdout(f'{not_okay}\n    Certificate verification failed: {e.verify_message}\n    Diagnostic Info:\n   {diag_info}\nIf you are behind a firewall / proxy server that does TLS / SSL inspection you may need to point GAM at your certificate authority file by setting cacerts_pem = /path/to/your/certauth.pem in gam.cfg.\n')
     except ssl.SSLError as e:
       if e.reason == 'SSLV3_ALERT_HANDSHAKE_FAILURE':
         writeStdout(f'{not_okay}\n    GAM expects to connect with TLS 1.3 or newer and that failed. If your firewall / proxy server is not compatible with TLS 1.3 then you can tell GAM to allow TLS 1.2 by setting tls_min_version = TLSv1.2 in gam.cfg.\n')
@@ -59020,7 +59020,7 @@ SIZE_FIELD_CHOICE_MAP = {
 #	[excludetrashed]
 #	[maxfiles <Integer>] [nodataheaders <String>]
 #	[countsonly [summary none|only|plus] [summaryuser <String>]
-#		    [showsource] [showsize|showsizeunits] [showmimetypesize]]
+#		    [showsource] [showsize] [showsizeunits] [showmimetypesize]]
 #	[countsrowfilter]
 #	[filepath|fullpath [folderpathonly [<Boolean>]] [pathdelimiter <Character>] [addpathstojson] [showdepth]] [buildtree]
 #	[allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
@@ -59047,7 +59047,7 @@ def printFileList(users):
       if 'mimeType' not in DFF.fieldsList:
         DFF.fieldsList.append('mimeType')
       skipObjects.discard(sizeField)
-      if showSize and sizeField not in DFF.fieldsList:
+      if (showSize or showSizeUnits) and sizeField not in DFF.fieldsList:
         DFF.fieldsList.append(sizeField)
     if (DLP.minimumFileSize is not None) or (DLP.maximumFileSize is not None):
       _setSkipObjects(skipObjects, [sizeField], DFF.fieldsList)
@@ -59244,7 +59244,9 @@ def printFileList(users):
       row['Source'] = sourceId
       row['Name'] = sourceName
     if showSize:
-      row['Size'] = sizeTotal if not showSizeUnits else formatFileSize(sizeTotal)
+      row['Size'] = sizeTotal
+    if showSizeUnits:
+      row['SizeUnits'] = formatFileSize(sizeTotal)
     if addCSVData:
       row.update(addCSVData)
     for mimeType, mtinfo in sorted(mimeTypeInfo.items()):
@@ -59334,24 +59336,12 @@ def printFileList(users):
       summaryUser = getString(Cmd.OB_STRING)
     elif myarg == 'showsource':
       showSource = True
-      if countsOnly:
-        if not showSize:
-          csvPFco.SetTitles(['Owner', 'Source', 'Name', 'Total'])
-        else:
-          csvPFco.SetTitles(['Owner', 'Source', 'Name', 'Total', 'Size'])
-        csvPFco.SetSortAllTitles()
-    elif myarg in {'showsizeunits', 'showsize', 'showmimetypesize'}:
+    elif myarg == 'showsize':
       showSize = True
-      if countsOnly:
-        if not showSource:
-          csvPFco.SetTitles(['Owner', 'Total', 'Size'])
-        else:
-          csvPFco.SetTitles(['Owner', 'Source', 'Name', 'Total', 'Size'])
-        csvPFco.SetSortAllTitles()
-        if myarg == 'showsizeunits':
-          showSizeUnits = True
-        elif myarg == 'showmimetypesize':
-          showMimeTypeSize = True
+    elif myarg == 'showsizeunits':
+      showSizeUnits = True
+    elif myarg == 'showmimetypesize':
+      showMimeTypeSize = showSize = True
     elif myarg == 'sizefield':
       sizeField = getChoice(SIZE_FIELD_CHOICE_MAP, mapChoice=True)
     elif myarg == 'delimiter':
@@ -59382,6 +59372,15 @@ def printFileList(users):
       continueOnInvalidQuery = getBoolean()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg)
+  if countsOnly:
+    titles = ['Owner', 'Total'] if not showSource else ['Owner', 'Source', 'Name', 'Total']
+    if showSize:
+      titles.append('Size')
+    if showSizeUnits:
+      titles.append('SizeUnits')
+    csvPFco.SetTitles(titles)
+    csvPFco.SetSortAllTitles()
+
   if not filepath and not fullpath:
     showDepth = False
   noSelect = noFileSelectFileIdEntity(fileIdEntity)
@@ -59447,9 +59446,11 @@ def printFileList(users):
       csvPF.AddJSONTitles(sorted(addCSVData.keys()))
     else:
       csvPFco.AddTitles(sorted(addCSVData.keys()))
+      csvPFco.MoveTitlesToEnd(['Total'])
       if showSize:
         csvPFco.MoveTitlesToEnd(['Size'])
-      csvPFco.MoveTitlesToEnd(['Total'])
+      if showSizeUnits:
+        csvPFco.MoveTitlesToEnd(['SizeUnits'])
       csvPFco.SetSortAllTitles()
   if filepath and not countsOnly:
     csvPF.AddTitles('paths')
@@ -60157,7 +60158,7 @@ def _updateLastModificationRow(row, lastModification):
 #	[filenamematchpattern <REMatchPattern>]
 #	<PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
 #	[excludetrashed] (addcsvdata <FieldName> <String>)*
-#	[showsize|showsizeunits] [showmimetypesize]
+#	[showsize] [showsizeunits] [showmimetypesize]
 #	[showlastmodification] [pathdelimiter <Character>]
 #	(addcsvdata <FieldName> <String>)*
 #	[summary none|only|plus] [summaryuser <String>]
@@ -60172,14 +60173,14 @@ def _updateLastModificationRow(row, lastModification):
 #	[filenamematchpattern <REMatchPattern>]
 #	<PermissionMatch>* [<PermissionMatchMode>] [<PermissionMatchAction>]
 #	[excludetrashed]
-#	[showsize|showsizeunits] [showmimetypesize]
+#	[showsize] [showsizeunits] [showmimetypesize]
 #	[showlastmodification] [pathdelimiter <Character>]
 #	[summary none|only|plus] [summaryuser <String>]
 def printShowFileCounts(users):
   def _setSelectionFields():
     if DLP.showOwnedBy is not None:
       fieldsList.extend(OWNED_BY_ME_FIELDS_TITLES)
-    if showSize or (DLP.minimumFileSize is not None) or (DLP.maximumFileSize is not None):
+    if (showSize or showSizeUnits) or (DLP.minimumFileSize is not None) or (DLP.maximumFileSize is not None):
       fieldsList.append(sizeField)
     if showLastModification:
       fieldsList.extend(['id,name,modifiedTime,lastModifyingUser(me, displayName, emailAddress),parents'])
@@ -60212,7 +60213,9 @@ def printShowFileCounts(users):
         kvList = [Ent.USER, user]
       dataList = [Ent.Choose(Ent.DRIVE_FILE_OR_FOLDER, countTotal), countTotal]
       if showSize:
-        dataList.extend([Ent.Singular(Ent.SIZE), sizeTotal if not showSizeUnits else formatFileSize(sizeTotal)])
+        dataList.extend(['Size', sizeTotal])
+      if showSizeUnits:
+        dataList.extend(['SizeUnits', formatFileSize(sizeTotal)])
       if sharedDriveId:
         dataList.extend(['Item cap', f"{countTotal/SHARED_DRIVE_MAX_FILES_FOLDERS:.2%}"])
       printEntityKVList(kvList, dataList, i, count)
@@ -60231,7 +60234,9 @@ def printShowFileCounts(users):
       else:
         row = {'User': user, 'Total': countTotal}
       if showSize:
-        row['Size'] = sizeTotal if not showSizeUnits else formatFileSize(sizeTotal)
+        row['Size'] = sizeTotal
+      if showSizeUnits:
+        row['SizeUnits'] = formatFileSize(sizeTotal)
       if showLastModification:
         _updateLastModificationRow(row, lastModification)
       if addCSVData:
@@ -60270,13 +60275,13 @@ def printShowFileCounts(users):
     elif myarg == 'showsize':
       showSize = True
     elif myarg == 'showsizeunits':
-      showSizeUnits = showSize = True
+      showSizeUnits = True
+    elif myarg == 'showmimetypesize':
+      showMimeTypeSize = showSize = True
     elif myarg == 'sizefield':
       sizeField = getChoice(SIZE_FIELD_CHOICE_MAP, mapChoice=True)
     elif myarg == 'showlastmodification':
       showLastModification = True
-    elif myarg == 'showmimetypesize':
-      showMimeTypeSize = showSize = True
     elif myarg == 'summary':
       summary = getChoice(FILECOUNT_SUMMARY_CHOICE_MAP, mapChoice=True)
     elif myarg == 'summaryuser':
@@ -60305,6 +60310,8 @@ def printShowFileCounts(users):
   _setSelectionFields()
   if csvPF:
     sortTitles = ['User', 'id', 'name', 'Total', 'Item cap'] if fileIdEntity.get('shareddrive') else ['User', 'Total']
+    if showSizeUnits:
+      sortTitles.insert(sortTitles.index('Total')+1, 'SizeUnits')
     if showSize:
       sortTitles.insert(sortTitles.index('Total')+1, 'Size')
     if showLastModification:
