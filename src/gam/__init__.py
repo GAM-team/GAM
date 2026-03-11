@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.35.03'
+__version__ = '7.35.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -39696,7 +39696,7 @@ def doCreateFeature():
     callGAPI(cd.resources().features(), 'insert',
              throwReasons=[GAPI.DUPLICATE, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
              customer=GC.Values[GC.CUSTOMER_ID], body=body)
-    entityActionPerformed([Ent.BUILDING, body['name']])
+    entityActionPerformed([Ent.FEATURE, body['name']])
   except GAPI.duplicate:
     entityDuplicateWarning([Ent.FEATURE, body['name']])
   except GAPI.invalidInput as e:

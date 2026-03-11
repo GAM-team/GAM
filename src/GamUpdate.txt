@@ -1,3 +1,8 @@
+7.35.04
+
+Fixed bug in `gam create feature name <Name>` where the result was incorrectly shown as
+`Building: <Name>, Added` instead of `Feature: <Name>, Added`.
+
 7.35.03
 
 Updated `gam <UserTypeEntity> print filelist|filecounts` to handle options `showsize` and `showsizeunits` as independent options.
