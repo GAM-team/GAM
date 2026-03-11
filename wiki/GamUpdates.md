@@ -10,10 +10,31 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
-### 7.35.04
+### 7.36.00
 
-Fixed bug in `gam create feature name <Name>` where the result was incorrectly shown as
-`Building: <Name>, Added` instead of `Feature: <Name>, Added`.
+Added options `filtermultiattrtype` and filtermultiattrcustom` to `gam info user` and
+`gam print users` that support filtering `<UserMultiAttribute>` display based on `type` or `customType`.
+
+```
+<UserMultiAttributeFilterName> ::=
+        address|addresses|
+        externalid|externalids|
+        im|ims|
+        keyword|keywords|
+        location|locations|
+        orgainzation|organizations|
+        otheremail|otheremails|
+        phone|phones|
+        relation|relations|
+        website|websites
+```
+
+* `filtermultiattrtype <UserMultiAttributeFilterName> <String>` - Display `<UserMultiAttributeFilterName>` if its `type` is `<String>`
+* `filtermultiattrcustom <UserMultiAttributeFilterName> <String>` - Display `<UserMultiAttributeFilterName>` if its `customType` is `<String>`
+
+```
+gam info user user@domain.com quick filtermultiattrtype organizations work filtermultiattrcustom phones private
+```
 
 ### 7.35.03
 

@@ -377,6 +377,9 @@ features "CameraSet"
 features "'Laptop Cart'"
 features "CameraSet,'Laptop Cart'"
 ```
+
+For quoting rules, see: [List Quoting Rules](Command-Line-Parsing)
+
 ## Manage buildings
 When creating a building, at a minimum you must enter `address|addresslines` and `country|regioncode`.
 

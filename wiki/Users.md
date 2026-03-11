@@ -329,6 +329,20 @@ You can remove all instances of a `<UserMultiAttribute>` with `<UserClearAttribu
         <UserMultiAttribute>|
         <UserClearAttribute>
 ```
+```
+<UserMultiAttributeFilterName> ::=
+        address|addresses|
+        externalid|externalids|
+        im|ims|
+        keyword|keywords|
+        location|locations|
+        orgainzation|organizations|
+        otheremail|otheremails|
+        phone|phones|
+        relation|relations|
+        website|websites
+```
+
 ## Admin Console User Info
 When defining a user in the admin console, there is a section labelled `Employee information` with the following items:
 * `Employee ID`
@@ -971,6 +985,8 @@ gam info user [<UserItem>]
         [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)]
         [noschemas|allschemas|(schemas|custom|customschemas <SchemaNameList>)]
         [userview] <UserFieldName>* [fields <UserFieldNameList>]
+        (filtermultiattrtype <UserMultiAttributeFilterName> <String>)*
+        (filtermultiattrcustom <UserMultiAttributeFilterName> <String>)*
         [formatjson]
 ```
 ### Display information about multiple users
@@ -984,6 +1000,8 @@ gam info users <UserTypeEntity>
         [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)]
         [noschemas|allschemas|(schemas|custom|customschemas <SchemaNameList>)]
         [userview] <UserFieldName>* [fields <UserFieldNameList>]
+        (filtermultiattrtype <UserMultiAttributeFilterName> <String>)*
+        (filtermultiattrcustom <UserMultiAttributeFilterName> <String>)*
         [formatjson]
 gam <UserTypeEntity> info users
         [quick]
@@ -994,6 +1012,8 @@ gam <UserTypeEntity> info users
         [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)]
         [noschemas|allschemas|(schemas|custom|customschemas <SchemaNameList>)]
         [userview] <UserFieldName>* [fields <UserFieldNameList>]
+        (filtermultiattrtype <UserMultiAttributeFilterName> <String>)*
+        (filtermultiattrcustom <UserMultiAttributeFilterName> <String>)*
         [formatjson]
 ```
 For `info users`, unlike all other GAM commands, a `<UserTypeEntity>` value of `all users` is actually `all users_ns_susp` not `all users_ns`.
@@ -1031,6 +1051,11 @@ By default, Gam displays fields that only an adminstrator can view.
 By default, Gam displays all fields for a user.
 * `<UserFieldName>* [fields <UserFieldNameList>]` - Only display selected fields.
 
+By default, all instances of `<UserMultiAttribute>` are displayed, use these options to only display instances
+of a specified `type` or `customType`.
+* `filtermultiattrtype <UserMultiAttributeFilterName> <String>` - Display `<UserMultiAttributeFilterName>` if its `type` is `<String>`
+* `filtermultiattrcustom <UserMultiAttributeFilterName> <String>` - Display `<UserMultiAttributeFilterName>` if its `customType` is `<String>`
+
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 
@@ -1062,6 +1087,8 @@ gam print users [todrive <ToDriveAttribute>*]
         [schemas|custom|customschemas all|<SchemaNameList>]
         [emailpart|emailparts|username]
         [userview] [allfields|basic|full|(<UserFieldName>*|fields <UserFieldNameList>)]
+        (filtermultiattrtype <UserMultiAttributeFilterName> <String>)*
+        (filtermultiattrcustom <UserMultiAttributeFilterName> <String>)*
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
         [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
@@ -1088,6 +1115,8 @@ gam print users [todrive <ToDriveAttribute>*] select <UserTypeEntity>
         [schemas|custom|customschemas all|<SchemaNameList>]
         [emailpart|emailparts|username]
         [userview] [basic|full|allfields|(<UserFieldName>*|fields <UserFieldNameList>)]
+        (filtermultiattrtype <UserMultiAttributeFilterName> <String>)*
+        (filtermultiattrcustom <UserMultiAttributeFilterName> <String>)*
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
         [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
@@ -1102,6 +1131,8 @@ gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
         [schemas|custom|customschemas all|<SchemaNameList>]
         [emailpart|emailparts|username]
         [userview] [basic|full|allfields|(<UserFieldName>*|fields <UserFieldNameList>)]
+        (filtermultiattrtype <UserMultiAttributeFilterName> <String>)*
+        (filtermultiattrcustom <UserMultiAttributeFilterName> <String>)*
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
         [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
@@ -1136,6 +1167,11 @@ By default, Gam displays only the primary email address for each user.
 * `<UserFieldName>* [fields <UserFieldNameList>]` - Only display selected fields.
 * `schemas|custom all` - Display custom schema information for all schemas.
 * `schemas|custom <SchemaNameList>` - Display all fields or selected fields of the specified custom schemas
+
+By default, all instances of `<UserMultiAttribute>` are displayed, use these options to only display instances
+of a specified `type` or `customType`.
+* `filtermultiattrtype <UserMultiAttributeFilterName> <String>` - Display `<UserMultiAttributeFilterName>` if its `type` is `<String>`
+* `filtermultiattrcustom <UserMultiAttributeFilterName> <String>` - Display `<UserMultiAttributeFilterName>` if its `customType` is `<String>`
 
 By default, when aliases are displayed, all aliases are displayed. Use `aliasmatchpattern <REMatchPattern>`
 to limit the display of aliases to those that match `<REMatchPattern>`.
