@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.35.04'
+__version__ = '7.36.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -46726,9 +46726,57 @@ USER_FIELDS_CHOICE_MAP = {
   'websites': 'websites',
   }
 
+USER_MULTI_ATTR_FILTER_CHOICE_MAP = {
+  'address': 'addresses',
+  'addresses': 'addresses',
+  'email': 'emails',
+  'emails': 'emails',
+  'externalid': 'externalIds',
+  'externalids': 'externalIds',
+  'im': 'ims',
+  'ims': 'ims',
+  'keyword': 'keywords',
+  'keywords': 'keywords',
+  'location': 'locations',
+  'locations': 'locations',
+  'organization': 'organizations',
+  'organizations': 'organizations',
+  'organisation': 'organizations',
+  'organisations': 'organizations',
+  'otheremail': 'emails',
+  'otheremails': 'emails',
+  'phone': 'phones',
+  'phones': 'phones',
+  'relation': 'relations',
+  'relations': 'relations',
+  'website': 'websites',
+  'websites': 'websites',
+  }
+
 INFO_USER_OPTIONS = {'noaliases', 'nobuildingnames', 'nogroups', 'nolicenses', 'nolicences', 'noschemas', 'schemas', 'userview'}
 USER_SKIP_OBJECTS = {'thumbnailPhotoEtag'}
 USER_TIME_OBJECTS = {'creationTime', 'deletionTime', 'lastLoginTime'}
+
+def _getUserMultiAttributeFilters(myarg, userMultiAttributeFilters):
+  up = getChoice(USER_MULTI_ATTR_FILTER_CHOICE_MAP, mapChoice=True)
+  filterValue = getString(Cmd.OB_STRING)
+  userMultiAttributeFilters.setdefault(up, [])
+  if myarg == 'filtermultiattrtype':
+    userMultiAttributeFilters[up].append({'type': filterValue})
+  else: #elif myarg == 'filtermultiattrcustom':
+    userMultiAttributeFilters[up].append({'customType': filterValue})
+
+def _filterUserMultiAttributes(user, userMultiAttributeFilters):
+  for up, upTypes in userMultiAttributeFilters.items():
+    if up in user:
+      filterAttrList = []
+      for userAttr in user.pop(up):
+        for upType in upTypes:
+          if ((userAttr.get('type', None) == upType.get('type', '')) or
+              (userAttr.get('customType', None) == upType.get('customType', ''))):
+            filterAttrList.append(userAttr)
+            break
+      user[up] = filterAttrList
 
 def _formatLanguagesList(propertyValue, delimiter):
   languages = []
@@ -46824,6 +46872,7 @@ def infoUsers(entityList):
   fieldsList = []
   groups = []
   memberships = []
+  userMultiAttributeFilters = {}
   skus = SKU.getAllSKUs() if not GM.Globals[GM.LICENSE_SKUS] else GM.Globals[GM.LICENSE_SKUS]
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -46858,6 +46907,8 @@ def infoUsers(entityList):
       getGroups = getLicenses = False
     elif getFieldsList(myarg, USER_FIELDS_CHOICE_MAP, fieldsList):
       pass
+    elif myarg in {'filtermultiattrtype', 'filtermultiattrcustom'}:
+      _getUserMultiAttributeFilters(myarg, userMultiAttributeFilters)
 # Ignore info group arguments that may have come from whatis
     elif myarg in INFO_GROUP_OPTIONS:
       pass
@@ -46885,6 +46936,8 @@ def infoUsers(entityList):
                       throwReasons=GAPI.USER_GET_THROW_REASONS+[GAPI.INVALID_INPUT, GAPI.RESOURCE_NOT_FOUND],
                       userKey=userEmail, projection=schemaParms['projection'], customFieldMask=schemaParms['customFieldMask'],
                       viewType=viewType, fields=fields)
+      if userMultiAttributeFilters:
+        _filterUserMultiAttributes(user, userMultiAttributeFilters)
       groups = []
       memberships = []
       if getGroups or getGroupsTree:
@@ -47322,6 +47375,8 @@ def doPrintUsers(entityList=None):
       return
     if showValidColumn:
       userEntity[showValidColumn] = True
+    if userMultiAttributeFilters:
+      _filterUserMultiAttributes(userEntity, userMultiAttributeFilters)
     userEmail = userEntity['primaryEmail']
     if printOptions['emailParts']:
       if userEmail.find('@') != -1:
@@ -47464,6 +47519,7 @@ def doPrintUsers(entityList=None):
   showItemCountOnly = False
   addCSVData = {}
   includeCSVDataInJSON = False
+  userMultiAttributeFilters = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -47543,6 +47599,8 @@ def doPrintUsers(entityList=None):
       getAddCSVData(addCSVData)
     elif myarg == 'includecsvdatainjson':
       includeCSVDataInJSON = getBoolean()
+    elif myarg in {'filtermultiattrtype', 'filtermultiattrcustom'}:
+      _getUserMultiAttributeFilters(myarg, userMultiAttributeFilters)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   _, _, entityList = getEntityArgument(entityList)

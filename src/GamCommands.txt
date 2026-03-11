@@ -5803,12 +5803,12 @@ gam download storagefile <StorageBucketObjectName>
 
 <UserClearAttribute> ::=
         (address clear)|
-        (otheremail clear)|
         (externalid clear)|
         (im clear)|
         (keyword clear)|
         (location clear)|
         (organization clear)|
+        (otheremail clear)|
         (phone clear)|
         (posix clear)|
         (relation clear)|
@@ -5821,6 +5821,18 @@ gam download storagefile <StorageBucketObjectName>
         <UserMultiAttribute>|
         <UserClearAttribute>
 
+<UserMultiAttributeFilterName> ::=
+        address|addresses|
+        externalid|externalids|
+        im|ims|
+        keyword|keywords|
+        location|locations|
+        orgainzation|organizations|
+        otheremail|otheremails|
+        phone|phones|
+        relation|relations|
+        website|websites
+       
 gam create|add user <EmailAddress> [ignorenullpassword] <UserAttribute>*
         [verifynotinvitable|alwaysevict]
         (groups [<GroupRole>] [[delivery] <DeliverySetting>] <GroupEntity>)*
@@ -5875,6 +5887,8 @@ gam info user [<UserItem>]
         [nolicenses|nolicences|licenses|licences]
         [noschemas|allschemas|(schemas|custom|customschemas <SchemaNameList>)]
         [userview] <UserFieldName>* [fields <UserFieldNameList>]
+        (filtermultiattrtype <UserMultiAttributeFilterName> <String>)*
+        (filtermultiattrcustom <UserMultiAttributeFilterName> <String>)*
         [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)]
         [formatjson]
 
@@ -5911,6 +5925,8 @@ gam info users <UserTypeEntity>
         [nolicenses|nolicences|licenses|licences]
         [noschemas|allschemas|(schemas|custom|customschemas <SchemaNameList>)]
         [userview] <UserFieldName>* [fields <UserFieldNameList>]
+        (filtermultiattrtype <UserMultiAttributeFilterName> <String>)*
+        (filtermultiattrcustom <UserMultiAttributeFilterName> <String>)*
         [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)]
         [formatjson]
 
@@ -5947,6 +5963,8 @@ gam <UserTypeEntity> info users
         [nolicenses|nolicences|licenses|licences]
         [noschemas|allschemas|(schemas|custom|customschemas <SchemaNameList>)]
         [userview] <UserFieldName>* [fields <UserFieldNameList>]
+        (filtermultiattrtype <UserMultiAttributeFilterName> <String>)*
+        (filtermultiattrcustom <UserMultiAttributeFilterName> <String>)*
         [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)]
         [formatjson]
 
@@ -5966,6 +5984,8 @@ gam print users [todrive <ToDriveAttribute>*]
         [schemas|custom|customschemas all|<SchemaNameList>]
         [emailpart|emailparts|username]
         [userview] [basic|full|allfields|(<UserFieldName>*|fields <UserFieldNameList>)]
+        (filtermultiattrtype <UserMultiAttributeFilterName> <String>)*
+        (filtermultiattrcustom <UserMultiAttributeFilterName> <String>)*
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
         [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
@@ -5983,6 +6003,8 @@ gam print users [todrive <ToDriveAttribute>*] select <UserTypeEntity>
         [schemas|custom|customschemas all|<SchemaNameList>]
         [emailpart|emailparts|username]
         [userview] [basic|full|allfields|(<UserFieldName>*|fields <UserFieldNameList>)]
+        (filtermultiattrtype <UserMultiAttributeFilterName> <String>)*
+        (filtermultiattrcustom <UserMultiAttributeFilterName> <String>)*
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
         [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
@@ -5998,6 +6020,8 @@ gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
         [schemas|custom|customschemas all|<SchemaNameList>]
         [emailpart|emailparts|username]
         [userview] [basic|full|allfields|(<UserFieldName>*|fields <UserFieldNameList>)]
+        (filtermultiattrtype <UserMultiAttributeFilterName> <String>)*
+        (filtermultiattrcustom <UserMultiAttributeFilterName> <String>)*
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
         [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
