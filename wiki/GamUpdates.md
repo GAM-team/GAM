@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.36.01
+
+Fixed bug in `gam info|print|show policies` where the `policyQuery/query` field was not displayed.
+
+Added option `noidmapping` to `gam info|print|show policies` to suppress adding the `policyQuery/groupEmail` and
+`policyQuery/orgUnitPath` name fields that are mapped from the `policyQuery/group` and `policyQuery/orgInit` id fields.
+
 ### 7.36.00
 
 Added options `filtermultiattrtype` and filtermultiattrcustom` to `gam info user` and

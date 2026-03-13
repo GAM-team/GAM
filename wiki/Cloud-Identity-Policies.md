@@ -58,7 +58,7 @@ See: https://cloud.google.com/identity/docs/concepts/supported-policy-api-settin
 Display selected policies.
 ```
 gam info policies <CIPolicyEntity>
-        [nowarnings] [noappnames]
+        [nowarnings] [noappnames] [noidmappimg]
         [formatjson]
 ```
 
@@ -69,8 +69,12 @@ Select policies::
 
 By default, policy warnings are displayed, use the 'nowarnings` option to suppress their display.
 
-By default,  additional API calls are made for `settings/workspace_marketplace.apps_allowlist`
+By default, additional API calls are made for `settings/workspace_marketplace.apps_allowlist`
 to get the application name for the application ID. Use option `noappnames` to suppress these calls.
+
+By default, additional API calls are made to add the `policyQuery/groupEmail` and `policyQuery/orgUnitPath` fields
+that are mapped from the `policyQuery/group` and `policyQuery/orgUnit` fields. Use option `noidmapping'
+to suppress these calls and not add the additional fields.
 
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
@@ -78,7 +82,7 @@ By default, Gam displays the information as an indented list of keys and values.
 Display all or filtered policies.
 ```
 gam show policies
-        [filter <String>] [nowarnings] [noappnames]
+        [filter <String>] [nowarnings] [noappnames] [noidmappimg]
         [group <REMatchPattern>] [ou|org|orgunit <REMatchPattern>]
         [formatjson]
 ```
@@ -92,12 +96,16 @@ By default, policy warnings are displayed, use the `nowarnings` option to suppre
 By default,  additional API calls are made for `settings/workspace_marketplace.apps_allowlist`
 to get the application name for the application ID. Use option `noappnames` to suppress these calls.
 
+By default, additional API calls are made to add the `policyQuery/groupEmail` and `policyQuery/orgUnitPath` fields
+that are mapped from the `policyQuery/group` and `policyQuery/orgUnit` fields. Use option `noidmapping'
+to suppress these calls and not add the additional fields.
+
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 
 ```
 gam print policies [todrive <ToDriveAttribute>*]
-        [filter <String>] [nowarnings] [noappnames]
+        [filter <String>] [nowarnings] [noappnames] [noidmappimg]
         [group <REMatchPattern>] [ou|org|orgunit <REMatchPattern>]
         [formatjson [quotechar <Character>]]
 ```
@@ -107,6 +115,10 @@ By default, all policies are displayed:
 * `ou|org|orgunit <REMatchPattern>` - Only display policies whose OU path matches the `<REMatchPattern>`
 
 By default, policy warnings are displayed, use the `nowarnings` option to suppress their display.
+
+By default, additional API calls are made to add the `policyQuery/groupEmail` and `policyQuery/orgUnitPath` fields
+that are mapped from the `policyQuery/group` and `policyQuery/orgUnit` fields. Use option `noidmapping'
+to suppress these calls and not add the additional fields.
 
 By default,  additional API calls are made for `settings/workspace_marketplace.apps_allowlist`
 to get the application name for the application ID. Use option `noappnames` to suppress these calls.
