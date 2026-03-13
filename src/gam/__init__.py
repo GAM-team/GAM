@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.36.00'
+__version__ = '7.36.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -37743,9 +37743,7 @@ def _filterPolicies(ci, pageMessage, ifilter):
     policies = callGAPIpages(ci.policies(), 'list', 'policies',
                              pageMessage=pageMessage,
                              throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                             filter=ifilter,
-                             fields='nextPageToken,policies(name,policyQuery(group,orgUnit,sortOrder),type,setting)',
-                             pageSize=100)
+                             filter=ifilter, pageSize=100)
     # Google returns unordered results, sort them by setting type
     return sorted(policies, key=lambda p: p.get('setting', {}).get('type', ''))
   except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
@@ -37777,7 +37775,7 @@ def _getPolicyAppNameFromId(httpObj, app):
   if a:
     app['applicationName'] = a.group(1)
 
-def _cleanPolicy(policy, add_warnings, no_appnames,
+def _cleanPolicy(policy, add_warnings, no_appnames, no_idmapping,
                  groupEmailPattern, orgUnitPathPattern,
                  cd, groups_ci):
   # convert any wordlists into spaced strings to reduce output complexity
@@ -37792,19 +37790,19 @@ def _cleanPolicy(policy, add_warnings, no_appnames,
   if add_warnings and policy['setting']['type'] in CIPOLICY_ADDITIONAL_WARNINGS:
     policy['warning'] = CIPOLICY_ADDITIONAL_WARNINGS[policy['setting']['type']]
   if groupId := policy['policyQuery'].get('group'):
-    _, _, policy['policyQuery']['groupEmail'] = convertGroupCloudIDToEmail(groups_ci, groupId)
-    # all groups are in the root OU so the orgUnit attribute is useless
-    policy['policyQuery'].pop('orgUnit', None)
-    if groupEmailPattern is not None:
-      return  groupEmailPattern.match(policy['policyQuery']['groupEmail'])
-    if orgUnitPathPattern is not None:
-      return False
+    if (not no_idmapping) or (groupEmailPattern is not None):
+      _, _, groupEmail = convertGroupCloudIDToEmail(groups_ci, groupId)
+      if not no_idmapping:
+        policy['policyQuery']['groupEmail'] = groupEmail
+      if groupEmailPattern is not None:
+        return groupEmailPattern.match(groupEmail)
   elif orgId := policy['policyQuery'].get('orgUnit'):
-    policy['policyQuery']['orgUnitPath'] = convertOrgUnitIDtoPath(cd, orgId)
-    if orgUnitPathPattern is not None:
-      return orgUnitPathPattern.match(policy['policyQuery']['orgUnitPath'])
-    if groupEmailPattern is not None:
-      return False
+    if (not no_idmapping) or (orgUnitPathPattern is not None):
+      orgUnitPath = convertOrgUnitIDtoPath(cd, orgId)
+      if not no_idmapping:
+        policy['policyQuery']['orgUnitPath'] = orgUnitPath
+      if orgUnitPathPattern is not None:
+        return orgUnitPathPattern.match(orgUnitPath)
   return True
 
 def _showPolicy(policy, FJQC, i=0, count=0):
@@ -37819,9 +37817,8 @@ def _showPolicy(policy, FJQC, i=0, count=0):
   printBlankLine()
   Ind.Decrement()
 
-def _showPolicies(policies, FJQC, add_warnings, no_appnames,
-                  groupEmailPattern, orgUnitPathPattern,
-                  cd, groups_ci):
+def _showPolicies(policies, FJQC, add_warnings, no_appnames, no_idmapping,
+                  groupEmailPattern, orgUnitPathPattern, cd, groups_ci):
   count = len(policies)
   if FJQC is None or not FJQC.formatJSON:
     if groupEmailPattern is None and orgUnitPathPattern is None:
@@ -37832,9 +37829,8 @@ def _showPolicies(policies, FJQC, add_warnings, no_appnames,
   i = 0
   for policy in policies:
     i += 1
-    if _cleanPolicy(policy, add_warnings, no_appnames,
-                    groupEmailPattern, orgUnitPathPattern,
-                    cd, groups_ci):
+    if _cleanPolicy(policy, add_warnings, no_appnames, no_idmapping,
+                    groupEmailPattern, orgUnitPathPattern, cd, groups_ci):
       _showPolicy(policy, FJQC, i, count)
   Ind.Decrement()
 
@@ -37884,6 +37880,7 @@ def doCreateUpdateCIPolicy():
   if 'setting' in jsonData:
     if 'value' in jsonData['setting']:
       jsonData['setting']['value'].pop('createTime', None)
+      jsonData['setting']['value'].pop('deleteTime', None)
       jsonData['setting']['value'].pop('updateTime', None)
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -37891,12 +37888,14 @@ def doCreateUpdateCIPolicy():
       orgUnit, targetResource = _getCIPolicyOrgUnitTarget(cd, myarg, groupEmail)
       jsonData.setdefault('policyQuery', {})
       jsonData['policyQuery'].pop('group', None)
-      jsonData['policyQuery']['orgUnit'] = targetResource
+      jsonData['policyQuery']['orgUnit'] = f"orgUnits/{targetResource}"
+      jsonData['policyQuery']['query'] = f"entity.org_units.exists(org_unit, org_unit.org_unit_id == orgUnitId('{targetResource}'))"
     elif myarg == 'group':
       groupEmail, targetResource = _getCIPolicyGroupTarget(cd, myarg, orgUnit)
       jsonData.setdefault('policyQuery', {})
       jsonData['policyQuery'].pop('orgUnit', None)
-      jsonData['policyQuery']['group'] = targetResource
+      jsonData['policyQuery']['group'] = f"groups/{targetResource}"
+      jsonData['policyQuery']['query'] = f"entity.groups.exists(group, group.group_id == groupId('{targetResource}'))"
     else:
       unknownArgumentExit()
   jsonData['customer'] = _getCustomersCustomerIdWithC()
@@ -37906,7 +37905,6 @@ def doCreateUpdateCIPolicy():
                         bailOnInternalError=True,
                         throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.UNIMPLEMENTED_ERROR,
                                       GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
-
                         name=pname, body=jsonData)
     else:
       result = callGAPI(ci.policies(), 'create',
@@ -37979,7 +37977,7 @@ def doDeleteCIPolicies():
     Ind.Decrement()
 
 # gam info policies <CIPolicyNameEntity>
-#	[nowarnings] [noappnames]
+#	[nowarnings] [noappnames] [noidmappiong]
 #	[formatjson]
 def doInfoCIPolicies():
   _checkPoliciesWithDASA()
@@ -37989,13 +37987,15 @@ def doInfoCIPolicies():
   entityList = getEntityList(Cmd.OB_CIPOLICY_NAME_ENTITY)
   FJQC = FormatJSONQuoteChar()
   add_warnings = True
-  no_appnames = False
+  no_appnames = no_idmapping = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'nowarnings':
       add_warnings = False
     elif myarg == 'noappnames':
-      no_appnames=True
+      no_appnames = True
+    elif myarg == 'noidmapping':
+      no_idmapping = True
     else:
       FJQC.GetFormatJSON(myarg)
   i = 0
@@ -38008,7 +38008,7 @@ def doInfoCIPolicies():
                               bailOnInternalError=True,
                               throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT,
                                             GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
-                              name=pname, fields='name,policyQuery(group,orgUnit,sortOrder),type,setting')]
+                              name=pname)]
       except (GAPI.invalid, GAPI.invalidArgument, GAPI.notFound, GAPI.permissionDenied, GAPI.internalError) as e:
         entityActionFailedWarning([Ent.POLICY, pname], str(e), i, count)
         continue
@@ -38018,15 +38018,15 @@ def doInfoCIPolicies():
       ifilter = f"setting.type.matches('{pname}')"
       printGettingAllAccountEntities(Ent.POLICY, ifilter)
       policies = _filterPolicies(ci, getPageMessage(), ifilter)
-    _showPolicies(policies, FJQC, add_warnings, no_appnames,
+    _showPolicies(policies, FJQC, add_warnings, no_appnames, no_idmapping,
                   None, None, cd, groups_ci)
 
 # gam print policies [todrive <ToDriveAttribute>*]
-#	[filter <String>]  [nowarnings] [noappnames]
+#	[filter <String>]  [nowarnings] [noappnames] [noidmappiong]
 #	[group <REMatchPattern>] [ou|org|orgunit <REMatchPattern>]
 #	[formatjson [quotechar <Character>]]
 # gam show policies
-#	[filter <String>]  [nowarnings] [noappnames]
+#	[filter <String>]  [nowarnings] [noappnames] [noidmappiong]
 #	[group <REMatchPattern>] [ou|org|orgunit <REMatchPattern>]
 #	[formatjson]
 def doPrintShowCIPolicies():
@@ -38048,7 +38048,7 @@ def doPrintShowCIPolicies():
   FJQC = FormatJSONQuoteChar(csvPF)
   ifilter = None
   add_warnings = True
-  no_appnames = False
+  no_appnames = no_idmapping = False
   groupEmailPattern = orgUnitPathPattern = None
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -38060,6 +38060,8 @@ def doPrintShowCIPolicies():
       add_warnings = False
     elif myarg == 'noappnames':
       no_appnames = True
+    elif myarg == 'noidmapping':
+      no_idmapping = True
     elif myarg == 'group':
       groupEmailPattern = getREPattern(re.IGNORECASE)
     elif myarg in {'ou', 'org', 'orgunit'}:
@@ -38069,14 +38071,12 @@ def doPrintShowCIPolicies():
   printGettingAllAccountEntities(Ent.POLICY, ifilter)
   policies = _filterPolicies(ci, getPageMessage(), ifilter)
   if not csvPF:
-    _showPolicies(policies, FJQC, add_warnings, no_appnames,
-                  groupEmailPattern, orgUnitPathPattern,
-                  cd, groups_ci)
+    _showPolicies(policies, FJQC, add_warnings, no_appnames, no_idmapping,
+                  groupEmailPattern, orgUnitPathPattern, cd, groups_ci)
   else:
     for policy in policies:
-      if _cleanPolicy(policy, add_warnings, no_appnames,
-                      groupEmailPattern, orgUnitPathPattern,
-                      cd, groups_ci):
+      if _cleanPolicy(policy, add_warnings, no_appnames, no_idmapping,
+                      groupEmailPattern, orgUnitPathPattern, cd, groups_ci):
         _printPolicy(policy)
   if csvPF:
     csvPF.writeCSVfile('Policies')
