@@ -13,6 +13,7 @@
 - [Send an email to users](#send-an-email-to-users)
 - [Simple `replace <Tag> <String>` processing](Tag-Replace)
 - [Example](#example)
+- [Reply to an email](#reply-to-an-email)
 
 ## Note
 Thanks to @bousquf for the following enhancement. You want to send a message from an authorized group
@@ -450,4 +451,13 @@ Send reminder message.
 $ gam csv UserEmail.csv gam user "~User" sendemail to "~To" subject "~Subject" textmessage "Reminder Message" references "~Message-ID" in-reply-to "~Message-ID"
 User: user1@domain.com, Send Email to 1 Recipient
   Recipient: user2@domain.com, Message: Test, Email Sent: 17677cdfbe1146f4
+```
+
+## Reply to an email
+
+To reply to an email and have Gmail recognize it in conversation mode, you have to specify the
+`References` and `In-Reply-to` headers with the `RFC822 Message ID` from the original message
+and the `subject` from the original message.
+```
+gam user recipient@domain.com sendemail to sender@domain.com references "<CAAMabc...XYZQ@mail.gmail.com>" in-reply-to "<CAAMabc...XYZQ@mail.gmail.com>" subject "Re: Original subject" textmessage "Reply text"
 ```
