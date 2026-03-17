@@ -13,7 +13,7 @@
 - [Send an email to users](#send-an-email-to-users)
 - [Simple `replace <Tag> <String>` processing](Tag-Replace)
 - [Example](#example)
-- [Reply to an email](#reply-to-an-email)
+- [Conversation mode](#conversation-mode)
 
 ## Note
 Thanks to @bousquf for the following enhancement. You want to send a message from an authorized group
@@ -215,14 +215,14 @@ Configure it at Admin Console > Apps > Google Workspace > Gmail > Routing > SMTP
 gam sendemail [recipient|to] <RecipientEntity>
         [from <EmailAddress>] [mailbox <EmailAddress>] [replyto <EmailAddress>]
         [cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
-        [subject <String>]
-        [<MessageContent>]
+        [subject <String>] [<MessageContent>]
         (replace <Tag> <String>)*
         (replaceregex <REMatchPattern> <RESubstitution> <Tag> <String>)*
         [html [<Boolean>]] (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
         [newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
+        [threadid <String>]
 ```
 By default, emails will be sent from the admin user named in oauth2.txt, override this with the `from <EmailAddress>` option.
 
@@ -273,14 +273,14 @@ You can specify additional recipients, e.g., help desk personnel.
 gam sendemail [recipient|to] <RecipientEntity> [from <EmailAddress>]
         [replyto <EmailAddress>]
         [cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
-        [subject <String>]
-        [<MessageContent>]
+        [subject <String>] [<MessageContent>]
         (replace <Tag> <String>)*
         (replaceregex <REMatchPattern> <RESubstitution> <Tag> <String>)*
         [html [<Boolean>]] (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
         [newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
+        [threadid <String>]
 ```
 
 By default, emails will be sent from the admin user named in oauth2.txt, override this with the `from <EmailAddress>` option.
@@ -354,14 +354,14 @@ gam csv Users.csv gam sendemail "~personal" subject "Your new #domain# account` 
 gam <UserTypeEntity> sendemail recipient|to <RecipientEntity>
         [replyto <EmailAddress>]
         [cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
-        [subject <String>]
-        [<MessageContent>]
+        [subject <String>] [<MessageContent>]
         (replace <Tag> <String>)*
         (replaceregex <REMatchPattern> <RESubstitution> <Tag> <String>)*
         [html [<Boolean>]] (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
         [newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
+        [threadid <String>]
 ```
 Emails will be sent from the users in `<UserTypeEntity>` to the recipients in `<RecipientEntity>`.
 
@@ -396,14 +396,14 @@ Your command line will have: `embedimage file1.jpg image1 embedimage file2.jpg i
 gam <UserTypeEntity> sendemail from <EmailAddress>
         [replyto <EmailAddress>]
         [cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
-        [subject <String>]
-        [<MessageContent>]
+        [subject <String>] [<MessageContent>]
         (replace <Tag> <String>)*
         (replaceregex <REMatchPattern> <RESubstitution> <Tag> <String>)*
         [html [<Boolean>]] (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
         [newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
+        [threadid <String>]
 ```
 Emails will be sent to the users in `<UserTypeEntity>`.
 
@@ -453,11 +453,28 @@ User: user1@domain.com, Send Email to 1 Recipient
   Recipient: user2@domain.com, Message: Test, Email Sent: 17677cdfbe1146f4
 ```
 
-## Reply to an email
+## Conversation mode
 
-To reply to an email and have Gmail recognize it in conversation mode, you have to specify the
+To reply to an email and have Gmail recognize it in conversation mode for the original sender, you have to specify the
 `References` and `In-Reply-to` headers with the `RFC822 Message ID` from the original message
 and the `subject` from the original message.
 ```
 gam user recipient@domain.com sendemail to sender@domain.com references "<CAAMabc...XYZQ@mail.gmail.com>" in-reply-to "<CAAMabc...XYZQ@mail.gmail.com>" subject "Re: Original subject" textmessage "Reply text"
 ```
+
+If you want to have Gmail recognize the reply in conversation mode in the Sent folder of the original recipient,
+you must include `threadid <String>`; you can get the 'threadId` with:
+```
+gam user recipient@domain.com show messages query "rfc822MsgId:<CAAMabc...XYZQ@mail.gmail.com>"  
+Getting all Messages that match query ((rfc822MsgId:<CAAMabc...XYZQ@mail.gmail.com>)) for recipient@domain.com
+Got 1 Message that matched query ((rfc822MsgId:<CAAMabc...XYZQ@mail.gmail.com>)) for recipient@domain.com...
+User: recipient@domain.com, Show 1 Message
+  Message: 19cfd414fe48430d
+...
+
+gam user recipient@domain.com sendemail to sender@domain.com references "<CAAMabc...XYZQ@mail.gmail.com>" in-reply-to "<CAAMabc...XYZQ@mail.gmail.com>" subject "Re: Original subject" textmessage "Reply text" threadid 19cfd414fe48430d
+```
+
+
+
+
