@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.36.01'
+__version__ = '7.36.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -7347,7 +7347,7 @@ def _addEmbeddedImagesToMessage(message, embeddedImages):
 # Send an email
 def send_email(msgSubject, msgBody, msgTo, i=0, count=0, clientAccess=False, msgFrom=None, msgReplyTo=None,
                html=False, charset=UTF8, attachments=None, embeddedImages=None,
-               msgHeaders=None, ccRecipients=None, bccRecipients=None, mailBox=None):
+               msgHeaders=None, ccRecipients=None, bccRecipients=None, mailBox=None, threadId=None):
   def checkResult(entityType, recipients):
     if not recipients:
       return
@@ -7414,11 +7414,14 @@ def send_email(msgSubject, msgBody, msgTo, i=0, count=0, clientAccess=False, msg
       userId = mailBoxAddr
       gmail = buildGAPIObject(API.GMAIL)
     message['To'] = msgTo if msgTo else userId
+    body = {'raw': base64.urlsafe_b64encode(message.as_bytes()).decode()}
+    if threadId is not None:
+      body['threadId'] = threadId
     try:
       result = callGAPI(gmail.users().messages(), 'send',
                         throwReasons=[GAPI.SERVICE_NOT_AVAILABLE, GAPI.AUTH_ERROR, GAPI.DOMAIN_POLICY,
                                       GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
-                        userId=userId, body={'raw': base64.urlsafe_b64encode(message.as_bytes()).decode()}, fields='id')
+                        userId=userId, body=body, fields='id')
       entityActionPerformedMessage([Ent.RECIPIENT, msgTo, Ent.MESSAGE, msgSubject], f"{result['id']}", i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy,
             GAPI.invalid, GAPI.invalidArgument, GAPI.forbidden, GAPI.permissionDenied) as e:
@@ -15390,34 +15393,34 @@ def getRecipients():
 
 # gam sendemail [recipient|to] <RecipientEntity> [from <EmailAddress>] [mailbox <EmailAddress>] [replyto <EmailAddress>]
 #	[cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
-#	[subject <String>]
-#	[<MessageContent>]
+#	[subject <String>] [<MessageContent>]
 #	(replace <Tag> <String>)*
 #	(replaceregex <REMatchPattern> <RESubstitution>  <Tag> <String>)*
 #	[html [<Boolean>]] (attach <FileName> [charset <CharSet>])*
 #	(embedimage <FileName> <String>)*
 #	[newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
 #	(<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
+#	[threadid <String>]
 # gam <UserTypeEntity> sendemail recipient|to <RecipientEntity> [replyto <EmailAddress>]
 #	[cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
-#	[subject <String>]
-#	[<MessageContent>]
+#	[subject <String>] [<MessageContent>]
 #	(replace <Tag> <String>)*
 #	(replaceregex <REMatchPattern> <RESubstitution>  <Tag> <String>)*
 #	[html [<Boolean>]] (attach <FileName> [charset <CharSet>])*
 #	(embedimage <FileName> <String>)*
 #	[newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
 #	(<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
+#	[threadid <String>]
 # gam <UserTypeEntity> sendemail from <EmailAddress> [replyto <EmailAddress>]
 #	[cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
-#	[subject <String>]
-#	[<MessageContent>]
+#	[subject <String>] [<MessageContent>]
 #	(replace <Tag> <String>)*
 #	(replaceregex <REMatchPattern> <RESubstitution>  <Tag> <String>)*
 #	[html [<Boolean>]] (attach <FileName> [charset <CharSet>])*
 #	(embedimage <FileName> <String>)*
 #	[newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
 #	(<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
+#	[threadid <String>]
 def doSendEmail(users=None):
   body = {}
   notify = {'subject': '', 'message': '', 'html': False, 'charset': UTF8, 'password': ''}
@@ -15442,6 +15445,7 @@ def doSendEmail(users=None):
   bccRecipients = []
   mailBox = None
   msgReplyTo = None
+  threadId = None
   singleMessage = False
   tagReplacements = _initTagReplacements()
   attachments = []
@@ -15492,6 +15496,8 @@ def doSendEmail(users=None):
     elif myarg == 'header':
       header = getString(Cmd.OB_STRING, minLen=1)
       msgHeaders[SMTP_HEADERS_MAP.get(header.lower(), header)] = getString(Cmd.OB_STRING)
+    elif myarg == 'threadid':
+      threadId = getString(Cmd.OB_STRING)
     else:
       unknownArgumentExit()
   notify['message'] = notify['message'].replace('\r', '').replace('\\n', '\n')
@@ -15519,7 +15525,7 @@ def doSendEmail(users=None):
                  msgFrom=msgFrom, msgReplyTo=msgReplyTo, html=notify['html'], charset=notify['charset'],
                  attachments=attachments, embeddedImages=embeddedImages, msgHeaders=msgHeaders,
                  ccRecipients=','.join(ccRecipients), bccRecipients=','.join(bccRecipients),
-                 mailBox=mailBox)
+                 mailBox=mailBox, threadId=threadId)
     else:
       entityPerformActionModifierNumItems([Ent.USER, msgFrom], Act.MODIFIER_TO, jcount, Ent.RECIPIENT, i, count)
       Ind.Increment()
@@ -15528,7 +15534,7 @@ def doSendEmail(users=None):
         j += 1
         send_email(notify['subject'], notify['message'], recipient, j, jcount,
                    msgFrom=msgFrom, msgReplyTo=msgReplyTo, html=notify['html'], charset=notify['charset'],
-                   attachments=attachments, embeddedImages=embeddedImages, msgHeaders=msgHeaders, mailBox=mailBox)
+                   attachments=attachments, embeddedImages=embeddedImages, msgHeaders=msgHeaders, mailBox=mailBox, threadId=threadId)
       Ind.Decrement()
 
 ADDRESS_FIELDS_PRINT_ORDER = ['contactName', 'organizationName', 'addressLine1', 'addressLine2', 'addressLine3', 'locality', 'region', 'postalCode', 'countryCode']
@@ -37780,7 +37786,14 @@ def _cleanPolicy(policy, add_warnings, no_appnames, no_idmapping,
                  cd, groups_ci):
   # convert any wordlists into spaced strings to reduce output complexity
   if policy['setting']['type'] == 'settings/detector.word_list':
-    policy['setting']['value']['wordList'] = ' '.join(policy['setting']['value']['wordList']['words'])
+    wordList = ''
+    for word in policy['setting']['value']['wordList']['words']:
+      wordList += "'"
+      wordList += word.replace("'", r"\'")
+      wordList += "',"
+    if wordList:
+      wordList = wordList[:-1]
+    policy['setting']['value']['wordList'] = wordList
   # get application name for application id
   if policy['setting']['type'] == 'settings/workspace_marketplace.apps_allowlist' and not no_appnames:
     httpObj = getHttpObj(timeout=10)
@@ -37867,51 +37880,55 @@ def doCreateUpdateCIPolicy():
   updateCmd = Act.Get() == Act.UPDATE
   groupEmail = orgUnit = None
   checkArgumentPresent('json', True)
-  jsonData = getJSON(['customer', 'type'])
+  policy = getJSON(['customer', 'type'])
   if updateCmd:
-    pname = jsonData.pop('name', None)
+    pname = policy.pop('name', None)
   else:
-    jsonData.pop('name', None)
+    policy.pop('name', None)
     pname = 'New Policy'
-  if 'policyQuery' in jsonData:
-    jsonData['policyQuery'].pop('orgUnitPath', None)
-    jsonData['policyQuery'].pop('groupEmail', None)
-    jsonData['policyQuery'].pop('sortOrder', None)
-  if 'setting' in jsonData:
-    if 'value' in jsonData['setting']:
-      jsonData['setting']['value'].pop('createTime', None)
-      jsonData['setting']['value'].pop('deleteTime', None)
-      jsonData['setting']['value'].pop('updateTime', None)
+  if 'policyQuery' in policy:
+    policy['policyQuery'].pop('orgUnitPath', None)
+    policy['policyQuery'].pop('groupEmail', None)
+    policy['policyQuery'].pop('sortOrder', None)
+  if 'setting' in policy:
+    if 'value' in policy['setting']:
+      policy['setting']['value'].pop('createTime', None)
+      policy['setting']['value'].pop('deleteTime', None)
+      policy['setting']['value'].pop('updateTime', None)
+      if policy['setting']['type'] == 'settings/detector.word_list':
+        if isinstance(policy['setting']['value']['wordList'], str):
+          wordList = policy['setting']['value'].pop('wordList')
+          policy['setting']['value']['wordList']['words'] = shlexSplitList(wordList, dataDelimiter=',')
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg in {'ou', 'org', 'orgunit'}:
       orgUnit, targetResource = _getCIPolicyOrgUnitTarget(cd, myarg, groupEmail)
-      jsonData.setdefault('policyQuery', {})
-      jsonData['policyQuery'].pop('group', None)
-      jsonData['policyQuery']['orgUnit'] = f"orgUnits/{targetResource}"
-      jsonData['policyQuery']['query'] = f"entity.org_units.exists(org_unit, org_unit.org_unit_id == orgUnitId('{targetResource}'))"
+      policy.setdefault('policyQuery', {})
+      policy['policyQuery'].pop('group', None)
+      policy['policyQuery']['orgUnit'] = f"orgUnits/{targetResource}"
+      policy['policyQuery']['query'] = f"entity.org_units.exists(org_unit, org_unit.org_unit_id == orgUnitId('{targetResource}'))"
     elif myarg == 'group':
       groupEmail, targetResource = _getCIPolicyGroupTarget(cd, myarg, orgUnit)
-      jsonData.setdefault('policyQuery', {})
-      jsonData['policyQuery'].pop('orgUnit', None)
-      jsonData['policyQuery']['group'] = f"groups/{targetResource}"
-      jsonData['policyQuery']['query'] = f"entity.groups.exists(group, group.group_id == groupId('{targetResource}'))"
+      policy.setdefault('policyQuery', {})
+      policy['policyQuery'].pop('orgUnit', None)
+      policy['policyQuery']['group'] = f"groups/{targetResource}"
+      policy['policyQuery']['query'] = f"entity.groups.exists(group, group.group_id == groupId('{targetResource}'))"
     else:
       unknownArgumentExit()
-  jsonData['customer'] = _getCustomersCustomerIdWithC()
+  policy['customer'] = _getCustomersCustomerIdWithC()
   try:
     if updateCmd:
       result = callGAPI(ci.policies(), 'patch',
                         bailOnInternalError=True,
                         throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.UNIMPLEMENTED_ERROR,
                                       GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
-                        name=pname, body=jsonData)
+                        name=pname, body=policy)
     else:
       result = callGAPI(ci.policies(), 'create',
                         bailOnInternalError=True,
                         throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.UNIMPLEMENTED_ERROR,
                                       GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
-                        body=jsonData)
+                        body=policy)
     if result['done']:
       if 'error' not in result:
         if not updateCmd:

@@ -4926,36 +4926,36 @@ gam print schema|schemas [todrive <ToDriveAttribute>*]
 gam sendemail [recipient|to] <RecipientEntity>
         [from <EmailAddress>] [mailbox <EmailAddress>] [replyto <EmailAddress>]
         [cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
-        [subject <String>]
-        [<MessageContent>]
+        [subject <String>] [<MessageContent>]
         (replace <Tag> <String>)*
         (replaceregex <RESearchPattern> <RESubstitution> <Tag> <String>)*
         [html [<Boolean>]] (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
         [newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
+        [threadid <String>]
 gam <UserTypeEntity> sendemail recipient|to <RecipientEntity>
         [replyto <EmailAddress>]
         [cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
-        [subject <String>]
-        [<MessageContent>]
+        [subject <String>] [<MessageContent>]
         (replace <Tag> <String>)*
         (replaceregex <RESearchPattern> <RESubstitution> <Tag> <String>)*
         [html [<Boolean>]] (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
         [newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
+        [threadid <String>]
 gam <UserTypeEntity> sendemail from <EmailAddress>
         [replyto <EmailAddress>]
         [cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
-        [subject <String>]
-        [<MessageContent>]
+        [subject <String>] [<MessageContent>]
         (replace <Tag> <String>)*
         (replaceregex <RESearchPattern> <RESubstitution> <Tag> <String>)*
         [html [<Boolean>]] (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
         [newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
+        [threadid <String>]
 
 # Shared Drives - Administrator
 
