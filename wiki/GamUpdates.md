@@ -10,6 +10,26 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.36.03
+
+Added command to send email replies that causes Gmail to recognize the message
+in conversation mode for the user sending the reply and the user receiving the reply;
+GAM supplies the necessary headers and options.
+```
+gam <UserTypeEntity> sendreply
+        (((query <QueryGmail> [querytime<String> <Date>]*) [or|and])+) | (ids <MessageIDEntity>)
+        [replyto <EmailAddress>]
+        [subject <String>] [<MessageContent>] [html [<Boolean>]]
+        (attach <FileName> [charset <CharSet>])*
+        (embedimage <FileName> <String>)*
+        (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
+
+gam user user@domain.com sendreply query "rfc822MsgId:<CAAMmEdqj43...1OsQ@mail.gmail.com>" textmessage "Thanks for the information"
+gam user user@domain.com sendreply ids 19cfc3506c02c22b textmessage "Thanks for the information"
+```
+
+* See: https://github.com/GAM-team/GAM/wiki/Send-Email#conversation-mode
+
 ### 7.36.02
 
 Added option `threadid <String>` to `gam [<UserTypeEntity>] sendemail` that causes Gmail to recognize the message

@@ -475,6 +475,18 @@ User: recipient@domain.com, Show 1 Thread
 
 gam user recipient@domain.com sendemail to sender@domain.com references "<CAAMabc...XYZQ@mail.gmail.com>" in-reply-to "<CAAMabc...XYZQ@mail.gmail.com>" subject "Re: Original subject" textmessage "Reply text" threadid 19cfd414fe48430d
 ```
+As of version 7.36.03, GAM has a command to simplify this process.
+```
+gam <UserTypeEntity> sendreply
+        (((query <QueryGmail> [querytime<String> <Date>]*) [or|and])+) | (ids <MessageIDEntity>)
+        [replyto <EmailAddress>]
+        [subject <String>] [<MessageContent>] [html [<Boolean>]]
+        (attach <FileName> [charset <CharSet>])*
+        (embedimage <FileName> <String>)*
+        (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
+
+gam user recipient@domain.com sendreply query "rfc822MsgId:<CAAMabc...XYZQ@mail.gmail.com>" textmessage "Reply text"
+```
 
 
 
