@@ -465,11 +465,12 @@ gam user recipient@domain.com sendemail to sender@domain.com references "<CAAMab
 If you want to have Gmail recognize the reply in conversation mode in the Sent folder of the original recipient,
 you must include `threadid <String>`; you can get the 'threadId` with:
 ```
-gam user recipient@domain.com show messages query "rfc822MsgId:<CAAMabc...XYZQ@mail.gmail.com>"  
+gam user recipient@domain.com show threads query "rfc822MsgId:<CAAMabc...XYZQ@mail.gmail.com>"  
 Getting all Messages that match query ((rfc822MsgId:<CAAMabc...XYZQ@mail.gmail.com>)) for recipient@domain.com
 Got 1 Message that matched query ((rfc822MsgId:<CAAMabc...XYZQ@mail.gmail.com>)) for recipient@domain.com...
-User: recipient@domain.com, Show 1 Message
-  Message: 19cfd414fe48430d
+User: recipient@domain.com, Show 1 Thread
+  Thread: 19cfd414fe48430d
+    Message: 19cfd414fe48430d
 ...
 
 gam user recipient@domain.com sendemail to sender@domain.com references "<CAAMabc...XYZQ@mail.gmail.com>" in-reply-to "<CAAMabc...XYZQ@mail.gmail.com>" subject "Re: Original subject" textmessage "Reply text" threadid 19cfd414fe48430d
