@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.36.03'
+__version__ = '7.37.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -10821,9 +10821,9 @@ def getScopesFromUser(scopesList, clientAccess, currentScopes=None):
     oauth2_menu += '\n'
   oauth2_menu += '''
 Select an unselected scope [ ] by entering a number; yields [*]
-For scopes that support readonly, enter a number and an 'r' to grant read-only access; yields [R]
-For scopes that support action, enter a number and an 'a' to grant action-only access; yields [A]
-Clear read-only access [R] or action-only access [A] from a scope by entering a number; yields [*]
+For scopes that optionally support readonly, enter a number and an 'r' to grant readonly access; yields [R]
+For scopes that optionally support actiononly, enter a number and an 'a' to grant actiononly access; yields [A]
+Clear readonly access [R] or actiononly access [A] from a scope by entering a number; yields [*]
 Unselect a selected scope [*] by entering a number; yields [ ]
 Select all default scopes by entering an 's'; yields [*] for default scopes, [ ] for others
 Unselect all scopes by entering a 'u'; yields [ ] for all scopes
@@ -10844,15 +10844,16 @@ Continue to authorization by entering a 'c'
       for a_scope in scopesList:
         selectedScopes[i] = ' '
         possibleScope = a_scope['scope']
+        subScopes = a_scope.get('subscopes', [])
         for currentScope in currentScopes:
           if currentScope == possibleScope:
             selectedScopes[i] = '*'
             break
-          if 'readonly' in a_scope['subscopes']:
+          if 'readonly' in subScopes:
             if currentScope == possibleScope+'.readonly':
               selectedScopes[i] = 'R'
               break
-          if 'action' in a_scope['subscopes']:
+          if 'actiononly' in subScopes:
             if currentScope == possibleScope+'.action':
               selectedScopes[i] = 'A'
               break
@@ -10863,13 +10864,14 @@ Continue to authorization by entering a 'c'
         selectedScopes[i] = ' '
         api = a_scope['api']
         possibleScope = a_scope['scope']
+        subScopes = a_scope.get('subscopes', [])
         if api in currentScopes:
           if not isinstance(possibleScope, list):
             for scope in currentScopes[api]:
               if scope == possibleScope:
                 selectedScopes[i] = '*'
                 break
-              if 'readonly' in a_scope['subscopes']:
+              if 'readonly' in subScopes:
                 if (scope == possibleScope+'.readonly') or (scope == a_scope.get('roscope')):
                   selectedScopes[i] = 'R'
                   break
@@ -10910,12 +10912,12 @@ Continue to authorization by entering a 'c'
           selection = int(selection)
         if isinstance(selection, int) and selection < numScopes:
           if mode == 'R':
-            if 'readonly' not in scopesList[selection]['subscopes']:
-              sys.stdout.write(f'{ERROR_PREFIX}Scope {selection} does not support read-only mode!\n')
+            if 'readonly' not in scopesList[selection].get('subscopes',[]):
+              sys.stdout.write(f'{ERROR_PREFIX}Scope {selection} does not support readonly mode!\n')
               continue
           elif mode == 'A':
-            if 'action' not in scopesList[selection]['subscopes']:
-              sys.stdout.write(f'{ERROR_PREFIX}Scope {selection} does not support action-only mode!\n')
+            if 'actiononly' not in scopesList[selection].get('subscopes', []):
+              sys.stdout.write(f'{ERROR_PREFIX}Scope {selection} does not support actiononly mode!\n')
               continue
           elif selectedScopes[selection] != '*':
             mode = '*'
@@ -11357,9 +11359,10 @@ def doOAuthCreate():
           if uscope in {'openid', 'email', API.USERINFO_EMAIL_SCOPE, 'profile', API.USERINFO_PROFILE_SCOPE}:
             continue
           for scope in scopesList:
+            subScopes = scope.get('subscopes', [])
             if ((uscope == scope['scope']) or
-                (uscope.endswith('.action') and 'action' in scope['subscopes']) or
-                (uscope.endswith('.readonly') and 'readonly' in scope['subscopes'])):
+                (uscope.endswith('.action') and 'actiononly' in subscopes) or
+                (uscope.endswith('.readonly') and 'readonly' in subscopes)):
               scopes.append(uscope)
               break
           else:
@@ -11992,12 +11995,13 @@ def getGCPOrg(crm, login_hint, login_domain):
   try:
     getorg = callGAPI(crm.organizations(), 'search',
                       throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                      query=f'domain:{login_domain}')
+                      query=f'domain:{login_domain}',
+                      pageSize=1, fields='organizations/name')
   except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
     entityActionFailedExit([Ent.USER, login_hint, Ent.DOMAIN, login_domain], str(e))
   try:
     organization = getorg['organizations'][0]['name']
-    sys.stdout.write(Msg.YOUR_ORGANIZATION_NAME_IS.format(organization))
+#    sys.stdout.write(Msg.YOUR_ORGANIZATION_NAME_IS.format(organization))
     return organization
   except (KeyError, IndexError):
     systemErrorExit(3, Msg.YOU_HAVE_NO_RIGHTS_TO_CREATE_PROJECTS_AND_YOU_ARE_NOT_A_SUPER_ADMIN)
@@ -72448,12 +72452,10 @@ def _printShowTokens(entityType, users):
       result['internal'] = True
       return
     try:
-      results = callGAPI(crm1.projects(),
-                         'getAncestry',
-                         projectId=result['project'],
-                         throwReasons=[GAPI.PERMISSION_DENIED])
-      ancestors = results.get('ancestor', [])
-      for ancestor in ancestors:
+      results = callGAPI(crm1.projects(), 'getAncestry',
+                         throwReasons=[GAPI.PERMISSION_DENIED],
+                         projectId=result['project'])
+      for ancestor in results.get('ancestor', []):
         if ancestor.get('resourceId', {}).get('type') == 'organization' and ancestor.get('resourceId', {}).get('id') == org_id:
           result['internal'] = True
           internal_projects.append(result['project'])
