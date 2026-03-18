@@ -54,6 +54,7 @@ CLOUDIDENTITY_POLICY = 'cloudidentitypolicy'
 CLOUDIDENTITY_POLICY_BETA = 'cloudidentitypolicybeta'
 CLOUDIDENTITY_USERINVITATIONS = 'cloudidentityuserinvitations'
 CLOUDRESOURCEMANAGER = 'cloudresourcemanager'
+CLOUDRESOURCEMANAGERV1 = 'cloudresourcemanagerv1'
 CONTACTS = 'contacts'
 CONTACTDELEGATION = 'contactdelegation'
 DATATRANSFER = 'datatransfer'
@@ -103,7 +104,6 @@ TASKS = 'tasks'
 VAULT = 'vault'
 YOUTUBE = 'youtube'
 #
-BUSINESSACCOUNTMANAGEMENT_SCOPE = 'https://www.googleapis.com/auth/business.manage'
 CHROMEVERSIONHISTORY_URL = 'https://versionhistory.googleapis.com/v1/chrome/platforms'
 DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive'
 DRIVE_FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file'
@@ -119,7 +119,6 @@ STORAGE_READONLY_SCOPE = 'https://www.googleapis.com/auth/devstorage.read_only'
 STORAGE_READWRITE_SCOPE = 'https://www.googleapis.com/auth/devstorage.read_write'
 USERINFO_EMAIL_SCOPE = 'https://www.googleapis.com/auth/userinfo.email' # email
 USERINFO_PROFILE_SCOPE = 'https://www.googleapis.com/auth/userinfo.profile' # profile
-VAULT_SCOPES = ['https://www.googleapis.com/auth/ediscovery', 'https://www.googleapis.com/auth/ediscovery.readonly']
 REQUIRED_SCOPES = [USERINFO_EMAIL_SCOPE, USERINFO_PROFILE_SCOPE]
 REQUIRED_SCOPES_SET = set(REQUIRED_SCOPES)
 NUM_CLIENT_SCOPES_ERROR_LIMIT = 48
@@ -138,6 +137,21 @@ SCOPELESS_APIS = {
   SERVICEACCOUNTLOOKUP,
   }
 #
+
+# Scopes not in the discovery doc that are still valid for the API.
+EXTRA_SCOPES = {
+        BUSINESSACCOUNTMANAGEMENT: [ 'https://www.googleapis.com/auth/business.manage'],
+        CLOUDRESOURCEMANAGER: ['https://www.googleapis.com/auth/cloudplatformfolders',
+                                  'https://www.googleapis.com/auth/cloudplatformfolders.readonly',
+                                  'https://www.googleapis.com/auth/cloudplatformprojects',
+                                  'https://www.googleapis.com/auth/cloudplatformprojects.readonly',
+                                  'https://www.googleapis.com/auth/cloudplatformorganizations',
+                                  'https://www.googleapis.com/auth/cloudplatformorganizations.readonly',
+                                 ],
+        VAULT: ['https://www.googleapis.com/auth/ediscovery', 'https://www.googleapis.com/auth/ediscovery.readonly'],
+        }
+EXTRA_SCOPES[CLOUDRESOURCEMANAGERV1] = EXTRA_SCOPES[CLOUDRESOURCEMANAGER]
+
 APIS_NEEDING_ACCESS_TOKEN = {
   CBCM: ['https://www.googleapis.com/auth/admin.directory.device.chromebrowsers']
   }
@@ -251,6 +265,7 @@ _INFO = {
   CLOUDIDENTITY_POLICY_BETA: {'name': 'Cloud Identity API - Policy Beta', 'version': 'v1beta1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_USERINVITATIONS: {'name': 'Cloud Identity API - User Invitations', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDRESOURCEMANAGER: {'name': 'Cloud Resource Manager API v3', 'version': 'v3', 'v2discovery': True},
+  CLOUDRESOURCEMANAGERV1: {'name': 'Cloud Resource Manager API v1', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudresourcemanager'},
   CONTACTS: {'name': 'Contacts API', 'version': 'v3', 'v2discovery': False},
   CONTACTDELEGATION: {'name': 'Contact Delegation API', 'version': 'v1', 'v2discovery': True, 'localjson': True},
   DATATRANSFER: {'name': 'Data Transfer API', 'version': 'datatransfer_v1', 'v2discovery': True, 'mappedAPI': 'admin'},
@@ -305,9 +320,8 @@ READONLY = ['readonly',]
 _CLIENT_SCOPES = [
   {'name': 'Business Account Management API',
    'api': BUSINESSACCOUNTMANAGEMENT,
-   'subscopes': [],
    'offByDefault': True,
-   'scope': BUSINESSACCOUNTMANAGEMENT_SCOPE},
+   'scope': EXTRA_SCOPES[BUSINESSACCOUNTMANAGEMENT]},
   {'name': 'Calendar API',
    'api': CALENDAR,
    'subscopes': READONLY,
@@ -322,7 +336,6 @@ _CLIENT_SCOPES = [
    'scope': 'https://www.googleapis.com/auth/chrome.management.reports.readonly'},
   {'name': 'Chrome Management API - AppDetails read only',
    'api': CHROMEMANAGEMENT_APPDETAILS,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/chrome.management.appdetails.readonly'},
   {'name': 'Chrome Management API - Profiles',
    'api': CHROMEMANAGEMENT_CHROMEPROFILES,
@@ -330,7 +343,6 @@ _CLIENT_SCOPES = [
    'scope': 'https://www.googleapis.com/auth/chrome.management.profiles'},
   {'name': 'Chrome Management API - Telemetry read only',
    'api': CHROMEMANAGEMENT_TELEMETRY,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/chrome.management.telemetry.readonly'},
   {'name': 'Chrome Policy API',
    'api': CHROMEPOLICY,
@@ -342,7 +354,6 @@ _CLIENT_SCOPES = [
    'scope': 'https://www.googleapis.com/auth/admin.chrome.printers'},
   {'name': 'Chrome Version History API',
    'api': CHROMEVERSIONHISTORY,
-   'subscopes': [],
    'scope': ''},
   {'name': 'Classroom API - Courses',
    'api': CLASSROOM,
@@ -370,11 +381,9 @@ _CLIENT_SCOPES = [
    'scope': 'https://www.googleapis.com/auth/classroom.guardianlinks.students'},
   {'name': 'Classroom API - Profile Emails',
    'api': CLASSROOM,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/classroom.profile.emails'},
   {'name': 'Classroom API - Profile Photos',
    'api': CLASSROOM,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/classroom.profile.photos'},
   {'name': 'Classroom API - Rosters',
    'api': CLASSROOM,
@@ -404,7 +413,6 @@ _CLIENT_SCOPES = [
    'scope': 'https://www.googleapis.com/auth/cloud-identity.policies'},
   {'name': 'Cloud Identity API - Policy Beta',
    'api': CLOUDIDENTITY_POLICY_BETA,
-   'subscopes': [],
    'offByDefault': True,
    'scope': 'https://www.googleapis.com/auth/cloud-identity.policies'},
   {'name': 'Cloud Identity API - User Invitations',
@@ -413,17 +421,14 @@ _CLIENT_SCOPES = [
    'scope': 'https://www.googleapis.com/auth/cloud-identity.userinvitations'},
   {'name': 'Cloud Storage API (Read Only, Vault/Takeout Download, Cloud Storage)',
    'api': STORAGEREAD,
-   'subscopes': [],
    'offByDefault': True,
    'scope': STORAGE_READONLY_SCOPE},
   {'name': 'Cloud Storage API (Read/Write, Vault/Takeout Copy/Download, Cloud Storage)',
    'api': STORAGEWRITE,
-   'subscopes': [],
    'offByDefault': True,
    'scope': STORAGE_READWRITE_SCOPE},
   {'name': 'Contacts API - Domain Shared Contacts',
    'api': CONTACTS,
-   'subscopes': [],
    'scope': 'https://www.google.com/m8/feeds'},
   {'name': 'Contact Delegation API',
    'api': CONTACTDELEGATION,
@@ -471,7 +476,6 @@ _CLIENT_SCOPES = [
    'scope': 'https://www.googleapis.com/auth/admin.directory.userschema'},
   {'name': 'Directory API - User Security',
    'api': DIRECTORY,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/admin.directory.user.security'},
   {'name': 'Directory API - Users',
    'api': DIRECTORY,
@@ -479,24 +483,19 @@ _CLIENT_SCOPES = [
    'scope': 'https://www.googleapis.com/auth/admin.directory.user'},
   {'name': 'Email Audit API',
    'api': EMAIL_AUDIT,
-   'subscopes': [],
    'offByDefault': True,
    'scope': 'https://apps-apis.google.com/a/feeds/compliance/audit/'},
   {'name': 'Groups Migration API',
    'api': GROUPSMIGRATION,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/apps.groups.migration'},
   {'name': 'Groups Settings API',
    'api': GROUPSSETTINGS,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/apps.groups.settings'},
   {'name': 'License Manager API',
    'api': LICENSING,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/apps.licensing'},
   {'name': 'People Directory API - read only',
    'api': PEOPLE_DIRECTORY,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/directory.readonly'},
   {'name': 'People API',
    'api': PEOPLE,
@@ -504,29 +503,31 @@ _CLIENT_SCOPES = [
    'scope': PEOPLE_SCOPE},
   {'name': 'Pub / Sub API',
    'api': PUBSUB,
-   'subscopes': [],
    'offByDefault': True,
    'scope': 'https://www.googleapis.com/auth/pubsub'},
   {'name': 'Reports API - Audit Reports',
    'api': REPORTS,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/admin.reports.audit.readonly'},
   {'name': 'Reports API - Usage Reports',
    'api': REPORTS,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/admin.reports.usage.readonly'},
   {'name': 'Reseller API',
    'api': RESELLER,
-   'subscopes': [],
    'offByDefault': True,
    'scope': 'https://www.googleapis.com/auth/apps.order'},
+  {'name': 'Resource Manager - Organizations',
+   'api': CLOUDRESOURCEMANAGER,
+   'offByDefault': True,
+   'scope': 'https://www.googleapis.com/auth/cloudplatformorganizations.readonly'},
+  {'name': 'Resource Manager - Projects',
+   'api': CLOUDRESOURCEMANAGER,
+   'offByDefault': True,
+   'scope': 'https://www.googleapis.com/auth/cloudplatformprojects.readonly'},
   {'name': 'Service Account Lookup pseudo-API',
    'api': SERVICEACCOUNTLOOKUP,
-   'subscopes': [],
    'scope': ''},
   {'name': 'Site Verification API',
    'api': SITEVERIFICATION,
-   'subscopes': [],
    'offByDefault': True,
    'scope': 'https://www.googleapis.com/auth/siteverification'},
   {'name': 'Vault API',

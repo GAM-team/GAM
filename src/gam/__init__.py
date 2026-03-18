@@ -5681,15 +5681,9 @@ def buildGAPIObject(api, credentials=None):
   httpObj = transportAuthorizedHttp(credentials, http=getHttpObj(cache=GM.Globals[GM.CACHE_DIR]))
   service = getService(api, httpObj)
   if not GC.Values[GC.ENABLE_DASA]:
-    try:
-      API_Scopes = set(list(service._rootDesc['auth']['oauth2']['scopes']))
-    except KeyError:
-      if api == API.VAULT:
-        API_Scopes = set(API.VAULT_SCOPES)
-      elif api == API.BUSINESSACCOUNTMANAGEMENT:
-        API_Scopes = {API.BUSINESSACCOUNTMANAGEMENT_SCOPE}
-      else:
-        API_Scopes = set()
+    discovery_scopes = list(service._rootDesc.get('auth', {}).get('oauth2', {}).get('scopes', {}).keys())
+    extra_scopes = API.EXTRA_SCOPES.get(api, [])
+    API_Scopes = set(discovery_scopes + extra_scopes)
     GM.Globals[GM.CURRENT_CLIENT_API] = api
     GM.Globals[GM.CURRENT_CLIENT_API_SCOPES] = API_Scopes.intersection(GM.Globals[GM.CREDENTIALS_SCOPES])
     if api not in API.SCOPELESS_APIS and not GM.Globals[GM.CURRENT_CLIENT_API_SCOPES]:
@@ -10822,7 +10816,7 @@ def getScopesFromUser(scopesList, clientAccess, currentScopes=None):
   numScopes = len(scopesList)
   for a_scope in scopesList:
     oauth2_menu += f"[%%s] %2d)  {a_scope['name']}"
-    if a_scope['subscopes']:
+    if a_scope.get('subscopes'):
       oauth2_menu += f' (supports {" and ".join(a_scope["subscopes"])})'
     oauth2_menu += '\n'
   oauth2_menu += '''
@@ -72445,6 +72439,29 @@ def _printShowTokens(entityType, users):
     Ind.Decrement()
     Ind.Decrement()
 
+  def project_from_client_id(client_id):
+    match = re.search(r'^\d+', client_id)
+    return match.group()
+
+  def get_gcp_info():
+    if result['project'] in internal_projects:
+      result['internal'] = True
+      return
+    try:
+      results = callGAPI(crm1.projects(),
+                         'getAncestry',
+                         projectId=result['project'],
+                         throwReasons=[GAPI.PERMISSION_DENIED])
+      ancestors = results.get('ancestor', [])
+      for ancestor in ancestors:
+        if ancestor.get('resourceId', {}).get('type') == 'organization' and ancestor.get('resourceId', {}).get('id') == org_id:
+          result['internal'] = True
+          internal_projects.append(result['project'])
+    except GAPI.permissionDenied:
+      # we don't have permission to get project. This might be an external project
+      # or it might be an internal project we don't have rights to get.
+      pass
+
   cd = buildGAPIObject(API.DIRECTORY)
   csvPF = CSVPrintFile() if Act.csvFormat() else None
   clientId = None
@@ -72453,6 +72470,8 @@ def _printShowTokens(entityType, users):
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   aggregateTokensById = {}
   tokenNameIdMap = None
+  getGCPDetails = False
+  extra_titles = []
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -72469,6 +72488,10 @@ def _printShowTokens(entityType, users):
       aggregateUsersBy = 'user'
     elif myarg == 'delimiter':
       delimiter = getCharacter()
+    elif myarg == 'gcpdetails':
+      getGCPDetails = True
+      extra_titles = ['project', 'internal']
+      gcp_projects = {}
     elif not entityType:
       Cmd.Backup()
       entityType, users = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
@@ -72478,9 +72501,9 @@ def _printShowTokens(entityType, users):
     users = getItemsToModify(Cmd.ENTITY_ALL_USERS_NS, None)
   if csvPF:
     if not aggregateUsersBy:
-      csvPF.SetTitles(['user']+TOKENS_FIELDS_TITLES)
+      csvPF.SetTitles(['user'] + TOKENS_FIELDS_TITLES + extra_titles)
     elif aggregateUsersBy != 'user':
-      csvPF.SetTitles(TOKENS_AGGREGATE_FIELDS_TITLES)
+      csvPF.SetTitles(TOKENS_AGGREGATE_FIELDS_TITLES + extra_titles)
     else:
       csvPF.SetTitles(['user', 'tokenCount'])
   else:
@@ -72488,6 +72511,13 @@ def _printShowTokens(entityType, users):
       tokenTitle = TOKENS_TITLE_MAP[orderBy]
     else:
       tokenTitle = TOKENS_TITLE_MAP[aggregateUsersBy]
+  if getGCPDetails:
+    internal_projects = [] # cache
+    crm = buildGAPIObject('cloudresourcemanager')
+    crm1 = buildGAPIObject('cloudresourcemanagerv1')
+    admin_email = _getAdminEmail()
+    admin_domain = getEmailAddressDomain(admin_email)
+    org_id = getGCPOrg(crm, admin_email, admin_domain).split('/')[1]
   fields = ','.join(TOKENS_FIELDS_TITLES)
   i, count, users = getEntityArgument(users)
   for user in users:
@@ -72509,6 +72539,10 @@ def _printShowTokens(entityType, users):
                                               GAPI.DOMAIN_CANNOT_USE_APIS, GAPI.BAD_REQUEST,
                                               GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                                 userKey=user, fields=f'items({fields})')
+      if getGCPDetails:
+        for result in results:
+          result['project'] = project_from_client_id(result.get('clientId'))
+          get_gcp_info()
       if not aggregateUsersBy:
         if not csvPF:
           jcount = len(results)
