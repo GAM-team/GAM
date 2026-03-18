@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.36.02'
+__version__ = '7.36.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -7341,7 +7341,8 @@ def _addEmbeddedImagesToMessage(message, embeddedImages):
 # Send an email
 def send_email(msgSubject, msgBody, msgTo, i=0, count=0, clientAccess=False, msgFrom=None, msgReplyTo=None,
                html=False, charset=UTF8, attachments=None, embeddedImages=None,
-               msgHeaders=None, ccRecipients=None, bccRecipients=None, mailBox=None, threadId=None):
+               msgHeaders=None, ccRecipients=None, bccRecipients=None, mailBox=None, threadId=None,
+               action=Act.SENDEMAIL):
   def checkResult(entityType, recipients):
     if not recipients:
       return
@@ -7397,12 +7398,13 @@ def send_email(msgSubject, msgBody, msgTo, i=0, count=0, clientAccess=False, msg
   if mailBox is None:
     mailBox = msgFromAddr
   _, mailBoxAddr = cleanAddr(mailBox)
-  action = Act.Get()
-  Act.Set(Act.SENDEMAIL)
+  parentAction = Act.Get()
+  Act.Set(action)
   if not GC.Values[GC.SMTP_HOST]:
     if not clientAccess:
       userId, gmail = buildGAPIServiceObject(API.GMAIL, mailBoxAddr)
       if not gmail:
+        Act.Set(parentAction)
         return
     else:
       userId = mailBoxAddr
@@ -7444,7 +7446,7 @@ def send_email(msgSubject, msgBody, msgTo, i=0, count=0, clientAccess=False, msg
         server.quit()
       except Exception:
         pass
-  Act.Set(action)
+  Act.Set(parentAction)
 
 def addFieldToFieldsList(fieldName, fieldsChoiceMap, fieldsList):
   fields = fieldsChoiceMap[fieldName.lower()]
@@ -15385,32 +15387,35 @@ def getRecipients():
     return [normalizeEmailAddressOrUID(emailAddress, noUid=True, noLower=True) for emailAddress in recipients]
   return getNormalizedEmailAddressEntity(shlexSplit=True, noLower=True)
 
-# gam sendemail [recipient|to] <RecipientEntity> [from <EmailAddress>] [mailbox <EmailAddress>] [replyto <EmailAddress>]
+# gam sendemail [recipient|to] <RecipientEntity>
+#	[from <EmailAddress>] [mailbox <EmailAddress>] [replyto <EmailAddress>]
 #	[cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
-#	[subject <String>] [<MessageContent>]
+#	[subject <String>] [<MessageContent>] [html [<Boolean>]]
 #	(replace <Tag> <String>)*
 #	(replaceregex <REMatchPattern> <RESubstitution>  <Tag> <String>)*
-#	[html [<Boolean>]] (attach <FileName> [charset <CharSet>])*
+#	(attach <FileName> [charset <CharSet>])*
 #	(embedimage <FileName> <String>)*
 #	[newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
 #	(<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
 #	[threadid <String>]
-# gam <UserTypeEntity> sendemail recipient|to <RecipientEntity> [replyto <EmailAddress>]
+# gam <UserTypeEntity> sendemail recipient|to <RecipientEntity>
+#	[replyto <EmailAddress>]
 #	[cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
-#	[subject <String>] [<MessageContent>]
+#	[subject <String>] [<MessageContent>] [html [<Boolean>]]
 #	(replace <Tag> <String>)*
 #	(replaceregex <REMatchPattern> <RESubstitution>  <Tag> <String>)*
-#	[html [<Boolean>]] (attach <FileName> [charset <CharSet>])*
+#	(attach <FileName> [charset <CharSet>])*
 #	(embedimage <FileName> <String>)*
 #	[newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
 #	(<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
 #	[threadid <String>]
-# gam <UserTypeEntity> sendemail from <EmailAddress> [replyto <EmailAddress>]
+# gam <UserTypeEntity> sendemail from <EmailAddress>
+#	[replyto <EmailAddress>]
 #	[cc <RecipientEntity>] [bcc <RecipientEntity>] [singlemessage]
-#	[subject <String>] [<MessageContent>]
+#	[subject <String>] [<MessageContent> ][html [<Boolean>]]
 #	(replace <Tag> <String>)*
 #	(replaceregex <REMatchPattern> <RESubstitution>  <Tag> <String>)*
-#	[html [<Boolean>]] (attach <FileName> [charset <CharSet>])*
+#	(attach <FileName> [charset <CharSet>])*
 #	(embedimage <FileName> <String>)*
 #	[newuser <EmailAddress> firstname|givenname <String> lastname|familyname <string> password <Password>]
 #	(<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
@@ -15530,6 +15535,125 @@ def doSendEmail(users=None):
                    msgFrom=msgFrom, msgReplyTo=msgReplyTo, html=notify['html'], charset=notify['charset'],
                    attachments=attachments, embeddedImages=embeddedImages, msgHeaders=msgHeaders, mailBox=mailBox, threadId=threadId)
       Ind.Decrement()
+
+# gam <UserTypeEntity> sendreply
+#	(((query <QueryGmail> [querytime<String> <Date>]*) [or|and])+) | (ids <MessageIDEntity>)
+#	[replyto <EmailAddress>]
+#	[subject <String>] [<MessageContent>] [html [<Boolean>]]
+#	(attach <FileName> [charset <CharSet>])*
+#	(embedimage <FileName> <String>)*
+#	(<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
+def doSendReply(users):
+  def _getHeaderValue(name):
+    for header in messageInfo['payload']['headers']:
+      if name == header['name']:
+        return _decodeHeader(header['value'])
+    return ''
+
+  notify = {'subject': '', 'message': '', 'html': False, 'charset': UTF8}
+  query = ''
+  queryTimes = {}
+  messageIds = []
+  msgHeaders = {}
+  msgReplyTo = None
+  attachments = []
+  embeddedImages = []
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'query':
+      selectLocation = Cmd.Location()
+      if query:
+        query += ' '
+      query += f'({getString(Cmd.OB_QUERY)})'
+    elif myarg.startswith('querytime'):
+      queryTimes[myarg] = getDateOrDeltaFromNow().replace('-', '/')
+    elif myarg in {'or', 'and'}:
+      if query:
+        query += f' {myarg.upper()}'
+    elif myarg == 'ids':
+      selectLocation = Cmd.Location()
+      messageIds = getEntityList(Cmd.OB_MESSAGE_ID)
+    elif myarg == 'subject':
+      notify['subject'] = getString(Cmd.OB_STRING)
+    elif myarg in SORF_MSG_FILE_ARGUMENTS:
+      notify['message'], notify['charset'], notify['html'] = getStringOrFile(myarg)
+    elif myarg == 'replyto':
+      msgReplyTo = getString(Cmd.OB_EMAIL_ADDRESS)
+    elif myarg == 'html':
+      notify['html'] = getBoolean()
+    elif myarg == 'attach':
+      attachments.append((getFilename(), getCharSet()))
+    elif myarg == 'embedimage':
+      embeddedImages.append((getFilename(), getString(Cmd.OB_STRING)))
+    elif myarg in SMTP_HEADERS_MAP:
+      if myarg in SMTP_DATE_HEADERS:
+        msgDate, _, _ = getTimeOrDeltaFromNow(True)
+        msgHeaders[SMTP_HEADERS_MAP[myarg]] = formatdate(time.mktime(msgDate.timetuple()) + msgDate.microsecond/1E6, True)
+      else:
+        msgHeaders[SMTP_HEADERS_MAP[myarg]] = getString(Cmd.OB_STRING)
+    elif myarg == 'header':
+      header = getString(Cmd.OB_STRING, minLen=1)
+      msgHeaders[SMTP_HEADERS_MAP.get(header.lower(), header)] = getString(Cmd.OB_STRING)
+    else:
+      unknownArgumentExit()
+  if query and messageIds:
+    Cmd.SetLocation(selectLocation-1)
+    usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('query <QueryGmail>', 'ids <MessageIDEntity>'))
+  notify['message'] = notify['message'].replace('\r', '').replace('\\n', '\n')
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
+    if not gmail:
+      continue
+    try:
+      if query:
+        printGettingAllEntityItemsForWhom(Ent.MESSAGE, user, i, count, query=query)
+        listResult = callGAPIpages(gmail.users().messages(), 'list', 'messages',
+                                   pageMessage=getPageMessageForWhom(),
+                                   throwReasons=GAPI.GMAIL_THROW_REASONS+GAPI.GMAIL_LIST_THROW_REASONS,
+                                   userId='me', q=query, fields='nextPageToken,messages(id)',
+                                   maxResults=GC.Values[GC.MESSAGE_MAX_RESULTS])
+        messageIds = [message['id'] for message in listResult]
+    except (GAPI.failedPrecondition, GAPI.permissionDenied, GAPI.invalid, GAPI.invalidArgument) as e:
+      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+      continue
+    except GAPI.serviceNotAvailable:
+      userGmailServiceNotEnabledWarning(user, i, count)
+      continue
+    jcount = len(messageIds)
+    if jcount == 0:
+      entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], Ent.MESSAGE, jcount, Msg.NO_ENTITIES_MATCHED.format(Ent.Plural(Ent.MESSAGE)), i, count)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
+      continue
+    entityPerformActionModifierNumItems([Ent.USER, user], Act.MODIFIER_TO, jcount, Ent.RECIPIENT, i, count)
+    Ind.Increment()
+    j = 0
+    for messageId in messageIds:
+      j += 1
+      try:
+        messageInfo = callGAPI(gmail.users().messages(), 'get',
+                               throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_MESSAGE_ID],
+                               userId='me', id=messageId, fields='id,threadId,payload(headers)')
+        threadId = messageInfo['threadId']
+        msgHeaders['References'] = msgHeaders['In-Reply-To'] = _getHeaderValue('Message-ID')
+        msgSubject = notify['subject'] if notify['subject'] else f"Re: {_getHeaderValue('Subject')}"
+        recipient = _getHeaderValue('From')
+        send_email(msgSubject, notify['message'], recipient, j, jcount,
+                   msgFrom=user, msgReplyTo=msgReplyTo, html=notify['html'], charset=notify['charset'],
+                   attachments=attachments, embeddedImages=embeddedImages, msgHeaders=msgHeaders, threadId=threadId,
+                   action=Act.SENDREPLY)
+      except GAPI.notFound:
+        entityActionFailedWarning([Ent.USER, user, Ent.MESSAGE, messageId], Msg.DOES_NOT_EXIST, j, jcount)
+      except GAPI.invalidMessageId:
+        entityActionFailedWarning([Ent.USER, user, Ent.MESSAGE, messageId], Msg.INVALID_MESSAGE_ID, j, jcount)
+      except (GAPI.failedPrecondition, GAPI.permissionDenied, GAPI.invalid, GAPI.invalidArgument) as e:
+        entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+        break
+      except GAPI.serviceNotAvailable:
+        userGmailServiceNotEnabledWarning(user, i, count)
+        break
+    Ind.Decrement()
 
 ADDRESS_FIELDS_PRINT_ORDER = ['contactName', 'organizationName', 'addressLine1', 'addressLine2', 'addressLine3', 'locality', 'region', 'postalCode', 'countryCode']
 
@@ -80879,6 +81003,7 @@ USER_COMMANDS = {
   'profile': 			(Act.SET, setProfile),
   'sendas': 			(Act.ADD, createUpdateSendAs),
   'sendemail': 			(Act.SENDEMAIL, doSendEmail),
+  'sendreply': 			(Act.SENDREPLY, doSendReply),
   'signature': 			(Act.SET, setSignature),
   'signout': 			(Act.SIGNOUT, signoutTurnoff2SVUsers),
   'turnoff2sv': 		(Act.TURNOFF2SV, signoutTurnoff2SVUsers),

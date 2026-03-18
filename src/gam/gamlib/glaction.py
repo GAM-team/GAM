@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2024 Ross Scroggs All Rights Reserved.
+# Copyright (C) 2026 Ross Scroggs All Rights Reserved.
 #
 # All Rights Reserved.
 #
@@ -107,6 +107,7 @@ class GamAction():
   SAVE = 'save'
   SEND = 'send'
   SENDEMAIL = 'snem'
+  SENDREPLY = 'sner'
   SET = 'set '
   SETUP = 'setu'
   SHARE = 'shar'
@@ -225,6 +226,7 @@ class GamAction():
     SAVE: ['Saved', 'Save'],
     SEND: ['Sent', 'Send'],
     SENDEMAIL: ['Email Sent', 'Send Email'],
+    SENDREPLY: ['Reply Sent', 'Send Reply'],
     SET: ['Set', 'Set'],
     SETUP: ['Set Up', 'Set Up'],
     SHARE: ['Shared', 'Share'],
