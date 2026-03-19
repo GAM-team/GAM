@@ -72458,7 +72458,7 @@ def _printShowTokens(entityType, users):
                            throwReasons=[GAPI.PERMISSION_DENIED],
                            projectId=result['project'])
         for ancestor in results.get('ancestor', []):
-          if ancestor.get('resourceId', {}).get('type') == 'organization' and ancestor.get('resourceId', {}).get('id') == org_id:
+          if ancestor.get('resourceId', {}).get('type') == 'organization' and ancestor.get('resourceId', {}).get('id') == GC.Values['GCP_ORG_ID']:
             result['internal'] = True
             internal_projects.add(result['project'])
       except GAPI.permissionDenied:
@@ -72520,7 +72520,8 @@ def _printShowTokens(entityType, users):
     crm1 = buildGAPIObject('cloudresourcemanagerv1')
     admin_email = _getAdminEmail()
     admin_domain = getEmailAddressDomain(admin_email)
-    org_id = getGCPOrg(crm, admin_email, admin_domain).split('/')[1]
+    if 'GCP_ORG_ID' not in GC.Values:
+      GC.Values['GCP_ORG_ID'] = getGCPOrg(crm, admin_email, admin_domain).split('/')[1]
   fields = ','.join(TOKENS_FIELDS_TITLES)
   i, count, users = getEntityArgument(users)
   for user in users:
