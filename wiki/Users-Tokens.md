@@ -23,20 +23,27 @@ gam <UserTypeEntity> delete|del token|tokens clientid <ClientID>
 ```
 gam <UserTypeEntity> print tokens|token [todrive <ToDriveAttributes>*] [clientid <ClientID>]
         [orderby clientid|id|appname|displaytext] [delimiter <Character>]
+        [gcpdetails]
 gam <UserTypeEntity> show tokens|token|3lo|oauth [clientid <ClientID>]
         [orderby clientid|id|appname|displaytext]
+        [gcpdetails]
 gam print tokens|token [todrive <ToDriveAttributes>*] [clientid <ClientID>]
         [orderby clientid|id|appname|displaytext] [delimiter <Character>]
         [<UserTypeEntity>]
+        [gcpdetails]
 gam show tokens|token [clientid <ClientID>]
         [orderby clientid|id|appname|displaytext] [delimiter <Character>]
         [<UserTypeEntity>]
+        [gcpdetails]
 ```
 By default, all client tokens for a user are displayed, use `clientid <ClientID>` to display a specific client token.
 
 For each user, select the order of token presentation:
 * `orderby clientid|id` - Display each user's tokens ordered by Client ID
 * `orderby appname|displaytext` - Display each user's tokens ordered by App Name
+
+Use `gcpdetails` to get project information about the client; you get the project number
+and whether it is an internal project.
 
 For `print tokens`:
 * `delimiter <Character>` - Separate `scopes` entries with `<Character>`; the default value is `csv_output_field_delimiter` from `gam.cfg`.

@@ -10,6 +10,16 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.37.00
+
+Added new client access scopes used by `gam print tokens`.
+```
+[*] 52)  Resource Manager API - Organizations readonly
+[*] 53)  Resource Manager API - Projects readonly
+```
+
+Added option `gcpdetails` to `gam print tokens` that uses these scopes to get additional project information.
+
 ### 7.36.03
 
 Added command to send email replies that causes Gmail to recognize the message
