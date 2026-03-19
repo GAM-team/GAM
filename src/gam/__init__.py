@@ -72453,7 +72453,6 @@ def _printShowTokens(entityType, users):
       if result['project'] in internal_projects:
         result['internal'] = True
         continue
-      result['internal'] = False
       try:
         results = callGAPI(crm1.projects(), 'getAncestry',
                            throwReasons=[GAPI.PERMISSION_DENIED],
