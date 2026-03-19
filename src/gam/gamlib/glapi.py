@@ -332,7 +332,6 @@ _CLIENT_SCOPES = [
    'scope': 'https://www.googleapis.com/auth/admin.directory.device.chromebrowsers'},
   {'name': 'Chrome Management API - readonly',
    'api': CHROMEMANAGEMENT,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/chrome.management.reports.readonly'},
   {'name': 'Chrome Management API - AppDetails readonly',
    'api': CHROMEMANAGEMENT_APPDETAILS,
@@ -539,30 +538,24 @@ _CLIENT_SCOPES = [
 _COMMANDDATA_CLIENT_SCOPES = [
   {'name': 'Drive API - commanddata_clientaccess',
    'api': DRIVE3,
-   'subscopes': [],
    'scope': DRIVE_READONLY_SCOPE},
   {'name': 'Sheets API - commanddata_clientaccess readonly',
    'api': SHEETS,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/spreadsheets.readonly'},
   ]
 
 _TODRIVE_CLIENT_SCOPES = [
   {'name': 'Drive API - todrive_clientaccess',
    'api': DRIVE3,
-   'subscopes': [],
    'scope': DRIVE_SCOPE},
   {'name': 'Drive File API - todrive_clientaccess',
    'api': DRIVE3,
-   'subscopes': [],
    'scope': DRIVE_FILE_SCOPE},
   {'name': 'Gmail API - todrive_clientaccess',
    'api': GMAIL,
-   'subscopes': [],
    'scope': GMAIL_SEND_SCOPE},
   {'name': 'Sheets API - todrive_clientaccess',
    'api': SHEETS,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/spreadsheets'},
   ]
 
@@ -571,11 +564,9 @@ OAUTH2SA_SCOPES = 'us_scopes'
 _SVCACCT_SCOPES = [
   {'name': 'AlertCenter API',
    'api': ALERTCENTER,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/apps.alerts'},
   {'name': 'Analytics Admin API - readonly',
    'api': ANALYTICS_ADMIN,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/analytics.readonly'},
   {'name': 'Calendar API',
    'api': CALENDAR,
@@ -612,11 +603,9 @@ _SVCACCT_SCOPES = [
    'scope': 'https://www.googleapis.com/auth/chat.admin.spaces'},
   {'name': 'Chat API - Spaces Delete',
    'api': CHAT_SPACES_DELETE,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/chat.delete'},
   {'name': 'Chat API - Spaces Delete Admin',
    'api': CHAT_SPACES_DELETE_ADMIN,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/chat.admin.delete'},
   {'name': 'Classroom API - Course Announcements',
    'api': CLASSROOM,
@@ -636,11 +625,9 @@ _SVCACCT_SCOPES = [
    'scope': 'https://www.googleapis.com/auth/classroom.coursework.students'},
   {'name': 'Classroom API - Profile Emails',
    'api': CLASSROOM,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/classroom.profile.emails'},
   {'name': 'Classroom API - Profile Photos',
    'api': CLASSROOM,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/classroom.profile.photos'},
   {'name': 'Classroom API - Rosters',
    'api': CLASSROOM,
@@ -657,7 +644,6 @@ _SVCACCT_SCOPES = [
 #   'scope': 'https://www.googleapis.com/auth/cloud-identity.policies'},
 #  {'name': 'Cloud Identity API - Policy Beta',
 #   'api': CLOUDIDENTITY_POLICY_BETA,
-#   'subscopes': [],
 #   'offByDefault': True,
 #   'scope': 'https://www.googleapis.com/auth/cloud-identity.policies'},
 #  {'name': 'Cloud Identity User Invitations API',
@@ -666,7 +652,6 @@ _SVCACCT_SCOPES = [
 #   'scope': 'https://www.googleapis.com/auth/cloud-identity'},
 #  {'name': 'Contacts API - Users',
 #   'api': CONTACTS,
-#   'subscopes': [],
 #   'scope': 'https://www.google.com/m8/feeds'},
   {'name': 'Drive API',
    'api': DRIVE3,
@@ -674,7 +659,6 @@ _SVCACCT_SCOPES = [
    'scope': DRIVE_SCOPE},
   {'name': 'Drive Activity API v2 - must pair with Drive API',
    'api': DRIVEACTIVITY,
-   'subscopes': [],
    'scope': [DRIVE_READONLY_SCOPE,
              'https://www.googleapis.com/auth/drive.activity']},
   {'name': 'Drive Labels API - Admin',
@@ -691,30 +675,24 @@ _SVCACCT_SCOPES = [
    'scope': 'https://www.googleapis.com/auth/documents'},
   {'name': 'Forms API - must pair with Drive API',
    'api': FORMS,
-   'subscopes': [],
    'scope': [DRIVE_READONLY_SCOPE,
              'https://www.googleapis.com/auth/forms.body',
              'https://www.googleapis.com/auth/forms.responses.readonly']},
   {'name': 'Gmail API - Full Access (Labels, Messages)',
    'api': GMAIL,
-   'subscopes': [],
    'scope': 'https://mail.google.com/'},
   {'name': 'Gmail API - Full Access (Labels, Messages) except delete message',
    'api': GMAIL,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/gmail.modify'},
   {'name': 'Gmail API - Basic Settings (Filters, IMAP, Language, POP, Vacation) - read/write, Sharing Settings (Delegates, Forwarding, SendAs) - read',
    'api': GMAIL,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/gmail.settings.basic'},
   {'name': 'Gmail API - Sharing Settings (Delegates, Forwarding, SendAs) - write',
    'api': GMAIL,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/gmail.settings.sharing'},
 #  {'name': 'Identity and Access Management API',
 #   'api': IAM,
 #   'offByDefault': True,
-#   'subscopes': [],
 #   'scope': CLOUD_PLATFORM_SCOPE},
   {'name': 'Keep API',
    'api': KEEP,
@@ -726,16 +704,13 @@ _SVCACCT_SCOPES = [
    'scope': 'https://www.googleapis.com/auth/datastudio'},
   {'name': 'Meet API - Manage/Display Meeting Spaces',
    'api': MEET_SPACES,
-   'subscopes': [],
    'scope': ['https://www.googleapis.com/auth/meetings.space.created',
              'https://www.googleapis.com/auth/meetings.space.settings']},
   {'name': 'Meet API - Read Meeting Spaces metadata readonly',
    'api': MEET_READONLY,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/meetings.space.readonly'},
   {'name': 'OAuth2 API',
    'api': OAUTH2,
-   'subscopes': [],
    'scope': USERINFO_PROFILE_SCOPE},
   {'name': 'People API',
    'api': PEOPLE,
@@ -743,15 +718,12 @@ _SVCACCT_SCOPES = [
    'scope': PEOPLE_SCOPE},
   {'name': 'People Directory API - readonly',
    'api': PEOPLE_DIRECTORY,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/directory.readonly'},
   {'name': 'People API - Other Contacts - readonly',
    'api': PEOPLE_OTHERCONTACTS,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/contacts.other.readonly'},
   {'name': 'Search Console  API - readonly',
    'api': SEARCHCONSOLE,
-   'subscopes': [],
    'offByDefault': True,
    'scope': 'https://www.googleapis.com/auth/webmasters.readonly'},
   {'name': 'Sheets API',
@@ -760,17 +732,14 @@ _SVCACCT_SCOPES = [
    'scope': 'https://www.googleapis.com/auth/spreadsheets'},
   {'name': 'Site Verification API',
    'api': SITEVERIFICATION,
-   'subscopes': [],
    'offByDefault': True,
    'scope': 'https://www.googleapis.com/auth/siteverification'},
   {'name': 'Tag Manager API - Accounts, Containers, Workspaces, Tags - readonly',
    'api': TAGMANAGER,
-   'subscopes': [],
    'offByDefault': True,
    'scope': 'https://www.googleapis.com/auth/tagmanager.readonly'},
   {'name': 'Tag Manager API - Users',
    'api': TAGMANAGER_USERS,
-   'subscopes': [],
    'offByDefault': True,
    'scope': 'https://www.googleapis.com/auth/tagmanager.manage.users'},
   {'name': 'Tasks API',
@@ -779,7 +748,6 @@ _SVCACCT_SCOPES = [
    'scope': 'https://www.googleapis.com/auth/tasks'},
   {'name': 'Youtube API - readonly',
    'api': YOUTUBE,
-   'subscopes': [],
    'offByDefault': True,
    'scope': 'https://www.googleapis.com/auth/youtube.readonly'},
   ]
@@ -787,30 +755,25 @@ _SVCACCT_SCOPES = [
 _SVCACCT_SPECIAL_SCOPES = [
   {'name': 'Drive API - write todrive data - has access to all Drive',
    'api': DRIVETD,
-   'subscopes': [],
    'offByDefault': True,
    'scope': DRIVE_SCOPE},
   {'name': 'Gmail API - Full Access - readonly',
    'api': GMAIL,
-   'subscopes': [],
    'offByDefault': True,
    'scope': 'https://www.googleapis.com/auth/gmail.readonly'},
   {'name': 'Gmail API - Send Messages - including todrive',
    'api': GMAIL,
-   'subscopes': [],
    'offByDefault': True,
    'scope': GMAIL_SEND_SCOPE},
   {'name': 'Sheets API - write todrive data - has access to all Sheets',
    'api': SHEETSTD,
    'offByDefault': True,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/spreadsheets'},
   ]
 
 _USER_SVCACCT_ONLY_SCOPES = [
   {'name': 'Groups Migration API',
    'api': GROUPSMIGRATION,
-   'subscopes': [],
    'scope': 'https://www.googleapis.com/auth/apps.groups.migration'},
   ]
 
@@ -850,7 +813,7 @@ def getClientScopesURLs(commanddataClientAccess, todriveClientAccess):
 
 def getSvcAcctScopeAPI(uscope):
   for scope in _SVCACCT_SCOPES:
-    if uscope == scope['scope'] or (uscope.endswith('.readonly') and 'readonly' in scope['subscopes']):
+    if uscope == scope['scope'] or (uscope.endswith('.readonly') and 'readonly' in scope.get('subscopes', [])):
       return scope['api']
   return None
 
@@ -878,11 +841,11 @@ def findAPIforScope(scopesList):
     if cscope['scope'] == scope:
       requiredAPIs.append(cscope['name'])
       return True
-    if cscope['subscopes'] == READONLY and cscope['scope']+'.readonly' == scope:
+    if 'readonly' in cscope.get('subscopes', []) and cscope['scope']+'.readonly' == scope:
       requiredAPIs.append(cscope['name']+' (supports readonly)')
       return True
     return False
-    
+
   requiredAPIs = []
   for scope in scopesList:
     for cscope in _CLIENT_SCOPES:
