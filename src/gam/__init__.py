@@ -11361,8 +11361,8 @@ def doOAuthCreate():
           for scope in scopesList:
             subScopes = scope.get('subscopes', [])
             if ((uscope == scope['scope']) or
-                (uscope.endswith('.action') and 'actiononly' in subscopes) or
-                (uscope.endswith('.readonly') and 'readonly' in subscopes)):
+                (uscope.endswith('.action') and 'actiononly' in subScopes) or
+                (uscope.endswith('.readonly') and 'readonly' in subScopes)):
               scopes.append(uscope)
               break
           else:
@@ -72447,22 +72447,25 @@ def _printShowTokens(entityType, users):
     match = re.search(r'^\d+', client_id)
     return match.group()
 
-  def get_gcp_info():
-    if result['project'] in internal_projects:
-      result['internal'] = True
-      return
-    try:
-      results = callGAPI(crm1.projects(), 'getAncestry',
-                         throwReasons=[GAPI.PERMISSION_DENIED],
-                         projectId=result['project'])
-      for ancestor in results.get('ancestor', []):
-        if ancestor.get('resourceId', {}).get('type') == 'organization' and ancestor.get('resourceId', {}).get('id') == org_id:
-          result['internal'] = True
-          internal_projects.append(result['project'])
-    except GAPI.permissionDenied:
-      # we don't have permission to get project. This might be an external project
-      # or it might be an internal project we don't have rights to get.
-      pass
+  def get_gcp_info(results):
+    for result in results:
+      result['project'] = project_from_client_id(result.get('clientId'))
+      if result['project'] in internal_projects:
+        result['internal'] = True
+        continue
+      result['internal'] = False
+      try:
+        results = callGAPI(crm1.projects(), 'getAncestry',
+                           throwReasons=[GAPI.PERMISSION_DENIED],
+                           projectId=result['project'])
+        for ancestor in results.get('ancestor', []):
+          if ancestor.get('resourceId', {}).get('type') == 'organization' and ancestor.get('resourceId', {}).get('id') == org_id:
+            result['internal'] = True
+            internal_projects.add(result['project'])
+      except GAPI.permissionDenied:
+        # we don't have permission to get project. This might be an external project
+        # or it might be an internal project we don't have rights to get.
+        pass
 
   cd = buildGAPIObject(API.DIRECTORY)
   csvPF = CSVPrintFile() if Act.csvFormat() else None
@@ -72493,7 +72496,6 @@ def _printShowTokens(entityType, users):
     elif myarg == 'gcpdetails':
       getGCPDetails = True
       extra_titles = ['project', 'internal']
-      gcp_projects = {}
     elif not entityType:
       Cmd.Backup()
       entityType, users = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
@@ -72514,7 +72516,7 @@ def _printShowTokens(entityType, users):
     else:
       tokenTitle = TOKENS_TITLE_MAP[aggregateUsersBy]
   if getGCPDetails:
-    internal_projects = [] # cache
+    internal_projects = set() # cache
     crm = buildGAPIObject('cloudresourcemanager')
     crm1 = buildGAPIObject('cloudresourcemanagerv1')
     admin_email = _getAdminEmail()
@@ -72542,9 +72544,7 @@ def _printShowTokens(entityType, users):
                                               GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                                 userKey=user, fields=f'items({fields})')
       if getGCPDetails:
-        for result in results:
-          result['project'] = project_from_client_id(result.get('clientId'))
-          get_gcp_info()
+        get_gcp_info(results)
       if not aggregateUsersBy:
         if not csvPF:
           jcount = len(results)

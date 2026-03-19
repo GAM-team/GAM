@@ -1,3 +1,13 @@
+7.37.00
+
+Added new client access scopes used by `gam print tokens`.
+```
+[*] 52)  Resource Manager - Organizations readonly
+[*] 53)  Resource Manager - Projects readonly
+```
+
+Added option `gcpdetails` to `gam print tokens` that uses these scopes to get additional project information.
+
 7.36.03
 
 Added command to send email replies that causes Gmail to recognize the message
