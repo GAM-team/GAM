@@ -43,7 +43,7 @@ For each user, select the order of token presentation:
 * `orderby appname|displaytext` - Display each user's tokens ordered by App Name
 
 Use `gcpdetails` to get project information about the client; you get the project number
-and whether it is an internal project.
+and whether it is an internal project. In order to accurately determine if a project is internal, your GAM admin user must have at least the `Browser` [IAM role for the entire GCP organization](https://docs.cloud.google.com/iam/docs/roles-permissions/browser) which allows them to lookup basic metadata about your organization projects. If your admin is not able to see all GCP projects in your organization results may not be accurate.
 
 For `print tokens`:
 * `delimiter <Character>` - Separate `scopes` entries with `<Character>`; the default value is `csv_output_field_delimiter` from `gam.cfg`.
