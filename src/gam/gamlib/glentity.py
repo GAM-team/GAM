@@ -242,6 +242,7 @@ class GamEntity():
   FORWARDING_ADDRESS = 'fwda'
   GCP_FOLDER = 'gcpf'
   GCP_FOLDER_NAME = 'gcpn'
+  GCP_ORG_ID = 'gcpo'
   GMAIL_PROFILE = 'gmpr'
   GROUP = 'grou'
   GROUP_ALIAS = 'gali'
@@ -613,6 +614,7 @@ class GamEntity():
     FORWARDING_ADDRESS: ['Forwarding Addresses', 'Forwarding Address'],
     GCP_FOLDER: ['GCP Folders', 'GCP Folder'],
     GCP_FOLDER_NAME: ['GCP Folder Names', 'GCP Folder Name'],
+    GCP_ORG_ID: ['GCP Organization ID', 'GCP Organization ID'],
     GMAIL_PROFILE: ['Gmail Profile', 'Gmail Profile'],
     GROUP: ['Groups', 'Group'],
     GROUP_ALIAS: ['Group Aliases', 'Group Alias'],

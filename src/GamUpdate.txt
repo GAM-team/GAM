@@ -1,3 +1,21 @@
+7.38.00
+
+Added variable `gcp_org_id` to `gam.cfg` that is used by the following commands;
+by setting the value, additional API calls are eliminated.
+```
+gam create project
+gam create gcpfolder
+gam create|update|delete caalevel
+gam print|show caalevels
+gam print|show tokens gcpdetails
+```
+You can get and set the `gcp_org_id` value with these commands:
+```
+$ gam info gcporgid             
+organizations/906207637890
+$ gam config gcp_org_id organizations/906207637890 save
+```
+
 7.37.00
 
 Added new client access scopes used by `gam print tokens`.

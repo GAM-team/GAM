@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.37.00'
+__version__ = '7.38.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -11991,20 +11991,39 @@ def _checkForExistingProjectFiles(projectFiles):
     if os.path.exists(a_file):
       systemErrorExit(JSON_ALREADY_EXISTS_RC, Msg.AUTHORIZATION_FILE_ALREADY_EXISTS.format(a_file, Act.ToPerform()))
 
-def getGCPOrg(crm, login_hint, login_domain):
-  try:
-    getorg = callGAPI(crm.organizations(), 'search',
-                      throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                      query=f'domain:{login_domain}',
-                      pageSize=1, fields='organizations/name')
-  except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
-    entityActionFailedExit([Ent.USER, login_hint, Ent.DOMAIN, login_domain], str(e))
-  try:
-    organization = getorg['organizations'][0]['name']
-#    sys.stdout.write(Msg.YOUR_ORGANIZATION_NAME_IS.format(organization))
-    return organization
-  except (KeyError, IndexError):
-    systemErrorExit(3, Msg.YOU_HAVE_NO_RIGHTS_TO_CREATE_PROJECTS_AND_YOU_ARE_NOT_A_SUPER_ADMIN)
+def getCRMOrgId(forceSearch=False):
+  if not GC.Values[GC.GCP_ORG_ID] or forceSearch:
+    setTrueCustomerId()
+    _, crm = buildGAPIServiceObject(API.CLOUDRESOURCEMANAGER, None)
+    results = callGAPI(crm.organizations(), 'search',
+                       query=f'directorycustomerid:{GC.Values[GC.CUSTOMER_ID]}',
+                       pageSize=1, fields='organizations/name')
+    orgs = results.get('organizations')
+    if not orgs:
+      # return nothing and let calling API deal with it
+      # since caller knows what GCP role would serve best
+      return None
+    return orgs[0].get('name')
+  return GC.Values[GC.GCP_ORG_ID]
+
+# gam info gcporgid
+def doInfoGCPOrgId():
+  checkForExtraneousArguments()
+  writeStdout(f'{getCRMOrgId(forceSearch=True)}\n')
+
+def getGCPOrgId(crm, login_hint, login_domain):
+  if not GC.Values[GC.GCP_ORG_ID]:
+    try:
+      results = callGAPI(crm.organizations(), 'search',
+                         throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                         query=f'domain:{login_domain}',
+                         pageSize=1, fields='organizations/name')
+      return results['organizations'][0]['name']
+    except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
+      entityActionFailedExit([Ent.USER, login_hint, Ent.DOMAIN, login_domain], str(e))
+    except (KeyError, IndexError):
+      systemErrorExit(3, Msg.YOU_HAVE_NO_RIGHTS_TO_CREATE_PROJECTS_AND_YOU_ARE_NOT_A_SUPER_ADMIN)
+  return GC.Values[GC.GCP_ORG_ID]
 
 # gam create gcpfolder <String>
 # gam create gcpfolder [admin <EmailAddress] folder <String>
@@ -12028,7 +12047,7 @@ def doCreateGCPFolder():
   login_hint = _getValidateLoginHint(login_hint)
   login_domain = getEmailAddressDomain(login_hint)
   _, crm = getCRMService(login_hint)
-  organization = getGCPOrg(crm, login_hint, login_domain)
+  organization = getGCPOrgId(crm, login_hint, login_domain)
   try:
     result = callGAPI(crm.folders(), 'create',
                       throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
@@ -12074,7 +12093,7 @@ def doCreateProject():
       if 'error' in status:
         if status['error'].get('message', '') == 'No permission to create project in organization':
           sys.stdout.write(Msg.NO_RIGHTS_GOOGLE_CLOUD_ORGANIZATION)
-          organization = getGCPOrg(crm, login_hint, login_domain)
+          organization = getGCPOrgId(crm, login_hint, login_domain)
           org_policy = callGAPI(crm.organizations(), 'getIamPolicy',
                                 resource=organization)
           if 'bindings' not in org_policy:
@@ -14205,6 +14224,7 @@ def doReport():
   showNoActivities = False
   if usageReports:
     includeServices = set()
+  kwargs = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'todrive':
@@ -14296,6 +14316,8 @@ def doReport():
       gmailEventTypes = set(getNumberRangeList())
     elif activityReports and myarg == 'userisactor':
       mapAdminUsersToFilter = False
+    elif activityReports and myarg == 'includesensitivedata':
+      kwargs['includeSensitiveData'] = True
     elif myarg == 'addcsvdata':
       getAddCSVData(addCSVData)
     elif activityReports and myarg == 'shownoactivities':
@@ -14617,7 +14639,7 @@ def doReport():
                                actorIpAddress=actorIpAddress, orgUnitID=orgUnitId,
                                startTime=startEndTime.startTime, endTime=startEndTime.endTime,
                                eventName=eventName, filters=pfilters, groupIdFilter=groupIdFilter,
-                               resourceDetailsFilter=resourceDetailsFilter, maxResults=maxResults)
+                               resourceDetailsFilter=resourceDetailsFilter, maxResults=maxResults, **kwargs)
         except GAPI.badRequest:
           if user != 'all':
             entityUnknownWarning(Ent.USER, user, i, count)
@@ -72458,7 +72480,7 @@ def _printShowTokens(entityType, users):
                            throwReasons=[GAPI.PERMISSION_DENIED],
                            projectId=result['project'])
         for ancestor in results.get('ancestor', []):
-          if ancestor.get('resourceId', {}).get('type') == 'organization' and ancestor.get('resourceId', {}).get('id') == GC.Values['GCP_ORG_ID']:
+          if ancestor.get('resourceId', {}).get('type') == 'organization' and ancestor.get('resourceId', {}).get('id') == GC.Values[GC.GCP_ORG_ID]:
             result['internal'] = True
             internal_projects.add(result['project'])
       except GAPI.permissionDenied:
@@ -72520,8 +72542,7 @@ def _printShowTokens(entityType, users):
     crm1 = buildGAPIObject('cloudresourcemanagerv1')
     admin_email = _getAdminEmail()
     admin_domain = getEmailAddressDomain(admin_email)
-    if 'GCP_ORG_ID' not in GC.Values:
-      GC.Values['GCP_ORG_ID'] = getGCPOrg(crm, admin_email, admin_domain).split('/')[1]
+    GC.Values[GC.GCP_ORG_ID] = getGCPOrgId(crm, admin_email, admin_domain).split('/')[1]
   fields = ','.join(TOKENS_FIELDS_TITLES)
   i, count, users = getEntityArgument(users)
   for user in users:
@@ -79625,29 +79646,10 @@ def printShowTagManagerTags(users):
 def printShowTagManagerPermissions(users):
   printShowTagManagerObjects(users, Ent.TAGMANAGER_PERMISSION)
 
-def getCRMOrgId():
-  setTrueCustomerId()
-  _, crm = buildGAPIServiceObject(API.CLOUDRESOURCEMANAGER, None)
-  results = callGAPI(crm.organizations(), 'search',
-                     query=f'directorycustomerid:{GC.Values[GC.CUSTOMER_ID]}',
-                     pageSize=1, fields='organizations/name')
-  orgs = results.get('organizations')
-  if not orgs:
-    # return nothing and let calling API deal with it
-    # since caller knows what GCP role would serve best
-    return None
-  return orgs[0].get('name')
-
 def CAARoleErrorExit(caa):
   sa_email = caa._http.credentials.signer_email
   systemErrorExit(NO_SA_ACCESS_CONTEXT_MANAGER_EDITOR_ROLE_RC,
                   f'Please grant service account {sa_email} the Access Context Manager Editor role in your GCP organization.')
-
-def normalizeCAALevelName(caa, name):
-  if name.startswith('accessPolicies/'):
-    return name
-  ap_name = getAccessPolicy(caa)
-  return f'{ap_name}/accessLevels/{name}'
 
 def buildCAAServiceObject():
   _, caa = buildGAPIServiceObject(API.ACCESSCONTEXTMANAGER, None)
@@ -79672,7 +79674,13 @@ def getAccessPolicy(caa=None):
   for ap in aps:
     if ap.get('title') == 'Access policy created in Cloud Identity Console':
       return ap['name']
-  systemErrorExit(ACCESS_POLICY_ERROR_RC, ' Could not find a org level access policy. That is odd.')
+  systemErrorExit(ACCESS_POLICY_ERROR_RC, 'Could not find a org level access policy. That is odd.')
+
+def normalizeCAALevelName(caa, name):
+  if name.startswith('accessPolicies/'):
+    return name
+  ap_name = getAccessPolicy(caa)
+  return f'{ap_name}/accessLevels/{name}'
 
 CAA_OS_TYPE_MAP = {
   'desktopmac': 'DESKTOP_MAC',
@@ -80189,6 +80197,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_DRIVEFILEACL:	doInfoDriveFileACLs,
       Cmd.ARG_DRIVELABEL:	doInfoDriveLabels,
       Cmd.ARG_INSTANCE:		doInfoInstance,
+      Cmd.ARG_GCPORGID:		doInfoGCPOrgId,
       Cmd.ARG_GROUP:		doInfoGroups,
       Cmd.ARG_GROUPMEMBERS:	doInfoGroupMembers,
       Cmd.ARG_INBOUNDSSOASSIGNMENT:	doInfoInboundSSOAssignment,

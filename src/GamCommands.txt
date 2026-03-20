@@ -1429,6 +1429,8 @@ gam print addresses [todrive <ToDriveAttribute>*]
 
 # Authorization
 
+gam info gcporgid
+
 gam create gcpfolder <String>
 gam create gcpfolder [admin <EmailAddress>] folder <String>
 
@@ -2989,6 +2991,8 @@ gam [<UserTypeEntity>] show classificationlabelpermissions <ClassificationLabelN
 <CAABasicAttribute> ::+
         (combiningfunction <CAACombiningFunction>) |
         (condition <CAAConditionAttribute>+ endcondition)
+
+gam info gcporgid
 
 gam create caalevel <String> [description <String>] (basic <CAABasicAttribute>+)|(custom <QueryCEL>)|<JSONData>
 gam update caalevel <CAALevelName> [description <String>] (basic <CAABasicAttribute>+)|(custom <QueryCEL>)|<JSONData>
@@ -8911,6 +8915,8 @@ gam <UserTypeEntity> show sheetrange <DriveFileEntity>
 # Users - Tokens
 
 gam <UserTypeEntity> delete tokens clientid <ClientID>
+
+gam info gcporgid
 
 gam <UserTypeEntity> print tokens|token [todrive <ToDriveAttribute>*] [clientid <ClientID>]
         [usertokencounts|(aggregateusersby|orderby clientid|id|appname|displaytext)]

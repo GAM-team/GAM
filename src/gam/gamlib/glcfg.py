@@ -177,6 +177,8 @@ ENFORCE_EXPANSIVE_ACCESS = 'enforce_expansive_access'
 EVENT_MAX_RESULTS = 'event_max_results'
 # Path to extra_args.txt
 EXTRA_ARGS = 'extra_args'
+# Google Cloud Project Organization ID
+GCP_ORG_ID = 'gcp_org_id'
 # Gmail CSE certificates directory
 GMAIL_CSE_INCERT_DIR = 'gmail_cse_incert_dir'
 # Gmail CSE KACL wrapped key files
@@ -403,6 +405,7 @@ Defaults = {
   ENABLE_GCLOUD_REAUTH: FALSE,
   EVENT_MAX_RESULTS: '250',
   EXTRA_ARGS: '',
+  GCP_ORG_ID: '',
   GMAIL_CSE_INCERT_DIR: '',
   GMAIL_CSE_INKEY_DIR: '',
   INPUT_DIR: '.',
@@ -577,6 +580,7 @@ VAR_INFO = {
   ENABLE_GCLOUD_REAUTH: {VAR_TYPE: TYPE_BOOLEAN},
   EVENT_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 2500)},
   EXTRA_ARGS: {VAR_TYPE: TYPE_FILE, VAR_SIGFILE: FN_EXTRA_ARGS_TXT, VAR_SFFT: ('', FN_EXTRA_ARGS_TXT), VAR_ACCESS: os.R_OK},
+  GCP_ORG_ID: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
   GMAIL_CSE_INCERT_DIR: {VAR_TYPE: TYPE_DIRECTORY},
   GMAIL_CSE_INKEY_DIR: {VAR_TYPE: TYPE_DIRECTORY},
   INPUT_DIR: {VAR_TYPE: TYPE_DIRECTORY},
