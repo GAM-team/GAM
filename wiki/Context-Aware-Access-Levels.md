@@ -3,6 +3,7 @@
 - [Notes](#Notes)
 - [API documentation](#api-documentation)
 - [Grant Service Account Rights to Manage CAA](#grant-service-account-rights-to-manage-caa)
+- [Get Google Cloud organization ID for your workspace](#Get Google Cloud organization ID for your workspace)
 - [Definitions](#definitions)
 - [Parameters for Basic Levels](#parameters-for-basic-levels)
 - [Create an Access Level](#create-an-access-level)
@@ -35,6 +36,15 @@ In order for GAM to manage CAA access levels, you need to grant your service acc
 9. In the `Select a role*` box, select Access Context Manager > Access Context Manager Editor.
 10. Click `Save`. It may take 15 minutes or more for the role permissions to propagate.
 11. Confirm the role is in place by re-running `gam print caalevels`
+
+## Get Google Cloud organization ID for your workspace
+This ID is used by the caalevel commands; to eliminate additional API calls,
+you can get the value and store it in the `gam.cfg/gcp_org_id` variable.
+```
+$ gam info gcporgid
+organizations/906207637890
+$ gam config gcp_org_id organizations/906207637890 save
+```
 
 ## Definitions
 ```

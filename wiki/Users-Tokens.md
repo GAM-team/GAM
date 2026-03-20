@@ -1,5 +1,6 @@
 # Users - Tokens
 - [API documentation](#api-documentation)
+- [Get Google Cloud organization ID for your workspace](#Get Google Cloud organization ID for your workspace)
 - [Definitions](#definitions)
 - [Delete a user's token](#delete-a-users-token)
 - [Display individual user's tokens](#display-individual-users-tokens)
@@ -8,6 +9,15 @@
 
 ## API documentation
 * [Directory API - Tokens](https://developers.google.com/admin-sdk/directory/reference/rest/v1/tokens)
+
+## Get Google Cloud organization ID for your workspace
+This ID is used by `gam print|show token gcpdetails`; to eliminate additional API calls,
+you can get the value and store it in the `gam.cfg/gcp_org_id` variable.
+```
+$ gam info gcporgid
+organizations/906207637890
+$ gam config gcp_org_id organizations/906207637890 save
+```
 
 ## Definitions
 * [`<UserTypeEntity>`](Collections-of-Users)

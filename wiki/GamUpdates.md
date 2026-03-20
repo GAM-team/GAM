@@ -10,6 +10,32 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.38.00
+
+Added variable `gcp_org_id` to `gam.cfg` that is used by the following commands;
+by setting the value, additional API calls are eliminated.
+```
+gam create project
+gam create gcpfolder
+gam create|update|delete caalevel
+gam print|show caalevels
+gam print|show tokens gcpdetails
+```
+You can get and set the `gcp_org_id` value with these commands:
+```
+$ gam info gcporgid             
+organizations/906207637890
+$ gam config gcp_org_id organizations/906207637890 save
+```
+
+Added the following options to `gam report <ActivityApplicationName>`.
+```
+applicationinfofilter <String>
+networkinfofilter <String>
+statusfilter <String>
+includesensitivedata
+```
+
 ### 7.37.00
 
 Added new client access scopes used by `gam print tokens`.

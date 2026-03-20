@@ -99,6 +99,8 @@ gam report <ActivityApplicationName> [todrive <ToDriveAttribute>*]
         [event|events <EventNameList>] [ip <String>]
         [gmaileventtypes <NumberRangeList>]
         [groupidfilter <String>] [resourcedetailsfilter <String>]
+        [networkinfofilter <String>] [statusfilter <String>]
+        [applicationinfofilter <String>] [includesensitivedata]
         [notimesort]
         [maxactivities <Number>] [maxevents <Number>] [maxresults <Number>]
         [countsonly [bydate|summary] [eventrowfilter]]
@@ -153,6 +155,15 @@ Limit to those users that are a member of at least one of a list of groups.
 
 Limit based on resource details.
 * `resourcedetailsfilter <String>` - See: https://developers.google.com/workspace/admin/reports/reference/rest/v1/activities/list#query-parameters
+
+Limit based on 'regionCode`.
+* `networkinfofilter <String>` - Format: 'regionCode="IN"'
+
+Limit based on `statusCode`.
+* `statusfilter <String>` - Format: 'statusCode="200"'
+
+Limit based on `oAuthClientId`.
+* `applicationinfofilter <String>` - Format: 'oAuthClientId="clientId"'
 
 You can use `config csv_output_row_filter` to filter the events if the API filter can't produce the results you want.
 

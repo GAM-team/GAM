@@ -375,6 +375,21 @@ extra_args
         Path to extra_args.txt
         Default: Blank
         Data file: extra_args.txt
+gcp_org_id
+        The Google Cloud organization ID for your workspace.
+        Default: Blank
+        This value is used by the following commands;
+        by setting the value, additional API calls are eliminated.
+        gam create project
+        gam create gcpfolder
+        gam create|update|delete caalevel
+        gam print|show caalevels
+        gam print|show tokens gcpdetails
+
+        You can get and save the `gcp_org_id` value with these commands:
+        $ gam info gcporgid
+        organizations/906207637890
+        $ gam config gcp_org_id organizations/906207637890 save
 gmail_cse_incert_dir
         Directory for the S/MIME certificate files used by Gmail Client Side Encryption.
         Default: Blank
