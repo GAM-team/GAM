@@ -13873,6 +13873,14 @@ REPORT_ACTIVITIES_UPPERCASE_EVENTS = {
   'takeout',
   }
 
+REPORT_ACTIVITIES_FILTER_MAP = {
+  'applicationinfofilter': 'applicationInfoFilter',
+  'groupidfilter': 'groupIdFilter',
+  'networkinfofilter': 'networkInfoFilter',
+  'resourcedetailsfilter': 'resourceDetailsFilter',
+  'statusfilter': 'statusFilter',
+  }
+
 REPORT_ACTIVITIES_TIME_OBJECTS = {'time'}
 
 # gam report <ActivityApplictionName> [todrive <ToDriveAttribute>*]
@@ -13884,6 +13892,8 @@ REPORT_ACTIVITIES_TIME_OBJECTS = {'time'}
 #	[event|events <EventNameList>] [ip <String>]
 #	[gmaileventtypes <NumberRangeList>]
 #	[groupidfilter <String>] [resourcedetailsfilter <String>]
+#	[networkinfofilter <String>] [statusfilter <String>]
+#	[applicationinfofilter <String>] [includesensitivedata]
 #	[notimesort]
 #	[maxactivities <Number>] [maxevents <Number>] [maxresults <Number>]
 #	[countsonly [bydate|summary] [eventrowfilter]]
@@ -14162,6 +14172,12 @@ def doReport():
     else:
       events['accounts:used_quota_in_percentage'] = 0
 
+  def _getActivitiesFilters(myarg):
+    if myarg in REPORT_ACTIVITIES_FILTER_MAP:
+      kwargs[REPORT_ACTIVITIES_FILTER_MAP[myarg]] = getString(Cmd.OB_STRING)
+      return True
+    return False
+
   # dynamically extend our choices with other reports Google dynamically adds
   rep = buildGAPIObject(API.REPORTS)
   dyn_choices = rep._rootDesc \
@@ -14187,7 +14203,7 @@ def doReport():
   if customerId == GC.MY_CUSTOMER:
     customerId = None
   csvPF = CSVPrintFile()
-  filters = actorIpAddress = groupIdFilter = orgUnit = orgUnitId = resourceDetailsFilter = None
+  filters = actorIpAddress = orgUnit = orgUnitId = None
   showOrgUnit = False
   parameters = set()
   parameterServices = set()
@@ -14308,10 +14324,8 @@ def doReport():
       countsSummary = True
     elif activityReports and myarg == 'eventrowfilter':
       eventRowFilter = True
-    elif activityReports and myarg == 'groupidfilter':
-      groupIdFilter = getString(Cmd.OB_STRING)
-    elif activityReports and myarg == 'resourcedetailsfilter':
-      resourceDetailsFilter = getString(Cmd.OB_STRING)
+    elif activityReports and _getActivitiesFilters(myarg):
+      pass
     elif activityReports and (report == 'gmail')  and myarg == 'gmaileventtypes':
       gmailEventTypes = set(getNumberRangeList())
     elif activityReports and myarg == 'userisactor':
@@ -14638,8 +14652,7 @@ def doReport():
                                applicationName=report, userKey=user, customerId=customerId,
                                actorIpAddress=actorIpAddress, orgUnitID=orgUnitId,
                                startTime=startEndTime.startTime, endTime=startEndTime.endTime,
-                               eventName=eventName, filters=pfilters, groupIdFilter=groupIdFilter,
-                               resourceDetailsFilter=resourceDetailsFilter, maxResults=maxResults, **kwargs)
+                               eventName=eventName, filters=pfilters, maxResults=maxResults, **kwargs)
         except GAPI.badRequest:
           if user != 'all':
             entityUnknownWarning(Ent.USER, user, i, count)

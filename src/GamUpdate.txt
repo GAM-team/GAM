@@ -16,6 +16,14 @@ organizations/906207637890
 $ gam config gcp_org_id organizations/906207637890 save
 ```
 
+Added the following options to `gam report <ActivityApplicationName>`.
+```
+networkinfofilter <String>
+statusfilter <String>
+applicationinfofilter <String>
+includesensitivedata
+```
+
 7.37.00
 
 Added new client access scopes used by `gam print tokens`.
