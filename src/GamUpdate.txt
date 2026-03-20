@@ -9,18 +9,25 @@ gam create|update|delete caalevel
 gam print|show caalevels
 gam print|show tokens gcpdetails
 ```
-You can get and set the `gcp_org_id` value with these commands:
+You can get and set the `gam.cfg/gcp_org_id` value with these commands:
 ```
 $ gam info gcporgid             
 organizations/906207637890
 $ gam config gcp_org_id organizations/906207637890 save
 ```
 
+You can get and set the `gam.cfg/customer_id` value with these commands:
+```
+$ gam info customerid             
+C78abc9de
+$ gam config customer_id C78abc9de save
+```
+
 Added the following options to `gam report <ActivityApplicationName>`.
 ```
+applicationinfofilter <String>
 networkinfofilter <String>
 statusfilter <String>
-applicationinfofilter <String>
 includesensitivedata
 ```
 

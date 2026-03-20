@@ -12006,6 +12006,12 @@ def getCRMOrgId(forceSearch=False):
     return orgs[0].get('name')
   return GC.Values[GC.GCP_ORG_ID]
 
+# gam info customerid
+def doInfoCustomerId():
+  checkForExtraneousArguments()
+  setTrueCustomerId(cd=None)
+  writeStdout(f'{GC.Values[GC.CUSTOMER_ID]}\n')
+
 # gam info gcporgid
 def doInfoGCPOrgId():
   checkForExtraneousArguments()
@@ -80200,6 +80206,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CROSTELEMETRY:	doInfoPrintShowCrOSTelemetry,
       Cmd.ARG_CURRENTPROJECTID:	doInfoCurrentProjectId,
       Cmd.ARG_CUSTOMER:		doInfoCustomer,
+      Cmd.ARG_CUSTOMERID:	doInfoCustomerId,
       Cmd.ARG_DATATRANSFER:	doInfoDataTransfer,
       Cmd.ARG_DEVICE:		doInfoCIDevice,
       Cmd.ARG_DEVICEUSER:	doInfoCIDeviceUser,

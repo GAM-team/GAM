@@ -3548,6 +3548,10 @@ gam info customer [formatjson]
 
 gam info instance [formatjson]
 
+gam info customerid
+
+gam info gcporgid
+
 # Data Transfers
 
 gam print|show transferapps

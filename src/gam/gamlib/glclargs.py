@@ -830,6 +830,7 @@ class GamCLArgs():
   ARG_CSEKEYPAIRS = 'csekeypairs'
   ARG_CURRENTPROJECTID = 'currentprojectid'
   ARG_CUSTOMER = 'customer'
+  ARG_CUSTOMERID = 'customerid'
   ARG_DATASTUDIOASSET = 'datastudioasset'
   ARG_DATASTUDIOASSETS = 'datastudioassets'
   ARG_DATASTUDIOPERMISSION = 'datastudiopermission'
