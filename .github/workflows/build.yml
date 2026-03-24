@@ -376,7 +376,7 @@ jobs:
           #    echo "ARCHFLAGS=-arch arm64" >> $GITHUB_ENV
           #    ;;
           #esac
-          if [[ "${RUNNER_OS}" != "Windows" ]]; then
+          if [[ "${RUNNER_OS}" == "Windows" ]]; then
             strip "${OPENSSL_INSTALL_PATH}/bin/openssl.exe"
           else
             strip "${OPENSSL_INSTALL_PATH}/bin/openssl"
