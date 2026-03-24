@@ -946,8 +946,10 @@ jobs:
           done
           driveid=$($gam user $gam_user add shareddrive "${newbase}" returnidonly)
           echo "Created shared drive ${driveid}"
-          run_gam create user $newuser firstname GHA lastname $JID displayname "Github Actions ${JID}" password random recoveryphone 12125121110 recoveryemail jay0lee@gmail.com gha.jid $JID languages en+,en-GB- ou "${newou}"
+          run_gam create user $newuser firstname GHA lastname $JID displayname "Github Actions ${JID}" password random recoveryphone 12125121110 recoveryemail jay0lee@gmail.com gha.jid $JID languages en+,en-GB- ou "$newou"
           run_gam user $newuser add license workspaceenterpriseplus
+          run_gam update user $newuser ou /
+          run_gam update user $newuser ou "$newou"
           run_gam user $newuser update photo https://dummyimage.com/98x98/000/fff.jpg
           run_gam user $newuser get photo
           run_gam user $newuser delete photo
