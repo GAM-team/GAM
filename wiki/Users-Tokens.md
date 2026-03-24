@@ -1,6 +1,6 @@
 # Users - Tokens
 - [API documentation](#api-documentation)
-- [Get Google Cloud organization ID for your workspace](#Get Google Cloud organization ID for your workspace)
+- [Get Google Cloud organization ID for your workspace](#get-google-cloud-organization-id-for-your-workspace)
 - [Definitions](#definitions)
 - [Delete a user's token](#delete-a-users-token)
 - [Display individual user's tokens](#display-individual-users-tokens)
