@@ -376,11 +376,10 @@ jobs:
           #    echo "ARCHFLAGS=-arch arm64" >> $GITHUB_ENV
           #    ;;
           #esac
-          if [[ "${RUNNER_OS}" == "Windows" ]]; then
-            strip "${OPENSSL_INSTALL_PATH}/bin/openssl.exe"
-          else
+          if [[ "${RUNNER_OS}" != "Windows" ]]; then
             strip "${OPENSSL_INSTALL_PATH}/bin/openssl"
           fi
+
       - name: Run OpenSSL
         if: matrix.goal == 'build'
         run: |
@@ -402,8 +401,6 @@ jobs:
         if: matrix.goal == 'build' && runner.os != 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
           cd "${PYTHON_SOURCE_PATH}"
-          export CFLAGS="-O3 -pipe"
-          export LDFLAGS="-Wl,--strip-all"
           ./configure --with-openssl="${OPENSSL_INSTALL_PATH}" \
                       --prefix="${PYTHON_INSTALL_PATH}" \
                       --enable-shared \
@@ -479,8 +476,6 @@ jobs:
         if: matrix.goal == 'build' && runner.os != 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
           cd "${PYTHON_SOURCE_PATH}"
-          export CFLAGS="-O3 -pipe"
-          export LDFLAGS="-Wl,--strip-all"
           echo "Running: ${MAKE} ${MAKEOPT}"
           $MAKE $MAKEOPT
 
