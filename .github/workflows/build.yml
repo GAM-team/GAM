@@ -376,8 +376,11 @@ jobs:
           #    echo "ARCHFLAGS=-arch arm64" >> $GITHUB_ENV
           #    ;;
           #esac
-          strip "${OPENSSL_INSTALL_PATH}/bin/openssl"
-
+          if [[ "${RUNNER_OS}" != "Windows" ]]; then
+            strip "${OPENSSL_INSTALL_PATH}/bin/openssl.exe"
+          else
+            strip "${OPENSSL_INSTALL_PATH}/bin/openssl"
+          fi
       - name: Run OpenSSL
         if: matrix.goal == 'build'
         run: |
