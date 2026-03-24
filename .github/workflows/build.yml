@@ -23,7 +23,7 @@ defaults:
 
 env:
   SCRATCH_COUNTER: 14
-  OPENSSL_CONFIG_OPTS: no-fips --api=3.0.0
+  OPENSSL_CONFIG_OPTS: no-fips --api=3.0.0 no-docs no-ssl3 no-tls1 no-tls1_1 no-dtls no-comp no-srp no-psk no-engine no-dynamic-engine no-nextprotoneg no-weak-ssl-ciphers no-idea no-seed no-camellia no-sm2 no-sm3 no-sm4 no-rc2 no-rc4 no-rc5 no-md2 no-md4 no-cast no-des no-shared no-tests -O3
   OPENSSL_INSTALL_PATH: ${{ github.workspace }}/bin/ssl
   OPENSSL_SOURCE_PATH: ${{ github.workspace }}/src/openssl
   PYTHON_INSTALL_PATH: ${{ github.workspace }}/bin/python
@@ -164,7 +164,7 @@ jobs:
         with:
           path: |
             cache.tar.xz
-          key: gam-${{ matrix.jid }}-20260227
+          key: gam-${{ matrix.jid }}-20260323
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
@@ -277,6 +277,8 @@ jobs:
           echo "We are running on ${RUNNER_OS}"
           LD_LIBRARY_PATH="${OPENSSL_INSTALL_PATH}/lib:${PYTHON_INSTALL_PATH}/lib:/usr/local/lib"
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
+            export CFLAGS="-O3 -pipe"
+            export LDFLAGS="-Wl,-dead_strip"
             MAKE=make
             MAKEOPT="-j$(sysctl -n hw.logicalcpu)"
             PERL=perl
@@ -285,6 +287,8 @@ jobs:
             echo "We are running on and targetting MacOS ${MACOSX_DEPLOYMENT_TARGET}"
             echo "PYTHON=${PYTHON_INSTALL_PATH}/bin/python3" >> $GITHUB_ENV
           elif [[ "${RUNNER_OS}" == "Linux" ]]; then
+            export CFLAGS="-O3 -pipe"
+            export LDFLAGS="-Wl,--strip-all"
             MAKE=make
             MAKEOPT="-j$(nproc)"
             PERL=perl
@@ -311,6 +315,8 @@ jobs:
           echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}" >> $GITHUB_ENV
           echo "MAKE=${MAKE}" >> $GITHUB_ENV
           echo "MAKEOPT=${MAKEOPT}" >> $GITHUB_ENV
+          echo "CFLAGS=${CFLAGS}" >> $GITHUB_ENV
+          echo "LDFLAGS=${LDFLAGS}" >> $GITHUB_ENV
           echo "PERL=${PERL}" >> $GITHUB_ENV
           echo "PYEXTERNALS_PATH=${PYEXTERNALS_PATH}" >> $GITHUB_ENV
 
@@ -335,10 +341,6 @@ jobs:
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
           cd "${OPENSSL_SOURCE_PATH}"
-          #if ([ "$RUNNER_OS" == "Windows" ] && [ "$RUNNER_ARCH" == "ARM64" ]); then
-            # https://github.com/openssl/openssl/issues/26239
-            export CFLAGS=-DNO_INTERLOCKEDOR64
-          #fi
           # --libdir=lib is needed so Python can find OpenSSL libraries
           "${PERL}" ./Configure --libdir=lib --prefix="${OPENSSL_INSTALL_PATH}" $OPENSSL_CONFIG_OPTS
 
@@ -352,10 +354,6 @@ jobs:
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
           cd "${OPENSSL_SOURCE_PATH}"
-          # TODO: remove this once https://github.com/openssl/openssl/issues/26239 is fixed.
-          if ([ "$RUNNER_OS" == "Windows" ] && [ "$RUNNER_ARCH" == "ARM64" ]); then
-            export CFLAGS=-DNO_INTERLOCKEDOR64
-          fi
           $MAKE "$MAKEOPT"
 
       - name: Install OpenSSL
@@ -364,20 +362,23 @@ jobs:
           cd "${OPENSSL_SOURCE_PATH}"
           # install_sw saves us ages processing man pages :-)
           $MAKE install_sw
+          #if [[ "${RUNNER_OS}" != "Windows" ]]; then
+          #  echo "LDFLAGS=-L${OPENSSL_INSTALL_PATH}/lib" >> $GITHUB_ENV
+          #fi
+          #echo "CRYPTOGRAPHY_SUPPRESS_LINK_FLAGS=1" >> $GITHUB_ENV
+          #case $RUNNER_ARCH in
+          #  X64)
+          #    echo "CFLAGS=-I${OPENSSL_INSTALL_PATH}/include ${CFLAGS}" >> $GITHUB_ENV
+          #    echo "ARCHFLAGS=-arch x86_64" >> $GITHUB_ENV
+          #    ;;
+          #  ARM64)
+          #    echo "CFLAGS=-I${OPENSSL_INSTALL_PATH}/include ${CFLAGS}" >> $GITHUB_ENV
+          #    echo "ARCHFLAGS=-arch arm64" >> $GITHUB_ENV
+          #    ;;
+          #esac
           if [[ "${RUNNER_OS}" != "Windows" ]]; then
-            echo "LDFLAGS=-L${OPENSSL_INSTALL_PATH}/lib" >> $GITHUB_ENV
+            strip "${OPENSSL_INSTALL_PATH}/bin/openssl"
           fi
-          echo "CRYPTOGRAPHY_SUPPRESS_LINK_FLAGS=1" >> $GITHUB_ENV
-          case $RUNNER_ARCH in
-            X64)
-              echo "CFLAGS=-I${OPENSSL_INSTALL_PATH}/include ${CFLAGS}" >> $GITHUB_ENV
-              echo "ARCHFLAGS=-arch x86_64" >> $GITHUB_ENV
-              ;;
-            ARM64)
-              echo "CFLAGS=-I${OPENSSL_INSTALL_PATH}/include ${CFLAGS}" >> $GITHUB_ENV
-              echo "ARCHFLAGS=-arch arm64" >> $GITHUB_ENV
-              ;;
-          esac
 
       - name: Run OpenSSL
         if: matrix.goal == 'build'
@@ -405,7 +406,9 @@ jobs:
                       --enable-shared \
                       --with-ensurepip=upgrade \
                       --enable-optimizations \
-                      --with-lto || : # exit 0
+                      --with-lto \
+                      --disable-test-modules \
+                      --without-doc-strings || : # exit 0
           cat config.log
 
       - name: Windows Get External Python deps
@@ -452,8 +455,10 @@ jobs:
         shell: powershell
         run: |
           cd "${env:PYTHON_SOURCE_PATH}"
-          # We need out custom openssl.props which uses OpenSSL 3 DLL names
+          # We need our custom openssl.props which uses OpenSSL 3 DLL names
           Copy-Item -Path "${env:GITHUB_WORKSPACE}\src\tools\openssl.props" -Destination PCBuild\ -Verbose
+          # We need our custom _hashlib.vcxproj
+          Copy-Item -Path "${env:GITHUB_WORKSPACE}\src\tools\_hashlib.vcxproj" -Destination PCBuild\ -Verbose
           if (${env:RUNNER_ARCH} -eq "X64") {
             $env:arch = "x64"
             #PCBuild\build.bat -c Release -p $env:arch --pgo
@@ -480,6 +485,7 @@ jobs:
           cd "${PYTHON_SOURCE_PATH}"
           $MAKE altinstall
           $MAKE bininstall
+          strip "${PYTHON_INSTALL_PATH}/bin/python3"
           export PATH="${PATH}:${PYTHON_INSTALL_PATH}/bin"
           echo "PATH=${PATH}" >> $GITHUB_ENV
           echo "PATH: ${PATH}"
@@ -938,14 +944,16 @@ jobs:
           done
           driveid=$($gam user $gam_user add shareddrive "${newbase}" returnidonly)
           echo "Created shared drive ${driveid}"
-          run_gam create user $newuser firstname GHA lastname $JID displayname "Github Actions ${JID}" password random recoveryphone 12125121110 recoveryemail jay0lee@gmail.com gha.jid $JID languages en+,en-GB- ou "${newou}"
-          run_gam user $newuser add license workspaceenterpriseplus
+          run_gam create user $newuser firstname GHA lastname $JID displayname "Github Actions ${JID}" password uniquerandom recoveryphone 12125121110 recoveryemail jay0lee@gmail.com gha.jid $JID languages en+,en-GB- ou "$newou"
           run_gam user $newuser update photo https://dummyimage.com/98x98/000/fff.jpg
           run_gam user $newuser get photo
           run_gam user $newuser delete photo
           run_gam create alias $newalias user $newuser
           run_gam create group $newgroup name "GHA $JID group" description "This is a description" isarchived true
           run_gam user $gam_user sendemail recipient dev-null@pdl.jaylee.us subject "test message $newbase" message "GHA test message"
+          run_gam user $newuser add license workspaceenterpriseplus
+          run_gam update user $newuser ou /
+          run_gam update user $newuser ou "$newou"
           run_gam config enable_dasa false save
           # don't expose policy output
           run_gam show policies > policies.csv
