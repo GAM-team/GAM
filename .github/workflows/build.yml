@@ -400,12 +400,16 @@ jobs:
         if: matrix.goal == 'build' && runner.os != 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
           cd "${PYTHON_SOURCE_PATH}"
+          export CFLAGS="-O3 -pipe"
+          export LDFLAGS="-Wl,--strip-all"
           ./configure --with-openssl="${OPENSSL_INSTALL_PATH}" \
                       --prefix="${PYTHON_INSTALL_PATH}" \
                       --enable-shared \
                       --with-ensurepip=upgrade \
                       --enable-optimizations \
-                      --with-lto || : # exit 0
+                      --with-lto \
+                      --disable-test-modules \
+                      --without-doc-strings || : # exit 0
           cat config.log
 
       - name: Windows Get External Python deps
@@ -473,6 +477,8 @@ jobs:
         if: matrix.goal == 'build' && runner.os != 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
           cd "${PYTHON_SOURCE_PATH}"
+          export CFLAGS="-O3 -pipe"
+          export LDFLAGS="-Wl,--strip-all"
           echo "Running: ${MAKE} ${MAKEOPT}"
           $MAKE $MAKEOPT
 
