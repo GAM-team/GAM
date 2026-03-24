@@ -884,8 +884,6 @@ jobs:
             fi
           }
 
-          # Ensures / means / on Windows Bash...
-          export MSYS_NO_PATHCONV=1
           export gam_user="gam-gha-${JID}@pdl.jaylee.us"
           echo "gam_user=${gam_user}" >> $GITHUB_ENV
           run_gam config customer_id "C03uzfv2s" save
