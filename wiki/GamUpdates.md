@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.38.01
+
+Added `root` as a synonym for '/' in command line arguments that specify an OU.
+This is to avoid issues where a stand-alone `/` on the command line may be mis-interpreted
+by the command line interpreter as a reference to the file system root.
+
 ### 7.38.00
 
 Added variable `gcp_org_id` to `gam.cfg` that is used by the following commands;
