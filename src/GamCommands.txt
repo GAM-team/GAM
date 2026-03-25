@@ -5764,7 +5764,7 @@ gam download storagefile <StorageBucketObjectName>
         (language clear|<LanguageList>)|
         (lastname|familyname <String>)|
         (note clear|([text_html|text_plain] <UserNoteContent))|
-        (ou|org|orgunitpath <OrgUnitPath>|<OrgUnitID>)
+        (ou|org|orgunitpath <OrgUnitPath>|<OrgUnitID>|root)
         (password (random [<Integer>])|(uniquerandom [<Integer>])|
                    blocklogin|
                    prompt|uniqueprompt|

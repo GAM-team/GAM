@@ -1,3 +1,9 @@
+7.38.01
+
+Added `root` as a synonnym for '/' in command line arguments that specify an OU.
+This is to avoid issues where a stand-alone `/` on the command line may be mis-interpreted
+by the command line interpreter as a reference to the file system root.
+
 7.38.00
 
 Added variable `gcp_org_id` to `gam.cfg` that is used by the following commands;

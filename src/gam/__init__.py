@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.38.00'
+__version__ = '7.38.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -3777,6 +3777,11 @@ def SetGlobalVariables():
       else:
         _printValueError(sectionName, itemName, api, f'{Msg.EXPECTED}: {",".join(sorted(validAPIs))}')
 
+  def _validateGCPOrgId(sectionName, itemName, gcpOrgId):
+    mg = re.match(r'organizations/\d+', gcpOrgId)
+    if not mg:
+      _printValueError(sectionName, itemName, gcpOrgId, f'{Msg.EXPECTED}: "organizations/<Number>"')
+
   def _getCfgString(sectionName, itemName):
     value = _stripStringQuotes(GM.Globals[GM.PARSER].get(sectionName, itemName))
     if itemName == GC.DOMAIN:
@@ -3787,6 +3792,8 @@ def SetGlobalVariables():
         _validateLicenseSKUs(sectionName, itemName, value)
       elif itemName == GC.DEVELOPER_PREVIEW_APIS and value:
         _validateDeveloperPreviewAPIs(sectionName, itemName, value.lower())
+      elif itemName == GC.GCP_ORG_ID and value:
+        _validateGCPOrgId(sectionName, itemName, value)
       return value
     _printValueError(sectionName, itemName, f'"{value}"', f'{Msg.EXPECTED}: {integerLimits(minLen, maxLen, Msg.STRING_LENGTH)}')
     return ''
@@ -6556,6 +6563,8 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
     qualifier = Msg.DIRECTLY_IN_THE.format(Ent.Singular(Ent.ORGANIZATIONAL_UNIT)) if directlyInOU else Msg.IN_THE.format(Ent.Singular(Ent.ORGANIZATIONAL_UNIT))
     fields = 'nextPageToken,users(primaryEmail,orgUnitPath)' if directlyInOU else 'nextPageToken,users(primaryEmail)'
     for ou in ous:
+      if ou == 'root':
+        ou = '/'
       ou = makeOrgUnitPathAbsolute(ou)
       if ou.startswith('id:'):
         try:
@@ -6737,6 +6746,8 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
     else:
       queries = [None]
     for ou in ous:
+      if ou == 'root':
+        ou = '/'
       ou = makeOrgUnitPathAbsolute(ou)
       oneQualifier = Msg.DIRECTLY_IN_THE.format(Ent.Singular(Ent.ORGANIZATIONAL_UNIT)) if not includeChildOrgunits else Msg.IN_THE.format(Ent.Singular(Ent.ORGANIZATIONAL_UNIT))
       for query in queries:
@@ -12015,7 +12026,7 @@ def getCRMOrgId(forceSearch=False):
 # gam info customerid
 def doInfoCustomerId():
   checkForExtraneousArguments()
-  setTrueCustomerId(cd=None)
+  setTrueCustomerId(cd=None, forceUpdate=True)
   writeStdout(f'{GC.Values[GC.CUSTOMER_ID]}\n')
 
 # gam info gcporgid
@@ -16779,8 +16790,8 @@ def _showCustomerLicenseInfo(customerInfo, FJQC):
   if not FJQC.formatJSON:
     Ind.Decrement()
 
-def setTrueCustomerId(cd=None):
-  if GC.Values[GC.CUSTOMER_ID] == GC.MY_CUSTOMER:
+def setTrueCustomerId(cd=None, forceUpdate=False):
+  if GC.Values[GC.CUSTOMER_ID] == GC.MY_CUSTOMER or forceUpdate:
     if not cd:
       cd = buildGAPIObject(API.DIRECTORY)
     try:
