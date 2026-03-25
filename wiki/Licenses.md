@@ -61,7 +61,7 @@
 | G Suite Lite | Google-Apps-Lite | gsuitelite |
 | Gemini Business | 1010470003 | geminibiz
 | Gemini Education Premium | 1010470005 | geminiedupremium |
-| Gemini Enterprise | 1010470001 | geminient | duetai |
+| Gemini Enterprise - Legacy | 1010470001 | geminient | duetai |
 | Google AI Pro for Education | 1010470004 | gaiproedu |
 | Google AI Ultra for Business | 1010470008 | geminiultra |
 | Google Apps Message Security | Google-Apps-For-Postini | postini |
@@ -170,7 +170,7 @@
         gaiproedu | geminiedu | 1010470004 | Google AI Pro for Education |
         geminibiz | 1010470003 | Gemini Business |
         geminiedupremium| 1010470005 | Gemini Education Premium |
-        geminient| duetai | 1010470001 | Gemini Enterprise |
+        geminient| duetai | 1010470001 | Gemini Enterprise - Legacy |
         geminiultra | 1010470008 | Google AI Ultra for Business |
         gsuitebasic | gafb | gafw | basic | Google-Apps-For-Business |
         gsuitebusiness | gau | gsb | unlimited | Google-Apps-Unlimited |

@@ -94,7 +94,7 @@ _SKUS = {
   '1010430001': {
     'product': '101043', 'aliases': ['gwas', 'plusstorage'], 'displayName': 'Google Workspace Additional Storage'},
   '1010470001': {
-    'product': '101047', 'aliases': ['geminient', 'duetai'], 'displayName': 'Gemini Enterprise'},
+    'product': '101047', 'aliases': ['geminient', 'duetai'], 'displayName': 'Gemini Enterprise - Legacy'},
   '1010470002': {
     'product': '101047', 'aliases': ['gwlabs', 'workspacelabs'], 'displayName': 'Google Workspace Labs'},
   '1010470003': {
