@@ -1667,6 +1667,12 @@ def encodeOrgUnitPath(path):
 def getOrgUnitItem(pathOnly=False, absolutePath=True, cd=None):
   if Cmd.ArgumentsRemaining():
     path = Cmd.Current().strip()
+    # Some shells like Bash for Windows interpret / as the filesystem root.
+    # Let user specify "root" instead to indicate /. "/root", "Root" and "ROOT"
+    # will still work for an OU actually named "root" as we are being
+    # case-sensitive here for "root" but Google is not case sensitive about OUs
+    if path == 'root':
+      path = '/'
     if path:
       if pathOnly and (path.startswith('id:') or path.startswith('uid:')) and cd is not None:
         try:
