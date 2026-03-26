@@ -1,3 +1,17 @@
+7.39.00
+
+Deleted variable `enforce_expansive_access` from `gam.cfg` and removed option `enforceexpansiveaccess`
+from the following commands as expansive access is now always enforced by Google on My Drives.
+```
+gam <UserTypeEntity> delete permissions
+gam <UserTypeEntity> delete drivefileacl
+gam <UserTypeEntity> update drivefileacl
+gam <UserTypeEntity> copy drivefile
+gam <UserTypeEntity> move drivefile
+gam <UserTypeEntity> transfer ownership
+gam <UserTypeEntity> claim ownership
+```
+
 7.38.02
 
 Added license SKU `1010470009` for `AI Expanded Access`; abbreviation `aiexpandedaccess`.
