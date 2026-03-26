@@ -220,7 +220,7 @@ By default, when an ACL is created, GAM outputs details of the ACL as indented k
 ```
 gam <UserTypeEntity> update drivefileacl <DriveFileEntity> <DriveFilePermissionIDorEmail>
         (role <DriveFileACLRole>) [expiration <Time>] [removeexpiration [<Boolean>]]
-        [updatesheetprotectedranges [<Boolean>]] [enforceexpansiveaccess [<Boolean>]]
+        [updatesheetprotectedranges [<Boolean>]]
         [showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
 ```
 There is no change of parents when a new user is updated to be a file's owner.
@@ -236,10 +236,7 @@ The option `updatesheetprotectedranges` only applies to items in `<DriveFileEnti
     * ACLs with role reader or commenter will be removed from existing protected ranges
     * ACLs with role writer or higher will be added to existing protected ranges
 
-`enforceexpansiveaccess` defaults to the value of `gam.cfg/enforce_expansive_access` that controls
-the ability to update inherited ACLs.
-* False - Inherited ACLs can be updated
-* True = Inherited ACLs can not be updated
+Inherited ACLs can not be updated.
 
 By default, the file ID is displayed in the output; to see the file name, use the `showtitles`
 option; this requires an additional API call per file.
@@ -251,7 +248,7 @@ By default, when an ACL is updated, GAM outputs details of the ACL as indented k
 ### Delete
 ```
 gam <UserTypeEntity> delete|del drivefileacl <DriveFileEntity> <DriveFilePermissionIDorEmail>
-        [updatesheetprotectedranges [<Boolean>]] [enforceexpansiveaccess [<Boolean>]]
+        [updatesheetprotectedranges [<Boolean>]]
         [showtitles]
 ```
 The option `updatesheetprotectedranges` only applies to items in `<DriveFileEntity>` that are Google Sheets.
@@ -261,10 +258,7 @@ The option `updatesheetprotectedranges` only applies to items in `<DriveFileEnti
   * Sheet Protected Ranges are updated to reflect the deleted ACL; additional API calls are required.
     * ACLs with any role will be removed from existing protected ranges
 
-`enforceexpansiveaccess` defaults to the value of `gam.cfg/enforce_expansive_access` that controls
-the ability to delete inherited ACLs.
-* False - Inherited ACLs can be deleted
-* True = Inherited ACLs can not be deleted
+Inherited ACLs can not be deleted.
 
 By default, the file ID is displayed in the output; to see the file name, use the `showtitles`
 option; this requires an additional API call per file.
@@ -306,12 +300,8 @@ When adding permissions from JSON data, permissions with `deleted` true are neve
 ```
 gam <UserTypeEntity> delete permissions <DriveFileEntity> <DriveFilePermissionIDEntity>
         <PermissionMatch>* [<PermissionMatchAction>]
-        [enforceexpansiveaccess [<Boolean>]]
 ```
-`enforceexpansiveaccess` defaults to the value of `gam.cfg/enforce_expansive_access` that controls
-the ability to delete inherited ACLs.
-* False - Inherited ACLs can be deleted
-* True = Inherited ACLs can not be deleted
+Inherited ACLs can not be deleted.
 
 When deleting permissions from JSON data, permissions with role `owner` true are never processed.
 

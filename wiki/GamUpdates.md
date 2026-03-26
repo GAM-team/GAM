@@ -10,6 +10,20 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.39.00
+
+Deleted variable `enforce_expansive_access` from `gam.cfg` and removed option `enforceexpansiveaccess`
+from the following commands as expansive access is now always enforced by Google on My Drives.
+```
+gam <UserTypeEntity> delete permissions
+gam <UserTypeEntity> delete drivefileacl
+gam <UserTypeEntity> update drivefileacl
+gam <UserTypeEntity> copy drivefile
+gam <UserTypeEntity> move drivefile
+gam <UserTypeEntity> transfer ownership
+gam <UserTypeEntity> claim ownership
+```
+
 ### 7.38.02
 
 Added license SKU `1010470009` for `AI Expanded Access`; abbreviation `aiexpandedaccess`.
@@ -35,14 +49,14 @@ gam print|show tokens gcpdetails
 ```
 You can get and set the `gam.cfg/gcp_org_id` value with these commands:
 ```
-$ gam info gcporgid             
+$ gam info gcporgid
 organizations/906207637890
 $ gam config gcp_org_id organizations/906207637890 save
 ```
 
 You can get and set the `gam.cfg/customer_id` value with these commands:
 ```
-$ gam info customerid             
+$ gam info customerid     
 C78abc9de
 $ gam config customer_id C78abc9de save
 ```

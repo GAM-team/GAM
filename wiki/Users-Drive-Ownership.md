@@ -61,7 +61,6 @@ Use [Users - Drive - Transfer](Users-Drive-Transfer) for more complex ownership 
 ```
 gam <UserTypeEntity> transfer ownership <DriveFileEntity> <UserItem>
         [<DriveFileParentAttribute>] [includetrashed] [norecursion [<Boolean>]]
-        [enforceexpansiveaccess [<Boolean>]]
         (orderby <DriveOrderByFieldName> [ascending|descending])*
         [preview] [filepath] [pathdelimiter <Character>] [buildtree] [todrive <ToDriveAttribute>*]
 ```
@@ -101,7 +100,6 @@ gam <UserTypeEntity> claim ownership <DriveFileEntity>
         [skipids <DriveFileEntity>] [onlyusers|skipusers <UserTypeEntity>] [subdomains <DomainNameEntity>]
         [restricted [<Boolean>]] [writerscanshare|writerscantshare [<Boolean>]]
         [keepuser | (retainrole reader|commenter|writer|editor|none)] [noretentionmessages]
-        [enforceexpansiveaccess [<Boolean>]]
         (orderby <DriveOrderByFieldName> [ascending|descending])*
         [preview] [filepath] [pathdelimiter <Character>] [buildtree] [todrive <ToDriveAttribute>*]
 ```

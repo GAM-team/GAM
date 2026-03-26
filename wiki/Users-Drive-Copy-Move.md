@@ -140,7 +140,6 @@ gam <UserTypeEntity> copy drivefile <DriveFileEntity>
         (mappermissionsdomain <DomainName> <DomainName>)*
         [sendemailifrequired [<Boolean>]]
         [verifyorganizer [<Boolean>]]
-        [enforceexpansiveaccess [<Boolean>]]
 ```
 The files/folders specified by `<DriveFileEntity>` are referred to as `source`, `target` refers to where those files are being copied.
 The files/folders specified by `<DriveFileEntity>` are referred to as `top`; when a folder is being copied recursively, the files/folders that it contains are referred as `sub`.
@@ -590,7 +589,6 @@ gam <UserTypeEntity> move drivefile <DriveFileEntity> [newfilename <DriveFileNam
         [retainsourcefolders [<Boolean>]]
         [sendemailifrequired [<Boolean>]]
         [verifyorganizer [<Boolean>]]
-        [enforceexpansiveaccess [<Boolean>]]
 ```
 The files/folders specified by `<DriveFileEntity>` are referred to as `source`, `target` refers to where those files are being moved.
 The files/folders specified by `<DriveFileEntity>` are referred to as `top`; when a folder is being moved, the files/folders that it contains are referred as `sub`.

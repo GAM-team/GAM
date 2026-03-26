@@ -48,7 +48,6 @@ gam <UserTypeEntity> transfer drive <UserItem> [select <DriveFileEntity>]
         [noretentionmessages]
         [nonowner_retainrole reader|commenter|writer|editor|contentmanager|fileorganizer|current|none]
         [nonowner_targetrole reader|commenter|writer|editor|contentmanager|fileorganizer|current|none|source]
-        [enforceexpansiveaccess [<Boolean>]]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [preview] [todrive <ToDriveAttribute>*]
 ```
