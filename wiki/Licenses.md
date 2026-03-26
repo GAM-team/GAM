@@ -41,7 +41,7 @@
 
 | License Name | License SKU | Abbreviation  |
 |--------------|-------------|---------------|
-| AI Expanded Access | 1010470009 | aiexpanded |
+| AI Expanded Access | 1010470009 | aiexpandedaccess |
 | AI Meetings and Messaging | 1010470007 | aimeetingsandmessaging | 
 | AI Security | 1010470006 |  aisecurity |
 | AppSheet Core | 1010380001 | appsheetcore |
@@ -62,7 +62,7 @@
 | G Suite Lite | Google-Apps-Lite | gsuitelite |
 | Gemini Business | 1010470003 | geminibiz
 | Gemini Education Premium | 1010470005 | geminiedupremium |
-| Gemini Enterprise | 1010470001 | geminient | duetai |
+| Gemini Enterprise - Legacy | 1010470001 | geminient | duetai |
 | Google AI Pro for Education | 1010470004 | gaiproedu |
 | Google AI Ultra for Business | 1010470008 | geminiultra |
 | Google Apps Message Security | Google-Apps-For-Postini | postini |
@@ -153,6 +153,7 @@
         4tb | drive4tb | googledrivestorage4tb | Google-Drive-storage-4TB |
         8tb | drive8tb | googledrivestorage8tb | Google-Drive-storage-8TB |
         16tb | drive16tb | googledrivestorage16tb | Google-Drive-storage-16TB |
+        aiexpandedaccess | 1010470009 | AI Expanded Access |
         aimeetingsandmessaging | 1010470007 | AI Meetings and Messaging |
         aisecurity | 1010470006 | AI Security |
         appsheetcore | 1010380001 | AppSheet Core |
@@ -171,7 +172,7 @@
         gaiproedu | geminiedu | 1010470004 | Google AI Pro for Education |
         geminibiz | 1010470003 | Gemini Business |
         geminiedupremium| 1010470005 | Gemini Education Premium |
-        geminient| duetai | 1010470001 | Gemini Enterprise |
+        geminient| duetai | 1010470001 | Gemini Enterprise - Legacy|
         geminiultra | 1010470008 | Google AI Ultra for Business |
         gsuitebasic | gafb | gafw | basic | Google-Apps-For-Business |
         gsuitebusiness | gau | gsb | unlimited | Google-Apps-Unlimited |

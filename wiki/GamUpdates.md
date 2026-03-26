@@ -12,7 +12,9 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 
 ### 7.38.02
 
-Added license SKU `1010470009` for `AI Expanded Access`; abbreviation `aiexpanded`.
+Added license SKU `1010470009` for `AI Expanded Access`; abbreviation `aiexpandedaccess`.
+
+Renamed license SKU `1010470001` from `Gemini Enterprise` to `Gemini Enterprise - Legacy`.
 
 ### 7.38.01
 
