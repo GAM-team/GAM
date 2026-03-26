@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.38.02
+
+Added license SKU `1010470009` for `AI Expanded Access`; abbreviation `aiexpanded`.
+
 ### 7.38.01
 
 Added `root` as a synonym for '/' in command line arguments that specify an OU.

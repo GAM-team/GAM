@@ -41,6 +41,7 @@
 
 | License Name | License SKU | Abbreviation  |
 |--------------|-------------|---------------|
+| AI Expanded Access | 1010470009 | aiexpanded |
 | AI Meetings and Messaging | 1010470007 | aimeetingsandmessaging | 
 | AI Security | 1010470006 |  aisecurity |
 | AppSheet Core | 1010380001 | appsheetcore |
