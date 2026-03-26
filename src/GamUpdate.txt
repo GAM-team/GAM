@@ -1,6 +1,10 @@
+7.38.02
+
+Added license SKU `1010470009` for `AI Expanded Access`; abbreviation `aiexpanded`.
+
 7.38.01
 
-Added `root` as a synonnym for '/' in command line arguments that specify an OU.
+Added `root` as a synonym for '/' in command line arguments that specify an OU.
 This is to avoid issues where a stand-alone `/` on the command line may be mis-interpreted
 by the command line interpreter as a reference to the file system root.
 
