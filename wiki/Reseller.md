@@ -44,6 +44,7 @@ Thanks to Duncan Isaksen-Loxton for a script to help manage multiple domains.
         4tb | drive4tb | googledrivestorage4tb | Google-Drive-storage-4TB |
         8tb | drive8tb | googledrivestorage8tb | Google-Drive-storage-8TB |
         16tb | drive16tb | googledrivestorage16tb | Google-Drive-storage-16TB |
+        aiexpandedaccess | 1010470009 | AI Expanded Access |
         aimeetingsandmessaging | 1010470007 | AI Meetings and Messaging |
         aisecurity | 1010470006 | AI Security |
         appsheetcore | 1010380001 | AppSheet Core |
