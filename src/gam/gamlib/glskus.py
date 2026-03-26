@@ -94,7 +94,7 @@ _SKUS = {
   '1010430001': {
     'product': '101043', 'aliases': ['gwas', 'plusstorage'], 'displayName': 'Google Workspace Additional Storage'},
   '1010470001': {
-    'product': '101047', 'aliases': ['geminient', 'duetai'], 'displayName': 'Gemini Enterprise'},
+    'product': '101047', 'aliases': ['geminient', 'duetai'], 'displayName': 'Gemini Enterprise - Legacy'},
   '1010470002': {
     'product': '101047', 'aliases': ['gwlabs', 'workspacelabs'], 'displayName': 'Google Workspace Labs'},
   '1010470003': {
@@ -110,7 +110,7 @@ _SKUS = {
   '1010470008': {
     'product': '101047', 'aliases': ['geminiultra'], 'displayName': 'Google AI Ultra for Business'},
   '1010470009': {
-    'product': '101047', 'aliases': ['aiexpanded'], 'displayName': 'AI Expanded Access'},
+    'product': '101047', 'aliases': ['aiexpandedaccess'], 'displayName': 'AI Expanded Access'},
   '1010490001': {
     'product': '101049', 'aliases': ['eeu'], 'displayName': 'Endpoint Education Upgrade'},
   '1010500001': {

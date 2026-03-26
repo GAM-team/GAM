@@ -260,7 +260,7 @@ If an item contains spaces, it should be surrounded by ".
         4tb | drive4tb | googledrivestorage4tb | Google-Drive-storage-4TB |
         8tb | drive8tb | googledrivestorage8tb | Google-Drive-storage-8TB |
         16tb | drive16tb | googledrivestorage16tb | Google-Drive-storage-16TB |
-        aiexpanded | 1010470009 | AI Expanded Access |
+        aiexpandedaccess | 1010470009 | AI Expanded Access |
         aimeetingsandmessaging | 1010470007 | AI Meetings and Messaging |
         aisecurity | 1010470006 | AI Security |
         appsheetcore | 1010380001 | AppSheet Core |
@@ -279,7 +279,7 @@ If an item contains spaces, it should be surrounded by ".
         gaiproedu | geminiedu | 1010470004 | Google AI Pro for Education |
         geminibiz | 1010470003 | Gemini Business |
         geminiedupremium| 1010470005 | Gemini Education Premium |
-        geminient| duetai | 1010470001 | Gemini Enterprise |
+        geminient| duetai | 1010470001 | Gemini Enterprise - Legacy |
         geminiultra | 1010470008 | Google AI Ultra for Business |
         gsuitebasic | gafb | gafw | basic | Google-Apps-For-Business |
         gsuitebusiness | gau | gsb | unlimited | Google-Apps-Unlimited |
