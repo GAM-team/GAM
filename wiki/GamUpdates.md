@@ -12,7 +12,7 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 
 ### 7.39.01
 
-Updated 'gam <UserTypeEntity> transfer drive <UserItem>` to handle the following error:
+Updated `gam <UserTypeEntity> transfer drive <UserItem>` to handle the following error:
 ```
 ERROR: 403: cannotDeletePermission - The authenticated user cannot delete the permission.
 ```
