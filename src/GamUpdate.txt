@@ -1,3 +1,10 @@
+7.39.01
+
+Updated 'gam <UserTypeEntity> transfer drive <UserItem>` to handle the following error:
+```
+ERROR: 403: cannotDeletePermission - The authenticated user cannot delete the permission.
+```
+
 7.39.00
 
 Deleted variable `enforce_expansive_access` from `gam.cfg` and removed option `enforceexpansiveaccess`
