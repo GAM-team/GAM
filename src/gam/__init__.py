@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.39.01'
+__version__ = '7.39.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -59337,7 +59337,7 @@ def printFileList(users):
       csvPF.WriteRowTitlesJSONNoFilter(row)
 
   def _printFileInfo(drive, user, f_file, cleanFileName):
-    nonlocal getSharedDriveACLsCount, getSharedDriveACLsCountMsg
+    nonlocal getSharedDriveACLsCount
     driveId = f_file.get('driveId')
     checkSharedDrivePermissions = getPermissionsForSharedDrives and driveId and 'permissions' not in f_file
     if (f_file.get('noDisplay', False) or
@@ -59354,7 +59354,7 @@ def printFileList(users):
       if not incrementalPrint:
         getSharedDriveACLsCount += 1
         if getSharedDriveACLsCount % 100 == 0:
-          writeStderr(f'{Msg.GOT} {getSharedDriveACLsCount} {getSharedDriveACLsCountMsg}')
+          writeStderr(f'{Msg.GOT} {getSharedDriveACLsCount} {Ent.Plural(Ent.DRIVE_FILE_OR_FOLDER_ACL)} {Msg.FOR} {gettingEntity}\n')
       try:
         f_file['permissions'] = callGAPIpages(drive.permissions(), 'list', 'permissions',
                                               throwReasons=GAPI.DRIVE3_GET_ACL_REASONS,
@@ -59530,7 +59530,7 @@ def printFileList(users):
   simpleLists = ['permissionIds', 'spaces']
   skipObjects = set()
   fileIdEntity = {}
-  getSharedDriveACLsCountMsg = selectSubQuery = ''
+  selectSubQuery = ''
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   DLP = DriveListParameters({'allowChoose': True, 'allowCorpora': True, 'allowQuery': True, 'mimeTypeInQuery': False})
   DFF = DriveFileFields()
@@ -59613,7 +59613,6 @@ def printFileList(users):
     elif myarg == 'showshareddrivepermissions':
       getPermissionsForSharedDrives = True
       permissionsFields = f'nextPageToken,permissions({",".join(DRIVEFILE_BASIC_PERMISSION_FIELDS)})'
-      getSharedDriveACLsCountMsg = f'{Ent.Plural(Ent.DRIVE_FILE_OR_FOLDER_ACL)} {Msg.FOR} {Ent.Plural(Ent.SHAREDDRIVE)}\n'
     elif myarg == 'pmfilter':
       pmselect = False
     elif myarg == 'oneitemperrow':

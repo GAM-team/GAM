@@ -1,6 +1,11 @@
+7.39.02
+
+Fixed progress messages for `gam <UserTypeEntity> print filelist` when permissions were being
+displayed/matched for Shared Drives.
+
 7.39.01
 
-Updated 'gam <UserTypeEntity> transfer drive <UserItem>` to handle the following error:
+Updated `gam <UserTypeEntity> transfer drive <UserItem>` to handle the following error:
 ```
 ERROR: 403: cannotDeletePermission - The authenticated user cannot delete the permission.
 ```
