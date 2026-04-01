@@ -6528,7 +6528,8 @@ gam <UserTypeEntity> create chatspace
         [description <String>] [guidelines <String>]
         [history <Boolean>]
         [<ChatContent>]
-        [formatjson|returnidonly]
+        [(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]] (addcsvdata <FieldName> <String>)*) | formatjson | returnidonly]
+
 gam <UserTypeEntity> update chatspace <ChatSpace>
         [restricted|(audience <String>)]|
         ([displayname <String>]

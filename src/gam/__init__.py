@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.39.02'
+__version__ = '7.39.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -27627,11 +27627,26 @@ CHAT_SPACE_MIN_MAX_MEMBERS = {
 #	[members <UserTypeEntity>]
 #	[displayname <String>]
 #	[description <String>] [guidelines|rules <String>]
-#	[history <Boolean>]
 #	[<ChatContent>]
-#	[formatjson|returnidonly]
+#	[(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]] (addcsvdata <FieldName> <String>)*) | formatjson | returnidonly]
 def createChatSpace(users):
-  FJQC = FormatJSONQuoteChar()
+  def _writeSpaceDetails(space, resp=None):
+    baserow = {'User': user, 'name': space['name']}
+    if resp:
+      baserow['message.name'] = resp['name']
+    if addCSVData:
+      baserow.update(addCSVData)
+    row = flattenJSON(space, flattened=baserow.copy(), timeObjects=CHAT_TIME_OBJECTS)
+    if not FJQC.formatJSON:
+      csvPF.WriteRowTitles(row)
+    else:
+      row = baserow.copy()
+      row['JSON'] = json.dumps(cleanJSON(space, timeObjects=CHAT_TIME_OBJECTS), ensure_ascii=False, sort_keys=True)
+      csvPF.WriteRowNoFilter(row)
+
+  csvPF = None
+  FJQC = FormatJSONQuoteChar(csvPF)
+  addCSVData = {}
   body = {'space': {'spaceType': CHAT_SPACE_TYPE_MAP['space'], 'displayName': ''}, 'requestId': str(uuid.uuid4())}
   members = []
   tbody = {}
@@ -27649,10 +27664,17 @@ def createChatSpace(users):
       _, members = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
     elif myarg == 'returnidonly':
       returnIdOnly = True
+    elif myarg == 'csv':
+      csvPF = CSVPrintFile(['User', 'name'])
+      FJQC = FormatJSONQuoteChar(csvPF)
+    elif csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif csvPF and myarg == 'addcsvdata':
+      getAddCSVData(addCSVData)
     elif myarg in SORF_TEXT_ARGUMENTS:
       tbody['text'] = getStringOrFile(myarg, minLen=0, unescapeCRLF=True)[0]
     else:
-      FJQC.GetFormatJSON(myarg)
+      FJQC.GetFormatJSONQuoteChar(myarg)
   spaceType = body['space']['spaceType']
   jcount = len(members)
   if (jcount < CHAT_SPACE_MIN_MAX_MEMBERS[spaceType]['min'] or
@@ -27681,6 +27703,15 @@ def createChatSpace(users):
     body['space']['singleUserBotDm'] = False
   if tbody:
     trimChatMessageIfRequired(tbody)
+  if csvPF:
+    if tbody:
+      csvPF.AddTitle('message.name')
+    if addCSVData:
+      csvPF.AddTitles(sorted(addCSVData.keys()))
+    if FJQC.formatJSON:
+      csvPF.SetJSONTitles(csvPF.titlesList)
+      csvPF.AddJSONTitle('JSON')
+    csvPF.SetSortAllTitles()
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -27692,15 +27723,17 @@ def createChatSpace(users):
       space = callGAPI(chat.spaces(), 'setup',
                        throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                        body=body)
-      if not returnIdOnly:
+      if returnIdOnly:
+        writeStdout(f'{space["name"]}\n')
+      elif not csvPF:
         kvList[-1] = space['name']
         if not FJQC.formatJSON:
           entityActionPerformed(kvList, i, count)
         Ind.Increment()
         _showChatItem(space, Ent.CHAT_SPACE, FJQC)
         Ind.Decrement()
-      else:
-        writeStdout(f'{space["name"]}\n')
+      elif not tbody:
+        _writeSpaceDetails(space, None)
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
       continue
@@ -27712,18 +27745,29 @@ def createChatSpace(users):
       _, chat, kvList = buildChatServiceObject(API.CHAT_MESSAGES, user, i, count,
                                                [Ent.CHAT_SPACE, body['space'].get('displayName', parent)])
       if not chat:
+        if csvPF:
+          _writeSpaceDetails(space, None)
         continue
       try:
         resp = callGAPI(chat.spaces().messages(), 'create',
                         throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                        parent=parent, requestId=str(uuid.uuid4()), body=tbody)
-        if not returnIdOnly:
-          kvList.extend([Ent.CHAT_MESSAGE, resp['name']])
-          entityActionPerformed(kvList, i, count)
-        else:
+                        parent=parent, requestId=str(uuid.uuid4()), body=tbody, fields='name')
+        if returnIdOnly:
           writeStdout(f'{resp["name"]}\n')
+        elif not csvPF:
+          if not FJQC.formatJSON:
+            kvList.extend([Ent.CHAT_MESSAGE, resp['name']])
+            entityActionPerformed(kvList, i, count)
+          else:
+            printLine(json.dumps(cleanJSON(resp), ensure_ascii=False, sort_keys=True))
+        else:
+          _writeSpaceDetails(space, resp)
       except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
         exitIfChatNotConfigured(chat, kvList, str(e), i, count)
+        if csvPF:
+          _writeSpaceDetails(space, None)
+  if csvPF:
+    csvPF.writeCSVfile('Chat Spaces')
 
 CHAT_UPDATE_SPACE_TYPE_MAP = {
   'space': 'SPACE',
