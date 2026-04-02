@@ -936,7 +936,7 @@ jobs:
           run_gam config csv_output_row_filter "buildingId:regex:^gha_test_${JID}_" redirect csv ./buildings.csv print buildings
           run_gam csv ./buildings.csv gam delete building ~buildingId
           run_gam config csv_output_row_filter "displayName:regex:^El\ Goog\ gha_test_${JID}_" redirect csv ./ssoprofiles.csv print inboundssoprofiles
-          run_gam csv ./sso-profiles.csv gam delete inboundssoprofile "id:~~name~~"
+          run_gam csv ./ssoprofiles.csv gam delete inboundssoprofile "id:~~name~~"
 
           echo "Creating OrgUnit ${newou}"
           run_gam create ou "${newou}"
