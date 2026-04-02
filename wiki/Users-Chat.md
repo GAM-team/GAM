@@ -211,16 +211,14 @@ gam <UserTypeEntity> create chatspace
         [members <UserTypeEntity>]
         [displayname <String>]
         [description <String>] [guidelines <String>]
-        [history <Boolean>]
         [<ChatContent>]
         [formatjson|returnidonly]
 ```
 For `type space`, the following apply:
-* `members <UserTypeEntity>` - Optional, can not specify more that 20 users
+* `members <UserTypeEntity>` - Optional, can not specify more than 20 users
 * `displayname <String>` - Required
 * `description <String>` - Optional
 * `guidelines <String>` - Optional
-* `history <Boolean>` - Optional
 * `announcement|collaboration` - Initial permission settings; default is `collaboration`
 
 For `type groupchat`, the following apply:
@@ -228,23 +226,60 @@ For `type groupchat`, the following apply:
 * `displayname <String>` - Ignored
 * `description <String>` - Optional
 * `guidelines <String>` - Optional
-* `history <Boolean>` - Optional
 
 For `type directmessage`, the following apply:
 * `members <UserTypeEntity>` - Required, must specify 1 user
 * `displayname <String>` - Ignored
 * `description <String>` - Ignored
 * `guidelines <String>` - Ignored
-* `history <Boolean>` - Optional
 
 By default, Gam displays the information about the created chatspace as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
 * `returnidonly` - Display the chatspace name only
 
+Alternately, you can display the information about the created chatspace as columns of fields.
+* `csv [todrive <ToDriveAttribute>*]` - Write Chat Space information to a CSV file.
+* `addcsvdata <FieldName> <String>` - Add additional columns of data from the command line to the output
+
+By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
+the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
+When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
+The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
+`quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
+
 Use the `<ChatContent>` option to send an initial message to the created chatspace.
 
 By default, details about the chatmessage are displayed.
+* `formatjson` - Display the chat message name in JSON format.
 * `returnidonly` - Display the chatmessage name only
+* `csv` - The column `message.name` is added the CSV file output
+
+### Bulk build chat spaces
+You want to create Chat Spaces for use by users that don't currently have Chat enabled;
+all commands will be run by a super admin.
+
+Make a CSV file NewSpaces.csv with columns: displayName,manager,members
+```
+displayName,manager,members
+Chat 123,user1@domain.com,user1@domain.com user2@domain.com user3@domain.com
+Chat 456,user4@domain.com,user4@domain.com user5@domain.com user6@domain.com
+```
+The manager column specifies the member that will be updated to be a manager.
+
+Create the spaces
+```
+gam redirect csv ./NewSpaceDetails.csv multiprocess csv NewSpaces.csv gam user admin@domain.com create chatspace type space collaboration displayname "~displayName" members "~members" csv addcsvdata manager "~manager"
+```
+
+Update the specified member from ROLE_MEMBER to ROLE_MANAGER
+```
+gam redirect stdout ./UpdateMemberToManager.txt multiprocess redirect stderr stdout csv NewSpaceDetails.csv gam user admin@domain.com update chatmember "~name" role manager user "~manager"
+```
+
+Delete the super admin from the space
+```
+gam redirect stdout ./DeleteAdmin.txt multiprocess redirect stderr stdout csv NewSpaceDetails.csv gam user admin@domain.com delete chatmember "~name" user admin@domain.com
+```
 
 ### Update a user's chat space
 ```
