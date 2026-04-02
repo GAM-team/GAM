@@ -18,6 +18,8 @@ space details when creating chat spaces in bulk.
 csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]] (addcsvdata <FieldName> <String>)*
 ```
 
+See: https://github.com/GAM-team/GAM/wiki/Users-Chat#bulk-build-chat-spaces
+
 ### 7.39.02
 
 Fixed progress messages for `gam <UserTypeEntity> print filelist` when permissions were being
