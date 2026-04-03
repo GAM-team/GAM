@@ -10,6 +10,16 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.39.04
+
+Added `updateprimaryemail <RegularExpression> <EmailReplacement>` option to
+`gam update group <GroupEntity>` and `gam update cigroup <GroupEntity>` to allow modifying
+the group's current primary email address.
+For example, to change the domain of a set of groups from the current domain.com to newdomain.com:
+```
+gam update group csvfile Groups.csv:email updateprimaryemail "^(.+)@domain.com$" "\1@newdomain.com"
+```
+
 ### 7.39.03
 
 Added the following options to `gam <UserTypeEntity> create chatspace` that can be used to capture

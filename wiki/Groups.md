@@ -1,12 +1,13 @@
 # Groups
 - [API documentation](#api-documentation)
 - [Query documentation](#query-documentation)
-- [Python Regular Expressions](Python-Regular-Expressions) Match function
+- [Python Regular Expressions](Python-Regular-Expressions) Match function and Search function
 - [Definitions](#definitions)
 - [GUI API Group settings mapping](#gui-api-group-settings-mapping)
 - [GUI API Group access type settings mapping](#gui-api-group-access-type-settings-mapping)
 - [whoCanViewMembership and whoCanDiscoverGroup interactions](#whocanviewmembership-and-whocandiscovergroup-interactions)
 - [Manage groups](#manage-groups)
+- [Update a group's primary email address](#update-a-groups-primary-email-address)
 - [Update a group's settings with JSON data](#update-a-groups-settings-with-json-data)
 - [Display information about specific groups](#display-information-about-specific-groups)
 - [Display information about selected groups](#display-information-about-selected-groups)
@@ -348,6 +349,7 @@ gam create group <EmailAddress>
         [copyfrom <GroupItem>] <GroupAttribute>*
         [verifynotinvitable]
 gam update group|groups <GroupEntity> [email <EmailAddress>]
+        [updateprimaryemail <RESearchPattern> <RESubstitution>]
         [copyfrom <GroupItem>] <GroupAttribute>*
         [makesecuritygroup|security]
         [admincreated <Boolean>]
@@ -362,6 +364,19 @@ You can update a group to a security group with the `makesecuritygroup` option.
 * Warning: A Security Group cannot be changed back to a Google Group.
 
 When deleting and `noactionifalias` is specified, no action is performed if `<GroupEntity>` specifies an alias rather than a primary email address.
+
+## Update a group's primary email address
+You can simply update a group's primary email address with the `email` option.
+```
+gam update group groupold@domain.com email groupnew@domain.com
+```
+The `updateprimaryemail <RESearchPattern> <RESubstitution>` option allows modification several group's
+current primary email address. For example, to change the domain of a set of groups from the current domain.com to newdomain.com,
+make a CSV file Groups.csv with a column `email` that contains the group email addresses that are to be changed.
+```
+gam update group csvfile Groups.csv:email updateprimaryemail "^(.+)@domain.com$" "\1@newdomain.com"
+```
+If the group's current primary email address does not match the <REMatchPattern> then no modification is made.
 
 ## Update a group's settings with JSON data
 You can save group settings in JSON format which can simplify updating multiple settings. Suppose you have

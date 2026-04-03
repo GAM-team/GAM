@@ -1,10 +1,11 @@
 # Cloud Identity Groups
 - [API documentation](#api-documentation)
 - [Query documentation](#query-documentation)
-- [Python Regular Expressions](Python-Regular-Expressions) Match function
+- [Python Regular Expressions](Python-Regular-Expressions) Match function and Search function
 - [Notes](#Notes)
 - [Definitions](#definitions)
 - [Manage groups](#manage-groups)
+- [Update a group's primary email address](#update-a-groups-primary-email-address)
 - [Display information about individual groups](#display-information-about-individual-groups)
 - [Display information about multiple groups](#display-information-about-multiple-groups)
 - [Display group counts](#display-group-counts)
@@ -258,6 +259,19 @@ You can update a group to restrict its membership with the `memberrestrictions <
 * https://cloud.google.com/identity/docs/reference/rest/v1/SecuritySettings#MemberRestriction
 
 The `makeowner` option makes the administrator in `oauth2.txt` the initial owner of the group.
+
+## Update a group's primary email address
+You can simply update a group's primary email address with the `email` option.
+```
+gam update cigroup groupold@domain.com email groupnew@domain.com
+```
+The `updateprimaryemail <RESearchPattern> <RESubstitution>` option allows modification several group's
+current primary email address. For example, to change the domain of a set of groups from the current domain.com to newdomain.com,
+make a CSV file Groups.csv with a column `email` that contains the group email addresses that are to be changed.
+```
+gam update cigroup csvfile Groups.csv:email updateprimaryemail "^(.+)@domain.com$" "\1@newdomain.com"
+```
+If the group's current primary email address does not match the <REMatchPattern> then no modification is made.
 
 ## Display information about individual groups
 This command displays information as an indented list of keys and values.

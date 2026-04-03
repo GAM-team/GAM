@@ -814,9 +814,9 @@ gam update user userold@domain.com primaryemail usernew@domain.com
 ```
 The `updateprimaryemail <RESearchPattern> <RESubstitution>` option allows modification of the user's current primary email address.
 
-For example, to change the domain of a set of users from the current domain to newdomain.com:
+For example, to change the domain of a set of users from the current domain.com to newdomain.com:
 ```
-gam ou /Path/To/Ou update user updateprimaryemail "^(.+)@.*$" "\1@newdomain.com"
+gam ou /Path/To/Ou update user updateprimaryemail "^(.+)@domain.com$" "\1@newdomain.com"
 ```
 To change graduating students email addresses from flastname@domain.com to flastname_grad@domain.com:
 ```
