@@ -240,6 +240,7 @@ gam create cigroup <EmailAddress>
         [security|makesecuritygroup] [locked]
         [dynamic <QueryDynamicGroup>]
 gam update cigroup <GroupEntity> [copyfrom <GroupItem>] <GroupAttribute>
+        [updateprimaryemail <RESearchPattern> <RESubstitution> [preview]]
         [security|makesecuritygroup|
          dynamicsecurity|makedynamicsecuritygroup|
          lockedsecurity|makelockedsecuritygroup]
@@ -265,12 +266,15 @@ You can simply update a group's primary email address with the `email` option.
 ```
 gam update cigroup groupold@domain.com email groupnew@domain.com
 ```
-The `updateprimaryemail <RESearchPattern> <RESubstitution>` option allows modification several group's
+The `updateprimaryemail <RESearchPattern> <RESubstitution> [preview]` option allows modification several group's
 current primary email address. For example, to change the domain of a set of groups from the current domain.com to newdomain.com,
 make a CSV file Groups.csv with a column `email` that contains the group email addresses that are to be changed.
+You can list all groups with: `gam redirect csv ./Groups.csv print cigroups`
 ```
 gam update cigroup csvfile Groups.csv:email updateprimaryemail "^(.+)@domain.com$" "\1@newdomain.com"
 ```
+The `preview` option allows verification of the primary email address changes before commiting the changes.
+
 If the group's current primary email address does not match the <REMatchPattern> then no modification is made.
 
 ## Display information about individual groups

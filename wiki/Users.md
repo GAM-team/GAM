@@ -666,7 +666,7 @@ If the mailbox is setup, a zero return code is returned; if the retries are exha
 ```
 gam update user <UserItem> [ignorenullpassword] <UserAttribute>*
         [verifynotinvitable|alwaysevict] [noactionifalias]
-        [updateprimaryemail <RESearchPattern> <RESubstitution>]
+        [updateprimaryemail <RESearchPattern> <RESubstitution> [preview]]
         [updateoufromgroup <FileName> [charset <Charset>]
             [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [fields <FieldNameList>] [keyfield <FieldName>] [datafield <FieldName>]]
@@ -688,7 +688,7 @@ gam update user <UserItem> [ignorenullpassword] <UserAttribute>*
         [logpassword <FileName>]
 gam update users <UserTypeEntity> [ignorenullpassword] <UserAttribute>*
         [verifynotinvitable|alwaysevict] [noactionifalias]
-        [updateprimaryemail <RESearchPattern> <RESubstitution>]
+        [updateprimaryemail <RESearchPattern> <RESubstitution> [preview]]
         [updateoufromgroup <FileName> [charset <Charset>]
             [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [fields <FieldNameList>] [keyfield <FieldName>] [datafield <FieldName>]]
@@ -709,7 +709,7 @@ gam update users <UserTypeEntity> [ignorenullpassword] <UserAttribute>*
         [logpassword <FileName>]
 gam <UserTypeEntity> update users [ignorenullpassword] <UserAttribute>*
         [verifynotinvitable|alwaysevict] [noactionifalias]
-        [updateprimaryemail <RESearchPattern>`< <RESubstitution>]
+        [updateprimaryemail <RESearchPattern> <RESubstitution> [preview]]
         [updateoufromgroup <FileName> [charset <Charset>]
             [columndelimiter <Character>] [noescapechar <Boolean>] [quotechar <Character>]
             [fields <FieldNameList>] [keyfield <FieldName>] [datafield <FieldName>]]
@@ -812,7 +812,7 @@ You can simply update a user's primary email address with the `primaryemail` opt
 ```
 gam update user userold@domain.com primaryemail usernew@domain.com
 ```
-The `updateprimaryemail <RESearchPattern> <RESubstitution>` option allows modification of the user's current primary email address.
+The `updateprimaryemail <RESearchPattern> <RESubstitution> [preview]` option allows modification of the user's current primary email address.
 
 For example, to change the domain of a set of users from the current domain.com to newdomain.com:
 ```
@@ -822,6 +822,8 @@ To change graduating students email addresses from flastname@domain.com to flast
 ```
 gam ou /Path/To/Ou update user updateprimaryemail "^(.+)@(.+)$" "\1_grad@\2"
 ```
+The `preview` option allows verification of the primary email address changes before commiting the changes.
+
 If the user's current primary email address does not match the <REMatchPattern> then no modification is made.
 
 ## Update a user's attributes with JSON data
