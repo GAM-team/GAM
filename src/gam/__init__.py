@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.39.04'
+__version__ = '7.39.05'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -34102,7 +34102,7 @@ UPDATE_GROUP_SUBCMDS = ['add', 'create', 'delete', 'remove', 'clear', 'sync', 'u
 GROUP_PREVIEW_TITLES = ['group', 'email', 'role', 'action', 'message']
 
 # gam update groups <GroupEntity> [email <EmailAddress>]
-#	[updateprimaryemail <RESEarchPattern> <RESubstitution>]
+#	[updateprimaryemail <RESEarchPattern> <RESubstitution> [preview]]
 #	[copyfrom <GroupItem>] <GroupAttribute>*
 #	[security|makesecuritygroup]
 #	[admincreated <Boolean>]
@@ -34532,13 +34532,14 @@ def doUpdateGroups():
     gs_body = {}
     ci_body = {}
     verifyNotInvitable = False
-    updatePrimaryEmail = {}
+    updatePrimaryEmail = []
     while Cmd.ArgumentsRemaining():
       myarg = getArgument()
       if myarg == 'email':
         body['email'] = getEmailAddress(noUid=True)
       elif myarg == 'updateprimaryemail':
-        updatePrimaryEmail = getREPatternSubstitution(re.IGNORECASE)
+        updatePrimaryEmail = list(getREPatternSubstitution(re.IGNORECASE))
+        updatePrimaryEmail.append(checkArgumentPresent(['preview']))
       elif myarg == 'admincreated':
         body['adminCreated'] = getBoolean()
       elif myarg == 'getbeforeupdate':
@@ -34579,11 +34580,12 @@ def doUpdateGroups():
       if updatePrimaryEmail:
         if updatePrimaryEmail[0].search(group) is not None:
           body['email'] = re.sub(updatePrimaryEmail[0], updatePrimaryEmail[1], group)
-        else:
-          body.pop('email', None)
-          if not body:
-            entityActionNotPerformedWarning([Ent.GROUP, group], Msg.PRIMARY_EMAIL_DID_NOT_MATCH_PATTERN.format(updatePrimaryEmail[0].pattern), i, count)
+          if updatePrimaryEmail[2]:
+            entityActionNotPerformedWarning([Ent.GROUP, group], Msg.UPDATE_PRIMARY_EMAIL_PREVIEW.format(body['email']), i, count)
             continue
+        else:
+          entityActionNotPerformedWarning([Ent.GROUP, group], Msg.PRIMARY_EMAIL_DID_NOT_MATCH_PATTERN.format(updatePrimaryEmail[0].pattern), i, count)
+          continue
       if 'email' in body and verifyNotInvitable:
         isInvitableUser, _ = _getIsInvitableUser(None, body['email'])
         if isInvitableUser:
@@ -37050,7 +37052,7 @@ def doCreateCIGroup():
   doCreateGroup(ciGroupsAPI=True)
 
 # gam update cigroups <GroupEntity> [email <EmailAddress>]
-#	[updateprimaryemail <RESEarchPattern> <RESubstitution>]
+#	[updateprimaryemail <RESEarchPattern> <RESubstitution> [preview]]
 #	[copyfrom <GroupItem>] <GroupAttribute>*
 #	[security|makesecuritygroup|dynamicsecurity|makedynamicsecuritygroup]
 #	[dynamic <QueryDynamicGroup>]
@@ -37239,13 +37241,14 @@ def doUpdateCIGroups():
     gs_body = {}
     ci_body = {}
     se_body = {}
-    updatePrimaryEmail = {}
+    updatePrimaryEmail = []
     while Cmd.ArgumentsRemaining():
       myarg = getArgument()
       if myarg == 'email':
         ci_body['groupKey'] = {'id': getEmailAddress(noUid=True)}
       elif myarg == 'updateprimaryemail':
-        updatePrimaryEmail = getREPatternSubstitution(re.IGNORECASE)
+        updatePrimaryEmail = list(getREPatternSubstitution(re.IGNORECASE))
+        updatePrimaryEmail.append(checkArgumentPresent(['preview']))
       elif myarg == 'getbeforeupdate':
         getBeforeUpdate = True
       elif myarg == 'dynamic':
@@ -37301,11 +37304,12 @@ def doUpdateCIGroups():
       if updatePrimaryEmail:
         if updatePrimaryEmail[0].search(group) is not None:
           ci_body['groupKey'] = {'id': re.sub(updatePrimaryEmail[0], updatePrimaryEmail[1], group)}
-        else:
-          ci_body.pop('groupKey', None)
-          if not ci_body:
-            entityActionNotPerformedWarning([Ent.GROUP, group], Msg.PRIMARY_EMAIL_DID_NOT_MATCH_PATTERN.format(updatePrimaryEmail[0].pattern), i, count)
+          if updatePrimaryEmail[2]:
+            entityActionNotPerformedWarning([Ent.GROUP, group], Msg.UPDATE_PRIMARY_EMAIL_PREVIEW.format(ci_body['groupKey']['id']), i, count)
             continue
+        else:
+          entityActionNotPerformedWarning([Ent.GROUP, group], Msg.PRIMARY_EMAIL_DID_NOT_MATCH_PATTERN.format(updatePrimaryEmail[0].pattern), i, count)
+          continue
       if gs_body and not GroupIsAbuseOrPostmaster(group):
         try:
           if group.find('@') == -1: # group settings API won't take uid so we make sure cd API is used so that we can grab real email.
@@ -45794,7 +45798,7 @@ def getUserAttributes(cd, updateCmd, noUid=False):
   notFoundBody = {}
   notify = {'recipients': [], 'subject': '', 'message': '', 'html': False, 'charset': UTF8, 'password': ''}
   primary = {}
-  updatePrimaryEmail = {}
+  updatePrimaryEmail = []
   groupOrgUnitMap = None
   tagReplacements = _initTagReplacements()
   addGroups = {}
@@ -45846,7 +45850,8 @@ def getUserAttributes(cd, updateCmd, noUid=False):
     elif updateCmd and myarg == 'updateoufromgroup':
       groupOrgUnitMap = _getGroupOrgUnitMap()
     elif updateCmd and myarg == 'updateprimaryemail':
-      updatePrimaryEmail = getREPatternSubstitution(re.IGNORECASE)
+      updatePrimaryEmail = list(getREPatternSubstitution(re.IGNORECASE))
+      updatePrimaryEmail.append(checkArgumentPresent(['preview']))
     elif myarg == 'json':
       body.update(getJSON(USER_JSON_SKIP_FIELDS))
       if 'name' in body and 'fullName' in body['name']:
@@ -46324,7 +46329,7 @@ def doCreateGuestUser():
 
 # gam <UserTypeEntity> update user <UserAttribute>*
 #	[verifynotinvitable|alwaysevict] [noactionifalias]
-#	[updateprimaryemail <RESEarchPattern> <RESubstitution>]
+#	[updateprimaryemail <RESEarchPattern> <RESubstitution> [preview]]
 #	[updateoufromgroup <CSVFileInput> [keyfield <FieldName>] [datafield <FieldName>]]
 #	[immutableous <OrgUnitEntity>]|
 #	[clearschema <SchemaName>|<SchemaNameField>]
@@ -46383,10 +46388,12 @@ def updateUsers(entityList):
       elif updatePrimaryEmail:
         if updatePrimaryEmail[0].search(user) is not None:
           body['primaryEmail'] = re.sub(updatePrimaryEmail[0], updatePrimaryEmail[1], user)
+          if updatePrimaryEmail[2]:
+            entityActionNotPerformedWarning([Ent.USER, user], Msg.UPDATE_PRIMARY_EMAIL_PREVIEW.format(body['primaryEmail']), i, count)
+            continue
         else:
-          body.pop('primaryEmail', None)
-          if not body:
-            entityActionNotPerformedWarning([Ent.USER, user], Msg.PRIMARY_EMAIL_DID_NOT_MATCH_PATTERN.format(updatePrimaryEmail[0].pattern), i, count)
+          entityActionNotPerformedWarning([Ent.USER, user], Msg.PRIMARY_EMAIL_DID_NOT_MATCH_PATTERN.format(updatePrimaryEmail[0].pattern), i, count)
+          continue
       if groupOrgUnitMap:
         try:
           groups = callGAPIpages(cd.groups(), 'list', 'groups',

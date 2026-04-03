@@ -534,6 +534,7 @@ UNKNOWN_API_OR_VERSION = 'Unknown Google API or version: ({0}), contact {1}'
 UNRECOVERABLE_ERROR = 'Unrecoverable error'
 UPDATE_ATTENDEE_CHANGES = 'Update attendee changes'
 UPDATE_GAM_TO_64BIT = "You're running a 32-bit version of GAM on a 64-bit version of Windows, upgrade to a windows-x86_64 version of GAM"
+UPDATE_PRIMARY_EMAIL_PREVIEW = 'updateprimaryemail preview: {0}'
 UPDATE_USER_PASSWORD_CHANGE_NOTIFY_MESSAGE = 'The account password for #givenname# #familyname#, #user# has been changed to: #password#\n'
 UPDATE_USER_PASSWORD_CHANGE_NOTIFY_SUBJECT = 'Account #user# password has been changed'
 UPLOAD_CSV_FILE_INTERNAL_ERROR = 'Google reported "{0}" but the file was probably uploaded, check that it has {1} rows'
