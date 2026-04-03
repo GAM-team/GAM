@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.39.03'
+__version__ = '7.39.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -34102,6 +34102,7 @@ UPDATE_GROUP_SUBCMDS = ['add', 'create', 'delete', 'remove', 'clear', 'sync', 'u
 GROUP_PREVIEW_TITLES = ['group', 'email', 'role', 'action', 'message']
 
 # gam update groups <GroupEntity> [email <EmailAddress>]
+#	[updateprimaryemail <RESEarchPattern> <RESubstitution>]
 #	[copyfrom <GroupItem>] <GroupAttribute>*
 #	[security|makesecuritygroup]
 #	[admincreated <Boolean>]
@@ -34531,10 +34532,13 @@ def doUpdateGroups():
     gs_body = {}
     ci_body = {}
     verifyNotInvitable = False
+    updatePrimaryEmail = {}
     while Cmd.ArgumentsRemaining():
       myarg = getArgument()
       if myarg == 'email':
         body['email'] = getEmailAddress(noUid=True)
+      elif myarg == 'updateprimaryemail':
+        updatePrimaryEmail = getREPatternSubstitution(re.IGNORECASE)
       elif myarg == 'admincreated':
         body['adminCreated'] = getBoolean()
       elif myarg == 'getbeforeupdate':
@@ -34550,15 +34554,8 @@ def doUpdateGroups():
         verifyNotInvitable = True
       else:
         getGroupAttrValue(myarg, gs_body)
-    if 'email' in body and verifyNotInvitable:
-      isInvitableUser, _ = _getIsInvitableUser(None, body['email'])
-      if isInvitableUser:
-        entityActionNotPerformedWarning([Ent.GROUP, body['email']], Msg.EMAIL_ADDRESS_IS_UNMANAGED_ACCOUNT)
-        return
     if ci_body:
       ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
-      if 'email' in body:
-        ci_body['groupKey'] = {'id': body.pop('email')}
     if gs_body:
       gs = buildGAPIObject(API.GROUPSSETTINGS)
       gs_body = getSettingsFromGroup(cd, ','.join(entityList), gs, gs_body)
@@ -34571,7 +34568,7 @@ def doUpdateGroups():
           settings = gs_body
       elif not ci_body:
         return
-    elif not body and not ci_body:
+    elif not body and not ci_body and not updatePrimaryEmail:
       return
     Act.Set(Act.UPDATE)
     i = 0
@@ -34579,6 +34576,22 @@ def doUpdateGroups():
     for group in entityList:
       i += 1
       ci, _, group = convertGroupCloudIDToEmail(ci, group, i, count)
+      if updatePrimaryEmail:
+        if updatePrimaryEmail[0].search(group) is not None:
+          body['email'] = re.sub(updatePrimaryEmail[0], updatePrimaryEmail[1], group)
+        else:
+          body.pop('email', None)
+          if not body:
+            entityActionNotPerformedWarning([Ent.GROUP, group], Msg.PRIMARY_EMAIL_DID_NOT_MATCH_PATTERN.format(updatePrimaryEmail[0].pattern), i, count)
+            continue
+      if 'email' in body and verifyNotInvitable:
+        isInvitableUser, _ = _getIsInvitableUser(None, body['email'])
+        if isInvitableUser:
+          entityActionNotPerformedWarning([Ent.GROUP, body['email']], Msg.EMAIL_ADDRESS_IS_UNMANAGED_ACCOUNT)
+          continue
+      if ci_body and 'email' in body:
+        ci_body['groupKey'] = {'id': body.pop('email')}
+      origGroup = group
       if gs_body and not GroupIsAbuseOrPostmaster(group):
         try:
           if group.find('@') == -1: # group settings API won't take uid so we make sure cd API is used so that we can grab real email.
@@ -34593,12 +34606,12 @@ def doUpdateGroups():
           if not checkReplyToCustom(group, settings, i, count):
             continue
         except GAPI.notFound:
-          entityActionFailedWarning([entityType, group], Msg.DOES_NOT_EXIST, i, count)
+          entityActionFailedWarning([entityType, origGroup], Msg.DOES_NOT_EXIST, i, count)
           continue
         except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
                 GAPI.backendError, GAPI.invalid, GAPI.invalidInput, GAPI.badRequest, GAPI.permissionDenied,
                 GAPI.systemError, GAPI.serviceLimit, GAPI.serviceNotAvailable, GAPI.authError) as e:
-          entityActionFailedWarning([entityType, group], str(e), i, count)
+          entityActionFailedWarning([entityType, origGroup], str(e), i, count)
           continue
       if body:
         try:
@@ -34607,7 +34620,7 @@ def doUpdateGroups():
                            groupKey=group, body=body, fields='email')['email']
         except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.backendError, GAPI.badRequest, GAPI.invalid, GAPI.invalidInput,
                 GAPI.systemError, GAPI.permissionDenied, GAPI.failedPrecondition, GAPI.forbidden) as e:
-          entityActionFailedWarning([entityType, group], str(e), i, count)
+          entityActionFailedWarning([entityType, origGroup], str(e), i, count)
           continue
       if gs_body and not GroupIsAbuseOrPostmaster(group):
         try:
@@ -34616,15 +34629,15 @@ def doUpdateGroups():
                    throwReasons=GAPI.GROUP_SETTINGS_THROW_REASONS, retryReasons=GAPI.GROUP_SETTINGS_RETRY_REASONS,
                    groupUniqueId=mapGroupEmailForSettings(group), body=settings, fields='')
         except GAPI.notFound:
-          entityActionFailedWarning([entityType, group], Msg.DOES_NOT_EXIST, i, count)
+          entityActionFailedWarning([entityType, origGroup], Msg.DOES_NOT_EXIST, i, count)
           continue
         except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden, GAPI.backendError,
                 GAPI.invalid, GAPI.invalidArgument, GAPI.invalidAttributeValue, GAPI.invalidInput, GAPI.badRequest, GAPI.permissionDenied,
                 GAPI.systemError, GAPI.serviceLimit, GAPI.serviceNotAvailable, GAPI.authError) as e:
-          entityActionFailedWarning([entityType, group], str(e), i, count)
+          entityActionFailedWarning([entityType, origGroup], str(e), i, count)
           continue
         except GAPI.required:
-          entityActionFailedWarning([entityType, group], Msg.INVALID_JSON_SETTING, i, count)
+          entityActionFailedWarning([entityType, origGroup], Msg.INVALID_JSON_SETTING, i, count)
           continue
       if ci_body:
         _, name, groupEmail = convertGroupEmailToCloudID(ci, group, i, count)
@@ -34639,7 +34652,7 @@ def doUpdateGroups():
                 GAPI.systemError, GAPI.permissionDenied, GAPI.failedPrecondition, GAPI.serviceNotAvailable) as e:
           entityActionFailedWarning([Ent.CLOUD_IDENTITY_GROUP, groupEmail], str(e), i, count)
           continue
-      entityActionPerformed([entityType, group], i, count)
+      entityActionPerformed([entityType, origGroup], i, count)
   elif CL_subCommand in {'create', 'add'}:
     baseRole, groupMemberType = _getRoleGroupMemberType()
     isSuspended, isArchived = _getOptionalIsSuspendedIsArchived()
@@ -37037,6 +37050,7 @@ def doCreateCIGroup():
   doCreateGroup(ciGroupsAPI=True)
 
 # gam update cigroups <GroupEntity> [email <EmailAddress>]
+#	[updateprimaryemail <RESEarchPattern> <RESubstitution>]
 #	[copyfrom <GroupItem>] <GroupAttribute>*
 #	[security|makesecuritygroup|dynamicsecurity|makedynamicsecuritygroup]
 #	[dynamic <QueryDynamicGroup>]
@@ -37225,10 +37239,13 @@ def doUpdateCIGroups():
     gs_body = {}
     ci_body = {}
     se_body = {}
+    updatePrimaryEmail = {}
     while Cmd.ArgumentsRemaining():
       myarg = getArgument()
       if myarg == 'email':
         ci_body['groupKey'] = {'id': getEmailAddress(noUid=True)}
+      elif myarg == 'updateprimaryemail':
+        updatePrimaryEmail = getREPatternSubstitution(re.IGNORECASE)
       elif myarg == 'getbeforeupdate':
         getBeforeUpdate = True
       elif myarg == 'dynamic':
@@ -37273,7 +37290,7 @@ def doUpdateCIGroups():
           settings = gs_body
       elif not ci_body:
         return
-    elif not ci_body and not se_body and lockGroup is None:
+    elif not ci_body and not se_body and not updatePrimaryEmail and lockGroup is None:
       return
     Act.Set(Act.UPDATE)
     i = 0
@@ -37281,6 +37298,14 @@ def doUpdateCIGroups():
     for group in entityList:
       i += 1
       ci, _, group = convertGroupCloudIDToEmail(ci, group, i, count)
+      if updatePrimaryEmail:
+        if updatePrimaryEmail[0].search(group) is not None:
+          ci_body['groupKey'] = {'id': re.sub(updatePrimaryEmail[0], updatePrimaryEmail[1], group)}
+        else:
+          ci_body.pop('groupKey', None)
+          if not ci_body:
+            entityActionNotPerformedWarning([Ent.GROUP, group], Msg.PRIMARY_EMAIL_DID_NOT_MATCH_PATTERN.format(updatePrimaryEmail[0].pattern), i, count)
+            continue
       if gs_body and not GroupIsAbuseOrPostmaster(group):
         try:
           if group.find('@') == -1: # group settings API won't take uid so we make sure cd API is used so that we can grab real email.

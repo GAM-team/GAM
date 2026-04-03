@@ -3891,6 +3891,7 @@ gam create|add group <EmailAddress>
         [copyfrom <GroupItem>] <GroupAttribute>*
         [verifynotinvitable]
 gam update group|groups <GroupEntity> [email <EmailAddress>]
+        [updateprimaryemail <RESearchPattern> <RESubstitution>]
         [copyfrom <GroupItem>] <GroupAttribute>*
         [security|makesecuritygroup]
         [admincreated <Boolean>]
@@ -4118,6 +4119,7 @@ gam create cigroup <EmailAddress>
         [security|makesecuritygroup] [locked]
         [dynamic <QueryDynamicGroup>]
 gam update cigroup <GroupEntity> [copyfrom <GroupItem>] <GroupAttribute>
+        [updateprimaryemail <RESearchPattern> <RESubstitution>]
         [security|makesecuritygroup|
          dynamicsecurity|makedynamicsecuritygroup|
          lockedsecurity|makelockedsecuritygroup]
