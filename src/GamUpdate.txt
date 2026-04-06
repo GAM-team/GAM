@@ -1,3 +1,7 @@
+7.39.06
+
+Fixed bug in `gam version checkrc`.
+
 7.39.05
 
 Added optional argument `preview` to `updateprimaryemail <RegularExpression> <EmailReplacement> [preview]`
