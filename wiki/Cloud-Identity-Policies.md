@@ -67,7 +67,7 @@ Select policies::
 * `settings/<String>` - A policy setting type, `settings/workspace_marketplace.apps_allowlist`
 * `<String>` - A policy setting type, `workspace_marketplace.apps_allowlist`
 
-By default, policy warnings are displayed, use the 'nowarnings` option to suppress their display.
+By default, policy warnings are displayed, use the `nowarnings` option to suppress their display.
 
 By default, additional API calls are made for `settings/workspace_marketplace.apps_allowlist`
 to get the application name for the application ID. Use option `noappnames` to suppress these calls.
