@@ -138,6 +138,11 @@ Print all service status policies.
 gam redirect csv ./ServiceStatusPolicies.csv print policies filter "setting.type.matches('.*service_status')"
 ```
 
+Print Drive external sharing policies.
+```
+gam redirect csv ./DriveExternalSharingPolicies.csv print policies filter "setting.type.matches('settings/drive_and_docs.external_sharing')"
+```
+
 Print all polices that apply directly to the OU "/Staff".
 ```
 gam redirect csv ./StaffPolicies.csv print policies ou "^/Staff$"
