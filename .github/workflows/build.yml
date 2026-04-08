@@ -393,7 +393,7 @@ jobs:
           cd "${GITHUB_WORKSPACE}/src"
           git clone https://github.com/python/cpython.git
           cd "${PYTHON_SOURCE_PATH}"
-          if [[ "${RUNNER_OS}" != "Linux" ]]; then
+          if [[ "${RUNNER_OS}" == "Linux" ]]; then
             # TEMP lock Linux to 3.14.3 until the PyInstaller multiprocess issues are resolved.
             export LATEST_STABLE_TAG="v3.14.3"
           else          
