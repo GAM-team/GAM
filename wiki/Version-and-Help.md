@@ -3,9 +3,9 @@
 Print the current version of Gam with details
 ```
 gam version
-GAM 7.39.07 - https://github.com/GAM-team/GAM - pyinstaller
+GAM 7.39.08 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
-Python 3.14.3 64-bit final
+Python 3.14.4 64-bit final
 macOS Tahoe 26.4 arm64
 Path: /Users/gamteam/bin/gam7
 Config File: /Users/gamteam/GamConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
@@ -15,9 +15,9 @@ Time: 2026-02-15T07:51:00-08:00
 Print the current version of Gam with details and time offset information
 ```
 gam version timeoffset
-GAM 7.39.07 - https://github.com/GAM-team/GAM - pyinstaller
+GAM 7.39.08 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
-Python 3.14.3 64-bit final
+Python 3.14.4 64-bit final
 macOS Tahoe 26.4 arm64
 Path: /Users/gamteam/bin/gam7
 Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
@@ -27,9 +27,9 @@ Your system time differs from www.googleapis.com by less than 1 second
 Print the current version of Gam with extended details and SSL information
 ```
 gam version extended
-GAM 7.39.07 - https://github.com/GAM-team/GAM - pyinstaller
+GAM 7.39.08 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
-Python 3.14.3 64-bit final
+Python 3.14.4 64-bit final
 macOS Tahoe 26.4 arm64
 Path: /Users/gamteam/bin/gam7
 Config File: /Users/gamteam/GamConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
@@ -68,7 +68,7 @@ MacOS High Sierra 10.13.6 x86_64
 Path: /Users/gamteam/bin/gam7
 Version Check:
   Current: 5.35.08
-   Latest: 7.39.07
+   Latest: 7.39.08
 echo $?
 1
 ```
@@ -76,7 +76,7 @@ echo $?
 Print the current version number without details
 ```
 gam version simple
-7.39.07
+7.39.08
 ```
 In Linux/MacOS you can do:
 ```
@@ -86,9 +86,9 @@ echo $VER
 Print the current version of Gam and address of this Wiki
 ```
 gam help
-GAM 7.39.07 - https://github.com/GAM-team/GAM
+GAM 7.39.08 - https://github.com/GAM-team/GAM
 GAM Team <google-apps-manager@googlegroups.com>
-Python 3.14.3 64-bit final
+Python 3.14.4 64-bit final
 macOS Tahoe 26.4 arm64
 Path: /Users/gamteam/bin/gam7
 Config File: /Users/gamteam/GamConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
