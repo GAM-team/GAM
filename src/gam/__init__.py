@@ -11330,7 +11330,10 @@ def doOAuthRequest(currentScopes, login_hint, verifyScopes=False):
     for scope in scopesList:
       if selectedScopes[i] == '*':
         if scope['scope']:
-          scopes.add(scope['scope'])
+          if not isinstance(scope['scope'], list):
+            scopes.add(scope['scope'])
+          else:
+            scopes.update(scope['scope'])
       elif selectedScopes[i] == 'R':
         scopes.add(f'{scope["scope"]}.readonly')
       elif selectedScopes[i] == 'A':
