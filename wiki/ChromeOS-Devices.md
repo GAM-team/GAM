@@ -428,7 +428,7 @@ See https://support.google.com/chrome/a/answer/3523633 for full details.
 Thanks to Jay for most of the following.
 
 Send a remote command to the managed Chrome OS device. It's important to note that the device must be in a proper state to accept the command or an error may be returned.
-For example, the `reboot`, `set_volume` and `take_a_screenshot` commands only work if the device is configured in auto-start kiosk app mode.
+For example, the `set_volume` and `take_a_screenshot` commands only work if the device is configured in auto-start kiosk app mode.
 
 The `wipe_users` and `remote_powerwash` commands will erase all user data on the device and the `remote_powerwash` command will require that the device is physically reconnected to the
 WiFi network and re-enrolled before it can be managed again. These commands require the `doit` argument so that the admin confirms the potential loss of user data and management.
