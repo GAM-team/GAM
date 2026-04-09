@@ -13,7 +13,7 @@ To use these commands you must add the 'Business Account Management API' to your
 service account authorization.
 ```
 gam update project
-gam user user@domain.com update serviceccount
+gam user user@domain.com update serviceaccount
 ...
 [*]  2)  Business Account Management API
 
