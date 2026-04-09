@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.40.00
+
+Updated `gam print|show businessprofileaccounts` (client access) to
+`gam <UserTypeEntity> print|show businessprofileaccounts` (service account access).
+You'll need to run `gam user user@domain.com update serviceaccount` and
+select `2)  Business Account Management API`.
+
 ### 7.39.08
 
 Fixed bug in `gam oauth create` that caused a trap when `0)  Business Account Management API` was selected.
