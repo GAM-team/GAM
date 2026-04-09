@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.39.08'
+__version__ = '7.40.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -49336,13 +49336,12 @@ PROFILE_ACCOUNT_TYPE_MAP = {
   'usergroup': 'USER_GROUP',
   }
 
-# gam show businessprofileaccounts
+# gam <UserTypeEntity> show businessprofileaccounts
 #	[type locationgroup|organization|personal|usergroup]
-# gam print businessprofileaccounts [todrive <ToDriveAttribute>*]
+# gam <UserTypeEntity> print businessprofileaccounts [todrive <ToDriveAttribute>*]
 #	[type locationgroup|organization|personal|usergroup]
-def doPrintShowBusinessProfileAccounts():
-  bp = buildGAPIObject(API.BUSINESSACCOUNTMANAGEMENT)
-  csvPF = CSVPrintFile(['name', 'accountName']) if Act.csvFormat() else None
+def printShowBusinessProfileAccounts(users):
+  csvPF = CSVPrintFile(['User', 'name', 'accountName']) if Act.csvFormat() else None
   kwargs = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -49352,25 +49351,40 @@ def doPrintShowBusinessProfileAccounts():
       kwargs['filter'] = f'type={getChoice(PROFILE_ACCOUNT_TYPE_MAP, mapChoice=True)}'
     else:
       unknownArgumentExit()
-  try:
-    accounts = callGAPIpages(bp.accounts(), 'list', 'accounts',
-                             throwReasons=[GAPI.PERMISSION_DENIED],
-                             **kwargs)
-  except GAPI.permissionDenied as e:
-    accessErrorExitNonDirectory(API.BUSINESSACCOUNTMANAGEMENT, str(e))
-  if not csvPF:
-    count = len(accounts)
-    i = 0
-    for account in sorted(accounts, key=lambda k: k['name']):
-      i += 1
-      printKeyValueListWithCount(['Account', account['name']], i, count)
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, bp = buildGAPIServiceObject(API.BUSINESSACCOUNTMANAGEMENT, user, i, count)
+    if not bp:
+      continue
+    if csvPF:
+      printGettingAllEntityItemsForWhom(Ent.BUSINESS_PROFILE_ACCOUNT, user, i, count, query=kwargs.get('filter'))
+      pageMessage = getPageMessageForWhom()
+    else:
+      pageMessage = None
+    try:
+      accounts = callGAPIpages(bp.accounts(), 'list', 'accounts',
+                               pageMessage=pageMessage,
+                               throwReasons=[GAPI.PERMISSION_DENIED],
+                               **kwargs)
+    except GAPI.permissionDenied as e:
+      accessErrorExitNonDirectory(API.BUSINESSACCOUNTMANAGEMENT, str(e))
+    if not csvPF:
+      jcount = len(accounts)
+      entityPerformActionNumItems([Ent.USER, user], jcount, Ent.BUSINESS_PROFILE_ACCOUNT, i, count)
       Ind.Increment()
-      showJSON(None, account)
+      j = 0
+      for account in sorted(accounts, key=lambda k: k['name']):
+        j += 1
+        printKeyValueListWithCount(['Account', account['name']], j, jcount)
+        Ind.Increment()
+        showJSON(None, account)
+        Ind.Decrement()
       Ind.Decrement()
-  else:
-    for account in accounts:
-      row = flattenJSON(account, flattened={'name': account['name'], 'accountName': account['accountName']})
-      csvPF.WriteRowTitles(row)
+    else:
+      for account in accounts:
+        row = flattenJSON(account, flattened={'User': user, 'name': account['name'], 'accountName': account['accountName']})
+        csvPF.WriteRowTitles(row)
   if csvPF:
     csvPF.writeCSVfile('Business Profile Accounts')
 
@@ -80340,7 +80354,6 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_BROWSER:		doPrintShowBrowsers,
       Cmd.ARG_BROWSERTOKEN:	doPrintShowBrowserTokens,
       Cmd.ARG_BUILDING:		doPrintShowBuildings,
-      Cmd.ARG_BUSINESSPROFILEACCOUNT:	doPrintShowBusinessProfileAccounts,
       Cmd.ARG_CAALEVEL:		doPrintShowCAALevels,
       Cmd.ARG_CHANNELCUSTOMER:	doPrintShowChannelCustomers,
       Cmd.ARG_CHANNELCUSTOMERENTITLEMENT:	doPrintShowChannelCustomerEntitlements,
@@ -80479,7 +80492,6 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_BROWSER:		doPrintShowBrowsers,
       Cmd.ARG_BROWSERTOKEN:	doPrintShowBrowserTokens,
       Cmd.ARG_BUILDING:		doPrintShowBuildings,
-      Cmd.ARG_BUSINESSPROFILEACCOUNT:	doPrintShowBusinessProfileAccounts,
       Cmd.ARG_CAALEVEL:		doPrintShowCAALevels,
       Cmd.ARG_CHANNELCUSTOMER:	doPrintShowChannelCustomers,
       Cmd.ARG_CHANNELCUSTOMERENTITLEMENT:	doPrintShowChannelCustomerEntitlements,
@@ -80671,7 +80683,6 @@ MAIN_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_BUCKET:		Cmd.ARG_STORAGEBUCKET,
   Cmd.ARG_BUCKETS:		Cmd.ARG_STORAGEBUCKET,
   Cmd.ARG_BUILDINGS:		Cmd.ARG_BUILDING,
-  Cmd.ARG_BUSINESSPROFILEACCOUNTS:	Cmd.ARG_BUSINESSPROFILEACCOUNT,
   Cmd.ARG_CAALEVELS:		Cmd.ARG_CAALEVEL,
   Cmd.ARG_CHATMEMBERS:		Cmd.ARG_CHATMEMBER,
   Cmd.ARG_CHANNELCUSTOMERS:	Cmd.ARG_CHANNELCUSTOMER,
@@ -81415,6 +81426,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_ANALYTICPROPERTY:	printShowAnalyticProperties,
       Cmd.ARG_ASP:		printShowASPs,
       Cmd.ARG_BACKUPCODE:	printShowBackupCodes,
+      Cmd.ARG_BUSINESSPROFILEACCOUNT:	printShowBusinessProfileAccounts,
       Cmd.ARG_CALENDAR:		printShowCalendars,
       Cmd.ARG_CALENDARACL:	printShowCalendarACLs,
       Cmd.ARG_CALSETTINGS:	printShowCalSettings,
@@ -81532,6 +81544,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_ANALYTICPROPERTY:	printShowAnalyticProperties,
       Cmd.ARG_ASP:		printShowASPs,
       Cmd.ARG_BACKUPCODE:	printShowBackupCodes,
+      Cmd.ARG_BUSINESSPROFILEACCOUNT:	printShowBusinessProfileAccounts,
       Cmd.ARG_CALENDAR:		printShowCalendars,
       Cmd.ARG_CALENDARACL:	printShowCalendarACLs,
       Cmd.ARG_CALSETTINGS:	printShowCalSettings,
@@ -81755,6 +81768,7 @@ USER_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_ANALYTICPROPERTIES:	Cmd.ARG_ANALYTICPROPERTY,
   Cmd.ARG_ASPS:			Cmd.ARG_ASP,
   Cmd.ARG_BACKUPCODES:		Cmd.ARG_BACKUPCODE,
+  Cmd.ARG_BUSINESSPROFILEACCOUNTS:	Cmd.ARG_BUSINESSPROFILEACCOUNT,
   Cmd.ARG_CALENDARS:		Cmd.ARG_CALENDAR,
   Cmd.ARG_CALENDARACLS:		Cmd.ARG_CALENDARACL,
   Cmd.ARG_CLASSIFICATIONLABEL:	Cmd.ARG_DRIVELABEL,

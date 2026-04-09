@@ -3514,13 +3514,6 @@ gam print guardian|guardians [todrive <ToDriveAttribute>*] [accepted|invitations
         [showstudentemails]
         [formatjson [quotechar <Character>]]
 
-# Business Profile Accounts
-
-gam show businessprofileaccounts
-        [type locationgroup|organization|personal|usergroup]
-gam print businessprofileaccounts [todrive <ToDriveAttribute>*]
-        [type locationgroup|organization|personal|usergroup]
-
 # Classroom User Profiles
 
 gam <UserTypeEntity> print classroomprofile [todrive <ToDriveAttribute>*]
@@ -6099,6 +6092,13 @@ gam <UserTypeEntity> delete backupcodes|verificationcodes
 gam <UserTypeEntity> show backupcodes|verificationcodes
 gam <UserTypeEntity> print backupcodes|verificationcodes [todrive <ToDriveAttribute>*]
         [delimiter <Character>] [countsonly]
+
+# Users - Business Profile Accounts
+
+gam <UserTypeEntity> show businessprofileaccounts
+        [type locationgroup|organization|personal|usergroup]
+gam <UserTypeEntity> print businessprofileaccounts [todrive <ToDriveAttribute>*]
+        [type locationgroup|organization|personal|usergroup]
 
 # Users - Calendars
 

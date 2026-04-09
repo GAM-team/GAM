@@ -1,3 +1,10 @@
+7.40.00
+
+Updated `gam print|show businessprofileaccounts` (client access) to
+`gam <UserTypeEntity> print|show businessprofileaccounts` (service account access).
+You'll need to run `gam user user@domain.com update serviceaccount` and
+select `2)  Business Account Management API`.
+
 7.39.08
 
 Fixed bug in `gam oauth create` that caused a trap when `0)  Business Account Management API` was selected.

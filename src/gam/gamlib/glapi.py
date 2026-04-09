@@ -140,7 +140,6 @@ SCOPELESS_APIS = {
 
 # Scopes not in the discovery doc that are still valid for the API.
 EXTRA_SCOPES = {
-  BUSINESSACCOUNTMANAGEMENT: ['https://www.googleapis.com/auth/business.manage'],
   CLOUDRESOURCEMANAGER: ['https://www.googleapis.com/auth/cloudplatformfolders',
                          'https://www.googleapis.com/auth/cloudplatformfolders.readonly',
                          'https://www.googleapis.com/auth/cloudplatformprojects',
@@ -318,10 +317,6 @@ _INFO = {
 READONLY = ['readonly',]
 
 _CLIENT_SCOPES = [
-  {'name': 'Business Account Management API',
-   'api': BUSINESSACCOUNTMANAGEMENT,
-   'offByDefault': True,
-   'scope': EXTRA_SCOPES[BUSINESSACCOUNTMANAGEMENT]},
   {'name': 'Calendar API',
    'api': CALENDAR,
    'subscopes': READONLY,
@@ -568,6 +563,10 @@ _SVCACCT_SCOPES = [
   {'name': 'Analytics Admin API - readonly',
    'api': ANALYTICS_ADMIN,
    'scope': 'https://www.googleapis.com/auth/analytics.readonly'},
+  {'name': 'Business Account Management API',
+   'api': BUSINESSACCOUNTMANAGEMENT,
+   'offByDefault': True,
+   'scope': 'https://www.googleapis.com/auth/business.manage'},
   {'name': 'Calendar API',
    'api': CALENDAR,
    'subscopes': READONLY,
