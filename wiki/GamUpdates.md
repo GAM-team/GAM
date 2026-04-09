@@ -12,7 +12,9 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 
 ### 7.39.08
 
-Upgraded to Python 3.14.4.
+Fixed bug in `gam oauth create` that caused a trap when `0)  Business Account Management API` was selected.
+
+Upgraded to Python 3.14.4 on macOS and Windows; Linux is still 3.14.3.
 
 ### 7.39.07
 

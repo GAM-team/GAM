@@ -22,13 +22,13 @@ gam oauth create
 
 ## Display Business Profile Accounts
 ```
-gam <UserItem> show businessprofileaccounts
+gam <UserTyoeEntity> show businessprofileaccounts
         [type locationgroup|organization|personal|usergroup]
 ```
 Gam displays the information as an indented list of keys and values.
 
 ```
-gam <UserItem> print businessprofileaccounts [todrive <ToDriveAttribute>*]
+gam <UserTyoeEntity> print businessprofileaccounts [todrive <ToDriveAttribute>*]
         [type locationgroup|organization|personal|usergroup]
 ```
 Gam displays the information as columns of fields.
