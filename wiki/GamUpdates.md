@@ -12,9 +12,13 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 
 ### 7.40.01
 
-Updated `gam <UserTypeEntity> print filelist|filecounts` to handle `pm inherited <Boolean> em` when
-accessing My Drives. An additional API call per file is required to get the `permissionDetails` field
-that contains the `inherited` field.
+Updated `gam <UserTypeEntity> print filelist|filecounts` to handle the `permissionDetails` subfield
+of the `permissions field` for My Drives; this useful when trying to display permission inheritance.
+An additional API call per file is required to get the `permissionDetails` subfield.
+```
+gam user user@domain.com print filelist fields id,name,mimetype,basicpermissions,permissiondetails oneitemperrow
+gam user user@domain.com print filelist fields id,name,mimetype,basicpermissions,permissiondetails pm inherited false em pmfilter oneitemperrow
+```
 
 ### 7.40.00
 
