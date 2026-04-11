@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.40.01
+
+Updated `gam <UserTypeEntity> print filelist|filecounts` to handle `pm inherited <Boolean> em` when
+accessing My Drives. An additional API call per file is required to get the `permissionDetails` field
+that contains the `inherited` field.
+
 ### 7.40.00
 
 Updated `gam print|show businessprofileaccounts` (client access) to
