@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.40.00'
+__version__ = '7.40.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -57522,7 +57522,8 @@ def _mapDriveInfo(f_file, parentsSubFields, showParentsIdsAsList):
 
 DRIVEFILE_BASIC_PERMISSION_FIELDS = [
   'displayName', 'id', 'emailAddress', 'domain', 'role', 'type',
-  'allowFileDiscovery', 'expirationTime', 'deleted', 'permissionDetails' #permissionDetails must be last
+  'allowFileDiscovery', 'expirationTime', 'deleted', 'inheritedPermissionsDisabled',
+  'permissionDetails' #permissionDetails must be last
   ]
 
 DRIVE_FIELDS_CHOICE_MAP = {
@@ -57531,7 +57532,7 @@ DRIVE_FIELDS_CHOICE_MAP = {
   'appproperties': 'appProperties',
   'basicpermissions': ['permissions.displayName', 'permissions.id', 'permissions.emailAddress', 'permissions.domain',
                        'permissions.role', 'permissions.type', 'permissions.allowFileDiscovery',
-                       'permissions.expirationTime', 'permissions.deleted'],
+                       'permissions.expirationTime', 'permissions.deleted', 'permissions.inheritedPermissionsDisabled'],
   'cancomment': 'capabilities.canComment',
   'canreadrevisions': 'capabilities.canReadRevisions',
   'capabilities': 'capabilities',
@@ -57895,19 +57896,37 @@ def _setSkipObjects(skipObjects, skipTitles, fieldsList):
         skipObjects.add(field)
       fieldsList.append('parents')
 
-def _setGetPermissionsForSharedDrives(fieldsList):
-  getPermissionsForSharedDrives = False
-  permissionsFieldsList = []
+def _setGetPermissionsForMyDriveSharedDrives(fieldsList, permissionsFieldsList):
+  getPermissionDetailsForMyDrive = getPermissionsForSharedDrives = False
   permissionsFields = None
   for field in fieldsList:
     if field.startswith('permissions'):
-      getPermissionsForSharedDrives = True
       if field.find('.') != -1:
         field, subField = field.split('.', 1)
         permissionsFieldsList.append(subField)
-  if getPermissionsForSharedDrives:
+      else:
+        permissionsFieldsList.append('*')
+  if permissionsFieldsList:
+    if 'permissionDetails' in permissionsFieldsList:
+      getPermissionDetailsForMyDrive = True
+    getPermissionsForSharedDrives = True
     permissionsFields = getItemFieldsFromFieldsList('permissions', permissionsFieldsList, True)
-  return (getPermissionsForSharedDrives, permissionsFields)
+  return (getPermissionDetailsForMyDrive, getPermissionsForSharedDrives, permissionsFields)
+
+# Do file permissions have to be gotten by API call?
+def _setGetCheckFilePermissions(fileinfo, getPermissionDetailsForMyDrive, getPermissionsForSharedDrives, driveId, DLP):
+  filePerms = fileinfo.get('permissions')
+  if getPermissionsForSharedDrives and driveId and not filePerms:
+    return True
+  if getPermissionDetailsForMyDrive:
+    return True
+  if DLP.PM.checkDetails:
+    if not filePerms:
+      return True
+    permDetails = filePerms[0].get('permissionDetails')
+    if (not permDetails) or 'inherited' not in permDetails[0]:
+      return True
+  return False
 
 SHOWLABELS_CHOICES = {'details', 'ids'}
 
@@ -57953,6 +57972,7 @@ def showFileInfo(users):
     returnIdOnly = showParentsIdsAsList = showNoParents = stripCRsFromName = False
   pathDelimiter = '/'
   showLabels = None
+  permissionsFieldsList = []
   simpleLists = []
   skipObjects = set()
   fileIdEntity = getDriveFileEntity()
@@ -57976,8 +57996,7 @@ def showFileInfo(users):
     elif myarg == 'showlabels':
       showLabels = getChoice(SHOWLABELS_CHOICES)
     elif myarg == 'showshareddrivepermissions':
-      getPermissionsForSharedDrives = True
-      permissionsFields = f'nextPageToken,permissions({",".join(DRIVEFILE_BASIC_PERMISSION_FIELDS)})'
+      permissionsFieldsList = DRIVEFILE_BASIC_PERMISSION_FIELDS.copy()
     elif myarg == 'returnidonly':
       returnIdOnly = True
     elif myarg == 'followshortcuts':
@@ -57986,9 +58005,8 @@ def showFileInfo(users):
       pass
     else:
       FJQC.GetFormatJSON(myarg)
+  _, getPermissionsForSharedDrives, permissionsFields = _setGetPermissionsForMyDriveSharedDrives(DFF.fieldsList, permissionsFieldsList)
   if DFF.fieldsList:
-    if not getPermissionsForSharedDrives:
-      getPermissionsForSharedDrives, permissionsFields = _setGetPermissionsForSharedDrives(DFF.fieldsList)
     _setSelectionFields()
     if followShortcuts:
       DFF.fieldsList.extend(['mimeType', 'shortcutDetails'])
@@ -58101,7 +58119,7 @@ def showFileInfo(users):
         if not FJQC.formatJSON:
           showJSON(None, result, skipObjects=skipObjects, timeObjects=DRIVE_TIME_OBJECTS, simpleLists=simpleLists,
                    dictObjectsKey={'owners': 'displayName', 'fields': 'id', 'labels': 'id', 'user': 'emailAddress', 'parents': 'id',
-                                   'permissions': 'displayName'})
+                                   'permissions': 'displayName', 'permissionDetails': 'inherited'})
           Ind.Decrement()
         else:
           printLine(json.dumps(cleanJSON(result, skipObjects=skipObjects, timeObjects=DRIVE_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
@@ -58850,6 +58868,7 @@ class PermissionMatch():
     self.permissionMatchKeep = self.permissionMatchOr = True
     self.permissionFields = set()
     self.clearDefaultMatch = False
+    self.checkDetails = False
 
   def GetMatch(self):
     startEndTime = StartEndTime('expirationstart', 'expirationend')
@@ -58931,9 +58950,11 @@ class PermissionMatch():
       elif myarg == 'inherited':
         body[myarg] = getBoolean()
         self.permissionFields.add('permissionDetails')
+        self.checkDetails = True
       elif myarg == 'permtype':
         body['permissionType'] = getChoice(DRIVEFILE_ACL_PERMISSION_DETAILS_TYPES)
         self.permissionFields.add('permissionDetails')
+        self.checkDetails = True
       elif myarg in {'em', 'endmatch'}:
         break
       else:
@@ -58981,16 +59002,25 @@ class PermissionMatch():
       elif field in {'allowFileDiscovery', 'deleted'}:
         if value != permission.get(field, False):
           break
-      elif field == 'inherited':
-        if 'permissionDetails' in permission:
-          if value != permission['permissionDetails'][0].get(field, False):
-            break
-        else:
-          break
-      elif field == 'permissionType':
-        if 'permissionDetails' in permission:
-          if value != permission['permissionDetails'][0].get(field, ''):
-            break
+      elif field in {'inherited', 'permissionType'}:
+        permDetails = permission.pop('permissionDetails', None)
+        if permDetails:
+          dfltValue = False if field == 'inherited' else ''
+          permission['permissionDetails'] = []
+          if permission.get('inheritedPermissionsDisabled', False):
+            obreak = False
+            for permissionDetail in permDetails:
+              if permissionDetail.get('inherited', False):
+                continue
+              permission['permissionDetails'].append(permissionDetail)
+              if value != permissionDetail.get(field, dfltValue):
+                obreak = True
+            if obreak:
+              break
+          else:
+            permission['permissionDetails'].append(permDetails[len(permDetails)-1])
+            if value != permDetails[0].get(field, dfltValue):
+              break
         else:
           break
       elif field in {'expirationstart', 'expirationend'}:
@@ -59432,7 +59462,8 @@ def printFileList(users):
   def _printFileInfo(drive, user, f_file, cleanFileName):
     nonlocal getSharedDriveACLsCount
     driveId = f_file.get('driveId')
-    checkSharedDrivePermissions = getPermissionsForSharedDrives and driveId and 'permissions' not in f_file
+    getCheckFilePermissions = _setGetCheckFilePermissions(f_file, getPermissionDetailsForMyDrive, getPermissionsForSharedDrives,
+                                                          driveId, DLP)
     if (f_file.get('noDisplay', False) or
         not DLP.CheckShowOwnedBy(f_file) or
         not DLP.CheckShowSharedByMe(f_file) or
@@ -59440,10 +59471,10 @@ def printFileList(users):
         not DLP.CheckMimeType(f_file) or
         not DLP.CheckFileSize(f_file, sizeField) or
         not DLP.CheckFilenameMatch(f_file) or
-        (not checkSharedDrivePermissions and not DLP.CheckFilePermissionMatches(f_file)) or
+        (not getCheckFilePermissions and not DLP.CheckFilePermissionMatches(f_file)) or
         (DLP.onlySharedDrives and not driveId)):
       return
-    if checkSharedDrivePermissions:
+    if getCheckFilePermissions:
       if not incrementalPrint:
         getSharedDriveACLsCount += 1
         if getSharedDriveACLsCount % 100 == 0:
@@ -59610,7 +59641,7 @@ def printFileList(users):
   csvPFco = None
   FJQC = FormatJSONQuoteChar(csvPF)
   addPathsToJSON = continueOnInvalidQuery = countsRowFilter = buildTree = countsOnly = filepath = fullpath = folderPathOnly = \
-    getPermissionsForSharedDrives = mimeTypeInQuery = noRecursion = oneItemPerRow = stripCRsFromName = \
+    getPermissionDetailsForMyDrive = getPermissionsForSharedDrives = mimeTypeInQuery = noRecursion = oneItemPerRow = stripCRsFromName = \
     showParentsIdsAsList = showDepth = showParent = showSize = showSizeUnits = showMimeTypeSize = showSource = False
   sizeField = 'quotaBytesUsed'
   pathDelimiter = '/'
@@ -59621,6 +59652,7 @@ def printFileList(users):
   maxdepth = -1
   nodataFields = []
   simpleLists = ['permissionIds', 'spaces']
+  permissionsFieldsList = []
   skipObjects = set()
   fileIdEntity = {}
   selectSubQuery = ''
@@ -59704,8 +59736,7 @@ def printFileList(users):
     elif myarg == 'showlabels':
       showLabels = getChoice(SHOWLABELS_CHOICES)
     elif myarg == 'showshareddrivepermissions':
-      getPermissionsForSharedDrives = True
-      permissionsFields = f'nextPageToken,permissions({",".join(DRIVEFILE_BASIC_PERMISSION_FIELDS)})'
+      permissionsFieldsList = DRIVEFILE_BASIC_PERMISSION_FIELDS.copy()
     elif myarg == 'pmfilter':
       pmselect = False
     elif myarg == 'oneitemperrow':
@@ -59759,11 +59790,9 @@ def printFileList(users):
       btkwargs = fileIdEntity['shareddrive']
     DLP.Finalize(fileIdEntity)
   if DLP.PM.permissionMatches:
-    getPermissionsForSharedDrives = True
-    permissionsFields = f'nextPageToken,permissions({",".join(DRIVEFILE_BASIC_PERMISSION_FIELDS)})'
-  elif DFF.fieldsList:
-    if not getPermissionsForSharedDrives:
-      getPermissionsForSharedDrives, permissionsFields = _setGetPermissionsForSharedDrives(DFF.fieldsList)
+    permissionsFieldsList += list(DLP.PM.permissionFields)
+  getPermissionDetailsForMyDrive, getPermissionsForSharedDrives, permissionsFields = \
+    _setGetPermissionsForMyDriveSharedDrives(DFF.fieldsList, permissionsFieldsList)
   if DFF.fieldsList:
     _setSelectionFields()
     fields = getFieldsFromFieldsList(DFF.fieldsList)
@@ -60650,10 +60679,11 @@ def printShowFileCounts(users):
     fieldsList.append('driveId')
   DLP.Finalize(fileIdEntity)
   if DLP.PM.permissionMatches:
+    getPermissionDetailsForMyDrive = DLP.PM.checkDetails
     getPermissionsForSharedDrives = True
-    permissionsFields = 'nextPageToken,permissions'
+    permissionsFields = f'nextPageToken,permissions({",".join(DLP.PM.permissionFields)})'
   else:
-    getPermissionsForSharedDrives = False
+    getPermissionDetailsForMyDrive = getPermissionsForSharedDrives = False
   _setSelectionFields()
   if csvPF:
     sortTitles = ['User', 'id', 'name', 'Total', 'Item cap'] if fileIdEntity.get('shareddrive') else ['User', 'Total']
@@ -60694,16 +60724,17 @@ def printShowFileCounts(users):
       for files in feed:
         for f_file in files:
           driveId = f_file.get('driveId')
-          checkSharedDrivePermissions = getPermissionsForSharedDrives and driveId and 'permissions' not in f_file
+          getCheckFilePermissions = _setGetCheckFilePermissions(f_file, getPermissionDetailsForMyDrive, getPermissionsForSharedDrives,
+                                                                driveId, DLP)
           if (not DLP.CheckShowOwnedBy(f_file) or
               not DLP.CheckShowSharedByMe(f_file) or
               not DLP.CheckExcludeTrashed(f_file) or
               not DLP.CheckFileSize(f_file, sizeField) or
               not DLP.CheckFilenameMatch(f_file) or
-              (not checkSharedDrivePermissions and not DLP.CheckFilePermissionMatches(f_file)) or
+              (not getCheckFilePermissions and not DLP.CheckFilePermissionMatches(f_file)) or
               (DLP.onlySharedDrives and not driveId)):
             continue
-          if checkSharedDrivePermissions:
+          if getCheckFilePermissions:
             try:
               f_file['permissions'] = callGAPIpages(drive.permissions(), 'list', 'permissions',
                                                     throwReasons=GAPI.DRIVE3_GET_ACL_REASONS+[GAPI.BAD_REQUEST],
@@ -67094,7 +67125,7 @@ def emptyDriveTrash(users):
       userDriveServiceNotEnabledWarning(user, str(e), i, count)
 
 def _getDriveFileACLPrintKeysTimeObjects():
-  printKeys = ['id', 'type', 'emailAddress', 'domain', 'role', 'permissionDetails',
+  printKeys = ['id', 'role', 'type', 'emailAddress', 'domain', 'permissionDetails',
                'expirationTime', 'photoLink', 'allowFileDiscovery', 'deleted',
                'pendingOwner', 'view']
   timeObjects = {'expirationTime'}
@@ -67143,14 +67174,14 @@ def _showDriveFilePermission(permission, printKeys, timeObjects, i=0, count=0):
       printKeyValueList([key, ''])
       Ind.Increment()
       for detail in value:
-        printKeyValueList(['role', detail['role']])
-        Ind.Increment()
-        printKeyValueList(['type', detail['permissionType']])
-        if 'additionalRoles' in detail:
-          printKeyValueList(['additionalRoles', ','.join(detail['additionalRoles'])])
         printKeyValueList(['inherited', detail['inherited']])
+        Ind.Increment()
         if detail['inherited']:
           printKeyValueList(['inheritedFrom', detail.get('inheritedFrom', UNKNOWN)])
+        printKeyValueList(['permissionType', detail['permissionType']])
+        printKeyValueList(['role', detail['role']])
+        if 'additionalRoles' in detail:
+          printKeyValueList(['additionalRoles', ','.join(detail['additionalRoles'])])
         Ind.Decrement()
       Ind.Decrement()
     elif key not in timeObjects:
