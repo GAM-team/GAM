@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.40.01'
+__version__ = '7.40.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -6118,9 +6118,12 @@ def _checkCIMemberCategory(member, memberDisplayOptions):
   return True
 
 def getCIGroupMemberRoleFixType(member):
-  ''' fixes missing type and returns the highest role of member '''
+  ''' fixes missing type/id and returns the highest role of member '''
   if 'type' not in member:
-    if member['preferredMemberKey']['id'] == GC.Values[GC.CUSTOMER_ID]:
+    if 'id' not in member['preferredMemberKey']:
+      member['preferredMemberKey']['id'] = GC.Values[GC.CUSTOMER_ID]
+      member['type'] = Ent.TYPE_CUSTOMER
+    elif member['preferredMemberKey']['id'] == GC.Values[GC.CUSTOMER_ID]:
       member['type'] = Ent.TYPE_CUSTOMER
     else:
       member['type'] = Ent.TYPE_OTHER
@@ -37196,14 +37199,14 @@ def doUpdateCIGroups():
                  throwReasons=GAPI.MEMBERS_THROW_REASONS+[GAPI.DUPLICATE, GAPI.MEMBER_NOT_FOUND, GAPI.RESOURCE_NOT_FOUND,
                                                           GAPI.INVALID_MEMBER, GAPI.CYCLIC_MEMBERSHIPS_NOT_ALLOWED,
                                                           GAPI.CONDITION_NOT_MET, GAPI.FAILED_PRECONDITION, GAPI.PERMISSION_DENIED,
-                                                          GAPI.ALREADY_EXISTS, GAPI.CONFLICT],
+                                                          GAPI.ALREADY_EXISTS, GAPI.INVALID_ARGUMENT, GAPI.CONFLICT],
                  parent=group, body=body, fields='')
         _showSuccess(group, member, role, expireTime, j, jcount)
       except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
         entityUnknownWarning(entityType, group, i, count)
       except (GAPI.duplicate, GAPI.memberNotFound, GAPI.resourceNotFound,
               GAPI.invalidMember, GAPI.cyclicMembershipsNotAllowed, GAPI.conditionNotMet,
-              GAPI.failedPrecondition, GAPI.permissionDenied, GAPI.alreadyExists) as e:
+              GAPI.failedPrecondition, GAPI.permissionDenied, GAPI.alreadyExists, GAPI.invalidArgument) as e:
         _showFailure(group, member, role, str(e), j, jcount)
       except GAPI.conflict:
         _showSuccess(group, member, role, expireTime, j, jcount, Msg.ACTION_MAY_BE_DELAYED)
