@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.40.03
+
+Added option `whocanaddexternalmembers only_owners_can_add_external_members|end_users_can_add_external_members` to `<GroupSettingsAttribute>`.
+It appears that `allowexternalmembers true` must be set in the same command.
+Added option `whocanaddexternalmembers` to `<GroupFieldName>`.
+These options are not in general release as of 2026-04-13; experiment.
+
 ### - 7.40.02
 
 Updated `gam info|print cigroups` and `gam print|show cigroup-members` to handle trap caused

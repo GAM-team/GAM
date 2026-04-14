@@ -85,6 +85,7 @@ See [Collections of Items](Collections-of-Items)
         (sendmessagedenynotification <Boolean>)|
         (spammoderationlevel allow|moderate|silently_moderate|reject)|
         (whocanadd all_members_can_add|all_managers_can_add|all_owners_can_add|none_can_add)|
+        (whocanaddexternalmembers only_owners_can_add_external_members|end_users_can_add_external_members)|
         (whocancontactowner anyone_can_contact|all_in_domain_can_contact|all_members_can_contact|all_managers_can_contact|all_owners_can_contact)|
         (whocanjoin anyone_can_join|all_in_domain_can_join|invited_can_join|can_request_to_join)|
         (whocanleavegroup all_members_can_leave|all_managers_can_leave|all_owners_can_leave|none_can_leave)|
@@ -172,6 +173,7 @@ See [Collections of Items](Collections-of-Items)
         spammoderationlevel|
         whocanaddreferences|
         whocanadd|
+        whocanaddexternalmembers|
         whocanapprovemessages|
         whocanassigntopics|
         whocanassistcontent|
