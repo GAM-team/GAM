@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.40.02'
+__version__ = '7.40.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -33826,6 +33826,9 @@ GROUP_SETTINGS_ATTRIBUTES = {
   'sendmessagedenynotification': ['sendMessageDenyNotification', {GC.VAR_TYPE: GC.TYPE_BOOLEAN}],
   'spammoderationlevel': ['spamModerationLevel', {GC.VAR_TYPE: GC.TYPE_CHOICE,
                                                   'choices': {'allow': 'ALLOW', 'moderate': 'MODERATE', 'silentlymoderate': 'SILENTLY_MODERATE', 'reject': 'REJECT'}}],
+  'whocanaddexternalmembers': ['whoCanAddExternalMembers', {GC.VAR_TYPE: GC.TYPE_CHOICE,
+                                                            'choices': {'onlyadminscanaddexternalmembers': 'ONLY_ADMINS_CAN_ADD_EXTERNAL_MEMBERS',
+                                                                        'enduserscanaddexternalmembers': 'END_USERS_CAN_ADD_EXTERNAL_MEMBERS'}}],
   'whocancontactowner': ['whoCanContactOwner', {GC.VAR_TYPE: GC.TYPE_CHOICE,
                                                 'choices': {'anyonecancontact': 'ANYONE_CAN_CONTACT', 'allindomaincancontact': 'ALL_IN_DOMAIN_CAN_CONTACT',
                                                             'allmemberscancontact': 'ALL_MEMBERS_CAN_CONTACT', 'allmanagerscancontact': 'ALL_MANAGERS_CAN_CONTACT',
