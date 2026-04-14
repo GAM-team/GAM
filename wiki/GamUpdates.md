@@ -17,7 +17,7 @@ It appears that `allowexternalmembers true` must be set in the same command.
 Added option `whocanaddexternalmembers` to `<GroupFieldName>`.
 These options are not in general release as of 2026-04-13; experiment.
 
-### - 7.40.02
+### 7.40.02
 
 Updated `gam info|print cigroups` and `gam print|show cigroup-members` to handle trap caused
 by API returning invalid member data; `preferredMemberKey` with no `id`.
