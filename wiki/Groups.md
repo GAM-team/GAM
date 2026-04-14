@@ -79,7 +79,7 @@ See [Collections of Items](Collections-of-Items)
         (isarchived <Boolean>)|
         (memberscanpostasthegroup <Boolean>)|
         (messagemoderationlevel moderate_all_messages|moderate_non_members|moderate_new_members|moderate_none)|
-        (name <String>)|
+        (name|displayname <String>)|
         (primarylanguage <Language>)|
         (replyto reply_to_custom|reply_to_sender|reply_to_list|reply_to_owner|reply_to_ignore|reply_to_managers)|
         (sendmessagedenynotification <Boolean>)|

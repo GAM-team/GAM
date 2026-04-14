@@ -76,12 +76,14 @@ and Cloud Identity Premium accounts.
 <RESubstitution> ::= <String>>
 
 <GroupSettingsAttribute> ::=
+        (accesstype public|team|announcementonly|restricted)|
         (allowexternalmembers <Boolean>)|
         (allowwebposting <Boolean>)|
         (archiveonly <Boolean>)|
         (customfootertext <String>)|
         (customreplyto <EmailAddress>)|
         (defaultmessagedenynotificationtext <String>)|
+        (defaultsender self|group)|
         (description <String>)|
         (enablecollaborativeinbox|collaborative <Boolean>)|
         (includeinglobaladdresslist|gal <Boolean>)|
@@ -95,7 +97,8 @@ and Cloud Identity Premium accounts.
         (sendmessagedenynotification <Boolean>)|
         (spammoderationlevel allow|moderate|silently_moderate|reject)|
         (whocanadd all_members_can_add|all_managers_can_add|all_owners_can_add|none_can_add)|
-        (whocancontactowner anyone_can_contact|all_in_domain_can_contact|all_members_can_contact|all_managers_can_contact)|
+        (whocanaddexternalmembers only_owners_can_add_external_members|end_users_can_add_external_members)|
+        (whocancontactowner anyone_can_contact|all_in_domain_can_contact|all_members_can_contact|all_managers_can_contact|all_owners_can_contact)|
         (whocanjoin anyone_can_join|all_in_domain_can_join|invited_can_join|can_request_to_join)|
         (whocanleavegroup all_members_can_leave|all_managers_can_leave|all_owners_can_leave|none_can_leave)|
         (whocanpostmessage none_can_post|all_managers_can_post|all_members_can_post|all_owners_can_post|all_in_domain_can_post|anyone_can_post)|
@@ -139,7 +142,7 @@ and Cloud Identity Premium accounts.
 <GroupAttribute> ::=
         <JSONData>|
         <GroupSettingsAttribute>|
-        (whocandiscovergroup allmemberscandiscover|allindomaincandiscover|anyonecandiscover)|
+        (whocandiscovergroup all_members_can_discover|all_in_domain_can_discover|anyone_can_discover)|
         (whocanassistcontent all_members|owners_and_managers|managers_only|owners_only|none)|
         (whocanmoderatecontent all_members|owners_and_managers|owners_only|none)|
         (whocanmoderatemembers all_members|owners_and_managers|owners_only|none)|
@@ -182,6 +185,7 @@ and Cloud Identity Premium accounts.
         spammoderationlevel|
         whocanaddreferences|
         whocanadd|
+        whocanaddexternalmembers|
         whocanapprovemessages|
         whocanassigntopics|
         whocanassistcontent|
