@@ -165,7 +165,7 @@ jobs:
         with:
           path: |
             cache.tar.xz
-          key: gam-${{ matrix.jid }}-20260414
+          key: gam-${{ matrix.jid }}-20260415
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
@@ -328,8 +328,7 @@ jobs:
           cd "${GITHUB_WORKSPACE}/src"
           git clone https://github.com/openssl/openssl.git
           cd "${OPENSSL_SOURCE_PATH}"
-          #export LATEST_STABLE_TAG=$(git tag --list openssl-* | grep -v alpha | grep -v beta | sort -Vr | head -n1)
-          LATEST_STABLE_TAG="openssl-3.6.2"
+          export LATEST_STABLE_TAG=$(git tag --list openssl-* | grep -v alpha | grep -v beta | sort -Vr | head -n1)
           echo "Checking out version ${LATEST_STABLE_TAG}"
           git checkout "${LATEST_STABLE_TAG}"
           export COMPILED_OPENSSL_VERSION=${LATEST_STABLE_TAG:8} # Trim the openssl- prefix
@@ -401,6 +400,9 @@ jobs:
             export LATEST_STABLE_TAG=$(git tag --list | grep -v a | grep -v rc | grep -v b | sort -Vr | head -n1)
           fi
           git checkout "${LATEST_STABLE_TAG}"
+          # Temp Python 3.14 patch to work with OpenSSL 4
+          # Python 3.15 in Oct 2026 should support 4 OOB
+          patch -p1 < "${GITHUB_WORKSPACE}/src/tools/py314-ossl4.diff"
           export COMPILED_PYTHON_VERSION=${LATEST_STABLE_TAG:1} # Trim the "v" prefix
           echo "COMPILED_PYTHON_VERSION=${COMPILED_PYTHON_VERSION}" >> $GITHUB_ENV
 
