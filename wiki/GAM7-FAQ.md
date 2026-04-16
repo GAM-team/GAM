@@ -36,13 +36,15 @@ gam version
 Updating from Jay’s GAM to GAM7 may introduce some issues. If your GAM install is critical to your product Google environment you may want to wait for some of the upgrade challenges to be ironed out in the next few weeks. Having said that, GAM stores all of it’s configuration in the GAM install folder so backing up that folder should preserve your old GAM config. For [upgrade instructions see the wiki](https://github.com/GAM-team/GAM/wiki/How-to-upgrade-from-Standard-GAM).
 
 # What does this mean if I’m using Ross’ GAM-ADV?
-GAM7 is effectively the same source as GAMADV-XTD3 with minor changes to point to the [github.com/GAM-team/GAM](http://github.com/GAM-team/GAM) site. On Linux/MacOS you should be able to run:
+GAM7 is effectively the same source as GAMADV-XTD3 with minor changes to point to the [github.com/GAM-team/GAM](http://github.com/GAM-team/GAM) site.
+
+On Linux/MacOS you should be able to run:
 
 ```
 bash <(curl -s -S -L https://git.io/gam-install) -l
 ```
 
-To upgrade. On Windows, download the latest MSI from [git.io/gam-releases](http://git.io/gam-releases) and install it to the same path you had GAM-ADV installed.
+On Windows, download the latest EXE installer from [git.io/gam-releases](http://git.io/gam-releases), run it and  install it to the same path you had GAM-ADV installed.
 
 Both GAM7 and GAM-ADV versions use the same configuration file (gam.cfg), and credentials; they are interchangeable.
 
