@@ -11,5 +11,7 @@ from gam.__main__ import main
 if __name__ == '__main__':
   if platform.system() != 'Linux':
     multiprocessing.freeze_support()
-    multiprocessing.set_start_method('spawn', force=True)
+  # Python 3.14.4 and PyInstaller 6.19.0 don't play nice with Linux forkserver
+  # use spawn everywhere for now.
+  multiprocessing.set_start_method('spawn', force=True)
   main()
