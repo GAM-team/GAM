@@ -1,3 +1,7 @@
+7.41.00
+
+Upgraded to Python 3.14.4 and OpenSSL 4.0.0.
+
 7.40.03
 
 Added option `whocanaddexternalmembers only_owners_can_add_external_members|end_users_can_add_external_members` to `<GroupSettingsAttribute>`.
