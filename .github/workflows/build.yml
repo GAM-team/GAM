@@ -23,7 +23,7 @@ defaults:
 
 env:
   SCRATCH_COUNTER: 14
-  OPENSSL_CONFIG_OPTS: no-fips --api=3.0.0 no-docs no-tls1 no-tls1_1 no-dtls no-comp no-srp no-psk no-nextprotoneg no-weak-ssl-ciphers no-idea no-seed no-camellia no-sm2 no-sm3 no-sm4 no-rc2 no-rc4 no-rc5 no-md2 no-md4 no-cast no-des no-shared no-asm -fPIC no-tests -O3
+  OPENSSL_CONFIG_OPTS: no-fips --api=3.0.0 no-docs no-tls1 no-tls1_1 no-dtls no-comp no-srp no-psk no-nextprotoneg no-weak-ssl-ciphers no-idea no-seed no-camellia no-sm2 no-sm3 no-sm4 no-rc2 no-rc4 no-rc5 no-md2 no-md4 no-cast no-des no-shared -fPIC no-tests -O3
   OPENSSL_INSTALL_PATH: ${{ github.workspace }}/bin/ssl
   OPENSSL_SOURCE_PATH: ${{ github.workspace }}/src/openssl
   PYTHON_INSTALL_PATH: ${{ github.workspace }}/bin/python
@@ -165,7 +165,7 @@ jobs:
         with:
           path: |
             cache.tar.xz
-          key: gam-${{ matrix.jid }}-20260415
+          key: gam-${{ matrix.jid }}-20260416
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
@@ -343,7 +343,14 @@ jobs:
         run: |
           cd "${OPENSSL_SOURCE_PATH}"
           # --libdir=lib is needed so Python can find OpenSSL libraries
-          "${PERL}" ./Configure --libdir=lib --prefix="${OPENSSL_INSTALL_PATH}" $OPENSSL_CONFIG_OPTS
+          # Python doesn't like OpenSSL 4.0 with ASM on Linux arm64
+          # disable for now
+          if ([ "$RUNNER_OS" == "Linux" ] && [ "$RUNNER_ARCH" == "ARM64" ]); then
+            "${PERL}" ./Configure --libdir=lib --prefix="${OPENSSL_INSTALL_PATH}" no-asm $OPENSSL_CONFIG_OPTS
+          else
+            "${PERL}" ./Configure --libdir=lib --prefix="${OPENSSL_INSTALL_PATH}" $OPENSSL_CONFIG_OPTS
+          fi
+            
 
       - name: Rename GNU link on Windows
         if: matrix.goal == 'build' && runner.os == 'Windows' && steps.cache-python-ssl.outputs.cache-hit != 'true'
@@ -393,12 +400,7 @@ jobs:
           cd "${GITHUB_WORKSPACE}/src"
           git clone https://github.com/python/cpython.git
           cd "${PYTHON_SOURCE_PATH}"
-          if [[ "${RUNNER_OS}" == "Linux" ]]; then
-            # TEMP lock Linux to 3.14.3 until the PyInstaller multiprocess issues are resolved.
-            export LATEST_STABLE_TAG="v3.14.3"
-          else          
-            export LATEST_STABLE_TAG=$(git tag --list | grep -v a | grep -v rc | grep -v b | sort -Vr | head -n1)
-          fi
+          export LATEST_STABLE_TAG=$(git tag --list | grep -v a | grep -v rc | grep -v b | sort -Vr | head -n1)
           git checkout "${LATEST_STABLE_TAG}"
           # Temp Python 3.14 patch to work with OpenSSL 4
           # Python 3.15 in Oct 2026 should support 4 OOB
