@@ -36,10 +36,13 @@ def main():
 if __name__ == '__main__':
   if getattr(sys, 'frozen', False): # we're frozen:
     multiprocessing.freeze_support()
-  if platform.system() == 'Linux':
+  #if platform.system() == 'Linux':
     # set explictly since it's not default in Python < 3.14, forkserver should
     # be safer than fork and less likely to see bulk command hangs.
-    multiprocessing.set_start_method('forkserver')
-  else:
-    multiprocessing.set_start_method('spawn')
+    #multiprocessing.set_start_method('forkserver')
+  #else:
+  
+  # Python 3.14.4 and PyInstaller 6.19.0 don't play nice with forkserver
+  # on Linux. For the time being use spawn everywhere.
+  multiprocessing.set_start_method('spawn')
   main()
