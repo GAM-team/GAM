@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.41.00
+
+Upgraded to Python 3.14.4 and OpenSSL 4.0.0.
+
 ### 7.40.03
 
 Added option `whocanaddexternalmembers only_owners_can_add_external_members|end_users_can_add_external_members` to `<GroupSettingsAttribute>`.
