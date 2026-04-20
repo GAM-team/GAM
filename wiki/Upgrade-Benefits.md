@@ -132,7 +132,7 @@ See: [Users - Calendars - Transfer](Users-Calendars-Transfer)
 
 GAM7 supports domain shared contacts and user contacts.
 
-See: [Domain Shared Contacts](Contacts)
+See: [Domain Shared Contacts](Domain-SharedContacts)
 
 See: [Users - People - Contacts & Profiles](Users-People-Contacts-Profiles)
 
