@@ -1,3 +1,7 @@
+7.41.01
+
+Fixed bug in `gam print cigroups members managers owners countsonly totalcount internal external` that caused a trap.
+
 7.41.00
 
 Upgraded to Python 3.14.4 and OpenSSL 4.0.0.

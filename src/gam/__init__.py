@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.41.00'
+__version__ = '7.41.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -35649,7 +35649,7 @@ def setMemberDisplayTitles(memberDisplayOptions, csvPF):
 
 def setMemberDisplaySortTitles(memberDisplayOptions, sortTitles):
   if memberDisplayOptions['totalCount']:
-    sortTitles.append(MEMBERS_TITLES['total'][0])
+    sortTitles.append(MEMBERS_TITLES['combined']['total'][0])
   for category in memberDisplayOptions['categories']:
     if memberDisplayOptions['totalCount'] and category != 'combined':
       sortTitles.append(MEMBERS_TITLES[category]['total'][0])
