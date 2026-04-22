@@ -114,6 +114,8 @@ from pathvalidate import sanitize_filename, sanitize_filepath
 import google.oauth2.credentials
 import google.oauth2.id_token
 import google.auth
+import google.auth.transport.requests
+from google.auth.compute_engine import _metadata as gce_metadata
 from google.auth.jwt import Credentials as JWTCredentials
 import google.oauth2.service_account
 import google_auth_oauthlib.flow
@@ -4543,6 +4545,15 @@ class signjwtCredentials(google.oauth2.service_account.Credentials):
     token = self._signer(payload)
     return token
 
+def get_adc_request():
+  # TODO: cache the result of is_on_gce() and check it here
+  # so we only check once on each GAM run.
+  request = google.auth.transport.requests.Request()
+  if gce_metadata.is_on_gce(request):
+    return request
+  else:
+    return getTLS1_2Request()
+
 class signjwtSignJwt(google.auth.crypt.Signer):
   ''' Signer class for SignJWT '''
   def __init__(self, service_account_info):
@@ -4556,12 +4567,15 @@ class signjwtSignJwt(google.auth.crypt.Signer):
 
   def sign(self, message):
     ''' Call IAM Credentials SignJWT API to get our signed JWT '''
+    request = get_adc_request()
     try:
       credentials, _ = google.auth.default(scopes=[API.IAM_SCOPE],
-                                           request=getTLSv1_2Request())
+                                           request=request)
     except (google.auth.exceptions.DefaultCredentialsError, google.auth.exceptions.RefreshError) as e:
       systemErrorExit(API_ACCESS_DENIED_RC, str(e))
     httpObj = transportAuthorizedHttp(credentials, http=getHttpObj(override_min_tls='TLSv1_2'))
+    # refresh here so we can use the proper request from above
+    httpObj.credentials.refresh(request)
     iamc = getService(API.IAM_CREDENTIALS, httpObj)
     response = callGAPI(iamc.projects().serviceAccounts(), 'signJwt',
                         name=self.name, body={'payload': json.dumps(message)})
@@ -11615,7 +11629,7 @@ def doEnableAPIs():
       automatic = False
     else:
       unknownArgumentExit()
-  request = getTLSv1_2Request()
+  request = get_adc_request()
   try:
     _, projectId = google.auth.default(scopes=[API.IAM_SCOPE], request=request)
   except (google.auth.exceptions.DefaultCredentialsError, google.auth.exceptions.RefreshError):
@@ -13200,7 +13214,7 @@ def doCreateGCPServiceAccount():
   checkForExtraneousArguments()
   _checkForExistingProjectFiles([GC.Values[GC.OAUTH2SERVICE_JSON]])
   sa_info = {'key_type': 'signjwt', 'token_uri': API.GOOGLE_OAUTH2_TOKEN_ENDPOINT, 'type': 'service_account'}
-  request = getTLSv1_2Request()
+  request = get_adc_request()
   try:
     credentials, sa_info['project_id'] = google.auth.default(scopes=[API.IAM_SCOPE], request=request)
   except (google.auth.exceptions.DefaultCredentialsError, google.auth.exceptions.RefreshError) as e:
