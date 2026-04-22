@@ -4552,7 +4552,8 @@ def get_adc_request():
   if gce_metadata.is_on_gce(request):
     return request
   else:
-    return getTLSv1_2Request()
+    #return getTLSv1_2Request()
+    return transportCreateRequest()
 
 class signjwtSignJwt(google.auth.crypt.Signer):
   ''' Signer class for SignJWT '''
@@ -4573,7 +4574,7 @@ class signjwtSignJwt(google.auth.crypt.Signer):
                                            request=request)
     except (google.auth.exceptions.DefaultCredentialsError, google.auth.exceptions.RefreshError) as e:
       systemErrorExit(API_ACCESS_DENIED_RC, str(e))
-    httpObj = transportAuthorizedHttp(credentials, http=getHttpObj(override_min_tls='TLSv1_2'))
+    httpObj = transportAuthorizedHttp(credentials, http=getHttpObj())#override_min_tls='TLSv1_2'))
     # refresh here so we can use the proper request from above
     httpObj.credentials.refresh(request)
     iamc = getService(API.IAM_CREDENTIALS, httpObj)
