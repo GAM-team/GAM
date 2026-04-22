@@ -4518,13 +4518,6 @@ class signjwtJWTCredentials(google.auth.jwt.Credentials):
     jwt = self._signer.sign(payload)
     return jwt, expiry.naive
 
-# Some Workforce Identity Federation endpoints such as GitHub Actions
-# only allow TLS 1.2 as of April 2023.
-
-def getTLSv1_2Request():
-  httpc = getHttpObj(override_min_tls='TLSv1_2')
-  return transportCreateRequest(httpc)
-
 class signjwtCredentials(google.oauth2.service_account.Credentials):
   ''' Class used for DwD '''
 
@@ -4552,7 +4545,6 @@ def get_adc_request():
   if gce_metadata.is_on_gce(request):
     return request
   else:
-    #return getTLSv1_2Request()
     return transportCreateRequest()
 
 class signjwtSignJwt(google.auth.crypt.Signer):
@@ -4574,7 +4566,7 @@ class signjwtSignJwt(google.auth.crypt.Signer):
                                            request=request)
     except (google.auth.exceptions.DefaultCredentialsError, google.auth.exceptions.RefreshError) as e:
       systemErrorExit(API_ACCESS_DENIED_RC, str(e))
-    httpObj = transportAuthorizedHttp(credentials, http=getHttpObj())#override_min_tls='TLSv1_2'))
+    httpObj = transportAuthorizedHttp(credentials, http=getHttpObj())
     # refresh here so we can use the proper request from above
     httpObj.credentials.refresh(request)
     iamc = getService(API.IAM_CREDENTIALS, httpObj)
