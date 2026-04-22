@@ -4223,6 +4223,9 @@ def SetGlobalVariables():
   GM.Globals[GM.OAUTH2_TXT_LOCK] = f'{GC.Values[GC.OAUTH2_TXT]}.lock'
 # Override httplib2 settings
   httplib2.debuglevel = GC.Values[GC.DEBUG_LEVEL]
+# Override requests debuglevel also. Requests is used with
+# SignJWT/WIF/GCE and a few other places.
+  http.client.HTTPConnection.debuglevel = GC.Values[GC.DEBUG_LEVEL]
 # Use our own print function for http.client so we can redact and cleanup
   http.client.print = redactable_debug_print
 # Reset global variables if required
