@@ -4552,7 +4552,7 @@ def get_adc_request():
   if gce_metadata.is_on_gce(request):
     return request
   else:
-    return getTLS1_2Request()
+    return getTLSv1_2Request()
 
 class signjwtSignJwt(google.auth.crypt.Signer):
   ''' Signer class for SignJWT '''
