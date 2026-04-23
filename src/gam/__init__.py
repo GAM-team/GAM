@@ -4615,7 +4615,8 @@ def getOauth2TxtCredentials(exitOnError=True, api=None, noDASA=False, refreshOnl
     if jsonData:
       try:
         if api in API.APIS_NEEDING_ACCESS_TOKEN:
-          return (False, getSvcAcctCredentials(API.APIS_NEEDING_ACCESS_TOKEN[api], userEmail=None, forceOauth=True))
+          subject = GC.Values[GC.ADMIN_EMAIL] if api in API.APIS_NEEDING_DASA_SUBJECT else None
+          return (False, getSvcAcctCredentials(API.APIS_NEEDING_ACCESS_TOKEN[api], userEmail=subject, forceOauth=True))
         jsonDict = json.loads(jsonData)
         api, _, _ = API.getVersion(api)
         audience = f'https://{api}.googleapis.com/'

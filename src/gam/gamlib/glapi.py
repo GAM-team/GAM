@@ -152,7 +152,32 @@ EXTRA_SCOPES = {
 EXTRA_SCOPES[CLOUDRESOURCEMANAGERV1] = EXTRA_SCOPES[CLOUDRESOURCEMANAGER]
 
 APIS_NEEDING_ACCESS_TOKEN = {
-  CBCM: ['https://www.googleapis.com/auth/admin.directory.device.chromebrowsers']
+  CBCM: ['https://www.googleapis.com/auth/admin.directory.device.chromebrowsers'],
+  # admin.googleapis.com (Directory) rejects self-signed JWT bearer tokens
+  # with `401 "Expected OAuth 2 access token"`, so DASA must exchange the
+  # JWT for an OAuth 2.0 access token. Only readonly scopes are requested
+  # here; write operations under DASA are not addressed by this entry.
+  DIRECTORY: [
+    'https://www.googleapis.com/auth/admin.directory.customer.readonly',
+    'https://www.googleapis.com/auth/admin.directory.device.chromeos.readonly',
+    'https://www.googleapis.com/auth/admin.directory.device.mobile.readonly',
+    'https://www.googleapis.com/auth/admin.directory.domain.readonly',
+    'https://www.googleapis.com/auth/admin.directory.group.readonly',
+    'https://www.googleapis.com/auth/admin.directory.orgunit.readonly',
+    'https://www.googleapis.com/auth/admin.directory.resource.calendar.readonly',
+    'https://www.googleapis.com/auth/admin.directory.rolemanagement.readonly',
+    'https://www.googleapis.com/auth/admin.directory.user.readonly',
+    ],
+  REPORTS: [
+    'https://www.googleapis.com/auth/admin.reports.audit.readonly',
+    'https://www.googleapis.com/auth/admin.reports.usage.readonly',
+    ],
+  }
+# APIs in APIS_NEEDING_ACCESS_TOKEN that additionally require DWD
+# impersonation (sub=admin_email) in DASA mode. CBCM does not impersonate.
+APIS_NEEDING_DASA_SUBJECT = {
+  DIRECTORY,
+  REPORTS,
   }
 #
 DEPRECATED_SCOPES = {
