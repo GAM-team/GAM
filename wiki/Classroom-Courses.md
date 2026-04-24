@@ -131,6 +131,7 @@ gam user user@domain.com check|update serviceaccount
         name|
         owneremail|
         ownerid|
+        ownername|
         room|
         section|
         teacherfolder|
@@ -431,14 +432,16 @@ gam courses <CourseEntity> update topic <CourseTopicIDEntity> <CourseTopic>
 
 ## Display courses
 ```
-gam info course <CourseID> [owneremail] [alias|aliases] [show all|students|teachers] [countsonly]
+gam info course <CourseID>
+        [owneremail] [ownername] [alias|aliases] [show all|students|teachers] [countsonly]
         [fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>] [formatjson]
-gam info courses <CourseEntity> [owneremail] [alias|aliases] [show all|students|teachers] [countsonly]
+gam info courses <CourseEntity>
+        [owneremail] [ownername] [alias|aliases] [show all|students|teachers] [countsonly]
         [fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>] [formatjson]
 
 gam print courses [todrive <ToDriveAttribute>*]
         (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
-        [owneremail] [owneremailmatchpattern <REMatchPattern>]
+        [owneremail] [owneremailmatchpattern <REMatchPattern>] [ownername]
         [alias|aliases|aliasesincolumns [delimiter <Character>]]
         [show all|students|teachers] [countsonly]
         [timefilter creationtime|updatetime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
@@ -471,7 +474,9 @@ To get information about courses created/updated within a particular time frame,
 For the filter to apply, `timefilter` and at least one of `start|starttime` and `end|endtime` must be specified.
 
 By default, all basic course fields are displayed; use the following options to modify the output.
-* `owneremail` - Display course owner email; requires an additional API call per course.
+* `owneremail` - Display course owner email.
+* `ownername` - Display course owner name.
+    * These options require an additional API call per course.
 * `alias|aliases` - Display course aliases; all aliases are in the single column `Aliases` separated by a delimiter; requires an additional API call per course.
     * `delimiter <Character>` - Delimiter between aliases with `print` command.
 * `aliasesincolumn` - Display course aliases; the `Aliases` column contains the number of aliases and `Aliases.0`, `Aliases.1`, ... contain the individual aliases; requires an additional API call per course.
@@ -525,7 +530,8 @@ gam print course-announcements [todrive <ToDriveAttribute>*]
         (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] states <CourseStateList>])
         (courseannouncementids <CourseAnnouncementIDEntity>)|(announcementstates <CourseAnnouncementStateList>)*
         (orderby <CourseAnnouncementOrderByFieldName> [ascending|descending])*)
-        [creatoremail] [fields <CourseAnnouncementFieldNameList>]
+        [showcreatoremails|creatoremail] [showcreatornames|creatorname]
+        [fields <CourseAnnouncementFieldNameList>]
         [timefilter creationtime|updatetime|scheduledtime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
         [countsonly] [formatjson [quotechar <Character>]]
 ```
@@ -553,7 +559,10 @@ To get information about course announcements created/updated/scheduled within a
 For the filter to apply, `timefilter` and at least one of `start|starttime` and `end|endtime` must be specified.
 
 By default, all course announcement fields are displayed; use the following options to modify the output.
-* `creatoremail` - Display course announcement creator email; requires an additional API call per course announcement.
+* `creatoremail` - Display course announcement creator email.
+* `creatorname` - Display course announcement creator name.
+    * These options require an additional API call per course.
+* `alias|aliases` - Display course aliases; all aliases are in the single column `Aliases` separated by a delimiter; requires an additional API call per course.
 * `fields <CourseAnnouncementFieldNameList>` - Select specific fields to display.
 
 Use the `countsonly` option to display the number of announcements in a course but not their details.
@@ -573,7 +582,8 @@ gam print course-materials [todrive <ToDriveAttribute>*]
         (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] states <CourseStateList>])
         (materialids <CourseMaterialIDEntity>)|(materialstates <CourseMaterialStateList>)*
         (orderby <CourseMaterialOrderByFieldName> [ascending|descending])*)
-        [showcreatoremails|creatoremail] [showtopicnames] [fields <CourseMaterialFieldNameList>]
+        [showcreatoremails|creatoremail] [showcreatornames|creatorname] [showtopicnames]
+        [fields <CourseMaterialFieldNameList>]
         [timefilter creationtime|updatetime|scheduledtime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
         [oneitemperrow]
         [countsonly] [formatjson [quotechar <Character>]]
@@ -602,8 +612,10 @@ By default, all published course materials for a course are displayed; use the f
 * `materialsstates <CourseMaterialsStateList>` - Display course materials with any of the specified states.
 
 By default, all course materials fields are displayed; use the following options to modify the output.
-* `showcreatoremails` - Display course materials creator email; requires an additional API call per course materials.
-* `showtopicnames` - Display topic names; requires and additional API call per course.
+* `showcreatoremails|creatoremail` - Display course materials creator email.
+* `showcreatornames|creatorname` - Display course materials creator name.
+    * These options require an additional API call per course.
+* `showtopicnames` - Display topic names; requires an additional API call per course.
 * `fields <CourseMaterialsFieldNameList>` - Select specific fields to display.
 
 With `print course-materials`, the materials selected for display are all output on one row/line as a repeating item with the other course fields.
@@ -669,7 +681,8 @@ gam print course-work [todrive <ToDriveAttribute>*]
         (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] states <CourseStateList>])
         (workids <CourseWorkIDEntity>)|(workstates <CourseWorkStateList>)*
         (orderby <CourseWorkOrderByFieldName> [ascending|descending])*)
-        [showcreatoremails] [showtopicnames] [fields <CourseWorkFieldNameList>]
+        [showcreatoremails|creatoremail] [showcreatornames|creatorname] [showtopicnames]
+        [fields <CourseWorkFieldNameList>]
         [showstudentsaslist [<Boolean>]] [delimiter <Character>]
         [timefilter creationtime|updatetime|scheduledtime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
         [oneitemperrow]
@@ -699,8 +712,10 @@ By default, all published course work for a course is displayed; use the followi
 * `workstates <CourseWorkStateList>` - Display course work with any of the specified states.
 
 By default, all course work fields are displayed; use the following options to modify the output.
-* `showcreatoremails` - Display course work creator email; requires an additional API call per course work.
-* `showtopicnames` - Display topic names; requires and additional API call per course.
+* `showcreatoremails|creatoremail` - Display course materials creator email.
+* `showcreatornames|creatorname` - Display course materials creator name.
+    * These options require an additional API call per course.
+* `showtopicnames` - Display topic names; requires an additional API call per course.
 * `fields <CourseWorkFieldNameList>` - Select specific fields to display.
 
 By default, when course work is assigned to individual students, the student IDs are displayed in multiple indexed columns.

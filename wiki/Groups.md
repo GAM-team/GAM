@@ -7,6 +7,8 @@
 - [GUI API Group access type settings mapping](#gui-api-group-access-type-settings-mapping)
 - [whoCanViewMembership and whoCanDiscoverGroup interactions](#whocanviewmembership-and-whocandiscovergroup-interactions)
 - [Manage groups](#manage-groups)
+- [Handle group deletion and immediate recreation](#handle-group-deletion-and-immediate-recreation)
+- [Verify group creation](#verify-group-creation)
 - [Update a group's primary email address](#update-a-groups-primary-email-address)
 - [Update a group's settings with JSON data](#update-a-groups-settings-with-json-data)
 - [Display information about specific groups](#display-information-about-specific-groups)
@@ -350,6 +352,8 @@ These commands allow you to create, update and delete groups.
 gam create group <EmailAddress>
         [copyfrom <GroupItem>] <GroupAttribute>*
         [verifynotinvitable]
+        [recentdeleteretries <Integer>] [recentdeleteretrydelay <Integer>]
+        [verifycreationretries <Integer>] [verifycreationinitialdelay <Integer>] [verifycreationretrydelay <Integer>]
 gam update group|groups <GroupEntity> [email <EmailAddress>]
         [updateprimaryemail <RESearchPattern> <RESubstitution> [preview]]
         [copyfrom <GroupItem>] <GroupAttribute>*
@@ -366,6 +370,28 @@ You can update a group to a security group with the `makesecuritygroup` option.
 * Warning: A Security Group cannot be changed back to a Google Group.
 
 When deleting and `noactionifalias` is specified, no action is performed if `<GroupEntity>` specifies an alias rather than a primary email address.
+
+## Handle group deletion and immediate recreation
+If you have a script that deletes a group and then immediately tries to create a new group with the same email address,
+you may run into issues. There seems to be a 30-45 second window after the deletion in which a couple
+of strange errors can occur on the creation: `Resource not found` and `Duplicate`.
+The following options can be used with `gam create group` to handle these errors. This will be most useful
+in scripts that are used to delete and then immediately  recreate groups.
+```
+recentdeleteretries <Integer> - Handle group delete/create errors, defaults to 0, no errors handled, range 0-20
+recentdeleteretrydelay <Integer> - Number of seconds to delay between retries, defaults to 5, range 1-60
+```
+
+## Verify group creation
+After creating a group, it may be sometime, e.g. 30-45 seconds, before members can
+successfully be added to the group even though the API reported that the group was created.
+The following options can be used with `gam create group` to verify that the group is actually ready to be updated.
+This will be most useful in scripts that are used to create and then populate groups.
+```
+verifycreationretries <Integer> - Verify group creation, defaults to 0, no verification performed, range 0-20
+verifycreationinitialdelay <Integer> - Number of seconds to delay before first verification performed, defaults to 5, range 0-60
+verifycreationretrydelay <Integer> - Number of seconds to delay between verificaton retries, defaults to 5, range 1-60
+```
 
 ## Update a group's primary email address
 You can simply update a group's primary email address with the `email` option.

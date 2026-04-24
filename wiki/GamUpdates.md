@@ -10,6 +10,34 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.41.02
+
+Added option `ownername` to `gam info|print courses` to have GAM display the course owners full name;
+there is an extra API call per course to get the name.
+
+Added option `creatorname` to `gam print course-announcements|course-materials|course-works` to have
+GAM display the item creators full name; there is an extra API call per course to get the name.
+
+After creating a group, it may be sometime, e.g. 30-45 seconds, before members can
+successfully be added to the group even though the API reported that the group was created.
+The following options can be used with `gam create group` to verify that the group is actually ready to be updated.
+This will be most useful in scripts that are used to create and then populate groups.
+```
+verifycreationretries <Integer> - Verify group creation, defaults to 0, no verification performed, range 0-20
+verifycreationinitialdelay <Integer> - Number of seconds to delay before first verification performed, defaults to 5, range 0-60
+verifycreationretrydelay <Integer> - Number of seconds to delay between verificaton retries, defaults to 5, range 1-60
+```
+
+If you have a script that deletes a group and then immediately tries to create a new group with the same email address,
+you may run into issues. There seems to be a 30-45 second window after the deletion in which a couple
+of strange errors can occur on the creation: `Resource not found` and `Duplicate`.
+The following options can be used with `gam create group` to handle these errors. This will be most useful
+in scripts that are used to delete and then immediately recreate groups.
+```
+recentdeleteretries <Integer> - Handle group delete/create errors, defaults to 0, no errors handled, range 0-20
+recentdeleteretrydelay <Integer> - Number of seconds to delay between retries, defaults to 5, range 1-60
+```
+
 ### 7.41.01
 
 Fixed bug in `gam print cigroups members managers owners countsonly totalcount internal external` that caused a trap.
