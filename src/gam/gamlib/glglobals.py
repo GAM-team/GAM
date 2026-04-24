@@ -131,6 +131,8 @@ GAM_PATH = 'gpth'
 GAM_TYPE = 'gtyp'
 # Shared Service Account HTTP Object
 HTTP_OBJECT = 'http'
+# Are we on Global Compute Engine
+IS_ON_GCE = 'ogce'
 # Length of last Got message
 LAST_GOT_MSG_LEN = 'lgml'
 # License SKUs
@@ -285,6 +287,7 @@ Globals = {
   GAM_PATH: '.',
   GAM_TYPE: '',
   HTTP_OBJECT: None,
+  IS_ON_GCE: False,
   LAST_GOT_MSG_LEN: 0,
   LICENSE_SKUS: [],
   MAKE_BUILDING_ID_NAME_MAP: True,

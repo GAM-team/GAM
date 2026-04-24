@@ -3162,6 +3162,7 @@ gam <UserTypeEntity> show contactdelegates [shownames] [csv]
         name|
         owneremail|
         ownerid|
+        ownername|
         room|
         section|
         students|
@@ -3275,16 +3276,16 @@ gam courses <CourseEntity> sync teachers [addonly|removeonly] [makefirstteachero
 gam courses <CourseEntity> sync students [addonly|removeonly] <UserTypeEntity>
 
 gam info course <CourseID> [owneraccess]
-        [owneremail] [alias|aliases] [show all|students|teachers] [countsonly]
+        [owneremail] [ownername] [alias|aliases] [show all|students|teachers] [countsonly]
         [fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>]
         [formatjson]
 gam info courses <CourseEntity> [owneraccess]
-        [owneremail] [alias|aliases] [show all|students|teachers] [countsonly]
+        [owneremail] [ownername] [alias|aliases] [show all|students|teachers] [countsonly]
         [fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>]
         [formatjson]
 gam print courses [todrive <ToDriveAttribute>*]
         (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
-        [owneremail] [owneremailmatchpattern <REMatchPattern>]
+        [owneremail] [owneremailmatchpattern <REMatchPattern>] [ownername]
         [alias|aliases|aliasesincolumns [delimiter <Character>]]
         [show all|students|teachers] [countsonly]
         [timefilter creationtime|updatetime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
@@ -3398,14 +3399,16 @@ gam print course-announcements [todrive <ToDriveAttribute>*]
         (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] states <CourseStateList>])
         (announcementids <CourseAnnouncementIDEntity>)|((announcementstates <CourseAnnouncementStateList>)*
         (orderby <CourseAnnouncementOrderByFieldName> [ascending|descending])*)
-        [showcreatoremails|creatoremail] [fields <CourseAnnouncementFieldNameList>]
+        [showcreatoremails|creatoremail] [showcreatornames|creatorname]
+        [fields <CourseAnnouncementFieldNameList>]
         [timefilter creationtime|updatetime|scheduledtime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
         [countsonly] [formatjson [quotechar <Character>]]
 gam print course-materials [todrive <ToDriveAttribute>*]
         (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] states <CourseStateList>])
         (materialids <CourseMaterialIDEntity>)|((materialstates <CourseMaterialStateList>)*
         (orderby <CourseMaterialOrderByFieldName> [ascending|descending])*)
-        [showcreatoremails|creatoremail] [showtopicnames] [fields <CourseMaterialFieldNameList>]
+        [showcreatoremails|creatoremail] [showcreatornames|creatorname] [showtopicnames]
+        [fields <CourseMaterialFieldNameList>]
         [timefilter creationtime|updatetime|scheduledtime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
         [oneitemperrow]
         [countsonly] [formatjson [quotechar <Character>]]
@@ -3426,7 +3429,8 @@ gam print course-works [todrive <ToDriveAttribute>*]
         (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] states <CourseStateList>])
         (workids <CourseWorkIDEntity>)|((workstates <CourseWorkStateList>)*
         (orderby <CourseWorkOrderByFieldName> [ascending|descending])*)
-        [showcreatoremails|creatoremail] [showtopicnames] [fields <CourseWorkFieldNameList>]
+        [showcreatoremails|creatoremail] [showcreatornames|creatorname] [showtopicnames]
+        [fields <CourseWorkFieldNameList>]
         [showstudentsaslist [<Boolean>]] [delimiter <Character>]
         [timefilter creationtime|updatetime|scheduledtime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
         [oneitemperrow]
@@ -3884,6 +3888,8 @@ gam audit monitor list <EmailAddress>
 gam create|add group <EmailAddress>
         [copyfrom <GroupItem>] <GroupAttribute>*
         [verifynotinvitable]
+        [recentdeleteretries <Integer>] [recentdeleteretrydelay <Integer>]
+        [verifycreationretries <Integer>] [verifycreationinitialdelay <Integer>] [verifycreationretrydelay <Integer>]
 gam update group|groups <GroupEntity> [email <EmailAddress>]
         [updateprimaryemail <RESearchPattern> <RESubstitution>]
         [copyfrom <GroupItem>] <GroupAttribute>*

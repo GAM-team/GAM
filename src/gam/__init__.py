@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.41.01'
+__version__ = '7.41.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -4542,13 +4542,13 @@ class signjwtCredentials(google.oauth2.service_account.Credentials):
     return token
 
 def get_adc_request():
-  # TODO: cache the result of is_on_gce() and check it here
-  # so we only check once on each GAM run.
   request = google.auth.transport.requests.Request()
-  if gce_metadata.is_on_gce(request):
+  if GM.Globals[GM.IS_ON_GCE]:
     return request
-  else:
-    return transportCreateRequest()
+  if gce_metadata.is_on_gce(request):
+    GM.Globals[GM.IS_ON_GCE] = True
+    return request
+  return transportCreateRequest()
 
 class signjwtSignJwt(google.auth.crypt.Signer):
   ''' Signer class for SignJWT '''
@@ -34018,9 +34018,20 @@ GROUP_ACCESS_TYPE_CHOICE_MAP = {
 
 # gam create group <EmailAddress> [copyfrom <GroupItem>] <GroupAttribute>*
 #	[verifynotinvitable]
+#	[verifyduplicateretries <Integer>] [verifyduplicateretrydelay <Integer>]
+#	[verifycreationretries <Integer>] [verifycreationinitialdelay <Integer>] [verifycreationretrydelay <Integer>]
 def doCreateGroup(ciGroupsAPI=False):
+  def waitingForCreationToComplete(sleep_time):
+    writeStderr(Ind.Spaces()+Msg.WAITING_FOR_ITEM_CREATION_TO_COMPLETE_SLEEPING.format(Ent.Singular(Ent.GROUP), sleep_time))
+    time.sleep(sleep_time)
+
   cd = buildGAPIObject(API.DIRECTORY)
   verifyNotInvitable = getBeforeUpdate = False
+  recentDeleteRetries = 0
+  recentDeleteRetryDelay = 5
+  verifyCreationRetries = 0
+  verifyCreationInitialDelay = 5
+  verifyCreationRetryDelay = 5
   groupEmail = getEmailAddress(noUid=True)
   entityType = GROUP_CIGROUP_ENTITYTYPE_MAP[ciGroupsAPI]
   if not ciGroupsAPI:
@@ -34060,6 +34071,16 @@ def doCreateGroup(ciGroupsAPI=False):
       body['labels'][CIGROUP_LOCKED_LABEL] = ''
     elif myarg == 'verifynotinvitable':
       verifyNotInvitable = True
+    elif myarg == 'recentdeleteretries':
+      recentDeleteRetries = getInteger(minVal=0, maxVal=20)
+    elif myarg == 'recentdeleteretrydelay':
+      recentDeleteRetryDelay = getInteger(minVal=1, maxVal=60)
+    elif myarg == 'verifycreationretries':
+      verifyCreationRetries = getInteger(minVal=0, maxVal=20)
+    elif myarg == 'verifycreationinitialdelay':
+      verifyCreationInitialDelay = getInteger(minVal=0, maxVal=60)
+    elif myarg == 'verifycreationretrydelay':
+      verifyCreationRetryDelay = getInteger(minVal=1, maxVal=60)
     else:
       getGroupAttrValue(myarg, gs_body)
   if verifyNotInvitable:
@@ -34080,38 +34101,89 @@ def doCreateGroup(ciGroupsAPI=False):
       return
     if not getBeforeUpdate:
       settings = gs_body
-  try:
-    if not ciGroupsAPI:
-      callGAPI(cd.groups(), 'insert',
-               throwReasons=GAPI.GROUP_CREATE_THROW_REASONS,
-               body=body, fields='')
-    else:
-      callGAPI(ci.groups(), 'create',
-               throwReasons=GAPI.CIGROUP_CREATE_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
-               initialGroupConfig=initialGroupConfig, body=body, fields='')
-    if gs_body and not GroupIsAbuseOrPostmaster(groupEmail):
-      if getBeforeUpdate:
-        settings = callGAPI(gs.groups(), 'get',
-                            throwReasons=GAPI.GROUP_SETTINGS_THROW_REASONS,
-                            retryReasons=GAPI.GROUP_SETTINGS_RETRY_REASONS+[GAPI.NOT_FOUND],
-                            groupUniqueId=mapGroupEmailForSettings(groupEmail), fields='*')
-        settings.update(gs_body)
-      callGAPI(gs.groups(), 'update',
-               bailOnInvalidError='messageModerationLevel' in settings,
-               throwReasons=GAPI.GROUP_SETTINGS_THROW_REASONS,
-               retryReasons=GAPI.GROUP_SETTINGS_RETRY_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT],
-               groupUniqueId=mapGroupEmailForSettings(groupEmail), body=settings, fields='')
-    entityActionPerformed([entityType, groupEmail])
-  except (GAPI.alreadyExists, GAPI.duplicate):
-    duplicateAliasGroupUserWarning(cd, [entityType, groupEmail])
-  except GAPI.notFound:
-    entityActionFailedWarning([entityType, groupEmail], Msg.DOES_NOT_EXIST)
-  except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden, GAPI.backendError,
-          GAPI.invalid, GAPI.invalidArgument, GAPI.invalidAttributeValue, GAPI.invalidInput, GAPI.invalidArgument, GAPI.failedPrecondition,
-          GAPI.badRequest, GAPI.permissionDenied, GAPI.systemError, GAPI.serviceLimit, GAPI.serviceNotAvailable, GAPI.authError) as e:
-    entityActionFailedWarning([entityType, groupEmail], str(e))
-  except GAPI.required:
-    entityActionFailedWarning([entityType, groupEmail], Msg.INVALID_JSON_SETTING)
+  duplicateRetries = 0
+  while True:
+    try:
+      if not ciGroupsAPI:
+        callGAPI(cd.groups(), 'insert',
+                 throwReasons=GAPI.GROUP_CREATE_THROW_REASONS,
+                 body=body, fields='')
+      else:
+        callGAPI(ci.groups(), 'create',
+                 throwReasons=GAPI.CIGROUP_CREATE_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
+                 initialGroupConfig=initialGroupConfig, body=body, fields='')
+      if gs_body and not GroupIsAbuseOrPostmaster(groupEmail):
+        groupUniqueId = mapGroupEmailForSettings(groupEmail)
+        if getBeforeUpdate:
+          settings = callGAPI(gs.groups(), 'get',
+                              throwReasons=GAPI.GROUP_SETTINGS_THROW_REASONS,
+                              retryReasons=GAPI.GROUP_SETTINGS_RETRY_REASONS+[GAPI.NOT_FOUND],
+                              groupUniqueId=groupUniqueId, fields='*')
+          settings.update(gs_body)
+        callGAPI(gs.groups(), 'update',
+                 bailOnInvalidError='messageModerationLevel' in settings,
+                 throwReasons=GAPI.GROUP_SETTINGS_THROW_REASONS,
+                 retryReasons=GAPI.GROUP_SETTINGS_RETRY_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT],
+                 groupUniqueId=groupUniqueId, body=settings, fields='')
+      entityActionPerformed([entityType, groupEmail])
+      break
+    except GAPI.resourceNotFound as e:
+      # If group we're trying to create was just deleted, Google gets confused; sleep and retry
+      duplicateRetries += 1
+      if ciGroupsAPI or duplicateRetries > recentDeleteRetries:
+        entityActionFailedWarning([entityType, groupEmail], str(e))
+        break
+      time.sleep(recentDeleteRetryDelay)
+      continue
+    except (GAPI.alreadyExists, GAPI.duplicate):
+      duplicateRetries += 1
+      if ciGroupsAPI or duplicateRetries > recentDeleteRetries:
+        duplicateAliasGroupUserWarning(cd, [entityType, groupEmail])
+        break
+      time.sleep(recentDeleteRetryDelay)
+      continue
+#    except GAPI.notFound:
+#      entityActionFailedWarning([entityType, groupEmail], Msg.DOES_NOT_EXIST)
+    except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden, GAPI.backendError,
+            GAPI.invalid, GAPI.invalidArgument, GAPI.invalidAttributeValue, GAPI.invalidInput, GAPI.invalidArgument, GAPI.failedPrecondition,
+            GAPI.badRequest, GAPI.permissionDenied, GAPI.systemError, GAPI.serviceLimit, GAPI.serviceNotAvailable, GAPI.authError) as e:
+      entityActionFailedWarning([entityType, groupEmail], str(e))
+      break
+    except GAPI.required:
+      entityActionFailedWarning([entityType, groupEmail], Msg.INVALID_JSON_SETTING)
+      break
+  if ciGroupsAPI or not verifyCreationRetries:
+    return
+  Act.Set(Act.VERIFYITEMEXISTS)
+  action = Act.Get()
+  performAction(Ent.GROUP, groupEmail)
+  Ind.Increment()
+  waitingForCreationToComplete(verifyCreationInitialDelay)
+  retries = 0
+  while True:
+    try:
+      callGAPI(cd.groups(), 'get',
+               throwReasons=GAPI.GROUP_GET_THROW_REASONS, retryReasons=GAPI.GROUP_GET_RETRY_REASONS,
+               groupKey=groupEmail, fields='name')
+      entityActionPerformed([Ent.GROUP, groupEmail])
+      break
+    except GAPI.groupNotFound:
+      retries += 1
+      kvList = [Act.PerformedName(action), False, 'Retry', f'{retries}/{verifyCreationRetries}']
+      printEntityKVList([Ent.GROUP, groupEmail], kvList)
+      if retries >= verifyCreationRetries:
+        entityActionFailedWarning([Ent.GROUP, groupEmail], Msg.RETRIES_EXHAUSTED.format(verifyCreationRetries))
+        break
+      waitingForCreationToComplete(verifyCreationRetryDelay)
+    except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.backendError,
+            GAPI.invalid, GAPI.invalidArgument, GAPI.invalidMember, GAPI.invalidParameter, GAPI.invalidInput, GAPI.forbidden,
+            GAPI.badRequest, GAPI.permissionDenied, GAPI.systemError, GAPI.serviceLimit, GAPI.serviceNotAvailable, GAPI.authError) as e:
+      entityActionFailedWarning([Ent.GROUP, groupEmail], str(e))
+      break
+    except KeyboardInterrupt:
+      entityActionFailedWarning([Ent.GROUP, groupEmail], Msg.CHECK_INTERRUPTED)
+      break
+  Ind.Decrement()
 
 # [addonly|removeonly]
 def getSyncOperation():
@@ -50287,6 +50359,7 @@ COURSE_FIELDS_CHOICE_MAP = {
   'name': 'name',
   'owneremail': 'ownerId',
   'ownerid': 'ownerId',
+  'ownername': 'ownerId',
   'room': 'room',
   'section': 'section',
   'teacherfolder': 'teacherFolder',
@@ -50309,6 +50382,7 @@ COURSE_PROPERTY_PRINT_ORDER = [
   'alternateLink',
   'ownerEmail',
   'ownerId',
+  'ownerName',
   'creationTime',
   'updateTime',
   'calendarId',
@@ -50320,7 +50394,8 @@ COURSE_PROPERTY_PRINT_ORDER = [
   ]
 
 def _initCourseShowProperties(fields=None):
-  return {'aliases': False, 'aliasesInColumns': False, 'ownerEmail': False, 'ownerEmailMatchPattern': None, 'members': 'none', 'countsOnly': False,
+  return {'aliases': False, 'aliasesInColumns': False, 'ownerEmail': False, 'ownerEmailMatchPattern': None,
+          'ownerName': False, 'members': 'none', 'countsOnly': False,
           'fields': fields if fields is not None else [], 'skips': []}
 
 def _getCourseShowProperties(myarg, courseShowProperties):
@@ -50335,6 +50410,8 @@ def _getCourseShowProperties(myarg, courseShowProperties):
   elif myarg == 'owneremailmatchpattern':
     courseShowProperties['ownerEmail'] = True
     courseShowProperties['ownerEmailMatchPattern'] = getREPattern(re.IGNORECASE)
+  elif myarg == 'ownername':
+    courseShowProperties['ownerName'] = True
   elif myarg == 'show':
     courseShowProperties['members'] = getChoice(COURSE_MEMBER_ARGUMENTS)
   elif myarg == 'countsonly':
@@ -50349,6 +50426,9 @@ def _getCourseShowProperties(myarg, courseShowProperties):
         courseShowProperties['aliasesInColumns'] = True
       elif field == 'owneremail':
         courseShowProperties['ownerEmail'] = True
+        courseShowProperties['fields'].append(COURSE_FIELDS_CHOICE_MAP[field])
+      elif field == 'ownername':
+        courseShowProperties['ownerName'] = True
         courseShowProperties['fields'].append(COURSE_FIELDS_CHOICE_MAP[field])
       elif field == 'teachers':
         if courseShowProperties['members'] == 'none':
@@ -50391,27 +50471,26 @@ def _setCourseFields(courseShowProperties, pagesMode, getOwnerId=False):
   if not courseShowProperties['fields']:
     return None
   courseShowProperties['fields'].append('id')
-  if courseShowProperties['ownerEmail'] or getOwnerId:
+  if courseShowProperties['ownerEmail'] or courseShowProperties['ownerName'] or getOwnerId:
     courseShowProperties['fields'].append('ownerId')
   if not pagesMode:
     return ','.join(set(courseShowProperties['fields']))
   return f'nextPageToken,courses({",".join(set(courseShowProperties["fields"]))})'
 
-def _convertCourseUserIdToEmail(croom, userId, emails, entityValueList, i, count):
-  userEmail = emails.get(userId)
-  if userEmail is None:
+def _convertCourseUserIdToEmailName(croom, userId, emails, entityValueList, i, count):
+  if userId not in emails:
     try:
-      userEmail = callGAPI(croom.userProfiles(), 'get',
-                           throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.BAD_REQUEST, GAPI.FORBIDDEN, GAPI.SERVICE_NOT_AVAILABLE],
-                           retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                           userId=userId, fields='emailAddress').get('emailAddress')
+      result = callGAPI(croom.userProfiles(), 'get',
+                        throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.BAD_REQUEST, GAPI.FORBIDDEN, GAPI.SERVICE_NOT_AVAILABLE],
+                        retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                        userId=userId, fields='emailAddress,name(fullName)')
     except (GAPI.notFound, GAPI.permissionDenied, GAPI.badRequest, GAPI.forbidden, GAPI.serviceNotAvailable):
-      pass
-    if userEmail is None:
+      result = {}
+    if not result:
       entityDoesNotHaveItemWarning(entityValueList, i, count)
-      userEmail = 'Unknown user'
-    emails[userId] = userEmail
-  return userEmail
+    emails[userId] = (result.get('emailAddress', 'Unknown user'),
+                      result.get('name', {}).get('fullName', 'Unknown user'))
+  return emails[userId]
 
 def _getCourseOwnerSA(croom, course, useOwnerAccess):
   if not useOwnerAccess:
@@ -50533,9 +50612,13 @@ def _doInfoCourses(courseIdList):
                         throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
                         retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                         id=courseId, fields=fields)
-      if courseShowProperties['ownerEmail']:
-        course['ownerEmail'] = _convertCourseUserIdToEmail(croom, course['ownerId'], ownerEmails,
-                                                           [Ent.COURSE, course['id'], Ent.OWNER_ID, course['ownerId']], i, count)
+      if courseShowProperties['ownerEmail'] or courseShowProperties['ownerName']:
+        ownerEmail, ownerName = _convertCourseUserIdToEmailName(croom, course['ownerId'], ownerEmails,
+                                                                [Ent.COURSE, course['id'], Ent.OWNER_ID, course['ownerId']], i, count)
+        if courseShowProperties['ownerEmail']:
+          course['ownerEmail'] = ownerEmail
+        if courseShowProperties['ownerName']:
+          course['ownerName'] = ownerName
       aliases, teachers, students = _getCourseAliasesMembers(croom, courseInfo['croom'], courseId, courseShowProperties, teachersFields, studentsFields)
       if FJQC.formatJSON:
         if courseShowProperties['aliases']:
@@ -50599,14 +50682,14 @@ def _doInfoCourses(courseIdList):
       ClientAPIAccessDeniedExit(str(e))
 
 # gam info courses <CourseEntity> [owneraccess]
-#	[owneremail] [alias|aliases] [show none|all|students|teachers] [countsonly]
+#	[owneremail] [ownername] [alias|aliases] [show none|all|students|teachers] [countsonly]
 #	[fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>]
 #	[formatjson]
 def doInfoCourses():
   _doInfoCourses(getEntityList(Cmd.OB_COURSE_ENTITY, shlexSplit=True))
 
 # gam info course <CourseID> [owneraccess]
-#	[owneremail] [alias|aliases] [show none|all|students|teachers] [countsonly]
+#	[owneremail] [ownername] [alias|aliases] [show none|all|students|teachers] [countsonly]
 #	[fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>]
 #	[formatjson]
 def doInfoCourse():
@@ -50719,7 +50802,7 @@ def _getCoursesInfo(croom, courseSelectionParameters, courseShowProperties, getO
   return coursesInfo
 
 # gam print courses [todrive <ToDriveAttribute>*] (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] [states <CourseStateList>])
-#	[owneremail] [owneremailmatchpattern <REMatchPattern>]
+#	[owneremail] [owneremailmatchpattern <REMatchPattern>] [ownername]
 #	[alias|aliases|aliasesincolumns [delimiter <Character>]]
 #	[show none|all|students|teachers] [countsonly]
 #	[fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>]
@@ -50838,11 +50921,15 @@ def doPrintCourses():
     ocroom = _getCourseOwnerSA(croom, course, useOwnerAccess)
     if not ocroom:
       continue
-    if courseShowProperties['ownerEmail']:
-      course['ownerEmail'] = _convertCourseUserIdToEmail(croom, course['ownerId'], ownerEmails,
-                                                         [Ent.COURSE, courseId, Ent.OWNER_ID, course['ownerId']], i, count)
-      if courseShowProperties['ownerEmailMatchPattern'] and not courseShowProperties['ownerEmailMatchPattern'].match(course['ownerEmail']):
-        continue
+    if courseShowProperties['ownerEmail'] or courseShowProperties['ownerName']:
+      ownerEmail, ownerName = _convertCourseUserIdToEmailName(croom, course['ownerId'], ownerEmails,
+                                                              [Ent.COURSE, courseId, Ent.OWNER_ID, course['ownerId']], i, count)
+      if courseShowProperties['ownerEmail']:
+        course['ownerEmail'] = ownerEmail
+        if courseShowProperties['ownerEmailMatchPattern'] and not courseShowProperties['ownerEmailMatchPattern'].match(ownerEmail):
+          continue
+      if courseShowProperties['ownerName']:
+        course['ownerName'] = ownerName
     if showItemCountOnly:
       itemCount += 1
       continue
@@ -50944,10 +51031,14 @@ def doPrintCourseAnnouncements():
   def _printCourseAnnouncement(course, courseAnnouncement, i, count):
     if applyCourseItemFilter and not _courseItemPassesFilter(courseAnnouncement, courseItemFilter):
       return
-    if showCreatorEmail:
-      courseAnnouncement['creatorUserEmail'] = _convertCourseUserIdToEmail(croom, courseAnnouncement['creatorUserId'], creatorEmails,
-                                                                           [Ent.COURSE, course['id'], Ent.COURSE_ANNOUNCEMENT_ID, courseAnnouncement['id'],
-                                                                            Ent.CREATOR_ID, courseAnnouncement['creatorUserId']], i, count)
+    if showCreatorEmail or showCreatorName:
+      creatorUserEmail, creatorUserName = _convertCourseUserIdToEmailName(croom, courseAnnouncement['creatorUserId'], creatorEmails,
+                                                                          [Ent.COURSE, course['id'], Ent.COURSE_ANNOUNCEMENT_ID, courseAnnouncement['id'],
+                                                                           Ent.CREATOR_ID, courseAnnouncement['creatorUserId']], i, count)
+      if showCreatorEmail:
+        courseAnnouncement['creatorUserEmail'] = creatorUserEmail
+      if showCreatorName:
+        courseAnnouncement['creatorUserName'] = creatorUserName
     row = flattenJSON(courseAnnouncement, flattened={'courseId': course['id'], 'courseName': course['name']}, timeObjects=COURSE_ANNOUNCEMENTS_TIME_OBJECTS)
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
@@ -50967,7 +51058,7 @@ def doPrintCourseAnnouncements():
   courseAnnouncementStates = []
   OBY = OrderBy(COURSE_ANNOUNCEMENTS_ORDERBY_CHOICE_MAP)
   creatorEmails = {}
-  countsOnly = showCreatorEmail = False
+  countsOnly = showCreatorEmail = showCreatorName = False
   items = 'courseAnnouncements'
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -50985,6 +51076,8 @@ def doPrintCourseAnnouncements():
       OBY.GetChoice()
     elif myarg in {'showcreatoremails', 'creatoremail'}:
       showCreatorEmail = True
+    elif myarg in {'showcreatornames', 'creatorname'}:
+      showCreatorName = True
     elif getFieldsList(myarg, COURSE_ANNOUNCEMENTS_FIELDS_CHOICE_MAP, fieldsList, initialField='id'):
       pass
     elif myarg == 'countsonly':
@@ -51242,10 +51335,14 @@ def doPrintCourseWM(entityIDType, entityStateType):
   def _printCourseWM(course, courseWM, i, count):
     if applyCourseItemFilter and not _courseItemPassesFilter(courseWM, courseItemFilter):
       return
-    if showCreatorEmail:
-      courseWM['creatorUserEmail'] = _convertCourseUserIdToEmail(croom, courseWM['creatorUserId'], creatorEmails,
-                                                                 [Ent.COURSE, course['id'], entityIDType, courseWM['id'],
-                                                                  Ent.CREATOR_ID, courseWM['creatorUserId']], i, count)
+    if showCreatorEmail or showCreatorName:
+      creatorUserEmail, creatorUserName = _convertCourseUserIdToEmailName(croom, courseWM['creatorUserId'], creatorEmails,
+                                                                          [Ent.COURSE, course['id'], entityIDType, courseWM['id'],
+                                                                           Ent.CREATOR_ID, courseWM['creatorUserId']], i, count)
+      if showCreatorEmail:
+        courseWM['creatorUserEmail'] = creatorUserEmail
+      if showCreatorName:
+        courseWM['creatorUserName'] = creatorUserName
     if showTopicNames:
       topicId = courseWM.get('topicId')
       if topicId:
@@ -51294,7 +51391,7 @@ def doPrintCourseWM(entityIDType, entityStateType):
   courseShowProperties = _initCourseShowProperties(['name'])
   OBY = OrderBy(OrderbyChoiceMap)
   creatorEmails = {}
-  oneItemPerRow = showCreatorEmail = showTopicNames = False
+  oneItemPerRow = showCreatorEmail = showCreatorName = showTopicNames = False
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   countsOnly = showStudentsAsList = False
   while Cmd.ArgumentsRemaining():
@@ -51316,6 +51413,8 @@ def doPrintCourseWM(entityIDType, entityStateType):
       csvPF.RemoveIndexedTitles('materials')
     elif myarg in {'showcreatoremails', 'creatoremail'}:
       showCreatorEmail = True
+    elif myarg in {'showcreatornames', 'creatorname'}:
+      showCreatorName = True
     elif myarg == 'showtopicnames':
       showTopicNames = True
     elif getFieldsList(myarg, FieldsChoiceMap, fieldsList, initialField='id'):
@@ -51329,7 +51428,7 @@ def doPrintCourseWM(entityIDType, entityStateType):
       csvPF.AddTitles(items)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
-  if showCreatorEmail and fieldsList:
+  if (showCreatorEmail or showCreatorName)  and fieldsList:
     fieldsList.append('creatorUserId')
   if showTopicNames and fieldsList:
     fieldsList.append('topicId')
@@ -51394,7 +51493,8 @@ def doPrintCourseWM(entityIDType, entityStateType):
 #	(course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] states <CourseStateList>])
 #	(materialids <CourseMaterialIDEntity>)|((materialstates <CourseMaterialStateList>)*
 #	(orderby <CourseMaterialsOrderByFieldName> [ascending|descending])*)
-#	[showcreatoremails|creatoremail] [showtopicnames] [fields <CourseMaterialFieldNameList>]
+#	[showcreatoremails|creatoremail] [showcreatornames|creatorname] [showtopicnames]
+#	[fields <CourseMaterialFieldNameList>]
 #	[timefilter creationtime|updatetime|scheduledtime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
 #	[oneitemperrow]
 #	[countsonly|(formatjson [quotechar <Character>])]
@@ -51405,7 +51505,8 @@ def doPrintCourseMaterials():
 #	(course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] states <CourseStateList>])
 #	(workids <CourseWorkIDEntity>)|((workstates <CourseWorkStateList>)*
 #	(orderby <CourseWorkOrderByFieldName> [ascending|descending])*)
-#	[showcreatoremails|creatoremail] [showtopicnames] [fields <CourseWorkFieldNameList>]
+#	[showcreatoremails|creatoremail] [showcreatornames|creatorname] [showtopicnames]
+#	[fields <CourseWorkFieldNameList>]
 #	[showstudentsaslist [<Boolean>]] [delimiter <Character>]
 #	[timefilter creationtime|updatetime] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
 #	[oneitemperrow]

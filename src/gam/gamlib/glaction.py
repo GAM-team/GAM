@@ -134,6 +134,7 @@ class GamAction():
   UNZIP = 'unzi'
   USE = 'use '
   VERIFY = 'vrfy'
+  VERIFYITEMEXISTS = 'vexi'
   WAITFORMAILBOX = 'wamb'
   WATCH = 'watc'
   WIPE = 'wipe'
@@ -253,6 +254,7 @@ class GamAction():
     UPLOAD: ['Uploaded', 'Upload'],
     USE: ['Used', 'Use'],
     VERIFY: ['Verified', 'Verify'],
+    VERIFYITEMEXISTS: ['Verified Item Exists', 'Verify Item Exists'],
     WAITFORMAILBOX: ['Mailbox is Setup', 'Check Mailbox is Setup'],
     WATCH: ['Watched', 'Watch'],
     WIPE: ['Wiped', 'Wipe'],
