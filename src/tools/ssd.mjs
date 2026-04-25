@@ -107,7 +107,7 @@ async function runSSD() {
               sendKeys('{TAB}');
               await sleep(200);
           }
-          a  sendKeys('{ENTER}');
+          sendKeys('{ENTER}');
           console.log('Clicked Accept');
           
           await sleep(3000);
