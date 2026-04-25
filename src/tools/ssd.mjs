@@ -45,7 +45,8 @@ async function takeScreenshot(filename) {
     $graphic = [System.Drawing.Graphics]::FromImage($bitmap);
     $graphic.CopyFromScreen($Screen.Left, $Screen.Top, 0, 0, $bitmap.Size);
     $bitmap.Save('${fullPath}');
-    Write-Output "Wrote ${fullPath}"
+    Write-Output "Wrote ${fullPath}";
+    New-Item "${fullPath}.written";
   `;
   
   try {
