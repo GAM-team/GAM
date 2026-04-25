@@ -3581,8 +3581,8 @@ def SetGlobalVariables():
     return headerFilters
 
   ROW_FILTER_ANY_ALL_PATTERN = re.compile(r'^(any:|all:)(.+)$', re.IGNORECASE)
-  ROW_FILTER_COMP_PATTERN = re.compile(r'^(date|time|count|length)\s*([<>]=?|=|!=)(.+)$', re.IGNORECASE)
-  ROW_FILTER_RANGE_PATTERN = re.compile(r'^(daterange|timerange|countrange|lengthrange)(=|!=)(\S+)/(\S+)$', re.IGNORECASE)
+  ROW_FILTER_COMP_PATTERN = re.compile(r'^(date|time|count|length|number)\s*([<>]=?|=|!=)(.+)$', re.IGNORECASE)
+  ROW_FILTER_RANGE_PATTERN = re.compile(r'^(daterange|timerange|countrange|lengthrange|numberrange)(=|!=)(\S+)/(\S+)$', re.IGNORECASE)
   ROW_FILTER_TIMEOFDAYRANGE_PATTERN = re.compile(r'^(timeofdayrange)(=|!=)(\d\d):(\d\d)/(\d\d):(\d\d)$', re.IGNORECASE)
   ROW_FILTER_BOOL_PATTERN = re.compile(r'^(boolean):(.+)$', re.IGNORECASE)
   ROW_FILTER_TEXT_PATTERN = re.compile(r'^(text)([<>]=?|=|!=)(.*)$', re.IGNORECASE)
@@ -3648,7 +3648,7 @@ def SetGlobalVariables():
             rowFilters.append((columnPat, anyMatch, filterType, mg.group(2), filterValue))
           else:
             _printValueError(sectionName, itemName, f'"{column}": "{filterStr}"', f'{Msg.EXPECTED}: {filterValue}')
-        else: # filterType in {'count', 'length'}:
+        else: # filterType in {'count', 'length', 'number'}:
           if mg.group(3).isdigit():
             rowFilters.append((columnPat, anyMatch, filterType, mg.group(2), int(mg.group(3))))
           else:
@@ -3678,7 +3678,7 @@ def SetGlobalVariables():
             rowFilters.append((columnPat, anyMatch, filterType, mg.group(2), filterValue1, filterValue2))
           else:
             _printValueError(sectionName, itemName, f'"{column}": "{filterStr}"', f'{Msg.EXPECTED}: {filterValue1}/{filterValue2}')
-        else: #countrange|lengthrange
+        else: #countrange|lengthrange|numberrange
           if mg.group(3).isdigit() and mg.group(4).isdigit():
             rowFilters.append((columnPat, anyMatch, filterType, mg.group(2), int(mg.group(3)), int(mg.group(4))))
           else:
