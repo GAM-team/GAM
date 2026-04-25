@@ -104,10 +104,10 @@ async function runSSD() {
 
           // Page 2: Tab through the remaining toggles to reach the "Accept" button
           for (let i = 0; i < 7; i++) {
-              await driver.sendKeys([Key.Tab]);
+              sendKeys('{TAB}');
               await sleep(200);
           }
-          await driver.sendKeys([Key.Enter]);
+          a  sendKeys('{ENTER}');
           console.log('Clicked Accept');
           
           await sleep(3000);
