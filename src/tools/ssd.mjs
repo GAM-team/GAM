@@ -87,19 +87,31 @@ function launchSSD() {
 async function runSSD() {
     const runner_arch =  process.env.RUNNER_ARCH;
     if ( runner_arch === "ARM64" ) {
-          console.log('Running on ARM64. Attempting to kill OOBE dialogs...');
-          await takeScreenshot('oob_before.png');
+          console.log('Running on ARM64. Tabbing through OOBE...');
+          await sleep(3000);
+          await takeScreenshot('oob1.png');
           
-          try {
-              // Force kill the Windows Out-Of-Box Experience host
-              execSync('taskkill /F /IM CloudExperienceHost.exe /T');
-              console.log('Successfully terminated CloudExperienceHost.');
-          } catch (err) {
-              console.log('CloudExperienceHost was not running or could not be killed.');
+          // Page 1: Tab through the toggles to reach the "Next" button
+          for (let i = 0; i < 7; i++) {
+              await driver.sendKeys([Key.Tab]);
+              await sleep(200);
           }
+          await driver.sendKeys([Key.Enter]);
+          console.log('Clicked Next');
+          
+          await sleep(3000); 
+          await takeScreenshot('ooob2.png');
 
-          await sleep(3000); // Give the desktop a moment to settle
-          await takeScreenshot('oob_after.png');
+          // Page 2: Tab through the remaining toggles to reach the "Accept" button
+          for (let i = 0; i < 7; i++) {
+              await driver.sendKeys([Key.Tab]);
+              await sleep(200);
+          }
+          await driver.sendKeys([Key.Enter]);
+          console.log('Clicked Accept');
+          
+          await sleep(3000);
+          await takeScreenshot('oob3.png');
         } else {
           console.log('NOT running on ARM64');
         }
