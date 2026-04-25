@@ -744,7 +744,7 @@ jobs:
           name: images-${{ matrix.os }}
           if-no-files-found: ignore
           path: |
-            ../*.png
+            ${{ github.workspace }}/*.png
 
       - name: Sign gam.exe
         if: runner.os == 'Windows'
