@@ -733,6 +733,7 @@ jobs:
         run: |
           write-host "running SimplySignDesktop login..."
           node tools/ssd.mjs --log-level warn
+          Get-ChildItem -Path $env:GITHUB_WORKSPACE
           write-host "sleeping during login..."
           Start-Sleep 10
 
