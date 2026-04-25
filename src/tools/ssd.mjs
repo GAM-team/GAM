@@ -30,6 +30,9 @@ function minimizeAllWindows() {
 async function takeScreenshot(filename) {
   const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
   const fullPath = path.join(workspace, filename);
+  
+  // Create a temporary script file path
+  const scriptPath = path.join(workspace, `screenshot_${Date.now()}.ps1`);
 
   const psScript = `
     Add-Type -AssemblyName System.Windows.Forms;
@@ -44,19 +47,34 @@ async function takeScreenshot(filename) {
     $bitmap = New-Object System.Drawing.Bitmap $Screen.Width, $Screen.Height;
     $graphic = [System.Drawing.Graphics]::FromImage($bitmap);
     $graphic.CopyFromScreen($Screen.Left, $Screen.Top, 0, 0, $bitmap.Size);
+    
+    # Save the file (using single quotes safely now)
     $bitmap.Save('${fullPath}');
     Write-Output "Wrote ${fullPath}";
-    New-Item "${fullPath}.written";
+    
+    # Specify ItemType to prevent older PS versions from prompting interactively
+    New-Item -Path "${fullPath}.written" -ItemType File | Out-Null;
   `;
   
   try {
-    execSync(`powershell -Command "${psScript}"`);
+    // 1. Write the script to disk
+    fs.writeFileSync(scriptPath, psScript);
+
+    // 2. Execute the file directly, piping stdout/stderr to the Node console
+    execSync(`powershell -NoProfile -ExecutionPolicy Bypass -File "${scriptPath}"`, { 
+        stdio: 'inherit' 
+    });
+    
     console.log(`Saved screenshot: ${fullPath}`);
   } catch (err) {
     console.error(`Failed to save screenshot ${fullPath}:`, err.message);
+  } finally {
+    // 3. Clean up the temp file so it doesn't clutter your CI artifacts
+    if (fs.existsSync(scriptPath)) {
+        fs.unlinkSync(scriptPath);
+    }
   }
 }
-
 // Fire and forget application launcher
 function launchSSD() {
     const child = spawn('C:\\Program Files\\Certum\\SimplySign Desktop\\SimplySignDesktop.exe', [], {
