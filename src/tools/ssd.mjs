@@ -85,26 +85,24 @@ function launchSSD() {
 }
 
 async function runSSD() {
-    await takeScreenshot('001.png');
-    minimizeAllWindows();
-    await sleep(2000);
-    await takeScreenshot('002.png');
-    sendKeys('{ESC}');
-    await sleep(2000);
-    await takeScreenshot('003.png');
-    //sendKeys('{ESC}');
-    //await sleep(2000);
-    //await takeScreenshot('004.png');
-    //sendKeys('{ESC}');
-    //await sleep(2000);
-    //await takeScreenshot('005.png');
-    //sendKeys('%{F4}');
-    //await sleep(2000);
-    //await takeScreenshot('006.png');
-    //sendKeys('%{F4}');
-    //await sleep(2000);
-    //await takeScreenshot('007.png');
+    const runner_arch =  process.env.RUNNER_ARCH;
+    if ( runner_arch === "ARM64" ) {
+          console.log('Running on ARM64. Attempting to kill OOBE dialogs...');
+          await takeScreenshot('oob_before.png');
+          
+          try {
+              // Force kill the Windows Out-Of-Box Experience host
+              execSync('taskkill /F /IM CloudExperienceHost.exe /T');
+              console.log('Successfully terminated CloudExperienceHost.');
+          } catch (err) {
+              console.log('CloudExperienceHost was not running or could not be killed.');
+          }
 
+          await sleep(3000); // Give the desktop a moment to settle
+          await takeScreenshot('oob_after.png');
+        } else {
+          console.log('NOT running on ARM64');
+        }
     // Re-execute SSD to open login dialog
     launchSSD();
     await sleep(3000);
