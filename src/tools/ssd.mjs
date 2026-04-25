@@ -93,7 +93,7 @@ async function runSSD() {
           
           // Page 1: Tab through the toggles to reach the "Next" button
           for (let i = 0; i < 7; i++) {
-              await driver.sendKeys([Key.Tab]);
+              sendKeys('{TAB}');
               await sleep(200);
           }
           await driver.sendKeys([Key.Enter]);
