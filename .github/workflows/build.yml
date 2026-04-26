@@ -690,20 +690,6 @@ jobs:
           echo "GAM Version ${GAMVERSION}"
           echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
 
-      - name: Initialize Windows Desktop Shell
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          Write-Host "Checking for Windows Explorer shell..."
-          if (-not (Get-Process -Name explorer -ErrorAction SilentlyContinue)) {
-              Write-Host "Explorer not found. Booting the desktop shell..."
-              Start-Process explorer.exe
-              # Give the desktop a few seconds to fully render the taskbar
-              Start-Sleep -Seconds 10 
-          } else {
-              Write-Host "Explorer is already running."
-          }
-
       - name: Install NPM deps
         if: runner.os == 'Windows'
         run: |
@@ -725,6 +711,15 @@ jobs:
           $procLog = Start-Process "powershell" "Get-Content -Path `"$log`" -Wait" -NoNewWindow -PassThru 
           $procMain.WaitForExit() 
           $procLog.Kill()
+
+      - name: Try running SSD directly
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Write-Host "Running SSD..."
+          & "C:\\Program Files\\Certum\\SimplySign Desktop\\SimplySignDesktop.exe"
+          Start-Sleep -Seconds 10
+          & "C:\\Program Files\\Certum\\SimplySign Desktop\\SimplySignDesktop.exe"
 
       - name: Login to Certum
         if: runner.os == 'Windows'
