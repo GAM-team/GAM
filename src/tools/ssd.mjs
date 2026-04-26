@@ -75,13 +75,33 @@ async function takeScreenshot(filename) {
     }
   }
 }
-// Fire and forget application launcher
+
+// Fire and forget application launcher with logging
 function launchSSD() {
+    const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
+    const outLogPath = path.join(workspace, 'ssd_out.log');
+    const errLogPath = path.join(workspace, 'ssd_err.log');
+
+    // Open file descriptors for logging
+    const out = fs.openSync(outLogPath, 'a');
+    const err = fs.openSync(errLogPath, 'a');
+
+    console.log(`Launching SSD... Logging stdout to ${outLogPath} and stderr to ${errLogPath}`);
+
     const child = spawn('C:\\Program Files\\Certum\\SimplySign Desktop\\SimplySignDesktop.exe', [], {
-        detached: true,       
-        stdio: 'ignore'       
+        detached: true,
+        // stdio array: [stdin, stdout, stderr]
+        // We ignore stdin, and pipe stdout/stderr to our files
+        stdio: ['ignore', out, err]
     });
-    child.unref();            
+
+    // Catch immediate errors (e.g., file not found, permission denied)
+    child.on('error', (error) => {
+        console.error('Failed to spawn SimplySign Desktop:', error.message);
+    });
+
+    // Unreference the child so the parent script can exit
+    child.unref();
 }
 
 async function runSSD() {
