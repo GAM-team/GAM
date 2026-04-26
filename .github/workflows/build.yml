@@ -738,7 +738,7 @@ jobs:
           write-host "sleeping during login..."
           Start-Sleep 10
 
-      - name: Archive png artifacts
+      - name: Archive artifacts
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # 7.0.0
         if: runner.os == 'Windows'
         with:
@@ -747,6 +747,7 @@ jobs:
           if-no-files-found: ignore
           path: |
             ${{ github.workspace }}/*.png
+            ${{ github.workspace }}/*.log
 
       - name: Sign gam.exe
         if: runner.os == 'Windows'
