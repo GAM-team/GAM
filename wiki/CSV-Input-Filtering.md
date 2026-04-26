@@ -60,6 +60,9 @@ These filters can be used alone or in conjunction with the `matchfield|skipfield
         [(any|all):]notdata:<DataSelector>|
         [(any|all):]notregex:<RESearchPattern>|
         [(any|all):]notregexcs:<RESearchPattern>|
+        [(any|all):]number<Operator><Number>|
+        [(any|all):]numberrange!=<Number>/<Number>|
+        [(any|all):]numberrange=<Number>/<Number>|
         [(any|all):]regex:<RESearchPattern>|
         [(any|all):]regexcs:<RESearchPattern>|
         [(any|all):]text<Operator><String>|

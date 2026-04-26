@@ -38,6 +38,14 @@ recentdeleteretries <Integer> - Handle group delete/create errors, defaults to 0
 recentdeleteretrydelay <Integer> - Number of seconds to delay between retries, defaults to 5, range 1-60
 ```
 
+Added the following to `<RowValueFilter>` used in CSV input/output row filtering; these are
+synonyms for `count` and `countrange`.
+```
+[(any|all):]number<Operator><Number>|
+[(any|all):]numberrange!=<Number>/<Number>|
+[(any|all):]numberrange=<Number>/<Number>|
+```
+
 ### 7.41.01
 
 Fixed bug in `gam print cigroups members managers owners countsonly totalcount internal external` that caused a trap.
