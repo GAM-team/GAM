@@ -96,7 +96,7 @@ async function runSSD() {
               sendKeys('{TAB}');
               await sleep(200);
           }
-          await driver.sendKeys([Key.Enter]);
+          sendKeys('{ENTER}');
           console.log('Clicked Next');
           
           await sleep(3000); 
