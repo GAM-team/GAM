@@ -690,20 +690,6 @@ jobs:
           echo "GAM Version ${GAMVERSION}"
           echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
 
-      - name: Initialize Windows Desktop Shell
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          Write-Host "Checking for Windows Explorer shell..."
-          if (-not (Get-Process -Name explorer -ErrorAction SilentlyContinue)) {
-              Write-Host "Explorer not found. Booting the desktop shell..."
-              Start-Process explorer.exe
-              # Give the desktop a few seconds to fully render the taskbar
-              Start-Sleep -Seconds 10 
-          } else {
-              Write-Host "Explorer is already running."
-          }
-
       - name: Install NPM deps
         if: runner.os == 'Windows'
         run: |
@@ -716,8 +702,8 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $url = "https://files.certum.eu/software/SimplySignDesktop/Windows/9.4.2.86/SimplySignDesktop-9.4.2.86-64-bit-en.msi"
-          #$url = "https://files.certum.eu/software/SimplySignDesktop/Windows/9.4.3.90/SimplySignDesktop-9.4.3.90-64-bit-en.msi"
+          #$url = "https://files.certum.eu/software/SimplySignDesktop/Windows/9.4.2.86/SimplySignDesktop-9.4.2.86-64-bit-en.msi"
+          $url = "https://files.certum.eu/software/SimplySignDesktop/Windows/9.4.3.90/SimplySignDesktop-9.4.3.90-64-bit-en.msi"
           $file = "SimplySignDesktop.msi"
           Invoke-WebRequest $url -OutFile $file
           $log = "install.log" 
@@ -725,6 +711,15 @@ jobs:
           $procLog = Start-Process "powershell" "Get-Content -Path `"$log`" -Wait" -NoNewWindow -PassThru 
           $procMain.WaitForExit() 
           $procLog.Kill()
+
+      - name: Run SSD directly
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Write-Host "Running SSD..."
+          & "C:\\Program Files\\Certum\\SimplySign Desktop\\SimplySignDesktop.exe"
+          Start-Sleep -Seconds 10
+          & "C:\\Program Files\\Certum\\SimplySign Desktop\\SimplySignDesktop.exe"
 
       - name: Login to Certum
         if: runner.os == 'Windows'
@@ -738,7 +733,7 @@ jobs:
           write-host "sleeping during login..."
           Start-Sleep 10
 
-      - name: Archive png artifacts
+      - name: Archive artifacts
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # 7.0.0
         if: runner.os == 'Windows'
         with:
@@ -747,6 +742,7 @@ jobs:
           if-no-files-found: ignore
           path: |
             ${{ github.workspace }}/*.png
+            ${{ github.workspace }}/*.log
 
       - name: Sign gam.exe
         if: runner.os == 'Windows'
