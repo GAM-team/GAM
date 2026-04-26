@@ -118,10 +118,7 @@ async function runSSD() {
           
           await sleep(3000);
           await takeScreenshot('oob4.png');
-      
-        } else {
-          console.log('NOT running on ARM64');
-      
+
         } else {
           console.log('NOT running on ARM64');
         }
