@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.41.02'
+__version__ = '7.41.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -7837,10 +7837,10 @@ def RowFilterMatch(row, titlesList, rowFilter, rowFilterModeAll, rowDropFilter, 
     elif filterVal[2] == 'timeofdayrange':
       if rowTimeOfDayRangeFilterMatch(filterVal[3], filterVal[4], filterVal[5]):
         return True
-    elif filterVal[2] == 'count':
+    elif filterVal[2] in {'count', 'number'}:
       if rowCountFilterMatch(filterVal[3], filterVal[4]):
         return True
-    elif filterVal[2] == 'countrange':
+    elif filterVal[2] in {'countrange', 'numberrange'}:
       if rowCountRangeFilterMatch(filterVal[3], filterVal[4], filterVal[5]):
         return True
     elif filterVal[2] == 'length':
