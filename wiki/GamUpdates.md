@@ -10,6 +10,17 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.41.03
+
+Fixed bug in the following:
+Added the following to `<RowValueFilter>` used in CSV input/output row filtering; these are
+synonyms for `count` and `countrange`.
+```
+[(any|all):]number<Operator><Number>|
+[(any|all):]numberrange!=<Number>/<Number>|
+[(any|all):]numberrange=<Number>/<Number>|
+```
+
 ### 7.41.02
 
 Added option `ownername` to `gam info|print courses` to have GAM display the course owners full name;
