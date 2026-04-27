@@ -10,6 +10,16 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.42.00
+
+In versions prior to 7.42.00, when `redirect csv <FileName>` was used, GAM did not open and write `<FileName>`
+until all processing was complete; if `<FileName>` was not accessible, an error was generated
+and no results were saved. Now, `<FileName>` is opened initially to verify accessiblity
+and then written when processing is complete.
+
+In the unlikely event that this causes issues, you can do `redirect csv <FileName> delayopen`
+to get the previous behavior.
+
 ### 7.41.03
 
 Fixed bug in the following:

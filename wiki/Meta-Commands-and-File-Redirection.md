@@ -119,7 +119,7 @@ You can redirect CSV file output and stdout/stderr output to files. By using red
 You can redirect stdout and stderr to null and stderr can be redirected to stdout.
 ```
 <Redirect> ::=
-        redirect csv <FileName> [multiprocess] [append] [noheader] [charset <Charset>]
+        redirect csv <FileName> [delayopen] [multiprocess] [append] [noheader] [charset <Charset>]
                      [columndelimiter <Character>] [quotechar <Character>] [noescapechar [<Boolean>]]
                      [sortheaders <StringList>] [timestampcolumn <String>] [transpose [<Boolean>]]
                      [todrive <ToDriveAttribute>*] |
@@ -129,11 +129,19 @@ You can redirect stdout and stderr to null and stderr can be redirected to stdou
         redirect stderr null [multiprocess] |
         redirect stderr stdout [multiprocess]
 ```
-For `redirect`, the optional subarguments must appear in the order shown.
+In versions prior to 7.42.00`, the `redirect csv` optional subarguments had to be specified in the order shown.
+Now the arguments can be specified in any order except that `todrive <ToDriveAttribute>*` must still be last.
 
 If `<FileName>` specifies a relative path, the file will be put in the directory specified by `drive_dir` in gam.cfg.
 If `<FileName>` specifies an absolute path, the file will be put in the directory specified.
 Specify `./<FileName>` to put the file in your current working directory.
+
+In versions prior to 7.42.00, when `redirect csv <FileName>` was used, GAM did not open and write `<FileName>`
+until all processing was complete; if `<FileName>` was not accessible, an error was generated and no results were saved.
+Now, `<FileName>` is opened initially to verify accessiblity and then written when processing is complete.
+
+In the unlikely event that this causes issues, you can do `redirect csv <FileName> delayopen`
+to get the previous behavior.
 
 The `multiprocess` subargument allows the multiple subprocesses started by `gam csv` to write intelligently
 to a single redirected CSV/stdout/stderr file. If you don't specify `multiprocess`, each subprocess
