@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.41.03'
+__version__ = '7.42.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -3953,7 +3953,7 @@ def SetGlobalVariables():
                                          '\n'))
           status['errors'] = True
 
-  def _setCSVFile(fileName, mode, encoding, writeHeader, multi):
+  def _setCSVFile(fileName, mode, encoding, writeHeader, multi, delayOpen):
     if fileName != '-':
       fileName = setFilePath(fileName, GC.DRIVE_DIR)
     GM.Globals[GM.CSVFILE][GM.REDIRECT_NAME] = fileName
@@ -3962,6 +3962,9 @@ def SetGlobalVariables():
     GM.Globals[GM.CSVFILE][GM.REDIRECT_WRITE_HEADER] = writeHeader
     GM.Globals[GM.CSVFILE][GM.REDIRECT_MULTIPROCESS] = multi
     GM.Globals[GM.CSVFILE][GM.REDIRECT_QUEUE] = None
+    if not delayOpen and fileName != '-':
+      GM.Globals[GM.CSVFILE][GM.REDIRECT_FD] = openFile(fileName, mode, newline='',
+                                                        encoding=encoding, errors='backslashreplace')
 
   def _setSTDFile(stdtype, fileName, mode, multi):
     if stdtype == GM.STDOUT:
@@ -4243,7 +4246,7 @@ def SetGlobalVariables():
 # multiprocessexit (rc<Operator><Number>)|(rcrange=<Number>/<Number>)|(rcrange!=<Number>/<Number>)
   if checkArgumentPresent(Cmd.MULTIPROCESSEXIT_CMD):
     _setMultiprocessExit()
-# redirect csv <FileName> [multiprocess] [append] [noheader] [charset <CharSet>]
+# redirect csv <FileName> [delayopen] [multiprocess] [append] [noheader] [charset <CharSet>]
 #	       [columndelimiter <Character>] [quotechar <Character>]] [noescapechar [<Boolean>]]
 #	       [sortheaders <StringList>] [timestampcolumn <String>] [transpose [<Boolean>]]
 #	       [todrive <ToDriveAttribute>*]
@@ -4256,23 +4259,39 @@ def SetGlobalVariables():
     myarg = getChoice(['csv', 'stdout', 'stderr'])
     filename = re.sub(r'{{Section}}', sectionName, getString(Cmd.OB_FILE_NAME, checkBlank=True))
     if myarg == 'csv':
-      multi = checkArgumentPresent('multiprocess')
-      mode = DEFAULT_FILE_APPEND_MODE if checkArgumentPresent('append') else DEFAULT_FILE_WRITE_MODE
-      writeHeader = not checkArgumentPresent('noheader')
-      encoding = getCharSet()
-      if checkArgumentPresent('columndelimiter'):
-        GM.Globals[GM.CSV_OUTPUT_COLUMN_DELIMITER] = GC.Values[GC.CSV_OUTPUT_COLUMN_DELIMITER] = getCharacter()
-      if checkArgumentPresent('quotechar'):
-        GM.Globals[GM.CSV_OUTPUT_QUOTE_CHAR] = GC.Values[GC.CSV_OUTPUT_QUOTE_CHAR] = getCharacter()
-      if checkArgumentPresent('noescapechar'):
-        GM.Globals[GM.CSV_OUTPUT_NO_ESCAPE_CHAR] = GC.Values[GC.CSV_OUTPUT_NO_ESCAPE_CHAR] = getBoolean()
-      if checkArgumentPresent('sortheaders'):
-        GM.Globals[GM.CSV_OUTPUT_SORT_HEADERS] = GC.Values[GC.CSV_OUTPUT_SORT_HEADERS] = getString(Cmd.OB_STRING_LIST, minLen=0).replace(',', ' ').split()
-      if checkArgumentPresent('timestampcolumn'):
-        GM.Globals[GM.CSV_OUTPUT_TIMESTAMP_COLUMN] = GC.Values[GC.CSV_OUTPUT_TIMESTAMP_COLUMN] = getString(Cmd.OB_STRING, minLen=0)
-      if checkArgumentPresent('transpose'):
-        GM.Globals[GM.CSV_OUTPUT_TRANSPOSE] = getBoolean()
-      _setCSVFile(filename, mode, encoding, writeHeader, multi)
+      multi = False
+      mode =  DEFAULT_FILE_WRITE_MODE
+      writeHeader = True
+      encoding = GC.Values[GC.CHARSET]
+      delayOpen = False
+      while Cmd.ArgumentsRemaining():
+        myarg = getArgument()
+        if myarg == 'multiprocess':
+          multi = True
+        elif myarg == 'append':
+          mode = DEFAULT_FILE_APPEND_MODE
+        elif myarg == 'noheader':
+          writeHeader = False
+        elif myarg == 'charset':
+          encoding = getString(Cmd.OB_CHAR_SET)
+        elif myarg == 'delayopen':
+          delayOpen = True
+        elif myarg == 'columndelimiter':
+          GM.Globals[GM.CSV_OUTPUT_COLUMN_DELIMITER] = GC.Values[GC.CSV_OUTPUT_COLUMN_DELIMITER] = getCharacter()
+        elif myarg == 'quotechar':
+          GM.Globals[GM.CSV_OUTPUT_QUOTE_CHAR] = GC.Values[GC.CSV_OUTPUT_QUOTE_CHAR] = getCharacter()
+        elif myarg == 'noescapechar':
+          GM.Globals[GM.CSV_OUTPUT_NO_ESCAPE_CHAR] = GC.Values[GC.CSV_OUTPUT_NO_ESCAPE_CHAR] = getBoolean()
+        elif myarg == 'sortheaders':
+          GM.Globals[GM.CSV_OUTPUT_SORT_HEADERS] = GC.Values[GC.CSV_OUTPUT_SORT_HEADERS] = getString(Cmd.OB_STRING_LIST, minLen=0).replace(',', ' ').split()
+        elif myarg == 'timestampcolumn':
+          GM.Globals[GM.CSV_OUTPUT_TIMESTAMP_COLUMN] = GC.Values[GC.CSV_OUTPUT_TIMESTAMP_COLUMN] = getString(Cmd.OB_STRING, minLen=0)
+        elif myarg == 'transpose':
+          GM.Globals[GM.CSV_OUTPUT_TRANSPOSE] = getBoolean()
+        else:
+          Cmd.Backup()
+          break
+      _setCSVFile(filename, mode, encoding, writeHeader, multi, delayOpen)
       GM.Globals[GM.CSVFILE][GM.REDIRECT_QUEUE_CSVPF] = CSVPrintFile()
       if checkArgumentPresent('todrive'):
         GM.Globals[GM.CSVFILE][GM.REDIRECT_QUEUE_CSVPF].GetTodriveParameters()
@@ -4309,9 +4328,9 @@ def SetGlobalVariables():
       GM.Globals[GM.CSVFILE][GM.REDIRECT_MULTIPROCESS] == GM.Globals[GM.STDOUT][GM.REDIRECT_MULTIPROCESS] and
       GM.Globals[GM.CSVFILE].get(GM.REDIRECT_QUEUE_CSVPF) and not GM.Globals[GM.CSVFILE][GM.REDIRECT_QUEUE_CSVPF].todrive):
     _setCSVFile('-', GM.Globals[GM.STDOUT].get(GM.REDIRECT_MODE, DEFAULT_FILE_WRITE_MODE), GC.Values[GC.CHARSET],
-                GM.Globals[GM.CSVFILE].get(GM.REDIRECT_WRITE_HEADER, True), GM.Globals[GM.STDOUT][GM.REDIRECT_MULTIPROCESS])
+                GM.Globals[GM.CSVFILE].get(GM.REDIRECT_WRITE_HEADER, True), GM.Globals[GM.STDOUT][GM.REDIRECT_MULTIPROCESS], False)
   elif not GM.Globals[GM.CSVFILE]:
-    _setCSVFile('-', GM.Globals[GM.STDOUT].get(GM.REDIRECT_MODE, DEFAULT_FILE_WRITE_MODE), GC.Values[GC.CHARSET], True, False)
+    _setCSVFile('-', GM.Globals[GM.STDOUT].get(GM.REDIRECT_MODE, DEFAULT_FILE_WRITE_MODE), GC.Values[GC.CHARSET], True, False, False)
   initAPICallsRateCheck()
 # Main process
 # Clear input row filters/limit from parser, children can define but shouldn't inherit global value
@@ -8782,9 +8801,11 @@ class CSVPrintFile():
       closeFile(csvFile)
 
     def writeCSVToFile():
-      csvFile = openFile(GM.Globals[GM.CSVFILE][GM.REDIRECT_NAME], GM.Globals[GM.CSVFILE][GM.REDIRECT_MODE], newline='',
-                         encoding=GM.Globals[GM.CSVFILE][GM.REDIRECT_ENCODING], errors='backslashreplace',
-                         continueOnError=True)
+      csvFile = GM.Globals[GM.CSVFILE].get(GM.REDIRECT_FD, None)
+      if not csvFile:
+        csvFile = openFile(GM.Globals[GM.CSVFILE][GM.REDIRECT_NAME], GM.Globals[GM.CSVFILE][GM.REDIRECT_MODE], newline='',
+                           encoding=GM.Globals[GM.CSVFILE][GM.REDIRECT_ENCODING], errors='backslashreplace',
+                           continueOnError=True)
       if csvFile:
         writerDialect = setDialect(str(GC.Values[GC.CSV_OUTPUT_LINE_TERMINATOR]), self.noEscapeChar)
         writer = csv.DictWriter(csvFile, titlesList, extrasaction=extrasaction, **writerDialect)
@@ -9741,18 +9762,15 @@ def initializeLogging():
   logging.getLogger().addHandler(nh)
 
 def saveNonPickleableValues():
-  savedValues = {GM.STDOUT: {}, GM.STDERR: {}, GM.SAVED_STDOUT: None,
-                 GM.CMDLOG_HANDLER: None, GM.CMDLOG_LOGGER: None}
+  savedValues = {GM.CSVFILE: {}, GM.STDOUT: {}, GM.STDERR: {},
+                 GM.SAVED_STDOUT: None, GM.CMDLOG_HANDLER: None, GM.CMDLOG_LOGGER: None}
+  savedValues[GM.CSVFILE][GM.REDIRECT_FD] = GM.Globals[GM.CSVFILE].pop(GM.REDIRECT_FD, None)
+  savedValues[GM.STDOUT][GM.REDIRECT_FD] = GM.Globals[GM.STDOUT].pop(GM.REDIRECT_FD, None)
+  savedValues[GM.STDOUT][GM.REDIRECT_MULTI_FD] = GM.Globals[GM.STDOUT].pop(GM.REDIRECT_MULTI_FD, None)
+  savedValues[GM.STDERR][GM.REDIRECT_FD] = GM.Globals[GM.STDERR].pop(GM.REDIRECT_FD, None)
+  savedValues[GM.STDERR][GM.REDIRECT_MULTI_FD] = GM.Globals[GM.STDERR].pop(GM.REDIRECT_MULTI_FD, None)
   savedValues[GM.SAVED_STDOUT] = GM.Globals[GM.SAVED_STDOUT]
   GM.Globals[GM.SAVED_STDOUT] = None
-  savedValues[GM.STDOUT][GM.REDIRECT_FD] = GM.Globals[GM.STDOUT].get(GM.REDIRECT_FD, None)
-  GM.Globals[GM.STDOUT].pop(GM.REDIRECT_FD, None)
-  savedValues[GM.STDERR][GM.REDIRECT_FD] = GM.Globals[GM.STDERR].get(GM.REDIRECT_FD, None)
-  GM.Globals[GM.STDERR].pop(GM.REDIRECT_FD, None)
-  savedValues[GM.STDOUT][GM.REDIRECT_MULTI_FD] = GM.Globals[GM.STDOUT].get(GM.REDIRECT_MULTI_FD, None)
-  GM.Globals[GM.STDOUT].pop(GM.REDIRECT_MULTI_FD, None)
-  savedValues[GM.STDERR][GM.REDIRECT_MULTI_FD] = GM.Globals[GM.STDERR].get(GM.REDIRECT_MULTI_FD, None)
-  GM.Globals[GM.STDERR].pop(GM.REDIRECT_MULTI_FD, None)
   savedValues[GM.CMDLOG_HANDLER] = GM.Globals[GM.CMDLOG_HANDLER]
   GM.Globals[GM.CMDLOG_HANDLER] = None
   savedValues[GM.CMDLOG_LOGGER] = GM.Globals[GM.CMDLOG_LOGGER]
@@ -9760,11 +9778,12 @@ def saveNonPickleableValues():
   return savedValues
 
 def restoreNonPickleableValues(savedValues):
-  GM.Globals[GM.SAVED_STDOUT] = savedValues[GM.SAVED_STDOUT]
+  GM.Globals[GM.CSVFILE][GM.REDIRECT_FD] = savedValues[GM.CSVFILE][GM.REDIRECT_FD]
   GM.Globals[GM.STDOUT][GM.REDIRECT_FD] = savedValues[GM.STDOUT][GM.REDIRECT_FD]
-  GM.Globals[GM.STDERR][GM.REDIRECT_FD] = savedValues[GM.STDERR][GM.REDIRECT_FD]
   GM.Globals[GM.STDOUT][GM.REDIRECT_MULTI_FD] = savedValues[GM.STDOUT][GM.REDIRECT_MULTI_FD]
+  GM.Globals[GM.STDERR][GM.REDIRECT_FD] = savedValues[GM.STDERR][GM.REDIRECT_FD]
   GM.Globals[GM.STDERR][GM.REDIRECT_MULTI_FD] = savedValues[GM.STDERR][GM.REDIRECT_MULTI_FD]
+  GM.Globals[GM.SAVED_STDOUT] = savedValues[GM.SAVED_STDOUT]
   GM.Globals[GM.CMDLOG_HANDLER] = savedValues[GM.CMDLOG_HANDLER]
   GM.Globals[GM.CMDLOG_LOGGER] = savedValues[GM.CMDLOG_LOGGER]
 
