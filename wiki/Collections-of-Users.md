@@ -3,9 +3,19 @@
 - [Notes](#notes)
 - [Definitions](#definitions)
 - [User Type Entity](#user-type-entity)
+  - [All non-archived Users](#all-non-archived-users)
+  - [All archived Users](#all-archived-Users)
   - [All non-suspended Users](#all-non-suspended-users)
   - [All suspended Users](#all-suspended-Users)
+  - [All archived or suspended Users](#all-archived-or-suspended-users)
+  - [All non-archived and non-suspended Users](#all-non-archived-and-non-suspended-users)
   - [All non-suspended and suspended Users](#all-non-suspended-and-suspended-users)
+  - [All non-suspended Guests](#all-non-suspended-guests)
+  - [All suspended Guests](#all-suspended-Guests)
+  - [All non-suspended and suspended Guests](#all-non-suspended-and-suspended-guests)
+  - [All non-suspended Users and Guests](#all-non-suspended-users-and-guests)
+  - [All suspended Users and Guests](#all-suspended-users-and-guests)
+  - [All non-suspended and suspended Users and Guests](#all-non-suspended-and-suspended-users-and-guests)
   - [A single User](#a-single-user)
   - [A list of Users](#a-list-of-users)
   - [The admin user referenced in oauth2.txt](#the-admin-user-referenced-in-oauth2txt)
@@ -39,6 +49,18 @@
 - [Examples using multiple queries](#examples-using-multiple-queries)
 
 ## Notes
+
+The following items referencing guest users were added to  `<UserTypeEntity>` in version 7.43.00.
+```
+all_guests
+all_guests_ns
+all_guests_susp
+all_guests_ns_susp
+all_users_and_guests
+all_users_and_guests_ns
+all_users_and_guests_susp
+all_users_and_guests_ns_susp
+```
 
 The followig items referencing non-archived/archived users were added to `<UserTypeEntity>` in version 7.22.00.
 ```
@@ -123,6 +145,8 @@ ous_and_children_na_ns
 
 <UserTypeEntity> ::=
         (all users|users_na|users_arch|users_ns|users_susp|users_ns_susp|users_arch_or_susp|users_na_ns)|
+        (all guests|guests_ns|guests_susp|guests_ns_susp)|
+        (all users_and_guests|users_and_guests_ns|users_and_guests_susp|users_and_guests_ns_susp)|
         (user <UserItem>)|
         (users <UserList>)|
         (oauthuser)
@@ -231,6 +255,26 @@ Use these options to select users for GAM commands.
 
 ## All non-suspended and suspended Users
 * `all users_ns_susp`
+
+## All non-suspended Guests
+* `all guests`
+* `all guests_ns`
+
+## All suspended Guests
+* `all guests_susp`
+
+## All non-suspended and suspended Guests
+* `all guests_ns_susp`
+
+## All non-suspended Users and Guests
+* `all users_and_guests`
+* `all users_and_guests_ns`
+
+## All suspended Users and Guests
+* `all users_and_guests_susp`
+
+## All non-suspended and suspended Users and Guests
+* `all users_and_guests_ns_susp`
 
 ## A single User
 * `user <UserItem>`

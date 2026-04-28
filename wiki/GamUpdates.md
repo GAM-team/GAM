@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.43.00
+
+Updated `gam info user` and `gam print users` to display guest user attributes: `isGuestUser, guestAccountInfo`
+
+Expanded `<UserTypeEntity>` to allow specification of guest users.
+  * See [Collections of Users](Collections-of-Users)
+
 ### 7.42.00
 
 In versions prior to 7.42.00, when `redirect csv <FileName>` was used, GAM did not open and write `<FileName>`

@@ -91,8 +91,8 @@ gam <UserItem> show meetconferences
         [formatjson]
 ```
 By default, conferences are shown for all of a user's meet spaces. To limit the display use:
-  * `space <MeetSpaceName>` - Display conferences for a specifc space by giving its name
-  * `code <String>` - Display conferences for a specifc space by giving its code
+  * `space <MeetSpaceName>` - Display conferences for a specific space by giving its name
+  * `code <String>` - Display conferences for a specific space by giving its code
   
 By default, Gam displays the information about the meet conferences as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
@@ -103,8 +103,8 @@ gam <UserItem> print meetconferences [todrive <ToDriveAttribute>*]
         [formatjson [quotechar <Character>]]
 ```
 By default, conferences are shown for all of a user's meet spaces. To limit the display use:
-  * `space <MeetSpaceName>` - Display conferences for a specifc space by giving its name
-  * `code <String>` - Display conferences for a specifc space by giving its code
+  * `space <MeetSpaceName>` - Display conferences for a specific space by giving its name
+  * `code <String>` - Display conferences for a specific space by giving its code
   
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.
