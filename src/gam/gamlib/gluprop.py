@@ -117,6 +117,8 @@ PROPERTIES = {
     {CLASS: PC_STRING, TITLE: 'Full Name',},
   'displayName':
     {CLASS: PC_STRING, TITLE: 'Display Name',},
+  'primaryGuestEmail':
+    {CLASS: PC_STRING, TITLE: 'Primary Guest Email',},
   'languages':
     {CLASS: PC_LANGUAGES, TITLE: 'Languages',},
   'languageCode':
@@ -131,6 +133,8 @@ PROPERTIES = {
     {CLASS: PC_BOOLEAN, TITLE: 'Is a Super Admin',},
   'isDelegatedAdmin':
     {CLASS: PC_BOOLEAN, TITLE: 'Is Delegated Admin',},
+  'isGuestUser':
+    {CLASS: PC_BOOLEAN, TITLE: 'Is a Guest User',},
   'isEnrolledIn2Sv':
     {CLASS: PC_BOOLEAN, TITLE: '2-step enrolled',},
   'isEnforcedIn2Sv':

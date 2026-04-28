@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.42.00'
+__version__ = '7.43.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -46929,10 +46929,15 @@ USER_NAME_PROPERTY_PRINT_ORDER = [
   'fullName',
   'displayName',
   ]
+USER_GUEST_PROPERTY_PRINT_ORDER = [
+  'primaryGuestEmail',
+  ]
 USER_LANGUAGE_PROPERTY_PRINT_ORDER = [
   'languages',
   ]
 USER_SCALAR_PROPERTY_PRINT_ORDER = [
+  'isGuestUser',
+  'guestAccountInfo',
   'isAdmin',
   'isDelegatedAdmin',
   'isEnrolledIn2Sv',
@@ -47050,7 +47055,7 @@ USER_FIELDS_CHOICE_MAP = {
   'gal': 'includeInGlobalAddressList',
   'gender': ['gender.type', 'gender.customGender', 'gender.addressMeAs'],
   'givenname': 'name.givenName',
-  'guestaccountinfo': 'guestAccountInfo',
+  'guestaccountinfo': ['guestAccountInfo.primaryGuestEmail'],
   'id': 'id',
   'im': 'ims',
   'ims': 'ims',
@@ -47368,17 +47373,23 @@ def infoUsers(entityList):
       Ind.Increment()
       printKeyValueList(['Settings', None])
       Ind.Increment()
-      if 'name' in user:
-        for up in USER_NAME_PROPERTY_PRINT_ORDER:
-          if up in user['name']:
-            printKeyValueList([UProp.PROPERTIES[up][UProp.TITLE], user['name'][up]])
+      up = 'name'
+      if up in user:
+        for nup in USER_NAME_PROPERTY_PRINT_ORDER:
+          if nup in user[up]:
+            printKeyValueList([UProp.PROPERTIES[nup][UProp.TITLE], user[up][nup]])
       up = 'languages'
       if up in user:
         printKeyValueList([UProp.PROPERTIES[up][UProp.TITLE], _formatLanguagesList(user[up], ',')])
       for up in USER_SCALAR_PROPERTY_PRINT_ORDER:
         if up in user:
           if up not in USER_TIME_OBJECTS:
-            printKeyValueList([UProp.PROPERTIES[up][UProp.TITLE], user[up]])
+            if up != 'guestAccountInfo':
+              printKeyValueList([UProp.PROPERTIES[up][UProp.TITLE], user[up]])
+            else:
+              for gup in USER_GUEST_PROPERTY_PRINT_ORDER:
+                if gup in user[up]:
+                  printKeyValueList([UProp.PROPERTIES[gup][UProp.TITLE], user[up][gup]])
           else:
             printKeyValueList([UProp.PROPERTIES[up][UProp.TITLE], formatLocalTime(user[up])])
       Ind.Decrement()

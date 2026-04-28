@@ -916,6 +916,8 @@ Specify a collection of Users by directly specifying them or by specifying items
 
 <UserTypeEntity> ::=
         (all users|users_na|users_arch|users_ns|users_susp|users_arch_or_susp|users_na_ns|users_ns_susp)|
+        (all guests|guests_ns|guests_susp|guests_ns_susp)|
+        (all users_and_guests|users_and_guests_ns|users_and_guests_susp|users_and_guests_ns_susp)|
         (user <UserItem>)|
         (users <UserList>)|
         (oauthuser)
