@@ -1,4 +1,4 @@
-7.43.00
+7.43.01
 
 Updated `gam info user` and `gam print users` to display guest user attributes: `isGuestUser, guestAccountInfo`
 

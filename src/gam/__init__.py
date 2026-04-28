@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.43.00'
+__version__ = '7.43.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -47327,7 +47327,7 @@ def infoUsers(entityList):
                       throwReasons=GAPI.USER_GET_THROW_REASONS+[GAPI.INVALID_INPUT, GAPI.RESOURCE_NOT_FOUND],
                       userKey=userEmail, projection=schemaParms['projection'], customFieldMask=schemaParms['customFieldMask'],
                       viewType=viewType, fields=fields)
-      if getIsGuestUser and 'isGetUser' not in user:
+      if getIsGuestUser and 'isGuestUser' not in user:
         user['isGuestUser'] = False
       if userMultiAttributeFilters:
         _filterUserMultiAttributes(user, userMultiAttributeFilters)
