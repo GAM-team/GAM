@@ -1,6 +1,6 @@
 7.43.00
 
-Updated `gam info user` to display guest user attributes: `isGuestUser, guestAccountInfo`
+Updated `gam info user` and `gam print users` to display guest user attributes: `isGuestUser, guestAccountInfo`
 
 Expanded `<UserTypeEntity>` to allow specification of guest users.
   * See [Collections of Users](Collections-of-Users)

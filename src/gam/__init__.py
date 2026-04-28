@@ -45962,6 +45962,8 @@ def getUserAttributes(cd, updateCmd, noUid=False):
     elif updateCmd and myarg == 'updateprimaryemail':
       updatePrimaryEmail = list(getREPatternSubstitution(re.IGNORECASE))
       updatePrimaryEmail.append(checkArgumentPresent(['preview']))
+    elif updateCmd and myarg == 'primaryguestemail':
+      body['guestAccountInfo'] = {'primaryGuestEmail': getEmailAddress(noUid=True)}
     elif myarg == 'json':
       body.update(getJSON(USER_JSON_SKIP_FIELDS))
       if 'name' in body and 'fullName' in body['name']:
@@ -47253,7 +47255,7 @@ def infoUsers(entityList):
   ci = None
   setTrueCustomerId(cd)
   getAliases = getBuildingNames = getCIGroupsTree = getGroups = getLicenses = getSchemas = not GC.Values[GC.QUICK_INFO_USER]
-  getGroupsTree = False
+  getGroupsTree = getIsGuestUser = False
   FJQC = FormatJSONQuoteChar()
   schemaParms = _initSchemaParms('full')
   viewType = 'admin_view'
@@ -47308,6 +47310,7 @@ def infoUsers(entityList):
       fieldsList.append('customSchemas')
     if getAliases:
       fieldsList.extend(['aliases', 'nonEditableAliases'])
+  getIsGuestUser = not fieldsList or 'isGuestUser' in fieldsList
   fields = getFieldsFromFieldsList(fieldsList)
   if getLicenses:
     lic = buildGAPIObject(API.LICENSING)
@@ -47324,6 +47327,8 @@ def infoUsers(entityList):
                       throwReasons=GAPI.USER_GET_THROW_REASONS+[GAPI.INVALID_INPUT, GAPI.RESOURCE_NOT_FOUND],
                       userKey=userEmail, projection=schemaParms['projection'], customFieldMask=schemaParms['customFieldMask'],
                       viewType=viewType, fields=fields)
+      if getIsGuestUser and 'isGetUser' not in user:
+        user['isGuestUser'] = False
       if userMultiAttributeFilters:
         _filterUserMultiAttributes(user, userMultiAttributeFilters)
       groups = []
@@ -47767,6 +47772,8 @@ def doPrintUsers(entityList=None):
                   (isArchived == userEntity.get('archived', isArchived)))
     if not showUser:
       return
+    if getIsGuestUser and 'isGuestUser' not in userEntity:
+      userEntity['isGuestUser'] = False
     if showValidColumn:
       userEntity[showValidColumn] = True
     if userMultiAttributeFilters:
@@ -47905,7 +47912,7 @@ def doPrintUsers(entityList=None):
   maxResults = GC.Values[GC.USER_MAX_RESULTS]
   schemaParms = _initSchemaParms('basic')
   projectionSet = False
-  oneLicensePerRow = quotePlusPhoneNumbers = showDeleted = False
+  getIsGuestUser = oneLicensePerRow = quotePlusPhoneNumbers = showDeleted = False
   aliasMatchPattern = isArchived = isSuspended = orgUnitPath = orgUnitPathLower = orderBy = sortOrder = None
   viewType = 'admin_view'
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
@@ -48043,6 +48050,7 @@ def doPrintUsers(entityList=None):
     sortRows = False
     if orgUnitPath is not None and fieldsList:
       fieldsList.append('orgUnitPath')
+    getIsGuestUser = not fieldsList or 'isGuestUser' in fieldsList
     fields = getItemFieldsFromFieldsList('users', fieldsList)
     itemCount = 0
     for kwargsQuery in makeUserGroupDomainQueryFilters(kwargsDict):
@@ -48111,6 +48119,7 @@ def doPrintUsers(entityList=None):
       return
     sortRows = True
 # If no individual fields were specified (allfields, basic, full) or individual fields other than primaryEmail were specified, look up each user
+    getIsGuestUser = not fieldsList or 'isGuestUser' in fieldsList
     if isSuspended is not None and fieldsList:
       fieldsList.append('suspended')
     if isArchived is not None and fieldsList:
