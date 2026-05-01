@@ -72,7 +72,7 @@ gam <UserTypeEntity> print driveactivity [todrive <ToDriveAttributes>*]
          (query <QueryDriveFile>)]
         [([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date)|<Time>|
          yesterday|today|thismonth|(previousmonths <Integer>)]
-        [action|actions [not] <DriveActivityActionList>]
+        [action|actions [not] <DriveActivityActionList>] [maxactivities <Number>]
         [consolidationstrategy legacy|none]
         [idmapfile <FileName>|(gsheet <UserGoogleSheet>) [charset <String>] [columndelimiter <Character>] [noescapechar <Boolean>]  [quotechar <Character>]]
         [stripcrsfromname] [formatjson [quotechar <Character>]]
@@ -98,6 +98,8 @@ Activities can be filtered by action.
 Google does the filtering.
 * `action|actions <DriveActivityActionList>` - Only display activities with the specified actions; by default, all actions are displayed
 * `action|actions not <DriveActivityActionList>` - Only display activities without the specified actions; by default, all actions are displayed
+
+You can limit the number of activities displayed with the `maxactivities <Number>; the default is 0, no limit.
 
 The API only returns a permissionId and user name for each event but no user email address. To get an email address perform the
 following command to generate a file that contains the email address and permissionId for all users. You can substitute for `all users` if desired.
