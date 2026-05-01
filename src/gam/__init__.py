@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.43.01'
+__version__ = '7.43.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -5595,6 +5595,30 @@ def _finalizeGAPIpagesResult(pageMessage):
     writeStderr('\r\n')
     flushStderr()
 
+def _setMaxArgResults(maxItems, pageArgsInBody, kwargs):
+  if pageArgsInBody:
+    kwargs.setdefault('body', {})
+  maxArg = ''
+  maxResults = 0
+  if maxItems:
+    if not pageArgsInBody:
+      maxResults = kwargs.get('maxResults', 0)
+      if maxResults:
+        maxArg = 'maxResults'
+      else:
+        maxResults = kwargs.get('pageSize', 0)
+        if maxResults:
+          maxArg = 'pageSize'
+    else:
+      maxResults = kwargs['body'].get('maxResults', 0)
+      if maxResults:
+        maxArg = 'maxResults'
+      else:
+        maxResults = kwargs['body'].get('pageSize', 0)
+        if maxResults:
+          maxArg = 'pageSize'
+  return (maxArg, maxResults)
+
 def callGAPIpages(service, function, items,
                   pageMessage=None, messageAttribute=None, maxItems=0, noFinalize=False,
                   throwReasons=None, retryReasons=None,
@@ -5606,21 +5630,14 @@ def callGAPIpages(service, function, items,
     retryReasons = []
   allResults = []
   totalItems = 0
-  maxArg = ''
-  if maxItems:
-    maxResults = kwargs.get('maxResults', 0)
-    if maxResults:
-      maxArg = 'maxResults'
-    else:
-      maxResults = kwargs.get('pageSize', 0)
-      if maxResults:
-        maxArg = 'pageSize'
-  if pageArgsInBody:
-    kwargs.setdefault('body', {})
+  maxArg, maxResults = _setMaxArgResults(maxItems, pageArgsInBody, kwargs)
   entityType = Ent.Getting() if pageMessage else None
   while True:
     if maxArg and maxItems-totalItems < maxResults:
-      kwargs[maxArg] = maxItems-totalItems
+      if not pageArgsInBody:
+        kwargs[maxArg] = maxItems-totalItems
+      else:
+        kwargs['body'][maxArg] = maxItems-totalItems
     results = callGAPI(service, function,
                        throwReasons=throwReasons, retryReasons=retryReasons,
                        **kwargs)
@@ -5629,10 +5646,10 @@ def callGAPIpages(service, function, items,
       if not noFinalize:
         _finalizeGAPIpagesResult(pageMessage)
       return allResults
-    if pageArgsInBody:
-      kwargs['body']['pageToken'] = pageToken
-    else:
+    if not pageArgsInBody:
       kwargs['pageToken'] = pageToken
+    else:
+      kwargs['body']['pageToken'] = pageToken
 
 def yieldGAPIpages(service, function, items,
                    pageMessage=None, messageAttribute=None, maxItems=0, noFinalize=False,
@@ -5644,21 +5661,14 @@ def yieldGAPIpages(service, function, items,
   if retryReasons is None:
     retryReasons = []
   totalItems = 0
-  maxArg = ''
-  if maxItems:
-    maxResults = kwargs.get('maxResults', 0)
-    if maxResults:
-      maxArg = 'maxResults'
-    else:
-      maxResults = kwargs.get('pageSize', 0)
-      if maxResults:
-        maxArg = 'pageSize'
-  if pageArgsInBody:
-    kwargs.setdefault('body', {})
+  maxArg, maxResults = _setMaxArgResults(maxItems, pageArgsInBody, kwargs)
   entityType = Ent.Getting() if pageMessage else None
   while True:
     if maxArg and maxItems-totalItems < maxResults:
-      kwargs[maxArg] = maxItems-totalItems
+      if not pageArgsInBody:
+        kwargs[maxArg] = maxItems-totalItems
+      else:
+        kwargs['body'][maxArg] = maxItems-totalItems
     results = callGAPI(service, function,
                        throwReasons=throwReasons, retryReasons=retryReasons,
                        **kwargs)
@@ -5681,10 +5691,10 @@ def yieldGAPIpages(service, function, items,
       if not noFinalize:
         _finalizeGAPIpagesResult(pageMessage)
       return
-    if pageArgsInBody:
-      kwargs['body']['pageToken'] = pageToken
-    else:
+    if not pageArgsInBody:
       kwargs['pageToken'] = pageToken
+    else:
+      kwargs['body']['pageToken'] = pageToken
 
 def callGAPIitems(service, function, items,
                   throwReasons=None, retryReasons=None,
@@ -45962,8 +45972,8 @@ def getUserAttributes(cd, updateCmd, noUid=False):
     elif updateCmd and myarg == 'updateprimaryemail':
       updatePrimaryEmail = list(getREPatternSubstitution(re.IGNORECASE))
       updatePrimaryEmail.append(checkArgumentPresent(['preview']))
-    elif updateCmd and myarg == 'primaryguestemail':
-      body['guestAccountInfo'] = {'primaryGuestEmail': getEmailAddress(noUid=True)}
+#    elif updateCmd and myarg == 'primaryguestemail':
+#      body['guestAccountInfo'] = {'primaryGuestEmail': getEmailAddress(noUid=True)}
     elif myarg == 'json':
       body.update(getJSON(USER_JSON_SKIP_FIELDS))
       if 'name' in body and 'fullName' in body['name']:
@@ -57091,7 +57101,7 @@ CONSOLIDATION_GROUPING_STRATEGY_CHOICE_MAP = {'driveui': 'legacy', 'legacy': 'le
 #	 (drivefilename <DriveFileName>) | (drivefoldername <DriveFolderName>) | (query <QueryDriveFile>)]
 #	[([start <Date>|<Time>] [end <Date>|<Time>])|(range <Date>|<Time> <Date>|<Time>)|
 #	 yesterday|today|thismonth|(previousmonths <Integer>)]
-#	[action|actions [not] <DriveActivityActionList>]
+#	[action|actions [not] <DriveActivityActionList>] [maxactivities <Number>]
 #	[consolidationstrategy legacy|none]
 #	[idmapfile <CSVFileInput> endcsv]
 #	[stripcrsfromname] [formatjson [quotechar <Character>]]
@@ -57136,6 +57146,7 @@ def printDriveActivity(users):
   actions = set()
   strategy = 'none'
   negativeAction = stripCRsFromName = False
+  maxActivities = 0
   checkArgumentPresent(['v2'])
   csvPF = CSVPrintFile([f'user{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}name',
                         f'user{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}emailAddress',
@@ -57182,6 +57193,8 @@ def printDriveActivity(users):
       closeFile(f)
     elif myarg == 'stripcrsfromname':
       stripCRsFromName = True
+    elif myarg == 'maxactivities':
+      maxActivities = getInteger(minVal=0)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if not baseFileList and not query:
@@ -57240,18 +57253,18 @@ def printDriveActivity(users):
       qualifier = f' for {Ent.Singular(entityType)}: {fileId}'
       printGettingAllEntityItemsForWhom(Ent.ACTIVITY, user, i, count, qualifier=qualifier)
       pageMessage = getPageMessageForWhom()
-      kwargs = {
+      body = {
         'consolidationStrategy': {strategy: {}},
         'pageSize': GC.Values[GC.ACTIVITY_MAX_RESULTS],
         'pageToken': None,
         drive_key: f'items/{fileId}',
         'filter': activityFilter}
+      numActivities = 0
       try:
         feed = yieldGAPIpages(activity.activity(), 'query', 'activities',
-                              pageMessage=pageMessage,
+                              pageMessage=pageMessage, maxItems=maxActivities,
                               throwReasons=GAPI.ACTIVITY_THROW_REASONS,
-                              pageArgsInBody=True,
-                              fields='nextPageToken,activities', body=kwargs)
+                              fields='nextPageToken,activities', body=body, pageArgsInBody=True)
         for activities in feed:
           for activityEvent in activities:
             eventRow = {}
@@ -57297,6 +57310,9 @@ def printDriveActivity(users):
               if csvPF.CheckRowTitles(checkRow):
                 eventRow['JSON'] = json.dumps(cleanJSON(activityEvent), ensure_ascii=False, sort_keys=True)
                 csvPF.WriteRowNoFilter(eventRow)
+            numActivities += 1
+            if maxActivities and numActivities >= maxActivities:
+              break
       except GAPI.badRequest as e:
         entityActionFailedWarning([Ent.USER, user, entityType, fileId], str(e), i, count)
         continue

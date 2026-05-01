@@ -1,3 +1,8 @@
+7.43.02
+
+Added option `maxactivities <Number>` to `gam <UserTypeEntity> print driveactivity` to limit
+the number of activities displayed; the default is 0, no limit.
+
 7.43.01
 
 Updated `gam info user` and `gam print users` to display guest user attributes: `isGuestUser, guestAccountInfo`

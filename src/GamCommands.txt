@@ -7673,7 +7673,7 @@ gam <UserTypeEntity> print driveactivity [todrive <ToDriveAttribute>*]
          (drivefilename <DriveFileName>) | (drivefoldername <DriveFolderName>) | (query <QueryDriveFile>)]
         [([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date>)|<Time>|
          yesterday|today|thismonth|(previousmonths <Integer>)]
-        [action|actions [not] <DriveActivityActionList>]
+        [action|actions [not] <DriveActivityActionList>] [maxactivities <Number>]
         [consolidationstrategy legacy|none]
         [idmapfile <CSVFileInput> endcsv]
         [stripcrsfromname] [formatjson [quotechar <Character>]]
