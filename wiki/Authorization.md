@@ -316,7 +316,7 @@ Use `nokey` if you do not want a service account key created for the project.
 
 ## Use an existing project for GAM authorization
 
-To use the same GAM project on multiple computers, see: [Multiple Computers](Multiple Computers)
+To use the same GAM project on multiple computers, see: [GAM Configuration](Multiple Computers)
 
 Use an existing project to create and download two files: `client_secrets.json` for the Client and `oauth2service.json` for the Service Account.
 
