@@ -7032,7 +7032,7 @@ gam <UserTypeEntity> untrash drivefile <DriveFileEntity> [shortcutandtarget [<Bo
 
 gam <UserTypeEntity> info drivefile <DriveFileEntity>
         [returnidonly]
-        [filepath|fullpath] [folderpathonly [<Boolean>]] [pathdelimiter <Character>]
+        [filepath|fullpath] [folderpathonly|parentpathonly [<Boolean>]] [pathdelimiter <Character>]
         [allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
         [includepermissionsforview published]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
@@ -7513,7 +7513,7 @@ gam <UserTypeEntity> collect orphans
 
 gam <UserTypeEntity> show fileinfo <DriveFileEntity>
         [returnidonly]
-        [filepath|fullpath] [folderpathonly [<Boolean>]] [pathdelimiter <Character>]
+        [filepath|fullpath] [folderpathonly|parentpathonly [<Boolean>]] [pathdelimiter <Character>]
         [allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
         [includepermissionsforview published]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
@@ -7527,12 +7527,12 @@ gam <UserTypeEntity> show filepath <DriveFileEntity>
         [returnpathonly]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [stripcrsfromname]
-        [fullpath] [folderpathonly [<Boolean>]] [pathdelimiter <Character>]
+        [fullpath] [folderpathonly|parentpathonly [<Boolean>]] [pathdelimiter <Character>]
         [followshortcuts [<Boolean>]]
 gam <UserTypeEntity> print filepath <DriveFileEntity> [todrive <ToDriveAttribute>*]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [stripcrsfromname] [oneitemperrow]
-        [fullpath] [folderpathonly [<Boolean>]] [pathdelimiter <Character>]
+        [fullpath] [folderpathonly|parentpathonly [<Boolean>]] [pathdelimiter <Character>]
         [followshortcuts [<Boolean>]]
 
 gam <UserTypeEntity> print filecounts [todrive <ToDriveAttribute>*]
@@ -7635,7 +7635,7 @@ gam <UserTypeEntity> print filelist [todrive <ToDriveAttribute>*]
         [countsonly [summary none|only|plus] [summaryuser <String>]
                     [showsource] [showsize] [showsizeunits] [showmimetypesize]]
         [countsrowfilter]
-        [filepath|fullpath [folderpathonly [<Boolean>]] [pathdelimiter <Character>] [addpathstojson] [showdepth]] [buildtree]
+        [filepath|fullpath [folderpathonly|parentpathonly [<Boolean>]] [pathdelimiter <Character>] [addpathstojson] [showdepth]] [buildtree]
         [allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
         [showdrivename] [showshareddrivepermissions]
         [(showlabels details|ids)|(includelabels <ClassificationLabelIDList>)]
