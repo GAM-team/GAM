@@ -425,7 +425,7 @@ Display file details in indented keyword: value format. The two forms are equiva
 ```
 gam <UserTypeEntity> show fileinfo <DriveFileEntity>
         [returnidonly]
-        [filepath|fullpath] [folderpathonly [<Boolean>]] [pathdelimiter <Character>]
+        [filepath|fullpath] [folderpathonly|parentpathonly [<Boolean>]] [pathdelimiter <Character>]
         [allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [showdrivename] [showshareddrivepermissions]
@@ -436,7 +436,7 @@ gam <UserTypeEntity> show fileinfo <DriveFileEntity>
         [formatjson]
 gam <UserTypeEntity> info drivefile <DriveFileEntity>
         [returnidonly]
-        [filepath|fullpath] [folderpathonly [<Boolean>]] [pathdelimiter <Character>]
+        [filepath|fullpath] [folderpathonly|parentpathonly [<Boolean>]] [pathdelimiter <Character>]
         [allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [showdrivename] [showshareddrivepermissions]
@@ -455,6 +455,7 @@ Use `fullpath` to add additional path information indicating that a file is an O
 By default, the path to a file includes the file name as the last element of the path.
 Use `folderpathonly` to display only the folder names when displaying the path to a file. This folder only path
 an be used in  `gam <UserTypeEntity> create drivefolderpath` to recreate the folder hierarchy.
+Use `parentpathonly` to display only the parent folder names when displaying the path to a file.
 
 By default, file path components are separated by `/`; use `pathdelimiter <Character>` to use `<Character>` as the separator.
 
@@ -517,12 +518,12 @@ gam <UserTypeEntity> show filepath <DriveFileEntity>
         [returnpathonly]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [stripcrsfromname]
-        [folderpathonly [<Boolean>]] [fullpath] [pathdelimiter <Character>]
+        [folderpathonly|parentpathonly [<Boolean>]] [fullpath] [pathdelimiter <Character>]
         [followshortcuts [<Boolean>]]
 gam <UserTypeEntity> print filepath <DriveFileEntity> [todrive <ToDriveAttribute>*]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
         [stripcrsfromname] [oneitemperrow]
-        [fullpath] [folderpathonly [<Boolean>]] [pathdelimiter <Character>]
+        [fullpath] [folderpathonly|parentpathonly [<Boolean>]] [pathdelimiter <Character>]
         [followshortcuts [<Boolean>]]
 ```
 Use `returnpathonly` to display just the file path of the files in `<DriveFileEntity>`.
@@ -532,6 +533,7 @@ Use `fullpath` to add additional path information indicating that a file is an O
 By default, the path to a file includes the file name as the last element of the path.
 Use `folderpathonly` to display only the folder names when displaying the path to a file. This folder only path
 an be used in  `gam <UserTypeEntity> create drivefolderpath` to recreate the folder hierarchy.
+Use `parentpathonly` to display only the parent folder names when displaying the path to a file.
 
 By default, file path components are separated by `/`; use `pathdelimiter <Character>` to use `<Character>` as the separator.
 
@@ -1106,7 +1108,7 @@ gam <UserTypeEntity> print|show filelist [todrive <ToDriveAttribute>*]
         [countsonly [summary none|only|plus] [summaryuser <String>]
                     [showsource] [showsize] [showsizeunits] [showmimetypesize]]
         [countsrowfilter]
-        [filepath|fullpath [folderpathonly [<Boolean>]] [pathdelimiter <Character>] [addpathstojson] [showdepth]] [buildtree]
+        [filepath|fullpath [folderpathonly|parentpathonly [<Boolean>]] [pathdelimiter <Character>] [addpathstojson] [showdepth]] [buildtree]
         [allfields|<DriveFieldName>*|(fields <DriveFieldNameList>)]
         [showdrivename] [showshareddrivepermissions]
         [(showlabels details|ids)|(includelabels <ClassificationLabelIDList>)]
@@ -1239,6 +1241,7 @@ JSON data rather than as additional columns
 By default, the path to a file includes the file name as the last element of the path.
 Use `folderpathonly` to display only the folder names when displaying the path to a file. This folder only path
 an be used in  `gam <UserTypeEntity> create drivefolderpath` to recreate the folder hierarchy.
+Use `parentpathonly` to display only the parent folder names when displaying the path to a file.
 
 By default, file path components are separated by `/`; use `pathdelimiter <Character>` to use `<Character>` as the separator.
 

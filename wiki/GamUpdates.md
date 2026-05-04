@@ -10,6 +10,17 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.43.03
+
+Added option `parentpathonly [<Boolean>]` to the following commands that causes GAM
+to display only the parent folder names when displaying the path to a file.
+```
+gam <UserTypeEntity> info drivefile ... filepath|fullpath
+gam <UserTypeEntity> show fileinfo ... filepath|fullpath
+gam <UserTypeEntity> print|show filepath
+gam <UserTypeEntity> print filelist ... filepath|fullpath
+```
+
 ### 7.43.02
 
 Added option `maxactivities <Number>` to `gam <UserTypeEntity> print driveactivity` to limit
