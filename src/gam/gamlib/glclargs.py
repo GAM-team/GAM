@@ -53,6 +53,7 @@ class GamCLArgs():
   ENTITY_DOMAINS_ARCH = 'domains_arch'
   ENTITY_DOMAINS_NS = 'domains_ns'
   ENTITY_DOMAINS_SUSP = 'domains_susp'
+  ENTITY_DOMAINS_NS_SUSP = 'domains_ns_susp'
   ENTITY_DOMAINS_NA_NS = 'domains_na_ns'
   ENTITY_GROUP = 'group'
   ENTITY_GROUP_INDE = 'group_inde'
@@ -60,6 +61,7 @@ class GamCLArgs():
   ENTITY_GROUP_ARCH = 'group_arch'
   ENTITY_GROUP_NS = 'group_ns'
   ENTITY_GROUP_SUSP = 'group_susp'
+  ENTITY_GROUP_NS_SUSP = 'group_ns_susp'
   ENTITY_GROUP_NA_NS = 'group_na_ns'
   ENTITY_GROUPS = 'groups'
   ENTITY_GROUPS_INDE = 'groups_inde'
@@ -67,12 +69,14 @@ class GamCLArgs():
   ENTITY_GROUPS_ARCH = 'groups_arch'
   ENTITY_GROUPS_NS = 'groups_ns'
   ENTITY_GROUPS_SUSP = 'groups_susp'
+  ENTITY_GROUPS_NS_SUSP = 'groups_ns_susp'
   ENTITY_GROUPS_NA_NS = 'groups_na_ns'
   ENTITY_GROUP_USERS = 'group_users'
   ENTITY_GROUP_USERS_NA = 'group_users_na'
   ENTITY_GROUP_USERS_ARCH = 'group_users_arch'
   ENTITY_GROUP_USERS_NS = 'group_users_ns'
   ENTITY_GROUP_USERS_SUSP = 'group_users_susp'
+  ENTITY_GROUP_USERS_NS_SUSP = 'group_users_ns_susp'
   ENTITY_GROUP_USERS_NA_NS = 'group_users_na_ns'
   ENTITY_GROUP_USERS_SELECT = 'group_users_select'
   ENTITY_LICENSES = 'licenses'
@@ -82,24 +86,28 @@ class GamCLArgs():
   ENTITY_OU_ARCH = 'ou_arch'
   ENTITY_OU_NS = 'ou_ns'
   ENTITY_OU_SUSP = 'ou_susp'
+  ENTITY_OU_NS_SUSP = 'ou_ns_susp'
   ENTITY_OU_NA_NS = 'ou_na_ns'
   ENTITY_OU_AND_CHILDREN = 'ou_and_children'
   ENTITY_OU_AND_CHILDREN_NA = 'ou_and_children_na'
   ENTITY_OU_AND_CHILDREN_ARCH = 'ou_and_children_arch'
   ENTITY_OU_AND_CHILDREN_NS = 'ou_and_children_ns'
   ENTITY_OU_AND_CHILDREN_SUSP = 'ou_and_children_susp'
+  ENTITY_OU_AND_CHILDREN_NS_SUSP = 'ou_and_children_ns_susp'
   ENTITY_OU_AND_CHILDREN_NA_NS = 'ou_and_children_na_ns'
   ENTITY_OUS = 'ous'
   ENTITY_OUS_NA = 'ous_na'
   ENTITY_OUS_ARCH = 'ous_arch'
   ENTITY_OUS_NS = 'ous_ns'
   ENTITY_OUS_SUSP = 'ous_susp'
+  ENTITY_OUS_NS_SUSP = 'ous_ns_susp'
   ENTITY_OUS_NA_NS = 'ous_na_ns'
   ENTITY_OUS_AND_CHILDREN = 'ous_and_children'
   ENTITY_OUS_AND_CHILDREN_NA = 'ous_and_children_na'
   ENTITY_OUS_AND_CHILDREN_ARCH = 'ous_and_children_arch'
   ENTITY_OUS_AND_CHILDREN_NS = 'ous_and_children_ns'
   ENTITY_OUS_AND_CHILDREN_SUSP = 'ous_and_children_susp'
+  ENTITY_OUS_AND_CHILDREN_NS_SUSP = 'ous_and_children_ns_susp'
   ENTITY_OUS_AND_CHILDREN_NA_NS = 'ous_and_children_na_ns'
   ENTITY_QUERIES = 'queries'
   ENTITY_QUERY = 'query'
@@ -111,9 +119,9 @@ class GamCLArgs():
   ENTITY_USERS_ARCH = 'users_arch'
   ENTITY_USERS_NS = 'users_ns'
   ENTITY_USERS_SUSP = 'users_susp'
+  ENTITY_USERS_NS_SUSP = 'users_ns_susp'
   ENTITY_USERS_NA_NS = 'users_na_ns'
   ENTITY_USERS_ARCH_OR_SUSP = 'users_arch_or_susp'
-  ENTITY_USERS_NS_SUSP = 'users_ns_susp'
   ENTITY_USERS_AND_GUESTS  = 'users_and_guests'
   ENTITY_USERS_AND_GUESTS_NS  = 'users_and_guests_ns'
   ENTITY_USERS_AND_GUESTS_SUSP  = 'users_and_guests_susp'
@@ -158,6 +166,7 @@ class GamCLArgs():
     ENTITY_DOMAINS_ARCH,
     ENTITY_DOMAINS_NS,
     ENTITY_DOMAINS_SUSP,
+    ENTITY_DOMAINS_NS_SUSP,
     ENTITY_DOMAINS_NA_NS,
     ENTITY_GROUP,
     ENTITY_GROUP_INDE,
@@ -165,6 +174,7 @@ class GamCLArgs():
     ENTITY_GROUP_ARCH,
     ENTITY_GROUP_NS,
     ENTITY_GROUP_SUSP,
+    ENTITY_GROUP_NS_SUSP,
     ENTITY_GROUP_NA_NS,
     ENTITY_GROUPS,
     ENTITY_GROUPS_INDE,
@@ -172,12 +182,14 @@ class GamCLArgs():
     ENTITY_GROUPS_ARCH,
     ENTITY_GROUPS_NS,
     ENTITY_GROUPS_SUSP,
+    ENTITY_GROUPS_NS_SUSP,
     ENTITY_GROUPS_NA_NS,
     ENTITY_GROUP_USERS,
     ENTITY_GROUP_USERS_NA,
     ENTITY_GROUP_USERS_ARCH,
     ENTITY_GROUP_USERS_NS,
     ENTITY_GROUP_USERS_SUSP,
+    ENTITY_GROUP_USERS_NS_SUSP,
     ENTITY_GROUP_USERS_NA_NS,
     ENTITY_GROUP_USERS_SELECT,
     ENTITY_LICENSES,
@@ -187,24 +199,28 @@ class GamCLArgs():
     ENTITY_OU_ARCH,
     ENTITY_OU_NS,
     ENTITY_OU_SUSP,
+    ENTITY_OU_NS_SUSP,
     ENTITY_OU_NA_NS,
     ENTITY_OU_AND_CHILDREN,
     ENTITY_OU_AND_CHILDREN_NA,
     ENTITY_OU_AND_CHILDREN_ARCH,
     ENTITY_OU_AND_CHILDREN_NS,
     ENTITY_OU_AND_CHILDREN_SUSP,
+    ENTITY_OU_AND_CHILDREN_NS_SUSP,
     ENTITY_OU_AND_CHILDREN_NA_NS,
     ENTITY_OUS,
     ENTITY_OUS_NA,
     ENTITY_OUS_ARCH,
     ENTITY_OUS_NS,
     ENTITY_OUS_SUSP,
+    ENTITY_OUS_NS_SUSP,
     ENTITY_OUS_NA_NS,
     ENTITY_OUS_AND_CHILDREN,
     ENTITY_OUS_AND_CHILDREN_NA,
     ENTITY_OUS_AND_CHILDREN_ARCH,
     ENTITY_OUS_AND_CHILDREN_NS,
     ENTITY_OUS_AND_CHILDREN_SUSP,
+    ENTITY_OUS_AND_CHILDREN_NS_SUSP,
     ENTITY_OUS_AND_CHILDREN_NA_NS,
     ENTITY_QUERIES,
     ENTITY_QUERY,
@@ -286,48 +302,56 @@ class GamCLArgs():
     'org_arch': ENTITY_OU_ARCH,
     'org_ns': ENTITY_OU_NS,
     'org_susp': ENTITY_OU_SUSP,
+    'org_ns_susp': ENTITY_OU_NS_SUSP,
     'org_na_ns': ENTITY_OU_NA_NS,
     'org_and_child': ENTITY_OU_AND_CHILDREN,
     'org_and_child_na': ENTITY_OU_AND_CHILDREN_NA,
     'org_and_child_arch': ENTITY_OU_AND_CHILDREN_ARCH,
     'org_and_child_ns': ENTITY_OU_AND_CHILDREN_NS,
     'org_and_child_susp': ENTITY_OU_AND_CHILDREN_SUSP,
+    'org_and_child_ns_susp': ENTITY_OU_AND_CHILDREN_NS_SUSP,
     'org_and_child_na_ns': ENTITY_OU_AND_CHILDREN_NA_NS,
     'org_and_children': ENTITY_OU_AND_CHILDREN,
     'org_and_children_na': ENTITY_OU_AND_CHILDREN_NA,
     'org_and_children_arch': ENTITY_OU_AND_CHILDREN_ARCH,
     'org_and_children_ns': ENTITY_OU_AND_CHILDREN_NS,
     'org_and_children_susp': ENTITY_OU_AND_CHILDREN_SUSP,
+    'org_and_children_ns_susp': ENTITY_OU_AND_CHILDREN_NS_SUSP,
     'org_and_children_na_ns': ENTITY_OU_AND_CHILDREN_NA_NS,
     'orgs': ENTITY_OUS,
     'orgs_na': ENTITY_OUS_NA,
     'orgs_arch': ENTITY_OUS_ARCH,
     'orgs_ns': ENTITY_OUS_NS,
     'orgs_susp': ENTITY_OUS_SUSP,
+    'orgs_ns_susp': ENTITY_OUS_NS_SUSP,
     'orgs_na_ns': ENTITY_OUS_NA_NS,
     'orgs_and_child': ENTITY_OUS_AND_CHILDREN,
     'orgs_and_child_na': ENTITY_OUS_AND_CHILDREN_NA,
     'orgs_and_child_arch': ENTITY_OUS_AND_CHILDREN_ARCH,
     'orgs_and_child_ns': ENTITY_OUS_AND_CHILDREN_NS,
     'orgs_and_child_susp': ENTITY_OUS_AND_CHILDREN_SUSP,
+    'orgs_and_child_ns_susp': ENTITY_OUS_AND_CHILDREN_NS_SUSP,
     'orgs_and_child_na_ns': ENTITY_OUS_AND_CHILDREN_NA_NS,
     'orgs_and_children': ENTITY_OUS_AND_CHILDREN,
     'orgs_and_children_na': ENTITY_OUS_AND_CHILDREN_NA,
     'orgs_and_children_arch': ENTITY_OUS_AND_CHILDREN_ARCH,
     'orgs_and_children_ns': ENTITY_OUS_AND_CHILDREN_NS,
     'orgs_and_children_susp': ENTITY_OUS_AND_CHILDREN_SUSP,
+    'orgs_and_children_ns_susp': ENTITY_OUS_AND_CHILDREN_NS_SUSP,
     'orgs_and_children_na_ns': ENTITY_OUS_AND_CHILDREN_NA_NS,
     'ou_and_child': ENTITY_OU_AND_CHILDREN,
     'ou_and_child_na': ENTITY_OU_AND_CHILDREN_NA,
     'ou_and_child_arch': ENTITY_OU_AND_CHILDREN_ARCH,
     'ou_and_child_ns': ENTITY_OU_AND_CHILDREN_NS,
     'ou_and_child_susp': ENTITY_OU_AND_CHILDREN_SUSP,
+    'ou_and_child_ns_susp': ENTITY_OU_AND_CHILDREN_NS_SUSP,
     'ou_and_child_na_ns': ENTITY_OU_AND_CHILDREN_NA_NS,
     'ous_and_child': ENTITY_OUS_AND_CHILDREN,
     'ous_and_child_na': ENTITY_OUS_AND_CHILDREN_NA,
     'ous_and_child_arch': ENTITY_OUS_AND_CHILDREN_ARCH,
     'ous_and_child_ns': ENTITY_OUS_AND_CHILDREN_NS,
     'ous_and_child_susp': ENTITY_OUS_AND_CHILDREN_SUSP,
+    'ous_and_child_ns_susp': ENTITY_OUS_AND_CHILDREN_NS_SUSP,
     'ous_and_child_na_ns': ENTITY_OUS_AND_CHILDREN_NA_NS,
     }
 # CL entity source selectors
@@ -403,9 +427,9 @@ class GamCLArgs():
     ENTITY_USERS_ARCH,
     ENTITY_USERS_NS,
     ENTITY_USERS_SUSP,
+    ENTITY_USERS_NS_SUSP,
     ENTITY_USERS_ARCH_OR_SUSP,
     ENTITY_USERS_NA_NS,
-    ENTITY_USERS_NS_SUSP,
     ENTITY_USERS_AND_GUESTS,
     ENTITY_USERS_AND_GUESTS_NS,
     ENTITY_USERS_AND_GUESTS_SUSP,
@@ -422,9 +446,9 @@ class GamCLArgs():
   ENTITY_ALL_USERS_ARCH = ENTITY_SELECTOR_ALL+' '+ENTITY_USERS_ARCH
   ENTITY_ALL_USERS_NS = ENTITY_SELECTOR_ALL+' '+ENTITY_USERS_NS
   ENTITY_ALL_USERS_SUSP = ENTITY_SELECTOR_ALL+' '+ENTITY_USERS_SUSP
+  ENTITY_ALL_USERS_NS_SUSP = ENTITY_SELECTOR_ALL+' '+ENTITY_USERS_NS_SUSP
   ENTITY_ALL_USERS_NA_NS = ENTITY_SELECTOR_ALL+' '+ENTITY_USERS_NA_NS
   ENTITY_ALL_USERS_ARCH_OR_SUSP = ENTITY_SELECTOR_ALL+' '+ENTITY_USERS_ARCH_OR_SUSP
-  ENTITY_ALL_USERS_NS_SUSP = ENTITY_SELECTOR_ALL+' '+ENTITY_USERS_NS_SUSP
   ENTITY_ALL_USERS_AND_GUESTS = ENTITY_SELECTOR_ALL+' '+ENTITY_USERS_AND_GUESTS
   ENTITY_ALL_USERS_AND_GUESTS_NS = ENTITY_SELECTOR_ALL+' '+ENTITY_USERS_AND_GUESTS_NS
   ENTITY_ALL_USERS_AND_GUESTS_SUSP = ENTITY_SELECTOR_ALL+' '+ENTITY_USERS_AND_GUESTS_SUSP
@@ -440,8 +464,8 @@ class GamCLArgs():
     ENTITY_ALL_USERS_ARCH,
     ENTITY_ALL_USERS_NS,
     ENTITY_ALL_USERS_SUSP,
-    ENTITY_ALL_USERS_NA_NS,
     ENTITY_ALL_USERS_NS_SUSP,
+    ENTITY_ALL_USERS_NA_NS,
     ENTITY_ALL_USERS_AND_GUESTS,
     ENTITY_ALL_USERS_AND_GUESTS_NS,
     ENTITY_ALL_USERS_AND_GUESTS_SUSP,
@@ -457,6 +481,7 @@ class GamCLArgs():
     ENTITY_DOMAINS_ARCH,
     ENTITY_DOMAINS_NS,
     ENTITY_DOMAINS_SUSP,
+    ENTITY_DOMAINS_NS_SUSP,
     ENTITY_DOMAINS_NA_NS,
     }
   GROUP_ENTITY_TYPES = {
@@ -465,6 +490,7 @@ class GamCLArgs():
     ENTITY_GROUP_ARCH,
     ENTITY_GROUP_NS,
     ENTITY_GROUP_SUSP,
+    ENTITY_GROUP_NS_SUSP,
     ENTITY_GROUP_NA_NS,
     ENTITY_GROUP_INDE,
     }
@@ -474,6 +500,7 @@ class GamCLArgs():
     ENTITY_GROUPS_ARCH,
     ENTITY_GROUPS_NS,
     ENTITY_GROUPS_SUSP,
+    ENTITY_GROUPS_NS_SUSP,
     ENTITY_GROUPS_NA_NS,
     ENTITY_GROUPS_INDE,
     }
@@ -483,6 +510,7 @@ class GamCLArgs():
     ENTITY_GROUP_USERS_ARCH,
     ENTITY_GROUP_USERS_NS,
     ENTITY_GROUP_USERS_SUSP,
+    ENTITY_GROUP_USERS_NS_SUSP,
     ENTITY_GROUP_USERS_NA_NS,
     ENTITY_GROUP_USERS_SELECT,
     }
@@ -497,6 +525,8 @@ class GamCLArgs():
     ENTITY_OU_AND_CHILDREN_NS,
     ENTITY_OU_SUSP,
     ENTITY_OU_AND_CHILDREN_SUSP,
+    ENTITY_OU_NS_SUSP,
+    ENTITY_OU_AND_CHILDREN_NS_SUSP,
     ENTITY_OU_NA_NS,
     ENTITY_OU_AND_CHILDREN_NA_NS,
     }
@@ -511,6 +541,8 @@ class GamCLArgs():
     ENTITY_OUS_AND_CHILDREN_NS,
     ENTITY_OUS_SUSP,
     ENTITY_OUS_AND_CHILDREN_SUSP,
+    ENTITY_OUS_NS_SUSP,
+    ENTITY_OUS_AND_CHILDREN_NS_SUSP,
     ENTITY_OUS_NA_NS,
     ENTITY_OUS_AND_CHILDREN_NA_NS,
     }
@@ -525,6 +557,8 @@ class GamCLArgs():
     ENTITY_OUS_NS,
     ENTITY_OU_SUSP,
     ENTITY_OUS_SUSP,
+    ENTITY_OU_NS_SUSP,
+    ENTITY_OUS_NS_SUSP,
     ENTITY_OU_NA_NS,
     ENTITY_OUS_NA_NS,
     }
@@ -588,6 +622,7 @@ class GamCLArgs():
     ENTITY_DOMAINS_ARCH: 'isArchived=True',
     ENTITY_DOMAINS_NS: 'isSuspended=False',
     ENTITY_DOMAINS_SUSP: 'isSuspended=True',
+    ENTITY_DOMAINS_NS_SUSP: None,
     ENTITY_DOMAINS_NA_NS: 'isArchived=False isSuspended=False',
   }
   GROUPS_QUERY_MAP = { #(isArchived, isSuspended)
@@ -599,6 +634,8 @@ class GamCLArgs():
     ENTITY_GROUPS_NS: (None, False),
     ENTITY_GROUP_SUSP: (None, True),
     ENTITY_GROUPS_SUSP: (None, True),
+    ENTITY_GROUP_NS_SUSP: (None, None),
+    ENTITY_GROUPS_NS_SUSP: (None, None),
     ENTITY_GROUP_NA_NS: (False, False),
     ENTITY_GROUPS_NA_NS: (False, False),
   }
@@ -607,6 +644,7 @@ class GamCLArgs():
     ENTITY_GROUP_USERS_ARCH: (True, None),
     ENTITY_GROUP_USERS_NS: (None, False),
     ENTITY_GROUP_USERS_SUSP: (None, True),
+    ENTITY_GROUP_USERS_NS_SUSP: (None, None),
     ENTITY_GROUP_USERS_NA_NS: (False, False),
   }
   OU_QUERY_MAP = { #(isArchived, isSuspended)
@@ -626,6 +664,10 @@ class GamCLArgs():
     ENTITY_OUS_SUSP: (None, True),
     ENTITY_OU_AND_CHILDREN_SUSP: (None, True),
     ENTITY_OUS_AND_CHILDREN_SUSP: (None, True),
+    ENTITY_OU_NS_SUSP: (None, None),
+    ENTITY_OUS_NS_SUSP: (None, None),
+    ENTITY_OU_AND_CHILDREN_NS_SUSP: (None, None),
+    ENTITY_OUS_AND_CHILDREN_NS_SUSP: (None, None),
     ENTITY_OU_NA_NS: (False, False),
     ENTITY_OUS_NA_NS: (False, False),
     ENTITY_OU_AND_CHILDREN_NA_NS: (False, False),
@@ -667,6 +709,7 @@ class GamCLArgs():
     ENTITY_DOMAINS_ARCH,
     ENTITY_DOMAINS_NS,
     ENTITY_DOMAINS_SUSP,
+    ENTITY_DOMAINS_NS_SUSP,
     ENTITY_DOMAINS_NA_NS,
     ENTITY_GROUPS,
     ENTITY_GROUPS_INDE,
@@ -674,12 +717,14 @@ class GamCLArgs():
     ENTITY_GROUPS_ARCH,
     ENTITY_GROUPS_NS,
     ENTITY_GROUPS_SUSP,
+    ENTITY_GROUPS_NS_SUSP,
     ENTITY_GROUPS_NA_NS,
     ENTITY_GROUP_USERS,
     ENTITY_GROUP_USERS_NA,
     ENTITY_GROUP_USERS_ARCH,
     ENTITY_GROUP_USERS_NS,
     ENTITY_GROUP_USERS_SUSP,
+    ENTITY_GROUP_USERS_NS_SUSP,
     ENTITY_GROUP_USERS_NA_NS,
     ENTITY_GROUP_USERS_SELECT,
     ENTITY_OUS,
@@ -687,12 +732,14 @@ class GamCLArgs():
     ENTITY_OUS_ARCH,
     ENTITY_OUS_NS,
     ENTITY_OUS_SUSP,
+    ENTITY_OUS_NS_SUSP,
     ENTITY_OUS_NA_NS,
     ENTITY_OUS_AND_CHILDREN,
     ENTITY_OUS_AND_CHILDREN_NA,
     ENTITY_OUS_AND_CHILDREN_ARCH,
     ENTITY_OUS_AND_CHILDREN_NS,
     ENTITY_OUS_AND_CHILDREN_SUSP,
+    ENTITY_OUS_AND_CHILDREN_NS_SUSP,
     ENTITY_OUS_AND_CHILDREN_NA_NS,
     ENTITY_COURSEPARTICIPANTS,
     ENTITY_STUDENTS,

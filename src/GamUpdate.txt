@@ -1,3 +1,8 @@
+7.43.04
+
+Added option `include_suspended_zeros [<Boolean>]` to `gam print vaultcounts` that causes
+GAM to generate zero count lines for suspended users with zero items as well as non-suspended users.
+
 7.43.03
 
 Added option `parentpathonly [<Boolean>]` to the following commands that causes GAM

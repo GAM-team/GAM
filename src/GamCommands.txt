@@ -5499,6 +5499,7 @@ gam print vaultcounts [todrive <ToDriveAttributes>*]
         [excludedrafts <Boolean>]
         [<JSONData>]
         [wait <Integer>]
+        [include_suspended_zeros [<Boolean>]]
 gam print vaultcounts [todrive <ToDriveAttributes>*]
         matter <MatterItem> operation <String> [wait <Integer>]
 

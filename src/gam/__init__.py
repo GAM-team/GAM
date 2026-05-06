@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.43.03'
+__version__ = '7.43.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -45391,11 +45391,13 @@ PRINT_VAULT_COUNTS_TITLES = ['account', 'count', 'error']
 #	[excludedrafts <Boolean>]
 #	[<JSONData>]
 #	[wait <Integer>]
+#	[include_suspended_zeros [<Boolean>]]
 # gam print vaultcounts [todrive <ToDriveAttributes>*]
 #	 matter <MatterItem> operation <String> [wait <Integer>]
 def doPrintVaultCounts():
   v = buildGAPIObject(API.VAULT)
   csvPF = CSVPrintFile(PRINT_VAULT_COUNTS_TITLES, 'sortall')
+  includeSuspendedZeros = False
   matterId = name = None
   operationWait = 15
   body = {'view': 'ALL', 'query': {}}
@@ -45413,6 +45415,8 @@ def doPrintVaultCounts():
       _buildVaultQuery(myarg, body['query'], VAULT_COUNTS_CORPUS_ARGUMENT_MAP)
     elif myarg == 'wait':
       operationWait = getInteger(minVal=1)
+    elif myarg == "includesuspendedzeros":
+      includeSuspendedZeros = getBoolean()
     else:
       unknownArgumentExit()
   if not matterId:
@@ -45451,9 +45455,13 @@ def doPrintVaultCounts():
   if search_method == 'ACCOUNT':
     query_accounts = query.get('accountInfo', {}).get('emails', [])
   elif search_method == 'ENTIRE_ORG':
-    query_accounts = getItemsToModify(Cmd.ENTITY_ALL_USERS, '')
+    query_accounts = getItemsToModify(Cmd.ENTITY_ALL_USERS if not includeSuspendedZeros else Cmd.ENTITY_ALL_USERS_NS_SUSP,
+                                      '')
   elif search_method == 'ORG_UNIT':
-    query_accounts = getItemsToModify(Cmd.ENTITY_OU, query['orgUnitInfo']['orgUnitId'])
+    query_accounts = getItemsToModify(Cmd.ENTITY_OU if not includeSuspendedZeros else Cmd.ENTITY_OU_NS_SUSP,
+                                      query['orgUnitInfo']['orgUnitId'])
+  else:
+    query_accounts = []
   mailcounts = response.get('mailCountResult', {})
   groupcounts = response.get('groupsCountResult', {})
   for a_count in [mailcounts, groupcounts]:
