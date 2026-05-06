@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.43.04
+
+Added option `include_suspended_zeros [<Boolean>]` to `gam print vaultcounts` that causes
+GAM to generate zero count lines for suspended users with zero items as well as non-suspended users.
+
 ### 7.43.03
 
 Added option `parentpathonly [<Boolean>]` to the following commands that causes GAM

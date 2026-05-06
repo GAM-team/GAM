@@ -257,11 +257,17 @@ gam print vaultcounts [todrive <ToDriveAttributes>*]
         [excludedrafts <Boolean>]
         [<JSONData>]
         [wait <Integer>]
+        [include_suspended_zeros [<Boolean>]]
 ```
 Specify the search method, this is optional:
 * `accounts <EmailAddressEntity>` - Search all accounts specified in `<EmailAddressEntity>`
 * `orgunit|org|ou <OrgUnitPath>` - Search all accounts in the OU `<OrgUnitPath>`
-* `everyone|entireorg` - Search for all accounts in the organization
+* `everyone|entireorg` - Search all accounts in the organization
+
+By default, the Vault API doesn't return accounts with zero items; GAM
+generates a zero count line for non-suspended accounts with zero items.
+The `include_suspended_zeros` option causes GAM to generate a zero count line
+for suspended accounts with zero items.
 
 For `corpus mail|group`, you can specify search terms to limit the search.
 * `terms <String>` - [Vault search](https://support.google.com/vault/answer/2474474)
