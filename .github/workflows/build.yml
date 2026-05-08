@@ -165,7 +165,7 @@ jobs:
         with:
           path: |
             cache.tar.xz
-          key: gam-${{ matrix.jid }}-20260416
+          key: gam-${{ matrix.jid }}-20260508
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
@@ -512,10 +512,12 @@ jobs:
           curl -o get-pip.py https://bootstrap.pypa.io/get-pip.py
           "$PYTHON" get-pip.py
           "$PYTHON" -m venv venv
+          "$PYTHON" -m pip install uv
+          CUTOFF=$(date -d '14 days ago' +%Y-%m-%dT00:00:00Z)
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             # pyscard seems to build outside venv but not in it.
             # build it so it's cached.
-            "$PYTHON" -m pip install --upgrade --force-reinstall pyscard
+            "$PYTHON" -m uv pip install --upgrade pyscard --exclude-newer "$CUTOFF"
             export PYTHON="${GITHUB_WORKSPACE}/venv/scripts/python.exe"
           else
             export PYTHON="${GITHUB_WORKSPACE}/venv/bin/python3"
@@ -526,57 +528,40 @@ jobs:
             echo "gam=${gam}" >> $GITHUB_ENV
           fi
 
-      - name: Upgrade pip, wheel, etc
-        run: |
-          curl $curl_retry -O https://bootstrap.pypa.io/get-pip.py
-          "$PYTHON" get-pip.py
-          "$PYTHON" -m pip install --upgrade pip
-          "$PYTHON" -m pip install --upgrade wheel
-          "$PYTHON" -m pip install --upgrade setuptools
-          "$PYTHON" -m pip install --upgrade importlib-metadata
-          "$PYTHON" -m pip install --upgrade setuptools-scm
-          "$PYTHON" -m pip install --upgrade packaging
-          "$PYTHON" -m pip list
+      #- name: Upgrade pip, wheel, etc
+      #  run: |
+      #    curl $curl_retry -O https://bootstrap.pypa.io/get-pip.py
+      #    "$PYTHON" get-pip.py
+      #    "$PYTHON" -m pip install --upgrade pip
+      #    "$PYTHON" -m pip install --upgrade wheel
+      #    "$PYTHON" -m pip install --upgrade setuptools
+      #    "$PYTHON" -m pip install --upgrade importlib-metadata
+      #    "$PYTHON" -m pip install --upgrade setuptools-scm
+      #    "$PYTHON" -m pip install --upgrade packaging
+      #    "$PYTHON" -m pip list
 
       - name: Install pip requirements
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          echo "before anything..."
-          "$PYTHON" -m pip list
-          echo "--info--"
-          "$PYTHON" -m pip cache info
-          echo "--list--"
-          "$PYTHON" -m pip cache list
-          echo "--pip debug verbose--"
-          "$PYTHON" -m pip debug --verbose
-          echo "--------"
           if ([ "$RUNNER_OS" == "Windows" ] && [ "$RUNNER_ARCH" == "ARM64" ]); then
             # custom cryptography wheel for win arm64 since the project doesn't provide one:
             # https://github.com/pyca/cryptography/issues/14293
             gh release download --repo "jay0lee/cryptography-wheels" --pattern "*win_arm64.whl" --clobber
             "$PYTHON" -m pip install cryptography-*.whl
           fi
-          "$PYTHON" -m pip install -vvv --upgrade ..[yubikey]
-          echo "after everything..."
-          "$PYTHON" -m pip list
+          #"$PYTHON" -m pip install -vvv --upgrade ..[yubikey]
+          # use uv sync to keep us 2 weeks delayed on dependencies
+          cd ..
+          "$PYTHON" -m uv sync -vvv --extra yubikey
 
       - name: Install PyInstaller
         if: matrix.goal == 'build'
         run: |
-          #git clone https://github.com/pyinstaller/pyinstaller.git
-          #cd pyinstaller
-          #export latest_release=$(git tag --list | grep -v dev | grep -v rc | sort -Vr | head -n1)
-          #git checkout "${latest_release}"
-          # git checkout "v6.9.0"
-          # remove pre-compiled bootloaders so we fail if bootloader compile fails
-          #rm -rvf PyInstaller/bootloader/*-*/*
-          #cd bootloader
-          #"${PYTHON}" ./waf all
-          #cd ..
-          #echo "---- Installing PyInstaller ----"
-          #"${PYTHON}" -m pip install .
-          "$PYTHON" -m pip install --upgrade pyinstaller
+          # Install latest version of PyInstaller *that's 2 weeks old*
+          # Calculate the exact timestamp for 14 days ago
+          CUTOFF=$(date -d '14 days ago' +%Y-%m-%dT00:00:00Z)
+          "$PYTHON" -m uv pip install --upgrade pyinstaller --exclude-newer "$CUTOFF"
 
       - name: Build GAM with PyInstaller
         if: matrix.goal != 'test'
@@ -642,11 +627,10 @@ jobs:
           sudo apt-get -qq --yes update
           # arm64 needs to build a wheel and needs scons to build
           sudo apt-get -qq --yes install scons
-          "${PYTHON}" -m pip install --upgrade patchelf-wrapper
-          "${PYTHON}" -m pip install --upgrade typing_extensions
-          # "${PYTHON}" -m pip install --upgrade staticx
-          # install latest github src for staticx
-          "${PYTHON}" -m pip install --upgrade "git+https://github.com/JonathonReinhart/staticx"
+          CUTOFF=$(date -d '14 days ago' +%Y-%m-%dT00:00:00Z)
+          "$PYTHON" -m uv pip install --upgrade patchelf-wrapper --exclude-newer "$CUTOFF"
+          "$PYTHON" -m uv pip install --upgrade typing_extensions --exclude-newer "$CUTOFF"
+          "$PYTHON" -m uv pip install --upgrade staticx --exclude-newer "$CUTOFF"
 
       - name: Make StaticX GAM build
         if: matrix.staticx == 'yes'
