@@ -522,6 +522,7 @@ jobs:
           else
             export PYTHON="${GITHUB_WORKSPACE}/venv/bin/python3"
           fi
+          "$PYTHON" -m pip install uv
           echo "PYTHON=${PYTHON}" >> $GITHUB_ENV
           if [[ "$ACTIONS_GOAL" == "test" ]]; then
             export gam="${PYTHON} gam.py"
