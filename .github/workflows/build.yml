@@ -199,7 +199,10 @@ jobs:
             *)
               echo "arch=${RUNNER_ARCH}" >> $GITHUB_ENV
               ;;
-          esac 
+          esac
+          # calculate with python because date on MacOS is just stupid
+          DEPS_CUTOFF=$(python3 -c "from datetime import datetime, timedelta, timezone; print((datetime.now(timezone.utc) - timedelta(days=14)).strftime('%Y-%m-%dT00:00:00Z'))")
+          echo "DEPS_CUTOFF=${DEPS_CUTOFF}" >> $GITHUB_ENV
           echo "JID=${JID}" >> $GITHUB_ENV
           echo "freethreaded=${freethreaded}" >> $GITHUB_ENV
           if "$freethreaded"; then
@@ -513,11 +516,10 @@ jobs:
           "$PYTHON" get-pip.py
           "$PYTHON" -m venv .venv
           "$PYTHON" -m pip install uv
-          CUTOFF=$(date -d '14 days ago' +%Y-%m-%dT00:00:00Z)
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             # pyscard seems to build outside venv but not in it.
             # build it so it's cached.
-            "$PYTHON" -m uv pip install --upgrade pyscard --exclude-newer "$CUTOFF"
+            "$PYTHON" -m uv pip install --upgrade pyscard --exclude-newer "$DEPS_CUTOFF"
             export PYTHON="${GITHUB_WORKSPACE}/.venv/scripts/python.exe"
           else
             export PYTHON="${GITHUB_WORKSPACE}/.venv/bin/python3"
@@ -561,8 +563,7 @@ jobs:
         run: |
           # Install latest version of PyInstaller *that's 2 weeks old*
           # Calculate the exact timestamp for 14 days ago
-          CUTOFF=$(date -d '14 days ago' +%Y-%m-%dT00:00:00Z)
-          "$PYTHON" -m uv pip install --upgrade pyinstaller --exclude-newer "$CUTOFF"
+          "$PYTHON" -m uv pip install --upgrade pyinstaller --exclude-newer "$DEPS_CUTOFF"
 
       - name: Build GAM with PyInstaller
         if: matrix.goal != 'test'
@@ -628,10 +629,9 @@ jobs:
           sudo apt-get -qq --yes update
           # arm64 needs to build a wheel and needs scons to build
           sudo apt-get -qq --yes install scons
-          CUTOFF=$(date -d '14 days ago' +%Y-%m-%dT00:00:00Z)
-          "$PYTHON" -m uv pip install --upgrade patchelf-wrapper --exclude-newer "$CUTOFF"
-          "$PYTHON" -m uv pip install --upgrade typing_extensions --exclude-newer "$CUTOFF"
-          "$PYTHON" -m uv pip install --upgrade staticx --exclude-newer "$CUTOFF"
+          "$PYTHON" -m uv pip install --upgrade patchelf-wrapper --exclude-newer "$DEPS_CUTOFF"
+          "$PYTHON" -m uv pip install --upgrade typing_extensions --exclude-newer "$DEPS_CUTOFF"
+          "$PYTHON" -m uv pip install --upgrade staticx --exclude-newer "$DEPS_CUTOFF"
 
       - name: Make StaticX GAM build
         if: matrix.staticx == 'yes'
