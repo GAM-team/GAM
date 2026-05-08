@@ -554,7 +554,7 @@ jobs:
           #"$PYTHON" -m pip install -vvv --upgrade ..[yubikey]
           # use uv sync to keep us 2 weeks delayed on dependencies
           cd ..
-          "$PYTHON" -m uv sync -vvv --extra yubikey
+          "$PYTHON" -m uv sync --extra yubikey
 
       - name: Install PyInstaller
         if: matrix.goal == 'build'
