@@ -1,4 +1,4 @@
-name: "Dependency Upgrade"
+name: "Quarantined Dependency Upgrade"
 
 on:
   schedule:
@@ -31,14 +31,27 @@ jobs:
             --exclude-newer "${{ steps.date.outputs.cutoff_date }}T00:00:00Z" \
             --upgrade
 
+      - name: Check for lockfile changes
+        id: check_changes
+        run: |
+          # git diff --quiet returns 0 if there are no changes, and 1 if there are changes.
+          if git diff --quiet uv.lock; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No older-than-14-days updates found. Skipping PR."
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "Lockfile updated. Proceeding to PR generation."
+          fi
+
       - name: Create Pull Request
+        if: steps.check_changes.outputs.has_changes == 'true'
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "chore: lockfile dependency upgrade (${{ steps.date.outputs.cutoff_date }})"
           title: "Dependency Upgrade: Quarantine Buffer Applied"
           body: |
-            Update `uv.lock` file to the latest package versions available as of **${{ steps.date.outputs.cutoff_date }}**.
+            Updates the `uv.lock` file to the latest package versions available as of **${{ steps.date.outputs.cutoff_date }}**.
             
             - **Single Source of Truth:** Dependencies are still read from `pyproject.toml`.
             - **14-Day Buffer:** Only releases older than 2 weeks are included.
