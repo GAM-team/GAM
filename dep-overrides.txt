@@ -1,0 +1,6 @@
+# overrides uv.lock to force newer dependencies
+# when old deps are vulnerable. These should be set
+# to expire after 2 weeks when the fixed version will
+# be automatically picked up anyway.
+# Format: package_requirement | MM/DD/YYYY
+urllib3>=2.7.0 | 05/22/2026
