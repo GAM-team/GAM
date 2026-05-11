@@ -24,7 +24,7 @@ jobs:
 
       - name: Update overrides in pyproject.toml (if any)
         run: |
-          python src/tools//apply_overrides.py
+          uv run src/tools/apply_overrides.py
 
       - name: Calculate Cutoff Date
         id: date
