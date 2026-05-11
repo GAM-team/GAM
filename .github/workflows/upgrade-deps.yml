@@ -19,7 +19,7 @@ jobs:
 
       - name: Install tomli-w
         run: |
-          uv install tomli-w
+          uv pip install tomli-w
 
       - name: Update overrides in pyproject.toml (if any)
         run: |
