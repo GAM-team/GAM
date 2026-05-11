@@ -67,3 +67,4 @@ jobs:
             - **Cryptographic Integrity:** The lockfile contains SHA-256 hashes for all packages to prevent tampering.
           branch: sys-deps-upgrade
           delete-branch: true
+          force: false
