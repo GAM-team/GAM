@@ -73,13 +73,13 @@ def main():
         pyproject["tool"]["uv"] = {}
 
     # 3. Update overrides list
-    original_overrides = pyproject["tool"]["uv"].get("overrides", [])
-    
+    original_overrides = pyproject["tool"]["uv"].get("override-dependencies", [])
+
     if overrides:
-        pyproject["tool"]["uv"]["overrides"] = overrides
+        pyproject["tool"]["uv"]["override-dependencies"] = overrides
     else:
         # If all overrides are expired, drop the key entirely
-        pyproject["tool"]["uv"].pop("overrides", None)
+        pyproject["tool"]["uv"].pop("override-dependencies", None)
 
     # 4. Save changes only if they differ
     if original_overrides != overrides:
