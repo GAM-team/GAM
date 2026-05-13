@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.43.04'
+__version__ = '7.43.05'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -41121,6 +41121,8 @@ LIST_EVENTS_SELECT_PROPERTIES = {
 
 LIST_EVENTS_MATCH_FIELDS = {
   'attendees': ['attendees', 'email'],
+  'attendeesorganizer': ['attendees', 'organizer'],
+  'attendeesorganiser': ['attendees', 'organizer'],
   'attendeesonlydomainlist': ['attendees', 'onlydomainlist'],
   'attendeesdomainlist': ['attendees', 'domainlist'],
   'attendeesnotdomainlist': ['attendees', 'notdomainlist'],
@@ -41200,6 +41202,8 @@ def getCalendarEventEntity():
         calendarEventEntity['matches'].append((matchField, set(getString(Cmd.OB_DOMAIN_NAME_LIST).replace(',', ' ').split())))
       elif matchField[1] == 'email':
         calendarEventEntity['matches'].append((matchField, getNormalizedEmailAddressEntity()))
+      elif matchField[1] == 'organizer':
+        calendarEventEntity['matches'].append((matchField, getBoolean(defaultValue=None), getNormalizedEmailAddressEntity()))
       else: #status
         calendarEventEntity['matches'].append((matchField,
                                                getChoice(CALENDAR_ATTENDEE_OPTIONAL_CHOICE_MAP, defaultChoice=False, mapChoice=True),
@@ -41531,7 +41535,17 @@ def _eventMatches(event, match):
       if domain not in match[1]:
         return True
     return False
-  # status
+  if match[0][1] == 'organizer':
+    for matchEmail in match[2]:
+      for attendee in event['attendees']:
+        if 'email' in attendee and matchEmail == attendee['email']:
+          if attendee.get('organizer', False) != match[1]:
+            return False
+          break
+      else:
+        return False
+    return True
+  # if match[0][1] == 'status':
   for matchEmail in match[3]:
     for attendee in event['attendees']:
       if 'email' in attendee and matchEmail == attendee['email']:

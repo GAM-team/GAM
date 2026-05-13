@@ -1,3 +1,9 @@
+7.43.05
+
+Added option `matchfield attendeesorganizer <Boolean> <EmailAddressEntity>` to `<EventMatchProperty>`
+that is used in commands that process events. The match is true if all of the addresses in `<EmailAddressEntity>`
+are present as attendees in the event and are an organizer or not based on `<Boolean>`.
+
 7.43.04
 
 Added option `include_suspended_zeros [<Boolean>]` to `gam print vaultcounts` that causes

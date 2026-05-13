@@ -1720,6 +1720,7 @@ gam calendar <CalendarEntity> printacl [todrive <ToDriveAttribute>*]
 
 <EventMatchProperty> ::=
         (matchfield attendees <EmailAddressEntity>)|
+        (matchfield attendeesorganizer <Boolean> <EmailAddressEntity>)|
         (matchfield attendeesonlydomainlist <DomainNameList>)|
         (matchfield attendeesdomainlist <DomainNameList>)|
         (matchfield attendeesnotdomainlist <DomainNameList>)|
