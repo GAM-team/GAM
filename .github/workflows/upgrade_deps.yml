@@ -28,6 +28,7 @@ jobs:
           import json
           import urllib.request
           import re
+          import tomllib
           from datetime import datetime, timedelta, timezone
           from pathlib import Path
 
@@ -37,27 +38,37 @@ jobs:
               exit(1)
 
           content = toml_path.read_text(encoding="utf-8")
+          parsed_toml = tomllib.loads(content)
           
-          # Regex to find standard dependencies under [project] dependencies = [ ... ]
-          # This handles lines like "urllib3>=1.26", "cryptography", etc. inside the array
-          dep_block_match = re.search(r'dependencies\s*=\s*\[(.*?)\]', content, re.DOTALL)
-          if not dep_block_match:
-              print("No standard project dependencies array found.")
+          target_deps = set()
+          
+          # Standard [project.dependencies]
+          target_deps.update(parsed_toml.get("project", {}).get("dependencies", []))
+          
+          # Optional [project.optional-dependencies]
+          for deps in parsed_toml.get("project", {}).get("optional-dependencies", {}).values():
+              target_deps.update(deps)
+              
+          # Dev [dependency-groups] (uv / PEP 735 standard)
+          for deps in parsed_toml.get("dependency-groups", {}).values():
+              if isinstance(deps, list):
+                  for d in deps:
+                      if isinstance(d, str):
+                          target_deps.add(d)
+
+          if not target_deps:
+              print("No dependencies found to process.")
               exit(0)
 
-          dep_block = dep_block_match.group(1)
-          raw_deps = re.findall(r'"([^"]+)"', dep_block)
-          
-          updated_deps = []
+          updates = {}
           two_weeks_ago = datetime.now(timezone.utc) - timedelta(days=14)
-
           print(f"Evaluating dependencies against cutoff date: {two_weeks_ago.isoformat()}")
 
-          for dep in raw_deps:
-              # Isolate base package name (e.g., "urllib3>=1.25" -> "urllib3")
-              pkg_name = re.split(r'[<>=!~;]', dep)[0].strip()
+          for dep in target_deps:
+              # Isolate base package name (e.g., "yubikey-manager>=5.6.1" -> "yubikey-manager")
+              pkg_name = re.split(r'[<>=!~;\s]', dep)[0].strip()
               
-              # Pull environment markers to re-attach later if they exist (e.g., ; sys_platform == 'win32')
+              # Preserve environment markers if they exist
               marker = ""
               if ";" in dep:
                   marker = " ; " + dep.split(";", 1)[1].strip()
@@ -74,18 +85,16 @@ jobs:
                       if not files:
                           continue
                       
-                      # Get upload time of the first file in the release
                       upload_time_str = files[0].get("upload_time_iso_8601")
                       if not upload_time_str:
                           continue
                       
-                      # Normalize trailing Z to +00:00 for Python's datetime parser
                       if upload_time_str.endswith('Z'):
                           upload_time_str = upload_time_str[:-1] + '+00:00'
                       
                       upload_time = datetime.fromisoformat(upload_time_str)
                       
-                      # Filter: Must be older than 2 weeks and not a pre-release (alpha/beta/rc)
+                      # Filter: Must be older than 2 weeks and not a pre-release
                       if upload_time <= two_weeks_ago and not any(x in ver.lower() for x in ['a', 'b', 'rc', 'dev']):
                           valid_versions.append((upload_time, ver))
                   
@@ -95,20 +104,34 @@ jobs:
                       target_version = valid_versions[0][1]
                       
                       pinned_dep = f"{pkg_name}=={target_version}{marker}"
-                      updated_deps.append(f'    "{pinned_dep}",')
-                      print(f"  -> Pinned to {target_version}")
+                      if pinned_dep != dep:
+                          updates[dep] = pinned_dep
+                          print(f"  -> Pinning: '{dep}' => '{pinned_dep}'")
+                      else:
+                          print(f"  -> Already pinned correctly to {target_version}")
                   else:
-                      # Fallback to original line if no historical versions found
-                      updated_deps.append(f'    "{dep}",')
+                      print(f"  -> No valid historical versions found.")
                       
+              except urllib.error.HTTPError as e:
+                  print(f"  -> Package not found on PyPI or HTTP error: {e}")
               except Exception as e:
-                  print(f"  -> Error fetching package {pkg_name}: {e}. Keeping original constraint.")
-                  updated_deps.append(f'    "{dep}",')
+                  print(f"  -> Error processing {pkg_name}: {e}")
 
-          # 2. Reconstruct the dependencies block in pyproject.toml
-          new_dep_block = "\n" + "\n".join(updated_deps) + "\n"
-          new_content = content.replace(dep_block_match.group(1), new_dep_block)
-          toml_path.write_text(new_content, encoding="utf-8")
+          # 3. Replace the strings safely in the original file content
+          new_content = content
+          for old_dep, new_dep in updates.items():
+              # Regex targets the exact string inside either single or double quotes
+              # Using a lambda replacement ensures we don't trip over escape sequences in the new string
+              escaped_old = re.escape(old_dep)
+              pattern = r'([\'"])' + escaped_old + r'\1'
+              new_content = re.sub(pattern, lambda m: m.group(1) + new_dep + m.group(1), new_content)
+
+          # Write changes back to pyproject.toml
+          if content != new_content:
+              toml_path.write_text(new_content, encoding="utf-8")
+              print("\npyproject.toml updated successfully.")
+          else:
+              print("\nNo updates required.")
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1
