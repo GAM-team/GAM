@@ -65,11 +65,6 @@ packages = [
     "src/gam",
 ]
 
-[tool.uv]
-override-dependencies = [
-    "urllib3>=2.7.0",
-]
-
 [build-system]
 requires = [
     "hatchling",
