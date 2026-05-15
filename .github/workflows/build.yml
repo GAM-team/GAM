@@ -515,16 +515,14 @@ jobs:
           curl -o get-pip.py https://bootstrap.pypa.io/get-pip.py
           "$PYTHON" get-pip.py
           "$PYTHON" -m venv .venv
-          "$PYTHON" -m pip install uv
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             # pyscard seems to build outside venv but not in it.
             # build it so it's cached.
-            "$PYTHON" -m uv pip install --upgrade pyscard --exclude-newer "$DEPS_CUTOFF"
+            "$PYTHON" -m pip install --upgrade pyscard
             export PYTHON="${GITHUB_WORKSPACE}/.venv/scripts/python.exe"
           else
             export PYTHON="${GITHUB_WORKSPACE}/.venv/bin/python3"
           fi
-          "$PYTHON" -m pip install uv
           echo "PYTHON=${PYTHON}" >> $GITHUB_ENV
           if [[ "$ACTIONS_GOAL" == "test" ]]; then
             export gam="${PYTHON} gam.py"
@@ -553,17 +551,14 @@ jobs:
             gh release download --repo "jay0lee/cryptography-wheels" --pattern "*win_arm64.whl" --clobber
             "$PYTHON" -m pip install cryptography-*.whl
           fi
-          #"$PYTHON" -m pip install -vvv --upgrade ..[yubikey]
-          # use uv sync to keep us 2 weeks delayed on dependencies
-          cd ..
-          "$PYTHON" -m uv sync --extra yubikey
+          "$PYTHON" -m pip install -vvv --upgrade ..[yubikey]
 
       - name: Install PyInstaller
         if: matrix.goal == 'build'
         run: |
           # Install latest version of PyInstaller *that's 2 weeks old*
           # Calculate the exact timestamp for 14 days ago
-          "$PYTHON" -m uv pip install --upgrade pyinstaller --exclude-newer "$DEPS_CUTOFF"
+          "$PYTHON" -m pip install --upgrade pyinstaller
 
       - name: Build GAM with PyInstaller
         if: matrix.goal != 'test'
@@ -629,9 +624,9 @@ jobs:
           sudo apt-get -qq --yes update
           # arm64 needs to build a wheel and needs scons to build
           sudo apt-get -qq --yes install scons
-          "$PYTHON" -m uv pip install --upgrade patchelf-wrapper --exclude-newer "$DEPS_CUTOFF"
-          "$PYTHON" -m uv pip install --upgrade typing_extensions --exclude-newer "$DEPS_CUTOFF"
-          "$PYTHON" -m uv pip install --upgrade staticx --exclude-newer "$DEPS_CUTOFF"
+          "$PYTHON" -m pip install --upgrade patchelf-wrapper
+          "$PYTHON" -m pip install --upgrade typing_extensions
+          "$PYTHON" -m pip install --upgrade staticx
 
       - name: Make StaticX GAM build
         if: matrix.staticx == 'yes'
