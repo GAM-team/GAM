@@ -2469,9 +2469,9 @@ gam print chromehistory releases [todrive <ToDriveAttribute>*]
         pre_provisioned_reenable
 
 gam update cros <CrOSEntity> action <CrOSAction> [acknowledge_device_touch_requirement]
-        [actionbatchsize <Integer>]
+        [actionbatchsize <Integer>] [maxtodeprov <Integer>]
 gam <CrOSTypeEntity> update action <CrOSAction> [acknowledge_device_touch_requirement]
-        [actionbatchsize <Integer>]
+        [actionbatchsize <Integer>] [maxtodeprov <Integer>]
 
 <CrOSCommand>
         reboot|

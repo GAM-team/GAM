@@ -24210,7 +24210,7 @@ CROS_ACTION_NAME_MAP = {
 
 # gam <CrOSTypeEntity> update <CrOSAttribute>+ [quickcrosmove [<Boolean>]] [nobatchupdate]
 # gam <CrOSTypeEntity> update action <CrOSAction> [acknowledge_device_touch_requirement]
-#	[actionbatchsize <Integer>]
+#	[actionbatchsize <Integer>] [maxtodeprov <Integer>]
 def updateCrOSDevices(entityList):
   cd = buildGAPIObject(API.DIRECTORY)
   noBatchUpdate = False
@@ -24220,6 +24220,7 @@ def updateCrOSDevices(entityList):
   ackWipe = False
   quickCrOSMove = GC.Values[GC.QUICK_CROS_MOVE]
   actionBatchSize = 10
+  maxToDeprovision = None
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg in UPDATE_CROS_ARGUMENT_TO_PROPERTY_MAP:
@@ -24245,6 +24246,8 @@ def updateCrOSDevices(entityList):
       noBatchUpdate = getBoolean()
     elif myarg == 'actionbatchsize':
       actionBatchSize = getInteger(minVal=10, maxVal=250)
+    elif myarg == 'maxtodeprov':
+      maxToDeprovision = getInteger(minVal=0)
     else:
       unknownArgumentExit()
   if action_body and update_body:
@@ -24258,9 +24261,15 @@ def updateCrOSDevices(entityList):
   i, count, entityList = getEntityArgument(entityList)
 # Action
   if action_body:
-    if action_body['changeChromeOsDeviceStatusAction'] == 'CHANGE_CHROME_OS_DEVICE_STATUS_ACTION_DEPROVISION' and not ackWipe:
-      stderrWarningMsg(Msg.REFUSING_TO_DEPROVISION_DEVICES.format(count))
-      systemErrorExit(ACTION_NOT_PERFORMED_RC, None)
+    if action_body['changeChromeOsDeviceStatusAction'] == 'CHANGE_CHROME_OS_DEVICE_STATUS_ACTION_DEPROVISION':
+      if not ackWipe:
+        stderrWarningMsg(Msg.REFUSING_TO_DEPROVISION_DEVICES.format(count))
+        systemErrorExit(ACTION_NOT_PERFORMED_RC, None)
+      if maxToDeprovision is None:
+        maxToDeprovision = 1
+      if count > maxToDeprovision > 0:
+        stderrWarningMsg(Msg.REFUSING_TO_DEPROVISION_N_DEVICES.format(count, maxToDeprovision))
+        systemErrorExit(ACTION_NOT_PERFORMED_RC, None)
     while i < count:
       bcount = min(count-i, actionBatchSize)
       action_body['deviceIds'] = entityList[i:i+bcount]
