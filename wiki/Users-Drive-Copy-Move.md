@@ -528,7 +528,7 @@ There are two methods for moving a folder from a My Drive to a Shared Drive:
 * GAM
   * The Drive API doesn't allow moving a folder from a My Drive to a Shared Drive; GAM has to recreate the folders on the Shared Drive, thus changing their IDs
   * Files are  simply moved from their existing My Drive folder to the recreated Shared Drive folder; their IDs do not change
-  * Files owmed by users outside of your domain can't be moved
+  * Files owned by users outside of your domain can't be moved
 
 ## Simple moves by changing parents
 Use this command in the following cases:
