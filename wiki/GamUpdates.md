@@ -10,6 +10,25 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.43.05
+
+Added option `matchfield attendeesorganizer <Boolean> <EmailAddressEntity>` to `<EventMatchProperty>`
+that is used in commands that process events. The match is true if all of the addresses in `<EmailAddressEntity>`
+are present as attendees in the event and are an organizer or not based on `<Boolean>`.
+
+Added option `max_to_deprov <Integer>` to `gam update cros <CrOSEntity> action <CrOSAction>`
+that is used when `<CrOSAction>` is any of the following:
+```
+deprovision_different_model_replace|
+deprovision_different_model_replacement|
+deprovision_retiring_device|
+deprovision_same_model_replace|
+deprovision_same_model_replacement|
+deprovision_upgrade_transfer
+```
+`max_to_deprov <Integer>` - No deprovisions are processed if the number of devices in `<CrOSEntity>` exceeds `<Integer>`;
+the default value is one; set `<Integer>` to 0 for no limit.
+
 ### 7.43.04
 
 Added option `include_suspended_zeros [<Boolean>]` to `gam print vaultcounts` that causes
@@ -28,7 +47,7 @@ gam <UserTypeEntity> print filelist ... filepath|fullpath
 
 ### 7.43.02
 
-Added option `maxactivities <Number>` to `gam <UserTypeEntity> print driveactivity` to limit
+Added option `maxactivities <Integer>` to `gam <UserTypeEntity> print driveactivity` to limit
 the number of activities displayed; the default is 0, no limit.
 
 ### 7.43.01

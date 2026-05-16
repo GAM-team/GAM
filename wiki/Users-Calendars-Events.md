@@ -277,6 +277,7 @@
 
 <EventMatchProperty> ::=
         (matchfield attendees <EmailAddressEntity>)|
+        (matchfield attendeesorganizer <Boolean> <EmailAddressEntity>)|
         (matchfield attendeesonlydomainlist <DomainNameList>)|
         (matchfield attendeesdomainlist <DomainNameList>)|
         (matchfield attendeesnotdomainlist <DomainNameList>)|
@@ -460,8 +461,11 @@ The Google Calendar API processes `<EventSelectProperty>*`; you may specify none
 * `singleevents` - Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves
 * `updatedmin <Time>` - Lower bound for an event's last modification time (as a RFC3339 timestamp) to filter by. When specified, entries deleted since this time will always be included regardless of showdeletedevents
 
-GAM processes `<EventMatchProperty>*`; you may specify none or multiple properties.
-* `matchfield attendees <EmailAddressEntity>` - All of the attendees in `<EmailAddressEntity>` must be present
+GAM processes `<EventMatchProperty>*`
+; you may specify none or multiple properties.
+* `matchfield attendees <EmailAddressEntity>` - All of the addresses in `<EmailAddressEntity>` must be present as attendees
+* `matchfield attendeesorganizer <Boolean> <EmailAddressEntity>` - All of the addressed  in `<EmailAddressEntity>` must be present
+  as attendees and are an organizer or not based on `<Boolean>`
 * `matchfield attendeesonlydomainlist <DomainNameList>` - All attendee's email addresses must be in a domain in `<DomainNameList>`
   * For example, this lets you look for events with all attendees in your internal domains. You should include `resource.calendar.google.com`
     in `<DomainNameList>` if the events use resources.

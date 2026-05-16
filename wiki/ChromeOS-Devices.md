@@ -409,7 +409,7 @@ gam update ou csvkmd cros.csv keyfield OU datafield deviceId add croscsvdata dev
         reenable
 
 gam <CrOSTypeEntity> update action <CrOSAction> [acknowledge_device_touch_requirement]
-        [actionbatchsize <Integer>]
+        [actionbatchsize <Integer>] [maxtodeprov <Integer>]
 ```
 ChromeOS devices are now processed in batches.
 The batch size defaults to 10, the `actionbatchsize <Integer>` option can be used to set a batch size between 10 and 250.
@@ -423,6 +423,10 @@ your domain again. This requires physical access to the device and is very time 
 each device. Please also be aware that deprovisioning can have an effect on your device license count.
 
 See https://support.google.com/chrome/a/answer/3523633 for full details.
+
+The  option `max_to_deprov <Integer>` can be used to limit the number of devices to be deprovisioned;
+no deprovisions are processed if the number of devices in `<CrOSEntity>` exceeds `<Integer>`;
+the default value is one; set `<Number>` to 0 for no limit.
 
 ## Send remote commands to ChromeOS devices
 Thanks to Jay for most of the following.
