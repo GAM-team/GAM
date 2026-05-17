@@ -414,6 +414,8 @@ gam <CrOSTypeEntity> update action <CrOSAction> [acknowledge_device_touch_requir
 ChromeOS devices are now processed in batches.
 The batch size defaults to 10, the `actionbatchsize <Integer>` option can be used to set a batch size between 10 and 250.
 
+### Deprovisioning
+
 As deprovisioning ChromeOS devices is not reversible, you must enter `acknowledge_device_touch_requirement`
 when `<CrOSAction>` is `deprovision_same_model_replace`, `deprovision_different_model_replace`,
 `deprovision_retiring_device` or `deprovision_upgrade_transfer`.
@@ -424,9 +426,19 @@ each device. Please also be aware that deprovisioning can have an effect on your
 
 See https://support.google.com/chrome/a/answer/3523633 for full details.
 
-The  option `max_to_deprov <Integer>` can be used to limit the number of devices to be deprovisioned;
+Prior to version 7.43.05, all devices in `<CrOSEntity>` would be deprovisioned. When `<CrOSEntity>`
+was derived from an OU, this was desirable. However, if `<CrOSEntity>` was derived from a query,
+more devices than desired may have been deprovisioned. In version 7.43.05 and higher,
+GAM defaults to not deprovisioning devices if the number of devices exceeds one.
+
+The  option `max_to_deprov <Integer>` can be used to verify the number of devices to be deprovisioned;
 no deprovisions are processed if the number of devices in `<CrOSEntity>` exceeds `<Integer>`;
 the default value is one; set `<Number>` to 0 for no limit.
+
+When `<CrOSEntity>` is derived from an OU, set `max_to_deprov 0` and all devices will be deprovisioned.
+
+When `<CrOSEntity>` is derived from a query, e.g., `cros_sn <SerialNumber>`, the default `max_to_deprov 1`
+protects you from accidentally deprovisioning more devices than desired.
 
 ## Send remote commands to ChromeOS devices
 Thanks to Jay for most of the following.
