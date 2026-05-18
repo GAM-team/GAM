@@ -456,9 +456,9 @@
         See: https://cloud.google.com/access-context-manager/docs/custom-access-level-spec
 <QueryContact> ::= <String>
         See: https://developers.google.com/google-apps/contacts/v3/reference#contacts-query-parameters-reference
-<QueryCrOS> ::= <String>
+<QueryCrOS> ::= <String>:<String>
         See: https://support.google.com/chrome/a/answer/1698333
-<QueryDevice> ::= <String>
+<QueryDevice> ::= <String>:<String>
         See: https://support.google.com/a/answer/7549103
 <QueryDriveFile> ::= <String>
         See: https://developers.google.com/drive/api/v3/search-files
@@ -471,7 +471,7 @@
 <QueryItem> ::= <UniqueID>|<String>
 <QueryMemberRestrictions> ::= <String>
         See: https://cloud.google.com/identity/docs/reference/rest/v1beta1/SecuritySettings#MemberRestriction
-<QueryMobile> ::= <String>
+<QueryMobile> ::= <String>:<String>
         See: https://support.google.com/a/answer/7549103
 <QueryTeamDrive> ::= <String>
         See: https://developers.google.com/drive/api/v3/search-parameters

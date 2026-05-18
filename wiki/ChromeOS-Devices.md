@@ -68,7 +68,8 @@ gam oauth create
  
 ```
 <OrgUnitPath> ::= /|(/<String)+
-<QueryCrOS> ::= <String> See: https://support.google.com/chrome/a/answer/1698333
+<QueryCrOS> ::= <String>:<String>
+        See: https://support.google.com/chrome/a/answer/1698333
 <CommandID> ::= <String>
 <CrOSID> ::= <String>
 <CrOSIDList> ::= "<CrOSID>(,<CrOSID>)*"

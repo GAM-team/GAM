@@ -56,7 +56,7 @@ Use this table to filter/query for specific device types:
 ```
 <AssetTag> ::= <String>
 <AssetTagList> ::= "<AssetTag>(,<AssetTag>)*"
-<QueryDevice> ::= <String>
+<QueryDevice> ::= <String>:<String>
         See: https://support.google.com/a/answer/7549103
 <QueryDeviceList> ::= "<QueryDevice>(,<QueryDevice>)*"
 <DeviceID> ::= devices/<String>

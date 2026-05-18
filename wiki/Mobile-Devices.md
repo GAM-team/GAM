@@ -16,7 +16,7 @@
 
 ## Definitions
 ```
-<QueryMobile> ::= <String>
+<QueryMobile> ::= <String>:<String>
         See: https://support.google.com/a/answer/7549103
 <QueryMobileList> ::= "<QueryMobile>(,<QueryMobile>)*"
 <ResourceID> ::= <String>
