@@ -37,7 +37,7 @@ gam info domain [<DomainName>]
 gam show domains
         [formatjson]
 ```
-For `info`, if `<DomainName>` is omitted, information about the primary domain will be displayed.
+For `info`, if `<DomainName>` is omitted, customer information about the primary domain will be displayed.
 
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
