@@ -1,3 +1,9 @@
+7.43.06
+
+Updated commands that use `<QueryCrOS>`, `<QueryDevice>` or `<QueryMobile>` to validate
+that it is of the form `field:value` and that `value` does not contain a '?'.
+Without validation, Google can return many more devices than are expected.
+
 7.43.05
 
 Added option `matchfield attendeesorganizer <Boolean> <EmailAddressEntity>` to `<EventMatchProperty>`

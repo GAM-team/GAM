@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.43.05'
+__version__ = '7.43.06'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -6071,6 +6071,20 @@ def getQueries(myarg):
     return [getString(Cmd.OB_QUERY)]
   return shlexSplitList(getString(Cmd.OB_QUERY_LIST))
 
+def _validateDeviceQuery(entityType, query):
+  if (':' not in query) or ('?' in query):
+    Cmd.Backup()
+    usageErrorExit(Msg.INVALID_DEVICE_QUERY.format(Ent.Singular(entityType), query))
+
+def getDeviceQueries(myarg, entityType):
+  if myarg in {'query', 'filter'}:
+    queries = [getString(Cmd.OB_QUERY)]
+  else:
+    queries = shlexSplitList(getString(Cmd.OB_QUERY_LIST))
+  for query in queries:
+    _validateDeviceQuery(entityType, query)
+  return queries
+
 def convertEntityToList(entity, shlexSplit=False, nonListEntityType=False):
   if not entity:
     return []
@@ -6756,6 +6770,7 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
     if entityType == Cmd.ENTITY_CROS_SN:
       queries = [f'id:{query}' for query in queries]
     for query in queries:
+      _validateDeviceQuery(Ent.CROS_DEVICE, query)
       printGettingAllAccountEntities(Ent.CROS_DEVICE, query)
       try:
         result = callGAPIpages(cd.chromeosdevices(), 'list', 'chromeosdevices',
@@ -6782,9 +6797,9 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
     includeChildOrgunits = entityType in Cmd.CROS_OU_CHILDREN_ENTITY_TYPES
     allQualifier = Msg.DIRECTLY_IN_THE.format(Ent.Choose(Ent.ORGANIZATIONAL_UNIT, numOus)) if not includeChildOrgunits else Msg.IN_THE.format(Ent.Choose(Ent.ORGANIZATIONAL_UNIT, numOus))
     if entityType in Cmd.CROS_OU_QUERY_ENTITY_TYPES:
-      queries = getQueries('query')
+      queries = getDeviceQueries('query', Ent.CROS_DEVICE)
     elif entityType in Cmd.CROS_OU_QUERIES_ENTITY_TYPES:
-      queries = getQueries('queries')
+      queries = getDeviceQueries('queries', Ent.CROS_DEVICE)
     else:
       queries = [None]
     for ou in ous:
@@ -25361,7 +25376,7 @@ def doPrintCrOSDevices(entityList=None):
       selectionAllowed = False
       includeChildOrgunits = myarg in {Cmd.ENTITY_CROS_OU_AND_CHILDREN, Cmd.ENTITY_CROS_OUS_AND_CHILDREN}
     elif (selectionAllowed or queries == [None]) and myarg in {'query', 'queries'}:
-      queries = getQueries(myarg)
+      queries = getDeviceQueries(myarg, Ent.CROS_DEVICE)
     elif myarg.startswith('querytime'):
       queryTimes[myarg] = getTimeOrDeltaFromNow()[0:19]
     elif selectionAllowed and myarg == 'select':
@@ -25640,7 +25655,7 @@ def doPrintCrOSActivity(entityList=None):
       selectionAllowed = False
       directlyInOU = myarg in {Cmd.ENTITY_CROS_OU, Cmd.ENTITY_CROS_OUS}
     elif (selectionAllowed or queries == [None]) and myarg in {'query', 'queries'}:
-      queries = getQueries(myarg)
+      queries = getDeviceQueries(myarg, Ent.CROS_DEVICE)
     elif myarg.startswith('querytime'):
       queryTimes[myarg] = getTimeOrDeltaFromNow()[0:19]
     elif selectionAllowed and myarg == 'select':
@@ -26165,7 +26180,7 @@ def doMoveBrowsers():
     elif myarg in {'csv', 'csvfile'}:
       deviceIds.extend(getEntitiesFromCSVFile(False))
     elif myarg in {'query', 'queries'}:
-      queries = getQueries(myarg)
+      queries = getDeviceQueries(myarg, Ent.CHROME_BROWSER)
     elif myarg.startswith('querytime'):
       queryTimes[myarg] = getTimeOrDeltaFromNow()[0:19]
     elif myarg == 'browserou':
@@ -26717,7 +26732,7 @@ def doPrintShowBrowsers():
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg in {'query', 'queries'}:
-      queries = getQueries(myarg)
+      queries = getDeviceQueries(myarg, Ent.CHROME_BROWSER)
     elif myarg.startswith('querytime'):
       queryTimes[myarg] = getTimeOrDeltaFromNow()[0:19]
     elif myarg in {'ou', 'org', 'orgunit', 'browserou'}:
@@ -26924,7 +26939,7 @@ def doPrintShowBrowserTokens():
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg in {'query', 'queries'}:
-      queries = getQueries(myarg)
+      queries = getDeviceQueries(myarg, Ent.CHROME_BROWSER)
     elif myarg.startswith('querytime'):
       queryTimes[myarg] = getTimeOrDeltaFromNow()[0:19]
     elif myarg in {'ou', 'org', 'orgunit', 'browserou'}:
@@ -31030,6 +31045,7 @@ def getCIDeviceEntity():
       if not name.startswith('devices/'):
         name = f'devices/{name}'
       return ([{'name': name}], ci, customer, True)
+  _validateDeviceQuery(Ent.DEVICE, query)
   printGettingAllAccountEntities(Ent.DEVICE, query)
   pageMessage = getPageMessage()
   try:
@@ -31066,6 +31082,7 @@ def getCIDeviceUserEntity():
         return ([{'name': name}], ci, customer, True)
       Cmd.Backup()
       invalidArgumentExit(DEVICE_USERNAME_FORMAT_REQUIRED)
+  _validateDeviceQuery(Ent.DEVICE_USER, query)
   printGettingAllAccountEntities(Ent.DEVICE_USER, query)
   pageMessage = getPageMessage()
   try:
@@ -31214,7 +31231,7 @@ def doSyncCIDevices():
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg in ['filter', 'filters', 'query', 'queries']:
-      queries = getQueries(myarg)
+      queries = getDeviceQueries(myarg, Ent.COMPANY_DEVICE)
     elif myarg.startswith('querytime'):
       queryTimes[myarg] = getTimeOrDeltaFromNow()[0:19]
     elif myarg in {'csv', 'csvfile'}:
@@ -31520,7 +31537,7 @@ def doPrintCIDevices():
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg in ['filter', 'filters', 'query', 'queries']:
-      queries = getQueries(myarg)
+      queries = getDeviceQueries(myarg, entityType)
     elif myarg.startswith('querytime'):
       queryTimes[myarg] = getTimeOrDeltaFromNow()[0:19]
     elif myarg == 'orderby':
@@ -31758,7 +31775,7 @@ def doPrintCIDeviceUsers():
       if not parent.startswith('devices/'):
         parent = f'devices/{parent}'
     elif myarg in ['filter', 'filters', 'query', 'queries']:
-      queries = getQueries(myarg)
+      queries = getDeviceQueries(myarg, Ent.DEVICE_USER)
     elif myarg.startswith('querytime'):
       queryTimes[myarg] = getTimeOrDeltaFromNow()[0:19]
     elif myarg == 'orderby':
@@ -33406,6 +33423,7 @@ def getMobileDeviceEntity():
       query = None
   if not query:
     return ([{'resourceId': device, 'email': []} for device in getEntityList(Cmd.OB_MOBILE_ENTITY)], cd, True)
+  _validateDeviceQuery(Ent.MOBILE_DEVICE, query)
   try:
     printGettingAllAccountEntities(Ent.MOBILE_DEVICE, query)
     devices = callGAPIpages(cd.mobiledevices(), 'list', 'mobiledevices',
@@ -33716,7 +33734,7 @@ def doPrintMobileDevices():
     if myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg in {'query', 'queries'}:
-      queries = getQueries(myarg)
+      queries = getDeviceQueries(myarg, Ent.MOBILE_DEVICE)
     elif myarg.startswith('querytime'):
       queryTimes[myarg] = getTimeOrDeltaFromNow()[0:19]
     elif myarg == 'orderby':

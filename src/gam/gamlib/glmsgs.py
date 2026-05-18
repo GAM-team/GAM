@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2025 Ross Scroggs All Rights Reserved.
+# Copyright (C) 2026 Ross Scroggs All Rights Reserved.
 #
 # All Rights Reserved.
 #
@@ -312,6 +312,7 @@ INVALID_ALIAS = 'Invalid Alias'
 INVALID_ATTENDEE_CHANGE = 'Invalid attendee change "{0}"'
 INVALID_CHARSET = 'Invalid charset "{0}"'
 INVALID_DATE_TIME_RANGE = '{0} {1} must be greater than/equal to {2} {3}'
+INVALID_DEVICE_QUERY = 'Invalid {0} query "{1}"; it must contain a ":" and must not contain a "?"'
 INVALID_EMOJI_NAME = '{0} does not match pattern :[0-9a-z_-]:'
 INVALID_ENTITY = 'Invalid {0}, {1}'
 INVALID_EVENT_TIMERANGE = '{0} {1} must be less than {2}'
@@ -474,7 +475,7 @@ REASON_ONLY_VALID_WITH_CONTENTRESTRICTIONS_READONLY_TRUE = 'reason only valid wi
 REAUTHENTICATION_IS_NEEDED = 'Reauthentication is needed, please run\n\ngam oauth create'
 RECOMMEND_RUNNING_GAM_ROTATE_SAKEY = 'Recommend running "gam rotate sakey" to get a new key\n'
 REFUSING_TO_DEPROVISION_DEVICES = 'Refusing to deprovision {0} devices because acknowledge_device_touch_requirement not specified.\nDeprovisioning a device means the device will have to be physically wiped and re-enrolled to be managed by your domain again.\nThis requires physical access to the device and is very time consuming to perform for each device.\nPlease add "acknowledge_device_touch_requirement" to the GAM command if you understand this and wish to proceed with the deprovision.\nPlease also be aware that deprovisioning can have an effect on your device license count.\nSee https://support.google.com/chrome/a/answer/3523633 for full details.'
-REFUSING_TO_DEPROVISION_N_DEVICES = 'Refusing to deprovision {0} devices due to maxtodepov {1}.'
+REFUSING_TO_DEPROVISION_N_DEVICES = 'Refusing to deprovision {0} devices due to maxtodepov {1}.\nSpecify "maxtodeprov 0" to deprovision all {0} devices'
 REPLY_TO_CUSTOM_REQUIRES_EMAIL_ADDRESS = 'replyto REPLY_TO_CUSTOM requires customReplyTo <EmailAddress>'
 REQUEST_COMPLETED_NO_FILES = 'Request completed but no results/files were returned, try requesting again'
 REQUEST_NOT_COMPLETE = 'Request needs to be completed before downloading, current status is: {0}'
