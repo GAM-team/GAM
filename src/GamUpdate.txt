@@ -1,3 +1,7 @@
+7.43.07
+
+Improved validation of `<QueryCrOS>`, `<QueryDevice>` and `<QueryMobile>`.
+
 7.43.06
 
 Updated commands that use `<QueryCrOS>`, `<QueryDevice>` or `<QueryMobile>` to validate

@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.43.06'
+__version__ = '7.43.07'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -6072,7 +6072,13 @@ def getQueries(myarg):
   return shlexSplitList(getString(Cmd.OB_QUERY_LIST))
 
 def _validateDeviceQuery(entityType, query):
-  if (':' not in query) or ('?' in query):
+  if ':' in query:
+    qfield, qvalue = query.split(':', 1)
+    qfield = qfield.strip()
+  else:
+    qfield = ''
+    qvalue = query
+  if (not qfield) or (not qvalue)  or ('?' in query):
     Cmd.Backup()
     usageErrorExit(Msg.INVALID_DEVICE_QUERY.format(Ent.Singular(entityType), query))
 
