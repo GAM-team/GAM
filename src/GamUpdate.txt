@@ -1,3 +1,7 @@
+7.43.08
+
+Fixed bug and formatting issues in `gam info device <DeviceEntity>`.
+
 7.43.07
 
 Improved validation of `<QueryCrOS>`, `<QueryDevice>` and `<QueryMobile>`.

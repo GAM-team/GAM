@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.43.07'
+__version__ = '7.43.08'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -31093,7 +31093,7 @@ def getCIDeviceUserEntity():
   pageMessage = getPageMessage()
   try:
     deviceUsers = callGAPIpages(ci.devices().deviceUsers(), 'list', 'deviceUsers',
-                                throwReasons=[GAPI.INVALID, GAPI.PERMISSION_DENIED],
+                                throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                 pageMessage=pageMessage,
                                 customer=customer, filter=query, parent='devices/-',
@@ -31102,7 +31102,7 @@ def getCIDeviceUserEntity():
   except GAPI.invalid:
     Cmd.Backup()
     usageErrorExit(Msg.INVALID_QUERY)
-  except GAPI.permissionDenied as e:
+  except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
     entityActionFailedWarning([Ent.DEVICE_USER, None], str(e))
     return ([], ci, customer, False)
 
@@ -31456,7 +31456,7 @@ def doInfoCIDevice():
     else:
       FJQC.GetFormatJSON(myarg)
   fields = getFieldsFromFieldsList(fieldsList)
-  userFields = getFieldsFromFieldsList(userFieldsList)
+  userFields = getItemFieldsFromFieldsList('deviceUsers', userFieldsList)
   i = 0
   count = len(entityList)
   for device in entityList:
@@ -31468,7 +31468,7 @@ def doInfoCIDevice():
                         name=name, customer=customer, fields=fields)
       if getDeviceUsers:
         device_users = callGAPIpages(ci.devices().deviceUsers(), 'list', 'deviceUsers',
-                                     throwReasons=[GAPI.INVALID, GAPI.PERMISSION_DENIED],
+                                     throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                                      parent=name, customer=customer, fields=userFields)
         for device_user in device_users:
           device_user['client_states'] = callGAPIpages(ci.devices().deviceUsers().clientStates(), 'list', 'clientStates',
@@ -31492,7 +31492,7 @@ def doInfoCIDevice():
           Ind.Increment()
           showJSON(None, device_user, timeObjects=DEVICE_TIME_OBJECTS)
           Ind.Decrement()
-          Ind.Decrement()
+        Ind.Decrement()
     except GAPI.notFound:
       entityUnknownWarning(Ent.DEVICE, f'{name}')
     except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
@@ -31818,7 +31818,7 @@ def doPrintCIDeviceUsers():
           csvPF.WriteRowNoFilter({'name': deviceUser['name'],
                                 'JSON': json.dumps(cleanJSON(deviceUser, timeObjects=DEVICE_TIME_OBJECTS),
                                                      ensure_ascii=False, sort_keys=True)})
-    except (GAPI.invalid, GAPI.permissionDenied) as e:
+    except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       entityActionFailedWarning([Ent.DEVICE_USER, None], str(e))
       break
   if showItemCountOnly:
