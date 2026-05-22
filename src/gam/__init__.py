@@ -74701,15 +74701,15 @@ def forwardMessagesThreads(users, entityType):
             msgSubject = f"Fwd: {_decodeHeader(message['Subject'])}"
           else:
             msgSubject = f"Subject: {subject}"
-          for header in ['To', 'Cc', 'Bcc', 'Subject']:
-            if header in message:
-              del message[header]
           if addOriginalFieldsToSubject:
             msgSubject += ' (Original'
             for header in ['From', 'To', 'Date']:
               if header in message:
                 msgSubject += f' {header}: {message[header]}'
             msgSubject += ')'
+          for header in ['To', 'Cc', 'Bcc', 'Subject']:
+            if header in message:
+              del message[header]
           message['To'] = msgTo
           message['Subject'] = msgSubject
           try:
