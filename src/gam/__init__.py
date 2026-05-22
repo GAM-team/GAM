@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.43.09'
+__version__ = '7.43.10'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -74595,10 +74595,10 @@ def _decodeHeader(header):
       stderrWarningMsg(Msg.INVALID_CHARSET.format(mg.group(1)))
       return header
 
-# gam <UserTypeEntity> forward message|messages recipient|to <RecipientEntity>
+# gam <UserTypeEntity> forward message|messages [recipient|to] <RecipientEntity>
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_forward <Number>])|(ids <MessageIDEntity>)
 #	[subject <String>] [addorigfieldstosubject [<Boolean>]] [altcharset <String>]
-# gam <UserTypeEntity> forward thread|threads recipient|to <RecipientEntity>
+# gam <UserTypeEntity> forward thread|threads [recipient|to] <RecipientEntity>
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_forward <Number>])|(ids <ThreadIDEntity>)
 #	[subject <String>] [addorigfieldstosubject [<Boolean>]] [altcharset <String>]
 def forwardMessagesThreads(users, entityType):
@@ -74701,16 +74701,16 @@ def forwardMessagesThreads(users, entityType):
             msgSubject = f"Fwd: {_decodeHeader(message['Subject'])}"
           else:
             msgSubject = f"Subject: {subject}"
-          for header in ['To', 'Cc', 'Subject']:
+          for header in ['To', 'Cc', 'Bcc', 'Subject']:
             if header in message:
               del message[header]
-          message['To'] = msgTo
           if addOriginalFieldsToSubject:
             msgSubject += ' (Original'
             for header in ['From', 'To', 'Date']:
               if header in message:
                 msgSubject += f' {header}: {message[header]}'
             msgSubject += ')'
+          message['To'] = msgTo
           message['Subject'] = msgSubject
           try:
             result = callGAPI(gmail.users().messages(), 'send',
