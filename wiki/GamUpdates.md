@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.43.10
+
+Updated `gam <UserTypeEntity> forward message|thread [recipient|to] <RecipientEntity>` to not forward messages
+to the `Bcc` recipients of the original message.
+
+Fixed bug in `gam <UserTypeEntity> forward message|thread [recipient|to] <RecipientEntity> addorigfieldstosubject`
+where the recipient of the forwarded message was added to the subject line instead of the recipient of the original message.
+
 ### 7.43.09
 
 Fixed bug in `gam <UserTypeEntity> print filelist` that caused a trap.
