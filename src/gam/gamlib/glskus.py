@@ -44,7 +44,7 @@ _PRODUCTS = {
   }
 _SKUS = {
   '1010010001': {
-    'product': '101001', 'aliases': ['identity', 'cloudidentity'], 'displayName': 'Cloud Identity'},
+    'product': '101001', 'aliases': ['identity', 'cloudidentity'], 'displayName': 'Cloud Identity Free'},
   '1010050001': {
     'product': '101005', 'aliases': ['identitypremium', 'cloudidentitypremium'], 'displayName': 'Cloud Identity Premium'},
   '1010070001': {
