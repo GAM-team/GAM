@@ -145,10 +145,14 @@ PROPERTIES = {
     {CLASS: PC_BOOLEAN, TITLE: 'IP Whitelisted',},
   'archived':
     {CLASS: PC_BOOLEAN, TITLE: 'Is Archived',},
+  'archivalTime':
+    {CLASS: PC_TIME, TITLE: 'Archival Time',},
   'suspended':
     {CLASS: PC_BOOLEAN, TITLE: 'Account Suspended',},
   'suspensionReason':
     {CLASS: PC_STRING, TITLE: 'Suspension Reason',},
+  'suspensionTime':
+    {CLASS: PC_TIME, TITLE: 'Suspension Time',},
   'changePasswordAtNextLogin':
     {CLASS: PC_BOOLEAN, TITLE: 'Must Change Password',},
   'recoveryEmail':

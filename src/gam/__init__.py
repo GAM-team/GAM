@@ -47013,7 +47013,9 @@ USER_SCALAR_PROPERTY_PRINT_ORDER = [
   'ipWhitelisted',
   'suspended',
   'suspensionReason',
+  'suspensionTime',
   'archived',
+  'archivalTime',
   'changePasswordAtNextLogin',
   'id',
   'customerId',
@@ -47104,7 +47106,7 @@ USER_FIELDS_CHOICE_MAP = {
   'agreed2terms': 'agreedToTerms',
   'agreedtoterms': 'agreedToTerms',
   'aliases': ['aliases', 'nonEditableAliases'],
-  'archived': 'archived',
+  'archived': ['archived', 'archivalTime'],
   'changepassword': 'changePasswordAtNextLogin',
   'changepasswordatnextlogin': 'changePasswordAtNextLogin',
   'creationtime': 'creationTime',
@@ -47174,7 +47176,7 @@ USER_FIELDS_CHOICE_MAP = {
   'ssh': 'sshPublicKeys',
   'sshkeys': 'sshPublicKeys',
   'sshpublickeys': 'sshPublicKeys',
-  'suspended': ['suspended', 'suspensionReason'],
+  'suspended': ['suspended', 'suspensionReason', 'suspensionTime'],
   'thumbnailphotourl': 'thumbnailPhotoUrl',
   'username': 'primaryEmail',
   'website': 'websites',
@@ -47210,7 +47212,7 @@ USER_MULTI_ATTR_FILTER_CHOICE_MAP = {
 
 INFO_USER_OPTIONS = {'noaliases', 'nobuildingnames', 'nogroups', 'nolicenses', 'nolicences', 'noschemas', 'schemas', 'userview'}
 USER_SKIP_OBJECTS = {'thumbnailPhotoEtag'}
-USER_TIME_OBJECTS = {'creationTime', 'deletionTime', 'lastLoginTime'}
+USER_TIME_OBJECTS = {'creationTime', 'deletionTime', 'lastLoginTime', 'suspensionTime', 'archivalTime'}
 
 def _getUserMultiAttributeFilters(myarg, userMultiAttributeFilters):
   up = getChoice(USER_MULTI_ATTR_FILTER_CHOICE_MAP, mapChoice=True)
