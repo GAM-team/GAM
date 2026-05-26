@@ -8031,12 +8031,12 @@ gam <UserTypeEntity> export thread|threads
          [quick|notquick] [doit] [max_to_export <Number>])|(ids <ThreadIDEntity>)
         [targetfolder <FilePath>] [targetname <FileName>] [overwrite [<Boolean>]]
 
-gam <UserTypeEntity> forward message|messages recipient|to <RecipientEntity>
+gam <UserTypeEntity> forward message|messages [recipient|to] <RecipientEntity>
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [labelids <LabelIDList>]
          [quick|notquick] [doit] [max_to_forward <Number>])|(ids <MessageIDEntity>)
         [subject <String>] [addorigfieldstosubject [<Boolean>]] [altcharset <String>]
-gam <UserTypeEntity> forward thread|thtreads recipient|to <RecipientEntity>
+gam <UserTypeEntity> forward thread|thtreads [recipient|to] <RecipientEntity>
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [labelids <LabelIDList>]
          quick|notquick] [doit] [max_to_forward <Number>])|(ids <ThreadIDEntity>)

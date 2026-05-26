@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.43.08'
+__version__ = '7.43.10'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -29173,7 +29173,7 @@ def doInfoChatMessage():
 #	[formatjson [quotechar <Character>]]
 def printShowChatMessages(users):
   cd = buildGAPIObject(API.DIRECTORY)
-  csvPF = CSVPrintFile(['User', 'space.name', 'space.displayName', 'name'] if not isinstance(users, list) else ['space.name', 'space.displayName', 'name']) if Act.csvFormat() else None
+  csvPF = CSVPrintFile(['User', 'space.name', 'space.displayName', 'name']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   fieldsList = []
   pfilter = None
@@ -29301,7 +29301,7 @@ def doInfoChatEvent():
 #	filter <String>
 #	[formatjson [quotechar <Character>]]
 def printShowChatEvents(users):
-  csvPF = CSVPrintFile(['User', 'space.name', 'space.displayName', 'name'] if not isinstance(users, list) else ['space.name', 'space.displayName', 'name']) if Act.csvFormat() else None
+  csvPF = CSVPrintFile(['User', 'space.name', 'space.displayName', 'name']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   pfilter = None
   parentList = []
@@ -59707,7 +59707,7 @@ def printFileList(users):
         (DLP.onlySharedDrives and not driveId)):
       return
     if getCheckFilePermissions:
-      if not incrementalPrint:
+      if buildTree and not incrementalPrint:
         getSharedDriveACLsCount += 1
         if getSharedDriveACLsCount % 100 == 0:
           writeStderr(f'{Msg.GOT} {getSharedDriveACLsCount} {Ent.Plural(Ent.DRIVE_FILE_OR_FOLDER_ACL)} {Msg.FOR} {gettingEntity}\n')
@@ -74597,10 +74597,10 @@ def _decodeHeader(header):
       stderrWarningMsg(Msg.INVALID_CHARSET.format(mg.group(1)))
       return header
 
-# gam <UserTypeEntity> forward message|messages recipient|to <RecipientEntity>
+# gam <UserTypeEntity> forward message|messages [recipient|to] <RecipientEntity>
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_forward <Number>])|(ids <MessageIDEntity>)
 #	[subject <String>] [addorigfieldstosubject [<Boolean>]] [altcharset <String>]
-# gam <UserTypeEntity> forward thread|threads recipient|to <RecipientEntity>
+# gam <UserTypeEntity> forward thread|threads [recipient|to] <RecipientEntity>
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_forward <Number>])|(ids <ThreadIDEntity>)
 #	[subject <String>] [addorigfieldstosubject [<Boolean>]] [altcharset <String>]
 def forwardMessagesThreads(users, entityType):
@@ -74703,16 +74703,16 @@ def forwardMessagesThreads(users, entityType):
             msgSubject = f"Fwd: {_decodeHeader(message['Subject'])}"
           else:
             msgSubject = f"Subject: {subject}"
-          for header in ['To', 'Cc', 'Subject']:
-            if header in message:
-              del message[header]
-          message['To'] = msgTo
           if addOriginalFieldsToSubject:
             msgSubject += ' (Original'
             for header in ['From', 'To', 'Date']:
               if header in message:
                 msgSubject += f' {header}: {message[header]}'
             msgSubject += ')'
+          for header in ['To', 'Cc', 'Bcc', 'Subject']:
+            if header in message:
+              del message[header]
+          message['To'] = msgTo
           message['Subject'] = msgSubject
           try:
             result = callGAPI(gmail.users().messages(), 'send',

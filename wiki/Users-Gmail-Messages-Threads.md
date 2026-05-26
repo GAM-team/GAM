@@ -477,12 +477,12 @@ When `matchlabel <LabelName>` is specified, the following characters are replace
 
 ## Forward messages/threads
 ```
-gam <UserTypeEntity> forward message|messages recipient|to <RecipientEntity>
+gam <UserTypeEntity> forward message|messages [recipient|to] <RecipientEntity>
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [labelids <LabelIDList>]
          [quick|notquick] [doit] [max_to_forward <Number>])|(ids <MessageIDEntity>)
          [subject <String>] [addorigfieldstosubject]
-gam <UserTypeEntity> forward thread|threads recipient|to <RecipientEntity>
+gam <UserTypeEntity> forward thread|threads [recipient|to] <RecipientEntity>
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [labelids <LabelIDList>]
          [quick|notquick] [doit] [max_to_forward <Number>])|(ids <ThreadIDEntity>)
