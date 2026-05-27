@@ -16,11 +16,11 @@ In zsh, if an argument contains a `~`, `|`, `!`, `>`, or `<`, you must enclose t
 
 To embed a `'` in a string enclosed in `"`, enter `'`; `name "Test'Group"`.
 
+To embed a `"` in a string enclosed in `"`, enter `\"`; `name "Test\"Group"`.
+
 To embed a `"` in a string enclosed in `'`, enter `"`; `name 'Test"Group'`.
 
 To embed a `'` in a string enclosed in `'`, enter `'\''`; `name 'Test'\''Group'`.
-
-To embed a `"` in a string enclosed in `"`, enter `\"`; `name "Test\"Group"`.
 
 Linux and MacOS do not recognize smart or curly quotes, `“` and `”`, they can not be used to enclose arguments.
 
