@@ -50,7 +50,7 @@
 | Assured Controls | 1010390001 | assuredcontrols |
 | Assured Controls Plus | 1010390002 | assuredcontrolsplus |
 | Chrome Enterprise Premium | 1010400001 | cep | chromeenterprisepremium |
-| Cloud Identity | 1010010001 | cloudidentity |
+| Cloud Identity Free | 1010010001 | cloudidentity |
 | Cloud Identity Premium | 1010050001 | cloudidentitypremium |
 | Cloud Search | 1010350001 | cloudsearch |
 | Colab Pro | 1010500001 | colabpro |
@@ -163,7 +163,7 @@
         assuredcontrolsplus | 1010390002 | Assured Controls Plus |
         bce | beyondcorp | beyondcorpenterprise | cep | chromeenterprisepremium | 1010400001 | Chrome Enterprise Premium |
         cdm | chrome | googlechromedevicemanagement | Google-Chrome-Device-Management |
-        cloudidentity | identity | 1010010001 | Cloud Identity |
+        cloudidentityfree| cloudidentity | identity | 1010010001 | Cloud Identity Free |
         cloudidentitypremium | identitypremium | 1010050001 | Cloud Identity Premium |
         cloudsearch | 1010350001 | Cloud Search |
         colabpro | 1010500001 | Colab Pro |

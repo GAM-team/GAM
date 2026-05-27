@@ -16,6 +16,7 @@
 - [Display Chat Members](#display-chat-members)
 - [Manage Chat Messages](#manage-chat-messages)
 - [Display Chat Messages](#display-chat-messages)
+- [Display Chat Messages by Searching](#display-chat-messages-by-searching)
 - [Display Chat Events](#display-chat-events)
 - [Manage Chat Emojis](#manage-chat-emojis)
 - [Display Chat Emojis](#display-chat-emojis)
@@ -65,6 +66,7 @@ Google requires that you have a Chat Bot configured in order to use the Chat API
 * [Chat API - Custom Emojis](https://developers.google.com/workspace/chat/api/reference/rest/v1/customEmojis)
 * [Chat API - Members](https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.members/list)
 * [Chat API - Messages](https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.messages/list)
+* [Chat API - Search Messages](https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.messages/search)
 * [Chat API - Events](https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.spaceEvents/list)
 * [Chat API - User Sections](https://developers.google.com/workspace/chat/api/reference/rest/v1/users.sections)
 * [Apps in Google Chat](https://support.google.com/chat/answer/7655820)
@@ -109,8 +111,8 @@ Google requires that you have a Chat Bot configured in order to use the Chat API
 <ChatThread> ::= spaces/<String>/threads/<String>
 <ChatSpaceType> ::=
         space|
-	groupchat|
-	directmessage
+        groupchat|
+        directmessage
 <ChatSpaceTypeList> ::= "<ChatSpaceType>(,<ChatSpaceType>)*"
 <ChatMessageID> ::= client-<String>
         <String> must contain only lowercase letters, numbers, and hyphens up to 56 characters in length.
@@ -908,7 +910,7 @@ gam user user@domain.com delete chatmessage name spaces/AAAADi-pvqc/messages/PKJ
 ```
 
 ## Display Chat Messages
-Display a specific Chat message.
+Display a specific chat message.
 
 ```
 gam <UserTypeEntity> info chatmessage name <ChatMessage>
@@ -923,12 +925,15 @@ By default, Gam displays the information as an indented list of keys and values.
 gam user user@domain.com info chatmessage name spaces/AAAADi-pvqc/messages/PKJrx90ooIU.PKJrx90ooIU
 ```
 
-### Display information about all chat messages in a chat space
+### Display information about chat messages in a chat space
 ```
 gam <UserTypeEntity> show chatmessages
         <ChatSpace>+
-        [showdeleted [<Boolean>]] [filter <String>]
+        [showdeleted [<Boolean>]]
+        [([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date>|<Time>)]
+        [thread <ChatThread>])
         [fields <ChatMessageFieldNameList>]
+        [orderby createtime [ascending|descending]]
         [formatjson]
 ```
 By default, Gam displays the information as an indented list of keys and values.
@@ -937,8 +942,11 @@ By default, Gam displays the information as an indented list of keys and values.
 ```
 gam <UserTypeEntity> print chatmessages [todrive <ToDriveAttribute>*]
         <ChatSpace>+
-        [showdeleted [<Boolean>]] [filter <String>]
+        [showdeleted [<Boolean>]]
+        [([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date>|<Time>)]
+        [thread <ChatThread>])
         [fields <ChatMessageFieldNameList>]
+        [orderby createtime [ascending|descending]]
         [formatjson [quotechar <Character>]]
 ```
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
@@ -952,38 +960,73 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 
 By default, deleted messages are not displayed; use `showdeleted` to also display deleted messages.
 
-Use `filter <String>` to filter messages by `createTime` and `thread.name`.
+To filter messages by the time they were created:
+  * `start|starttime <Date>|<Time>` - Display messages created on or after the `<Date>|<Time>`
+  * `end|endtime <Date>|<Time>` - Display messages created before the `<Date>|<Time>`
+  * `range <Date>|<Time> <Date>|<Time>` - Display messages created on or after the first `<Date>|<Time>` and before the second `<Date>|<Time>`
 
-To filter messages by the date they were created, specify the createTime with a timestamp in RFC-3339 format and double quotation marks. For example, "2023-04-21T11:30:00-04:00".
-* Use the greater than operator `>` to list messages that were created after a timestamp.
-* Use the less than operator `<` to list messages that were created before a timestamp.
-* To filter messages within a time interval, use the AND operator between two timestamps.
-* To filter by thread, specify the thread.name, formatted as spaces/{space}/threads/{thread}. You can only specify one thread.name per query.
-* To filter by both thread and date, use the AND operator in your query.
+Use `thread <String>` to filter messages by their thread name, e.g., `spaces/AAAAAAAAAAA/threads/123`.
 
-For example, the following queries are valid on Linux/MacOS:
+## Display Chat Messages by Searching
+These commands are in Developer Preview; to use them you must have these values set in `gam.cfg`.
 ```
-filter 'createTime > "2012-04-21T11:30:00-04:00"'
-filter 'createTime > "2012-04-21T11:30:00-04:00" AND thread.name = spaces/AAAAAAAAAAA/threads/123'
-filter 'createTime > "2012-04-21T11:30:00+00:00" AND createTime < "2013-01-01T00:00:00+00:00" AND thread.name = spaces/AAAAAAAAAAA/threads/123'
-filter 'thread.name = spaces/AAAAAAAAAAA/threads/123'
+developer_preview_apis = chat
+developer_preview_api_key = <DeveloperPreviewKey>
 ```
+See the following for search option details:
+https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.messages/search
 
-For example, the following queries are valid on Windows Command Prompt:
-```
-filter "createTime > \"2012-04-21T11:30:00-04:00\""
-filter "createTime > \"2012-04-21T11:30:00-04:00\" AND thread.name = spaces/AAAAAAAAAAA/threads/123"
-filter "createTime > \"2012-04-21T11:30:00+00:00\" AND createTime < \"2013-01-01T00:00:00+00:00\" AND thread.name = spaces/AAAAAAAAAAA/threads/123"
-filter "thread.name = spaces/AAAAAAAAAAA/threads/123"
-```
+You must specify `keywords <StringList>`; messages that match any word in `<StringList>` are displayed.
 
-For example, the following queries are valid on Windows PowerShell:
+By default, all spaces the user has access to are searched; use the following options to limit the search.
+  * `<ChatSpace>*` - Specific chat spaces
+  * `displaynames [all|any] <StringList>` - Spaces with display names with partial matches of `all|any` of the words in `<StringList>`
+
+Use the following to limit the search to messages with specific characteristics.
+  * `senders <EmailAddressEntity>` - Messages with any sender in `<EmailAddressEntity>`
+  * `usermentions [all|any] <EmailAddressEntity>` - Messages with mentions af `all|any` users in `<EmailAddressEntity>`
+  * `start|starttime <Date>|<Time>` - Messages created on or after the `<Date>|<Time>`
+  * `end|endtime <Date>|<Time>` - Messages created before the `<Date>|<Time>`
+  * `range <Date>|<Time> <Date>|<Time>` - Messages created on or after the first `<Date>|<Time>` and before the second `<Date>|<Time>`
+  * `hasattachment` - Messages with at least one attachment
 ```
-filter 'createTime > \"2012-04-21T11:30:00-04:00\"'
-filter 'createTime > \"2012-04-21T11:30:00-04:00\" AND thread.name = spaces/AAAAAAAAAAA/threads/123"'
-filter 'createTime > \"2012-04-21T11:30:00+00:00\" AND createTime < \"2013-01-01T00:00:00+00:00\" AND thread.name = spaces/AAAAAAAAAAA/threads/123'
-filter 'thread.name = spaces/AAAAAAAAAAA/threads/123'
+gam <UserTypeEntity> show chatsearchmessages
+        keywords <StringList>
+        <ChatSpace>*
+        [displaynames [all|any] <StringList>]
+        [senders <EmailAddressEntity>]*
+        [usermentions [all|any] <EmailAddressEntity>]*
+        [([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date>|<Time>)]
+        [hasattachment]
+        [fields <ChatMessageFieldNameList>]
+        [orderby createtime|relevance]
+        [formatjson]
 ```
+By default, Gam displays the information as an indented list of keys and values.
+* `formatjson` - Display the fields in JSON format.
+
+```
+gam <UserTypeEntity> print chatsearchmessages [todrive <ToDriveAttribute>*]
+        keywords <StringList>
+        <ChatSpace>*
+        [displaynames [all|any] <StringList>]
+        [senders <EmailAddressEntity>]*
+        [usermentions [all|any] <EmailAddressEntity>]*
+        [([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date>|<Time>)]
+        [hasattachment]
+        [fields <ChatMessageFieldNameList>]
+        [orderby createtime|relevance]
+        [formatjson [quotechar <Character>]]
+```
+By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
+* `formatjson` - Display the fields in JSON format.
+
+By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
+the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
+When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
+The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
+`quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
+
 
 ## Display Chat Events
 Display a specific Chat event.

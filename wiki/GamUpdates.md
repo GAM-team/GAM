@@ -10,6 +10,30 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.44.00
+
+Added support for User data `archivalTime` and `suspensionTime` that is available
+when fields `archived` and `suspended` are requested in `gam info user` and `gam print users`.
+
+Added the following options to `gam <UserTypeEntity> show chatmessages` to simplify specifying a filter.
+```
+start|starttime <Date>|<Time>
+end|endtime <Date>|<Time>
+range <Date>|<Time> <Date>|<Time>
+thread <ChatThread>
+```
+
+Added commands to search for and display chat messages.
+* See: https://github.com/GAM-team/GAM/wiki/Users-Chat#display-chat-messages-by-searching
+
+These commands are in Developer Preview; to use them you must have these values set in `gam.cfg`.
+```
+developer_preview_apis = chat
+developer_preview_api_key = <DeveloperPreviewKey>
+```
+
+Upgraded to Python 3.14.5.
+
 ### 7.43.10
 
 Updated `gam <UserTypeEntity> forward message|thread [recipient|to] <RecipientEntity>` to not forward messages
