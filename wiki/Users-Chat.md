@@ -976,7 +976,10 @@ developer_preview_api_key = <DeveloperPreviewKey>
 See the following for search option details:
 https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.messages/search
 
-You must specify `keywords <StringList>`; messages that match any word in `<StringList>` are displayed.
+You must specify `keywords <StringList>`; messages that match any word|phrase in `<StringList>` are displayed.
+Phrases must be enclosed in `"`.
+* Linux, macOS, Windows Command Prompt - `keywords "\"things to do\" urgent`
+* Windows Power Shell - ```keywords "`"things to do`" urgent```
 
 By default, all spaces the user has access to are searched; use the following options to limit the search.
   * `<ChatSpace>*` - Specific chat spaces
@@ -984,7 +987,7 @@ By default, all spaces the user has access to are searched; use the following op
 
 Use the following to limit the search to messages with specific characteristics.
   * `senders <EmailAddressEntity>` - Messages with any sender in `<EmailAddressEntity>`
-  * `usermentions [all|any] <EmailAddressEntity>` - Messages with mentions af `all|any` users in `<EmailAddressEntity>`
+  * `usermentions [all|any] <EmailAddressEntity>` - Messages with mentions of `all|any` users in `<EmailAddressEntity>`
   * `start|starttime <Date>|<Time>` - Messages created on or after the `<Date>|<Time>`
   * `end|endtime <Date>|<Time>` - Messages created before the `<Date>|<Time>`
   * `range <Date>|<Time> <Date>|<Time>` - Messages created on or after the first `<Date>|<Time>` and before the second `<Date>|<Time>`
