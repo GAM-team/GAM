@@ -846,6 +846,8 @@ class GamCLArgs():
   ARG_CHATMEMBERS = 'chatmembers'
   ARG_CHATMESSAGE = 'chatmessage'
   ARG_CHATMESSAGES = 'chatmessages'
+  ARG_CHATSEARCHMESSAGE = 'chatsearchmessage'
+  ARG_CHATSEARCHMESSAGES = 'chatsearchmessages'
   ARG_CHATSECTION = 'chatsection'
   ARG_CHATSECTIONS = 'chatsections'
   ARG_CHATSECTIONITEM = 'chatsectionitem'

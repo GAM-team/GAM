@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2025 Ross Scroggs All Rights Reserved.
+# Copyright (C) 2026 Ross Scroggs All Rights Reserved.
 #
 # All Rights Reserved.
 #
@@ -22,7 +22,7 @@
 
 # Products/SKUs
 _PRODUCTS = {
-  '101001': 'Cloud Identity',
+  '101001': 'Cloud Identity Free',
   '101005': 'Cloud Identity Premium',
   '101031': 'Google Workspace for Education',
   '101033': 'Google Voice',
@@ -44,7 +44,7 @@ _PRODUCTS = {
   }
 _SKUS = {
   '1010010001': {
-    'product': '101001', 'aliases': ['identity', 'cloudidentity'], 'displayName': 'Cloud Identity Free'},
+    'product': '101001', 'aliases': ['identity', 'cloudidentity', 'cloudidentityfree'], 'displayName': 'Cloud Identity Free'},
   '1010050001': {
     'product': '101005', 'aliases': ['identitypremium', 'cloudidentitypremium'], 'displayName': 'Cloud Identity Premium'},
   '1010070001': {

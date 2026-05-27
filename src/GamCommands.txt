@@ -270,7 +270,7 @@ If an item contains spaces, it should be surrounded by ".
         assuredcontrolsplus | 1010390002 | Assured Controls Plus |
         bce | beyondcorp | beyondcorpenterprise | cep | chromeenterprisepremium | 1010400001 | Chrome Enterprise Premium |
         cdm | chrome | googlechromedevicemanagement | Google-Chrome-Device-Management |
-        cloudidentity | identity | 1010010001 | Cloud Identity |
+        cloudidentityfree | cloudidentity | identity | 1010010001 | Cloud Identity Free |
         cloudidentitypremium | identitypremium | 1010050001 | Cloud Identity Premium |
         cloudsearch | 1010350001 | Cloud Search |
         colabpro | 1010500001 | Colab Pro |
@@ -6768,13 +6768,41 @@ gam <UserTypeEntity> info chatmessage name <ChatMessage>
         [formatjson]
 gam <UserTypeEntity> show chatmessages
         <ChatSpace>+
-        [showdeleted [<Boolean>]] [filter <String>]
+        [showdeleted [<Boolean>]
+        [([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date>|<Time>)]
         [fields <ChatMessageFieldNameList>]
+        [orderby createtime [ascending|descending]]
         [formatjson]
 gam <UserTypeEntity> print chatmessages [todrive <ToDriveAttribute>*]
         <ChatSpace>+
-        [showdeleted [<Boolean>]] [filter <String>]
+        [showdeleted [<Boolean>]
+        [([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date>|<Time>)]
+        [thread <ChatThread>])
         [fields <ChatMessageFieldNameList>]
+        [orderby createtime [ascending|descending]]
+        [formatjson [quotechar <Character>]]
+
+gam <UserTypeEntity> show chatsearchmessages
+        keywords <StringList>
+        <ChatSpace>*
+        [displaynames [all|any] <StringList>]
+        [senders <EmailAddressEntity>]*
+        [usermentions [all|any] <EmailAddressEntity>]*
+        [([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date>|<Time>)]
+        [hasattachment]
+        [fields <ChatMessageFieldNameList>]
+        [orderby createtime|relevance]
+        [formatjson]
+gam <UserTypeEntity> print chatsearchmessages [todrive <ToDriveAttribute>*]
+        keywords <StringList>
+        <ChatSpace>*
+        [displaynames [all|any] <StringList>]
+        [senders <EmailAddressEntity>]*
+        [usermentions [all|any] <EmailAddressEntity>]*
+        [([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date>|<Time>)]
+        [hasattachment]
+        [fields <ChatMessageFieldNameList>]
+        [orderby createtime|relevance]
         [formatjson [quotechar <Character>]]
 
 gam <UserTypeEntity> info chatevent name <ChatEvent>

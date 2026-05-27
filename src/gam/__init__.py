@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.43.10'
+__version__ = '7.44.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -1001,6 +1001,13 @@ def getChoiceAndValue(item, choices, delimiter):
       return (choice, value)
     missingArgumentExit(item)
   invalidChoiceExit(choice, choices, False)
+
+AND_OR_CONJUNCTION_MAP = {
+  'and': 'AND',
+  'or': 'OR',
+  'all': 'AND',
+  'any': 'OR',
+  }
 
 SUSPENDED_ARGUMENTS = {'notsuspended', 'suspended', 'issuspended'}
 SUSPENDED_CHOICE_MAP = {'notsuspended': False, 'suspended': True}
@@ -29161,24 +29168,37 @@ def infoChatMessage(users):
 def doInfoChatMessage():
   infoChatMessage([None])
 
+CHAT_MESSAGES_ORDERBY_CHOICE_MAP = {
+  'createtime': 'createTime'
+  }
+
 # gam <UserTypeEntity> show chatmessages
 #	<ChatSpace>+
-#	[showdeleted [<Boolean>]] [filter <String>]
+#	[showdeleted [<Boolean>]]
+#	[([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date>|<Time>)]
+#	[thread <ChatThread>])
 #	[fields <ChatMessageFieldNameList>]
+#	[orderby createtime [ascending|descending]]
 #	[formatjson]
 # gam <UserTypeEntity> print chatmessages [todrive <ToDriveAttribute>*]
 #	<ChatSpace>+
 #	[showdeleted [<Boolean>]] [filter <String>]
+#	[([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date>|<Time>)]
+#	[thread <ChatThread>])
 #	[fields <ChatMessageFieldNameList>]
+#	[orderby createtime [ascending|descending]]
 #	[formatjson [quotechar <Character>]]
 def printShowChatMessages(users):
   cd = buildGAPIObject(API.DIRECTORY)
   csvPF = CSVPrintFile(['User', 'space.name', 'space.displayName', 'name']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
+  OBY = OrderBy(CHAT_MESSAGES_ORDERBY_CHOICE_MAP, ascendingKeyword='ASC', descendingKeyword='DESC')
   fieldsList = []
   pfilter = None
   parentList = []
   showDeleted = False
+  startEndTime = StartEndTime()
+  threadName = ''
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -29191,10 +29211,35 @@ def printShowChatMessages(users):
       showDeleted = getBoolean()
     elif myarg =='filter':
       pfilter = getString(Cmd.OB_STRING)
+    elif myarg in {'start', 'starttime', 'end', 'endtime', 'range'}:
+      startEndTime.Get(myarg)
+    elif myarg == 'thread':
+      threadName = getString(Cmd.OB_CHAT_THREAD)
+    elif myarg == 'orderby':
+      OBY.GetChoice()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if not parentList:
     missingArgumentExit('space')
+  if startEndTime.startDateTime is not None or startEndTime.endDateTime is not None:
+    if pfilter:
+      pfilter += ' AND '
+    else:
+      pfilter = ''
+    pfilter += '('
+    if startEndTime.startDateTime is not None:
+      pfilter += f'createTime > "{startEndTime.startDateTime}"'
+      if startEndTime.endDateTime is not None:
+        pfilter += ' AND '
+    if startEndTime.endDateTime is not None:
+      pfilter += f'createTime < "{startEndTime.endDateTime}"'
+    pfilter += ')'
+  if threadName:
+    if pfilter:
+      pfilter += ' AND '
+    else:
+      pfilter = ''
+    pfilter += f'thread.name = {threadName}'
   chatSenders = {}
   fields = getItemFieldsFromFieldsList('messages', fieldsList)
   i, count, users = getEntityArgument(users)
@@ -29225,7 +29270,8 @@ def printShowChatMessages(users):
                                  pageMessage=_getChatPageMessage(Ent.CHAT_MESSAGE, user, i, count, qfilter),
                                  throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                                 pageSize=GC.Values[GC.CHAT_MAX_RESULTS], parent=parentName, filter=pfilter, showDeleted=showDeleted,
+                                 pageSize=GC.Values[GC.CHAT_MAX_RESULTS], parent=parentName,
+                                 filter=pfilter, showDeleted=showDeleted, orderBy=OBY.orderBy,
                                  fields=fields)
         for message in messages:
           if 'sender' in message:
@@ -29253,6 +29299,183 @@ def printShowChatMessages(users):
           _printChatItem(user, message, parent, Ent.CHAT_MESSAGE, csvPF, FJQC)
       elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
         csvPF.WriteRowNoFilter({'User': user})
+  if csvPF:
+    csvPF.writeCSVfile('Chat Messages')
+
+def _getChatSpaceDisplayName(chat, space, chatSpaces):
+  spaceName = space['name']
+  if spaceName not in chatSpaces:
+    try:
+      result = callGAPI(chat.spaces(), 'get',
+                        throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR,
+                                      GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
+                        name=spaceName, fields='displayName')
+      spaceDisplayName = result.get('displayName', 'None')
+    except (GAPI.notFound, GAPI.invalidArgument, GAPI.internalError, GAPI.permissionDenied, GAPI.failedPrecondition):
+      spaceDisplayName = 'None'
+    chatSpaces[spaceName] = spaceDisplayName
+  space['displayName'] = chatSpaces[spaceName]
+
+CHAT_SEARCHMESSAGES_ORDERBY_CHOICE_MAP = {
+  'createtime': 'createTime',
+  'relevance': 'relevance',
+  }
+CHAT_SEARCHMESSAGES_VIEW_CHOICE_MAP = {'basic': 'SEARCH_MESSAGES_VIEW_BASIC', 'full': 'SEARCH_MESSAGES_VIEW_FULL'}
+
+# gam <UserTypeEntity> show chatsearchmessages
+#	keywords <StringList>
+#	<ChatSpace>*
+#	[displaynames [all|any] <StringList>]
+#	[senders <EmailAddressEntity>]*
+#	[usermentions [all|any] <EmailAddressEntity>]*
+#	[([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date>|<Time>)]
+#	[hasattachment [<Boolean>]]
+#	[fields <ChatMessageFieldNameList>]
+#	[orderby createtime|relevance]
+#	[basic|full]
+#	[formatjson]
+# gam <UserTypeEntity> print chatsearchmessages [todrive <ToDriveAttribute>*]
+#	keywords <StringList>
+#	<ChatSpace>*
+#	[displaynames [all|any] <StringList>]
+#	[senders <EmailAddressEntity>]*
+#	[usermentions [all|any] <EmailAddressEntity>]*
+#	[([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date>|<Time>)]
+#	[hasattachment [<Boolean>]]
+#	[fields <ChatMessageFieldNameList>]
+#	[orderby createtime|relevance]
+#	[basic|full]
+#	[formatjson [quotechar <Character>]]
+def printShowChatSearchMessages(users):
+  if API.CHAT not in GM.Globals[GM.DEVELOPER_PREVIEW_APIS]:
+    Cmd.Backup()
+    usageErrorExit(Msg.DEVELOPER_PREVIEW_REQUIRED)
+  cd = buildGAPIObject(API.DIRECTORY)
+  csvPF = CSVPrintFile(['User', 'space.name', 'space.displayName', 'name']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
+  orderBy = None
+  fieldsList = []
+  keywordList = []
+  spaceList = []
+  displayNameConjunction = ''
+  displayNameList = []
+  senderList = []
+  userMentionList = []
+  startEndTime = StartEndTime()
+  hasAttachment = False
+  body = {'view': CHAT_SEARCHMESSAGES_VIEW_CHOICE_MAP['basic'],
+          'pageSize': GC.Values[GC.CHAT_MAX_RESULTS], 'pageToken': None}
+  parent = 'spaces/-'
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif myarg =='keywords':
+      keywordList = getString(Cmd.OB_STRING_LIST, minLen=0).replace(',', ' ').split()
+    elif myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
+      spaceList.append(getSpaceName(myarg))
+    elif myarg == 'displaynames':
+      displayNameConjunction = getChoice(AND_OR_CONJUNCTION_MAP, mapChoice=True, defaultChoice='OR')
+      displayNameList = getString(Cmd.OB_STRING_LIST, minLen=0).replace(',', ' ').split()
+    elif myarg == 'senders':
+      senderList.extend(getNormalizedEmailAddressEntity(noUid=False))
+    elif myarg == 'usermentions':
+      userMentionConjunction = getChoice(AND_OR_CONJUNCTION_MAP, mapChoice=True, defaultChoice='OR')
+      userMentionList.extend(getNormalizedEmailAddressEntity(noUid=False))
+    elif myarg in {'start', 'starttime', 'end', 'endtime`', 'range'}:
+      startEndTime.Get(myarg)
+    elif myarg == 'hasattachment':
+      hasAttachment = True
+    elif myarg == 'orderby':
+      orderBy = getChoice(CHAT_SEARCHMESSAGES_ORDERBY_CHOICE_MAP, mapChoice=True)
+    elif myarg in CHAT_SEARCHMESSAGES_VIEW_CHOICE_MAP:
+      body['view'] = CHAT_SEARCHMESSAGES_VIEW_CHOICE_MAP[myarg]
+    elif getFieldsList(myarg, CHAT_MESSAGES_FIELDS_CHOICE_MAP, fieldsList, initialField='name', onlyFieldsArg=True):
+      pass
+    else:
+      FJQC.GetFormatJSONQuoteChar(myarg, True)
+  if not keywordList:
+    missingArgumentExit('keywords')
+  if orderBy is not None:
+    body['orderBy'] = f'{orderBy} desc'
+  body['filter'] = f'({" ".join(keywordList)})'
+  if spaceList:
+    body['filter'] += ' AND ('
+    for space in spaceList:
+      body['filter'] += f'space.name = "{space}" OR '
+    body['filter'] = body['filter'][:-4] + ')'
+  if displayNameList:
+    body['filter'] += ' AND ('
+    for displayName in displayNameList:
+      body['filter'] += f'space.display_name:{displayName}" {displayNameConjunction} '
+    body['filter'] = body['filter'][:-(len(displayNameConjunction)+2)] + ')'
+  if senderList:
+    body['filter'] += ' AND ('
+    for sender in senderList:
+      body['filter'] += f'sender.name = "users/{sender}" OR '
+    body['filter'] = body['filter'][:-4] + ')'
+  if userMentionList:
+    body['filter'] += ' AND ('
+    for userMention in userMentionList:
+      body['filter'] += f'annotations.user_mentions.user.name:"users/{userMention}" {userMentionConjunction} '
+    body['filter'] = body['filter'][:-(len(userMentionConjunction)+2)] + ')'
+  if startEndTime.startDateTime is not None or startEndTime.endDateTime is not None:
+    body['filter'] += ' AND ('
+    if startEndTime.startDateTime is not None:
+      body['filter'] += f'createTime >= "{startEndTime.startDateTime}"'
+      if startEndTime.endDateTime is not None:
+        body['filter'] += ' AND '
+    if startEndTime.endDateTime is not None:
+      body['filter'] += f'createTime < "{startEndTime.endDateTime}"'
+    body['filter'] += ')'
+  if hasAttachment:
+    body['filter'] += ' AND attachment:*'
+  chatSenders = {}
+  chatSpaces = {}
+  fields = getItemFieldsFromFieldsList('results(message', fieldsList)
+  if fields:
+    fields += ')'
+  i, count, users = getEntityArgument(users)
+  for user in users:
+    i += 1
+    user, chat, kvList = buildChatServiceObject(API.CHAT_MESSAGES, user, i, count, [Ent.CHAT_SPACE, None])
+    if not chat:
+      continue
+    _, chatsp, _ = buildChatServiceObject(API.CHAT_SPACES, user, i, count, [Ent.CHAT_SPACE, None])
+    if not chat:
+      continue
+    try:
+      results = callGAPIpages(chat.spaces().messages(), 'search', 'results',
+                              pageMessage=_getChatPageMessage(Ent.CHAT_MESSAGE, user, i, count, body['filter']),
+                              throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                              parent='spaces/-', body=body, fields=fields, pageArgsInBody=True)
+      for result in results:
+        if 'sender' in result['message']:
+          _getChatSenderEmail(cd, result['message']['sender'], chatSenders)
+        if 'space' in result['message']:
+          _getChatSpaceDisplayName(chatsp, result['message']['space'], chatSpaces)
+    except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+      exitIfChatNotConfigured(chat, kvList, str(e), i, count)
+      continue
+    except GAPI.failedPrecondition:
+      userChatServiceNotEnabledWarning(user, i, count)
+      break
+    if not csvPF:
+      jcount = len(results)
+      if not FJQC.formatJSON:
+        entityPerformActionNumItems(kvList, jcount, Ent.CHAT_MESSAGE, i, count)
+      Ind.Increment()
+      j = 0
+      for result in results:
+        j += 1
+        _showChatItem(result['message'], Ent.CHAT_MESSAGE, FJQC, j, jcount)
+      Ind.Decrement()
+    elif results:
+      for result in results:
+        _printChatItem(user, result['message'], parent, Ent.CHAT_MESSAGE, csvPF, FJQC)
+    elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
+      csvPF.WriteRowNoFilter({'User': user})
   if csvPF:
     csvPF.writeCSVfile('Chat Messages')
 
@@ -80170,17 +80393,12 @@ def CAABuildCondition():
       unknownArgumentExit()
   return condition
 
-CAA_COMBINING_FUNCTIONS_MAP = {
-  'and': 'AND',
-  'or': 'OR',
-  }
-
 def CAABuildBasicLevel():
   basic_level = {'conditions': []}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'combiningfunction':
-      basic_level['combiningFunction'] = getChoice(CAA_COMBINING_FUNCTIONS_MAP, mapChoice=True)
+      basic_level['combiningFunction'] = getChoice(AND_OR_CONJUNCTION_MAP, mapChoice=True)
     elif myarg == 'condition':
       basic_level['conditions'].append(CAABuildCondition())
     else:
@@ -81701,6 +81919,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHATEVENT:	printShowChatEvents,
       Cmd.ARG_CHATMEMBER:	printShowChatMembers,
       Cmd.ARG_CHATMESSAGE:	printShowChatMessages,
+      Cmd.ARG_CHATSEARCHMESSAGE:	printShowChatSearchMessages,
       Cmd.ARG_CHATSECTION:	printShowChatSections,
       Cmd.ARG_CHATSECTIONITEM:	printShowChatSectionItems,
       Cmd.ARG_CHATSPACE:	printShowChatSpaces,
@@ -81819,6 +82038,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHATEVENT:	printShowChatEvents,
       Cmd.ARG_CHATMEMBER:	printShowChatMembers,
       Cmd.ARG_CHATMESSAGE:	printShowChatMessages,
+      Cmd.ARG_CHATSEARCHMESSAGE:	printShowChatSearchMessages,
       Cmd.ARG_CHATSECTION:	printShowChatSections,
       Cmd.ARG_CHATSECTIONITEM:	printShowChatSectionItems,
       Cmd.ARG_CHATSPACE:	printShowChatSpaces,
@@ -82047,6 +82267,7 @@ USER_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_CHATEVENTS:		Cmd.ARG_CHATEVENT,
   Cmd.ARG_CHATMEMBERS:		Cmd.ARG_CHATMEMBER,
   Cmd.ARG_CHATMESSAGES:		Cmd.ARG_CHATMESSAGE,
+  Cmd.ARG_CHATSEARCHMESSAGES:	Cmd.ARG_CHATSEARCHMESSAGE,
   Cmd.ARG_CHATSECTIONS:		Cmd.ARG_CHATSECTION,
   Cmd.ARG_CHATSECTIONITEMS:	Cmd.ARG_CHATSECTIONITEM,
   Cmd.ARG_CHATSPACES:		Cmd.ARG_CHATSPACE,
