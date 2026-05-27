@@ -978,8 +978,8 @@ https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.messag
 
 You must specify `keywords <StringList>`; messages that match any word|phrase in `<StringList>` are displayed.
 Phrases must be enclosed in `"`.
-* Linux, macOS, Windows Command Prompt - `keywords "\"things to do\" urgent`
-* Windows Power Shell - ```keywords "`"things to do`" urgent```
+* Linux, macOS, Windows Command Prompt - `keywords "\"things to do\" urgent"`
+* Windows Power Shell - ```keywords "`"things to do`" urgent"```
 
 By default, all spaces the user has access to are searched; use the following options to limit the search.
   * `<ChatSpace>*` - Specific chat spaces
