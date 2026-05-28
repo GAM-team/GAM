@@ -12,6 +12,7 @@ Thank you.
 * James Seymour - https://sites.google.com/view/gam--commands/
 * Kevin Melillo - https://github.com/KevinMelilloIEEE/gam-script
 * Korey Rideout - https://chatgpt.com/g/g-PTxxnVPMG-gam-assist-now-turbocharged-with-gam7
+* Paul Ogier (Taming.Tech) - GAM Scripts https://github.com/PaulOgier/GAMScripts
 * Paul Ogier (Taming.Tech) - GAM7 Course on Udemy https://taming.tech/GAMCourse
 * Paul Ogier (Taming.Tech) - GAM7 Tutorials https://www.youtube.com/watch?v=g9LDeyXQNLI&list=PL_dLiK09pJVhKJxZHNk9CHK0q5hkZ856w
 * Paul Ogier (Taming.Tech) - Installation videos
