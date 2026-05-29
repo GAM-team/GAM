@@ -133,6 +133,8 @@ Use this table to filter/query for specific device types:
 
 ```
 ## Create a company device
+This method is available only to customers who have one of the following SKUs: Enterprise Standard, Enterprise Plus, Enterprise for Education, and Cloud Identity Premium.
+
 Adds a new device to the Google company-owned inventory. Once a user is assigned and enrolled on the device the device will be considered company-owned for management purposes.
 The device will also register as company-owned with Google services like [Context-Aware Access (CAA)](https://support.google.com/a/answer/9275380).
 ```
