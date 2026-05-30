@@ -16,7 +16,6 @@ Added option `oneitemperrow` to `gam print crostelemetry` to have each of a devi
 report field entries displayed on a separate row with all of the other device fields.
 
 Added additional fields to `<CrOSTelemetryFieldName>`and `<CrOSTelemetryListFieldName>`:
-Added additional fields to `<CrOSTelemetryFieldName>`:
 ```
 appreport
 heartbeatstatusreport
