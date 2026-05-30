@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.44.00'
+__version__ = '7.44.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -25827,6 +25827,7 @@ def doPrintCrOSEntity(entityList):
     doPrintCrOSActivity(entityList)
 
 CROS_TELEMETRY_FIELDS_CHOICE_MAP = {
+  'appreport': 'appReport',
   'audiostatusreport': 'audioStatusReport',
   'batteryinfo': 'batteryInfo',
   'batterystatusreport': 'batteryStatusReport',
@@ -25837,35 +25838,41 @@ CROS_TELEMETRY_FIELDS_CHOICE_MAP = {
   'deviceid': 'deviceId',
   'graphicsinfo': 'graphicsInfo',
   'graphicsstatusreport': 'graphicsStatusReport',
+  'heartbeatstatusreport': 'heartbeatStatusReport',
+  'kioskappstatusreport': 'kioskAppStatusReport',
   'memoryinfo': 'memoryInfo',
   'memorystatusreport': 'memoryStatusReport',
   'name': 'name',
-  'networkinfo': 'networkInfo',
+  'networkbandwidthreport': 'networkBandwidthReport',
   'networkdiagnosticsreport': 'networkDiagnosticsReport',
+  'networkinfo': 'networkInfo',
   'networkstatusreport': 'networkStatusReport',
   'orgunitid': 'orgUnitId',
   'osupdatestatus': 'osUpdateStatus',
   'peripheralsreport': 'peripheralsReport',
+  'runtimecountersreport': 'runtimeCountersReport',
   'serialnumber': 'serialNumber',
   'storageinfo': 'storageInfo',
   'storagestatusreport': 'storageStatusReport',
   'thunderboltinfo': 'thunderboltInfo',
   }
 CROS_TELEMETRY_LIST_FIELDS_CHOICE_MAP = {
+  'appreport': 'appReport',
   'audiostatusreport': 'audioStatusReport',
-  'batteryinfo': 'batteryInfo',
   'batterystatusreport': 'batteryStatusReport',
   'bootperformancereport': 'bootPerformanceReport',
-  'cpuinfo': 'cpuInfo',
   'cpustatusreport': 'cpuStatusReport',
   'graphicsstatusreport': 'graphicsStatusReport',
+  'heartbeatstatusreport': 'heartbeatStatusReport',
+  'kioskappstatusreport': 'kioskAppStatusReport',
   'memorystatusreport': 'memoryStatusReport',
+  'networkbandwidthreport': 'networkBandwidthReport',
   'networkdiagnosticsreport': 'networkDiagnosticsReport',
   'networkstatusreport': 'networkStatusReport',
   'osupdatestatus': 'osUpdateStatus',
   'peripheralsreport': 'peripheralsReport',
+  'runtimecountersreport': 'runtimeCountersReport',
   'storagestatusreport': 'storageStatusReport',
-  'thunderboltinfo': 'thunderboltInfo',
   }
 
 CROS_TELEMETRY_SCALAR_FIELDS = ['deviceId', 'serialNumber', 'customer', 'name', 'orgUnitId', 'orgUnitPath']
@@ -25887,7 +25894,7 @@ CROS_TELEMETRY_TIME_OBJECTS = {'reportTime', 'lastUpdateTime', 'lastUpdateCheckT
 # gam print crostelemetry [todrive <ToDriveAttribute>*]
 #	[(ou|org|orgunit|ou_and_children <OrgUnitItem>)|(cros_sn <SerialNumber>)|(filter <String>)]
 #	<CrOSTelemetryFieldName>* [fields <CrOSTelemetryFieldNameList>]
-#	[reverselists <CrOSTelemetryListFieldNameList>]
+#	[reverselists <CrOSTelemetryListFieldNameList>] [oneitemperrow]
 #	[start <Date>] [end <Date>] [listlimit <Number>]
 #	[formatjson [quotechar <Character>]]
 def doInfoPrintShowCrOSTelemetry():
@@ -25928,13 +25935,32 @@ def doInfoPrintShowCrOSTelemetry():
 
   def _printDevice(device):
     _cleanDevice(device)
-    if not FJQC.formatJSON:
-      csvPF.WriteRowTitles(flattenJSON(device, timeObjects=CROS_TELEMETRY_TIME_OBJECTS))
-    else:
+    if FJQC.formatJSON:
       if (not csvPF.rowFilter and not csvPF.rowDropFilter) or csvPF.CheckRowTitles(flattenJSON(device, timeObjects=CROS_TELEMETRY_TIME_OBJECTS)):
         csvPF.WriteRowNoFilter({'deviceId': device['deviceId'],
                                 'JSON': json.dumps(cleanJSON(device, timeObjects=CROS_TELEMETRY_TIME_OBJECTS),
                                                    ensure_ascii=False, sort_keys=True)})
+      return
+    if not oneItemPerRow:
+      csvPF.WriteRowTitles(flattenJSON(device, timeObjects=CROS_TELEMETRY_TIME_OBJECTS))
+      return
+    listLens = {}
+    maxLen = 0
+    for field in CROS_TELEMETRY_LIST_FIELDS_CHOICE_MAP.values():
+      if field in device:
+        listLens[field] = len(device[field])
+        if listLens[field] > maxLen:
+          maxLen = listLens[field]
+    baserow = {}
+    for field in CROS_TELEMETRY_SCALAR_FIELDS:
+      if field in device:
+        baserow[field] = device[field]
+    for i in range(maxLen):
+      row = baserow.copy()
+      for field, fieldLen in listLens.items():
+        if i < fieldLen:
+          flattenJSON({field: device[field][i]}, flattened=row, timeObjects=CROS_TELEMETRY_TIME_OBJECTS)
+      csvPF.WriteRowTitles(row)
 
   def _showDevice(device, i=0, count=0):
     _cleanDevice(device)
@@ -25961,11 +25987,12 @@ def doInfoPrintShowCrOSTelemetry():
     Act.Set(Act.SHOW)
   else:
     pfilters = []
-  csvPF = CSVPrintFile(['deviceId'], CROS_TELEMETRY_SCALAR_FIELDS, CROS_TELEMETRY_LIST_FIELDS) if Act.csvFormat() else None
+  csvPF = CSVPrintFile(['deviceId'], CROS_TELEMETRY_SCALAR_FIELDS) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   diskPercentOnly = showOrgUnitPath = False
   listLimit = 0
   startTime = endTime = None
+  oneItemPerRow = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -26021,6 +26048,8 @@ def doInfoPrintShowCrOSTelemetry():
         cd = buildGAPIObject(API.DIRECTORY)
     elif myarg == 'storagepercentonly':
       diskPercentOnly = True
+    elif csvPF and myarg == 'oneitemperrow':
+      oneItemPerRow = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   if fieldsList:
@@ -26032,6 +26061,8 @@ def doInfoPrintShowCrOSTelemetry():
   readMask = ','.join(set(fieldsList))
   if csvPF and FJQC.formatJSON:
     csvPF.SetJSONTitles(['deviceId', 'JSON'])
+  elif csvPF and not oneItemPerRow:
+    csvPF.SetIndexedTitles(CROS_TELEMETRY_LIST_FIELDS)
   if not pfilters:
     pfilters = [(None, 'All')]
   for pfilter in pfilters:

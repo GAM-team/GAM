@@ -1,3 +1,17 @@
+7.44.01
+
+Added option `oneitemperrow` to `gam print crostelemetry` to have each of a device's
+report field entries displayed on a separate row with all of the other device fields.
+
+Added additional fields to `<CrOSTelemetryFieldName>`and `<CrOSTelemetryListFieldName>`:
+```
+appreport
+heartbeatstatusreport
+kioskappstatusreport
+networkbandwidthreport
+runtimecountersreport
+```
+
 7.44.00
 
 Added support for User data `archivalTime` and `suspensionTime` that is available

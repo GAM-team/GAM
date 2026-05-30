@@ -2725,25 +2725,30 @@ gam <CrOSTypeEntity> get devicefile [select <DeviceFileEntity>] [targetfolder <F
 Print telemetry data for specified CrOS devices.
 
 <CrOSTelemetryFieldName> ::=
+        appreport|
         audiostatusreport|
         batteryinfo|
         batterystatusreport|
-        bootPerformancereport|
+        bootperformancereport|
         cpuinfo|
         cpustatusreport|
         customer|
         deviceid|
         graphicsinfo|
         graphicsstatusreport|
+        heartbeatstatusreport|
+        kioskappstatusreport|
         memoryinfo|
         memorystatusreport|
         name|
+        networkbandwidthreport|
         networkdiagnosticsreport|
         networkinfo|
         networkstatusreport|
         orgunitid|
         osupdatestatus|
         peripheralsreport|
+        runtimecountersreport|
         serialnumber|
         storageinfo|
         storagestatusreport|
@@ -2751,20 +2756,22 @@ Print telemetry data for specified CrOS devices.
 <CrOSTelemetryFieldNameList> ::= "<CrOSTelemetryFieldName>(,<CrOSTelemetryFieldName>)*"
 
 <CrOSTelemetryListFieldName> ::=
+        appreport|
         audiostatusreport|
-        batteryinfo|
         batterystatusreport|
         bootperformancereport|
-        cpuinfo|
         cpustatusreport|
         graphicsstatusreport|
+        heartbeatstatusreport|
+        kioskappstatusreport|
         memorystatusreport|
+        networkbandwidthreport|
         networkdiagnosticsreport|
         networkstatusreport|
         osupdatestatus|
         peripheralsreport|
-        storagestatusreport|
-        thunderboltinfo
+        runtimecountersreport|
+        storagestatusreport
 <CrOSTelemetryListFieldNameList> ::= "<CrOSTelemetryListFieldName>(,<CrOSTelemetryLIstFieldName>)*"
 
 gam info crostelemetry <SerialNumber>
@@ -2781,7 +2788,7 @@ gam show crostelemetry
 gam print crostelemetry [todrive <ToDriveAttribute>*]
         [(ou|org|orgunit|ou_and_children <OrgUnitItem>)|(cros_sn <SerialNumber>)|(filter <String>)]
         <CrOSTelemetryFieldName>* [fields <CrOSTelemetryFieldNameList>]
-        [reverselists <CrOSTelemetryListFieldNameList>]
+        [reverselists <CrOSTelemetryListFieldNameList>] [oneitemperrow]
         [start <Date>] [end <Date>] [listlimit <Number>]
         [formatjson [quotechar <Character>]]
 
