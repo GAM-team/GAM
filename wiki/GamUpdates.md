@@ -10,6 +10,21 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.44.01
+
+Added option `oneitemperrow` to `gam print crostelemetry` to have each of a device's
+report field entries displayed on a separate row with all of the other device fields.
+
+Added additional fields to `<CrOSTelemetryFieldName>`and `<CrOSTelemetryListFieldName>`:
+Added additional fields to `<CrOSTelemetryFieldName>`:
+```
+appreport
+heartbeatstatusreport
+kioskappstatusreport
+networkbandwidthreport
+runtimecountersreport
+```
+
 ### 7.44.00
 
 Added support for User data `archivalTime` and `suspensionTime` that is available

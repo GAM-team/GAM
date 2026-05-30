@@ -185,25 +185,30 @@ gam oauth create
 <CrOSActivityListFieldNameList> ::= "<CrOSActivityListFieldName>(,<CrOSActivityListFieldName>)*"
 
 <CrOSTelemetryFieldName> ::=
+        appreport|
         audiostatusreport|
         batteryinfo|
         batterystatusreport|
-        bootPerformancereport|
+        bootperformancereport|
         cpuinfo|
         cpustatusreport|
         customer|
         deviceid|
         graphicsinfo|
         graphicsstatusreport|
+        heartbeatstatusreport|
+        kioskappstatusreport|
         memoryinfo|
         memorystatusreport|
         name|
+        networkbandwidthreport|
         networkdiagnosticsreport|
         networkinfo|
         networkstatusreport|
         orgunitid|
         osupdatestatus|
         peripheralsreport|
+        runtimecountersreport|
         serialnumber|
         storageinfo|
         storagestatusreport|
@@ -211,20 +216,22 @@ gam oauth create
 <CrOSTelemetryFieldNameList> ::= "<CrOSTelemetryFieldName>(,<CrOSTelemetryFieldName>)*"
 
 <CrOSTelemetryListFieldName> ::=
+        appreport|
         audiostatusreport|
-        batteryinfo|
         batterystatusreport|
         bootperformancereport|
-        cpuinfo|
         cpustatusreport|
         graphicsstatusreport|
+        heartbeatstatusreport|
+        kioskappstatusreport|
         memorystatusreport|
+        networkbandwidthreport|
         networkdiagnosticsreport|
         networkstatusreport|
         osupdatestatus|
         peripheralsreport|
-        storagestatusreport|
-        thunderboltinfo
+        runtimecountersreport|
+        storagestatusreport
 <CrOSTelemetryListFieldNameList> ::= "<CrOSTelemetryListFieldName>(,<CrOSTelemetryLIstFieldName>)*"
 ```
 
@@ -964,19 +971,21 @@ By default, Gam displays the information as an indented list of keys and values:
 gam print crostelemetry [todrive <ToDriveAttribute>*]
         [(ou|org|orgunit|ou_and_children <OrgUnitItem>)|(cros_sn <SerialNumber>)|(filter <String>)]
         <CrOSTelemetryFieldName>* [fields <CrOSTelemetryFieldNameList>]
-        [reverselists <CrOSTelemetryListFieldNameList>]
+        [reverselists <CrOSTelemetryListFieldNameList>] [oneitemperrow]
         [start <Date>] [end <Date>] [listlimit <Number>]
         [formatjson [quotechar <Character>]]
 ```
 Use these options to select CrOS devices; if none are chosen, all CrOS devices in the account are selected.
-
 - `ou|org|orgunit <OrgUnitItem>` - Select CrOS devices directly in the OU `<OrgUnitItem>`
 - `ou_and_children <OrgUnitItem>` - Select CrOS devices in the OU `<OrgUnitItem>` and its sub OUs
 - `cros_sn <SerialNumber>` - Select the CrOS device with serial number `<SerialNumber>`.
 - `filter <String>` - Select the CrOS device with a filter.
+
+Use these options to limit/modify the displayed lists.
 - `listlimit <Number>` - Limits the number of repetitions to `<Number>`; if not specified or `<Number>` equals zero, there is no limit.
 - `start <Date>` and `end <Date>` - Constrain list `reportTime` to fall within the specified `<Dates>`. If a `<Date>` isn't specified, there is no filtering in that range.
-- `reverselists <CrOSTelemetryListFieldNameList>` - For each list, change order from ascending (oldest to newest) to descending (newest to oldest); this makes it easy to get the `N` most recent values with `listlimit N reverselists cpustatusreport,memorystatusreport`
+- `reverselists <CrOSTelemetryListFieldNameList>` - For each list, change order from descending (newest to oldest) to ascending (oldest to newest)
+- `oneitemrerrow` - Display each instance of a list item on a separate row; by default, all list items are displayed on a single row
 
 By default, all telemetry data is displayed, use the following to select specific fields:
 - `<CrOSTelemetryFieldName>*` - Specify fields individually
