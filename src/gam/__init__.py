@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.44.02'
+__version__ = '7.44.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -40994,6 +40994,7 @@ CALENDAR_ACL_ROLES_MAP = {
   'read': 'reader',
   'reader': 'reader',
   'writer': 'writer',
+  'writerwithoutprivateaccess': 'writerWithoutPrivateAccess',
   'none': 'none',
   }
 

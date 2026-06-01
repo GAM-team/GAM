@@ -1,3 +1,8 @@
+7.44.03
+
+Added `writerwithoutprivateaccess` to `<CalendarACLRole>`; this will become effective 2026-06-29.
+* See: https://developers.google.com/workspace/calendar/release-notes#June_01_2026
+
 7.44.02
 
 Added fields `bluetoothadapterinfo` and `osversioncompliance` to `<CrOSFieldName>` for use

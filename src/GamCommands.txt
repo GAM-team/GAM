@@ -1665,11 +1665,15 @@ gam <UserTypeEntity> show analyticdatastreams
 <CalendarEntity> ::=
         <CalendarList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 
-<CalendarACLRole> ::= editor|freebusy|freebusyreader|owner|reader|writer|none
-<CalendarACLScope> ::= <EmailAddress>|user:<EmailAdress>|group:<EmailAddress>|domain:<DomainName>|domain|default
-<CalendarACLScopeList> ::= "<CalendarACLScope>(,<CalendarACLScope>)*"
-<CalendarACLScopeEntity> ::=
-        <CalendarACLScopeList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+<CalendarACLRole> ::=
+         editor|freebusy|freebusyreader|owner|reader|writer|writerwithoutprivateaccess|none
+<CalendarACLScope> ::=
+        <EmailAddress>|user:<EmailAdress>|group:<EmailAddress>|
+        domain:<DomainName>|domain|default
+<CalendarACLScopeList> ::=
+        "<CalendarACLScope>(,<CalendarACLScope>)*"
+<CalendarACLScopeEntity>::=
+        <CalendarACLScopeList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 
 gam calendars <CalendarEntity> create|add acls|calendaracls <CalendarACLRole> <CalendarACLScopeEntity> [sendnotifications <Boolean>]
 gam calendars <CalendarEntity> update acls|calendaracls <CalendarACLRole> <CalendarACLScopeEntity> [sendnotifications <Boolean>]
@@ -4894,10 +4898,15 @@ gam print resources [todrive <ToDriveAttribute>*] [allfields|<ResourceFieldName>
         [formatjson [quotechar <Character>]]
         [showitemcountonly]
 
-<CalendarACLRole> ::= editor|freebusy|freebusyreader|owner|reader|writer|none
-<CalendarACLScope> ::= <EmailAddress>|user:<EmailAdress>|group:<EmailAddress>|domain:<DomainName>|domain|default
-<CalendarACLScopeList> ::= "<CalendarACLScope>(,<CalendarACLScope>)*"
-<CalendarACLScopeEntity> ::= <CalendarACLScopeList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+<CalendarACLRole> ::=
+         editor|freebusy|freebusyreader|owner|reader|writer|writerwithoutprivateaccess|none
+<CalendarACLScope> ::=
+        <EmailAddress>|user:<EmailAdress>|group:<EmailAddress>|
+        domain:<DomainName>|domain|default
+<CalendarACLScopeList> ::=
+        "<CalendarACLScope>(,<CalendarACLScope>)*"
+<CalendarACLScopeEntity>::=
+        <CalendarACLScopeList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 
 gam resource <ResourceID> create|add acls|calendaracls <CalendarACLRole> <CalendarACLScopeEntity> [sendnotifications <Boolean>]
 gam resource <ResourceID> update acls|calendaracls <CalendarACLRole> <CalendarACLScopeEntity> [sendnotifications <Boolean>]
@@ -6126,7 +6135,8 @@ gam <UserTypeEntity> print businessprofileaccounts [todrive <ToDriveAttribute>*]
 
 # Users - Calendars
 
-<CalendarACLRole> ::= editor|freebusy|freebusyreader|owner|reader|writer
+<CalendarACLRole> ::=
+         editor|freebusy|freebusyreader|owner|reader|writer|writerwithoutprivateaccess|none
 
 <CalendarSelectProperty> ::=
         (minaccessrole <CalendarACLRole>)|
