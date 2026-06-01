@@ -98,6 +98,7 @@ gam oauth create
         autoupdateexpiration|
         autoupdatethrough|
         backlightinfo|
+        bluetoothadapterinfo|
         bootmode|
         chromeostype|
         cpuinfo|
@@ -131,6 +132,7 @@ gam oauth create
         orgunitpath|org|ou|
         osupdatestatus|
         osversion|
+        osversioncompliance|
         platformversion|
         recentusers|
         screenshotfiles|
