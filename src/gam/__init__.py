@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.44.01'
+__version__ = '7.44.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -24658,6 +24658,7 @@ CROS_FIELDS_CHOICE_MAP = {
   'autoupdateexpiration': 'autoUpdateExpiration',
   'autoupdatethrough': 'autoUpdateThrough',
   'backlightinfo': 'backlightInfo',
+  'bluetoothadapterinfo': 'bluetoothAdapterInfo',
   'bootmode': 'bootMode',
   'chromeostype': 'chromeOsType',
   'cpuinfo': 'cpuInfo',
@@ -24693,6 +24694,7 @@ CROS_FIELDS_CHOICE_MAP = {
   'orgunitpath': 'orgUnitPath',
   'osupdatestatus': 'osUpdateStatus',
   'osversion': 'osVersion',
+  'osversioncompliance': 'osVersionCompliance',
   'ou': 'orgUnitPath',
   'platformversion': 'platformVersion',
   'recentusers': ['recentUsers.email', 'recentUsers.type'],
@@ -24728,6 +24730,7 @@ CROS_SCALAR_PROPERTY_PRINT_ORDER = [
   'firmwareVersion',
   'platformVersion',
   'osVersion',
+  'osVersionCompliance',
   'bootMode',
   'meid',
   'dockMacAddress',
@@ -24976,6 +24979,9 @@ def infoCrOSDevices(entityList):
       backlightInfo = _filterBasicList(cros, 'backLightInfo', True, listLimit)
       if backlightInfo:
         showJSON('backlightInfo', backlightInfo, dictObjectsKey={'backlightInfo': 'path'})
+      bluetoothAdapterInfo = _filterBasicList(cros, 'bluetoothAdapterInfo', True, listLimit)
+      if bluetoothAdapterInfo:
+        showJSON('bluetoothAdapterInfo', bluetoothAdapterInfo, dictObjectsKey={'bluetoothAdapterInfo': 'address'})
       fanInfo = _filterBasicList(cros, 'fanInfo', True, listLimit)
       if fanInfo:
         showJSON('fanInfo', fanInfo)
@@ -25205,7 +25211,8 @@ CROS_ENTITIES_MAP = {
   }
 
 CROS_INDEXED_TITLES = ['activeTimeRanges', 'recentUsers', 'deviceFiles',
-                       'cpuStatusReports', 'cpuInfo', 'backlightInfo', 'fanInfo', 'diskVolumeReports', 'lastKnownNetwork', 'screenshotFiles', 'systemRamFreeReports']
+                       'cpuStatusReports', 'cpuInfo', 'backlightInfo', 'bluetoothAdapterInfo', 'fanInfo',
+                       'diskVolumeReports', 'lastKnownNetwork', 'screenshotFiles', 'systemRamFreeReports']
 
 # gam print cros [todrive <ToDriveAttribute>*]
 #	[(query <QueryCrOS>)|(queries <QueryCrOSList>) [querytime<String> <Time>]
@@ -25279,7 +25286,7 @@ def doPrintCrOSDevices(entityList=None):
       return
     row = {}
     for attrib in cros:
-      if attrib in {'cpuInfo', 'backlightInfo', 'fanInfo'}:
+      if attrib in {'cpuInfo', 'backlightInfo', 'bluetoothAdapterInfo', 'fanInfo'}:
         flattenJSON({attrib: cros[attrib]}, flattened=row)
       elif attrib not in {'kind', 'etag', 'diskSpaceUsage', 'osUpdateStatus', 'tpmVersionInfo', 'activeTimeRanges', 'recentUsers',
                           'deviceFiles', 'cpuStatusReports', 'diskVolumeReports', 'lastKnownNetwork', 'screenshotFiles', 'systemRamFreeReports'}:

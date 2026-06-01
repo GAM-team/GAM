@@ -2511,6 +2511,7 @@ gam <CrOSTypeEntity> update <CrOSAttribute>+ [quickcrosmove [<Boolean>]] [nobatc
         autoupdateexpiration|
         autoupdatethrough|
         backlightinfo|
+        bluetoothadapterinfo|
         bootmode|
         chromeostype|
         cpuinfo|
@@ -2544,6 +2545,7 @@ gam <CrOSTypeEntity> update <CrOSAttribute>+ [quickcrosmove [<Boolean>]] [nobatc
         orgunitpath|org|ou|
         osupdatestatus|
         osversion|
+        osversioncompliance|
         platformversion|
         recentusers|
         screenshotfiles|
