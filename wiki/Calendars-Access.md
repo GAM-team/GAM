@@ -20,6 +20,9 @@ Calendar ACL roles (as seen in Calendar GUI):
   * `owner` - Make changes to events and manage sharing
   * `freebusy` & `freebusyreader` - See only free/busy (hide details)
 
+Added `writerwithoutprivateaccess` to `<CalendarACLRole>` in 7.44.03; this will become effective 2026-06-29.
+* See: https://developers.google.com/workspace/calendar/release-notes#June_01_2026
+
 ## API documentation
 * [Calendar API - ACLs](https://developers.google.com/google-apps/calendar/v3/reference/acl)
 
@@ -30,10 +33,15 @@ Calendar ACL roles (as seen in Calendar GUI):
 <CalendarEntity> ::= <CalendarList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
         See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
 
-<CalendarACLRole> ::= editor|freebusy|freebusyreader|owner|reader|writer
-<CalendarACLScope> ::= <EmailAddress>|user:<EmailAdress>|group:<EmailAddress>|domain:<DomainName>|domain|default
-<CalendarACLScopeList> ::= "<CalendarACLScope>(,<CalendarACLScope>)*"
-<CalendarACLScopeEntity>::= <CalendarACLScopeList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+<CalendarACLRole> ::=
+         editor|freebusy|freebusyreader|owner|reader|writer|writerwithoutprivateaccess|none
+<CalendarACLScope> ::=
+        <EmailAddress>|user:<EmailAdress>|group:<EmailAddress>|
+        domain:<DomainName>|domain|default
+<CalendarACLScopeList> ::=
+        "<CalendarACLScope>(,<CalendarACLScope>)*"
+<CalendarACLScopeEntity>::=
+        <CalendarACLScopeList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 ```
 ## Manage calendar access
 ```
