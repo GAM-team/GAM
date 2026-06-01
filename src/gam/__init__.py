@@ -24649,7 +24649,7 @@ def _getFilterDateTime():
   return (filterDate, filterDate.replace(tzinfo='UTC'))
 
 CROS_FIELDS_CHOICE_MAP = {
-  'activetimeranges': ['activeTimeRanges.activeTime', 'activeTimeRanges.date'],
+  'activetimeranges': 'activeTimeRanges',
   'annotatedassetid': 'annotatedAssetId',
   'annotatedlocation': 'annotatedLocation',
   'annotateduser': 'annotatedUser',
@@ -24664,7 +24664,7 @@ CROS_FIELDS_CHOICE_MAP = {
   'cpuinfo': 'cpuInfo',
   'cpustatusreports': 'cpuStatusReports',
   'deprovisionreason': 'deprovisionReason',
-  'devicefiles': ['deviceFiles.type', 'deviceFiles.createTime'],
+  'devicefiles': 'deviceFiles',
   'deviceid': 'deviceId',
   'devicelicensetype': 'deviceLicenseType',
   'diskspaceusage': 'diskSpaceUsage',
@@ -24697,7 +24697,7 @@ CROS_FIELDS_CHOICE_MAP = {
   'osversioncompliance': 'osVersionCompliance',
   'ou': 'orgUnitPath',
   'platformversion': 'platformVersion',
-  'recentusers': ['recentUsers.email', 'recentUsers.type'],
+  'recentusers': 'recentUsers',
   'screenshotfiles': 'screenshotFiles',
   'serialnumber': 'serialNumber',
   'status': 'status',
@@ -24705,11 +24705,11 @@ CROS_FIELDS_CHOICE_MAP = {
   'systemramfreereports': 'systemRamFreeReports',
   'systemramtotal': 'systemRamTotal',
   'tag': 'annotatedAssetId',
-  'timeranges': ['activeTimeRanges.activeTime', 'activeTimeRanges.date'],
-  'times': ['activeTimeRanges.activeTime', 'activeTimeRanges.date'],
+  'timeranges': 'activeTimeRanges',
+  'times': 'activeTimeRanges',
   'tpmversioninfo': 'tpmVersionInfo',
   'user': 'annotatedUser',
-  'users': ['recentUsers.email', 'recentUsers.type'],
+  'users': 'recentUsers',
   'willautorenew': 'willAutoRenew',
   }
 CROS_BASIC_FIELDS_LIST = ['deviceId', 'annotatedAssetId', 'annotatedLocation', 'annotatedUser', 'lastSync', 'notes', 'serialNumber', 'status']
@@ -25318,7 +25318,7 @@ def doPrintCrOSDevices(entityList=None):
         for key in ['email', 'type']:
           new_row[f'recentUsers{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{key}'] = recentUsers[i][key]
       if i < lenDF:
-        for key in ['type', 'createTime']:
+        for key in ['name', 'type', 'downloadUrl', 'createTime']:
           new_row[f'deviceFiles{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{key}'] = deviceFiles[i][key]
       if i < lenCSR:
         new_row[f'cpuStatusReports{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}reportTime'] = cpuStatusReports[i]['reportTime']
