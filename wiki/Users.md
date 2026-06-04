@@ -1093,7 +1093,9 @@ gam print users [todrive <ToDriveAttribute>*]
         (filtermultiattrcustom <UserMultiAttributeFilterName> <String>)*
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
-        [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
+        ([issuspended [<Boolean>]] [isarchived [<Boolean>]])|(isdisabled [<Boolean>])]
+        [disabledafter <DateTime>] [disabledbefore <DateTime>]
+        [aliasmatchpattern <REMatchPattern>]
         [showvalidcolumn] (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
 ```
 
@@ -1103,8 +1105,40 @@ By default, users in all domains in the account are selected; these options allo
 * `(query <QueryUser>)|(queries <QueryUserList>)` - Limit users to those that match a query; each query is run against each domain
 * `limittoou <OrgUnitPath>|<OrgUnitID>` - Limit users to those in the specified `<OrgUnitItem>>`
 * `deleted_only|only_deleted` - Only display deleted users
-* `issuspended <Boolean>` - Limit users based on their status
-* `isarchived <Boolean>` - Limit users based on their status
+
+The `isarchived`, `issuspended` and `isdisabled` options can be used to select users based on their archival/suspension status.
+
+| Options | Users Displayed |
+|---------|-----------------|
+| None | All Users|
+| isarchived [true] | Archived Users |
+| isarchived false | Non-Archived Users |
+| issuspended [true] | Suspended Users |
+| issuspended false | Non-Suspended Users |
+| isarchived [true] issuspended [true] | Archived Users that are Suspended |
+| isarchived [true] issuspended false | Archived Users that are not Suspended |
+| isarchived false issuspended [true] | Suspended Users that are not Archived |
+| isarchived false issuspended false | Non-Archived and Non-Suspended Users |
+| isdisabled [true] | Archived or Suspended Users |
+| isdisabled false | Non-Archived and Non-Suspended Users |
+
+When any of `isarchived [true]`, `issuspended [true]`, `isdisabled [true]` are specified,
+the options `disabledafter <DateTime>` and/or `disabledbefore <DateTime>` can be used to further limit
+the users displayed.
+
+### Examples
+Display users suspended more than 90 days ago.
+```
+gam print users issuspended disabledbefore -90d
+```
+Display users archived within the last 10 days.
+```
+gam print users isarchived disabledafter -10d
+```
+Display users archived/suspended  within a range.
+```
+gam print users isdisabled disabledafter -60d disabledbefore -30d
+```
 
 ### Print a header row and fields for users specified by `<UserTypeEntity>`
 ```
@@ -1121,7 +1155,9 @@ gam print users [todrive <ToDriveAttribute>*] select <UserTypeEntity>
         (filtermultiattrcustom <UserMultiAttributeFilterName> <String>)*
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
-        [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
+        ([issuspended [<Boolean>]] [isarchived [<Boolean>]])|(isdisabled [<Boolean>])]
+        [disabledafter <DateTime>] [disabledbefore <DateTime>]
+        [aliasmatchpattern <REMatchPattern>]
         [showvalidcolumn] (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
 
 gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
@@ -1137,7 +1173,9 @@ gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
         (filtermultiattrcustom <UserMultiAttributeFilterName> <String>)*
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
-        [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
+        ([issuspended [<Boolean>]] [isarchived [<Boolean>]])|(isdisabled [<Boolean>])]
+        [disabledafter <DateTime>] [disabledbefore <DateTime>]
+        [aliasmatchpattern <REMatchPattern>]
         [showvalidcolumn] (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
 ```
 
@@ -1174,6 +1212,40 @@ By default, all instances of `<UserMultiAttribute>` are displayed, use these opt
 of a specified `type` or `customType`.
 * `filtermultiattrtype <UserMultiAttributeFilterName> <String>` - Display `<UserMultiAttributeFilterName>` if its `type` is `<String>`
 * `filtermultiattrcustom <UserMultiAttributeFilterName> <String>` - Display `<UserMultiAttributeFilterName>` if its `customType` is `<String>`
+
+The `isarchived`, `issuspended` and `isdisabled` options can be used to select users from `<UserTypeEntity>`  based on their archival/suspension status.
+
+| Options | Users Displayed |
+|---------|-----------------|
+| None | All Users|
+| isarchived [true] | Archived Users |
+| isarchived false | Non-Archived Users |
+| issuspended [true] | Suspended Users |
+| issuspended false | Non-Suspended Users |
+| isarchived [true] issuspended [true] | Archived Users that are Suspended |
+| isarchived [true] issuspended false | Archived Users that are not Suspended |
+| isarchived false issuspended [true] | Suspended Users that are not Archived |
+| isarchived false issuspended false | Non-Archived and Non-Suspended Users |
+| isdisabled [true] | Archived or Suspended Users |
+| isdisabled false | Non-Archived and Non-Suspended Users |
+
+When any of `isarchived [true]`, `issuspended [true]`, `isdisabled [true]` are specified,
+the options `disabledafter <DateTime>` and/or `disabledbefore <DateTime>` can be used to further limit
+the users displayed.
+
+### Examples
+Display users suspended more than 90 days ago.
+```
+gam print users issuspended disabledbefore -90d
+```
+Display users archived within the last 10 days.
+```
+gam print users isarchived disabledafter -10d
+```
+Display users archived/suspended  within a range.
+```
+gam print users isdisabled disabledafter -60d disabledbefore -30d
+```
 
 By default, when aliases are displayed, all aliases are displayed. Use `aliasmatchpattern <REMatchPattern>`
 to limit the display of aliases to those that match `<REMatchPattern>`.
