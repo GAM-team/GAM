@@ -1123,8 +1123,9 @@ The `isarchived`, `issuspended` and `isdisabled` options can be used to select u
 | isdisabled false | Non-Archived and Non-Suspended Users |
 
 When any of `isarchived [true]`, `issuspended [true]`, `isdisabled [true]` are specified,
-the options `disabledafter <DateTime>` and/or `disabledbefore <DateTime>` can be used to further limit
-the users displayed.
+the options following options  can be used to further limit the users displayed.
+* `disabledafter <DateTime>` - Display users disabled on/after `<DateTime>`
+* `disabledbefore <DateTime>` - Display users disabled before `<DateTime>`
 
 ### Examples
 Display users suspended more than 90 days ago.
@@ -1230,8 +1231,9 @@ The `isarchived`, `issuspended` and `isdisabled` options can be used to select u
 | isdisabled false | Non-Archived and Non-Suspended Users |
 
 When any of `isarchived [true]`, `issuspended [true]`, `isdisabled [true]` are specified,
-the options `disabledafter <DateTime>` and/or `disabledbefore <DateTime>` can be used to further limit
-the users displayed.
+the options following options  can be used to further limit the users displayed.
+* `disabledafter <DateTime>` - Display users disabled on/after `<DateTime>`
+* `disabledbefore <DateTime>` - Display users disabled before `<DateTime>`
 
 ### Examples
 Display staff users suspended more than 90 days ago.
