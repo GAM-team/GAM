@@ -1234,17 +1234,17 @@ the options `disabledafter <DateTime>` and/or `disabledbefore <DateTime>` can be
 the users displayed.
 
 ### Examples
-Display users suspended more than 90 days ago.
+Display staff users suspended more than 90 days ago.
 ```
-gam print users issuspended disabledbefore -90d
+gam ou /Staff print users issuspended disabledbefore -90d
 ```
-Display users archived within the last 10 days.
+Display staff users archived within the last 10 days.
 ```
-gam print users isarchived disabledafter -10d
+gam ou /Staff print users isarchived disabledafter -10d
 ```
-Display users archived/suspended  within a range.
+Display staff users archived/suspended  within a range.
 ```
-gam print users isdisabled disabledafter -60d disabledbefore -30d
+gam ou /Staff print users isdisabled disabledafter -60d disabledbefore -30d
 ```
 
 By default, when aliases are displayed, all aliases are displayed. Use `aliasmatchpattern <REMatchPattern>`
