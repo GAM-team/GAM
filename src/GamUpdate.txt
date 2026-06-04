@@ -1,3 +1,9 @@
+7.45.00
+
+Added options `isdisabled [<Boolean>]`, `disabledafter <DateTime>` and  `disabledbefore <DateTime>`
+to `gam print users`. These options along with `issuspended [<Boolean>]` and `isarchived [<Boolean>]`
+are useful when identifying users to deprovision.
+
 7.44.03
 
 Added `writerwithoutprivateaccess` to `<CalendarACLRole>`; this will become effective 2026-06-29.

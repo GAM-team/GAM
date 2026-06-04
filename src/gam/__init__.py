@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.44.03'
+__version__ = '7.45.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -19492,14 +19492,32 @@ def getUserGroupDomainQueryFilters(myarg, kwargsDict):
     return False
   return True
 
-def makeUserGroupDomainQueryFilters(kwargsDict):
+def makeUserGroupDomainQueryFilters(kwargsDict, isSuspended, isArchived, isDisabled):
+  def addToQuery(query, keyword, value):
+    pquery = query
+    if not pquery:
+      pquery = ''
+    else:
+      pquery += ' '
+    pquery += f'{keyword}={value}'
+    kwargsQueries.append((kwargs, pquery))
+
   kwargsQueries = []
   for kwargs in kwargsDict['list']:
     for query in kwargsDict['queries']:
-      kwargsQueries.append((kwargs, query))
+      if isDisabled is not None:
+        addToQuery(query, 'isArchived', isDisabled)
+        addToQuery(query, 'isSuspended', isDisabled)
+      elif isSuspended is not None or isArchived is not None:
+        if isArchived is not None:
+          addToQuery(query, 'isArchived', isArchived)
+        if isSuspended is not None:
+          addToQuery(query, 'isSuspended', isSuspended)
+      else:
+        kwargsQueries.append((kwargs, query))
   return kwargsQueries
 
-def userFilters(kwargs, query, orgUnitPath, isSuspended, isArchived):
+def userFilters(kwargs, query, orgUnitPath):
   queryTitle = ''
   if kwargs.get('domain'):
     queryTitle += f'domain={kwargs["domain"]}, '
@@ -19512,18 +19530,6 @@ def userFilters(kwargs, query, orgUnitPath, isSuspended, isArchived):
       else:
         query += ' '
       query += f"orgUnitPath='{orgUnitPath}'"
-  if isSuspended is not None:
-    if query is None:
-      query = ''
-    else:
-      query += ' '
-    query += f'isSuspended={isSuspended}'
-  if isArchived is not None:
-    if query is None:
-      query = ''
-    else:
-      query += ' '
-    query += f'isArchived={isArchived}'
   if query is not None:
     queryTitle += f'query="{query}", '
   if queryTitle:
@@ -19535,7 +19541,8 @@ def userFilters(kwargs, query, orgUnitPath, isSuspended, isArchived):
 #	 [limittoou <OrgUnitItem>])
 #	[user|users <EmailAddressList>] [group|groups <EmailAddressList>]
 #	[select <UserTypeEntity>]
-#	[issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
+#	[issuspended [<Boolean>]] [isarchived [<Boolean>]]
+#	[aliasmatchpattern <REMatchPattern>]
 #	[shownoneditable] [nogroups] [nousers]
 #	[onerowpertarget] [delimiter <Character>]
 #	[suppressnoaliasrows]
@@ -19639,10 +19646,10 @@ def doPrintAliases():
   if addCSVData:
     csvPF.AddTitles(sorted(addCSVData.keys()))
   if getUsers:
-    for kwargsQuery in makeUserGroupDomainQueryFilters(kwargsDict):
+    for kwargsQuery in makeUserGroupDomainQueryFilters(kwargsDict, isSuspended, isArchived, None):
       kwargs = kwargsQuery[0]
       query = kwargsQuery[1]
-      query, pquery = userFilters(kwargs, query, orgUnitPath, isSuspended, isArchived)
+      query, pquery = userFilters(kwargs, query, orgUnitPath)
       printGettingAllAccountEntities(Ent.USER, pquery)
       try:
         entityList = callGAPIpages(cd.users(), 'list', 'users',
@@ -19683,7 +19690,7 @@ def doPrintAliases():
     except (GAPI.userNotFound, GAPI.badRequest, GAPI.invalid, GAPI.forbidden, GAPI.invalidResource, GAPI.conditionNotMet) as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
   if getGroups:
-    for kwargsQuery in makeUserGroupDomainQueryFilters(kwargsDict):
+    for kwargsQuery in makeUserGroupDomainQueryFilters(kwargsDict, None, None, None):
       kwargs = kwargsQuery[0]
       query = kwargsQuery[1]
       query, pquery = groupFilters(kwargs, query)
@@ -36496,7 +36503,7 @@ def doPrintGroups():
     setMemberDisplayTitles(memberDisplayOptions, csvPF)
   if entitySelection is None:
     entityList = []
-    for kwargsQuery in makeUserGroupDomainQueryFilters(kwargsDict):
+    for kwargsQuery in makeUserGroupDomainQueryFilters(kwargsDict, None, None, None):
       kwargs = kwargsQuery[0]
       query  = kwargsQuery[1]
       query, pquery = groupFilters(kwargs, query)
@@ -36724,7 +36731,7 @@ def getGroupMembersEntityList(cd, entityList, matchPatterns, fieldsList, kwargsD
   if entityList is None:
     updateFieldsForGroupMatchPatterns(matchPatterns, fieldsList)
     entityList = []
-    for kwargsQuery in makeUserGroupDomainQueryFilters(kwargsDict):
+    for kwargsQuery in makeUserGroupDomainQueryFilters(kwargsDict, None, None, None):
       kwargs = kwargsQuery[0]
       query  = kwargsQuery[1]
       query, pquery = groupFilters(kwargs, query)
@@ -47474,7 +47481,7 @@ USER_MULTI_ATTR_FILTER_CHOICE_MAP = {
 
 INFO_USER_OPTIONS = {'noaliases', 'nobuildingnames', 'nogroups', 'nolicenses', 'nolicences', 'noschemas', 'schemas', 'userview'}
 USER_SKIP_OBJECTS = {'thumbnailPhotoEtag'}
-USER_TIME_OBJECTS = {'creationTime', 'deletionTime', 'lastLoginTime', 'suspensionTime', 'archivalTime'}
+USER_TIME_OBJECTS = {'creationTime', 'deletionTime', 'lastLoginTime', 'suspensionTime', 'archivalTime', 'disabledTime'}
 
 def _getUserMultiAttributeFilters(myarg, userMultiAttributeFilters):
   up = getChoice(USER_MULTI_ATTR_FILTER_CHOICE_MAP, mapChoice=True)
@@ -48041,7 +48048,9 @@ USERS_INDEXED_TITLES = ['addresses', 'aliases', 'nonEditableAliases', 'emails', 
 #	[userview] [basic|full|allfields | <UserFieldName>* | fields <UserFieldNameList>]
 #	[delimiter <Character>] [sortheaders] [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
 #	[convertcrnl]
-#	[issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
+#	([issuspended [<Boolean>]] [isarchived [<Boolean>]])|(isdisabled [<Boolean>])]
+#	[disabledafter <DateTime>] [disabledbefore <DateTime>]
+#	[aliasmatchpattern <REMatchPattern>]
 # 	[showitemcountonly]
 #	[showvalidcolumn] (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
 #
@@ -48054,7 +48063,9 @@ USERS_INDEXED_TITLES = ['addresses', 'aliases', 'nonEditableAliases', 'emails', 
 #	[userview] [basic|full|allfields | <UserFieldName>* | fields <UserFieldNameList>]
 #	[delimiter <Character>] [sortheaders] [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
 #	[convertcrnl]
-#	[issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
+#	([issuspended [<Boolean>]] [isarchived [<Boolean>]])|(isdisabled [<Boolean>])]
+#	[disabledafter <DateTime>] [disabledbefore <DateTime>]
+#	[aliasmatchpattern <REMatchPattern>]
 # 	[showitemcountonly]
 #	[showvalidcolumn] (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
 #
@@ -48062,7 +48073,9 @@ USERS_INDEXED_TITLES = ['addresses', 'aliases', 'nonEditableAliases', 'emails', 
 #	([domain <DomainName>] [(query <QueryUser>)|(queries <QueryUserList>)]
 #	 [limittoou <OrgUnitItem>] [deleted_only|only_deleted])|[select <UserTypeEntity>]
 #	[formatjson [quotechar <Character>]] [countonly]
-#	[issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
+#	([issuspended [<Boolean>]] [isarchived [<Boolean>]])|(isdisabled [<Boolean>])]
+#	[disabledafter <DateTime>] [disabledbefore <DateTime>]
+#	[aliasmatchpattern <REMatchPattern>]
 # 	[showitemcountonly]
 #	[showvalidcolumn] (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
 #
@@ -48090,15 +48103,74 @@ def doPrintUsers(entityList=None):
       csvPF.WriteRowNoFilter(row)
 
   def _printUser(userEntity, i, count):
-    if (isSuspended is None and isArchived is None):
+    if disabledAfterTime is not None or disabledBeforeTime is not None:
+      if not (isDisabled or isSuspended or isArchived):
+        return
+      if isDisabled:
+        if (not (('suspended' in userEntity and userEntity['suspended']) or
+                 ('archived' in userEntity and userEntity['archived']))):
+          return
+        if userEntity['primaryEmail'] in archivedSuspendedUsers:
+          return
+        archivedSuspendedUsers.add(userEntity['primaryEmail'])
+      else:
+        if (isSuspended and not ('suspended' in userEntity and userEntity['suspended'])):
+          return
+        if (isArchived and not ('archived' in userEntity and userEntity['archived'])):
+          return
+      if isDisabled or (isSuspended and isArchived):
+        if 'suspensionTime' in userEntity:
+          if 'archivalTime' in userEntity:
+            disabledTimeStr = min(userEntity['suspensionTime'], userEntity['archivalTime'])
+          else:
+            disabledTimeStr = userEntity['suspensionTime']
+            userEntity['archivalTime'] = ''
+        elif 'archivalTime' in userEntity:
+          disabledTimeStr = userEntity['archivalTime']
+          userEntity['suspensionTime'] = ''
+        else:
+          return
+      elif isSuspended:
+        if 'suspensionTime' in userEntity:
+          disabledTimeStr = userEntity['suspensionTime']
+        else:
+          return
+      else: #isArchived
+        if 'archivalTime' in userEntity:
+          disabledTimeStr = userEntity['archivalTime']
+        else:
+          return
+      try:
+        disabledTime = arrow.get(disabledTimeStr)
+        if ((disabledAfterTime is not None and disabledTime < disabledAfterTime) or
+            (disabledBeforeTime is not None and disabledTime >= disabledBeforeTime)):
+          return
+      except (arrow.parser.ParserError, OverflowError):
+        return
+      userEntity.update({'disabled': True, 'disabledTime': disabledTimeStr})
+      showUser = True
+    elif isDisabled is not None:
+      if isDisabled:
+        showUser = ((isDisabled == userEntity.get('suspended', False)) or
+                    (isDisabled == userEntity.get('archived', False)))
+      else:
+        showUser = ((isDisabled == userEntity.get('suspended', False)) and
+                    (isDisabled == userEntity.get('archived', False)))
+      if showUser and userEntity['primaryEmail'] in archivedSuspendedUsers:
+        return
+      archivedSuspendedUsers.add(userEntity['primaryEmail'])
+    elif (isSuspended is None and isArchived is None):
       showUser = True
     elif (isSuspended is not None and isArchived is None):
-      showUser = isSuspended == userEntity.get('suspended', isSuspended)
-    elif (isSuspended is None and isArchived is not  None):
-      showUser = isArchived == userEntity.get('archived', isArchived)
-    else:
-      showUser = ((isSuspended == userEntity.get('suspended', isSuspended)) or
-                  (isArchived == userEntity.get('archived', isArchived)))
+      showUser = isSuspended == userEntity.get('suspended', False)
+    elif (isSuspended is None and isArchived is not None):
+      showUser = isArchived == userEntity.get('archived', False)
+    else: # (isSuspended is not None and isArchived is not None)
+      showUser = ((isSuspended == userEntity.get('suspended', False)) and
+                  (isArchived == userEntity.get('archived', False)))
+      if showUser and userEntity['primaryEmail'] in archivedSuspendedUsers:
+        return
+      archivedSuspendedUsers.add(userEntity['primaryEmail'])
     if not showUser:
       return
     if getIsGuestUser and 'isGuestUser' not in userEntity:
@@ -48242,7 +48314,9 @@ def doPrintUsers(entityList=None):
   schemaParms = _initSchemaParms('basic')
   projectionSet = False
   getIsGuestUser = oneLicensePerRow = quotePlusPhoneNumbers = showDeleted = False
-  aliasMatchPattern = isArchived = isSuspended = orgUnitPath = orgUnitPathLower = orderBy = sortOrder = None
+  aliasMatchPattern = orgUnitPath = orgUnitPathLower = orderBy = sortOrder = None
+  disabledAfterTime = disabledBeforeTime = isArchived = isDisabled = isSuspended = None
+  archivedSuspendedUsers = set()
   viewType = 'admin_view'
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   showValidColumn = ''
@@ -48265,8 +48339,17 @@ def doPrintUsers(entityList=None):
       _, entityList = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
     elif myarg == 'issuspended':
       isSuspended = getBoolean()
+      isDisabled = None
     elif myarg == 'isarchived':
       isArchived = getBoolean()
+      isDisabled = None
+    elif myarg == 'isdisabled':
+      isDisabled  = getBoolean()
+      isSuspended = isArchived = None
+    elif myarg == 'disabledafter':
+      disabledAfterTime, _, _ = getTimeOrDeltaFromNow(True)
+    elif myarg == 'disabledbefore':
+      disabledBeforeTime, _, _ = getTimeOrDeltaFromNow(True)
     elif myarg == 'orderby':
       orderBy, sortOrder = getOrderBySortOrder(USERS_ORDERBY_CHOICE_MAP)
     elif myarg == 'userview':
@@ -48380,12 +48463,20 @@ def doPrintUsers(entityList=None):
     if orgUnitPath is not None and fieldsList:
       fieldsList.append('orgUnitPath')
     getIsGuestUser = not fieldsList or 'isGuestUser' in fieldsList
+    if isSuspended is not None or isArchived is not None or isDisabled is not None:
+      if len(kwargsDict['queries']) == 1 and kwargsDict['queries'][0] is None:
+        kwargsDict['queries'][0] = ''
+      if fieldsList:
+        if isSuspended is not None or isDisabled is not None:
+          fieldsList.extend(USER_FIELDS_CHOICE_MAP['suspended'])
+        if isArchived is not None or isDisabled is not None:
+          fieldsList.extend(USER_FIELDS_CHOICE_MAP['archived'])
     fields = getItemFieldsFromFieldsList('users', fieldsList)
     itemCount = 0
-    for kwargsQuery in makeUserGroupDomainQueryFilters(kwargsDict):
+    for kwargsQuery in makeUserGroupDomainQueryFilters(kwargsDict, isSuspended, isArchived, isDisabled):
       kwargs = kwargsQuery[0]
       query  = kwargsQuery[1]
-      query, pquery = userFilters(kwargs, query, orgUnitPath, isSuspended, isArchived)
+      query, pquery = userFilters(kwargs, query, orgUnitPath)
       printGettingAllAccountEntities(Ent.USER, pquery)
       pageMessage = getPageMessage(showFirstLastItems=True)
       try:
@@ -48449,10 +48540,10 @@ def doPrintUsers(entityList=None):
     sortRows = True
 # If no individual fields were specified (allfields, basic, full) or individual fields other than primaryEmail were specified, look up each user
     getIsGuestUser = not fieldsList or 'isGuestUser' in fieldsList
-    if isSuspended is not None and fieldsList:
-      fieldsList.append('suspended')
-    if isArchived is not None and fieldsList:
-      fieldsList.append('archived')
+    if (isSuspended is not None or isDisabled is not None) and fieldsList:
+      fieldsList.extend(USER_FIELDS_CHOICE_MAP['suspended'])
+    if (isArchived is not None or isDisabled is not None) and fieldsList:
+      fieldsList.extend(USER_FIELDS_CHOICE_MAP['archived'])
     if projectionSet or len(set(fieldsList)) > 1 or showValidColumn:
       jcount = len(entityList)
       fields = getFieldsFromFieldsList(fieldsList)

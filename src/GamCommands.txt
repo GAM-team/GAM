@@ -1618,7 +1618,8 @@ gam print alias|aliases [todrive <ToDriveAttribute>*]
          [limittoou <OrgUnitItem>])
         [user|users <EmailAddressList>] [group|groups <EmailAddressList>]
         [select <UserTypeEntity>]
-        [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
+        [issuspended [<Boolean>]] [isarchived [<Boolean>]]
+        [aliasmatchpattern <REMatchPattern>]
         [shownoneditable] [nogroups] [nousers]
         [onerowpertarget] [delimiter <Character>]
         [suppressnoaliasrows]
@@ -6030,7 +6031,9 @@ gam print users [todrive <ToDriveAttribute>*]
         (filtermultiattrcustom <UserMultiAttributeFilterName> <String>)*
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
-        [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
+        ([issuspended [<Boolean>]] [isarchived [<Boolean>]])|(isdisabled [<Boolean>])]
+        [disabledafter <DateTime>] [disabledbefore <DateTime>]
+        [aliasmatchpattern <REMatchPattern>]
         [showvalidcolumn] (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
         [showitemcountonly]
 
@@ -6049,7 +6052,9 @@ gam print users [todrive <ToDriveAttribute>*] select <UserTypeEntity>
         (filtermultiattrcustom <UserMultiAttributeFilterName> <String>)*
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
-        [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
+        ([issuspended [<Boolean>]] [isarchived [<Boolean>]])|(isdisabled [<Boolean>])]
+        [disabledafter <DateTime>] [disabledbefore <DateTime>]
+        [aliasmatchpattern <REMatchPattern>]
         [showvalidcolumn] (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
         [showitemcountonly]
 
@@ -6066,7 +6071,9 @@ gam <UserTypeEntity> print users [todrive <ToDriveAttribute>*]
         (filtermultiattrcustom <UserMultiAttributeFilterName> <String>)*
         [delimiter <Character>] [sortheaders [<Boolean>]] [scalarsfirst [<Boolean>]]
         [formatjson [quotechar <Character>]] [quoteplusphonenumbers]
-        [issuspended <Boolean>] [isarchived <Boolean>] [aliasmatchpattern <REMatchPattern>]
+        ([issuspended [<Boolean>]] [isarchived [<Boolean>]])|(isdisabled [<Boolean>])]
+        [disabledafter <DateTime>] [disabledbefore <DateTime>]
+        [aliasmatchpattern <REMatchPattern>]
         [showvalidcolumn] (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
         [showitemcountonly]
 
