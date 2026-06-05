@@ -48102,7 +48102,28 @@ def doPrintUsers(entityList=None):
                                ensure_ascii=False, sort_keys=True)
       csvPF.WriteRowNoFilter(row)
 
+  def _getDisabledTimeStr(userEntity):
+    disabledTimeStr = ''
+    if isDisabled or (isSuspended and isArchived):
+      if 'suspensionTime' in userEntity:
+        if 'archivalTime' in userEntity:
+          disabledTimeStr = min(userEntity['suspensionTime'], userEntity['archivalTime'])
+        else:
+          disabledTimeStr = userEntity['suspensionTime']
+          userEntity['archivalTime'] = ''
+      elif 'archivalTime' in userEntity:
+        disabledTimeStr = userEntity['archivalTime']
+        userEntity['suspensionTime'] = ''
+    elif isSuspended:
+      if 'suspensionTime' in userEntity:
+        disabledTimeStr = userEntity['suspensionTime']
+    else: #isArchived
+      if 'archivalTime' in userEntity:
+        disabledTimeStr = userEntity['archivalTime']
+    return disabledTimeStr
+
   def _printUser(userEntity, i, count):
+    getDisabledTime = isDisabled or isSuspended or isArchived
     if disabledAfterTime is not None or disabledBeforeTime is not None:
       if not (isDisabled or isSuspended or isArchived):
         return
@@ -48118,28 +48139,9 @@ def doPrintUsers(entityList=None):
           return
         if (isArchived and not ('archived' in userEntity and userEntity['archived'])):
           return
-      if isDisabled or (isSuspended and isArchived):
-        if 'suspensionTime' in userEntity:
-          if 'archivalTime' in userEntity:
-            disabledTimeStr = min(userEntity['suspensionTime'], userEntity['archivalTime'])
-          else:
-            disabledTimeStr = userEntity['suspensionTime']
-            userEntity['archivalTime'] = ''
-        elif 'archivalTime' in userEntity:
-          disabledTimeStr = userEntity['archivalTime']
-          userEntity['suspensionTime'] = ''
-        else:
-          return
-      elif isSuspended:
-        if 'suspensionTime' in userEntity:
-          disabledTimeStr = userEntity['suspensionTime']
-        else:
-          return
-      else: #isArchived
-        if 'archivalTime' in userEntity:
-          disabledTimeStr = userEntity['archivalTime']
-        else:
-          return
+      disabledTimeStr = _getDisabledTimeStr(userEntity)
+      if not disabledTimeStr:
+        return
       try:
         disabledTime = arrow.get(disabledTimeStr)
         if ((disabledAfterTime is not None and disabledTime < disabledAfterTime) or
@@ -48147,7 +48149,8 @@ def doPrintUsers(entityList=None):
           return
       except (arrow.parser.ParserError, OverflowError):
         return
-      userEntity.update({'disabled': True, 'disabledTime': disabledTimeStr})
+      userEntity.update({'disabled': True, 'disabledTime':  disabledTimeStr})
+      getDisabledTime = False
       showUser = True
     elif isDisabled is not None:
       if isDisabled:
@@ -48159,20 +48162,26 @@ def doPrintUsers(entityList=None):
       if showUser and userEntity['primaryEmail'] in archivedSuspendedUsers:
         return
       archivedSuspendedUsers.add(userEntity['primaryEmail'])
+      userEntity['disabled'] = isDisabled
     elif (isSuspended is None and isArchived is None):
       showUser = True
     elif (isSuspended is not None and isArchived is None):
       showUser = isSuspended == userEntity.get('suspended', False)
+      userEntity['disabled'] = isSuspended
     elif (isSuspended is None and isArchived is not None):
       showUser = isArchived == userEntity.get('archived', False)
+      userEntity['disabled'] = isArchived
     else: # (isSuspended is not None and isArchived is not None)
       showUser = ((isSuspended == userEntity.get('suspended', False)) and
                   (isArchived == userEntity.get('archived', False)))
       if showUser and userEntity['primaryEmail'] in archivedSuspendedUsers:
         return
       archivedSuspendedUsers.add(userEntity['primaryEmail'])
+      userEntity['disabled'] = isSuspended or isArchived
     if not showUser:
       return
+    if getDisabledTime:
+      userEntity['disabledTime'] =  _getDisabledTimeStr(userEntity)
     if getIsGuestUser and 'isGuestUser' not in userEntity:
       userEntity['isGuestUser'] = False
     if showValidColumn:
