@@ -153,3 +153,4 @@ This capability is no longer available, see: https://developers.google.com/works
 
 Data ownership can be transferred in the Google Calendar UI.
 
+See: https://workspaceupdates.googleblog.com/2026/03/an-update-on-secondary-calendar-lifecycle-changes-and-a-new-API.html
