@@ -7058,6 +7058,7 @@ gam <UserTypeEntity> move drivefile <DriveFileEntity> [newfilename <DriveFileNam
         [copysubfolderpermissions [<Boolean>]]
         [copysubfolderinheritedpermissions [<Boolean>]]
         [copysubfoldernoniheritedpermissions never|always|syncallfolders|syncupdatedfolders]
+        [movefilepermissions [<Boolean>]]
         [excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
         (mappermissionsemail <EmailAddress> <EmailAddress>)* [mappermissionsemailfile <CSVFileInput> endcsv]
         (mappermissionsdomain <DomainName> <DomainName>)*

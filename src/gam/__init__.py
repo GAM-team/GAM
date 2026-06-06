@@ -63103,6 +63103,7 @@ def initCopyMoveOptions(copyCmd):
     'copyTopFolderNonInheritedPermissions': COPY_NONINHERITED_PERMISSIONS_ALWAYS,
     'copySubFolderNonInheritedPermissions': COPY_NONINHERITED_PERMISSIONS_ALWAYS,
     'noCopyNonInheritedPermissions': COPY_NONINHERITED_PERMISSIONS_NEVER,
+    'moveFilePermissions': True,
     'excludePermissionsFromDomains': set(),
     'includePermissionsFromDomains': set(),
     'mapPermissionsEmails': {},
@@ -63222,6 +63223,8 @@ def getCopyMoveOptions(myarg, copyMoveOptions):
           copyMoveOptions['mergeWithParent'] = False
       elif myarg == 'createshortcutsfornonmovablefiles':
         copyMoveOptions['createShortcutsForNonmovableFiles'] = getBoolean()
+      elif myarg == 'movefilepermissions':
+        copyMoveOptions['moveFilePermissions'] = getBoolean()
       else:
         return False
 # Copy arguments
@@ -64553,20 +64556,24 @@ def _updateMoveFilePermissions(drive, user, i, count,
     return [Ent.USER, user, entityType, title, Ent.PERMISSION, permstr]
 
   def isPermissionDeletable(kvList, permission):
-    domain = ''
-    if copyMoveOptions['excludePermissionsFromDomains'] or copyMoveOptions['includePermissionsFromDomains']:
+    if not copyMoveOptions['moveFilePermissions']:
+      notMovedMessage = 'movefilepermissions false'
+    elif permission.pop('deleted', False):
+      notMovedMessage = f"{permission['type']} {permission['emailAddress']} deleted"
+    elif copyMoveOptions['excludePermissionsFromDomains'] or copyMoveOptions['includePermissionsFromDomains']:
+      domain = ''
       if permission['type'] in {'group', 'user'}:
         atLoc = permission.get('emailAddress', '').find('@')
         if atLoc > 0:
           domain = permission['emailAddress'][atLoc+1:].lower()
       elif permission['type'] == 'domain':
         domain = permission.get('domain', '').lower()
-    if domain and domain in copyMoveOptions['excludePermissionsFromDomains']:
-      notMovedMessage = f'domain {domain} excluded'
-    elif domain and copyMoveOptions['includePermissionsFromDomains'] and domain not in copyMoveOptions['includePermissionsFromDomains']:
-      notMovedMessage = f'domain {domain} not included'
-    elif permission.pop('deleted', False):
-      notMovedMessage = f"{permission['type']} {permission['emailAddress']} deleted"
+      if domain and domain in copyMoveOptions['excludePermissionsFromDomains']:
+        notMovedMessage = f'domain {domain} excluded'
+      elif domain and copyMoveOptions['includePermissionsFromDomains'] and domain not in copyMoveOptions['includePermissionsFromDomains']:
+        notMovedMessage = f'domain {domain} not included'
+      else:
+        return False
     else:
       return False
     deleteSourcePerms[permission['id']] = permission.copy()
@@ -64745,6 +64752,7 @@ def _recursiveUpdateMovePermissions(drive, user, i, count,
 #	[copypermissionroles <DriveFileACLRoleList>]
 #	[copypermissiontypes <DriveFileACLTypeList>]
 #	[synctopfoldernoniheritedpermissions [<Boolean>]] [syncsubfoldernoninheritedpermissions [<Boolean>]]
+#	[movefilepermissions [<Boolean>]]
 #	[excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
 #	(mappermissionsemail <EmailAddress> <EmailAddress>)* [mappermissionsemailfile <CSVFileInput> endcsv]
 #	(mappermissionsdomain <DomainName> <DomainName>)*
@@ -65117,7 +65125,8 @@ def moveDriveFile(users):
       verifyOrganizer = getBoolean()
     else:
       unknownArgumentExit()
-  updateMovePermissions = (copyMoveOptions['excludePermissionsFromDomains'] or copyMoveOptions['includePermissionsFromDomains'] or
+  updateMovePermissions = ((not copyMoveOptions['moveFilePermissions']) or
+                           copyMoveOptions['excludePermissionsFromDomains'] or copyMoveOptions['includePermissionsFromDomains'] or
                            copyMoveOptions['mapPermissionsDomains'] or copyMoveOptions['mapPermissionsEmails'])
 
   i, count, users = getEntityArgument(users)
