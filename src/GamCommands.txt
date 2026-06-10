@@ -4378,6 +4378,14 @@ gam show policies
         [group <REMatchPattern>] [ou|org|orgunit <REMatchPattern>]
         [formatjson]
 
+gam create policy
+        json <JSONData>
+        [(ou|orgunit <OrgUnitItem>)|(group <GroupItem>)|(query <String>)]
+gam update policy
+        json <JSONData>
+        [(ou|orgunit <OrgUnitItem>)|(group <GroupItem>)|(query <String>)]
+gam delete policies <CIPolicyNameEntity>
+
 # Inbound SSO
 
 <SSOProfileDisplayName> ::= <String>

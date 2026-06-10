@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.45.00'
+__version__ = '7.46.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -38526,37 +38526,25 @@ def _checkPoliciesWithDASA():
     systemErrorExit(USAGE_ERROR_RC,
                     Msg.COMMAND_NOT_COMPATIBLE_WITH_ENABLE_DASA.format(Act.ToPerform().lower(), Cmd.ARG_CIPOLICIES))
 
-def _getCIPolicyOrgUnitTarget(cd, myarg, groupEmail):
-  if groupEmail:
-    Cmd.Backup()
-    usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format(myarg, 'group'))
-  targetName, targetResource = _getOrgunitsOrgUnitIdPath(cd, getString(Cmd.OB_ORGUNIT_PATH))
-  return (targetName, targetResource)
-
-def _getCIPolicyGroupTarget(cd, myarg, orgUnit):
-  if orgUnit:
-    Cmd.Backup()
-    usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format(myarg, 'ou|org|orgunit'))
-  targetName = getEmailAddress(returnUIDprefix='uid:')
-  targetResource = f"groups/{convertEmailAddressToUID(targetName, cd, emailType='group')}"
-  return (targetName, targetResource)
-
 # gam create policy
 #	json <JSONData>
-#	[(ou|orgunit <OrgUnitItem>)|(group <GroupItem>)]
+#	[(ou|orgunit <OrgUnitItem>)|(group <GroupItem>)|(query <String>)]
 # gam update policy
 #	json <JSONData>
-#	[(ou|orgunit <OrgUnitItem>)|(group <GroupItem>)]
+#	[(ou|orgunit <OrgUnitItem>)|(group <GroupItem>)|(query <String>)]
 def doCreateUpdateCIPolicy():
   _checkPoliciesWithDASA()
-  ci = buildGAPIObject(API.CLOUDIDENTITY_POLICY_BETA)
+  ci = buildGAPIObject(API.CLOUDIDENTITY_POLICY)
   cd = buildGAPIObject(API.DIRECTORY)
   updateCmd = Act.Get() == Act.UPDATE
-  groupEmail = orgUnit = None
+  groupEmail = orgUnit = query = None
   checkArgumentPresent('json', True)
   policy = getJSON(['customer', 'type'])
   if updateCmd:
     pname = policy.pop('name', None)
+    if not pname:
+      Cmd.Backup()
+      usageErrorExit(Msg.POLICY_NAME_NOT_FOUND)
   else:
     policy.pop('name', None)
     pname = 'New Policy'
@@ -38564,6 +38552,8 @@ def doCreateUpdateCIPolicy():
     policy['policyQuery'].pop('orgUnitPath', None)
     policy['policyQuery'].pop('groupEmail', None)
     policy['policyQuery'].pop('sortOrder', None)
+    if 'orgUnit' in policy['policyQuery'] or 'group' in policy['policyQuery']:
+      policy['policyQuery'].pop('query', None)
   if 'setting' in policy:
     if 'value' in policy['setting']:
       policy['setting']['value'].pop('createTime', None)
@@ -38576,19 +38566,37 @@ def doCreateUpdateCIPolicy():
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg in {'ou', 'org', 'orgunit'}:
-      orgUnit, targetResource = _getCIPolicyOrgUnitTarget(cd, myarg, groupEmail)
-      policy.setdefault('policyQuery', {})
-      policy['policyQuery'].pop('group', None)
-      policy['policyQuery']['orgUnit'] = f"orgUnits/{targetResource}"
-      policy['policyQuery']['query'] = f"entity.org_units.exists(org_unit, org_unit.org_unit_id == orgUnitId('{targetResource}'))"
+      if groupEmail:
+        Cmd.Backup()
+        usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format(myarg, 'group'))
+      if query:
+        Cmd.Backup()
+        usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format(myarg, 'query'))
+      orgUnit, targetResource = _getOrgunitsOrgUnitIdPath(cd, getString(Cmd.OB_ORGUNIT_PATH))
+      policy['policyQuery'] = {'orgUnit': f"orgUnits/{targetResource}"}
     elif myarg == 'group':
-      groupEmail, targetResource = _getCIPolicyGroupTarget(cd, myarg, orgUnit)
-      policy.setdefault('policyQuery', {})
-      policy['policyQuery'].pop('orgUnit', None)
-      policy['policyQuery']['group'] = f"groups/{targetResource}"
-      policy['policyQuery']['query'] = f"entity.groups.exists(group, group.group_id == groupId('{targetResource}'))"
+      if orgUnit:
+        Cmd.Backup()
+        usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format(myarg, 'ou|org|orgunit'))
+      if query:
+        Cmd.Backup()
+        usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format(myarg, 'query'))
+      groupEmail = getEmailAddress(returnUIDprefix='uid:')
+      targetResource = f"groups/{convertEmailAddressToUID(groupEmail, cd, emailType='group')}"
+      policy['policyQuery'] = {'group': f"groups/{targetResource}"}
+    elif myarg == 'query':
+      if groupEmail:
+        Cmd.Backup()
+        usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format(myarg, 'group'))
+      if orgUnit:
+        Cmd.Backup()
+        usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format(myarg, 'ou|org|orgunit'))
+      query = getString(Cmd.OB_QUERY)
+      policy['policyQuery'] = {'query': query}
     else:
       unknownArgumentExit()
+  if 'policyQuery' not in policy:
+    missingArgumentExit('ou|org|orgunit|group|query')
   policy['customer'] = _getCustomersCustomerIdWithC()
   try:
     if updateCmd:
@@ -38616,11 +38624,10 @@ def doCreateUpdateCIPolicy():
           GAPI.notFound, GAPI.permissionDenied, GAPI.internalError) as e:
     entityActionFailedWarning([Ent.POLICY, pname], str(e))
 
-
 # gam delete policies <CIPolicyNameEntity>
 def doDeleteCIPolicies():
   _checkPoliciesWithDASA()
-  ci = buildGAPIObject(API.CLOUDIDENTITY_POLICY_BETA)
+  ci = buildGAPIObject(API.CLOUDIDENTITY_POLICY)
   entityList = getEntityList(Cmd.OB_CIPOLICY_NAME_ENTITY)
   checkForExtraneousArguments()
   i = 0

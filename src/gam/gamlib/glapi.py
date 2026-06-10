@@ -51,7 +51,6 @@ CLOUDIDENTITY_INBOUND_SSO = 'cloudidentityinboundsso'
 CLOUDIDENTITY_ORGUNITS = 'cloudidentityorgunits'
 CLOUDIDENTITY_ORGUNITS_BETA = 'cloudidentityorgunitsbeta'
 CLOUDIDENTITY_POLICY = 'cloudidentitypolicy'
-CLOUDIDENTITY_POLICY_BETA = 'cloudidentitypolicybeta'
 CLOUDIDENTITY_USERINVITATIONS = 'cloudidentityuserinvitations'
 CLOUDRESOURCEMANAGER = 'cloudresourcemanager'
 CLOUDRESOURCEMANAGERV1 = 'cloudresourcemanagerv1'
@@ -261,7 +260,6 @@ _INFO = {
   CLOUDIDENTITY_ORGUNITS: {'name': 'Cloud Identity API - OrgUnits', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_ORGUNITS_BETA: {'name': 'Cloud Identity API - OrgUnits Beta', 'version': 'v1beta1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_POLICY: {'name': 'Cloud Identity API - Policy', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
-  CLOUDIDENTITY_POLICY_BETA: {'name': 'Cloud Identity API - Policy Beta', 'version': 'v1beta1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_USERINVITATIONS: {'name': 'Cloud Identity API - User Invitations', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDRESOURCEMANAGER: {'name': 'Resource Manager API v3', 'version': 'v3', 'v2discovery': True},
   CLOUDRESOURCEMANAGERV1: {'name': 'Resource Manager API v1', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudresourcemanager'},
@@ -404,10 +402,6 @@ _CLIENT_SCOPES = [
    'api': CLOUDIDENTITY_POLICY,
    'subscopes': READONLY,
    'roByDefault': True,
-   'scope': 'https://www.googleapis.com/auth/cloud-identity.policies'},
-  {'name': 'Cloud Identity API - Policy Beta',
-   'api': CLOUDIDENTITY_POLICY_BETA,
-   'offByDefault': True,
    'scope': 'https://www.googleapis.com/auth/cloud-identity.policies'},
   {'name': 'Cloud Identity API - User Invitations',
    'api': CLOUDIDENTITY_USERINVITATIONS,
@@ -640,10 +634,6 @@ _SVCACCT_SCOPES = [
 #   'api': CLOUDIDENTITY_POLICY,
 #   'subscopes': READONLY,
 #   'roByDefault': True,
-#   'scope': 'https://www.googleapis.com/auth/cloud-identity.policies'},
-#  {'name': 'Cloud Identity API - Policy Beta',
-#   'api': CLOUDIDENTITY_POLICY_BETA,
-#   'offByDefault': True,
 #   'scope': 'https://www.googleapis.com/auth/cloud-identity.policies'},
 #  {'name': 'Cloud Identity User Invitations API',
 #   'api': CLOUDIDENTITY_USERINVITATIONS,
