@@ -583,6 +583,7 @@ gam <UserTypeEntity> move drivefile <DriveFileEntity> [newfilename <DriveFileNam
         [copysubfolderpermissions [<Boolean>]]
         [copysubfolderinheritedpermissions [<Boolean>]]
         [copysubfoldernoninheritedpermissions never|always|syncallfolders|syncupdatedfolders]
+        [movefilepermissions [<Boolean>]]
         [excludepermissionsfromdomains|includepermissionsfromdomains <DomainNameList>]
         (mappermissionsemail <EmailAddress> <EmailAddress)* [mappermissionsemailfile <CSVFileInput> endcsv]
         (mappermissionsdomain <DomainName> <DomainName>)*
@@ -728,6 +729,8 @@ and any remaining copy errors.
 
 ### Moved File Permissions
 By default, the permissions of a moved file are not modified.
+
+When `movefilerpermissions false` is specified, all ACLs are removed.
 
 When `excludepermissionsfromdomains <DomainNameList>` is specified, any ACL that references a domain in `<DomainNameList>` will be removed.
 

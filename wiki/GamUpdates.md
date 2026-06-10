@@ -10,6 +10,19 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.45.00
+
+Added options `isdisabled [<Boolean>]`, `disabledafter <DateTime>` and  `disabledbefore <DateTime>`
+to `gam print users`. These options along with `issuspended [<Boolean>]` and `isarchived [<Boolean>]`
+are useful when identifying users to deprovision.
+
+Added option `movefilepermissions [<Boolean>]]` to `gam <UserTypeEntity> move drivefile` that, when False,
+causes GAM to remove ACLs from a file before moving it; this will be most useful when moving files to
+Shared Drives so that only the Shared Drive ACls apply. When not specified or set True, file permissions
+are not removed; this is the current GAM behavior.
+
+Upgraded to OpenSSL 4.0.1.
+
 ### 7.44.03
 
 Added `writerwithoutprivateaccess` to `<CalendarACLRole>`; this will become effective 2026-06-29.

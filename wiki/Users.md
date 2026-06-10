@@ -1122,6 +1122,10 @@ The `isarchived`, `issuspended` and `isdisabled` options can be used to select u
 | isdisabled [true] | Archived or Suspended Users |
 | isdisabled false | Non-Archived and Non-Suspended Users |
 
+When none of `isarchived`, `issuspended`, `isdisabled` are specified,
+but one or both of `disabledafter` or `disabledbefore` is specified,
+then `isdisabled true` is selected.
+
 When any of `isarchived [true]`, `issuspended [true]`, `isdisabled [true]` are specified,
 the following options  can be used to further limit the users displayed.
 * `disabledafter <DateTime>` - Display users disabled on/after `<DateTime>`
@@ -1229,6 +1233,10 @@ The `isarchived`, `issuspended` and `isdisabled` options can be used to select u
 | isarchived false issuspended false | Non-Archived and Non-Suspended Users |
 | isdisabled [true] | Archived or Suspended Users |
 | isdisabled false | Non-Archived and Non-Suspended Users |
+
+When none of `isarchived`, `issuspended`, `isdisabled` are specified,
+but one or both of `disabledafter` or `disabledbefore` is specified,
+then `isdisabled true` is selected.
 
 When any of `isarchived [true]`, `issuspended [true]`, `isdisabled [true]` are specified,
 the following options  can be used to further limit the users displayed.
