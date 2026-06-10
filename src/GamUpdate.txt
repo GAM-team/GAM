@@ -9,6 +9,8 @@ causes GAM to remove ACLs from a file before moving it; this will be most useful
 Shared Drives so that only the Shared Drive ACls apply. When not specified or set True, file permissions
 are not removed; this is the current GAM behavior.
 
+Upgraded to OpenSSL 4.0.1.
+
 7.44.03
 
 Added `writerwithoutprivateaccess` to `<CalendarACLRole>`; this will become effective 2026-06-29.

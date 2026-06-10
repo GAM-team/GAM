@@ -48467,6 +48467,9 @@ def doPrintUsers(entityList=None):
       lic = buildGAPIObject(API.LICENSING)
       if skus is None:
         skus = SKU.getAllSKUs() if not GM.Globals[GM.LICENSE_SKUS] else GM.Globals[GM.LICENSE_SKUS]
+  if ((disabledAfterTime is not None or disabledBeforeTime is not None) and
+      isArchived is None and isDisabled is None and isSuspended is None):
+    isDisabled = True
   if entityList is None:
     sortRows = False
     if orgUnitPath is not None and fieldsList:
