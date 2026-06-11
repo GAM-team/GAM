@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.46.00'
+__version__ = '7.46.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -24392,7 +24392,7 @@ def displayCrOSCommandResult(cd, deviceId, commandId, checkResultRetries, i, cou
         if addCSVData:
           result.update(addCSVData)
         csvPF.WriteRowTitles(flattenJSON(result, timeObjects=CROS_COMMAND_TIME_OBJECTS))
-        return
+        break
       showJSON(None, result, timeObjects=CROS_COMMAND_TIME_OBJECTS)
       state = result.get('state')
       if state in CROS_COMMAND_FINAL_STATES:

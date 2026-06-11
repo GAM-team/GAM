@@ -1,3 +1,10 @@
+7.46.01
+
+Fixed bug in `gam <CrOSTypeEntity> issuecommand command <CrOSCommand> ... csv` where
+command execution status lines were improperly indented.
+
+Upgraded to Python 3.14.6.
+
 7.46.00
 
 Added commands to create, update and delete Cloud Identity policies for data loss prevention (DLP) rules and detectors.
