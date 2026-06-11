@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.46.01
+
+Fixed bug in `gam <CrOSTypeEntity> issuecommand command <CrOSCommand> ... csv` where
+command execution status lines were improperly indented.
+
+Upgraded to Python 3.14.6.
+
 ### 7.46.00
 
 Added commands to create, update and delete Cloud Identity policies for data loss prevention (DLP) rules and detectors.
