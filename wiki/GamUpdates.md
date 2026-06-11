@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.46.00
+
+Added commands to create, update and delete Cloud Identity policies for data loss prevention (DLP) rules and detectors.
+
+* See: https://github.com/GAM-team/GAM/wiki/Cloud-Identity-Policies
+* See: https://workspaceupdates.googleblog.com/2026/06/introducing-workspace-policy-api-mutate-endpoints-for-DLP.html
+
 ### 7.45.00
 
 Added options `isdisabled [<Boolean>]`, `disabledafter <DateTime>` and  `disabledbefore <DateTime>`

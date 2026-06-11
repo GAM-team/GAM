@@ -5,6 +5,8 @@
 - [Definitions](#definitions)
 - [Policies](#policies)
 - [Display Cloud Identity Policies](#display-cloud-identity-policies)
+- [Create and Update Cloud Identity Policies](#create-and-update-cloud-identity-policies)
+- [Delete Cloud Identity Policies](#delete-cloud-identity-policies)
 
 ## API documentation
 * [Policy API](https://cloud.google.com/identity/docs/reference/rest/v1/policies)
@@ -34,6 +36,9 @@ You must enable access to policies in the GCP cloud console.
 * Type orgpolicy.policyAdmin in the Filter box
 * Click Organization Policy Administrator
 * Click Save
+
+The commands to create, update and delete Cloud Identity policies for data loss prevention (DLP) rules and detectors
+were added in version `7.46.00`.
 
 ## Definitions
 ```
@@ -87,7 +92,7 @@ gam show policies
         [formatjson]
 ```
 By default, all policies are displayed.
-* `filter <String>` - Display filtered policies, See https://cloud.google.com/identity/docs/reference/rest/v1beta1/policies/list
+* `filter <String>` - Display filtered policies, See https://cloud.google.com/identity/docs/reference/rest/v1/policies/list
 * `group <REMatchPattern>` - Only display policies whose group email address matches the `<REMatchPattern>`
 * `ou|org|orgunit <REMatchPattern>` - Only display policies whose OU path matches the `<REMatchPattern>`
 
@@ -110,7 +115,7 @@ gam print policies [todrive <ToDriveAttribute>*]
         [formatjson [quotechar <Character>]]
 ```
 By default, all policies are displayed:
-* `filter <String>` - Display filtered policies, See https://cloud.google.com/identity/docs/reference/rest/v1beta1/policies/list
+* `filter <String>` - Display filtered policies, See https://cloud.google.com/identity/docs/reference/rest/v1/policies/list
 * `group <REMatchPattern>` - Only display policies whose group email address matches the `<REMatchPattern>`
 * `ou|org|orgunit <REMatchPattern>` - Only display policies whose OU path matches the `<REMatchPattern>`
 
@@ -151,4 +156,33 @@ gam redirect csv ./StaffPolicies.csv print policies ou "^/Staff$"
 Print all polices that apply to the OU "/Staff" and its sub-OUs.
 ```
 gam redirect csv ./StaffPolicies.csv print policies ou "^/Staff"
+```
+
+## Create and Update Cloud Identity Policies
+Policies can be complex objects, it is probably easiest to create template policies in the Admin console (under Rules),
+output the JSON format data for those policies to be used in subsequent create and update commands.
+
+```
+gam create policy
+        json <JSONData>
+        [(ou|orgunit <OrgUnitItem>)|(group <GroupItem>)|(query <String>)]
+gam update policy
+        json <JSONData>
+        [(ou|orgunit <OrgUnitItem>)|(group <GroupItem>)|(query <String>)]
+```
+```
+gam redirect stdout ./policy.json info policies policies/akajj264aoclblvncu
+Make changes to policy.json and update the policy.
+gam update policy json file policy.json
+
+Update the policy to reference a different group.
+gam update policy json file policy.json group <EmailAddress>
+
+Make changes to policy.json and create a new policy in a different OU.
+gam create policy json file policy.json ou <OrgUnitPath>
+```
+
+## Delete Cloud Identity Policies
+```
+gam delete policies <CIPolicyNameEntity>
 ```
