@@ -376,7 +376,7 @@ For `corpus calendar`, you can specify advanced search options:
 * `minuswords <StringList>`
   * Matches only those events that do not contain any of the words in the given set in title, description, location, or attendees.
   * Entries in the set are considered in "or".
-* `responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*
+* `responsestatuses <AttendeeStatus>(,<AttendeeStatus>)*`
   * Matches only events for which the custodian gave one of these responses. If the set is empty, there will be no filtering on responses.
 * `calendarversiondate <Date>|<Time>`
   * Search the current version of the Calendar event, but export the contents of the last version saved before 12:00 AM UTC on the specified date.
