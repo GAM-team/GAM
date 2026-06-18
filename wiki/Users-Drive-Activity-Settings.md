@@ -81,8 +81,8 @@ gam <UserTypeEntity> print driveactivity [todrive <ToDriveAttributes>*]
 By default, drive activity for all files in the top level of My Drive will be displayed.
 * `fileid <DriveFileID>` - Display drive activity for file `<DriveFileID>`
 * `folderid <DriveFolderID>` - Display drive activity for all files in folder `<DriveFolderID>`
-* `drivefilename <DriveFileName>` - Display drive activity for the file with name `<DriveFolderID>`
-* `drivefoldername <DriveFolderName>` - Display drive activity for all files in the folder  with name `<DriveFolderName>`
+* `drivefilename <DriveFileName>` - Display drive activity for the file with name `<DriveFileName>`
+* `drivefoldername <DriveFolderName>` - Display drive activity for all files in the folder with name `<DriveFolderName>`
 * `query`  - Display drive activity for all files/folders selected by the query
 
 Activities can be filtered by time.
