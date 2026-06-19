@@ -1,3 +1,8 @@
+7.46.02
+
+Updated `gam <UserTypeEntity> show calsettings` to display `dataOwner` field;
+it is labelled `Owner`.
+
 7.46.01
 
 Fixed bug in `gam <CrOSTypeEntity> issuecommand command <CrOSCommand> ... csv` where

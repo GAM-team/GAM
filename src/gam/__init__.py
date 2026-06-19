@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.46.01'
+__version__ = '7.46.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -42956,14 +42956,16 @@ def doCalendarsModifySettings(calIds):
 def _showCalendarSettings(calendar, j, jcount):
   printEntity([Ent.CALENDAR, calendar['id']], j, jcount)
   Ind.Increment()
+  if 'dataOwner' in calendar:
+    printKeyValueList(['Owner', calendar['dataOwner']])
   if 'summaryOverride' in calendar or 'summary' in calendar:
     printKeyValueList(['Summary', calendar.get('summaryOverride', calendar.get('summary', ''))])
   if 'description' in calendar:
-    printKeyValueWithCRsNLs('Description', calendar.get('description', ''))
+    printKeyValueWithCRsNLs('Description', calendar['description'])
   if 'location' in calendar:
-    printKeyValueList(['Location', calendar.get('location', '')])
+    printKeyValueList(['Location', calendar['location']])
   if 'timeZone' in calendar:
-    printKeyValueList(['Timezone', calendar.get('timeZone', '')])
+    printKeyValueList(['Timezone', calendar['timeZone']])
   if 'conferenceProperties' in calendar:
     printKeyValueList(['ConferenceProperties', None])
     Ind.Increment()
