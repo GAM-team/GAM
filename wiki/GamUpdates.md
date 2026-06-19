@@ -12,7 +12,7 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 
 ### 7.46.02
 
-Updated `gam <UserTypeEntity> show calsettings` to display `dataOwner` field;
+Updated `gam calendars <CalendarEntity> show settings` to display `dataOwner` field;
 it is labelled `Owner`.
 
 ### 7.46.01
