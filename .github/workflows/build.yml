@@ -551,7 +551,7 @@ jobs:
             gh release download --repo "jay0lee/cryptography-wheels" --pattern "*win_arm64.whl" --clobber
             "$PYTHON" -m pip install cryptography-*.whl
           fi
-          "$PYTHON" -m pip install -vvv --upgrade ..[yubikey]
+          "$PYTHON" -m pip install --upgrade ..[yubikey]
 
       - name: Install PyInstaller
         if: matrix.goal == 'build'
