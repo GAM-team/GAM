@@ -551,7 +551,10 @@ jobs:
             gh release download --repo "jay0lee/cryptography-wheels" --pattern "*win_arm64.whl" --clobber
             "$PYTHON" -m pip install cryptography-*.whl
           fi
-          "$PYTHON" -m pip install --upgrade ..[yubikey]
+          # "$PYTHON" -m pip install --upgrade ..[yubikey]
+          # TODO: once yubikey upgrades to cryptography 49 this should no longer be necessary
+          "$PYTHON" -m pip install --upgrade ..
+          "$PYTHON" -m pip install yubikey-manager --no-deps
 
       - name: Install PyInstaller
         if: matrix.goal == 'build'
