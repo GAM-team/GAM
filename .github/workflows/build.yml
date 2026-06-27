@@ -539,14 +539,6 @@ jobs:
             gh release download --repo "jay0lee/cryptography-wheels" --pattern "*win_arm64.whl" --clobber
             "$PYTHON" -m pip install cryptography-*.whl
           fi
-          
-          # HACK HACK HACK
-          # force ykman to accept cryptography 49+. Can be removed
-          # once ykman upgrades to cryptograhy 49.
-          "$PYTHON" -m pip install yubikey-manager==5.9.1 --no-deps
-          # 2. Patch the ykman METADATA file to strip the cryptography constraint
-          "$PYTHON" -c 'import re; from importlib.metadata import distribution as d; p=[f.locate() for f in d("yubikey-manager").files if f.name=="METADATA"][0]; c=open(p).read(); open(p,"w").write(re.sub(r"(Requires-Dist:\s*cryptography)[^;\n]*", r"\1", c))'
-          
           "$PYTHON" -m pip install ..[yubikey]
 
       - name: Install PyInstaller
