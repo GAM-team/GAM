@@ -538,6 +538,10 @@ jobs:
             # https://github.com/pyca/cryptography/issues/14293
             gh release download --repo "jay0lee/cryptography-wheels" --pattern "*win_arm64.whl" --clobber
             "$PYTHON" -m pip install cryptography-*.whl
+          elif [[ "$RUNNER_OS" == "macOS" && "$RUNNER_ARCH" == "x86_64" ]]; then
+            # custom cryptography wheel for macos x86_64 since it's no longer standard
+            gh release download --repo "jay0lee/cryptography-wheels" --pattern "*macosx_15_0_x86_64.whl" --clobber
+            "$PYTHON" -m pip install cryptography-*.whl
           fi
           "$PYTHON" -m pip install ..[yubikey]
 
