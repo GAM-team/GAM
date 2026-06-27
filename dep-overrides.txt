@@ -1,6 +1,4 @@
-# overrides uv.lock to force newer dependencies
-# when old deps are vulnerable. These should be set
-# to expire after 2 weeks when the fixed version will
-# be automatically picked up anyway.
+# overrides our upgrades to force newer or older dependencies
 # Format: package_requirement | MM/DD/YYYY
-urllib3>=2.7.0 | 05/22/2026
+# ykman doesn't support cryptography 49 yet
+cryptography (>=3.0, <49) | 08/30/2026
