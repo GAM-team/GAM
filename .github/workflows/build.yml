@@ -529,18 +529,6 @@ jobs:
             echo "gam=${gam}" >> $GITHUB_ENV
           fi
 
-      #- name: Upgrade pip, wheel, etc
-      #  run: |
-      #    curl $curl_retry -O https://bootstrap.pypa.io/get-pip.py
-      #    "$PYTHON" get-pip.py
-      #    "$PYTHON" -m pip install --upgrade pip
-      #    "$PYTHON" -m pip install --upgrade wheel
-      #    "$PYTHON" -m pip install --upgrade setuptools
-      #    "$PYTHON" -m pip install --upgrade importlib-metadata
-      #    "$PYTHON" -m pip install --upgrade setuptools-scm
-      #    "$PYTHON" -m pip install --upgrade packaging
-      #    "$PYTHON" -m pip list
-
       - name: Install pip requirements
         env:
           GH_TOKEN: ${{ github.token }}
@@ -551,10 +539,7 @@ jobs:
             gh release download --repo "jay0lee/cryptography-wheels" --pattern "*win_arm64.whl" --clobber
             "$PYTHON" -m pip install cryptography-*.whl
           fi
-          # "$PYTHON" -m pip install --upgrade ..[yubikey]
-          # TODO: once yubikey upgrades to cryptography 49 this should no longer be necessary
-          "$PYTHON" -m pip install yubikey-manager==5.9.1 --no-deps
-          "$PYTHON" -m pip install ..[yubikey]
+          "$PYTHON" -m pip install --upgrade ..[yubikey]
 
       - name: Install PyInstaller
         if: matrix.goal == 'build'
