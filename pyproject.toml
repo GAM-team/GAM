@@ -10,7 +10,7 @@ authors = [
 dependencies = [
     "arrow==1.4.0",
     "chardet==7.4.3",
-    "cryptography==49.0.0",
+    "cryptography==48.0.1",
     "distro==1.9.0 ; sys_platform=='linux'",
     "filelock==3.29.4",
     "google-api-python-client==2.197.0",
