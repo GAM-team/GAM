@@ -12,7 +12,7 @@ dependencies = [
     "chardet==7.4.3",
     "cryptography==49.0.0",
     "distro==1.9.0 ; sys_platform=='linux'",
-    "filelock==3.29.3",
+    "filelock==3.29.4",
     "google-api-python-client==2.197.0",
     "google-auth-httplib2==0.4.0",
     "google-auth-oauthlib==1.4.0",
