@@ -10,6 +10,10 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.46.03
+
+Updated all Vault related commands to handle the following error: `ERROR: 403: permissionDenied`
+
 ### 7.46.02
 
 Updated `gam calendars <CalendarEntity> show settings` to display `dataOwner` field;

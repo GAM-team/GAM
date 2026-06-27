@@ -5,6 +5,7 @@
 - [Manage calendar access](#manage-calendar-access)
 - [Display calendar access](#display-calendar-access)
 - [Old format commands](#old-format-commands)
+- [Transfer calendar ownership](#transfer-calendar-ownership)
 
 ## Notes
 These commands use Client access for all commands except those that reference user's primary calendars
@@ -42,6 +43,9 @@ Added `writerwithoutprivateaccess` to `<CalendarACLRole>` in 7.44.03; this will 
         "<CalendarACLScope>(,<CalendarACLScope>)*"
 <CalendarACLScopeEntity>::=
         <CalendarACLScopeList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+
+<UniqueID> ::= id:<String>
+<UserItem> ::= <EmailAddress>|<UniqueID>|<String>
 ```
 ## Manage calendar access
 ```
@@ -92,3 +96,13 @@ gam calendar <CalendarEntity> printacl [todrive <ToDriveAttribute>*]
 ```
 By default, when you add or update a calendar ACL, notification is sent to the members referenced in the `<CalendarACLScopeEntity>`.
 Use `sendnotifications false` to suppress sending the notification.
+
+## Transfer calendar ownership
+
+You can transfer ownership of secondary calendars from one user to another.
+
+```
+gam <CalendarEntity> transfer ownership <UserItem>
+```
+
+See: https://workspaceupdates.googleblog.com/2026/06/secondary-calendar-management-API.html

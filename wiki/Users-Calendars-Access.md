@@ -5,7 +5,7 @@
 - [Calendar selection](#calendar-selection)
 - [Manage calendar access](#manage-calendar-access)
 - [Display calendar access](#display-calendar-access)
-- [Transfer calendar ownership](#transfer-calendar-ownership)
+- [Transfer calendar ownership](Calendars-Access)
 
 ## Notes
 Calendar ACL roles (as seen in Calendar GUI):
@@ -144,13 +144,3 @@ the quote character itself, the column delimiter (comma by default) and new-line
 When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
-
-## Transfer calendar ownership
-
-You can transfer ownership of calendars from one user to another; only non-primary calendars owned by the source user can be transferred.
-
-This capability is no longer available, see: https://developers.google.com/workspace/calendar/release-notes#October_27_2025
-
-Data ownership can be transferred in the Google Calendar UI.
-
-See: https://workspaceupdates.googleblog.com/2026/03/an-update-on-secondary-calendar-lifecycle-changes-and-a-new-API.html
