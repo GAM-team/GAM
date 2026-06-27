@@ -535,6 +535,14 @@ User: user@domain.com, Delete maximum of 15 Other Contacts
   User: user@domain.com, Other Contact: otherContacts/c6318452176100245073, Deleted
 ```
 
+Bulk delete Other Contacts
+
+Let's suppose you have a CSV file (OtherContacts.csv) with at least these two headers: User,resourceName
+The file can contain multiple users and their other contacts. This is the most API effecient way to delete the contacts.
+```
+gam redirect stdout ./DeleteOtherContacts.txt redirect stderr stdout csvkmd users OtherContacts.csv keyfield User datafield resourceName delete othercontacts csvdata resourceName
+```
+
 ## Display User Other Contacts
 ### Display as an indented list of keys and values.
 ```
