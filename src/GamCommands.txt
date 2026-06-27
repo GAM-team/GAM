@@ -1676,6 +1676,10 @@ gam <UserTypeEntity> show analyticdatastreams
 <CalendarACLScopeEntity>::=
         <CalendarACLScopeList> | <FileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 
+Transfer ownership of a selection of a users secondary calendars to another user
+
+gam calendars <CalendarEntity> transfer <UserItem>
+
 gam calendars <CalendarEntity> create|add acls|calendaracls <CalendarACLRole> <CalendarACLScopeEntity> [sendnotifications <Boolean>]
 gam calendars <CalendarEntity> update acls|calendaracls <CalendarACLRole> <CalendarACLScopeEntity> [sendnotifications <Boolean>]
 gam calendars <CalendarEntity> delete acls|calendaracls [<CalendarACLRole>] <CalendarACLScopeEntity>
@@ -6297,13 +6301,6 @@ gam <UserTypeEntity> show calendaracls <UserCalendarEntity>
 gam <UserTypeEntity> print calendaracls <UserCalendarEntity> [todrive <ToDriveAttribute>*]
         [noselfowner] (addcsvdata <FieldName> <String>)*
         [formatjson [quotechar <Character>]]
-
-Transfer ownership of a selection of a users secondary calendars to another user
-
-gam <UserTypeEntity> transfer calendars|seccals <UserItem> [<UserCalendarEntity>]
-        [keepuser | (retainrole <CalendarACLRole>)] [sendnotifications <Boolean>] [noretentionmessages]
-        <CalendarSettings>* [append description|location|summary] [noupdatemessages]
-        [deletefromoldowner] [addtonewowner <CalendarAttribute>*] [nolistmessages]
 
 <AttendeeAttendance> ::= optional|required
 <AttendeeStatus> ::= accepted|declined|needsaction|tentative

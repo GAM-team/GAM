@@ -1,6 +1,10 @@
+7.46.03
+
+Updated all Vault related commands to handle the following error: `ERROR: 403: permissionDenied`
+
 7.46.02
 
-Updated `gam <UserTypeEntity> show calsettings` to display `dataOwner` field;
+Updated `gam calendars <CalendarEntity> show settings` to display `dataOwner` field;
 it is labelled `Owner`.
 
 7.46.01
