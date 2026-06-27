@@ -102,9 +102,11 @@ jobs:
                       pkg, ver = line.split("==", 1)
                       resolved_versions[pkg.strip().lower()] = ver.strip()
 
-          # Cleanup temp file
+          # Cleanup temp files so they don't get committed to the PR
           if temp_in.exists():
               temp_in.unlink()
+          if Path("resolved.txt").exists():
+              Path("resolved.txt").unlink()
 
           # 5. Map the newly resolved versions back to your pyproject.toml updates
           updates = {}
