@@ -553,8 +553,8 @@ jobs:
           fi
           # "$PYTHON" -m pip install --upgrade ..[yubikey]
           # TODO: once yubikey upgrades to cryptography 49 this should no longer be necessary
-          "$PYTHON" -m pip install yubikey-manager==5.9.1
-          "$PYTHON" -m pip install --upgrade ..
+          "$PYTHON" -m pip install yubikey-manager==5.9.1 --no-deps
+          "$PYTHON" -m pip install ..[yubikey]
 
       - name: Install PyInstaller
         if: matrix.goal == 'build'
