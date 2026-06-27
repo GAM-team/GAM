@@ -544,11 +544,8 @@ jobs:
           # force ykman to accept cryptography 49+. Can be removed
           # once ykman upgrades to cryptograhy 49.
           "$PYTHON" -m pip install yubikey-manager==5.9.1 --no-deps
-          # 2. Locate the site-packages directory
-          SITE_PACKAGES=$("$PYTHON" -c "import site; print(site.getsitepackages()[0])")
-          # 3. Strip the strict cryptography constraint from ykman's METADATA file
-          # This removes the (<49...) portion, leaving just 'Requires-Dist: cryptography'
-          find "$SITE_PACKAGES" -path "*/yubikey_manager-*.dist-info/METADATA" -exec sed -i.bak 's/cryptography (<[^)]*)/cryptography/g' {} +
+          # 2. Patch the ykman METADATA file to strip the cryptography constraint
+          "$PYTHON" -c 'import re; from importlib.metadata import distribution as d; p=[f.locate() for f in d("yubikey-manager").files if f.name=="METADATA"][0]; c=open(p).read(); open(p,"w").write(re.sub(r"(Requires-Dist:\s*cryptography)[^;\n]*", r"\1", c))'
           
           "$PYTHON" -m pip install ..[yubikey]
 
