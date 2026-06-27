@@ -22,13 +22,18 @@ jobs:
         with:
           python-version: '3.14'
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+
       - name: Calculate and pin two-week old stable versions
         shell: python
         run: |
-          import json
-          import urllib.request
+          import subprocess
           import re
           import tomllib
+          import os
           from datetime import datetime, timedelta, timezone
           from pathlib import Path
 
@@ -42,14 +47,10 @@ jobs:
           
           target_deps = set()
           
-          # Standard [project.dependencies]
+          # Gather all dependencies
           target_deps.update(parsed_toml.get("project", {}).get("dependencies", []))
-          
-          # Optional [project.optional-dependencies]
           for deps in parsed_toml.get("project", {}).get("optional-dependencies", {}).values():
               target_deps.update(deps)
-              
-          # Dev [dependency-groups] (uv / PEP 735 standard)
           for deps in parsed_toml.get("dependency-groups", {}).values():
               if isinstance(deps, list):
                   for d in deps:
@@ -60,73 +61,78 @@ jobs:
               print("No dependencies found to process.")
               exit(0)
 
-          updates = {}
-          two_weeks_ago = datetime.now(timezone.utc) - timedelta(days=14)
-          print(f"Evaluating dependencies against cutoff date: {two_weeks_ago.isoformat()}")
-
+          # 1. Create a "clean" requirements list (base names + markers only, no versions)
+          clean_reqs = []
           for dep in target_deps:
-              # Isolate base package name (e.g., "yubikey-manager>=5.6.1" -> "yubikey-manager")
-              pkg_name = re.split(r'[<>=!~;\s]', dep)[0].strip()
+              pkg_base = re.split(r'[<>=!~;\s]', dep)[0].strip()
+              if ";" in dep:
+                  marker = dep.split(";", 1)[1].strip()
+                  clean_reqs.append(f"{pkg_base} ; {marker}")
+              else:
+                  clean_reqs.append(pkg_base)
+
+          temp_in = Path("temp_reqs.in")
+          temp_in.write_text("\n".join(clean_reqs), encoding="utf-8")
+
+          # 2. Calculate Cutoff Date
+          two_weeks_ago = datetime.now(timezone.utc) - timedelta(days=14)
+          cutoff_str = two_weeks_ago.strftime("%Y-%m-%dT%H:%M:%SZ")
+          print(f"Resolving dependencies against cutoff date: {cutoff_str}")
+
+          # 3. Use uv to resolve the CLEAN list, allowing free upgrades/downgrades
+          try:
+              subprocess.run([
+                  "uv", "pip", "compile", 
+                  str(temp_in), 
+                  "--exclude-newer", cutoff_str,
+                  "--quiet",
+                  "-o", "resolved.txt"
+              ], check=True)
+          except subprocess.CalledProcessError:
+              print("\nDependency resolution failed! Upstream constraints are impossible to satisfy.")
+              if temp_in.exists(): temp_in.unlink()
+              exit(1)
+
+          # 4. Parse the resolved lockfile
+          resolved_versions = {}
+          with open("resolved.txt", "r", encoding="utf-8") as f:
+              for line in f:
+                  line = line.split("#")[0].strip()
+                  if "==" in line:
+                      pkg, ver = line.split("==", 1)
+                      resolved_versions[pkg.strip().lower()] = ver.strip()
+
+          # Cleanup temp file
+          if temp_in.exists():
+              temp_in.unlink()
+
+          # 5. Map the newly resolved versions back to your pyproject.toml updates
+          updates = {}
+          for dep in target_deps:
+              pkg_name_raw = re.split(r'[<>=!~;\s]', dep)[0].strip()
+              pkg_name_lower = pkg_name_raw.lower()
               
-              # Preserve environment markers if they exist
               marker = ""
               if ";" in dep:
                   marker = " ; " + dep.split(";", 1)[1].strip()
 
-              print(f"Fetching PyPI data for: {pkg_name}")
-              try:
-                  url = f"https://pypi.org/pypi/{pkg_name}/json"
-                  req = urllib.request.Request(url, headers={'User-Agent': 'GAM-CI-Script'})
-                  with urllib.request.urlopen(req) as response:
-                      data = json.loads(response.read().decode())
+              if pkg_name_lower in resolved_versions:
+                  target_version = resolved_versions[pkg_name_lower]
+                  pinned_dep = f"{pkg_name_raw}=={target_version}{marker}"
                   
-                  valid_versions = []
-                  for ver, files in data.get("releases", {}).items():
-                      if not files:
-                          continue
-                      
-                      upload_time_str = files[0].get("upload_time_iso_8601")
-                      if not upload_time_str:
-                          continue
-                      
-                      if upload_time_str.endswith('Z'):
-                          upload_time_str = upload_time_str[:-1] + '+00:00'
-                      
-                      upload_time = datetime.fromisoformat(upload_time_str)
-                      
-                      # Filter: Must be older than 2 weeks and not a pre-release
-                      if upload_time <= two_weeks_ago and not any(x in ver.lower() for x in ['a', 'b', 'rc', 'dev']):
-                          valid_versions.append((upload_time, ver))
-                  
-                  if valid_versions:
-                      # Sort by upload time descending to get the newest valid option
-                      valid_versions.sort(key=lambda x: x[0], reverse=True)
-                      target_version = valid_versions[0][1]
-                      
-                      pinned_dep = f"{pkg_name}=={target_version}{marker}"
-                      if pinned_dep != dep:
-                          updates[dep] = pinned_dep
-                          print(f"  -> Pinning: '{dep}' => '{pinned_dep}'")
-                      else:
-                          print(f"  -> Already pinned correctly to {target_version}")
+                  if pinned_dep != dep:
+                      updates[dep] = pinned_dep
+                      print(f"  -> Changing: '{dep}' => '{pinned_dep}'")
                   else:
-                      print(f"  -> No valid historical versions found.")
-                      
-              except urllib.error.HTTPError as e:
-                  print(f"  -> Package not found on PyPI or HTTP error: {e}")
-              except Exception as e:
-                  print(f"  -> Error processing {pkg_name}: {e}")
+                      print(f"  -> Up to date: {dep}")
 
-          # 3. Replace the strings safely in the original file content
+          # 6. Replace the strings safely in the original file content
           new_content = content
           for old_dep, new_dep in updates.items():
-              # Regex targets the exact string inside either single or double quotes
-              # Using a lambda replacement ensures we don't trip over escape sequences in the new string
               escaped_old = re.escape(old_dep)
               pattern = r'([\'"])' + escaped_old + r'\1'
               new_content = re.sub(pattern, lambda m: m.group(1) + new_dep + m.group(1), new_content)
 
-          # Write changes back to pyproject.toml
           if content != new_content:
               toml_path.write_text(new_content, encoding="utf-8")
               print("\npyproject.toml updated successfully.")
@@ -139,6 +145,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "chore: upgrade PyPi deps"
           title: "Upgrade PyPi deps"
-          body: "Automated scan checking PyPI for package versions at least 2 weeks old."
+          body: "Automated scan checking PyPI for mutually compatible package versions at least 2 weeks old. Handles both upgrades and conflict-driven downgrades."
           branch: sys-deps-upgrade
           force: false # Standard push, plays nice with rulesets
