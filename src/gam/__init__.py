@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.46.03'
+__version__ = '7.46.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -55368,7 +55368,7 @@ def doCalendarsTransferOwnership(calIds):
                throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_PARAMETER,
                              GAPI.FORBIDDEN, GAPI.AUTH_ERROR, GAPI.CONDITION_NOT_MET],
                calendarId=calId, newDataOwner=newDataOwner, useAdminAccess=True)
-      entityPerformActionModifierNewValue([Ent.CALENDAR, calId], Act.MODIFIER_TO, newDataOwner, i, count)
+      entityModifierNewValueActionPerformed([Ent.CALENDAR, calId], Act.MODIFIER_TO, newDataOwner, i, count)
     except (GAPI.notFound, GAPI.invalid, GAPI.invalidParameter,
             GAPI.forbidden, GAPI.authError, GAPI.conditionNotMet) as e:
       entityModifierNewValueActionFailedWarning([Ent.CALENDAR, calId], Act.MODIFIER_TO, newDataOwner, str(e), i, count)
