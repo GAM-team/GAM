@@ -9599,6 +9599,7 @@ def inspect_untrusted_cert(url):
   port = parsed.port or 443
   # Create an unverified context purely for diagnostic extraction
   ctx = ssl.create_default_context()
+  ctx.minimum_version = ssl.TLSVersion.TLSv1_2
   ctx.check_hostname = False
   ctx.verify_mode = ssl.CERT_NONE
   try:
