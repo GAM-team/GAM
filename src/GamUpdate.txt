@@ -1,3 +1,8 @@
+7.46.05
+
+Fixed bug in `gam <UserTypeEntity> print sheet` where an extra line of output
+was displayed before the CSV data.
+
 7.46.04
 
 Added the following command to transfer secondary calendar ownership.
