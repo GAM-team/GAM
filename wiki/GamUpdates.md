@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.46.06
+
+Updated GAM to suppress the following message:
+```
+Regional Access Boundary HTTP request failed after retries: response_data={'error': {'code': 403, 'message': 'Permission denied on the service account.', 'status': 'PERMISSION_DENIED'}}, retryable_error=False
+```
+
 ### 7.46.05
 
 Fixed bug in `gam <UserTypeEntity> print sheet` where an extra line of output
