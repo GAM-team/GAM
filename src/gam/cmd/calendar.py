@@ -4,7 +4,7 @@ import re
 import json
 import sys
 
-from gam.util.csv_pf import RI_ENTITY, RI_J, RI_JCOUNT, RI_ITEM
+from gam.util.csv_pf import RI_ENTITY, RI_J, RI_JCOUNT, RI_ITEM, FormatJSONQuoteChar
 import uuid
 
 from gamlib import glaction
