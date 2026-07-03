@@ -6,6 +6,8 @@ Part of the _users_tmp sub-package."""
 
 import re
 import sys
+
+from gamlib import gluprop as UProp
 import base64
 import time
 
