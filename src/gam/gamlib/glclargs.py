@@ -1494,81 +1494,140 @@ class GamCLArgs():
     ARGUMENT_MISSING: ['Missing arguments', 'Missing argument'],
     }
 
+  # Shared state across all instances (class-level)
+  _argv = []
+  _argvI = 0
+  _argvLen = 0
+  _argvIsave = 0
+  _origArgv = []
+  _origArgvI = 0
+  _origArgvLen = 0
+  _encoding = 'utf-8'
+
+  @property
+  def argv(self):
+    return GamCLArgs._argv
+  @argv.setter
+  def argv(self, value):
+    GamCLArgs._argv = value
+
+  @property
+  def argvI(self):
+    return GamCLArgs._argvI
+  @argvI.setter
+  def argvI(self, value):
+    GamCLArgs._argvI = value
+
+  @property
+  def argvLen(self):
+    return GamCLArgs._argvLen
+  @argvLen.setter
+  def argvLen(self, value):
+    GamCLArgs._argvLen = value
+
+  @property
+  def argvIsave(self):
+    return GamCLArgs._argvIsave
+  @argvIsave.setter
+  def argvIsave(self, value):
+    GamCLArgs._argvIsave = value
+
+  @property
+  def origArgv(self):
+    return GamCLArgs._origArgv
+  @origArgv.setter
+  def origArgv(self, value):
+    GamCLArgs._origArgv = value
+
+  @property
+  def origArgvI(self):
+    return GamCLArgs._origArgvI
+  @origArgvI.setter
+  def origArgvI(self, value):
+    GamCLArgs._origArgvI = value
+
+  @property
+  def origArgvLen(self):
+    return GamCLArgs._origArgvLen
+  @origArgvLen.setter
+  def origArgvLen(self, value):
+    GamCLArgs._origArgvLen = value
+
+  @property
+  def encoding(self):
+    return GamCLArgs._encoding
+  @encoding.setter
+  def encoding(self, value):
+    GamCLArgs._encoding = value
+
   def __init__(self):
-    self.argv = []
-    self.argvI = 0
-    self.argvLen = 0
-    self.argvIsave = 0
-    self.origArgv = []
-    self.origArgvI = 0
-    self.origArgvLen = 0
-    self.encoding = 'utf-8'
+    pass  # state is shared at class level
 
 # Initialize arguments
   def InitializeArguments(self, args):
-    self.argv = args[:]
-    self.argvI = 1
-    self.argvLen = len(self.argv)
+    GamCLArgs._argv = args[:]
+    GamCLArgs._argvI = 1
+    GamCLArgs._argvLen = len(GamCLArgs._argv)
 
 # Number of arguments remaining
   def NumArgumentsRemaining(self):
-    return self.argvLen - self.argvI
+    return GamCLArgs._argvLen - GamCLArgs._argvI
 
 # Any arguments remaining
   def ArgumentsRemaining(self):
-    return self.argvI < self.argvLen
+    return GamCLArgs._argvI < GamCLArgs._argvLen
 
 # Multiple arguments remaining
   def MultipleArgumentsRemaining(self):
-    return not self.argvI+1 == self.argvLen
+    return not GamCLArgs._argvI+1 == GamCLArgs._argvLen
 
 # All arguments
   def AllArguments(self):
-    return self.argv
+    return GamCLArgs._argv
 
 # Specific argument
   def Argument(self, index):
-    return self.argv[index]
+    return GamCLArgs._argv[index]
 
 # Current argument
   def Current(self):
-    return self.argv[self.argvI]
+    return GamCLArgs._argv[GamCLArgs._argvI]
 
 # Previous argument
   def Previous(self):
-    return self.argv[self.argvI-1]
+    return GamCLArgs._argv[GamCLArgs._argvI-1]
 
 # Remaining arguments
   def Remaining(self):
-    return self.argv[self.argvI:]
+    return GamCLArgs._argv[GamCLArgs._argvI:]
 
 # Argument location
   def Location(self):
-    return self.argvI
+    return GamCLArgs._argvI
 
 # Advance to next argument
   def Advance(self):
-    self.argvI += 1
+    GamCLArgs._argvI += 1
 
 # Backup to previous argument
   def Backup(self):
-    self.argvI -= 1
+    GamCLArgs._argvI -= 1
 
 # Save argument location
   def SaveLocation(self):
-    self.argvIsave = self.argvI
+    GamCLArgs._argvIsave = GamCLArgs._argvI
 
 # Reset argument location
   def ResetLocation(self, offset):
-    self.argvI = self.argvIsave+offset
+    GamCLArgs._argvI = GamCLArgs._argvIsave+offset
 
 # Set argument location
   def SetLocation(self, location):
-    self.argvI = location
+    GamCLArgs._argvI = location
 
 # Set encoding
   def SetEncoding(self, encoding):
-    self.encoding = encoding
+    GamCLArgs._encoding = encoding
 
 # Concatenate list members, any item containing spaces, commas or single quotes is enclosed in ""
   @staticmethod
@@ -1578,14 +1637,14 @@ class GamCLArgs():
 # Mark bad argument in command line
   def CommandLineWithBadArgumentMarked(self, extraneous):
     if extraneous:
-      return f'Command: {self.QuotedArgumentList(self.argv[:self.argvI])} >>>{self.QuotedArgumentList(self.argv[self.argvI:])}<<<\n'
+      return f'Command: {self.QuotedArgumentList(GamCLArgs._argv[:GamCLArgs._argvI])} >>>{self.QuotedArgumentList(GamCLArgs._argv[GamCLArgs._argvI:])}<<<\n'
     if self.ArgumentsRemaining():
-      return f'Command: {self.QuotedArgumentList(self.argv[:self.argvI])} >>>{self.QuotedArgumentList([self.argv[self.argvI]])}<<< {self.QuotedArgumentList(self.argv[self.argvI+1:])}\n'
-    return f'Command: {self.QuotedArgumentList(self.argv)} >>><<<\n'
+      return f'Command: {self.QuotedArgumentList(GamCLArgs._argv[:GamCLArgs._argvI])} >>>{self.QuotedArgumentList([GamCLArgs._argv[GamCLArgs._argvI]])}<<< {self.QuotedArgumentList(GamCLArgs._argv[GamCLArgs._argvI+1:])}\n'
+    return f'Command: {self.QuotedArgumentList(GamCLArgs._argv)} >>><<<\n'
 
 # Deprecated command
   def CommandDeprecated(self):
-    return f'{self.QuotedArgumentList(self.argv)}\n'
+    return f'{self.QuotedArgumentList(GamCLArgs._argv)}\n'
 
 # Peek to see if next argument is in choices
   def PeekArgumentPresent(self, choices):
@@ -1609,14 +1668,14 @@ class GamCLArgs():
 
 # Merge new arguments into current argument list
   def MergeArguments(self, arguments):
-    self.origArgv = self.argv[:]
-    self.origArgvI = self.argvI
-    self.origArgvLen = self.argvLen
-    self.argv = self.argv[0:self.argvI]+arguments+self.argv[self.argvI:]
-    self.argvLen += len(arguments)
+    GamCLArgs._origArgv = GamCLArgs._argv[:]
+    GamCLArgs._origArgvI = GamCLArgs._argvI
+    GamCLArgs._origArgvLen = GamCLArgs._argvLen
+    GamCLArgs._argv = GamCLArgs._argv[0:GamCLArgs._argvI]+arguments+GamCLArgs._argv[GamCLArgs._argvI:]
+    GamCLArgs._argvLen += len(arguments)
 
 # Restore
   def RestoreArguments(self):
-    self.argv = self.origArgv[:]
-    self.argvI = self.origArgvI
-    self.argvLen = self.origArgvLen
+    GamCLArgs._argv = GamCLArgs._origArgv[:]
+    GamCLArgs._argvI = GamCLArgs._origArgvI
+    GamCLArgs._argvLen = GamCLArgs._origArgvLen

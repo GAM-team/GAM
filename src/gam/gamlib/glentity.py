@@ -795,39 +795,70 @@ class GamEntity():
     ROLE_PUBLIC: ['Public', 'Public'],
     }
 
+  # Shared state across all instances (class-level)
+  _entityType = None
+  _forWhom = None
+  _preQualifier = ''
+  _postQualifier = ''
+
+  @property
+  def entityType(self):
+    return GamEntity._entityType
+  @entityType.setter
+  def entityType(self, value):
+    GamEntity._entityType = value
+
+  @property
+  def forWhom(self):
+    return GamEntity._forWhom
+  @forWhom.setter
+  def forWhom(self, value):
+    GamEntity._forWhom = value
+
+  @property
+  def preQualifier(self):
+    return GamEntity._preQualifier
+  @preQualifier.setter
+  def preQualifier(self, value):
+    GamEntity._preQualifier = value
+
+  @property
+  def postQualifier(self):
+    return GamEntity._postQualifier
+  @postQualifier.setter
+  def postQualifier(self, value):
+    GamEntity._postQualifier = value
+
   def __init__(self):
-    self.entityType = None
-    self.forWhom = None
-    self.preQualifier = ''
-    self.postQualifier = ''
+    pass  # state is shared at class level
 
   def SetGetting(self, entityType):
-    self.entityType = entityType
-    self.preQualifier = self.postQualifier = ''
+    GamEntity._entityType = entityType
+    GamEntity._preQualifier = GamEntity._postQualifier = ''
 
   def SetGettingQuery(self, entityType, query):
-    self.entityType = entityType
-    self.preQualifier = f' that match query ({query})'
-    self.postQualifier = f' that matched query ({query})'
+    GamEntity._entityType = entityType
+    GamEntity._preQualifier = f' that match query ({query})'
+    GamEntity._postQualifier = f' that matched query ({query})'
 
   def SetGettingQualifier(self, entityType, qualifier):
-    self.entityType = entityType
-    self.preQualifier = self.postQualifier = qualifier
+    GamEntity._entityType = entityType
+    GamEntity._preQualifier = GamEntity._postQualifier = qualifier
 
   def Getting(self):
-    return self.entityType
+    return GamEntity._entityType
 
   def GettingPreQualifier(self):
-    return self.preQualifier
+    return GamEntity._preQualifier
 
   def GettingPostQualifier(self):
-    return self.postQualifier
+    return GamEntity._postQualifier
 
   def SetGettingForWhom(self, forWhom):
-    self.forWhom = forWhom
+    GamEntity._forWhom = forWhom
 
   def GettingForWhom(self):
-    return self.forWhom
+    return GamEntity._forWhom
 
   def Choose(self, entityType, count):
     return self._NAMES[entityType][[0, 1][count == 1]]
@@ -839,13 +870,13 @@ class GamEntity():
     return self._NAMES[entityType][0]
 
   def PluralGetting(self):
-    return self._NAMES[self.entityType][0]
+    return self._NAMES[GamEntity._entityType][0]
 
   def Singular(self, entityType):
     return self._NAMES[entityType][1]
 
   def SingularGetting(self):
-    return self._NAMES[self.entityType][1]
+    return self._NAMES[GamEntity._entityType][1]
 
   def MayTakeTime(self, entityType):
     if entityType:

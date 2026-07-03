@@ -1,0 +1,266 @@
+"""GAM Cloud Identity user invitation management."""
+
+import re
+import json
+import sys
+
+from gamlib import glaction
+from gamlib import glapi as API
+from gamlib import glcfg as GC
+from gamlib import glclargs
+from gamlib import glentity
+from gamlib import glgapi as GAPI
+from gamlib import glglobals as GM
+from gamlib import glindent
+from gamlib import glmsgs as Msg
+
+Act = glaction.GamAction()
+Ent = glentity.GamEntity()
+Ind = glindent.GamIndent()
+Cmd = glclargs.GamCLArgs()
+
+
+def _getMain():
+  return sys.modules['gam']
+
+def __getattr__(name):
+  """Fall back to gam module for any undefined names."""
+  main = _getMain()
+  try:
+    return getattr(main, name)
+  except AttributeError:
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+from urllib.parse import quote_plus
+
+def isolateCIUserInvitatonsEmail(name):
+  ''' converts long name into email address'''
+  return name.split('/')[-1]
+
+def quotedCIUserInvitatonsEmail(customer, email):
+  return f"{customer}/userinvitations/{quote_plus(email, safe='@')}"
+
+def _getCIUserInvitationsEntity(ci=None, email=None):
+  if ci is None:
+    ci = _getMain().buildGAPIObject(API.CLOUDIDENTITY_USERINVITATIONS)
+  customer = _getMain()._getCustomersCustomerIdWithC()
+  if email is None:
+    email = _getMain().getString(Cmd.OB_EMAIL_ADDRESS)
+  pattern = re.compile(rf'^{customer}/userinvitations/(.+)$')
+  mg = pattern.match(email)
+  if mg:
+    email = mg.group(1)
+  else:
+    email = _getMain().normalizeEmailAddressOrUID(email, noUid=True)
+  return (quotedCIUserInvitatonsEmail(customer, email), email, ci)
+
+def _getIsInvitableUser(ci, email):
+  name, _, ci = _getCIUserInvitationsEntity(ci, email)
+  try:
+    result = _getMain().callGAPI(ci.customers().userinvitations(), 'isInvitableUser',
+                      throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                      name=name)
+    return (result['isInvitableUser'], ci)
+  except GAPI.notFound:
+    return (False, ci)
+  except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied):
+    return (False, ci)
+
+# gam send userinvitation <EmailAddress>
+# gam cancel userinvitation <EmailAddress>
+def doCIUserInvitationsAction():
+  name, user, ci = _getCIUserInvitationsEntity()
+  _getMain().checkForExtraneousArguments()
+  if Act.Get() == Act.CANCEL:
+    action = 'cancel'
+  else:
+    Act.Set(Act.SEND)
+    action = 'send'
+  _getMain().entityPerformAction([Ent.USER_INVITATION, user])
+  try:
+    result = _getMain().callGAPI(ci.customers().userinvitations(), action,
+                      throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                      name=name)
+    name = result.get('response', {}).get('name')
+    if name:
+      result['response']['name'] = isolateCIUserInvitatonsEmail(name)
+    Ind.Increment()
+    _getMain().showJSON(None, result)
+    Ind.Decrement()
+  except GAPI.notFound:
+    _getMain().entityUnknownWarning(Ent.USER_INVITATION, f'{user}')
+  except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+    _getMain().entityActionFailedWarning([Ent.USER_INVITATION, f'{user}'], str(e))
+
+CI_USERINVITATION_TIME_OBJECTS = {'updateTime'}
+
+def _showUserInvitation(invitation, FJQC, i=0, count=0):
+  if FJQC is not None and FJQC.formatJSON:
+    invitation['email'] = isolateCIUserInvitatonsEmail(invitation['name'])
+    _getMain().printLine(json.dumps(_getMain().cleanJSON(invitation, timeObjects=CI_USERINVITATION_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
+    return
+  _getMain().printEntity([Ent.USER_INVITATION, isolateCIUserInvitatonsEmail(invitation['name'])], i, count)
+  Ind.Increment()
+  _getMain().showJSON(None, invitation, timeObjects=CI_USERINVITATION_TIME_OBJECTS)
+  Ind.Decrement()
+
+# gam check userinvitation|isinvitable <EmailAddress>
+def doCheckCIUserInvitations():
+  name, user, ci = _getCIUserInvitationsEntity()
+  _getMain().checkForExtraneousArguments()
+  try:
+    result = _getMain().callGAPI(ci.customers().userinvitations(), 'isInvitableUser',
+                      throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                      name=name)
+    _getMain().printEntity([Ent.USER_INVITATION, user])
+    Ind.Increment()
+    _getMain().showJSON(None, result)
+    Ind.Decrement()
+  except GAPI.notFound:
+    _getMain().entityUnknownWarning(Ent.USER_INVITATION, f'{user}')
+  except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+    _getMain().entityActionFailedWarning([Ent.USER_INVITATION, f'{user}'], str(e))
+
+def infoCIUserInvitations(name, user, ci, FJQC):
+  try:
+    invitation = _getMain().callGAPI(ci.customers().userinvitations(), 'get',
+                          throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                          name=name)
+    _showUserInvitation(invitation, FJQC)
+  except GAPI.notFound:
+    _getMain().entityUnknownWarning(Ent.USER_INVITATION, f'{user}')
+  except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+    _getMain().entityActionFailedWarning([Ent.USER_INVITATION, f'{user}'], str(e))
+
+# gam info userinvitation <EmailAddress> [formatjson]
+def doInfoCIUserInvitations():
+  name, user, ci = _getCIUserInvitationsEntity()
+  FJQC = _getMain().FormatJSONQuoteChar(formatJSONOnly=True)
+  infoCIUserInvitations(name, user, ci, FJQC)
+
+CI_USERINVITATION_ORDERBY_CHOICE_MAP = {
+  'email': 'email',
+  'updatetime': 'update_time',
+  }
+
+CI_USERINVITATION_STATE_CHOICE_MAP = {
+  'accepted': 'ACCEPTED',
+  'declined': 'DECLINED',
+  'invited': 'INVITED',
+  'notyetsent': 'NOT_YET_SENT',
+  }
+
+# gam show userinvitations
+#	[state notyetsent|invited|accepted|declined]
+#	[orderby email|updatetime [ascending|descending]]
+#	[formatjson]
+# gam print userinvitations [todrive <ToDriveAttribute>*]
+#	[state notyetsent|invited|accepted|declined]
+#	[orderby email|updatetime [ascending|descending]]
+#	[[formatjson [quotechar <Character>]]
+def doPrintShowCIUserInvitations():
+  def _printUserInvitation(invitation):
+    invitation['email'] = isolateCIUserInvitatonsEmail(invitation['name'])
+    row = _getMain().flattenJSON(invitation, timeObjects=CI_USERINVITATION_TIME_OBJECTS)
+    if not FJQC.formatJSON:
+      csvPF.WriteRowTitles(row)
+    elif csvPF.CheckRowTitles(row):
+      csvPF.WriteRowNoFilter({'email': invitation['email'],
+                              'JSON': json.dumps(_getMain().cleanJSON(invitation, timeObjects=CI_USERINVITATION_TIME_OBJECTS),
+                                                 ensure_ascii=False, sort_keys=True)})
+
+  ci = _getMain().buildGAPIObject(API.CLOUDIDENTITY_USERINVITATIONS)
+  customer = _getMain()._getCustomersCustomerIdWithC()
+  csvPF = _getMain().CSVPrintFile(['email']) if Act.csvFormat() else None
+  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  OBY = _getMain().OrderBy(CI_USERINVITATION_ORDERBY_CHOICE_MAP)
+  ifilter = None
+  while Cmd.ArgumentsRemaining():
+    myarg = _getMain().getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif myarg == 'state':
+      state = _getMain().getChoice(CI_USERINVITATION_STATE_CHOICE_MAP, mapChoice=True)
+      ifilter = f"state=='{state}'"
+    elif myarg == 'orderby':
+      OBY.GetChoice()
+    else:
+      FJQC.GetFormatJSONQuoteChar(myarg, True)
+  _getMain().printGettingAllAccountEntities(Ent.USER_INVITATION, ifilter)
+  pageMessage = _getMain().getPageMessage()
+  try:
+    invitations = _getMain().callGAPIpages(ci.customers().userinvitations(), 'list', 'userInvitations',
+                                throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                                pageMessage=pageMessage,
+                                parent=customer, filter=ifilter, orderBy=OBY.orderBy)
+  except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+    _getMain().entityActionFailedWarning([Ent.USER_INVITATION, None], str(e))
+    return
+  if not csvPF:
+    jcount = len(invitations)
+    _getMain().performActionNumItems(jcount, Ent.USER_INVITATION)
+    Ind.Increment()
+    j = 0
+    for invitation in invitations:
+      j += 1
+      _showUserInvitation(invitation, FJQC, j, jcount)
+    Ind.Decrement()
+  else:
+    for invitation in invitations:
+      _printUserInvitation(invitation)
+  if csvPF:
+    csvPF.writeCSVfile('User Invitations')
+
+# gam <UserTypeEntity> check isinvitable [todrive <ToDriveAttribute>*]
+# /batch is broken for Cloud Identity. Once fixed move this to using batch.
+# Current serial implementation will be SLOW...
+def checkCIUserIsInvitable(users):
+  ci = _getMain().buildGAPIObject(API.CLOUDIDENTITY_USERINVITATIONS)
+  customer = _getMain()._getCustomersCustomerIdWithC()
+  csvPF = _getMain().CSVPrintFile(['invitableUsers'])
+  _getMain().getTodriveOnly(csvPF)
+  i, count, users = _getMain().getEntityArgument(users)
+  for user in users:
+    i += 1
+    user = _getMain().convertUIDtoEmailAddress(user)
+    name = quotedCIUserInvitatonsEmail(customer, user)
+    try:
+      result = _getMain().callGAPI(ci.customers().userinvitations(), 'isInvitableUser',
+                        throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID, GAPI.PERMISSION_DENIED],
+                        name=name)
+      if result.get('isInvitableUser'):
+        csvPF.WriteRow({'invitableUsers': user})
+    except GAPI.notFound:
+      _getMain().entityUnknownWarning(Ent.USER_INVITATION, f'{user}', i, count)
+    except (GAPI.invalid, GAPI.permissionDenied) as e:
+      _getMain().entityActionFailedWarning([Ent.USER_INVITATION, user], str(e), i, count)
+      return
+  csvPF.writeCSVfile('Invitable Users')
+
+INBOUNDSSO_INPUT_MODE_CHOICE_MAP = {
+  'saml': 'saml',
+  'samlsso': 'saml',
+  'oidc': 'oidc',
+  'oidcsso': 'oidc',
+}
+
+INBOUNDSSO_OUTPUT_MODE_CHOICE_MAP = {
+  'all': 'all',
+  'saml': 'saml',
+  'samlsso': 'saml',
+  'oidc': 'oidc',
+  'oidcsso': 'oidc',
+}
+
+INBOUNDSSO_ALL_SAML = {'all', 'saml'}
+INBOUNDSSO_ALL_OIDC = {'all', 'oidc'}
+
+INBOUNDSSO_MODE_CHOICE_MAP = {
+  'ssooff': 'SSO_OFF',
+  'saml': 'SAML_SSO',
+  'samlsso': 'SAML_SSO',
+  'oidc': 'OIDC_SSO',
+  'oidcsso': 'OIDC_SSO',
+  'domainwidesamlifenabled': 'DOMAIN_WIDE_SAML_IF_ENABLED'
+  }
+

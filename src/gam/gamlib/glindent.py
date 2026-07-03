@@ -24,23 +24,33 @@ class GamIndent():
 
   INDENT_SPACES_PER_LEVEL = '  '
 
+  # Shared state across all instances (class-level)
+  _indent = 0
+
+  @property
+  def indent(self):
+    return GamIndent._indent
+  @indent.setter
+  def indent(self, value):
+    GamIndent._indent = value
+
   def __init__(self):
-    self.indent = 0
+    pass  # state is shared at class level
 
   def Reset(self):
-    self.indent = 0
+    GamIndent._indent = 0
 
   def Increment(self):
-    self.indent += 1
+    GamIndent._indent += 1
 
   def Decrement(self):
-    self.indent -= 1
+    GamIndent._indent -= 1
 
   def Spaces(self):
-    return self.INDENT_SPACES_PER_LEVEL*self.indent
+    return self.INDENT_SPACES_PER_LEVEL*GamIndent._indent
 
   def SpacesSub1(self):
-    return self.INDENT_SPACES_PER_LEVEL*(self.indent-1)
+    return self.INDENT_SPACES_PER_LEVEL*(GamIndent._indent-1)
 
   def MultiLineText(self, message, n=0):
-    return message.replace('\n', f'\n{self.INDENT_SPACES_PER_LEVEL*(self.indent+n)}').rstrip()
+    return message.replace('\n', f'\n{self.INDENT_SPACES_PER_LEVEL*(GamIndent._indent+n)}').rstrip()

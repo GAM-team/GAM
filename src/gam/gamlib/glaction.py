@@ -278,28 +278,38 @@ class GamAction():
   SUCCESS = 'Success'
   SUFFIX_FAILED = 'Failed'
 
+  # Shared state across all instances (class-level)
+  _action = None
+
+  @property
+  def action(self):
+    return GamAction._action
+  @action.setter
+  def action(self, value):
+    GamAction._action = value
+
   def __init__(self):
-    self.action = None
+    pass  # state is shared at class level
 
   def Set(self, action):
-    self.action = action
+    GamAction._action = action
 
   def Get(self):
-    return self.action
+    return GamAction._action
 
   def ToPerform(self):
-    return self._NAMES[self.action][1]
+    return self._NAMES[GamAction._action][1]
 
   def Performed(self):
-    return self._NAMES[self.action][0]
+    return self._NAMES[GamAction._action][0]
 
   def Failed(self):
-    return f'{self._NAMES[self.action][1]} {self.SUFFIX_FAILED}'
+    return f'{self._NAMES[GamAction._action][1]} {self.SUFFIX_FAILED}'
 
   def NotPerformed(self):
-    actionWords = self._NAMES[self.action][0].split(' ')
+    actionWords = self._NAMES[GamAction._action][0].split(' ')
     if len(actionWords) != 2:
-      return f'{self.PREFIX_NOT} {self._NAMES[self.action][0]}'
+      return f'{self.PREFIX_NOT} {self._NAMES[GamAction._action][0]}'
     return f'{actionWords[0]} {self.PREFIX_NOT} {actionWords[1]}'
 
   def PerformedName(self, action):
@@ -309,4 +319,4 @@ class GamAction():
     return self._NAMES[action][1]
 
   def csvFormat(self):
-    return self.action == self.PRINT
+    return GamAction._action == self.PRINT
