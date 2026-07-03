@@ -6,6 +6,7 @@ Part of the _groups_tmp sub-package."""
 
 import re
 import sys
+import time
 
 from gamlib import glaction
 from gamlib import glapi as API

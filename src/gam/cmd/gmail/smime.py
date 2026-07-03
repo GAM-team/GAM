@@ -6,6 +6,7 @@ Part of the _gmail_monolith sub-package."""
 
 import re
 import sys
+import base64
 
 from gamlib import glaction
 from gamlib import glapi as API

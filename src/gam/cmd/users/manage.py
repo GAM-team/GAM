@@ -6,6 +6,8 @@ Part of the _users_tmp sub-package."""
 
 import re
 import sys
+import base64
+import time
 
 from gamlib import glaction
 from gamlib import glapi as API

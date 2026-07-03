@@ -10,6 +10,7 @@ Part of the drive sub-package, extracted from drive.py."""
 
 import re
 import sys
+import os
 
 from gamlib import glaction
 from gamlib import glapi as API

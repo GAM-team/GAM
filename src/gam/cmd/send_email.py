@@ -1,6 +1,7 @@
 """GAM email sending and tag replacement utilities."""
 
 import sys
+import time
 
 import re
 
