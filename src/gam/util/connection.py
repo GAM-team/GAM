@@ -21,29 +21,30 @@ from gamlib import glglobals as GM
 from gamlib import glmsgs as Msg
 from gamlib import glverlibs
 
+from gam.constants import (
+    FN_GAMCOMMANDS_TXT, GAM, GAM_URL, GAM_WIKI,
+    GOOGLE_TIMECHECK_LOCATION, MAX_LOCAL_GOOGLE_TIME_OFFSET, NETWORK_ERROR_RC,
+    SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE,
+)
+from util.args import ISOformatTimeStamp, getArgument, getString, todaysTime
+from util.display import printBlankLine, printKeyValueList
+from util.errors import unknownArgumentExit
+from util.output import (
+    createGreenText, createRedText, createYellowText,
+    flushStdout, stderrWarningMsg, systemErrorExit, writeStdout,
+)
+from util.api import doGAMCheckForUpdates, getHttpObj, getService, handleServerError, waitOnFailure
 
-class _InstanceProxy:
-  """Lazy proxy that delegates attribute access to a named instance in the gam module."""
-  def __init__(self, name):
-    self._name = name
-  def __getattr__(self, attr):
-    return getattr(getattr(sys.modules['gam'], self._name), attr)
-
-Cmd = _InstanceProxy('Cmd')
-
-def _getEnt():
-  return sys.modules['gam'].Ent
-
-def _getMain():
-  return sys.modules['gam']
+# gam.__init__ attributes that can't be imported at module level
+# (connection.py is imported BY __init__.py during init)
+_gam = lambda: sys.modules['gam']
 
 
 # --- Constants ---
 
 def _buildTimeOffsetUnits():
-  m = _getMain()
-  return [('day', m.SECONDS_PER_DAY), ('hour', m.SECONDS_PER_HOUR),
-          ('minute', m.SECONDS_PER_MINUTE), ('second', 1)]
+  return [('day', SECONDS_PER_DAY), ('hour', SECONDS_PER_HOUR),
+          ('minute', SECONDS_PER_MINUTE), ('second', 1)]
 
 MACOS_CODENAMES = {
   10: {
@@ -70,31 +71,30 @@ MACOS_CODENAMES = {
 # --- Functions ---
 
 def getLocalGoogleTimeOffset(testLocation=None):
-  m = _getMain()
   if testLocation is None:
-    testLocation = m.GOOGLE_TIMECHECK_LOCATION
+    testLocation = GOOGLE_TIMECHECK_LOCATION
   TIME_OFFSET_UNITS = _buildTimeOffsetUnits()
   # If local time is well off, it breaks https because the server certificate will be seen as too old or new and thus invalid; http doesn't have that issue.
   # Try with http first, if time is close (<MAX_LOCAL_GOOGLE_TIME_OFFSET seconds), retry with https as it should be OK
-  httpObj = m.getHttpObj()
+  httpObj = getHttpObj()
   for prot in ['http', 'https']:
     try:
       headerData = httpObj.request(f'{prot}://'+testLocation, 'HEAD')
       googleUTC = arrow.Arrow.strptime(headerData[0]['date'], '%a, %d %b %Y %H:%M:%S %Z', tzinfo='UTC')
     except (httplib2.HttpLib2Error, RuntimeError) as e:
-      m.handleServerError(e)
+      handleServerError(e)
     except httplib2.socks.HTTPError as e:
       # If user has specified an HTTPS proxy, the http request will probably fail as httplib2
       # turns a GET into a CONNECT which is not valid for an http address
       if prot == 'http':
         continue
-      m.handleServerError(e)
+      handleServerError(e)
     except (ValueError, KeyError):
       if prot == 'http':
         continue
-      m.systemErrorExit(m.NETWORK_ERROR_RC, Msg.INVALID_HTTP_HEADER.format(str(headerData)))
+      systemErrorExit(NETWORK_ERROR_RC, Msg.INVALID_HTTP_HEADER.format(str(headerData)))
     offset = remainder = int(abs((arrow.utcnow()-googleUTC).total_seconds()))
-    if offset < m.MAX_LOCAL_GOOGLE_TIME_OFFSET and prot == 'http':
+    if offset < MAX_LOCAL_GOOGLE_TIME_OFFSET and prot == 'http':
       continue
     timeoff = []
     for tou in TIME_OFFSET_UNITS:
@@ -107,23 +107,22 @@ def getLocalGoogleTimeOffset(testLocation=None):
     return (offset, nicetime)
 
 def _getServerTLSUsed(location):
-  m = _getMain()
   url = 'https://'+location
   _, netloc, _, _, _, _ = urlparse(url)
   conn = 'https:'+netloc
-  httpObj = m.getHttpObj()
+  httpObj = getHttpObj()
   triesLimit = 5
   for n in range(1, triesLimit+1):
     try:
-      httpObj.request(url, headers={'user-agent': m.GAM_USER_AGENT})
+      httpObj.request(url, headers={'user-agent': _gam().GAM_USER_AGENT})
       cipher_name, tls_ver, _ = httpObj.connections[conn].sock.cipher()
       return tls_ver, cipher_name
     except (httplib2.HttpLib2Error, RuntimeError) as e:
       if n != triesLimit:
         httpObj.connections = {}
-        m.waitOnFailure(n, triesLimit, m.NETWORK_ERROR_RC, str(e))
+        waitOnFailure(n, triesLimit, NETWORK_ERROR_RC, str(e))
         continue
-      m.handleServerError(e)
+      handleServerError(e)
 
 def getOSPlatform():
   myos = platform.system()
@@ -175,7 +174,6 @@ def inspect_untrusted_cert(url):
 
 # gam checkconnection
 def doCheckConnection():
-  m = _getMain()
 
   def check_host(host):
     nonlocal try_count, okay, not_okay, success_count
@@ -189,10 +187,10 @@ def doCheckConnection():
     except Exception as e:
       dns_err = f'{not_okay}\n   Unknown DNS failure: {str(e)}\n'
     check_line = f'Checking {host} ({ip}) ({try_count})...'
-    m.writeStdout(f'{check_line:<100}')
-    m.flushStdout()
+    writeStdout(f'{check_line:<100}')
+    flushStdout()
     if dns_err:
-      m.writeStdout(dns_err)
+      writeStdout(dns_err)
       return
     gen_firewall = 'You probably have security software or a firewall on your machine or network that is preventing GAM from making Internet connections. Check your network configuration or try running GAM on a hotspot or home network to see if the problem exists only on your organization\'s network.'
     try:
@@ -202,37 +200,37 @@ def doCheckConnection():
         url = f'https://{host}:443/'
       httpObj.request(url, 'HEAD', headers=headers)
       success_count += 1
-      m.writeStdout(f'{okay}\n')
+      writeStdout(f'{okay}\n')
     except ConnectionRefusedError:
-      m.writeStdout(f'{not_okay}\n    Connection refused. {gen_firewall}\n')
+      writeStdout(f'{not_okay}\n    Connection refused. {gen_firewall}\n')
     except ConnectionResetError:
-      m.writeStdout(f'{not_okay}\n    Connection reset by peer. {gen_firewall}\n')
+      writeStdout(f'{not_okay}\n    Connection reset by peer. {gen_firewall}\n')
     except httplib2.error.ServerNotFoundError:
-      m.writeStdout(f'{not_okay}\n    Failed to find server. Your DNS is probably misconfigured.\n')
+      writeStdout(f'{not_okay}\n    Failed to find server. Your DNS is probably misconfigured.\n')
     except ssl.SSLCertVerificationError as e:
       diag_info = inspect_untrusted_cert(host)
       # e.verify_message contains the specific OpenSSL error string
-      m.writeStdout(f'{not_okay}\n    Certificate verification failed: {e.verify_message}\n    Diagnostic Info:\n   {diag_info}\nIf you are behind a firewall / proxy server that does TLS / SSL inspection you may need to point GAM at your certificate authority file by setting cacerts_pem = /path/to/your/certauth.pem in gam.cfg.\n')
+      writeStdout(f'{not_okay}\n    Certificate verification failed: {e.verify_message}\n    Diagnostic Info:\n   {diag_info}\nIf you are behind a firewall / proxy server that does TLS / SSL inspection you may need to point GAM at your certificate authority file by setting cacerts_pem = /path/to/your/certauth.pem in gam.cfg.\n')
     except ssl.SSLError as e:
       if e.reason == 'SSLV3_ALERT_HANDSHAKE_FAILURE':
-        m.writeStdout(f'{not_okay}\n    GAM expects to connect with TLS 1.3 or newer and that failed. If your firewall / proxy server is not compatible with TLS 1.3 then you can tell GAM to allow TLS 1.2 by setting tls_min_version = TLSv1.2 in gam.cfg.\n')
+        writeStdout(f'{not_okay}\n    GAM expects to connect with TLS 1.3 or newer and that failed. If your firewall / proxy server is not compatible with TLS 1.3 then you can tell GAM to allow TLS 1.2 by setting tls_min_version = TLSv1.2 in gam.cfg.\n')
       elif e.reason == 'CERTIFICATE_VERIFY_FAILED':
-        m.writeStdout(f'{not_okay}\n    Certificate verification failed. If you are behind a firewall / proxy server that does TLS / SSL inspection you may need to point GAM at your certificate authority file by setting cacerts_pem = /path/to/your/certauth.pem in gam.cfg.\n')
+        writeStdout(f'{not_okay}\n    Certificate verification failed. If you are behind a firewall / proxy server that does TLS / SSL inspection you may need to point GAM at your certificate authority file by setting cacerts_pem = /path/to/your/certauth.pem in gam.cfg.\n')
       elif e.strerror and e.strerror.startswith('TLS/SSL connection has been closed\n'):
-        m.writeStdout(f'{not_okay}\n    TLS connection was closed. {gen_firewall}\n')
+        writeStdout(f'{not_okay}\n    TLS connection was closed. {gen_firewall}\n')
       else:
-        m.writeStdout(f'{not_okay}\n    {str(e)}\n')
+        writeStdout(f'{not_okay}\n    {str(e)}\n')
     except TimeoutError:
-      m.writeStdout(f'{not_okay}\n    Timed out trying to connect to host\n')
+      writeStdout(f'{not_okay}\n    Timed out trying to connect to host\n')
     except Exception as e:
-      m.writeStdout(f'{not_okay}\n    {str(e)}\n')
+      writeStdout(f'{not_okay}\n    {str(e)}\n')
 
   try_count = 0
-  httpObj = m.getHttpObj(timeout=30)
+  httpObj = getHttpObj(timeout=30)
   httpObj.follow_redirects = False
-  headers = {'user-agent': m.GAM_USER_AGENT}
-  okay = m.createGreenText('OK')
-  not_okay = m.createRedText('ERROR')
+  headers = {'user-agent': _gam().GAM_USER_AGENT}
+  okay = createGreenText('OK')
+  not_okay = createRedText('ERROR')
   success_count = 0
   initial_hosts = ['api.github.com',
            'raw.githubusercontent.com',
@@ -265,34 +263,33 @@ def doCheckConnection():
   for api in API._INFO:
     if api in [API.CONTACTS, API.EMAIL_AUDIT]:
       continue
-    svc = m.getService(api, httpObj)
+    svc = getService(api, httpObj)
     base_url = svc._rootDesc.get('baseUrl')
     parsed_base_url = urlparse(base_url)
     base_host = parsed_base_url.netloc
     if base_host not in checked_hosts:
-      m.writeStdout(f'Checking {base_host} for {api}\n')
+      writeStdout(f'Checking {base_host} for {api}\n')
       check_host(base_host)
       checked_hosts.append(base_host)
   if success_count == try_count:
-    m.writeStdout(m.createGreenText('All hosts passed!\n'))
+    writeStdout(createGreenText('All hosts passed!\n'))
   else:
-    m.systemErrorExit(3, m.createYellowText('Some hosts failed to connect! Please follow the recommendations for those hosts to correct any issues and try again.'))
+    systemErrorExit(3, createYellowText('Some hosts failed to connect! Please follow the recommendations for those hosts to correct any issues and try again.'))
 
 # gam comment
 def doComment():
-  m = _getMain()
-  m.writeStdout(Cmd.QuotedArgumentList(Cmd.Remaining())+'\n')
+  writeStdout(_gam().Cmd.QuotedArgumentList(_gam().Cmd.Remaining())+'\n')
 
 # gam version [check|checkrc|simple|extended] [timeoffset] [nooffseterror] [location <HostName>]
 def doVersion(checkForArgs=True):
-  m = _getMain()
-  Ent = _getEnt()
+  Ent = _gam().Ent
+  Cmd = _gam().Cmd
   forceCheck = 0
   extended = noOffsetError = timeOffset = simple = False
-  testLocation = m.GOOGLE_TIMECHECK_LOCATION
+  testLocation = GOOGLE_TIMECHECK_LOCATION
   if checkForArgs:
     while Cmd.ArgumentsRemaining():
-      myarg = m.getArgument()
+      myarg = getArgument()
       if myarg == 'check':
         forceCheck = 1
       elif myarg == 'checkrc':
@@ -306,46 +303,45 @@ def doVersion(checkForArgs=True):
       elif myarg == 'nooffseterror':
         noOffsetError = True
       elif myarg == 'location':
-        testLocation = m.getString(Cmd.OB_HOST_NAME)
+        testLocation = getString(Cmd.OB_HOST_NAME)
       else:
-        m.unknownArgumentExit()
+        unknownArgumentExit()
   if simple:
-    m.writeStdout(m.__version__)
+    writeStdout(_gam().__version__)
     return
-  m.writeStdout((f'{m.GAM} {m.__version__} - {m.GAM_URL} - {GM.Globals[GM.GAM_TYPE]}\n'
-               f'{m.__author__}\n'
+  writeStdout((f'{GAM} {_gam().__version__} - {GAM_URL} - {GM.Globals[GM.GAM_TYPE]}\n'
+               f'{_gam().__author__}\n'
                f'Python {sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]} {struct.calcsize("P")*8}-bit {sys.version_info[3]}\n'
                f'{getOSPlatform()} {platform.machine()}\n'
                f'Path: {GM.Globals[GM.GAM_PATH]}\n'
                f'{Ent.Singular(Ent.CONFIG_FILE)}: {GM.Globals[GM.GAM_CFG_FILE]}, {Ent.Singular(Ent.SECTION)}: {GM.Globals[GM.GAM_CFG_SECTION_NAME]}, '
                f'{GC.CUSTOMER_ID}: {GC.Values[GC.CUSTOMER_ID]}, {GC.DOMAIN}: {GC.Values[GC.DOMAIN]}\n'
-               f'Time: {m.ISOformatTimeStamp(m.todaysTime())}\n'
+               f'Time: {ISOformatTimeStamp(todaysTime())}\n'
                ))
   if sys.platform.startswith('win') and str(struct.calcsize('P')*8).find('32') != -1 and platform.machine().find('64') != -1:
-    m.printKeyValueList([Msg.UPDATE_GAM_TO_64BIT])
+    printKeyValueList([Msg.UPDATE_GAM_TO_64BIT])
   if timeOffset:
     offsetSeconds, offsetFormatted = getLocalGoogleTimeOffset(testLocation)
-    m.printKeyValueList([Msg.YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE.format(testLocation, offsetFormatted)])
-    if offsetSeconds > m.MAX_LOCAL_GOOGLE_TIME_OFFSET:
+    printKeyValueList([Msg.YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE.format(testLocation, offsetFormatted)])
+    if offsetSeconds > MAX_LOCAL_GOOGLE_TIME_OFFSET:
       if not noOffsetError:
-        m.systemErrorExit(m.NETWORK_ERROR_RC, Msg.PLEASE_CORRECT_YOUR_SYSTEM_TIME)
-      m.stderrWarningMsg(Msg.PLEASE_CORRECT_YOUR_SYSTEM_TIME)
+        systemErrorExit(NETWORK_ERROR_RC, Msg.PLEASE_CORRECT_YOUR_SYSTEM_TIME)
+      stderrWarningMsg(Msg.PLEASE_CORRECT_YOUR_SYSTEM_TIME)
   if forceCheck:
-    m.doGAMCheckForUpdates(forceCheck)
+    doGAMCheckForUpdates(forceCheck)
   if extended:
-    m.printKeyValueList([ssl.OPENSSL_VERSION])
+    printKeyValueList([ssl.OPENSSL_VERSION])
     tls_ver, cipher_name = _getServerTLSUsed(testLocation)
     for lib in glverlibs.GAM_VER_LIBS:
       try:
-        m.writeStdout(f'{lib} {lib_version(lib)}\n')
+        writeStdout(f'{lib} {lib_version(lib)}\n')
       except:
         pass
-    m.printKeyValueList([f'{testLocation} connects using {tls_ver} {cipher_name}'])
+    printKeyValueList([f'{testLocation} connects using {tls_ver} {cipher_name}'])
 
 # gam help
 def doUsage():
-  m = _getMain()
-  m.printBlankLine()
+  printBlankLine()
   doVersion(checkForArgs=False)
-  m.writeStdout(Msg.HELP_SYNTAX.format(os.path.join(GM.Globals[GM.GAM_PATH], m.FN_GAMCOMMANDS_TXT)))
-  m.writeStdout(Msg.HELP_WIKI.format(m.GAM_WIKI))
+  writeStdout(Msg.HELP_SYNTAX.format(os.path.join(GM.Globals[GM.GAM_PATH], FN_GAMCOMMANDS_TXT)))
+  writeStdout(Msg.HELP_WIKI.format(GAM_WIKI))

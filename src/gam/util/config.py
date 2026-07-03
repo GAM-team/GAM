@@ -37,70 +37,38 @@ from util.args import integerLimits
 from util.args import LOCALE_CODES_MAP
 from util.args import LANGUAGE_CODES_MAP
 from util.args import TIMEZONE_FORMAT_REQUIRED
+from util.args import (
+    checkArgumentPresent, getArgument, getBoolean, getCharacter, getChoice,
+    getFloat, getInteger, getLanguageCode, getREPattern, getString,
+    shlexSplitList, shlexSplitListStatus,
+    Cmd, FALSE, FALSE_VALUES, TRUE, TRUE_FALSE, TRUE_VALUES, UTF8,
+)
 from util.csv_pf import CSVPrintFile
+from util.display import printKeyValueList, printLine
 from util.entity import getEntitiesFromCSVFile
 from util.entity import getEntitiesFromFile
-from util.fileio import initAPICallsRateCheck
-from util.fileio import openGAMCommandLog
-from util.fileio import StringIOobject
-
-
-def _getMain():
-  return sys.modules['gam']
+from util.errors import formatChoiceList, usageErrorExit, USAGE_ERROR_RC
+from util.fileio import (
+    initAPICallsRateCheck, openGAMCommandLog, StringIOobject,
+    deleteFile, fileErrorMessage, openFile, readFile, setFilePath, writeFile,
+    FILE_ERROR_RC,
+)
+from util.output import (
+    ERROR_PREFIX, WARNING, WARNING_PREFIX,
+    formatKeyValueList, printErrorMessage, stderrErrorMsg, systemErrorExit,
+    writeStderr,
+)
+from gam.constants import (
+    CONFIG_ERROR_RC, DEFAULT_FILE_APPEND_MODE, DEFAULT_FILE_READ_MODE,
+    DEFAULT_FILE_WRITE_MODE, EV_GAMCFGDIR, EV_GAMCFGSECTION, EV_OLDGAMPATH,
+    FN_GAM_CFG, GAM,
+)
 
 
 def SetGlobalVariables():
-  _main = _getMain()
-  Cmd = _main.Cmd
-  checkArgumentPresent = _main.checkArgumentPresent
-  getBoolean = _main.getBoolean
-  getCharacter = _main.getCharacter
-  getChoice = _main.getChoice
-  getString = _main.getString
-  getInteger = _main.getInteger
-  getFloat = _main.getFloat
-  getLanguageCode = _main.getLanguageCode
-  getREPattern = _main.getREPattern
-  getArgument = _main.getArgument
-  systemErrorExit = _main.systemErrorExit
-  stderrErrorMsg = _main.stderrErrorMsg
-  printErrorMessage = _main.printErrorMessage
-  printKeyValueList = _main.printKeyValueList
-  printLine = _main.printLine
-  writeStderr = _main.writeStderr
-  openFile = _main.openFile
-  readFile = _main.readFile
-  writeFile = _main.writeFile
-  deleteFile = _main.deleteFile
-  fileErrorMessage = _main.fileErrorMessage
-  setFilePath = _main.setFilePath
-  usageErrorExit = _main.usageErrorExit
-  formatChoiceList = _main.formatChoiceList
-  formatKeyValueList = _main.formatKeyValueList
-  shlexSplitList = _main.shlexSplitList
-  shlexSplitListStatus = _main.shlexSplitListStatus
-  FN_GAM_CFG = _main.FN_GAM_CFG
-  UTF8 = _main.UTF8
-  USAGE_ERROR_RC = _main.USAGE_ERROR_RC
-  CONFIG_ERROR_RC = _main.CONFIG_ERROR_RC
-  FILE_ERROR_RC = _main.FILE_ERROR_RC
-  # Constants from __init__.py needed by SetGlobalVariables
-  GAM = _main.GAM
-  TRUE = _main.TRUE
-  FALSE = _main.FALSE
-  TRUE_VALUES = _main.TRUE_VALUES
-  FALSE_VALUES = _main.FALSE_VALUES
-  TRUE_FALSE = _main.TRUE_FALSE
-  ERROR_PREFIX = _main.ERROR_PREFIX
-  WARNING = _main.WARNING
-  WARNING_PREFIX = _main.WARNING_PREFIX
-  EV_GAMCFGDIR = _main.EV_GAMCFGDIR
-  EV_GAMCFGSECTION = _main.EV_GAMCFGSECTION
-  EV_OLDGAMPATH = _main.EV_OLDGAMPATH
-  DEFAULT_FILE_APPEND_MODE = _main.DEFAULT_FILE_APPEND_MODE
-  DEFAULT_FILE_READ_MODE = _main.DEFAULT_FILE_READ_MODE
-  DEFAULT_FILE_WRITE_MODE = _main.DEFAULT_FILE_WRITE_MODE
-  redactable_debug_print = _main.redactable_debug_print
+  # redactable_debug_print is defined in gam.__init__ — access at call time
+  # to avoid circular import (gam imports from us during init)
+  redactable_debug_print = sys.modules['gam'].redactable_debug_print
 
 
   def _stringInQuotes(value):

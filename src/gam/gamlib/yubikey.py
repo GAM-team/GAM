@@ -25,10 +25,7 @@ import string
 import sys
 
 from gam import mplock
-
-from gam import systemErrorExit
-from gam import readStdin
-from gam import writeStdout
+from gam.util.output import systemErrorExit, readStdin, writeStdout
 
 from gam.gamlib import glmsgs as Msg
 

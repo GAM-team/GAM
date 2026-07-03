@@ -76,6 +76,7 @@ import calendar
 import datetime
 import json
 import re
+import shlex
 import sys
 
 import arrow
@@ -1629,3 +1630,22 @@ def substituteQueryTimes(queries, queryTimes):
 def _getFilterDateTime():
   filterDate = getYYYYMMDD(returnDateTime=True)
   return (filterDate, filterDate.replace(tzinfo='UTC'))
+
+def shlexSplitList(entity, dataDelimiter=' ,'):
+  lexer = shlex.shlex(entity, posix=True)
+  lexer.whitespace = dataDelimiter
+  lexer.whitespace_split = True
+  try:
+    return list(lexer)
+  except ValueError as e:
+    Cmd.Backup()
+    usageErrorExit(str(e))
+
+def shlexSplitListStatus(entity, dataDelimiter=' ,'):
+  lexer = shlex.shlex(entity, posix=True)
+  lexer.whitespace = dataDelimiter
+  lexer.whitespace_split = True
+  try:
+    return (True, list(lexer))
+  except ValueError as e:
+    return (False, str(e))

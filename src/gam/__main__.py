@@ -22,9 +22,10 @@ import platform
 import sys
 
 import gam
+from gam.util.batch import initializeLogging
 
 def main():
-  gam.initializeLogging()
+  initializeLogging()
   rc = gam.ProcessGAMCommand(sys.argv)
   try:
     sys.stdout.flush()

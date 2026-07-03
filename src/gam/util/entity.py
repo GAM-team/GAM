@@ -227,24 +227,7 @@ def convertOrgUnitIDtoPath(cd, orgUnitId):
     GM.Globals[GM.MAP_ORGUNIT_ID_TO_NAME][orgUnitId] = orgUnitPath
   return orgUnitPath
 
-def shlexSplitList(entity, dataDelimiter=' ,'):
-  lexer = shlex.shlex(entity, posix=True)
-  lexer.whitespace = dataDelimiter
-  lexer.whitespace_split = True
-  try:
-    return list(lexer)
-  except ValueError as e:
-    _getMain().Cmd.Backup()
-    _getMain().usageErrorExit(str(e))
-
-def shlexSplitListStatus(entity, dataDelimiter=' ,'):
-  lexer = shlex.shlex(entity, posix=True)
-  lexer.whitespace = dataDelimiter
-  lexer.whitespace_split = True
-  try:
-    return (True, list(lexer))
-  except ValueError as e:
-    return (False, str(e))
+from util.args import shlexSplitList, shlexSplitListStatus  # noqa: E402,F401 - moved to args, re-exported for compat
 
 def getQueries(myarg):
   if myarg in {'query', 'filter'}:
